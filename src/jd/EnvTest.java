@@ -1,17 +1,20 @@
 package jd;
 
-import java.io.File;
-import java.io.IOException;
 import java.net.URL;
 
+import jd.http.Browser;
 import jd.http.ext.security.JSPermissionRestricter;
 
 import org.appwork.exceptions.WTFException;
 import org.appwork.utils.IO;
-import org.mozilla.javascript.Context;
-import org.mozilla.javascript.tools.shell.Global;
+import org.jdownloader.scripting.envjs.EnvJS;
 
 public class EnvTest {
+    public static Object connection(Object a, Object b, Object c) {
+
+        return null;
+    }
+
     public static String readFromFile(String url) {
 
         System.out.println("Read File: " + url);
@@ -24,47 +27,41 @@ public class EnvTest {
 
     public static void main(String[] args) {
 
-        // String cb = rcBr.getRegex("(cb\\=function\\(a\\)\\{\\;.*?(var H\\=function\\(\\)\\{\\}\\;").getMatch(0);
+        // Init Javascript Sandbox
         JSPermissionRestricter.init();
-        Context cx = Context.enter();
-        Global scope = new Global(cx);
-        cx.setOptimizationLevel(-1);
-        cx.setLanguageVersion(Context.VERSION_1_5);
+        EnvJS env = new EnvJS() {
+            public String xhrRequest(String url, String method, String data, String requestHeaders) throws java.io.IOException {
+                if (url.endsWith("fb.html")) {
+                    return "";
+                }
+                return super.xhrRequest(url, method, data, requestHeaders);
+            };
+        };
+
         try {
-            jd.http.ext.security.JSPermissionRestricter.evaluateTrustedString(cx, scope, IO.readFileToString(new File("\\ressourcen\\libs\\js\\env.rhino.js")), "js", 1, null);
 
-            jd.http.ext.security.JSPermissionRestricter.evaluateTrustedString(cx, scope, "Envjs.scriptTypes = {\"text/javascript\"   :true,   \"text/envjs\"        :true};", "js", 1, null);
+            // load env.js library
+            env.init();
 
-            // jd.http.ext.security.JSPermissionRestricter.evaluateTrustedString(cx, scope,
-            // "Envjs.log = function(message){java.lang.System.out.println(message);};", "js", 1, null);
-            // jd.http.ext.security.JSPermissionRestricter.evaluateTrustedString(cx, scope, "Packages.jd.EnvTest.readFromFile(null);", "js",
-            // 1, null);
+            Browser br = new Browser();
+            // load page
+            String link = "";
+            // String html = br.getPage(link);
 
-            // jd.http.ext.security.JSPermissionRestricter.evaluateTrustedString(cx, scope,
-            // "Envjs.eval = function(context, source, name){java.lang.System.out.println(context+\"_\"+source+\"-\"+name);};", "js", 1,
-            // null);
-            // jd.http.ext.security.JSPermissionRestricter.evaluateTrustedString(cx, scope, "console.log('Blablabla');", "js", 1, null);
-            String html = IO.readFileToString(new File("rapidgator.html"));
-            // html = HTMLEntities.htmlentities(html);
-            //
-            // html = HTMLEntities.htmlAmpersand(html);
-            // html = HTMLEntities.htmlAngleBrackets(html);
-            // html = HTMLEntities.htmlDoubleQuotes(html);
-            // html = HTMLEntities.htmlQuotes(html);
-            // html = HTMLEntities.htmlSingleQuotes(html);
+            // evaluate page
             long start = System.currentTimeMillis();
-            // String js = "document.write(\"" + html.replace("\"", "\\\"") + "\"); document.open();";
+            env.eval("document.location = '" + link + "';");
+            ;
+            System.out.println(env.getDocument());
+            // jd.http.ext.security.JSPermissionRestricter.evaluateTrustedString(cx, scope, "document.location = '" + link + "';", "js", 1,
+            // null);
+            //
 
-            String js = "document.async=true; document.baseURI = 'http://jdownloader.org/';HTMLParser.parseDocument(\"" + html.replace("\"", "\\\"") + "\", document);Envjs.wait();";
-
-            System.out.println(js);
-            jd.http.ext.security.JSPermissionRestricter.evaluateTrustedString(cx, scope, js, "js", 1, null);
-            // cx.evaluateString(scope, js, "js", 1, null);
-            // cx.evaluateString(scope, "document.write('bla');", "js", 1, null);
-            // cx.evaluateString(scope, "document.documentElement.innerHTML=\"" + html.replace("\"", "\\\"") + "\"", "js", 1, null);
-
-            Object result = cx.evaluateString(scope, "var f=function(){return document.innerHTML;}; f();", "js", 1, null);
-            System.out.println(result);
+            // // actually this js is NOT trusted.
+            // jd.http.ext.security.JSPermissionRestricter.evaluateTrustedString(cx, scope, js, "js", 1, null);
+            //
+            // Object result = cx.evaluateString(scope, "var f=function(){return document.innerHTML;}; f();", "js", 1, null);
+            // System.out.println("Result:\r\n" + result);
 
             System.out.println("Duration: " + (System.currentTimeMillis() - start));
 
@@ -83,7 +80,7 @@ public class EnvTest {
             // "<stdin>", 1, null);
             // result = org.mozilla.javascript.tools.shell.Main.evaluateScript(script, cx, scope);
 
-        } catch (IOException e) {
+        } catch (Throwable e) {
             e.printStackTrace();
         }
 

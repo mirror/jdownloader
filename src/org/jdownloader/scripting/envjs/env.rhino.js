@@ -34,22 +34,21 @@ var Envjs = function(){
 },
 __this__ = this;
 
-//eg "Mozilla"
+// eg "Mozilla"
 Envjs.appCodeName  = "Envjs";
 
-//eg "Gecko/20070309 Firefox/2.0.0.3"
+// eg "Gecko/20070309 Firefox/2.0.0.3"
 Envjs.appName      = "Resig/20070309 PilotFish/1.2.13";
 
-Envjs.version = "1.6";//?
+Envjs.version = "1.6";// ?
 Envjs.revision = '';
 /*
- * Envjs core-env.1.2.13 
- * Pure JavaScript Browser Environment
- * By John Resig <http://ejohn.org/> and the Envjs Team
- * Copyright 2008-2010 John Resig, under the MIT License
+ * Envjs core-env.1.2.13 Pure JavaScript Browser Environment By John Resig
+ * <http://ejohn.org/> and the Envjs Team Copyright 2008-2010 John Resig, under
+ * the MIT License
  */
 
-//CLOSURE_START
+// CLOSURE_START
 (function(){
 
 
@@ -74,7 +73,9 @@ function __extend__(a,b) {
 
 /**
  * Writes message to system out
- * @param {String} message
+ * 
+ * @param {String}
+ *            message
  */
 Envjs.log = function(message){};
 
@@ -89,21 +90,25 @@ Envjs.NONE = 3;
 
 /**
  * Writes error info out to console
- * @param {Error} e
+ * 
+ * @param {Error}
+ *            e
  */
 Envjs.lineSource = function(e){};
 
     
 /**
  * TODO: used in ./event/eventtarget.js
- * @param {Object} event
+ * 
+ * @param {Object}
+ *            event
  */
 Envjs.defaultEventBehaviors = {};
 
 
 /**
- * describes which script src values will trigger Envjs to load
- * the script like a browser would
+ * describes which script src values will trigger Envjs to load the script like
+ * a browser would
  */
 Envjs.scriptTypes = {
     "text/javascript"   :false,
@@ -112,8 +117,11 @@ Envjs.scriptTypes = {
 
 /**
  * will be called when loading a script throws an error
- * @param {Object} script
- * @param {Object} e
+ * 
+ * @param {Object}
+ *            script
+ * @param {Object}
+ *            e
  */
 Envjs.onScriptLoadError = function(script, e){
     console.log('error loading script %s %s', script, e);
@@ -122,7 +130,9 @@ Envjs.onScriptLoadError = function(script, e){
 
 /**
  * load and execute script tag text content
- * @param {Object} script
+ * 
+ * @param {Object}
+ *            script
  */
 Envjs.loadInlineScript = function(script){
     var tmpFile;
@@ -132,17 +142,24 @@ Envjs.loadInlineScript = function(script){
 
 /**
  * Should evaluate script in some context
- * @param {Object} context
- * @param {Object} source
- * @param {Object} name
+ * 
+ * @param {Object}
+ *            context
+ * @param {Object}
+ *            source
+ * @param {Object}
+ *            name
  */
 Envjs.eval = function(context, source, name){};
 
 
 /**
  * Executes a script tag
- * @param {Object} script
- * @param {Object} parser
+ * 
+ * @param {Object}
+ *            script
+ * @param {Object}
+ *            parser
  */
 Envjs.loadLocalScript = function(script){
     console.log("loading script %s", script);
@@ -157,7 +174,7 @@ Envjs.loadLocalScript = function(script){
         types = script.type.split(";");
         for(i=0;i<types.length;i++){
             if(Envjs.scriptTypes[types[i]]){
-                //ok this script type is allowed
+                // ok this script type is allowed
                 break;
             }
             if(i+1 == types.length){
@@ -174,7 +191,7 @@ Envjs.loadLocalScript = function(script){
             return true;
         }
     }catch(e){
-        //Envjs.error("Error loading script.", e);
+        // Envjs.error("Error loading script.", e);
         Envjs.onScriptLoadError(script, e);
         return false;
     }
@@ -182,8 +199,8 @@ Envjs.loadLocalScript = function(script){
 
     console.log("loading allowed external script %s", script.src);
 
-    //lets you register a function to execute
-    //before the script is loaded
+    // lets you register a function to execute
+    // before the script is loaded
     if(Envjs.beforeScriptLoad){
         for(src in Envjs.beforeScriptLoad){
             if(script.src.match(src)){
@@ -192,12 +209,12 @@ Envjs.loadLocalScript = function(script){
         }
     }
     base = "" + script.ownerDocument.location;
-    //filename = Envjs.uri(script.src.match(/([^\?#]*)/)[1], base );
+    // filename = Envjs.uri(script.src.match(/([^\?#]*)/)[1], base );
     console.log('loading script from base %s', base);
     filename = Envjs.uri(script.src, base);
     try {
         xhr = new XMLHttpRequest();
-        xhr.open("GET", filename, false/*syncronous*/);
+        xhr.open("GET", filename, false/* syncronous */);
         console.log("loading external script %s", filename);
         xhr.onreadystatechange = function(){
             console.log("readyState %s", xhr.readyState);
@@ -215,8 +232,8 @@ Envjs.loadLocalScript = function(script){
         Envjs.onScriptLoadError(script, e);
         return false;
     }
-    //lets you register a function to execute
-    //after the script is loaded
+    // lets you register a function to execute
+    // after the script is loaded
     if(Envjs.afterScriptLoad){
         for(src in Envjs.afterScriptLoad){
             if(script.src.match(src)){
@@ -230,16 +247,16 @@ Envjs.loadLocalScript = function(script){
 
 /**
  * An 'image' was requested by the document.
- *
- * - During inital parse of a <link>
- * - Via an innerHTML parse of a <link>
- * - A modificiation of the 'src' attribute of an Image/HTMLImageElement
- *
- * NOTE: this is optional API.  If this doesn't exist then the default
- * 'loaded' event occurs.
- *
- * @param node {Object} the <img> node
- * @param node the src value
+ *  - During inital parse of a <link> - Via an innerHTML parse of a <link> - A
+ * modificiation of the 'src' attribute of an Image/HTMLImageElement
+ * 
+ * NOTE: this is optional API. If this doesn't exist then the default 'loaded'
+ * event occurs.
+ * 
+ * @param node
+ *            {Object} the <img> node
+ * @param node
+ *            the src value
  * @return 'true' to indicate the 'load' succeed, false otherwise
  */
 Envjs.loadImage = function(node, src) {
@@ -248,19 +265,20 @@ Envjs.loadImage = function(node, src) {
 
 
 /**
- * A 'link'  was requested by the document.  Typically this occurs when:
- * - During inital parse of a <link>
- * - Via an innerHTML parse of a <link>
- * - A modificiation of the 'href' attribute on a <link> node in the tree
- *
- * @param node {Object} is the link node in question
- * @param href {String} is the href.
- *
- * Return 'true' to indicate that the 'load' was successful, or false
- * otherwise.  The appropriate event is then triggered.
- *
- * NOTE: this is optional API.  If this doesn't exist then the default
- *   'loaded' event occurs
+ * A 'link' was requested by the document. Typically this occurs when: - During
+ * inital parse of a <link> - Via an innerHTML parse of a <link> - A
+ * modificiation of the 'href' attribute on a <link> node in the tree
+ * 
+ * @param node
+ *            {Object} is the link node in question
+ * @param href
+ *            {String} is the href.
+ * 
+ * Return 'true' to indicate that the 'load' was successful, or false otherwise.
+ * The appropriate event is then triggered.
+ * 
+ * NOTE: this is optional API. If this doesn't exist then the default 'loaded'
+ * event occurs
  */
 Envjs.loadLink = function(node, href) {
     return true;
@@ -270,8 +288,7 @@ Envjs.loadLink = function(node, href) {
 
 
 /*
- *  cookie handling
- *  Private internal helper class used to save/retreive cookies
+ * cookie handling Private internal helper class used to save/retreive cookies
  */
 
 /**
@@ -283,7 +300,9 @@ Envjs.cookieFile = function(){
 
 /**
  * saves cookies to a local file
- * @param {Object} htmldoc
+ * 
+ * @param {Object}
+ *            htmldoc
  */
 Envjs.saveCookies = function(){
     var cookiejson = JSON.stringify(Envjs.cookies.peristent,null,'\t');
@@ -293,7 +312,9 @@ Envjs.saveCookies = function(){
 
 /**
  * loads cookies from a local file
- * @param {Object} htmldoc
+ * 
+ * @param {Object}
+ *            htmldoc
  */
 Envjs.loadCookies = function(){
     var cookiejson,
@@ -310,25 +331,25 @@ Envjs.loadCookies = function(){
 
 Envjs.cookies = {
     persistent:{
-        //domain - key on domain name {
-            //path - key on path {
-                //name - key on name {
-                     //value : cookie value
-                     //other cookie properties
-                //}
-            //}
-        //}
-        //expire - provides a timestamp for expiring the cookie
-        //cookie - the cookie!
+        // domain - key on domain name {
+            // path - key on path {
+                // name - key on name {
+                     // value : cookie value
+                     // other cookie properties
+                // }
+            // }
+        // }
+        // expire - provides a timestamp for expiring the cookie
+        // cookie - the cookie!
     },
-    temporary:{//transient is a reserved word :(
-        //like above
+    temporary:{// transient is a reserved word :(
+        // like above
     }
 };
 
 var __cookies__;
 
-//HTMLDocument cookie
+// HTMLDocument cookie
 Envjs.setCookie = function(url, cookie){
     var i,
         index,
@@ -343,12 +364,12 @@ Envjs.setCookie = function(url, cookie){
     else
         return;
     
-    //for now the strategy is to simply create a json object
-    //and post it to a file in the .cookies.js file.  I hate parsing
-    //dates so I decided not to implement support for 'expires' 
-    //(which is deprecated) and instead focus on the easier 'max-age'
-    //(which succeeds 'expires') 
-    cookie = {};//keyword properties of the cookie
+    // for now the strategy is to simply create a json object
+    // and post it to a file in the .cookies.js file. I hate parsing
+    // dates so I decided not to implement support for 'expires'
+    // (which is deprecated) and instead focus on the easier 'max-age'
+    // (which succeeds 'expires')
+    cookie = {};// keyword properties of the cookie
     cookie['domain'] = url.hostname;
     cookie['path'] = url.path||'/';
     for(i=0;i<attrs.length;i++){
@@ -357,19 +378,20 @@ Envjs.setCookie = function(url, cookie){
             name = __trim__(attrs[i].slice(0,index));
             value = __trim__(attrs[i].slice(index+1));
             if(name=='max-age'){
-                //we'll have to when to check these
-                //and garbage collect expired cookies
+                // we'll have to when to check these
+                // and garbage collect expired cookies
                 cookie[name] = parseInt(value, 10);
             } else if( name == 'domain' ){
                 if(__domainValid__(url, value)){
                     cookie['domain'] = value;
                 }
             } else if( name == 'path' ){
-                //not sure of any special logic for path
+                // not sure of any special logic for path
                 cookie['path'] = value;
             } else {
-                //its not a cookie keyword so store it in our array of properties
-                //and we'll serialize individually in a moment
+                // its not a cookie keyword so store it in our array of
+                // properties
+                // and we'll serialize individually in a moment
                 properties[name] = value;
             }
         }else{
@@ -379,11 +401,11 @@ Envjs.setCookie = function(url, cookie){
         }
     }
     if(!('max-age' in cookie)){
-        //it's a transient cookie so it only lasts as long as 
-        //the window.location remains the same (ie in-memory cookie)
+        // it's a transient cookie so it only lasts as long as
+        // the window.location remains the same (ie in-memory cookie)
         __mergeCookie__(Envjs.cookies.temporary, cookie, properties);
     }else{
-        //the cookie is persistent
+        // the cookie is persistent
         __mergeCookie__(Envjs.cookies.persistent, cookie, properties);
         Envjs.saveCookies();
     }
@@ -405,11 +427,11 @@ function __domainValid__(url, value){
 };
 
 Envjs.getCookies = function(url){
-    //The cookies that are returned must belong to the same domain
-    //and be at or below the current window.location.path.  Also
-    //we must check to see if the cookie was set to 'secure' in which
-    //case we must check our current location.protocol to make sure it's
-    //https:
+    // The cookies that are returned must belong to the same domain
+    // and be at or below the current window.location.path. Also
+    // we must check to see if the cookie was set to 'secure' in which
+    // case we must check our current location.protocol to make sure it's
+    // https:
     var persisted;
     url = Envjs.urlsplit(url);
     if(!__cookies__){
@@ -418,7 +440,7 @@ Envjs.getCookies = function(url){
             try{
                 persisted = Envjs.loadCookies();
             }catch(e){
-                //fail gracefully
+                // fail gracefully
                 console.log('%s', e);
             }   
             if(persisted){
@@ -487,24 +509,23 @@ function __mergeCookie__(target, cookie, properties){
     }
 };
 
-})();//end cookies
+})();// end cookies
 /*
-    http://www.JSON.org/json2.js
-    2008-07-15
-
-    Public Domain.
-
-    NO WARRANTY EXPRESSED OR IMPLIED. USE AT YOUR OWN RISK.
-
-    See http://www.JSON.org/js.html
-
-   
-    This code should be minified before deployment.
-    See http://javascript.crockford.com/jsmin.html
-
-    USE YOUR OWN COPY. IT IS EXTREMELY UNWISE TO LOAD CODE FROM SERVERS YOU DO
-    NOT CONTROL.
-*/
+ * http://www.JSON.org/json2.js 2008-07-15
+ * 
+ * Public Domain.
+ * 
+ * NO WARRANTY EXPRESSED OR IMPLIED. USE AT YOUR OWN RISK.
+ * 
+ * See http://www.JSON.org/js.html
+ * 
+ * 
+ * This code should be minified before deployment. See
+ * http://javascript.crockford.com/jsmin.html
+ * 
+ * USE YOUR OWN COPY. IT IS EXTREMELY UNWISE TO LOAD CODE FROM SERVERS YOU DO
+ * NOT CONTROL.
+ */
 try{ JSON; }catch(e){ 
 JSON = function () {
 
@@ -724,106 +745,96 @@ replace(/(?:^|:|,)(?:\s*\[)+/g, ''))) {
 
 /**
  * synchronizes thread modifications
- * @param {Function} fn
+ * 
+ * @param {Function}
+ *            fn
  */
 Envjs.sync = function(fn){};
 
 /**
  * sleep thread for specified duration
- * @param {Object} millseconds
+ * 
+ * @param {Object}
+ *            millseconds
  */
 Envjs.sleep = function(millseconds){};
 
 /**
  * Interval to wait on event loop when nothing is happening
  */
-Envjs.WAIT_INTERVAL = 20;//milliseconds
+Envjs.WAIT_INTERVAL = 20;// milliseconds
 
 /*
  * Copyright (c) 2010 Nick Galbreath
  * http://code.google.com/p/stringencoders/source/browse/#svn/trunk/javascript
- *
- * Permission is hereby granted, free of charge, to any person
- * obtaining a copy of this software and associated documentation
- * files (the "Software"), to deal in the Software without
- * restriction, including without limitation the rights to use,
- * copy, modify, merge, publish, distribute, sublicense, and/or sell
- * copies of the Software, and to permit persons to whom the
- * Software is furnished to do so, subject to the following
- * conditions:
- *
- * The above copyright notice and this permission notice shall be
- * included in all copies or substantial portions of the Software.
- *
- * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
- * EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES
- * OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
- * NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT
- * HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY,
- * WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
- * FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
- * OTHER DEALINGS IN THE SOFTWARE.
+ * 
+ * Permission is hereby granted, free of charge, to any person obtaining a copy
+ * of this software and associated documentation files (the "Software"), to deal
+ * in the Software without restriction, including without limitation the rights
+ * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+ * copies of the Software, and to permit persons to whom the Software is
+ * furnished to do so, subject to the following conditions:
+ * 
+ * The above copyright notice and this permission notice shall be included in
+ * all copies or substantial portions of the Software.
+ * 
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+ * SOFTWARE.
  */
 
 /*
- * url processing in the spirit of python's urlparse module
- * see `pydoc urlparse` or
- * http://docs.python.org/library/urlparse.html
- *
- *  urlsplit: break apart a URL into components
- *  urlunsplit:  reconsistute a URL from componets
- *  urljoin: join an absolute and another URL
- *  urldefrag: remove the fragment from a URL
- *
+ * url processing in the spirit of python's urlparse module see `pydoc urlparse`
+ * or http://docs.python.org/library/urlparse.html
+ * 
+ * urlsplit: break apart a URL into components urlunsplit: reconsistute a URL
+ * from componets urljoin: join an absolute and another URL urldefrag: remove
+ * the fragment from a URL
+ * 
  * Take a look at the tests in urlparse-test.html
- *
+ * 
  * On URL Normalization:
- *
- * urlsplit only does minor normalization the components Only scheme
- * and hostname are lowercased urljoin does a bit more, normalizing
- * paths with "."  and "..".
-
+ * 
+ * urlsplit only does minor normalization the components Only scheme and
+ * hostname are lowercased urljoin does a bit more, normalizing paths with "."
+ * and "..".
+ * 
  * urlnormalize adds additional normalization
- *
- *   * removes default port numbers
- *     http://abc.com:80/ -> http://abc.com/, etc
- *   * normalizes path
- *     http://abc.com -> http://abc.com/
- *     and other "." and ".." cleanups
- *   * if file, remove query and fragment
- *
- * It does not do:
- *   * normalizes escaped hex values
- *     http://abc.com/%7efoo -> http://abc.com/%7Efoo
- *   * normalize '+' <--> '%20'
- *
+ *  * removes default port numbers http://abc.com:80/ -> http://abc.com/, etc *
+ * normalizes path http://abc.com -> http://abc.com/ and other "." and ".."
+ * cleanups * if file, remove query and fragment
+ * 
+ * It does not do: * normalizes escaped hex values http://abc.com/%7efoo ->
+ * http://abc.com/%7Efoo * normalize '+' <--> '%20'
+ * 
  * Differences with Python
- *
+ * 
  * The javascript urlsplit returns a normal object with the following
- * properties: scheme, netloc, hostname, port, path, query, fragment.
- * All properties are read-write.
- *
- * In python, the resulting object is not a dict, but a specialized,
- * read-only, and has alternative tuple interface (e.g. obj[0] ==
- * obj.scheme).  It's not clear why such a simple function requires
- * a unique datastructure.
- *
- * urlunsplit in javascript takes an duck-typed object,
- *  { scheme: 'http', netloc: 'abc.com', ...}
- *  while in  * python it takes a list-like object.
- *  ['http', 'abc.com'... ]
- *
- * For all functions, the javascript version use
- * hostname+port if netloc is missing.  In python
- * hostname+port were always ignored.
- *
+ * properties: scheme, netloc, hostname, port, path, query, fragment. All
+ * properties are read-write.
+ * 
+ * In python, the resulting object is not a dict, but a specialized, read-only,
+ * and has alternative tuple interface (e.g. obj[0] == obj.scheme). It's not
+ * clear why such a simple function requires a unique datastructure.
+ * 
+ * urlunsplit in javascript takes an duck-typed object, { scheme: 'http',
+ * netloc: 'abc.com', ...} while in * python it takes a list-like object.
+ * ['http', 'abc.com'... ]
+ * 
+ * For all functions, the javascript version use hostname+port if netloc is
+ * missing. In python hostname+port were always ignored.
+ * 
  * Similar functionality in different languages:
- *
- *   http://php.net/manual/en/function.parse-url.php
- *   returns assocative array but cannot handle relative URL
- *
- * TODO: test allowfragments more
- * TODO: test netloc missing, but hostname present
+ * 
+ * http://php.net/manual/en/function.parse-url.php returns assocative array but
+ * cannot handle relative URL
+ * 
+ * TODO: test allowfragments more TODO: test netloc missing, but hostname
+ * present
  */
 
 var urlparse = {};
@@ -831,8 +842,8 @@ var urlparse = {};
 // Unlike to be useful standalone
 //
 // NORMALIZE PATH with "../" and "./"
-//   http://en.wikipedia.org/wiki/URL_normalization
-//   http://tools.ietf.org/html/rfc3986#section-5.2.3
+// http://en.wikipedia.org/wiki/URL_normalization
+// http://tools.ietf.org/html/rfc3986#section-5.2.3
 //
 urlparse.normalizepath = function(path)
 {
@@ -869,10 +880,10 @@ urlparse.normalizepath = function(path)
 
 //
 // Does many of the normalizations that the stock
-//  python urlsplit/urlunsplit/urljoin neglects
+// python urlsplit/urlunsplit/urljoin neglects
 //
 // Doesn't do hex-escape normalization on path or query
-//   %7e -> %7E
+// %7e -> %7E
 // Nor, '+' <--> %20 translation
 //
 urlparse.urlnormalize = function(url)
@@ -881,7 +892,7 @@ urlparse.urlnormalize = function(url)
     switch (parts.scheme) {
     case 'file':
         // files can't have query strings
-        //  and we don't bother with fragments
+        // and we don't bother with fragments
         parts.query = '';
         parts.fragment = '';
         break;
@@ -901,7 +912,7 @@ urlparse.urlnormalize = function(url)
         return url;
     }
 
-    // for [file|http|https].  Not sure about other schemes
+    // for [file|http|https]. Not sure about other schemes
     parts.path = urlparse.normalizepath(parts.path);
 
     return urlparse.urlunsplit(parts);
@@ -938,7 +949,7 @@ urlparse.urlsplit = function(url, default_scheme, allow_fragments)
         o.hostname = parts[3].toLowerCase() || '';
         o.port = parseInt(parts[4],10) || '';
         // Probably should grab the netloc from regexp
-        //  and then parse again for hostname/port
+        // and then parse again for hostname/port
 
         o.netloc = parts[3];
         if (parts[4]) {
@@ -980,7 +991,7 @@ urlparse.urlunsplit = function(o) {
         }
         s +=  o.netloc;
     } else if (o.hostname) {
-        // extension.  Python only uses netloc
+        // extension. Python only uses netloc
         if (s == '') {
             s += '//';
         }
@@ -1040,9 +1051,9 @@ urlparse.urljoin = function(base, url, allow_fragments)
             base_parts.path = url_parts.path;
         } else {
             // relative path.. get rid of "current filename" and
-            //   replace.  Same as var parts =
-            //   base_parts.path.split('/'); parts[parts.length-1] =
-            //   url_parts.path; base_parts.path = parts.join('/');
+            // replace. Same as var parts =
+            // base_parts.path.split('/'); parts[parts.length-1] =
+            // url_parts.path; base_parts.path = parts.join('/');
             var idx = base_parts.path.lastIndexOf('/');
             if (idx == -1) {
                 base_parts.path = url_parts.path;
@@ -1071,7 +1082,7 @@ urlparse.urljoin = function(base, url, allow_fragments)
 
 /**
  * getcwd - named after posix call of same name (see 'man 2 getcwd')
- *
+ * 
  */
 Envjs.getcwd = function() {
     return '.';
@@ -1079,15 +1090,17 @@ Envjs.getcwd = function() {
 
 /**
  * resolves location relative to doc location
- *
- * @param {Object} path  Relative or absolute URL
- * @param {Object} base  (semi-optional)  The base url used in resolving "path" above
+ * 
+ * @param {Object}
+ *            path Relative or absolute URL
+ * @param {Object}
+ *            base (semi-optional) The base url used in resolving "path" above
  */
 Envjs.uri = function(path, base) {
     console.log('constructing uri from path %s and base %s', path, base);
 
     // Semi-common trick is to make an iframe with src='javascript:false'
-    //  (or some equivalent).  By returning '', the load is skipped
+    // (or some equivalent). By returning '', the load is skipped
     if (path.indexOf('javascript') === 0) {
         return '';
     }
@@ -1105,7 +1118,7 @@ Envjs.uri = function(path, base) {
 
     // if base not passed in, try to get it from document
     // Ideally I would like the caller to pass in document.baseURI to
-    //  make this more self-sufficient and testable
+    // make this more self-sufficient and testable
     if (!base && document) {
         base = document.baseURI;
     }
@@ -1116,7 +1129,7 @@ Envjs.uri = function(path, base) {
     }
 
     // if base is still empty, then we are in QA mode loading local
-    // files.  Get current working directory
+    // files. Get current working directory
     if (!base) {
         base = 'file://' +  Envjs.getcwd() + '/';
     }
@@ -1130,45 +1143,61 @@ Envjs.uri = function(path, base) {
 
 
 /**
- * Used in the XMLHttpRquest implementation to run a
- * request in a seperate thread
- * @param {Object} fn
+ * Used in the XMLHttpRquest implementation to run a request in a seperate
+ * thread
+ * 
+ * @param {Object}
+ *            fn
  */
 Envjs.runAsync = function(fn){};
 
 
 /**
  * Used to write to a local file
- * @param {Object} text
- * @param {Object} url
+ * 
+ * @param {Object}
+ *            text
+ * @param {Object}
+ *            url
  */
 Envjs.writeToFile = function(text, url){};
 
 
 /**
  * Used to write to a local file
- * @param {Object} text
- * @param {Object} suffix
+ * 
+ * @param {Object}
+ *            text
+ * @param {Object}
+ *            suffix
  */
 Envjs.writeToTempFile = function(text, suffix){};
 
 /**
  * Used to read the contents of a local file
- * @param {Object} url
+ * 
+ * @param {Object}
+ *            url
  */
 Envjs.readFromFile = function(url){};
 
 /**
  * Used to delete a local file
- * @param {Object} url
+ * 
+ * @param {Object}
+ *            url
  */
 Envjs.deleteFile = function(url){};
 
 /**
  * establishes connection and calls responsehandler
- * @param {Object} xhr
- * @param {Object} responseHandler
- * @param {Object} data
+ * 
+ * @param {Object}
+ *            xhr
+ * @param {Object}
+ *            responseHandler
+ * @param {Object}
+ *            data
  */
 Envjs.connection = function(xhr, responseHandler, data){};
 
@@ -1177,8 +1206,11 @@ __extend__(Envjs, urlparse);
 
 /**
  * Makes an object window-like by proxying object accessors
- * @param {Object} scope
- * @param {Object} parent
+ * 
+ * @param {Object}
+ *            scope
+ * @param {Object}
+ *            parent
  */
 Envjs.proxy = function(scope, parent, aliasList){};
 
@@ -1193,26 +1225,28 @@ Envjs.lang           = '';
 Envjs.platform       = '';
 
 /**
- *
- * @param {Object} frameElement
- * @param {Object} url
+ * 
+ * @param {Object}
+ *            frameElement
+ * @param {Object}
+ *            url
  */
 Envjs.loadFrame = function(frame, url){
     try {
         if(frame.contentWindow){
-            //mark for garbage collection
+            // mark for garbage collection
             frame.contentWindow = null;
         }
 
-        //create a new scope for the window proxy
-        //platforms will need to override this function
-        //to make sure the scope is global-like
+        // create a new scope for the window proxy
+        // platforms will need to override this function
+        // to make sure the scope is global-like
         frame.contentWindow = (function(){return this;})();
         new Window(frame.contentWindow, window);
 
-        //I dont think frames load asynchronously in firefox
-        //and I think the tests have verified this but for
-        //some reason I'm less than confident... Are there cases?
+        // I dont think frames load asynchronously in firefox
+        // and I think the tests have verified this but for
+        // some reason I'm less than confident... Are there cases?
         frame.contentDocument = frame.contentWindow.document;
         frame.contentDocument.async = false;
         if(url){
@@ -1235,13 +1269,12 @@ Envjs.loadFrame = function(frame, url){
  * @copyright 2008-2010
  * @license MIT
  */
-//CLOSURE_END
+// CLOSURE_END
 }());
 /*
- * Envjs rhino-env.1.2.13
- * Pure JavaScript Browser Environment
- * By John Resig <http://ejohn.org/> and the Envjs Team
- * Copyright 2008-2010 John Resig, under the MIT License
+ * Envjs rhino-env.1.2.13 Pure JavaScript Browser Environment By John Resig
+ * <http://ejohn.org/> and the Envjs Team Copyright 2008-2010 John Resig, under
+ * the MIT License
  */
 
 var __context__ = Packages.org.mozilla.javascript.Context.getCurrentContext();
@@ -1250,13 +1283,12 @@ Envjs.platform       = "Rhino";
 Envjs.revision       = "1.7.0.rc2";
 
 /*
- * Envjs rhino-env.1.2.13 
- * Pure JavaScript Browser Environment
- * By John Resig <http://ejohn.org/> and the Envjs Team
- * Copyright 2008-2010 John Resig, under the MIT License
+ * Envjs rhino-env.1.2.13 Pure JavaScript Browser Environment By John Resig
+ * <http://ejohn.org/> and the Envjs Team Copyright 2008-2010 John Resig, under
+ * the MIT License
  */
 
-//CLOSURE_START
+// CLOSURE_START
 (function(){
 
 
@@ -1281,16 +1313,16 @@ function __extend__(a,b) {
 
 /**
  * Writes message to system out.
- *
- * Some sites redefine 'print' as in 'window.print', so instead of
- * printing to stdout, you are popping open a new window, which might
- * call print, etc, etc,etc This can cause infinite loops and can
- * exhausing all memory.
- *
+ * 
+ * Some sites redefine 'print' as in 'window.print', so instead of printing to
+ * stdout, you are popping open a new window, which might call print, etc,
+ * etc,etc This can cause infinite loops and can exhausing all memory.
+ * 
  * By defining this upfront now, Envjs.log will always call the native 'print'
  * function
- *
- * @param {Object} message
+ * 
+ * @param {Object}
+ *            message
  */
 Envjs.log = print;
 
@@ -1299,7 +1331,9 @@ Envjs.lineSource = function(e){
 };
 /**
  * load and execute script tag text content
- * @param {Object} script
+ * 
+ * @param {Object}
+ *            script
  */
 Envjs.loadInlineScript = function(script){
     if(script.ownerDocument.ownerWindow){
@@ -1329,19 +1363,21 @@ Envjs.eval = function(context, source, name){
     );
 };
 
-//Temporary patch for parser module
+// Temporary patch for parser module
 Packages.org.mozilla.javascript.Context.
     getCurrentContext().setOptimizationLevel(-1);
 
 /**
  * Rhino provides a very succinct 'sync'
- * @param {Function} fn
+ * 
+ * @param {Function}
+ *            fn
  */
 try{
     Envjs.sync = sync;
     Envjs.spawn = spawn;
 } catch(e){
-    //sync unavailable on AppEngine
+    // sync unavailable on AppEngine
     Envjs.sync = function(fn){
         console.log('Threadless platform, sync is safe');
         return fn;
@@ -1355,7 +1391,9 @@ try{
 
 /**
  * sleep thread for specified duration
- * @param {Object} millseconds
+ * 
+ * @param {Object}
+ *            millseconds
  */
 Envjs.sleep = function(millseconds){
     try{
@@ -1391,12 +1429,14 @@ Envjs.getcwd = function() {
 }
 
 /**
- *
- * @param {Object} fn
- * @param {Object} onInterupt
+ * 
+ * @param {Object}
+ *            fn
+ * @param {Object}
+ *            onInterupt
  */
 Envjs.runAsync = function(fn, onInterupt){
-    ////Envjs.debug("running async");
+    // //Envjs.debug("running async");
     var running = true,
         run;
 
@@ -1414,11 +1454,14 @@ Envjs.runAsync = function(fn, onInterupt){
 
 /**
  * Used to write to a local file
- * @param {Object} text
- * @param {Object} url
+ * 
+ * @param {Object}
+ *            text
+ * @param {Object}
+ *            url
  */
 Envjs.writeToFile = function(text, url){
-    //Envjs.debug("writing text to url : " + url);
+    // Envjs.debug("writing text to url : " + url);
     var out = new java.io.FileWriter(
         new java.io.File(
             new java.net.URI(url.toString())));
@@ -1429,11 +1472,14 @@ Envjs.writeToFile = function(text, url){
 
 /**
  * Used to write to a local file
- * @param {Object} text
- * @param {Object} suffix
+ * 
+ * @param {Object}
+ *            text
+ * @param {Object}
+ *            suffix
  */
 Envjs.writeToTempFile = function(text, suffix){
-    //Envjs.debug("writing text to temp url : " + suffix);
+    // Envjs.debug("writing text to temp url : " + suffix);
     // Create temp file.
     var temp = java.io.File.createTempFile("envjs-tmp", suffix);
 
@@ -1450,7 +1496,9 @@ Envjs.writeToTempFile = function(text, suffix){
 
 /**
  * Used to read the contents of a local file
- * @param {Object} url
+ * 
+ * @param {Object}
+ *            url
  */
 Envjs.readFromFile = function( url ){
     console.log("Read: "+url);
@@ -1473,7 +1521,9 @@ Envjs.readFromFile = function( url ){
 
 /**
  * Used to delete a local file
- * @param {Object} url
+ * 
+ * @param {Object}
+ *            url
  */
 Envjs.deleteFile = function(url){
     var file = new java.io.File( new java.net.URI( url ) );
@@ -1482,9 +1532,13 @@ Envjs.deleteFile = function(url){
 
 /**
  * establishes connection and calls responsehandler
- * @param {Object} xhr
- * @param {Object} responseHandler
- * @param {Object} data
+ * 
+ * @param {Object}
+ *            xhr
+ * @param {Object}
+ *            responseHandler
+ * @param {Object}
+ *            data
  */
 Envjs.connection = function(xhr, responseHandler, data){
     var url = java.net.URL(xhr.url),
@@ -1505,19 +1559,19 @@ Envjs.connection = function(xhr, responseHandler, data){
                 data =  data || "" ;
                 Envjs.writeToFile(data, url);
                 xhr.readyState = 4;
-                //could be improved, I just cant recall the correct http codes
+                // could be improved, I just cant recall the correct http codes
                 xhr.status = 200;
                 xhr.statusText = "";
             } else if ( xhr.method == "DELETE" ) {
                 Envjs.deleteFile(url);
                 xhr.readyState = 4;
-                //could be improved, I just cant recall the correct http codes
+                // could be improved, I just cant recall the correct http codes
                 xhr.status = 200;
                 xhr.statusText = "";
             } else {
                 connection = url.openConnection();
                 connection.connect();
-                //try to add some canned headers that make sense
+                // try to add some canned headers that make sense
 
                 try{
                     if(xhr.url.match(/html$/)){
@@ -1531,9 +1585,10 @@ Envjs.connection = function(xhr, responseHandler, data){
                     }else{
                         xhr.responseHeaders["Content-Type"] = 'text/plain';
                     }
-                    //xhr.responseHeaders['Last-Modified'] = connection.getLastModified();
-                    //xhr.responseHeaders['Content-Length'] = headerValue+'';
-                    //xhr.responseHeaders['Date'] = new Date()+'';*/
+                    // xhr.responseHeaders['Last-Modified'] =
+                    // connection.getLastModified();
+                    // xhr.responseHeaders['Content-Length'] = headerValue+'';
+                    // xhr.responseHeaders['Date'] = new Date()+'';*/
                 }catch(e){
                     console.log('failed to load response headers',e);
                 }
@@ -1554,7 +1609,7 @@ Envjs.connection = function(xhr, responseHandler, data){
             connection.addRequestProperty(header+'', xhr.headers[header]+'');
         }
 
-        //write data to output stream if required
+        // write data to output stream if required
         if(data){
             if(data instanceof Document){
                 if ( xhr.method == "PUT" || xhr.method == "POST" ) {
@@ -1606,13 +1661,13 @@ Envjs.connection = function(xhr, responseHandler, data){
             console.log('contentEncoding %s', contentEncoding);
             if( contentEncoding.equalsIgnoreCase("gzip") ||
                 contentEncoding.equalsIgnoreCase("decompress")){
-                //zipped content
+                // zipped content
                 binary = true;
                 outstream = new java.io.ByteArrayOutputStream();
                 buffer = java.lang.reflect.Array.newInstance(java.lang.Byte.TYPE, 1024);
                 instream = new java.util.zip.GZIPInputStream(connection.getInputStream())
             }else{
-                //this is a text file
+                // this is a text file
                 outstream = new java.io.StringWriter();
                 buffer = java.lang.reflect.Array.newInstance(java.lang.Character.TYPE, 1024);
                 instream = new java.io.InputStreamReader(connection.getInputStream());
@@ -1643,14 +1698,14 @@ Envjs.connection = function(xhr, responseHandler, data){
 
     }
     if(responseHandler){
-        //Envjs.debug('calling ajax response handler');
+        // Envjs.debug('calling ajax response handler');
         responseHandler();
     }
 };
 
-//Since we're running in rhino I guess we can safely assume
-//java is 'enabled'.  I'm sure this requires more thought
-//than I've given it here
+// Since we're running in rhino I guess we can safely assume
+// java is 'enabled'. I'm sure this requires more thought
+// than I've given it here
 Envjs.javaEnabled = true;
 
 Envjs.homedir        = java.lang.System.getProperty("user.home");
@@ -1662,24 +1717,26 @@ Envjs.lang           = java.lang.System.getProperty("user.lang");
 
 
 /**
- *
- * @param {Object} frameElement
- * @param {Object} url
+ * 
+ * @param {Object}
+ *            frameElement
+ * @param {Object}
+ *            url
  */
 Envjs.loadFrame = function(frame, url){
     try {
         if(frame.contentWindow){
-            //mark for garbage collection
+            // mark for garbage collection
             frame.contentWindow = null;
         }
 
-        //create a new scope for the window proxy
+        // create a new scope for the window proxy
         frame.contentWindow = Envjs.proxy();
         new Window(frame.contentWindow, window);
 
-        //I dont think frames load asynchronously in firefox
-        //and I think the tests have verified this but for
-        //some reason I'm less than confident... Are there cases?
+        // I dont think frames load asynchronously in firefox
+        // and I think the tests have verified this but for
+        // some reason I'm less than confident... Are there cases?
         frame.contentDocument = frame.contentWindow.document;
         frame.contentDocument.async = false;
         if(url){
@@ -1693,15 +1750,17 @@ Envjs.loadFrame = function(frame, url){
 
 /**
  * unloadFrame
- * @param {Object} frame
+ * 
+ * @param {Object}
+ *            frame
  */
 Envjs.unloadFrame = function(frame){
     var all, length, i;
     try{
-        //TODO: probably self-referencing structures within a document tree
-        //preventing it from being entirely garbage collected once orphaned.
-        //Should have code to walk tree and break all links between contained
-        //objects.
+        // TODO: probably self-referencing structures within a document tree
+        // preventing it from being entirely garbage collected once orphaned.
+        // Should have code to walk tree and break all links between contained
+        // objects.
         frame.contentDocument = null;
         if(frame.contentWindow){
             frame.contentWindow.close();
@@ -1714,8 +1773,11 @@ Envjs.unloadFrame = function(frame){
 
 /**
  * Makes an object window-like by proxying object accessors
- * @param {Object} scope
- * @param {Object} parent
+ * 
+ * @param {Object}
+ *            scope
+ * @param {Object}
+ *            parent
  */
 Envjs.proxy = function(scope, parent) {
     try{
@@ -1736,7 +1798,7 @@ Envjs.proxy = function(scope, parent) {
  * @copyright 2008-2010
  * @license MIT
  */
-//CLOSURE_END
+// CLOSURE_END
 }());
 
 /**
@@ -1746,13 +1808,12 @@ var Console,
     console;
 
 /*
- * Envjs console.1.2.13 
- * Pure JavaScript Browser Environment
- * By John Resig <http://ejohn.org/> and the Envjs Team
- * Copyright 2008-2010 John Resig, under the MIT License
+ * Envjs console.1.2.13 Pure JavaScript Browser Environment By John Resig
+ * <http://ejohn.org/> and the Envjs Team Copyright 2008-2010 John Resig, under
+ * the MIT License
  */
 
-//CLOSURE_START
+// CLOSURE_START
 (function(){
 
 
@@ -1760,9 +1821,8 @@ var Console,
 
 
 /**
- * @author envjs team
- * borrowed 99%-ish with love from firebug-lite
- *
+ * @author envjs team borrowed 99%-ish with love from firebug-lite
+ * 
  * http://wiki.commonjs.org/wiki/Console
  */
 Console = function(module){
@@ -2010,21 +2070,19 @@ function appendNode(node, html)
  * @copyright 2008-2010
  * @license MIT
  */
-//CLOSURE_END
+// CLOSURE_END
 }());
 /*
- * Envjs dom.1.2.13 
- * Pure JavaScript Browser Environment
- * By John Resig <http://ejohn.org/> and the Envjs Team
- * Copyright 2008-2010 John Resig, under the MIT License
+ * Envjs dom.1.2.13 Pure JavaScript Browser Environment By John Resig
+ * <http://ejohn.org/> and the Envjs Team Copyright 2008-2010 John Resig, under
+ * the MIT License
  * 
- * Parts of the implementation were originally written by:\
- * and Jon van Noort   (jon@webarcana.com.au) \
- * and David Joham     (djoham@yahoo.com)",\ 
- * and Scott Severtson
+ * Parts of the implementation were originally written by:\ and Jon van Noort
+ * (jon@webarcana.com.au) \ and David Joham (djoham@yahoo.com)",\ and Scott
+ * Severtson
  * 
- * This file simply provides the global definitions we need to \
- * be able to correctly implement to core browser DOM interfaces."
+ * This file simply provides the global definitions we need to \ be able to
+ * correctly implement to core browser DOM interfaces."
  */
 
 var Attr,
@@ -2053,13 +2111,12 @@ var Attr,
 
 
 /*
- * Envjs dom.1.2.13 
- * Pure JavaScript Browser Environment
- * By John Resig <http://ejohn.org/> and the Envjs Team
- * Copyright 2008-2010 John Resig, under the MIT License
+ * Envjs dom.1.2.13 Pure JavaScript Browser Environment By John Resig
+ * <http://ejohn.org/> and the Envjs Team Copyright 2008-2010 John Resig, under
+ * the MIT License
  */
 
-//CLOSURE_START
+// CLOSURE_START
 (function(){
 
 
@@ -2085,7 +2142,7 @@ function __extend__(a,b) {
 /**
  * @author john resig
  */
-//from jQuery
+// from jQuery
 function __setArray__( target, array ) {
     // Resetting the length to 0, then using the native Array push
     // is a super-fast way to populate an object with array-like properties
@@ -2094,11 +2151,12 @@ function __setArray__( target, array ) {
 }
 
 /**
- * @class  NodeList -
- *      provides the abstraction of an ordered collection of nodes
- *
- * @param  ownerDocument : Document - the ownerDocument
- * @param  parentNode    : Node - the node that the NodeList is attached to (or null)
+ * @class NodeList - provides the abstraction of an ordered collection of nodes
+ * 
+ * @param ownerDocument :
+ *            Document - the ownerDocument
+ * @param parentNode :
+ *            Node - the node that the NodeList is attached to (or null)
  */
 NodeList = function(ownerDocument, parentNode) {
     this.length = 0;
@@ -2122,12 +2180,13 @@ __extend__(NodeList.prototype, {
         var ret = "",
             i;
 
-        // create string containing the concatenation of the string values of each child
+        // create string containing the concatenation of the string values of
+        // each child
         for (i=0; i < this.length; i++) {
             if(this[i]){
                 if(this[i].nodeType == Node.TEXT_NODE && i>0 &&
                    this[i-1].nodeType == Node.TEXT_NODE){
-                    //add a single space between adjacent text nodes
+                    // add a single space between adjacent text nodes
                     ret += " "+this[i].xml;
                 }else{
                     ret += this[i].xml;
@@ -2151,10 +2210,10 @@ __extend__(NodeList.prototype, {
 
 
 /**
- * @method __findItemIndex__
- *      find the item index of the node
+ * @method __findItemIndex__ find the item index of the node
  * @author Jon van Noort (jon@webarcana.com.au)
- * @param  node : Node
+ * @param node :
+ *            Node
  * @return : int
  */
 var __findItemIndex__ = function (nodelist, node) {
@@ -2172,13 +2231,14 @@ var __findItemIndex__ = function (nodelist, node) {
 };
 
 /**
- * @method __insertBefore__
- *      insert the specified Node into the NodeList before the specified index
- *      Used by Node.insertBefore(). Note: Node.insertBefore() is responsible
- *      for Node Pointer surgery __insertBefore__ simply modifies the internal
- *      data structure (Array).
- * @param  newChild      : Node - the Node to be inserted
- * @param  refChildIndex : int     - the array index to insert the Node before
+ * @method __insertBefore__ insert the specified Node into the NodeList before
+ *         the specified index Used by Node.insertBefore(). Note:
+ *         Node.insertBefore() is responsible for Node Pointer surgery
+ *         __insertBefore__ simply modifies the internal data structure (Array).
+ * @param newChild :
+ *            Node - the Node to be inserted
+ * @param refChildIndex :
+ *            int - the array index to insert the Node before
  */
 var __insertBefore__ = function(nodelist, newChild, refChildIndex) {
     if ((refChildIndex >= 0) && (refChildIndex <= nodelist.length)) {
@@ -2197,14 +2257,15 @@ var __insertBefore__ = function(nodelist, newChild, refChildIndex) {
 };
 
 /**
- * @method __replaceChild__
- *      replace the specified Node in the NodeList at the specified index
- *      Used by Node.replaceChild(). Note: Node.replaceChild() is responsible
- *      for Node Pointer surgery __replaceChild__ simply modifies the internal
- *      data structure (Array).
- *
- * @param  newChild      : Node - the Node to be inserted
- * @param  refChildIndex : int     - the array index to hold the Node
+ * @method __replaceChild__ replace the specified Node in the NodeList at the
+ *         specified index Used by Node.replaceChild(). Note:
+ *         Node.replaceChild() is responsible for Node Pointer surgery
+ *         __replaceChild__ simply modifies the internal data structure (Array).
+ * 
+ * @param newChild :
+ *            Node - the Node to be inserted
+ * @param refChildIndex :
+ *            int - the array index to hold the Node
  */
 var __replaceChild__ = function(nodelist, newChild, refChildIndex) {
     var ret = null;
@@ -2231,12 +2292,12 @@ var __replaceChild__ = function(nodelist, newChild, refChildIndex) {
 };
 
 /**
- * @method __removeChild__
- *      remove the specified Node in the NodeList at the specified index
- *      Used by Node.removeChild(). Note: Node.removeChild() is responsible
- *      for Node Pointer surgery __removeChild__ simply modifies the internal
- *      data structure (Array).
- * @param  refChildIndex : int - the array index holding the Node to be removed
+ * @method __removeChild__ remove the specified Node in the NodeList at the
+ *         specified index Used by Node.removeChild(). Note: Node.removeChild()
+ *         is responsible for Node Pointer surgery __removeChild__ simply
+ *         modifies the internal data structure (Array).
+ * @param refChildIndex :
+ *            int - the array index holding the Node to be removed
  */
 var __removeChild__ = function(nodelist, refChildIndex) {
     var ret = null;
@@ -2254,11 +2315,12 @@ var __removeChild__ = function(nodelist, refChildIndex) {
 };
 
 /**
- * @method __appendChild__
- *      append the specified Node to the NodeList. Used by Node.appendChild().
- *      Note: Node.appendChild() is responsible for Node Pointer surgery
- *      __appendChild__ simply modifies the internal data structure (Array).
- * @param  newChild      : Node - the Node to be inserted
+ * @method __appendChild__ append the specified Node to the NodeList. Used by
+ *         Node.appendChild(). Note: Node.appendChild() is responsible for Node
+ *         Pointer surgery __appendChild__ simply modifies the internal data
+ *         structure (Array).
+ * @param newChild :
+ *            Node - the Node to be inserted
  */
 var __appendChild__ = function(nodelist, newChild) {
     if (newChild.nodeType == Node.DOCUMENT_FRAGMENT_NODE) {
@@ -2266,20 +2328,22 @@ var __appendChild__ = function(nodelist, newChild) {
         // append the children of DocumentFragment
         Array.prototype.push.apply(nodelist, newChild.childNodes.toArray() );
     } else {
-        // simply add node to array (links between Nodes are made at higher level)
+        // simply add node to array (links between Nodes are made at higher
+        // level)
         Array.prototype.push.apply(nodelist, [newChild]);
     }
 
 };
 
 /**
- * @method __cloneNodes__ -
- *      Returns a NodeList containing clones of the Nodes in this NodeList
- * @param  deep : boolean -
- *      If true, recursively clone the subtree under each of the nodes;
- *      if false, clone only the nodes themselves (and their attributes,
- *      if it is an Element).
- * @param  parentNode : Node - the new parent of the cloned NodeList
+ * @method __cloneNodes__ - Returns a NodeList containing clones of the Nodes in
+ *         this NodeList
+ * @param deep :
+ *            boolean - If true, recursively clone the subtree under each of the
+ *            nodes; if false, clone only the nodes themselves (and their
+ *            attributes, if it is an Element).
+ * @param parentNode :
+ *            Node - the new parent of the cloned NodeList
  * @return : NodeList - NodeList containing clones of the Nodes in this NodeList
  */
 var __cloneNodes__ = function(nodelist, deep, parentNode) {
@@ -2299,11 +2363,11 @@ var __ownerDocument__ = function(node){
 };
 
 /**
- * @class  Node -
- *      The Node interface is the primary datatype for the entire
- *      Document Object Model. It represents a single node in the
- *      document tree.
- * @param  ownerDocument : Document - The Document object associated with this node.
+ * @class Node - The Node interface is the primary datatype for the entire
+ *        Document Object Model. It represents a single node in the document
+ *        tree.
+ * @param ownerDocument :
+ *            Document - The Document object associated with this node.
  */
 
 Node = function(ownerDocument) {
@@ -2313,7 +2377,7 @@ Node = function(ownerDocument) {
     this.nodeValue = null;
 
     // A NodeList that contains all children of this node. If there are no
-    // children, this is a NodeList containing no nodes.  The content of the
+    // children, this is a NodeList containing no nodes. The content of the
     // returned NodeList is "live" in the sense that, for instance, changes to
     // the children of the node object that it was created from are immediately
     // reflected in the nodes returned by the NodeList accessors; it is not a
@@ -2337,11 +2401,11 @@ Node = function(ownerDocument) {
     this._namespaces = new NamespaceNodeMap(ownerDocument, this);
     this._readonly = false;
 
-    //IMPORTANT: These must come last so rhino will not iterate parent
-    //           properties before child properties.  (qunit.equiv issue)
+    // IMPORTANT: These must come last so rhino will not iterate parent
+    // properties before child properties. (qunit.equiv issue)
 
     // The parent of this node. All nodes, except Document, DocumentFragment,
-    // and Attr may have a parent.  However, if a node has just been created
+    // and Attr may have a parent. However, if a node has just been created
     // and not yet added to the tree, or if it has been removed from the tree,
     // this is null
     this.parentNode      = null;
@@ -2662,7 +2726,7 @@ __extend__(Node.prototype, {
         var newChildParent = newChild.parentNode;
         if (newChildParent) {
             // remove it
-           //console.debug('removing node %s', newChild);
+           // console.debug('removing node %s', newChild);
             newChildParent.removeChild(newChild);
         }
 
@@ -2704,11 +2768,11 @@ __extend__(Node.prototype, {
     },
     cloneNode: function(deep) {
         // use importNode to clone this Node
-        //do not throw any exceptions
+        // do not throw any exceptions
         try {
             return __ownerDocument__(this).importNode(this, deep);
         } catch (e) {
-            //there shouldn't be any exceptions, but if there are, return null
+            // there shouldn't be any exceptions, but if there are, return null
             // may want to warn: $debug("could not clone node: "+e.code);
             return null;
         }
@@ -2759,7 +2823,8 @@ __extend__(Node.prototype, {
         }
     },
     isSupported : function(feature, version) {
-        // use Implementation.hasFeature to determine if this feature is supported
+        // use Implementation.hasFeature to determine if this feature is
+        // supported
         return __ownerDocument__(this).implementation.hasFeature(feature, version);
     },
     getElementsByTagName : function(tagname) {
@@ -2782,9 +2847,11 @@ __extend__(Node.prototype, {
         var i;
         var importNode;
 
-        //there is no need to perform namespace checks since everything has already gone through them
-        //in order to have gotten into the DOM in the first place. The following line
-        //turns namespace checking off in ._isValidNamespace
+        // there is no need to perform namespace checks since everything has
+        // already gone through them
+        // in order to have gotten into the DOM in the first place. The
+        // following line
+        // turns namespace checking off in ._isValidNamespace
         __ownerDocument__(this).importing = true;
 
         if (importedNode.nodeType == Node.ELEMENT_NODE) {
@@ -2797,7 +2864,8 @@ __extend__(Node.prototype, {
                     importNode.setAttribute(importedNode.attributes.item(i).name, importedNode.attributes.item(i).value);
                 }
             } else {
-                // create a local Element (with the name & namespaceURI of the importedNode)
+                // create a local Element (with the name & namespaceURI of the
+                // importedNode)
                 importNode = __ownerDocument__(this).createElementNS(importedNode.namespaceURI, importedNode.nodeName);
 
                 // create attributes matching those of the importedNode
@@ -2806,7 +2874,8 @@ __extend__(Node.prototype, {
                         importedNode.attributes.item(i).name, importedNode.attributes.item(i).value);
                 }
 
-                // create namespace definitions matching those of the importedNode
+                // create namespace definitions matching those of the
+                // importedNode
                 for(i = 0; i < importedNode._namespaces.length; i++) {
                     importNode._namespaces[i] = __ownerDocument__(this).createNamespace(importedNode._namespaces.item(i).localName);
                     importNode._namespaces[i].value = importedNode._namespaces.item(i).value;
@@ -2814,27 +2883,32 @@ __extend__(Node.prototype, {
             }
         } else if (importedNode.nodeType == Node.ATTRIBUTE_NODE) {
             if (!__ownerDocument__(this).implementation.namespaceAware) {
-                // create a local Attribute (with the name of the importedAttribute)
+                // create a local Attribute (with the name of the
+                // importedAttribute)
                 importNode = __ownerDocument__(this).createAttribute(importedNode.name);
             } else {
-                // create a local Attribute (with the name & namespaceURI of the importedAttribute)
+                // create a local Attribute (with the name & namespaceURI of the
+                // importedAttribute)
                 importNode = __ownerDocument__(this).createAttributeNS(importedNode.namespaceURI, importedNode.nodeName);
 
-                // create namespace definitions matching those of the importedAttribute
+                // create namespace definitions matching those of the
+                // importedAttribute
                 for(i = 0; i < importedNode._namespaces.length; i++) {
                     importNode._namespaces[i] = __ownerDocument__(this).createNamespace(importedNode._namespaces.item(i).localName);
                     importNode._namespaces[i].value = importedNode._namespaces.item(i).value;
                 }
             }
 
-            // set the value of the local Attribute to match that of the importedAttribute
+            // set the value of the local Attribute to match that of the
+            // importedAttribute
             importNode.value = importedNode.value;
 
         } else if (importedNode.nodeType == Node.DOCUMENT_FRAGMENT_NODE) {
             // create a local DocumentFragment
             importNode = __ownerDocument__(this).createDocumentFragment();
         } else if (importedNode.nodeType == Node.NAMESPACE_NODE) {
-            // create a local NamespaceNode (with the same name & value as the importedNode)
+            // create a local NamespaceNode (with the same name & value as the
+            // importedNode)
             importNode = __ownerDocument__(this).createNamespace(importedNode.nodeName);
             importNode.value = importedNode.value;
         } else if (importedNode.nodeType == Node.TEXT_NODE) {
@@ -2844,7 +2918,8 @@ __extend__(Node.prototype, {
             // create a local CDATANode (with the same data as the importedNode)
             importNode = __ownerDocument__(this).createCDATASection(importedNode.data);
         } else if (importedNode.nodeType == Node.PROCESSING_INSTRUCTION_NODE) {
-            // create a local ProcessingInstruction (with the same target & data as the importedNode)
+            // create a local ProcessingInstruction (with the same target & data
+            // as the importedNode)
             importNode = __ownerDocument__(this).createProcessingInstruction(importedNode.target, importedNode.data);
         } else if (importedNode.nodeType == Node.COMMENT_NODE) {
             // create a local Comment (with the same data as the importedNode)
@@ -2860,7 +2935,7 @@ __extend__(Node.prototype, {
             }
         }
 
-        //reset importing
+        // reset importing
         __ownerDocument__(this).importing = false;
         return importNode;
 
@@ -2879,7 +2954,7 @@ __extend__(Node.prototype, {
             parent,
             aparents,
             bparents;
-        //handle a couple simpler case first
+        // handle a couple simpler case first
         if(a === b) {
             return Node.DOCUMENT_POSITION_EQUAL;
         }
@@ -2922,13 +2997,13 @@ __extend__(Node.prototype, {
                 bparents[bparents.length] = parent;
                 parent = parent.parentNode;
             }else{
-                //i cant be 0 since we already checked for equal parentNode
+                // i cant be 0 since we already checked for equal parentNode
                 if(bparents.length > aparents.length){
                     return Node.DOCUMENT_POSITION_FOLLOWING;
                 }else if(bparents.length < aparents.length){
                     return Node.DOCUMENT_POSITION_PRECEDING;
                 }else{
-                    //common ancestor diverge point
+                    // common ancestor diverge point
                     if (i === 0) {
                         return Node.DOCUMENT_POSITION_FOLLOWING;
                     } else {
@@ -2953,10 +3028,14 @@ __extend__(Node.prototype, {
 
 /**
  * @method __getElementsByTagNameRecursive__ - implements getElementsByTagName()
- * @param  elem     : Element  - The element which are checking and then recursing into
- * @param  tagname  : string      - The name of the tag to match on. The special value "*" matches all tags
- * @param  nodeList : NodeList - The accumulating list of matching nodes
- *
+ * @param elem :
+ *            Element - The element which are checking and then recursing into
+ * @param tagname :
+ *            string - The name of the tag to match on. The special value "*"
+ *            matches all tags
+ * @param nodeList :
+ *            NodeList - The accumulating list of matching nodes
+ * 
  * @return : NodeList
  */
 var __getElementsByTagNameRecursive__ = function (elem, tagname, nodeList) {
@@ -2980,14 +3059,17 @@ var __getElementsByTagNameRecursive__ = function (elem, tagname, nodeList) {
 };
 
 /**
- * @method __getElementsByTagNameNSRecursive__
- *      implements getElementsByTagName()
- *
- * @param  elem     : Element  - The element which are checking and then recursing into
- * @param  namespaceURI : string - the namespace URI of the required node
- * @param  localName    : string - the local name of the required node
- * @param  nodeList     : NodeList - The accumulating list of matching nodes
- *
+ * @method __getElementsByTagNameNSRecursive__ implements getElementsByTagName()
+ * 
+ * @param elem :
+ *            Element - The element which are checking and then recursing into
+ * @param namespaceURI :
+ *            string - the namespace URI of the required node
+ * @param localName :
+ *            string - the local name of the required node
+ * @param nodeList :
+ *            NodeList - The accumulating list of matching nodes
+ * 
  * @return : NodeList
  */
 var __getElementsByTagNameNSRecursive__ = function(elem, namespaceURI, localName, nodeList) {
@@ -3011,8 +3093,10 @@ var __getElementsByTagNameNSRecursive__ = function(elem, namespaceURI, localName
 
 /**
  * @method __isAncestor__ - returns true if node is ancestor of target
- * @param  target         : Node - The node we are using as context
- * @param  node         : Node - The candidate ancestor node
+ * @param target :
+ *            Node - The node we are using as context
+ * @param node :
+ *            Node - The candidate ancestor node
  * @return : boolean
  */
 var __isAncestor__ = function(target, node) {
@@ -3039,7 +3123,9 @@ var __recursivelyGatherText__ = function(aNode) {
 
 /**
  * function __escapeXML__
- * @param  str : string - The string to be escaped
+ * 
+ * @param str :
+ *            string - The string to be escaped
  * @return : string - The escaped string
  */
 var escAmpRegEx = /&(?!(amp;|lt;|gt;|quot|apos;))/g;
@@ -3059,27 +3145,22 @@ function __escapeXML__(str) {
 };
 
 /*
-function __escapeHTML5__(str) {
-    str = str.replace(escAmpRegEx, "&amp;").
-            replace(escLtRegEx, "&lt;").
-            replace(escGtRegEx, "&gt;");
-
-    return str;
-};
-function __escapeHTML5Atribute__(str) {
-    str = str.replace(escAmpRegEx, "&amp;").
-            replace(escLtRegEx, "&lt;").
-            replace(escGtRegEx, "&gt;").
-            replace(quotRegEx, "&quot;").
-            replace(aposRegEx, "&apos;");
-
-    return str;
-};
-*/
+ * function __escapeHTML5__(str) { str = str.replace(escAmpRegEx, "&amp;").
+ * replace(escLtRegEx, "&lt;"). replace(escGtRegEx, "&gt;");
+ * 
+ * return str; }; function __escapeHTML5Atribute__(str) { str =
+ * str.replace(escAmpRegEx, "&amp;"). replace(escLtRegEx, "&lt;").
+ * replace(escGtRegEx, "&gt;"). replace(quotRegEx, "&quot;"). replace(aposRegEx,
+ * "&apos;");
+ * 
+ * return str; };
+ */
 
 /**
  * function __unescapeXML__
- * @param  str : string - The string to be unescaped
+ * 
+ * @param str :
+ *            string - The string to be unescaped
  * @return : string - The unescaped string
  */
 var unescAmpRegEx = /&amp;/g;
@@ -3098,15 +3179,15 @@ function __unescapeXML__(str) {
 };
 
 /**
- * @class  NamedNodeMap -
- *      used to represent collections of nodes that can be accessed by name
- *      typically a set of Element attributes
- *
- * @extends NodeList -
- *      note W3C spec says that this is not the case, but we need an item()
- *      method identical to NodeList's, so why not?
- * @param  ownerDocument : Document - the ownerDocument
- * @param  parentNode    : Node - the node that the NamedNodeMap is attached to (or null)
+ * @class NamedNodeMap - used to represent collections of nodes that can be
+ *        accessed by name typically a set of Element attributes
+ * 
+ * @extends NodeList - note W3C spec says that this is not the case, but we need
+ *          an item() method identical to NodeList's, so why not?
+ * @param ownerDocument :
+ *            Document - the ownerDocument
+ * @param parentNode :
+ *            Node - the node that the NamedNodeMap is attached to (or null)
  */
 NamedNodeMap = function(ownerDocument, parentNode) {
     NodeList.apply(this, arguments);
@@ -3144,7 +3225,8 @@ __extend__(NamedNodeMap.prototype, {
               throw(new DOMException(DOMException.NO_MODIFICATION_ALLOWED_ERR));
             }
 
-            // throw Exception if arg is already an attribute of another Element object
+            // throw Exception if arg is already an attribute of another Element
+            // object
             if (arg.ownerElement && (arg.ownerElement != this.parentNode)) {
               throw(new DOMException(DOMException.INUSE_ATTRIBUTE_ERR));
             }
@@ -3163,7 +3245,8 @@ __extend__(NamedNodeMap.prototype, {
             if (__ownerDocument__(this).implementation.errorChecking && ret._readonly) {
               throw(new DOMException(DOMException.NO_MODIFICATION_ALLOWED_ERR));
             } else {
-              this[itemIndex] = arg;                // over-write existing NamedNode
+              this[itemIndex] = arg;                // over-write existing
+                                                    // NamedNode
               this[arg.name.toLowerCase()] = arg;
             }
       } else {
@@ -3201,7 +3284,7 @@ __extend__(NamedNodeMap.prototype, {
 
           // get Node
           var oldNode = this[itemIndex];
-          //this[oldNode.name] = undefined;
+          // this[oldNode.name] = undefined;
 
           // throw Exception if Node is readonly
           if (__ownerDocument__(this).implementation.errorChecking && oldNode._readonly) {
@@ -3238,7 +3321,8 @@ __extend__(NamedNodeMap.prototype, {
                 throw(new DOMException(DOMException.WRONG_DOCUMENT_ERR));
             }
 
-            // throw Exception if arg is already an attribute of another Element object
+            // throw Exception if arg is already an attribute of another Element
+            // object
             if (arg.ownerElement && (arg.ownerElement != this.parentNode)) {
                 throw(new DOMException(DOMException.INUSE_ATTRIBUTE_ERR));
             }
@@ -3294,12 +3378,14 @@ __extend__(NamedNodeMap.prototype, {
             throw(new DOMException(DOMException.NO_MODIFICATION_ALLOWED_ERR));
           }
 
-          return __removeChild__(this, itemIndex);             // return removed node
+          return __removeChild__(this, itemIndex);             // return
+                                                                // removed node
     },
     get xml() {
           var ret = "";
 
-          // create string containing concatenation of all (but last) Attribute string values (separated by spaces)
+          // create string containing concatenation of all (but last)
+            // Attribute string values (separated by spaces)
           for (var i=0; i < this.length -1; i++) {
             ret += this[i].xml +" ";
           }
@@ -3318,11 +3404,13 @@ __extend__(NamedNodeMap.prototype, {
 });
 
 /**
- * @method __findNamedItemIndex__
- *      find the item index of the node with the specified name
- *
- * @param  name : string - the name of the required node
- * @param  isnsmap : if its a NamespaceNodeMap
+ * @method __findNamedItemIndex__ find the item index of the node with the
+ *         specified name
+ * 
+ * @param name :
+ *            string - the name of the required node
+ * @param isnsmap :
+ *            if its a NamespaceNodeMap
  * @return : int
  */
 var __findNamedItemIndex__ = function(namednodemap, name, isnsmap) {
@@ -3351,12 +3439,13 @@ var __findNamedItemIndex__ = function(namednodemap, name, isnsmap) {
 };
 
 /**
- * @method __findNamedItemNSIndex__
- *      find the item index of the node with the specified
- *      namespaceURI and localName
- *
- * @param  namespaceURI : string - the namespace URI of the required node
- * @param  localName    : string - the local name of the required node
+ * @method __findNamedItemNSIndex__ find the item index of the node with the
+ *         specified namespaceURI and localName
+ * 
+ * @param namespaceURI :
+ *            string - the namespace URI of the required node
+ * @param localName :
+ *            string - the local name of the required node
  * @return : int
  */
 var __findNamedItemNSIndex__ = function(namednodemap, namespaceURI, localName) {
@@ -3381,10 +3470,10 @@ var __findNamedItemNSIndex__ = function(namednodemap, namespaceURI, localName) {
 };
 
 /**
- * @method __hasAttribute__
- *      Returns true if specified node exists
- *
- * @param  name : string - the name of the required node
+ * @method __hasAttribute__ Returns true if specified node exists
+ * 
+ * @param name :
+ *            string - the name of the required node
  * @return : boolean
  */
 var __hasAttribute__ = function(namednodemap, name) {
@@ -3400,11 +3489,12 @@ var __hasAttribute__ = function(namednodemap, name) {
 }
 
 /**
- * @method __hasAttributeNS__
- *      Returns true if specified node exists
- *
- * @param  namespaceURI : string - the namespace URI of the required node
- * @param  localName    : string - the local name of the required node
+ * @method __hasAttributeNS__ Returns true if specified node exists
+ * 
+ * @param namespaceURI :
+ *            string - the namespace URI of the required node
+ * @param localName :
+ *            string - the local name of the required node
  * @return : boolean
  */
 var __hasAttributeNS__ = function(namednodemap, namespaceURI, localName) {
@@ -3420,11 +3510,13 @@ var __hasAttributeNS__ = function(namednodemap, namespaceURI, localName) {
 }
 
 /**
- * @method __cloneNamedNodes__
- *      Returns a NamedNodeMap containing clones of the Nodes in this NamedNodeMap
- *
- * @param  parentNode : Node - the new parent of the cloned NodeList
- * @param  isnsmap : bool - is this a NamespaceNodeMap
+ * @method __cloneNamedNodes__ Returns a NamedNodeMap containing clones of the
+ *         Nodes in this NamedNodeMap
+ * 
+ * @param parentNode :
+ *            Node - the new parent of the cloned NodeList
+ * @param isnsmap :
+ *            bool - is this a NamespaceNodeMap
  * @return NamedNodeMap containing clones of the Nodes in this NamedNodeMap
  */
 var __cloneNamedNodes__ = function(namednodemap, parentNode, isnsmap) {
@@ -3442,14 +3534,15 @@ var __cloneNamedNodes__ = function(namednodemap, parentNode, isnsmap) {
 
 
 /**
- * @class  NamespaceNodeMap -
- *      used to represent collections of namespace nodes that can be
- *      accessed by name typically a set of Element attributes
- *
+ * @class NamespaceNodeMap - used to represent collections of namespace nodes
+ *        that can be accessed by name typically a set of Element attributes
+ * 
  * @extends NamedNodeMap
- *
- * @param  ownerDocument : Document - the ownerDocument
- * @param  parentNode    : Node - the node that the NamespaceNodeMap is attached to (or null)
+ * 
+ * @param ownerDocument :
+ *            Document - the ownerDocument
+ * @param parentNode :
+ *            Node - the node that the NamespaceNodeMap is attached to (or null)
  */
 var NamespaceNodeMap = function(ownerDocument, parentNode) {
     this.NamedNodeMap = NamedNodeMap;
@@ -3462,15 +3555,18 @@ __extend__(NamespaceNodeMap.prototype, {
         var ret = "",
             ns,
             ind;
-        // identify namespaces declared local to this Element (ie, not inherited)
+        // identify namespaces declared local to this Element (ie, not
+        // inherited)
         for (ind = 0; ind < this.length; ind++) {
-            // if namespace declaration does not exist in the containing node's, parentNode's namespaces
+            // if namespace declaration does not exist in the containing node's,
+            // parentNode's namespaces
             ns = null;
             try {
                 var ns = this.parentNode.parentNode._namespaces.
                     getNamedItem(this[ind].localName);
             }catch (e) {
-                //breaking to prevent default namespace being inserted into return value
+                // breaking to prevent default namespace being inserted into
+                // return value
                 break;
             }
             if (!(ns && (""+ ns.nodeValue == ""+ this[ind].nodeValue))) {
@@ -3483,10 +3579,11 @@ __extend__(NamespaceNodeMap.prototype, {
 });
 
 /**
- * @class  Namespace -
- *      The Namespace interface represents an namespace in an Element object
- *
- * @param  ownerDocument : The Document object associated with this node.
+ * @class Namespace - The Namespace interface represents an namespace in an
+ *        Element object
+ * 
+ * @param ownerDocument :
+ *            The Document object associated with this node.
  */
 Namespace = function(ownerDocument) {
     Node.apply(this, arguments);
@@ -3495,7 +3592,8 @@ Namespace = function(ownerDocument) {
 
     // If this attribute was explicitly given a value in the original document,
     // this is true; otherwise, it is false.
-    // Note that the implementation is in charge of this attribute, not the user.
+    // Note that the implementation is in charge of this attribute, not the
+    // user.
     // If the user changes the value of the attribute (even if it ends up having
     // the same value as the default value) then the specified flag is
     // automatically flipped to true
@@ -3533,9 +3631,10 @@ __extend__(Namespace.prototype, {
 
 
 /**
- * @class  CharacterData - parent abstract class for Text and Comment
+ * @class CharacterData - parent abstract class for Text and Comment
  * @extends Node
- * @param  ownerDocument : The Document object associated with this node.
+ * @param ownerDocument :
+ *            The Document object associated with this node.
  */
 CharacterData = function(ownerDocument) {
     Node.apply(this, arguments);
@@ -3569,7 +3668,8 @@ __extend__(CharacterData.prototype,{
             throw(new DOMException(DOMException.NO_MODIFICATION_ALLOWED_ERR));
         }
         if (this.data) {
-            // throw Exception if offset is negative or greater than the data length,
+            // throw Exception if offset is negative or greater than the data
+            // length,
             if (__ownerDocument__(this).implementation.errorChecking &&
                 ((offset < 0) || (offset >  this.data.length) || (count < 0))) {
                 throw(new DOMException(DOMException.INDEX_SIZE_ERR));
@@ -3591,7 +3691,8 @@ __extend__(CharacterData.prototype,{
         }
 
         if(this.data){
-            // throw Exception if offset is negative or greater than the data length,
+            // throw Exception if offset is negative or greater than the data
+            // length,
             if (__ownerDocument__(this).implementation.errorChecking &&
                 ((offset < 0) || (offset >  this.data.length))) {
                 throw(new DOMException(DOMException.INDEX_SIZE_ERR));
@@ -3600,7 +3701,8 @@ __extend__(CharacterData.prototype,{
             // insert data
             this.data =  this.data.substring(0, offset).concat(arg, this.data.substring(offset));
         }else {
-            // throw Exception if offset is negative or greater than the data length,
+            // throw Exception if offset is negative or greater than the data
+            // length,
             if (__ownerDocument__(this).implementation.errorChecking && (offset !== 0)) {
                throw(new DOMException(DOMException.INDEX_SIZE_ERR));
             }
@@ -3616,7 +3718,8 @@ __extend__(CharacterData.prototype,{
         }
 
         if (this.data) {
-            // throw Exception if offset is negative or greater than the data length,
+            // throw Exception if offset is negative or greater than the data
+            // length,
             if (__ownerDocument__(this).implementation.errorChecking &&
                 ((offset < 0) || (offset >  this.data.length) || (count < 0))) {
                 throw(new DOMException(DOMException.INDEX_SIZE_ERR));
@@ -3633,7 +3736,8 @@ __extend__(CharacterData.prototype,{
     substringData: function(offset, count){
         var ret = null;
         if (this.data) {
-            // throw Exception if offset is negative or greater than the data length,
+            // throw Exception if offset is negative or greater than the data
+            // length,
             // or the count is negative
             if (__ownerDocument__(this).implementation.errorChecking &&
                 ((offset < 0) || (offset > this.data.length) || (count < 0))) {
@@ -3641,7 +3745,8 @@ __extend__(CharacterData.prototype,{
             }
             // if count is not specified
             if (!count) {
-                ret = this.data.substring(offset); // default to 'end of string'
+                ret = this.data.substring(offset); // default to 'end of
+                                                    // string'
             }else{
                 ret = this.data.substring(offset, offset + count);
             }
@@ -3654,16 +3759,15 @@ __extend__(CharacterData.prototype,{
 });
 
 /**
- * @class  Text
- *      The Text interface represents the textual content (termed
- *      character data in XML) of an Element or Attr.
- *      If there is no markup inside an element's content, the text is
- *      contained in a single object implementing the Text interface that
- *      is the only child of the element. If there is markup, it is
- *      parsed into a list of elements and Text nodes that form the
- *      list of children of the element.
+ * @class Text The Text interface represents the textual content (termed
+ *        character data in XML) of an Element or Attr. If there is no markup
+ *        inside an element's content, the text is contained in a single object
+ *        implementing the Text interface that is the only child of the element.
+ *        If there is markup, it is parsed into a list of elements and Text
+ *        nodes that form the list of children of the element.
  * @extends CharacterData
- * @param  ownerDocument The Document object associated with this node.
+ * @param ownerDocument
+ *            The Document object associated with this node.
  */
 Text = function(ownerDocument) {
     CharacterData.apply(this, arguments);
@@ -3676,7 +3780,7 @@ __extend__(Text.prototype,{
     },
     // Breaks this Text node into two Text nodes at the specified offset,
     // keeping both in the tree as siblings. This node then only contains
-    // all the content up to the offset point.  And a new Text node, which
+    // all the content up to the offset point. And a new Text node, which
     // is inserted as the next sibling of this node, contains all the
     // content at and after the offset point.
     splitText : function(offset) {
@@ -3688,7 +3792,8 @@ __extend__(Text.prototype,{
             if (this._readonly) {
               throw(new DOMException(DOMException.NO_MODIFICATION_ALLOWED_ERR));
             }
-            // throw Exception if offset is negative or greater than the data length,
+            // throw Exception if offset is negative or greater than the data
+            // length,
             if ((offset < 0) || (offset > this.data.length)) {
               throw(new DOMException(DOMException.INDEX_SIZE_ERR));
             }
@@ -3721,13 +3826,13 @@ __extend__(Text.prototype,{
 });
 
 /**
- * @class CDATASection 
- *      CDATA sections are used to escape blocks of text containing 
- *      characters that would otherwise be regarded as markup.
- *      The only delimiter that is recognized in a CDATA section is 
- *      the "\]\]\>" string that ends the CDATA section
+ * @class CDATASection CDATA sections are used to escape blocks of text
+ *        containing characters that would otherwise be regarded as markup. The
+ *        only delimiter that is recognized in a CDATA section is the "\]\]\>"
+ *        string that ends the CDATA section
  * @extends Text
- * @param  ownerDocument : The Document object associated with this node.
+ * @param ownerDocument :
+ *            The Document object associated with this node.
  */
 CDATASection = function(ownerDocument) {
     Text.apply(this, arguments);
@@ -3746,11 +3851,11 @@ __extend__(CDATASection.prototype,{
     }
 });
 /**
- * @class  Comment
- *      This represents the content of a comment, i.e., all the
- *      characters between the starting '<!--' and ending '-->'
+ * @class Comment This represents the content of a comment, i.e., all the
+ *        characters between the starting '<!--' and ending '-->'
  * @extends CharacterData
- * @param  ownerDocument :  The Document object associated with this node.
+ * @param ownerDocument :
+ *            The Document object associated with this node.
  */
 Comment = function(ownerDocument) {
     CharacterData.apply(this, arguments);
@@ -3775,7 +3880,8 @@ __extend__(Comment.prototype, {
 
 /**
  * @author envjs team
- * @param {Document} onwnerDocument
+ * @param {Document}
+ *            onwnerDocument
  */
 DocumentType = function(ownerDocument) {
     Node.apply(this, arguments);
@@ -3802,17 +3908,17 @@ __extend__({
 });
 
 /**
- * @class  Attr
- *      The Attr interface represents an attribute in an Element object
+ * @class Attr The Attr interface represents an attribute in an Element object
  * @extends Node
- * @param  ownerDocument : The Document object associated with this node.
+ * @param ownerDocument :
+ *            The Document object associated with this node.
  */
 Attr = function(ownerDocument) {
     Node.apply(this, arguments);
     // set when Attr is added to NamedNodeMap
     this.ownerElement = null;
-    //TODO: our implementation of Attr is incorrect because we don't
-    //      treat the value of the attribute as a child text node.
+    // TODO: our implementation of Attr is incorrect because we don't
+    // treat the value of the attribute as a child text node.
 };
 Attr.prototype = new Node();
 __extend__(Attr.prototype, {
@@ -3858,12 +3964,11 @@ __extend__(Attr.prototype, {
 
 
 /**
- * @class  Element -
- *      By far the vast majority of objects (apart from text)
- *      that authors encounter when traversing a document are
- *      Element nodes.
+ * @class Element - By far the vast majority of objects (apart from text) that
+ *        authors encounter when traversing a document are Element nodes.
  * @extends Node
- * @param  ownerDocument : The Document object associated with this node.
+ * @param ownerDocument :
+ *            The Document object associated with this node.
  */
 Element = function(ownerDocument) {
     Node.apply(this, arguments);
@@ -3890,9 +3995,9 @@ __extend__(Element.prototype, {
         // if attribute exists, use it
         var attr = this.attributes.getNamedItem(name);
        console.log('attr %s', attr);
-        //I had to add this check because as the script initializes
-        //the id may be set in the constructor, and the html element
-        //overrides the id property with a getter/setter.
+        // I had to add this check because as the script initializes
+        // the id may be set in the constructor, and the html element
+        // overrides the id property with a getter/setter.
         if(__ownerDocument__(this)){
             if (attr===null||attr===undefined) {
                 // otherwise create it
@@ -3908,7 +4013,8 @@ __extend__(Element.prototype, {
                     throw(new DOMException(DOMException.NO_MODIFICATION_ALLOWED_ERR));
                 }
 
-                // throw Exception if the value string contains an illegal character
+                // throw Exception if the value string contains an illegal
+                // character
                 if (!__isValidString__(value+'')) {
                     throw(new DOMException(DOMException.INVALID_CHARACTER_ERR));
                 }
@@ -3964,10 +4070,13 @@ __extend__(Element.prototype, {
         if (attr) {
             ret = attr.value;
         }
-        return ret;  // if Attribute exists, return its value, otherwise return ""
+        return ret;  // if Attribute exists, return its value, otherwise
+                        // return ""
     },
     setAttributeNS : function(namespaceURI, qualifiedName, value) {
         // call NamedNodeMap.getNamedItem
+        throw new EcmaError();
+        Packages.org.jdownloader.scripting.envjs.EnvJS.get(Envjs.instance).breakIt();
         console.log('setAttributeNS %s %s %s', namespaceURI, qualifiedName, value);
         var attr = this.attributes.getNamedItem(namespaceURI, qualifiedName);
 
@@ -3997,9 +4106,9 @@ __extend__(Element.prototype, {
         }
 
         // if this Attribute is an ID
-        //if (__isIdDeclaration__(name)) {
-        //    this.id = value;
-        //}
+        // if (__isIdDeclaration__(name)) {
+        // this.id = value;
+        // }
 
         // assign values to properties (and aliases)
         attr.value     = value;
@@ -4083,9 +4192,10 @@ __extend__(Element.prototype, {
     }
 });
 /**
- * @class  DOMException - raised when an operation is impossible to perform
+ * @class DOMException - raised when an operation is impossible to perform
  * @author Jon van Noort (jon@webarcana.com.au)
- * @param  code : int - the exception code (one of the DOMException constants)
+ * @param code :
+ *            int - the exception code (one of the DOMException constants)
  */
 DOMException = function(code) {
     this.code = code;
@@ -4112,10 +4222,11 @@ DOMException.NAMESPACE_ERR                  = 14;
 DOMException.INVALID_ACCESS_ERR             = 15;
 
 /**
- * @class  DocumentFragment -
- *      DocumentFragment is a "lightweight" or "minimal" Document object.
+ * @class DocumentFragment - DocumentFragment is a "lightweight" or "minimal"
+ *        Document object.
  * @extends Node
- * @param  ownerDocument :  The Document object associated with this node.
+ * @param ownerDocument :
+ *            The Document object associated with this node.
  */
 DocumentFragment = function(ownerDocument) {
     Node.apply(this, arguments);
@@ -4147,14 +4258,13 @@ __extend__(DocumentFragment.prototype,{
 
 
 /**
- * @class  ProcessingInstruction -
- *      The ProcessingInstruction interface represents a
- *      "processing instruction", used in XML as a way to
- *      keep processor-specific information in the text of
- *      the document
+ * @class ProcessingInstruction - The ProcessingInstruction interface represents
+ *        a "processing instruction", used in XML as a way to keep
+ *        processor-specific information in the text of the document
  * @extends Node
  * @author Jon van Noort (jon@webarcana.com.au)
- * @param  ownerDocument :  The Document object associated with this node.
+ * @param ownerDocument :
+ *            The Document object associated with this node.
  */
 ProcessingInstruction = function(ownerDocument) {
     Node.apply(this, arguments);
@@ -4179,13 +4289,15 @@ __extend__(ProcessingInstruction.prototype, {
     },
     get target(){
       // The target of this processing instruction.
-      // XML defines this as being the first token following the markup that begins the processing instruction.
+      // XML defines this as being the first token following the markup that
+        // begins the processing instruction.
       // The content of this processing instruction.
         return this.nodeName;
     },
     set target(value){
       // The target of this processing instruction.
-      // XML defines this as being the first token following the markup that begins the processing instruction.
+      // XML defines this as being the first token following the markup that
+        // begins the processing instruction.
       // The content of this processing instruction.
         this.nodeName = value;
     },
@@ -4211,7 +4323,7 @@ Entity = function() {
 
 Entity.constants = {
         // content taken from W3C "HTML 4.01 Specification"
-        //                        "W3C Recommendation 24 December 1999"
+        // "W3C Recommendation 24 December 1999"
 
     nbsp: "\u00A0",
     iexcl: "\u00A1",
@@ -4479,11 +4591,10 @@ EntityReference = function() {
 };
 
 /**
- * @class  DOMImplementation -
- *      provides a number of methods for performing operations
- *      that are independent of any particular instance of the
- *      document object model.
- *
+ * @class DOMImplementation - provides a number of methods for performing
+ *        operations that are independent of any particular instance of the
+ *        document object model.
+ * 
  * @author Jon van Noort (jon@webarcana.com.au)
  */
 DOMImplementation = function() {
@@ -4493,10 +4604,10 @@ DOMImplementation = function() {
 };
 
 __extend__(DOMImplementation.prototype,{
-    // @param  feature : string - The package name of the feature to test.
-    //      the legal only values are "XML" and "CORE" (case-insensitive).
-    // @param  version : string - This is the version number of the package
-    //       name to test. In Level 1, this is the string "1.0".*
+    // @param feature : string - The package name of the feature to test.
+    // the legal only values are "XML" and "CORE" (case-insensitive).
+    // @param version : string - This is the version number of the package
+    // name to test. In Level 1, this is the string "1.0".*
     // @return : boolean
     hasFeature : function(feature, version) {
         var ret = false;
@@ -4549,7 +4660,7 @@ __extend__(DOMImplementation.prototype,{
         return doc;
     },
     translateErrCode : function(code) {
-        //convert DOMException Code to human readable error message;
+        // convert DOMException Code to human readable error message;
       var msg = "";
 
       switch (code) {
@@ -4628,9 +4739,11 @@ __extend__(DOMImplementation.prototype,{
 
 
 /**
- * @method DOMImplementation._isNamespaceDeclaration - Return true, if attributeName is a namespace declaration
+ * @method DOMImplementation._isNamespaceDeclaration - Return true, if
+ *         attributeName is a namespace declaration
  * @author Jon van Noort (jon@webarcana.com.au)
- * @param  attributeName : string - the attribute name
+ * @param attributeName :
+ *            string - the attribute name
  * @return : boolean
  */
 function __isNamespaceDeclaration__(attributeName) {
@@ -4639,9 +4752,11 @@ function __isNamespaceDeclaration__(attributeName) {
 }
 
 /**
- * @method DOMImplementation._isIdDeclaration - Return true, if attributeName is an id declaration
+ * @method DOMImplementation._isIdDeclaration - Return true, if attributeName is
+ *         an id declaration
  * @author Jon van Noort (jon@webarcana.com.au)
- * @param  attributeName : string - the attribute name
+ * @param attributeName :
+ *            string - the attribute name
  * @return : boolean
  */
 function __isIdDeclaration__(attributeName) {
@@ -4650,10 +4765,11 @@ function __isIdDeclaration__(attributeName) {
 }
 
 /**
- * @method DOMImplementation._isValidName - Return true,
- *   if name contains no invalid characters
+ * @method DOMImplementation._isValidName - Return true, if name contains no
+ *         invalid characters
  * @author Jon van Noort (jon@webarcana.com.au)
- * @param  name : string - the candidate name
+ * @param name :
+ *            string - the candidate name
  * @return : boolean
  */
 function __isValidName__(name) {
@@ -4663,12 +4779,14 @@ function __isValidName__(name) {
 var re_validName = /^[a-zA-Z_:][a-zA-Z0-9\.\-_:]*$/;
 
 /**
- * @method DOMImplementation._isValidString - Return true, if string does not contain any illegal chars
- *  All of the characters 0 through 31 and character 127 are nonprinting control characters.
- *  With the exception of characters 09, 10, and 13, (Ox09, Ox0A, and Ox0D)
- *  Note: different from _isValidName in that ValidStrings may contain spaces
+ * @method DOMImplementation._isValidString - Return true, if string does not
+ *         contain any illegal chars All of the characters 0 through 31 and
+ *         character 127 are nonprinting control characters. With the exception
+ *         of characters 09, 10, and 13, (Ox09, Ox0A, and Ox0D) Note: different
+ *         from _isValidName in that ValidStrings may contain spaces
  * @author Jon van Noort (jon@webarcana.com.au)
- * @param  name : string - the candidate string
+ * @param name :
+ *            string - the candidate string
  * @return : boolean
  */
 function __isValidString__(name) {
@@ -4678,14 +4796,13 @@ function __isValidString__(name) {
 var re_invalidStringChars = /\x01|\x02|\x03|\x04|\x05|\x06|\x07|\x08|\x0B|\x0C|\x0E|\x0F|\x10|\x11|\x12|\x13|\x14|\x15|\x16|\x17|\x18|\x19|\x1A|\x1B|\x1C|\x1D|\x1E|\x1F|\x7F/;
 
 /**
- * @method DOMImplementation._parseNSName - parse the namespace name.
- *  if there is no colon, the
+ * @method DOMImplementation._parseNSName - parse the namespace name. if there
+ *         is no colon, the
  * @author Jon van Noort (jon@webarcana.com.au)
- * @param  qualifiedName : string - The qualified name
- * @return : NSName - [
-         .prefix        : string - The prefix part of the qname
-         .namespaceName : string - The namespaceURI part of the qname
-    ]
+ * @param qualifiedName :
+ *            string - The qualified name
+ * @return : NSName - [ .prefix : string - The prefix part of the qname
+ *         .namespaceName : string - The namespaceURI part of the qname ]
  */
 function __parseNSName__(qualifiedName) {
     var resultNSName = {};
@@ -4706,7 +4823,8 @@ function __parseNSName__(qualifiedName) {
 /**
  * @method DOMImplementation._parseQName - parse the qualified name
  * @author Jon van Noort (jon@webarcana.com.au)
- * @param  qualifiedName : string - The qualified name
+ * @param qualifiedName :
+ *            string - The qualified name
  * @return : QName
  */
 function __parseQName__(qualifiedName) {
@@ -4730,8 +4848,8 @@ function __parseQName__(qualifiedName) {
 Notation = function() {
     throw new Error("Notation Not Implemented" );
 };/**
- * @author thatcher
- */
+     * @author thatcher
+     */
 Range = function(){
 
 };
@@ -4755,31 +4873,31 @@ __extend__(Range.prototype, {
     get commonAncestorContainer(){
 
     },
-    setStart: function(refNode, offset){//throws RangeException
+    setStart: function(refNode, offset){// throws RangeException
 
     },
-    setEnd: function(refNode, offset){//throws RangeException
+    setEnd: function(refNode, offset){// throws RangeException
     
     },
-    setStartBefore: function(refNode){//throws RangeException
+    setStartBefore: function(refNode){// throws RangeException
     
     },
-    setStartAfter: function(refNode){//throws RangeException
+    setStartAfter: function(refNode){// throws RangeException
     
     },
-    setEndBefore: function(refNode){//throws RangeException
+    setEndBefore: function(refNode){// throws RangeException
     
     },
-    setEndAfter: function(refNode){//throws RangeException
+    setEndAfter: function(refNode){// throws RangeException
     
     },
-    collapse: function(toStart){//throws RangeException
+    collapse: function(toStart){// throws RangeException
     
     },
-    selectNode: function(refNode){//throws RangeException
+    selectNode: function(refNode){// throws RangeException
     
     },
-    selectNodeContents: function(refNode){//throws RangeException
+    selectNodeContents: function(refNode){// throws RangeException
     
     },
     compareBoundaryPoints: function(how, sourceRange){
@@ -4824,19 +4942,21 @@ Range.END_TO_START                   = 3;
 var __isValidNamespace__;
 
 /**
- * @class  Document - The Document interface represents the entire HTML
- *      or XML document. Conceptually, it is the root of the document tree,
- *      and provides the primary access to the document's data.
- *
+ * @class Document - The Document interface represents the entire HTML or XML
+ *        document. Conceptually, it is the root of the document tree, and
+ *        provides the primary access to the document's data.
+ * 
  * @extends Node
- * @param  implementation : DOMImplementation - the creator Implementation
+ * @param implementation :
+ *            DOMImplementation - the creator Implementation
  */
 Document = function(implementation, docParentWindow) {
     Node.apply(this, arguments);
 
-    //TODO: Temporary!!! Cnage back to true!!!
+    // TODO: Temporary!!! Cnage back to true!!!
     this.async = true;
-    // The Document Type Declaration (see DocumentType) associated with this document
+    // The Document Type Declaration (see DocumentType) associated with this
+    // document
     this.doctype = null;
     // The DOMImplementation object that handles this document.
     this.implementation = implementation;
@@ -4919,8 +5039,8 @@ __extend__(Document.prototype,{
         return node;
     },
     createElementNS : function(namespaceURI, qualifiedName) {
-        //we use this as a parser flag to ignore the xhtml
-        //namespace assumed by the parser
+        // we use this as a parser flag to ignore the xhtml
+        // namespace assumed by the parser
         console.log('creating element %s %s', namespaceURI, qualifiedName);
         if(this.baseURI === 'http://envjs.com/xml' &&
             namespaceURI === 'http://www.w3.org/1999/xhtml'){
@@ -4933,7 +5053,8 @@ __extend__(Document.prototype,{
                 throw(new DOMException(DOMException.NAMESPACE_ERR));
             }
 
-            // throw Exception if the qualifiedName string contains an illegal character
+            // throw Exception if the qualifiedName string contains an illegal
+            // character
             if (!__isValidName__(qualifiedName)) {
                 throw(new DOMException(DOMException.INVALID_CHARACTER_ERR));
             }
@@ -4959,8 +5080,8 @@ __extend__(Document.prototype,{
         return node;
     },
     createAttributeNS : function(namespaceURI, qualifiedName) {
-        //we use this as a parser flag to ignore the xhtml
-        //namespace assumed by the parser
+        // we use this as a parser flag to ignore the xhtml
+        // namespace assumed by the parser
         if(this.baseURI === 'http://envjs.com/xml' &&
             namespaceURI === 'http://www.w3.org/1999/xhtml'){
             return this.createAttribute(qualifiedName);
@@ -4973,7 +5094,8 @@ __extend__(Document.prototype,{
                 throw(new DOMException(DOMException.NAMESPACE_ERR));
             }
 
-            // throw Exception if the qualifiedName string contains an illegal character
+            // throw Exception if the qualifiedName string contains an illegal
+            // character
             if (!__isValidName__(qualifiedName)) {
                 throw(new DOMException(DOMException.INVALID_CHARACTER_ERR));
             }
@@ -5007,7 +5129,7 @@ __extend__(Document.prototype,{
     },
 
     evaluate: function(xpathText, contextNode, nsuriMapper, resultType, result){
-        //return new XPathExpression().evaluate();
+        // return new XPathExpression().evaluate();
         throw Error('Document.evaluate not supported yet!');
     },
 
@@ -5020,7 +5142,7 @@ __extend__(Document.prototype,{
             node = all[i];
             // if id matches
             if (node.id == elementId) {
-                //found the node
+                // found the node
                 retNode = node;
                 break;
             }
@@ -5048,14 +5170,16 @@ __extend__(Document.prototype,{
 
 /*
  * Helper function
- *
+ * 
  */
 __isValidNamespace__ = function(doc, namespaceURI, qualifiedName, isAttribute) {
 
     if (doc.importing === true) {
-        //we're doing an importNode operation (or a cloneNode) - in both cases, there
-        //is no need to perform any namespace checking since the nodes have to have been valid
-        //to have gotten into the DOM in the first place
+        // we're doing an importNode operation (or a cloneNode) - in both cases,
+        // there
+        // is no need to perform any namespace checking since the nodes have to
+        // have been valid
+        // to have gotten into the DOM in the first place
         return true;
     }
 
@@ -5064,7 +5188,7 @@ __isValidNamespace__ = function(doc, namespaceURI, qualifiedName, isAttribute) {
     var qName = __parseQName__(qualifiedName);
 
 
-    //only check for namespaces if we're finished parsing
+    // only check for namespaces if we're finished parsing
     if (this.parsing === false) {
 
         // if the qualifiedName is malformed
@@ -5086,7 +5210,7 @@ __isValidNamespace__ = function(doc, namespaceURI, qualifiedName, isAttribute) {
     }
 
     // if the qualifiedName has a prefix that is "xml" and the namespaceURI is
-    //  different from "http://www.w3.org/XML/1998/namespace" [Namespaces].
+    // different from "http://www.w3.org/XML/1998/namespace" [Namespaces].
     if ((valid) && (qName.prefix === "xml") && (namespaceURI !== "http://www.w3.org/XML/1998/namespace")) {
         valid = false;
     }
@@ -5094,12 +5218,12 @@ __isValidNamespace__ = function(doc, namespaceURI, qualifiedName, isAttribute) {
     return valid;
 };
 /**
- *
- * This file only handles XML parser.
- * It is extended by parser/domparser.js (and parser/htmlparser.js)
- *
+ * 
+ * This file only handles XML parser. It is extended by parser/domparser.js (and
+ * parser/htmlparser.js)
+ * 
  * This depends on e4x, which some engines may not have.
- *
+ * 
  * @author thatcher
  */
 DOMParser = function(principle, documentURI, baseURI) {
@@ -5128,7 +5252,9 @@ __extend__(DOMParser.prototype,{
         // https://bugzilla.mozilla.org/show_bug.cgi?id=336551
         // The official workaround is the big regexp below
         // but simpler one seems to be ok
-        // xmlstring = xmlstring.replace(/^<\?xml\s+version\s*=\s*(["'])[^\1]+\1[^?]*\?>/, "");
+        // xmlstring =
+        // xmlstring.replace(/^<\?xml\s+version\s*=\s*(["'])[^\1]+\1[^?]*\?>/,
+        // "");
         //
         xmlstring = xmlstring.replace(/<\?xml.*\?>/);
 
@@ -5189,13 +5315,13 @@ var __toDomNode__ = function(e4, parent, doc){
             break;
         case 'attribute':
             // console.log('setting attribute %s %s %s',
-            //       xnode.localName(), xnode.namespace(), xnode.valueOf());
+            // xnode.localName(), xnode.namespace(), xnode.valueOf());
 
             //
-            // cross-platform alert.  The original code used
-            //  xnode.text() to get the attribute value
-            //  This worked in Rhino, but did not in Spidermonkey
-            //  valueOf seemed to work in both
+            // cross-platform alert. The original code used
+            // xnode.text() to get the attribute value
+            // This worked in Rhino, but did not in Spidermonkey
+            // valueOf seemed to work in both
             //
             if(xnode.namespace() && xnode.namespace().prefix){
                 console.log("%s", xnode.namespace().prefix);
@@ -5260,16 +5386,15 @@ __extend__(XMLSerializer.prototype, {
  * @copyright 2008-2010
  * @license MIT
  */
-//CLOSURE_END
+// CLOSURE_END
 }());
 /*
- * Envjs event.1.2.13
- * Pure JavaScript Browser Environment
- * By John Resig <http://ejohn.org/> and the Envjs Team
- * Copyright 2008-2010 John Resig, under the MIT License
- *
- * This file simply provides the global definitions we need to
- * be able to correctly implement to core browser DOM Event interfaces.
+ * Envjs event.1.2.13 Pure JavaScript Browser Environment By John Resig
+ * <http://ejohn.org/> and the Envjs Team Copyright 2008-2010 John Resig, under
+ * the MIT License
+ * 
+ * This file simply provides the global definitions we need to be able to
+ * correctly implement to core browser DOM Event interfaces.
  */
 var Event,
     MouseEvent,
@@ -5279,17 +5404,16 @@ var Event,
     DocumentEvent,
     EventTarget,
     EventException,
-    //nonstandard but very useful for implementing mutation events
-    //among other things like general profiling
+    // nonstandard but very useful for implementing mutation events
+    // among other things like general profiling
     Aspect;
 /*
- * Envjs event.1.2.13 
- * Pure JavaScript Browser Environment
- * By John Resig <http://ejohn.org/> and the Envjs Team
- * Copyright 2008-2010 John Resig, under the MIT License
+ * Envjs event.1.2.13 Pure JavaScript Browser Environment By John Resig
+ * <http://ejohn.org/> and the Envjs Team Copyright 2008-2010 John Resig, under
+ * the MIT License
  */
 
-//CLOSURE_START
+// CLOSURE_START
 (function(){
 
 
@@ -5315,7 +5439,7 @@ function __extend__(a,b) {
 /**
  * @author john resig
  */
-//from jQuery
+// from jQuery
 function __setArray__( target, array ) {
     // Resetting the length to 0, then using the native Array push
     // is a super-fast way to populate an object with array-like properties
@@ -5325,12 +5449,12 @@ function __setArray__( target, array ) {
 /**
  * Borrowed with love from:
  * 
- * jQuery AOP - jQuery plugin to add features of aspect-oriented programming (AOP) to jQuery.
- * http://jquery-aop.googlecode.com/
- *
+ * jQuery AOP - jQuery plugin to add features of aspect-oriented programming
+ * (AOP) to jQuery. http://jquery-aop.googlecode.com/
+ * 
  * Licensed under the MIT license:
  * http://www.opensource.org/licenses/mit-license.php
- *
+ * 
  * Version: 1.1
  */
 (function() {
@@ -5342,8 +5466,8 @@ function __setArray__( target, array ) {
 	var _regexEnabled = true;
 
 	/**
-	 * Private weaving function.
-	 */
+     * Private weaving function.
+     */
 	var weaveOne = function(source, method, advice) {
 
 		var old = source[method];
@@ -5387,15 +5511,16 @@ function __setArray__( target, array ) {
 
 
 	/**
-	 * Private weaver and pointcut parser.
-	 */
+     * Private weaver and pointcut parser.
+     */
 	var weave = function(pointcut, advice)
 	{
 
 		var source = (typeof(pointcut.target.prototype) != 'undefined') ? pointcut.target.prototype : pointcut.target;
 		var advices = [];
 
-		// If it's not an introduction and no method was found, try with regex...
+		// If it's not an introduction and no method was found, try with
+        // regex...
 		if (advice.type != _intro && typeof(source[pointcut.method]) == 'undefined')
 		{
 
@@ -5424,51 +5549,74 @@ function __setArray__( target, array ) {
 	Aspect = 
 	{
 		/**
-		 * Creates an advice after the defined point-cut. The advice will be executed after the point-cut method 
-		 * has completed execution successfully, and will receive one parameter with the result of the execution.
-		 * This function returns an array of weaved aspects (Function).
-		 *
-		 * @example jQuery.aop.after( {target: window, method: 'MyGlobalMethod'}, function(result) { alert('Returned: ' + result); } );
-		 * @result Array<Function>
-		 *
-		 * @example jQuery.aop.after( {target: String, method: 'indexOf'}, function(index) { alert('Result found at: ' + index + ' on:' + this); } );
-		 * @result Array<Function>
-		 *
-		 * @name after
-		 * @param Map pointcut Definition of the point-cut to apply the advice. A point-cut is the definition of the object/s and method/s to be weaved.
-		 * @option Object target Target object to be weaved. 
-		 * @option String method Name of the function to be weaved. Regex are supported, but not on built-in objects.
-		 * @param Function advice Function containing the code that will get called after the execution of the point-cut. It receives one parameter
-		 *                        with the result of the point-cut's execution.
-		 *
-		 * @type Array<Function>
-		 * @cat Plugins/General
-		 */
+         * Creates an advice after the defined point-cut. The advice will be
+         * executed after the point-cut method has completed execution
+         * successfully, and will receive one parameter with the result of the
+         * execution. This function returns an array of weaved aspects
+         * (Function).
+         * 
+         * @example jQuery.aop.after( {target: window, method:
+         *          'MyGlobalMethod'}, function(result) { alert('Returned: ' +
+         *          result); } );
+         * @result Array<Function>
+         * 
+         * @example jQuery.aop.after( {target: String, method: 'indexOf'},
+         *          function(index) { alert('Result found at: ' + index + ' on:' +
+         *          this); } );
+         * @result Array<Function>
+         * 
+         * @name after
+         * @param Map
+         *            pointcut Definition of the point-cut to apply the advice.
+         *            A point-cut is the definition of the object/s and method/s
+         *            to be weaved.
+         * @option Object target Target object to be weaved.
+         * @option String method Name of the function to be weaved. Regex are
+         *         supported, but not on built-in objects.
+         * @param Function
+         *            advice Function containing the code that will get called
+         *            after the execution of the point-cut. It receives one
+         *            parameter with the result of the point-cut's execution.
+         * 
+         * @type Array<Function>
+         * @cat Plugins/General
+         */
 		after : function(pointcut, advice)
 		{
 			return weave( pointcut, { type: _after, value: advice } );
 		},
 
 		/**
-		 * Creates an advice before the defined point-cut. The advice will be executed before the point-cut method 
-		 * but cannot modify the behavior of the method, or prevent its execution.
-		 * This function returns an array of weaved aspects (Function).
-		 *
-		 * @example jQuery.aop.before( {target: window, method: 'MyGlobalMethod'}, function() { alert('About to execute MyGlobalMethod'); } );
-		 * @result Array<Function>
-		 *
-		 * @example jQuery.aop.before( {target: String, method: 'indexOf'}, function(index) { alert('About to execute String.indexOf on: ' + this); } );
-		 * @result Array<Function>
-		 *
-		 * @name before
-		 * @param Map pointcut Definition of the point-cut to apply the advice. A point-cut is the definition of the object/s and method/s to be weaved.
-		 * @option Object target Target object to be weaved. 
-		 * @option String method Name of the function to be weaved. Regex are supported, but not on built-in objects.
-		 * @param Function advice Function containing the code that will get called before the execution of the point-cut.
-		 *
-		 * @type Array<Function>
-		 * @cat Plugins/General
-		 */
+         * Creates an advice before the defined point-cut. The advice will be
+         * executed before the point-cut method but cannot modify the behavior
+         * of the method, or prevent its execution. This function returns an
+         * array of weaved aspects (Function).
+         * 
+         * @example jQuery.aop.before( {target: window, method:
+         *          'MyGlobalMethod'}, function() { alert('About to execute
+         *          MyGlobalMethod'); } );
+         * @result Array<Function>
+         * 
+         * @example jQuery.aop.before( {target: String, method: 'indexOf'},
+         *          function(index) { alert('About to execute String.indexOf on: ' +
+         *          this); } );
+         * @result Array<Function>
+         * 
+         * @name before
+         * @param Map
+         *            pointcut Definition of the point-cut to apply the advice.
+         *            A point-cut is the definition of the object/s and method/s
+         *            to be weaved.
+         * @option Object target Target object to be weaved.
+         * @option String method Name of the function to be weaved. Regex are
+         *         supported, but not on built-in objects.
+         * @param Function
+         *            advice Function containing the code that will get called
+         *            before the execution of the point-cut.
+         * 
+         * @type Array<Function>
+         * @cat Plugins/General
+         */
 		before : function(pointcut, advice)
 		{
 			return weave( pointcut, { type: _before, value: advice } );
@@ -5476,83 +5624,104 @@ function __setArray__( target, array ) {
 
 
 		/**
-		 * Creates an advice 'around' the defined point-cut. This type of advice can control the point-cut method execution by calling
-		 * the functions '.proceed()' on the 'invocation' object, and also, can modify the arguments collection before sending them to the function call.
-		 * This function returns an array of weaved aspects (Function).
-		 *
-		 * @example jQuery.aop.around( {target: window, method: 'MyGlobalMethod'}, function(invocation) {
-		 *                alert('# of Arguments: ' + invocation.arguments.length); 
-		 *                return invocation.proceed(); 
-		 *          } );
-		 * @result Array<Function>
-		 *
-		 * @example jQuery.aop.around( {target: String, method: 'indexOf'}, function(invocation) { 
-		 *                alert('Searching: ' + invocation.arguments[0] + ' on: ' + this); 
-		 *                return invocation.proceed(); 
-		 *          } );
-		 * @result Array<Function>
-		 *
-		 * @example jQuery.aop.around( {target: window, method: /Get(\d+)/}, function(invocation) {
-		 *                alert('Executing ' + invocation.method); 
-		 *                return invocation.proceed(); 
-		 *          } );
-		 * @desc Matches all global methods starting with 'Get' and followed by a number.
-		 * @result Array<Function>
-		 *
-		 *
-		 * @name around
-		 * @param Map pointcut Definition of the point-cut to apply the advice. A point-cut is the definition of the object/s and method/s to be weaved.
-		 * @option Object target Target object to be weaved. 
-		 * @option String method Name of the function to be weaved. Regex are supported, but not on built-in objects.
-		 * @param Function advice Function containing the code that will get called around the execution of the point-cut. This advice will be called with one
-		 *                        argument containing one function '.proceed()', the collection of arguments '.arguments', and the matched method name '.method'.
-		 *
-		 * @type Array<Function>
-		 * @cat Plugins/General
-		 */
+         * Creates an advice 'around' the defined point-cut. This type of advice
+         * can control the point-cut method execution by calling the functions
+         * '.proceed()' on the 'invocation' object, and also, can modify the
+         * arguments collection before sending them to the function call. This
+         * function returns an array of weaved aspects (Function).
+         * 
+         * @example jQuery.aop.around( {target: window, method:
+         *          'MyGlobalMethod'}, function(invocation) { alert('# of
+         *          Arguments: ' + invocation.arguments.length); return
+         *          invocation.proceed(); } );
+         * @result Array<Function>
+         * 
+         * @example jQuery.aop.around( {target: String, method: 'indexOf'},
+         *          function(invocation) { alert('Searching: ' +
+         *          invocation.arguments[0] + ' on: ' + this); return
+         *          invocation.proceed(); } );
+         * @result Array<Function>
+         * 
+         * @example jQuery.aop.around( {target: window, method: /Get(\d+)/},
+         *          function(invocation) { alert('Executing ' +
+         *          invocation.method); return invocation.proceed(); } );
+         * @desc Matches all global methods starting with 'Get' and followed by
+         *       a number.
+         * @result Array<Function>
+         * 
+         * 
+         * @name around
+         * @param Map
+         *            pointcut Definition of the point-cut to apply the advice.
+         *            A point-cut is the definition of the object/s and method/s
+         *            to be weaved.
+         * @option Object target Target object to be weaved.
+         * @option String method Name of the function to be weaved. Regex are
+         *         supported, but not on built-in objects.
+         * @param Function
+         *            advice Function containing the code that will get called
+         *            around the execution of the point-cut. This advice will be
+         *            called with one argument containing one function
+         *            '.proceed()', the collection of arguments '.arguments',
+         *            and the matched method name '.method'.
+         * 
+         * @type Array<Function>
+         * @cat Plugins/General
+         */
 		around : function(pointcut, advice)
 		{
 			return weave( pointcut, { type: _around, value: advice } );
 		},
 
 		/**
-		 * Creates an introduction on the defined point-cut. This type of advice replaces any existing methods with the same
-		 * name. To restore them, just unweave it.
-		 * This function returns an array with only one weaved aspect (Function).
-		 *
-		 * @example jQuery.aop.introduction( {target: window, method: 'MyGlobalMethod'}, function(result) { alert('Returned: ' + result); } );
-		 * @result Array<Function>
-		 *
-		 * @example jQuery.aop.introduction( {target: String, method: 'log'}, function() { alert('Console: ' + this); } );
-		 * @result Array<Function>
-		 *
-		 * @name introduction
-		 * @param Map pointcut Definition of the point-cut to apply the advice. A point-cut is the definition of the object/s and method/s to be weaved.
-		 * @option Object target Target object to be weaved. 
-		 * @option String method Name of the function to be weaved.
-		 * @param Function advice Function containing the code that will be executed on the point-cut. 
-		 *
-		 * @type Array<Function>
-		 * @cat Plugins/General
-		 */
+         * Creates an introduction on the defined point-cut. This type of advice
+         * replaces any existing methods with the same name. To restore them,
+         * just unweave it. This function returns an array with only one weaved
+         * aspect (Function).
+         * 
+         * @example jQuery.aop.introduction( {target: window, method:
+         *          'MyGlobalMethod'}, function(result) { alert('Returned: ' +
+         *          result); } );
+         * @result Array<Function>
+         * 
+         * @example jQuery.aop.introduction( {target: String, method: 'log'},
+         *          function() { alert('Console: ' + this); } );
+         * @result Array<Function>
+         * 
+         * @name introduction
+         * @param Map
+         *            pointcut Definition of the point-cut to apply the advice.
+         *            A point-cut is the definition of the object/s and method/s
+         *            to be weaved.
+         * @option Object target Target object to be weaved.
+         * @option String method Name of the function to be weaved.
+         * @param Function
+         *            advice Function containing the code that will be executed
+         *            on the point-cut.
+         * 
+         * @type Array<Function>
+         * @cat Plugins/General
+         */
 		introduction : function(pointcut, advice)
 		{
 			return weave( pointcut, { type: _intro, value: advice } );
 		},
 		
 		/**
-		 * Configures global options.
-		 *
-		 * @name setup
-		 * @param Map settings Configuration options.
-		 * @option Boolean regexMatch Enables/disables regex matching of method names.
-		 *
-		 * @example jQuery.aop.setup( { regexMatch: false } );
-		 * @desc Disable regex matching.
-		 *
-		 * @type Void
-		 * @cat Plugins/General
-		 */
+         * Configures global options.
+         * 
+         * @name setup
+         * @param Map
+         *            settings Configuration options.
+         * @option Boolean regexMatch Enables/disables regex matching of method
+         *         names.
+         * 
+         * @example jQuery.aop.setup( { regexMatch: false } );
+         * @desc Disable regex matching.
+         * 
+         * @type Void
+         * @cat Plugins/General
+         */
 		setup: function(settings)
 		{
 			_regexEnabled = settings.regexMatch;
@@ -5621,7 +5790,7 @@ function __removeEventListener__(target, type, fn, phase){
         return;
     }
     if(type == '*'){
-        //used to clean all event listeners for a given node
+        // used to clean all event listeners for a given node
         console.log('cleaning all event listeners for node %s %s',target, target.uuid);
         delete $events[target.uuid];
         return;
@@ -5641,8 +5810,8 @@ function __dispatchEvent__(target, event, bubbles){
     if (!event.uuid) {
         event.uuid = __eventuuid__++;
     }
-    //the window scope defines the $event object, for IE(^^^) compatibility;
-    //$event = event;
+    // the window scope defines the $event object, for IE(^^^) compatibility;
+    // $event = event;
     console.log('dispatching event %s', event.uuid);
     if (bubbles === undefined || bubbles === null) {
         bubbles = true;
@@ -5687,10 +5856,10 @@ function __dispatchEvent__(target, event, bubbles){
             __bubbleEvent__(target, event);
         }
         if(!event._preventDefault){
-            //At this point I'm guessing that just HTMLEvents are concerned
-            //with default behavior being executed in a browser but I could be
-            //wrong as usual.  The goal is much more to filter at this point
-            //what events have no need to be handled
+            // At this point I'm guessing that just HTMLEvents are concerned
+            // with default behavior being executed in a browser but I could be
+            // wrong as usual. The goal is much more to filter at this point
+            // what events have no need to be handled
             console.log('triggering default behavior for %s', event.type);
             if(event.type in Envjs.defaultEventBehaviors){
                 Envjs.defaultEventBehaviors[event.type](event);
@@ -5750,7 +5919,7 @@ function __bubbleEvent__(target, event){
  */
 Event = function(options){
     // event state is kept read-only by forcing
-    // a new object for each event.  This may not
+    // a new object for each event. This may not
     // be appropriate in the long run and we'll
     // have to decide if we simply dont adhere to
     // the read-only restriction of the specification
@@ -5808,7 +5977,8 @@ __extend__(Event,{
 
 /**
  * @name UIEvent
- * @param {Object} options
+ * @param {Object}
+ *            options
  */
 UIEvent = function(options) {
     this._view = null;
@@ -5837,7 +6007,7 @@ var $onblur,
 
 /**
  * @name MouseEvent
- * @w3c:domlevel 2 
+ * @w3c:domlevel 2
  * @uri http://www.w3.org/TR/2000/REC-DOM-Level-2-Events-20001113/events.html
  */
 MouseEvent = function(options) {
@@ -5955,7 +6125,7 @@ KeyboardEvent.DOM_KEY_LOCATION_JOYSTICK      = 5;
 
 
 
-//We dont fire mutation events until someone has registered for them
+// We dont fire mutation events until someone has registered for them
 var __supportedMutations__ = /DOMSubtreeModified|DOMNodeInserted|DOMNodeRemoved|DOMAttrModified|DOMCharacterDataModified/;
 
 var __fireMutationEvents__ = Aspect.before({
@@ -5963,7 +6133,7 @@ var __fireMutationEvents__ = Aspect.before({
     method: 'addEventListener'
 }, function(target, type){
     if(type && type.match(__supportedMutations__)){
-        //unweaving removes the __addEventListener__ aspect
+        // unweaving removes the __addEventListener__ aspect
         __fireMutationEvents__.unweave();
         // These two methods are enough to cover all dom 2 manipulations
         Aspect.around({
@@ -5994,7 +6164,8 @@ var __fireMutationEvents__ = Aspect.before({
 
 /**
  * @name MutationEvent
- * @param {Object} options
+ * @param {Object}
+ *            options
  */
 MutationEvent = function(options) {
     this._cancelable = false;
@@ -6067,21 +6238,18 @@ EventException = function(code) {
 };
 EventException.UNSPECIFIED_EVENT_TYPE_ERR = 0;
 /**
- *
- * DOM Level 2: http://www.w3.org/TR/DOM-Level-2-Events/events.html
- * DOM Level 3: http://www.w3.org/TR/DOM-Level-3-Events/
- *
- * interface DocumentEvent {
- *   Event createEvent (in DOMString eventType)
- *      raises (DOMException);
- * };
- *
- * Firefox (3.6) exposes DocumentEvent
- * Safari (4) does NOT.
+ * 
+ * DOM Level 2: http://www.w3.org/TR/DOM-Level-2-Events/events.html DOM Level 3:
+ * http://www.w3.org/TR/DOM-Level-3-Events/
+ * 
+ * interface DocumentEvent { Event createEvent (in DOMString eventType) raises
+ * (DOMException); };
+ * 
+ * Firefox (3.6) exposes DocumentEvent Safari (4) does NOT.
  */
 
 /**
- * TODO: Not sure we need a full prototype.  We not just an regular object?
+ * TODO: Not sure we need a full prototype. We not just an regular object?
  */
 DocumentEvent = function(){};
 DocumentEvent.prototype.__EventMap__ = {
@@ -6128,17 +6296,15 @@ __extend__(Document.prototype, DocumentEvent.prototype);
  * @copyright 2008-2010
  * @license MIT
  */
-//CLOSURE_END
+// CLOSURE_END
 }());
 
 /*
- * Envjs timer.1.2.13 
- * Pure JavaScript Browser Environment
- * By John Resig <http://ejohn.org/> and the Envjs Team
- * Copyright 2008-2010 John Resig, under the MIT License
+ * Envjs timer.1.2.13 Pure JavaScript Browser Environment By John Resig
+ * <http://ejohn.org/> and the Envjs Team Copyright 2008-2010 John Resig, under
+ * the MIT License
  * 
- * Parts of the implementation were originally written by:\
- * Steven Parkes
+ * Parts of the implementation were originally written by:\ Steven Parkes
  * 
  * requires Envjs.wait, Envjs.sleep, Envjs.WAIT_INTERVAL
  */
@@ -6148,24 +6314,22 @@ var setTimeout,
     clearInterval;
     
 /*
- * Envjs timer.1.2.13 
- * Pure JavaScript Browser Environment
- * By John Resig <http://ejohn.org/> and the Envjs Team
- * Copyright 2008-2010 John Resig, under the MIT License
+ * Envjs timer.1.2.13 Pure JavaScript Browser Environment By John Resig
+ * <http://ejohn.org/> and the Envjs Team Copyright 2008-2010 John Resig, under
+ * the MIT License
  */
 
-//CLOSURE_START
+// CLOSURE_START
 (function(){
 
 
 
 
 /*
-*       timer.js
-*   implementation provided by Steven Parkes
-*/
+ * timer.js implementation provided by Steven Parkes
+ */
 
-//private
+// private
 var $timers = [],
     EVENT_LOOP_RUNNING = false;
 
@@ -6173,7 +6337,7 @@ $timers.lock = function(fn){
     Envjs.sync(fn)();
 };
 
-//private internal class
+// private internal class
 var Timer = function(fn, interval){
     this.fn = fn;
     this.interval = interval;
@@ -6185,7 +6349,7 @@ var Timer = function(fn, interval){
 Timer.prototype.start = function(){};
 Timer.prototype.stop = function(){};
 
-//static
+// static
 Timer.normalize = function(time) {
     time = time*1;
     if ( isNaN(time) || time < 0 ) {
@@ -6203,8 +6367,10 @@ Timer.MIN_TIME = /* 4 */ 0;
 
 /**
  * @function setTimeout
- * @param {Object} fn
- * @param {Object} time
+ * @param {Object}
+ *            fn
+ * @param {Object}
+ *            time
  */
 setTimeout = function(fn, time){
     var num;
@@ -6243,8 +6409,10 @@ setTimeout = function(fn, time){
 
 /**
  * @function setInterval
- * @param {Object} fn
- * @param {Object} time
+ * @param {Object}
+ *            fn
+ * @param {Object}
+ *            time
  */
 setInterval = function(fn, time){
     console.log('setting interval %s %s', time, fn.toString().substring(0,64));
@@ -6261,7 +6429,7 @@ setInterval = function(fn, time){
     var num;
     $timers.lock(function(){
         num = $timers.length+1;
-        //Envjs.debug("Creating timer number "+num);
+        // Envjs.debug("Creating timer number "+num);
         $timers[num] = new Timer(fn, time);
         $timers[num].start();
     });
@@ -6270,7 +6438,9 @@ setInterval = function(fn, time){
 
 /**
  * clearInterval
- * @param {Object} num
+ * 
+ * @param {Object}
+ *            num
  */
 clearInterval = clearTimeout = function(num){
     console.log("clearing interval "+num);
@@ -6283,13 +6453,13 @@ clearInterval = clearTimeout = function(num){
 };
 
 // wait === null/undefined: execute any timers as they fire,
-//  waiting until there are none left
+// waiting until there are none left
 // wait(n) (n > 0): execute any timers as they fire until there
-//  are none left waiting at least n ms but no more, even if there
-//  are future events/current threads
+// are none left waiting at least n ms but no more, even if there
+// are future events/current threads
 // wait(0): execute any immediately runnable timers and return
 // wait(-n): keep sleeping until the next event is more than n ms
-//  in the future
+// in the future
 //
 // TODO: make a priority queue ...
 
@@ -6332,7 +6502,7 @@ Envjs.wait = function(wait) {
                 }
             }
         });
-        //next sleep time
+        // next sleep time
         sleep = earliest && earliest.at - Date.now();
         if ( earliest && sleep <= 0 ) {
             nextfn = earliest.fn;
@@ -6357,7 +6527,8 @@ Envjs.wait = function(wait) {
 
         // bunch of subtle cases here ...
         if ( !earliest ) {
-            // no events in the queue (but maybe XHR will bring in events, so ...
+            // no events in the queue (but maybe XHR will bring in events, so
+            // ...
             if ( !wait || wait < Date.now() ) {
                 // Loop ends if there are no events and a wait hasn't been
                 // requested or has expired
@@ -6366,16 +6537,17 @@ Envjs.wait = function(wait) {
         // no events, but a wait requested: fall through to sleep
         } else {
             // there are events in the queue, but they aren't firable now
-            /*if ( delta_wait && sleep <= delta_wait ) {
-                //TODO: why waste a check on a tight
-                // loop if it just falls through?
-            // if they will happen within the next delta, fall through to sleep
-            } else */if ( wait === 0 || ( wait > 0 && wait < Date.now () ) ) {
+            /*
+             * if ( delta_wait && sleep <= delta_wait ) { //TODO: why waste a
+             * check on a tight // loop if it just falls through? // if they
+             * will happen within the next delta, fall through to sleep } else
+             */if ( wait === 0 || ( wait > 0 && wait < Date.now () ) ) {
                 // loop ends even if there are events but the user
                 // specifcally asked not to wait too long
                 break;
             }
-            // there are events and the user wants to wait: fall through to sleep
+            // there are events and the user wants to wait: fall through to
+            // sleep
         }
 
         // Related to ajax threads ... hopefully can go away ..
@@ -6397,15 +6569,14 @@ Envjs.wait = function(wait) {
  * @copyright 2008-2010
  * @license MIT
  */
-//CLOSURE_END
+// CLOSURE_END
 }());
 /*
- * Pure JavaScript Browser Environment
- * By John Resig <http://ejohn.org/> and the Envjs Team
- * Copyright 2008-2010 John Resig, under the MIT License
- *
- * This file simply provides the global definitions we need to
- * be able to correctly implement to core browser DOM HTML interfaces.
+ * Pure JavaScript Browser Environment By John Resig <http://ejohn.org/> and the
+ * Envjs Team Copyright 2008-2010 John Resig, under the MIT License
+ * 
+ * This file simply provides the global definitions we need to be able to
+ * correctly implement to core browser DOM HTML interfaces.
  */
 var HTMLDocument,
     HTMLElement,
@@ -6466,13 +6637,12 @@ var HTMLDocument,
     __loadLink__;
 
 /*
- * Envjs html.1.2.13 
- * Pure JavaScript Browser Environment
- * By John Resig <http://ejohn.org/> and the Envjs Team
- * Copyright 2008-2010 John Resig, under the MIT License
+ * Envjs html.1.2.13 Pure JavaScript Browser Environment By John Resig
+ * <http://ejohn.org/> and the Envjs Team Copyright 2008-2010 John Resig, under
+ * the MIT License
  */
 
-//CLOSURE_START
+// CLOSURE_START
 (function(){
 
 
@@ -6481,8 +6651,9 @@ var HTMLDocument,
 
 /**
  * @author ariel flesler
- *    http://flesler.blogspot.com/2008/11/fast-trim-function-for-javascript.html
- * @param {Object} str
+ *         http://flesler.blogspot.com/2008/11/fast-trim-function-for-javascript.html
+ * @param {Object}
+ *            str
  */
 function __trim__( str ){
     return (str || "").replace( /^\s+|\s+$/g, "" );
@@ -6508,7 +6679,7 @@ function __extend__(a,b) {
 /**
  * @author john resig
  */
-//from jQuery
+// from jQuery
 function __setArray__( target, array ) {
     // Resetting the length to 0, then using the native Array push
     // is a super-fast way to populate an object with array-like properties
@@ -6517,11 +6688,10 @@ function __setArray__( target, array ) {
 }
 
 /**
- * @class  HTMLDocument
- *      The Document interface represents the entire HTML or XML document.
- *      Conceptually, it is the root of the document tree, and provides
- *      the primary access to the document's data.
- *
+ * @class HTMLDocument The Document interface represents the entire HTML or XML
+ *        document. Conceptually, it is the root of the document tree, and
+ *        provides the primary access to the document's data.
+ * 
  * @extends Document
  */
 HTMLDocument = function(implementation, ownerWindow, referrer) {
@@ -6538,8 +6708,9 @@ __extend__(HTMLDocument.prototype, {
         var node;
         tagName = tagName.toUpperCase();
         // create Element specifying 'this' as ownerDocument
-        // This is an html document so we need to use explicit interfaces per the
-        //TODO: would be much faster as a big switch
+        // This is an html document so we need to use explicit interfaces per
+        // the
+        // TODO: would be much faster as a big switch
         switch(tagName){
         case "A":
             node = new HTMLAnchorElement(this);break;
@@ -6673,7 +6844,7 @@ __extend__(HTMLDocument.prototype, {
         return node;
     },
     createElementNS : function (uri, local) {
-        //print('createElementNS :'+uri+" "+local);
+        // print('createElementNS :'+uri+" "+local);
         if(!uri){
             return this.createElement(local);
         }else if ("http://www.w3.org/1999/xhtml" == uri) {
@@ -6700,7 +6871,7 @@ __extend__(HTMLDocument.prototype, {
         }
         return html;
     },
-    //document.head is non-standard
+    // document.head is non-standard
     get head(){
         console.log('get head');
         if (!this.documentElement) {
@@ -6709,7 +6880,7 @@ __extend__(HTMLDocument.prototype, {
         var element = this.documentElement,
         length = element.childNodes.length,
         i;
-        //check for the presence of the head element in this html doc
+        // check for the presence of the head element in this html doc
         for(i=0;i<length;i++){
             if(element.childNodes[i].nodeType === Node.ELEMENT_NODE){
                 if(element.childNodes[i].tagName.toLowerCase() === 'head'){
@@ -6717,7 +6888,7 @@ __extend__(HTMLDocument.prototype, {
                 }
             }
         }
-        //no head?  ugh bad news html.. I guess we'll force the issue?
+        // no head? ugh bad news html.. I guess we'll force the issue?
         var head = element.appendChild(this.createElement('head'));
         return head;
     },
@@ -6730,7 +6901,7 @@ __extend__(HTMLDocument.prototype, {
         head = this.head,
         length = head.childNodes.length,
         i;
-        //check for the presence of the title element in this head element
+        // check for the presence of the title element in this head element
         for(i=0;i<length;i++){
             if(head.childNodes[i].nodeType === Node.ELEMENT_NODE){
                 if(head.childNodes[i].tagName.toLowerCase() === 'title'){
@@ -6738,7 +6909,7 @@ __extend__(HTMLDocument.prototype, {
                 }
             }
         }
-        //no title?  ugh bad news html.. I guess we'll force the issue?
+        // no title? ugh bad news html.. I guess we'll force the issue?
         title = head.appendChild(this.createElement('title'));
         return title.appendChild(this.createTextNode('Untitled Document')).nodeValue;
     },
@@ -6760,7 +6931,7 @@ __extend__(HTMLDocument.prototype, {
         element = this.documentElement,
         length = element.childNodes.length,
         i;
-        //check for the presence of the head element in this html doc
+        // check for the presence of the head element in this html doc
         for(i=0;i<length;i++){
             if(element.childNodes[i].nodeType === Node.ELEMENT_NODE){
                 if(element.childNodes[i].tagName.toLowerCase() === 'body'){
@@ -6768,10 +6939,13 @@ __extend__(HTMLDocument.prototype, {
                 }
             }
         }
-        //no head?  ugh bad news html.. I guess we'll force the issue?
+        // no head? ugh bad news html.. I guess we'll force the issue?
         return element.appendChild(this.createElement('body'));
     },
-    set body(){console.log('set body');/**in firefox this is a benevolent do nothing*/},
+    set body(){console.log('set body');/**
+                                         * in firefox this is a benevolent do
+                                         * nothing
+                                         */},
     get cookie(){
         return Envjs.getCookies(this.location+'');
     },
@@ -6781,15 +6955,13 @@ __extend__(HTMLDocument.prototype, {
 
     /**
      * document.location
-     *
+     * 
      * should be identical to window.location
-     *
-     * HTML5:
-     * http://dev.w3.org/html5/spec/Overview.html#the-location-interface
-     *
-     * Mozilla MDC:
-     * https://developer.mozilla.org/en/DOM/document.location
-     *
+     * 
+     * HTML5: http://dev.w3.org/html5/spec/Overview.html#the-location-interface
+     * 
+     * Mozilla MDC: https://developer.mozilla.org/en/DOM/document.location
+     * 
      */
     get location() {
         if (this.ownerWindow) {
@@ -6807,15 +6979,13 @@ __extend__(HTMLDocument.prototype, {
 
     /**
      * document.URL (read-only)
-     *
+     * 
      * HTML DOM Level 2:
      * http://www.w3.org/TR/DOM-Level-2-HTML/html.html#ID-46183437
-     *
-     * HTML5:
-     * http://dev.w3.org/html5/spec/Overview.html#dom-document-url
-     *
-     * Mozilla MDC:
-     * https://developer.mozilla.org/en/DOM/document.URL
+     * 
+     * HTML5: http://dev.w3.org/html5/spec/Overview.html#dom-document-url
+     * 
+     * Mozilla MDC: https://developer.mozilla.org/en/DOM/document.URL
      */
     get URL() {
         return this.location;
@@ -6826,13 +6996,12 @@ __extend__(HTMLDocument.prototype, {
 
     /**
      * document.domain
-     *
+     * 
      * HTML5 Spec:
      * http://dev.w3.org/html5/spec/Overview.html#dom-document-domain
-     *
-     * Mozilla MDC:
-     * https://developer.mozilla.org/en/DOM/document.domain
-     *
+     * 
+     * Mozilla MDC: https://developer.mozilla.org/en/DOM/document.domain
+     * 
      */
     get domain(){
         var HOSTNAME = new RegExp('\/\/([^\:\/]+)'),
@@ -6867,7 +7036,7 @@ __extend__(HTMLDocument.prototype, {
         return new HTMLCollection(this.getElementsByTagName('a'));
     },
     getElementsByName : function(name){
-        //returns a real Array + the NodeList
+        // returns a real Array + the NodeList
         var retNodes = __extend__([],new NodeList(this, this.documentElement)),
         node;
         // loop through all Elements
@@ -6902,23 +7071,23 @@ Aspect.around({
 
     console.log('element appended: %s %s %s', node+'', node.nodeName, node.namespaceURI);
     if((node.nodeType !== Node.ELEMENT_NODE)){
-        //for now we are only handling element insertions.  probably
-        //we will need to handle text node changes to script tags and
-        //changes to src attributes
+        // for now we are only handling element insertions. probably
+        // we will need to handle text node changes to script tags and
+        // changes to src attributes
         return node;
     }
     console.log('appended html element %s %s %s',            node.namespaceURI, node.nodeName, node);
     switch(doc.parsing){
         case true:
-            //handled by parser if included
+            // handled by parser if included
             console.log('html document in parse mode');
             break;
         case false:
             switch(node.namespaceURI){
                 case null:
-                    //fall through
+                    // fall through
                 case "":
-                    //fall through
+                    // fall through
                 case "http://www.w3.org/1999/xhtml":
                     switch(node.tagName.toLowerCase()){
                     case 'style':
@@ -6929,7 +7098,8 @@ Aspect.around({
                             try{
                                 okay = Envjs.loadLocalScript(node, null);
                                 console.log('loaded script? %s %s', node.uuid, okay);
-                                // only fire event if we actually had something to load
+                                // only fire event if we actually had something
+                                // to load
                                 if (node.src && node.src.length > 0){
                                     event = doc.createEvent('HTMLEvents');
                                     event.initEvent( okay ? "load" : "error", false, false );
@@ -6962,8 +7132,9 @@ Aspect.around({
                                 event.initEvent("load", false, false);
                                 node.dispatchEvent( event, false );
                             }else{
-                                //I dont like this being here:
-                                //TODO: better  mix-in strategy so the try/catch isnt required
+                                // I dont like this being here:
+                                // TODO: better mix-in strategy so the try/catch
+                                // isnt required
                                 try{
                                     if(Window){
                                         Envjs.loadFrame(node);
@@ -6985,15 +7156,12 @@ Aspect.around({
                         }
                         break;
                         /*
-                          case 'img':
-                          if (node.src && node.src.length > 0){
-                          // don't actually load anything, so we're "done" immediately:
-                          event = doc.createEvent('HTMLEvents');
-                          event.initEvent("load", false, false);
-                          node.dispatchEvent( event, false );
-                          }
-                          break;
-                        */
+                         * case 'img': if (node.src && node.src.length > 0){ //
+                         * don't actually load anything, so we're "done"
+                         * immediately: event = doc.createEvent('HTMLEvents');
+                         * event.initEvent("load", false, false);
+                         * node.dispatchEvent( event, false ); } break;
+                         */
                     case 'option':
                         node._updateoptions();
                         break;
@@ -7003,14 +7171,15 @@ Aspect.around({
                             node.onload();
                         }
                         break;
-                    }//switch on name
+                    }// switch on name
                 default:
                     break;
-            }//switch on ns
+            }// switch on ns
             break;
         default:
-            // console.log('element appended: %s %s', node+'', node.namespaceURI);
-    }//switch on doc.parsing
+            // console.log('element appended: %s %s', node+'',
+            // node.namespaceURI);
+    }// switch on doc.parsing
     return node;
 
 });
@@ -7024,9 +7193,10 @@ Aspect.around({
         node = invocation.proceed(),
         doc = node.ownerDocument;
     if((node.nodeType !== Node.ELEMENT_NODE)){
-        //for now we are only handling element insertions.  probably we will need
-        //to handle text node changes to script tags and changes to src
-        //attributes
+        // for now we are only handling element insertions. probably we will
+        // need
+        // to handle text node changes to script tags and changes to src
+        // attributes
         if(node.nodeType !== Node.DOCUMENT_NODE && node.uuid){
             console.log('removing event listeners, %s', node, node.uuid);
             node.removeEventListener('*', null, null);
@@ -7037,20 +7207,20 @@ Aspect.around({
 
     switch(doc.parsing){
         case true:
-            //handled by parser if included
+            // handled by parser if included
             break;
         case false:
             switch(node.namespaceURI){
             case null:
-                //fall through
+                // fall through
             case "":
-                //fall through
+                // fall through
             case "http://www.w3.org/1999/xhtml":
-                //this is interesting dillema since our event engine is
-                //storing the registered events in an array accessed
-                //by the uuid property of the node.  unforunately this
-                //means listeners hang out way after(forever ;)) the node
-                //has been removed and gone out of scope.
+                // this is interesting dillema since our event engine is
+                // storing the registered events in an array accessed
+                // by the uuid property of the node. unforunately this
+                // means listeners hang out way after(forever ;)) the node
+                // has been removed and gone out of scope.
                 console.log('removing event listeners, %s', node, node.uuid);
                 node.removeEventListener('*', null, null);
                 switch(node.tagName.toLowerCase()){
@@ -7071,14 +7241,14 @@ Aspect.around({
                     break;
                 default:
                     break;
-                }//switch on name
+                }// switch on name
             default:
                 break;
-            }//switch on ns
+            }// switch on ns
             break;
         default:
             console.log('element appended: %s %s', node+'', node.namespaceURI);
-    }//switch on doc.parsing
+    }// switch on doc.parsing
     return node;
 
 });
@@ -7087,14 +7257,14 @@ Aspect.around({
 
 /**
  * Named Element Support
- *
- *
+ * 
+ * 
  */
 
 /*
- *
- * @returns 'name' if the node has a appropriate name
- *          null if node does not have a name
+ * 
+ * @returns 'name' if the node has a appropriate name null if node does not have
+ * a name
  */
 
 var __isNamedElement__ = function(node) {
@@ -7206,7 +7376,7 @@ HTMLEvents.prototype = {
     }
 };
 
-//HTMLDocument, HTMLFramesetElement, HTMLObjectElement
+// HTMLDocument, HTMLFramesetElement, HTMLObjectElement
 var  __load__ = function(element){
     var event = new Event('HTMLEvents');
     event.initEvent("load", false, false);
@@ -7214,7 +7384,7 @@ var  __load__ = function(element){
     return event;
 };
 
-//HTMLFramesetElement, HTMLBodyElement
+// HTMLFramesetElement, HTMLBodyElement
 var  __unload__ = function(element){
     var event = new Event('HTMLEvents');
     event.initEvent("unload", false, false);
@@ -7222,7 +7392,7 @@ var  __unload__ = function(element){
     return event;
 };
 
-//HTMLObjectElement
+// HTMLObjectElement
 var  __abort__ = function(element){
     var event = new Event('HTMLEvents');
     event.initEvent("abort", true, false);
@@ -7230,7 +7400,7 @@ var  __abort__ = function(element){
     return event;
 };
 
-//HTMLFramesetElement, HTMLObjectElement, HTMLBodyElement
+// HTMLFramesetElement, HTMLObjectElement, HTMLBodyElement
 var  __error__ = function(element){
     var event = new Event('HTMLEvents');
     event.initEvent("error", true, false);
@@ -7238,7 +7408,7 @@ var  __error__ = function(element){
     return event;
 };
 
-//HTMLInputElement, HTMLTextAreaElement
+// HTMLInputElement, HTMLTextAreaElement
 var  __select__ = function(element){
     var event = new Event('HTMLEvents');
     event.initEvent("select", true, false);
@@ -7246,7 +7416,7 @@ var  __select__ = function(element){
     return event;
 };
 
-//HTMLInputElement, HTMLSelectElement, HTMLTextAreaElement
+// HTMLInputElement, HTMLSelectElement, HTMLTextAreaElement
 var  __change__ = function(element){
     var event = new Event('HTMLEvents');
     event.initEvent("change", true, false);
@@ -7254,7 +7424,7 @@ var  __change__ = function(element){
     return event;
 };
 
-//HtmlFormElement
+// HtmlFormElement
 var __submit__ = function(element){
     var event = new Event('HTMLEvents');
     event.initEvent("submit", true, true);
@@ -7262,7 +7432,7 @@ var __submit__ = function(element){
     return event;
 };
 
-//HtmlFormElement
+// HtmlFormElement
 var  __reset__ = function(element){
     var event = new Event('HTMLEvents');
     event.initEvent("reset", false, false);
@@ -7270,7 +7440,7 @@ var  __reset__ = function(element){
     return event;
 };
 
-//LABEL, INPUT, SELECT, TEXTAREA, and BUTTON
+// LABEL, INPUT, SELECT, TEXTAREA, and BUTTON
 var __focus__ = function(element){
     var event = new Event('HTMLEvents');
     event.initEvent("focus", false, false);
@@ -7278,7 +7448,7 @@ var __focus__ = function(element){
     return event;
 };
 
-//LABEL, INPUT, SELECT, TEXTAREA, and BUTTON
+// LABEL, INPUT, SELECT, TEXTAREA, and BUTTON
 var __blur__ = function(element){
     var event = new Event('HTMLEvents');
     event.initEvent("blur", false, false);
@@ -7286,7 +7456,7 @@ var __blur__ = function(element){
     return event;
 };
 
-//Window
+// Window
 var __resize__ = function(element){
     var event = new Event('HTMLEvents');
     event.initEvent("resize", true, false);
@@ -7294,7 +7464,7 @@ var __resize__ = function(element){
     return event;
 };
 
-//Window
+// Window
 var __scroll__ = function(element){
     var event = new Event('HTMLEvents');
     event.initEvent("scroll", true, false);
@@ -7304,7 +7474,7 @@ var __scroll__ = function(element){
 
 /**
  * @name KeyboardEvents
- * @w3c:domlevel 2 
+ * @w3c:domlevel 2
  * @uri http://www.w3.org/TR/2000/REC-DOM-Level-2-Events-20001113/events.html
  */
 var KeyboardEvents= function(){};
@@ -7334,21 +7504,21 @@ var __registerKeyboardEventAttrs__ = function(elm){
     return elm;
 };
 
-//HTMLInputElement, HTMLSelectElement, HTMLTextAreaElement
+// HTMLInputElement, HTMLSelectElement, HTMLTextAreaElement
 var  __keydown__ = function(element){
     var event = new Event('KeyboardEvents');
     event.initEvent("keydown", false, false);
     element.dispatchEvent(event);
 };
 
-//HTMLInputElement, HTMLSelectElement, HTMLTextAreaElement
+// HTMLInputElement, HTMLSelectElement, HTMLTextAreaElement
 var  __keypress__ = function(element){
     var event = new Event('KeyboardEvents');
     event.initEvent("keypress", false, false);
     element.dispatchEvent(event);
 };
 
-//HTMLInputElement, HTMLSelectElement, HTMLTextAreaElement
+// HTMLInputElement, HTMLSelectElement, HTMLTextAreaElement
 var  __keyup__ = function(element){
     var event = new Event('KeyboardEvents');
     event.initEvent("keyup", false, false);
@@ -7357,7 +7527,7 @@ var  __keyup__ = function(element){
 
 /**
  * @name MaouseEvents
- * @w3c:domlevel 2 
+ * @w3c:domlevel 2
  * @uri http://www.w3.org/TR/2000/REC-DOM-Level-2-Events-20001113/events.html
  */
 var MouseEvents= function(){};
@@ -7459,34 +7629,30 @@ var  __mouseout__ = function(element){
  */
 
 
-/* Hack for http://www.prototypejs.org/
- *
- * Prototype 1.6 (the library) creates a new global Element, which causes
- * envjs to use the wrong Element.
- *
+/*
+ * Hack for http://www.prototypejs.org/
+ * 
+ * Prototype 1.6 (the library) creates a new global Element, which causes envjs
+ * to use the wrong Element.
+ * 
  * http://envjs.lighthouseapp.com/projects/21590/tickets/108-prototypejs-wont-load-due-it-clobbering-element
- *
- * Options:
- *  (1) Rename the dom/element to something else
- *       rejected: been done before. people want Element.
- *  (2) merge dom+html and not export Element to global namespace
- *      (meaning we would use a local var Element in a closure, so prototype
- *      can do what ever it wants)
- *       rejected: want dom and html separate
- *  (3) use global namespace (put everything under Envjs = {})
- *       rejected: massive change
- *  (4) use commonjs modules (similar to (3) in spirit)
- *       rejected: massive change
- *
- *  or
- *
- *  (5) take a reference to Element during initial loading ("compile
- *      time"), and use the reference instead of "Element".  That's
- *      what the next line does.  We use __DOMElement__ if we need to
- *      reference the parent class.  Only this file explcity uses
- *      Element so this should work, and is the most minimal change I
- *      could think of with no external API changes.
- *
+ * 
+ * Options: (1) Rename the dom/element to something else rejected: been done
+ * before. people want Element. (2) merge dom+html and not export Element to
+ * global namespace (meaning we would use a local var Element in a closure, so
+ * prototype can do what ever it wants) rejected: want dom and html separate (3)
+ * use global namespace (put everything under Envjs = {}) rejected: massive
+ * change (4) use commonjs modules (similar to (3) in spirit) rejected: massive
+ * change
+ * 
+ * or
+ * 
+ * (5) take a reference to Element during initial loading ("compile time"), and
+ * use the reference instead of "Element". That's what the next line does. We
+ * use __DOMElement__ if we need to reference the parent class. Only this file
+ * explcity uses Element so this should work, and is the most minimal change I
+ * could think of with no external API changes.
+ * 
  */
 var  __DOMElement__ = Element;
 
@@ -7527,7 +7693,7 @@ __extend__(HTMLElement.prototype, {
                     ret += this.childNodes[i].xhtml;
                 } else if (this.childNodes[i].nodeType === Node.TEXT_NODE && i>0 &&
                            this.childNodes[i-1].nodeType === Node.TEXT_NODE){
-                    //add a single space between adjacent text nodes
+                    // add a single space between adjacent text nodes
                     ret += " "+this.childNodes[i].xml;
                 }else{
                     ret += this.childNodes[i].xml;
@@ -7586,11 +7752,11 @@ __extend__(HTMLElement.prototype, {
         this.setAttribute('tabindex',Number(value));
     },
     get outerHTML(){
-        //Not in the specs but I'll leave it here for now.
+        // Not in the specs but I'll leave it here for now.
         return this.xhtml;
     },
     scrollIntoView: function(){
-        /*TODO*/
+        /* TODO */
         return;
     },
     toString: function(){
@@ -7599,7 +7765,7 @@ __extend__(HTMLElement.prototype, {
     get xhtml() {
         // HTMLDocument.xhtml is non-standard
         // This is exactly like Document.xml except the tagName has to be
-        // lower cased.  I dont like to duplicate this but its really not
+        // lower cased. I dont like to duplicate this but its really not
         // a simple work around between xml and html serialization via
         // XMLSerializer (which uppercases html tags) and innerHTML (which
         // lowercases tags)
@@ -7651,10 +7817,10 @@ __extend__(HTMLElement.prototype, {
     },
 
     /**
-     * setAttribute use a dispatch table that other tags can set to
-     *  "listen" to various values being set.  The dispatch table
-     * and registration functions are at the end of the file.
-     *
+     * setAttribute use a dispatch table that other tags can set to "listen" to
+     * various values being set. The dispatch table and registration functions
+     * are at the end of the file.
+     * 
      */
 
     setAttribute: function(name, value) {
@@ -7739,14 +7905,14 @@ HTMLElement.registerRemoveAttribute = function(tag, attrib, callbackfn) {
 
 /**
  * This is really only useful internally
- *
+ * 
  */
 HTMLElement.getAttributeCallback = function(type, tag, attrib) {
     return HTMLElement.attributeCallbacks[tag + ':' + type + ':' + attrib] || null;
 };
 /*
  * HTMLCollection
- *
+ * 
  * HTML5 -- 2.7.2.1 HTMLCollection
  * http://dev.w3.org/html5/spec/Overview.html#htmlcollection
  * http://dev.w3.org/html5/spec/Overview.html#collections
@@ -7785,136 +7951,66 @@ HTMLCollection.prototype = {
     }
 };
 /*
- *  a set of convenience classes to centralize implementation of
- * properties and methods across multiple in-form elements
- *
- *  the hierarchy of related HTML elements and their members is as follows:
- *
+ * a set of convenience classes to centralize implementation of properties and
+ * methods across multiple in-form elements
+ * 
+ * the hierarchy of related HTML elements and their members is as follows:
+ * 
  * Condensed Version
- *
- *  HTMLInputCommon
- *     * legent (no value attr)
- *     * fieldset (no value attr)
- *     * label (no value attr)
- *     * option (custom value)
- *  HTMLTypeValueInputs (extends InputCommon)
- *     * select  (custom value)
- *     * button (just sets value)
- *  HTMLInputAreaCommon (extends TypeValueIput)
- *     * input  (custom)
- *     * textarea (just sets value)
- *
- * -----------------------
- *    HTMLInputCommon:  common to all elements
- *       .form
- *
- *    <legend>
- *          [common plus:]
- *       .align
- *
- *    <fieldset>
- *          [identical to "legend" plus:]
- *       .margin
- *
- *
- *  ****
- *
- *    <label>
- *          [common plus:]
- *       .dataFormatAs
- *       .htmlFor
- *       [plus data properties]
- *
- *    <option>
- *          [common plus:]
- *       .defaultSelected
- *       .index
- *       .label
- *       .selected
- *       .text
- *       .value   // unique implementation, not duplicated
- *       .form    // unique implementation, not duplicated
- *  ****
- *
- *    HTMLTypeValueInputs:  common to remaining elements
- *          [common plus:]
- *       .name
- *       .type
- *       .value
- *       [plus data properties]
- *
- *
- *    <select>
- *       .length
- *       .multiple
- *       .options[]
- *       .selectedIndex
- *       .add()
- *       .remove()
- *       .item()                                       // unimplemented
- *       .namedItem()                                  // unimplemented
- *       [plus ".onchange"]
- *       [plus focus events]
- *       [plus data properties]
- *       [plus ".size"]
- *
- *    <button>
- *       .dataFormatAs   // duplicated from above, oh well....
- *       [plus ".status", ".createTextRange()"]
- *
- *  ****
- *
- *    HTMLInputAreaCommon:  common to remaining elements
- *       .defaultValue
- *       .readOnly
- *       .handleEvent()                                // unimplemented
- *       .select()
- *       .onselect
- *       [plus ".size"]
- *       [plus ".status", ".createTextRange()"]
- *       [plus focus events]
- *       [plus ".onchange"]
- *
- *    <textarea>
- *       .cols
- *       .rows
- *       .wrap                                         // unimplemented
- *       .onscroll                                     // unimplemented
- *
- *    <input>
- *       .alt
- *       .accept                                       // unimplemented
- *       .checked
- *       .complete                                     // unimplemented
- *       .defaultChecked
- *       .dynsrc                                       // unimplemented
- *       .height
- *       .hspace                                       // unimplemented
- *       .indeterminate                                // unimplemented
- *       .loop                                         // unimplemented
- *       .lowsrc                                       // unimplemented
- *       .maxLength
- *       .src
- *       .start                                        // unimplemented
- *       .useMap
- *       .vspace                                       // unimplemented
- *       .width
- *       .onclick
- *       [plus ".size"]
- *       [plus ".status", ".createTextRange()"]
-
- *    [data properties]                                // unimplemented
- *       .dataFld
- *       .dataSrc
-
- *    [status stuff]                                   // unimplemented
- *       .status
- *       .createTextRange()
-
- *    [focus events]
- *       .onblur
- *       .onfocus
-
+ * 
+ * HTMLInputCommon * legent (no value attr) * fieldset (no value attr) * label
+ * (no value attr) * option (custom value) HTMLTypeValueInputs (extends
+ * InputCommon) * select (custom value) * button (just sets value)
+ * HTMLInputAreaCommon (extends TypeValueIput) * input (custom) * textarea (just
+ * sets value)
+ * 
+ * ----------------------- HTMLInputCommon: common to all elements .form
+ * 
+ * <legend> [common plus:] .align
+ * 
+ * <fieldset> [identical to "legend" plus:] .margin
+ * 
+ * 
+ * ****
+ * 
+ * <label> [common plus:] .dataFormatAs .htmlFor [plus data properties]
+ * 
+ * <option> [common plus:] .defaultSelected .index .label .selected .text .value //
+ * unique implementation, not duplicated .form // unique implementation, not
+ * duplicated ****
+ * 
+ * HTMLTypeValueInputs: common to remaining elements [common plus:] .name .type
+ * .value [plus data properties]
+ * 
+ * 
+ * <select> .length .multiple .options[] .selectedIndex .add() .remove() .item() //
+ * unimplemented .namedItem() // unimplemented [plus ".onchange"] [plus focus
+ * events] [plus data properties] [plus ".size"]
+ * 
+ * <button> .dataFormatAs // duplicated from above, oh well.... [plus ".status",
+ * ".createTextRange()"]
+ * 
+ * ****
+ * 
+ * HTMLInputAreaCommon: common to remaining elements .defaultValue .readOnly
+ * .handleEvent() // unimplemented .select() .onselect [plus ".size"] [plus
+ * ".status", ".createTextRange()"] [plus focus events] [plus ".onchange"]
+ * 
+ * <textarea> .cols .rows .wrap // unimplemented .onscroll // unimplemented
+ * 
+ * <input> .alt .accept // unimplemented .checked .complete // unimplemented
+ * .defaultChecked .dynsrc // unimplemented .height .hspace // unimplemented
+ * .indeterminate // unimplemented .loop // unimplemented .lowsrc //
+ * unimplemented .maxLength .src .start // unimplemented .useMap .vspace //
+ * unimplemented .width .onclick [plus ".size"] [plus ".status",
+ * ".createTextRange()"]
+ * 
+ * [data properties] // unimplemented .dataFld .dataSrc
+ * 
+ * [status stuff] // unimplemented .status .createTextRange()
+ * 
+ * [focus events] .onblur .onfocus
+ * 
  */
 
 
@@ -7955,8 +8051,8 @@ var inputElements_focusEvents = {
 
 
 /*
-* HTMLInputCommon - convenience class, not DOM
-*/
+ * HTMLInputCommon - convenience class, not DOM
+ */
 var HTMLInputCommon = function(ownerDocument) {
     HTMLElement.apply(this, arguments);
 };
@@ -7995,8 +8091,8 @@ __extend__(HTMLInputCommon.prototype, {
 
 
 /*
-* HTMLTypeValueInputs - convenience class, not DOM
-*/
+ * HTMLTypeValueInputs - convenience class, not DOM
+ */
 var HTMLTypeValueInputs = function(ownerDocument) {
 
     HTMLInputCommon.apply(this, arguments);
@@ -8018,8 +8114,8 @@ __extend__(HTMLTypeValueInputs.prototype, {
 
 
 /*
-* HTMLInputAreaCommon - convenience class, not DOM
-*/
+ * HTMLInputAreaCommon - convenience class, not DOM
+ */
 var HTMLInputAreaCommon = function(ownerDocument) {
     HTMLTypeValueInputs.apply(this, arguments);
 };
@@ -8050,7 +8146,7 @@ var __updateFormForNamedElement__ = function(node, value) {
 
 /**
  * HTMLAnchorElement - DOM Level 2
- *
+ * 
  * HTML5: 4.6.1 The a element
  * http://dev.w3.org/html5/spec/Overview.html#the-a-element
  */
@@ -8147,7 +8243,7 @@ __extend__(HTMLAnchorElement.prototype, {
 
 /*
  * HTMLAreaElement - DOM Level 2
- *
+ * 
  * HTML5: 4.8.13 The area element
  * http://dev.w3.org/html5/spec/Overview.html#the-area-element
  */
@@ -8184,15 +8280,13 @@ __extend__(HTMLAreaElement.prototype, {
         return this.hasAttribute('href');
     },
     get shape(){
-        //TODO
+        // TODO
         return 0;
     },
-    /*get tabIndex(){
-      return this.getAttribute('tabindex');
-      },
-      set tabIndex(value){
-      this.setAttribute('tabindex',value);
-      },*/
+    /*
+     * get tabIndex(){ return this.getAttribute('tabindex'); }, set
+     * tabIndex(value){ this.setAttribute('tabindex',value); },
+     */
     get target(){
         return this.getAttribute('target');
     },
@@ -8211,7 +8305,7 @@ __extend__(HTMLAreaElement.prototype, {
 
 /*
  * HTMLBaseElement - DOM Level 2
- *
+ * 
  * HTML5: 4.2.3 The base element
  * http://dev.w3.org/html5/spec/Overview.html#the-base-element
  */
@@ -8239,8 +8333,7 @@ __extend__(HTMLBaseElement.prototype, {
 
 
 /*
- * HTMLQuoteElement - DOM Level 2
- * HTML5: 4.5.5 The blockquote element
+ * HTMLQuoteElement - DOM Level 2 HTML5: 4.5.5 The blockquote element
  * http://dev.w3.org/html5/spec/Overview.html#htmlquoteelement
  */
 HTMLQuoteElement = function(ownerDocument) {
@@ -8249,16 +8342,13 @@ HTMLQuoteElement = function(ownerDocument) {
 __extend__(HTMLQuoteElement.prototype, HTMLElement.prototype);
 __extend__(HTMLQuoteElement.prototype, {
     /**
-     * Quoth the spec:
-     * """
-     * If the cite attribute is present, it must be a valid URL. To
-     * obtain the corresponding citation link, the value of the
-     * attribute must be resolved relative to the element. User agents
-     * should allow users to follow such citation links.
-     * """
-     *
+     * Quoth the spec: """ If the cite attribute is present, it must be a valid
+     * URL. To obtain the corresponding citation link, the value of the
+     * attribute must be resolved relative to the element. User agents should
+     * allow users to follow such citation links. """
+     * 
      * TODO: normalize
-     *
+     * 
      */
     get cite() {
         return this.getAttribute('cite') || '';
@@ -8273,8 +8363,8 @@ __extend__(HTMLQuoteElement.prototype, {
 });
 
 /*
- * HTMLBodyElement - DOM Level 2
- * HTML5: http://dev.w3.org/html5/spec/Overview.html#the-body-element-0
+ * HTMLBodyElement - DOM Level 2 HTML5:
+ * http://dev.w3.org/html5/spec/Overview.html#the-body-element-0
  */
 HTMLBodyElement = function(ownerDocument) {
     HTMLElement.apply(this, arguments);
@@ -8293,8 +8383,7 @@ __extend__(HTMLBodyElement.prototype, {
 });
 
 /*
- * HTMLBRElement
- * HTML5: 4.5.3 The hr Element
+ * HTMLBRElement HTML5: 4.5.3 The hr Element
  * http://dev.w3.org/html5/spec/Overview.html#the-br-element
  */
 HTMLBRElement = function(ownerDocument) {
@@ -8314,7 +8403,7 @@ __extend__(HTMLBRElement.prototype, {
 
 /*
  * HTMLButtonElement - DOM Level 2
- *
+ * 
  * HTML5: 4.10.6 The button element
  * http://dev.w3.org/html5/spec/Overview.html#the-button-element
  */
@@ -8352,15 +8441,14 @@ HTMLElement.registerSetAttribute('BUTTON', 'name',
                                  __updateFormForNamedElement__);
 
 /*
- * HTMLCanvasElement - DOM Level 2
- * HTML5: 4.8.11 The canvas element
+ * HTMLCanvasElement - DOM Level 2 HTML5: 4.8.11 The canvas element
  * http://dev.w3.org/html5/spec/Overview.html#the-canvas-element
  */
 
 
 /*
- * This is a "non-Abstract Base Class". For an implmentation that actually
- * did something, all these methods would need to over-written
+ * This is a "non-Abstract Base Class". For an implmentation that actually did
+ * something, all these methods would need to over-written
  */
 CanvasRenderingContext2D = function() {
     // NOP
@@ -8436,11 +8524,11 @@ __extend__(HTMLCanvasElement.prototype, {
 
 
 /*
-* HTMLTableColElement - DOM Level 2
-*
-* HTML5: 4.9.3 The colgroup element
-* http://dev.w3.org/html5/spec/Overview.html#the-colgroup-element
-*/
+ * HTMLTableColElement - DOM Level 2
+ * 
+ * HTML5: 4.9.3 The colgroup element
+ * http://dev.w3.org/html5/spec/Overview.html#the-colgroup-element
+ */
 HTMLTableColElement = function(ownerDocument) {
     HTMLElement.apply(this, arguments);
 };
@@ -8515,8 +8603,7 @@ __extend__(HTMLModElement.prototype, {
 });
 
 /*
- * HTMLDivElement - DOM Level 2
- * HTML5: 4.5.12 The Div Element
+ * HTMLDivElement - DOM Level 2 HTML5: 4.5.12 The Div Element
  * http://dev.w3.org/html5/spec/Overview.html#the-div-element
  */
 HTMLDivElement = function(ownerDocument) {
@@ -8538,8 +8625,7 @@ __extend__(HTMLDivElement.prototype, {
 
 
 /*
- * HTMLDListElement
- * HTML5: 4.5.7 The dl Element
+ * HTMLDListElement HTML5: 4.5.7 The dl Element
  * http://dev.w3.org/html5/spec/Overview.html#the-dl-element
  */
 HTMLDListElement = function(ownerDocument) {
@@ -8559,7 +8645,7 @@ __extend__(HTMLDListElement.prototype, {
 
 /**
  * HTMLLegendElement - DOM Level 2
- *
+ * 
  * HTML5: 4.10.3 The legend element
  * http://dev.w3.org/html5/spec/Overview.html#the-legend-element
  */
@@ -8579,7 +8665,7 @@ __extend__(HTMLLegendElement.prototype, {
 
 /*
  * HTMLFieldSetElement - DOM Level 2
- *
+ * 
  * HTML5: 4.10.2 The fieldset element
  * http://dev.w3.org/html5/spec/Overview.html#the-fieldset-element
  */
@@ -8604,15 +8690,15 @@ HTMLElement.registerSetAttribute('FIELDSET', 'name',
                                  __updateFormForNamedElement__);
 /*
  * HTMLFormElement - DOM Level 2
- *
+ * 
  * HTML5: http://dev.w3.org/html5/spec/Overview.html#the-form-element
  */
 HTMLFormElement = function(ownerDocument){
     HTMLElement.apply(this, arguments);
 
-    //TODO: on __elementPopped__ from the parser
-    //      we need to determine all the forms default
-    //      values
+    // TODO: on __elementPopped__ from the parser
+    // we need to determine all the forms default
+    // values
 };
 HTMLFormElement.prototype = new HTMLElement();
 __extend__(HTMLFormElement.prototype,{
@@ -8656,12 +8742,12 @@ __extend__(HTMLFormElement.prototype,{
 
     /**
      * "Named Elements"
-     *
+     * 
      */
     /**
      * returns HTMLFormControlsCollection
      * http://dev.w3.org/html5/spec/Overview.html#dom-form-elements
-     *
+     * 
      * button fieldset input keygen object output select textarea
      */
     get elements() {
@@ -8671,7 +8757,7 @@ __extend__(HTMLFormElement.prototype,{
         for (i = 0; i < nodes.length; ++i) {
             nodename = nodes[i].nodeName;
             // would like to replace switch with something else
-            //  since it's redundant with the SetAttribute callbacks
+            // since it's redundant with the SetAttribute callbacks
             switch (nodes[i].nodeName) {
             case 'BUTTON':
             case 'FIELDSET':
@@ -8711,15 +8797,15 @@ __extend__(HTMLFormElement.prototype,{
         return '[object HTMLFormElement]';
     },
     submit: function() {
-        //TODO: this needs to perform the form inputs serialization
-        //      and submission
-        //  DONE: see xhr/form.js
+        // TODO: this needs to perform the form inputs serialization
+        // and submission
+        // DONE: see xhr/form.js
         var event = __submit__(this);
 
     },
     reset: function() {
-        //TODO: this needs to reset all values specified in the form
-        //      to those which where set as defaults
+        // TODO: this needs to reset all values specified in the form
+        // to those which where set as defaults
         __reset__(this);
 
     },
@@ -8796,9 +8882,8 @@ __extend__(HTMLFrameElement.prototype, {
 
 /**
  * HTMLFrameSetElement - DOM Level 2
- *
- * HTML5: 12.3.3 Frames
- * http://dev.w3.org/html5/spec/Overview.html#frameset
+ * 
+ * HTML5: 12.3.3 Frames http://dev.w3.org/html5/spec/Overview.html#frameset
  */
 HTMLFrameSetElement = function(ownerDocument) {
     HTMLElement.apply(this, arguments);
@@ -8823,8 +8908,7 @@ __extend__(HTMLFrameSetElement.prototype, {
 });
 
 /*
- * HTMLHeadingElement
- * HTML5: 4.4.6 The h1, h2, h3, h4, h5, and h6 elements
+ * HTMLHeadingElement HTML5: 4.4.6 The h1, h2, h3, h4, h5, and h6 elements
  * http://dev.w3.org/html5/spec/Overview.html#the-h1-h2-h3-h4-h5-and-h6-elements
  */
 HTMLHeadingElement = function(ownerDocument) {
@@ -8840,7 +8924,7 @@ __extend__(HTMLHeadingElement.prototype, {
 
 /**
  * HTMLHeadElement - DOM Level 2
- *
+ * 
  * HTML5: 4.2.1 The head element
  * http://dev.w3.org/html5/spec/Overview.html#the-head-element-0
  */
@@ -8855,18 +8939,19 @@ __extend__(HTMLHeadElement.prototype, {
     set profile(value){
         this.setAttribute('profile', value);
     },
-    //we override this so we can apply browser behavior specific to head children
-    //like loading scripts
+    // we override this so we can apply browser behavior specific to head
+    // children
+    // like loading scripts
     appendChild : function(newChild) {
         newChild = HTMLElement.prototype.appendChild.apply(this,[newChild]);
-        //TODO: evaluate scripts which are appended to the head
-        //__evalScript__(newChild);
+        // TODO: evaluate scripts which are appended to the head
+        // __evalScript__(newChild);
         return newChild;
     },
     insertBefore : function(newChild, refChild) {
         newChild = HTMLElement.prototype.insertBefore.apply(this,[newChild]);
-        //TODO: evaluate scripts which are appended to the head
-        //__evalScript__(newChild);
+        // TODO: evaluate scripts which are appended to the head
+        // __evalScript__(newChild);
         return newChild;
     },
     toString: function(){
@@ -8876,8 +8961,7 @@ __extend__(HTMLHeadElement.prototype, {
 
 
 /*
- * HTMLHRElement
- * HTML5: 4.5.2 The hr Element
+ * HTMLHRElement HTML5: 4.5.2 The hr Element
  * http://dev.w3.org/html5/spec/Overview.html#the-hr-element
  */
 HTMLHRElement = function(ownerDocument) {
@@ -8896,8 +8980,7 @@ __extend__(HTMLHRElement.prototype, {
 
 
 /*
- * HTMLHtmlElement
- * HTML5: 4.1.1 The Html Element
+ * HTMLHtmlElement HTML5: 4.1.1 The Html Element
  * http://dev.w3.org/html5/spec/Overview.html#htmlhtmlelement
  */
 HTMLHtmlElement = function(ownerDocument) {
@@ -8917,7 +9000,7 @@ __extend__(HTMLHtmlElement.prototype, {
 
 /*
  * HTMLIFrameElement - DOM Level 2
- *
+ * 
  * HTML5: 4.8.3 The iframe element
  * http://dev.w3.org/html5/spec/Overview.html#the-iframe-element
  */
@@ -9001,8 +9084,7 @@ __extend__(HTMLImageElement.prototype, {
 });
 
 /*
- * html5 4.8.1
- * http://dev.w3.org/html5/spec/Overview.html#the-img-element
+ * html5 4.8.1 http://dev.w3.org/html5/spec/Overview.html#the-img-element
  */
 Image = function(width, height) {
     // Not sure if "[global].document" satifies this requirement:
@@ -9012,7 +9094,7 @@ Image = function(width, height) {
 
     HTMLElement.apply(this, [document]);
     // Note: firefox will throw an error if the width/height
-    //   is not an integer.  Safari just converts to 0 on error.
+    // is not an integer. Safari just converts to 0 on error.
     this.width = parseInt(width, 10) || 0;
     this.height = parseInt(height, 10) || 0;
     this.nodeName = 'IMG';
@@ -9022,25 +9104,22 @@ Image.prototype = new HTMLImageElement();
 
 /*
  * Image.src attribute events.
- *
- * Not sure where this should live... in events/img.js? in parser/img.js?
- * Split out to make it easy to move.
+ * 
+ * Not sure where this should live... in events/img.js? in parser/img.js? Split
+ * out to make it easy to move.
  */
 
 /**
- * HTMLImageElement && Image are a bit odd in that the 'src' attribute
- * is 'active' -- changing it triggers loading of the image from the
- * network.
- *
- * This can occur by
- *   - Directly setting the Image.src =
- *   - Using one of the Element.setAttributeXXX methods
- *   - Node.importNode an image
- *   - The initial creation and parsing of an <img> tag
- *
- * __onImageRequest__ is a function that handles eventing
- *  and dispatches to a user-callback.
- *
+ * HTMLImageElement && Image are a bit odd in that the 'src' attribute is
+ * 'active' -- changing it triggers loading of the image from the network.
+ * 
+ * This can occur by - Directly setting the Image.src = - Using one of the
+ * Element.setAttributeXXX methods - Node.importNode an image - The initial
+ * creation and parsing of an <img> tag
+ * 
+ * __onImageRequest__ is a function that handles eventing and dispatches to a
+ * user-callback.
+ * 
  */
 __loadImage__ = function(node, value) {
     var event;
@@ -9069,35 +9148,31 @@ __extend__(HTMLImageElement.prototype, {
 
 /*
  * Image Loading
- *
+ * 
  * The difference between "owner.parsing" and "owner.fragment"
- *
+ * 
  * If owner.parsing === true, then during the html5 parsing then,
- *  __elementPopped__ is called when a compete tag (with attrs and
- *  children) is full parsed and added the DOM.
- *
- *   For images, __elementPopped__ is called with everything the
- *    tag has.  which in turn looks for a "src" attr and calls
- *    __loadImage__
- *
- * If owner.parser === false (or non-existant), then we are not in
- * a parsing step.  For images, perhaps someone directly modified
- * a 'src' attribute of an existing image.
- *
- * 'innerHTML' is tricky since we first create a "fake document",
- *  parse it, then import the right parts.  This may call
- *  img.setAttributeNS twice.  once during the parse and once
- *  during the clone of the node.  We want event to trigger on the
- *  later and not during th fake doco.  "owner.fragment" is set by
- *  the fake doco parser to indicate that events should not be
- *  triggered on this.
- *
- * We coud make 'owner.parser' == [ 'none', 'full', 'fragment']
- * and just use one variable That was not done since the patch is
- * quite large as is.
- *
- * This same problem occurs with scripts.  innerHTML oddly does
- * not eval any <script> tags inside.
+ * __elementPopped__ is called when a compete tag (with attrs and children) is
+ * full parsed and added the DOM.
+ * 
+ * For images, __elementPopped__ is called with everything the tag has. which in
+ * turn looks for a "src" attr and calls __loadImage__
+ * 
+ * If owner.parser === false (or non-existant), then we are not in a parsing
+ * step. For images, perhaps someone directly modified a 'src' attribute of an
+ * existing image.
+ * 
+ * 'innerHTML' is tricky since we first create a "fake document", parse it, then
+ * import the right parts. This may call img.setAttributeNS twice. once during
+ * the parse and once during the clone of the node. We want event to trigger on
+ * the later and not during th fake doco. "owner.fragment" is set by the fake
+ * doco parser to indicate that events should not be triggered on this.
+ * 
+ * We coud make 'owner.parser' == [ 'none', 'full', 'fragment'] and just use one
+ * variable That was not done since the patch is quite large as is.
+ * 
+ * This same problem occurs with scripts. innerHTML oddly does not eval any
+ * <script> tags inside.
  */
 HTMLElement.registerSetAttribute('IMG', 'src', function(node, value) {
     var owner = node.ownerDocument;
@@ -9107,7 +9182,7 @@ HTMLElement.registerSetAttribute('IMG', 'src', function(node, value) {
 });
 /**
  * HTMLInputElement
- *
+ * 
  * HTML5: 4.10.5 The input element
  * http://dev.w3.org/html5/spec/Overview.html#the-input-element
  */
@@ -9141,8 +9216,8 @@ __extend__(HTMLInputElement.prototype, {
     },
 
     /**
-     * 'defaultChecked' actually reflects if the 'checked' attribute
-     * is present or not
+     * 'defaultChecked' actually reflects if the 'checked' attribute is present
+     * or not
      */
     get defaultChecked(){
         return this.hasAttribute('checked');
@@ -9229,7 +9304,7 @@ __extend__(HTMLInputElement.prototype, {
     }
 });
 
-//http://dev.w3.org/html5/spec/Overview.html#dom-input-value
+// http://dev.w3.org/html5/spec/Overview.html#dom-input-value
 // if someone directly modifies the value attribute, then the input's value
 // also directly changes.
 HTMLElement.registerSetAttribute('INPUT', 'value', function(node, value) {
@@ -9240,21 +9315,19 @@ HTMLElement.registerSetAttribute('INPUT', 'value', function(node, value) {
 });
 
 /*
- *The checked content attribute is a boolean attribute that gives the
- *default checkedness of the input element. When the checked content
- *attribute is added, if the control does not have dirty checkedness,
- *the user agent must set the checkedness of the element to true; when
- *the checked content attribute is removed, if the control does not
- *have dirty checkedness, the user agent must set the checkedness of
- *the element to false.
+ * The checked content attribute is a boolean attribute that gives the default
+ * checkedness of the input element. When the checked content attribute is
+ * added, if the control does not have dirty checkedness, the user agent must
+ * set the checkedness of the element to true; when the checked content
+ * attribute is removed, if the control does not have dirty checkedness, the
+ * user agent must set the checkedness of the element to false.
  */
 // Named Element Support
 HTMLElement.registerSetAttribute('INPUT', 'name',
                                  __updateFormForNamedElement__);
 
 /**
- * HTMLLabelElement - DOM Level 2
- * HTML5 4.10.4 The label element
+ * HTMLLabelElement - DOM Level 2 HTML5 4.10.4 The label element
  * http://dev.w3.org/html5/spec/Overview.html#the-label-element
  */
 HTMLLabelElement = function(ownerDocument) {
@@ -9281,8 +9354,7 @@ __extend__(HTMLLabelElement.prototype, {
 });
 
 /*
- * HTMLLIElement
- * HTML5: 4.5.8 The li Element
+ * HTMLLIElement HTML5: 4.5.8 The li Element
  * http://dev.w3.org/html5/spec/Overview.html#the-li-element
  */
 HTMLLIElement = function(ownerDocument) {
@@ -9302,7 +9374,7 @@ __extend__(HTMLLIElement.prototype, {
 
 /*
  * HTMLLinkElement - DOM Level 2
- *
+ * 
  * HTML5: 4.8.12 The map element
  * http://dev.w3.org/html5/spec/Overview.html#the-map-element
  */
@@ -9376,18 +9448,17 @@ __loadLink__ = function(node, value) {
 
     if (owner.fragment) {
         /**
-         * if we are in an innerHTML fragment parsing step
-         * then ignore.  It will be handled once the fragment is
-         * added to the real doco
+         * if we are in an innerHTML fragment parsing step then ignore. It will
+         * be handled once the fragment is added to the real doco
          */
         return;
     }
 
     if (node.parentNode === null) {
         /*
-         * if a <link> is parentless (normally by create a new link
-         * via document.createElement('link'), then do *not* fire an
-         * event, even if it has a valid 'href' attribute.
+         * if a <link> is parentless (normally by create a new link via
+         * document.createElement('link'), then do *not* fire an event, even if
+         * it has a valid 'href' attribute.
          */
         return;
     }
@@ -9423,7 +9494,7 @@ __extend__(HTMLLinkElement.prototype, {
 
 /**
  * HTMLMapElement
- *
+ * 
  * 4.8.12 The map element
  * http://dev.w3.org/html5/spec/Overview.html#the-map-element
  */
@@ -9447,8 +9518,7 @@ __extend__(HTMLMapElement.prototype, {
 });
 
 /**
- * HTMLMetaElement - DOM Level 2
- * HTML5: 4.2.5 The meta element
+ * HTMLMetaElement - DOM Level 2 HTML5: 4.2.5 The meta element
  * http://dev.w3.org/html5/spec/Overview.html#meta
  */
 HTMLMetaElement = function(ownerDocument) {
@@ -9487,8 +9557,7 @@ __extend__(HTMLMetaElement.prototype, {
 
 
 /**
- * HTMLObjectElement - DOM Level 2
- * HTML5: 4.8.5 The object element
+ * HTMLObjectElement - DOM Level 2 HTML5: 4.8.5 The object element
  * http://dev.w3.org/html5/spec/Overview.html#the-object-element
  */
 HTMLObjectElement = function(ownerDocument) {
@@ -9544,12 +9613,10 @@ __extend__(HTMLObjectElement.prototype, {
     set standby(value){
         this.setAttribute('standby',value);
     },
-    /*get tabIndex(){
-      return this.getAttribute('tabindex');
-      },
-      set tabIndex(value){
-      this.setAttribute('tabindex',value);
-      },*/
+    /*
+     * get tabIndex(){ return this.getAttribute('tabindex'); }, set
+     * tabIndex(value){ this.setAttribute('tabindex',value); },
+     */
     get type(){
         return this.getAttribute('type');
     },
@@ -9581,8 +9648,7 @@ HTMLElement.registerSetAttribute('OBJECT', 'name',
                                  __updateFormForNamedElement__);
 
 /*
- * HTMLOListElement
- * HTML5: 4.5.6 The ol Element
+ * HTMLOListElement HTML5: 4.5.6 The ol Element
  * http://dev.w3.org/html5/spec/Overview.html#the-ol-element
  */
 HTMLOListElement = function(ownerDocument) {
@@ -9593,7 +9659,7 @@ HTMLOListElement.prototype = new HTMLElement();
 __extend__(HTMLOListElement.prototype, {
 
     // TODO: attribute boolean reversed;
-    // TODO:  attribute long start;
+    // TODO: attribute long start;
 
     toString: function() {
         return '[object HTMLOListElement]';
@@ -9602,8 +9668,7 @@ __extend__(HTMLOListElement.prototype, {
 
 
 /**
- * HTMLOptGroupElement - DOM Level 2
- * HTML 5: 4.10.9 The optgroup element
+ * HTMLOptGroupElement - DOM Level 2 HTML 5: 4.10.9 The optgroup element
  * http://dev.w3.org/html5/spec/Overview.html#the-optgroup-element
  */
 HTMLOptGroupElement = function(ownerDocument) {
@@ -9627,13 +9692,13 @@ __extend__(HTMLOptGroupElement.prototype, {
         var i,
         length,
         selected = false;
-        //make sure at least one is selected by default
+        // make sure at least one is selected by default
         if(node.nodeType === Node.ELEMENT_NODE && node.tagName === 'OPTION'){
             length = this.childNodes.length;
             for(i=0;i<length;i++){
                 if(this.childNodes[i].nodeType === Node.ELEMENT_NODE &&
                    this.childNodes[i].tagName === 'OPTION'){
-                    //check if it is selected
+                    // check if it is selected
                     if(this.selected){
                         selected = true;
                         break;
@@ -9653,8 +9718,7 @@ __extend__(HTMLOptGroupElement.prototype, {
 });
 
 /**
- * HTMLOptionElement, Option
- * HTML5: 4.10.10 The option element
+ * HTMLOptionElement, Option HTML5: 4.10.10 The option element
  * http://dev.w3.org/html5/spec/Overview.html#the-option-element
  */
 HTMLOptionElement = function(ownerDocument) {
@@ -9665,8 +9729,8 @@ HTMLOptionElement.prototype = new HTMLInputCommon();
 __extend__(HTMLOptionElement.prototype, {
 
     /**
-     * defaultSelected actually reflects the presence of the
-     * 'selected' attribute.
+     * defaultSelected actually reflects the presence of the 'selected'
+     * attribute.
      */
     get defaultSelected() {
         return this.hasAttribute('selected');
@@ -9682,12 +9746,11 @@ __extend__(HTMLOptionElement.prototype, {
     },
 
     /*
-     * HTML5: The form IDL attribute's behavior depends on whether the
-     * option element is in a select element or not. If the option has
-     * a select element as its parent, or has a colgroup element as
-     * its parent and that colgroup element has a select element as
-     * its parent, then the form IDL attribute must return the same
-     * value as the form IDL attribute on that select
+     * HTML5: The form IDL attribute's behavior depends on whether the option
+     * element is in a select element or not. If the option has a select element
+     * as its parent, or has a colgroup element as its parent and that colgroup
+     * element has a select element as its parent, then the form IDL attribute
+     * must return the same value as the form IDL attribute on that select
      * element. Otherwise, it must return null.
      */
     _selectparent: function() {
@@ -9739,8 +9802,7 @@ __extend__(HTMLOptionElement.prototype, {
     },
 
     /*
-     * This is not in the spec, but safari and firefox both
-     * use this
+     * This is not in the spec, but safari and firefox both use this
      */
     get name() {
         return this.getAttribute('name');
@@ -9750,7 +9812,7 @@ __extend__(HTMLOptionElement.prototype, {
     },
 
     /**
-     *
+     * 
      */
     get selected() {
         // if disabled, return false, no matter what
@@ -9824,8 +9886,8 @@ HTMLElement.registerSetAttribute('OPTION', 'name', updater);
 HTMLElement.registerSetAttribute('OPTION', 'id', updater);
 
 /*
-* HTMLParagraphElement - DOM Level 2
-*/
+ * HTMLParagraphElement - DOM Level 2
+ */
 HTMLParagraphElement = function(ownerDocument) {
     HTMLElement.apply(this, arguments);
 };
@@ -9839,7 +9901,7 @@ __extend__(HTMLParagraphElement.prototype, {
 
 /**
  * HTMLParamElement
- *
+ * 
  * HTML5: 4.8.6 The param element
  * http://dev.w3.org/html5/spec/Overview.html#the-param-element
  */
@@ -9880,7 +9942,7 @@ __extend__(HTMLParamElement.prototype, {
 
 /**
  * HTMLScriptElement - DOM Level 2
- *
+ * 
  * HTML5: 4.3.1 The script element
  * http://dev.w3.org/html5/spec/Overview.html#script
  */
@@ -9892,16 +9954,15 @@ __extend__(HTMLScriptElement.prototype, {
 
     /**
      * HTML5 spec @ http://dev.w3.org/html5/spec/Overview.html#script
-     *
-     * "The IDL attribute text must return a concatenation of the
-     * contents of all the text nodes that are direct children of the
-     * script element (ignoring any other nodes such as comments or
-     * elements), in tree order. On setting, it must act the same way
-     * as the textContent IDL attribute."
-     *
-     * AND... "The term text node refers to any Text node,
-     * including CDATASection nodes; specifically, any Node with node
-     * type TEXT_NODE (3) or CDATA_SECTION_NODE (4)"
+     * 
+     * "The IDL attribute text must return a concatenation of the contents of
+     * all the text nodes that are direct children of the script element
+     * (ignoring any other nodes such as comments or elements), in tree order.
+     * On setting, it must act the same way as the textContent IDL attribute."
+     * 
+     * AND... "The term text node refers to any Text node, including
+     * CDATASection nodes; specifically, any Node with node type TEXT_NODE (3)
+     * or CDATA_SECTION_NODE (4)"
      */
     get text() {
         var kids = this.childNodes;
@@ -9919,30 +9980,28 @@ __extend__(HTMLScriptElement.prototype, {
     },
 
     /**
-     * HTML5 spec "Can be set, to replace the element's children with
-     * the given value."
+     * HTML5 spec "Can be set, to replace the element's children with the given
+     * value."
      */
     set text(value) {
         // this deletes all children, and make a new single text node
         // with value
         this.textContent = value;
 
-        /* Currently we always execute, but this isn't quite right if
-         * the node has *not* been inserted into the document, then it
-         * should *not* fire.  The more detailed answer from the spec:
-         *
-         * When a script element that is neither marked as having
-         * "already started" nor marked as being "parser-inserted"
-         * experiences one of the events listed in the following list,
-         * the user agent must synchronously run the script element:
-         *
-         *   * The script element gets inserted into a document.
-         *   * The script element is in a Document and its child nodes
-         *     are changed.
-         *   * The script element is in a Document and has a src
-         *     attribute set where previously the element had no such
-         *     attribute.
-         *
+        /*
+         * Currently we always execute, but this isn't quite right if the node
+         * has *not* been inserted into the document, then it should *not* fire.
+         * The more detailed answer from the spec:
+         * 
+         * When a script element that is neither marked as having "already
+         * started" nor marked as being "parser-inserted" experiences one of the
+         * events listed in the following list, the user agent must
+         * synchronously run the script element:
+         *  * The script element gets inserted into a document. * The script
+         * element is in a Document and its child nodes are changed. * The
+         * script element is in a Document and has a src attribute set where
+         * previously the element had no such attribute.
+         * 
          * And no doubt there are other cases as well.
          */
         Envjs.loadInlineScript(this);
@@ -9993,8 +10052,8 @@ __extend__(HTMLScriptElement.prototype, {
 
 
 /**
- * HTMLSelectElement
- * HTML5: http://dev.w3.org/html5/spec/Overview.html#the-select-element
+ * HTMLSelectElement HTML5:
+ * http://dev.w3.org/html5/spec/Overview.html#the-select-element
  */
 HTMLSelectElement = function(ownerDocument) {
     HTMLTypeValueInputs.apply(this, arguments);
@@ -10091,7 +10150,7 @@ __extend__(HTMLSelectElement.prototype, {
 
     add: function(element, before) {
         this.appendChild(element);
-        //__add__(this);
+        // __add__(this);
     },
     remove: function() {
         __remove__(this);
@@ -10121,8 +10180,7 @@ __extend__(HTMLSpanElement.prototype, {
 
 
 /**
- * HTMLStyleElement - DOM Level 2
- * HTML5 4.2.6 The style element
+ * HTMLStyleElement - DOM Level 2 HTML5 4.2.6 The style element
  * http://dev.w3.org/html5/spec/Overview.html#the-style-element
  */
 HTMLStyleElement = function(ownerDocument) {
@@ -10154,9 +10212,8 @@ __extend__(HTMLStyleElement.prototype, {
 });
 
 /**
- * HTMLTableElement - DOM Level 2
- * Implementation Provided by Steven Wood
- *
+ * HTMLTableElement - DOM Level 2 Implementation Provided by Steven Wood
+ * 
  * HTML5: 4.9.1 The table element
  * http://dev.w3.org/html5/spec/Overview.html#the-table-element
  */
@@ -10167,7 +10224,7 @@ HTMLTableElement.prototype = new HTMLElement();
 __extend__(HTMLTableElement.prototype, {
 
     get tFoot() {
-        //tFoot returns the table footer.
+        // tFoot returns the table footer.
         return this.getElementsByTagName("tfoot")[0];
     },
 
@@ -10190,7 +10247,7 @@ __extend__(HTMLTableElement.prototype, {
     },
 
     get tHead() {
-        //tHead returns the table head.
+        // tHead returns the table head.
         return this.getElementsByTagName("thead")[0];
     },
 
@@ -10212,33 +10269,24 @@ __extend__(HTMLTableElement.prototype, {
         }
     },
 
-    /*appendChild : function (child) {
-
-      var tagName;
-      if(child&&child.nodeType==Node.ELEMENT_NODE){
-      tagName = child.tagName.toLowerCase();
-      if (tagName === "tr") {
-      // need an implcit <tbody> to contain this...
-      if (!this.currentBody) {
-      this.currentBody = document.createElement("tbody");
-
-      Node.prototype.appendChild.apply(this, [this.currentBody]);
-      }
-
-      return this.currentBody.appendChild(child);
-
-      } else if (tagName === "tbody" || tagName === "tfoot" && this.currentBody) {
-      this.currentBody = child;
-      return Node.prototype.appendChild.apply(this, arguments);
-
-      } else {
-      return Node.prototype.appendChild.apply(this, arguments);
-      }
-      }else{
-      //tables can still have text node from white space
-      return Node.prototype.appendChild.apply(this, arguments);
-      }
-      },*/
+    /*
+     * appendChild : function (child) {
+     * 
+     * var tagName; if(child&&child.nodeType==Node.ELEMENT_NODE){ tagName =
+     * child.tagName.toLowerCase(); if (tagName === "tr") { // need an implcit
+     * <tbody> to contain this... if (!this.currentBody) { this.currentBody =
+     * document.createElement("tbody");
+     * 
+     * Node.prototype.appendChild.apply(this, [this.currentBody]); }
+     * 
+     * return this.currentBody.appendChild(child);
+     *  } else if (tagName === "tbody" || tagName === "tfoot" &&
+     * this.currentBody) { this.currentBody = child; return
+     * Node.prototype.appendChild.apply(this, arguments);
+     *  } else { return Node.prototype.appendChild.apply(this, arguments); }
+     * }else{ //tables can still have text node from white space return
+     * Node.prototype.appendChild.apply(this, arguments); } },
+     */
 
     get tBodies() {
         return new HTMLCollection(this.getElementsByTagName("tbody"));
@@ -10351,9 +10399,8 @@ __extend__(HTMLTableElement.prototype, {
 });
 
 /*
- * HTMLxElement - DOM Level 2
- * - Contributed by Steven Wood
- *
+ * HTMLxElement - DOM Level 2 - Contributed by Steven Wood
+ * 
  * HTML5: 4.9.5 The tbody element
  * http://dev.w3.org/html5/spec/Overview.html#the-tbody-element
  * http://dev.w3.org/html5/spec/Overview.html#htmltablesectionelement
@@ -10364,16 +10411,14 @@ HTMLTableSectionElement = function(ownerDocument) {
 HTMLTableSectionElement.prototype = new HTMLElement();
 __extend__(HTMLTableSectionElement.prototype, {
 
-    /*appendChild : function (child) {
-
-    // disallow nesting of these elements.
-    if (child.tagName.match(/TBODY|TFOOT|THEAD/)) {
-    return this.parentNode.appendChild(child);
-    } else {
-    return Node.prototype.appendChild.apply(this, arguments);
-    }
-
-    },*/
+    /*
+     * appendChild : function (child) {
+     *  // disallow nesting of these elements. if
+     * (child.tagName.match(/TBODY|TFOOT|THEAD/)) { return
+     * this.parentNode.appendChild(child); } else { return
+     * Node.prototype.appendChild.apply(this, arguments); }
+     *  },
+     */
 
     get align() {
         return this.getAttribute("align");
@@ -10446,9 +10491,8 @@ __extend__(HTMLTableSectionElement.prototype, {
 });
 
 /**
- * HTMLTableCellElement
- * base interface for TD and TH
- *
+ * HTMLTableCellElement base interface for TD and TH
+ * 
  * HTML5: 4.9.11 Attributes common to td and th elements
  * http://dev.w3.org/html5/spec/Overview.html#htmltablecellelement
  */
@@ -10459,10 +10503,10 @@ HTMLTableCellElement.prototype = new HTMLElement();
 __extend__(HTMLTableCellElement.prototype, {
 
 
-    // TOOD: attribute unsigned long  colSpan;
-    // TODO: attribute unsigned long  rowSpan;
-    // TODO: attribute DOMString      headers;
-    // TODO: readonly attribute long  cellIndex;
+    // TOOD: attribute unsigned long colSpan;
+    // TODO: attribute unsigned long rowSpan;
+    // TODO: attribute DOMString headers;
+    // TODO: readonly attribute long cellIndex;
 
     // Not really necessary but might be helpful in debugging
     toString: function() {
@@ -10472,8 +10516,7 @@ __extend__(HTMLTableCellElement.prototype, {
 });
 
 /**
- * HTMLTableDataCellElement
- * HTML5: 4.9.9 The td Element
+ * HTMLTableDataCellElement HTML5: 4.9.9 The td Element
  * http://dev.w3.org/html5/spec/Overview.html#the-td-element
  */
 HTMLTableDataCellElement = function(ownerDocument) {
@@ -10490,8 +10533,7 @@ __extend__(HTMLTableDataCellElement.prototype, {
 });
 
 /**
- * HTMLTableHeaderCellElement
- * HTML5: 4.9.10 The th Element
+ * HTMLTableHeaderCellElement HTML5: 4.9.10 The th Element
  * http://dev.w3.org/html5/spec/Overview.html#the-th-element
  */
 HTMLTableHeaderCellElement = function(ownerDocument) {
@@ -10500,7 +10542,7 @@ HTMLTableHeaderCellElement = function(ownerDocument) {
 HTMLTableHeaderCellElement.prototype = new HTMLTableCellElement();
 __extend__(HTMLTableHeaderCellElement.prototype, {
 
-    // TODO:  attribute DOMString scope
+    // TODO: attribute DOMString scope
 
     toString: function() {
         return '[object HTMLTableHeaderCellElement]';
@@ -10509,8 +10551,7 @@ __extend__(HTMLTableHeaderCellElement.prototype, {
 
 
 /**
- * HTMLTextAreaElement - DOM Level 2
- * HTML5: 4.10.11 The textarea element
+ * HTMLTextAreaElement - DOM Level 2 HTML5: 4.10.11 The textarea element
  * http://dev.w3.org/html5/spec/Overview.html#the-textarea-element
  */
 HTMLTextAreaElement = function(ownerDocument) {
@@ -10569,7 +10610,7 @@ HTMLElement.registerSetAttribute('TEXTAREA', 'name',
 
 /**
  * HTMLTitleElement - DOM Level 2
- *
+ * 
  * HTML5: 4.2.2 The title element
  * http://dev.w3.org/html5/spec/Overview.html#the-title-element-0
  */
@@ -10593,9 +10634,8 @@ __extend__(HTMLTitleElement.prototype, {
 
 
 /**
- * HTMLRowElement - DOM Level 2
- * Implementation Provided by Steven Wood
- *
+ * HTMLRowElement - DOM Level 2 Implementation Provided by Steven Wood
+ * 
  * HTML5: 4.9.8 The tr element
  * http://dev.w3.org/html5/spec/Overview.html#the-tr-element
  */
@@ -10605,14 +10645,16 @@ HTMLTableRowElement = function(ownerDocument) {
 HTMLTableRowElement.prototype = new HTMLElement();
 __extend__(HTMLTableRowElement.prototype, {
 
-    /*appendChild : function (child) {
-
-      var retVal = Node.prototype.appendChild.apply(this, arguments);
-      retVal.cellIndex = this.cells.length -1;
-
-      return retVal;
-      },*/
-    // align gets or sets the horizontal alignment of data within cells of the row.
+    /*
+     * appendChild : function (child) {
+     * 
+     * var retVal = Node.prototype.appendChild.apply(this, arguments);
+     * retVal.cellIndex = this.cells.length -1;
+     * 
+     * return retVal; },
+     */
+    // align gets or sets the horizontal alignment of data within cells of the
+    // row.
     get align() {
         return this.getAttribute("align");
     },
@@ -10715,8 +10757,7 @@ __extend__(HTMLTableRowElement.prototype, {
 });
 
 /*
- * HTMLUListElement
- * HTML5: 4.5.7 The ul Element
+ * HTMLUListElement HTML5: 4.5.7 The ul Element
  * http://dev.w3.org/html5/spec/Overview.html#htmlhtmlelement
  */
 HTMLUListElement = function(ownerDocument) {
@@ -10753,7 +10794,7 @@ __extend__(HTMLUnknownElement.prototype,{
  * @copyright 2008-2010
  * @license MIT
  */
-//CLOSURE_END
+// CLOSURE_END
 }());
 
 /**
@@ -10773,13 +10814,12 @@ var CSS2Properties,
 ;
 
 /*
- * Envjs css.1.2.13 
- * Pure JavaScript Browser Environment
- * By John Resig <http://ejohn.org/> and the Envjs Team
- * Copyright 2008-2010 John Resig, under the MIT License
+ * Envjs css.1.2.13 Pure JavaScript Browser Environment By John Resig
+ * <http://ejohn.org/> and the Envjs Team Copyright 2008-2010 John Resig, under
+ * the MIT License
  */
 
-//CLOSURE_START
+// CLOSURE_START
 (function(){
 
 
@@ -10805,7 +10845,7 @@ function __extend__(a,b) {
 /**
  * @author john resig
  */
-//from jQuery
+// from jQuery
 function __setArray__( target, array ) {
     // Resetting the length to 0, then using the native Array push
     // is a super-fast way to populate an object with array-like properties
@@ -10815,8 +10855,9 @@ function __setArray__( target, array ) {
 
 /**
  * @author ariel flesler
- *    http://flesler.blogspot.com/2008/11/fast-trim-function-for-javascript.html
- * @param {Object} str
+ *         http://flesler.blogspot.com/2008/11/fast-trim-function-for-javascript.html
+ * @param {Object}
+ *            str
  */
 function __trim__( str ){
     return (str || "").replace( /^\s+|\s+$/g, "" );
@@ -10825,11 +10866,9 @@ function __trim__( str ){
 /*
  * Interface DocumentStyle (introduced in DOM Level 2)
  * http://www.w3.org/TR/2000/REC-DOM-Level-2-Style-20001113/stylesheets.html#StyleSheets-StyleSheet-DocumentStyle
- *
- * interface DocumentStyle {
- *   readonly attribute StyleSheetList   styleSheets;
- * };
- *
+ * 
+ * interface DocumentStyle { readonly attribute StyleSheetList styleSheets; };
+ * 
  */
 __extend__(Document.prototype, {
     get styleSheets() {
@@ -10840,8 +10879,7 @@ __extend__(Document.prototype, {
     }
 });
 /*
- * CSS2Properties - DOM Level 2 CSS
- * Renamed to CSSStyleDeclaration??
+ * CSS2Properties - DOM Level 2 CSS Renamed to CSSStyleDeclaration??
  */
 
 var __toCamelCase__ = function(name) {
@@ -10864,8 +10902,8 @@ var __toDashed__ = function(camelCaseName) {
 
 CSS2Properties = function(element){
     console.log('css2properties %s', __cssproperties__++);
-    this.styleIndex = __supportedStyles__;//non-standard
-    this.type = element.tagName;//non-standard
+    this.styleIndex = __supportedStyles__;// non-standard
+    this.type = element.tagName;// non-standard
     __setArray__(this, []);
     __cssTextToStyles__(this, element.cssText || '');
 };
@@ -10881,7 +10919,7 @@ __extend__(CSS2Properties.prototype, {
         __cssTextToStyles__(this, cssText);
     },
     getPropertyCSSValue: function(name) {
-        //?
+        // ?
     },
     getPropertyPriority: function() {
 
@@ -10913,8 +10951,8 @@ __extend__(CSS2Properties.prototype, {
         var nval;
         name = __toCamelCase__(name);
         if (value !== undefined && name in this.styleIndex) {
-            // NOTE:  parseFloat('300px') ==> 300  no
-            // NOTE:  Number('300px') ==> Nan      yes
+            // NOTE: parseFloat('300px') ==> 300 no
+            // NOTE: Number('300px') ==> Nan yes
             nval = Number(value);
             this.styleIndex[name] = isNaN(nval) ? value : nval;
             name = __toDashed__(name);
@@ -10932,7 +10970,7 @@ __extend__(CSS2Properties.prototype, {
 
 var __cssTextToStyles__ = function(css2props, cssText) {
     console.log('__cssTextToStyles__ %s %s', css2props, cssText);
-    //var styleArray=[];
+    // var styleArray=[];
     var i, style, styles = cssText.split(';');
     for (i = 0; i < styles.length; ++i) {
         style = styles[i].split(':');
@@ -10943,9 +10981,9 @@ var __cssTextToStyles__ = function(css2props, cssText) {
     }
 };
 
-//Obviously these arent all supported but by commenting out various
-//sections this provides a single location to configure what is
-//exposed as supported.
+// Obviously these arent all supported but by commenting out various
+// sections this provides a single location to configure what is
+// exposed as supported.
 var __supportedStyles__ = {
     azimuth:                null,
     background:             null,
@@ -11102,7 +11140,7 @@ for (var style in __supportedStyles__) {
                     return this.styleIndex[name];
                 });
             } else if (name === 'display') {
-                //display will be set to a tagName specific value if ''
+                // display will be set to a tagName specific value if ''
                 CSS2Properties.prototype.__defineGetter__(name, function() {
                     var val = this.styleIndex[name];
                     val = val ? val :__displayMap__[this.type];
@@ -11153,7 +11191,7 @@ CSSRule.IMPORT_RULE    =  3;
 CSSRule.MEDIA_RULE     =  4;
 CSSRule.FONT_FACE_RULE =  5;
 CSSRule.PAGE_RULE      =  6;
-//CSSRule.NAMESPACE_RULE = 10;
+// CSSRule.NAMESPACE_RULE = 10;
 
 
 CSSStyleRule = function() {
@@ -11196,32 +11234,23 @@ __extend__(CSSRuleList.prototype, {
 });
 
 /**
- * StyleSheet
- * http://dev.w3.org/csswg/cssom/#stylesheet
- *
- * interface StyleSheet {
- *   readonly attribute DOMString type;
- *   readonly attribute DOMString href;
- *   readonly attribute Node ownerNode;
- *   readonly attribute StyleSheet parentStyleSheet;
- *   readonly attribute DOMString title;
- *   [PutForwards=mediaText] readonly attribute MediaList media;
- *          attribute boolean disabled;
- * };
+ * StyleSheet http://dev.w3.org/csswg/cssom/#stylesheet
+ * 
+ * interface StyleSheet { readonly attribute DOMString type; readonly attribute
+ * DOMString href; readonly attribute Node ownerNode; readonly attribute
+ * StyleSheet parentStyleSheet; readonly attribute DOMString title;
+ * [PutForwards=mediaText] readonly attribute MediaList media; attribute boolean
+ * disabled; };
  */
 StyleSheet = function() {
 }
 
 /*
- * CSSStyleSheet
- * http://dev.w3.org/csswg/cssom/#cssstylesheet
- *
- * interface CSSStyleSheet : StyleSheet {
- *   readonly attribute CSSRule ownerRule;
- *   readonly attribute CSSRuleList cssRules;
- *   unsigned long insertRule(DOMString rule, unsigned long index);
- *   void deleteRule(unsigned long index);
- * };
+ * CSSStyleSheet http://dev.w3.org/csswg/cssom/#cssstylesheet
+ * 
+ * interface CSSStyleSheet : StyleSheet { readonly attribute CSSRule ownerRule;
+ * readonly attribute CSSRuleList cssRules; unsigned long insertRule(DOMString
+ * rule, unsigned long index); void deleteRule(unsigned long index); };
  */
 CSSStyleSheet = function(options){
     var $cssRules,
@@ -11232,8 +11261,8 @@ CSSStyleSheet = function(options){
         $type = "text/css";
 
     function parseStyleSheet(text){
-        //$debug("parsing css");
-        //this is pretty ugly, but text is the entire text of a stylesheet
+        // $debug("parsing css");
+        // this is pretty ugly, but text is the entire text of a stylesheet
         var cssRules = [];
         if (!text) {
             text = '';
@@ -11267,7 +11296,7 @@ CSSStyleSheet = function(options){
         },
         get rule(){
             return $cssRules;
-        },//IE - may be deprecated
+        },// IE - may be deprecated
         get href(){
             return $href;
         },
@@ -11280,10 +11309,10 @@ CSSStyleSheet = function(options){
         get type(){
             return $type;
         },
-        addRule: function(selector, style, index){/*TODO*/},
-        deleteRule: function(index){/*TODO*/},
-        insertRule: function(rule, index){/*TODO*/},
-        //IE - may be deprecated
+        addRule: function(selector, style, index){/* TODO */},
+        deleteRule: function(index){/* TODO */},
+        insertRule: function(rule, index){/* TODO */},
+        // IE - may be deprecated
         removeRule: function(index){
             this.deleteRule(index);
         }
@@ -11307,15 +11336,15 @@ __extend__(StyleSheetList.prototype, {
 });
 /**
  * This extends HTMLElement to handle CSS-specific interfaces.
- *
- * More work / research would be needed to extend just (DOM) Element
- * for xml use and additional changes for just HTMLElement.
+ * 
+ * More work / research would be needed to extend just (DOM) Element for xml use
+ * and additional changes for just HTMLElement.
  */
 
 
 /**
- * Replace or add  the getter for 'style'
- *
+ * Replace or add the getter for 'style'
+ * 
  * This could be wrapped in a closure
  */
 var $css2properties = [{}];
@@ -11332,13 +11361,12 @@ __extend__(HTMLElement.prototype, {
 
 /**
  * Change for how 'setAttribute("style", ...)' works
- *
- * We are truly adding functionality to HtmlElement.setAttribute, not
- * replacing it.  So we need to save the old one first, call it, then
- * do our stuff.  If we need to do more hacks like this, HTMLElement
- * (or regular Element) needs to have a hooks array or dispatch table
- * for global changes.
- *
+ * 
+ * We are truly adding functionality to HtmlElement.setAttribute, not replacing
+ * it. So we need to save the old one first, call it, then do our stuff. If we
+ * need to do more hacks like this, HTMLElement (or regular Element) needs to
+ * have a hooks array or dispatch table for global changes.
+ * 
  * This could be wrapped in a closure if desired.
  */
 var updateCss2Props = function(elem, values) {
@@ -11366,24 +11394,23 @@ HTMLElement.prototype.setAttribute = function(name, value) {
  * @copyright 2008-2010
  * @license MIT
  */
-//CLOSURE_END
+// CLOSURE_END
 }());
 
-//these are both non-standard globals that
-//provide static namespaces and functions
-//to support the html 5 parser from nu.
+// these are both non-standard globals that
+// provide static namespaces and functions
+// to support the html 5 parser from nu.
 var XMLParser = {},
     HTMLParser = {};
 
     
 /*
- * Envjs parser.1.2.13 
- * Pure JavaScript Browser Environment
- * By John Resig <http://ejohn.org/> and the Envjs Team
- * Copyright 2008-2010 John Resig, under the MIT License
+ * Envjs parser.1.2.13 Pure JavaScript Browser Environment By John Resig
+ * <http://ejohn.org/> and the Envjs Team Copyright 2008-2010 John Resig, under
+ * the MIT License
  */
 
-//CLOSURE_START
+// CLOSURE_START
 (function(){
 
 
@@ -11409,7 +11436,7 @@ function __extend__(a,b) {
 /**
  * @author john resig
  */
-//from jQuery
+// from jQuery
 function __setArray__( target, array ) {
     // Resetting the length to 0, then using the native Array push
     // is a super-fast way to populate an object with array-like properties
@@ -11924,21 +11951,20 @@ __defineParser__=function gwtOnLoad(b,d,c){$moduleName=d;$moduleBase=c;if(b)try{
 function v0i(){}
 var k$h=jci(mIh,nIh),b$h=jci(pIh,qIh),q$h=jci(mIh,rIh),g$h=jci(mIh,sIh),l$h=jci(mIh,tIh),E9h=jci(uIh,vIh),F9h=jci(uIh,wIh),D_h=ici(xIh,yIh),f$h=jci(mIh,AIh),dai=ici(cNh,BIh),s$h=jci(CIh,DIh),A$h=jci(CIh,EIh),F$h=jci(CIh,FIh),a$h=jci(pIh,aJh),i$h=jci(mIh,bJh),c$h=jci(mIh,cJh),A_h=ici(cNh,dJh),e$h=jci(mIh,fJh),d$h=jci(mIh,gJh),h$h=jci(mIh,hJh),B_h=ici(cNh,iJh),j$h=jci(mIh,jJh),p$h=jci(mIh,aUh),m$h=jci(mIh,kJh),n$h=jci(mIh,lJh),o$h=jci(mIh,mJh),r$h=jci(mIh,nJh),C_h=ici(xIh,oJh),C$h=jci(CIh,qJh),x$h=jci(CIh,rJh),E$h=jci(CIh,sJh),u$h=jci(CIh,tJh),t$h=jci(CIh,uJh),B$h=jci(CIh,vJh),v$h=jci(CIh,wJh),w$h=jci(CIh,xJh),y$h=jci(CIh,yJh),z$h=jci(CIh,zJh),D$h=jci(CIh,BJh),a_h=jci(CIh,CJh),b_h=jci(CIh,DJh),e_h=jci(CIh,EJh),c_h=jci(CIh,FJh),d_h=jci(CIh,aKh),f_h=jci(CIh,bKh),g_h=kci(cKh,dKh),h_h=kci(cKh,eKh),i_h=kci(cKh,hKh),w_h=jci(iKh,jKh),p_h=jci(iKh,kKh),k_h=jci(lKh,mKh),j_h=jci(lKh,nKh),m_h=jci(lKh,oKh),l_h=jci(lKh,pKh),n_h=jci(lKh,qKh),bai=ici(cNh,sKh),E_h=ici(tKh,uKh),o_h=jci(iKh,vKh),F_h=ici(tKh,wKh),q_h=jci(iKh,xKh),v_h=jci(iKh,yKh),r_h=jci(iKh,zKh),s_h=jci(iKh,AKh),t_h=jci(iKh,BKh),cai=ici(cNh,DKh),u_h=jci(iKh,EKh),aai=ici(tKh,FKh),x_h=jci(iKh,aLh),y_h=jci(bLh,cLh),z_h=jci(bLh,dLh);if (true) {  var __gwt_initHandlers = function(){};  }})();
 /**
-* DOMParser
-*/
+ * DOMParser
+ */
 
 __defineParser__(function(e){
     console.log('Error loading html 5 parser implementation');
 }, 'nu_validator_htmlparser_HtmlParser', '');
 
-/*DOMParser = function(principle, documentURI, baseURI){};
-__extend__(DOMParser.prototype,{
-    parseFromString: function(xmlstring, mimetype){
-        console.log('DOMParser.parseFromString %s', mimetype);
-        var xmldoc = new Document(new DOMImplementation());
-        return XMLParser.parseDocument(xmlstring, xmldoc, mimetype);
-    }
-});*/
+/*
+ * DOMParser = function(principle, documentURI, baseURI){};
+ * __extend__(DOMParser.prototype,{ parseFromString: function(xmlstring,
+ * mimetype){ console.log('DOMParser.parseFromString %s', mimetype); var xmldoc =
+ * new Document(new DOMImplementation()); return
+ * XMLParser.parseDocument(xmlstring, xmldoc, mimetype); } });
+ */
 
 XMLParser.parseDocument = function(xmlstring, xmldoc, mimetype){
     console.log('XMLParser.parseDocument');
@@ -11980,7 +12006,7 @@ HTMLParser.parseDocument = function(htmlstring, htmldoc){
     console.log('HTMLParser.parseDocument %s', htmldoc.async);
     htmldoc.parsing = true;
     Envjs.parseHtmlDocument(htmlstring, htmldoc, htmldoc.async, null, null);
-    //Envjs.wait(-1);
+    // Envjs.wait(-1);
     return htmldoc;
 };
 HTMLParser.parseFragment = function(htmlstring, element){
@@ -12010,7 +12036,7 @@ HTMLParser.parseFragment = function(htmlstring, element){
 
         tmpdoc.fragment = true;
 
-        //preserves leading white space
+        // preserves leading white space
         docstring = '<html><head></head><body>'+
             '<envjs_1234567890 xmlns="envjs_1234567890">'
                 +htmlstring+
@@ -12027,10 +12053,10 @@ HTMLParser.parseFragment = function(htmlstring, element){
         }
     }
 
-    //parent is envjs_1234567890 element
+    // parent is envjs_1234567890 element
     parent = tmpdoc.body.childNodes[0];
     while(element.firstChild != null){
-        //zap the elements children so we can import
+        // zap the elements children so we can import
         element.removeChild( element.firstChild );
     }
 
@@ -12059,7 +12085,7 @@ var __clearFragmentCache__ = function(){
 
 /**
  * @name Document
- * @w3c:domlevel 2 
+ * @w3c:domlevel 2
  * @uri http://www.w3.org/TR/2000/REC-DOM-Level-2-Events-20001113/events.html
  */
 __extend__(Document.prototype, {
@@ -12067,7 +12093,7 @@ __extend__(Document.prototype, {
         console.log('Parser::Document.loadXML');
         // create Document
         if(this === document){
-            //$debug("Setting internal window.document");
+            // $debug("Setting internal window.document");
             document = this;
         }
         // populate Document
@@ -12081,7 +12107,7 @@ __extend__(Document.prototype, {
             
             Envjs.wait(-1);
         } catch (e) {
-            //$error(e);
+            // $error(e);
         }
         return this;
     }
@@ -12125,12 +12151,10 @@ __extend__(HTMLDocument.prototype, {
 
 /**
  * elementPopped is called by the parser in two cases
- *
- * - an 'tag' is * complete (all children process and end tag, real or
- *   implied is * processed)
- * - a replaceElement happens (this happens by making placeholder
- *   nodes and then the real one is swapped in.
- *
+ *  - an 'tag' is * complete (all children process and end tag, real or implied
+ * is * processed) - a replaceElement happens (this happens by making
+ * placeholder nodes and then the real one is swapped in.
+ * 
  */
 var __elementPopped__ = function(ns, name, node){
     console.log('popped html element %s %s %s', ns, name, node);
@@ -12139,7 +12163,7 @@ var __elementPopped__ = function(ns, name, node){
         event;
     switch(doc.parsing){
         case false:
-            //innerHTML so dont do loading patterns for parsing
+            // innerHTML so dont do loading patterns for parsing
             console.log('element popped (implies innerHTML) not in parsing mode %s', node.nodeName);
             break;
         case true:
@@ -12158,8 +12182,10 @@ var __elementPopped__ = function(ns, name, node){
                                 case 'script':
                                     try{
                                         okay = Envjs.loadLocalScript(node, null);
-                                        // console.log('loaded script? %s %s', node.uuid, okay);
-                                        // only fire event if we actually had something to load
+                                        // console.log('loaded script? %s %s',
+                                        // node.uuid, okay);
+                                        // only fire event if we actually had
+                                        // something to load
                                         if (node.src && node.src.length > 0){
                                             event = doc.createEvent('HTMLEvents');
                                             event.initEvent( okay ? "load" : "error", false, false );
@@ -12191,8 +12217,9 @@ var __elementPopped__ = function(ns, name, node){
                                             event.initEvent("load", false, false);
                                             node.dispatchEvent( event, false );
                                         }else{
-                                            //I dont like this being here:
-                                            //TODO: better  mix-in strategy so the try/catch isnt required
+                                            // I dont like this being here:
+                                            // TODO: better mix-in strategy so
+                                            // the try/catch isnt required
                                             try{
                                                 if(Window){
                                                     Envjs.loadFrame(node);
@@ -12206,19 +12233,22 @@ var __elementPopped__ = function(ns, name, node){
                                     }catch(e){
                                         console.log('error loading html element %s %e', node, e.toString());
                                     }
-                                    /*try{
-                                        if (node.src && node.src.length > 0){
-                                            console.log("getting content document for (i)frame from %s", node.src);
-                                            Envjs.loadFrame(node, Envjs.uri(node.src));
-                                            event = node.ownerDocument.createEvent('HTMLEvents');
-                                            event.initEvent("load", false, false);
-                                            node.dispatchEvent( event, false );
-                                        }else{
-                                            console.log('src/parser/htmldocument: triggering frame load (no src)');
-                                        }
-                                    }catch(e){
-                                        console.log('error loading html element %s %s %s %e', ns, name, node, e.toString());
-                                    }*/
+                                    /*
+                                     * try{ if (node.src && node.src.length >
+                                     * 0){ console.log("getting content document
+                                     * for (i)frame from %s", node.src);
+                                     * Envjs.loadFrame(node,
+                                     * Envjs.uri(node.src)); event =
+                                     * node.ownerDocument.createEvent('HTMLEvents');
+                                     * event.initEvent("load", false, false);
+                                     * node.dispatchEvent( event, false );
+                                     * }else{
+                                     * console.log('src/parser/htmldocument:
+                                     * triggering frame load (no src)'); }
+                                     * }catch(e){ console.log('error loading
+                                     * html element %s %s %s %e', ns, name,
+                                     * node, e.toString()); }
+                                     */
                                     break;
                                 case 'link':
                                     if (node.href) {
@@ -12236,7 +12266,7 @@ var __elementPopped__ = function(ns, name, node){
                                 case 'html':
                                     console.log('html popped');
                                     doc.parsing = false;
-                                    //DOMContentLoaded event
+                                    // DOMContentLoaded event
                                     try{
                                         if(doc.createEvent){
                                             event = doc.createEvent('Events');
@@ -12278,7 +12308,7 @@ var __elementPopped__ = function(ns, name, node){
                                         }
                                     }catch(e){
                                         console.log('%s', e);
-                                        //swallow
+                                        // swallow
                                     }
                                 default:
                                     if(node.getAttribute('onload')){
@@ -12286,17 +12316,17 @@ var __elementPopped__ = function(ns, name, node){
                                         node.onload();
                                     }
                                     break;
-                            }//switch on name
+                            }// switch on name
                         default:
                             break;
-                    }//switch on ns
+                    }// switch on ns
                     break;
                 default:
                     console.log('element popped: %s %s', ns, name, node.ownerDocument+'');
-            }//switch on doc type
+            }// switch on doc type
         default:
             break;
-    }//switch on parsing
+    }// switch on parsing
 };
 
 __extend__(HTMLElement.prototype,{
@@ -12311,31 +12341,28 @@ __extend__(HTMLElement.prototype,{
  * @copyright 2008-2010
  * @license MIT
  */
-//CLOSURE_END
+// CLOSURE_END
 }());
 /*
- * Envjs xhr.1.2.13 
- * Pure JavaScript Browser Environment
- * By John Resig <http://ejohn.org/> and the Envjs Team
- * Copyright 2008-2010 John Resig, under the MIT License
+ * Envjs xhr.1.2.13 Pure JavaScript Browser Environment By John Resig
+ * <http://ejohn.org/> and the Envjs Team Copyright 2008-2010 John Resig, under
+ * the MIT License
  * 
  * Parts of the implementation originally written by Yehuda Katz.
  * 
- * This file simply provides the global definitions we need to 
- * be able to correctly implement to core browser (XML)HTTPRequest 
- * interfaces.
+ * This file simply provides the global definitions we need to be able to
+ * correctly implement to core browser (XML)HTTPRequest interfaces.
  */
 var Location,
     XMLHttpRequest;
 
 /*
- * Envjs xhr.1.2.13 
- * Pure JavaScript Browser Environment
- * By John Resig <http://ejohn.org/> and the Envjs Team
- * Copyright 2008-2010 John Resig, under the MIT License
+ * Envjs xhr.1.2.13 Pure JavaScript Browser Environment By John Resig
+ * <http://ejohn.org/> and the Envjs Team Copyright 2008-2010 John Resig, under
+ * the MIT License
  */
 
-//CLOSURE_START
+// CLOSURE_START
 (function(){
 
 
@@ -12361,7 +12388,7 @@ function __extend__(a,b) {
 /**
  * @author john resig
  */
-//from jQuery
+// from jQuery
 function __setArray__( target, array ) {
     // Resetting the length to 0, then using the native Array push
     // is a super-fast way to populate an object with array-like properties
@@ -12371,8 +12398,9 @@ function __setArray__( target, array ) {
 
 /**
  * @author ariel flesler
- *    http://flesler.blogspot.com/2008/11/fast-trim-function-for-javascript.html
- * @param {Object} str
+ *         http://flesler.blogspot.com/2008/11/fast-trim-function-for-javascript.html
+ * @param {Object}
+ *            str
  */
 function __trim__( str ){
     return (str || "").replace( /^\s+|\s+$/g, "" );
@@ -12396,8 +12424,8 @@ __extend__(Document.prototype,{
         return new Location(this.documentURI, this);
     },
     set location(url){
-        //very important or you will go into an infinite
-        //loop when creating a xml document
+        // very important or you will go into an infinite
+        // loop when creating a xml document
         if(url) {
             this.location.replace(url);
         }
@@ -12426,28 +12454,30 @@ HTMLFormElement.prototype.submit = function(){
 
 /**
  * Form Submissions
- *
+ * 
  * This code is borrow largely from jquery.params and jquery.form.js
- *
- * formToArray() gathers form element data into an array of objects that can
- * be passed to any of the following ajax functions: $.get, $.post, or load.
- * Each object in the array has both a 'name' and 'value' property.  An example of
- * an array for a simple login form might be:
- *
- * [ { name: 'username', value: 'jresig' }, { name: 'password', value: 'secret' } ]
- *
- * It is this array that is passed to pre-submit callback functions provided to the
- * ajaxSubmit() and ajaxForm() methods.
- *
- * The semantic argument can be used to force form serialization in semantic order.
- * This is normally true anyway, unless the form contains input elements of type='image'.
- * If your form must be submitted with name/value pairs in semantic order and your form
- * contains an input of type='image" then pass true for this arg, otherwise pass false
- * (or nothing) to avoid the overhead for this logic.
- *
- *
+ * 
+ * formToArray() gathers form element data into an array of objects that can be
+ * passed to any of the following ajax functions: $.get, $.post, or load. Each
+ * object in the array has both a 'name' and 'value' property. An example of an
+ * array for a simple login form might be:
+ *  [ { name: 'username', value: 'jresig' }, { name: 'password', value: 'secret' } ]
+ * 
+ * It is this array that is passed to pre-submit callback functions provided to
+ * the ajaxSubmit() and ajaxForm() methods.
+ * 
+ * The semantic argument can be used to force form serialization in semantic
+ * order. This is normally true anyway, unless the form contains input elements
+ * of type='image'. If your form must be submitted with name/value pairs in
+ * semantic order and your form contains an input of type='image" then pass true
+ * for this arg, otherwise pass false (or nothing) to avoid the overhead for
+ * this logic.
+ * 
+ * 
  * @name formToArray
- * @param semantic true if serialization must maintain strict semantic ordering of elements (slower)
+ * @param semantic
+ *            true if serialization must maintain strict semantic ordering of
+ *            elements (slower)
  * @type Array<Object>
  */
 var __formToArray__ = function(form, semantic) {
@@ -12513,36 +12543,41 @@ var __formToArray__ = function(form, semantic) {
 
 
 /**
- * Serializes form data into a 'submittable' string. This method will return a string
- * in the format: name1=value1&amp;name2=value2
- *
- * The semantic argument can be used to force form serialization in semantic order.
- * If your form must be submitted with name/value pairs in semantic order then pass
- * true for this arg, otherwise pass false (or nothing) to avoid the overhead for
- * this logic (which can be significant for very large forms).
- *
- *
+ * Serializes form data into a 'submittable' string. This method will return a
+ * string in the format: name1=value1&amp;name2=value2
+ * 
+ * The semantic argument can be used to force form serialization in semantic
+ * order. If your form must be submitted with name/value pairs in semantic order
+ * then pass true for this arg, otherwise pass false (or nothing) to avoid the
+ * overhead for this logic (which can be significant for very large forms).
+ * 
+ * 
  * @name formSerialize
- * @param semantic true if serialization must maintain strict semantic ordering of elements (slower)
+ * @param semantic
+ *            true if serialization must maintain strict semantic ordering of
+ *            elements (slower)
  * @type String
  */
 var __formSerialize__ = function(form, semantic) {
-    //hand off to param for proper encoding
+    // hand off to param for proper encoding
     return __param__(__formToArray__(form, semantic));
 };
 
 
 /**
- * Serializes all field elements inputs Array into a query string.
- * This method will return a string in the format: name1=value1&amp;name2=value2
- *
+ * Serializes all field elements inputs Array into a query string. This method
+ * will return a string in the format: name1=value1&amp;name2=value2
+ * 
  * The successful argument controls whether or not serialization is limited to
- * 'successful' controls (per http://www.w3.org/TR/html4/interact/forms.html#successful-controls).
- * The default value of the successful argument is true.
- *
- *
+ * 'successful' controls (per
+ * http://www.w3.org/TR/html4/interact/forms.html#successful-controls). The
+ * default value of the successful argument is true.
+ * 
+ * 
  * @name fieldSerialize
- * @param successful true if only successful controls should be serialized (default is true)
+ * @param successful
+ *            true if only successful controls should be serialized (default is
+ *            true)
  * @type String
  */
 var __fieldSerialize__ = function(inputs, successful) {
@@ -12576,27 +12611,31 @@ var __fieldSerialize__ = function(inputs, successful) {
         }
     }
 
-    //hand off  for proper encoding
+    // hand off for proper encoding
     return __param__(array);
 };
 
 
 /**
- * Returns the value(s) of the element in the matched set.  For example, consider the following form:
- *
- *
- * The successful argument controls whether or not the field element must be 'successful'
- * (per http://www.w3.org/TR/html4/interact/forms.html#successful-controls).
- * The default value of the successful argument is true.  If this value is false the value(s)
- * for each element is returned.
- *
- * Note: This method *always* returns an array.  If no valid value can be determined the
- *       array will be empty, otherwise it will contain one or more values.
- *
- *
+ * Returns the value(s) of the element in the matched set. For example, consider
+ * the following form:
+ * 
+ * 
+ * The successful argument controls whether or not the field element must be
+ * 'successful' (per
+ * http://www.w3.org/TR/html4/interact/forms.html#successful-controls). The
+ * default value of the successful argument is true. If this value is false the
+ * value(s) for each element is returned.
+ * 
+ * Note: This method *always* returns an array. If no valid value can be
+ * determined the array will be empty, otherwise it will contain one or more
+ * values.
+ * 
+ * 
  * @name fieldValue
- * @param Boolean successful true if only the values for successful controls
- *        should be returned (default is true)
+ * @param Boolean
+ *            successful true if only the values for successful controls should
+ *            be returned (default is true)
  * @type Array<String>
  */
 var __fieldValues__ = function(inputs, successful) {
@@ -12623,19 +12662,25 @@ var __fieldValues__ = function(inputs, successful) {
 
 /**
  * Returns the value of the field element.
- *
- * The successful argument controls whether or not the field element must be 'successful'
- * (per http://www.w3.org/TR/html4/interact/forms.html#successful-controls).
- * The default value of the successful argument is true.  If the given element is not
- * successful and the successful arg is not false then the returned value will be null.
- *
- * Note: If the successful flag is true (default) but the element is not successful, the return will be null
- * Note: The value returned for a successful select-multiple element will always be an array.
- * Note: If the element has no value the return value will be undefined.
- *
+ * 
+ * The successful argument controls whether or not the field element must be
+ * 'successful' (per
+ * http://www.w3.org/TR/html4/interact/forms.html#successful-controls). The
+ * default value of the successful argument is true. If the given element is not
+ * successful and the successful arg is not false then the returned value will
+ * be null.
+ * 
+ * Note: If the successful flag is true (default) but the element is not
+ * successful, the return will be null Note: The value returned for a successful
+ * select-multiple element will always be an array. Note: If the element has no
+ * value the return value will be undefined.
+ * 
  * @name fieldValue
- * @param Element el The DOM element for which the value will be returned
- * @param Boolean successful true if value returned must be for a successful controls (default is true)
+ * @param Element
+ *            el The DOM element for which the value will be returned
+ * @param Boolean
+ *            successful true if value returned must be for a successful
+ *            controls (default is true)
  * @type String or Array<String> or null or undefined
  */
 var __fieldValue__ = function(element, successful) {
@@ -12689,14 +12734,14 @@ var __fieldValue__ = function(element, successful) {
 
 
 /**
- * Clears the form data.  Takes the following actions on the form's input fields:
- *  - input text fields will have their 'value' property set to the empty string
- *  - select elements will have their 'selectedIndex' property set to -1
- *  - checkbox and radio inputs will have their 'checked' property set to false
- *  - inputs of type submit, button, reset, and hidden will *not* be effected
- *  - button elements will *not* be effected
- *
- *
+ * Clears the form data. Takes the following actions on the form's input fields: -
+ * input text fields will have their 'value' property set to the empty string -
+ * select elements will have their 'selectedIndex' property set to -1 - checkbox
+ * and radio inputs will have their 'checked' property set to false - inputs of
+ * type submit, button, reset, and hidden will *not* be effected - button
+ * elements will *not* be effected
+ * 
+ * 
  * @name clearForm
  */
 var __clearForm__ = function(form) {
@@ -12714,13 +12759,13 @@ var __clearForm__ = function(form) {
 };
 
 /**
- * Clears the selected form element.  Takes the following actions on the element:
- *  - input text fields will have their 'value' property set to the empty string
- *  - select elements will have their 'selectedIndex' property set to -1
- *  - checkbox and radio inputs will have their 'checked' property set to false
- *  - inputs of type submit, button, reset, and hidden will *not* be effected
- *  - button elements will *not* be effected
- *
+ * Clears the selected form element. Takes the following actions on the element: -
+ * input text fields will have their 'value' property set to the empty string -
+ * select elements will have their 'selectedIndex' property set to -1 - checkbox
+ * and radio inputs will have their 'checked' property set to false - inputs of
+ * type submit, button, reset, and hidden will *not* be effected - button
+ * elements will *not* be effected
+ * 
  * @name clearFields
  */
 var __clearField__ = function(element) {
@@ -12753,23 +12798,21 @@ var __param__= function( array ) {
 
 /**
  * Location
- *
- * Mozilla MDC:
- * https://developer.mozilla.org/En/DOM/Window.location
+ * 
+ * Mozilla MDC: https://developer.mozilla.org/En/DOM/Window.location
  * https://developer.mozilla.org/en/DOM/document.location
- *
+ * 
  * HTML5: 6.10.4 The Location interface
  * http://dev.w3.org/html5/spec/Overview.html#location
- *
+ * 
  * HTML5: 2.5.3 Interfaces for URL manipulation
  * http://dev.w3.org/html5/spec/Overview.html#url-decomposition-idl-attributes
- * All of section 2.5 is worth reading, but 2.5.3 contains very
- * detailed information on how getters/setter should work
- *
- * NOT IMPLEMENTED:
- *  HTML5: Section 6.10.4.1 Security -- prevents scripts from another domain
- *   from accessing most of the 'Location'
- *  Not sure if anyone implements this in HTML4
+ * All of section 2.5 is worth reading, but 2.5.3 contains very detailed
+ * information on how getters/setter should work
+ * 
+ * NOT IMPLEMENTED: HTML5: Section 6.10.4.1 Security -- prevents scripts from
+ * another domain from accessing most of the 'Location' Not sure if anyone
+ * implements this in HTML4
  */
 
 Location = function(url, doc, history) {
@@ -12927,17 +12970,18 @@ Location = function(url, doc, history) {
             $url = url;
             parts = Envjs.urlsplit($url);
 
-            //we can only assign if this Location is associated with a document
+            // we can only assign if this Location is associated with a document
             if ($document) {
                 console.log('fetching %s (async? %s)', url, $document.async);
                 xhr = new XMLHttpRequest();
 
                 // TODO: make async flag a Envjs paramter
-                xhr.open('GET', url, false);//$document.async);
+                xhr.open('GET', url, false);// $document.async);
 
-                // TODO: is there a better way to test if a node is an HTMLDocument?
+                // TODO: is there a better way to test if a node is an
+                // HTMLDocument?
                 if ($document.toString() === '[object HTMLDocument]') {
-                    //tell the xhr to not parse the document as XML
+                    // tell the xhr to not parse the document as XML
                     console.log('loading html document');
                     xhr.onreadystatechange = function() {
                         console.log('readyState %s', xhr.readyState);
@@ -12949,7 +12993,7 @@ Location = function(url, doc, history) {
                     };
                     xhr.send(null, false);
                 } else {
-                    //Treat as an XMLDocument
+                    // Treat as an XMLDocument
                     xhr.onreadystatechange = function() {
                         if (xhr.readyState === 4) {
                             $document = xhr.responseXML;
@@ -12968,7 +13012,7 @@ Location = function(url, doc, history) {
 
         },
         reload: function(forceget) {
-            //for now we have no caching so just proxy to assign
+            // for now we have no caching so just proxy to assign
             console.log('reloading %s',$url);
             this.assign($url);
         },
@@ -13004,7 +13048,7 @@ var __exchangeHTMLDocument__ = function(doc, text, url) {
         doc.appendChild(html);
         console.log('default error document \n %s', doc.documentElement.outerHTML);
 
-        //DOMContentLoaded event
+        // DOMContentLoaded event
         if (doc.createEvent) {
             event = doc.createEvent('Event');
             event.initEvent('DOMContentLoaded', false, false);
@@ -13015,9 +13059,9 @@ var __exchangeHTMLDocument__ = function(doc, text, url) {
             doc.dispatchEvent( event, false );
         }
 
-        //finally fire the window.onload event
-        //TODO: this belongs in window.js which is a event
-        //      event handler for DOMContentLoaded on document
+        // finally fire the window.onload event
+        // TODO: this belongs in window.js which is a event
+        // event handler for DOMContentLoaded on document
 
         try {
             if (doc === window.document) {
@@ -13028,16 +13072,16 @@ var __exchangeHTMLDocument__ = function(doc, text, url) {
             }
         } catch (e) {
             console.log('window load event failed %s', e);
-            //swallow
+            // swallow
         }
     };  /* closes return {... */
 };
 
 /**
- *
+ * 
  * @class XMLHttpRequest
  * @author Originally implemented by Yehuda Katz
- *
+ * 
  */
 
 // this implementation can be used without requiring a DOMParser
@@ -13047,11 +13091,11 @@ var domparser;
 XMLHttpRequest = function(){
     this.headers = {};
     this.responseHeaders = {};
-    this.aborted = false;//non-standard
+    this.aborted = false;// non-standard
 };
 
 // defined by the standard: http://www.w3.org/TR/XMLHttpRequest/#xmlhttprequest
-// but not provided by Firefox.  Safari and others do define it.
+// but not provided by Firefox. Safari and others do define it.
 XMLHttpRequest.UNSENT = 0;
 XMLHttpRequest.OPEN = 1;
 XMLHttpRequest.HEADERS_RECEIVED = 2;
@@ -13070,7 +13114,7 @@ XMLHttpRequest.prototype = {
     setRequestHeader: function(header, value){
         this.headers[header] = value;
     },
-    send: function(data, parsedoc/*non-standard*/){
+    send: function(data, parsedoc/* non-standard */){
         var _this = this;
         parsedoc = (parsedoc === undefined)?true:!!parsedoc;
         function makeRequest(){
@@ -13092,13 +13136,14 @@ XMLHttpRequest.prototype = {
                             console.log("parsing response text into xml document");
                             doc = domparser.parseFromString(_this.responseText+"", 'text/xml');
                         } catch(e) {
-                            //Envjs.error('response XML does not appear to be well formed xml', e);
+                            // Envjs.error('response XML does not appear to be
+                            // well formed xml', e);
                             console.warn('parseerror \n%s', e);
                             doc = document.implementation.createDocument('','error',null);
                             doc.appendChild(doc.createTextNode(e+''));
                         }
                     }else{
-                        //Envjs.warn('response XML does not appear to be xml');
+                        // Envjs.warn('response XML does not appear to be xml');
                     }
                     
                     try{
@@ -13121,10 +13166,10 @@ XMLHttpRequest.prototype = {
         }
 
         if (this.async){
-            //TODO: what we really need to do here is rejoin the
-            //      current thread and call onreadystatechange via
-            //      setTimeout so the callback is essentially applied
-            //      at the end of the current callstack
+            // TODO: what we really need to do here is rejoin the
+            // current thread and call onreadystatechange via
+            // setTimeout so the callback is essentially applied
+            // at the end of the current callstack
             console.log('requesting async: %s', this.url);
             Envjs.runAsync(makeRequest);
         }else{
@@ -13136,10 +13181,10 @@ XMLHttpRequest.prototype = {
         this.aborted = true;
     },
     onreadystatechange: function(){
-        //Instance specific
+        // Instance specific
     },
     getResponseHeader: function(header){
-        //$debug('GETTING RESPONSE HEADER '+header);
+        // $debug('GETTING RESPONSE HEADER '+header);
         var rHeader, returnedHeaders;
         if (this.readyState < 3){
             throw new Error("INVALID_STATE_ERR");
@@ -13152,7 +13197,7 @@ XMLHttpRequest.prototype = {
             }
 
             if (returnedHeaders.length){
-                //$debug('GOT RESPONSE HEADER '+returnedHeaders.join(", "));
+                // $debug('GOT RESPONSE HEADER '+returnedHeaders.join(", "));
                 return returnedHeaders.join(", ");
             }
         }
@@ -13182,7 +13227,7 @@ XMLHttpRequest.prototype = {
  * @copyright 2008-2010
  * @license MIT
  */
-//CLOSURE_END
+// CLOSURE_END
 }());
 
 /**
@@ -13195,13 +13240,12 @@ var Window,
 
 
 /*
- * Envjs window.1.2.13 
- * Pure JavaScript Browser Environment
- * By John Resig <http://ejohn.org/> and the Envjs Team
- * Copyright 2008-2010 John Resig, under the MIT License
+ * Envjs window.1.2.13 Pure JavaScript Browser Environment By John Resig
+ * <http://ejohn.org/> and the Envjs Team Copyright 2008-2010 John Resig, under
+ * the MIT License
  */
 
-//CLOSURE_START
+// CLOSURE_START
 (function(){
 
 
@@ -13252,8 +13296,8 @@ __extend__(HTMLFrameElement.prototype,{
 });
 
 /*
- *       history.js
- *
+ * history.js
+ * 
  */
 
 History = function(owner) {
@@ -13278,7 +13322,7 @@ History = function(owner) {
                     $current = target;
                 }
             } else {
-                //TODO: walk through the history and find the 'best match'?
+                // TODO: walk through the history and find the 'best match'?
             }
         },
 
@@ -13319,8 +13363,8 @@ History = function(owner) {
         },
 
         add: function(newLocation, type) {
-            //not a standard interface, we expose it to simplify
-            //history state modifications
+            // not a standard interface, we expose it to simplify
+            // history state modifications
             if (newLocation !== $history[$current]) {
                 $history.slice(0, $current);
                 $history.push({
@@ -13334,8 +13378,7 @@ History = function(owner) {
 
 
 /*
- *      navigator.js
- *  Browser Navigator
+ * navigator.js Browser Navigator
  */
 Navigator = function(){
 
@@ -13349,7 +13392,7 @@ Navigator = function(){
         get appVersion(){
             return Envjs.version +" ("+
                 this.platform +"; "+
-                "U; "+//?
+                "U; "+// ?
                 Envjs.os_name+" "+Envjs.os_arch+" "+Envjs.os_version+"; "+
                 (Envjs.lang?Envjs.lang:"en-US")+"; "+
                 "rv:"+Envjs.revision+
@@ -13379,7 +13422,9 @@ Navigator = function(){
 
 /**
  * Screen
- * @param {Object} __window__
+ * 
+ * @param {Object}
+ *            __window__
  */
 
 Screen = function(__window__){
@@ -13397,14 +13442,15 @@ Screen = function(__window__){
 
     __extend__( __window__, {
         moveBy : function(dx,dy){
-            //TODO - modify $locals to reflect change
+            // TODO - modify $locals to reflect change
         },
         moveTo : function(x,y) {
-            //TODO - modify $locals to reflect change
+            // TODO - modify $locals to reflect change
         },
-        /*print : function(){
-            //TODO - good global to modify to ensure print is not misused
-        };*/
+        /*
+         * print : function(){ //TODO - good global to modify to ensure print is
+         * not misused };
+         */
         resizeBy : function(dw, dh){
             __window__resizeTo($width + dw, $height + dh);
         },
@@ -13413,13 +13459,13 @@ Screen = function(__window__){
             $height = (height <= $availHeight) ? height : $availHeight;
         },
         scroll : function(x,y){
-            //TODO - modify $locals to reflect change
+            // TODO - modify $locals to reflect change
         },
         scrollBy : function(dx, dy){
-            //TODO - modify $locals to reflect change
+            // TODO - modify $locals to reflect change
         },
         scrollTo : function(x,y){
-            //TODO - modify $locals to reflect change
+            // TODO - modify $locals to reflect change
         }
     });
 
@@ -13460,49 +13506,47 @@ Screen = function(__window__){
 /*
  * Copyright (c) 2010 Nick Galbreath
  * http://code.google.com/p/stringencoders/source/browse/#svn/trunk/javascript
- *
- * Permission is hereby granted, free of charge, to any person
- * obtaining a copy of this software and associated documentation
- * files (the "Software"), to deal in the Software without
- * restriction, including without limitation the rights to use,
- * copy, modify, merge, publish, distribute, sublicense, and/or sell
- * copies of the Software, and to permit persons to whom the
- * Software is furnished to do so, subject to the following
- * conditions:
- *
- * The above copyright notice and this permission notice shall be
- * included in all copies or substantial portions of the Software.
- *
- * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
- * EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES
- * OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
- * NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT
- * HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY,
- * WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
- * FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
- * OTHER DEALINGS IN THE SOFTWARE.
+ * 
+ * Permission is hereby granted, free of charge, to any person obtaining a copy
+ * of this software and associated documentation files (the "Software"), to deal
+ * in the Software without restriction, including without limitation the rights
+ * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+ * copies of the Software, and to permit persons to whom the Software is
+ * furnished to do so, subject to the following conditions:
+ * 
+ * The above copyright notice and this permission notice shall be included in
+ * all copies or substantial portions of the Software.
+ * 
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+ * SOFTWARE.
  */
 
-/* base64 encode/decode compatible with window.btoa/atob
- *
- * window.atob/btoa is a Firefox extension to convert binary data (the "b")
- * to base64 (ascii, the "a").
- *
- * It is also found in Safari and Chrome.  It is not available in IE.
- *
- * if (!window.btoa) window.btoa = base64.encode
- * if (!window.atob) window.atob = base64.decode
- *
+/*
+ * base64 encode/decode compatible with window.btoa/atob
+ * 
+ * window.atob/btoa is a Firefox extension to convert binary data (the "b") to
+ * base64 (ascii, the "a").
+ * 
+ * It is also found in Safari and Chrome. It is not available in IE.
+ * 
+ * if (!window.btoa) window.btoa = base64.encode if (!window.atob) window.atob =
+ * base64.decode
+ * 
  * The original spec's for atob/btoa are a bit lacking
  * https://developer.mozilla.org/en/DOM/window.atob
  * https://developer.mozilla.org/en/DOM/window.btoa
- *
- * window.btoa and base64.encode takes a string where charCodeAt is [0,255]
- * If any character is not [0,255], then an DOMException(5) is thrown.
- *
- * window.atob and base64.decode take a base64-encoded string
- * If the input length is not a multiple of 4, or contains invalid characters
- *   then an DOMException(5) is thrown.
+ * 
+ * window.btoa and base64.encode takes a string where charCodeAt is [0,255] If
+ * any character is not [0,255], then an DOMException(5) is thrown.
+ * 
+ * window.atob and base64.decode take a base64-encoded string If the input
+ * length is not a multiple of 4, or contains invalid characters then an
+ * DOMException(5) is thrown.
  */
 var base64 = {};
 base64.PADCHAR = '=';
@@ -13532,8 +13576,8 @@ base64.makeDOMException = function() {
 
 base64.getbyte64 = function(s,i) {
     // This is oddly fast, except on Chrome/V8.
-    //  Minimal or no improvement in performance by using a
-    //   object with properties mapping chars to value (eg. 'A': 0)
+    // Minimal or no improvement in performance by using a
+    // object with properties mapping chars to value (eg. 'A': 0)
     var idx = base64.ALPHA.indexOf(s.charAt(i));
     if (idx === -1) {
         throw base64.makeDOMException();
@@ -13633,8 +13677,8 @@ base64.encode = function(s) {
     }
     return x.join('');
 };
-//These descriptions of window properties are taken loosely David Flanagan's
-//'JavaScript - The Definitive Guide' (O'Reilly)
+// These descriptions of window properties are taken loosely David Flanagan's
+// 'JavaScript - The Definitive Guide' (O'Reilly)
 
 var __windows__ = {};
 
@@ -13652,15 +13696,19 @@ var __top__ = function(_scope){
 
 /**
  * Window
- * @param {Object} scope
- * @param {Object} parent
- * @param {Object} opener
+ * 
+ * @param {Object}
+ *            scope
+ * @param {Object}
+ *            parent
+ * @param {Object}
+ *            opener
  */
 Window = function(scope, parent, opener){
 
     // the window property is identical to the self property and to this obj
-    //var proxy = new Envjs.proxy(scope, parent);
-    //scope.__proxy__ = proxy;
+    // var proxy = new Envjs.proxy(scope, parent);
+    // scope.__proxy__ = proxy;
     scope.__defineGetter__('window', function(){
         return scope;
     });
@@ -13670,7 +13718,7 @@ Window = function(scope, parent, opener){
     console.log('opening window %s', $uuid);
 
     // every window has one-and-only-one .document property which is always
-    // an [object HTMLDocument].  also, only window.document objects are
+    // an [object HTMLDocument]. also, only window.document objects are
     // html documents, all other documents created by the window.document are
     // [object XMLDocument]
     var $htmlImplementation =  new DOMImplementation();
@@ -13681,12 +13729,12 @@ Window = function(scope, parent, opener){
     var $document = new HTMLDocument($htmlImplementation, scope);
 
     // A read-only reference to the Window object that contains this window
-    // or frame.  If the window is a top-level window, parent refers to
-    // the window itself.  If this window is a frame, this property refers
+    // or frame. If the window is a top-level window, parent refers to
+    // the window itself. If this window is a frame, this property refers
     // to the window or frame that contains it.
     var $parent = parent;
 
-    /**> $cookies - see cookie.js <*/
+    /** > $cookies - see cookie.js < */
     // read only boolean specifies whether the window has been closed
     var $closed = false;
 
@@ -13701,11 +13749,12 @@ Window = function(scope, parent, opener){
     // a read-only reference to the History object
     var $history = new History();
 
-    // a read-only reference to the Location object.  the location object does
+    // a read-only reference to the Location object. the location object does
     // expose read/write properties
     var $location = new Location('about:blank', $document, $history);
 
-    // The name of window/frame. Set directly, when using open(), or in frameset.
+    // The name of window/frame. Set directly, when using open(), or in
+    // frameset.
     // May be used when specifying the target attribute of links
     var $name = null;
 
@@ -13713,7 +13762,7 @@ Window = function(scope, parent, opener){
     var $navigator = new Navigator();
 
     // a read/write reference to the Window object that contained the script
-    // that called open() to open this browser window.  This property is valid
+    // that called open() to open this browser window. This property is valid
     // only for top-level window objects.
     var $opener = opener?opener:null;
 
@@ -13722,14 +13771,14 @@ Window = function(scope, parent, opener){
 
     // Read-only properties that specify the total height and width, in pixels,
     // of the browser window. These dimensions include the height and width of
-    // the menu bar, toolbars, scrollbars, window borders and so on.  These
+    // the menu bar, toolbars, scrollbars, window borders and so on. These
     // properties are not supported by IE and IE offers no alternative
     // properties;
     var $outerHeight = $innerHeight,
         $outerWidth = $innerWidth;
 
     // Read-only properties that specify the number of pixels that the current
-    // document has been scrolled to the right and down.  These are not
+    // document has been scrolled to the right and down. These are not
     // supported by IE.
     var $pageXOffset = 0, $pageYOffset = 0;
 
@@ -13767,11 +13816,9 @@ Window = function(scope, parent, opener){
             $document = doc;
         },
         /*
-        deprecated ie specific property probably not good to support
-        get event(){
-            return $event;
-        },
-        */
+         * deprecated ie specific property probably not good to support get
+         * event(){ return $event; },
+         */
         get frames(){
         return new HTMLCollection($document.getElementsByTagName('frame'));
         },
@@ -13799,7 +13846,7 @@ Window = function(scope, parent, opener){
         },
         set location(uri){
             uri = Envjs.uri(uri);
-            //new Window(this, this.parent, this.opener);
+            // new Window(this, this.parent, this.opener);
             if($location.href == uri){
                 $location.reload();
             }else if($location.href == 'about:blank'){
@@ -13859,8 +13906,10 @@ Window = function(scope, parent, opener){
         set status(status){
             $status = status;
         },
-        // a read-only reference to the top-level window that contains this window.
-        // If this window is a top-level window it is simply a reference to itself.
+        // a read-only reference to the top-level window that contains this
+        // window.
+        // If this window is a top-level window it is simply a reference to
+        // itself.
         // If this window is a frame, the top property refers to the top-level
         // window that contains the frame.
         get top(){
@@ -13875,22 +13924,18 @@ Window = function(scope, parent, opener){
 
         /**
          * getComputedStyle
-         *
-         * Firefox 3.6:
-         *  - Requires both elements to be present else an
-         *    exception is thrown.
-         *  - Returns a 'ComputedCSSStyleDeclaration' object.
-         *    while a raw element.style returns a 'CSSStyleDeclaration' object.
-         *  - Bogus input also throws exception
-         *
-         * Safari 4:
-         *  - Requires one argument (second can be MIA)
-         *  - Returns a CSSStyleDeclaration object
-         *  - if bad imput, returns null
-         *
-         * getComputedStyle should really be an "add on" from the css
-         * modules.  Unfortunately, 'window' comes way after the 'css'
-         * so css can't add it.
+         * 
+         * Firefox 3.6: - Requires both elements to be present else an exception
+         * is thrown. - Returns a 'ComputedCSSStyleDeclaration' object. while a
+         * raw element.style returns a 'CSSStyleDeclaration' object. - Bogus
+         * input also throws exception
+         * 
+         * Safari 4: - Requires one argument (second can be MIA) - Returns a
+         * CSSStyleDeclaration object - if bad imput, returns null
+         * 
+         * getComputedStyle should really be an "add on" from the css modules.
+         * Unfortunately, 'window' comes way after the 'css' so css can't add
+         * it.
          */
         getComputedStyle: function(element, pseudoElement) {
             return element.style;
@@ -13950,13 +13995,14 @@ Window = function(scope, parent, opener){
 };
 
 
-//finally pre-supply the window with the window-like environment
+// finally pre-supply the window with the window-like environment
 console.log('Default Window');
 new Window(__this__, __this__);
 console.log('[ %s ]',window.navigator.userAgent);
 /**
- *
- * @param {Object} event
+ * 
+ * @param {Object}
+ *            event
  */
 __extend__(Envjs.defaultEventBehaviors,{
 
@@ -13981,48 +14027,161 @@ __extend__(Envjs.defaultEventBehaviors,{
  * @license MIT
  */
 
+Envjs.instance=-1;
 
-
-//custom:
+// custom:
 
 Envjs.writeToFile = function(text, url){
-    Packages.jd.EnvTest.writeToFile(text,url);
+    var envjs=Packages.org.jdownloader.scripting.envjs.EnvJS.get(Envjs.instance);
+    
+ 
+    envjs.writeToFile(text,url);
 };
 
 /**
  * Used to write to a local file
- * @param {Object} text
- * @param {Object} suffix
+ * 
+ * @param {Object}
+ *            text
+ * @param {Object}
+ *            suffix
  */
 Envjs.writeToTempFile = function(text, suffix){
-  
-    return    Packages.jd.EnvTest.writeToTempFile(text,suffix);
+    var envjs=Packages.org.jdownloader.scripting.envjs.EnvJS.get(Envjs.instance);
+    
+    return    envjs.writeToTempFile(text,suffix);
 };
 
 
 /**
  * Used to read the contents of a local file
- * @param {Object} url
+ * 
+ * @param {Object}
+ *            url
  */
  
  
 Envjs.readFromFile = function( url ){
+  var envjs=Packages.org.jdownloader.scripting.envjs.EnvJS.get(Envjs.instance);
  
-    return  Packages.jd.EnvTest.readFromFile(url)+"";
+    return  envjs.readFromFile(url)+"";
 };
     
 
 /**
  * Used to delete a local file
- * @param {Object} url
+ * 
+ * @param {Object}
+ *            url
  */
 Envjs.deleteFile = function(url){
-    Packages.jd.EnvTest.deleteFile(url);
+    var envjs=Packages.org.jdownloader.scripting.envjs.EnvJS.get(Envjs.instance);
+    
+    envjs.deleteFile(url);
 };
 
 Envjs.cookieFile = function(){
     return 'file:///'+Envjs.homedir+'/.cookies';
 };
-//CLOSURE_END
+
+
+Envjs.connection = function(xhr, responseHandler, data){
+    
+    var resp= undefined;
+    var envjs=Packages.org.jdownloader.scripting.envjs.EnvJS.get(Envjs.instance);
+    
+        // write data to output stream if required
+        if(data){
+            if(data instanceof Document){
+                if ( xhr.method == "PUT" || xhr.method == "POST" ) {           
+                    
+                   
+                     resp=  JSON.parse(""+   envjs.xhrRequest(xhr.url,xhr.method,(new XMLSerializer()).serializeToString(data),JSON.stringify(xhr.headers,null,'\t') )); 
+                  
+                }
+            }else if(data.length&&data.length>0){
+                if ( xhr.method == "PUT" || xhr.method == "POST" ) {
+                    
+                    
+                     resp=  JSON.parse(""+   envjs.xhrRequest(xhr.url,xhr.method,data+"",JSON.stringify(xhr.headers,null,'\t') )); 
+            
+                }
+            }
+   
+        }
+
+    
+if(resp===undefined){
+
+    
+  resp=  JSON.parse(""+envjs.xhrRequest(xhr.url,xhr.method,null,JSON.stringify(xhr.headers,null,'\t') )); 
+}
+
+xhr.responseHeaders=resp.responseHeader;
+
+ 
+
+ xhr.readyState = 4;
+ xhr.status =resp.responseCode||undefined;
+ xhr.statusText = resp.responseMessage||"";
+
+ contentEncoding = resp.encoding || "utf-8";
+
+ 
+ 
+ 
+
+     xhr.responseText = resp.responseText;
+
+ 
+ 
+    if(responseHandler){
+        // Envjs.debug('calling ajax response handler');
+        responseHandler();
+    }
+};
+
+Envjs.getCookies = function(url){
+    var envjs=Packages.org.jdownloader.scripting.envjs.EnvJS.get(Envjs.instance);
+    
+    var ret=envjs.getCookieStringByUrl(url);
+if(ret){
+    return ""+ret;
+}else{
+    return undefined;
+}
+    
+    
+}
+
+Envjs.saveCookies = function(){
+    var cookiejson = JSON.stringify(Envjs.cookies.peristent,null,'\t');
+    console.log('persisting cookies %s', cookiejson);
+//    Envjs.writeToFile(cookiejson, Envjs.cookieFile());
+};
+Envjs.log = function(message){
+    
+    var envjs=Packages.org.jdownloader.scripting.envjs.EnvJS.get(Envjs.instance);
+    envjs.log(message);
+    
+};
+
+Envjs.eval = function(context, source, name){
+  console.log("eval:\r\n"+source);
+    __context__.evaluateString(
+        context,
+        source,
+        name,
+        0,
+        null
+    );
+};
+Envjs.setCookie = function(url, cookie){
+    
+    var envjs=Packages.org.jdownloader.scripting.envjs.EnvJS.get(Envjs.instance);
+    envjs.setCookie(url,cookie);
+}
+
+// CLOSURE_END
 
 }());
