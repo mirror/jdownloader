@@ -86,7 +86,7 @@ public class UpToBoxCom extends PluginForHost {
 
     @Override
     public void correctDownloadLink(DownloadLink link) {
-        link.setUrlDownload(link.getDownloadURL().replace("https://", "http://").replace("http://www.", "http//"));
+        link.setUrlDownload(link.getDownloadURL().replace("https://", "http://").replace("http://www.", "http://"));
     }
 
     @Override
