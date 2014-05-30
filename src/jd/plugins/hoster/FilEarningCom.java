@@ -67,7 +67,8 @@ public class FilEarningCom extends PluginForHost {
         this.setBrowserExclusive();
         br.getPage(link.getDownloadURL());
         handleErrors();
-        Regex fileInfo = br.getRegex("(?i)Download:\\&nbsp;<h1>(.+) \\(([\\d\\.]+ ?(MB|GB))\\)</h1>");
+        // <h1>Download File: norah.avi (114.43 MB)
+        Regex fileInfo = br.getRegex("Download File: ([^<>/]*?) \\(([\\d\\.]+ ?(MB|GB))\\)[\t\n\r ]+</h1>");
         String filename = fileInfo.getMatch(0);
         String filesize = fileInfo.getMatch(1);
         if (filename == null) {

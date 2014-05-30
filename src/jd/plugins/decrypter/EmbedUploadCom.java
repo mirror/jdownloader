@@ -81,7 +81,7 @@ public class EmbedUploadCom extends PluginForDecrypt {
                 }
             }
 
-            if (parameter.matches(".+/\\?d=[A-Z0-9]+")) {
+            if (parameter.matches(".+/\\?d=[A-Za-z0-9]+")) {
                 String embedUploadDirectlink = br.getRegex("div id=\"embedupload\" style=\"padding-left:43px;padding-right:20px;padding-bottom:20px;font-size:17px;font-style:italic\" >[\t\n\r ]+<a href=\"(http://.*?)\"").getMatch(0);
                 if (embedUploadDirectlink == null) {
                     embedUploadDirectlink = br.getRegex("(\"|')(http://(www\\.)?embedupload\\.(com|to)/\\?EU=[A-Z0-9]+&urlkey=[A-Za-z0-9]+)\\1").getMatch(1);

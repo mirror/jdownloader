@@ -66,12 +66,18 @@ public class ExtMatrixCom extends PluginForHost {
     public AvailableStatus requestFileInformation(DownloadLink link) throws IOException, PluginException {
         this.setBrowserExclusive();
         br.getPage(link.getDownloadURL());
-        if (br.containsHTML(">The file you have requested does not exist")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (br.containsHTML(">The file you have requested does not exist")) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
         final Regex fileInfo = br.getRegex("style=\"text\\-align:(center|left|right);\">(Premium Only\\!)?([^\"<>]+) \\(([0-9\\.]+ [A-Za-z]+)(\\))?(,[^<>\"/]+)?</h1>");
         String filename = fileInfo.getMatch(2);
         String filesize = fileInfo.getMatch(3);
-        if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        if (br.containsHTML(PREMIUMONLYTEXT)) link.getLinkStatus().setStatusText(PREMIUMONLYUSERTEXT);
+        if (filename == null || filesize == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        if (br.containsHTML(PREMIUMONLYTEXT)) {
+            link.getLinkStatus().setStatusText(PREMIUMONLYUSERTEXT);
+        }
         // Set final filename here because hoster taggs files
         link.setFinalFileName(filename.trim());
         link.setDownloadSize(SizeFormatter.getSize(filesize));
@@ -89,16 +95,22 @@ public class ExtMatrixCom extends PluginForHost {
             try {
                 throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);
             } catch (final Throwable e) {
-                if (e instanceof PluginException) throw (PluginException) e;
+                if (e instanceof PluginException) {
+                    throw (PluginException) e;
+                }
             }
             throw new PluginException(LinkStatus.ERROR_FATAL, PREMIUMONLYUSERTEXT);
         }
         final String getLink = getLink();
-        if (getLink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (getLink == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         // waittime
         String ttt = br.getRegex("var time = (\\d+);").getMatch(0);
         int tt = 20;
-        if (ttt != null) tt = Integer.parseInt(ttt);
+        if (ttt != null) {
+            tt = Integer.parseInt(ttt);
+        }
         if (tt > 240) {
             // 10 Minutes reconnect-waittime is not enough, let's wait one
             // hour
@@ -113,7 +125,9 @@ public class ExtMatrixCom extends PluginForHost {
                 br.followConnection();
                 final String action = br.getRegex("\"(http://s\\d+\\.extmatrix\\.com/get/[A-Za-z0-9]+/\\d+/[^<>\"]*?)\"").getMatch(0);
                 final String rcID = br.getRegex("Recaptcha\\.create\\(\"([^<>\"]*?)\"").getMatch(0);
-                if (rcID == null || action == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                if (rcID == null || action == null) {
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                }
                 PluginForHost recplug = JDUtilities.getPluginForHost("DirectHTTP");
                 jd.plugins.hoster.DirectHTTP.Recaptcha rc = ((DirectHTTP) recplug).getReCaptcha(br);
                 rc.setId(rcID);
@@ -132,11 +146,19 @@ public class ExtMatrixCom extends PluginForHost {
         }
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
-            if (br.containsHTML("Server is too busy for free users")) throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "No free slots", 10 * 60 * 1000l);
-            if (br.containsHTML("(api\\.recaptcha\\.net|google\\.com/recaptcha/api/)")) throw new PluginException(LinkStatus.ERROR_CAPTCHA);
-            if (br.containsHTML("(files per hour for free users\\.</div>|>Los usuarios de Cuenta Gratis pueden descargar|hours for free users\\.|var time =)")) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 60 * 60 * 1001l);
+            if (br.containsHTML("Server is too busy for free users")) {
+                throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "No free slots", 10 * 60 * 1000l);
+            }
+            if (br.containsHTML("(api\\.recaptcha\\.net|google\\.com/recaptcha/api/)")) {
+                throw new PluginException(LinkStatus.ERROR_CAPTCHA);
+            }
+            if (br.containsHTML("(files per hour for free users\\.</div>|>Los usuarios de Cuenta Gratis pueden descargar|hours for free users\\.|var time =)")) {
+                throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 60 * 60 * 1001l);
+            }
             final String unknownError = br.getRegex("class=\"error\">(.*?)\"").getMatch(0);
-            if (unknownError != null) logger.warning("Unknown error occured: " + unknownError);
+            if (unknownError != null) {
+                logger.warning("Unknown error occured: " + unknownError);
+            }
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl.startDownload();
@@ -158,7 +180,9 @@ public class ExtMatrixCom extends PluginForHost {
             br.setCookiesExclusive(false);
             final Object ret = account.getProperty("cookies", null);
             boolean acmatch = Encoding.urlEncode(account.getUser()).matches(account.getStringProperty("name", Encoding.urlEncode(account.getUser())));
-            if (acmatch) acmatch = Encoding.urlEncode(account.getPass()).matches(account.getStringProperty("pass", Encoding.urlEncode(account.getPass())));
+            if (acmatch) {
+                acmatch = Encoding.urlEncode(account.getPass()).matches(account.getStringProperty("pass", Encoding.urlEncode(account.getPass())));
+            }
             if (acmatch && ret != null && ret instanceof HashMap<?, ?> && !force) {
                 final HashMap<String, String> cookies = (HashMap<String, String>) ret;
                 if (account.isValid()) {
@@ -212,9 +236,13 @@ public class ExtMatrixCom extends PluginForHost {
             return ai;
         }
         String hostedFiles = br.getRegex("<td>Files Hosted:</td>[\t\r\n ]+<td>(\\d+)</td>").getMatch(0);
-        if (hostedFiles != null) ai.setFilesNum(Integer.parseInt(hostedFiles));
+        if (hostedFiles != null) {
+            ai.setFilesNum(Integer.parseInt(hostedFiles));
+        }
         String space = br.getRegex("<td>Spaced Used:</td>[\t\n\r ]+<td>(.*?) " + PREMIUMLIMIT).getMatch(0);
-        if (space != null) ai.setUsedSpace(space.trim());
+        if (space != null) {
+            ai.setUsedSpace(space.trim());
+        }
         account.setValid(true);
         ai.setUnlimitedTraffic();
         if (account.getBooleanProperty("freeacc", false)) {
@@ -229,7 +257,7 @@ public class ExtMatrixCom extends PluginForHost {
             ai.setStatus("Registered (free) user");
         } else {
             try {
-                maxPrem.set(20);
+                maxPrem.set(2);
                 account.setMaxSimultanDownloads(maxPrem.get());
                 account.setConcurrentUsePossible(true);
             } catch (final Throwable e) {
@@ -255,10 +283,16 @@ public class ExtMatrixCom extends PluginForHost {
                 br.getPage(getLink);
                 getLink = br.getRedirectLocation();
             }
-            if (getLink == null) getLink = br.getRegex("<a id=\\'jd_support\\' href=\"(http://[^<>\"]*?)\"").getMatch(0);
-            if (getLink == null) getLink = getLink();
-            if (getLink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            int maxChunks = -2;
+            if (getLink == null) {
+                getLink = br.getRegex("<a id=\\'jd_support\\' href=\"(http://[^<>\"]*?)\"").getMatch(0);
+            }
+            if (getLink == null) {
+                getLink = getLink();
+            }
+            if (getLink == null) {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
+            int maxChunks = 1;
             if (oldStyle()) {
                 /*
                  * stable has bug with openDownload and postData, cookies are not forwared to chunks
@@ -277,7 +311,9 @@ public class ExtMatrixCom extends PluginForHost {
 
     private boolean oldStyle() {
         String style = System.getProperty("ftpStyle", null);
-        if ("new".equalsIgnoreCase(style)) return false;
+        if ("new".equalsIgnoreCase(style)) {
+            return false;
+        }
         String prev = JDUtilities.getRevision();
         if (prev == null || prev.length() < 3) {
             prev = "0";
@@ -285,13 +321,17 @@ public class ExtMatrixCom extends PluginForHost {
             prev = prev.replaceAll(",|\\.", "");
         }
         int rev = Integer.parseInt(prev);
-        if (rev < 10000) return true;
+        if (rev < 10000) {
+            return true;
+        }
         return false;
     }
 
     private String getLink() {
         String getLink = br.getRegex("disabled=\"disabled\" onclick=\"document\\.location=\\'(.*?)\\';\"").getMatch(0);
-        if (getLink == null) getLink = br.getRegex("(\\'|\")(" + "http://(www\\.)?([a-z0-9]+\\.)?" + MAINPAGE.replaceAll("(http://|www\\.)", "") + "/get/[A-Za-z0-9]+/\\d+/[^<>\"/]+)(\\'|\")").getMatch(1);
+        if (getLink == null) {
+            getLink = br.getRegex("(\\'|\")(" + "http://(www\\.)?([a-z0-9]+\\.)?" + MAINPAGE.replaceAll("(http://|www\\.)", "") + "/get/[A-Za-z0-9]+/\\d+/[^<>\"/]+)(\\'|\")").getMatch(1);
+        }
         return getLink;
     }
 

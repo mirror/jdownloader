@@ -54,7 +54,9 @@ public class BonBonmeCom extends PluginForDecrypt {
         }
         String filename = br.getRegex("<div class=\"title\">[\t\n\r ]+<h2>([^<>\"]*?)(</h2>| 觀看次數:<script)").getMatch(0);
         String externID = br.getRegex("xvideos\\.com/embedframe/(\\d+)\"").getMatch(0);
-        if (externID == null) externID = br.getRegex("bonbonme_player_[A-Za-z0-9\\-_]+\\.php\\?vid=video(\\d+)\\&").getMatch(0);
+        if (externID == null) {
+            externID = br.getRegex("bonbonme_player_[A-Za-z0-9\\-_]+\\.php\\?vid=video(\\d+)\\&").getMatch(0);
+        }
         if (externID != null) {
             decryptedLinks.add(createDownloadlink("http://www.xvideos.com/video" + externID));
             return decryptedLinks;
@@ -125,6 +127,11 @@ public class BonBonmeCom extends PluginForDecrypt {
         externID = br.getRegex("metacafe\\.com/fplayer/(\\d+)/").getMatch(0);
         if (externID != null) {
             decryptedLinks.add(createDownloadlink("http://www.metacafe.com/watch/" + externID + "/" + System.currentTimeMillis()));
+            return decryptedLinks;
+        }
+        externID = br.getRegex("\"http://bonbonme\\.com/player/xvideos\\.php\\?vid=(video\\d+)\\&amp;").getMatch(0);
+        if (externID != null) {
+            decryptedLinks.add(createDownloadlink("http://www.xvideos.com/" + externID + "/" + System.currentTimeMillis()));
             return decryptedLinks;
         }
         // filename needed for all IDs below here

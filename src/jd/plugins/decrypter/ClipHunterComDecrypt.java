@@ -29,6 +29,7 @@ import jd.PluginWrapper;
 import jd.config.SubConfiguration;
 import jd.controlling.ProgressController;
 import jd.http.Browser;
+import jd.http.Browser.BrowserException;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.plugins.CryptedLink;
@@ -52,8 +53,13 @@ public class ClipHunterComDecrypt extends PluginForDecrypt {
         final String parameter = param.toString();
         br.setFollowRedirects(true);
         br.setCookie("cliphunter.com", "qchange", "h");
-        br.getPage(parameter);
-        if (br.getURL().contains("error/missing") || br.containsHTML("(>Ooops, This Video is not available|>This video was removed and is no longer available at our site|<title></title>)")) {
+        boolean offline = false;
+        try {
+            br.getPage(parameter);
+        } catch (final BrowserException e) {
+            offline = true;
+        }
+        if (offline || br.getURL().contains("error/missing") || br.containsHTML("(>Ooops, This Video is not available|>This video was removed and is no longer available at our site|<title></title>)")) {
             final DownloadLink dl = createDownloadlink("http://cliphunterdecrypted.com/" + System.currentTimeMillis() + new Random().nextInt(100000));
             dl.setName(new Regex(parameter, "cliphunter\\.com/w/\\d+/(.+)").getMatch(0));
             dl.setAvailable(false);
@@ -89,10 +95,18 @@ public class ClipHunterComDecrypt extends PluginForDecrypt {
             q480p = true;
             q540p = true;
         }
-        if (q360p) selectedQualities.add("_i.mp4");
-        if (q360pflv) selectedQualities.add("_l.flv");
-        if (q480p) selectedQualities.add("_p.mp4");
-        if (q540p) selectedQualities.add("_h.flv");
+        if (q360p) {
+            selectedQualities.add("_i.mp4");
+        }
+        if (q360pflv) {
+            selectedQualities.add("_l.flv");
+        }
+        if (q480p) {
+            selectedQualities.add("_p.mp4");
+        }
+        if (q540p) {
+            selectedQualities.add("_h.flv");
+        }
         final boolean fastLinkcheck = cfg.getBooleanProperty("FASTLINKCHECK", false);
         if (cfg.getBooleanProperty("ALLOW_BEST", false)) {
             String dllink = null;
@@ -104,7 +118,9 @@ public class ClipHunterComDecrypt extends PluginForDecrypt {
                     dl.setProperty("directlink", dllink);
                     dl.setProperty("originallink", parameter);
                     dl.setProperty("selectedquality", quality[0]);
-                    if (fastLinkcheck) dl.setAvailable(true);
+                    if (fastLinkcheck) {
+                        dl.setAvailable(true);
+                    }
                     decryptedLinks.add(dl);
                     break;
                 }
@@ -120,7 +136,9 @@ public class ClipHunterComDecrypt extends PluginForDecrypt {
                         dl.setProperty("directlink", dllink);
                         dl.setProperty("originallink", parameter);
                         dl.setProperty("selectedquality", quality[0]);
-                        if (fastLinkcheck) dl.setAvailable(true);
+                        if (fastLinkcheck) {
+                            dl.setAvailable(true);
+                        }
                         decryptedLinks.add(dl);
                     }
                 }
@@ -141,11 +159,15 @@ public class ClipHunterComDecrypt extends PluginForDecrypt {
         // parse decryptalgo
         final String jsUrl = br.getRegex("<script.*src=\"(http://s\\.gexo.*?player[_a-z]+\\.js)\"").getMatch(0);
         final String[] encryptedUrls = br.getRegex("var pl_fiji(_p|_i)? = \\'(.*?)\\'").getColumn(1);
-        if (jsUrl == null || encryptedUrls == null || encryptedUrls.length == 0) return null;
+        if (jsUrl == null || encryptedUrls == null || encryptedUrls.length == 0) {
+            return null;
+        }
         final Browser br2 = br.cloneBrowser();
         br2.getPage(jsUrl);
         String decryptAlgo = new Regex(br2, "decrypt\\:\\s?function(.*?\\})(,|;)").getMatch(0);
-        if (decryptAlgo == null) return null;
+        if (decryptAlgo == null) {
+            return null;
+        }
         // Find available links
         final LinkedHashMap<String, String> foundQualities = new LinkedHashMap<String, String>();
         decryptAlgo = "function decrypt" + decryptAlgo + ";";

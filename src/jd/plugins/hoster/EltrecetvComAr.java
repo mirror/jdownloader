@@ -17,6 +17,7 @@
 package jd.plugins.hoster;
 
 import jd.PluginWrapper;
+import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
@@ -26,7 +27,7 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.download.DownloadInterface;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "eltrecetv.com.ar" }, urls = { "http://(www\\.)?eltrecetv\\.com\\.ar/[^<>\"/]+/[^<>\"/]+/\\d+/.+" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "eltrecetv.com.ar" }, urls = { "http://(www\\.)?eltrecetv\\.com\\.ar/[^<>\"/]+/[^<>\"/]+" }, flags = { 0 })
 public class EltrecetvComAr extends PluginForHost {
 
     private String DLLINK = null;
@@ -77,20 +78,32 @@ public class EltrecetvComAr extends PluginForHost {
 
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws Exception {
+        /*
+         * Information on how to avouud RTMP for this host:
+         * http://www.taringa.net/posts/videos/9656281/Bajar-videos-de-eltrecetv-mejorada.html
+         */
         setBrowserExclusive();
         String dllink = downloadLink.getDownloadURL();
         br.getPage(dllink);
-        if (br.getRequest().getHttpConnection().getResponseCode() == 404) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (br.getRequest().getHttpConnection().getResponseCode() == 404) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
         String filename = br.getRegex("<title>(.*?) \\|.*?</title>").getMatch(0);
         if (filename == null) {
             filename = br.getRegex("\\s+<h1>(.*?)</h1>").getMatch(0);
         }
-        String id = new Regex(dllink, "/(\\d+)/[^/]+$").getMatch(0);
+        final String id = new Regex(dllink, "(\\d+)$").getMatch(0);
+        if (id == null) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
         br.getPage("http://www.eltrecetv.com.ar/playlist/" + id);
         String streamer = br.getRegex("<jwplayer:streamer>(rtmp.*?)</jwplayer:streamer>").getMatch(0);
         String playpath = br.getRegex("<media:content bitrate=\"\\d+\" url=\"([^\"]+)").getMatch(0);
 
-        if (filename == null || streamer == null || playpath == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (filename == null || streamer == null || playpath == null) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
+        filename = Encoding.htmlDecode(filename).trim();
         DLLINK = streamer + "@" + playpath + "@http://cdn.eltrecetv.com.ar/sites/all/libraries/jwplayer/player.swf@" + downloadLink.getDownloadURL();
         downloadLink.setFinalFileName(filename + ".mp4");
         return AvailableStatus.TRUE;

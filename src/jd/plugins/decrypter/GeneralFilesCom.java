@@ -37,7 +37,7 @@ public class GeneralFilesCom extends PluginForDecrypt {
         super(wrapper);
     }
 
-    private static final String currenthost = "general-file.com";
+    private static final String currenthost = "general-files.org";
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
@@ -65,10 +65,14 @@ public class GeneralFilesCom extends PluginForDecrypt {
 
         br.setFollowRedirects(false);
         String fpName = br.getRegex("<h4 class=\"file\\-header\\-2\">([^<>\"]*?)</h4>").getMatch(0);
-        if (fpName == null)
+        if (fpName == null) {
             fpName = new Regex(parameter, "/download/[a-z0-9]+/([^<>\"/]*?)\\.html").getMatch(0);
+        }
         fpName = Encoding.htmlDecode(fpName.trim());
-        final String goLink = br.getRegex("\\'(/go/\\d+)(\\?ajax=1)?\\'").getMatch(0);
+        String goLink = br.getRegex("\\'/go/(\\d+)(\\?ajax=1)?\\'").getMatch(0);
+        if (goLink == null) {
+            goLink = br.getRegex("/rate/2/(\\d+)\\'\\)").getMatch(0);
+        }
         if (goLink == null) {
             logger.warning("Decrypter broken for link: " + parameter);
             return null;
@@ -79,26 +83,30 @@ public class GeneralFilesCom extends PluginForDecrypt {
                 return null;
             }
             for (int i = 1; i <= 3; i++) {
-                final String c = getCaptchaCode("http://www." + currenthost + "/captcha/" + new Regex(goLink, "(\\d+)$").getMatch(0), param);
-                br.postPage(goLink, "captcha=" + Encoding.urlEncode(c));
+                final String c = getCaptchaCode("http://www." + currenthost + "/captcha/" + goLink, param);
+                br.postPage("http://www." + currenthost + "/go/" + goLink, "captcha=" + Encoding.urlEncode(c));
                 if (br.getRedirectLocation() != null && br.getRedirectLocation().matches("http://(www\\.)?" + currenthost + "/download/[a-z0-9]+/[^<>\"/]*?\\.html")) {
                     br.getPage(br.getRedirectLocation());
                     continue;
-                } else if (br.containsHTML(">Please enter captcha and"))
+                } else if (br.containsHTML(">Please enter captcha and")) {
                     continue;
+                }
                 break;
             }
-            if (br.containsHTML(">Please enter captcha and"))
+            if (br.containsHTML(">Please enter captcha and")) {
                 throw new DecrypterException(DecrypterException.CAPTCHA);
+            }
         } else {
-            br.getPage("http://www." + currenthost + goLink + "?ajax=1");
+            br.getPage("http://www." + currenthost + "/go/" + goLink + "?ajax=1");
         }
         /* First try ajax regex */
         String finallink = br.getRegex("\"link\":\"(http:[^<>\"]*?)\"").getMatch(0);
-        if (finallink == null)
+        if (finallink == null) {
             finallink = br.getRegex("window\\.location\\.replace\\(\\'(http[^<>\"]*?)\\'\\)").getMatch(0);
-        if (finallink == null)
+        }
+        if (finallink == null) {
             finallink = br.getRedirectLocation();
+        }
         if (finallink == null || finallink.contains(currenthost)) {
             logger.warning("Decrypter broken for link: " + parameter);
             return null;
