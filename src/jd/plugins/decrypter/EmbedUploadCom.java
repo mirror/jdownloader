@@ -39,21 +39,20 @@ public class EmbedUploadCom extends PluginForDecrypt {
         super(wrapper);
     }
 
-    private String        CURRENT_DOMAIN = "embedupload.to";
-    private String        recaptcha      = "(api\\.recaptcha\\.net|google\\.com/recaptcha/api/)";
-    private String        fuid           = null;
-    private static Object LOCK           = new Object();
+    private String        recaptcha = "(api\\.recaptcha\\.net|google\\.com/recaptcha/api/)";
+    private String        fuid      = null;
+    private static Object LOCK      = new Object();
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         // one thread, will minimise captcha events.
         synchronized (LOCK) {
             ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-            String parameter = param.toString().replace("embedupload.com/", "embedupload.to/");
+            String parameter = param.toString().replace("embedupload.to/", "embedupload.com/");
             fuid = new Regex(parameter, "(com|to)/\\?([A-Z0-9]{2}|d)=([A-Z0-9]+)").getMatch(2);
             br.getHeaders().put("User-Agent", "Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/32.0.1700.76 Safari/537.36");
             br.setFollowRedirects(false);
             br.getPage(parameter);
-            if (br.containsHTML("Copyright Abuse <br>|Invalid file name <|>Unfortunately, the file you are looking for is not available\\.\\s*<|Removed for copyright infringement or Invalid file name\\s*<") || br.getURL().equals("http://" + CURRENT_DOMAIN + "/?d=")) {
+            if (br.containsHTML("Copyright Abuse <br>|Invalid file name <|>Unfortunately, the file you are looking for is not available\\.\\s*<|Removed for copyright infringement or Invalid file name\\s*<") || br.getURL().matches(".+/\\?d=")) {
                 logger.info("Link offline: " + parameter);
                 return decryptedLinks;
             }
@@ -77,17 +76,23 @@ public class EmbedUploadCom extends PluginForDecrypt {
                     }
                     break;
                 }
-                if (br.containsHTML(recaptcha)) throw new DecrypterException(DecrypterException.CAPTCHA);
+                if (br.containsHTML(recaptcha)) {
+                    throw new DecrypterException(DecrypterException.CAPTCHA);
+                }
             }
 
-            if (parameter.contains(CURRENT_DOMAIN + "/?d=")) {
+            if (parameter.matches(".+/\\?d=[A-Z0-9]+")) {
                 String embedUploadDirectlink = br.getRegex("div id=\"embedupload\" style=\"padding-left:43px;padding-right:20px;padding-bottom:20px;font-size:17px;font-style:italic\" >[\t\n\r ]+<a href=\"(http://.*?)\"").getMatch(0);
-                if (embedUploadDirectlink == null) embedUploadDirectlink = br.getRegex("(\"|')(http://(www\\.)?embedupload\\.(com|to)/\\?EU=[A-Z0-9]+&urlkey=[A-Za-z0-9]+)(\"|')").getMatch(1);
+                if (embedUploadDirectlink == null) {
+                    embedUploadDirectlink = br.getRegex("(\"|')(http://(www\\.)?embedupload\\.(com|to)/\\?EU=[A-Z0-9]+&urlkey=[A-Za-z0-9]+)\\1").getMatch(1);
+                }
                 if (embedUploadDirectlink != null) {
                     decryptedLinks.add(createDownloadlink("directhttp://" + embedUploadDirectlink));
                 }
                 String[] redirectLinks = br.getRegex("style=\"padding-left:43px;padding-right:20px;padding-bottom:20px;font-size:17px;font-style:italic\" >[\t\r\n ]+<a href=\"(http://.*?)\"").getColumn(0);
-                if (redirectLinks == null || redirectLinks.length == 0) redirectLinks = br.getRegex("(\"|')(http://(www\\.)?embedupload\\.(com|to)/\\?[A-Z0-9]{2}=" + fuid + ")(\"|')").getColumn(1);
+                if (redirectLinks == null || redirectLinks.length == 0) {
+                    redirectLinks = br.getRegex("(\"|')(http://(www\\.)?embedupload\\.(com|to)/\\?[A-Z0-9]{2}=" + fuid + ")\\1").getColumn(1);
+                }
                 if (redirectLinks == null || redirectLinks.length == 0) {
                     if (br.containsHTML("You can download from these site : ") || br.containsHTML(">The file you are looking for is hosted on these")) {
                         logger.info("Link might be offline: " + parameter);
@@ -131,8 +136,12 @@ public class EmbedUploadCom extends PluginForDecrypt {
 
     private String getSingleLink(Browser ibr) {
         String link = ibr.getRegex("link on a new browser window : ([^<>\"]*?)</b>").getMatch(0);
-        if (link == null) link = ibr.getRegex("You should click on the download link : <a href=\\'(http[^<>\"]*?)\\'").getMatch(0);
-        if (link == null) link = ibr.getRegex("File hosting link:[\t\n\r ]+<b>[\t\n\r ]+<a href=\\'(http[^<>\"]*?)\\'").getMatch(0);
+        if (link == null) {
+            link = ibr.getRegex("You should click on the download link : <a href=\\'(http[^<>\"]*?)\\'").getMatch(0);
+        }
+        if (link == null) {
+            link = ibr.getRegex("File hosting link:[\t\n\r ]+<b>[\t\n\r ]+<a href=\\'(http[^<>\"]*?)\\'").getMatch(0);
+        }
         return link;
     }
 
