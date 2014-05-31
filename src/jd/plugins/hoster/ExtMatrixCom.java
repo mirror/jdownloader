@@ -19,6 +19,7 @@ package jd.plugins.hoster;
 import java.io.File;
 import java.io.IOException;
 import java.util.HashMap;
+import java.util.Locale;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -40,6 +41,7 @@ import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
 
 import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.formatter.TimeFormatter;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "extmatrix.com" }, urls = { "http://(www\\.)?extmatrix\\.com/files/[A-Za-z0-9]+/[^<>\"/]+\\.html" }, flags = { 2 })
 public class ExtMatrixCom extends PluginForHost {
@@ -264,6 +266,11 @@ public class ExtMatrixCom extends PluginForHost {
                 // not available in old Stable 0.9.581
             }
             ai.setStatus("Premium User");
+            br.getPage(MAINPAGE);
+            final String validUntil = br.getRegex("Premium End:</td>\\s+<td>([^<>]*?)</td>").getMatch(0);
+            if (validUntil != null) {
+                ai.setValidUntil(TimeFormatter.getMilliSeconds(validUntil, "dd-MM-yyyy", Locale.ENGLISH));
+            }
         }
         return ai;
     }
