@@ -1,5 +1,5 @@
 /*
- * Envjs event.1.3.pre01
+ * Envjs event.1.3.pre03
  * Pure JavaScript Browser Environment
  * By John Resig <http://ejohn.org/> and the Envjs Team
  * Copyright 2008-2010 John Resig, under the MIT License
@@ -24,7 +24,7 @@ var Envjs = Envjs || require('envjs/platform/core').Envjs,
 	After = After || require('envjs/platform/core').After,
 	Document = Document || require('envjs/dom').Document;
 /*
- * Envjs event.1.3.pre01 
+ * Envjs event.1.3.pre03 
  * Pure JavaScript Browser Environment
  * By John Resig <http://ejohn.org/> and the Envjs Team
  * Copyright 2008-2010 John Resig, under the MIT License
@@ -77,7 +77,7 @@ var __addEventListener__,
 var log = Envjs.logger();
 
 Envjs.once('tick', function(){
-   log = Envjs.logger('Envjs.DOM2.EventTarget').debug('available'); 
+   log = Envjs.logger('Envjs.DOM.EventTarget').debug('available'); 
 });
 
 /**
@@ -272,7 +272,7 @@ __bubbleEvent__ = function(target, event){
 var log = Envjs.logger();
 
 Envjs.once('tick', function(){
-   log = Envjs.logger('Envjs.DOM2.Event').debug('available'); 
+   log = Envjs.logger('Envjs.DOM.Event').debug('available'); 
 });
 
 /**
@@ -334,7 +334,7 @@ __extend__(Event,{
     BUBBLING_PHASE  : 3
 });
 
-}(/*Envjs.DOM2.Event*/));
+}(/*Envjs.DOM.Event*/));
 
 
 
@@ -343,7 +343,7 @@ __extend__(Event,{
 var log = Envjs.logger();
 
 Envjs.once('tick', function(){
-   log = Envjs.logger('Envjs.DOM3.UIEvent').debug('available'); 
+   log = Envjs.logger('Envjs.DOM.UIEvent').debug('available'); 
 });
 
 /**
@@ -370,14 +370,14 @@ __extend__(UIEvent.prototype,{
     }
 });
 
-}(/*Envjs.DOM3.UIEvent*/));
+}(/*Envjs.DOM.UIEvent*/));
 
 (function(){
     
 var log = Envjs.logger();
 
 Envjs.once('tick', function(){
-   log = Envjs.logger('Envjs.DOM2.MouseEvent').debug('available'); 
+   log = Envjs.logger('Envjs.DOM.MouseEvent').debug('available'); 
 });
 
 /**
@@ -452,7 +452,7 @@ __extend__(MouseEvent.prototype,{
 var log = Envjs.logger();
 
 Envjs.once('tick', function(){
-   log = Envjs.logger('Envjs.DOM3.KeyboardEvent').
+   log = Envjs.logger('Envjs.DOM.KeyboardEvent').
 		debug('KeyboardEvent available'); 
 });
 
@@ -554,7 +554,7 @@ var __fireMutationEvents__ = Aspect.before({
 var log = Envjs.logger();
 
 Envjs.once('tick', function(){
-   log = Envjs.logger('Envjs.DOM2.MutationEvent').debug('available'); 
+   log = Envjs.logger('Envjs.DOM.MutationEvent').debug('available'); 
 });
 
 /**
@@ -623,7 +623,7 @@ MutationEvent.ADDITION = 0;
 MutationEvent.MODIFICATION = 1;
 MutationEvent.REMOVAL = 2;
 
-}(/*Envjs.DOM2.MutationEvent*/));
+}(/*Envjs.DOM.MutationEvent*/));
 
 
 (function(){
@@ -631,7 +631,7 @@ MutationEvent.REMOVAL = 2;
 var log = Envjs.logger();
 
 Envjs.once('tick', function(){
-   log = Envjs.logger('Envjs.DOM2.EventException').debug('available'); 
+   log = Envjs.logger('Envjs.DOM.EventException').debug('available'); 
 });
 
 /**
@@ -662,7 +662,7 @@ EventException.UNSPECIFIED_EVENT_TYPE_ERR = 0;
 var log = Envjs.logger();
 
 Envjs.once('tick', function(){
-   log = Envjs.logger('Envjs.DOM2.DocumentEvent').debug('available'); 
+   log = Envjs.logger('Envjs.DOM.DocumentEvent').debug('available'); 
 });
 
 /**
@@ -708,7 +708,7 @@ DocumentEvent.prototype.createEvent = function(eventType) {
 __extend__(Document.prototype, DocumentEvent.prototype);
 
 
-}(/*Envjs.DOM2.DocumentEvent*/));
+}(/*Envjs.DOM.DocumentEvent*/));
 
 /**
  * @author john resig & the envjs team

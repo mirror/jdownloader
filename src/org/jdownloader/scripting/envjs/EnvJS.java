@@ -3,6 +3,7 @@ package org.jdownloader.scripting.envjs;
 import java.io.IOException;
 import java.lang.ref.WeakReference;
 import java.util.HashMap;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map.Entry;
 import java.util.concurrent.ConcurrentHashMap;
@@ -20,6 +21,7 @@ import org.appwork.utils.logging2.LogSource;
 import org.appwork.utils.net.HTTPHeader;
 import org.jdownloader.logging.LogController;
 import org.mozilla.javascript.Context;
+import org.mozilla.javascript.EcmaError;
 import org.mozilla.javascript.tools.shell.Global;
 
 public class EnvJS {
@@ -28,6 +30,7 @@ public class EnvJS {
     private long                                                 id;
     private Browser                                              br;
     private LogSource                                            logger;
+
     private static AtomicLong                                    CCOUNTER  = new AtomicLong(0l);
     private static ConcurrentHashMap<Long, WeakReference<EnvJS>> INSTANCES = new ConcurrentHashMap<Long, WeakReference<EnvJS>>();
 
@@ -82,6 +85,7 @@ public class EnvJS {
 
     public EnvJS() {
         id = CCOUNTER.incrementAndGet();
+
         INSTANCES.put(id, new WeakReference<EnvJS>(this));
         logger = LogController.getInstance().getLogger(EnvJS.class.getName());
     }
@@ -90,8 +94,62 @@ public class EnvJS {
         System.out.println("Break");
     }
 
-    public void require(String path) {
-        System.out.println();
+    public void exit() {
+        // throw new WTFException("EXIT!");
+    }
+
+    public String readRequire(String path) throws IOException {
+        if (path.startsWith("envjs/")) {
+            path = path.substring(6);
+        }
+        logger.info("Require: " + path);
+
+        if ("platform/rhino".equals(path)) {
+
+            return IO.readURLToString(EnvJS.class.getResource(path + ".js"));
+        }
+        if ("platform/core".equals(path)) {
+            return IO.readURLToString(EnvJS.class.getResource(path + ".js"));
+        }
+        if ("console".equals(path)) {
+            return IO.readURLToString(EnvJS.class.getResource(path + ".js"));
+        }
+        if ("rhino".equals(path)) {
+            return IO.readURLToString(EnvJS.class.getResource(path + ".js"));
+        }
+
+        if ("timer".equals(path)) {
+            return IO.readURLToString(EnvJS.class.getResource(path + ".js"));
+        }
+
+        if ("local_settings".equals(path)) {
+            return IO.readURLToString(EnvJS.class.getResource(path + ".js"));
+        }
+        if ("window".equals(path)) {
+            return IO.readURLToString(EnvJS.class.getResource(path + ".js"));
+        }
+        if ("dom".equals(path)) {
+            return IO.readURLToString(EnvJS.class.getResource(path + ".js"));
+        }
+        if ("html".equals(path)) {
+            return IO.readURLToString(EnvJS.class.getResource(path + ".js"));
+        }
+
+        if ("event".equals(path)) {
+            return IO.readURLToString(EnvJS.class.getResource(path + ".js"));
+        }
+        if ("parser".equals(path)) {
+            return IO.readURLToString(EnvJS.class.getResource(path + ".js"));
+        }
+        if ("xhr".equals(path)) {
+            return IO.readURLToString(EnvJS.class.getResource(path + ".js"));
+        }
+        if ("css".equals(path)) {
+            return IO.readURLToString(EnvJS.class.getResource(path + ".js"));
+        }
+
+        throw new WTFException("Unknown Resource required: " + path);
+
     }
 
     public void init() {
@@ -104,14 +162,12 @@ public class EnvJS {
 
         // org.mozilla.javascript.EcmaError: ReferenceError: "JSON" is not defined. (js#508) exceptions in the log are ok.
         try {
-            jd.http.ext.security.JSPermissionRestricter.evaluateTrustedString(cx, scope, "var EnvJSinstanceID=" + id + ";", "js", 1, null);
-            jd.http.ext.security.JSPermissionRestricter.evaluateTrustedString(cx, scope, IO.readURLToString(EnvJS.class.getResource("rhino.js")), "js", 1, null);
-            jd.http.ext.security.JSPermissionRestricter.evaluateTrustedString(cx, scope, IO.readURLToString(EnvJS.class.getResource("window.js")), "js", 1, null);
-            jd.http.ext.security.JSPermissionRestricter.evaluateTrustedString(cx, scope, IO.readURLToString(EnvJS.class.getResource("platform/rhino.js")), "js", 1, null);
+            evaluateTrustedString(cx, scope, "var EnvJSinstanceID=" + id + ";", "setInstance", 1, null);
+            evaluateTrustedString(cx, scope, readRequire("envjs/rhino"), "setInstance", 1, null);
 
-            // jd.http.ext.security.JSPermissionRestricter.evaluateTrustedString(cx, scope,
+            // evaluateTrustedString(cx, scope,
             // "Envjs.scriptTypes[\"text/javascript\"] = {\"text/javascript\"   :true,   \"text/envjs\"        :true};", "js", 1, null);
-        } catch (IOException e) {
+        } catch (Throwable e) {
             throw new WTFException(e);
         }
     }
@@ -119,13 +175,30 @@ public class EnvJS {
     public void eval(String js) {
 
         // cx.evaluateString(scope, js, "js", 1, null);
-        jd.http.ext.security.JSPermissionRestricter.evaluateTrustedString(cx, scope, js, "js", 1, null);
+        evaluateTrustedString(cx, scope, js, "eval", 1, null);
     }
 
     public void setDocument(String url, String html) {
 
         String js = " document.async=true; document.baseURI = '" + url + "';HTMLParser.parseDocument(\"" + html.replace("\"", "\\\"").replace("\r", "\\r").replace("\n", "\\n") + "\", document);Envjs.wait();";
-        jd.http.ext.security.JSPermissionRestricter.evaluateTrustedString(cx, scope, js, "js", 1, null);
+        evaluateTrustedString(cx, scope, js, "setDoc", 1, null);
+    }
+
+    private LinkedList<String> scriptStack = new LinkedList<String>();
+
+    private void evaluateTrustedString(Context cx2, Global scope2, String js, String string, int i, Object object) {
+        scriptStack.add(string);
+        try {
+            jd.http.ext.security.JSPermissionRestricter.evaluateTrustedString(cx2, scope2, js, string, i, object);
+        } catch (EcmaError e) {
+            logger.log(e);
+            throw e;
+        } finally {
+            if (string != scriptStack.removeLast()) {
+                throw new WTFException("Stack problem");
+            }
+
+        }
     }
 
     public String getDocument() {

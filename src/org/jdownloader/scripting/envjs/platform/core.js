@@ -1,5 +1,5 @@
 /*
- * Envjs core-env.1.3.pre01
+ * Envjs core-env.1.3.pre03
  * Pure JavaScript Browser Environment
  * By John Resig <http://ejohn.org/> and the Envjs Team
  * Copyright 2008-2010 John Resig, under the MIT License
@@ -62,7 +62,7 @@ Envjs.exit = function(){};
 
 
 /*
- * Envjs core-env.1.3.pre01 
+ * Envjs core-env.1.3.pre03 
  * Pure JavaScript Browser Environment
  * By John Resig <http://ejohn.org/> and the Envjs Team
  * Copyright 2008-2010 John Resig, under the MIT License
@@ -353,25 +353,25 @@ Envjs.Configuration = {
     /** Please see each module for specific configuration options */
     //this is a short list of well knowns, but can always be extended
     logging:[
-        {category:'Envjs.Core',                 level:'WARN'},
-        {category:'Envjs.Core.REPL',            level:'WARN'},
-        {category:'Envjs.DOM',                  level:'WARN'},
-        {category:'Envjs.DOM.Node',             level:'WARN'},
-        {category:'Envjs.DOM.NodeList',         level:'WARN'},
-        {category:'Envjs.DOM.NamedNodeMap',     level:'WARN'},
-        {category:'Envjs.DOM.Element',          level:'WARN'},
-        {category:'Envjs.DOM.Document',         level:'WARN'},
-        {category:'Envjs.DOM2.EventTarget',     level:'WARN'},
-        {category:'Envjs.Timer',                level:'WARN'},
-        {category:'Envjs.Location',             level:'WARN'},
-        {category:'Envjs.XMLHttpRequest',       level:'WARN'},
-        {category:'Envjs.Parser',               level:'WARN'},
-        {category:'Envjs.Parser.HTMLParser',    level:'WARN'},
-        {category:'Envjs.Parser.XMLParser',     level:'WARN'},
-        {category:'Envjs.HTML.FrameElement',    level:'WARN'},
-        {category:'Envjs.Window',               level:'WARN'},
-        {category:'Envjs.Platform',             level:'WARN'},
-        {category:'root',                       level:'WARN'}
+        {category:'Envjs.Core',                 level:'DEBUG'},
+        {category:'Envjs.Core.REPL',            level:'DEBUG'},
+        {category:'Envjs.DOM',                  level:'DEBUG'},
+        {category:'Envjs.DOM.Node',             level:'DEBUG'},
+        {category:'Envjs.DOM.NodeList',         level:'DEBUG'},
+        {category:'Envjs.DOM.NamedNodeMap',     level:'DEBUG'},
+        {category:'Envjs.DOM.Element',          level:'DEBUG'},
+        {category:'Envjs.DOM.Document',         level:'DEBUG'},
+        {category:'Envjs.DOM.EventTarget',      level:'DEBUG'},
+        {category:'Envjs.Timer',                level:'DEBUG'},
+        {category:'Envjs.Location',             level:'DEBUG'},
+        {category:'Envjs.XMLHttpRequest',       level:'DEBUG'},
+        {category:'Envjs.Parser',               level:'DEBUG'},
+        {category:'Envjs.Parser.HTMLParser',    level:'DEBUG'},
+        {category:'Envjs.Parser.XMLParser',     level:'DEBUG'},
+        {category:'Envjs.HTML.FrameElement',    level:'DEBUG'},
+        {category:'Envjs.Window',               level:'DEBUG'},
+        {category:'Envjs.Platform',             level:'DEBUG'},
+        {category:'root',                       level:'DEBUG'}
     ], 
     env : {
         dev:{},
@@ -984,7 +984,7 @@ Envjs.emit = function(event /*, arg1, arg2, etc*/ ){
 
 setTimeout  = require('envjs/timer').setTimeout;
 
-var $warming = 3;
+var $warming = 10;
 
 Envjs.tick = function(){
     var y, next, fn, arg, file; 
@@ -1040,6 +1040,7 @@ Envjs.tick = function(){
         );  
         log.info('event loop is passive, exiting');
         Envjs.emit('exit');
+        return;
     }
         
     Envjs.emit('tick', Date.now());

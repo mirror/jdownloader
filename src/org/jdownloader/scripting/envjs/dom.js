@@ -1,5 +1,5 @@
 /*
- * Envjs dom.1.3.pre01 
+ * Envjs dom.1.3.pre03 
  * Pure JavaScript Browser Environment
  * By John Resig <http://ejohn.org/> and the Envjs Team
  * Copyright 2008-2010 John Resig, under the MIT License
@@ -45,7 +45,7 @@ var Envjs = Envjs || require('envjs/platform/core').Envjs,
 	After = After || require('envjs/platform/core').After;
 
 /*
- * Envjs dom.1.3.pre01 
+ * Envjs dom.1.3.pre03 
  * Pure JavaScript Browser Environment
  * By John Resig <http://ejohn.org/> and the Envjs Team
  * Copyright 2008-2010 John Resig, under the MIT License
@@ -2185,7 +2185,7 @@ exports.DOMImplementation = DOMImplementation = function() {
 
 __extend__(DOMImplementation.prototype,{
     // @param  feature : string - The package name of the feature to test.
-    //      the legal only values are "XML" and "CORE" (case-insensitive).
+    //      the legal only values are "XML" and "HTML" (case-insensitive).
     // @param  version : string - This is the version number of the package
     //       name to test. In Level 1, this is the string "1.0".*
     // @return : boolean
@@ -2193,6 +2193,9 @@ __extend__(DOMImplementation.prototype,{
         var ret = false;
         if (feature.toLowerCase() == "xml") {
             ret = (!version || (version == "1.0") || (version == "2.0"));
+        }
+        else if (feature.toLowerCase() == "html") {
+            ret = (!version || (version == "1.0"));
         }
         else if (feature.toLowerCase() == "core") {
             ret = (!version || (version == "2.0"));
@@ -2603,7 +2606,9 @@ __extend__(Document.prototype,{
 
         return node;
     },
-
+    createEntityReference: function(){
+        log.debug('createEntityReference');
+    },
     createRange: function(){
         log.debug('createRange');
         return new Range();
@@ -2611,7 +2616,7 @@ __extend__(Document.prototype,{
 
     evaluate: function(xpathText, contextNode, nsuriMapper, resultType, result){
         //return new XPathExpression().evaluate();
-        throw 'Document.evaluate not supported yet!';
+        throw 'Include src/dom/xpath.js for evaluate support.';
     },
 
     getElementById : function(elementId) {
@@ -2809,6 +2814,9 @@ DOMException.INVALID_MODIFICATION_ERR       = 13;
 DOMException.NAMESPACE_ERR                  = 14;
 DOMException.INVALID_ACCESS_ERR             = 15;
 
+//Introduced in DOM Level 3:
+DOMException.VALIDATION_ERR                 = 16;
+DOMException.TYPE_MISMATCH_ERR              = 17;
 
 }(/*Envjs.DOM.DOMException*/));
 var __E4XParser__,
@@ -4226,7 +4234,6 @@ function __parseLoop__(impl, doc, p) {
             node.data = nodeData;
         }
     }
-
   }
 }
 
@@ -4292,7 +4299,7 @@ var re_invalidStringChars = /\x01|\x02|\x03|\x04|\x05|\x06|\x07|\x08|\x0B|\x0C|\
     ]
  */
 function __parseNSName__(qualifiedName) {
-  var resultNSName = new Object();
+  var resultNSName = {};
 
   resultNSName.prefix          = qualifiedName;  // unless the qname has a namespaceName, the prefix is the entire String
   resultNSName.namespaceName   = "";
@@ -4315,7 +4322,7 @@ function __parseNSName__(qualifiedName) {
  * @return : QName
  */
 function __parseQName__(qualifiedName) {
-  var resultQName = new Object();
+  var resultQName = {};
 
   resultQName.localName = qualifiedName;  // unless the qname has a prefix, the local name is the entire String
   resultQName.prefix    = "";

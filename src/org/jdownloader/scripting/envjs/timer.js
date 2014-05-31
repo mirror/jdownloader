@@ -1,6 +1,6 @@
 
 /*
- * Envjs timer.1.3.pre01 
+ * Envjs timer.1.3.pre03 
  * Pure JavaScript Browser Environment
  * By John Resig <http://ejohn.org/> and the Envjs Team
  * Copyright 2008-2010 John Resig, under the MIT License
@@ -14,7 +14,7 @@
 
 
 /*
- * Envjs timer.1.3.pre01 
+ * Envjs timer.1.3.pre03 
  * Pure JavaScript Browser Environment
  * By John Resig <http://ejohn.org/> and the Envjs Team
  * Copyright 2008-2010 John Resig, under the MIT License
@@ -36,7 +36,6 @@ var setTimeout,
 var Envjs = require('envjs/platform/core').Envjs;
 /*
 *   - timer.js
-*   original implementation provided by Steven Parkes
 */
 (function(){
 	
@@ -54,7 +53,6 @@ Envjs.once('tick', function(){
 exports.setTimeout = setTimeout = function(fn, time){
 	log.debug('setTimeout %s', time);
 	return Envjs.timers.addTimerOrInterval(fn, time, 'timeout');
-
 };
 
 /**

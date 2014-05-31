@@ -22,7 +22,7 @@ var Envjs = Envjs || require('envjs/platform/core').Envjs,
 	Document = require('envjs/dom').Document,
 	HTMLElement = require('envjs/html').HTMLElement;
 /*
- * Envjs css.1.3.pre01 
+ * Envjs css.1.3.pre03 
  * Pure JavaScript Browser Environment
  * By John Resig <http://ejohn.org/> and the Envjs Team
  * Copyright 2008-2010 John Resig, under the MIT License

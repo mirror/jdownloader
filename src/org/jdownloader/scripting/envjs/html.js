@@ -77,7 +77,7 @@ var Envjs = Envjs || require('envjs/platform/core').Envjs,
 	Event = Event || require('envjs/event').Event;
 	
 /*
- * Envjs html.1.3.pre01 
+ * Envjs html.1.3.pre03 
  * Pure JavaScript Browser Environment
  * By John Resig <http://ejohn.org/> and the Envjs Team
  * Copyright 2008-2010 John Resig, under the MIT License

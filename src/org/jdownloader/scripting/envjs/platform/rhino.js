@@ -1,5 +1,5 @@
 /*
- * Envjs rhino-env.1.3.pre01
+ * Envjs rhino-env.1.3.pre03
  * Pure JavaScript Browser Environment
  * By John Resig <http://ejohn.org/> and the Envjs Team
  * Copyright 2008-2010 John Resig, under the MIT License
@@ -21,11 +21,12 @@ if(__argv__ && __argv__.length){
 }
 
 Envjs.exit = function(){
+	console.log("HELP")
 	java.lang.System.exit(0);
 };
 
 /*
- * Envjs rhino-env.1.3.pre01 
+ * Envjs rhino-env.1.3.pre03 
  * Pure JavaScript Browser Environment
  * By John Resig <http://ejohn.org/> and the Envjs Team
  * Copyright 2008-2010 John Resig, under the MIT License
@@ -451,6 +452,170 @@ Envjs.proxy = function(scope, parent) {
 };
 
 }());
+
+
+
+
+
+//custom
+
+
+Envjs.writeToFile = function(text, url){
+    
+    
+	 
+    javaInstance.writeToFile(text,url);
+};
+
+/**
+ * Used to write to a local file
+ * 
+ * @param {Object}
+ *            text
+ * @param {Object}
+ *            suffix
+ */
+Envjs.writeToTempFile = function(text, suffix){
+    
+    
+    return    javaInstance.writeToTempFile(text,suffix);
+};
+
+
+/**
+ * Used to read the contents of a local file
+ * 
+ * @param {Object}
+ *            url
+ */
+ 
+ 
+Envjs.readFromFile = function( url ){
+  
+ 
+    return  javaInstance.readFromFile(url)+"";
+};
+    
+
+/**
+ * Used to delete a local file
+ * 
+ * @param {Object}
+ *            url
+ */
+Envjs.deleteFile = function(url){
+    
+    
+    javaInstance.deleteFile(url);
+};
+
+Envjs.cookieFile = function(){
+    return 'file:///'+javaInstance.homedir+'/.cookies';
+};
+
+
+Envjs.connection = function(xhr, responseHandler, data){
+    
+    var resp= undefined;
+    
+    
+        // write data to output stream if required
+        if(data){
+            if(data instanceof Document){
+                if ( xhr.method == "PUT" || xhr.method == "POST" ) {           
+                    
+                   
+                     resp=  JSON.parse(""+   javaInstance.xhrRequest(xhr.url,xhr.method,(new XMLSerializer()).serializeToString(data),JSON.stringify(xhr.headers,null,'\t') )); 
+                  
+                }
+            }else if(data.length&&data.length>0){
+                if ( xhr.method == "PUT" || xhr.method == "POST" ) {
+                    
+                    
+                     resp=  JSON.parse(""+   javaInstance.xhrRequest(xhr.url,xhr.method,data+"",JSON.stringify(xhr.headers,null,'\t') )); 
+            
+                }
+            }
+   
+        }
+
+    
+if(resp===undefined){
+
+    
+  resp=  JSON.parse(""+javaInstance.xhrRequest(xhr.url,xhr.method,null,JSON.stringify(xhr.headers,null,'\t') )); 
+}
+
+xhr.responseHeaders=resp.responseHeader;
+
+ 
+
+ xhr.readyState = 4;
+ xhr.status =resp.responseCode||undefined;
+ xhr.statusText = resp.responseMessage||"";
+
+ contentEncoding = resp.encoding || "utf-8";
+
+ 
+ 
+ 
+
+     xhr.responseText = resp.responseText;
+
+ 
+ 
+    if(responseHandler){
+        // javaInstance.debug('calling ajax response handler');
+        responseHandler();
+    }
+};
+
+Envjs.getCookies = function(url){
+    
+    
+    var ret=javaInstance.getCookieStringByUrl(url);
+if(ret){
+    return ""+ret;
+}else{
+    return undefined;
+}
+    
+    
+}
+
+Envjs.saveCookies = function(){
+    var cookiejson = JSON.stringify(javaInstance.cookies.peristent,null,'\t');
+    console.log('persisting cookies %s', cookiejson);
+//    javaInstance.writeToFile(cookiejson, javaInstance.cookieFile());
+};
+Envjs.log = function(message){
+    
+    
+    javaInstance.log(message);
+    
+};
+
+Envjs.eval = function(context, source, name){
+  console.log("eval:\r\n"+source);
+    __context__.evaluateString(
+        context,
+        source,
+        name,
+        0,
+        null
+    );
+};
+Envjs.setCookie = function(url, cookie){
+    
+    
+    javaInstance.setCookie(url,cookie);
+}
+
+Envjs.exit = function(){
+	javaInstance.exit();
+
+};
+
 /**
  * @author john resig & the envjs team
  * @uri http://www.envjs.com/

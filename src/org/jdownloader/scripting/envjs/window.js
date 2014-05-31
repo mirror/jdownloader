@@ -1,5 +1,5 @@
 /*
- * Envjs window.1.3.pre01 
+ * Envjs window.1.3.pre03 
  * Pure JavaScript Browser Environment
  * By John Resig <http://ejohn.org/> and the Envjs Team
  * Copyright 2008-2010 John Resig, under the MIT License
@@ -24,7 +24,7 @@ var Envjs               = Envjs             || require('envjs/platform/core').En
 
 
 /*
- * Envjs window.1.3.pre01 
+ * Envjs window.1.3.pre03 
  * Pure JavaScript Browser Environment
  * By John Resig <http://ejohn.org/> and the Envjs Team
  * Copyright 2008-2010 John Resig, under the MIT License
@@ -221,7 +221,7 @@ exports.Navigator = Navigator = function(){
             return [];
         },
         get userAgent(){
-            return $userAgent||(this.appCodeName + "/" + this.appVersion + " Resig/20070309 PilotFish/1.3.pre01");
+            return $userAgent||(this.appCodeName + "/" + this.appVersion + " Resig/20070309 PilotFish/1.3.pre03");
         },
 		set userAgent(agent){
 			if(agent){
