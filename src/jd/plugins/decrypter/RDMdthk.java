@@ -103,11 +103,7 @@ public class RDMdthk extends PluginForDecrypt {
             return null;
         }
 
-        String next = br.getRegex("href=\"(/ard/servlet/ajax\\-cache/\\d+/view=switch/documentId=" + ID + "/index.html)").getMatch(0);
-        if (next != null) {
-            br.getPage(next);
-        }
-        // Dossiers
+        /* Dossiers - maybe old code */
         String pages[] = br.getRegex("value=\"(/ard/servlet/ajax\\-cache/\\d+/view=list/documentId=" + ID + "/goto=\\d+/index.html)").getColumn(0);
         if (pages.length < 1) {
             pages = new String[1];
@@ -178,60 +174,73 @@ public class RDMdthk extends PluginForDecrypt {
         return false;
     }
 
+    /* INFORMATION: network = akamai or limelight == RTMP */
     private ArrayList<DownloadLink> getDownloadLinks(SubConfiguration cfg, String... s) {
         ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
         final boolean grab_subtitle = cfg.getBooleanProperty(Q_SUBTITLES, false);
 
         try {
+            final String original_ard_link = s[0];
+            final String original_ard_ID = s[1];
             String title = s[2];
             if (title == null) {
                 title = getTitle(br);
             }
-            if (s[1] != null) {
-                Browser br = new Browser();
+            if (original_ard_ID != null) {
+                final Browser br = new Browser();
                 setBrowserExclusive();
                 br.setFollowRedirects(true);
-                br.getPage(s[0]);
+                br.getPage(original_ard_link);
                 if (br.containsHTML("(<h1>Leider konnte die gew\\&uuml;nschte Seite<br />nicht gefunden werden\\.</h1>|Die angeforderte Datei existiert leider nicht)")) {
                     return ret;
                 }
-                final String subtitleLink = br.getRegex("mediaCollection\\.setSubtitleUrl\\(\"(/static/avportal/untertitel_mediathek/\\d+\\.xml)\"").getMatch(0);
+                br.getPage("http://www.ardmediathek.de/play/media/" + original_ard_ID + "?devicetype=pc&features=flash");
+                final String subtitleLink = getJson("_subtitleUrl", br.toString());
                 String url = null, fmt = null;
                 int t = 0;
 
                 String extension = ".mp4";
+                /* TODO: FIX */
                 if (br.getRegex("new MediaCollection\\(\"audio\",").matches()) {
                     extension = ".mp3";
                 }
+                final String array_text = br.getRegex("\"_mediaArray\":\\[(.*?)],\"_sortierArray\"").getMatch(0);
+                final String[] quality_info = array_text.split("\\},\\{");
 
                 ArrayList<DownloadLink> newRet = new ArrayList<DownloadLink>();
                 final HashMap<String, DownloadLink> bestMap = new HashMap<String, DownloadLink>();
                 String lastQualityFMT = null;
-                for (String quality[] : br.getRegex("mediaCollection\\.addMediaStream\\((\\d+), (\\d+), \"([^\"]+|)\", \"([^\"]+)\", \"([^\"]+)\"\\);").getMatches()) {
+                for (final String qual_info : quality_info) {
                     // rtmp --> hds or rtmp
-                    url = quality[3];
-                    if ("akamai".equals(quality[4]) || "limelight".equals(quality[4])) {
+                    final String directlink = getJson("_stream", qual_info);
+                    final String server = getJson("_server", qual_info);
+                    final String network = getJson("_cdn", qual_info);
+                    final String quality_number = getJson("_quality", qual_info);
+                    final boolean isRTMP = (network.equals("akamai") || network.equals("limelight"));
+                    url = directlink;
+                    if (isRTMP) {
                         if (url.endsWith("manifest.f4m")) {
                             continue;
                         }
                     }
-                    if ("default".equals(quality[4])) {
+                    if ("default".equals(network)) {
                         if (url.endsWith("m3u")) {
                             continue;
                         }
                     }
                     if (!url.startsWith("http://")) {
-                        if (isEmpty(quality[2])) {
+                        /* Server needed for rtmp links */
+                        if (isEmpty(server)) {
                             continue;
                         }
                     }
                     // get streamtype id
-                    t = Integer.valueOf(quality[0]);
+                    t = Integer.valueOf(quality_number);
                     // http or hds t=0 or t=1
                     url += "@";
                     // rtmp t=?
-                    if (quality[2].startsWith("rtmp")) {
-                        url = quality[2] + "@" + quality[3].split("\\?")[0];
+                    if (server.startsWith("rtmp")) {
+                        url = server + "@" + directlink.split("\\?")[0];
                     }
                     fmt = "hd";
 
@@ -241,7 +250,7 @@ public class RDMdthk extends PluginForDecrypt {
                         continue;
                     }
 
-                    switch (Integer.valueOf(quality[1])) {
+                    switch (Integer.valueOf(quality_number)) {
                     case 0:
                         if ((cfg.getBooleanProperty(Q_LOW, true) || BEST) == false) {
                             continue;
@@ -273,18 +282,18 @@ public class RDMdthk extends PluginForDecrypt {
                     }
 
                     lastQualityFMT = fmt.toUpperCase(Locale.ENGLISH);
-                    final String quality_part = fmt.toUpperCase(Locale.ENGLISH) + "-" + quality[4];
+                    final String quality_part = fmt.toUpperCase(Locale.ENGLISH) + "-" + network;
                     final String plain_name = title + "@" + quality_part;
                     final String full_name = plain_name + extension;
-                    final String network = quality[4];
 
                     /* Skip rtmp streams if user wants http only */
-                    if (network.equals("akamai") && HTTP_ONLY) {
+                    if (isRTMP && HTTP_ONLY) {
                         continue;
                     }
 
                     final DownloadLink link = createDownloadlink(s[0].replace("http://", "decrypted://") + "&quality=" + fmt + "&network=" + network);
-                    if (t == 1 ? false : true) {
+                    /* RTMP links have no filesize anyways --> No need to check them in host plugin */
+                    if (isRTMP) {
                         link.setAvailable(true);
                     }
                     link.setFinalFileName(full_name);
@@ -295,11 +304,11 @@ public class RDMdthk extends PluginForDecrypt {
                     link.setProperty("plain_quality_part", quality_part);
                     link.setProperty("plain_name", plain_name);
                     link.setProperty("plain_network", network);
-                    link.setProperty("directQuality", quality[1]);
+                    link.setProperty("directQuality", quality_number);
                     link.setProperty("streamingType", t);
 
                     /* Add subtitle link for every quality so players will automatically find it */
-                    if (grab_subtitle && subtitleLink != null) {
+                    if (grab_subtitle && subtitleLink != null && !isEmpty(subtitleLink)) {
                         final String subtitle_filename = plain_name + ".xml";
                         final String finallink = "http://www.ardmediathek.de" + subtitleLink + "@" + quality_part;
                         final DownloadLink dl_subtitle = createDownloadlink(s[0].replace("http://", "decrypted://") + "&quality=subtitles" + fmt + "&network=" + network);
@@ -338,7 +347,7 @@ public class RDMdthk extends PluginForDecrypt {
                             newRet.add(keep);
 
                             /* We have to re-add the subtitle for the best quality if wished by the user */
-                            if (grab_subtitle && subtitleLink != null) {
+                            if (grab_subtitle && subtitleLink != null && !isEmpty(subtitleLink)) {
                                 final String plain_name = keep.getStringProperty("plain_name", null);
                                 final String plain_quality_part = keep.getStringProperty("plain_quality_part", null);
                                 final String plain_network = keep.getStringProperty("plain_network", null);
@@ -406,6 +415,14 @@ public class RDMdthk extends PluginForDecrypt {
         }
         title = title.replaceAll("\\n|\\t|,", "").trim();
         return title;
+    }
+
+    private String getJson(final String parameter, final String source) {
+        String result = new Regex(source, "\"" + parameter + "\":([0-9\\.]+)").getMatch(0);
+        if (result == null) {
+            result = new Regex(source, "\"" + parameter + "\":\"([^<>\"]*?)\"").getMatch(0);
+        }
+        return result;
     }
 
     private boolean isEmpty(String ip) {

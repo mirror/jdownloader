@@ -29,7 +29,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "sosodo.com" }, urls = { "http://(www\\.)?sosodo\\.com/home/music/track/\\d+/\\d+" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "sosodo.com" }, urls = { "http://(www\\.)?(sosodo|mvpdj)\\.com/home/music/track/\\d+/\\d+" }, flags = { 0 })
 public class SosodoCom extends PluginForHost {
 
     public SosodoCom(PluginWrapper wrapper) {
@@ -40,7 +40,12 @@ public class SosodoCom extends PluginForHost {
 
     @Override
     public String getAGBLink() {
-        return "http://sosodo.com/about";
+        return "http://mvpdj.com/about";
+    }
+
+    @Override
+    public void correctDownloadLink(final DownloadLink link) {
+        link.setUrlDownload(link.getDownloadURL().replace("sosodo.com/", "mvpdj.com/"));
     }
 
     @Override
@@ -48,28 +53,36 @@ public class SosodoCom extends PluginForHost {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         br.getPage(downloadLink.getDownloadURL());
-        if (!br.containsHTML("<title>")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (!br.containsHTML("<title>")) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
         String filename = br.getRegex("\"name\":\"([^<>\"]*?)\"").getMatch(0);
         DLLINK = br.getRegex("\"url\":\"(/[^<>\"]*?)\"").getMatch(0);
-        if (filename == null || DLLINK == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        DLLINK = "http://sosodo.com" + Encoding.htmlDecode(DLLINK);
+        if (filename == null || DLLINK == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        DLLINK = "http://mvpdj.com" + Encoding.htmlDecode(DLLINK);
         filename = filename.trim();
         String ext = DLLINK.substring(DLLINK.lastIndexOf("."));
-        if (ext == null || ext.length() > 5) ext = ".mp3";
-        if (!filename.endsWith(ext))
+        if (ext == null || ext.length() > 5) {
+            ext = ".mp3";
+        }
+        if (!filename.endsWith(ext)) {
             downloadLink.setFinalFileName(Encoding.htmlDecode(filename) + ext);
-        else
+        } else {
             downloadLink.setFinalFileName(Encoding.htmlDecode(filename));
+        }
         final Browser br2 = br.cloneBrowser();
         // In case the link redirects to the finallink
         br2.setFollowRedirects(true);
         URLConnectionAdapter con = null;
         try {
             con = br2.openGetConnection(DLLINK);
-            if (!con.getContentType().contains("html"))
+            if (!con.getContentType().contains("html")) {
                 downloadLink.setDownloadSize(con.getLongContentLength());
-            else
+            } else {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            }
             return AvailableStatus.TRUE;
         } finally {
             try {

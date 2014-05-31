@@ -23,6 +23,7 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.security.GeneralSecurityException;
 import java.text.DecimalFormat;
+import java.util.HashMap;
 import java.util.Scanner;
 import java.util.concurrent.atomic.AtomicBoolean;
 
@@ -44,7 +45,7 @@ import jd.plugins.download.DownloadInterface;
 import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "ard.de" }, urls = { "decrypted://(www\\.)?(ardmediathek|mediathek\\.daserste)\\.de/[\\w\\-]+/([\\w\\-]+/)?[\\w\\-]+(\\?documentId=\\d+)?\\&quality=\\w+\\&network=\\w+" }, flags = { 32 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "ard.de" }, urls = { "decrypted://(www\\.)?(ardmediathek|mediathek\\.daserste)\\.de/.+(\\?documentId=\\d+)?\\&quality=\\w+\\&network=\\w+" }, flags = { 32 })
 public class ARDMediathek extends PluginForHost {
 
     private static final String Q_LOW       = "Q_LOW";
@@ -253,6 +254,16 @@ public class ARDMediathek extends PluginForHost {
 
         final String[] matches = new Regex(xmlContent, "(<p id=\"subtitle\\d+\".*?</p>)").getColumn(0);
         try {
+            /* Find style --> color assignments */
+            final HashMap<String, String> styles_color_names = new HashMap<String, String>();
+            final String[][] found_styles = new Regex(xmlContent, "<style id=\"(s\\d+)\" tts:color=\"([a-z]+)\"").getMatches();
+            if (found_styles != null && found_styles.length != 0) {
+                for (final String[] color_info : found_styles) {
+                    styles_color_names.put(color_info[0], color_info[1]);
+                }
+            }
+            styles_color_names.put("s1", "black");
+
             for (final String info : matches) {
                 dest.write(counter++ + lineseparator);
                 final DecimalFormat df = new DecimalFormat("00");
@@ -266,33 +277,27 @@ public class ARDMediathek extends PluginForHost {
                 final String end = df.format(endHour) + ":" + endInfo.getMatch(1).replace(".", ",");
                 dest.write(start + " --> " + end + lineseparator);
 
-                String text = new Regex(info, "style=\"s\\d+\">?(.*?)</p>").getMatch(0);
-                final String[] toRemove = new Regex(info, "(tts:backgroundColor=\"[a-z]+\")").getColumn(0);
-                if (toRemove != null && toRemove.length != 0) {
-                    for (final String remove : toRemove) {
-                        text = text.replace(remove, "");
-                    }
-                }
-                text = text.replaceAll(lineseparator, " ");
-                text = text.replaceAll("&apos;", "\\\\u0027");
-                text = unescape(text);
-                text = HTMLEntities.unhtmlentities(text);
-                text = HTMLEntities.unhtmlAmpersand(text);
-                text = HTMLEntities.unhtmlAngleBrackets(text);
-                text = HTMLEntities.unhtmlSingleQuotes(text);
-                text = HTMLEntities.unhtmlDoubleQuotes(text);
-                text = text.replaceAll("<br />", lineseparator);
-                text = text.replaceAll("</?(p|span)>?", "");
-                text = text.trim();
-                final String[][] colorTags = new Regex(text, "color=\"([a-z0-9]+)\">(.*?)($|tts:)").getMatches();
-                if (colorTags != null && colorTags.length != 0) {
-                    for (final String[] singleText : colorTags) {
-                        final String colorText = singleText[0];
-                        final String plainText = singleText[1];
-                        final String completeNewText = "<font color=#" + getColorCode(colorText) + ">" + plainText + "</font>";
-                        final String completeOldText = "tts:color=\"" + colorText + "\">" + plainText;
-                        text = text.replace(completeOldText, completeNewText);
-                    }
+                final String[][] color_texts = new Regex(info, "style=\"(s\\d+)\">?(.*?)</p>").getMatches();
+                String text = "";
+                for (final String[] style_text : color_texts) {
+                    final String style = style_text[0];
+                    text = style_text[1];
+                    text = text.replaceAll(lineseparator, " ");
+                    text = text.replaceAll("&apos;", "\\\\u0027");
+                    text = unescape(text);
+                    text = HTMLEntities.unhtmlentities(text);
+                    text = HTMLEntities.unhtmlAmpersand(text);
+                    text = HTMLEntities.unhtmlAngleBrackets(text);
+                    text = HTMLEntities.unhtmlSingleQuotes(text);
+                    text = HTMLEntities.unhtmlDoubleQuotes(text);
+                    text = text.replaceAll("<br />", lineseparator);
+                    text = text.replaceAll("</?(p|span)>?", "");
+                    text = text.trim();
+
+                    final String color = styles_color_names.get(style);
+                    final String color_code = getColorCode(color);
+                    text = "<font color=#" + color_code + ">" + text + "</font>";
+
                 }
                 dest.write(text + lineseparator + lineseparator);
             }
@@ -320,6 +325,8 @@ public class ARDMediathek extends PluginForHost {
             colorCode = "00FFFF";
         } else if (colorName.equals("lime")) {
             colorCode = "00FF00";
+        } else if (colorName.equals("fuchsia")) {
+            colorCode = "FF00FF";
         }
         return colorCode;
     }

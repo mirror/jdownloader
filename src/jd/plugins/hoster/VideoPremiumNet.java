@@ -28,6 +28,7 @@ import java.util.regex.Pattern;
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.http.Browser;
+import jd.http.Browser.BrowserException;
 import jd.http.Cookie;
 import jd.http.Cookies;
 import jd.http.URLConnectionAdapter;
@@ -244,6 +245,11 @@ public class VideoPremiumNet extends PluginForHost {
             try {
                 dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, -2);
             } catch (final SocketTimeoutException e) {
+                /* self built http link (workaround to avoid rtmp) does not work --> retry via rtmp */
+                downloadLink.setProperty("http_failed", true);
+                throw new PluginException(LinkStatus.ERROR_RETRY, "HTTP version download failed, retry RTMP");
+            } catch (final BrowserException be) {
+                /* self built http link (workaround to avoid rtmp) does not work --> retry via rtmp */
                 downloadLink.setProperty("http_failed", true);
                 throw new PluginException(LinkStatus.ERROR_RETRY, "HTTP version download failed, retry RTMP");
             }

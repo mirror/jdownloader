@@ -56,8 +56,7 @@ public class Brds4Chnrg extends PluginForDecrypt {
         }
         if (decryptedLinks.size() == 0) {
             final String IMAGERDOMAINS = "(i\\.4cdn\\.org|images\\.4chan\\.org)";
-            String[] images = br.getRegex("(?i)(https?://[\\w\\.]*?" + IMAGERDOMAINS + "/[0-9a-z]{1,4}/(src/)?\\d+\\.(gif|jpg|png|webm))").getColumn(0);
-            if (images == null || images.length == 0) images = br.getRegex("(?i)File: <a (title=\"[^<>\"/]+\" )?href=\"(//" + IMAGERDOMAINS + "/[0-9a-z]{1,4}/(src/)?\\d+\\.(gif|jpg|png|webm))\"").getColumn(1);
+            String[] images = br.getRegex("(?i)File: <a (title=\"[^<>\"/]+\" )?href=\"(//" + IMAGERDOMAINS + "/[0-9a-z]{1,4}/(src/)?\\d+\\.(gif|jpg|png|webm))\"").getColumn(1);
 
             if (br.containsHTML("404 - Not Found")) {
                 fp.setName("4chan - 404 - Not Found");
@@ -73,7 +72,9 @@ public class Brds4Chnrg extends PluginForDecrypt {
             } else {
                 String domain = "4chan.org";
                 String cat = br.getRegex("<div class=\"boardTitle\">/.{1,4}/ - (.*?)</div>").getMatch(0);
-                if (cat == null) cat = br.getRegex("<title>/b/ - (.*?)</title>").getMatch(0);
+                if (cat == null) {
+                    cat = br.getRegex("<title>/b/ - (.*?)</title>").getMatch(0);
+                }
                 if (cat != null) {
                     cat = cat.replace("&amp;", "&");
                 } else {
@@ -87,7 +88,9 @@ public class Brds4Chnrg extends PluginForDecrypt {
                 }
                 fp.setName(domain + " - " + cat + " - " + suffix);
                 for (String image : images) {
-                    if (image.startsWith("/") && !image.startsWith("h")) image = image.replace("//", prot + "://");
+                    if (image.startsWith("/") && !image.startsWith("h")) {
+                        image = image.replace("//", prot + "://");
+                    }
                     DownloadLink dl = createDownloadlink(image);
                     dl.setAvailableStatus(AvailableStatus.TRUE);
                     fp.add(dl);
