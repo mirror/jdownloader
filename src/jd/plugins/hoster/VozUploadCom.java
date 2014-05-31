@@ -1755,7 +1755,7 @@ public class VozUploadCom extends PluginForHost {
      *            Integer positive or negative. Positive adds slots. Negative integer removes slots.
      * */
     private synchronized void setHashedHashKeyValue(final Account account, final Integer x) {
-        if (usedHost == null || x == null) {
+        if (usedHost == null || x == null || account == null) {
             return;
         }
         HashMap<String, Integer> holder = new HashMap<String, Integer>();
@@ -1763,6 +1763,10 @@ public class VozUploadCom extends PluginForHost {
             // load hostMap within holder if not empty
             holder = hostMap.get(account);
             // remove old hashMap reference, prevents creating duplicate entry of 'account' when returning result.
+            /* Workaround attempt for: http://svn.jdownloader.org/issues/43720 */
+            if (holder == null) {
+                return;
+            }
             if (holder.containsKey(account)) {
                 hostMap.remove(account);
             }

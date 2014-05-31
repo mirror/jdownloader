@@ -208,6 +208,8 @@ public class MixtureCloudCom extends PluginForHost {
                     br.clearCookies("https://www.mixturecloud.com/");
                     br.setFollowRedirects(true);
                     br.getPage("https://www.mixturecloud.com/");
+                    /* Log in too fast and it will fail */
+                    Thread.sleep(3000);
 
                     Form login = br.getForm(1);
                     login.getInputField("email").setValue(Encoding.urlEncode(account.getUser()));
