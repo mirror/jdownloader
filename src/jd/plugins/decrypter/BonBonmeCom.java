@@ -134,6 +134,16 @@ public class BonBonmeCom extends PluginForDecrypt {
             decryptedLinks.add(createDownloadlink("http://www.xvideos.com/" + externID + "/" + System.currentTimeMillis()));
             return decryptedLinks;
         }
+        externID = br.getRegex("\"http://5278\\.us/player/plus\\.php\\?vid=([^<>\"]*?)\\&").getMatch(0);
+        if (externID != null) {
+            /* Double b64 encoded finallink */
+            externID = Encoding.Base64Decode(externID);
+            if (!externID.contains("http")) {
+                externID = Encoding.Base64Decode(externID);
+            }
+            decryptedLinks.add(createDownloadlink(externID));
+            return decryptedLinks;
+        }
         // filename needed for all IDs below here
         if (filename == null) {
             logger.warning("Decrypter broken for link: " + parameter);

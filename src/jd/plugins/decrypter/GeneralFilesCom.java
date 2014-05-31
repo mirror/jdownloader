@@ -50,7 +50,7 @@ public class GeneralFilesCom extends PluginForDecrypt {
             return decryptedLinks;
         }
 
-        if (br.containsHTML(">File was removed from filehosting<|>The file no longer exists at this location|class=\"gf\\-removed\\-h\"") || br.getHttpConnection().getResponseCode() == 404) {
+        if (br.containsHTML(">File was removed from filehosting<|>The file no longer exists at this location|class=\"gf\\-removed\\-h\"|class=\"deleted\"") || br.getHttpConnection().getResponseCode() == 404) {
             logger.info("Link offline: " + parameter);
             return decryptedLinks;
         }
