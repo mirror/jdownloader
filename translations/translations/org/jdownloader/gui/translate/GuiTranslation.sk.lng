@@ -445,6 +445,7 @@ NinekwService_createPanel_feedback=Spätná väzba
 NinekwService_createPanel_https=Https
 NinekwService_createPanel_lowcredits=Upozorniť na nízky kredit
 NinekwService_createPanel_ms=ms
+NinekwService_createPanel_options_header=Možnosti
 NinekwService_createPanel_prio=Priorita 1-10 (Cena +1-10)
 NinekwService_createPanel_whitelist=Biela listina
 NotifierConfigPanel_getTitle=Notifikačná bublina
