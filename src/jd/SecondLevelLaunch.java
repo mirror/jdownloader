@@ -721,7 +721,8 @@ public class SecondLevelLaunch {
                             }.start(true);
                             Thread.currentThread().setName("ExecuteWhenGuiReachedThread: Init Host Plugins");
 
-                            if (!jared) {
+                            if (!jared || true) {
+                                // always rescan until we fixed the plugin loader
                                 HostPluginController.getInstance().invalidateCache();
                                 CrawlerPluginController.invalidateCache();
                             }
