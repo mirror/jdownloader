@@ -68,10 +68,14 @@ public class UploadableCh extends PluginForHost {
         br.setFollowRedirects(true);
         br.getHeaders().put("User-Agent", "Mozilla/5.0 (Windows NT 6.1; WOW64; rv:28.0) Gecko/20100101 Firefox/28.0");
         br.getPage(link.getDownloadURL());
-        if (br.containsHTML(">File not available<|>This file is no longer available.<")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (br.containsHTML(">File not available<|>This file is no longer available.<")) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
         final String filename = br.getRegex("id=\"file_name\" title=\"([^<>\"]*?)\"").getMatch(0);
         final String filesize = br.getRegex("class=\"filename_normal\">\\(([^<>\"]*?)\\)</span>").getMatch(0);
-        if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (filename == null || filesize == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         link.setName(Encoding.htmlDecode(filename.trim()));
         final long fsize = SizeFormatter.getSize(filesize);
         link.setDownloadSize(fsize);
@@ -96,10 +100,14 @@ public class UploadableCh extends PluginForHost {
             br.postPage(postLink, "downloadLink=wait");
             int wait = 90;
             final String waittime = br.getRegex("\"waitTime\":(\\d+)").getMatch(0);
-            if (waittime != null) wait = Integer.parseInt(waittime);
+            if (waittime != null) {
+                wait = Integer.parseInt(waittime);
+            }
             sleep(wait * 1001l, downloadLink);
             br.postPage(postLink, "checkDownload=check");
-            if (br.containsHTML("\"fail\":\"timeLimit\"")) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 20 * 60 * 1001l);
+            if (br.containsHTML("\"fail\":\"timeLimit\"")) {
+                throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 20 * 60 * 1001l);
+            }
             final PluginForHost recplug = JDUtilities.getPluginForHost("DirectHTTP");
             final jd.plugins.hoster.DirectHTTP.Recaptcha rc = ((DirectHTTP) recplug).getReCaptcha(br);
             rc.setId("6LdlJuwSAAAAAPJbPIoUhyqOJd7-yrah5Nhim5S3");
@@ -114,17 +122,30 @@ public class UploadableCh extends PluginForHost {
                 }
                 break;
             }
-            if (br.containsHTML("\"success\":0")) throw new PluginException(LinkStatus.ERROR_CAPTCHA);
+            if (br.containsHTML("\"success\":0")) {
+                throw new PluginException(LinkStatus.ERROR_CAPTCHA);
+            }
 
             br.getHeaders().put("Accept", "*/*");
             br.getHeaders().put("Accept-Language", "de,en-us;q=0.7,en;q=0.3");
             br.getHeaders().put("Content-Type", "application/x-www-form-urlencoded; charset=UTF-8");
             br.getHeaders().put("Referer", postLink);
             br.postPage("http://www.uploadable.ch/file/" + fid, "downloadLink=show");
-            if (br.containsHTML("fail")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error", 5 * 60 * 1000l);
+            if (br.containsHTML("fail")) {
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error", 5 * 60 * 1000l);
+            }
             br.postPage("http://www.uploadable.ch/file/" + fid, "download=normal");
+
+            final String reconnect_mins = br.getRegex(">Please wait for (\\d+) minutes  to download the next file").getMatch(0);
+            if (reconnect_mins != null) {
+                logger.info("uploadable.ch: Reconnect limit detected");
+                throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, Integer.parseInt(reconnect_mins) * 60 * 1001l);
+            }
+
             dllink = br.getRedirectLocation();
-            if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            if (dllink == null) {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
         }
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, false, 1);
         if (dl.getConnection().getContentType().contains("html")) {
@@ -165,7 +186,9 @@ public class UploadableCh extends PluginForHost {
                 br.setCookiesExclusive(true);
                 final Object ret = account.getProperty("cookies", null);
                 boolean acmatch = Encoding.urlEncode(account.getUser()).equals(account.getStringProperty("name", Encoding.urlEncode(account.getUser())));
-                if (acmatch) acmatch = Encoding.urlEncode(account.getPass()).equals(account.getStringProperty("pass", Encoding.urlEncode(account.getPass())));
+                if (acmatch) {
+                    acmatch = Encoding.urlEncode(account.getPass()).equals(account.getStringProperty("pass", Encoding.urlEncode(account.getPass())));
+                }
                 if (acmatch && ret != null && ret instanceof HashMap<?, ?> && !force) {
                     final HashMap<String, String> cookies = (HashMap<String, String>) ret;
                     if (account.isValid()) {
@@ -213,7 +236,9 @@ public class UploadableCh extends PluginForHost {
         }
         br.getPage("http://www.uploadable.ch/indexboard.php");
         final String space = br.getRegex(">Storage</div>[\t\r\n ]+<div class=\"b_blue_type\">([^\"/]*?)</span>").getMatch(0);
-        if (space != null) ai.setUsedSpace(space.trim().replace("<span>", ""));
+        if (space != null) {
+            ai.setUsedSpace(space.trim().replace("<span>", ""));
+        }
         final String expiredate = br.getRegex("lass=\"grey_type\">[\r\n\t ]+Until([^<>\"]*?)</div>").getMatch(0);
         if (expiredate == null) {
             try {
@@ -268,10 +293,11 @@ public class UploadableCh extends PluginForHost {
     }
 
     public boolean canHandle(DownloadLink downloadLink, Account account) {
-        if ((account == null || account.getBooleanProperty("free", false)) && downloadLink.getDownloadSize() > FREE_SIZELIMIT)
+        if ((account == null || account.getBooleanProperty("free", false)) && downloadLink.getDownloadSize() > FREE_SIZELIMIT) {
             return false;
-        else
+        } else {
             return true;
+        }
     }
 
     @Override

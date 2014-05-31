@@ -500,7 +500,6 @@ public class FourSharedCom extends PluginForHost {
                 }
                 br.forceDebug(true);
                 br.setReadTimeout(3 * 60 * 1000);
-                br.getPage("http://www.4shared.com/");
                 // stable does not send this header with post request!!!!!
                 String protocol = "https://";
                 if (isJava7nJDStable()) {
@@ -509,17 +508,23 @@ public class FourSharedCom extends PluginForHost {
                     }
                     protocol = "http://";
                 }
+                br.getPage(protocol + "www.4shared.com/");
                 br.getHeaders().put("Content-Type", "application/x-www-form-urlencoded");
-                Browser br2 = br.cloneBrowser();
-                br2.getHeaders().put("X-Requested-With", "XMLHttpRequest");
-                br2.postPage(protocol + "www.4shared.com/web/login/validate", "login=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()));
                 final String lang = System.getProperty("user.language");
-                if (!br2.containsHTML("\"success\":true")) {
-                    if ("de".equalsIgnoreCase(lang)) {
-                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUngültiger Benutzername oder ungültiges Passwort!\r\nSchnellhilfe: \r\nDu bist dir sicher, dass dein eingegebener Benutzername und Passwort stimmen?\r\nFalls dein Passwort Sonderzeichen enthält, ändere es und versuche es erneut!", PluginException.VALUE_ID_PREMIUM_DISABLE);
-                    } else {
-                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nInvalid username/password!\r\nQuick help:\r\nYou're sure that the username and password you entered are correct?\r\nIf your password contains special characters, change it (remove them) and try again!", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                final boolean ajax_login = false;
+                if (ajax_login) {
+                    final Browser br2 = br.cloneBrowser();
+                    br2.getHeaders().put("X-Requested-With", "XMLHttpRequest");
+                    br2.postPage(protocol + "www.4shared.com/web/login/validate", "login=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()));
+                    if (!br2.containsHTML("\"success\":true")) {
+                        if ("de".equalsIgnoreCase(lang)) {
+                            throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUngültiger Benutzername oder ungültiges Passwort!\r\nSchnellhilfe: \r\nDu bist dir sicher, dass dein eingegebener Benutzername und Passwort stimmen?\r\nFalls dein Passwort Sonderzeichen enthält, ändere es und versuche es erneut!", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                        } else {
+                            throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nInvalid username/password!\r\nQuick help:\r\nYou're sure that the username and password you entered are correct?\r\nIf your password contains special characters, change it (remove them) and try again!", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                        }
                     }
+                } else {
+                    br.postPage(protocol + "www.4shared.com/web/login", "login=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()) + "&returnTo=https%253A%252F%252Fwww.4shared.com%252Faccount%252Fhome.jsp&remember=on&_remember=on");
                 }
                 br.postPage(protocol + "www.4shared.com/web/login", "login=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()) + "&remember=on&_remember=on&returnTo=https%253A%252F%252Fwww.4shared.com%252Faccount%252Fhome.jsp");
                 br.getHeaders().put("Content-Type", null);

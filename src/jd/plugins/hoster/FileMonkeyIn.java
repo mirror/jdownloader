@@ -128,14 +128,18 @@ public class FileMonkeyIn extends PluginForHost {
     }
 
     private String getFUID(final DownloadLink downloadLink) {
-        if (downloadLink == null) return null;
+        if (downloadLink == null) {
+            return null;
+        }
         final String fuid = new Regex(downloadLink.getDownloadURL(), "/file/([^/]+)").getMatch(0);
         return fuid;
     }
 
     @Override
     public boolean checkLinks(final DownloadLink[] urls) {
-        if (urls == null || urls.length == 0) { return false; }
+        if (urls == null || urls.length == 0) {
+            return false;
+        }
         final Browser br = new Browser();
         prepareBrowser(br);
         br.setCookiesExclusive(true);
@@ -164,16 +168,20 @@ public class FileMonkeyIn extends PluginForHost {
                 br.getPage(apiURL + "/checkuploads" + sb.toString());
                 for (final DownloadLink dl : links) {
                     final String filter = br.getRegex("\\{(\"upload\":\"" + getFUID(dl) + "\"[^\\}]+)").getMatch(0);
-                    if (filter == null) dl.setAvailable(false);
+                    if (filter == null) {
+                        dl.setAvailable(false);
+                    }
                     final String status = new Regex(filter, "status\":\"((not)found|online)\"").getMatch(0);
-                    if (status != null && ("found".equals(status) || "online".equals(status)))
+                    if (status != null && ("found".equals(status) || "online".equals(status))) {
                         dl.setAvailable(true);
-                    else {
+                    } else {
                         dl.setAvailable(false);
                         continue;
                     }
                     final String name = new Regex(filter, "\"name\":\"?([^\"]+)").getMatch(0);
-                    if (name != null) dl.setFinalFileName(name.trim());
+                    if (name != null) {
+                        dl.setFinalFileName(name.trim());
+                    }
                     final String size = new Regex(filter, "\"size\":\"?(\\d+)").getMatch(0);
                     if (size != null) {
                         dl.setDownloadSize(Long.parseLong(size));
@@ -183,7 +191,9 @@ public class FileMonkeyIn extends PluginForHost {
                         }
                     }
                     final String md5 = new Regex(filter, "md5\":\"([a=f0-9]{32})").getMatch(0);
-                    if (md5 != null) dl.setMD5Hash(md5);
+                    if (md5 != null) {
+                        dl.setMD5Hash(md5);
+                    }
                 }
                 if (index == urls.length) {
                     break;
@@ -223,7 +233,9 @@ public class FileMonkeyIn extends PluginForHost {
                         }
                         if (CrossSystem.isOpenBrowserSupported()) {
                             int result = JOptionPane.showConfirmDialog(jd.gui.swing.jdgui.JDGui.getInstance().getMainFrame(), message, title, JOptionPane.YES_NO_OPTION, JOptionPane.INFORMATION_MESSAGE, null);
-                            if (JOptionPane.OK_OPTION == result) CrossSystem.openURL(new URL("http://update3.jdownloader.org/jdserv/BuyPremiumInterface/redirect?" + domain + "&freedialog"));
+                            if (JOptionPane.OK_OPTION == result) {
+                                CrossSystem.openURL(new URL("http://update3.jdownloader.org/jdserv/BuyPremiumInterface/redirect?" + domain + "&freedialog"));
+                            }
                         }
                     } catch (Throwable e) {
                     }
@@ -265,7 +277,9 @@ public class FileMonkeyIn extends PluginForHost {
         checkLinks(new DownloadLink[] { link });
         if (!link.isAvailabilityStatusChecked()) {
             link.setAvailableStatus(AvailableStatus.UNCHECKABLE);
-        } else if (!link.isAvailable()) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
+        } else if (!link.isAvailable()) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
         return getAvailableStatus(link);
     }
 
@@ -274,7 +288,9 @@ public class FileMonkeyIn extends PluginForHost {
             final Field field = link.getClass().getDeclaredField("availableStatus");
             field.setAccessible(true);
             Object ret = field.get(link);
-            if (ret != null && ret instanceof AvailableStatus) return (AvailableStatus) ret;
+            if (ret != null && ret instanceof AvailableStatus) {
+                return (AvailableStatus) ret;
+            }
         } catch (final Throwable e) {
         }
         return AvailableStatus.UNCHECKED;
@@ -292,12 +308,10 @@ public class FileMonkeyIn extends PluginForHost {
         String dllink = checkDirectLink(downloadLink, "directlink");
         if (dllink == null) {
             br.getPage(downloadLink.getDownloadURL());
-            if (br.getRedirectLocation() != null) br.getPage(br.getRedirectLocation());
-            final Regex reconnectWait = br.getRegex("(\\d{2}) minutes and (\\d{2}) seconds or get premium");
-            if (reconnectWait.getMatches().length == 1) {
-                final long reconWait = Long.parseLong(reconnectWait.getMatch(0)) * 60 * 1001 + Long.parseLong(reconnectWait.getMatch(1)) * 1000l;
-                throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, reconWait);
+            if (br.getRedirectLocation() != null) {
+                br.getPage(br.getRedirectLocation());
             }
+            handleReconnectWait();
             br.postPage(br.getURL(), "action=freedownload");
             if (dllink == null) {
                 final PluginForDecrypt solveplug = JDUtilities.getPluginForDecrypt("linkcrypt.ws");
@@ -306,15 +320,22 @@ public class FileMonkeyIn extends PluginForHost {
                 try {
                     cf = sm.downloadCaptcha(getLocalCaptchaFile());
                 } catch (final Exception e) {
-                    if (sm.getBr().containsHTML(">error: invalid ckey<")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error", 1 * 60 * 1000l);
+                    if (sm.getBr().containsHTML(">error: invalid ckey<")) {
+                        throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error", 1 * 60 * 1000l);
+                    }
                     throw e;
                 }
                 final String code = getCaptchaCode(cf, downloadLink);
                 final String chid = sm.getChallenge(code);
                 br.postPage(br.getURL(), "adcopy_challenge=" + Encoding.urlEncode(sm.getChallenge()) + "&adcopy_response=" + Encoding.urlEncode(chid));
-                if (br.containsHTML("solvemedia\\.com/")) throw new PluginException(LinkStatus.ERROR_CAPTCHA);
+                if (br.containsHTML("solvemedia\\.com/")) {
+                    throw new PluginException(LinkStatus.ERROR_CAPTCHA);
+                }
+                handleReconnectWait();
                 dllink = br.getRegex("(\\'|\")(https?://[a-z0-9\\.\\-]+\\.filemonkey\\.in/download/[^<>\"]*?)(\\'|\")").getMatch(1);
-                if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                if (dllink == null) {
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                }
             }
         }
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 1);
@@ -324,6 +345,14 @@ public class FileMonkeyIn extends PluginForHost {
         }
         downloadLink.setProperty("directlink", dllink);
         dl.startDownload();
+    }
+
+    private void handleReconnectWait() throws PluginException {
+        final Regex reconnectWait = br.getRegex("(\\d{2}) minutes and (\\d{2}) seconds or get premium");
+        if (reconnectWait.getMatches().length == 1) {
+            final long reconWait = Long.parseLong(reconnectWait.getMatch(0)) * 60 * 1001 + Long.parseLong(reconnectWait.getMatch(1)) * 1000l;
+            throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, reconWait);
+        }
     }
 
     @Override
@@ -378,12 +407,16 @@ public class FileMonkeyIn extends PluginForHost {
                     account.setValid(true);
                     /* premium account */
                     final String traffic_left = getJson("trafficleft_bytes");
-                    if (traffic_left != null) ai.setTrafficLeft(Long.parseLong(traffic_left));
+                    if (traffic_left != null) {
+                        ai.setTrafficLeft(Long.parseLong(traffic_left));
+                    }
                     final boolean is_premium = Boolean.parseBoolean(getJson("ispremium"));
                     if (is_premium && !ai.isExpired()) {
                         // use ms to expire, works best with time zone difference and incorrect systemtime.
                         final String ms_expire = getJson("premium_mstoexpire");
-                        if (ms_expire != null) ai.setValidUntil(System.currentTimeMillis() + Long.parseLong(ms_expire));
+                        if (ms_expire != null) {
+                            ai.setValidUntil(System.currentTimeMillis() + Long.parseLong(ms_expire));
+                        }
                         account.setProperty("free", false);
                         ai.setStatus("Premium account");
                         try {
@@ -422,7 +455,9 @@ public class FileMonkeyIn extends PluginForHost {
                     prepareBrowser(br);
                     br.getPage(apiURL + "/getapikey?email=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()));
                     if (!isSuccess()) {
-                        if (br.containsHTML("email\\\\/password combination wrong")) throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nInvalid username/password!", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                        if (br.containsHTML("email\\\\/password combination wrong")) {
+                            throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nInvalid username/password!", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                        }
                         final String captcha_required = getJson("error_code");
                         if (captcha_required != null && "err_captcha_required".equals(captcha_required)) {
                             br.getPage(apiURL + "/getcaptcha");
@@ -445,10 +480,11 @@ public class FileMonkeyIn extends PluginForHost {
                     }
                     api_key = getJson("apikey");
                 } finally {
-                    if (api_key != null)
+                    if (api_key != null) {
                         account.setProperty("apikey", api_key);
-                    else
+                    } else {
                         account.setProperty("apikey", Property.NULL);
+                    }
                 }
             }
             return api_key;
@@ -493,9 +529,9 @@ public class FileMonkeyIn extends PluginForHost {
                 if (dl.getConnection().getContentType().contains("html")) {
                     logger.warning("The final dllink seems not to be a file!");
                     br.followConnection();
-                    if (br.containsHTML("<h2>Error 500</h2>[\r\n ]+<div class=\"error\">"))
+                    if (br.containsHTML("<h2>Error 500</h2>[\r\n ]+<div class=\"error\">")) {
                         throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Hoster is issues", 60 * 60 * 1000l);
-                    else {
+                    } else {
                         // useAPI.set(false);
                         throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                     }
@@ -506,7 +542,9 @@ public class FileMonkeyIn extends PluginForHost {
     }
 
     public void handlePremium_web(final DownloadLink link, final Account account) throws Exception {
-        if (true) return;
+        if (true) {
+            return;
+        }
     }
 
     @SuppressWarnings("unchecked")
@@ -518,7 +556,9 @@ public class FileMonkeyIn extends PluginForHost {
                 prepareBrowser(br);
                 final Object ret = account.getProperty("cookies", null);
                 boolean acmatch = Encoding.urlEncode(account.getUser()).equals(account.getStringProperty("name", Encoding.urlEncode(account.getUser())));
-                if (acmatch) acmatch = Encoding.urlEncode(account.getPass()).equals(account.getStringProperty("pass", Encoding.urlEncode(account.getPass())));
+                if (acmatch) {
+                    acmatch = Encoding.urlEncode(account.getPass()).equals(account.getStringProperty("pass", Encoding.urlEncode(account.getPass())));
+                }
                 if (acmatch && ret != null && ret instanceof HashMap<?, ?> && !force) {
                     final HashMap<String, String> cookies = (HashMap<String, String>) ret;
                     if (account.isValid()) {
@@ -546,7 +586,9 @@ public class FileMonkeyIn extends PluginForHost {
                     }
                     break;
                 }
-                if (br.containsHTML("google\\.com/recaptcha/")) throw new PluginException(LinkStatus.ERROR_CAPTCHA);
+                if (br.containsHTML("google\\.com/recaptcha/")) {
+                    throw new PluginException(LinkStatus.ERROR_CAPTCHA);
+                }
                 final String lang = System.getProperty("user.language");
                 if (br.getCookie(mainURL, "logincookie") == null) {
                     if ("de".equalsIgnoreCase(lang)) {
@@ -573,7 +615,9 @@ public class FileMonkeyIn extends PluginForHost {
 
     private String getJson(final String source, final String search) {
         String result = null;
-        if (source == null || search == null) return result;
+        if (source == null || search == null) {
+            return result;
+        }
         result = new Regex(source, "\"" + search + "\":\"([^\"]+)").getMatch(0);
         if (result == null) {
             result = new Regex(source, "\"" + search + "\":(true|false|\\d+)").getMatch(0);

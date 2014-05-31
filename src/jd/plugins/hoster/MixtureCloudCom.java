@@ -129,10 +129,16 @@ public class MixtureCloudCom extends PluginForHost {
             logger.warning("MixtureCloud: Couldn't find filesize. Please report this to the JDownloader Development Team.");
             logger.warning("MixtureCloud: Continuing...");
         }
-        if (filename == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (filename == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         link.setFinalFileName(Encoding.htmlDecode(filename.trim()));
-        if (filesize != null) link.setDownloadSize(SizeFormatter.getSize(filesize));
-        if (br.containsHTML(PREMIUMONLY)) link.getLinkStatus().setStatusText(PREMIUMONLYUSERTEXT);
+        if (filesize != null) {
+            link.setDownloadSize(SizeFormatter.getSize(filesize));
+        }
+        if (br.containsHTML(PREMIUMONLY)) {
+            link.getLinkStatus().setStatusText(PREMIUMONLYUSERTEXT);
+        }
         return AvailableStatus.TRUE;
     }
 
@@ -144,11 +150,19 @@ public class MixtureCloudCom extends PluginForHost {
 
     public void doFree(final DownloadLink downloadLink) throws Exception, PluginException {
         checkErrors();
-        if (br.getRedirectLocation() != null) br.getPage(br.getRedirectLocation());
-        if (br.containsHTML("File access is limited to users with unlimited")) throw new PluginException(LinkStatus.ERROR_FATAL, PREMIUMONLYUSERTEXT);
+        if (br.getRedirectLocation() != null) {
+            br.getPage(br.getRedirectLocation());
+        }
+        if (br.containsHTML("File access is limited to users with unlimited")) {
+            throw new PluginException(LinkStatus.ERROR_FATAL, PREMIUMONLYUSERTEXT);
+        }
         String dllink = br.getRegex("style=\"padding\\-left:30px\"></div>[\t\n\r ]+<a href=\"(http://[^<>\"]*?)\"").getMatch(0);
-        if (dllink == null) dllink = br.getRegex("\"(http://www\\d+\\.mixturecloud\\.com/down\\.php\\?d=[^<>\"]*?)\"").getMatch(0);
-        if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (dllink == null) {
+            dllink = br.getRegex("\"(http://www\\d+\\.mixturecloud\\.com/down\\.php\\?d=[^<>\"]*?)\"").getMatch(0);
+        }
+        if (dllink == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         // /** Waittime can be skipped */
         // int wait = 52;
         // final String waittime = br.getRegex("var time=(\\d+)").getMatch(0);
@@ -174,7 +188,9 @@ public class MixtureCloudCom extends PluginForHost {
                 prepBrowser(br);
                 final Object ret = account.getProperty("cookies", null);
                 boolean acmatch = Encoding.urlEncode(account.getUser()).equals(account.getStringProperty("name", Encoding.urlEncode(account.getUser())));
-                if (acmatch) acmatch = Encoding.urlEncode(account.getPass()).equals(account.getStringProperty("pass", Encoding.urlEncode(account.getPass())));
+                if (acmatch) {
+                    acmatch = Encoding.urlEncode(account.getPass()).equals(account.getStringProperty("pass", Encoding.urlEncode(account.getPass())));
+                }
                 if (acmatch && ret != null && ret instanceof HashMap<?, ?> && !force) {
                     final HashMap<String, String> cookies = (HashMap<String, String>) ret;
                     if (account.isValid()) {
@@ -198,7 +214,9 @@ public class MixtureCloudCom extends PluginForHost {
                     login.getInputField("password").setValue(Encoding.urlEncode(account.getPass()));
 
                     final String secCode = br.getRegex("type=\"hidden\" name=\"securecode\" value=\"([^<>\"]{8})\"").getMatch(0);
-                    if (secCode == null) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+                    if (secCode == null) {
+                        throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+                    }
                     String postData = "login=1&back=&securecode=" + Encoding.urlEncode(secCode) + "&email=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass());
                     // Check if we have to enter a login captcha
                     final String rcID = br.getRegex("google\\.com/recaptcha/api/noscript\\?k=([^<>\"]*?)\"").getMatch(0);
@@ -215,6 +233,8 @@ public class MixtureCloudCom extends PluginForHost {
                         login.addInputField(new InputField("recaptcha_response_field", Encoding.urlEncode(c)));
                     }
                     // br.postPage("http://www.mixturecloud.com/login", postData);
+                    login.put("login", "1");
+                    login.setAction("https://www.mixturecloud.com/login");
                     br.setFollowRedirects(false);
                     br.submitForm(login);
                     br.setFollowRedirects(true);
@@ -235,7 +255,9 @@ public class MixtureCloudCom extends PluginForHost {
                         break;
                     }
                 }
-                if (!success) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+                if (!success) {
+                    throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+                }
 
                 // Save cookies
                 final HashMap<String, String> cookies = new HashMap<String, String>();
@@ -256,9 +278,15 @@ public class MixtureCloudCom extends PluginForHost {
     }
 
     private void checkErrors() throws Exception {
-        if (br.containsHTML(">Not found|Sorry, but the page you were trying to view")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        if (br.containsHTML("In response to a complaint received under the US Digital Millennium Copyright Act, you can't access to this file")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        if (br.containsHTML("Sie haben in den letzten 30 Minuten eine Datei")) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 30 * 60 * 1001l);
+        if (br.containsHTML(">Not found|Sorry, but the page you were trying to view")) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
+        if (br.containsHTML("In response to a complaint received under the US Digital Millennium Copyright Act, you can't access to this file")) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
+        if (br.containsHTML("Sie haben in den letzten 30 Minuten eine Datei")) {
+            throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 30 * 60 * 1001l);
+        }
     }
 
     @Override
@@ -269,10 +297,11 @@ public class MixtureCloudCom extends PluginForHost {
         AccountInfo ai = new AccountInfo();
         try {
             // captcha on each login == lame, we will only login very 12 hours after lastlogin to refresh cookie session
-            if (account.getStringProperty("lastlogin") != null && (System.currentTimeMillis() - 43200000 <= Long.parseLong(account.getStringProperty("lastlogin"))))
+            if (account.getStringProperty("lastlogin") != null && (System.currentTimeMillis() - 43200000 <= Long.parseLong(account.getStringProperty("lastlogin")))) {
                 login(account, false);
-            else
+            } else {
                 login(account, true);
+            }
         } catch (PluginException e) {
             account.setValid(false);
             return ai;
