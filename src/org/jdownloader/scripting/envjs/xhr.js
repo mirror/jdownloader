@@ -269,7 +269,7 @@ exports.Location = Location = function(url, doc, history) {
             if ($document) {
                 log.debug('fetching %s (async? %s)', url, $document.async);
                 xhr = new XMLHttpRequest();
-                
+                console.log("Referer: "+$document.location);
                 xhr.setRequestHeader('Referer', $document.location);
                 log.debug("REFERER: %s", $document.location);
                 // TODO: make async flag a Envjs paramter

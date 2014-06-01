@@ -2,7 +2,6 @@ package jd;
 
 import java.net.URL;
 
-import jd.http.Browser;
 import jd.http.ext.security.JSPermissionRestricter;
 
 import org.appwork.exceptions.WTFException;
@@ -29,8 +28,9 @@ public class EnvTest {
 
         // Init Javascript Sandbox
         JSPermissionRestricter.init();
-        EnvJS env = new EnvJS() {
+        final EnvJS env = new EnvJS() {
             public String xhrRequest(String url, String method, String data, String requestHeaders) throws java.io.IOException {
+
                 if (url.endsWith("fb.html")) {
                     return "";
                 }
@@ -39,20 +39,27 @@ public class EnvTest {
         };
 
         try {
+            final String link = "http://uploaded......";
 
             // load env.js library
             env.init();
+            env.eval(" var w = new Window(__this__);");
+            env.eval("console.log(w);");
+            env.eval("console.log(w.document);");
+            env.eval("console.log(window);");
+            env.eval("console.log(document);");
+            env.eval("document.location = '" + link + "';");
+            env.eval("try{Envjs.eventLoop();}catch(e){console.log(e+\"\");}");
 
-            Browser br = new Browser();
+            System.out.println(env.getDocument());
             // load page
-            String link = "";
+
             // String html = br.getPage(link);
 
             // evaluate page
-            long start = System.currentTimeMillis();
-            env.eval("document.location = '" + link + "';");
+
             ;
-            System.out.println(env.getDocument());
+
             // jd.http.ext.security.JSPermissionRestricter.evaluateTrustedString(cx, scope, "document.location = '" + link + "';", "js", 1,
             // null);
             //
@@ -63,7 +70,7 @@ public class EnvTest {
             // Object result = cx.evaluateString(scope, "var f=function(){return document.innerHTML;}; f();", "js", 1, null);
             // System.out.println("Result:\r\n" + result);
 
-            System.out.println("Duration: " + (System.currentTimeMillis() - start));
+            // System.out.println("Duration: " + (System.currentTimeMillis() - start));
 
             // script = org.mozilla.javascript.tools.shell.Main.loadScriptFromSource(cx, "console.log(Recaptcha.th3.exec())", "<stdin>",
             // 1, null);

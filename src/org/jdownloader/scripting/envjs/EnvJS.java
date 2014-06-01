@@ -66,6 +66,10 @@ public class EnvJS {
         });
         br.getHeaders().put(new HTTPHeader("User-Agent", "Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/35.0.1916.114 Safari/537.36"));
         if (headers != null) {
+            headers.remove("User-Agent");
+            if (headers.get("Referer") != null && "about:blank".equals(headers.get("Referer"))) {
+                headers.remove("Referer");
+            }
             br.getHeaders().putAll(headers);
         }
         if ("get".equalsIgnoreCase(method)) {
@@ -95,7 +99,7 @@ public class EnvJS {
     }
 
     public void exit() {
-        // throw new WTFException("EXIT!");
+        throw new WTFException("EXIT");
     }
 
     public String readRequire(String path) throws IOException {
@@ -163,6 +167,8 @@ public class EnvJS {
         // org.mozilla.javascript.EcmaError: ReferenceError: "JSON" is not defined. (js#508) exceptions in the log are ok.
         try {
             evaluateTrustedString(cx, scope, "var EnvJSinstanceID=" + id + ";", "setInstance", 1, null);
+            // evaluateTrustedString(cx, scope, IO.readURLToString(EnvJS.class.getResource("env.rhino.js")), "oldRhino", 1, null);
+
             evaluateTrustedString(cx, scope, readRequire("envjs/rhino"), "setInstance", 1, null);
 
             // evaluateTrustedString(cx, scope,
