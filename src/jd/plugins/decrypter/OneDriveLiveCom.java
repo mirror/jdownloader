@@ -277,6 +277,9 @@ public class OneDriveLiveCom extends PluginForDecrypt {
 
     public static String getLinktext(final Browser br) {
         String linktext = br.getRegex("\"children\":\\[(\\{.*?\\})\\],\"covers\":").getMatch(0);
+        if (linktext == null) {
+            linktext = br.getRegex("\"children\":\\[(\\{.*?\\})\\],\"defaultSort\":\\d+").getMatch(0);
+        }
         // Check for single pictures: https://onedrive.live.com/?cid=E0615573A3471F93&id=E0615573A3471F93!1567
         if (linktext == null) {
             linktext = br.getRegex("\"items\":\\[(\\{.*?\\})\\]").getMatch(0);

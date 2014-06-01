@@ -120,6 +120,7 @@ public class DepoFileInfo extends PluginForHost {
             final String captchaAction = br.getRegex("<div class=\"captchaPageTable\">[\t\n\r ]+<form method=\"POST\" action=\"(http://[^<>\"]*?)\"").getMatch(0);
             final String rcID = br.getRegex("recaptcha/api/noscript\\?k=([^<>\"]*?)\"").getMatch(0);
             if (rcID == null || captchaAction == null) {
+                logger.warning("reCaptcha_ID or captchaAction NULL - plugin seems to be broken!");
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
             final PluginForHost recplug = JDUtilities.getPluginForHost("DirectHTTP");

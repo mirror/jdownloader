@@ -1606,10 +1606,11 @@ public class VozUploadCom extends PluginForHost {
      * forward. Thus prevents new downloads starting when not possible and is self aware and requires no coder interaction.
      * 
      * @param account
+     * @throws Exception
      * 
      * @category 'Experimental', Mod written February 2013
      * */
-    private void controlSimHost(final Account account) {
+    private void controlSimHost(final Account account) throws Exception {
         synchronized (CTRLLOCK) {
             if (usedHost == null) {
                 return;
@@ -1628,7 +1629,25 @@ public class VozUploadCom extends PluginForHost {
             } else {
                 // non account
                 was = maxNonAccSimDlPerHost.get();
-                maxNonAccSimDlPerHost.set(getHashedHashedValue(account) - 1);
+                /* Bad workaround for old XFS3 bug: http://svn.jdownloader.org/issues/43717 */
+                try {
+                    maxNonAccSimDlPerHost.set(getHashedHashedValue(account) - 1);
+                } catch (final NullPointerException efail) {
+                    boolean throw_old = true;
+                    try {
+                        logger.warning("Performing bad XFS3 bug workaround");
+                        if (dl.getConnection().getResponseCode() == 503) {
+                            throw_old = false;
+                            throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Wait before starting more downloads - too many connections", 5 * 60 * 1000l);
+                        }
+                    } catch (final Exception e) {
+                        if (throw_old) {
+                            throw efail;
+                        } else {
+                            throw e;
+                        }
+                    }
+                }
                 current = maxNonAccSimDlPerHost.get();
             }
             if (account == null) {

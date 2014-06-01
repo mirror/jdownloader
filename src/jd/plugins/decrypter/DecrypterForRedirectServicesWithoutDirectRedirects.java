@@ -681,9 +681,9 @@ public class DecrypterForRedirectServicesWithoutDirectRedirects extends PluginFo
             } else if (parameter.contains("shrk.biz/")) {
                 finallink = br.getRegex("<meta http\\-equiv=\"refresh\" content=\"\\d+; URL=(https?://[^<>\"]*?)\"").getMatch(0);
             } else if (parameter.contains("egcenter.com/")) {
-                String next = new Regex(parameter, "/(\\d+)").getMatch(0);
-                br.getPage(parameter.replace(next, "2-" + next));
-                finallink = br.getRegex("<div id=\"continue\" style=\'display:none\'><a href=\'(http://[^\']+)").getMatch(0);
+                final String lid = new Regex(parameter, "/(\\d+)").getMatch(0);
+                br.getPage("http://www.egcenter.com/m1.php?id=" + lid);
+                finallink = br.getRegex("NewWindow\\(\\'(http[^<>\"]*?)\\'").getMatch(0);
             } else if (parameter.contains("allsubs.org/")) {
                 finallink = "directhttp://" + parameter.replace("/subs-download/", "//subs-download2/") + "/";
             } else if (parameter.contains("sharmota.com/")) {
