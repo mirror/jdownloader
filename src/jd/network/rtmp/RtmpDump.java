@@ -330,7 +330,6 @@ public class RtmpDump extends RTMPDownload {
 
             String cmdArgsWindows = rtmpConnection.getCommandLineParameter();
             List<String> cmdArgsMacAndLinux = new ArrayList<String>();
-
             if (CrossSystem.isWindows()) {
                 // MAX_PATH Fix --> \\?\ + Path
                 if (String.valueOf(tmpFile).length() >= 260) {

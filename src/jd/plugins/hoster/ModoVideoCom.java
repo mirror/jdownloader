@@ -405,7 +405,11 @@ public class ModoVideoCom extends PluginForHost {
                 rtmp.setSwfVfy(dllink.split("@")[2]);
                 rtmp.setPageUrl(downloadLink.getDownloadURL());
                 rtmp.setConn("S:" + dllink.split("@")[1]);
-                rtmp.setResume(false);
+                if (false) {
+                    /* does not work for this host */
+                    rtmp.setResume(true);
+                    rtmp.getParameterMap().put("k", "5");
+                }
                 try {
                     /* add a download slot */
                     controlFree(+1);
