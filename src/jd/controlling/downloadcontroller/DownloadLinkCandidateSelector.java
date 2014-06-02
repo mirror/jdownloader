@@ -155,11 +155,23 @@ public class DownloadLinkCandidateSelector {
                     maxConcurrentHost--;
                 }
                 final Account account = singleDownloadController.getAccount();
-                if (account != null && account == candidateAccount && account.isConcurrentUsePossible() == false) {
-                    /**
-                     * account in use and concurrency is forbidden
-                     */
-                    return DownloadLinkCandidatePermission.CONCURRENCY_FORBIDDEN;
+                if (account != null) {
+                    if (candidateAccount != null) {
+                        final boolean sameAccountHost = account.getHoster().equals(candidateAccount.getHoster());
+                        if (sameAccountHost && account != candidateAccount && candidateAccount.isConcurrentUsePossible() == false) {
+                            return DownloadLinkCandidatePermission.CONCURRENCY_FORBIDDEN;
+                        }
+                    } else {
+                        final boolean sameAccountHost = account.getHoster().equals(candidatePluginHost);
+                        if (sameAccountHost && account.isConcurrentUsePossible() == false) {
+                            return DownloadLinkCandidatePermission.CONCURRENCY_FORBIDDEN;
+                        }
+                    }
+                } else if (candidateAccount != null) {
+                    final boolean sameAccountHost = candidateAccount.getHoster().equals(singleDownloadController.getDownloadLink().getHost());
+                    if (sameAccountHost && candidateAccount.isConcurrentUsePossible() == false) {
+                        return DownloadLinkCandidatePermission.CONCURRENCY_FORBIDDEN;
+                    }
                 }
                 if (candidatePluginHost.equals(singleDownloadController.getDownloadLinkCandidate().getCachedAccount().getPlugin().getHost())) {
                     /**

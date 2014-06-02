@@ -109,7 +109,6 @@ import org.jdownloader.extensions.extraction.ArchiveController;
 import org.jdownloader.images.NewTheme;
 import org.jdownloader.logging.LogController;
 import org.jdownloader.osevents.OperatingSystemEventSender;
-import org.jdownloader.plugins.controller.crawler.CrawlerPluginController;
 import org.jdownloader.plugins.controller.host.HostPluginController;
 import org.jdownloader.settings.AutoDownloadStartOption;
 import org.jdownloader.settings.GeneralSettings;
@@ -721,11 +720,6 @@ public class SecondLevelLaunch {
                             }.start(true);
                             Thread.currentThread().setName("ExecuteWhenGuiReachedThread: Init Host Plugins");
 
-                            if (!jared || true) {
-                                // always rescan until we fixed the plugin loader
-                                HostPluginController.getInstance().invalidateCache();
-                                CrawlerPluginController.invalidateCache();
-                            }
                             HostPluginController.getInstance().ensureLoaded();
                             HOST_PLUGINS_COMPLETE.setReached();
                             PackagizerController.getInstance();
