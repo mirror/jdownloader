@@ -442,6 +442,10 @@ public class FreeWayMe extends PluginForHost {
 
         String dllink = "https://www.free-way.me/load.php?multiget=2&user=" + user + "&pw=" + pw + "&url=" + url + "&encodedJD";
 
+        if (this.getPluginConfig().getBooleanProperty(BETAUSER, false)) {
+            dllink += "&beta=1";
+        }
+
         // set timeout
         br.setConnectTimeout(100 * 1000);
         br.setReadTimeout(95 * 1000);
