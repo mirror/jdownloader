@@ -984,6 +984,7 @@ TaskColumn_getStringValue_extraction_error_file_not_found=Çıkartma hatası: Do
 TaskColumn_getStringValue_extraction_error_space=Çıkartma hatası: Yeterli Alan yok
 TaskColumn_getStringValue_extraction_success=Çıkartma TAMAM
 TaskColumn_getStringValue_finished_=Tamamlandı
+TaskColumn_getStringValue_finished_mirror=Tamamlandı(Yansı)
 TaskColumn_getStringValue_running_=Yürütülüyor
 TaskColumn_onSingleClick_object_=%s1 tarafından şu anki IP engellendi
 TestAction_TestAction_object_=%s1 İfadesini dene
