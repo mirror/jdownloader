@@ -405,7 +405,7 @@ public class ModoVideoCom extends PluginForHost {
                 rtmp.setSwfVfy(dllink.split("@")[2]);
                 rtmp.setPageUrl(downloadLink.getDownloadURL());
                 rtmp.setConn("S:" + dllink.split("@")[1]);
-                rtmp.setResume(true);
+                rtmp.setResume(false);
                 try {
                     /* add a download slot */
                     controlFree(+1);
@@ -416,6 +416,7 @@ public class ModoVideoCom extends PluginForHost {
                     controlFree(-1);
                 }
             } catch (final Throwable e) {
+                e.printStackTrace();
                 logger.info(this.getHost() + ": timesfailed_unknown_rtmp_error");
                 int timesFailed = downloadLink.getIntegerProperty(NICE_HOSTproperty + "timesfailed_unknown_rtmp_error", 0);
                 downloadLink.getLinkStatus().setRetryCount(0);
