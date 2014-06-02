@@ -464,6 +464,9 @@ public class OBoomCom extends PluginForHost {
         if (waitTime != null) {
             throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, Long.parseLong(waitTime) * 1000l);
         }
+        if (account != null && br.getRegex("421,\"connections\",(\\d+)").getMatch(0) != null) {
+            throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, "Already downloading?", 5 * 60 * 1000l);
+        }
     }
 
     private void refreshTokenHandling(Map<String, String> usedInfos, Account account, final boolean freshInfos) throws PluginException {
