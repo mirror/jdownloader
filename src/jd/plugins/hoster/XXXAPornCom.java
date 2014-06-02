@@ -37,6 +37,7 @@ public class XXXAPornCom extends PluginForHost {
     private static final String EMBEDTYPE = "http://(www\\.)?media\\.xxxaporn\\.com/video/\\d+";
 
     public XXXAPornCom(PluginWrapper wrapper) {
+        //
         super(wrapper);
     }
 
@@ -63,21 +64,31 @@ public class XXXAPornCom extends PluginForHost {
         if (downloadLink.getDownloadURL().matches(EMBEDTYPE)) {
             final String fileID = new Regex(downloadLink.getDownloadURL(), "xxxaporn\\.com/(video/)?(\\d+)").getMatch(1);
             br.getPage("http://media.xxxaporn.com/media/player/config_embed.php?vkey=" + fileID);
-            if (br.containsHTML("Invalid video key\\!")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            if (br.containsHTML("Invalid video key\\!")) {
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            }
             filename = new Regex(downloadLink.getDownloadURL(), "xxxaporn\\.com/\\d+/([A-Za-z0-9\\-_]+)").getMatch(0);
-            if (filename == null) filename = br.getRegex("xxxaporn\\.com/video/\\d+/([a-z0-9\\-]+)</share>").getMatch(0);
-            if (filename == null) filename = fileID;
+            if (filename == null) {
+                filename = br.getRegex("xxxaporn\\.com/video/\\d+/([a-z0-9\\-]+)</share>").getMatch(0);
+            }
+            if (filename == null) {
+                filename = fileID;
+            }
             DLLINK = br.getRegex("<src>(http://[^<>\"]*?)</src>").getMatch(0);
         } else {
             br.getPage(downloadLink.getDownloadURL());
-            if (br.containsHTML("No htmlCode read")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            if (br.containsHTML("No htmlCode read")) {
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            }
             filename = br.getRegex("<title>Viewing Media \\- (.*?):: Free Amateur Sex, Amateur Porn").getMatch(0);
             if (filename == null) {
                 filename = br.getRegex("<div class=\"video\\-info\">[\t\n\r ]+<h1>(.*?)</h1>").getMatch(0);
             }
             DLLINK = br.getRegex("\\(\\'flashvars\\',\\'file=(http://[^<>\"]*?)\\'\\)").getMatch(0);
         }
-        if (filename == null || DLLINK == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (filename == null || DLLINK == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         DLLINK = Encoding.htmlDecode(DLLINK);
         filename = filename.trim();
         downloadLink.setFinalFileName(Encoding.htmlDecode(filename) + ".flv");
@@ -87,10 +98,11 @@ public class XXXAPornCom extends PluginForHost {
         URLConnectionAdapter con = null;
         try {
             con = br2.openGetConnection(DLLINK);
-            if (!con.getContentType().contains("html"))
+            if (!con.getContentType().contains("html")) {
                 downloadLink.setDownloadSize(con.getLongContentLength());
-            else
+            } else {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            }
             return AvailableStatus.TRUE;
         } finally {
             try {
