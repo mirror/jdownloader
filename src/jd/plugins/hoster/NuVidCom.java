@@ -53,7 +53,9 @@ public class NuVidCom extends PluginForHost {
         final String vkey = new Regex(Encoding.htmlDecode(linkPart), "vkey=([0-9a-f]+)").getMatch(0);
         br.getPage("http://www.nuvid.com" + Encoding.htmlDecode(linkPart) + "&pkey=" + JDHash.getMD5(vkey + Encoding.Base64Decode("aHlyMTRUaTFBYVB0OHhS")));
         DLLINK = br.getRegex("<video_file>(http://.*?)</video_file>").getMatch(0);
-        if (DLLINK == null) DLLINK = br.getRegex("<video_file><\\!\\[CDATA\\[(http://.*?)\\]\\]></video_file>").getMatch(0);
+        if (DLLINK == null) {
+            DLLINK = br.getRegex("<video_file><\\!\\[CDATA\\[(http://.*?)\\]\\]></video_file>").getMatch(0);
+        }
     }
 
     @Override
@@ -78,18 +80,28 @@ public class NuVidCom extends PluginForHost {
         br.setFollowRedirects(true);
         br.getPage(downloadLink.getDownloadURL());
         // Offline1
-        if (br.containsHTML("(This page cannot be found|Are you sure you typed in the correct url|<title>Most Recent Videos \\- Free Sex Adult Videos \\- NuVid\\.com</title>|This video was not found)")) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
+        if (br.containsHTML("(This page cannot be found|Are you sure you typed in the correct url|<title>Most Recent Videos \\- Free Sex Adult Videos \\- NuVid\\.com</title>|This video was not found)")) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
         // Offline2
-        if (br.containsHTML("This video was deleted\\.")) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
+        if (br.containsHTML("This video was deleted\\.")) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
         String filename = br.getRegex("<h3>([^<>\"]*?)</h3>").getMatch(0);
         if (filename == null) {
             filename = br.getRegex("<title>([^<>\"]*?) - Free Porn \\& Sex Video").getMatch(0);
         }
-        final String linkPart = br.getRegex("\\'http://nuvid\\.com(/player/config\\.php\\?t=.*?)\\'\\);").getMatch(0);
-        if (filename == null || linkPart == null) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
+        final String linkPart = br.getRegex("\\'http://www\\.nuvid\\.com(/player_config/\\?t=.*?)\\'\\);").getMatch(0);
+        if (filename == null || linkPart == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         getDllink(linkPart);
-        if (DLLINK == null && br.containsHTML("Invalid video key")) throw new PluginException(LinkStatus.ERROR_FATAL, "Plugin outdated, key has changed!");
-        if (filename == null || DLLINK == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (DLLINK == null && br.containsHTML("Invalid video key")) {
+            throw new PluginException(LinkStatus.ERROR_FATAL, "Plugin outdated, key has changed!");
+        }
+        if (filename == null || DLLINK == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         DLLINK = Encoding.htmlDecode(DLLINK);
         filename = filename.trim();
         String ext = DLLINK.substring(DLLINK.lastIndexOf("."));
