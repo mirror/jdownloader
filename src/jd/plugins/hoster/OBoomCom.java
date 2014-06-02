@@ -36,7 +36,7 @@ import org.appwork.utils.formatter.HexFormatter;
 import org.appwork.utils.logging2.LogSource;
 import org.appwork.utils.os.CrossSystem;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "oboom.com" }, urls = { "https?://(www\\.)?oboom\\.com/(#(id=)?)?[A-Z0-9]{8}" }, flags = { 2 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "oboom.com" }, urls = { "https?://(www\\.)?oboom\\.com/(#(id=)?|#/)?[A-Z0-9]{8}" }, flags = { 2 })
 public class OBoomCom extends PluginForHost {
 
     private static Map<Account, Map<String, String>> ACCOUNTINFOS = new HashMap<Account, Map<String, String>>();
@@ -58,7 +58,8 @@ public class OBoomCom extends PluginForHost {
     public void correctDownloadLink(final DownloadLink link) {
         // clean links so prevent dupes and has less side effects with multihosters...
         // website redirects to domain/#fuid
-        link.setUrlDownload(link.getDownloadURL().replaceAll("\\.com/(#(id=)?)?", "\\.com/#"));
+        link.setUrlDownload(link.getDownloadURL().replaceAll("\\.com/#id=", "\\.com/#"));
+        link.setUrlDownload(link.getDownloadURL().replaceAll("\\.com/#/", "\\.com/#"));
         try {
             link.setLinkID(getFileID(link));
         } catch (final Throwable e) {
@@ -482,7 +483,7 @@ public class OBoomCom extends PluginForHost {
     }
 
     private String getFileID(DownloadLink link) {
-        return new Regex(link.getDownloadURL(), "oboom\\.com/(#(id=)?)?([A-Z0-9]{8})").getMatch(2);
+        return new Regex(link.getDownloadURL(), "oboom\\.com/(#(id=)?|#/)?([A-Z0-9]{8})").getMatch(2);
     }
 
     @Override
