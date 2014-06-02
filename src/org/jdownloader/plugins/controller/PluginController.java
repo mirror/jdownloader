@@ -3,7 +3,7 @@ package org.jdownloader.plugins.controller;
 import java.io.File;
 import java.io.FilenameFilter;
 import java.util.ArrayList;
-import java.util.HashMap;
+import java.util.Map;
 
 import jd.plugins.Plugin;
 
@@ -14,75 +14,98 @@ import org.jdownloader.logging.LogController;
 import org.jdownloader.plugins.controller.PluginClassLoader.PluginClassLoaderChild;
 
 public class PluginController<T extends Plugin> {
-    
+
     @SuppressWarnings("unchecked")
-    public java.util.List<PluginInfo<T>> scan(String hosterpath, HashMap<String, ArrayList<LazyPlugin>> pluginCache) {
-        boolean ownLogger = false;
+    public java.util.List<PluginInfo<T>> scan(String hosterpath, Map<String, ArrayList<LazyPlugin>> pluginCache) {
         LogSource logger = LogController.getRebirthLogger();
+        final boolean ownLogger;
         if (logger == null) {
             ownLogger = true;
             logger = LogController.CL();
             logger.setAllowTimeoutFlush(false);
+        } else {
+            ownLogger = false;
         }
         final java.util.List<PluginInfo<T>> ret = new ArrayList<PluginInfo<T>>();
-        ClassLoader oldCL = null;
+        final ClassLoader oldCL = Thread.currentThread().getContextClassLoader();
         try {
-            File path = null;
-            PluginClassLoaderChild cl = null;
-            path = Application.getRootByClass(jd.SecondLevelLaunch.class, hosterpath);
-            cl = PluginClassLoader.getInstance().getChild();
-            oldCL = Thread.currentThread().getContextClassLoader();
+            final File path = Application.getRootByClass(jd.SecondLevelLaunch.class, hosterpath);
+            final PluginClassLoaderChild cl = PluginClassLoader.getInstance().getChild();
             Thread.currentThread().setContextClassLoader(cl);
-            final File[] files = path.listFiles(new FilenameFilter() {
+            final File[] pluginClassFiles = path.listFiles(new FilenameFilter() {
                 public boolean accept(final File dir, final String name) {
-                    if (!name.endsWith(".class") || name.contains("$")) return false;
-                    if (name.startsWith("YoutubeDashConfigPanel")) return false;
-                    if (name.startsWith("RTMPDownload")) return false;
-                    if (name.startsWith("YoutubeHelper")) return false;
+                    if (!name.endsWith(".class") || name.contains("$")) {
+                        return false;
+                    }
+                    if (name.startsWith("YoutubeDashConfigPanel")) {
+                        return false;
+                    }
+                    if (name.startsWith("RTMPDownload")) {
+                        return false;
+                    }
+                    if (name.startsWith("YoutubeHelper")) {
+                        return false;
+                    }
                     return true;
                 }
             });
             final String pkg = hosterpath.replace("/", ".");
             boolean errorFree = true;
-            if (files != null) {
-                for (final File f : files) {
+            final ArrayList<PluginInfo<T>> scannedPlugins = new ArrayList<PluginInfo<T>>();
+            if (pluginClassFiles != null) {
+                for (final File pluginClassFile : pluginClassFiles) {
                     try {
-                        long lastModified = f.lastModified();
-                        boolean validCachedPlugins = false;
+                        final long lastModified = pluginClassFile.lastModified();
+                        final String name = pluginClassFile.getName();
+                        final String classFileName = name.substring(0, name.length() - 6);
                         String sha256 = null;
+                        scannedPlugins.clear();
                         if (pluginCache != null) {
-                            ArrayList<LazyPlugin> cachedPlugins = pluginCache.get(f.getName());
+                            final ArrayList<LazyPlugin> cachedPlugins = pluginCache.get(name);
                             if (cachedPlugins != null) {
-                                for (LazyPlugin plugin : cachedPlugins) {
-                                    if ((plugin.getMainClassLastModified() > 0 && plugin.getMainClassLastModified() == lastModified) || ((sha256 != null || (sha256 = Hash.getSHA1(f)) != null) && sha256.equals(plugin.getMainClassSHA256()))) {
-                                        PluginInfo<T> retPlugin = new PluginInfo<T>(f, null);
+                                for (final LazyPlugin plugin : cachedPlugins) {
+                                    if (plugin != null && ((plugin.getMainClassLastModified() > 0 && plugin.getMainClassLastModified() == lastModified) || ((sha256 != null || (sha256 = Hash.getSHA1(pluginClassFile)) != null) && sha256.equals(plugin.getMainClassSHA256())))) {
+                                        final PluginInfo<T> retPlugin = new PluginInfo<T>(pluginClassFile, null);
                                         retPlugin.setLazyPlugin(plugin);
-                                        ret.add(retPlugin);
-                                        validCachedPlugins = true;
+                                        scannedPlugins.add(retPlugin);
+                                    } else {
+                                        scannedPlugins.clear();
+                                        break;
                                     }
                                 }
                             }
                         }
-                        if (validCachedPlugins) continue;
-                        String classFileName = f.getName().substring(0, f.getName().length() - 6);
-                        PluginInfo<T> pluginInfo;
-                        ret.add(pluginInfo = new PluginInfo<T>(f, (Class<T>) cl.loadClass(pkg + "." + classFileName)));
-                        pluginInfo.setMainClassLastModified(lastModified);
-                        if (sha256 == null) sha256 = Hash.getSHA256(f);
-                        pluginInfo.setMainClassSHA256(sha256);
-                        logger.finer("Loaded from: " + new String("" + cl.getResource(hosterpath + "/" + f.getName())));
+                        if (scannedPlugins.size() == 0) {
+                            final PluginInfo<T> pluginInfo = new PluginInfo<T>(pluginClassFile, (Class<T>) cl.loadClass(pkg + "." + classFileName));
+                            ret.add(pluginInfo);
+                            pluginInfo.setMainClassLastModified(lastModified);
+                            if (sha256 == null) {
+                                sha256 = Hash.getSHA256(pluginClassFile);
+                            }
+                            pluginInfo.setMainClassSHA256(sha256);
+                            logger.finer("Loaded: " + classFileName);
+                        } else {
+                            for (final PluginInfo<T> scannedPlugin : scannedPlugins) {
+                                logger.finer("Cached: " + classFileName + "|" + scannedPlugin.getLazyPlugin().getDisplayName() + "|" + scannedPlugin.getLazyPlugin().getVersion());
+                            }
+                            ret.addAll(scannedPlugins);
+                        }
                     } catch (Throwable e) {
                         errorFree = false;
                         logger.log(e);
                     }
                 }
             }
-            if (errorFree && ownLogger) logger.clear();
+            if (errorFree && ownLogger) {
+                logger.clear();
+            }
         } finally {
-            if (ownLogger) logger.close();
             Thread.currentThread().setContextClassLoader(oldCL);
+            if (ownLogger) {
+                logger.close();
+            }
         }
         return ret;
-        
+
     }
 }

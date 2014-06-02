@@ -24,7 +24,7 @@ public class ReScanPluginsCommand extends AbstractStartupCommand {
             public void run() {
 
                 if (HostPluginController.getInstance().isCacheInvalidated()) {
-                    HostPluginController.getInstance().init(true);
+                    HostPluginController.getInstance().init();
                 }
 
             }

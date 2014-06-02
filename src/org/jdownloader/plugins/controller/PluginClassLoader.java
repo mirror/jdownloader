@@ -1,6 +1,7 @@
 package org.jdownloader.plugins.controller;
 
 import java.io.File;
+import java.io.IOException;
 import java.lang.ref.WeakReference;
 import java.net.URL;
 import java.net.URLClassLoader;
@@ -13,6 +14,8 @@ import jd.plugins.Plugin;
 
 import org.appwork.utils.Application;
 import org.appwork.utils.IO;
+import org.appwork.utils.logging2.LogSource;
+import org.jdownloader.logging.LogController;
 
 public class PluginClassLoader extends URLClassLoader {
     private static final WeakHashMap<Class<?>, String>                                                    sharedClasses           = new WeakHashMap<Class<?>, String>();
@@ -24,7 +27,9 @@ public class PluginClassLoader extends URLClassLoader {
             while (it.hasNext()) {
                 Entry<Class<?>, String> next = it.next();
                 Class<?> ret = null;
-                if (name.equals(next.getValue()) && (ret = next.getKey()) != null) return ret;
+                if (name.equals(next.getValue()) && (ret = next.getKey()) != null) {
+                    return ret;
+                }
             }
         }
         return null;
@@ -52,7 +57,9 @@ public class PluginClassLoader extends URLClassLoader {
         }
 
         public boolean isUpdateRequired(String name) {
-            if (!jared) return false;
+            if (!jared) {
+                return false;
+            }
             name = name.replace("/", ".");
             synchronized (DYNAMIC_LOADABLE_LOBRARIES) {
                 Iterator<Entry<String, String>> it = DYNAMIC_LOADABLE_LOBRARIES.entrySet().iterator();
@@ -82,6 +89,47 @@ public class PluginClassLoader extends URLClassLoader {
             return false;
         }
 
+        private Class<?> loadAndDefineClass(final URL myUrl, final String name, final PluginClassLoader parent) throws Exception {
+            int tryAgain = 5;
+            byte data[] = null;
+            while (true) {
+                try {
+                    data = IO.readURL(myUrl);
+                    if (parent != null) {
+                        return parent.defineClass(name, data, 0, data.length);
+                    } else {
+                        return defineClass(name, data, 0, data.length);
+                    }
+                } catch (ClassFormatError e) {
+                    LogSource logger = LogController.getRebirthLogger(null);
+                    if (logger != null) {
+                        if (data != null) {
+                            logger.severe("ClassFormatError:class=" + name + "|file=" + myUrl + "|size=" + data.length);
+                        } else {
+                            logger.severe("ClassFormatError:class=" + name + "|file=" + myUrl);
+                        }
+                        logger.log(e);
+                    }
+                    if (--tryAgain == 0) {
+                        throw e;
+                    } else {
+                        Thread.sleep(150);
+                    }
+                } catch (IOException e) {
+                    LogSource logger = LogController.getRebirthLogger(null);
+                    if (logger != null) {
+                        logger.severe("IOException:class=" + name + "|file=" + myUrl);
+                        logger.log(e);
+                    }
+                    if (--tryAgain == 0) {
+                        throw e;
+                    } else {
+                        Thread.sleep(150);
+                    }
+                }
+            }
+        }
+
         @Override
         public Class<?> loadClass(String name) throws ClassNotFoundException {
             try {
@@ -108,7 +156,9 @@ public class PluginClassLoader extends URLClassLoader {
                                      * library file not existing, create a new one if wished, so the update system replaces it with correct
                                      * one
                                      */
-                                    if (createDummyLibs) lib.createNewFile();
+                                    if (createDummyLibs) {
+                                        lib.createNewFile();
+                                    }
                                     throw new UpdateRequiredClassNotFoundException(libFile);
                                 }
                                 throw new ClassNotFoundException(name);
@@ -118,24 +168,35 @@ public class PluginClassLoader extends URLClassLoader {
                 }
                 if (isCheckStableCompatibility() && name.equals(pluginClass) == false && !name.startsWith(pluginClass + "$")) {
                     boolean check = true;
-                    if (check) check = !name.equals("jd.plugins.hoster.RTMPDownload");/* available in 09581 Stable */
-                    if (check) check = !name.equals("org.appwork.utils.speedmeter.SpeedMeterInterface");/* available in 09581 Stable */
-                    if (check) check = !name.equals("org.appwork.utils.net.throttledconnection.MeteredThrottledInputStream");/*
-                                                                                                                              * available in
-                                                                                                                              * 09581 Stable
-                                                                                                                              */
-                    if (check) check = !name.equals("org.appwork.utils.net.throttledconnection.ThrottledConnection");/*
-                                                                                                                      * available in 09581
-                                                                                                                      * Stable
-                                                                                                                      */
+                    if (check) {
+                        check = !name.equals("jd.plugins.hoster.RTMPDownload");/* available in 09581 Stable */
+                    }
+                    if (check) {
+                        check = !name.equals("org.appwork.utils.speedmeter.SpeedMeterInterface");/* available in 09581 Stable */
+                    }
+                    if (check) {
+                        check = !name.equals("org.appwork.utils.net.throttledconnection.MeteredThrottledInputStream");/*
+                                                                                                                       * available in 09581
+                                                                                                                       * Stable
+                                                                                                                       */
+                    }
+                    if (check) {
+                        check = !name.equals("org.appwork.utils.net.throttledconnection.ThrottledConnection");/*
+                                                                                                               * available in 09581 Stable
+                                                                                                               */
+                    }
                     if (check) {
                         if (name.startsWith("org.appwork") || name.startsWith("jd.plugins.hoster") || name.startsWith("jd.plugins.decrypter")) {
                             System.out.println("Check for Stable Compatibility!!!: " + getPluginClass() + " wants to load " + name);
                         }
                     }
                 }
-                if (!name.startsWith("jd.plugins.hoster") && !name.startsWith("jd.plugins.decrypter")) { return super.loadClass(name); }
-                if (name.startsWith("jd.plugins.hoster.RTMPDownload")) { return super.loadClass(name); }
+                if (!name.startsWith("jd.plugins.hoster") && !name.startsWith("jd.plugins.decrypter")) {
+                    return super.loadClass(name);
+                }
+                if (name.startsWith("jd.plugins.hoster.RTMPDownload")) {
+                    return super.loadClass(name);
+                }
                 Class<?> c = null;
                 boolean sharedClass = name.endsWith("StringContainer");
                 if (sharedClass) {
@@ -156,28 +217,37 @@ public class PluginClassLoader extends URLClassLoader {
                     } else {
                         c = findLoadedClass(name);
                     }
-                    if (c != null) return c;
+                    if (c != null) {
+                        return c;
+                    }
                     URL myUrl = Application.getRessourceURL(name.replace(".", "/") + ".class");
-                    if (myUrl == null) throw new ClassNotFoundException("Class does not exist(anymore): " + name);
-                    byte[] data;
+                    if (myUrl == null) {
+                        throw new ClassNotFoundException("Class does not exist(anymore): " + name);
+                    }
                     if (sharedClass) {
                         synchronized (sharedClasses) {
                             c = findSharedClass(name);
                             if (c == null) {
-                                data = IO.readURL(myUrl);
-                                c = parent.defineClass(name, data, 0, data.length);
+                                c = loadAndDefineClass(myUrl, name, parent);
                                 sharedClasses.put(c, name);
                             }
                         }
                     } else {
-                        data = IO.readURL(myUrl);
-                        c = defineClass(name, data, 0, data.length);
+                        c = loadAndDefineClass(myUrl, name, null);
                     }
                     return c;
                 }
             } catch (Exception e) {
-                if (e instanceof UpdateRequiredClassNotFoundException) throw (UpdateRequiredClassNotFoundException) e;
-                if (e instanceof ClassNotFoundException) throw (ClassNotFoundException) e;
+                LogSource logger = LogController.getRebirthLogger(null);
+                if (logger != null) {
+                    logger.log(e);
+                }
+                if (e instanceof UpdateRequiredClassNotFoundException) {
+                    throw (UpdateRequiredClassNotFoundException) e;
+                }
+                if (e instanceof ClassNotFoundException) {
+                    throw (ClassNotFoundException) e;
+                }
                 throw new ClassNotFoundException(name, e);
             }
 
@@ -236,7 +306,9 @@ public class PluginClassLoader extends URLClassLoader {
     }
 
     public PluginClassLoaderChild getSharedChild(LazyPlugin<? extends Plugin> lazyPlugin) {
-        if (lazyPlugin == null) return getChild();
+        if (lazyPlugin == null) {
+            return getChild();
+        }
         PluginClassLoaderChild ret = fetchSharedChild(lazyPlugin, null);
         if (ret == null) {
             ret = getChild();
@@ -253,11 +325,17 @@ public class PluginClassLoader extends URLClassLoader {
                 Entry<PluginClassLoaderChild, WeakReference<LazyPlugin<? extends Plugin>>> next = it.next();
                 WeakReference<LazyPlugin<? extends Plugin>> weakPlugin = next.getValue();
                 LazyPlugin<? extends Plugin> plugin = null;
-                if (weakPlugin != null) plugin = weakPlugin.get();
-                if (plugin == null) continue;
+                if (weakPlugin != null) {
+                    plugin = weakPlugin.get();
+                }
+                if (plugin == null) {
+                    continue;
+                }
                 if (lazyPlugin == plugin || lazyPlugin.getClassname().equals(plugin.getClassname()) && lazyPlugin.getVersion() == plugin.getVersion() && lazyPlugin.getMainClassSHA256().equals(plugin.getMainClassSHA256())) {
                     ret = next.getKey();
-                    if (ret != null) return ret;
+                    if (ret != null) {
+                        return ret;
+                    }
                     break;
                 }
             }
@@ -271,7 +349,9 @@ public class PluginClassLoader extends URLClassLoader {
 
     public static PluginClassLoaderChild getThreadPluginClassLoaderChild() {
         ClassLoader cl = Thread.currentThread().getContextClassLoader();
-        if (cl != null && cl instanceof PluginClassLoaderChild) return (PluginClassLoaderChild) cl;
+        if (cl != null && cl instanceof PluginClassLoaderChild) {
+            return (PluginClassLoaderChild) cl;
+        }
         return null;
     }
 

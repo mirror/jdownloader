@@ -13,27 +13,27 @@ import org.jdownloader.plugins.controller.crawler.CrawlerPluginController;
 import org.jdownloader.plugins.controller.host.HostPluginController;
 
 public class JDAPIImpl implements JDAPI {
-    
+
     public long uptime() {
         return System.currentTimeMillis() - SecondLevelLaunch.startup;
     }
-    
+
     public long version() {
         return JDUtilities.getRevisionNumber();
     }
-    
+
     @Override
     public boolean refreshPlugins() {
-        HostPluginController.getInstance().init(true);
+        HostPluginController.getInstance().init();
         CrawlerPluginController.getInstance().init(true);
         return true;
     }
-    
+
     @Override
     public int sum(int a, int b) {
         return a + b;
     }
-    
+
     @Override
     public void doSomethingCool() {
         new Thread() {
@@ -42,7 +42,7 @@ public class JDAPIImpl implements JDAPI {
             }
         }.start();
     }
-    
+
     @Override
     public Integer getCoreRevision() {
         org.jdownloader.myjdownloader.client.json.JsonMap map = null;
@@ -50,11 +50,11 @@ public class JDAPIImpl implements JDAPI {
             map = JSonStorage.restoreFromString(IO.readFileToString(Application.getResource("build.json")), new TypeRef<org.jdownloader.myjdownloader.client.json.JsonMap>() {
             });
             return (Integer) map.get("JDownloaderRevision");
-            
+
         } catch (Throwable t) {
             Log.exception(t);
         }
         return -1;
     }
-    
+
 }
