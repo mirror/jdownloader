@@ -17,6 +17,7 @@
 package jd.plugins.hoster;
 
 import java.io.IOException;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -45,12 +46,17 @@ import org.appwork.utils.formatter.SizeFormatter;
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "uloz.to" }, urls = { "http://(www\\.)?(uloz\\.to|ulozto\\.sk|ulozto\\.cz|ulozto\\.net)/[a-zA-Z0-9]+/.+" }, flags = { 2 })
 public class UlozTo extends PluginForHost {
 
-    private static final String REPEAT_CAPTCHA      = "REPEAT_CAPTCHA";
-    private static final String CAPTCHA_TEXT        = "CAPTCHA_TEXT";
-    private static final String CAPTCHA_ID          = "CAPTCHA_ID";
-    private static final String QUICKDOWNLOAD       = "http://(www\\.)?uloz\\.to/quickDownload/\\d+";
-    private static final String PREMIUMONLYUSERTEXT = JDL.L("plugins.hoster.ulozto.premiumonly", "Only downloadable for premium users!");
-    private static final String PASSWORDPROTECTED   = ">Enter password please<";
+    private static final String  REPEAT_CAPTCHA               = "REPEAT_CAPTCHA";
+    private static final String  CAPTCHA_TEXT                 = "CAPTCHA_TEXT";
+    private static final String  CAPTCHA_ID                   = "CAPTCHA_ID";
+    private static final String  QUICKDOWNLOAD                = "http://(www\\.)?uloz\\.to/quickDownload/\\d+";
+    private static final String  PREMIUMONLYUSERTEXT          = JDL.L("plugins.hoster.ulozto.premiumonly", "Only downloadable for premium users!");
+    private static final String  PASSWORDPROTECTED            = ">Enter password please<";
+
+    /* note: CAN NOT be negative or zero! (ie. -1 or 0) Otherwise math sections fail. .:. use [1-20] */
+    private static AtomicInteger totalMaxSimultanFreeDownload = new AtomicInteger(20);
+    /* don't touch the following! */
+    private static AtomicInteger maxFree                      = new AtomicInteger(1);
 
     public UlozTo(PluginWrapper wrapper) {
         super(wrapper);
@@ -70,7 +76,7 @@ public class UlozTo extends PluginForHost {
 
     @Override
     public int getMaxSimultanFreeDownloadNum() {
-        return -1;
+        return maxFree.get();
     }
 
     @Override
@@ -304,7 +310,15 @@ public class UlozTo extends PluginForHost {
             br.followConnection();
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        dl.startDownload();
+        try {
+            /* add a download slot */
+            controlFree(+1);
+            /* start the dl */
+            dl.startDownload();
+        } finally {
+            /* remove download slot */
+            controlFree(-1);
+        }
     }
 
     public void handlePremium(final DownloadLink parameter, final Account account) throws Exception {
@@ -395,6 +409,25 @@ public class UlozTo extends PluginForHost {
         ai.setStatus("Premium User");
         account.setValid(true);
         return ai;
+    }
+
+    /**
+     * Prevents more than one free download from starting at a given time. One step prior to dl.startDownload(), it adds a slot to maxFree
+     * which allows the next singleton download to start, or at least try.
+     * 
+     * This is needed because xfileshare(website) only throws errors after a final dllink starts transferring or at a given step within pre
+     * download sequence. But this template(XfileSharingProBasic) allows multiple slots(when available) to commence the download sequence,
+     * this.setstartintival does not resolve this issue. Which results in x(20) captcha events all at once and only allows one download to
+     * start. This prevents wasting peoples time and effort on captcha solving and|or wasting captcha trading credits. Users will experience
+     * minimal harm to downloading as slots are freed up soon as current download begins.
+     * 
+     * @param controlFree
+     *            (+1|-1)
+     */
+    public synchronized void controlFree(final int num) {
+        logger.info("maxFree was = " + maxFree.get());
+        maxFree.set(Math.min(Math.max(1, maxFree.addAndGet(num)), totalMaxSimultanFreeDownload.get()));
+        logger.info("maxFree now = " + maxFree.get());
     }
 
     @Override

@@ -830,6 +830,9 @@ public class DecrypterForRedirectServicesWithoutDirectRedirects extends PluginFo
             } else if (parameter.contains("lienscash.com/")) {
                 br.getPage(parameter);
                 finallink = br.getRegex("class=\"redirect\" id=\"(.*?)\"").getMatch(0);
+                if (finallink == null) {
+                    finallink = br.getRegex("id=\"redir_btn\" href=\"(https?://[^<>\"]*?)\"").getMatch(0);
+                }
             }
         } catch (final SocketTimeoutException e) {
             logger.info("Link offline (timeout): " + parameter);

@@ -28,15 +28,14 @@ import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterException;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
-import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
 import jd.utils.JDUtilities;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "ileprotect.com" }, urls = { "http://(www\\.)?ileprotect\\.com/linkidwoc\\.php\\?linkid=[A-Za-z0-9]+" }, flags = { 0 })
-public class IleProtectCom extends PluginForDecrypt {
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "liens-protector.com" }, urls = { "http://(www\\.)?liens\\-protector\\.com/[A-Za-z0-9\\-_]+\\.html" }, flags = { 0 })
+public class LiensProtectorCom extends PluginForDecrypt {
 
-    public IleProtectCom(PluginWrapper wrapper) {
+    public LiensProtectorCom(PluginWrapper wrapper) {
         super(wrapper);
     }
 
@@ -52,36 +51,36 @@ public class IleProtectCom extends PluginForDecrypt {
         String parameter = param.toString();
         br.setFollowRedirects(true);
         br.getPage(parameter);
-        boolean failed = true;
-        for (int i = 0; i <= 5; i++) {
-            if (!br.containsHTML(RECAPTCHATEXT) && !br.containsHTML(RECAPTCHATEXT2)) {
-                return null;
+        if (!skipcaptcha) {
+            boolean failed = true;
+            for (int i = 0; i <= 5; i++) {
+                if (!br.containsHTML(RECAPTCHATEXT) && !br.containsHTML(RECAPTCHATEXT2)) {
+                    return null;
+                }
+                PluginForHost recplug = JDUtilities.getPluginForHost("DirectHTTP");
+                jd.plugins.hoster.DirectHTTP.Recaptcha rc = ((jd.plugins.hoster.DirectHTTP) recplug).getReCaptcha(br);
+                rc.parse();
+                rc.load();
+                File cf = rc.downloadCaptcha(getLocalCaptchaFile());
+                String c;
+                if (skipcaptcha) {
+                    c = "";
+                } else {
+                    c = getCaptchaCode(cf, param);
+                }
+                br.postPage("http://" + DOMAIN + "/showlinks.php", "recaptcha_challenge_field=" + rc.getChallenge() + "&recaptcha_response_field=" + Encoding.urlEncode(c) + "&linkid=" + new Regex(parameter, "([A-Za-z0-9]+)$").getMatch(0) + "&x=" + Integer.toString(new Random().nextInt(100)) + "&y=" + Integer.toString(new Random().nextInt(100)));
+                if (br.containsHTML("(The security code is <font color=\\'red\\'>incorrect</font>|The CAPTCHA wasn\\'t entered correctly)")) {
+                    br.getPage(parameter);
+                    skipcaptcha = false;
+                    continue;
+                }
+                failed = false;
+                break;
             }
-            PluginForHost recplug = JDUtilities.getPluginForHost("DirectHTTP");
-            jd.plugins.hoster.DirectHTTP.Recaptcha rc = ((jd.plugins.hoster.DirectHTTP) recplug).getReCaptcha(br);
-            rc.parse();
-            rc.load();
-            File cf = rc.downloadCaptcha(getLocalCaptchaFile());
-            String c;
-            if (skipcaptcha) {
-                c = "";
-            } else {
-                c = getCaptchaCode(cf, param);
+            if (failed) {
+                throw new DecrypterException(DecrypterException.CAPTCHA);
             }
-            br.postPage("http://" + DOMAIN + "/showlinks.php", "recaptcha_challenge_field=" + rc.getChallenge() + "&recaptcha_response_field=" + Encoding.urlEncode(c) + "&linkid=" + new Regex(parameter, "([A-Za-z0-9]+)$").getMatch(0) + "&x=" + Integer.toString(new Random().nextInt(100)) + "&y=" + Integer.toString(new Random().nextInt(100)));
-            if (br.containsHTML("(The security code is <font color=\\'red\\'>incorrect</font>|The CAPTCHA wasn\\'t entered correctly)")) {
-                br.getPage(parameter);
-                skipcaptcha = false;
-                continue;
-            }
-            failed = false;
-            break;
         }
-        if (failed) {
-            throw new DecrypterException(DecrypterException.CAPTCHA);
-        }
-        br.postPage("http://" + DOMAIN + "/linkid.php", "security_code=&password=&linkid=" + new Regex(parameter, "([A-Za-z0-9]+)$").getMatch(0) + "&x=" + Integer.toString(new Random().nextInt(100)) + "&y=" + Integer.toString(new Random().nextInt(100)));
-        final String fpName = br.getRegex("<h1>([^<>\"]*?)</h1>").getMatch(0);
         String[] links = br.getRegex("target=_blank>(https?://[^<>\"\\']+)").getColumn(0);
         if (links == null || links.length == 0) {
             if (br.containsHTML("href= target=_blank></a><br></br><a")) {
@@ -95,11 +94,6 @@ public class IleProtectCom extends PluginForDecrypt {
             if (!singleLink.contains(DOMAIN + "/")) {
                 decryptedLinks.add(createDownloadlink(singleLink));
             }
-        }
-        if (fpName != null) {
-            FilePackage fp = FilePackage.getInstance();
-            fp.setName(Encoding.htmlDecode(fpName.trim()));
-            fp.addLinks(decryptedLinks);
         }
         return decryptedLinks;
     }

@@ -66,15 +66,19 @@ public class Shareplacecom extends PluginForHost {
         br.setFollowRedirects(true);
         br.getPage(url);
         if (br.getRedirectLocation() == null) {
-            final String iframe = url = br.getRegex("<frame name=\"main\" src=\"(.*?)\">").getMatch(0);
-            br.getPage(iframe);
-            if (br.containsHTML("Your requested file is not found")) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
+            final String iframe = br.getRegex("<frame name=\"main\" src=\"(.*?)\">").getMatch(0);
+            br.getPage("http://shareplace.com/" + iframe);
+            if (br.containsHTML("Your requested file is not found")) {
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            }
             final String filename = br.getRegex("Filename:</font></b>(.*?)<b><br>").getMatch(0);
             String filesize = br.getRegex("Filesize.*?b>(.*?)<b>").getMatch(0);
             if (filesize == null) {
                 filesize = br.getRegex("File.*?size.*?:.*?</b>(.*?)<b><br>").getMatch(0);
             }
-            if (filename == null || filesize == null) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
+            if (filename == null || filesize == null) {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
             downloadLink.setFinalFileName(filename.trim());
             downloadLink.setDownloadSize(SizeFormatter.getSize(filesize.trim()));
             return AvailableStatus.TRUE;
@@ -94,7 +98,9 @@ public class Shareplacecom extends PluginForHost {
             dllink = rhino(new Regex(s[0], "(var.*?)var zzipitime").getMatch(0));
         }
         if (dllink == null) {
-            if (br.containsHTML("<span>You have got max allowed download sessions from the same IP\\!</span>")) { throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, "Limit reached or IP already loading", 60 * 60 * 1001l); }
+            if (br.containsHTML("<span>You have got max allowed download sessions from the same IP\\!</span>")) {
+                throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, "Limit reached or IP already loading", 60 * 60 * 1001l);
+            }
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
 

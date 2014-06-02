@@ -549,7 +549,6 @@ public class SaveTv extends PluginForHost {
         synchronized (LOCK) {
             checkFeatureDialogAll();
             checkFeatureDialogCrawler();
-            checkEPGCharIssuesDialog();
         }
         final SubConfiguration cfg = SubConfiguration.getConfig("save.tv");
         final boolean preferAdsFree = cfg.getBooleanProperty(PREFERADSFREE);
@@ -1565,53 +1564,6 @@ public class SaveTv extends PluginForHost {
                         message += "- Und viele mehr...\r\n";
                         message += "\r\n";
                         message += "Diese einstellungen sind nur in der Version JDownloader 2 BETA verfügbar unter:\r\nEinstellungen -> Plugin Einstellungen -> save.tv";
-                        message += getMessageEnd();
-                        JOptionPane.showConfirmDialog(jd.gui.swing.jdgui.JDGui.getInstance().getMainFrame(), message, title, JOptionPane.PLAIN_MESSAGE, JOptionPane.INFORMATION_MESSAGE, null);
-                    } catch (Throwable e) {
-                    }
-                }
-            });
-        } catch (Throwable e) {
-        }
-    }
-
-    private void checkEPGCharIssuesDialog() {
-        SubConfiguration config = null;
-        try {
-            config = getPluginConfig();
-            if (config.getBooleanProperty("epgissues_shown", Boolean.FALSE) == false) {
-                if (config.getProperty("epgissues_shown2") == null) {
-                    showEPGCharIssuesDialog();
-                } else {
-                    config = null;
-                }
-            } else {
-                config = null;
-            }
-        } catch (final Throwable e) {
-        } finally {
-            if (config != null) {
-                config.setProperty("epgissues_shown", Boolean.TRUE);
-                config.setProperty("epgissues_shown2", "shown");
-                config.save();
-            }
-        }
-    }
-
-    private static void showEPGCharIssuesDialog() {
-        try {
-            SwingUtilities.invokeAndWait(new Runnable() {
-
-                @Override
-                public void run() {
-                    try {
-                        String message = "";
-                        String title = null;
-                        title = "Save.tv Plugin - 30.05.14 - EPG Dateinamen Probleme";
-                        message += "Hallo lieber save.tv Nutzer/liebe save.tv Nutzerin\r\n";
-                        message += "Das save.tv Plugin versucht ab sofort, die momentan bestehenden EPG Probleme (kaputte Dateinamen) zu beheben.\r\n";
-                        message += "Wir bitten darum, kaputte Dateinamen auch bei uns im Forum zu melden.\r\n";
-                        message += "Ideal wäre eine Auflistung mit den falschen Zeichen und den dazugehörigen korrekten Zeichen.\r\n";
                         message += getMessageEnd();
                         JOptionPane.showConfirmDialog(jd.gui.swing.jdgui.JDGui.getInstance().getMainFrame(), message, title, JOptionPane.PLAIN_MESSAGE, JOptionPane.INFORMATION_MESSAGE, null);
                     } catch (Throwable e) {
