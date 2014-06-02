@@ -1739,6 +1739,9 @@ public interface GuiTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "Finished" })
     String TaskColumn_getStringValue_finished_();
 
+    @Default(lngs = { "en" }, values = { "Finished(Mirror)" })
+    String TaskColumn_getStringValue_finished_mirror();
+
     @Default(lngs = { "en" }, values = { "Running" })
     String TaskColumn_getStringValue_running_();
 

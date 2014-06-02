@@ -29,7 +29,6 @@ import org.appwork.uio.UIOManager;
 import org.appwork.utils.ImageProvider.ImageProvider;
 import org.jdownloader.DomainInfo;
 import org.jdownloader.extensions.extraction.ExtractionStatus;
-import org.jdownloader.gui.IconKey;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.images.NewTheme;
 import org.jdownloader.plugins.ConditionalSkipReason;
@@ -68,30 +67,30 @@ public class TaskColumn extends ExtTextColumn<AbstractNode> {
     /**
      * 
      */
-    private static final long serialVersionUID = 1L;
+    private static final long  serialVersionUID = 1L;
 
-    private ImageIcon         trueIcon;
-    private ImageIcon         falseIcon;
-    private ImageIcon         infoIcon;
+    private final ImageIcon    trueIcon;
+    private final ImageIcon    falseIcon;
+    private final ImageIcon    infoIcon;
 
-    private ImageIcon         iconWait;
+    private final ImageIcon    iconWait;
 
-    private ImageIcon         trueIconExtracted;
+    private final ImageIcon    trueIconExtracted;
 
-    private ImageIcon         trueIconExtractedFailed;
+    private final ImageIcon    trueIconExtractedFailed;
 
-    private ImageIcon         extracting;
+    private final ImageIcon    extracting;
 
-    private ColumnHelper      columnHelper     = new ColumnHelper();
+    private final ColumnHelper columnHelper     = new ColumnHelper();
 
-    private String            finishedText     = _GUI._.TaskColumn_getStringValue_finished_();
-    private String            runningText      = _GUI._.TaskColumn_getStringValue_running_();
+    private final String       finishedText     = _GUI._.TaskColumn_getStringValue_finished_();
+    private final String       runningText      = _GUI._.TaskColumn_getStringValue_running_();
 
-    private String            startingString;
+    private final String       startingString;
 
-    private ImageIcon         startingIcon;
+    private final ImageIcon    startingIcon;
 
-    private ImageIcon         skippedIcon;
+    private final ImageIcon    trueIconMirror;
 
     @Override
     public int getDefaultWidth() {
@@ -112,10 +111,10 @@ public class TaskColumn extends ExtTextColumn<AbstractNode> {
     public TaskColumn() {
         super(_GUI._.StatusColumn_StatusColumn());
         this.trueIcon = NewTheme.I().getIcon("true", 16);
+        this.trueIconMirror = NewTheme.I().getIcon("true-orange", 16);
         this.falseIcon = NewTheme.I().getIcon("false", 16);
         this.infoIcon = NewTheme.I().getIcon("info", 16);
         this.iconWait = NewTheme.I().getIcon("wait", 16);
-        this.skippedIcon = NewTheme.I().getIcon(IconKey.ICON_SKIPPED, 16);
         this.extracting = NewTheme.I().getIcon(org.jdownloader.gui.IconKey.ICON_COMPRESS, 16);
         startingIcon = NewTheme.I().getIcon("run", 16);
         trueIconExtracted = new ImageIcon(ImageProvider.merge(trueIcon.getImage(), NewTheme.I().getImage(org.jdownloader.gui.IconKey.ICON_COMPRESS, 16), 0, 0, trueIcon.getIconWidth() + 4, (trueIcon.getIconHeight() - 16) / 2 + 2));
@@ -250,7 +249,7 @@ public class TaskColumn extends ExtTextColumn<AbstractNode> {
                 columnHelper.tooltip = null;
                 return;
             }
-            FinalLinkState finalLinkState = link.getFinalLinkState();
+            final FinalLinkState finalLinkState = link.getFinalLinkState();
             if (finalLinkState != null) {
                 if (FinalLinkState.CheckFailed(finalLinkState)) {
                     columnHelper.icon = falseIcon;
@@ -282,7 +281,11 @@ public class TaskColumn extends ExtTextColumn<AbstractNode> {
                         return;
                     }
                 }
-                columnHelper.icon = trueIcon;
+                if (FinalLinkState.FINISHED_MIRROR.equals(finalLinkState)) {
+                    columnHelper.icon = trueIconMirror;
+                } else {
+                    columnHelper.icon = trueIcon;
+                }
                 columnHelper.string = finalLinkState.getExplanation(this, link);
                 columnHelper.tooltip = null;
                 return;
@@ -330,7 +333,9 @@ public class TaskColumn extends ExtTextColumn<AbstractNode> {
     protected String getTooltipText(AbstractNode obj) {
         fillColumnHelper(columnHelper, obj);
         String ret = columnHelper.tooltip;
-        if (ret == null) ret = columnHelper.string;
+        if (ret == null) {
+            ret = columnHelper.string;
+        }
         return ret;
     }
 

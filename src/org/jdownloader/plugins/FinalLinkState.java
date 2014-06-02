@@ -7,7 +7,7 @@ import org.jdownloader.translate._JDT;
 
 public enum FinalLinkState {
     FINISHED(_GUI._.TaskColumn_getStringValue_finished_()),
-    FINISHED_MIRROR(_GUI._.TaskColumn_getStringValue_finished_()),
+    FINISHED_MIRROR(_GUI._.TaskColumn_getStringValue_finished_mirror()),
     FINISHED_MD5(_JDT._.system_download_doCRC2_success("MD5")),
     FINISHED_SHA1(_JDT._.system_download_doCRC2_success("SHA1")),
     FINISHED_CRC32(_JDT._.system_download_doCRC2_success("CRC32")),
@@ -33,7 +33,9 @@ public enum FinalLinkState {
     public String getExplanation(Object requestor, DownloadLink link) {
         if (this == FAILED_FATAL && link != null) {
             String ret = link.getStringProperty(DownloadLink.PROPERTY_CUSTOM_MESSAGE, null);
-            if (ret != null) return ret;
+            if (ret != null) {
+                return ret;
+            }
         }
         return exp;
     }
