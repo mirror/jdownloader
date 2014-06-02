@@ -25,7 +25,7 @@ public class JDAPIImpl implements JDAPI {
     @Override
     public boolean refreshPlugins() {
         HostPluginController.getInstance().init();
-        CrawlerPluginController.getInstance().init(true);
+        CrawlerPluginController.getInstance().init();
         return true;
     }
 
