@@ -67,7 +67,7 @@ public class RDMdthk extends PluginForDecrypt {
             offline = true;
         }
         // Add offline link so user can see it
-        if (!br.containsHTML("data\\-ctrl\\-player=") && !parameter.contains("/dossiers/") || offline) {
+        if ((!br.containsHTML("data\\-ctrl\\-player=") && !br.containsHTML("id=\"box_video_player\"")) && !br.getURL().contains("/dossiers/") || offline) {
             final DownloadLink dl = createDownloadlink(parameter.replace("http://", "decrypted://") + "&quality=offline&network=default");
             dl.setAvailable(false);
             dl.setProperty("offline", true);
@@ -212,11 +212,18 @@ public class RDMdthk extends PluginForDecrypt {
                 String lastQualityFMT = null;
                 for (final String qual_info : quality_info) {
                     // rtmp --> hds or rtmp
-                    final String directlink = getJson("_stream", qual_info);
+                    String directlink;
+                    final String directlinktext = new Regex(qual_info, "\"_stream\":\\[(.*?)\\]").getMatch(0);
+                    if (directlinktext != null) {
+                        final String[] directlinks = directlinktext.split(",");
+                        directlink = directlinks[directlinks.length - 1].replace("\"", "");
+                    } else {
+                        directlink = getJson("_stream", qual_info);
+                    }
                     final String server = getJson("_server", qual_info);
                     final String network = getJson("_cdn", qual_info);
                     final String quality_number = getJson("_quality", qual_info);
-                    final boolean isRTMP = (network.equals("akamai") || network.equals("limelight"));
+                    final boolean isRTMP = ("akamai".equals(network) || "limelight".equals(network));
                     url = directlink;
                     if (isRTMP) {
                         if (url.endsWith("manifest.f4m")) {
@@ -239,7 +246,7 @@ public class RDMdthk extends PluginForDecrypt {
                     // http or hds t=0 or t=1
                     url += "@";
                     // rtmp t=?
-                    if (server.startsWith("rtmp")) {
+                    if (isRTMP) {
                         url = server + "@" + directlink.split("\\?")[0];
                     }
                     fmt = "hd";

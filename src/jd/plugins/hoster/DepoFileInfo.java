@@ -80,7 +80,7 @@ public class DepoFileInfo extends PluginForHost {
             link.getLinkStatus().setStatusText(SERVERERRORUSERTEXT);
             return AvailableStatus.TRUE;
         }
-        if (br.getURL().contains("/error." + TYPE) || br.getURL().contains("/index." + TYPE) || br.containsHTML("No htmlCode read")) {
+        if (br.getURL().contains("/error." + TYPE) || br.getURL().contains("/index." + TYPE) || br.containsHTML("No htmlCode read") || !br.containsHTML("class=\"downloadPageTableV2\"")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         final Regex fInfo = br.getRegex("<th class=\"descr\"([^<>]*?)?>[\t\n\r ]+<strong>([^<>\"]*?) \\((\\d+(,\\d+)?(\\.\\d+)? (KB|MB|GB))\\)<br/>");

@@ -59,6 +59,11 @@ public class OneDriveLiveCom extends PluginForDecrypt {
         String cid = null;
         String id = null;
         String authkey = null;
+        try {
+            br.setLoadLimit(br.getLoadLimit() * 2);
+        } catch (final Throwable e) {
+            /* Not available in JD1 */
+        }
         final DownloadLink main = createDownloadlink("http://onedrivedecrypted.live.com/" + System.currentTimeMillis() + new Random().nextInt(100000));
         try {
             if (parameter.matches(TYPE_SKYDRIVE_REDIRECT)) {
@@ -205,7 +210,15 @@ public class OneDriveLiveCom extends PluginForDecrypt {
                     }
                 }
 
-                final String ext = getJson("extension", singleinfo);
+                String ext = getJson("extension", singleinfo);
+                /* Sometimes extension is not given --> Get it via mimeType */
+                if (ext == null) {
+                    String mimeType = getJson("mimeType", singleinfo);
+                    if (mimeType != null && mimeType.contains("/")) {
+                        mimeType = mimeType.replace("\\", "");
+                        ext = "." + mimeType.substring(mimeType.lastIndexOf("/") + 1);
+                    }
+                }
                 if (filesize == null || filename == null || ext == null) {
                     logger.warning("Decrypter broken for link: " + parameter);
                     return null;

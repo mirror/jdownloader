@@ -328,11 +328,11 @@ public class VKontakteRu extends PluginForDecrypt {
             }
             sleep(2500l, param);
         }
-        if (decryptedLinks2 != null && decryptedLinks2.size() > 0) {
-            logger.info("vk.com: Done, decrypted: " + decryptedLinks2.size() + " links!");
-        } else if (decryptedLinks2 == null) {
+        if (decryptedLinks2 == null) {
             logger.warning("vk.com: Decrypter broken for link: " + this.CRYPTEDLINK_FUNCTIONAL);
             return null;
+        } else {
+            logger.info("vk.com: Done, decrypted: " + decryptedLinks2.size() + " links!");
         }
         return decryptedLinks2;
 
@@ -445,6 +445,10 @@ public class VKontakteRu extends PluginForDecrypt {
             try {
                 findVideolinks(parameter, true);
             } catch (final Throwable e) {
+                throw new DecrypterException(EXCEPTION_LINKOFFLINE);
+            }
+            /* Found nothing --> Must be offline */
+            if (decryptedLinks2.size() == 0) {
                 throw new DecrypterException(EXCEPTION_LINKOFFLINE);
             }
         } else {
@@ -826,7 +830,7 @@ public class VKontakteRu extends PluginForDecrypt {
             try {
                 if (this.isAbort()) {
                     logger.info("Decryption aborted by user, stopping...");
-                    break;
+                    return;
                 }
             } catch (final Throwable e) {
                 // Not available in 0.9.851 Stable
@@ -849,6 +853,14 @@ public class VKontakteRu extends PluginForDecrypt {
             }
             for (String singleVideo : videos) {
                 try {
+                    try {
+                        if (this.isAbort()) {
+                            logger.info("Decryption aborted by user, stopping...");
+                            return;
+                        }
+                    } catch (final Throwable e) {
+                        // Not available in 0.9.851 Stable
+                    }
                     singleVideo = singleVideo.replace(", ", "_");
                     logger.info("Decrypting video " + totalCounter + " / " + numberOfEntrys);
                     final String completeVideolink = "http://vk.com/video" + singleVideo;

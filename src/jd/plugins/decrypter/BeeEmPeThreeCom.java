@@ -42,18 +42,30 @@ public class BeeEmPeThreeCom extends PluginForDecrypt {
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String parameter = param.toString();
+        br.setFollowRedirects(true);
         br.getPage(parameter);
         if (br.containsHTML(">Error: This file has been removed|>Page Not Found<")) {
             logger.info("Link offline: " + parameter);
             return decryptedLinks;
         }
+
+        /* Check for external hulkshare.com link */
+        final String hulkshare = br.getRegex("show_url\\(\\'(http://(www\\.)?hulkshare\\.com/ap\\-[a-z0-9]+)\\'\\)").getMatch(0);
+        if (hulkshare != null) {
+            final DownloadLink fina = createDownloadlink(hulkshare.replace("/ap-", "/"));
+            decryptedLinks.add(fina);
+            return decryptedLinks;
+        }
+
         final String finalFilename = br.getRegex("monetized_ad_client_song = \"([^<>\"]*?)\"").getMatch(0);
         String captchaUrl = null;
         boolean failed = true;
         String fileID = new Regex(parameter, "beemp3s\\.org/download\\.php\\?file=(\\d+)").getMatch(0);
         for (int i = 0; i <= 5; i++) {
             captchaUrl = br.getRegex(CAPTCHAREGEX).getMatch(0);
-            if (captchaUrl == null) return null;
+            if (captchaUrl == null) {
+                return null;
+            }
             captchaUrl = "http://beemp3s.org/" + captchaUrl;
             String code = getCaptchaCode(captchaUrl, param);
             br.getPage("http://beemp3s.org/chk_cd.php?id=" + fileID + "&code=" + code);
@@ -65,7 +77,9 @@ public class BeeEmPeThreeCom extends PluginForDecrypt {
             failed = false;
             break;
         }
-        if (failed) throw new DecrypterException(DecrypterException.CAPTCHA);
+        if (failed) {
+            throw new DecrypterException(DecrypterException.CAPTCHA);
+        }
         if (br.containsHTML("Error#\\|# File not found")) {
             final DownloadLink offline = createDownloadlink("directhttp://" + parameter);
             offline.setFinalFileName(new Regex(parameter, "\\&song=(.+)").getMatch(0) + ".mp3");
@@ -82,7 +96,9 @@ public class BeeEmPeThreeCom extends PluginForDecrypt {
          * Set filename if possible as filenames may be cut or broken if not set here
          */
         final DownloadLink dl = createDownloadlink("directhttp://" + finallink.trim());
-        if (finalFilename != null) dl.setFinalFileName(Encoding.htmlDecode(finalFilename) + ".mp3");
+        if (finalFilename != null) {
+            dl.setFinalFileName(Encoding.htmlDecode(finalFilename) + ".mp3");
+        }
         decryptedLinks.add(dl);
 
         return decryptedLinks;

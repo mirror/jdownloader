@@ -53,7 +53,7 @@ public class JunoCloudMeFolder extends PluginForDecrypt {
         final String fid = new Regex(parameter, "folders/(\\d+)/").getMatch(0);
         final String fpName = br.getRegex("<h1>([^<>\"]*?)</h1>").getMatch(0);
 
-        if (user == null || fpName == null) {
+        if (fpName == null) {
             logger.warning("Decrypter broken for link:" + parameter);
             return null;
         }
@@ -82,6 +82,15 @@ public class JunoCloudMeFolder extends PluginForDecrypt {
                 fina.setAvailable(true);
                 decryptedLinks.add(fina);
             }
+            if (user == null) {
+                /* Username is needed to decrypt multiple pages */
+                break;
+            }
+        }
+
+        if (decryptedLinks.size() == 0) {
+            logger.info("Link offline (folder empty): " + parameter);
+            return decryptedLinks;
         }
 
         final FilePackage fp = FilePackage.getInstance();
