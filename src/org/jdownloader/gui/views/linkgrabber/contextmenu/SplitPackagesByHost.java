@@ -37,43 +37,41 @@ public class SplitPackagesByHost extends CustomizableTableContextAppAction<Crawl
 
             @Override
             protected Void run() throws RuntimeException {
-                HashMap<String, java.util.List<CrawledLink>> splitMap = new HashMap<String, java.util.List<CrawledLink>>();
+                final HashMap<CrawledPackage, HashMap<String, ArrayList<CrawledLink>>> splitMap = new HashMap<CrawledPackage, HashMap<String, ArrayList<CrawledLink>>>();
 
-                CrawledPackage samePkg = null;
-                boolean samePackage = true;
                 for (AbstractNode child : getSelection().getChildren()) {
                     if (child instanceof CrawledLink) {
-                        CrawledLink cL = (CrawledLink) child;
-                        if (samePkg == null) {
-                            samePkg = cL.getParentNode();
-                        } else if (cL.getParentNode() != samePkg) {
-                            samePackage = false;
+                        final CrawledLink cL = (CrawledLink) child;
+                        final CrawledPackage parent = cL.getParentNode();
+                        HashMap<String, ArrayList<CrawledLink>> parentMap = splitMap.get(parent);
+                        if (parentMap == null) {
+                            parentMap = new HashMap<String, ArrayList<CrawledLink>>();
+                            splitMap.put(parent, parentMap);
                         }
-                        java.util.List<CrawledLink> map = splitMap.get(cL.getHost());
-                        if (map == null) {
-                            map = new ArrayList<CrawledLink>();
-                            splitMap.put(cL.getHost(), map);
+                        final String host = cL.getHost();
+                        ArrayList<CrawledLink> hostList = parentMap.get(host);
+                        if (hostList == null) {
+                            hostList = new ArrayList<CrawledLink>();
+                            parentMap.put(host, hostList);
                         }
-                        map.add(cL);
+                        hostList.add(cL);
                     }
                 }
-                if (!samePackage) {
-                    samePkg = null;
-                }
-                Iterator<Entry<String, java.util.List<CrawledLink>>> it = splitMap.entrySet().iterator();
+                final Iterator<Entry<CrawledPackage, HashMap<String, ArrayList<CrawledLink>>>> it = splitMap.entrySet().iterator();
                 while (it.hasNext()) {
-                    Entry<String, java.util.List<CrawledLink>> next = it.next();
-                    String host = next.getKey();
-                    final java.util.List<CrawledLink> links = next.getValue();
-                    final CrawledPackage newPkg = new CrawledPackage();
-                    newPkg.setExpanded(true);
-                    if (samePkg != null) {
-                        samePkg.copyPropertiesTo(newPkg);
-                        newPkg.setName(getNewPackageName(samePkg.getName(), host));
-                    } else {
-                        newPkg.setName(getNewPackageName(null, host));
+                    final Entry<CrawledPackage, HashMap<String, ArrayList<CrawledLink>>> next = it.next();
+                    final CrawledPackage sourcePackage = next.getKey();
+                    final HashMap<String, ArrayList<CrawledLink>> items = next.getValue();
+                    final Iterator<Entry<String, ArrayList<CrawledLink>>> it2 = items.entrySet().iterator();
+                    while (it2.hasNext()) {
+                        final Entry<String, ArrayList<CrawledLink>> next2 = it2.next();
+                        final CrawledPackage newPkg = new CrawledPackage();
+                        final String host = next2.getKey();
+                        newPkg.setExpanded(true);
+                        sourcePackage.copyPropertiesTo(newPkg);
+                        newPkg.setName(getNewPackageName(sourcePackage.getName(), host));
+                        LinkCollector.getInstance().moveOrAddAt(newPkg, next2.getValue(), -1);
                     }
-                    LinkCollector.getInstance().moveOrAddAt(newPkg, links, -1);
                 }
                 return null;
             }
@@ -83,7 +81,9 @@ public class SplitPackagesByHost extends CustomizableTableContextAppAction<Crawl
     public String getNewPackageName(String oldPackageName, String host) {
         String nameFactory = JsonConfig.create(LinkgrabberSettings.class).getSplitPackageNameFactoryPattern();
         if (StringUtils.isEmpty(nameFactory)) {
-            if (!StringUtils.isEmpty(oldPackageName)) return oldPackageName;
+            if (!StringUtils.isEmpty(oldPackageName)) {
+                return oldPackageName;
+            }
             return host;
         }
         if (!StringUtils.isEmpty(oldPackageName)) {
