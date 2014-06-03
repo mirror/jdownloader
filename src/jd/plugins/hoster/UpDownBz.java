@@ -97,20 +97,30 @@ public class UpDownBz extends PluginForHost {
         }
     }
 
+    private void prepBR_API() {
+        br.getHeaders().put("Accept", "application/json, text/javascript, */*; q=0.01");
+        br.getHeaders().put("Content-Type", "application/json; charset=utf-8");
+    }
+
     @Override
     public AccountInfo fetchAccountInfo(Account account) throws Exception {
         AccountInfo ai = new AccountInfo();
         ai.setStatus("Free");
         ai.setValidUntil(0);
         account.setValid(false);
+        prepBR_API();
 
         // login to service
         String sessionid = login(account);
-        if (sessionid == null) { return ai; }
+        if (sessionid == null) {
+            return ai;
+        }
 
         // receive userdata
         AccountData data = api_getdetails(account);
-        if (data == null) { return ai; }
+        if (data == null) {
+            return ai;
+        }
 
         // account is available and ok
         account.setValid(true);
@@ -118,9 +128,9 @@ public class UpDownBz extends PluginForHost {
         // eval traffic data
         long traffic_max = data.getTrafficMax();
         long traffic_used = data.getTrafficUsed();
-        if (traffic_max == -1)
+        if (traffic_max == -1) {
             ai.setUnlimitedTraffic();
-        else {
+        } else {
             ai.setTrafficLeft(traffic_max - traffic_used);
             ai.setTrafficMax(traffic_max);
         }
@@ -135,7 +145,10 @@ public class UpDownBz extends PluginForHost {
     @Override
     public boolean checkLinks(DownloadLink[] urls) {
         // TODO process a specified number of links at once
-        if (urls == null || urls.length == 0) { return false; }
+        if (urls == null || urls.length == 0) {
+            return false;
+        }
+        prepBR_API();
 
         // extract file ids to check
         List<String> ids = new ArrayList<String>(urls.length);
@@ -152,7 +165,9 @@ public class UpDownBz extends PluginForHost {
 
         // check given ids
         Map<String, FileData> filedata = api_checkLinks(ids);
-        if (filedata == null) return false;
+        if (filedata == null) {
+            return false;
+        }
 
         // update download links
         int j = 0;
@@ -177,6 +192,7 @@ public class UpDownBz extends PluginForHost {
 
     @Override
     public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws IOException {
+        prepBR_API();
         DownloadLink[] dl_links = { downloadLink };
         AvailableStatus status = checkLinks(dl_links) ? AvailableStatus.TRUE : AvailableStatus.FALSE;
         return status;
@@ -199,16 +215,22 @@ public class UpDownBz extends PluginForHost {
 
         // login for premium download request
         String sessionid = login(account);
-        if (sessionid == null) throw new PluginException(LinkStatus.ERROR_RETRY, "login failed", 60 * 1000);
+        if (sessionid == null) {
+            throw new PluginException(LinkStatus.ERROR_RETRY, "login failed", 60 * 1000);
+        }
 
         // request download
         PrivateDownloadData prvdl_data = api_privatedownload(account);
-        if (prvdl_data == null) throw new PluginException(LinkStatus.ERROR_RETRY, "requesting download failed", 60 * 1000);
+        if (prvdl_data == null) {
+            throw new PluginException(LinkStatus.ERROR_RETRY, "requesting download failed", 60 * 1000);
+        }
 
         // TODO: verify download file
 
         // is enough traffic available
-        if (downloadLink.getDownloadSize() > prvdl_data.getTrafficLeft()) throw new PluginException(LinkStatus.ERROR_DOWNLOAD_FAILED, "traffic limit reached");
+        if (downloadLink.getDownloadSize() > prvdl_data.getTrafficLeft()) {
+            throw new PluginException(LinkStatus.ERROR_DOWNLOAD_FAILED, "traffic limit reached");
+        }
 
         // construct the download url
         String url = createStorageUrl(downloadLink, sessionid, prvdl_data.getHost(), share_password);
@@ -226,29 +248,40 @@ public class UpDownBz extends PluginForHost {
     private void handleErrors(final DownloadLink downloadLink, final Account account) throws PluginException {
         int code = dl.getConnection().getResponseCode();
         // file is not available
-        if (code == 404) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND, "requested file is not available");
+        if (code == 404) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND, "requested file is not available");
+        }
 
         // you are not authorized
-        if (code == 401) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "invalid login data" + (downloadLink.getBooleanProperty("protected", false) ? " or wrong download password" : ""), 6 * 60 * 1000L);
+        if (code == 401) {
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "invalid login data" + (downloadLink.getBooleanProperty("protected", false) ? " or wrong download password" : ""), 6 * 60 * 1000L);
+        }
 
         // wrong request format
-        if (code == 400) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, "wrong request format"); }
+        if (code == 400) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, "wrong request format");
+        }
 
         // wrong request method
-        if (code == 405) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, "wrong request method"); }
+        if (code == 405) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, "wrong request method");
+        }
 
         // no connections available
         if (code == 421) {
-            if (account != null)
+            if (account != null) {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "connection limit reached", 1 * 60 * 1000L);
-            else
+            } else {
                 throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, "connection limit reached", 5 * 60 * 1000l);
+            }
         }
 
         // is data to download available
         if (code == 200) {
             long downloadsize = dl.getConnection().getLongContentLength();
-            if (downloadsize != downloadLink.getDownloadSize() || !dl.getConnection().isContentDisposition()) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, "no valid data to download found");
+            if (downloadsize != downloadLink.getDownloadSize() || !dl.getConnection().isContentDisposition()) {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, "no valid data to download found");
+            }
         } else if (code == 206) {
             long downloadsize = -1;
 
@@ -260,7 +293,9 @@ public class UpDownBz extends PluginForHost {
                 }
             }
 
-            if (downloadsize != downloadLink.getDownloadSize() || !dl.getConnection().isContentDisposition()) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, "no valid data to download found");
+            if (downloadsize != downloadLink.getDownloadSize() || !dl.getConnection().isContentDisposition()) {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, "no valid data to download found");
+            }
         } else {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, "no valid data to download found");
         }
@@ -269,12 +304,15 @@ public class UpDownBz extends PluginForHost {
     @Override
     public void handleFree(DownloadLink link) throws Exception {
         final String fuid = getFileId(link.getDownloadURL());
-        if (fuid == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, "Can not find unique file ID");
+        if (fuid == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, "Can not find unique file ID");
+        }
         long ttw = 0;
         // cached links don't seem to be possible
         String dl_host = null;
         if (dl_host == null) {
             requestFileInformation(link);
+            prepBR_API();
             br.postPageRaw(HTTP_PROTOCOL + API_HOST, "{\"m\":\"pub\",\"a\":\"dl\",\"d\":{\"i\":\"" + fuid + "\"}}");
 
             // try to parse api response
@@ -293,7 +331,9 @@ public class UpDownBz extends PluginForHost {
                 try {
                     // extract json data object
                     JSonObject json_data = (JSonObject) json_response.get("d");
-                    if (json_data == null) return;
+                    if (json_data == null) {
+                        return;
+                    }
                     long wtime = (Long) ((JSonValue) json_data.get("t")).getValue();
                     long ctime = (Long) ((JSonValue) json_response.get("t")).getValue();
                     ttw = wtime - ctime;
@@ -303,8 +343,9 @@ public class UpDownBz extends PluginForHost {
                 } catch (ClassCastException e) {
                     e.printStackTrace();
                 }
-            } else
+            } else {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, "Status isn't Success, some error handling required here...");
+            }
         }
         if (dl_host != null) {
             sleep(ttw * 1001, link);
@@ -317,8 +358,9 @@ public class UpDownBz extends PluginForHost {
 
             // nothing wrong, thus start the download
             dl.startDownload();
-        } else
+        } else {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, "Could not find dl_host");
+        }
 
     }
 
@@ -364,20 +406,25 @@ public class UpDownBz extends PluginForHost {
     }
 
     private Map<String, FileData> api_checkLinks(List<String> ids) {
-        if (ids == null) return null;
+        if (ids == null) {
+            return null;
+        }
         return api_checkLinks(ids.toArray(new String[ids.size()]));
     }
 
     private Map<String, FileData> api_checkLinks(String[] ids) {
-        if (ids == null) return null;
+        if (ids == null) {
+            return null;
+        }
 
         // output data. surrounding map selects by id. only found files will be available in the map.
         Map<String, FileData> data = null;
 
         // create comma separated file ids
         StringBuilder sb = new StringBuilder();
-        for (String id : ids)
+        for (String id : ids) {
             sb.append("\"" + id + "\",");
+        }
         sb.deleteCharAt(sb.length() - 1);
 
         // build json api query
@@ -410,7 +457,9 @@ public class UpDownBz extends PluginForHost {
                 } catch (ClassCastException e) {
                     e.printStackTrace();
                 } finally {
-                    if (json_array == null) return null;
+                    if (json_array == null) {
+                        return null;
+                    }
                 }
 
                 // extract values and add to output store for each file
@@ -418,7 +467,9 @@ public class UpDownBz extends PluginForHost {
                 for (JSonNode json_elem : json_array) {
                     try {
                         JSonObject json_data = (JSonObject) json_elem;
-                        if (json_data == null) continue;
+                        if (json_data == null) {
+                            continue;
+                        }
 
                         String name = (String) ((JSonValue) json_data.get("name")).getValue();
                         String id = (String) ((JSonValue) json_data.get("id")).getValue();
@@ -453,7 +504,9 @@ public class UpDownBz extends PluginForHost {
     }
 
     private String computePassword(final String username, final String password) {
-        if (username == null || password == null) { return null; }
+        if (username == null || password == null) {
+            return null;
+        }
         String result = null;
         try {
             MessageDigest digest = MessageDigest.getInstance("MD5");
@@ -487,14 +540,18 @@ public class UpDownBz extends PluginForHost {
     }
 
     private PrivateDownloadData api_privatedownload(Account account) {
-        if (account == null) return null;
+        if (account == null) {
+            return null;
+        }
 
         // output data. host, traffic_left
         PrivateDownloadData data = null;
 
         // client needs to be logged in
         String sessionid = login(account);
-        if (sessionid == null) { return null; }
+        if (sessionid == null) {
+            return null;
+        }
 
         // build json api query
         String query = "{\"i\":\"" + generateRandomId() + "\",\"m\":\"prv\",\"a\":\"dl\",\"s\":\"" + sessionid + "\"}";
@@ -520,7 +577,9 @@ public class UpDownBz extends PluginForHost {
                 try {
                     // extract json data object
                     JSonObject json_data = (JSonObject) json_response.get("d");
-                    if (json_data == null) return null;
+                    if (json_data == null) {
+                        return null;
+                    }
 
                     // extract values and add to output store
                     String host = (String) ((JSonValue) json_data.get("h")).getValue();
@@ -547,7 +606,9 @@ public class UpDownBz extends PluginForHost {
     }
 
     private SessionData api_getsid(Account account) {
-        if (account == null) return null;
+        if (account == null) {
+            return null;
+        }
 
         // output data. sessionid, expires_at
         SessionData data = null;
@@ -556,7 +617,9 @@ public class UpDownBz extends PluginForHost {
 
         // compute password hash
         String computed_password = computePassword(account.getUser(), account.getPass());
-        if (computed_password == null) return null;
+        if (computed_password == null) {
+            return null;
+        }
 
         // build json api query
         String query = "{\"i\":\"" + generateRandomId() + "\",\"m\":\"auth\",\"a\":\"getsid\",\"d\":{\"u\":\"" + account.getUser() + "\",\"p\":\"" + computed_password + "\"}}";
@@ -583,7 +646,9 @@ public class UpDownBz extends PluginForHost {
                 try {
                     // extract json data object
                     JSonObject json_data = (JSonObject) json_response.get("d");
-                    if (json_data == null) return null;
+                    if (json_data == null) {
+                        return null;
+                    }
 
                     // extract session values
                     sessionid = (String) ((JSonValue) json_data.get("s")).getValue();
@@ -617,14 +682,18 @@ public class UpDownBz extends PluginForHost {
     }
 
     private AccountData api_getdetails(Account account) {
-        if (account == null) return null;
+        if (account == null) {
+            return null;
+        }
 
         // output data. premium_until, traffic_use, traffic_max
         AccountData data = null;
 
         // client needs to be logged in
         String sessionid = login(account);
-        if (sessionid == null) { return null; }
+        if (sessionid == null) {
+            return null;
+        }
 
         // build json api query
         String query = "{\"i\":\"" + generateRandomId() + "\",\"m\":\"acc\",\"a\":\"info\",\"d\":{\"w\":\"jdl\"},\"s\":\"" + sessionid + "\"}";
@@ -650,7 +719,9 @@ public class UpDownBz extends PluginForHost {
                 try {
                     // extract json data object
                     JSonObject json_data = (JSonObject) json_response.get("d");
-                    if (json_data == null) return null;
+                    if (json_data == null) {
+                        return null;
+                    }
 
                     // extract account values
                     Long premium_until = (Long) ((JSonValue) json_data.get("premium_until")).getValue();
@@ -679,7 +750,9 @@ public class UpDownBz extends PluginForHost {
 
     private String createStorageUrl(DownloadLink dl_link, String sessionid, String host, String share_password) {
         String url = HTTP_PROTOCOL + (host != null ? host : "") + "/d/?file=" + dl_link.getStringProperty("id", "") + "&sid=" + (sessionid != null ? sessionid : "");
-        if (share_password != null && Boolean.TRUE.equals((Boolean) dl_link.getBooleanProperty("protected", false))) url += "&pass=" + share_password;
+        if (share_password != null && Boolean.TRUE.equals(dl_link.getBooleanProperty("protected", false))) {
+            url += "&pass=" + share_password;
+        }
         return url;
     }
 
@@ -817,7 +890,9 @@ public class UpDownBz extends PluginForHost {
 
         public static ApiStatus get(Long code) {
             for (ApiStatus status : ApiStatus.values()) {
-                if (status.code == code) { return status; }
+                if (status.code == code) {
+                    return status;
+                }
             }
             return ApiStatus.UNKNOWN;
         }

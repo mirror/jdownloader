@@ -151,13 +151,20 @@ public class VimeoComDecrypter extends PluginForDecrypt {
                 decryptedLinks.add(link);
                 return decryptedLinks;
             }
-            if (br.containsHTML("<title>Private Video on Vimeo</title>") && !br.containsHTML("If so please provide the correct password")) {
-                final DownloadLink link = createDownloadlink(parameter.replace("http://", "decryptedforVimeoHosterPlugin1" + "://"));
-                link.setAvailable(false);
-                link.setProperty("offline", true);
-                decryptedLinks.add(link);
-                return decryptedLinks;
+
+            if (br.containsHTML("<title>Private Video on Vimeo</title>") && br.containsHTML("To watch this video, please provide the correct password")) {
+                try {
+                    handlePW(param, br);
+                } catch (final DecrypterException edc) {
+                    logger.info("User entered too many wrong passwords --> Cannot decrypt link: " + parameter);
+                    final DownloadLink link = createDownloadlink(parameter.replace("http://", "decryptedforVimeoHosterPlugin1" + "://"));
+                    link.setAvailable(false);
+                    link.setProperty("offline", true);
+                    decryptedLinks.add(link);
+                    return decryptedLinks;
+                }
             }
+
             if (br.containsHTML(">There was a problem loading this video")) {
                 final DownloadLink link = createDownloadlink(parameter.replace("http://", "decryptedforVimeoHosterPlugin1" + "://"));
                 link.setAvailable(false);
@@ -180,8 +187,6 @@ public class VimeoComDecrypter extends PluginForDecrypt {
             } catch (final Throwable e) {
 
             }
-
-            handlePW(param, br);
 
             final String date = br.getRegex("itemprop=\"dateCreated\" content=\"(\\d{4}\\-\\d{2}\\-\\d{2}T\\d{2}:\\d{2}:\\d{2})").getMatch(0);
             final String channelName = br.getRegex("itemtype=\"http://schema\\.org/Person\">[\t\n\r ]+<meta itemprop=\"name\" content=\"([^<>\"]*?)\"").getMatch(0);

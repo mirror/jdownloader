@@ -17,12 +17,15 @@
 package jd.plugins.hoster;
 
 import java.io.IOException;
+import java.lang.reflect.Field;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
+import java.util.List;
 
 import jd.PluginWrapper;
 import jd.config.Property;
+import jd.controlling.AccountController;
 import jd.http.Browser;
 import jd.http.Browser.BrowserException;
 import jd.http.URLConnectionAdapter;
@@ -72,6 +75,77 @@ public class StahomatCz extends PluginForHost {
         br.setReadTimeout(3 * 60 * 1000);
     }
 
+    /**
+     * JD 2 Code. DO NOT USE OVERRIDE FOR COMPATIBILITY REASONS
+     */
+    public boolean isProxyRotationEnabledForLinkChecker() {
+        return false;
+    }
+
+    public boolean checkLinks(DownloadLink[] urls) {
+        prepBrowser();
+        if (urls == null || urls.length == 0) {
+            return false;
+        }
+        try {
+            List<Account> accs = AccountController.getInstance().getValidAccounts(this.getHost());
+            if (accs == null || accs.size() == 0) {
+                logger.info("No account present, Please add a premium" + mName + "account.");
+                for (DownloadLink dl : urls) {
+                    /* no check possible */
+                    dl.setAvailableStatus(AvailableStatus.UNCHECKABLE);
+                }
+                return false;
+            }
+            // login(accs.get(0), false);
+            br.setFollowRedirects(true);
+            for (DownloadLink dl : urls) {
+                URLConnectionAdapter con = null;
+                try {
+                    con = br.openGetConnection(dl.getDownloadURL());
+                    if (con.isContentDisposition()) {
+                        dl.setFinalFileName(getFileNameFromHeader(con));
+                        dl.setDownloadSize(con.getLongContentLength());
+                        dl.setAvailable(true);
+                    } else {
+                        dl.setAvailable(false);
+                    }
+                } finally {
+                    try {
+                        /* make sure we close connection */
+                        con.disconnect();
+                    } catch (final Throwable e) {
+                    }
+                }
+            }
+        } catch (Exception e) {
+            return false;
+        }
+        return true;
+    }
+
+    @Override
+    public AvailableStatus requestFileInformation(DownloadLink link) throws PluginException {
+        checkLinks(new DownloadLink[] { link });
+        if (!link.isAvailable()) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
+        return getAvailableStatus(link);
+    }
+
+    private AvailableStatus getAvailableStatus(DownloadLink link) {
+        try {
+            final Field field = link.getClass().getDeclaredField("availableStatus");
+            field.setAccessible(true);
+            Object ret = field.get(link);
+            if (ret != null && ret instanceof AvailableStatus) {
+                return (AvailableStatus) ret;
+            }
+        } catch (final Throwable e) {
+        }
+        return AvailableStatus.UNCHECKED;
+    }
+
     @Override
     public boolean canHandle(DownloadLink downloadLink, Account account) {
         if (account == null) {
@@ -86,7 +160,9 @@ public class StahomatCz extends PluginForHost {
                     return false;
                 } else if (lastUnavailable != null) {
                     unavailableMap.remove(downloadLink.getHost());
-                    if (unavailableMap.size() == 0) hostUnavailableMap.remove(account);
+                    if (unavailableMap.size() == 0) {
+                        hostUnavailableMap.remove(account);
+                    }
                 }
             }
         }
@@ -109,7 +185,9 @@ public class StahomatCz extends PluginForHost {
         if (!dl.getConnection().isContentDisposition()) {
             /* download is not contentdisposition, so remove this host from premiumHosts list */
             br.followConnection();
-            if (br.containsHTML(">Omlouváme se, ale soubor se nepovedlo stáhnout")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error", 30 * 60 * 1000l);
+            if (br.containsHTML(">Omlouváme se, ale soubor se nepovedlo stáhnout")) {
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error", 30 * 60 * 1000l);
+            }
             /* temp disabled the host */
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         } else {
@@ -131,7 +209,9 @@ public class StahomatCz extends PluginForHost {
         br.setFollowRedirects(true);
         final String pass = downloadLink.getStringProperty("pass", null);
         TOKEN = account.getStringProperty("token", null);
-        if (TOKEN == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (TOKEN == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         String dllink = checkDirectLink(downloadLink, "superloadczdirectlink");
         if (dllink == null) {
             showMessage(downloadLink, "Task 1: Generating Link");
@@ -156,7 +236,9 @@ public class StahomatCz extends PluginForHost {
                 throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
             }
             dllink = getJson("link");
-            if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            if (dllink == null) {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
             dllink = dllink.replaceAll("\\\\", "");
             showMessage(downloadLink, "Task 2: Download begins!");
         }
@@ -235,7 +317,9 @@ public class StahomatCz extends PluginForHost {
     private void login(final Account acc) throws IOException, PluginException {
         synchronized (LOCK) {
             br.postPage(mAPI + "/login", "username=" + Encoding.urlEncode(acc.getUser()) + "&password=" + JDHash.getMD5(acc.getPass()));
-            if (!getSuccess()) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+            if (!getSuccess()) {
+                throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+            }
             TOKEN = getJson("token");
             if (TOKEN != null) {
                 acc.setProperty("token", TOKEN);
@@ -250,9 +334,13 @@ public class StahomatCz extends PluginForHost {
     }
 
     private AccountInfo updateCredits(AccountInfo ai, Account account) throws PluginException, IOException {
-        if (ai == null) ai = new AccountInfo();
+        if (ai == null) {
+            ai = new AccountInfo();
+        }
         String token = account.getStringProperty("token", null);
-        if (token == null) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
+        if (token == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         br.postPage(mAPI + "/get-status-bar", "token=" + token);
         Integer credits = Integer.parseInt(getJson("credits"));
         if (credits != null) {
@@ -265,7 +353,9 @@ public class StahomatCz extends PluginForHost {
     }
 
     private void tempUnavailableHoster(Account account, DownloadLink downloadLink, long timeout) throws PluginException {
-        if (downloadLink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, "Unable to handle this errorcode!");
+        if (downloadLink == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, "Unable to handle this errorcode!");
+        }
         synchronized (hostUnavailableMap) {
             HashMap<String, Long> unavailableMap = hostUnavailableMap.get(account);
             if (unavailableMap == null) {
@@ -280,7 +370,9 @@ public class StahomatCz extends PluginForHost {
 
     private String getJson(final String key) {
         String result = br.getRegex("\"" + key + "\":\"([^\"]+)\"").getMatch(0);
-        if (result == null) result = br.getRegex("\"" + key + "\":([^\"\\}\\,]+)").getMatch(0);
+        if (result == null) {
+            result = br.getRegex("\"" + key + "\":([^\"\\}\\,]+)").getMatch(0);
+        }
         return result;
     }
 
@@ -311,7 +403,9 @@ public class StahomatCz extends PluginForHost {
             failed = false;
             break;
         }
-        if (failed) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 401", 10 * 60 * 1000l);
+        if (failed) {
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 401", 10 * 60 * 1000l);
+        }
     }
 
     @Override
@@ -320,11 +414,6 @@ public class StahomatCz extends PluginForHost {
 
     @Override
     public void resetDownloadlink(DownloadLink link) {
-    }
-
-    @Override
-    public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
-        return AvailableStatus.UNCHECKABLE;
     }
 
 }

@@ -112,8 +112,10 @@ public class VKontakteRu extends PluginForDecrypt {
 
     private ArrayList<DownloadLink> decryptedLinks2                      = new ArrayList<DownloadLink>();
 
-    // TODO: Include already decrypted-count of links in reloop-links so the logger works fine for reloop links, also check if the maxoffset
-    // changes, if so, maybe update it...maybe
+    /*
+     * TODO: Include already decrypted-count of links in reloop-links so the logger works fine for reloop links, also check if the maxoffse
+     * changes, if so, maybe update it...maybe
+     */
     /* General errorhandling language implementation: English | Rus | Polish */
     @Override
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
@@ -140,6 +142,8 @@ public class VKontakteRu extends PluginForDecrypt {
             } else if (CRYPTEDLINK_ORIGINAL.matches(PATTERN_VIDEO_SINGLE_SEARCH)) {
                 CRYPTEDLINK_FUNCTIONAL = "https://vk.com/" + new Regex(CRYPTEDLINK_ORIGINAL, "(video(\\-)?\\d+_\\d+)$").getMatch(0);
             }
+        } else if (CRYPTEDLINK_ORIGINAL.matches(PATTERN_VIDEO_ALBUM)) {
+            loginrequired = false;
         }
         /* Check/fix links before browser access END */
         synchronized (LOCK) {
@@ -148,19 +152,19 @@ public class VKontakteRu extends PluginForDecrypt {
                 if (!loginrequired) {
                     getPageSafe(CRYPTEDLINK_FUNCTIONAL);
                 } else {
-                    /** Login process */
+                    /* Login process */
                     if (!loggedIN) {
                         logger.info("Existing account is invalid or no account available, cannot decrypt link: " + CRYPTEDLINK_FUNCTIONAL);
                         return decryptedLinks2;
                     }
                     br.setFollowRedirects(true);
-                    /** Login process end */
+                    /* Login process end */
                 }
 
                 br.getPage("http://vk.com/");
                 MAINPAGE = new Regex(br.getURL(), "(https?://vk\\.com)").getMatch(0);
 
-                /** Replace section start */
+                /* Replace section start */
                 String newLink = CRYPTEDLINK_FUNCTIONAL;
                 if (CRYPTEDLINK_FUNCTIONAL.matches(PATTERN_PUBLIC_LINK) || CRYPTEDLINK_FUNCTIONAL.matches(PATTERN_CLUB_LINK)) {
                     // group and club links --> wall links

@@ -34,6 +34,7 @@ import jd.nutils.JDHash;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.plugins.Account;
+import jd.plugins.Account.AccountType;
 import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
@@ -133,6 +134,8 @@ public class LinkSnappyCom extends PluginForHost {
             throw e;
         }
         String accountType = null;
+        /* = all are premium anyways */
+        account.setType(AccountType.PREMIUM);
         final String expire = br.getRegex("\"expire\":\"([^<>\"]*?)\"").getMatch(0);
         if ("lifetime".equals(expire)) {
             accountType = "Lifetime Premium Account";

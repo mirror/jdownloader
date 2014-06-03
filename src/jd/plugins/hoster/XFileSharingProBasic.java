@@ -38,6 +38,7 @@ import jd.parser.html.Form;
 import jd.parser.html.HTMLParser;
 import jd.parser.html.InputField;
 import jd.plugins.Account;
+import jd.plugins.Account.AccountType;
 import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
@@ -95,7 +96,7 @@ public class XFileSharingProBasic extends PluginForHost {
     private String                 fuid                         = null;
 
     /* DEV NOTES */
-    // XfileSharingProBasic Version 2.6.5.8
+    // XfileSharingProBasic Version 2.6.5.9
     // mods:
     // limit-info:
     // protocol: no https
@@ -987,8 +988,18 @@ public class XFileSharingProBasic extends PluginForHost {
                 }
                 if (!new Regex(correctedBR, "(Premium(\\-| )Account expire|>Renew premium<)").matches()) {
                     account.setProperty("nopremium", true);
+                    try {
+                        account.setType(AccountType.FREE);
+                    } catch (final Throwable e) {
+                        /* Not available in old 0.9.581 Stable */
+                    }
                 } else {
                     account.setProperty("nopremium", false);
+                    try {
+                        account.setType(AccountType.PREMIUM);
+                    } catch (final Throwable e) {
+                        /* Not available in old 0.9.581 Stable */
+                    }
                 }
                 /* Save cookies */
                 final HashMap<String, String> cookies = new HashMap<String, String>();

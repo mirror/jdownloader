@@ -55,14 +55,18 @@ public class VideoFourtyFourNet extends PluginForHost {
         // Nice filenames also for offline links
         downloadLink.setName(new Regex(downloadLink.getDownloadURL(), "video44\\.net/(.+)").getMatch(0));
         br.getPage(downloadLink.getDownloadURL());
-        if (br.containsHTML("The file does not exist")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        if (br.containsHTML("file: \"The video is transferring")) {
+        if (br.containsHTML("The file does not exist")) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
+        if (br.containsHTML("The video is transferring")) {
             downloadLink.getLinkStatus().setStatusText("File currently unavailable");
             return AvailableStatus.TRUE;
         }
         // made up links still valid all the way to the finallink!
         dllink = br.getRegex("file:\\s*\"(http[^\"]+)").getMatch(0);
-        if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (dllink == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         dllink = Encoding.urlDecode(dllink, false);
         Browser br2 = br.cloneBrowser();
         // In case the link redirects to the finallink
@@ -71,12 +75,15 @@ public class VideoFourtyFourNet extends PluginForHost {
         try {
             con = br2.openGetConnection(dllink);
             // only way to check for made up links... or offline is here
-            if (con.getResponseCode() == 403) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            if (con.getResponseCode() == 403) {
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            }
             if (!con.getContentType().contains("html")) {
                 downloadLink.setFinalFileName(getFileNameFromHeader(con));
                 downloadLink.setDownloadSize(con.getLongContentLength());
-            } else
+            } else {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            }
             return AvailableStatus.TRUE;
         } finally {
             try {
@@ -89,7 +96,9 @@ public class VideoFourtyFourNet extends PluginForHost {
     @Override
     public void handleFree(DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
-        if (br.containsHTML("file: \"The video is transferring")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "File currently unavailable", 60 * 60 * 1000l);
+        if (br.containsHTML("The video is transferring")) {
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "File currently unavailable", 60 * 60 * 1000l);
+        }
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, false, 1);
         dl.startDownload();
     }

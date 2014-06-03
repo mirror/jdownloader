@@ -65,7 +65,9 @@ public class VideoWeedCom extends PluginForHost {
         br.setReadTimeout(180 * 1000);
         br.setFollowRedirects(true);
         br.getPage(downloadLink.getDownloadURL());
-        if (br.containsHTML("(>This file no longer exists on our servers\\.<|The video file was removed)")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (br.containsHTML("(>This file no longer exists on our servers\\.<|The video file was removed)")) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
         String filename = br.getRegex("name=\"title\" content=\"(.*?)\"").getMatch(0);
         if (filename == null) {
             filename = br.getRegex("videoweed\\.com/file/[a-z0-9]+\\&title=(.*?)\\+\\-\\+VideoWeed\\.com\"").getMatch(0);
@@ -73,7 +75,9 @@ public class VideoWeedCom extends PluginForHost {
                 filename = br.getRegex("<td><strong>Title: </strong>(.*?)</td>").getMatch(0);
                 if (filename == null) {
                     filename = br.getRegex("<td width=\"580\">[\t\n\r ]+<div class=\"div_titlu\">(.*?) - <a").getMatch(0);
-                    if (filename == null) filename = br.getRegex("colspan=\"2\"><strong>Title: </strong>(.*?)</td>").getMatch(0);
+                    if (filename == null) {
+                        filename = br.getRegex("colspan=\"2\"><strong>Title: </strong>(.*?)</td>").getMatch(0);
+                    }
                 }
             }
         }
@@ -82,7 +86,9 @@ public class VideoWeedCom extends PluginForHost {
             String result = unWise();
             key = new Regex(result, "(\"\\d+{1,3}\\.\\d+{1,3}\\.\\d+{1,3}\\.\\d+{1,3}-[a-f0-9]{32})\"").getMatch(0);
         }
-        if (key == null || filename == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (key == null || filename == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         br.getPage("http://www.videoweed.es/api/player.api.php?user=undefined&codes=1&file=" + new Regex(downloadLink.getDownloadURL(), "videoweed\\.es/file/(.+)").getMatch(0) + "&pass=undefined&key=" + Encoding.urlEncode(key));
         filename = Encoding.htmlDecode(filename.trim());
         final String ext = ".flv";
@@ -107,17 +113,20 @@ public class VideoWeedCom extends PluginForHost {
             return AvailableStatus.TRUE;
         }
         dllink = br.getRegex("url=(http://.*?)\\&title").getMatch(0);
-        if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (dllink == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         Browser br2 = br.cloneBrowser();
         // In case the link redirects to the finallink
         br2.setFollowRedirects(true);
         URLConnectionAdapter con = null;
         try {
             con = br2.openGetConnection(dllink);
-            if (!con.getContentType().contains("html"))
+            if (!con.getContentType().contains("html")) {
                 downloadLink.setDownloadSize(con.getLongContentLength());
-            else
+            } else {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            }
             return AvailableStatus.TRUE;
         } finally {
             try {
@@ -130,9 +139,13 @@ public class VideoWeedCom extends PluginForHost {
     @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
-        if (br.containsHTML("error_msg=The video is being transfered")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Not downloadable at the moment, try again later...", 60 * 60 * 1000l);
-        if (br.containsHTML("error_msg=The video has failed to convert")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Not downloadable at the moment, try again later...", 60 * 60 * 1000l);
-        if (br.containsHTML("error_msg=The video is converting")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server says: This video is converting", 60 * 60 * 1000l);
+        if (br.containsHTML("error_msg=The video is being transfered")) {
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Not downloadable at the moment, try again later...", 60 * 60 * 1000l);
+        } else if (br.containsHTML("error_msg=The video has failed to convert")) {
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Not downloadable at the moment, try again later...", 60 * 60 * 1000l);
+        } else if (br.containsHTML("error_msg=The video is converting")) {
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server says: This video is converting", 60 * 60 * 1000l);
+        }
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 0);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
@@ -144,7 +157,9 @@ public class VideoWeedCom extends PluginForHost {
     private String unWise() {
         String result = null;
         String fn = br.getRegex("eval\\((function\\(.*?\'\\))\\);").getMatch(0);
-        if (fn == null) return null;
+        if (fn == null) {
+            return null;
+        }
         final ScriptEngineManager manager = new ScriptEngineManager();
         final ScriptEngine engine = manager.getEngineByName("ECMAScript");
         try {

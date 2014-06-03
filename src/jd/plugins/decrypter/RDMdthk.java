@@ -211,8 +211,13 @@ public class RDMdthk extends PluginForDecrypt {
                 final HashMap<String, DownloadLink> bestMap = new HashMap<String, DownloadLink>();
                 String lastQualityFMT = null;
                 for (final String qual_info : quality_info) {
+                    final String server = getJson("_server", qual_info);
+                    String network = getJson("_cdn", qual_info);
+                    final String quality_number = getJson("_quality", qual_info);
+                    final boolean isRTMP = ("akamai".equals(network) || "limelight".equals(network));
                     // rtmp --> hds or rtmp
                     String directlink;
+                    /* Sometimes we have (HTTP) stream AND downloadlink --> Use downloadlink */
                     final String directlinktext = new Regex(qual_info, "\"_stream\":\\[(.*?)\\]").getMatch(0);
                     if (directlinktext != null) {
                         final String[] directlinks = directlinktext.split(",");
@@ -220,10 +225,6 @@ public class RDMdthk extends PluginForDecrypt {
                     } else {
                         directlink = getJson("_stream", qual_info);
                     }
-                    final String server = getJson("_server", qual_info);
-                    final String network = getJson("_cdn", qual_info);
-                    final String quality_number = getJson("_quality", qual_info);
-                    final boolean isRTMP = ("akamai".equals(network) || "limelight".equals(network));
                     url = directlink;
                     if (isRTMP) {
                         if (url.endsWith("manifest.f4m")) {
@@ -288,6 +289,10 @@ public class RDMdthk extends PluginForDecrypt {
                         break;
                     }
 
+                    /* Basically we change it for the filename */
+                    if (network == null) {
+                        network = "default_nonetwork";
+                    }
                     lastQualityFMT = fmt.toUpperCase(Locale.ENGLISH);
                     final String quality_part = fmt.toUpperCase(Locale.ENGLISH) + "-" + network;
                     final String plain_name = title + "@" + quality_part;
