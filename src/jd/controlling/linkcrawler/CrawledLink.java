@@ -482,7 +482,14 @@ public class CrawledLink implements AbstractPackageChildrenNode<CrawledPackage>,
 
     public boolean isDirectHTTP() {
         if (gethPlugin() != null) {
-            return gethPlugin().getClass().getName().equalsIgnoreCase("jd.plugins.hoster.DirectHTTP");
+            return gethPlugin().getClass().getName().endsWith("r.DirectHTTP");
+        }
+        return false;
+    }
+
+    public boolean isFTP() {
+        if (gethPlugin() != null) {
+            return gethPlugin().getClass().getName().endsWith("r.Ftp");
         }
         return false;
     }
