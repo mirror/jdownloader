@@ -9,6 +9,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 
 import jd.controlling.faviconcontroller.FavIcons;
 import jd.controlling.linkcrawler.CrawledLink;
+import jd.http.Browser;
 
 import org.jdownloader.DomainInfo;
 import org.jdownloader.gui.views.components.Header;
@@ -19,9 +20,9 @@ public class QuickFilterHosterTable extends FilterTable {
     /**
      * 
      */
-    private static final long           serialVersionUID = 658947589171018284L;
-    private HashMap<DomainInfo, Filter> filterMapping    = new HashMap<DomainInfo, Filter>();
-    private HashMap<DomainInfo, Filter> enabledFilters   = new HashMap<DomainInfo, Filter>();
+    private static final long       serialVersionUID = 658947589171018284L;
+    private HashMap<String, Filter> filterMapping    = new HashMap<String, Filter>();
+    private HashMap<String, Filter> enabledFilters   = new HashMap<String, Filter>();
 
     public QuickFilterHosterTable(Header hosterFilter, LinkGrabberTable table) {
         super(hosterFilter, table, org.jdownloader.settings.staticreferences.CFG_LINKFILTER.LINKGRABBER_HOSTER_QUICKFILTER_ENABLED);
@@ -74,54 +75,84 @@ public class QuickFilterHosterTable extends FilterTable {
         };
     }
 
-    private void setEnabled(boolean enabled, Filter filter, DomainInfo info) {
+    private void setEnabled(boolean enabled, Filter filter, String ID) {
         synchronized (enabledFilters) {
             if (!enabled) {
-                enabledFilters.put(info, filter);
+                enabledFilters.put(ID, filter);
             } else {
-                enabledFilters.remove(info);
+                enabledFilters.remove(ID);
             }
         }
         getLinkgrabberTable().getModel().recreateModel(false);
     }
 
+    private String getID(CrawledLink link) {
+        final DomainInfo info = link.getDomainInfo();
+        final String linkID;
+        final String linkHOST;
+        if (link.isDirectHTTP()) {
+            linkHOST = Browser.getHost(link.getURL());
+            linkID = "http_" + linkHOST;
+        } else if (link.isFTP()) {
+            linkHOST = Browser.getHost(link.getURL());
+            linkID = "ftp_" + linkHOST;
+        } else {
+            linkHOST = info.getTld();
+            linkID = linkHOST;
+        }
+        return linkID;
+    }
+
     private Filter getFilter(CrawledLink link, AtomicBoolean newDisabledFilters) {
         final DomainInfo info = link.getDomainInfo();
-        Filter ret = filterMapping.get(info);
-        if (ret != null) return ret;
-        Filter filter = new Filter(info.getTld(), null) {
-            protected String getID() {
-                return "Hoster_" + getName();
-            }
+        final String ID;
+        final String HOST;
+        if (link.isDirectHTTP()) {
+            HOST = Browser.getHost(link.getURL());
+            ID = "http_" + HOST;
+        } else if (link.isFTP()) {
+            HOST = Browser.getHost(link.getURL());
+            ID = "ftp_" + HOST;
+        } else {
+            HOST = info.getTld();
+            ID = HOST;
+        }
+        Filter ret = filterMapping.get(ID);
+        if (ret == null) {
+            ret = new Filter(ID, null) {
+                protected String getID() {
+                    return "Hoster_" + ID;
+                }
 
-            @Override
-            public boolean isFiltered(CrawledLink link) {
-                return info == link.getDomainInfo();
-            }
+                @Override
+                public boolean isFiltered(CrawledLink link) {
+                    return ID.equals(QuickFilterHosterTable.this.getID(link));
+                }
 
-            @Override
-            public void setEnabled(boolean enabled) {
-                super.setEnabled(enabled);
-                QuickFilterHosterTable.this.setEnabled(enabled, this, info);
-            }
+                @Override
+                public void setEnabled(boolean enabled) {
+                    super.setEnabled(enabled);
+                    QuickFilterHosterTable.this.setEnabled(enabled, this, ID);
+                }
 
-        };
-        filter.setIcon(FavIcons.getFavIcon(info.getTld(), filter));
-        filterMapping.put(info, filter);
-        if (!filter.isEnabled()) {
-            newDisabledFilters.set(true);
-            synchronized (enabledFilters) {
-                enabledFilters.put(info, filter);
+            };
+            ret.setIcon(FavIcons.getFavIcon(HOST, ret));
+            filterMapping.put(ID, ret);
+            if (!ret.isEnabled()) {
+                newDisabledFilters.set(true);
+                synchronized (enabledFilters) {
+                    enabledFilters.put(ID, ret);
+                }
             }
         }
-        return filter;
+        return ret;
     }
 
     @Override
     public boolean isFiltered(CrawledLink e) {
         Filter ret = null;
         synchronized (enabledFilters) {
-            ret = enabledFilters.get(e.getDomainInfo());
+            ret = enabledFilters.get(getID(e));
         }
         return ret != null && !ret.isEnabled() && ret != getFilterException();
     }
