@@ -126,7 +126,7 @@ public class DownloadLink extends Property implements Serializable, AbstractPack
     private static final String                                         UNKNOWN_FILE_NAME                   = "unknownFileName";
     private static final String                                         PROPERTY_CHUNKS                     = "CHUNKS";
 
-    private transient AvailableStatus                                   availableStatus                     = AvailableStatus.UNCHECKED;
+    private transient volatile AvailableStatus                          availableStatus                     = AvailableStatus.UNCHECKED;
 
     @Deprecated
     private long[]                                                      chunksProgress                      = null;
@@ -194,6 +194,8 @@ public class DownloadLink extends Property implements Serializable, AbstractPack
     private transient PartInfo                                          partInfo;
     private transient NullsafeAtomicReference<Property>                 tempProperties                      = new NullsafeAtomicReference<Property>(null);
     private transient NullsafeAtomicReference<DownloadLinkView>         view                                = new NullsafeAtomicReference<DownloadLinkView>(null);
+
+    private transient volatile long                                     lastAvailableStatusChange           = -1;
 
     private transient String                                            customFinalName;
 
@@ -829,6 +831,11 @@ public class DownloadLink extends Property implements Serializable, AbstractPack
             return;
         }
         this.availableStatus = availableStatus;
+        if (AvailableStatus.UNCHECKED.equals(availableStatus)) {
+            lastAvailableStatusChange = -1;
+        } else {
+            lastAvailableStatusChange = System.currentTimeMillis();
+        }
         switch (availableStatus) {
         case FALSE:
             if (getFinalLinkState() == null) {
@@ -844,6 +851,10 @@ public class DownloadLink extends Property implements Serializable, AbstractPack
         if (hasNotificationListener()) {
             notifyChanges(AbstractNodeNotifier.NOTIFY.PROPERTY_CHANCE, new DownloadLinkProperty(this, DownloadLinkProperty.Property.AVAILABILITY, availableStatus));
         }
+    }
+
+    public long getLastAvailableStatusChange() {
+        return lastAvailableStatusChange;
     }
 
     private void notifyChanges(AbstractNodeNotifier.NOTIFY notify, Object param) {
