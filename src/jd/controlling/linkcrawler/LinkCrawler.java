@@ -100,6 +100,10 @@ public class LinkCrawler {
         return doDuplicateFinderFinalCheck;
     }
 
+    protected Long getDefaultAverageRuntime() {
+        return null;
+    }
+
     /*
      * customized comparator we use to prefer faster decrypter plugins over slower ones
      */
@@ -305,6 +309,14 @@ public class LinkCrawler {
                     } else {
                         if (checkStartNotify()) {
                             threadPool.execute(new LinkCrawlerRunnable(LinkCrawler.this, generation) {
+                                @Override
+                                public long getAverageRuntime() {
+                                    final Long ret = getDefaultAverageRuntime();
+                                    if (ret != null) {
+                                        return ret;
+                                    }
+                                    return super.getAverageRuntime();
+                                }
 
                                 @Override
                                 void crawling() {
@@ -352,6 +364,14 @@ public class LinkCrawler {
                          */
                         if (checkStartNotify()) {
                             threadPool.execute(new LinkCrawlerRunnable(LinkCrawler.this, generation) {
+                                @Override
+                                public long getAverageRuntime() {
+                                    final Long ret = getDefaultAverageRuntime();
+                                    if (ret != null) {
+                                        return ret;
+                                    }
+                                    return super.getAverageRuntime();
+                                }
 
                                 @Override
                                 void crawling() {
@@ -584,6 +604,14 @@ public class LinkCrawler {
                                                 for (final CrawledLink decryptThis : allPossibleCryptedLinks) {
                                                     if (checkStartNotify()) {
                                                         threadPool.execute(new LinkCrawlerRunnable(LinkCrawler.this, generation) {
+                                                            @Override
+                                                            public long getAverageRuntime() {
+                                                                final Long ret = getDefaultAverageRuntime();
+                                                                if (ret != null) {
+                                                                    return ret;
+                                                                }
+                                                                return super.getAverageRuntime();
+                                                            }
 
                                                             @Override
                                                             void crawling() {
@@ -632,6 +660,10 @@ public class LinkCrawler {
                                                             threadPool.execute(new LinkCrawlerRunnable(LinkCrawler.this, generation) {
 
                                                                 public long getAverageRuntime() {
+                                                                    final Long ret = getDefaultAverageRuntime();
+                                                                    if (ret != null) {
+                                                                        return ret;
+                                                                    }
                                                                     return pDecrypt.getAverageCrawlRuntime();
                                                                 }
 
@@ -682,6 +714,10 @@ public class LinkCrawler {
                                             threadPool.execute(new LinkCrawlerRunnable(LinkCrawler.this, generation) {
                                                 @Override
                                                 public long getAverageRuntime() {
+                                                    final Long ret = getDefaultAverageRuntime();
+                                                    if (ret != null) {
+                                                        return ret;
+                                                    }
                                                     return pHost.getAverageParseRuntime();
                                                 }
 
@@ -744,6 +780,10 @@ public class LinkCrawler {
                                         threadPool.execute(new LinkCrawlerRunnable(LinkCrawler.this, generation) {
                                             @Override
                                             public long getAverageRuntime() {
+                                                final Long ret = getDefaultAverageRuntime();
+                                                if (ret != null) {
+                                                    return ret;
+                                                }
                                                 return directHTTP.getAverageParseRuntime();
                                             }
 
@@ -774,6 +814,10 @@ public class LinkCrawler {
 
                                             @Override
                                             public long getAverageRuntime() {
+                                                final Long ret = getDefaultAverageRuntime();
+                                                if (ret != null) {
+                                                    return ret;
+                                                }
                                                 return ftp.getAverageParseRuntime();
                                             }
 
@@ -800,6 +844,14 @@ public class LinkCrawler {
                             } else {
                                 if (checkStartNotify()) {
                                     threadPool.execute(new LinkCrawlerRunnable(LinkCrawler.this, generation) {
+                                        @Override
+                                        public long getAverageRuntime() {
+                                            final Long ret = getDefaultAverageRuntime();
+                                            if (ret != null) {
+                                                return ret;
+                                            }
+                                            return super.getAverageRuntime();
+                                        }
 
                                         @Override
                                         void crawling() {
@@ -1233,6 +1285,14 @@ public class LinkCrawler {
                             if (checkStartNotify()) {
                                 /* enqueue distributing of the links */
                                 threadPool.execute(new LinkCrawlerRunnable(LinkCrawler.this, generation) {
+                                    @Override
+                                    public long getAverageRuntime() {
+                                        final Long ret = getDefaultAverageRuntime();
+                                        if (ret != null) {
+                                            return ret;
+                                        }
+                                        return super.getAverageRuntime();
+                                    }
 
                                     @Override
                                     void crawling() {
@@ -1340,6 +1400,14 @@ public class LinkCrawler {
                             if (checkStartNotify()) {
                                 /* enqueue distributing of the links */
                                 threadPool.execute(new LinkCrawlerRunnable(LinkCrawler.this, generation) {
+                                    @Override
+                                    public long getAverageRuntime() {
+                                        final Long ret = getDefaultAverageRuntime();
+                                        if (ret != null) {
+                                            return ret;
+                                        }
+                                        return super.getAverageRuntime();
+                                    }
 
                                     @Override
                                     void crawling() {
@@ -1393,6 +1461,14 @@ public class LinkCrawler {
                                 if (checkStartNotify()) {
                                     /* enqueue distributing of the links */
                                     threadPool.execute(new LinkCrawlerRunnable(LinkCrawler.this, generation) {
+                                        @Override
+                                        public long getAverageRuntime() {
+                                            final Long ret = getDefaultAverageRuntime();
+                                            if (ret != null) {
+                                                return ret;
+                                            }
+                                            return super.getAverageRuntime();
+                                        }
 
                                         @Override
                                         void crawling() {

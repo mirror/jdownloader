@@ -18,7 +18,9 @@ public class LazyHostPlugin extends LazyPlugin<PluginForHost> {
 
     public long getAverageParseRuntime() {
         synchronized (this) {
-            if (parses == 0 || parsesRuntime == 0) return 0;
+            if (parses == 0 || parsesRuntime == 0) {
+                return 0;
+            }
             long ret = parsesRuntime / parses;
             return ret;
         }
@@ -144,8 +146,9 @@ public class LazyHostPlugin extends LazyPlugin<PluginForHost> {
                 ret = super.newInstance(classLoader);
                 ret.setLazyP(this);
                 return ret;
-            } else
+            } else {
                 throw e;
+            }
         }
     }
 
@@ -168,8 +171,9 @@ public class LazyHostPlugin extends LazyPlugin<PluginForHost> {
                 ret = super.getPrototype(classLoader);
                 ret.setLazyP(this);
                 return ret;
-            } else
+            } else {
                 throw e;
+            }
         }
     }
 
