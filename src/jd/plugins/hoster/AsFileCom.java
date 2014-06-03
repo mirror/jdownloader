@@ -105,20 +105,32 @@ public class AsFileCom extends PluginForHost {
         prepBrowser(br);
         br.setFollowRedirects(true);
         getPage(link.getDownloadURL());
-        if (br.containsHTML("(<title>ASfile\\.com</title>|>Page not found<|Delete Reason:|No htmlCode read)") || br.getURL().contains("/file_is_unavailable/")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (br.containsHTML("(<title>ASfile\\.com</title>|>Page not found<|Delete Reason:|No htmlCode read)") || br.getURL().contains("/file_is_unavailable/")) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
         String filename;
         if (br.getURL().contains("/password/")) {
             filename = br.getRegex("This file ([^<>\"]*?) is password protected.").getMatch(0);
             link.getLinkStatus().setStatusText("This link is password protected!");
         } else {
             filename = br.getRegex("<meta name=\"title\" content=\"Free download ([^<>\"\\']+)\"").getMatch(0);
-            if (filename == null) filename = br.getRegex("<title>Free download ([^<>\"\\']+)</title>").getMatch(0);
-            if (filename == null) filename = br.getRegex(">Download:</div><div class=\"div_variable\"><strong>(.*?)</strong>").getMatch(0);
+            if (filename == null) {
+                filename = br.getRegex("<title>Free download ([^<>\"\\']+)</title>").getMatch(0);
+            }
+            if (filename == null) {
+                filename = br.getRegex(">Download:</div><div class=\"div_variable\"><strong>(.*?)</strong>").getMatch(0);
+            }
             String filesize = br.getRegex(">File size:</div><div class=\"div_variable\">([^<>\"]*?)<").getMatch(0);
-            if (filesize == null) filesize = br.getRegex("File size: (.*?)</div>").getMatch(0);
-            if (filesize != null) link.setDownloadSize(SizeFormatter.getSize(filesize.trim()));
+            if (filesize == null) {
+                filesize = br.getRegex("File size: (.*?)</div>").getMatch(0);
+            }
+            if (filesize != null) {
+                link.setDownloadSize(SizeFormatter.getSize(filesize.trim()));
+            }
         }
-        if (filename == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (filename == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         link.setName(Encoding.htmlDecode(filename.trim()));
         return AvailableStatus.TRUE;
     }
@@ -152,7 +164,9 @@ public class AsFileCom extends PluginForHost {
         // Password handling
         if (br.getURL().contains("/password/")) {
             passCode = downloadLink.getStringProperty("pass", null);
-            if (passCode == null) passCode = Plugin.getUserInput("Password?", downloadLink);
+            if (passCode == null) {
+                passCode = Plugin.getUserInput("Password?", downloadLink);
+            }
             br.postPage(br.getURL(), "password=" + passCode);
             if (br.getURL().contains("/password/")) {
                 downloadLink.setProperty("pass", null);
@@ -164,17 +178,25 @@ public class AsFileCom extends PluginForHost {
             try {
                 throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);
             } catch (final Throwable e) {
-                if (e instanceof PluginException) throw (PluginException) e;
+                if (e instanceof PluginException) {
+                    throw (PluginException) e;
+                }
                 throw new PluginException(LinkStatus.ERROR_FATAL, "Premium only");
             }
         }
         long totalReconnectWait = 0;
         final String waitMin = br.getRegex("class=\"orange\">(\\d+)</span>[\t\n\r ]+<span id=\"measure\">[\t\n\r ]+minutes").getMatch(0);
-        if (waitMin != null) totalReconnectWait += Long.parseLong(waitMin) * 60 * 1001l;
+        if (waitMin != null) {
+            totalReconnectWait += Long.parseLong(waitMin) * 60 * 1001l;
+        }
         final String waitSec = br.getRegex("class=\"orange\">(\\d+)</span>[\t\n\r ]+<span id=\"measure\">[\t\n\r ]+seconds").getMatch(0);
         // waitSe is always there so only add it if we also have minutes
-        if (waitSec != null && waitMin != null) totalReconnectWait += Long.parseLong(waitSec) * 1001l;
-        if (totalReconnectWait > 0) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, totalReconnectWait);
+        if (waitSec != null && waitMin != null) {
+            totalReconnectWait += Long.parseLong(waitSec) * 1001l;
+        }
+        if (totalReconnectWait > 0) {
+            throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, totalReconnectWait);
+        }
         final String fileID = new Regex(downloadLink.getDownloadURL(), "asfile\\.com/file/(.+)").getMatch(0);
         final long timeBefore = System.currentTimeMillis();
         // Captcha waittime can be skipped
@@ -182,20 +204,30 @@ public class AsFileCom extends PluginForHost {
         final PluginForHost recplug = JDUtilities.getPluginForHost("DirectHTTP");
         final jd.plugins.hoster.DirectHTTP.Recaptcha rc = ((DirectHTTP) recplug).getReCaptcha(br);
         final String id = br.getRegex("\\?k=([A-Za-z0-9%_\\+\\- ]+)\"").getMatch(0);
-        if (id == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (id == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         rc.setId(id);
         rc.load();
         final File cf = rc.downloadCaptcha(getLocalCaptchaFile());
         final String c = getCaptchaCode(cf, downloadLink);
         postPage(br.getURL(), "recaptcha_challenge_field=" + Encoding.urlEncode(rc.getChallenge()) + "&recaptcha_response_field=" + Encoding.urlEncode(c));
-        if (!br.containsHTML("/free\\-download/file/")) throw new PluginException(LinkStatus.ERROR_CAPTCHA);
+        if (!br.containsHTML("/free\\-download/file/")) {
+            throw new PluginException(LinkStatus.ERROR_CAPTCHA);
+        }
 
         getPage("http://asfile.com/en/free-download/file/" + fileID);
-        if (br.containsHTML("You have exceeded the download limit for today")) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED);
-        if (br.containsHTML(">This file TEMPORARY unavailable")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Temporarily unavailable due technical problems", 60 * 60 * 1000l);
+        if (br.containsHTML("You have exceeded the download limit for today")) {
+            throw new PluginException(LinkStatus.ERROR_IP_BLOCKED);
+        }
+        if (br.containsHTML(">This file TEMPORARY unavailable")) {
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Temporarily unavailable due technical problems", 60 * 60 * 1000l);
+        }
         final String hash = br.getRegex("hash: \\'([a-z0-9]+)\\'").getMatch(0);
         final String storage = br.getRegex("storage: \\'([^<>\"\\']+)\\'").getMatch(0);
-        if (hash == null || storage == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (hash == null || storage == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
 
         waitTime(System.currentTimeMillis(), downloadLink, false);
         final Browser brc = br.cloneBrowser();
@@ -203,8 +235,12 @@ public class AsFileCom extends PluginForHost {
         brc.postPage("http://asfile.com/en/index/convertHashToLink", "hash=" + hash + "&path=" + fileID + "&storage=" + Encoding.urlEncode(storage) + "&name=" + Encoding.urlEncode(downloadLink.getName()));
         final String correctedBR = brc.toString().replace("\\", "");
         dllink = new Regex(correctedBR, "\"url\":\"(http:[^<>\"\\']+)\"").getMatch(0);
-        if (dllink == null) dllink = new Regex(correctedBR, "\"(http://s\\d+\\.asfile\\.com/file/free/[a-z0-9]+/\\d+/[A-Za-z0-9]+/[^<>\"\\'/]+)\"").getMatch(0);
-        if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (dllink == null) {
+            dllink = new Regex(correctedBR, "\"(http://s\\d+\\.asfile\\.com/file/free/[a-z0-9]+/\\d+/[A-Za-z0-9]+/[^<>\"\\'/]+)\"").getMatch(0);
+        }
+        if (dllink == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         sleep(2000, downloadLink);
         /*
          * resume no longer possible? at least with a given password it does not work
@@ -212,11 +248,15 @@ public class AsFileCom extends PluginForHost {
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, false, 1);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
-            if (br.containsHTML("No htmlCode read")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error", 60 * 60 * 1000l);
+            if (br.containsHTML("No htmlCode read")) {
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error", 60 * 60 * 1000l);
+            }
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         downloadLink.setProperty("directFree", dllink);
-        if (passCode != null) downloadLink.setProperty("pass", passCode);
+        if (passCode != null) {
+            downloadLink.setProperty("pass", passCode);
+        }
         dl.startDownload();
     }
 
@@ -225,11 +265,17 @@ public class AsFileCom extends PluginForHost {
         /** Ticket Time */
         final String waittime = br.getRegex("class=\"orange\">(\\d+)</span>[\t\n\r ]+<span id=\"measure\">[\t\n\r ]+seconds").getMatch(0);
         int wait = 60;
-        if (waittime != null) wait = Integer.parseInt(waittime);
-        if (wait > 180) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, wait * 1001l);
+        if (waittime != null) {
+            wait = Integer.parseInt(waittime);
+        }
+        if (wait > 180) {
+            throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, wait * 1001l);
+        }
         wait -= passedTime;
         logger.info("Waittime detected, waiting " + wait + " - " + passedTime + " seconds from now on...");
-        if (wait > 0 && !skip) sleep(wait * 1000l, downloadLink);
+        if (wait > 0 && !skip) {
+            sleep(wait * 1000l, downloadLink);
+        }
     }
 
     @SuppressWarnings("unchecked")
@@ -250,7 +296,9 @@ public class AsFileCom extends PluginForHost {
                 }
                 final Object ret = account.getProperty("cookies", null);
                 boolean acmatch = Encoding.urlEncode(account.getUser()).equals(account.getStringProperty("name", Encoding.urlEncode(account.getUser())));
-                if (acmatch) acmatch = Encoding.urlEncode(account.getPass()).equals(account.getStringProperty("pass", Encoding.urlEncode(account.getPass())));
+                if (acmatch) {
+                    acmatch = Encoding.urlEncode(account.getPass()).equals(account.getStringProperty("pass", Encoding.urlEncode(account.getPass())));
+                }
                 if (acmatch && ret != null && ret instanceof HashMap<?, ?> && !force) {
                     final HashMap<String, String> cookies = (HashMap<String, String>) ret;
                     if (account.isValid()) {
@@ -331,7 +379,9 @@ public class AsFileCom extends PluginForHost {
         } else {
             getPage("http://asfile.com/en/index/pay");
             String expire = br.getRegex("You have got the premium access to: (\\d{4}/\\d{2}/\\d{2} \\d{2}:\\d{2})</p>").getMatch(0);
-            if (expire != null) ai.setValidUntil(TimeFormatter.getMilliSeconds(expire, "yyyy/MM/dd hh:mm", null));
+            if (expire != null) {
+                ai.setValidUntil(TimeFormatter.getMilliSeconds(expire, "yyyy/MM/dd hh:mm", null));
+            }
             ai.setStatus("Passcode User");
         }
         account.setValid(true);
@@ -378,7 +428,9 @@ public class AsFileCom extends PluginForHost {
                 throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
             }
         }
-        if (dllink == null) dllink = getDllink();
+        if (dllink == null) {
+            dllink = getDllink();
+        }
         if (dllink == null) {
             br.getPage("http://asfile.com/en/count_files/" + uid);
             dllink = getDllink();
@@ -393,7 +445,9 @@ public class AsFileCom extends PluginForHost {
             link.setProperty("direct", null);
             logger.warning("The final dllink seems not to be a file!");
             br.followConnection();
-            if (br.containsHTML(">404 Not Found<")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error", 60 * 60 * 1000l);
+            if (br.containsHTML(">404 Not Found<")) {
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error", 60 * 60 * 1000l);
+            }
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         link.setProperty("direct", dllink);
@@ -463,32 +517,43 @@ public class AsFileCom extends PluginForHost {
      * @author raztoki
      */
     private void getPage(final String page) throws Exception {
-        if (page == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (page == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         final boolean follows_redirects = br.isFollowingRedirects();
         br.setFollowRedirects(true);
         try {
             br.getPage(page);
         } catch (Exception e) {
-            if (e instanceof PluginException) throw (PluginException) e;
+            if (e instanceof PluginException) {
+                throw (PluginException) e;
+            }
             // should only be picked up now if not JD2
-            if (br.getHttpConnection().getResponseCode() == 503 && br.getHttpConnection().getHeaderFields("server").contains("cloudflare-nginx")) {
+            if (br.getHttpConnection() != null && br.getHttpConnection().getResponseCode() == 503 && br.getHttpConnection().getHeaderFields("server").contains("cloudflare-nginx")) {
                 logger.warning("Cloudflare anti DDoS measures enabled, your version of JD can not support this. In order to go any further you will need to upgrade to JDownloader 2");
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Cloudflare anti DDoS measures enabled");
-            } else
+            } else {
                 throw e;
+            }
         }
         // prevention is better than cure
         try {
-            if (br.getHttpConnection().getResponseCode() == 503 && br.getHttpConnection().getHeaderFields("server").contains("cloudflare-nginx")) {
+            if (br.getHttpConnection() != null && br.getHttpConnection().getResponseCode() == 503 && br.getHttpConnection().getHeaderFields("server").contains("cloudflare-nginx")) {
                 String host = new Regex(page, "https?://([^/]+)(:\\d+)?/").getMatch(0);
                 Form cloudflare = br.getFormbyProperty("id", "ChallengeForm");
-                if (cloudflare == null) cloudflare = br.getFormbyProperty("id", "challenge-form");
+                if (cloudflare == null) {
+                    cloudflare = br.getFormbyProperty("id", "challenge-form");
+                }
                 if (cloudflare != null) {
                     String math = br.getRegex("\\$\\('#jschl_answer'\\)\\.val\\(([^\\)]+)\\);").getMatch(0);
-                    if (math == null) math = br.getRegex("a\\.value = ([\\d\\-\\.\\+\\*/]+);").getMatch(0);
+                    if (math == null) {
+                        math = br.getRegex("a\\.value = ([\\d\\-\\.\\+\\*/]+);").getMatch(0);
+                    }
                     if (math == null) {
                         String variableName = br.getRegex("(\\w+)\\s*=\\s*\\$\\(\'#jschl_answer\'\\);").getMatch(0);
-                        if (variableName != null) variableName = variableName.trim();
+                        if (variableName != null) {
+                            variableName = variableName.trim();
+                        }
                         math = br.getRegex(variableName + "\\.val\\(([^\\)]+)\\)").getMatch(0);
                     }
                     if (math == null) {
@@ -511,7 +576,9 @@ public class AsFileCom extends PluginForHost {
                     final HashMap<String, String> cookies = new HashMap<String, String>();
                     final Cookies add = br.getCookies(this.getHost());
                     for (final Cookie c : add.getCookies()) {
-                        if (new Regex(c.getKey(), "(cfduid|cf_clearance)").matches()) cookies.put(c.getKey(), c.getValue());
+                        if (new Regex(c.getKey(), "(cfduid|cf_clearance)").matches()) {
+                            cookies.put(c.getKey(), c.getValue());
+                        }
                     }
                     synchronized (cloudflareCookies) {
                         cloudflareCookies.clear();
@@ -526,9 +593,13 @@ public class AsFileCom extends PluginForHost {
 
     @SuppressWarnings("unused")
     private void postPage(String page, final String postData) throws Exception {
-        if (page == null || postData == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (page == null || postData == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         // stable sucks
-        if (isJava7nJDStable() && page.startsWith("https")) page = page.replaceFirst("https://", "http://");
+        if (isJava7nJDStable() && page.startsWith("https")) {
+            page = page.replaceFirst("https://", "http://");
+        }
         br.getHeaders().put("Content-Type", "application/x-www-form-urlencoded");
         try {
             br.postPage(page, postData);
@@ -538,11 +609,15 @@ public class AsFileCom extends PluginForHost {
     }
 
     private void sendForm(final Form form) throws Exception {
-        if (form == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (form == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         // stable sucks && lame to the max, lets try and send a form outside of desired protocol. (works with oteupload)
         if (Form.MethodType.POST.equals(form.getMethod())) {
             // if the form doesn't contain an action lets set one based on current br.getURL().
-            if (form.getAction() == null || form.getAction().equals("")) form.setAction(br.getURL());
+            if (form.getAction() == null || form.getAction().equals("")) {
+                form.setAction(br.getURL());
+            }
             if (isJava7nJDStable() && (form.getAction().contains("https://") || /* relative path */(!form.getAction().startsWith("http")))) {
                 if (!form.getAction().startsWith("http") && br.getURL().contains("https://")) {
                     // change relative path into full path, with protocol correction
@@ -550,19 +625,22 @@ public class AsFileCom extends PluginForHost {
                     String basedomain = new Regex(br.getURL(), "(https?://[^/]+)").getMatch(0);
                     String path = form.getAction();
                     String finalpath = null;
-                    if (path.startsWith("/"))
+                    if (path.startsWith("/")) {
                         finalpath = basedomain.replaceFirst("https://", "http://") + path;
-                    else if (!path.startsWith("."))
+                    } else if (!path.startsWith(".")) {
                         finalpath = basepath.replaceFirst("https://", "http://") + path;
-                    else {
+                    } else {
                         // lacking builder for ../relative paths. this will do for now.
                         logger.info("Missing relative path builder. Must abort now... Try upgrading to JDownloader 2");
                         throw new PluginException(LinkStatus.ERROR_FATAL);
                     }
                     form.setAction(finalpath);
-                } else
+                } else {
                     form.setAction(form.getAction().replaceFirst("https?://", "http://"));
-                if (!stableSucks.get()) showSSLWarning(this.getHost());
+                }
+                if (!stableSucks.get()) {
+                    showSSLWarning(this.getHost());
+                }
             }
             br.getHeaders().put("Content-Type", "application/x-www-form-urlencoded");
         }
@@ -574,10 +652,11 @@ public class AsFileCom extends PluginForHost {
     }
 
     private boolean isJava7nJDStable() {
-        if (System.getProperty("jd.revision.jdownloaderrevision") == null && System.getProperty("java.version").matches("1\\.[7-9].+"))
+        if (System.getProperty("jd.revision.jdownloaderrevision") == null && System.getProperty("java.version").matches("1\\.[7-9].+")) {
             return true;
-        else
+        } else {
             return false;
+        }
     }
 
     private static AtomicBoolean stableSucks = new AtomicBoolean(false);
@@ -599,33 +678,38 @@ public class AsFileCom extends PluginForHost {
                             message += "Wir haben eine Notloesung ergaenzt durch die man weiterhin diese JDownloader Version nutzen kann.\r\n";
                             message += "Bitte bedenke, dass HTTPS Post Requests als HTTP gesendet werden. Nutzung auf eigene Gefahr!\r\n";
                             message += "Falls du keine unverschluesselten Daten versenden willst, update bitte auf JDownloader 2!\r\n";
-                            if (xSystem)
+                            if (xSystem) {
                                 message += "JDownloader 2 Installationsanleitung und Downloadlink: Klicke -OK- (per Browser oeffnen)\r\n ";
-                            else
+                            } else {
                                 message += "JDownloader 2 Installationsanleitung und Downloadlink:\r\n" + new URL("http://board.jdownloader.org/showthread.php?t=37365") + "\r\n";
+                            }
                         } else if ("es".equalsIgnoreCase(lng)) {
                             title = domain + " :: Java 7+ && HTTPS Solicitudes Post.";
                             message = "Debido a un bug en Java 7+, al utilizar esta versión de JDownloader, no se puede enviar correctamente las solicitudes Post en HTTPS\r\n";
                             message += "Por ello, hemos añadido una solución alternativa para que pueda seguir utilizando esta versión de JDownloader...\r\n";
                             message += "Tenga en cuenta que las peticiones Post de HTTPS se envían como HTTP. Utilice esto a su propia discreción.\r\n";
                             message += "Si usted no desea enviar información o datos desencriptados, por favor utilice JDownloader 2!\r\n";
-                            if (xSystem)
+                            if (xSystem) {
                                 message += " Las instrucciones para descargar e instalar Jdownloader 2 se muestran a continuación: Hacer Click en -Aceptar- (El navegador de internet se abrirá)\r\n ";
-                            else
+                            } else {
                                 message += " Las instrucciones para descargar e instalar Jdownloader 2 se muestran a continuación, enlace :\r\n" + new URL("http://board.jdownloader.org/showthread.php?t=37365") + "\r\n";
+                            }
                         } else {
                             title = domain + " :: Java 7+ && HTTPS Post Requests.";
                             message = "Due to a bug in Java 7+ when using this version of JDownloader, we can not successfully send HTTPS Post Requests.\r\n";
                             message += "We have added a work around so you can continue to use this version of JDownloader...\r\n";
                             message += "Please be aware that HTTPS Post Requests are sent as HTTP. Use at your own discretion.\r\n";
                             message += "If you do not want to send unecrypted data, please upgrade to JDownloader 2!\r\n";
-                            if (xSystem)
+                            if (xSystem) {
                                 message += "Jdownloader 2 install instructions and download link: Click -OK- (open in browser)\r\n ";
-                            else
+                            } else {
                                 message += "JDownloader 2 install instructions and download link:\r\n" + new URL("http://board.jdownloader.org/showthread.php?t=37365") + "\r\n";
+                            }
                         }
                         int result = JOptionPane.showConfirmDialog(jd.gui.swing.jdgui.JDGui.getInstance().getMainFrame(), message, title, JOptionPane.CLOSED_OPTION, JOptionPane.CLOSED_OPTION);
-                        if (xSystem && JOptionPane.OK_OPTION == result) CrossSystem.openURL(new URL("http://board.jdownloader.org/showthread.php?t=37365"));
+                        if (xSystem && JOptionPane.OK_OPTION == result) {
+                            CrossSystem.openURL(new URL("http://board.jdownloader.org/showthread.php?t=37365"));
+                        }
                         stableSucks.set(true);
                     } catch (Throwable e) {
                     }
