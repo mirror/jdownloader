@@ -320,16 +320,39 @@ public class SingleDownloadController extends BrowserSettingsThread implements D
                 startTimestamp = System.currentTimeMillis();
                 switch (candidate.getCachedAccount().getType()) {
                 case MULTI:
-                    processingPlugin.set(originalPlugin);
-                    originalPlugin.init();
-                    if (AvailableStatus.FALSE == originalPlugin.requestFileInformation(downloadLink)) {
-                        throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+                    AvailableStatus availableStatus = downloadLink.getAvailableStatus();
+                    final long lastAvailableStatusChange = downloadLink.getLastAvailableStatusChange();
+                    final long availableStatusChangeTimeout = originalPlugin.getAvailableStatusTimeout(downloadLink, availableStatus);
+                    if (lastAvailableStatusChange + availableStatusChangeTimeout < System.currentTimeMillis()) {
+                        processingPlugin.set(originalPlugin);
+                        originalPlugin.init();
+                        try {
+                            availableStatus = originalPlugin.requestFileInformation(downloadLink);
+                            if (AvailableStatus.FALSE == availableStatus) {
+                                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+                            }
+                        } catch (final PluginException e) {
+                            switch (e.getLinkStatus()) {
+                            case LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE:
+                            case LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE:
+                            case LinkStatus.ERROR_PREMIUM:
+                                availableStatus = AvailableStatus.UNCHECKABLE;
+                                break;
+                            case LinkStatus.ERROR_FILE_NOT_FOUND:
+                                availableStatus = AvailableStatus.FALSE;
+                                throw e;
+                            default:
+                                availableStatus = AvailableStatus.UNCHECKABLE;
+                                throw e;
+                            }
+                        } finally {
+                            downloadLink.setAvailableStatus(availableStatus);
+                        }
                     }
                     break;
                 }
                 processingPlugin.set(livePlugin);
                 livePlugin.init();
-
                 livePlugin.handle(downloadLink, account);
                 SingleDownloadReturnState ret = new SingleDownloadReturnState(this, null, finalizeProcessingPlugin());
                 return ret;

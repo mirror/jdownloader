@@ -882,6 +882,20 @@ public abstract class PluginForHost extends Plugin {
         this.link = link;
     }
 
+    public long getAvailableStatusTimeout(DownloadLink link, AvailableStatus availableStatus) {
+        if (availableStatus != null) {
+            switch (availableStatus) {
+            case TRUE:
+            case FALSE:
+                return 5 * 60 * 1000l;
+            default:
+                return 2 * 60 * 1000l;
+            }
+        } else {
+            return 1 * 60 * 1000l;
+        }
+    }
+
     public DownloadLink getDownloadLink() {
         return link;
     }

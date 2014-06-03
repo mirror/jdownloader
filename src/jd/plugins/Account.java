@@ -441,7 +441,6 @@ public class Account extends Property {
         FREE,
         PREMIUM,
         UNKNOWN
-
     }
 
     /**

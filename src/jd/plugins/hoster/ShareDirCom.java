@@ -32,6 +32,7 @@ import jd.http.Cookies;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
 import jd.plugins.Account;
+import jd.plugins.Account.AccountType;
 import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
@@ -129,8 +130,10 @@ public class ShareDirCom extends PluginForHost {
         safeAPIRequest("http://sharedir.com/sdapi.php?get_acc_type", account, null);
         String acctype = null;
         if (br.containsHTML("0")) {
+            account.setType(AccountType.FREE);
             acctype = "Registered (free) user";
         } else {
+            account.setType(AccountType.PREMIUM);
             acctype = "Premium Account";
         }
         safeAPIRequest("http://sharedir.com/sdapi.php?get_traffic_left", account, null);
@@ -365,6 +368,7 @@ public class ShareDirCom extends PluginForHost {
                 account.setProperty("pass", Encoding.urlEncode(account.getPass()));
                 account.setProperty("cookies", cookies);
             } catch (final PluginException e) {
+                account.setType(AccountType.UNKNOWN);
                 account.setProperty("cookies", Property.NULL);
                 throw e;
             }
@@ -455,6 +459,10 @@ public class ShareDirCom extends PluginForHost {
 
     @Override
     public boolean canHandle(DownloadLink downloadLink, Account account) {
+        final long verifiedFileSize = downloadLink.getVerifiedFileSize();
+        if (verifiedFileSize >= 150 * 1000 * 1000l && !Account.AccountType.PREMIUM.equals(account.getType())) {
+            return false;
+        }
         synchronized (hostUnavailableMap) {
             HashMap<String, Long> unavailableMap = hostUnavailableMap.get(account);
             if (unavailableMap != null) {

@@ -342,6 +342,9 @@ public class Uploadedto extends PluginForHost {
                         return false;
                     }
                     postPage(br, getProtocol() + "uploaded.net/api/filemultiple", sb.toString());
+                    if (br.containsHTML("<title>uploaded.net - Maintenance")) {
+                        return false;
+                    }
                     if (br.getHttpConnection().getLongContentLength() != 20) {
                         break;
                     } else {
@@ -943,6 +946,9 @@ public class Uploadedto extends PluginForHost {
                 /* file is probably prohibited */
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
+        }
+        if (br.containsHTML("No connection to database")) {
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server in maintenance", 20 * 60 * 1000l);
         }
         if (throwPluginDefect) {
             if (usePremiumDownloadAPI && usePremiumAPI.get()) {
