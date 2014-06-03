@@ -363,6 +363,11 @@ public class AddLinksDialog extends AbstractDialog<LinkCollectingJob> {
         packagename = new SearchComboBox<PackageHistoryEntry>() {
 
             @Override
+            protected boolean isSearchCaseSensitive() {
+                return true;
+            }
+
+            @Override
             protected Icon getIconForValue(PackageHistoryEntry value) {
                 return null;
             }

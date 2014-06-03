@@ -156,6 +156,12 @@ public interface LinkgrabberSettings extends ConfigInterface {
 
     @AboutConfig
     @DefaultBooleanValue(false)
+    boolean isSplitPackageMergeEnabled();
+
+    void setSplitPackageMergeEnabled(boolean b);
+
+    @AboutConfig
+    @DefaultBooleanValue(false)
     boolean isLinkgrabberAddAtTop();
 
     void setLinkgrabberAddAtTop(boolean selected);

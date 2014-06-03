@@ -191,6 +191,10 @@ public abstract class AbstractNodePropertiesPanel extends MigPanel implements Ac
         };
         setListeners(destination.getTxt());
         packagename = new SearchComboBox<PackageHistoryEntry>() {
+            @Override
+            protected boolean isSearchCaseSensitive() {
+                return true;
+            }
 
             @Override
             protected Icon getIconForValue(PackageHistoryEntry value) {
@@ -221,6 +225,7 @@ public abstract class AbstractNodePropertiesPanel extends MigPanel implements Ac
 
             }
         };
+
         packagename.setBadColor(null);
         packagename.setUnkownTextInputAllowed(true);
         packagename.setHelpText(_GUI._.AddLinksDialog_layoutDialogContent_packagename_help());
@@ -283,9 +288,15 @@ public abstract class AbstractNodePropertiesPanel extends MigPanel implements Ac
 
                     if (action != null) {
 
-                        if (action instanceof CopyAction) { return super.processKeyBinding(ks, e, condition, pressed); }
-                        if ("select-all".equals(binding)) return super.processKeyBinding(ks, e, condition, pressed);
-                        if (action instanceof TextAction) { return false; }
+                        if (action instanceof CopyAction) {
+                            return super.processKeyBinding(ks, e, condition, pressed);
+                        }
+                        if ("select-all".equals(binding)) {
+                            return super.processKeyBinding(ks, e, condition, pressed);
+                        }
+                        if (action instanceof TextAction) {
+                            return false;
+                        }
 
                     }
 
@@ -368,7 +379,8 @@ public abstract class AbstractNodePropertiesPanel extends MigPanel implements Ac
 
             @Override
             protected Icon getIcon(Priority v, boolean closed) {
-                if (v == null) { return getHighestPackagePriorityIcon();
+                if (v == null) {
+                    return getHighestPackagePriorityIcon();
 
                 }
                 return v.loadIcon(18);
@@ -378,7 +390,8 @@ public abstract class AbstractNodePropertiesPanel extends MigPanel implements Ac
             protected String getLabel(Priority v, boolean closed) {
                 if (v == null) {
 
-                return _GUI._.PackagePropertiesPanel_getLabel_mixed_priority(); }
+                    return _GUI._.PackagePropertiesPanel_getLabel_mixed_priority();
+                }
                 return v._();
             }
 
@@ -409,7 +422,7 @@ public abstract class AbstractNodePropertiesPanel extends MigPanel implements Ac
             @Override
             protected Icon getIcon(BooleanStatus v, boolean closed) {
                 if (closed) {
-                    switch ((BooleanStatus) v) {
+                    switch (v) {
                     case FALSE:
                         return NewTheme.I().getIcon(IconKey.ICON_FALSE, 18);
 
@@ -426,7 +439,7 @@ public abstract class AbstractNodePropertiesPanel extends MigPanel implements Ac
                     }
 
                 } else {
-                    switch ((BooleanStatus) v) {
+                    switch (v) {
                     case FALSE:
                         return NewTheme.I().getIcon(IconKey.ICON_FALSE, 18);
 
@@ -449,7 +462,7 @@ public abstract class AbstractNodePropertiesPanel extends MigPanel implements Ac
             @Override
             protected String getLabel(BooleanStatus v, boolean closed) {
                 if (closed) {
-                    switch ((BooleanStatus) v) {
+                    switch (v) {
                     case FALSE:
                         return _GUI._.PackagePropertiesPanel_getListCellRendererComponent_autoextractdisabled_closed();
 
@@ -466,7 +479,7 @@ public abstract class AbstractNodePropertiesPanel extends MigPanel implements Ac
                     }
 
                 } else {
-                    switch ((BooleanStatus) v) {
+                    switch (v) {
                     case FALSE:
                         return _GUI._.PackagePropertiesPanel_getListCellRendererComponent_autoextractdisabled();
 
@@ -602,7 +615,9 @@ public abstract class AbstractNodePropertiesPanel extends MigPanel implements Ac
     }
 
     protected void delayedSave() {
-        if (settingLock.get() == 0) saveDelayer.resetAndStart();
+        if (settingLock.get() == 0) {
+            saveDelayer.resetAndStart();
+        }
     }
 
     abstract protected Icon getHighestPackagePriorityIcon();
@@ -628,15 +643,31 @@ public abstract class AbstractNodePropertiesPanel extends MigPanel implements Ac
         MigPanel p = this;
         p.removeAll();
         p.setLayout(new MigLayout("ins 0 0 0 0,wrap 3", "[][grow,fill]2[]", "2[]0"));
-        if (isPackagenameEnabled()) addPackagename(height, p);
-        if (isFileNameEnabled()) addFilename(height, p);
-        if (isSaveToEnabled()) addSaveTo(height, p);
-        if (isDownloadFromEnabled()) addDownloadFrom(height, p);
+        if (isPackagenameEnabled()) {
+            addPackagename(height, p);
+        }
+        if (isFileNameEnabled()) {
+            addFilename(height, p);
+        }
+        if (isSaveToEnabled()) {
+            addSaveTo(height, p);
+        }
+        if (isDownloadFromEnabled()) {
+            addDownloadFrom(height, p);
+        }
         //
-        if (isDownloadPasswordEnabled()) addDownloadPassword(height, p);
-        if (isCheckSumEnabled()) addChecksum(height, p);
-        if (isCommentAndPriorityEnabled()) addCommentLine(height, p);
-        if (isArchiveLineEnabled()) addArchiveLine(height, p);
+        if (isDownloadPasswordEnabled()) {
+            addDownloadPassword(height, p);
+        }
+        if (isCheckSumEnabled()) {
+            addChecksum(height, p);
+        }
+        if (isCommentAndPriorityEnabled()) {
+            addCommentLine(height, p);
+        }
+        if (isArchiveLineEnabled()) {
+            addArchiveLine(height, p);
+        }
         refresh(true);
         revalidate();
 
@@ -697,7 +728,9 @@ public abstract class AbstractNodePropertiesPanel extends MigPanel implements Ac
 
             @Override
             protected void runInEDT() {
-                if (!isAbstractNodeSelected() || !isShowing() || savingLock.get() > 0) return;
+                if (!isAbstractNodeSelected() || !isShowing() || savingLock.get() > 0) {
+                    return;
+                }
                 currentArchive = null;
                 new Thread("PropertiesPanelUpdater") {
                     public void run() {
@@ -731,7 +764,9 @@ public abstract class AbstractNodePropertiesPanel extends MigPanel implements Ac
     }
 
     public void save() {
-        if (settingLock.get() > 0 || !isAbstractNodeSelected()) return;
+        if (settingLock.get() > 0 || !isAbstractNodeSelected()) {
+            return;
+        }
         try {
             savingLock.incrementAndGet();
             saveInEDT();
@@ -797,7 +832,9 @@ public abstract class AbstractNodePropertiesPanel extends MigPanel implements Ac
 
                 } else {
                     List<String> hs = new ArrayList<String>();
-                    if (StringUtils.isNotEmpty(txt)) hs.add(txt);
+                    if (StringUtils.isNotEmpty(txt)) {
+                        hs.add(txt);
+                    }
 
                     saveArchivePasswords(hs);
                 }
