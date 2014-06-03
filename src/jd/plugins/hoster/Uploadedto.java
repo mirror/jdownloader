@@ -76,7 +76,7 @@ public class Uploadedto extends PluginForHost {
     }
 
     private static AtomicInteger   maxPrem                      = new AtomicInteger(1);
-    private char[]                 FILENAMEREPLACES             = new char[] { '_' };
+    private char[]                 FILENAMEREPLACES             = new char[] { '_', '[', ']' };
     private final String           ACTIVATEACCOUNTERRORHANDLING = "ACTIVATEACCOUNTERRORHANDLING";
     private final String           EXPERIMENTALHANDLING         = "EXPERIMENTALHANDLING";
     private Pattern                IPREGEX                      = Pattern.compile("(([1-2])?([0-9])?([0-9])\\.([1-2])?([0-9])?([0-9])\\.([1-2])?([0-9])?([0-9])\\.([1-2])?([0-9])?([0-9]))", Pattern.CASE_INSENSITIVE);
@@ -142,6 +142,11 @@ public class Uploadedto extends PluginForHost {
                     throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server in maintenance", 20 * 60 * 1000l);
                 }
                 return AvailableStatus.UNCHECKABLE;
+            }
+            name = name.trim();
+            try {
+                name = URLDecoder.decode(name, "UTF-8");
+            } catch (final Throwable e) {
             }
             downloadLink.setFinalFileName(name.trim());
             downloadLink.setDownloadSize(SizeFormatter.getSize(size));
@@ -371,7 +376,12 @@ public class Uploadedto extends PluginForHost {
                         /* id not in response, so its offline */
                         dl.setAvailable(false);
                     } else {
-                        dl.setFinalFileName(infos[hit][4].trim());
+                        String name = infos[hit][4].trim();
+                        try {
+                            name = URLDecoder.decode(name, "UTF-8");
+                        } catch (final Throwable e) {
+                        }
+                        dl.setFinalFileName(name);
                         long size = SizeFormatter.getSize(infos[hit][2]);
                         dl.setDownloadSize(size);
                         if (size > 0) {
