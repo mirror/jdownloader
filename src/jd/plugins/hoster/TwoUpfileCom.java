@@ -39,7 +39,7 @@ public class TwoUpfileCom extends PluginForHost {
         super(wrapper);
     }
 
-    // DTemplate Version 0.1.8-psp
+    // YetiShareBasic Version 0.1.8-psp
     // mods:
     // non account: 1 * 20
     // premium account: chunks * maxdls

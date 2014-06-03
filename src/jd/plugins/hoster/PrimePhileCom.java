@@ -39,7 +39,7 @@ public class PrimePhileCom extends PluginForHost {
         super(wrapper);
     }
 
-    // DTemplate Version 0.1.6-psp
+    // YetiShareBasic Version 0.1.6-psp
     // mods:
     // non account: chunks * maxdls
     // premium account: chunks * maxdls

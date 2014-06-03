@@ -33,7 +33,7 @@ public class DTemplateDecrypter extends PluginForDecrypt {
         super(wrapper);
     }
 
-    /** This is a decrypter for all hosters which are using the DTemplate */
+    /* This is a decrypter for all YetiShareBasic hosters */
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         br.setFollowRedirects(true);
@@ -53,19 +53,25 @@ public class DTemplateDecrypter extends PluginForDecrypt {
             allPages.add("1");
             final String[] tempPages = br.getRegex("\"\\?page=(\\d+)\"").getColumn(0);
             if (tempPages != null && tempPages.length != 0) {
-                for (final String aPage : tempPages)
-                    if (!allPages.contains(aPage)) allPages.add(aPage);
+                for (final String aPage : tempPages) {
+                    if (!allPages.contains(aPage)) {
+                        allPages.add(aPage);
+                    }
+                }
             }
 
             for (final String currentPage : allPages) {
-                if (!currentPage.equals("1")) br.getPage(parameter + "?page=" + currentPage);
+                if (!currentPage.equals("1")) {
+                    br.getPage(parameter + "?page=" + currentPage);
+                }
                 final String[] links = br.getRegex("<a href=\"(http://(www\\.)?" + host + "/[a-z0-9]+)").getColumn(0);
                 if (links == null || links.length == 0) {
                     logger.warning("Decrypter broken for link: " + parameter);
                     return null;
                 }
-                for (String singleLink : links)
+                for (String singleLink : links) {
                     decryptedLinks.add(createDownloadlink(singleLink.replace(host, host + "decrypted")));
+                }
             }
         } else {
             decryptedLinks.add(createDownloadlink(parameter.replace(host, host + "decrypted")));

@@ -40,7 +40,7 @@ public class DepoFileInfo extends PluginForHost {
         this.enablePremium("http://www.depofile.info/register.php");
     }
 
-    // DTemplate Version 0.1.9-psp
+    // YetiShareBasic Version 0.1.9-psp
     // mods: heavily modified, do NOT upgrade!
     // non account: 1 * 20
     // premium account: chunks * maxdls

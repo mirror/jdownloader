@@ -48,7 +48,7 @@ public class GuploadBiz extends PluginForHost {
     private static final String SIMULTANDLSLIMIT         = "?e=You+have+reached+the+maximum+concurrent+downloads";
     private static final String SIMULTANDLSLIMITUSERTEXT = "Max. simultan downloads limit reached, wait to start more downloads from this host";
 
-    // DTemplate Version 0.1-psp
+    // YetiShareBasic Version 0.1-psp
     // mods: added server error errorhandling
     // non account: 1 * 20 (resume disabled, untested but should work as they
     // use a predefined script)

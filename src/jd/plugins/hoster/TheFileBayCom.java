@@ -39,7 +39,7 @@ public class TheFileBayCom extends PluginForHost {
         super(wrapper);
     }
 
-    // DTemplate Version 0.1.8-psp
+    // YetiShareBasic Version 0.1.8-psp
     // mods:
     // non account: chunks * maxdls
     // premium account: chunks * maxdls

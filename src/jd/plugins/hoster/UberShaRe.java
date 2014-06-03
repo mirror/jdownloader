@@ -39,7 +39,7 @@ public class UberShaRe extends PluginForHost {
         super(wrapper);
     }
 
-    // DTemplate Version 0.2.1-psp
+    // YetiShareBasic Version 0.2.1-psp
     // mods:
     // non account: chunks * maxdls
     // premium account: chunks * maxdls

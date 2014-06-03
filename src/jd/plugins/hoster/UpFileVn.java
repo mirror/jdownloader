@@ -39,7 +39,7 @@ public class UpFileVn extends PluginForHost {
         super(wrapper);
     }
 
-    // DTemplate Version 0.1.7-psp
+    // YetiShareBasic Version 0.1.7-psp
     // mods: fInfo regex, many changes, DO NOT UPGRADE!
     // non account: chunks * maxdls
     // premium account: chunks * maxdls

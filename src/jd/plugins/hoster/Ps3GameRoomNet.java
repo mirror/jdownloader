@@ -43,7 +43,7 @@ public class Ps3GameRoomNet extends PluginForHost {
         this.enablePremium();
     }
 
-    // DTemplate Version 0.1.7-psp
+    // YetiShareBasic Version 0.1.7-psp
     // mods: Account-only
     // non account: unsupported
     // premium account: chunks * maxdls

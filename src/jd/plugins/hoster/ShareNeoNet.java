@@ -39,7 +39,7 @@ public class ShareNeoNet extends PluginForHost {
         super(wrapper);
     }
 
-    // DTemplate Version 0.1.6-psp
+    // YetiShareBasic Version 0.1.6-psp
     // mods:
     // non account: 1 * 1
     // premium account: chunks * maxdls
