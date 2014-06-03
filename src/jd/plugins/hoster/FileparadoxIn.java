@@ -213,7 +213,7 @@ public class FileparadoxIn extends PluginForHost {
         br.setFollowRedirects(true);
         prepBrowser(br);
 
-        String[] fileInfo = new String[3];
+        String[] fileInfo = new String[2];
 
         if (useAltLinkCheck) {
             altAvailStat(downloadLink, fileInfo);
@@ -251,7 +251,7 @@ public class FileparadoxIn extends PluginForHost {
         }
         // scan the first page
         scanInfo(downloadLink, fileInfo);
-        // scan the second page. filesize[1] and md5hash[2] are not mission critical
+        // scan the second page. filesize[1] isn't mission critical
         if (inValidate(fileInfo[0])) {
             Form download1 = getFormByKey(cbr, "op", "download1");
             if (download1 != null) {
@@ -280,9 +280,6 @@ public class FileparadoxIn extends PluginForHost {
         }
         if (!inValidate(fileInfo[1])) {
             downloadLink.setDownloadSize(SizeFormatter.getSize(fileInfo[1]));
-        }
-        if (!inValidate(fileInfo[2])) {
-            downloadLink.setMD5Hash(fileInfo[2].trim());
         }
         return getAvailableStatus(downloadLink);
     }
@@ -1204,7 +1201,7 @@ public class FileparadoxIn extends PluginForHost {
                 throw (PluginException) e;
             }
             // should only be picked up now if not JD2
-            if (br.getHttpConnection().getResponseCode() == 503 && br.getHttpConnection().getHeaderFields("server").contains("cloudflare-nginx")) {
+            if (br.getHttpConnection() != null && br.getHttpConnection().getResponseCode() == 503 && br.getHttpConnection().getHeaderFields("server").contains("cloudflare-nginx")) {
                 logger.warning("Cloudflare anti DDoS measures enabled, your version of JD can not support this. In order to go any further you will need to upgrade to JDownloader 2");
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Cloudflare anti DDoS measures enabled");
             } else {
@@ -1212,7 +1209,7 @@ public class FileparadoxIn extends PluginForHost {
             }
         }
         // prevention is better than cure
-        if (br.getHttpConnection().getResponseCode() == 503 && br.getHttpConnection().getHeaderFields("server").contains("cloudflare-nginx")) {
+        if (br.getHttpConnection() != null && br.getHttpConnection().getResponseCode() == 503 && br.getHttpConnection().getHeaderFields("server").contains("cloudflare-nginx")) {
             String host = new Regex(page, "https?://([^/]+)(:\\d+)?/").getMatch(0);
             Form cloudflare = br.getFormbyProperty("id", "ChallengeForm");
             if (cloudflare == null) {
@@ -1238,7 +1235,8 @@ public class FileparadoxIn extends PluginForHost {
                 // author.
                 ScriptEngineManager mgr = new ScriptEngineManager();
                 ScriptEngine engine = mgr.getEngineByName("JavaScript");
-                cloudflare.put("jschl_answer", String.valueOf(((Double) engine.eval("(" + math + ") + " + host.length())).longValue()));
+                final long value = ((Number) engine.eval("(" + math + ") + " + host.length())).longValue();
+                cloudflare.put("jschl_answer", value + "");
                 Thread.sleep(5500);
                 br.submitForm(cloudflare);
                 if (br.getFormbyProperty("id", "ChallengeForm") != null || br.getFormbyProperty("id", "challenge-form") != null) {

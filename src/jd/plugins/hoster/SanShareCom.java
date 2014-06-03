@@ -212,7 +212,7 @@ public class SanShareCom extends PluginForHost {
         br.setFollowRedirects(true);
         prepBrowser(br);
 
-        String[] fileInfo = new String[3];
+        String[] fileInfo = new String[2];
 
         if (useAltLinkCheck) {
             altAvailStat(downloadLink, fileInfo);
@@ -248,7 +248,7 @@ public class SanShareCom extends PluginForHost {
         }
         // scan the first page
         scanInfo(downloadLink, fileInfo);
-        // scan the second page. filesize[1] and md5hash[2] are not mission critical
+        // scan the second page. filesize[1] isn't mission critical
         if (inValidate(fileInfo[0])) {
             Form download1 = getFormByKey(cbr, "op", "download1");
             if (download1 != null) {
@@ -274,7 +274,6 @@ public class SanShareCom extends PluginForHost {
         downloadLink.setName(fileInfo[0].trim());
         if (getAvailableStatus(downloadLink).toString().equals("UNCHECKED")) downloadLink.setAvailable(true);
         if (!inValidate(fileInfo[1])) downloadLink.setDownloadSize(SizeFormatter.getSize(fileInfo[1]));
-        if (!inValidate(fileInfo[2])) downloadLink.setMD5Hash(fileInfo[2].trim());
         return getAvailableStatus(downloadLink);
     }
 
@@ -320,7 +319,6 @@ public class SanShareCom extends PluginForHost {
                 }
             }
         }
-        if (inValidate(fileInfo[2])) fileInfo[2] = cbr.getRegex("<b>MD5.*?</b>.*?nowrap>(.*?)<").getMatch(0);
         return fileInfo;
     }
 
@@ -407,11 +405,6 @@ public class SanShareCom extends PluginForHost {
                 // custom form inputs
 
                 final long timeBefore = System.currentTimeMillis();
-                // md5 can be on the subsequent pages
-                if (inValidate(downloadLink.getMD5Hash())) {
-                    String md5hash = cbr.getRegex("<b>MD5.*?</b>.*?nowrap>(.*?)<").getMatch(0);
-                    if (md5hash != null) downloadLink.setMD5Hash(md5hash.trim());
-                }
                 if (cbr.containsHTML(PASSWORDTEXT)) {
                     logger.info("The downloadlink seems to be password protected.");
                     dlForm = handlePassword(dlForm, downloadLink);
@@ -1102,29 +1095,40 @@ public class SanShareCom extends PluginForHost {
      * @author raztoki
      */
     private void getPage(final String page) throws Exception {
-        if (page == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (page == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         try {
             br.getPage(page);
         } catch (Exception e) {
-            if (e instanceof PluginException) throw (PluginException) e;
+            if (e instanceof PluginException) {
+                throw (PluginException) e;
+            }
             // should only be picked up now if not JD2
-            if (br.getHttpConnection().getResponseCode() == 503 && br.getHttpConnection().getHeaderFields("server").contains("cloudflare-nginx")) {
+            if (br.getHttpConnection() != null && br.getHttpConnection().getResponseCode() == 503 && br.getHttpConnection().getHeaderFields("server").contains("cloudflare-nginx")) {
                 logger.warning("Cloudflare anti DDoS measures enabled, your version of JD can not support this. In order to go any further you will need to upgrade to JDownloader 2");
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Cloudflare anti DDoS measures enabled");
-            } else
+            } else {
                 throw e;
+            }
         }
         // prevention is better than cure
-        if (br.getHttpConnection().getResponseCode() == 503 && br.getHttpConnection().getHeaderFields("server").contains("cloudflare-nginx")) {
+        if (br.getHttpConnection() != null && br.getHttpConnection().getResponseCode() == 503 && br.getHttpConnection().getHeaderFields("server").contains("cloudflare-nginx")) {
             String host = new Regex(page, "https?://([^/]+)(:\\d+)?/").getMatch(0);
             Form cloudflare = br.getFormbyProperty("id", "ChallengeForm");
-            if (cloudflare == null) cloudflare = br.getFormbyProperty("id", "challenge-form");
+            if (cloudflare == null) {
+                cloudflare = br.getFormbyProperty("id", "challenge-form");
+            }
             if (cloudflare != null) {
                 String math = br.getRegex("\\$\\('#jschl_answer'\\)\\.val\\(([^\\)]+)\\);").getMatch(0);
-                if (math == null) math = br.getRegex("a\\.value = ([\\d\\-\\.\\+\\*/]+);").getMatch(0);
+                if (math == null) {
+                    math = br.getRegex("a\\.value = ([\\d\\-\\.\\+\\*/]+);").getMatch(0);
+                }
                 if (math == null) {
                     String variableName = br.getRegex("(\\w+)\\s*=\\s*\\$\\(\'#jschl_answer\'\\);").getMatch(0);
-                    if (variableName != null) variableName = variableName.trim();
+                    if (variableName != null) {
+                        variableName = variableName.trim();
+                    }
                     math = br.getRegex(variableName + "\\.val\\(([^\\)]+)\\)").getMatch(0);
                 }
                 if (math == null) {
@@ -1135,7 +1139,8 @@ public class SanShareCom extends PluginForHost {
                 // author.
                 ScriptEngineManager mgr = new ScriptEngineManager();
                 ScriptEngine engine = mgr.getEngineByName("JavaScript");
-                cloudflare.put("jschl_answer", String.valueOf(((Double) engine.eval("(" + math + ") + " + host.length())).longValue()));
+                final long value = ((Number) engine.eval("(" + math + ") + " + host.length())).longValue();
+                cloudflare.put("jschl_answer", value + "");
                 Thread.sleep(5500);
                 br.submitForm(cloudflare);
                 if (br.getFormbyProperty("id", "ChallengeForm") != null || br.getFormbyProperty("id", "challenge-form") != null) {
@@ -1146,7 +1151,9 @@ public class SanShareCom extends PluginForHost {
                 final HashMap<String, String> cookies = new HashMap<String, String>();
                 final Cookies add = br.getCookies(this.getHost());
                 for (final Cookie c : add.getCookies()) {
-                    if (new Regex(c.getKey(), "(cfduid|cf_clearance)").matches()) cookies.put(c.getKey(), c.getValue());
+                    if (new Regex(c.getKey(), "(cfduid|cf_clearance)").matches()) {
+                        cookies.put(c.getKey(), c.getValue());
+                    }
                 }
                 synchronized (cloudflareCookies) {
                     cloudflareCookies.clear();

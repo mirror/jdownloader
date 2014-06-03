@@ -31,6 +31,7 @@ import java.util.SortedMap;
 import java.util.TreeMap;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicReference;
 
 import javax.script.ScriptEngine;
 import javax.script.ScriptEngineManager;
@@ -102,7 +103,7 @@ public class FileOmCom extends PluginForHost {
     private static final AtomicInteger totalMaxSimultanFreeDownload = new AtomicInteger(20);
 
     // DEV NOTES
-    // XfileShare Version 3.0.8.6
+    // XfileShare Version 3.0.8.7
     // last XfileSharingProBasic compare :: 2.6.2.1
     // captchatype: solvemedia
     // other: no redirects, uses cloudflare, maybe sister site billionupload.com?
@@ -186,12 +187,12 @@ public class FileOmCom extends PluginForHost {
             }
         }
         if (useRUA) {
-            if (agent.string == null) {
+            if (agent.get() == null) {
                 /* we first have to load the plugin, before we can reference it */
                 JDUtilities.getPluginForHost("mediafire.com");
-                agent.string = jd.plugins.hoster.MediafireCom.stringUserAgent();
+                agent.set(jd.plugins.hoster.MediafireCom.stringUserAgent());
             }
-            prepBr.getHeaders().put("User-Agent", agent.string);
+            prepBr.getHeaders().put("User-Agent", agent.get());
         }
         prepBr.getHeaders().put("Accept-Language", "en-gb, en;q=0.8");
         prepBr.setCookie(COOKIE_HOST, "lang", "english");
@@ -212,7 +213,7 @@ public class FileOmCom extends PluginForHost {
         br.setFollowRedirects(true);
         prepBrowser(br);
 
-        String[] fileInfo = new String[3];
+        String[] fileInfo = new String[2];
 
         if (useAltLinkCheck) {
             altAvailStat(downloadLink, fileInfo);
@@ -248,7 +249,7 @@ public class FileOmCom extends PluginForHost {
         }
         // scan the first page
         scanInfo(downloadLink, fileInfo);
-        // scan the second page. filesize[1] and md5hash[2] are not mission critical
+        // scan the second page. filesize[1] isn't mission critical
         if (inValidate(fileInfo[0])) {
             Form download1 = getFormByKey(cbr, "op", "download1");
             if (download1 != null) {
@@ -274,7 +275,6 @@ public class FileOmCom extends PluginForHost {
         downloadLink.setName(fileInfo[0].trim());
         if (getAvailableStatus(downloadLink).toString().equals("UNCHECKED")) downloadLink.setAvailable(true);
         if (!inValidate(fileInfo[1])) downloadLink.setDownloadSize(SizeFormatter.getSize(fileInfo[1]));
-        if (!inValidate(fileInfo[2])) downloadLink.setMD5Hash(fileInfo[2].trim());
         return getAvailableStatus(downloadLink);
     }
 
@@ -320,7 +320,6 @@ public class FileOmCom extends PluginForHost {
                 }
             }
         }
-        if (inValidate(fileInfo[2])) fileInfo[2] = cbr.getRegex("<b>MD5.*?</b>.*?nowrap>(.*?)<").getMatch(0);
         return fileInfo;
     }
 
@@ -407,11 +406,6 @@ public class FileOmCom extends PluginForHost {
                 // custom form inputs
 
                 final long timeBefore = System.currentTimeMillis();
-                // md5 can be on the subsequent pages
-                if (inValidate(downloadLink.getMD5Hash())) {
-                    String md5hash = cbr.getRegex("<b>MD5.*?</b>.*?nowrap>(.*?)<").getMatch(0);
-                    if (md5hash != null) downloadLink.setMD5Hash(md5hash.trim());
-                }
                 if (cbr.containsHTML(PASSWORDTEXT)) {
                     logger.info("The downloadlink seems to be password protected.");
                     dlForm = handlePassword(dlForm, downloadLink);
@@ -994,11 +988,7 @@ public class FileOmCom extends PluginForHost {
     private static Object                                     ACCLOCK                = new Object();
     private static Object                                     CTRLLOCK               = new Object();
 
-    private static StringContainer                            agent                  = new StringContainer();
-
-    public static class StringContainer {
-        public String string = null;
-    }
+    private static AtomicReference<String>                    agent                  = new AtomicReference<String>(null);
 
     /**
      * Rules to prevent new downloads from commencing

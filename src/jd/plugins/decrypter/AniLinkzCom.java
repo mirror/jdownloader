@@ -144,7 +144,9 @@ public class AniLinkzCom extends PluginForDecrypt {
             if (parameter.contains(".com/series/")) {
                 int p = 1;
                 String page = new Regex(parameter, "\\?page=(\\d+)").getMatch(0);
-                if (page != null) p = Integer.parseInt(page);
+                if (page != null) {
+                    p = Integer.parseInt(page);
+                }
                 for (int i = 0; i != p; i++) {
                     String host = new Regex(br.getURL(), "(https?://[^/]+)").getMatch(0);
                     String nextPage = br.getRegex("class=\"page\" href=\"(/series/[^\\?]+\\?page=" + (p + 1) + ")\">\\d+</a>").getMatch(0);
@@ -215,16 +217,19 @@ public class AniLinkzCom extends PluginForDecrypt {
                 escapeAll = Encoding.htmlDecode(escapeAll);
                 escapeAll = Encoding.urlDecode(escapeAll, false);
                 // cleanup crap
-                if (new Regex(escapeAll, "https?://[^\"]+(cizgifilmlerizle\\.com|animeuploads\\.com)/[^\"]+<div[^>]+").matches()) escapeAll = escapeAll.replaceAll("<div[^>]+>", "");
+                if (new Regex(escapeAll, "https?://[^\"]+(cizgifilmlerizle\\.com|animeuploads\\.com)/[^\"]+<div[^>]+").matches()) {
+                    escapeAll = escapeAll.replaceAll("<div[^>]+>", "");
+                }
             }
             if (inValidate(escapeAll) || new Regex(escapeAll, "(/img/\\w+dead\\.jpg|http://www\\./media)").matches()) {
                 // escapeAll == null / not online yet... || offline results within escapeAll
-                if (br.containsHTML("This page will be updated as soon as"))
+                if (br.containsHTML("This page will be updated as soon as")) {
                     logger.info("Not been release yet... : " + br2.getURL());
-                else if (inValidate(escapeAll))
+                } else if (inValidate(escapeAll)) {
                     logger.info("DeadLink!... : " + br2.getURL());
-                else
+                } else {
                     logger.warning("Decrypter out of date for link: " + br2.getURL());
+                }
                 DownloadLink dl = createDownloadlink("directhttp://" + br2.getURL());
                 dl.setProperty("OFFLINE", true);
                 dl.setAvailable(false);
@@ -253,17 +258,27 @@ public class AniLinkzCom extends PluginForDecrypt {
         }
 
         // generic fail overs
-        if (inValidate(link)) link = new Regex(escapeAll, "<iframe src=\"(https?://([^<>\"]+)?" + supported_hoster + "/[^<>\"]+)\"").getMatch(0);
-        if (inValidate(link)) link = new Regex(escapeAll, "(href|url|file)=\"?(https?://([^<>\"]+)?" + supported_hoster + "/[^<>\"]+)\"").getMatch(1);
-        if (inValidate(link)) link = new Regex(escapeAll, "src=\"(https?://([^<>\"]+)?" + supported_hoster + "/[^<>\"]+)\"").getMatch(0);
-        if (!inValidate(link))
+        if (inValidate(link)) {
+            link = new Regex(escapeAll, "<iframe src=\"(https?://([^<>\"]+)?" + supported_hoster + "/[^<>\"]+)\"").getMatch(0);
+        }
+        if (inValidate(link)) {
+            link = new Regex(escapeAll, "(href|url|file)=\"?(https?://([^<>\"]+)?" + supported_hoster + "/[^<>\"]+)\"").getMatch(1);
+        }
+        if (inValidate(link)) {
+            link = new Regex(escapeAll, "src=\"(https?://([^<>\"]+)?" + supported_hoster + "/[^<>\"]+)\"").getMatch(0);
+        }
+        if (!inValidate(link)) {
             decryptedLinks.add(createDownloadlink(link));
-        else if (inValidate(link) && new Regex(escapeAll, "(anilinkz\\.com/get/|chia\\-anime\\.com/|myvideo\\.de/)").matches()) {
+        } else if (inValidate(link) && new Regex(escapeAll, "(anilinkz\\.com/get/|chia\\-anime\\.com/|myvideo\\.de/)").matches()) {
             String[] aLinks = new Regex(escapeAll, "(http[^\"]+/get/[^\"]+)").getColumn(0);
             // chia-anime can't be redirected back into dedicated plugin
-            if ((aLinks == null || aLinks.length == 0) && escapeAll.contains("chia-anime.com")) aLinks = new Regex(escapeAll, "url\":\"(https?[^\"]+chia-anime\\.com[^\"]+)").getColumn(0);
+            if ((aLinks == null || aLinks.length == 0) && escapeAll.contains("chia-anime.com")) {
+                aLinks = new Regex(escapeAll, "url\":\"(https?[^\"]+chia-anime\\.com[^\"]+)").getColumn(0);
+            }
             // myvideo links are also direct links to flvs, using anilinks own swf player.
-            if ((aLinks == null || aLinks.length == 0) && escapeAll.contains("myvideo.de")) aLinks = new Regex(escapeAll, "=(https?[^\"]+myvideo\\.de/[^\"]+)").getColumn(0);
+            if ((aLinks == null || aLinks.length == 0) && escapeAll.contains("myvideo.de")) {
+                aLinks = new Regex(escapeAll, "=(https?[^\"]+myvideo\\.de/[^\"]+)").getColumn(0);
+            }
             if (aLinks != null && aLinks.length != 0) {
                 for (String aLink : aLinks) {
                     DownloadLink downloadLink = createDownloadlink("directhttp://" + aLink);
@@ -314,29 +329,40 @@ public class AniLinkzCom extends PluginForDecrypt {
      * @author raztoki
      */
     private void getPage(final String page) throws Exception {
-        if (page == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (page == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         try {
             br.getPage(page);
         } catch (Exception e) {
-            if (e instanceof PluginException) throw (PluginException) e;
+            if (e instanceof PluginException) {
+                throw (PluginException) e;
+            }
             // should only be picked up now if not JD2
-            if (br.getHttpConnection().getResponseCode() == 503 && br.getHttpConnection().getHeaderFields("server").contains("cloudflare-nginx")) {
+            if (br.getHttpConnection() != null && br.getHttpConnection().getResponseCode() == 503 && br.getHttpConnection().getHeaderFields("server").contains("cloudflare-nginx")) {
                 logger.warning("Cloudflare anti DDoS measures enabled, your version of JD can not support this. In order to go any further you will need to upgrade to JDownloader 2");
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Cloudflare anti DDoS measures enabled");
-            } else
+            } else {
                 throw e;
+            }
         }
         // prevention is better than cure
-        if (br.getHttpConnection().getResponseCode() == 503 && br.getHttpConnection().getHeaderFields("server").contains("cloudflare-nginx")) {
+        if (br.getHttpConnection() != null && br.getHttpConnection().getResponseCode() == 503 && br.getHttpConnection().getHeaderFields("server").contains("cloudflare-nginx")) {
             String host = new Regex(page, "https?://([^/]+)(:\\d+)?/").getMatch(0);
             Form cloudflare = br.getFormbyProperty("id", "ChallengeForm");
-            if (cloudflare == null) cloudflare = br.getFormbyProperty("id", "challenge-form");
+            if (cloudflare == null) {
+                cloudflare = br.getFormbyProperty("id", "challenge-form");
+            }
             if (cloudflare != null) {
                 String math = br.getRegex("\\$\\('#jschl_answer'\\)\\.val\\(([^\\)]+)\\);").getMatch(0);
-                if (math == null) math = br.getRegex("a\\.value = ([\\d\\-\\.\\+\\*/]+);").getMatch(0);
+                if (math == null) {
+                    math = br.getRegex("a\\.value = ([\\d\\-\\.\\+\\*/]+);").getMatch(0);
+                }
                 if (math == null) {
                     String variableName = br.getRegex("(\\w+)\\s*=\\s*\\$\\(\'#jschl_answer\'\\);").getMatch(0);
-                    if (variableName != null) variableName = variableName.trim();
+                    if (variableName != null) {
+                        variableName = variableName.trim();
+                    }
                     math = br.getRegex(variableName + "\\.val\\(([^\\)]+)\\)").getMatch(0);
                 }
                 if (math == null) {
@@ -347,7 +373,8 @@ public class AniLinkzCom extends PluginForDecrypt {
                 // author.
                 ScriptEngineManager mgr = new ScriptEngineManager();
                 ScriptEngine engine = mgr.getEngineByName("JavaScript");
-                cloudflare.put("jschl_answer", String.valueOf(((Double) engine.eval("(" + math + ") + " + host.length())).longValue()));
+                final long value = ((Number) engine.eval("(" + math + ") + " + host.length())).longValue();
+                cloudflare.put("jschl_answer", value + "");
                 Thread.sleep(5500);
                 br.submitForm(cloudflare);
                 if (br.getFormbyProperty("id", "ChallengeForm") != null || br.getFormbyProperty("id", "challenge-form") != null) {
@@ -358,7 +385,9 @@ public class AniLinkzCom extends PluginForDecrypt {
                 final HashMap<String, String> cookies = new HashMap<String, String>();
                 final Cookies add = br.getCookies(this.getHost());
                 for (final Cookie c : add.getCookies()) {
-                    if (new Regex(c.getKey(), "(cfduid|cf_clearance)").matches()) cookies.put(c.getKey(), c.getValue());
+                    if (new Regex(c.getKey(), "(cfduid|cf_clearance)").matches()) {
+                        cookies.put(c.getKey(), c.getValue());
+                    }
                 }
                 synchronized (cloudflareCookies) {
                     cloudflareCookies.clear();
@@ -377,10 +406,11 @@ public class AniLinkzCom extends PluginForDecrypt {
      * @author raztoki
      * */
     private boolean inValidate(final String s) {
-        if (s == null || s != null && (s.matches("[\r\n\t ]+") || s.equals("")))
+        if (s == null || s != null && (s.matches("[\r\n\t ]+") || s.equals(""))) {
             return true;
-        else
+        } else {
             return false;
+        }
     }
 
     /* NO OVERRIDE!! */
