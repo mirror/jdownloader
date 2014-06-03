@@ -169,7 +169,7 @@ public class MenuManagerDialog extends AbstractDialog<Object> implements TreeSel
             @Override
             public void actionPerformed(ActionEvent e) {
                 try {
-                    ExtFileChooserDialog d = new ExtFileChooserDialog(0, _GUI._.ManagerFrame_actionPerformed_export_title(), null, null);
+                    ExtFileChooserDialog d = new ExtFileChooserDialog(0, _GUI._.ManagerFrame_actionPerformed_import_title(), null, null);
                     d.setFileFilter(new FileFilter() {
 
                         @Override
@@ -230,7 +230,9 @@ public class MenuManagerDialog extends AbstractDialog<Object> implements TreeSel
                     data.validateFull();
                     model.set(data);
 
-                    if (tree.getRowCount() > 0) tree.setSelectionRow(0);
+                    if (tree.getRowCount() > 0) {
+                        tree.setSelectionRow(0);
+                    }
                 } catch (DialogClosedException e1) {
                     e1.printStackTrace();
                 } catch (DialogCanceledException e1) {
@@ -398,7 +400,9 @@ public class MenuManagerDialog extends AbstractDialog<Object> implements TreeSel
 
         LAFOptions.getInstance().applyPanelBackground(sp);
 
-        if (tree.getRowCount() > 0) tree.setSelectionRow(0);
+        if (tree.getRowCount() > 0) {
+            tree.setSelectionRow(0);
+        }
         return panel;
     }
 
@@ -417,7 +421,7 @@ public class MenuManagerDialog extends AbstractDialog<Object> implements TreeSel
     }
 
     public void addMenuItem(MenuItemData action) {
-        TreePath sel = model.addAction(tree.getSelectionPath(), (MenuItemData) action);
+        TreePath sel = model.addAction(tree.getSelectionPath(), action);
         tree.setSelectionPath(sel);
     }
 
@@ -443,7 +447,9 @@ public class MenuManagerDialog extends AbstractDialog<Object> implements TreeSel
         md.validateFull();
         System.out.println("Validate: " + (System.currentTimeMillis() - t));
         model.set(md);
-        if (tree.getRowCount() > 0) tree.setSelectionRow(0);
+        if (tree.getRowCount() > 0) {
+            tree.setSelectionRow(0);
+        }
 
     }
 
@@ -462,13 +468,17 @@ public class MenuManagerDialog extends AbstractDialog<Object> implements TreeSel
         tree.getSelectionModel().removeTreeSelectionListener(this);
         TreePath[] sel = tree.getSelectionPaths();
         model.fireUpdate();
-        if (sel != null) tree.setSelectionPaths(sel);
+        if (sel != null) {
+            tree.setSelectionPaths(sel);
+        }
         tree.getSelectionModel().addTreeSelectionListener(this);
     }
 
     public TreePath getSelectionPath() {
         TreePath ret = tree.getSelectionPath();
-        if (ret == null) ret = new TreePath(model.getRoot());
+        if (ret == null) {
+            ret = new TreePath(model.getRoot());
+        }
         return ret;
     }
 

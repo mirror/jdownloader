@@ -1177,7 +1177,9 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
                         if (CachedAccountPermission.OK.equals(permission)) {
                             ok = true;
                             if (cachedAccount.hasCaptcha(link) && (skipAllCaptchas || CaptchaBlackList.getInstance().matches(new PrePluginCheckDummyChallenge(link)) != null)) {
-                                selector.addExcluded(candidate, new DownloadLinkCandidateResult(SkipReason.CAPTCHA, null, null));
+                                if (selector.validateDownloadLinkCandidate(candidate)) {
+                                    selector.addExcluded(candidate, new DownloadLinkCandidateResult(SkipReason.CAPTCHA, null, null));
+                                }
                                 continue;
                             }
                             final DownloadLinkCandidate checkNextCandidate = new DownloadLinkCandidate(candidate, cachedAccount, accountCache.isCustomizedCache());
@@ -1190,11 +1192,11 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
                             }
                         }
                     }
-                    if (!ok) {
+                    if (!ok && selector.validateDownloadLinkCandidate(candidate)) {
                         if (tempDisabledCachedAccount != null) {
                             selector.addExcluded(candidate, new DownloadLinkCandidateResult(new WaitForAccountSkipReason(tempDisabledCachedAccount.getAccount()), null, null));
                         } else {
-                            selector.addExcluded(candidate, new DownloadLinkCandidateResult(SkipReason.NO_ACCOUNT, null, null));
+                            selector.addExcluded(candidate, new DownloadLinkCandidateResult(RESULT.ACCOUNT_REQUIRED, null, null));
                         }
                     }
                 }

@@ -124,11 +124,11 @@ public class DownloadLinkCandidateSelector {
             }
             final Account canidateAccount = cachedAccount.getAccount();
             if (canidateAccount != null) {
-                if (canidateAccount.isTempDisabled()) {
-                    return CachedAccountPermission.TEMP_DISABLED;
-                }
                 if (!canidateAccount.isEnabled()) {
                     return CachedAccountPermission.DISABLED;
+                }
+                if (canidateAccount.isTempDisabled()) {
+                    return CachedAccountPermission.TEMP_DISABLED;
                 }
             }
             return CachedAccountPermission.OK;

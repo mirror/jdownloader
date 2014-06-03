@@ -46,13 +46,27 @@ public class ImportAllMenusAdvancedAction implements AdvancedAction {
 
             @Override
             public boolean accept(File f) {
-                if (f.getName().endsWith(MenuManagerDownloadTabBottomBar.getInstance().getFileExtension())) return true;
-                if (f.getName().endsWith(MenuManagerDownloadTableContext.getInstance().getFileExtension())) return true;
-                if (f.getName().endsWith(MenuManagerLinkgrabberTabBottombar.getInstance().getFileExtension())) return true;
-                if (f.getName().endsWith(MenuManagerLinkgrabberTableContext.getInstance().getFileExtension())) return true;
-                if (f.getName().endsWith(MenuManagerMainToolbar.getInstance().getFileExtension())) return true;
-                if (f.getName().endsWith(MenuManagerTrayIcon.getInstance().getFileExtension())) return true;
-                if (f.getName().endsWith(MenuManagerMainmenu.getInstance().getFileExtension())) return true;
+                if (f.getName().endsWith(MenuManagerDownloadTabBottomBar.getInstance().getFileExtension())) {
+                    return true;
+                }
+                if (f.getName().endsWith(MenuManagerDownloadTableContext.getInstance().getFileExtension())) {
+                    return true;
+                }
+                if (f.getName().endsWith(MenuManagerLinkgrabberTabBottombar.getInstance().getFileExtension())) {
+                    return true;
+                }
+                if (f.getName().endsWith(MenuManagerLinkgrabberTableContext.getInstance().getFileExtension())) {
+                    return true;
+                }
+                if (f.getName().endsWith(MenuManagerMainToolbar.getInstance().getFileExtension())) {
+                    return true;
+                }
+                if (f.getName().endsWith(MenuManagerTrayIcon.getInstance().getFileExtension())) {
+                    return true;
+                }
+                if (f.getName().endsWith(MenuManagerMainmenu.getInstance().getFileExtension())) {
+                    return true;
+                }
                 return f.isDirectory();
             }
         });
@@ -61,18 +75,32 @@ public class ImportAllMenusAdvancedAction implements AdvancedAction {
         d.setMultiSelection(true);
 
         d.setStorageID("menus");
-        d.setType(FileChooserType.SAVE_DIALOG);
+        d.setType(FileChooserType.OPEN_DIALOG);
         try {
             Dialog.getInstance().showDialog(d);
 
             for (File f : d.getSelection()) {
-                if (f.getName().endsWith(MenuManagerDownloadTabBottomBar.getInstance().getFileExtension())) MenuManagerDownloadTabBottomBar.getInstance().importFrom(f);
-                if (f.getName().endsWith(MenuManagerDownloadTableContext.getInstance().getFileExtension())) MenuManagerDownloadTableContext.getInstance().importFrom(f);
-                if (f.getName().endsWith(MenuManagerLinkgrabberTabBottombar.getInstance().getFileExtension())) MenuManagerLinkgrabberTabBottombar.getInstance().importFrom(f);
-                if (f.getName().endsWith(MenuManagerLinkgrabberTableContext.getInstance().getFileExtension())) MenuManagerLinkgrabberTableContext.getInstance().importFrom(f);
-                if (f.getName().endsWith(MenuManagerMainToolbar.getInstance().getFileExtension())) MenuManagerMainToolbar.getInstance().importFrom(f);
-                if (f.getName().endsWith(MenuManagerTrayIcon.getInstance().getFileExtension())) MenuManagerTrayIcon.getInstance().importFrom(f);
-                if (f.getName().endsWith(MenuManagerMainmenu.getInstance().getFileExtension())) MenuManagerMainmenu.getInstance().importFrom(f);
+                if (f.getName().endsWith(MenuManagerDownloadTabBottomBar.getInstance().getFileExtension())) {
+                    MenuManagerDownloadTabBottomBar.getInstance().importFrom(f);
+                }
+                if (f.getName().endsWith(MenuManagerDownloadTableContext.getInstance().getFileExtension())) {
+                    MenuManagerDownloadTableContext.getInstance().importFrom(f);
+                }
+                if (f.getName().endsWith(MenuManagerLinkgrabberTabBottombar.getInstance().getFileExtension())) {
+                    MenuManagerLinkgrabberTabBottombar.getInstance().importFrom(f);
+                }
+                if (f.getName().endsWith(MenuManagerLinkgrabberTableContext.getInstance().getFileExtension())) {
+                    MenuManagerLinkgrabberTableContext.getInstance().importFrom(f);
+                }
+                if (f.getName().endsWith(MenuManagerMainToolbar.getInstance().getFileExtension())) {
+                    MenuManagerMainToolbar.getInstance().importFrom(f);
+                }
+                if (f.getName().endsWith(MenuManagerTrayIcon.getInstance().getFileExtension())) {
+                    MenuManagerTrayIcon.getInstance().importFrom(f);
+                }
+                if (f.getName().endsWith(MenuManagerMainmenu.getInstance().getFileExtension())) {
+                    MenuManagerMainmenu.getInstance().importFrom(f);
+                }
             }
 
         } catch (DialogClosedException e1) {
