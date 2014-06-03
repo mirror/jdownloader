@@ -20,7 +20,6 @@ import java.util.ArrayList;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
-import jd.http.Browser;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.plugins.CryptedLink;
@@ -30,7 +29,7 @@ import jd.plugins.FilePackage;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
-import jd.plugins.hoster.Keep2ShareCc.StringContainer;
+import jd.plugins.PluginForHost;
 import jd.utils.JDUtilities;
 
 import org.appwork.utils.formatter.SizeFormatter;
@@ -45,9 +44,14 @@ public class Keep2ShareCcDecrypter extends PluginForDecrypt {
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String parameter = param.toString();
-        prepBrowser(this.br);
         parameter = parameter.replace("keep2share.cc/", "k2s.cc/");
-        br.getPage(parameter);
+        final PluginForHost plugin = JDUtilities.getPluginForHost("keep2share.cc");
+        if (plugin == null) {
+            throw new IllegalStateException("keep2share plugin not found!");
+        }
+        // set cross browser support
+        ((jd.plugins.hoster.Keep2ShareCc) plugin).setBrowser(br);
+        ((jd.plugins.hoster.Keep2ShareCc) plugin).getPage(parameter);
         // Check if we have a single link or a folder
         if (br.containsHTML("class=\"summary\"")) {
             final String fpName = br.getRegex("<title>([^<>\"]*?)</title>").getMatch(0);
@@ -66,26 +70,8 @@ public class Keep2ShareCcDecrypter extends PluginForDecrypt {
             }
         } else {
             final DownloadLink singlink = createDownloadlink("http://keep2sharedecrypted.cc/file/" + new Regex(parameter, "([a-z0-9]+)$").getMatch(0));
-            String filename = null, filesize = null;
-            // This might not be needed anymore but keeping it doesn't hurt either
-            if (br.containsHTML(jd.plugins.hoster.Keep2ShareCc.DOWNLOADPOSSIBLE)) {
-                filename = br.getRegex(">Downloading file:</span><br>[\t\n\r ]+<span class=\"c2\">.*?alt=\"\" style=\"\">([^<>\"]*?)</span>").getMatch(0);
-                filesize = br.getRegex("File size ([^<>\"]*?)</div>").getMatch(0);
-            }
-            if (filename == null) {
-                filename = br.getRegex("File: <span>([^<>\"]*?)</span>").getMatch(0);
-                if (filename == null) {
-                    // offline/deleted
-                    filename = br.getRegex("File name:</b>(.*?)<br>").getMatch(0);
-                }
-            }
-            if (filesize == null) {
-                filesize = br.getRegex(">Size: ([^<>\"]*?)</div>").getMatch(0);
-                if (filesize == null) {
-                    // offline/deleted
-                    filesize = br.getRegex("<b>File size:</b>(.*?)<br>").getMatch(0);
-                }
-            }
+            final String filename = ((jd.plugins.hoster.Keep2ShareCc) plugin).getFileName();
+            final String filesize = ((jd.plugins.hoster.Keep2ShareCc) plugin).getFileSize();
             if (filename != null) {
                 singlink.setName(Encoding.htmlDecode(filename.trim()));
             }
@@ -101,6 +87,9 @@ public class Keep2ShareCcDecrypter extends PluginForDecrypt {
             }
             if (filename == null) {
                 singlink.setAvailable(false);
+            } else {
+                // prevent wasteful double linkchecks.
+                singlink.setAvailable(true);
             }
             decryptedLinks.add(singlink);
         }
@@ -108,21 +97,4 @@ public class Keep2ShareCcDecrypter extends PluginForDecrypt {
         return decryptedLinks;
     }
 
-    private static StringContainer agent = new StringContainer();
-
-    private Browser prepBrowser(final Browser prepBr) {
-        // define custom browser headers and language settings.
-        if (agent.string == null) {
-            /* we first have to load the plugin, before we can reference it */
-            JDUtilities.getPluginForHost("mediafire.com");
-            agent.string = jd.plugins.hoster.MediafireCom.stringUserAgent();
-        }
-        prepBr.getHeaders().put("User-Agent", agent.string);
-        prepBr.getHeaders().put("Accept-Language", "en-gb, en;q=0.8");
-        prepBr.getHeaders().put("Accept-Charset", null);
-        prepBr.getHeaders().put("Cache-Control", null);
-        prepBr.getHeaders().put("Pragma", null);
-        prepBr.setFollowRedirects(true);
-        return prepBr;
-    }
 }
