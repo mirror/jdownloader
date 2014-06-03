@@ -1,7 +1,7 @@
 AutoDetectAction_run_failed=JDownloader nemohl nalézt funkční LiveHeader skript znovupřipojení.\nUjistěte se, že jste zadali správné informace, a že máte dynamickou IP.
 DataCompareDialog_DataCompareDialog_=Porovnat informace o routeru
 DataCompareDialog_layoutDialogContent__desc=Zkontrolujte následující informace a zkuste vyplnit co nejvíce prázdných políček.
-DataCompareDialog_layoutDialogContent_firmware=Firmware/Verze
+DataCompareDialog_layoutDialogContent_firmware=Firmware a verze
 DataCompareDialog_layoutDialogContent_firmware_help=Zadejte verzi firmwaru vašeho routeru... nechte prázdné, pokud ji neznáte
 DataCompareDialog_layoutDialogContent_ip=IP nebo název hostitele
 DataCompareDialog_layoutDialogContent_ip_help=Zadejte název hostitele pro webové rozhraní...
