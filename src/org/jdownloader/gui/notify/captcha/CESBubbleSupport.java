@@ -15,9 +15,9 @@ import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.settings.staticreferences.CFG_CAPTCHA;
 
 public class CESBubbleSupport extends AbstractBubbleSupport {
-    
+
     private static final CESBubbleSupport INSTANCE = new CESBubbleSupport();
-    
+
     /**
      * get the only existing instance of CESBubbleSupport. This is a singleton
      * 
@@ -26,25 +26,25 @@ public class CESBubbleSupport extends AbstractBubbleSupport {
     public static CESBubbleSupport getInstance() {
         return CESBubbleSupport.INSTANCE;
     }
-    
+
     private CESBubbleSupport() {
         super(_GUI._.CESBubbleSupport_CESBubbleSupport(), CFG_CAPTCHA.REMOTE_CAPTCHA_BUBBLE_ENABLED);
     }
-    
+
     @Override
     public List<Element> getElements() {
         return null;
     }
-    
+
     public CESBubble show(final CESChallengeSolver<?> solver, final CESSolverJob<?> cesSolverJob, final int timeoutms) throws InterruptedException {
         if (isEnabled() && timeoutms > 0) {
             final CESBubble ret = new EDTHelper<CESBubble>() {
-                
+
                 @Override
                 public org.jdownloader.gui.notify.captcha.CESBubble edtRun() {
                     final AtomicReference<CESBubble> ret = new AtomicReference<CESBubble>(null);
                     show(new AbstractNotifyWindowFactory() {
-                        
+
                         @Override
                         public AbstractNotifyWindow<?> buildAbstractNotifyWindow() {
                             CESBubble bubble = new CESBubble(solver, cesSolverJob, timeoutms);
@@ -57,10 +57,9 @@ public class CESBubbleSupport extends AbstractBubbleSupport {
             }.getReturnValue();
             try {
                 if (ret != null) {
-                    long waitUntil = System.currentTimeMillis() + timeoutms;
+                    final long waitUntil = System.currentTimeMillis() + timeoutms;
                     while (!cesSolverJob.getJob().isSolved()) {
                         final long rest = waitUntil - System.currentTimeMillis();
-                        if (rest <= 0) return ret;
                         Thread.sleep(1000);
                         new EDTRunner() {
                             @Override
@@ -68,6 +67,9 @@ public class CESBubbleSupport extends AbstractBubbleSupport {
                                 ret.update(rest);
                             }
                         }.waitForEDT();
+                        if (rest <= 0) {
+                            return ret;
+                        }
                     }
                 }
             } catch (InterruptedException e) {
@@ -78,7 +80,7 @@ public class CESBubbleSupport extends AbstractBubbleSupport {
         }
         return null;
     }
-    
+
     public void hide(CESBubble bubble) {
         if (bubble != null) {
             bubble.hideBubble(5000);
