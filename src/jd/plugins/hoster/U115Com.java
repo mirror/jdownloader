@@ -28,6 +28,7 @@ import jd.http.Browser;
 import jd.http.Cookie;
 import jd.http.Cookies;
 import jd.http.RandomUserAgent;
+import jd.nutils.JDHash;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.plugins.Account;
@@ -189,9 +190,22 @@ public class U115Com extends PluginForHost {
             }
             br.setFollowRedirects(true);
             br.getPage("http://passport.115.com/?ct=login");
-            br.postPage("http://passport.115.com/?ac=login", "login%5Btime%5D=on&goto=&client=&callback=&login%5Baccount%5D=" + Encoding.urlEncode(account.getUser()) + "&login%5Bpasswd%5D=" + Encoding.urlEncode(account.getPass()));
-            if (br.getCookie(MAINPAGE, "OOFL") == null) {
-                throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nInvalid username/password!\r\nUngültiger Benutzername oder ungültiges Passwort!", PluginException.VALUE_ID_PREMIUM_DISABLE);
+            String key = "abcdef0123456789";
+            String vcode = key.toUpperCase();
+            final String sh1pw = JDHash.getSHA1(account.getPass());
+            final String sh1user = JDHash.getSHA1(account.getUser());
+            final String step_1 = JDHash.getSHA1(JDHash.getSHA1(toHex(sh1pw.getBytes()) + JDHash.getSHA1(toHex(sh1user.getBytes()))));
+            final String step_2 = JDHash.getMD5(toHex(step_1.getBytes()) + vcode);
+            final String ssopw = toHex(step_2.getBytes());
+            final String post_data = "login[ssoent]=B1&login[version]=2.0&login[ssoext]=" + key + "&login[ssoln]=" + account.getUser() + "&login[ssopw]=" + ssopw + "&login[ssovcode]=" + key + "&login[safe]=1&login[time]=1&login[safe_login]=0&login[goto]=http://www.115.com/";
+            br.postPage("http://passport.115.com/?ct=login&ac=ajax&is_ssl=1", post_data);
+            if (br.getCookie(MAINPAGE, "OOFL") == null || br.containsHTML("\"err_code\":")) {
+                final String lang = System.getProperty("user.language");
+                if ("de".equalsIgnoreCase(lang)) {
+                    throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nPlugin defekt, bitte den JDownloader Support kontaktieren!", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                } else {
+                    throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nPlugin broken, please contact the JDownloader Support!", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                }
             }
             // Save cookies
             final HashMap<String, String> cookies = new HashMap<String, String>();
@@ -203,6 +217,15 @@ public class U115Com extends PluginForHost {
             account.setProperty("pass", Encoding.urlEncode(account.getPass()));
             account.setProperty("cookies", cookies);
         }
+    }
+
+    public static String toHex(byte[] a) {
+        StringBuilder sb = new StringBuilder(a.length * 2);
+        for (int i = 0; i < a.length; i++) {
+            sb.append(Character.forDigit((a[i] & 0xf0) >> 4, 16));
+            sb.append(Character.forDigit(a[i] & 0x0f, 16));
+        }
+        return sb.toString();
     }
 
     @Override
@@ -300,7 +323,9 @@ public class U115Com extends PluginForHost {
 
     private String[] findIdsByFilename(final String plainfilename) throws IOException {
         // Access filelist in account
-        br.getPage("http://web.api.115.com/files?aid=1&cid=0&o=&asc=0&offset=0&show_dir=1&limit=66&source=&format=json&_t=" + System.currentTimeMillis());
+        // http://web.api.115.com/files?aid=1&cid=0&offset=0&limit=50&show_dir=1&o=user_ptime&asc=0&nf=1&qid=0&source=&format=json
+        br.getPage("http://115.com//?ct=file&ac=userfile&ajax=1&qid=&select=1&nf=1&filter=&select_dir=0&aid=1&cid=0&nsf=&_t=" + System.currentTimeMillis());
+        br.getPage("http://web.api.115.com/files?aid=1&cid=0&o=user_ptime&asc=0&offset=0&show_dir=1&limit=40&code=&scid=&snap=0&natsort=1&source=&format=json");
         final String[] fileIDs = new String[2];
         final String dataText = br.getRegex("\"data\":\\[(.*?\\})\\]").getMatch(0);
         if (dataText == null) {

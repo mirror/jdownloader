@@ -34,7 +34,6 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-import jd.utils.locale.JDL;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "baixarpremium.net" }, urls = { "REGEX_NOT_POSSIBLE_RANDOM-asdfasdfsadfsdgfd32423" }, flags = { 2 })
 public class BaixarPremiumNet extends PluginForHost {
@@ -131,19 +130,29 @@ public class BaixarPremiumNet extends PluginForHost {
             logger.info("Unhandled download error on baixarpremium.net: " + br.toString());
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        if (!this.dl.startDownload()) {
-            try {
-                if (dl.externalDownloadStop()) return;
-            } catch (final Throwable e) {
-            }
-            final String errormessage = link.getLinkStatus().getErrorMessage();
-            if (errormessage != null && (errormessage.startsWith(JDL.L("download.error.message.rangeheaders", "Server does not support chunkload")) || errormessage.equals("Unerwarteter Mehrfachverbindungsfehlernull"))) {
+        try {
+            if (!this.dl.startDownload()) {
+                try {
+                    if (dl.externalDownloadStop()) {
+                        return;
+                    }
+                } catch (final Throwable e) {
+                }
                 /* unknown error, we disable multiple chunks */
                 if (link.getBooleanProperty(BaixarPremiumNet.NOCHUNKS, false) == false) {
                     link.setProperty(BaixarPremiumNet.NOCHUNKS, Boolean.valueOf(true));
                     throw new PluginException(LinkStatus.ERROR_RETRY);
                 }
             }
+        } catch (final PluginException e) {
+            // New V2 chunk errorhandling
+            /* unknown error, we disable multiple chunks */
+            if (e.getLinkStatus() != LinkStatus.ERROR_RETRY && link.getBooleanProperty(BaixarPremiumNet.NOCHUNKS, false) == false) {
+                link.setProperty(BaixarPremiumNet.NOCHUNKS, Boolean.valueOf(true));
+                throw new PluginException(LinkStatus.ERROR_RETRY);
+            }
+
+            throw e;
         }
     }
 
@@ -152,9 +161,11 @@ public class BaixarPremiumNet extends PluginForHost {
     public static String b16encode(final String input) {
         final byte[] byteArray = input.getBytes();
         StringBuffer hexBuffer = new StringBuffer(byteArray.length * 2);
-        for (int i = 0; i < byteArray.length; i++)
-            for (int j = 1; j >= 0; j--)
+        for (int i = 0; i < byteArray.length; i++) {
+            for (int j = 1; j >= 0; j--) {
                 hexBuffer.append(HEX[(byteArray[i] >> (j * 4)) & 0xF]);
+            }
+        }
         return hexBuffer.toString();
     }
 
@@ -173,7 +184,9 @@ public class BaixarPremiumNet extends PluginForHost {
                 br.setCookiesExclusive(true);
                 final Object ret = account.getProperty("cookies", null);
                 boolean acmatch = Encoding.urlEncode(account.getUser()).equals(account.getStringProperty("name", Encoding.urlEncode(account.getUser())));
-                if (acmatch) acmatch = Encoding.urlEncode(account.getPass()).equals(account.getStringProperty("pass", Encoding.urlEncode(account.getPass())));
+                if (acmatch) {
+                    acmatch = Encoding.urlEncode(account.getPass()).equals(account.getStringProperty("pass", Encoding.urlEncode(account.getPass())));
+                }
                 if (acmatch && ret != null && ret instanceof HashMap<?, ?> && !force) {
                     final HashMap<String, String> cookies = (HashMap<String, String>) ret;
                     if (account.isValid()) {
@@ -214,7 +227,9 @@ public class BaixarPremiumNet extends PluginForHost {
     }
 
     private void tempUnavailableHoster(Account account, DownloadLink downloadLink, long timeout) throws PluginException {
-        if (downloadLink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, "Unable to handle this errorcode!");
+        if (downloadLink == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, "Unable to handle this errorcode!");
+        }
         synchronized (hostUnavailableMap) {
             HashMap<String, Long> unavailableMap = hostUnavailableMap.get(account);
             if (unavailableMap == null) {
@@ -237,7 +252,9 @@ public class BaixarPremiumNet extends PluginForHost {
                     return false;
                 } else if (lastUnavailable != null) {
                     unavailableMap.remove(downloadLink.getHost());
-                    if (unavailableMap.size() == 0) hostUnavailableMap.remove(account);
+                    if (unavailableMap.size() == 0) {
+                        hostUnavailableMap.remove(account);
+                    }
                 }
             }
         }
