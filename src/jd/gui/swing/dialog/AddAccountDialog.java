@@ -76,7 +76,9 @@ public class AddAccountDialog extends AbstractDialog<Integer> {
 
         try {
             Dialog.getInstance().showDialog(dialog);
-            if (dialog.getHoster() == null) return;
+            if (dialog.getHoster() == null) {
+                return;
+            }
             final Account ac = dialog.getAccount();
             ac.setHoster(dialog.getHoster().getDisplayName());
 
@@ -92,7 +94,9 @@ public class AddAccountDialog extends AbstractDialog<Integer> {
 
     private Account getAccount() {
         EditAccountPanel leditAccountPanel = editAccountPanel;
-        if (leditAccountPanel != null) return leditAccountPanel.getAccount();
+        if (leditAccountPanel != null) {
+            return leditAccountPanel.getAccount();
+        }
         return null;
     }
 
@@ -108,12 +112,16 @@ public class AddAccountDialog extends AbstractDialog<Integer> {
         String errorMessage = ac.getErrorString();
         if (StringUtils.isEmpty(errorMessage)) {
             AccountInfo ai = ac.getAccountInfo();
-            if (ai != null) errorMessage = ai.getStatus();
+            if (ai != null) {
+                errorMessage = ai.getStatus();
+            }
         }
         if (error != null) {
             switch (error) {
             case PLUGIN_ERROR:
-                if (StringUtils.isEmpty(errorMessage)) errorMessage = _JDT._.AccountController_updateAccountInfo_status_plugin_defect();
+                if (StringUtils.isEmpty(errorMessage)) {
+                    errorMessage = _JDT._.AccountController_updateAccountInfo_status_plugin_defect();
+                }
                 Dialog.getInstance().showMessageDialog(_GUI._.accountdialog_check_invalid(errorMessage));
                 return false;
             case EXPIRED:
@@ -121,21 +129,29 @@ public class AddAccountDialog extends AbstractDialog<Integer> {
                 Dialog.getInstance().showConfirmDialog(0, _GUI._.accountdialog_check_expired_title(), _GUI._.accountdialog_check_expired(null), null, _GUI._.accountdialog_check_expired_renew(), null);
                 return true;
             case TEMP_DISABLED:
-                if (StringUtils.isEmpty(errorMessage)) errorMessage = _GUI._.accountdialog_check_failed();
+                if (StringUtils.isEmpty(errorMessage)) {
+                    errorMessage = _GUI._.accountdialog_check_failed();
+                }
                 Dialog.getInstance().showMessageDialog(_GUI._.accountdialog_check_result(errorMessage));
                 AccountController.getInstance().addAccount(ac, false);
                 return true;
             default:
             case INVALID:
-                if (StringUtils.isEmpty(errorMessage)) errorMessage = _GUI._.accountdialog_check_failed_msg();
+                if (StringUtils.isEmpty(errorMessage)) {
+                    errorMessage = _GUI._.accountdialog_check_failed_msg();
+                }
                 Dialog.getInstance().showMessageDialog(_GUI._.accountdialog_check_invalid(errorMessage));
                 return false;
             }
         } else {
             String message = null;
             AccountInfo ai = ac.getAccountInfo();
-            if (ai != null) message = ai.getStatus();
-            if (StringUtils.isEmpty(message)) message = _GUI._.lit_yes();
+            if (ai != null) {
+                message = ai.getStatus();
+            }
+            if (StringUtils.isEmpty(message)) {
+                message = _GUI._.lit_yes();
+            }
             Dialog.getInstance().showMessageDialog(_GUI._.accountdialog_check_valid(message));
             AccountController.getInstance().addAccount(ac, false);
             return true;
@@ -147,7 +163,9 @@ public class AddAccountDialog extends AbstractDialog<Integer> {
 
             public void run() throws Exception {
                 PluginForHost hostPlugin = new PluginFinder().assignPlugin(ac, true, LogController.CL());
-                if (hostPlugin != null) ac.setPlugin(hostPlugin);
+                if (hostPlugin != null) {
+                    ac.setPlugin(hostPlugin);
+                }
                 AccountCheckJob job = AccountChecker.getInstance().check(ac, true);
                 job.waitChecked();
             }
@@ -214,18 +232,24 @@ public class AddAccountDialog extends AbstractDialog<Integer> {
         final java.util.List<LazyHostPlugin> plugins = new ArrayList<LazyHostPlugin>();
 
         for (LazyHostPlugin lhp : allPLugins) {
-            if (lhp.isPremium()) plugins.add(lhp);
+            if (lhp.isPremium()) {
+                plugins.add(lhp);
+            }
         }
 
-        if (plugins.size() == 0) throw new RuntimeException("No Plugins Loaded Exception");
-        // final HostPluginWrapper[] array = plugins.toArray(new
-        // HostPluginWrapper[plugins.size()]);
+        if (plugins.size() == 0) {
+            throw new RuntimeException("No Plugins Loaded Exception");
+            // final HostPluginWrapper[] array = plugins.toArray(new
+            // HostPluginWrapper[plugins.size()]);
+        }
 
         hoster = new SearchComboBox<LazyHostPlugin>(plugins) {
 
             @Override
             protected Icon getIconForValue(LazyHostPlugin value) {
-                if (value == null) return null;
+                if (value == null) {
+                    return null;
+                }
                 return DomainInfo.getInstance(value.getDisplayName()).getFavIcon();
             }
 
@@ -234,8 +258,10 @@ public class AddAccountDialog extends AbstractDialog<Integer> {
                 super.onChanged();
 
                 try {
-                    if (getSelectedItem() == null || content == null) return;
-                    PluginForHost plg = ((LazyHostPlugin) getSelectedItem()).newInstance(cl);
+                    if (getSelectedItem() == null || content == null) {
+                        return;
+                    }
+                    PluginForHost plg = getSelectedItem().newInstance(cl);
                     if (plg != plugin) {
                         plugin = plg;
                         updatePanel();
@@ -243,14 +269,16 @@ public class AddAccountDialog extends AbstractDialog<Integer> {
                     }
 
                 } catch (UpdateRequiredClassNotFoundException e1) {
-                    Dialog.getInstance().showErrorDialog(_GUI._.AddAccountDialog_actionPerformed_outdated(((LazyHostPlugin) getSelectedItem()).getHost()));
+                    Dialog.getInstance().showErrorDialog(_GUI._.AddAccountDialog_actionPerformed_outdated(getSelectedItem().getHost()));
                 }
 
             }
 
             @Override
             protected String getTextForValue(LazyHostPlugin value) {
-                if (value == null) return "";
+                if (value == null) {
+                    return "";
+                }
                 return value.getDisplayName();
             }
         };
@@ -260,7 +288,9 @@ public class AddAccountDialog extends AbstractDialog<Integer> {
         link.setToolTipText(_GUI._.gui_menu_action_premium_buy_name());
         link.addActionListener(new ActionListener() {
             public void actionPerformed(final ActionEvent e) {
-                if (plugin == null || StringUtils.isEmpty(plugin.getLazyP().getPremiumUrl())) return;
+                if (plugin == null || StringUtils.isEmpty(plugin.getLazyP().getPremiumUrl())) {
+                    return;
+                }
                 CrossSystem.openURLOrShowMessage(AccountController.createFullBuyPremiumUrl(plugin.getLazyP().getPremiumUrl(), "accountmanager/table"));
             }
         });
@@ -313,7 +343,7 @@ public class AddAccountDialog extends AbstractDialog<Integer> {
 
     public static String getPreselectedHoster() {
         if ("Europe/Berlin".equalsIgnoreCase(Calendar.getInstance().getTimeZone().getID())) {
-            return "uploaded.to";
+            return "oboom.com";
         } else {
             return "rapidgator.net";
         }
@@ -324,18 +354,22 @@ public class AddAccountDialog extends AbstractDialog<Integer> {
     }
 
     public LazyHostPlugin getHoster() {
-        return (LazyHostPlugin) this.hoster.getSelectedItem();
+        return this.hoster.getSelectedItem();
     }
 
     protected void updatePanel() {
         try {
-            if (content == null) return;
+            if (content == null) {
+                return;
+            }
             PluginForHost plg = plugin;
             if (plg == null) {
                 LazyHostPlugin p = HostPluginController.getInstance().get(getPreselectedHoster());
                 if (p == null) {
                     Iterator<LazyHostPlugin> it = HostPluginController.getInstance().list().iterator();
-                    if (it.hasNext()) p = it.next();
+                    if (it.hasNext()) {
+                        p = it.next();
+                    }
                 }
                 hoster.setSelectedItem(p);
                 plg = p.newInstance(cl);
