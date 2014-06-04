@@ -349,7 +349,7 @@ public abstract class PluginForHost extends Plugin {
                     }
                 case REFRESH:
                     // we should forward the refresh request to a new pluginstructure soon. For now. the plugin will just retry
-                    return null;
+                    return "";
                 }
             }
             throw new CaptchaException(e.getSkipRequest());
