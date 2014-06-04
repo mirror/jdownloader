@@ -241,10 +241,10 @@ public class OBoomCom extends PluginForHost {
             return true;
         }
         try {
-            StringBuilder sb = new StringBuilder();
-            HashMap<String, DownloadLink> idLinks = new HashMap<String, DownloadLink>();
+            final StringBuilder sb = new StringBuilder();
+            final HashMap<String, DownloadLink> idLinks = new HashMap<String, DownloadLink>();
             for (DownloadLink link : links) {
-                String id = getFileID(link);
+                final String id = getFileID(link);
                 idLinks.put(id, link);
                 idLinks.put("lower_" + id.toLowerCase(Locale.ENGLISH), link);
                 if (sb.length() > 0) {
@@ -254,13 +254,13 @@ public class OBoomCom extends PluginForHost {
             }
             br.setReadTimeout(60 * 1000);
             br.getPage("https://api.oboom.com/1.0/info?items=" + sb.toString() + "&http_errors=0");
-            String fileInfos[] = br.getRegex("\\{(.*?)\\}").getColumn(0);
+            final String fileInfos[] = br.getRegex("\\{(.*?)\\}").getColumn(0);
             if (fileInfos != null) {
                 for (String fileInfo : fileInfos) {
-                    String id = getValue(fileInfo, "id");
-                    String size = getValue(fileInfo, "size");
-                    String name = getValue(fileInfo, "name");
-                    String state = getValue(fileInfo, "state");
+                    final String id = getValue(fileInfo, "id");
+                    final String size = getValue(fileInfo, "size");
+                    final String name = getValue(fileInfo, "name");
+                    final String state = getValue(fileInfo, "state");
                     DownloadLink link = idLinks.get(id);
                     if (link == null) {
                         link = idLinks.get("lower_" + id.toLowerCase(Locale.ENGLISH));
@@ -301,10 +301,11 @@ public class OBoomCom extends PluginForHost {
     protected AvailableStatus fetchFileInformation(DownloadLink link, String session) throws Exception {
         prepBrowser(br);
         final String response;
+        final String ID = getFileID(link);
         if (session != null) {
-            response = br.getPage("https://api.oboom.com/1.0/info?token=" + session + "&items=" + getFileID(link) + "&http_errors=0");
+            response = br.getPage("https://api.oboom.com/1.0/info?token=" + session + "&items=" + ID + "&http_errors=0");
         } else {
-            response = br.getPage("https://api.oboom.com/1.0/info?items=" + getFileID(link) + "&http_errors=0");
+            response = br.getPage("https://api.oboom.com/1.0/info?items=" + ID + "&http_errors=0");
         }
 
         if (response.contains("404,\"token") || response.contains("403,\"token")) {
@@ -409,7 +410,8 @@ public class OBoomCom extends PluginForHost {
         if (AvailableStatus.UNCHECKABLE == fetchFileInformation(link, usedInfos.get("session"))) {
             refreshTokenHandling(usedInfos, account, freshInfos);
         }
-        br.getPage("https://api.oboom.com/1.0/dl?token=" + usedInfos.get("session") + "&item=" + getFileID(link) + "&http_errors=0");
+        final String ID = getFileID(link);
+        br.getPage("https://api.oboom.com/1.0/dl?token=" + usedInfos.get("session") + "&item=" + ID + "&http_errors=0");
         downloadErrorHandling(account);
         String urlInfos[] = br.getRegex("200,\"(.*?)\",\"(.*?)\"").getRow(0);
         if (urlInfos == null || urlInfos[0] == null || urlInfos[1] == null) {
@@ -432,7 +434,9 @@ public class OBoomCom extends PluginForHost {
             refreshTokenHandling(usedInfos, account, freshInfos);
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        dl.startDownload();
+        if (dl.startDownload()) {
+            getPluginConfig().setProperty("lastID", ID);
+        }
     }
 
     private void downloadErrorHandling(Account account) throws PluginException {
@@ -568,6 +572,7 @@ public class OBoomCom extends PluginForHost {
 
     public void handleFree(DownloadLink link, Account account) throws Exception {
         AtomicBoolean freshInfos = new AtomicBoolean(false);
+        final String ID = getFileID(link);
         Map<String, String> usedInfos = null;
         String session = null;
         if (account != null) {
@@ -600,7 +605,7 @@ public class OBoomCom extends PluginForHost {
             rc.load();
             File cf = rc.downloadCaptcha(getLocalCaptchaFile());
             String code = getCaptchaCode("recaptcha", cf, link);
-            br.getPage("https://www.oboom.com/1.0/dl/ticket?token=" + session + "&download_id=" + getFileID(link) + "&source=" + APPID + "&recaptcha_challenge_field=" + URLEncoder.encode(rc.getChallenge(), "UTF-8") + "&recaptcha_response_field=" + URLEncoder.encode(code, "UTF-8") + "&http_errors=0");
+            br.getPage("https://www.oboom.com/1.0/dl/ticket?token=" + session + "&download_id=" + ID + "&source=" + APPID + "&recaptcha_challenge_field=" + URLEncoder.encode(rc.getChallenge(), "UTF-8") + "&recaptcha_response_field=" + URLEncoder.encode(code, "UTF-8") + "&http_errors=0");
             if (br.containsHTML("incorrect-captcha-sol") || br.containsHTML("400,\"captcha-timeout")) {
                 continue;
             }
@@ -635,7 +640,7 @@ public class OBoomCom extends PluginForHost {
 
         }
         sleep(30 * 1000l, link);
-        br.getPage("https://api.oboom.com/1.0/dl?token=" + urlInfos[0] + "&item=" + getFileID(link) + "&auth=" + urlInfos[1] + "&http_errors=0");
+        br.getPage("https://api.oboom.com/1.0/dl?token=" + urlInfos[0] + "&item=" + ID + "&auth=" + urlInfos[1] + "&http_errors=0");
         downloadErrorHandling(account);
         urlInfos = br.getRegex("200,\"(.*?)\",\"(.*?)\"").getRow(0);
         if (urlInfos == null || urlInfos[0] == null || urlInfos[1] == null) {
@@ -644,6 +649,7 @@ public class OBoomCom extends PluginForHost {
         String url = "http://" + urlInfos[0] + "/1.0/dlh?ticket=" + urlInfos[1] + "&http_errors=0";
         br.setFollowRedirects(true);
         dl = jd.plugins.BrowserAdapter.openDownload(br, link, url, false, 1);
+
         if (!dl.getConnection().isContentDisposition()) {
             if (dl.getConnection().getResponseCode() == 500) {
                 dl.getConnection().disconnect();
@@ -654,7 +660,9 @@ public class OBoomCom extends PluginForHost {
             refreshTokenHandling(usedInfos, account, freshInfos.get());
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        dl.startDownload();
+        if (dl.startDownload()) {
+            getPluginConfig().setProperty("lastID", ID);
+        }
     }
 
     @Override
