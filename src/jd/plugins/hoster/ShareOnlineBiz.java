@@ -345,6 +345,9 @@ public class ShareOnlineBiz extends PluginForHost {
         if (br.containsHTML("nput invalid, halting. please avoid more of these requests")) {
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error", 60 * 60 * 1000l);
         }
+        if (br.containsHTML("IP is temporary banned")) {
+            throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, "IP is temporary banned", 15 * 60 * 1000l);
+        }
     }
 
     @Override
