@@ -587,7 +587,7 @@ public class Keep2ShareCc extends PluginForHost {
             doFree(link);
         } else {
             br.setFollowRedirects(false);
-            getPage(link.getDownloadURL());
+            br.getPage(link.getDownloadURL());
             handleGeneralErrors();
             // Set cookies for other domain if it is changed via redirect
             String currentDomain = MAINPAGE.replace("http://", "");
@@ -605,7 +605,7 @@ public class Keep2ShareCc extends PluginForHost {
             if (newDomain != null) {
                 resetCookies(account, currentDomain, newDomain);
                 if (dllink == null) {
-                    getPage(link.getDownloadURL().replace(currentDomain, newDomain));
+                    br.getPage(link.getDownloadURL().replace(currentDomain, newDomain));
                     dllink = br.getRedirectLocation();
                     if (dllink == null) {
                         dllink = getDllinkPremium();
@@ -733,23 +733,23 @@ public class Keep2ShareCc extends PluginForHost {
             prepBrowser(br);
         }
         final boolean follows_redirects = br.isFollowingRedirects();
-        br.setFollowRedirects(true);
         try {
-            br.getPage(page);
-        } catch (Exception e) {
-            if (e instanceof PluginException) {
-                throw (PluginException) e;
+            br.setFollowRedirects(true);
+            try {
+                br.getPage(page);
+            } catch (Exception e) {
+                if (e instanceof PluginException) {
+                    throw (PluginException) e;
+                }
+                // should only be picked up now if not JD2
+                if (br.getHttpConnection() != null && br.getHttpConnection().getResponseCode() == 503 && br.getHttpConnection().getHeaderFields("server").contains("cloudflare-nginx")) {
+                    logger.warning("Cloudflare anti DDoS measures enabled, your version of JD can not support this. In order to go any further you will need to upgrade to JDownloader 2");
+                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Cloudflare anti DDoS measures enabled");
+                } else {
+                    throw e;
+                }
             }
-            // should only be picked up now if not JD2
-            if (br.getHttpConnection() != null && br.getHttpConnection().getResponseCode() == 503 && br.getHttpConnection().getHeaderFields("server").contains("cloudflare-nginx")) {
-                logger.warning("Cloudflare anti DDoS measures enabled, your version of JD can not support this. In order to go any further you will need to upgrade to JDownloader 2");
-                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Cloudflare anti DDoS measures enabled");
-            } else {
-                throw e;
-            }
-        }
-        // prevention is better than cure
-        try {
+            // prevention is better than cure
             if (br.getHttpConnection() != null && br.getHttpConnection().getResponseCode() == 503 && br.getHttpConnection().getHeaderFields("server").contains("cloudflare-nginx")) {
                 String host = new Regex(page, "https?://([^/]+)(:\\d+)?/").getMatch(0);
                 Form cloudflare = br.getFormbyProperty("id", "ChallengeForm");
