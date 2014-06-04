@@ -33,9 +33,6 @@ import java.util.Locale;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.regex.Pattern;
 
-import javax.swing.Icon;
-import javax.swing.ImageIcon;
-
 import jd.config.Property;
 import jd.controlling.downloadcontroller.SingleDownloadController;
 import jd.controlling.linkcrawler.CheckableLink;
@@ -46,11 +43,9 @@ import jd.plugins.download.DownloadInterface;
 
 import org.appwork.exceptions.WTFException;
 import org.appwork.utils.Application;
-import org.appwork.utils.Files;
 import org.appwork.utils.NullsafeAtomicReference;
 import org.appwork.utils.Regex;
 import org.appwork.utils.StringUtils;
-import org.appwork.utils.images.IconIO;
 import org.appwork.utils.os.CrossSystem;
 import org.appwork.utils.reflection.Clazz;
 import org.jdownloader.DomainInfo;
@@ -60,7 +55,6 @@ import org.jdownloader.controlling.Priority;
 import org.jdownloader.controlling.UniqueAlltimeID;
 import org.jdownloader.extensions.extraction.ExtractionStatus;
 import org.jdownloader.gui.translate._GUI;
-import org.jdownloader.images.NewTheme;
 import org.jdownloader.logging.LogController;
 import org.jdownloader.plugins.ConditionalSkipReason;
 import org.jdownloader.plugins.FinalLinkState;
@@ -175,8 +169,6 @@ public class DownloadLink extends Property implements Serializable, AbstractPack
 
     private transient NullsafeAtomicReference<PluginProgress>           pluginProgress                      = new NullsafeAtomicReference<PluginProgress>(null);
 
-    private transient ImageIcon                                         icon                                = null;
-
     private long                                                        created                             = -1l;
 
     private transient volatile UniqueAlltimeID                          uniqueID                            = null;
@@ -191,9 +183,9 @@ public class DownloadLink extends Property implements Serializable, AbstractPack
     private transient UniqueAlltimeID                                   previousParent                      = null;
     private transient NullsafeAtomicReference<ExtractionStatus>         extractionStatus                    = new NullsafeAtomicReference<ExtractionStatus>();
     private transient NullsafeAtomicReference<LinkStatus>               currentLinkStatus                   = new NullsafeAtomicReference<LinkStatus>(null);
-    private transient PartInfo                                          partInfo;
     private transient NullsafeAtomicReference<Property>                 tempProperties                      = new NullsafeAtomicReference<Property>(null);
     private transient NullsafeAtomicReference<DownloadLinkView>         view                                = new NullsafeAtomicReference<DownloadLinkView>(null);
+    private transient NullsafeAtomicReference<LinkInfo>                 linkInfo                            = new NullsafeAtomicReference<LinkInfo>();
 
     private transient volatile long                                     lastAvailableStatusChange           = -1;
 
@@ -711,15 +703,21 @@ public class DownloadLink extends Property implements Serializable, AbstractPack
         }
     }
 
-    public PartInfo getPartInfo() {
-        if (partInfo == null) {
-            partInfo = new PartInfo(this);
+    public LinkInfo getLinkInfo() {
+        LinkInfo ret = linkInfo.get();
+        if (!linkInfo.isValueSet()) {
+            ret = LinkInfo.getLinkInfo(this);
+            linkInfo.set(ret);
         }
-        return partInfo;
+        return ret;
     }
 
-    private void setPartInfo(PartInfo info) {
-        partInfo = info;
+    private void setLinkInfo(LinkInfo linkInfo) {
+        if (linkInfo != null) {
+            this.linkInfo.set(linkInfo);
+        } else {
+            this.linkInfo.getAndClear();
+        }
     }
 
     /**
@@ -901,7 +899,7 @@ public class DownloadLink extends Property implements Serializable, AbstractPack
         setSkipReason(null);
         setConditionalSkipReason(null);
         setEnabled(true);
-        setPartInfo(null);
+        setLinkInfo(null);
         setExtractionStatus(null);
         if (resetPlugins != null) {
             for (PluginForHost resetPlugin : resetPlugins) {
@@ -1137,13 +1135,10 @@ public class DownloadLink extends Property implements Serializable, AbstractPack
             name = UNKNOWN_FILE_NAME;
         }
         this.name = name;
-        setPartInfo(null);
-        this.setIcon(null);
-        if (hasNotificationListener()) {
-            String newName = getName();
-            if (!StringUtils.equals(oldName, newName)) {
-                notifyChanges(AbstractNodeNotifier.NOTIFY.PROPERTY_CHANCE, new DownloadLinkProperty(this, DownloadLinkProperty.Property.NAME, newName));
-            }
+        setLinkInfo(null);
+        final String newName = getName();
+        if (!StringUtils.equals(oldName, newName) && hasNotificationListener()) {
+            notifyChanges(AbstractNodeNotifier.NOTIFY.PROPERTY_CHANCE, new DownloadLinkProperty(this, DownloadLinkProperty.Property.NAME, newName));
         }
     }
 
@@ -1159,18 +1154,11 @@ public class DownloadLink extends Property implements Serializable, AbstractPack
             name = CrossSystem.alleviatePathParts(name);
             this.setProperty(PROPERTY_FORCEDFILENAME, name);
         }
-        setPartInfo(null);
-        setIcon(null);
-        if (hasNotificationListener()) {
-            String newName = getName();
-            if (!StringUtils.equals(oldName, newName)) {
-                notifyChanges(AbstractNodeNotifier.NOTIFY.PROPERTY_CHANCE, new DownloadLinkProperty(this, DownloadLinkProperty.Property.NAME, newName));
-            }
+        setLinkInfo(null);
+        final String newName = getName();
+        if (!StringUtils.equals(oldName, newName) && hasNotificationListener()) {
+            notifyChanges(AbstractNodeNotifier.NOTIFY.PROPERTY_CHANCE, new DownloadLinkProperty(this, DownloadLinkProperty.Property.NAME, newName));
         }
-    }
-
-    private void setIcon(ImageIcon icon) {
-        this.icon = icon;
     }
 
     /**
@@ -1206,14 +1194,14 @@ public class DownloadLink extends Property implements Serializable, AbstractPack
         if (StringUtils.isEmpty(oldName)) {
             oldName = getName();
         }
-        if (StringUtils.equals(name, oldName)) {
+        if (!StringUtils.equals(name, oldName)) {
+            final String customFinalName = CrossSystem.alleviatePathParts(name);
+            this.customFinalName = customFinalName;
+            setLinkInfo(null);
+            if (hasNotificationListener()) {
+                notifyChanges(AbstractNodeNotifier.NOTIFY.PROPERTY_CHANCE, new DownloadLinkProperty(this, DownloadLinkProperty.Property.NAME, customFinalName));
+            }
             return;
-        }
-        customFinalName = CrossSystem.alleviatePathParts(name);
-        setIcon(null);
-        setPartInfo(null);
-        if (hasNotificationListener()) {
-            notifyChanges(AbstractNodeNotifier.NOTIFY.PROPERTY_CHANCE, new DownloadLinkProperty(this, DownloadLinkProperty.Property.NAME, name));
         }
     }
 
@@ -1228,8 +1216,7 @@ public class DownloadLink extends Property implements Serializable, AbstractPack
      * Userinputs>Automatische Erkennung - Plugins sollten {@link #setName(String)} verwenden um den Speichernamen anzugeben.
      */
     public void setFinalFileName(String newfinalFileName) {
-
-        String oldName = getName();
+        final String oldName = getName();
         finalFileName = null;
         if (!StringUtils.isEmpty(newfinalFileName)) {
             if (new Regex(newfinalFileName, Pattern.compile("r..\\.htm.?$", Pattern.CASE_INSENSITIVE)).matches()) {
@@ -1241,13 +1228,10 @@ public class DownloadLink extends Property implements Serializable, AbstractPack
         } else {
             this.setProperty(PROPERTY_FINALFILENAME, Property.NULL);
         }
-        setIcon(null);
-        setPartInfo(null);
-        if (hasNotificationListener()) {
-            String newName = getName();
-            if (!StringUtils.equals(oldName, newName)) {
-                notifyChanges(AbstractNodeNotifier.NOTIFY.PROPERTY_CHANCE, new DownloadLinkProperty(this, DownloadLinkProperty.Property.NAME, newName));
-            }
+        setLinkInfo(null);
+        final String newName = getName();
+        if (!StringUtils.equals(oldName, newName) && hasNotificationListener()) {
+            notifyChanges(AbstractNodeNotifier.NOTIFY.PROPERTY_CHANCE, new DownloadLinkProperty(this, DownloadLinkProperty.Property.NAME, newName));
         }
     }
 
@@ -1431,36 +1415,6 @@ public class DownloadLink extends Property implements Serializable, AbstractPack
         return resumeable;
     }
 
-    /* TODO: memfresser, anders machen */
-    /**
-     * ermittel das icon zur datei
-     * 
-     * @return
-     */
-    public ImageIcon getIcon() {
-        if (icon == null) {
-            icon = getIcon(name);
-        }
-        return icon;
-    }
-
-    public static ImageIcon getIcon(String name) {
-        ImageIcon newIcon = null;
-        String ext = Files.getExtension(name);
-        if (ext != null) {
-            try {
-                Icon ico = CrossSystem.getMime().getFileIcon(ext, 16, 16);
-                newIcon = IconIO.toImageIcon(ico);
-            } catch (Throwable e) {
-                LogController.CL().log(e);
-            }
-        }
-        if (newIcon == null) {
-            newIcon = NewTheme.I().getIcon("url", 16);
-        }
-        return newIcon;
-    }
-
     public DomainInfo getDomainInfo() {
         if (domainInfo == null) {
             DomainInfo newDomainInfo = null;
@@ -1571,16 +1525,16 @@ public class DownloadLink extends Property implements Serializable, AbstractPack
 
     public void setExtractionStatus(ExtractionStatus newExtractionStatus) {
         ExtractionStatus old = extractionStatus.getAndSet(newExtractionStatus);
-        if (old == newExtractionStatus) {
+        if (old != newExtractionStatus) {
+            if (newExtractionStatus == null) {
+                setProperty(DownloadLink.PROPERTY_EXTRACTION_STATUS, Property.NULL);
+            } else {
+                setProperty(DownloadLink.PROPERTY_EXTRACTION_STATUS, newExtractionStatus.name());
+            }
+            if (hasNotificationListener()) {
+                notifyChanges(AbstractNodeNotifier.NOTIFY.PROPERTY_CHANCE, new DownloadLinkProperty(this, DownloadLinkProperty.Property.EXTRACTION_STATUS, newExtractionStatus));
+            }
             return;
-        }
-        if (newExtractionStatus == null) {
-            setProperty(DownloadLink.PROPERTY_EXTRACTION_STATUS, Property.NULL);
-        } else {
-            setProperty(DownloadLink.PROPERTY_EXTRACTION_STATUS, newExtractionStatus.name());
-        }
-        if (hasNotificationListener()) {
-            notifyChanges(AbstractNodeNotifier.NOTIFY.PROPERTY_CHANCE, new DownloadLinkProperty(this, DownloadLinkProperty.Property.EXTRACTION_STATUS, newExtractionStatus));
         }
     }
 
