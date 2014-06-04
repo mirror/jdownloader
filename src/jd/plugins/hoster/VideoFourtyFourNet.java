@@ -65,6 +65,9 @@ public class VideoFourtyFourNet extends PluginForHost {
         // made up links still valid all the way to the finallink!
         dllink = br.getRegex("file:\\s*\"(http[^\"]+)").getMatch(0);
         if (dllink == null) {
+            dllink = br.getRegex("url: \\'(http://[^<>\"\\']*?\\.mp4)\\'").getMatch(0);
+        }
+        if (dllink == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dllink = Encoding.urlDecode(dllink, false);

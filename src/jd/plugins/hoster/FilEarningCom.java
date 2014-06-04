@@ -127,7 +127,7 @@ public class FilEarningCom extends PluginForHost {
 
     @Override
     public int getMaxSimultanFreeDownloadNum() {
-        return -1;
+        return 1;
     }
 
     private void handleErrors() throws Exception {
@@ -138,7 +138,7 @@ public class FilEarningCom extends PluginForHost {
         if (br.containsHTML(">Your download link is invalid or has expired, please try again\\.<")) {
             throw new PluginException(LinkStatus.ERROR_RETRY, "Hoster issue?", 10 * 60 * 1000l);
         }
-        if (br.containsHTML("(>You can only download a max of \\d+ files per hour as a free user\\!<|>Los usuarios de Cuenta Gratis pueden descargar)")) {
+        if (br.containsHTML("(>You can only download a max of|>Los usuarios de Cuenta Gratis pueden descargar)")) {
             throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 60 * 60 * 1001l);
         }
     }

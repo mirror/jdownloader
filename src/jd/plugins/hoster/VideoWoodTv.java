@@ -27,7 +27,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "videowood.tv" }, urls = { "http://(www\\.)?videowood\\.tv/embed/[A-Za-z0-9]+" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "videowood.tv" }, urls = { "http://(www\\.)?videowood\\.tv/(embed|video)/[A-Za-z0-9]+" }, flags = { 0 })
 public class VideoWoodTv extends PluginForHost {
 
     public VideoWoodTv(PluginWrapper wrapper) {
@@ -40,13 +40,22 @@ public class VideoWoodTv extends PluginForHost {
     }
 
     @Override
+    public void correctDownloadLink(final DownloadLink link) {
+        link.setUrlDownload(link.getDownloadURL().replace("/video/", "/embed/"));
+    }
+
+    @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         br.getPage(link.getDownloadURL());
-        if (br.containsHTML(">This video doesn\\'t exist|>Was deleted by user")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (br.containsHTML(">This video doesn\\'t exist|>Was deleted by user")) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
         final String filename = br.getRegex("title: \"([^<>\"]*?)\"").getMatch(0);
-        if (filename == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (filename == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         link.setName(Encoding.htmlDecode(filename.trim()));
         return AvailableStatus.TRUE;
     }
@@ -55,7 +64,9 @@ public class VideoWoodTv extends PluginForHost {
     public void handleFree(final DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
         final String dllink = br.getRegex("file: \"(http[^<>\"]*?)\"").getMatch(0);
-        if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (dllink == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 0);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
