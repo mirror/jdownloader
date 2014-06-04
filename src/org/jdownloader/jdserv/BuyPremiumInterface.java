@@ -12,4 +12,8 @@ public interface BuyPremiumInterface extends RemoteCallInterface {
 
     public String list();
 
+    public String listCache();
+
+    public boolean clearCache();
+
 }
