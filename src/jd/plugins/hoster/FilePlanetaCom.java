@@ -1270,6 +1270,7 @@ public class FilePlanetaCom extends PluginForHost {
                 }
             }
         }
+        correctBR();
     }
 
     @SuppressWarnings("unused")
