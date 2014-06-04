@@ -295,6 +295,7 @@ public class DownloadLink extends Property implements Serializable, AbstractPack
         finalLinkState = new NullsafeAtomicReference<FinalLinkState>(null);
         currentLinkStatus = new NullsafeAtomicReference<LinkStatus>(null);
         pluginProgress = new NullsafeAtomicReference<PluginProgress>(null);
+        linkInfo = new NullsafeAtomicReference<LinkInfo>();
         availableStatus = AvailableStatus.UNCHECKED;
         try {
             if (linkStatus != null) {

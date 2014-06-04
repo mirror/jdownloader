@@ -8,6 +8,7 @@ import jd.parser.Regex;
 
 import org.appwork.storage.config.WeakHashSet;
 import org.appwork.utils.Files;
+import org.appwork.utils.StringUtils;
 import org.appwork.utils.images.IconIO;
 import org.appwork.utils.os.CrossSystem;
 import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
@@ -62,12 +63,12 @@ public class LinkInfo {
                 if (partID != null) {
                     num = Integer.parseInt(partID);
                 }
-            } catch (Exception e) {
+            } catch (Throwable e) {
                 e.printStackTrace();
             }
             synchronized (linkInfoCache) {
                 for (LinkInfo linkInfo : linkInfoCache) {
-                    if (linkInfo.getExtension() == extension && linkInfo.getPartNum() == num) {
+                    if (linkInfo != null && linkInfo.getExtension() == extension && linkInfo.getPartNum() == num) {
                         return linkInfo;
                     }
                 }
@@ -91,10 +92,11 @@ public class LinkInfo {
             }
         }
         if (newIcon == null) {
-            final String iconID;
+            String iconID = null;
             if (extension != null && extension.getIconID() != null) {
                 iconID = extension.getIconID();
-            } else {
+            }
+            if (StringUtils.isEmpty(iconID)) {
                 iconID = "file";
             }
             newIcon = NewTheme.I().getIcon(iconID, 16);
