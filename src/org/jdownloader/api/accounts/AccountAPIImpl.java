@@ -40,27 +40,41 @@ public class AccountAPIImpl implements AccountAPI {
         int startWith = queryParams.getStartAt();
         int maxResults = queryParams.getMaxResults();
 
-        if (startWith > accs.size() - 1) return ret;
-        if (startWith < 0) startWith = 0;
-        if (maxResults < 0) maxResults = accs.size();
+        if (startWith > accs.size() - 1) {
+            return ret;
+        }
+        if (startWith < 0) {
+            startWith = 0;
+        }
+        if (maxResults < 0) {
+            maxResults = accs.size();
+        }
 
         for (int i = startWith; i < Math.min(startWith + maxResults, accs.size()); i++) {
             Account acc = accs.get(i);
             AccountAPIStorable accas = new AccountAPIStorable(acc);
             JsonMap infoMap = new JsonMap();
 
-            if (queryParams.fieldRequested("username")) infoMap.put("username", acc.getUser());
+            if (queryParams.fieldRequested("username")) {
+                infoMap.put("username", acc.getUser());
+            }
             if (queryParams.fieldRequested("validUntil")) {
                 AccountInfo ai = acc.getAccountInfo();
-                if (ai != null) infoMap.put("validUntil", ai.getValidUntil());
+                if (ai != null) {
+                    infoMap.put("validUntil", ai.getValidUntil());
+                }
             }
             if (queryParams.fieldRequested("trafficLeft")) {
                 AccountInfo ai = acc.getAccountInfo();
-                if (ai != null) infoMap.put("trafficLeft", ai.getTrafficLeft());
+                if (ai != null) {
+                    infoMap.put("trafficLeft", ai.getTrafficLeft());
+                }
             }
             if (queryParams.fieldRequested("trafficMax")) {
                 AccountInfo ai = acc.getAccountInfo();
-                if (ai != null) infoMap.put("trafficMax", ai.getTrafficMax());
+                if (ai != null) {
+                    infoMap.put("trafficMax", ai.getTrafficMax());
+                }
             }
             if (queryParams.fieldRequested("enabled")) {
                 infoMap.put("enabled", acc.isEnabled());
@@ -112,9 +126,14 @@ public class AccountAPIImpl implements AccountAPI {
     @Deprecated
     @Override
     public String getPremiumHosterUrl(String hoster) {
-        if (hoster == null) { return null; }
-        if (HostPluginController.getInstance().get(hoster) == null) { return null; }
-        return AccountController.createFullBuyPremiumUrl(HostPluginController.getInstance().get(hoster).getPremiumUrl(), "captcha/webinterface");
+        if (hoster == null) {
+            return null;
+        }
+        final LazyHostPlugin plugin = HostPluginController.getInstance().get(hoster);
+        if (plugin == null) {
+            return null;
+        }
+        return AccountController.createFullBuyPremiumUrl(plugin.getPremiumUrl(), "captcha/webinterface");
     }
 
     @Deprecated
@@ -128,7 +147,9 @@ public class AccountAPIImpl implements AccountAPI {
             out = RemoteAPI.getOutputStream(response, request, RemoteAPI.gzip(request), false);
 
             LazyHostPlugin plugin = HostPluginController.getInstance().get(premiumHoster);
-            if (plugin != null) ImageIO.write(IconIO.toBufferedImage(DomainInfo.getInstance(plugin.getHost()).getFavIcon()), "png", out);
+            if (plugin != null) {
+                ImageIO.write(IconIO.toBufferedImage(DomainInfo.getInstance(plugin.getHost()).getFavIcon()), "png", out);
+            }
 
         } catch (IOException e) {
             Log.exception(e);
@@ -195,7 +216,9 @@ public class AccountAPIImpl implements AccountAPI {
     @Deprecated
     public AccountAPIStorable getAccountInfo(long id) {
         java.util.List<Account> accs = getAccountbyIDs(new Long[] { id });
-        if (accs.size() == 1) { return new AccountAPIStorable(accs.get(0)); }
+        if (accs.size() == 1) {
+            return new AccountAPIStorable(accs.get(0));
+        }
         return null;
     }
 
@@ -211,7 +234,9 @@ public class AccountAPIImpl implements AccountAPI {
     @Deprecated
     @Override
     public boolean updateAccount(Long accountId, String username, String password) {
-        if (accountId == null) return false;
+        if (accountId == null) {
+            return false;
+        }
 
         for (Account acc : AccountController.getInstance().list()) {
             if (accountId.equals(acc.getId().getID())) {

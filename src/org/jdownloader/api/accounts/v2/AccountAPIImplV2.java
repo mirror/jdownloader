@@ -33,13 +33,21 @@ public class AccountAPIImplV2 implements AccountAPIV2 {
         int startWith = queryParams.getStartAt();
         int maxResults = queryParams.getMaxResults();
 
-        if (startWith > accs.size() - 1) return ret;
-        if (startWith < 0) startWith = 0;
-        if (maxResults < 0) maxResults = accs.size();
+        if (startWith > accs.size() - 1) {
+            return ret;
+        }
+        if (startWith < 0) {
+            startWith = 0;
+        }
+        if (maxResults < 0) {
+            maxResults = accs.size();
+        }
 
         for (int i = startWith; i < Math.min(startWith + maxResults, accs.size()); i++) {
             Account acc = accs.get(i);
-            if (queryParams.getUUIDList() != null && !queryParams.getUUIDList().contains(acc.getId().getID())) continue;
+            if (queryParams.getUUIDList() != null && !queryParams.getUUIDList().contains(acc.getId().getID())) {
+                continue;
+            }
             AccountAPIStorableV2 accas = new AccountAPIStorableV2(acc);
 
             if (queryParams.isError()) {
@@ -81,7 +89,9 @@ public class AccountAPIImplV2 implements AccountAPIV2 {
     }
 
     private String enumToString(AccountError error) {
-        if (error == null) return null;
+        if (error == null) {
+            return null;
+        }
         return error.name();
     }
 
@@ -119,9 +129,14 @@ public class AccountAPIImplV2 implements AccountAPIV2 {
 
     @Override
     public String getPremiumHosterUrl(String hoster) {
-        if (hoster == null) { return null; }
-        if (HostPluginController.getInstance().get(hoster) == null) { return null; }
-        return AccountController.createFullBuyPremiumUrl(HostPluginController.getInstance().get(hoster).getPremiumUrl(), "captcha/webinterface");
+        if (hoster == null) {
+            return null;
+        }
+        final LazyHostPlugin plugin = HostPluginController.getInstance().get(hoster);
+        if (plugin == null) {
+            return null;
+        }
+        return AccountController.createFullBuyPremiumUrl(plugin.getPremiumUrl(), "captcha/webinterface");
     }
 
     public void removeAccounts(long[] ids) {
@@ -134,8 +149,9 @@ public class AccountAPIImplV2 implements AccountAPIV2 {
 
     private java.util.List<Account> getAccountbyIDs(long[] ids) {
         HashSet<Long> todoIDs = new HashSet<Long>();
-        for (long l : ids)
+        for (long l : ids) {
             todoIDs.add(l);
+        }
         java.util.List<Account> accs = new ArrayList<Account>();
         for (Account lacc : AccountController.getInstance().list()) {
             if (lacc != null && todoIDs.size() > 0) {

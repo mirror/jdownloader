@@ -239,7 +239,7 @@ public class OboomController implements TopRightPainter, AccountControllerListen
                     } catch (DialogCanceledException e) {
                         OboomController.track("GETPRO_DIALOG/CANCELED");
                     }
-                    CrossSystem.openURL("https://www.oboom.com/ref/501C81?file_id=" + getLatestFileID());
+                    CrossSystem.openURL("https://www.oboom.com/ref/501C81?ref_token=" + getLatestRefID());
                 }
             }.start();
 
@@ -258,20 +258,20 @@ public class OboomController implements TopRightPainter, AccountControllerListen
 
     }
 
-    private static String getLatestFileID() {
-        String fileID = "";
+    private static String getLatestRefID() {
+        String refID = "";
         try {
             final SubConfiguration pluginConfig = SubConfiguration.getConfig("oboom.com");
             if (pluginConfig != null) {
-                fileID = pluginConfig.getStringProperty("lastID", null);
-                if (StringUtils.isEmpty(fileID)) {
-                    fileID = "";
+                refID = pluginConfig.getStringProperty("REF_TOKEN", null);
+                if (StringUtils.isEmpty(refID)) {
+                    refID = "";
                 }
             }
         } catch (final Throwable e) {
             e.printStackTrace();
         }
-        return null;
+        return refID;
     }
 
     public TopRightPainter start() {
@@ -515,7 +515,7 @@ public class OboomController implements TopRightPainter, AccountControllerListen
         try {
             Dialog.getInstance().showDialog(d);
             StatsManager.I().track("PremiumExpireWarning/" + account.getHoster() + "/OK");
-            CrossSystem.openURL("https://www.oboom.com/ref/501C81?file_id=" + getLatestFileID());
+            CrossSystem.openURL("https://www.oboom.com/ref/501C81?ref_token=" + getLatestRefID());
         } catch (DialogNoAnswerException e) {
             e.printStackTrace();
             StatsManager.I().track("PremiumExpireWarning/" + account.getHoster() + "/CANCELED");

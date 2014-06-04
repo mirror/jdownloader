@@ -32,6 +32,7 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.utils.JDUtilities;
 
+import org.appwork.utils.StringUtils;
 import org.appwork.utils.formatter.HexFormatter;
 import org.appwork.utils.logging2.LogSource;
 import org.appwork.utils.os.CrossSystem;
@@ -41,11 +42,10 @@ public class OBoomCom extends PluginForHost {
 
     private static Map<Account, Map<String, String>> ACCOUNTINFOS = new HashMap<Account, Map<String, String>>();
     private final String                             APPID        = "43340D9C23";
+    private final String                             REF_TOKEN    = "REF_TOKEN";
 
     public OBoomCom(PluginWrapper wrapper) {
         super(wrapper);
-
-        //
         enablePremium("https://www.oboom.com");
     }
 
@@ -66,6 +66,34 @@ public class OBoomCom extends PluginForHost {
         }
     }
 
+    @Override
+    public String getBuyPremiumUrl() {
+        return "https://www.oboom.com/ref/C0ACB0?ref_token=" + getLatestRefID();
+    }
+
+    private String getLatestRefID() {
+        String refID = "";
+        try {
+            final SubConfiguration pluginConfig = getPluginConfig();
+            if (pluginConfig != null) {
+                refID = pluginConfig.getStringProperty(REF_TOKEN, null);
+                if (StringUtils.isEmpty(refID)) {
+                    refID = "";
+                }
+            }
+        } catch (final Throwable e) {
+            e.printStackTrace();
+        }
+        return refID;
+    }
+
+    private void setLatestRefID(String ID) {
+        final SubConfiguration pluginConfig = getPluginConfig();
+        if (pluginConfig != null) {
+            pluginConfig.setProperty(REF_TOKEN, ID);
+        }
+    }
+
     /**
      * defines custom browser requirements.
      * */
@@ -79,7 +107,6 @@ public class OBoomCom extends PluginForHost {
         if (System.getProperty("jd.revision.jdownloaderrevision") == null) {
             prepBr.setDebug(true);
         }
-
         return prepBr;
     }
 
@@ -153,7 +180,6 @@ public class OBoomCom extends PluginForHost {
                     if (premium_unix != null) {
                         long timeStamp = Long.parseLong(premium_unix) * 1000l;
                         account.setProperty("PREMIUM_UNIX", timeStamp);
-
                         if (timeStamp <= System.currentTimeMillis()) {
                             infos.remove("premium");
                         }
@@ -253,7 +279,7 @@ public class OBoomCom extends PluginForHost {
                 sb.append(id);
             }
             br.setReadTimeout(60 * 1000);
-            br.getPage("https://api.oboom.com/1.0/info?items=" + sb.toString() + "&http_errors=0");
+            br.getPage("https://api.oboom.com/1.0/info?items=" + sb.toString() + "&http_errors=0&with_ref_token=true");
             final String fileInfos[] = br.getRegex("\\{(.*?)\\}").getColumn(0);
             if (fileInfos != null) {
                 for (String fileInfo : fileInfos) {
@@ -261,6 +287,7 @@ public class OBoomCom extends PluginForHost {
                     final String size = getValue(fileInfo, "size");
                     final String name = getValue(fileInfo, "name");
                     final String state = getValue(fileInfo, "state");
+                    final String refToken = getValue(fileInfo, "ref_token");
                     DownloadLink link = idLinks.get(id);
                     if (link == null) {
                         link = idLinks.get("lower_" + id.toLowerCase(Locale.ENGLISH));
@@ -279,6 +306,7 @@ public class OBoomCom extends PluginForHost {
                     } catch (final Throwable e) {
                     }
                     if ("online".equals(state)) {
+                        setLatestRefID(refToken);
                         link.setAvailable(true);
                     } else {
                         link.setAvailable(false);
@@ -303,9 +331,9 @@ public class OBoomCom extends PluginForHost {
         final String response;
         final String ID = getFileID(link);
         if (session != null) {
-            response = br.getPage("https://api.oboom.com/1.0/info?token=" + session + "&items=" + ID + "&http_errors=0");
+            response = br.getPage("https://api.oboom.com/1.0/info?token=" + session + "&items=" + ID + "&http_errors=0&with_ref_token=true");
         } else {
-            response = br.getPage("https://api.oboom.com/1.0/info?items=" + ID + "&http_errors=0");
+            response = br.getPage("https://api.oboom.com/1.0/info?items=" + ID + "&http_errors=0&with_ref_token=true");
         }
 
         if (response.contains("404,\"token") || response.contains("403,\"token")) {
@@ -315,9 +343,10 @@ public class OBoomCom extends PluginForHost {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
         }
-        String size = getValue(response, "size");
-        String name = getValue(response, "name");
-        String state = getValue(response, "state");
+        final String size = getValue(response, "size");
+        final String name = getValue(response, "name");
+        final String state = getValue(response, "state");
+        final String refToken = getValue(response, "ref_token");
         if (name != null) {
             link.setFinalFileName(unescape(name));
         }
@@ -331,6 +360,7 @@ public class OBoomCom extends PluginForHost {
         if (!"online".equals(state)) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
+        setLatestRefID(refToken);
         return AvailableStatus.TRUE;
     }
 
@@ -434,9 +464,7 @@ public class OBoomCom extends PluginForHost {
             refreshTokenHandling(usedInfos, account, freshInfos);
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        if (dl.startDownload()) {
-            getPluginConfig().setProperty("lastID", ID);
-        }
+        dl.startDownload();
     }
 
     private void downloadErrorHandling(Account account) throws PluginException {
@@ -660,9 +688,7 @@ public class OBoomCom extends PluginForHost {
             refreshTokenHandling(usedInfos, account, freshInfos.get());
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        if (dl.startDownload()) {
-            getPluginConfig().setProperty("lastID", ID);
-        }
+        dl.startDownload();
     }
 
     @Override

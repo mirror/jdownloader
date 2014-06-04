@@ -16,6 +16,7 @@ import javax.swing.JComboBox;
 
 import jd.controlling.AccountController;
 import jd.controlling.TaskQueue;
+import jd.plugins.PluginForHost;
 
 import org.appwork.swing.components.searchcombo.SearchComboBox;
 import org.appwork.uio.UIOManager;
@@ -185,11 +186,20 @@ public class BuyAction extends AbstractAction {
                             if (d.getReturnValue() < 0) {
                                 return;
                             }
-                            LazyHostPlugin buyIt = options[d.getReturnValue()];
+                            final LazyHostPlugin buyIt = options[d.getReturnValue()];
                             if (buyIt == null || StringUtils.isEmpty(buyIt.getPremiumUrl())) {
                                 return;
                             }
-                            CrossSystem.openURLOrShowMessage(AccountController.createFullBuyPremiumUrl(buyIt.getPremiumUrl(), "accountmanager" + (table == null ? "/context" : "/table")));
+                            String url = null;
+                            try {
+                                PluginForHost plugin = buyIt.newInstance(null);
+                                url = plugin.getBuyPremiumUrl();
+                            } catch (final Throwable e) {
+                            }
+                            if (StringUtils.isEmpty(url)) {
+                                url = buyIt.getPremiumUrl();
+                            }
+                            CrossSystem.openURLOrShowMessage(AccountController.createFullBuyPremiumUrl(url, "accountmanager" + (table == null ? "/context" : "/table")));
                             try {
                                 BuyAndAddPremiumAccount dia;
                                 UIOManager.I().show(BuyAndAddPremiumDialogInterface.class, dia = new BuyAndAddPremiumAccount(DomainInfo.getInstance(buyIt.getHost()), "accountmanager" + (table == null ? "/context" : "/table")));
