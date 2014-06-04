@@ -221,6 +221,16 @@ public class BillionUploadsCom extends PluginForHost {
 
         getPage(downloadLink.getDownloadURL());
 
+        checkIncapsulate(downloadLink);
+        // Context cx = Context.enter();
+        //
+        // Global scope = new Global(cx);
+        // cx.setOptimizationLevel(-1);
+        // cx.setLanguageVersion(Context.VERSION_1_5);
+        //
+        // String[] scripts = br.getRegex("<script>(.*?)</script>").getColumn(0);
+        // cx.evaluateString(scope, scripts[0], "script_0", 1, null);
+
         if (br.getURL().matches(".+(\\?|&)op=login(.*)?")) {
             ArrayList<Account> accounts = AccountController.getInstance().getAllAccounts(this.getHost());
             Account account = null;
@@ -287,6 +297,33 @@ public class BillionUploadsCom extends PluginForHost {
             downloadLink.setDownloadSize(SizeFormatter.getSize(fileInfo[1]));
         }
         return getAvailableStatus(downloadLink);
+    }
+
+    private void checkIncapsulate(DownloadLink downloadLink) throws Exception {
+
+        if (br.containsHTML("Request unsuccessful\\. Incapsula incident ID")) {
+            String iframe = br.getRegex("iframe src=\"([^\"]+)").getMatch(0);
+            Browser iframeBr = br.cloneBrowser();
+            iframeBr.getPage(iframe);
+            logger.info("Incapsula Captcha protection!");
+
+            final PluginForHost recplug = JDUtilities.getPluginForHost("DirectHTTP");
+            final jd.plugins.hoster.DirectHTTP.Recaptcha rc = ((DirectHTTP) recplug).getReCaptcha(iframeBr);
+            final String id = iframeBr.getRegex("\\?k=([A-Za-z0-9%_\\+\\- ]+)\"").getMatch(0);
+            if (inValidate(id)) {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
+            rc.setId(id);
+            rc.load();
+            Form form = iframeBr.getForm(0);
+            final File cf = rc.downloadCaptcha(getLocalCaptchaFile());
+            final String c = getCaptchaCode(cf, downloadLink);
+            form.put("recaptcha_challenge_field", rc.getChallenge());
+            form.put("recaptcha_response_field", Encoding.urlEncode(c));
+            iframeBr.submitForm(form);
+            br.getPage(br.getURL());
+            System.out.println(1);
+        }
     }
 
     private String[] scanInfo(final DownloadLink downloadLink, final String[] fileInfo) {
@@ -1246,8 +1283,23 @@ public class BillionUploadsCom extends PluginForHost {
         if (page == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
+
+        br.clearCookies(page);
         try {
-            br.getPage(page);
+            int retries = 10;
+            while (retries-- > 0) {
+                br.getPage(page);
+
+                if (!br.containsHTML("http\\:\\/\\/content\\.incapsula\\.com\\/jsTest\\.html")) {
+                    // the first request sets a cookie. the second should work.
+
+                    break;
+                }
+                Thread.sleep((10 - retries) * 500);
+            }
+            if (br.containsHTML("http\\:\\/\\/content\\.incapsula\\.com\\/jsTest\\.html")) {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
         } catch (Exception e) {
             if (e instanceof PluginException) {
                 throw (PluginException) e;
@@ -1260,6 +1312,7 @@ public class BillionUploadsCom extends PluginForHost {
                 throw e;
             }
         }
+
         // prevention is better than cure
         if (br.getHttpConnection() != null && br.getHttpConnection().getResponseCode() == 503 && br.getHttpConnection().getHeaderFields("server").contains("cloudflare-nginx")) {
             String host = new Regex(page, "https?://([^/]+)(:\\d+)?/").getMatch(0);

@@ -31,16 +31,16 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
+import net.sourceforge.htmlunit.corejs.javascript.ClassShutter;
+import net.sourceforge.htmlunit.corejs.javascript.Context;
+import net.sourceforge.htmlunit.corejs.javascript.ContextFactory;
+import net.sourceforge.htmlunit.corejs.javascript.Scriptable;
 
 import org.appwork.storage.JSonStorage;
 import org.appwork.storage.TypeRef;
 import org.appwork.utils.encoding.Base64;
 import org.appwork.utils.formatter.HexFormatter;
 import org.appwork.utils.logging.Log;
-import org.mozilla.javascript.ClassShutter;
-import org.mozilla.javascript.Context;
-import org.mozilla.javascript.ContextFactory;
-import org.mozilla.javascript.Scriptable;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "dummycnl.jdownloader.org" }, urls = { "http://dummycnl\\.jdownloader\\.org/[a-f0-9A-F]+" }, flags = { 0 })
 public class DummyCNL extends PluginForDecrypt {

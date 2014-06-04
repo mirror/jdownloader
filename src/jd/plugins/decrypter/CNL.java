@@ -23,6 +23,9 @@ import java.util.logging.Level;
 import javax.crypto.Cipher;
 import javax.crypto.spec.IvParameterSpec;
 import javax.crypto.spec.SecretKeySpec;
+import javax.script.ScriptEngine;
+import javax.script.ScriptEngineManager;
+import javax.script.ScriptException;
 
 import jd.PluginWrapper;
 import jd.controlling.DistributeData;
@@ -35,10 +38,6 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
 import jd.utils.JDHexUtils;
-
-import org.mozilla.javascript.Context;
-import org.mozilla.javascript.ContextFactory;
-import org.mozilla.javascript.Scriptable;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "Click n Load", "Click n Load" }, urls = { "cnl://.*?\\..*?/.*?/", "http://jdownloader\\.org/cnl/.*?/" }, flags = { 0, 0 })
 public class CNL extends PluginForDecrypt {
@@ -101,16 +100,22 @@ public class CNL extends PluginForDecrypt {
         final byte[] key;
 
         if (jk != null) {
-            Context cx = null;
-            try {
-                cx = ContextFactory.getGlobal().enterContext();
-                final Scriptable scope = cx.initStandardObjects();
-                final String fun = jk + "  f()";
-                final Object result = cx.evaluateString(scope, fun, "<cmd>", 1, null);
 
-                key = JDHexUtils.getByteArray(Context.toString(result));
+            try {
+                final ScriptEngineManager manager = new ScriptEngineManager();
+                final ScriptEngine engine = manager.getEngineByName("javascript");
+
+                final String fun = jk + "  f()";
+
+                final Object result = engine.eval(fun);
+
+                key = JDHexUtils.getByteArray(result + "");
+
+            } catch (ScriptException e) {
+                getLogger().log(e);
+                throw new RuntimeException(e);
             } finally {
-                if (cx != null) Context.exit();
+
             }
         } else {
             key = JDHexUtils.getByteArray(k);
@@ -122,7 +127,9 @@ public class CNL extends PluginForDecrypt {
 
         final ArrayList<DownloadLink> links = new DistributeData(Encoding.htmlDecode(decryted)).findLinks();
         for (final DownloadLink link : links) {
-            if (passwords != null && passwords.size() > 0) link.setSourcePluginPasswordList(passwords);
+            if (passwords != null && passwords.size() > 0) {
+                link.setSourcePluginPasswordList(passwords);
+            }
         }
         for (final DownloadLink l : links) {
             if (source != null) {

@@ -47,6 +47,7 @@ public class Zippysharecom extends PluginForHost {
     }
 
     public void correctDownloadLink(final DownloadLink link) {
+
         final String addedLink = link.getDownloadURL();
         if (addedLink.matches("http://www\\d{0,}\\.zippyshare\\.com/downloadMusic\\?key=\\d+")) {
             link.setUrlDownload(addedLink.replace("downloadMusic?key=", "view.jsp?key="));

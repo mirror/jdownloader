@@ -27,6 +27,10 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.regex.Pattern;
 
+import javax.script.ScriptEngine;
+import javax.script.ScriptEngineManager;
+import javax.script.ScriptException;
+
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.controlling.AccountController;
@@ -52,9 +56,6 @@ import jd.utils.locale.JDL;
 
 import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.formatter.TimeFormatter;
-import org.mozilla.javascript.Context;
-import org.mozilla.javascript.ContextFactory;
-import org.mozilla.javascript.Scriptable;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "filefactory.com" }, urls = { "https?://(www\\.)?filefactory\\.com(/|//)(file/[\\w]+/?|(trafficshare|digitalsales)/[a-f0-9]{32}/.+/?)" }, flags = { 2 })
 public class FileFactory extends PluginForHost {
@@ -411,7 +412,7 @@ public class FileFactory extends PluginForHost {
         return 200;
     }
 
-    public String getUrl() throws IOException, PluginException {
+    public String getUrl() throws IOException, PluginException, ScriptException {
         String url = br.getRegex("\"(http://[a-z0-9\\-]+\\.filefactory\\.com/dl/[^<>\"]*?)\"").getMatch(0);
         if (url == null) {
             url = br.getRegex("id=\"downloadLinkTarget\" style=\"display: none;\">[\t\n\r ]+<a href=\"(http://[^<>\"]*?)\"").getMatch(0);
@@ -424,31 +425,27 @@ public class FileFactory extends PluginForHost {
             }
         }
         if (url == null) {
-            Context cx = null;
-            try {
-                cx = ContextFactory.getGlobal().enterContext();
-                final Scriptable scope = cx.initStandardObjects();
-                final String[] eval = br.getRegex("var (.*?) = (.*?), (.*?) = (.*?)+\"(.*?)\", (.*?) = (.*?), (.*?) = (.*?), (.*?) = (.*?), (.*?) = (.*?), (.*?) = (.*?);").getRow(0);
-                if (eval != null) {
-                    // first load js
-                    Object result = cx.evaluateString(scope, "function g(){return " + eval[1] + "} g();", "<cmd>", 1, null);
-                    final String link = "/file" + result + eval[4];
-                    br.getPage(COOKIE_HOST + link);
-                    final String[] row = br.getRegex("var (.*?) = '';(.*;) (.*?)=(.*?)\\(\\);").getRow(0);
-                    result = cx.evaluateString(scope, row[1] + row[3] + " ();", "<cmd>", 1, null);
-                    if (result.toString().startsWith("http")) {
-                        url = result + "";
-                    } else {
-                        url = COOKIE_HOST + result;
-                    }
+
+            final ScriptEngineManager manager = new ScriptEngineManager();
+            final ScriptEngine engine = manager.getEngineByName("javascript");
+
+            final String[] eval = br.getRegex("var (.*?) = (.*?), (.*?) = (.*?)+\"(.*?)\", (.*?) = (.*?), (.*?) = (.*?), (.*?) = (.*?), (.*?) = (.*?), (.*?) = (.*?);").getRow(0);
+            if (eval != null) {
+                // first load js
+                Object result = engine.eval("function g(){return " + eval[1] + "} g();");
+                final String link = "/file" + result + eval[4];
+                br.getPage(COOKIE_HOST + link);
+                final String[] row = br.getRegex("var (.*?) = '';(.*;) (.*?)=(.*?)\\(\\);").getRow(0);
+                result = engine.eval(row[1] + row[3] + " ();");
+                if (result.toString().startsWith("http")) {
+                    url = result + "";
                 } else {
-                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                    url = COOKIE_HOST + result;
                 }
-            } finally {
-                if (cx != null) {
-                    Context.exit();
-                }
+            } else {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
+
         }
         return url;
 

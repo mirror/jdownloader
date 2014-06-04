@@ -55,7 +55,6 @@ import jd.controlling.proxy.ProxyController;
 import jd.gui.swing.MacOSApplicationAdapter;
 import jd.gui.swing.jdgui.JDGui;
 import jd.http.Browser;
-import jd.http.ext.security.JSPermissionRestricter;
 import jd.plugins.DownloadLink;
 import jd.utils.JDUtilities;
 
@@ -110,6 +109,8 @@ import org.jdownloader.images.NewTheme;
 import org.jdownloader.logging.LogController;
 import org.jdownloader.osevents.OperatingSystemEventSender;
 import org.jdownloader.plugins.controller.host.HostPluginController;
+import org.jdownloader.scripting.JSHtmlUnitPermissionRestricter;
+import org.jdownloader.scripting.JSPermissionRestricter;
 import org.jdownloader.settings.AutoDownloadStartOption;
 import org.jdownloader.settings.GeneralSettings;
 import org.jdownloader.settings.GraphicalUserInterfaceSettings;
@@ -257,7 +258,20 @@ public class SecondLevelLaunch {
     public static void mainStart(final String args[]) {
 
         SecondLevelLaunch.LOG = LogController.GL;
+        /* setup JSPermission */
+        try {
+            JSPermissionRestricter.init();
 
+        } catch (final Throwable e) {
+            SecondLevelLaunch.LOG.log(e);
+        }
+
+        try {
+            JSHtmlUnitPermissionRestricter.init();
+
+        } catch (final Throwable e) {
+            SecondLevelLaunch.LOG.log(e);
+        }
         // Mac OS specific
         if (CrossSystem.isMac()) {
             // Set MacApplicationName
@@ -629,12 +643,6 @@ public class SecondLevelLaunch {
                         }
                     });
                     CrossSystem.setBrowserCommandLine(CFG_GENERAL.BROWSER_COMMAND_LINE.getValue());
-                    /* setup JSPermission */
-                    try {
-                        JSPermissionRestricter.init();
-                    } catch (final Throwable e) {
-                        SecondLevelLaunch.LOG.log(e);
-                    }
 
                     // init
 

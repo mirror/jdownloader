@@ -8,7 +8,7 @@
 var Envjs = Envjs || require('envjs/platform/core').Envjs;
 require('local_settings');
 
-var __context__ = Packages.org.mozilla.javascript.Context.getCurrentContext();
+var __context__ = Packages.net.sourceforge.htmlunit.corejs.javascript.Context.getCurrentContext();
 
 Envjs.platform = "Rhino";
 Envjs.revision = "1.7.0.rc2";

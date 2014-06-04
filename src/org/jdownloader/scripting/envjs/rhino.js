@@ -32,7 +32,7 @@ javaInstance=Packages.org.jdownloader.scripting.envjs.EnvJS.get(EnvJSinstanceID)
          
                 try {
            
-                    var ctx = org.mozilla.javascript.Context.getCurrentContext();
+                    var ctx = net.sourceforge.htmlunit.corejs.javascript.Context.getCurrentContext();
                     var func = ctx.evaluateString({}, source, id, 1, null);
                     func(require, cached[id].exports, cached[id].module);
                 } finally {

@@ -1,16 +1,17 @@
-package jd.http.ext.security;
+package org.jdownloader.scripting;
 
 import java.util.concurrent.ConcurrentHashMap;
 
+import net.sourceforge.htmlunit.corejs.javascript.ClassShutter;
+import net.sourceforge.htmlunit.corejs.javascript.Context;
+import net.sourceforge.htmlunit.corejs.javascript.ContextFactory;
+import net.sourceforge.htmlunit.corejs.javascript.EcmaError;
+import net.sourceforge.htmlunit.corejs.javascript.NativeJavaObject;
+import net.sourceforge.htmlunit.corejs.javascript.Scriptable;
+import net.sourceforge.htmlunit.corejs.javascript.WrapFactory;
+import net.sourceforge.htmlunit.corejs.javascript.tools.shell.Global;
+
 import org.appwork.utils.logging.Log;
-import org.mozilla.javascript.ClassShutter;
-import org.mozilla.javascript.Context;
-import org.mozilla.javascript.ContextFactory;
-import org.mozilla.javascript.EcmaError;
-import org.mozilla.javascript.NativeJavaObject;
-import org.mozilla.javascript.Scriptable;
-import org.mozilla.javascript.WrapFactory;
-import org.mozilla.javascript.tools.shell.Global;
 
 /**
  * from http://codeutopia.net/blog/2009/01/02/sandboxing-rhino-in-java/
@@ -96,7 +97,7 @@ import org.mozilla.javascript.tools.shell.Global;
  * @author thomas
  * 
  */
-public class JSPermissionRestricter {
+public class JSHtmlUnitPermissionRestricter {
     static public class SandboxContextFactory extends ContextFactory {
         @Override
         protected Context makeContext() {
@@ -113,7 +114,7 @@ public class JSPermissionRestricter {
                     if (className.startsWith("adapter")) {
                         return true;
 
-                    } else if (className.equals("org.mozilla.javascript.EcmaError")) {
+                    } else if (className.equals("net.sourceforge.htmlunit.corejs.javascript.EcmaError")) {
                         Log.L.severe("Javascript error occured");
                         return true;
                     } else {
@@ -146,6 +147,7 @@ public class JSPermissionRestricter {
         private static final long serialVersionUID = -2783084485265910840L;
 
         public SandboxNativeJavaObject(Scriptable scope, Object javaObject, Class<?> staticType) {
+
             super(scope, javaObject, staticType);
         }
 
@@ -168,11 +170,11 @@ public class JSPermissionRestricter {
 
     private static ConcurrentHashMap<Thread, Boolean> TRUSTED_THREAD = new ConcurrentHashMap<Thread, Boolean>();
 
-    public static void evaluateTrustedString(Context cx, Global scope, String source, String sourceName, int lineno, Object securityDomain) {
+    public static Object evaluateTrustedString(Context cx, Global scope, String source, String sourceName, int lineno, Object securityDomain) {
         try {
             TRUSTED_THREAD.put(Thread.currentThread(), true);
 
-            cx.evaluateString(scope, source, sourceName, lineno, securityDomain);
+            return cx.evaluateString(scope, source, sourceName, lineno, securityDomain);
         } finally {
             TRUSTED_THREAD.remove(Thread.currentThread());
         }

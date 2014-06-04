@@ -990,11 +990,11 @@ Envjs.tick = function(){
     var y, next, fn, arg, file; 
     log = log||Envjs.logger('Envjs.Core');
     
-    log.debug('go through %s events', eventQueue.length);
+   // log.debug('go through %s events', eventQueue.length);
     next = eventQueue.shift();
     while( next ){
         
-        log.debug('next event %s', next.event);
+//        log.debug('next event %s', next.event);
         if(next.event in eventListeners){
 
             if('exit' === next.event){
@@ -1002,9 +1002,9 @@ Envjs.tick = function(){
                 Envjs.exit();
             }
             for(y = 0; y < eventListeners[next.event].length; y++){
-                log.debug('event %s %s', y, next.event);
+//                log.debug('event %s %s', y, next.event);
                 fn = eventListeners[next.event][y];
-                log.debug(fn+"");
+//                log.debug(fn+"");
                 fn.apply(fn, next.args);
             }
         }
@@ -2372,12 +2372,12 @@ Envjs.on('tick', function(type, now){
         timers = Envjs.timers,
         timer,
         i;
-    console.log('handling %s timer(s) in tick', timers.length);
+//    console.log('handling %s timer(s) in tick', timers.length);
     for(i = 0; i < timers.length;){
         timer = timers[i];
-        console.log('scheduled for %s , currently %s', timer.at, now);
+//        console.log('scheduled for %s , currently %s', timer.at, now);
         if(timer.at <= now){
-            console.log('timer past due: at(%s), now(%s), type(%s)',timer.at, now, timer.type);
+//            console.log('timer past due: at(%s), now(%s), type(%s)',timer.at, now, timer.type);
             switch(timer.type){
             case 'timeout':
                 //we need to remove it from the timers list and add it to the callback list
@@ -2398,7 +2398,7 @@ Envjs.on('tick', function(type, now){
             i++;
         }
     }   
-    console.log('timer tick has %s callbacks', callbacks.length);
+//    console.log('timer tick has %s callbacks', callbacks.length);
     //finally we need to execute the callbacks in the order added to this stack
     for(i = 0; i < callbacks.length; i++){
         timer = callbacks[i];

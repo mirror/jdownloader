@@ -51,9 +51,9 @@ Envjs.once('tick', function(){
  * @param {Object} time
  */
 exports.setTimeout = setTimeout = function(fn, time){
-	console.log("timeout "+fn);
-	log.debug('setTimeout %s', time);
-	console.log("timeout2 "+fn);
+//	console.log("timeout "+fn);
+//	log.debug('setTimeout %s', time);
+//	console.log("timeout2 "+fn);
 	return Envjs.timers.addTimerOrInterval(fn, time, 'timeout');
 };
 

@@ -17,6 +17,8 @@ import java.util.Map;
 import java.util.TimeZone;
 import java.util.regex.Pattern;
 
+import javax.script.ScriptEngine;
+import javax.script.ScriptEngineManager;
 import javax.xml.datatype.DatatypeConfigurationException;
 import javax.xml.datatype.DatatypeFactory;
 import javax.xml.datatype.XMLGregorianCalendar;
@@ -63,9 +65,6 @@ import org.appwork.utils.net.httpconnection.HTTPProxyStorable;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.logging.LogController;
 import org.jdownloader.plugins.config.PluginJsonConfig;
-import org.mozilla.javascript.Context;
-import org.mozilla.javascript.ContextFactory;
-import org.mozilla.javascript.Scriptable;
 
 public class YoutubeHelper {
 
@@ -732,27 +731,20 @@ public class YoutubeHelper {
         final String func = "function " + descrambler + "\\(([^)]+)\\)\\{(.+?return.*?)\\}";
         des = new Regex(jsContent, Pattern.compile(func)).getMatch(1);
         try {
-            Context cx = null;
-            try {
-                cx = ContextFactory.getGlobal().enterContext();
-            } catch (java.lang.SecurityException e) {
-                /* in case classshutter already set */
+
+            final ScriptEngineManager manager = new ScriptEngineManager();
+            final ScriptEngine engine = manager.getEngineByName("javascript");
+
+            String all = new Regex(jsContent, Pattern.compile("function " + descrambler + "\\(([^)]+)\\)\\{(.+?return.*?)\\}.*?\\{.*?\\}")).getMatch(-1);
+            Object result = engine.eval(all + " " + descrambler + "(\"" + sig + "\")");
+            if (result != null) {
+                return result.toString();
             }
-            if (cx != null) {
-                Scriptable scope = cx.initStandardObjects();
-                String all = new Regex(jsContent, Pattern.compile("function " + descrambler + "\\(([^)]+)\\)\\{(.+?return.*?)\\}.*?\\{.*?\\}")).getMatch(-1);
-                Object result = cx.evaluateString(scope, all + " " + descrambler + "(\"" + sig + "\")", "<cmd>", 1, null);
-                if (result != null) {
-                    return result.toString();
-                }
-            }
+
         } catch (final Throwable e) {
             logger.log(e);
         } finally {
-            try {
-                Context.exit();
-            } catch (final Throwable e) {
-            }
+
         }
         String s = sig;
         try {

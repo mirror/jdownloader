@@ -12,6 +12,10 @@ import java.util.concurrent.atomic.AtomicLong;
 import jd.http.Browser;
 import jd.http.Cookies;
 import jd.http.Request;
+import net.sourceforge.htmlunit.corejs.javascript.Context;
+import net.sourceforge.htmlunit.corejs.javascript.ContextFactory;
+import net.sourceforge.htmlunit.corejs.javascript.EcmaError;
+import net.sourceforge.htmlunit.corejs.javascript.tools.shell.Global;
 
 import org.appwork.exceptions.WTFException;
 import org.appwork.storage.JSonStorage;
@@ -20,11 +24,12 @@ import org.appwork.utils.IO;
 import org.appwork.utils.logging2.LogSource;
 import org.appwork.utils.net.HTTPHeader;
 import org.jdownloader.logging.LogController;
-import org.mozilla.javascript.Context;
-import org.mozilla.javascript.EcmaError;
-import org.mozilla.javascript.tools.shell.Global;
+import org.jdownloader.scripting.JSHtmlUnitPermissionRestricter;
 
 public class EnvJS {
+    static {
+        JSHtmlUnitPermissionRestricter.init();
+    }
     private Context                                              cx;
     private Global                                               scope;
     private long                                                 id;
@@ -75,6 +80,7 @@ public class EnvJS {
         if ("get".equalsIgnoreCase(method)) {
             br.getPage(url);
         }
+
         XHRResponse ret = new XHRResponse();
         for (Entry<String, List<String>> s : br.getRequest().getResponseHeaders().entrySet()) {
             ret.getResponseHeader().put(s.getKey(), s.getValue().get(0));
@@ -92,6 +98,9 @@ public class EnvJS {
 
         INSTANCES.put(id, new WeakReference<EnvJS>(this));
         logger = LogController.getInstance().getLogger(EnvJS.class.getName());
+        ContextFactory gs = ContextFactory.getGlobal();
+
+        System.out.println(gs);
     }
 
     public void breakIt() {
@@ -151,7 +160,9 @@ public class EnvJS {
         if ("css".equals(path)) {
             return IO.readURLToString(EnvJS.class.getResource(path + ".js"));
         }
-
+        if ("base64".equals(path)) {
+            return IO.readURLToString(EnvJS.class.getResource(path + ".js"));
+        }
         throw new WTFException("Unknown Resource required: " + path);
 
     }
@@ -164,7 +175,8 @@ public class EnvJS {
         cx.setLanguageVersion(Context.VERSION_1_5);
         br = new Browser();
 
-        // org.mozilla.javascript.EcmaError: ReferenceError: "JSON" is not defined. (js#508) exceptions in the log are ok.
+        // net.sourceforge.htmlunit.corejs.javascript.EcmaError: ReferenceError: "JSON" is not defined. (js#508) exceptions in the log are
+        // ok.
         try {
             evaluateTrustedString(cx, scope, "var EnvJSinstanceID=" + id + ";", "setInstance", 1, null);
             // evaluateTrustedString(cx, scope, IO.readURLToString(EnvJS.class.getResource("env.rhino.js")), "oldRhino", 1, null);
@@ -178,10 +190,10 @@ public class EnvJS {
         }
     }
 
-    public void eval(String js) {
+    public Object eval(String js) {
 
         // cx.evaluateString(scope, js, "js", 1, null);
-        evaluateTrustedString(cx, scope, js, "eval", 1, null);
+        return evaluateTrustedString(cx, scope, js, "eval", 1, null);
     }
 
     public void setDocument(String url, String html) {
@@ -192,10 +204,10 @@ public class EnvJS {
 
     private LinkedList<String> scriptStack = new LinkedList<String>();
 
-    private void evaluateTrustedString(Context cx2, Global scope2, String js, String string, int i, Object object) {
+    private Object evaluateTrustedString(Context cx2, Global scope2, String js, String string, int i, Object object) {
         scriptStack.add(string);
         try {
-            jd.http.ext.security.JSPermissionRestricter.evaluateTrustedString(cx2, scope2, js, string, i, object);
+            return cx2.evaluateString(scope, js, string, i, object);
         } catch (EcmaError e) {
             logger.log(e);
             throw e;
@@ -213,5 +225,13 @@ public class EnvJS {
             return result + "";
         }
         return null;
+    }
+
+    public Browser getBrowser() {
+        return br;
+    }
+
+    public void require(String string) throws IOException {
+        JSHtmlUnitPermissionRestricter.evaluateTrustedString(cx, scope, readRequire(string), "setInstance", 1, null);
     }
 }
