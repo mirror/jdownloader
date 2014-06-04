@@ -17,6 +17,7 @@
 package jd.plugins.hoster;
 
 import jd.PluginWrapper;
+import jd.http.Browser;
 import jd.http.RandomUserAgent;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
@@ -68,9 +69,10 @@ public class MotherLessCom extends PluginForHost {
                 br.getPage(link.getBrowserUrl());
             }
         }
+        br.getHeaders().put("Accept-Encoding", "identity");
         if ("video".equals(link.getStringProperty("dltype"))) {
             br.getHeaders().put("Referer", "http://motherless.com/scripts/jwplayer.flash.swf");
-            dl = jd.plugins.BrowserAdapter.openDownload(br, link, DLLINK, false, 1);
+            dl = jd.plugins.BrowserAdapter.openDownload(br, link, DLLINK, true, 1);
         } else if ("image".equals(link.getStringProperty("dltype"))) {
             dl = jd.plugins.BrowserAdapter.openDownload(br, link, DLLINK, false, 1);
         } else {
@@ -136,7 +138,7 @@ public class MotherLessCom extends PluginForHost {
             DLLINK = br.getRegex("(http://s\\d+\\.motherlessmedia\\.com/dev[0-9]+/[^<>\"]*?\\.(flv|mp4))\"").getMatch(0);
         }
         if (DLLINK != null && !DLLINK.contains("?start=0")) {
-            DLLINK += "?start=0";
+            // DLLINK += "?start=0";
         }
     }
 
@@ -171,7 +173,6 @@ public class MotherLessCom extends PluginForHost {
             br.getPage(link.getDownloadURL());
         }
         doFree(link);
-
     }
 
     private void login(Account account) throws Exception {
@@ -238,7 +239,9 @@ public class MotherLessCom extends PluginForHost {
         }
         URLConnectionAdapter con = null;
         try {
-            con = br.openGetConnection(DLLINK);
+            Browser brc = br.cloneBrowser();
+            brc.getHeaders().put("Accept-Encoding", "identity");
+            con = brc.openGetConnection(DLLINK);
             if (con.getContentType().contains("html")) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
