@@ -568,7 +568,7 @@ public class CrawledLink implements AbstractPackageChildrenNode<CrawledPackage>,
 
     public LinkInfo getLinkInfo() {
         LinkInfo ret = linkInfo.get();
-        if (!linkInfo.isValueSet()) {
+        if (ret == null) {
             ret = LinkInfo.getLinkInfo(this);
             linkInfo.set(ret);
         }
