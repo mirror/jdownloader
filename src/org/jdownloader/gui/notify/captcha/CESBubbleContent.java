@@ -155,7 +155,9 @@ public class CESBubbleContent extends AbstractBubbleContentPanel {
 
     public void update() {
         SolverStatus s = job.getStatus();
-        if (s != null) latestStatus = s;
+        if (s != null) {
+            latestStatus = s;
+        }
 
         credits.setText(solver.getAccountStatusString());
         if (latestStatus == null) {
@@ -178,7 +180,7 @@ public class CESBubbleContent extends AbstractBubbleContentPanel {
     public static void fill(ArrayList<Element> elements) {
     }
 
-    public void updateTimer(long rest) {
+    public void updateTimer(final long rest) {
         update();
         timeoutLbl.setText(_GUI._.CESBubbleContent_CESBubbleContent_wait(TimeFormatter.formatMilliSeconds(rest, 0), solver.getName()));
         button.setVisible(true);

@@ -564,6 +564,9 @@ public interface GuiTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "Comment" })
     String CommentColumn_CommentColumn_();
 
+    @Default(lngs = { "en" }, values = { "FileType" })
+    String FileTypeColumn_FileTypeColumn_();
+
     @Default(lngs = { "en" }, values = { "Views" })
     String LinkGrabberSideBarHeader_LinkGrabberSideBarHeader();
 

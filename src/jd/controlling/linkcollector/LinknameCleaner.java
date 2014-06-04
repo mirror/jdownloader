@@ -3,6 +3,7 @@ package jd.controlling.linkcollector;
 import java.util.regex.Pattern;
 
 import org.appwork.utils.Regex;
+import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
 
 public class LinknameCleaner {
     public static final Pattern   pat0     = Pattern.compile("(.*)(\\.|_|-)pa?r?t?\\.?[0-9]+.(rar|exe)$", Pattern.CASE_INSENSITIVE);
@@ -57,52 +58,61 @@ public class LinknameCleaner {
         String before = name;
         if (!ignoreArchiveFilters) {
             /** remove rar extensions */
-
             for (Pattern Pat : rarPats) {
                 name = getNameMatch(name, Pat);
-                if (!before.equalsIgnoreCase(name)) {
+                if (!before.equals(name)) {
                     extensionStilExists = false;
                     break;
                 }
             }
-            /**
-             * remove 7zip/zip and hjmerge extensions
-             */
-            before = name;
-            for (Pattern Pat : zipPats) {
-                name = getNameMatch(name, Pat);
-                if (!before.equalsIgnoreCase(name)) {
-                    extensionStilExists = false;
-                    break;
+
+            if (extensionStilExists) {
+                /**
+                 * remove 7zip/zip and hjmerge extensions
+                 */
+                before = name;
+                for (Pattern Pat : zipPats) {
+                    name = getNameMatch(name, Pat);
+                    if (!before.equals(name)) {
+                        extensionStilExists = false;
+                        break;
+                    }
                 }
             }
-        }
-        /**
-         * remove isz extensions
-         */
-        before = name;
-        for (Pattern Pat : iszPats) {
-            name = getNameMatch(name, Pat);
-            if (!before.equalsIgnoreCase(name)) {
-                extensionStilExists = false;
-                break;
+            if (extensionStilExists) {
+                /**
+                 * remove isz extensions
+                 */
+                before = name;
+                for (Pattern Pat : iszPats) {
+                    name = getNameMatch(name, Pat);
+                    if (!before.equals(name)) {
+                        extensionStilExists = false;
+                        break;
+                    }
+                }
             }
-        }
-        if (!ignoreArchiveFilters) {
-            /* xtremsplit */
-            name = getNameMatch(name, pat17);
-        }
-        /**
-         * FFSJ splitted files
-         * 
-         * */
-        if (ffsjPats != null) {
-            before = name;
-            for (Pattern Pat : ffsjPats) {
-                name = getNameMatch(name, Pat);
-                if (!before.equalsIgnoreCase(name)) {
+            if (extensionStilExists) {
+                before = name;
+                /* xtremsplit */
+                name = getNameMatch(name, pat17);
+                if (!before.equals(name)) {
                     extensionStilExists = false;
-                    break;
+                }
+            }
+
+            if (extensionStilExists && ffsjPats != null) {
+                /**
+                 * FFSJ splitted files
+                 * 
+                 * */
+                before = name;
+                for (Pattern Pat : ffsjPats) {
+                    name = getNameMatch(name, Pat);
+                    if (!before.equalsIgnoreCase(name)) {
+                        extensionStilExists = false;
+                        break;
+                    }
                 }
             }
         }
@@ -111,18 +121,28 @@ public class LinknameCleaner {
          * remove CDx,Partx
          */
         String tmpname = cutNameMatch(name, pat12);
-        if (tmpname.length() > 3) name = tmpname;
+        if (tmpname.length() > 3) {
+            name = tmpname;
+        }
         tmpname = cutNameMatch(name, pat13);
-        if (tmpname.length() > 3) name = tmpname;
+        if (tmpname.length() > 3) {
+            name = tmpname;
+        }
 
         /* remove extension */
         if (extensionStilExists && removeExtension) {
             int lastPoint = name.lastIndexOf(".");
-            if (lastPoint <= 0) lastPoint = name.lastIndexOf("_");
+            if (lastPoint <= 0) {
+                lastPoint = name.lastIndexOf("_");
+            }
             if (lastPoint > 0) {
                 int extLength = (name.length() - (lastPoint + 1));
                 if (extLength <= 3) {
-                    name = name.substring(0, lastPoint);
+                    final String ext = name.substring(lastPoint + 1);
+                    if (CompiledFiletypeFilter.getExtensionsFilterInterface(ext) != null) {
+                        /* make sure to cut off only known extensions */
+                        name = name.substring(0, lastPoint);
+                    }
                 }
             }
         }
@@ -132,22 +152,24 @@ public class LinknameCleaner {
         name = getNameMatch(name, pat16);
 
         /* if enabled, replace dots and _ with spaces and do further clean ups */
-
         if (cleanup && org.jdownloader.settings.staticreferences.CFG_GENERAL.CLEAN_UP_FILENAMES.isEnabled()) {
-
             StringBuilder sb = new StringBuilder();
             char[] cs = name.toCharArray();
             char lastChar = 'a';
             for (int i = 0; i < cs.length; i++) {
                 // splitFileNamesLikeThis to "split File Names Like This"
                 if (splitUpperLowerCase && i > 0 && Character.isUpperCase(cs[i]) && Character.isLowerCase(cs[i - 1])) {
-                    if (lastChar != ' ') sb.append(' ');
+                    if (lastChar != ' ') {
+                        sb.append(' ');
+                    }
                     lastChar = ' ';
                 }
                 switch (cs[i]) {
                 case '_':
                 case '.':
-                    if (lastChar != ' ') sb.append(' ');
+                    if (lastChar != ' ') {
+                        sb.append(' ');
+                    }
                     lastChar = ' ';
                     break;
                 default:
@@ -162,7 +184,9 @@ public class LinknameCleaner {
 
     private static String getNameMatch(String name, Pattern pattern) {
         String match = new Regex(name, pattern).getMatch(0);
-        if (match != null) return match;
+        if (match != null) {
+            return match;
+        }
         return name;
     }
 
@@ -175,18 +199,24 @@ public class LinknameCleaner {
                 c++;
             }
         }
-        if (Math.min(aa.length(), bb.length()) == 0) { return 0; }
+        if (Math.min(aa.length(), bb.length()) == 0) {
+            return 0;
+        }
         return c * 100 / Math.max(aa.length(), bb.length());
     }
 
     private static String cutNameMatch(String name, Pattern pattern) {
-        if (name == null) return null;
+        if (name == null) {
+            return null;
+        }
         String match = new Regex(name, pattern).getMatch(0);
         if (match != null) {
             int firstpos = name.indexOf(match);
             String tmp = name.substring(0, firstpos);
             int lastpos = name.indexOf(match) + match.length();
-            if (!(lastpos > name.length())) tmp = tmp + name.substring(lastpos);
+            if (!(lastpos > name.length())) {
+                tmp = tmp + name.substring(lastpos);
+            }
             name = tmp;
             /* remove seq. dots */
             name = name.replaceAll("\\.{2,}", ".");

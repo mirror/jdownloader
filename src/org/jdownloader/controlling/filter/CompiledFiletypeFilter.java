@@ -24,6 +24,23 @@ public class CompiledFiletypeFilter {
 
         public Pattern getPattern();
 
+        public String name();
+
+        public boolean isSameExtensionGroup(ExtensionsFilterInterface extension);
+
+    }
+
+    public static ExtensionsFilterInterface getExtensionsFilterInterface(final String fileExtension) {
+        if (fileExtension != null) {
+            for (final ExtensionsFilterInterface[] extensions : new ExtensionsFilterInterface[][] { AudioExtensions.values(), ArchiveExtensions.values(), ImageExtensions.values(), VideoExtensions.values() }) {
+                for (final ExtensionsFilterInterface extension : extensions) {
+                    if (extension.getPattern().matcher(fileExtension).matches()) {
+                        return extension;
+                    }
+                }
+            }
+        }
+        return null;
     }
 
     public static enum AudioExtensions implements ExtensionsFilterInterface {
@@ -53,7 +70,8 @@ public class CompiledFiletypeFilter {
         OMF,
         SND;
 
-        private Pattern pattern;
+        private Pattern        pattern;
+        private static Pattern allPattern;
 
         public Pattern getPattern() {
             return pattern;
@@ -76,17 +94,17 @@ public class CompiledFiletypeFilter {
         }
 
         public Pattern compiledAllPattern() {
-            StringBuilder sb = new StringBuilder();
-            sb.append("(");
-            boolean or = false;
-            for (AudioExtensions value : AudioExtensions.values()) {
-                if (or) sb.append("|");
-                sb.append(value.getPattern());
-                or = true;
+            if (allPattern == null) {
+                allPattern = compileAllPattern(AudioExtensions.values());
             }
-            sb.append(")");
-            return Pattern.compile(sb.toString(), Pattern.DOTALL | Pattern.CASE_INSENSITIVE);
+            return allPattern;
         }
+
+        @Override
+        public boolean isSameExtensionGroup(ExtensionsFilterInterface extension) {
+            return extension instanceof AudioExtensions;
+        }
+
     }
 
     public static enum VideoExtensions implements ExtensionsFilterInterface {
@@ -98,6 +116,7 @@ public class CompiledFiletypeFilter {
         FLV,
         MP4,
         H264,
+        H265,
         M4U,
         M4V,
         MOV,
@@ -112,7 +131,8 @@ public class CompiledFiletypeFilter {
         GP3,
         WEBM;
 
-        private Pattern pattern;
+        private Pattern        pattern;
+        private static Pattern allPattern;
 
         private VideoExtensions() {
             pattern = Pattern.compile(name(), Pattern.DOTALL | Pattern.CASE_INSENSITIVE);
@@ -120,6 +140,11 @@ public class CompiledFiletypeFilter {
 
         public Pattern getPattern() {
             return pattern;
+        }
+
+        @Override
+        public boolean isSameExtensionGroup(ExtensionsFilterInterface extension) {
+            return extension instanceof VideoExtensions;
         }
 
         private VideoExtensions(String id) {
@@ -131,7 +156,10 @@ public class CompiledFiletypeFilter {
         }
 
         public Pattern compiledAllPattern() {
-            return compileAllPattern(VideoExtensions.values());
+            if (allPattern == null) {
+                allPattern = compileAllPattern(AudioExtensions.values());
+            }
+            return allPattern;
         }
 
         public String getIconID() {
@@ -144,7 +172,9 @@ public class CompiledFiletypeFilter {
         sb.append("(");
         boolean or = false;
         for (ExtensionsFilterInterface value : filters) {
-            if (or) sb.append("|");
+            if (or) {
+                sb.append("|");
+            }
             sb.append(value.getPattern());
             or = true;
         }
@@ -168,9 +198,11 @@ public class CompiledFiletypeFilter {
         S7Z,
         DMG,
         SFX,
+        XZ,
         TGZ;
 
-        private Pattern pattern;
+        private Pattern        pattern;
+        private static Pattern allPattern;
 
         public Pattern getPattern() {
             return pattern;
@@ -189,7 +221,15 @@ public class CompiledFiletypeFilter {
         }
 
         public Pattern compiledAllPattern() {
-            return compileAllPattern(ArchiveExtensions.values());
+            if (allPattern == null) {
+                allPattern = compileAllPattern(AudioExtensions.values());
+            }
+            return allPattern;
+        }
+
+        @Override
+        public boolean isSameExtensionGroup(ExtensionsFilterInterface extension) {
+            return extension instanceof ArchiveExtensions;
         }
 
         public String getIconID() {
@@ -208,7 +248,8 @@ public class CompiledFiletypeFilter {
         SVG,
         ICO;
 
-        private Pattern pattern;
+        private Pattern        pattern;
+        private static Pattern allPattern;
 
         public Pattern getPattern() {
             return pattern;
@@ -227,7 +268,15 @@ public class CompiledFiletypeFilter {
         }
 
         public Pattern compiledAllPattern() {
-            return compileAllPattern(ImageExtensions.values());
+            if (allPattern == null) {
+                allPattern = compileAllPattern(AudioExtensions.values());
+            }
+            return allPattern;
+        }
+
+        @Override
+        public boolean isSameExtensionGroup(ExtensionsFilterInterface extension) {
+            return extension instanceof ImageExtensions;
         }
 
         public String getIconID() {
@@ -283,7 +332,9 @@ public class CompiledFiletypeFilter {
         case IS:
             for (Pattern o : this.list) {
                 try {
-                    if (o.matcher(extension).matches()) return true;
+                    if (o.matcher(extension).matches()) {
+                        return true;
+                    }
                 } catch (Throwable e) {
                     e.printStackTrace();
                 }
@@ -292,7 +343,9 @@ public class CompiledFiletypeFilter {
         case IS_NOT:
             for (Pattern o : this.list) {
                 try {
-                    if (o.matcher(extension).matches()) return false;
+                    if (o.matcher(extension).matches()) {
+                        return false;
+                    }
                 } catch (Throwable e) {
                     e.printStackTrace();
                 }
