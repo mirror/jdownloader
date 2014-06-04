@@ -44,7 +44,7 @@ public class SettingsMenuContainer extends MenuContainer {
 
             } else if (selection.isLinkContext()) {
 
-                Image back = (((DownloadLink) selection.getLink()).getIcon().getImage());
+                Image back = (selection.getLink().getLinkInfo().getIcon().getImage());
                 subMenu.setIcon(new ImageIcon(ImageProvider.merge(back, NewTheme.I().getImage("settings", 14), 0, 0, 6, 6)));
 
             }
@@ -57,7 +57,7 @@ public class SettingsMenuContainer extends MenuContainer {
 
             } else if (selection.isLinkContext()) {
 
-                Image back = (((CrawledLink) selection.getLink()).getDownloadLink().getIcon().getImage());
+                Image back = (selection.getLink().getDownloadLink().getLinkInfo().getIcon().getImage());
                 subMenu.setIcon(new ImageIcon(ImageProvider.merge(back, NewTheme.I().getImage("settings", 14), 0, 0, 6, 6)));
 
             }

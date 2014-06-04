@@ -86,6 +86,7 @@ public class LinkCrawler {
     private List<LazyCrawlerPlugin>                 cHosts;
     protected final PluginClassLoaderChild          classLoader;
     private boolean                                 directHttpEnabled           = true;
+    private final String                            defaultDownloadFolder;
 
     public void setDirectHttpEnabled(boolean directHttpEnabled) {
         this.directHttpEnabled = directHttpEnabled;
@@ -184,9 +185,11 @@ public class LinkCrawler {
             this.directHTTP = parentCrawler.directHTTP;
             this.ftp = parentCrawler.ftp;
             this.directHttpEnabled = parentCrawler.directHttpEnabled;
+            this.defaultDownloadFolder = parentCrawler.defaultDownloadFolder;
             setHandler(parentCrawler.getHandler());
         } else {
             setHandler(defaulHandlerFactory());
+            defaultDownloadFolder = JsonConfig.create(GeneralSettings.class).getDefaultDownloadFolder();
             parentCrawler = null;
             classLoader = PluginClassLoader.getInstance().getChild();
             pHosts = new ArrayList<LazyHostPlugin>(HostPluginController.getInstance().list());
@@ -1105,41 +1108,44 @@ public class LinkCrawler {
     }
 
     private PackageInfo convertFilePackageInfos(CrawledLink link) {
-        if (link.getDownloadLink() != null && !FilePackage.isDefaultFilePackage(link.getDownloadLink().getFilePackage())) {
-            PackageInfo fpi = link.getDesiredPackageInfo();
-            if (fpi == null) {
-                fpi = new PackageInfo();
-            }
-            FilePackage dp = link.getDownloadLink().getFilePackage();
-            if (dp.getDownloadDirectory() != null && !dp.getDownloadDirectory().equals(org.appwork.storage.config.JsonConfig.create(GeneralSettings.class).getDefaultDownloadFolder())) {
-                // do not set downloadfolder if it is the defaultfolder
-                fpi.setDestinationFolder(dp.getDownloadDirectory());
-            }
+        if (link.getDownloadLink() != null) {
+            final FilePackage fp = link.getDownloadLink().getFilePackage();
+            if (!FilePackage.isDefaultFilePackage(fp)) {
+                PackageInfo fpi = link.getDesiredPackageInfo();
+                if (fpi == null) {
+                    fpi = new PackageInfo();
+                }
+                FilePackage dp = link.getDownloadLink().getFilePackage();
+                if (dp.getDownloadDirectory() != null && !dp.getDownloadDirectory().equals(defaultDownloadFolder)) {
+                    // do not set downloadfolder if it is the defaultfolder
+                    fpi.setDestinationFolder(dp.getDownloadDirectory());
+                }
 
-            if (Boolean.FALSE.equals(dp.getBooleanProperty(PACKAGE_CLEANUP_NAME, true))) {
-                fpi.setName(dp.getName());
-            } else {
-                fpi.setName(LinknameCleaner.cleanFileName(dp.getName(), false, true, true, true));
-            }
+                if (Boolean.FALSE.equals(dp.getBooleanProperty(PACKAGE_CLEANUP_NAME, true))) {
+                    fpi.setName(dp.getName());
+                } else {
+                    fpi.setName(LinknameCleaner.cleanFileName(dp.getName(), false, true, true, true));
+                }
 
-            if (dp.hasProperty(PACKAGE_ALLOW_MERGE)) {
-                if (Boolean.FALSE.equals(dp.getBooleanProperty(PACKAGE_ALLOW_MERGE, false))) {
+                if (dp.hasProperty(PACKAGE_ALLOW_MERGE)) {
+                    if (Boolean.FALSE.equals(dp.getBooleanProperty(PACKAGE_ALLOW_MERGE, false))) {
+                        fpi.setUniqueId(dp.getUniqueID());
+                    } else {
+                        fpi.setUniqueId(null);
+                    }
+                } else {
                     fpi.setUniqueId(dp.getUniqueID());
-                } else {
-                    fpi.setUniqueId(null);
                 }
-            } else {
-                fpi.setUniqueId(dp.getUniqueID());
-            }
-            if (dp.hasProperty(PACKAGE_IGNORE_VARIOUS)) {
-                if (Boolean.TRUE.equals(dp.getBooleanProperty(PACKAGE_IGNORE_VARIOUS, false))) {
-                    fpi.setIgnoreVarious(true);
-                } else {
-                    fpi.setIgnoreVarious(false);
+                if (dp.hasProperty(PACKAGE_IGNORE_VARIOUS)) {
+                    if (Boolean.TRUE.equals(dp.getBooleanProperty(PACKAGE_IGNORE_VARIOUS, false))) {
+                        fpi.setIgnoreVarious(true);
+                    } else {
+                        fpi.setIgnoreVarious(false);
+                    }
                 }
+                link.setDesiredPackageInfo(fpi);
+                return fpi;
             }
-            link.setDesiredPackageInfo(fpi);
-            return fpi;
         }
         return null;
     }

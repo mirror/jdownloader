@@ -46,12 +46,12 @@ public class DownloadPropertiesHeader extends AbstractPanelHeader implements Lin
                 current = objectbyRow;
                 String str = "";
                 if (objectbyRow instanceof FilePackage) {
-                    FilePackage pkg = (FilePackage) objectbyRow;
+                    final FilePackage pkg = (FilePackage) objectbyRow;
                     setIcon(NewTheme.I().getIcon("package_open", 16));
                     str = (_GUI._.LinkgrabberPropertiesHeader_update_package(pkg.getName()));
                 } else if (objectbyRow instanceof DownloadLink) {
-                    DownloadLink link = (DownloadLink) objectbyRow;
-                    setIcon(link.getIcon());
+                    final DownloadLink link = (DownloadLink) objectbyRow;
+                    setIcon(link.getLinkInfo().getIcon());
                     str = (_GUI._.LinkgrabberPropertiesHeader_update_link(link.getView().getDisplayName()));
                 }
                 setText(str);

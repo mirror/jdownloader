@@ -3,7 +3,7 @@ package org.jdownloader.gui.views.linkgrabber.columns;
 import jd.controlling.linkcrawler.CrawledLink;
 import jd.controlling.packagecontroller.AbstractNode;
 import jd.plugins.DownloadLink;
-import jd.plugins.PartInfo;
+import jd.plugins.LinkInfo;
 
 import org.appwork.swing.exttable.ExtColumn;
 import org.appwork.swing.exttable.ExtDefaultRowSorter;
@@ -25,12 +25,14 @@ public class PartColumn extends ExtTextColumn<AbstractNode> {
         this.setRowSorter(new ExtDefaultRowSorter<AbstractNode>() {
             @Override
             public int compare(final AbstractNode o1, final AbstractNode o2) {
-                PartInfo p1 = getPartInfo(o1);
-                PartInfo p2 = getPartInfo(o2);
-                int l1 = p1 == null ? -1 : p1.getNum();
-                int l2 = p2 == null ? -1 : p2.getNum();
+                LinkInfo p1 = getLinkInfo(o1);
+                LinkInfo p2 = getLinkInfo(o2);
+                int l1 = p1 == null ? -1 : p1.getPartNum();
+                int l2 = p2 == null ? -1 : p2.getPartNum();
 
-                if (l1 == l2) { return 0; }
+                if (l1 == l2) {
+                    return 0;
+                }
                 if (this.getSortOrderIdentifier() == ExtColumn.SORT_ASC) {
                     return l1 > l2 ? -1 : 1;
                 } else {
@@ -78,10 +80,12 @@ public class PartColumn extends ExtTextColumn<AbstractNode> {
 
     @Override
     public String getStringValue(AbstractNode value) {
-        PartInfo partInfo = getPartInfo(value);
-        if (partInfo != null) {
-            int num = partInfo.getNum();
-            if (num >= 0) return String.valueOf(num);
+        LinkInfo linkInfo = getLinkInfo(value);
+        if (linkInfo != null) {
+            int num = linkInfo.getPartNum();
+            if (num >= 0) {
+                return String.valueOf(num);
+            }
         }
         return null;
     }
@@ -90,14 +94,14 @@ public class PartColumn extends ExtTextColumn<AbstractNode> {
      * @param value
      * @return
      */
-    public PartInfo getPartInfo(AbstractNode value) {
-        PartInfo partInfo = null;
+    public LinkInfo getLinkInfo(AbstractNode value) {
+        LinkInfo linkInfo = null;
         if (value instanceof CrawledLink) {
-            partInfo = ((CrawledLink) value).getPartInfo();
+            linkInfo = ((CrawledLink) value).getLinkInfo();
         }
         if (value instanceof DownloadLink) {
-            partInfo = ((DownloadLink) value).getPartInfo();
+            linkInfo = ((DownloadLink) value).getLinkInfo();
         }
-        return partInfo;
+        return linkInfo;
     }
 }

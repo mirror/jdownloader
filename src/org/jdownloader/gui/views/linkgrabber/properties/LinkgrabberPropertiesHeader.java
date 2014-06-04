@@ -44,12 +44,12 @@ public class LinkgrabberPropertiesHeader extends AbstractPanelHeader implements 
                 current = objectbyRow;
                 String str = "";
                 if (objectbyRow instanceof CrawledPackage) {
-                    CrawledPackage pkg = (CrawledPackage) objectbyRow;
+                    final CrawledPackage pkg = (CrawledPackage) objectbyRow;
                     setIcon(NewTheme.I().getIcon("package_open", 16));
                     str = (_GUI._.LinkgrabberPropertiesHeader_update_package(pkg.getName()));
                 } else if (objectbyRow instanceof CrawledLink) {
-                    CrawledLink link = (CrawledLink) objectbyRow;
-                    setIcon(link.getIcon());
+                    final CrawledLink link = (CrawledLink) objectbyRow;
+                    setIcon(link.getLinkInfo().getIcon());
                     str = (_GUI._.LinkgrabberPropertiesHeader_update_link(link.getName()));
                 }
                 setText(str);

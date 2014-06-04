@@ -138,7 +138,9 @@ public class FileColumn extends ExtTextColumn<AbstractNode> implements GenericCo
     @Override
     public boolean onDoubleClick(MouseEvent e, AbstractNode contextObject) {
 
-        if (e.getPoint().x - getBounds().x < 30) { return false; }
+        if (e.getPoint().x - getBounds().x < 30) {
+            return false;
+        }
 
         if (contextObject instanceof DownloadLink) {
             switch (CFG_GUI.CFG.getLinkDoubleClickAction()) {
@@ -207,7 +209,9 @@ public class FileColumn extends ExtTextColumn<AbstractNode> implements GenericCo
 
     @Override
     public boolean isEnabled(AbstractNode obj) {
-        if (obj instanceof CrawledPackage) { return ((CrawledPackage) obj).getView().isEnabled(); }
+        if (obj instanceof CrawledPackage) {
+            return ((CrawledPackage) obj).getView().isEnabled();
+        }
         return obj.isEnabled();
     }
 
@@ -228,7 +232,9 @@ public class FileColumn extends ExtTextColumn<AbstractNode> implements GenericCo
     }
 
     public boolean onRenameClick(final MouseEvent e, final AbstractNode obj) {
-        if (e.getPoint().x - getBounds().x < 30) { return false; }
+        if (e.getPoint().x - getBounds().x < 30) {
+            return false;
+        }
         startEditing(obj);
         return true;
 
@@ -240,7 +246,9 @@ public class FileColumn extends ExtTextColumn<AbstractNode> implements GenericCo
 
     @Override
     protected void setStringValue(final String value, final AbstractNode object) {
-        if (StringUtils.isEmpty(value)) return;
+        if (StringUtils.isEmpty(value)) {
+            return;
+        }
         if (object instanceof FilePackage) {
             ((FilePackage) object).setName(value);
         } else if (object instanceof CrawledPackage) {
@@ -297,14 +305,18 @@ public class FileColumn extends ExtTextColumn<AbstractNode> implements GenericCo
             return (((AbstractPackageNode<?, ?>) value).isExpanded() ? iconPackageOpen : iconPackageClosed);
         } else if (value instanceof DownloadLink) {
             if (((DownloadLink) value).hasVariantSupport()) {
-                if (((DownloadLink) value).getDefaultPlugin().hasVariantToChooseFrom(((DownloadLink) value))) { return new ExtMergedIcon(new AbstractIcon(IconKey.ICON_PACKAGE_OPEN, 16), 0, 3).add(IconIO.getScaledInstance(((DownloadLink) value).getIcon(), 10, 10), 3, -2); }
+                if (((DownloadLink) value).getDefaultPlugin().hasVariantToChooseFrom(((DownloadLink) value))) {
+                    return new ExtMergedIcon(new AbstractIcon(IconKey.ICON_PACKAGE_OPEN, 16), 0, 3).add(IconIO.getScaledInstance(((DownloadLink) value).getLinkInfo().getIcon(), 10, 10), 3, -2);
+                }
             }
-            return (((DownloadLink) value).getIcon());
+            return (((DownloadLink) value).getLinkInfo().getIcon());
         } else if (value instanceof CrawledLink) {
             if (((CrawledLink) value).hasVariantSupport()) {
-                if (((CrawledLink) value).gethPlugin().hasVariantToChooseFrom(((CrawledLink) value).getDownloadLink())) { return new ExtMergedIcon(new AbstractIcon(IconKey.ICON_PACKAGE_OPEN, 16), 0, 3).add(IconIO.getScaledInstance(((CrawledLink) value).getIcon(), 10, 10), 3, -2); }
+                if (((CrawledLink) value).gethPlugin().hasVariantToChooseFrom(((CrawledLink) value).getDownloadLink())) {
+                    return new ExtMergedIcon(new AbstractIcon(IconKey.ICON_PACKAGE_OPEN, 16), 0, 3).add(IconIO.getScaledInstance(((CrawledLink) value).getLinkInfo().getIcon(), 10, 10), 3, -2);
+                }
             }
-            return (((CrawledLink) value).getIcon());
+            return (((CrawledLink) value).getLinkInfo().getIcon());
         }
         return null;
     }

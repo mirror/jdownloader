@@ -37,7 +37,7 @@ public class DownloadStartedContentPanel extends AbstractBubbleContentPanel {
         DownloadLink downloadLink = downloadController.getDownloadLink();
 
         if (CFG_BUBBLE.DOWNLOAD_STARTED_BUBBLE_CONTENT_FILENAME_VISIBLE.isEnabled()) {
-            filename = addPair(filename, _GUI._.lit_filename() + ":", downloadLink.getIcon());
+            filename = addPair(filename, _GUI._.lit_filename() + ":", downloadLink.getLinkInfo().getIcon());
             filename.setText(new File(downloadLink.getFileOutput()).getName());
         }
         if (CFG_BUBBLE.DOWNLOAD_STARTED_BUBBLE_CONTENT_HOSTER_VISIBLE.isEnabled()) {

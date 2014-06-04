@@ -16,6 +16,7 @@ import org.jdownloader.gui.views.components.packagetable.PackageControllerTableM
 import org.jdownloader.gui.views.components.packagetable.columns.ChecksumColumn;
 import org.jdownloader.gui.views.components.packagetable.columns.CommentColumn;
 import org.jdownloader.gui.views.components.packagetable.columns.DownloadPasswordColumn;
+import org.jdownloader.gui.views.components.packagetable.columns.FileTypeColumn;
 import org.jdownloader.gui.views.downloads.columns.AddedDateColumn;
 import org.jdownloader.gui.views.downloads.columns.AvailabilityColumn;
 import org.jdownloader.gui.views.downloads.columns.FileColumn;
@@ -51,7 +52,9 @@ public class LinkGrabberTableModel extends PackageControllerTableModel<CrawledPa
         try {
             return super.refreshSort(data);
         } finally {
-            if (!isTristateSorterEnabled()) sortColumn = null;
+            if (!isTristateSorterEnabled()) {
+                sortColumn = null;
+            }
         }
     }
 
@@ -110,7 +113,7 @@ public class LinkGrabberTableModel extends PackageControllerTableModel<CrawledPa
         });
         this.addColumn(new AddedDateColumn());
         this.addColumn(new ChecksumColumn());
-
+        this.addColumn(new FileTypeColumn());
     }
 
     protected void setVariantsSupport(final boolean vs) {
@@ -142,7 +145,9 @@ public class LinkGrabberTableModel extends PackageControllerTableModel<CrawledPa
     }
 
     public void setPriorityColumnVisible(boolean b) {
-        if (priorityColumn != null) this.setColumnVisible(priorityColumn, b);
+        if (priorityColumn != null) {
+            this.setColumnVisible(priorityColumn, b);
+        }
     }
 
 }

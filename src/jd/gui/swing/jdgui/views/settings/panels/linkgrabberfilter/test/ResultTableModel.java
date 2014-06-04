@@ -31,7 +31,7 @@ public class ResultTableModel extends ExtTableModel<CrawledLink> {
                 try {
                     if (!((LinkgrabberFilterRule) value.getMatchingFilter()).isAccept()) {
 
-                    return _GUI._.ResultTableModel_getTooltipText_dropped_();
+                        return _GUI._.ResultTableModel_getTooltipText_dropped_();
 
                     }
                 } catch (Exception e) {
@@ -54,7 +54,9 @@ public class ResultTableModel extends ExtTableModel<CrawledLink> {
             protected Icon getIcon(CrawledLink value) {
 
                 try {
-                    if (!((LinkgrabberFilterRule) value.getMatchingFilter()).isAccept()) { return NewTheme.I().getIcon("false", 16); }
+                    if (!((LinkgrabberFilterRule) value.getMatchingFilter()).isAccept()) {
+                        return NewTheme.I().getIcon("false", 16);
+                    }
                 } catch (Exception e) {
 
                 }
@@ -65,7 +67,9 @@ public class ResultTableModel extends ExtTableModel<CrawledLink> {
             @Override
             public String getStringValue(CrawledLink value) {
                 try {
-                    if (!((LinkgrabberFilterRule) value.getMatchingFilter()).isAccept()) { return _GUI._.ResultTableModel_getStringValue_filtered_(); }
+                    if (!((LinkgrabberFilterRule) value.getMatchingFilter()).isAccept()) {
+                        return _GUI._.ResultTableModel_getStringValue_filtered_();
+                    }
                 } catch (Exception e) {
 
                 }
@@ -189,8 +193,7 @@ public class ResultTableModel extends ExtTableModel<CrawledLink> {
             }
 
             protected Icon getIcon(final CrawledLink value) {
-
-                return value.getIcon();
+                return value.getLinkInfo().getIcon();
             }
 
             protected boolean isDefaultResizable() {
@@ -216,16 +219,24 @@ public class ResultTableModel extends ExtTableModel<CrawledLink> {
 
             protected Icon getIcon(final CrawledLink value) {
                 DomainInfo domain = value.getDomainInfo();
-                if (domain == null) domain = DomainInfo.getInstance(Browser.getHost(value.getURL()));
-                if (domain == null) return null;
+                if (domain == null) {
+                    domain = DomainInfo.getInstance(Browser.getHost(value.getURL()));
+                }
+                if (domain == null) {
+                    return null;
+                }
                 return domain.getFavIcon();
             }
 
             @Override
             public String getStringValue(CrawledLink value) {
                 DomainInfo domain = value.getDomainInfo();
-                if (domain == null) domain = DomainInfo.getInstance(Browser.getHost(value.getURL()));
-                if (domain == null) return null;
+                if (domain == null) {
+                    domain = DomainInfo.getInstance(Browser.getHost(value.getURL()));
+                }
+                if (domain == null) {
+                    return null;
+                }
                 return domain.getTld();
             }
         });
@@ -255,7 +266,9 @@ public class ResultTableModel extends ExtTableModel<CrawledLink> {
                 CrawledLink p = value;
                 String last = p.getURL();
                 while ((p = p.getSourceLink()) != null) {
-                    if (last != null && last.equals(p.getURL())) continue;
+                    if (last != null && last.equals(p.getURL())) {
+                        continue;
+                    }
                     sb.append("∟");
                     sb.append(p.getURL());
                     sb.append("\r\n");
@@ -289,7 +302,9 @@ public class ResultTableModel extends ExtTableModel<CrawledLink> {
 
             @Override
             public String getStringValue(CrawledLink value) {
-                if (value.getMatchingFilter() == null) return null;
+                if (value.getMatchingFilter() == null) {
+                    return null;
+                }
                 return value.getMatchingFilter().getName();
             }
         });
@@ -310,7 +325,9 @@ public class ResultTableModel extends ExtTableModel<CrawledLink> {
             @Override
             public String getStringValue(CrawledLink value) {
                 FilterRule filter = value.getMatchingFilter();
-                if (filter == null) return null;
+                if (filter == null) {
+                    return null;
+                }
 
                 return value.getMatchingFilter().toString(value);
             }
