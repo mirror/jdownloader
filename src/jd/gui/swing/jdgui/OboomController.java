@@ -16,6 +16,7 @@ import java.util.regex.Pattern;
 import javax.swing.Icon;
 
 import jd.SecondLevelLaunch;
+import jd.config.SubConfiguration;
 import jd.controlling.AccountController;
 import jd.controlling.AccountControllerEvent;
 import jd.controlling.AccountControllerListener;
@@ -32,6 +33,7 @@ import org.appwork.txtresource.TranslationFactory;
 import org.appwork.uio.UIOManager;
 import org.appwork.utils.Application;
 import org.appwork.utils.IO;
+import org.appwork.utils.StringUtils;
 import org.appwork.utils.os.CrossSystem;
 import org.appwork.utils.swing.EDTRunner;
 import org.appwork.utils.swing.dialog.ConfirmDialog;
@@ -237,8 +239,7 @@ public class OboomController implements TopRightPainter, AccountControllerListen
                     } catch (DialogCanceledException e) {
                         OboomController.track("GETPRO_DIALOG/CANCELED");
                     }
-                    CrossSystem.openURL("https://www.oboom.com/ref/501C81");
-
+                    CrossSystem.openURL("https://www.oboom.com/ref/501C81?file_id=" + getLatestFileID());
                 }
             }.start();
 
@@ -255,6 +256,22 @@ public class OboomController implements TopRightPainter, AccountControllerListen
             }.start();
         }
 
+    }
+
+    private static String getLatestFileID() {
+        String fileID = "";
+        try {
+            final SubConfiguration pluginConfig = SubConfiguration.getConfig("oboom.com");
+            if (pluginConfig != null) {
+                fileID = pluginConfig.getStringProperty("lastID", null);
+                if (StringUtils.isEmpty(fileID)) {
+                    fileID = "";
+                }
+            }
+        } catch (final Throwable e) {
+            e.printStackTrace();
+        }
+        return null;
     }
 
     public TopRightPainter start() {
@@ -498,7 +515,7 @@ public class OboomController implements TopRightPainter, AccountControllerListen
         try {
             Dialog.getInstance().showDialog(d);
             StatsManager.I().track("PremiumExpireWarning/" + account.getHoster() + "/OK");
-            CrossSystem.openURL(AccountController.createFullBuyPremiumUrl(plg.getPremiumUrl(), "PremiumExpireWarning/JD2"));
+            CrossSystem.openURL("https://www.oboom.com/ref/501C81?file_id=" + getLatestFileID());
         } catch (DialogNoAnswerException e) {
             e.printStackTrace();
             StatsManager.I().track("PremiumExpireWarning/" + account.getHoster() + "/CANCELED");
