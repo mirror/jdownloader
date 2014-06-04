@@ -67,7 +67,10 @@ public class Lnksvn extends PluginForDecrypt {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>() {
             @Override
             public boolean add(DownloadLink e) {
-                distribute(e);
+                try {
+                    distribute(e);
+                } catch (final Throwable ignore) {
+                }
                 return super.add(e);
             }
         };
@@ -92,7 +95,7 @@ public class Lnksvn extends PluginForDecrypt {
         getCaptcha(param, "");
         // CNL
         /* old CNL handling found in revision 13753 */
-        if (br.getRegex("cnl\\.jpg").matches() && isExternInterfaceActive() && false) {
+        if (br.getRegex("cnl\\.jpg").matches() && isExternInterfaceActive()) {
             final Form cnlform = br.getForm(0);
             /* 0.95xx comp */
             final String jkvalue = cnlform.getRegex("<INPUT TYPE=\"hidden\" NAME=\"jk\" VALUE=\"(.*?)\"").getMatch(0);
@@ -136,7 +139,7 @@ public class Lnksvn extends PluginForDecrypt {
         }
         // Container handling (DLC)
         String[] container = br.getRegex("\\.href\\=unescape\\(\\'(.*?)\\'\\)\\;").getColumn(0);
-        if (container != null && container.length > 0 && false) {
+        if (container != null && container.length > 0) {
             for (final String c : container) {
                 final Browser clone = br.cloneBrowser();
                 final String test = Encoding.htmlDecode(c);
