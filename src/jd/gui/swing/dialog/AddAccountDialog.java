@@ -288,10 +288,10 @@ public class AddAccountDialog extends AbstractDialog<Integer> {
         link.setToolTipText(_GUI._.gui_menu_action_premium_buy_name());
         link.addActionListener(new ActionListener() {
             public void actionPerformed(final ActionEvent e) {
-                if (plugin == null || StringUtils.isEmpty(plugin.getLazyP().getPremiumUrl())) {
+                if (plugin == null || StringUtils.isEmpty(plugin.getBuyPremiumUrl())) {
                     return;
                 }
-                CrossSystem.openURLOrShowMessage(AccountController.createFullBuyPremiumUrl(plugin.getLazyP().getPremiumUrl(), "accountmanager/table"));
+                CrossSystem.openURLOrShowMessage(AccountController.createFullBuyPremiumUrl(plugin.getBuyPremiumUrl(), "accountmanager/table"));
             }
         });
         link.setFocusable(false);
