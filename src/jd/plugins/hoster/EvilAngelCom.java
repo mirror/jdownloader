@@ -155,7 +155,6 @@ public class EvilAngelCom extends PluginForHost {
                 br.setCookiesExclusive(true);
                 br.setCookie(MAINPAGE, "enterSite", "en");
                 br.getHeaders().put("Accept-Language", "en-US,en;q=0.5");
-                br.setCustomCharset("utf-8");
                 final Object ret = account.getProperty("cookies", null);
                 boolean acmatch = Encoding.urlEncode(account.getUser()).equals(account.getStringProperty("name", Encoding.urlEncode(account.getUser())));
                 if (acmatch) {
@@ -172,7 +171,7 @@ public class EvilAngelCom extends PluginForHost {
                         return;
                     }
                 }
-                br.setFollowRedirects(false);
+                br.setFollowRedirects(true);
                 br.getPage("http://www.evilangel.com/en/login");
                 if (br.containsHTML(">We are experiencing some problems\\!<")) {
                     final AccountInfo ai = new AccountInfo();
@@ -188,7 +187,7 @@ public class EvilAngelCom extends PluginForHost {
                 sd = new SimpleDateFormat("k:mm");
                 final String time = sd.format(d);
                 final String captcha = br.getRegex("name=\"captcha\\[id\\]\" value=\"([a-z0-9]{32})\"").getMatch(0);
-                String postData = "submit=Click+here+to+login&mOffset=1&back&username=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()) + "=&mDate=" + Encoding.urlEncode(date) + "&mTime=" + Encoding.urlEncode(time);
+                String postData = "submit=Click+here+to+login&mOffset=1&back&username=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()) + "&mDate=" + Encoding.urlEncode(date) + "&mTime=" + Encoding.urlEncode(time);
                 // Handly stupid login captcha
                 if (captcha != null) {
                     final DownloadLink dummyLink = new DownloadLink(this, "Account", "evilangel.com", "http://evilangel.com", true);
