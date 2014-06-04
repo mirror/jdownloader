@@ -27,10 +27,6 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Set;
 
-import javax.script.Invocable;
-import javax.script.ScriptEngine;
-import javax.script.ScriptEngineManager;
-
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.gui.UserIO;
@@ -53,6 +49,9 @@ import jd.utils.locale.JDL;
 
 import org.appwork.storage.JSonStorage;
 import org.appwork.utils.formatter.HexFormatter;
+import org.mozilla.javascript.Context;
+import org.mozilla.javascript.ContextFactory;
+import org.mozilla.javascript.ScriptableObject;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "share-links.biz" }, urls = { "http://[\\w\\.]*?(share-links\\.biz/_[0-9a-z]+|s2l\\.biz/[a-z0-9]+)" }, flags = { 0 })
 public class ShrLnksBz extends PluginForDecrypt {
@@ -424,20 +423,35 @@ public class ShrLnksBz extends PluginForDecrypt {
 
     private String unpackJS(final String fun, final int value) throws Exception {
         Object result = new Object();
-        final ScriptEngineManager manager = new ScriptEngineManager();
-        final ScriptEngine engine = manager.getEngineByName("javascript");
-        final Invocable inv = (Invocable) engine;
+
         try {
             logger.info(fun);
-            if (value == 1) {
-                result = engine.eval(fun);
-                result = "parent = 1;" + result.toString().replace(".frames.Main.location.href", "").replace("window", "\"window\"");
-                logger.info(result.toString());
-                result = engine.eval(result.toString());
-            } else {
-                engine.eval(fun);
-                result = inv.invokeFunction("f");
+
+            Context cx = null;
+            try {
+                cx = ContextFactory.getGlobal().enterContext();
+                ScriptableObject scope = cx.initStandardObjects();
+
+                if (value == 1) {
+
+                    /*
+                     * creating pseudo functions: document.location.protocol + document.write(value)
+                     */
+                    result = cx.evaluateString(scope, fun, "<cmd>", 1, null);
+                    result = "parent = 1;" + result.toString().replace(".frames.Main.location.href", "").replace("window", "\"window\"");
+                    logger.info(result.toString());
+
+                    result = cx.evaluateString(scope, result.toString(), "<cmd>", 1, null);
+
+                } else {
+                    cx.evaluateString(scope, fun, "<cmd>", 1, null);
+                    result = cx.evaluateString(scope, "f()", "<cmd>", 1, null);
+                }
+
+            } finally {
+                Context.exit();
             }
+
         } catch (final Exception e) {
             logger.severe(e.getMessage());
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
