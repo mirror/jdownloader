@@ -254,6 +254,10 @@ public class U115Com extends PluginForHost {
         if (!br.containsHTML("onclick=\"MoveMyFile\\.Show\\(true\\);")) {
             throw new PluginException(LinkStatus.ERROR_FATAL, "This file is not downloadable");
         }
+        final boolean plugin_broken = true;
+        if (plugin_broken) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         String plainfilename = link.getStringProperty("plainfilename", null);
         final String userID = br.getRegex("user_id:   \\'(\\d+)\\'").getMatch(0);
         final String fileID = br.getRegex("file_id:   \\'(\\d+)\\'").getMatch(0);
@@ -324,8 +328,9 @@ public class U115Com extends PluginForHost {
     private String[] findIdsByFilename(final String plainfilename) throws IOException {
         // Access filelist in account
         // http://web.api.115.com/files?aid=1&cid=0&offset=0&limit=50&show_dir=1&o=user_ptime&asc=0&nf=1&qid=0&source=&format=json
-        br.getPage("http://115.com//?ct=file&ac=userfile&ajax=1&qid=&select=1&nf=1&filter=&select_dir=0&aid=1&cid=0&nsf=&_t=" + System.currentTimeMillis());
-        br.getPage("http://web.api.115.com/files?aid=1&cid=0&o=user_ptime&asc=0&offset=0&show_dir=1&limit=40&code=&scid=&snap=0&natsort=1&source=&format=json");
+        // br.getPage("http://115.com//?ct=file&ac=userfile&ajax=1&qid=&select=1&nf=1&filter=&select_dir=0&aid=1&cid=0&nsf=&_t=" +
+        // System.currentTimeMillis());
+        // br.getPage("http://web.api.115.com/files?aid=1&cid=0&o=user_ptime&asc=0&offset=0&show_dir=1&limit=40&code=&scid=&snap=0&natsort=1&source=&format=json");
         final String[] fileIDs = new String[2];
         final String dataText = br.getRegex("\"data\":\\[(.*?\\})\\]").getMatch(0);
         if (dataText == null) {
