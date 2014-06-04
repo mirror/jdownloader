@@ -1,22 +1,16 @@
 package org.jdownloader.scripting;
 
-import java.lang.reflect.Field;
-import java.lang.reflect.Method;
 import java.util.concurrent.ConcurrentHashMap;
 
-import javax.script.ScriptEngine;
-import javax.script.ScriptEngineManager;
-
-import org.appwork.exceptions.WTFException;
 import org.appwork.utils.logging.Log;
-
-import sun.org.mozilla.javascript.internal.ClassShutter;
-import sun.org.mozilla.javascript.internal.Context;
-import sun.org.mozilla.javascript.internal.ContextFactory;
-import sun.org.mozilla.javascript.internal.EcmaError;
-import sun.org.mozilla.javascript.internal.NativeJavaObject;
-import sun.org.mozilla.javascript.internal.Scriptable;
-import sun.org.mozilla.javascript.internal.WrapFactory;
+import org.mozilla.javascript.ClassShutter;
+import org.mozilla.javascript.Context;
+import org.mozilla.javascript.ContextFactory;
+import org.mozilla.javascript.EcmaError;
+import org.mozilla.javascript.NativeJavaObject;
+import org.mozilla.javascript.Scriptable;
+import org.mozilla.javascript.WrapFactory;
+import org.mozilla.javascript.tools.shell.Global;
 
 /**
  * from http://codeutopia.net/blog/2009/01/02/sandboxing-rhino-in-java/
@@ -57,7 +51,8 @@ import sun.org.mozilla.javascript.internal.WrapFactory;
  * This will not get blocked by the ClassShutter! We need to disable access to getClass() to block this.
  * 
  * While the ClassShutter is relatively well documented, doing this required more research. A post in the Rhino mailing list finally pushed
- * me to the right direction: Overriding certain NativeJavaObject methods and creating a custom ContextFactory and WrapFactory for that.
+ * me to the right direction: Overriding certain NativeJavaObject methods and creating a custom
+ * sun.org.mozilla.javascript.internal.ContextFactory and WrapFactory for that.
  * 
  * Here is an extended NativeJavaObject, which blocks access to getClass. You could use this approach to block access to other methods too:
  * 
@@ -72,17 +67,18 @@ import sun.org.mozilla.javascript.internal.WrapFactory;
  * 
  *           public static class SandboxWrapFactory extends WrapFactory {
  * @Override public Scriptable wrapAsJavaObject(Context cx, Scriptable scope, Object javaObject, Class staticType) { return new
- *           SandboxNativeJavaObject(scope, javaObject, staticType); } } And a ContextFactory, which returns Context’s which use
- *           SandboxWrapFactory:
+ *           SandboxNativeJavaObject(scope, javaObject, staticType); } } And a sun.org.mozilla.javascript.internal.ContextFactory, which
+ *           returns Context’s which use SandboxWrapFactory:
  * 
- *           public class SandboxContextFactory extends ContextFactory {
+ *           public class SandboxContextFactory extends sun.org.mozilla.javascript.internal.ContextFactory {
  * @Override protected Context makeContext() { Context cx = super.makeContext(); cx.setWrapFactory(new SandboxWrapFactory()); return cx; } }
- *           Finally, to make all this work, we need to tell Rhino the global ContextFactory:
+ *           Finally, to make all this work, we need to tell Rhino the global sun.org.mozilla.javascript.internal.ContextFactory:
  * 
- *           ContextFactory.initGlobal(new SandboxContextFactory()); With this, we are done. Now, when you use
- *           ContextFactory.getGlobal().enterContext(), you will get sandboxing contexts. But why did we need to set it globally? This is
- *           because it would appear that certain things, such as the adapter classes, use the global context factory to get some context
- *           for themselves, and without setting the global factory, they would get unlimited access.
+ *           sun.org.mozilla.javascript.internal.ContextFactory.initGlobal(new SandboxContextFactory()); With this, we are done. Now, when
+ *           you use sun.org.mozilla.javascript.internal.ContextFactory.getGlobal().enterContext(), you will get sandboxing contexts. But
+ *           why did we need to set it globally? This is because it would appear that certain things, such as the adapter classes, use the
+ *           global context factory to get some context for themselves, and without setting the global factory, they would get unlimited
+ *           access.
  * 
  *           In closing
  * 
@@ -104,72 +100,41 @@ import sun.org.mozilla.javascript.internal.WrapFactory;
  */
 public class JSPermissionRestricter {
     static public class SandboxContextFactory extends ContextFactory {
-        private ContextFactory rhinoFactory;
-        private Method         makeContextMethod;
-
-        public SandboxContextFactory(ContextFactory rhinoFactory) throws NoSuchMethodException, SecurityException {
-            this.rhinoFactory = rhinoFactory;
-            makeContextMethod = ContextFactory.class.getDeclaredMethod("makeContext", new Class[] {});
-            makeContextMethod.setAccessible(true);
-        }
-
         @Override
         protected Context makeContext() {
-            Context cx;
-            try {
-                cx = (Context) makeContextMethod.invoke(rhinoFactory, new Object[] {});
-
-                Field classShutterInstance = Context.class.getDeclaredField("classShutter");
-                classShutterInstance.setAccessible(true);
-
-                final ClassShutter oldShutter = (ClassShutter) classShutterInstance.get(cx);
-
-                cx.setWrapFactory(new SandboxWrapFactory(cx.getWrapFactory()));
-
-                classShutterInstance.set(cx, new ClassShutter() {
-                    public boolean visibleToScripts(String className) {
-                        if (!oldShutter.visibleToScripts(className)) {
-                            return false;
-                        }
-                        Thread cur = Thread.currentThread();
-                        if (TRUSTED_THREAD.containsKey(cur)) {
-                            Log.L.severe("Trusted Thread Loads: " + className);
-                            return true;
-
-                        }
-                        if (className.startsWith("adapter")) {
-                            return true;
-
-                        } else if (className.equals("sun.org.mozilla.javascript.internal.EcmaError")) {
-                            Log.L.severe("Javascript error occured");
-                            return true;
-                        } else {
-
-                            throw new RuntimeException("Security Violation " + className);
-                        }
+            Context cx = super.makeContext();
+            cx.setWrapFactory(new SandboxWrapFactory());
+            cx.setClassShutter(new ClassShutter() {
+                public boolean visibleToScripts(String className) {
+                    Thread cur = Thread.currentThread();
+                    if (TRUSTED_THREAD.containsKey(cur)) {
+                        Log.L.severe("Trusted Thread Loads: " + className);
+                        return true;
 
                     }
-                });
+                    if (className.startsWith("adapter")) {
+                        return true;
 
-                return cx;
-            } catch (Throwable e) {
-                throw new WTFException(e);
-            }
+                    } else if (className.equals("net.sourceforge.htmlunit.corejs.javascript.EcmaError")) {
+                        Log.L.severe("Javascript error occured");
+                        return true;
+                    } else {
+
+                        throw new RuntimeException("Security Violation " + className);
+                    }
+
+                }
+            });
+
+            return cx;
         }
     }
 
     public static class SandboxWrapFactory extends WrapFactory {
 
-        private WrapFactory rhinoFactory;
-
-        public SandboxWrapFactory(WrapFactory wrapFactory) {
-            this.rhinoFactory = wrapFactory;
-        }
-
         @SuppressWarnings("rawtypes")
         @Override
         public Scriptable wrapAsJavaObject(Context cx, Scriptable scope, Object javaObject, Class staticType) {
-
             if (javaObject instanceof EcmaError) {
                 Log.exception((EcmaError) javaObject);
             }
@@ -183,6 +148,7 @@ public class JSPermissionRestricter {
         private static final long serialVersionUID = -2783084485265910840L;
 
         public SandboxNativeJavaObject(Scriptable scope, Object javaObject, Class<?> staticType) {
+
             super(scope, javaObject, staticType);
         }
 
@@ -199,31 +165,106 @@ public class JSPermissionRestricter {
         }
     }
 
-    public static void init() {
-        // this is onlypossible before RhineScriptEngine is loaded
-        // GlobalSetter getGlobalSetter = ContextFactory.getGlobalSetter();
+    private static ConcurrentHashMap<Thread, Boolean> TRUSTED_THREAD = new ConcurrentHashMap<Thread, Boolean>();
+
+    public static Object evaluateTrustedString(Context cx, Global scope, String source, String sourceName, int lineno, Object securityDomain) {
         try {
-            // force init
-            ScriptEngineManager manager = new ScriptEngineManager();
-            ScriptEngine engine = manager.getEngineByName("javascript");
+            TRUSTED_THREAD.put(Thread.currentThread(), true);
 
-            engine.eval("java.lang.System.out.println('TEST')");
+            return cx.evaluateString(scope, source, sourceName, lineno, securityDomain);
+        } finally {
+            TRUSTED_THREAD.remove(Thread.currentThread());
+        }
+    }
 
-            Field globalField = ContextFactory.class.getDeclaredField("global");
+    public static void init() {
+        // try {
+        //
+        // sun.org.mozilla.javascript.internal.ContextFactory.initGlobal(new sun.org.mozilla.javascript.internal.ContextFactory() {
+        //
+        // @Override
+        // protected sun.org.mozilla.javascript.internal.Context makeContext() {
+        // throw new
+        // WTFException("No Allowed. Use org.mozilla.javascript.* or net.sourceforge.htmlunit.corejs.javascript.* (JD2 only!) instead");
+        // }
+        //
+        // @Override
+        // protected boolean hasFeature(sun.org.mozilla.javascript.internal.Context context, int i) {
+        // throw new
+        // WTFException("No Allowed. Use org.mozilla.javascript.* or net.sourceforge.htmlunit.corejs.javascript.* (JD2 only!) instead");
+        // }
+        //
+        // @Override
+        // protected GeneratedClassLoader createClassLoader(ClassLoader classloader) {
+        // throw new
+        // WTFException("No Allowed. Use org.mozilla.javascript.* or net.sourceforge.htmlunit.corejs.javascript.* (JD2 only!) instead");
+        // }
+        //
+        // @Override
+        // protected Object doTopCall(Callable callable, sun.org.mozilla.javascript.internal.Context context,
+        // sun.org.mozilla.javascript.internal.Scriptable scriptable, sun.org.mozilla.javascript.internal.Scriptable scriptable1, Object[]
+        // aobj) {
+        // throw new
+        // WTFException("No Allowed. Use org.mozilla.javascript.* or net.sourceforge.htmlunit.corejs.javascript.* (JD2 only!) instead");
+        // }
+        //
+        // @Override
+        // protected void observeInstructionCount(sun.org.mozilla.javascript.internal.Context context, int i) {
+        // throw new
+        // WTFException("No Allowed. Use org.mozilla.javascript.* or net.sourceforge.htmlunit.corejs.javascript.* (JD2 only!) instead");
+        // }
+        //
+        // @Override
+        // protected void onContextCreated(sun.org.mozilla.javascript.internal.Context context) {
+        // throw new
+        // WTFException("No Allowed. Use org.mozilla.javascript.* or net.sourceforge.htmlunit.corejs.javascript.* (JD2 only!) instead");
+        // }
+        //
+        // @Override
+        // protected void onContextReleased(sun.org.mozilla.javascript.internal.Context context) {
+        // throw new
+        // WTFException("No Allowed. Use org.mozilla.javascript.* or net.sourceforge.htmlunit.corejs.javascript.* (JD2 only!) instead");
+        // }
+        // });
+        // // let's do a test
+        // final ScriptEngineManager manager = new ScriptEngineManager();
+        // final ScriptEngine engine = manager.getEngineByName("javascript");
+        //
+        // if (engine != null) {
+        // throw new WTFException("Failed to disable internal Rhino");
+        // }
+        // } catch (ExceptionInInitializerError e) {
+        // // desired exception.
+        // } catch (Throwable e) {
+        // // sun.org.mozilla.javascript.internal.* may be unavailable
+        // e.printStackTrace();
+        // }
 
-            globalField.setAccessible(true);
-            Object global = globalField.get(null);
-            globalField.set(null, new SandboxContextFactory((ContextFactory) global));
-            // try again. now this native call should throw an exception.
+        try {
+            ContextFactory.initGlobal(new SandboxContextFactory());
+            // let's do a test
             try {
+                Context cx = null;
+                try {
+                    cx = ContextFactory.getGlobal().enterContext();
 
-                manager = new ScriptEngineManager();
-                engine = manager.getEngineByName("javascript");
+                    cx.evaluateString(cx.initStandardObjects(), "java.lang.System.out.println('TEST')", "<cmd>", 1, null);
 
-                engine.eval("java.lang.System.out.println('TEST')");
+                } finally {
+                    Context.exit();
+                }
+
                 throw new SecurityException("Could not install the sun.org.mozilla.javascript.internal Sandbox!");
+            } catch (NullPointerException e) {
+                throw e;
+            } catch (SecurityException e) {
+                throw e;
             } catch (RuntimeException e) {
-                // this time, an exception is fine
+                if (!"Security Violation org".equals(e.getMessage())) {
+                    throw e;
+                } else {
+                    // test successfull. Security Sandbox successfully initialized
+                }
 
             }
 
@@ -232,7 +273,5 @@ public class JSPermissionRestricter {
         }
 
     }
-
-    private static ConcurrentHashMap<Thread, Boolean> TRUSTED_THREAD = new ConcurrentHashMap<Thread, Boolean>();
 
 }

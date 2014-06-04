@@ -260,6 +260,7 @@ public class SecondLevelLaunch {
         SecondLevelLaunch.LOG = LogController.GL;
         /* setup JSPermission */
         try {
+
             JSPermissionRestricter.init();
 
         } catch (final Throwable e) {
