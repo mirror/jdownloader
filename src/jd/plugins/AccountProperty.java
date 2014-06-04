@@ -6,6 +6,8 @@ public class AccountProperty {
         ERROR,
         PASSWORD,
         USERNAME;
+        //
+
     }
 
     private final Object  value;
