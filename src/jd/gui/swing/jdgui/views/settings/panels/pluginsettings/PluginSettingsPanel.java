@@ -93,7 +93,9 @@ public class PluginSettingsPanel extends JPanel implements SettingsComponent, Ac
 
             @Override
             protected Icon getIconForValue(LazyPlugin<?> value) {
-                if (value == null) return null;
+                if (value == null) {
+                    return null;
+                }
                 return DomainInfo.getInstance(value.getDisplayName()).getFavIcon();
             }
 
@@ -105,7 +107,9 @@ public class PluginSettingsPanel extends JPanel implements SettingsComponent, Ac
 
             @Override
             protected String getTextForValue(LazyPlugin<?> value) {
-                if (value == null) return "";
+                if (value == null) {
+                    return "";
+                }
                 return value.getDisplayName();
             }
         };
@@ -195,8 +199,8 @@ public class PluginSettingsPanel extends JPanel implements SettingsComponent, Ac
                     protected void runInEDT() {
                         removeAll();
                         add(SwingUtils.toBold(new JLabel(_GUI._.PluginSettingsPanel_runInEDT_choose_())), "split 3,shrinkx");
-                        add(searchCombobox, "pushx,growx,height 22!");
-                        add(resetButton, "width 22!,height 22!");
+                        add(searchCombobox, "pushx,growx,height 24!");
+                        add(resetButton, "width 22!,height 24!");
                         add(header, "growx,pushx,gaptop 10");
                         add(card, "spanx,pushx,growx");
 
@@ -293,7 +297,7 @@ public class PluginSettingsPanel extends JPanel implements SettingsComponent, Ac
     }
 
     public void actionPerformed(ActionEvent e) {
-        LazyPlugin<?> selected = (LazyPlugin<?>) searchCombobox.getSelectedItem();
+        LazyPlugin<?> selected = searchCombobox.getSelectedItem();
 
         if (selected != null) {
             JsonConfig.create(GraphicalUserInterfaceSettings.class).setActivePluginConfigPanel(selected.getClassname());
@@ -444,7 +448,9 @@ public class PluginSettingsPanel extends JPanel implements SettingsComponent, Ac
             configPanel.setHidden();
             configPanel = null;
         }
-        if (card != null) card.removeAll();
+        if (card != null) {
+            card.removeAll();
+        }
         currentItem = null;
 
     }
