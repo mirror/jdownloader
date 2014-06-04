@@ -324,9 +324,6 @@ public class KingFilesNet extends PluginForHost {
                 }
             }
         }
-        if (inValidate(fileInfo[2])) {
-            fileInfo[2] = cbr.getRegex("<b>MD5.*?</b>.*?nowrap>(.*?)<").getMatch(0);
-        }
         return fileInfo;
     }
 
