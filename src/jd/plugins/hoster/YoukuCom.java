@@ -45,9 +45,12 @@ public class YoukuCom extends PluginForHost {
 
     @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception {
-        prepareBrowser("Mozilla/5.0 (compatible; MSIE 9.0; Windows NT 6.1; WOW64; Trident/5.0)");
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, downloadLink.getDownloadURL(), false, -1);
-        if (dl.getConnection().getResponseCode() == 404) { throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, 10 * 60 * 1000l); }
+        prepareBrowser("Mozilla/5.0 (Windows NT 5.1) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/32.0.1700.107 Safari/537.36");
+        final String dllink = downloadLink.getDownloadURL();
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, false, 1);
+        if (dl.getConnection().getResponseCode() == 404) {
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, 10 * 60 * 1000l);
+        }
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -60,16 +63,19 @@ public class YoukuCom extends PluginForHost {
         br.getHeaders().put("Cache-Control", null);
         br.getHeaders().put("Accept-Charset", null);
         br.getHeaders().put("Accept", "*/*");
-        br.getHeaders().put("Accept-Language", "zh-ZH");
+        br.getHeaders().put("Accept-Language", "zh-TW,zh;q=0.8,en-US;q=0.6,en;q=0.4");
         br.getHeaders().put("User-Agent", userAgent);
         br.getHeaders().put("Connection", null);
-        br.getHeaders().put("Referer", "http://static.youku.com/v1.0.0184/v/swf/player.swf");
+        br.getHeaders().put("Referer", "http://static.youku.com/v1.0.0437/v/swf/loader.swf");
         br.getHeaders().put("x-flash-version", "10,3,181,34");
+        br.getHeaders().put("Accept-Encoding", "gzip,deflate,sdch");
     }
 
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws IOException, PluginException {
-        if (downloadLink.getBooleanProperty("offline")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (downloadLink.getBooleanProperty("offline")) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
         return AvailableStatus.TRUE;
     }
 
