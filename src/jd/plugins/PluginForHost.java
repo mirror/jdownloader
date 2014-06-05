@@ -737,7 +737,7 @@ public abstract class PluginForHost extends Plugin {
 
     protected void waitForNextStartAllowed(final DownloadLink downloadLink, final Account account) throws PluginException, InterruptedException {
         final WaitingQueueItem queueItem = downloadLink.getDownloadLinkController().getQueueItem();
-        final long wait = getStartIntervall(downloadLink, account);
+        final long wait = Math.max(0, getStartIntervall(downloadLink, account));
         if (wait == 0) {
             queueItem.lastStartTimestamp.set(System.currentTimeMillis());
             return;
