@@ -37,11 +37,11 @@ import org.jdownloader.updatev2.gui.LAFOptions;
 
 public class SpeedMeterPanel extends Graph {
 
-    private static final long serialVersionUID = 5571694800446993879L;
+    private static final long     serialVersionUID = 5571694800446993879L;
 
-    private Limiter           speedLimiter;
+    private final Limiter         speedLimiter;
 
-    private GeneralSettings   config;
+    private final GeneralSettings config;
 
     public SpeedMeterPanel(boolean contextMenu, boolean start) {
         super();
@@ -91,7 +91,9 @@ public class SpeedMeterPanel extends Graph {
             }
         }, false);
         setLimiter(new Limiter[] { speedLimiter });
-        if (start) start();
+        if (start) {
+            start();
+        }
     }
 
     protected String createTooltipText() {

@@ -1,12 +1,14 @@
 package jd.plugins;
 
+import java.lang.ref.WeakReference;
+import java.util.HashMap;
+
 import javax.swing.Icon;
 import javax.swing.ImageIcon;
 
 import jd.controlling.packagecontroller.AbstractPackageChildrenNode;
 import jd.parser.Regex;
 
-import org.appwork.storage.config.WeakHashSet;
 import org.appwork.utils.Files;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.images.IconIO;
@@ -42,7 +44,7 @@ public class LinkInfo {
         this.extension = extension;
     }
 
-    private static final WeakHashSet<LinkInfo> linkInfoCache = new WeakHashSet<LinkInfo>();
+    private static final HashMap<String, WeakReference<LinkInfo>> CACHE = new HashMap<String, WeakReference<LinkInfo>>();
 
     public static LinkInfo getLinkInfo(AbstractPackageChildrenNode abstractChildrenNode) {
         if (abstractChildrenNode != null) {
@@ -66,14 +68,14 @@ public class LinkInfo {
             } catch (Throwable e) {
                 e.printStackTrace();
             }
-            synchronized (linkInfoCache) {
-                for (LinkInfo linkInfo : linkInfoCache) {
-                    if (linkInfo != null && linkInfo.getExtension() == extension && linkInfo.getPartNum() == num) {
-                        return linkInfo;
-                    }
+            final String ID = fileNameExtension + "_" + num;
+            synchronized (CACHE) {
+                LinkInfo ret = null;
+                WeakReference<LinkInfo> linkInfo = CACHE.get(ID);
+                if (linkInfo == null || (ret = linkInfo.get()) == null) {
+                    ret = new LinkInfo(num, extension, getIcon(fileName, extension));
+                    CACHE.put(ID, new WeakReference<LinkInfo>(ret));
                 }
-                final LinkInfo ret = new LinkInfo(num, extension, getIcon(fileName, extension));
-                linkInfoCache.add(ret);
                 return ret;
             }
         }
