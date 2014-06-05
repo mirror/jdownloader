@@ -82,7 +82,9 @@ public class Freaksharenet extends PluginForHost {
 
     @Override
     public boolean isPremiumEnabled() {
-        if ("freakshare.com".equals(getHost())) return true;
+        if ("freakshare.com".equals(getHost())) {
+            return true;
+        }
         return false;
     }
 
@@ -99,18 +101,28 @@ public class Freaksharenet extends PluginForHost {
          */
         br.getPage("http://freakshare.com/index.php?language=EN");
         br.getPage(downloadLink.getDownloadURL());
-        if (br.containsHTML("We are back soon")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE);
-        if (br.containsHTML("(Sorry but this File is not avaible|Sorry, this Download doesnt exist anymore)")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        if (br.containsHTML("No Downloadserver\\. Please try again")) return AvailableStatus.UNCHECKABLE;
+        if (br.containsHTML("We are back soon")) {
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE);
+        }
+        if (br.containsHTML("(Sorry but this File is not avaible|Sorry, this Download doesnt exist anymore)")) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
+        if (br.containsHTML("No Downloadserver\\. Please try again")) {
+            return AvailableStatus.UNCHECKABLE;
+        }
         if (br.containsHTML(LIMITREACHED)) {
             String nameFromLink = new Regex(downloadLink.getDownloadURL(), "freakshare\\.com/files/[a-z0-9]+/(.*?)\\.html").getMatch(0);
-            if (nameFromLink != null) downloadLink.setName(Encoding.htmlDecode(nameFromLink));
+            if (nameFromLink != null) {
+                downloadLink.setName(Encoding.htmlDecode(nameFromLink));
+            }
             downloadLink.getLinkStatus().setStatusText(JDL.L("plugins.hoster.freaksharecom.limitreached", "Limit reached: No full availablecheck possible at the moment!"));
             return AvailableStatus.TRUE;
         }
 
         final String filename = br.getRegex("\"box_heading\" style=\"text\\-align:center;\">(.*?)\\- .*?</h1>").getMatch(0);
-        if (filename == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (filename == null) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
         downloadLink.setName(Encoding.htmlDecode(filename.trim()));
         final String filesize = br.getRegex("\"box_heading\" style=\"text\\-align:center;\">.*?\\- (.*?)</h1>").getMatch(0);
         if (filesize != null) {
@@ -127,22 +139,32 @@ public class Freaksharenet extends PluginForHost {
         br.setFollowRedirects(false);
         Form form = br.getForm(1);
         final String ajax = br.getRegex("\\$\\.get\\(\"\\.\\./\\.\\.(.*?)\",").getMatch(0);
-        if (form == null) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
+        if (form == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         if (form.getAction().contains("shop")) {
             logger.info("Wrong form = shop form!");
             form = null;
             Form[] forms = br.getForms();
-            if (forms == null) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
+            if (forms == null) {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
             for (Form a : forms) {
                 if (a.getAction() != null) {
-                    if (a.getAction().contains("shop")) continue;
-                    if (a.getAction().contains("payment.html")) continue;
+                    if (a.getAction().contains("shop.html")) {
+                        continue;
+                    }
+                    if (a.getAction().contains("payment.html")) {
+                        continue;
+                    }
                 }
                 form = a;
                 break;
             }
         }
-        if (form == null) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
+        if (form == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         form.remove(null);
 
         String ttt = null;
@@ -158,7 +180,9 @@ public class Freaksharenet extends PluginForHost {
         if (ttt != null) {
             tt = Integer.parseInt(ttt);
         }
-        if ((tt > 600 && !waitReconnecttime) || tt > 1800) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 60 * 60 * 1000l);
+        if ((tt > 600 && !waitReconnecttime) || tt > 1800) {
+            throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 60 * 60 * 1000l);
+        }
         sleep((tt + new Random().nextInt(10)) * 1001l, downloadLink);
         br.submitForm(form);
 
@@ -167,16 +191,24 @@ public class Freaksharenet extends PluginForHost {
             handleFreeErrors();
             Form[] forms = br.getForms();
             form = null;
-            if (forms == null) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
+            if (forms == null) {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
             for (Form a : forms) {
                 if (a.getAction() != null) {
-                    if (a.getAction().contains("shop")) continue;
-                    if (a.getAction().contains("payment.html")) continue;
+                    if (a.getAction().contains("shop.html")) {
+                        continue;
+                    }
+                    if (a.getAction().contains("payment.html")) {
+                        continue;
+                    }
                 }
                 form = a;
                 break;
             }
-            if (form == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            if (form == null) {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
             if (br.containsHTML("(api\\.recaptcha\\.net|google\\.com/recaptcha/api/)")) {
                 captchaFailed = true;
                 final PluginForHost recplug = JDUtilities.getPluginForHost("DirectHTTP");
@@ -190,7 +222,9 @@ public class Freaksharenet extends PluginForHost {
                 form.remove("submit");
                 form.remove(null);
                 br.submitForm(form);
-                if (br.containsHTML(MAXDLSLIMITMESSAGE)) { throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Maximum concurrent download sessions reached.", 30 * 60 * 1000l); }
+                if (br.containsHTML(MAXDLSLIMITMESSAGE)) {
+                    throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Maximum concurrent download sessions reached.", 30 * 60 * 1000l);
+                }
                 if (br.containsHTML("(api\\.recaptcha\\.net|google\\.com/recaptcha/api/|>Wrong Captcha)")) {
                     try {
                         invalidateLastChallengeResponse();
@@ -204,7 +238,9 @@ public class Freaksharenet extends PluginForHost {
                     }
                 }
                 final String finallink = br.getRedirectLocation();
-                if (finallink == null) continue;
+                if (finallink == null) {
+                    continue;
+                }
                 dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, finallink, resume, maxchunks);
                 captchaFailed = false;
                 break;
@@ -214,7 +250,9 @@ public class Freaksharenet extends PluginForHost {
             }
             if (!dl.getConnection().isContentDisposition()) {
                 br.followConnection();
-                if (br.containsHTML("(api\\.recaptcha\\.net|google\\.com/recaptcha/api/|>Wrong Captcha)")) continue;
+                if (br.containsHTML("(api\\.recaptcha\\.net|google\\.com/recaptcha/api/|>Wrong Captcha)")) {
+                    continue;
+                }
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
             captchaFailed = false;
@@ -303,28 +341,50 @@ public class Freaksharenet extends PluginForHost {
     }
 
     public void handleFreeErrors() throws PluginException {
-        if (br.containsHTML("Sorry, you cant download more then 50 files at time")) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 10 * 60 * 1000l);
-        if (br.containsHTML("You can Download only 1 File in")) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 10 * 60 * 1000l);
-        if (br.containsHTML("No Downloadserver\\. Please try again") || br.containsHTML("Downloadserver im Moment nicht erreichbar.")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "No Downloadserver. Please try again later", 15 * 60 * 1000l);
-        if (br.containsHTML(LIMITREACHED)) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 2 * 60 * 60 * 1000l);
+        if (br.containsHTML("Sorry, you cant download more then 50 files at time")) {
+            throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 10 * 60 * 1000l);
+        }
+        if (br.containsHTML("You can Download only 1 File in")) {
+            throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 10 * 60 * 1000l);
+        }
+        if (br.containsHTML("No Downloadserver\\. Please try again") || br.containsHTML("Downloadserver im Moment nicht erreichbar.")) {
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "No Downloadserver. Please try again later", 15 * 60 * 1000l);
+        }
+        if (br.containsHTML(LIMITREACHED)) {
+            throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 2 * 60 * 60 * 1000l);
+        }
     }
 
     private void handleServerErrors(DownloadLink downloadLink) throws PluginException {
-        if (br.containsHTML(MAXDLSLIMITMESSAGE)) { throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Maximum concurrent download sessions reached.", 30 * 60 * 1000l); }
+        if (br.containsHTML(MAXDLSLIMITMESSAGE)) {
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Maximum concurrent download sessions reached.", 30 * 60 * 1000l);
+        }
         if (br.containsHTML("File can not be found")) {
             logger.info("File for the following is offline (server error): " + downloadLink.getDownloadURL());
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        if (br.containsHTML(">404 Not Found<")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error", 60 * 60 * 1000l);
+        if (br.containsHTML(">404 Not Found<")) {
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error", 60 * 60 * 1000l);
+        }
         if (br.containsHTML("bad try")) {
             logger.warning("Hoster said \"bad try\" which means that jd didn't wait enough time before trying to start the download!");
             throw new PluginException(LinkStatus.ERROR_RETRY);
         }
-        if (br.containsHTML("No htmlCode read")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error: Server sent empty site", 5 * 60 * 1000l);
-        if (br.containsHTML("your Traffic is used up for today")) { throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 60 * 60 * 1001); }
-        if (br.containsHTML("No Downloadserver\\. Please try again") || br.containsHTML("Downloadserver im Moment nicht erreichbar.")) { throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "No Downloadserver. Please try again later", 15 * 60 * 1000l); }
-        if (br.containsHTML("you cant  download more then 1 at time")) { throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 10 * 60 * 1001); }
-        if (br.getURL().contains("section=filenotfound")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (br.containsHTML("No htmlCode read")) {
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error: Server sent empty site", 5 * 60 * 1000l);
+        }
+        if (br.containsHTML("your Traffic is used up for today")) {
+            throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 60 * 60 * 1001);
+        }
+        if (br.containsHTML("No Downloadserver\\. Please try again") || br.containsHTML("Downloadserver im Moment nicht erreichbar.")) {
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "No Downloadserver. Please try again later", 15 * 60 * 1000l);
+        }
+        if (br.containsHTML("you cant  download more then 1 at time")) {
+            throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 10 * 60 * 1001);
+        }
+        if (br.getURL().contains("section=filenotfound")) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
     }
 
     @Override
@@ -332,22 +392,32 @@ public class Freaksharenet extends PluginForHost {
         requestFileInformation(downloadLink);
         login(account, false);
         br.getPage(downloadLink.getDownloadURL());
-        if (br.containsHTML("Sorry, you cant download more then 50 files at time\\.")) { throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 10 * 60 * 1001); }
+        if (br.containsHTML("Sorry, you cant download more then 50 files at time\\.")) {
+            throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 10 * 60 * 1001);
+        }
         if (account.getBooleanProperty("freeacc", false)) {
             doFree(downloadLink);
         } else {
             String url = null;
             if (br.getRedirectLocation() == null) {
-                if (br.containsHTML("No Downloadserver. Please try again")) { throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "No Downloadserver. Please try again later", 15 * 60 * 1000l); }
-                if (br.containsHTML("Traffic is used up for today")) { throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE); }
+                if (br.containsHTML("No Downloadserver. Please try again")) {
+                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "No Downloadserver. Please try again later", 15 * 60 * 1000l);
+                }
+                if (br.containsHTML("Traffic is used up for today")) {
+                    throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
+                }
                 final Form form = br.getForm(0);
-                if (form == null) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
+                if (form == null) {
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                }
                 br.submitForm(form);
                 url = br.getRedirectLocation();
             } else {
                 url = br.getRedirectLocation();
             }
-            if (url == null) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
+            if (url == null) {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
             dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, url, true, -5);
             if (!dl.getConnection().isContentDisposition()) {
                 logger.info("The finallink is no file, trying to handle errors...");
@@ -381,7 +451,9 @@ public class Freaksharenet extends PluginForHost {
                 br.setFollowRedirects(false);
                 final Object ret = account.getProperty("cookies", null);
                 boolean acmatch = Encoding.urlEncode(account.getUser()).equals(account.getStringProperty("name", Encoding.urlEncode(account.getUser())));
-                if (acmatch) acmatch = Encoding.urlEncode(account.getPass()).equals(account.getStringProperty("pass", Encoding.urlEncode(account.getPass())));
+                if (acmatch) {
+                    acmatch = Encoding.urlEncode(account.getPass()).equals(account.getStringProperty("pass", Encoding.urlEncode(account.getPass())));
+                }
                 if (acmatch && ret != null && ret instanceof HashMap<?, ?> && !force) {
                     final HashMap<String, String> cookies = (HashMap<String, String>) ret;
                     if (account.isValid()) {
@@ -398,7 +470,9 @@ public class Freaksharenet extends PluginForHost {
                  */
                 br.getPage("http://freakshare.com/?language=US");
                 br.postPage("http://freakshare.com/login.html", "user=" + Encoding.urlEncode(account.getUser()) + "&pass=" + Encoding.urlEncode(account.getPass()) + "&submit=Login");
-                if (br.getCookie("http://freakshare.com", "login") == null) { throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE); }
+                if (br.getCookie("http://freakshare.com", "login") == null) {
+                    throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+                }
                 br.getPage("http://freakshare.com/");
                 if (!br.containsHTML("<td><b>Member \\(free\\)</b></td>") && !br.containsHTML("<td><b>Member \\(premium\\)</b></td>")) {
                     logger.info("JD couldn't find out the membership of this account!");

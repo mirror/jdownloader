@@ -1042,8 +1042,8 @@ public class VozUploadCom extends PluginForHost {
     private static AtomicInteger                              maxFree                = new AtomicInteger(1);
     private static AtomicInteger                              maxPrem                = new AtomicInteger(1);
     // connections you can make to a given 'host' file server, this assumes each file server is setup identically.
-    private static AtomicInteger                              maxNonAccSimDlPerHost  = new AtomicInteger(20);
-    private static AtomicInteger                              maxFreeAccSimDlPerHost = new AtomicInteger(20);
+    private static AtomicInteger                              maxNonAccSimDlPerHost  = new AtomicInteger(1);
+    private static AtomicInteger                              maxFreeAccSimDlPerHost = new AtomicInteger(1);
     private static AtomicInteger                              maxPremAccSimDlPerHost = new AtomicInteger(20);
 
     private static HashMap<String, String>                    cloudflareCookies      = new HashMap<String, String>();

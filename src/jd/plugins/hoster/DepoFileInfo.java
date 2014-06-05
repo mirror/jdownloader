@@ -32,7 +32,7 @@ import jd.utils.JDUtilities;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "depofile.info" }, urls = { "http://(www\\.)?depofile\\.info/[a-z0-9]+" }, flags = { 2 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "depofile.info" }, urls = { "http://(www\\.)?depofile\\.info/[a-z0-9]+" }, flags = { 0 })
 public class DepoFileInfo extends PluginForHost {
 
     public DepoFileInfo(PluginWrapper wrapper) {

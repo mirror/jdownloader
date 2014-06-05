@@ -67,70 +67,80 @@ public class AdcrunCh extends PluginForDecrypt {
             final String previousFinallink = br.getRegex("<iframe class=\\'fly_frame\\' src=\\'(http[^<>\"]*?)\\'").getMatch(0);
 
             if (finallink == null) {
-                br.getHeaders().put("Referer", parameter);
-                br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
-
-                String result = null;
-                final ScriptEngineManager manager = new ScriptEngineManager();
-                final ScriptEngine engine = manager.getEngineByName("javascript");
                 try {
-                    result = engine.eval(br.getRegex("eval(.*?)\n").getMatch(0)).toString();
+                    br.getHeaders().put("Referer", parameter);
+                    br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
+
+                    String result = null;
+                    final ScriptEngineManager manager = new ScriptEngineManager();
+                    final ScriptEngine engine = manager.getEngineByName("javascript");
+                    try {
+                        result = engine.eval(br.getRegex("eval(.*?)\n").getMatch(0)).toString();
+                    } catch (final Throwable e) {
+                        return null;
+                    }
+
+                    int wait = 10;
+                    final String waittime = br.getRegex("id=\"redirectin\">(\\d+)</span>").getMatch(0);
+                    if (waittime != null) {
+                        wait = Integer.parseInt(waittime);
+                    }
+
+                    final String nextUrl = "adcrun.ch/links";
+                    /* variable JS-Arrays in "Form" bringen */
+                    HashMap<String, String> ret = new HashMap<String, String>();
+                    final String[] res = new Regex(result, "opt:(.*?\\})").getColumn(0);
+                    if (res == null || res.length == 0) {
+                        return null;
+                    }
+                    for (String r : res) {
+                        String post = null;
+                        r = r.replaceAll("\'|\\{|\\}|args:", "");
+                        final String[] a = r.split(",");
+                        if (a == null || a.length == 0) {
+                            return null;
+                        }
+                        String key = null;
+                        String value = null;
+                        for (String f : a) {
+                            f = f.replaceAll("ref:.+", "ref:");
+                            if (post == null) {
+                                post = "opt=";
+                                key = "opt";
+                            } else {
+                                post += "&args[";
+                                key = "args[";
+                            }
+                            if (post.matches(".+args\\[")) {
+                                post += f.replaceAll(":", "]=");
+                                final String ftemp[] = f.split(":");
+                                key += ftemp[0] + "]";
+                                value = ftemp[1];
+                            } else {
+                                post += f;
+                                value = f;
+                            }
+                            ret.put(key, value);
+                        }
+                        br.postPage("http://" + nextUrl + "/ajax.fly.php", post);
+                        if (!post.contains("make_log")) {
+                            sleep(1000 * wait, param);
+                        }
+                        br.postPage("http://" + nextUrl + "/ajax.fly.php", post);
+                        br.postPage("http://" + nextUrl + "/ajax.fly.php", "opt=make_log&args%5Baid%5D=" + new Random().nextInt(1000) + "&args%5Blid%5D=" + ret.get("args[lid]") + "&args%5Boid%5D=0&args%5Bref%5D=");
+                        if (br.containsHTML("\\{\"error\":false,\"message\":false\\}")) {
+                            finallink = previousFinallink;
+                            break;
+                        } else {
+                            finallink = br.getRegex("\"url\":\\s?\"(.*?)\"").getMatch(0);
+                            if (finallink != null) {
+                                finallink = finallink.replace("\\", "");
+                            }
+                            break;
+                        }
+                    }
                 } catch (final Throwable e) {
-                    return null;
-                }
-
-                int wait = 10;
-                final String waittime = br.getRegex("id=\"redirectin\">(\\d+)</span>").getMatch(0);
-                if (waittime != null) {
-                    wait = Integer.parseInt(waittime);
-                }
-
-                final String nextUrl = "adcrun.ch/links";
-                /* variable JS-Arrays in "Form" bringen */
-                HashMap<String, String> ret = new HashMap<String, String>();
-                final String[] res = new Regex(result, "opt:(.*?\\})").getColumn(0);
-                if (res == null || res.length == 0) { return null; }
-                for (String r : res) {
-                    String post = null;
-                    r = r.replaceAll("\'|\\{|\\}|args:", "");
-                    final String[] a = r.split(",");
-                    if (a == null || a.length == 0) { return null; }
-                    String key = null;
-                    String value = null;
-                    for (String f : a) {
-                        f = f.replaceAll("ref:.+", "ref:");
-                        if (post == null) {
-                            post = "opt=";
-                            key = "opt";
-                        } else {
-                            post += "&args[";
-                            key = "args[";
-                        }
-                        if (post.matches(".+args\\[")) {
-                            post += f.replaceAll(":", "]=");
-                            final String ftemp[] = f.split(":");
-                            key += ftemp[0] + "]";
-                            value = ftemp[1];
-                        } else {
-                            post += f;
-                            value = f;
-                        }
-                        ret.put(key, value);
-                    }
-                    br.postPage("http://" + nextUrl + "/ajax.fly.php", post);
-                    if (!post.contains("make_log")) {
-                        sleep(1000 * wait, param);
-                    }
-                    br.postPage("http://" + nextUrl + "/ajax.fly.php", post);
-                    br.postPage("http://" + nextUrl + "/ajax.fly.php", "opt=make_log&args%5Baid%5D=" + new Random().nextInt(1000) + "&args%5Blid%5D=" + ret.get("args[lid]") + "&args%5Boid%5D=0&args%5Bref%5D=");
-                    if (br.containsHTML("\\{\"error\":false,\"message\":false\\}")) {
-                        finallink = previousFinallink;
-                        break;
-                    } else {
-                        finallink = br.getRegex("\"url\":\\s?\"(.*?)\"").getMatch(0);
-                        if (finallink != null) finallink = finallink.replace("\\", "");
-                        break;
-                    }
+                    finallink = previousFinallink;
                 }
             }
         }
@@ -144,5 +154,4 @@ public class AdcrunCh extends PluginForDecrypt {
 
         return decryptedLinks;
     }
-
 }

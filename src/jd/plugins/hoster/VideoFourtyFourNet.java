@@ -18,6 +18,7 @@ package jd.plugins.hoster;
 
 import jd.PluginWrapper;
 import jd.http.Browser;
+import jd.http.Browser.BrowserException;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
@@ -76,7 +77,11 @@ public class VideoFourtyFourNet extends PluginForHost {
         br2.setFollowRedirects(true);
         URLConnectionAdapter con = null;
         try {
-            con = br2.openGetConnection(dllink);
+            try {
+                con = br2.openGetConnection(dllink);
+            } catch (final BrowserException e) {
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            }
             // only way to check for made up links... or offline is here
             if (con.getResponseCode() == 403) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);

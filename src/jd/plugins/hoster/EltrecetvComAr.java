@@ -80,7 +80,7 @@ public class EltrecetvComAr extends PluginForHost {
     public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws Exception {
         /*
          * Information on how to avouud RTMP for this host:
-         * http://www.taringa.net/posts/videos/9656281/Bajar-videos-de-eltrecetv-mejorada.html
+         * http://www.taringa.net/posts/videos/9656281/Bajar-videos-de-eltrecetv-mejorada.html --> Does not work
          */
         setBrowserExclusive();
         String dllink = downloadLink.getDownloadURL();

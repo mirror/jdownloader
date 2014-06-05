@@ -51,6 +51,9 @@ public class VideoWoodTv extends PluginForHost {
         br.getPage(link.getDownloadURL());
         if (br.containsHTML(">This video doesn\\'t exist|>Was deleted by user")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        } else if (br.containsHTML("This video is not ready yet")) {
+            link.getLinkStatus().setStatusText("Host says 'This video is not ready yet'");
+            return AvailableStatus.TRUE;
         }
         final String filename = br.getRegex("title: \"([^<>\"]*?)\"").getMatch(0);
         if (filename == null) {
@@ -63,6 +66,9 @@ public class VideoWoodTv extends PluginForHost {
     @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
+        if (br.containsHTML("This video is not ready yet")) {
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Host says 'This video is not ready yet'", 30 * 60 * 1000l);
+        }
         final String dllink = br.getRegex("file: \"(http[^<>\"]*?)\"").getMatch(0);
         if (dllink == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
