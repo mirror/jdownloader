@@ -20,6 +20,7 @@ import java.io.IOException;
 
 import jd.PluginWrapper;
 import jd.plugins.Account;
+import jd.plugins.Account.AccountError;
 import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
@@ -112,7 +113,7 @@ public class Offline extends PluginForHost {
     public AccountInfo fetchAccountInfo(Account account) throws Exception {
         AccountInfo ai = new AccountInfo();
         ai.setStatus("Permanently Offline: Host provider no longer exists");
-        account.setValid(false);
+        account.setError(AccountError.INVALID, "Permanently Offline: Host provider no longer exists");
         return ai;
     }
 
