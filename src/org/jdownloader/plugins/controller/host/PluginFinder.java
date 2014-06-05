@@ -11,18 +11,20 @@ import org.appwork.utils.logging2.LogSource;
 import org.jdownloader.logging.LogController;
 
 public class PluginFinder {
-    
+
     private final HashMap<String, PluginForHost> pluginCache           = new HashMap<String, PluginForHost>();
-    
+
     private final HashMap<String, PluginForHost> rewriteLinkCache      = new HashMap<String, PluginForHost>();
     private volatile ArrayList<PluginForHost>    rewriteLinkPlugins    = null;
-    
+
     private final HashMap<String, PluginForHost> rewriteAccountCache   = new HashMap<String, PluginForHost>();
     private volatile ArrayList<PluginForHost>    rewriteAccountPlugins = null;
-    
+
     public synchronized PluginForHost assignPlugin(DownloadLink link, boolean allowRewrite, LogSource logger) {
         PluginForHost pluginForHost = null;
-        if (logger == null) logger = LogController.CL(true);
+        if (logger == null) {
+            logger = LogController.CL(true);
+        }
         /* check if we already have a cached plugin for given host */
         if (pluginCache.containsKey(link.getHost())) {
             pluginForHost = pluginCache.get(link.getHost());
@@ -53,7 +55,9 @@ public class PluginFinder {
                 /* rewrite cache not initialized yet, let's create it */
                 rewriteLinkPlugins = new ArrayList<PluginForHost>();
                 for (LazyHostPlugin p : HostPluginController.getInstance().list()) {
-                    if (!p.isHasLinkRewrite()) continue;
+                    if (!p.isHasLinkRewrite()) {
+                        continue;
+                    }
                     PluginForHost protoType = null;
                     try {
                         protoType = p.getPrototype(null);
@@ -128,11 +132,15 @@ public class PluginFinder {
         logger.severe("Could not find plugin: " + link.getHost() + " for " + link.getView().getDisplayName());
         return null;
     }
-    
+
     public synchronized PluginForHost assignPlugin(Account acc, boolean allowRewrite, LogSource logger) {
-        if (acc.getHoster() == null) return null;
+        if (acc.getHoster() == null) {
+            return null;
+        }
         PluginForHost pluginForHost = null;
-        if (logger == null) logger = LogController.CL(true);
+        if (logger == null) {
+            logger = LogController.CL(true);
+        }
         /* check if we already have a cached plugin for given host */
         if (pluginCache.containsKey(acc.getHoster())) {
             pluginForHost = pluginCache.get(acc.getHoster());
@@ -144,7 +152,7 @@ public class PluginFinder {
             /* no cached plugin found, first lets try to find a valid plugin for given host */
             try {
                 LazyHostPlugin hPlugin = HostPluginController.getInstance().get(acc.getHoster());
-                if (hPlugin != null && hPlugin.isPremium()) {
+                if (hPlugin != null && (hPlugin.isPremium() || hPlugin.getClassname().endsWith("r.Offline"))) {
                     pluginForHost = hPlugin.getPrototype(null);
                 }
             } catch (final Throwable e) {
@@ -161,7 +169,9 @@ public class PluginFinder {
                 /* rewrite cache not initialized yet, let's create it */
                 rewriteAccountPlugins = new ArrayList<PluginForHost>();
                 for (LazyHostPlugin p : HostPluginController.getInstance().list()) {
-                    if (!p.isHasAccountRewrite()) continue;
+                    if (!p.isHasAccountRewrite()) {
+                        continue;
+                    }
                     PluginForHost protoType = null;
                     try {
                         protoType = p.getPrototype(null);
@@ -216,5 +226,4 @@ public class PluginFinder {
         logger.severe("Could not find plugin: " + acc.getHoster());
         return null;
     }
-    
 }

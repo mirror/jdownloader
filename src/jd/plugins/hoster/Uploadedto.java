@@ -291,7 +291,19 @@ public class Uploadedto extends PluginForHost {
         super(wrapper);
         setConfigElements();
         this.enablePremium("http://uploaded.to/");
-        this.setStartIntervall(2000l);
+    }
+
+    protected long getStartIntervall(DownloadLink downloadLink, Account account) {
+        if (downloadLink != null) {
+            final long verifiedFileSize = downloadLink.getVerifiedFileSize();
+            if (account != null) {
+                if (verifiedFileSize >= 50 * 1000 * 1000l) {
+                    return 1000;
+                }
+                return 150;
+            }
+        }
+        return 0;
     }
 
     public String filterPackageID(String packageIdentifier) {

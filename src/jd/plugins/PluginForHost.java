@@ -670,7 +670,7 @@ public abstract class PluginForHost extends Plugin {
 
     public void handle(final DownloadLink downloadLink, final Account account) throws Exception {
         try {
-            waitForNextStartAllowed(downloadLink);
+            waitForNextStartAllowed(downloadLink, account);
             if (account != null) {
                 /* with account */
                 if (account.getHoster().equalsIgnoreCase(downloadLink.getHost())) {
@@ -731,14 +731,18 @@ public abstract class PluginForHost extends Plugin {
         WAIT_BETWEEN_STARTS = Math.max(0, interval);
     }
 
-    protected void waitForNextStartAllowed(final DownloadLink downloadLink) throws PluginException, InterruptedException {
-        WaitingQueueItem queueItem = downloadLink.getDownloadLinkController().getQueueItem();
-        long wait = WAIT_BETWEEN_STARTS;
+    protected long getStartIntervall(final DownloadLink downloadLink, final Account account) {
+        return WAIT_BETWEEN_STARTS;
+    }
+
+    protected void waitForNextStartAllowed(final DownloadLink downloadLink, final Account account) throws PluginException, InterruptedException {
+        final WaitingQueueItem queueItem = downloadLink.getDownloadLinkController().getQueueItem();
+        final long wait = getStartIntervall(downloadLink, account);
         if (wait == 0) {
             queueItem.lastStartTimestamp.set(System.currentTimeMillis());
             return;
         }
-        PluginProgress progress = new PluginProgress(0, 0, null) {
+        final PluginProgress progress = new PluginProgress(0, 0, null) {
             private String pluginMessage = null;
 
             @Override
