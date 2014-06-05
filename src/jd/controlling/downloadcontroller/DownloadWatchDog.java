@@ -1150,7 +1150,6 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
             if (!nextSelectedCandidate.isForced() && selector.isMirrorManagement()) {
                 nextSelectedCandidates.addAll(findDownloadLinkCandidateMirrors(selector, nextSelectedCandidate));
             }
-
             if (validateDestination(new File(nextSelectedCandidate.getLink().getFilePackage().getDownloadDirectory())) != null) {
                 /**
                  * filter invalid destinations
@@ -1175,24 +1174,23 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
                         }
                         final CachedAccountPermission permission = selector.getCachedAccountPermission(cachedAccount);
                         if (CachedAccountPermission.OK.equals(permission)) {
+                            final DownloadLinkCandidate checkNextCandidate = new DownloadLinkCandidate(candidate, cachedAccount, accountCache.isCustomizedCache());
                             ok = true;
                             if (cachedAccount.hasCaptcha(link) && (skipAllCaptchas || CaptchaBlackList.getInstance().matches(new PrePluginCheckDummyChallenge(link)) != null)) {
-                                if (selector.validateDownloadLinkCandidate(candidate)) {
+                                if (selector.validateDownloadLinkCandidate(checkNextCandidate)) {
                                     selector.addExcluded(candidate, new DownloadLinkCandidateResult(SkipReason.CAPTCHA, null, null));
                                 }
                                 continue;
                             }
-                            final DownloadLinkCandidate checkNextCandidate = new DownloadLinkCandidate(candidate, cachedAccount, accountCache.isCustomizedCache());
                             checkNextCandidatesStage1.add(checkNextCandidate);
                         } else if (CachedAccountPermission.TEMP_DISABLED.equals(permission)) {
-                            if (tempDisabledCachedAccount == null) {
-                                tempDisabledCachedAccount = cachedAccount;
-                            } else if (tempDisabledCachedAccount.getAccount().getTmpDisabledTimeout() > cachedAccount.getAccount().getTmpDisabledTimeout()) {
+                            if (tempDisabledCachedAccount == null || tempDisabledCachedAccount.getAccount().getTmpDisabledTimeout() > cachedAccount.getAccount().getTmpDisabledTimeout()) {
                                 tempDisabledCachedAccount = cachedAccount;
                             }
                         }
                     }
-                    if (!ok && selector.validateDownloadLinkCandidate(candidate)) {
+                    if (!ok) {
+                        /* candidate does not have a cachedAccount yet, so validation possible */
                         if (tempDisabledCachedAccount != null) {
                             selector.addExcluded(candidate, new DownloadLinkCandidateResult(new WaitForAccountSkipReason(tempDisabledCachedAccount.getAccount()), null, null));
                         } else {

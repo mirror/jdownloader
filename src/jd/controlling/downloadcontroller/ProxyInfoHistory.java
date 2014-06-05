@@ -28,7 +28,7 @@ public class ProxyInfoHistory {
         private WaitWhileWaitingSkipReasonIsSet waitWhile = null;
         private final String                    acchost;
         private final String                    dlHost;
-        private final AbstractProxySelectorImpl      proxySelector;
+        private final AbstractProxySelectorImpl proxySelector;
         private final Account                   account;
 
         private WaitingSkipReasonContainer(WaitingSkipReason skipReason, DownloadLinkCandidate candidate) {
@@ -112,9 +112,13 @@ public class ProxyInfoHistory {
         waitingSkipReason.invalidate();
         CAUSE cause = waitingSkipReason.getWaitingSkipReason().getCause();
         Map<AbstractProxySelectorImpl, List<WaitingSkipReasonContainer>> map = causeMapping.get(cause);
-        if (map == null) return;
+        if (map == null) {
+            return;
+        }
         List<WaitingSkipReasonContainer> list = map.get(proxyInfo);
-        if (list == null) return;
+        if (list == null) {
+            return;
+        }
         list.remove(waitingSkipReason);
         if (list.size() == 0) {
             map.remove(proxyInfo);
@@ -126,7 +130,9 @@ public class ProxyInfoHistory {
 
     public Set<AbstractProxySelectorImpl> list(WaitingSkipReason.CAUSE cause) {
         Map<AbstractProxySelectorImpl, List<WaitingSkipReasonContainer>> map = causeMapping.get(cause);
-        if (map != null) return map.keySet();
+        if (map != null) {
+            return map.keySet();
+        }
         return null;
     }
 
@@ -146,7 +152,9 @@ public class ProxyInfoHistory {
     }
 
     public List<WaitingSkipReasonContainer> list(String host) {
-        if (StringUtils.isEmpty(host)) return null;
+        if (StringUtils.isEmpty(host)) {
+            return null;
+        }
         ArrayList<WaitingSkipReasonContainer> ret = new ArrayList<WaitingSkipReasonContainer>();
         Iterator<Entry<AbstractProxySelectorImpl, Map<String, Map<Account, List<WaitingSkipReasonContainer>>>>> it = history.entrySet().iterator();
         while (it.hasNext()) {
@@ -163,7 +171,9 @@ public class ProxyInfoHistory {
     }
 
     public DownloadLinkCandidateResult getBlockingHistory(DownloadLinkCandidate candidate) {
-        if (candidate.getProxySelector() == null) return null;
+        if (candidate.getProxySelector() == null) {
+            return null;
+        }
         List<WaitingSkipReasonContainer> list = cleanup(getInteralWaitingSkipReasonList(candidate), candidate.getProxySelector());
         if (list != null && list.size() > 0) {
             final WaitingSkipReason waitingSkipReason = list.get(0).getWaitingSkipReason();
@@ -178,7 +188,9 @@ public class ProxyInfoHistory {
     }
 
     private List<WaitingSkipReasonContainer> cleanup(List<WaitingSkipReasonContainer> list, AbstractProxySelectorImpl proxyInfo) {
-        if (list == null) return list;
+        if (list == null || proxyInfo == null) {
+            return list;
+        }
         Iterator<WaitingSkipReasonContainer> it = list.iterator();
         while (it.hasNext()) {
             WaitingSkipReasonContainer next = it.next();
@@ -224,7 +236,9 @@ public class ProxyInfoHistory {
     }
 
     public ConditionalSkipReason getConditionalSkipReason(DownloadLinkCandidate candidate) {
-        if (candidate.getProxySelector() == null) return null;
+        if (candidate.getProxySelector() == null) {
+            return null;
+        }
         List<WaitingSkipReasonContainer> list = cleanup(getInteralWaitingSkipReasonList(candidate), candidate.getProxySelector());
         if (list.size() > 0) {
             WaitingSkipReasonContainer first = list.get(0);
@@ -239,8 +253,12 @@ public class ProxyInfoHistory {
     }
 
     public boolean putIntoHistory(DownloadLinkCandidate candidate, WaitingSkipReason waitingSkipReason) {
-        if (candidate.getProxySelector() == null) throw new IllegalArgumentException("candidate.getProxy() == null");
-        if (!(waitingSkipReason.getCause() == WaitingSkipReason.CAUSE.HOST_TEMP_UNAVAILABLE || waitingSkipReason.getCause() == WaitingSkipReason.CAUSE.IP_BLOCKED)) throw new IllegalArgumentException("putIntoHistory cannot be used with " + waitingSkipReason.getCause());
+        if (candidate.getProxySelector() == null) {
+            throw new IllegalArgumentException("candidate.getProxy() == null");
+        }
+        if (!(waitingSkipReason.getCause() == WaitingSkipReason.CAUSE.HOST_TEMP_UNAVAILABLE || waitingSkipReason.getCause() == WaitingSkipReason.CAUSE.IP_BLOCKED)) {
+            throw new IllegalArgumentException("putIntoHistory cannot be used with " + waitingSkipReason.getCause());
+        }
         AbstractProxySelectorImpl proxyInfo = candidate.getProxySelector();
         List<WaitingSkipReasonContainer> list = cleanup(getInteralWaitingSkipReasonList(candidate), proxyInfo);
         Iterator<WaitingSkipReasonContainer> it = list.iterator();
