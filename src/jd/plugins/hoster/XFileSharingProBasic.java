@@ -96,7 +96,7 @@ public class XFileSharingProBasic extends PluginForHost {
     private String                 fuid                         = null;
 
     /* DEV NOTES */
-    // XfileSharingProBasic Version 2.6.5.9
+    // XfileSharingProBasic Version 2.6.6.0
     // mods:
     // limit-info:
     // protocol: no https
@@ -574,6 +574,7 @@ public class XFileSharingProBasic extends PluginForHost {
         if (dllink != null) {
             try {
                 final Browser br2 = br.cloneBrowser();
+                br2.setFollowRedirects(true);
                 URLConnectionAdapter con = br2.openGetConnection(dllink);
                 if (con.getContentType().contains("html") || con.getLongContentLength() == -1) {
                     downloadLink.setProperty(property, Property.NULL);
@@ -868,7 +869,7 @@ public class XFileSharingProBasic extends PluginForHost {
             logger.info(NICE_HOST + ": " + error + " -> Retrying");
             timesFailed++;
             dl.setProperty(NICE_HOSTproperty + "failedtimes_" + error, timesFailed);
-            throw new PluginException(LinkStatus.ERROR_RETRY, "Final download link not found");
+            throw new PluginException(LinkStatus.ERROR_RETRY, "Unknown error occured: " + error);
         } else {
             dl.setProperty(NICE_HOSTproperty + "failedtimes_" + error, Property.NULL);
             logger.info(NICE_HOST + ": " + error + " -> Plugin is broken");

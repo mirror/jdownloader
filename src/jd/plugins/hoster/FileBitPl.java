@@ -28,6 +28,7 @@ import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.plugins.Account;
+import jd.plugins.Account.AccountType;
 import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
@@ -44,6 +45,7 @@ public class FileBitPl extends PluginForHost {
 
     private static final String                            NICE_HOST          = "filebit.pl";
     private static final String                            NICE_HOSTproperty  = "filebitpl";
+    private static final String                            APIKEY             = "YWI3Y2E2NWM3OWQxYmQzYWJmZWU3NTRiNzY0OTM1NGQ5ODI3ZjlhNmNkZWY3OGE1MjQ0ZjU4NmM5NTNiM2JjYw==";
     private static String                                  SESSIONID          = null;
 
     /* Default value is 10 */
@@ -91,7 +93,9 @@ public class FileBitPl extends PluginForHost {
                     return false;
                 } else if (lastUnavailable != null) {
                     unavailableMap.remove(downloadLink.getHost());
-                    if (unavailableMap.size() == 0) hostUnavailableMap.remove(account);
+                    if (unavailableMap.size() == 0) {
+                        hostUnavailableMap.remove(account);
+                    }
                 }
             }
         }
@@ -120,8 +124,12 @@ public class FileBitPl extends PluginForHost {
         br.setCurrentURL(null);
         int maxChunks = -10;
         maxChunks = (int) account.getLongProperty("maxconnections", 1);
-        if (maxChunks > 20) maxChunks = 0;
-        if (link.getBooleanProperty(NOCHUNKS, false)) maxChunks = 1;
+        if (maxChunks > 20) {
+            maxChunks = 0;
+        }
+        if (link.getBooleanProperty(NOCHUNKS, false)) {
+            maxChunks = 1;
+        }
         link.setProperty("filebitpldirectlink", dllink);
         dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, true, maxChunks);
         if (dl.getConnection().getContentType().contains("html")) {
@@ -170,7 +178,9 @@ public class FileBitPl extends PluginForHost {
         try {
             if (!this.dl.startDownload()) {
                 try {
-                    if (dl.externalDownloadStop()) return;
+                    if (dl.externalDownloadStop()) {
+                        return;
+                    }
                 } catch (final Throwable e) {
                 }
                 /* unknown error, we disable multiple chunks */
@@ -283,7 +293,9 @@ public class FileBitPl extends PluginForHost {
         account.setMaxSimultanDownloads(maxSimultanDls);
         maxPrem.set(maxSimultanDls);
         long maxChunks = Integer.parseInt(getJson("maxcon"));
-        if (maxChunks > 1) maxChunks = -maxChunks;
+        if (maxChunks > 1) {
+            maxChunks = -maxChunks;
+        }
         account.setProperty("maxconnections", maxChunks);
         br.getPage("http://filebit.pl/api/index.php?a=getHostList");
         handleAPIErrors(br, account, null);
@@ -307,9 +319,11 @@ public class FileBitPl extends PluginForHost {
             }
         }
         if (!"1".equals(premium)) {
+            account.setType(AccountType.FREE);
             account.setProperty("free", true);
             ai.setStatus("Free Account");
         } else {
+            account.setType(AccountType.PREMIUM);
             account.setProperty("free", false);
             ai.setStatus("Premium Account");
         }
@@ -318,7 +332,7 @@ public class FileBitPl extends PluginForHost {
     }
 
     private void login(final Account account) throws IOException, PluginException {
-        br.getPage("http://filebit.pl/api/index.php?a=login&login=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()));
+        br.getPage("http://filebit.pl/api/index.php?a=login&apikey=" + Encoding.Base64Decode(APIKEY) + "&login=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()));
         handleAPIErrors(br, account, null);
         SESSIONID = getJson("sessident");
         if (SESSIONID == null) {
@@ -333,12 +347,16 @@ public class FileBitPl extends PluginForHost {
 
     private String getJson(final String parameter) {
         String result = br.getRegex("\"" + parameter + "\":((\\-)?\\d+)").getMatch(0);
-        if (result == null) result = br.getRegex("\"" + parameter + "\":\"([^<>\"]*?)\"").getMatch(0);
+        if (result == null) {
+            result = br.getRegex("\"" + parameter + "\":\"([^<>\"]*?)\"").getMatch(0);
+        }
         return result;
     }
 
     private void tempUnavailableHoster(final Account account, final DownloadLink downloadLink, final long timeout) throws PluginException {
-        if (downloadLink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, "Unable to handle this errorcode!");
+        if (downloadLink == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, "Unable to handle this errorcode!");
+        }
         synchronized (hostUnavailableMap) {
             HashMap<String, Long> unavailableMap = hostUnavailableMap.get(account);
             if (unavailableMap == null) {
@@ -353,9 +371,11 @@ public class FileBitPl extends PluginForHost {
 
     private void handleAPIErrors(final Browser br, final Account account, final DownloadLink downloadLink) throws PluginException {
         String statusCode = br.getRegex("\"errno\":(\\d+)").getMatch(0);
-        if (statusCode == null && br.containsHTML("\"result\":true"))
+        if (statusCode == null && br.containsHTML("\"result\":true")) {
             statusCode = "999";
-        else if (statusCode == null) statusCode = "0";
+        } else if (statusCode == null) {
+            statusCode = "0";
+        }
         String statusMessage = null;
         try {
             int status = Integer.parseInt(statusCode);
