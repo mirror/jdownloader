@@ -71,6 +71,10 @@ public class RapideoPl extends PluginForHost {
         return maxPrem.get();
     }
 
+    /*
+     * TODO: Probably they also have time accounts (see answer of the browser extension API) --> Implement (we did not yet get such an
+     * account type to test)
+     */
     @Override
     public AccountInfo fetchAccountInfo(final Account account) throws Exception {
         final AccountInfo ac = new AccountInfo();
