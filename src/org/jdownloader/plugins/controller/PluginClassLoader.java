@@ -101,7 +101,7 @@ public class PluginClassLoader extends URLClassLoader {
                         return defineClass(name, data, 0, data.length);
                     }
                 } catch (ClassFormatError e) {
-                    LogSource logger = LogController.getRebirthLogger(null);
+                    LogSource logger = LogController.getRebirthLogger(LogController.GL);
                     if (logger != null) {
                         if (data != null) {
                             logger.severe("ClassFormatError:class=" + name + "|file=" + myUrl + "|size=" + data.length);
@@ -116,7 +116,7 @@ public class PluginClassLoader extends URLClassLoader {
                         Thread.sleep(150);
                     }
                 } catch (IOException e) {
-                    LogSource logger = LogController.getRebirthLogger(null);
+                    LogSource logger = LogController.getRebirthLogger(LogController.GL);
                     if (logger != null) {
                         logger.severe("IOException:class=" + name + "|file=" + myUrl);
                         logger.log(e);
@@ -238,7 +238,7 @@ public class PluginClassLoader extends URLClassLoader {
                     return c;
                 }
             } catch (Exception e) {
-                LogSource logger = LogController.getRebirthLogger(null);
+                LogSource logger = LogController.getRebirthLogger(LogController.GL);
                 if (logger != null) {
                     logger.log(e);
                 }
