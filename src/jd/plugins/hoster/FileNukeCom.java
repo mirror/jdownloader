@@ -181,6 +181,16 @@ public class FileNukeCom extends PluginForHost {
             if (dlForm == null) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
+
+            /* Fix form, add missing parameters */
+            dlForm.setAction(br.getURL());
+            dlForm.put("op", "download1");
+            dlForm.put("usr_login", "");
+            dlForm.put("id", new Regex(downloadLink.getDownloadURL(), "([a-z0-9]{12})$").getMatch(0));
+            dlForm.put("fname", downloadLink.getName());
+            dlForm.put("referer", "");
+            dlForm.put("method_free", "Free");
+
             // this is for sites with multiple f1 forms deep. This does not hurt
             // or interfere any other sections of this script
             for (int i = 0; i <= 3; i++) {
@@ -337,6 +347,13 @@ public class FileNukeCom extends PluginForHost {
                         }
                     }
                 }
+            }
+        }
+        if (dllink == null) {
+            final String lnk1 = new Regex(correctedBR, "var lnk1 = \\'(https?://[^<>\"]*?)\\'").getMatch(0);
+            final String ext1 = new Regex(correctedBR, "var ext1 = \\'(/.*?)\\'").getMatch(0);
+            if (lnk1 != null && ext1 != null) {
+                dllink = lnk1 + ext1;
             }
         }
         return dllink;
