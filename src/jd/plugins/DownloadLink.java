@@ -327,7 +327,7 @@ public class DownloadLink extends Property implements Serializable, AbstractPack
 
     public Priority getPriorityEnum() {
         try {
-            String priority = getStringProperty(PROPERTY_PRIORITY, null);
+            final String priority = getStringProperty(PROPERTY_PRIORITY, null);
             if (priority == null) {
                 return Priority.DEFAULT;
             }
