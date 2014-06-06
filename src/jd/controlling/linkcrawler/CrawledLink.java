@@ -28,7 +28,7 @@ import org.jdownloader.myjdownloader.client.json.AvailableLinkState;
 
 public class CrawledLink implements AbstractPackageChildrenNode<CrawledPackage>, CheckableLink, AbstractNodeNotifier {
 
-    private boolean crawlDeep = false;
+    private volatile boolean crawlDeep = false;
 
     public boolean isCrawlDeep() {
         return crawlDeep;
@@ -38,13 +38,13 @@ public class CrawledLink implements AbstractPackageChildrenNode<CrawledPackage>,
         this.crawlDeep = crawlDeep;
     }
 
-    private CrawledPackage                     parent               = null;
-    private UnknownCrawledLinkHandler          unknownHandler       = null;
-    private CrawledLinkModifier                modifyHandler        = null;
-    private BrokenCrawlerHandler               brokenCrawlerHandler = null;
-    private boolean                            autoConfirmEnabled   = false;
+    private volatile CrawledPackage            parent               = null;
+    private volatile UnknownCrawledLinkHandler unknownHandler       = null;
+    private volatile CrawledLinkModifier       modifyHandler        = null;
+    private volatile BrokenCrawlerHandler      brokenCrawlerHandler = null;
+    private volatile boolean                   autoConfirmEnabled   = false;
 
-    private transient volatile UniqueAlltimeID uniqueID             = null;
+    private volatile UniqueAlltimeID           uniqueID             = null;
     private LinkOriginDetails                  origin;
 
     public boolean isAutoConfirmEnabled() {
@@ -91,12 +91,12 @@ public class CrawledLink implements AbstractPackageChildrenNode<CrawledPackage>,
         this.unknownHandler = unknownHandler;
     }
 
-    private LinkCollectingJob         sourceJob          = null;
-    private long                      created            = -1;
+    private volatile LinkCollectingJob         sourceJob          = null;
+    private volatile long                      created            = -1;
 
-    boolean                           enabledState       = true;
-    private PackageInfo               desiredPackageInfo = null;
-    private LinkCollectingInformation collectingInfo     = null;
+    boolean                                    enabledState       = true;
+    private volatile PackageInfo               desiredPackageInfo = null;
+    private volatile LinkCollectingInformation collectingInfo     = null;
 
     public PackageInfo getDesiredPackageInfo() {
         return desiredPackageInfo;
@@ -175,15 +175,15 @@ public class CrawledLink implements AbstractPackageChildrenNode<CrawledPackage>,
         return cLink;
     }
 
-    private CryptedLink                             cLink          = null;
-    private String                                  url;
-    private CrawledLink                             sourceLink     = null;
-    private String                                  name           = null;
-    private FilterRule                              matchingFilter;
+    private volatile CryptedLink                    cLink          = null;
+    private volatile String                         url;
+    private volatile CrawledLink                    sourceLink     = null;
+    private volatile String                         name           = null;
+    private volatile FilterRule                     matchingFilter;
 
     private volatile ArchiveInfo                    archiveInfo;
-    private UniqueAlltimeID                         previousParent = null;
-    private String[]                                sourceUrls;
+    private volatile UniqueAlltimeID                previousParent = null;
+    private volatile String[]                       sourceUrls;
     private final NullsafeAtomicReference<LinkInfo> linkInfo       = new NullsafeAtomicReference<LinkInfo>();
 
     public CrawledLink(DownloadLink dlLink) {
