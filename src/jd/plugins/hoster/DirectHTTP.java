@@ -743,7 +743,8 @@ public class DirectHTTP extends PluginForHost {
             final long length = urlConnection.getLongContentLength();
             if (length >= 0) {
                 downloadLink.setDownloadSize(length);
-                if (urlConnection.getHeaderField("X-Mod-H264-Streaming") == null && urlConnection.getHeaderField("Content-Encoding") == null) {
+                final String contentEncoding = urlConnection.getHeaderField("Content-Encoding");
+                if (urlConnection.getHeaderField("X-Mod-H264-Streaming") == null && (contentEncoding == null || "none".equalsIgnoreCase(contentEncoding))) {
                     final String contentMD5 = urlConnection.getHeaderField("Content-MD5");
                     final String contentSHA1 = urlConnection.getHeaderField("Content-SHA1");
                     if (downloadLink.getSha1Hash() == null) {

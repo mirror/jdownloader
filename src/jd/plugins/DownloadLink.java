@@ -862,6 +862,8 @@ public class DownloadLink extends Property implements Serializable, AbstractPack
         }
         setChunksProgress(null);
         setChunks(0);
+        setSha1Hash(null);
+        setMD5Hash(null);
         setCustomSpeedLimit(0);
         setDownloadCurrent(0);
         setFinishedDate(-1l);
