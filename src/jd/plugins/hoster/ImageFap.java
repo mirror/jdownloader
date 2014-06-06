@@ -40,7 +40,9 @@ public class ImageFap extends PluginForHost {
 
     public void correctDownloadLink(DownloadLink link) {
         final String addedLink = link.getDownloadURL();
-        if (addedLink.contains("imagedecrypted/")) link.setUrlDownload("http://www.imagefap.com/photo/" + new Regex(addedLink, "(\\d+)$").getMatch(0) + "/");
+        if (addedLink.contains("imagedecrypted/")) {
+            link.setUrlDownload("http://www.imagefap.com/photo/" + new Regex(addedLink, "(\\d+)$").getMatch(0) + "/");
+        }
     }
 
     private static final String VIDEOLINK = "http://(www\\.)?imagefap.com/video\\.php\\?vid=\\d+";
@@ -106,10 +108,14 @@ public class ImageFap extends PluginForHost {
         br.getPage(downloadLink.getDownloadURL());
         if (downloadLink.getDownloadURL().matches(VIDEOLINK)) {
             final String configLink = br.getRegex("flashvars\\.config = escape\\(\"(http://[^<>\"]*?)\"").getMatch(0);
-            if (configLink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            if (configLink == null) {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
             br.getPage(configLink);
             final String finallink = br.getRegex("<videoLink>(http://[^<>\"]*?)</videoLink>").getMatch(0);
-            if (finallink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            if (finallink == null) {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
             dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, finallink, true, 0);
             if (dl.getConnection().getContentType().contains("html")) {
                 br.followConnection();
@@ -131,7 +137,9 @@ public class ImageFap extends PluginForHost {
                     }
                 }
             }
-            if (imagelink == null) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
+            if (imagelink == null) {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
             // Only set subdirectory if it wasn't set before or we'll get
             // subfolders
             // in subfolders which is bad
@@ -154,7 +162,7 @@ public class ImageFap extends PluginForHost {
 
     @Override
     public void init() {
-        Browser.setRequestIntervalLimitGlobal(getHost(), 200);
+        Browser.setRequestIntervalLimitGlobal(getHost(), 20);
     }
 
     @Override
@@ -163,7 +171,9 @@ public class ImageFap extends PluginForHost {
             br.getPage(downloadLink.getDownloadURL());
             if (downloadLink.getDownloadURL().matches(VIDEOLINK)) {
                 final String filename = br.getRegex(">Title:</td>[\t\n\r ]+<td width=35%>([^<>\"]*?)</td>").getMatch(0);
-                if (filename == null) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
+                if (filename == null) {
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                }
                 downloadLink.setFinalFileName(Encoding.htmlDecode(filename) + ".flv");
             } else {
                 if (br.getRedirectLocation() != null) {
@@ -174,7 +184,9 @@ public class ImageFap extends PluginForHost {
                     downloadLink.setUrlDownload(br.getRedirectLocation());
                     br.getPage(downloadLink.getDownloadURL());
                 }
-                if (br.containsHTML("(>The image you are trying to access does not exist|<title> \\(Picture 1\\) uploaded by  on ImageFap\\.com</title>)")) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
+                if (br.containsHTML("(>The image you are trying to access does not exist|<title> \\(Picture 1\\) uploaded by  on ImageFap\\.com</title>)")) {
+                    throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+                }
                 String picture_name = br.getRegex("<title>(.*?) in gallery").getMatch(0);
                 if (picture_name == null) {
                     picture_name = "";
@@ -196,8 +208,12 @@ public class ImageFap extends PluginForHost {
                     }
                 }
                 final String orderid = downloadLink.getStringProperty("orderid");
-                if (authorsName == null) authorsName = "Unknown author";
-                if (galleryName == null) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
+                if (authorsName == null) {
+                    authorsName = "Unknown author";
+                }
+                if (galleryName == null) {
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                }
                 galleryName = galleryName.trim();
                 authorsName = authorsName.trim();
                 if (orderid != null) {
