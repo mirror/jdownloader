@@ -935,9 +935,38 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
         return ret;
     }
 
+    private void printDownloadLinkCandidateHistory(DownloadLinkCandidate candidate) {
+        try {
+            if (candidate != null && candidate.getLink() != null) {
+                final DownloadSession currentSession = getSession();
+                final DownloadLinkCandidateHistory history = currentSession.getHistory(candidate.getLink());
+                if (history != null) {
+                    final List<DownloadLinkCandidateResult> results = history.getResults(candidate);
+                    if (results != null) {
+                        for (final DownloadLinkCandidateResult result : results) {
+                            switch (result.getResult()) {
+                            case CONDITIONAL_SKIPPED:
+                                logger.info(candidate + "->" + result.getResult() + "|" + result.getConditionalSkip());
+                                break;
+                            case SKIPPED:
+                                logger.info(candidate + "->" + result.getResult() + "|" + result.getSkipReason());
+                                break;
+                            default:
+                                logger.info(candidate + "->" + result.getResult());
+                                break;
+                            }
+                        }
+                    }
+                }
+            }
+        } catch (final Throwable e) {
+            logger.log(e);
+        }
+    }
+
     private void setFinalLinkStatus(DownloadLinkCandidate candidate, DownloadLinkCandidateResult value, SingleDownloadController singleDownloadController) {
-        DownloadSession currentSession = getSession();
-        DownloadLink link = candidate.getLink();
+        final DownloadSession currentSession = getSession();
+        final DownloadLink link = candidate.getLink();
         final boolean onDetach = singleDownloadController != null;
         HashResult hashResult = null;
         if (onDetach) {
@@ -1006,6 +1035,9 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
             }
             return;
         case SKIPPED:
+            if (SkipReason.NO_ACCOUNT.equals(value.getSkipReason())) {
+                printDownloadLinkCandidateHistory(candidate);
+            }
             currentSession.removeHistory(link);
             candidate.getLink().setSkipReason(value.getSkipReason());
             return;
@@ -1113,6 +1145,7 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
             break;
         case ACCOUNT_REQUIRED:
             if (!onDetach) {
+                printDownloadLinkCandidateHistory(candidate);
                 currentSession.removeHistory(link);
                 candidate.getLink().setSkipReason(SkipReason.NO_ACCOUNT);
             }
