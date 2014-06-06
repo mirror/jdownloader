@@ -30,6 +30,7 @@ import org.appwork.storage.TypeRef;
 import org.appwork.storage.config.ConfigInterface;
 import org.appwork.utils.Application;
 import org.appwork.utils.ModifyLock;
+import org.appwork.utils.StringUtils;
 import org.appwork.utils.logging2.LogSource;
 import org.jdownloader.controlling.FileCreationManager;
 import org.jdownloader.logging.LogController;
@@ -206,13 +207,31 @@ public class HostPluginController extends PluginController<PluginForHost> {
                             }
 
                             private final void updatePluginInstance(DownloadLink link) {
-                                long beforeVersion = -1;
-                                if (link.getDefaultPlugin() != null) {
-                                    beforeVersion = link.getDefaultPlugin().getLazyP().getVersion();
+                                final long currentDefaultVersion;
+                                final String currentDefaultHost;
+                                final PluginForHost defaultPlugin = link.getDefaultPlugin();
+                                if (defaultPlugin != null) {
+                                    currentDefaultHost = defaultPlugin.getLazyP().getHost();
+                                    currentDefaultVersion = defaultPlugin.getLazyP().getVersion();
+                                } else {
+                                    currentDefaultHost = null;
+                                    currentDefaultVersion = -1;
                                 }
-                                PluginForHost afterPlugin = finder.assignPlugin(link, true, logger);
-                                if (link.getFinalLinkState() == FinalLinkState.PLUGIN_DEFECT && afterPlugin != null && beforeVersion != afterPlugin.getLazyP().getVersion()) {
-                                    link.setFinalLinkState(null);
+                                final PluginForHost newDefaultPlugin = finder.assignPlugin(link, true, logger);
+                                final long newDefaultVersion;
+                                final String newDefaultHost;
+                                if (newDefaultPlugin != null) {
+                                    newDefaultVersion = newDefaultPlugin.getLazyP().getVersion();
+                                    newDefaultHost = newDefaultPlugin.getLazyP().getHost();
+                                } else {
+                                    newDefaultVersion = -1;
+                                    newDefaultHost = null;
+                                }
+                                if (newDefaultPlugin != null && (currentDefaultVersion != newDefaultVersion || !StringUtils.equals(currentDefaultHost, newDefaultHost))) {
+                                    link.setDefaultPlugin(newDefaultPlugin);
+                                    if (link.getFinalLinkState() == FinalLinkState.PLUGIN_DEFECT) {
+                                        link.setFinalLinkState(null);
+                                    }
                                 }
                             }
 
