@@ -219,8 +219,6 @@ public class PremiumTo extends PluginForHost {
                 url = url.replaceFirst("netload.in/", "nl.in/");
             } else if (url.startsWith("filepost.com/")) {
                 url = url.replaceFirst("filepost.com/", "fp.com/");
-            } else if (url.startsWith("extabit.com/")) {
-                url = url.replaceFirst("extabit.com/", "eb.com/");
             } else if (url.startsWith("turbobit.net/")) {
                 url = url.replaceFirst("turbobit.net/", "tb.net/");
             } else if (url.startsWith("filefactory.com/")) {

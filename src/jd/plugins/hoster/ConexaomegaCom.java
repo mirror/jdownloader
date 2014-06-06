@@ -72,7 +72,9 @@ public class ConexaomegaCom extends PluginForHost {
                 br.setCookiesExclusive(true);
                 final Object ret = account.getProperty("cookies", null);
                 boolean acmatch = Encoding.urlEncode(account.getUser()).equals(account.getStringProperty("name", Encoding.urlEncode(account.getUser())));
-                if (acmatch) acmatch = Encoding.urlEncode(account.getPass()).equals(account.getStringProperty("pass", Encoding.urlEncode(account.getPass())));
+                if (acmatch) {
+                    acmatch = Encoding.urlEncode(account.getPass()).equals(account.getStringProperty("pass", Encoding.urlEncode(account.getPass())));
+                }
                 if (acmatch && ret != null && ret instanceof HashMap<?, ?> && !force) {
                     final HashMap<String, String> cookies = (HashMap<String, String>) ret;
                     if (account.isValid()) {
@@ -87,7 +89,9 @@ public class ConexaomegaCom extends PluginForHost {
                 br.setFollowRedirects(true);
                 br.getPage("http://www.conexaomega.com/login");
                 br.postPage("http://www.conexaomega.com/login", "email=" + Encoding.urlEncode(account.getUser()) + "&senha=" + Encoding.urlEncode(account.getPass()) + "&remember=1&x=" + new Random().nextInt(100) + "&y=" + new Random().nextInt(100));
-                if (br.getCookie(COOKIE_HOST, "cm_auth") == null) return false;
+                if (br.getCookie(COOKIE_HOST, "cm_auth") == null) {
+                    return false;
+                }
                 /** Save cookies */
                 final HashMap<String, String> cookies = new HashMap<String, String>();
                 final Cookies add = this.br.getCookies(COOKIE_HOST);
@@ -135,7 +139,7 @@ public class ConexaomegaCom extends PluginForHost {
         // now let's get a list of all supported hosts:
         br.getPage("http://www.conexaomega.com/");
         ArrayList<String> supportedHosts = new ArrayList<String>();
-        final String[][] hostsList = { { "Uploaded", "uploaded.net" }, { "Jumbofiles", "jumbofiles.org" }, { "i-FileZ", "ifilez.co" }, { "DepFile", "depfile.com" }, { "SendSpace", "sendspace.com" }, { "Bayfiles", "bayfiles.net" }, { "FileJungle", "filejungle.com" }, { "VideoBB", "videobb.com" }, { "FilePost", "filepost.com" }, { "FileFactory", "filefactory.com" }, { "Uploading", "uploading.com" }, { "Bitshare", "bitshare.com" }, { "Rapidshare", "rapidshare.com" }, { "FreakShare", "freakshare.net" }, { "4shared", "4shared.com" }, { "Mediafire", "mediafire.com" }, { "Crocko", "crocko.com" }, { "Netload", "netload.in" }, { "Extabit", "extabit.com" }, { "RapdiGator", "rapidgator.net" } };
+        final String[][] hostsList = { { "Uploaded", "uploaded.net" }, { "Jumbofiles", "jumbofiles.org" }, { "i-FileZ", "ifilez.co" }, { "DepFile", "depfile.com" }, { "SendSpace", "sendspace.com" }, { "Bayfiles", "bayfiles.net" }, { "FileJungle", "filejungle.com" }, { "VideoBB", "videobb.com" }, { "FilePost", "filepost.com" }, { "FileFactory", "filefactory.com" }, { "Uploading", "uploading.com" }, { "Bitshare", "bitshare.com" }, { "Rapidshare", "rapidshare.com" }, { "FreakShare", "freakshare.net" }, { "4shared", "4shared.com" }, { "Mediafire", "mediafire.com" }, { "Crocko", "crocko.com" }, { "Netload", "netload.in" }, { "RapdiGator", "rapidgator.net" } };
         for (final String[] hostSet : hostsList) {
             if (br.containsHTML(hostSet[0] + ": Disponível")) {
                 supportedHosts.add(hostSet[1]);
@@ -176,11 +180,15 @@ public class ConexaomegaCom extends PluginForHost {
         showMessage(link, "Generating downloadlink...");
         br.getPage("http://www.conexaomega.com/_gerar?link=" + url + "&rnd=" + System.currentTimeMillis());
         final String dllink = br.getRegex("\"(http://cdn\\.conexaomega\\.com/dl/[^<>\"]*?)\"").getMatch(0);
-        if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (dllink == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, false, 1);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
-            if (br.containsHTML("Erro \\d+")) { throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error: " + br.toString().trim(), 30 * 60 * 1000l); }
+            if (br.containsHTML("Erro \\d+")) {
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error: " + br.toString().trim(), 30 * 60 * 1000l);
+            }
             logger.info("Unhandled download error on conexaomega.com: " + br.toString());
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
 
@@ -194,7 +202,9 @@ public class ConexaomegaCom extends PluginForHost {
     }
 
     private void tempUnavailableHoster(final Account account, final DownloadLink downloadLink, long timeout) throws PluginException {
-        if (downloadLink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, "Unable to handle this errorcode!");
+        if (downloadLink == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, "Unable to handle this errorcode!");
+        }
         synchronized (hostUnavailableMap) {
             HashMap<String, Long> unavailableMap = hostUnavailableMap.get(account);
             if (unavailableMap == null) {
@@ -217,7 +227,9 @@ public class ConexaomegaCom extends PluginForHost {
                     return false;
                 } else if (lastUnavailable != null) {
                     unavailableMap.remove(downloadLink.getHost());
-                    if (unavailableMap.size() == 0) hostUnavailableMap.remove(account);
+                    if (unavailableMap.size() == 0) {
+                        hostUnavailableMap.remove(account);
+                    }
                 }
             }
         }

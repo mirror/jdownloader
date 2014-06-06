@@ -120,8 +120,8 @@ public class RapidsPl extends PluginForHost {
         }
         // now let's get a list of all supported hosts:
         final ArrayList<String> supportedHosts = new ArrayList<String>();
-        final String[][] hostList = { { "uploaded", "uploaded.to", "uploaded.net", "ul.to" }, { "netload", "netload.in" }, { "freakshare", "freakshare.com" }, { "turbobit", "turbobit.net" }, { "depositfiles", "depositfiles.com" }, { "filefactory", "filefactory.com" }, { "redtube", "redtube.com" }, { "tube8", "tube8.com" }, { "uploading", "uploading.com" }, { "wrzuta", "wrzuta.pl" }, { "extabit", "extabit.com" }, { "bitshare", "bitshare.com" }, { "filepost", "filepost.com" }, { "rapidgator", "rapidgator.net" }, { "letitbit", "letitbit.net" }, { "crocko", "crocko.com" }, { "megashares", "megashares.com" }, { "hitfile", "hitfile.net" }, { "shareflare", "shareflare.net" }, { "vipfile", "vip-file.com" }, { "mediafire", "mediafire.com" }, { "shareonline", "share-online.biz" }, { "hellupload", "hellupload.com" }, { "fastshare", "fastshare.cz" }, { "egofiles", "egofiles.com" },
-                { "putlocker", "putlocker.com" }, { "ultramegabit", "ultramegabit.com" }, { "lumfile", "lumfile.com" }, { "ryushare", "ryushare.com" }, { "luckyshare", "luckyshare.net" }, { "catshare", "catshare.net" }, { "creafile", "creafile.net" }, { "filesmonster", "filesmonster.com" }, { "fileparadox", "fileparadox.in" }, { "novafile", "novafile.com" }, { "depfile", "depfile.com" }, { "4shared", "4shared.com" }, { "keep2share", "keep2share.cc" }, { "5fantastic", "5fantastic.pl" }, { "dizzcloud", "dizzcloud.com" }, { "sharingmaster", "sharingmaster.com" }, { "datafile", "datafile.com" } };
+        final String[][] hostList = { { "uploaded", "uploaded.to", "uploaded.net", "ul.to" }, { "netload", "netload.in" }, { "freakshare", "freakshare.com" }, { "turbobit", "turbobit.net" }, { "depositfiles", "depositfiles.com" }, { "filefactory", "filefactory.com" }, { "redtube", "redtube.com" }, { "tube8", "tube8.com" }, { "uploading", "uploading.com" }, { "wrzuta", "wrzuta.pl" }, { "bitshare", "bitshare.com" }, { "filepost", "filepost.com" }, { "rapidgator", "rapidgator.net" }, { "letitbit", "letitbit.net" }, { "crocko", "crocko.com" }, { "megashares", "megashares.com" }, { "hitfile", "hitfile.net" }, { "shareflare", "shareflare.net" }, { "vipfile", "vip-file.com" }, { "mediafire", "mediafire.com" }, { "shareonline", "share-online.biz" }, { "hellupload", "hellupload.com" }, { "fastshare", "fastshare.cz" }, { "egofiles", "egofiles.com" }, { "putlocker", "putlocker.com" },
+                { "ultramegabit", "ultramegabit.com" }, { "lumfile", "lumfile.com" }, { "ryushare", "ryushare.com" }, { "luckyshare", "luckyshare.net" }, { "catshare", "catshare.net" }, { "creafile", "creafile.net" }, { "filesmonster", "filesmonster.com" }, { "fileparadox", "fileparadox.in" }, { "novafile", "novafile.com" }, { "depfile", "depfile.com" }, { "4shared", "4shared.com" }, { "keep2share", "keep2share.cc" }, { "5fantastic", "5fantastic.pl" }, { "dizzcloud", "dizzcloud.com" }, { "sharingmaster", "sharingmaster.com" }, { "datafile", "datafile.com" } };
         for (final String hostSet[] : hostList) {
             if (br.containsHTML("/services/" + hostSet[0] + "\\.big")) {
                 for (int i = 1; i <= hostSet.length - 1; i++) {
@@ -202,7 +202,9 @@ public class RapidsPl extends PluginForHost {
         try {
             if (!this.dl.startDownload()) {
                 try {
-                    if (dl.externalDownloadStop()) return;
+                    if (dl.externalDownloadStop()) {
+                        return;
+                    }
                 } catch (final Throwable e) {
                 }
                 /* unknown error, we disable multiple chunks */
@@ -260,7 +262,9 @@ public class RapidsPl extends PluginForHost {
     }
 
     private void tempUnavailableHoster(final Account account, final DownloadLink downloadLink, final long timeout) throws PluginException {
-        if (downloadLink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, "Unable to handle this errorcode!");
+        if (downloadLink == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, "Unable to handle this errorcode!");
+        }
         synchronized (hostUnavailableMap) {
             HashMap<String, Long> unavailableMap = hostUnavailableMap.get(account);
             if (unavailableMap == null) {
@@ -283,7 +287,9 @@ public class RapidsPl extends PluginForHost {
                     return false;
                 } else if (lastUnavailable != null) {
                     unavailableMap.remove(downloadLink.getHost());
-                    if (unavailableMap.size() == 0) hostUnavailableMap.remove(account);
+                    if (unavailableMap.size() == 0) {
+                        hostUnavailableMap.remove(account);
+                    }
                 }
             }
         }
@@ -299,7 +305,9 @@ public class RapidsPl extends PluginForHost {
                 newBrowser();
                 final Object ret = account.getProperty("cookies", null);
                 boolean acmatch = Encoding.urlEncode(account.getUser()).equals(account.getStringProperty("name", Encoding.urlEncode(account.getUser())));
-                if (acmatch) acmatch = Encoding.urlEncode(account.getPass()).equals(account.getStringProperty("pass", Encoding.urlEncode(account.getPass())));
+                if (acmatch) {
+                    acmatch = Encoding.urlEncode(account.getPass()).equals(account.getStringProperty("pass", Encoding.urlEncode(account.getPass())));
+                }
                 if (acmatch && ret != null && ret instanceof HashMap<?, ?> && !force) {
                     final HashMap<String, String> cookies = (HashMap<String, String>) ret;
                     if (account.isValid()) {
@@ -341,7 +349,9 @@ public class RapidsPl extends PluginForHost {
         /* we have to make sure the youtube plugin is loaded */
         if (pluginloaded == false) {
             final PluginForHost plugin = JDUtilities.getPluginForHost("youtube.com");
-            if (plugin == null) throw new IllegalStateException("youtube plugin not found!");
+            if (plugin == null) {
+                throw new IllegalStateException("youtube plugin not found!");
+            }
             pluginloaded = true;
         }
         return jd.plugins.hoster.Youtube.unescape(s);
