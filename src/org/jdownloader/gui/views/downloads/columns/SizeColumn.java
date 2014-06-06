@@ -29,7 +29,6 @@ public class SizeColumn extends ExtColumn<AbstractNode> {
      */
 
     protected RenderLabel    sizeRenderer;
-    protected long           sizeValue;
     private StringBuffer     sb;
     private DecimalFormat    formatter;
     private RenderLabel      countRenderer;
@@ -67,7 +66,9 @@ public class SizeColumn extends ExtColumn<AbstractNode> {
             public int compare(final AbstractNode o1, final AbstractNode o2) {
                 final long s1 = getBytes(o1);
                 final long s2 = getBytes(o2);
-                if (s1 == s2) return compare2(o1, o2);
+                if (s1 == s2) {
+                    return compare2(o1, o2);
+                }
                 if (this.getSortOrderIdentifier() != ExtColumn.SORT_ASC) {
                     return s1 > s2 ? -1 : 1;
                 } else {
@@ -78,7 +79,9 @@ public class SizeColumn extends ExtColumn<AbstractNode> {
             public int compare2(final AbstractNode o1, final AbstractNode o2) {
                 final int s1 = getNumberOfItems(o1);
                 final int s2 = getNumberOfItems(o2);
-                if (s1 == s2) return 0;
+                if (s1 == s2) {
+                    return 0;
+                }
                 if (this.getSortOrderIdentifier() != ExtColumn.SORT_ASC) {
                     return s1 > s2 ? -1 : 1;
                 } else {
@@ -113,11 +116,7 @@ public class SizeColumn extends ExtColumn<AbstractNode> {
 
     @Override
     public void configureRendererComponent(final AbstractNode value, final boolean isSelected, final boolean hasFocus, final int row, final int column) {
-        if ((this.sizeValue = this.getBytes(value)) < 0) {
-            this.sizeRenderer.setText(this.getInvalidValue());
-        } else {
-            this.sizeRenderer.setText(this.getSizeString(this.sizeValue));
-        }
+        this.sizeRenderer.setText(this.getSizeString(getBytes(value)));
         if (fileCountVisible) {
             if (value instanceof AbstractPackageNode) {
 
@@ -145,34 +144,40 @@ public class SizeColumn extends ExtColumn<AbstractNode> {
     /**
      * @return
      */
-    protected String getInvalidValue() {
-        return "~";
-    }
-
-    /**
-     * @return
-     */
     @Override
     public JComponent getRendererComponent(final AbstractNode value, final boolean isSelected, final boolean hasFocus, final int row, final int column) {
         return this.renderer;
     }
 
     private String getSizeString(final long fileSize) {
-        if (fileSize >= 1024 * 1024 * 1024 * 1024l) { return this.formatter.format(fileSize / (1024 * 1024 * 1024 * 1024.0)) + " TiB"; }
-        if (fileSize >= 1024 * 1024 * 1024l) { return this.formatter.format(fileSize / (1024 * 1024 * 1024.0)) + " GiB"; }
-        if (fileSize >= 1024 * 1024l) { return this.formatter.format(fileSize / (1024 * 1024.0)) + " MiB"; }
-        if (fileSize >= 1024l) { return this.formatter.format(fileSize / 1024.0) + " KiB"; }
-        if (fileSize == 0) { return "0 B"; }
-        if (fileSize < 0) { return zeroString; }
+        if (fileSize >= 1024 * 1024 * 1024 * 1024l) {
+            return this.formatter.format(fileSize / (1024 * 1024 * 1024 * 1024.0)) + " TiB";
+        }
+        if (fileSize >= 1024 * 1024 * 1024l) {
+            return this.formatter.format(fileSize / (1024 * 1024 * 1024.0)) + " GiB";
+        }
+        if (fileSize >= 1024 * 1024l) {
+            return this.formatter.format(fileSize / (1024 * 1024.0)) + " MiB";
+        }
+        if (fileSize >= 1024l) {
+            return this.formatter.format(fileSize / 1024.0) + " KiB";
+        }
+        if (fileSize == 0) {
+            return "0 B";
+        }
+        if (fileSize < 0) {
+            return zeroString;
+        }
         return fileSize + " B";
     }
 
     @Override
     protected String getTooltipText(final AbstractNode value) {
-        if ((this.sizeValue = this.getBytes(value)) < 0) {
-            return this.getInvalidValue();
+        final long sizeValue = this.getBytes(value);
+        if (sizeValue < 0) {
+            return _GUI._.SizeColumn_getSizeString_zero_tt();
         } else {
-            return this.getSizeString(this.sizeValue);
+            return this.getSizeString(sizeValue);
         }
 
     }
@@ -237,18 +242,23 @@ public class SizeColumn extends ExtColumn<AbstractNode> {
             return ((DownloadLink) o2).getView().getBytesTotal();
         } else if (o2 instanceof FilePackage) {
             return ((FilePackage) o2).getView().getSize();
-        } else
+        } else {
             return -1;
+        }
     }
 
     protected int getNumberOfItems(AbstractNode o) {
-        if (o instanceof AbstractPackageNode) { return ((AbstractPackageNode) o).getView().getItems().size(); }
+        if (o instanceof AbstractPackageNode) {
+            return ((AbstractPackageNode) o).getView().getItems().size();
+        }
         return 1;
     }
 
     @Override
     public boolean isEnabled(AbstractNode obj) {
-        if (obj instanceof CrawledPackage) { return ((CrawledPackage) obj).getView().isEnabled(); }
+        if (obj instanceof CrawledPackage) {
+            return ((CrawledPackage) obj).getView().isEnabled();
+        }
         return obj.isEnabled();
     }
 

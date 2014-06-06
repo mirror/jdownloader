@@ -3530,6 +3530,9 @@ public interface GuiTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "Unknown" })
     String SizeColumn_getSizeString_zero();
 
+    @Default(lngs = { "en" }, values = { "Filesize is not available/known yet" })
+    String SizeColumn_getSizeString_zero_tt();
+
     @Default(lngs = { "en" }, values = { "Captchas solved by the Captchabrotherhood Captcha Exchange System" })
     String CaptchaBrotherhoodService_getDescription_tt_();
 
