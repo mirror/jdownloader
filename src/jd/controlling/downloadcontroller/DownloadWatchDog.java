@@ -43,6 +43,7 @@ import jd.controlling.AccountControllerListener;
 import jd.controlling.TaskQueue;
 import jd.controlling.captcha.CaptchaSettings;
 import jd.controlling.downloadcontroller.AccountCache.CachedAccount;
+import jd.controlling.downloadcontroller.DiskSpaceManager.DISKSPACERESERVATIONRESULT;
 import jd.controlling.downloadcontroller.DownloadLinkCandidateResult.RESULT;
 import jd.controlling.downloadcontroller.DownloadLinkCandidateSelector.CachedAccountPermission;
 import jd.controlling.downloadcontroller.DownloadLinkCandidateSelector.DownloadLinkCandidatePermission;
@@ -1137,6 +1138,35 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
         throw new WTFException("This should never happen!? " + value.getResult());
     }
 
+    private DISKSPACERESERVATIONRESULT validateDiskFree(final List<DownloadLinkCandidate> downloadLinkCandidates) {
+        DownloadLink downloadLink = null;
+        for (DownloadLinkCandidate downloadLinkCandidate : downloadLinkCandidates) {
+            if (downloadLinkCandidate.getLink().getVerifiedFileSize() >= 0) {
+                downloadLink = downloadLinkCandidate.getLink();
+                break;
+            }
+        }
+        if (downloadLink == null) {
+            downloadLink = downloadLinkCandidates.get(0).getLink();
+        }
+        final File partFile = new File(downloadLink.getFileOutput() + ".part");
+        long doneSize = Math.max((partFile.exists() ? partFile.length() : 0l), downloadLink.getView().getBytesLoaded());
+        final long remainingSize = downloadLink.getView().getBytesTotal() - Math.max(0, doneSize);
+        return getSession().getDiskSpaceManager().check(new DiskSpaceReservation() {
+
+            @Override
+            public File getDestination() {
+                return partFile;
+            }
+
+            @Override
+            public long getSize() {
+                return remainingSize;
+            }
+
+        });
+    }
+
     private List<DownloadLinkCandidate> nextDownloadLinkCandidates(DownloadLinkCandidateSelector selector) {
         final DownloadSession currentSession = selector.getSession();
         final boolean skipAllCaptchas = CaptchaSettings.MODE.SKIP_ALL.equals(selector.getSession().getCaptchaMode());
@@ -1151,11 +1181,12 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
                 nextSelectedCandidates.addAll(findDownloadLinkCandidateMirrors(selector, nextSelectedCandidate));
             }
             if (validateDestination(new File(nextSelectedCandidate.getLink().getFilePackage().getDownloadDirectory())) != null) {
-                /**
-                 * filter invalid destinations
-                 */
                 for (final DownloadLinkCandidate candidate : nextSelectedCandidates) {
                     selector.addExcluded(candidate, new DownloadLinkCandidateResult(SkipReason.INVALID_DESTINATION, null, null));
+                }
+            } else if (DISKSPACERESERVATIONRESULT.FAILED.equals(validateDiskFree(nextSelectedCandidates))) {
+                for (final DownloadLinkCandidate candidate : nextSelectedCandidates) {
+                    selector.addExcluded(candidate, new DownloadLinkCandidateResult(SkipReason.DISK_FULL, null, null));
                 }
             } else {
                 /**

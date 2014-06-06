@@ -19,8 +19,9 @@ public class DiskSpaceManager {
         FAILED
     }
 
-    private HashMap<DiskSpaceReservation, Object> reservations;
-    private final GeneralSettings                 config;
+    private final HashMap<DiskSpaceReservation, Object> reservations;
+    private final GeneralSettings                       config;
+    private final boolean                               SUPPORTED = Application.getJavaVersion() >= Application.JAVA16;
 
     public DiskSpaceManager() {
         reservations = new HashMap<DiskSpaceReservation, Object>();
@@ -32,15 +33,19 @@ public class DiskSpaceManager {
     }
 
     public synchronized DISKSPACERESERVATIONRESULT checkAndReserve(DiskSpaceReservation reservation, Object requestor) {
-        if (reservation == null) throw new IllegalArgumentException("reservation must not be null!");
-        if (Application.getJavaVersion() < Application.JAVA16) {
+        if (reservation == null) {
+            throw new IllegalArgumentException("reservation must not be null!");
+        }
+        if (!SUPPORTED) {
             /*
              * File.getUsableSpace is 1.6 only
              */
             return DISKSPACERESERVATIONRESULT.UNSUPPORTED;
         }
-        if (!config.isFreeSpaceCheckEnabled()) return DISKSPACERESERVATIONRESULT.OK;
-        HashSet<File> reservationPaths = new HashSet<File>();
+        if (!config.isFreeSpaceCheckEnabled()) {
+            return DISKSPACERESERVATIONRESULT.OK;
+        }
+        final HashSet<File> reservationPaths = new HashSet<File>();
         long requestedDiskSpace = Math.max(0, reservation.getSize()) + Math.max(0, config.getForcedFreeSpaceOnDisk() * 1024 * 1024);
         File destinationPath = reservation.getDestination();
         File checkPath = null;
@@ -48,19 +53,25 @@ public class DiskSpaceManager {
         if (destinationPath != null && destinationPath.isFile()) {
             destinationPath = destinationPath.getParentFile();
         }
-        if (destinationPath != null) reservationPaths.add(destinationPath);
+        if (destinationPath != null) {
+            reservationPaths.add(destinationPath);
+        }
         while (destinationPath != null) {
             if (destinationPath.exists() && checkPath == null) {
                 checkPath = destinationPath;
                 freeSpace = checkPath.getUsableSpace();
-                if (freeSpace < requestedDiskSpace) { return DISKSPACERESERVATIONRESULT.FAILED; }
+                if (freeSpace < requestedDiskSpace) {
+                    return DISKSPACERESERVATIONRESULT.FAILED;
+                }
             }
             destinationPath = destinationPath.getParentFile();
             if (destinationPath != null) {
                 reservationPaths.add(destinationPath);
             }
         }
-        if (checkPath == null) { return DISKSPACERESERVATIONRESULT.INVALIDDESTINATION; }
+        if (checkPath == null) {
+            return DISKSPACERESERVATIONRESULT.INVALIDDESTINATION;
+        }
 
         for (DiskSpaceReservation reserved : reservations.keySet()) {
             destinationPath = reserved.getDestination();
@@ -70,7 +81,9 @@ public class DiskSpaceManager {
             while (destinationPath != null) {
                 if (reservationPaths.contains(destinationPath)) {
                     requestedDiskSpace += Math.max(0, reserved.getSize());
-                    if (freeSpace < requestedDiskSpace) { return DISKSPACERESERVATIONRESULT.FAILED; }
+                    if (freeSpace < requestedDiskSpace) {
+                        return DISKSPACERESERVATIONRESULT.FAILED;
+                    }
                     break;
                 }
                 destinationPath = destinationPath.getParentFile();
@@ -93,7 +106,9 @@ public class DiskSpaceManager {
     }
 
     public synchronized boolean isReservedBy(DiskSpaceReservation reservation, Object requestor) {
-        if (requestor == null) return false;
+        if (requestor == null) {
+            return false;
+        }
         return reservations.get(reservation) == requestor;
     }
 
