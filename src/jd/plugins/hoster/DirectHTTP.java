@@ -740,9 +740,12 @@ public class DirectHTTP extends PluginForHost {
                     downloadLink.setProperty("fixName", fileName);
                 }
             }
-            downloadLink.setDownloadSize(urlConnection.getLongContentLength());
-            if (urlConnection.getHeaderField("X-Mod-H264-Streaming") == null) {
-                downloadLink.setProperty("VERIFIEDFILESIZE", urlConnection.getLongContentLength());
+            final long length = urlConnection.getLongContentLength();
+            if (length >= 0) {
+                downloadLink.setDownloadSize(length);
+                if (urlConnection.getHeaderField("X-Mod-H264-Streaming") == null && urlConnection.getHeaderField("Content-Encoding") == null) {
+                    downloadLink.setProperty("VERIFIEDFILESIZE", length);
+                }
             }
             return AvailableStatus.TRUE;
         } catch (final PluginException e2) {
