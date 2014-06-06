@@ -73,7 +73,7 @@ public class FilePackageView extends ChildrenView<DownloadLink> {
     }
 
     private DomainInfo[]  infos            = new DomainInfo[0];
-    private volatile long size             = -1;
+    private volatile long size             = 0;
     private volatile int  finalCount       = 0;
     private volatile int  unknownFileSizes = 0;
     private volatile int  children         = 0;
@@ -90,7 +90,7 @@ public class FilePackageView extends ChildrenView<DownloadLink> {
         return finalCount;
     }
 
-    private long                  done = -1;
+    private long                  done = 0;
 
     private int                   enabledCount;
 
@@ -109,7 +109,7 @@ public class FilePackageView extends ChildrenView<DownloadLink> {
     }
 
     public long getSize() {
-        return Math.max(done, size);
+        return size;
     }
 
     public long getDone() {
@@ -284,6 +284,9 @@ public class FilePackageView extends ChildrenView<DownloadLink> {
         this.children = tmp.children;
         this.finalCount = tmp.newFinalCount;
         this.unknownFileSizes = tmp.newUnknownFileSizes;
+        if (tmp.newUnknownFileSizes == tmp.children) {
+            size = -1;
+        }
         this.enabledCount = tmp.newEnabledCount;
         if (tmp.allFinished) {
             /* all links have reached finished state */
@@ -619,7 +622,7 @@ public class FilePackageView extends ChildrenView<DownloadLink> {
             availability = ChildrenAvailablility.ONLINE;
             return;
         }
-        if (offline == size) {
+        if (offline == tmp.children) {
             availability = ChildrenAvailablility.OFFLINE;
             return;
         }

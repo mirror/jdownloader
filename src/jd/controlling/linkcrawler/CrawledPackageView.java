@@ -69,7 +69,7 @@ public class CrawledPackageView extends ChildrenView<CrawledLink> {
         final HashMap<String, Long> names             = new HashMap<String, Long>();
         final TreeSet<DomainInfo>   domains           = new TreeSet<DomainInfo>();
         int                         newOnline         = 0;
-        long                        newFileSize       = -1;
+        long                        newFileSize       = 0;
         boolean                     newEnabled        = false;
         int                         newOffline        = 0;
         Priority                    priorityLowset    = Priority.HIGHEST;

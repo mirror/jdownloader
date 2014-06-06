@@ -215,7 +215,7 @@ public class ProgressColumn extends ExtProgressColumn<AbstractNode> {
                 if (view.getUnknownFileSizes() > 0) {
                     return view.getChildren();
                 }
-                return (Math.max(1, view.getSize()));
+                return Math.max(0, view.getSize());
             }
         } else {
             final DownloadLink dLink = (DownloadLink) value;
@@ -255,7 +255,7 @@ public class ProgressColumn extends ExtProgressColumn<AbstractNode> {
                 if (view.getUnknownFileSizes() > 0) {
                     return view.getFinalCount();
                 }
-                return view.getDone();
+                return Math.max(0, view.getDone());
             }
         } else {
             final DownloadLink dLink = (DownloadLink) value;
