@@ -20,24 +20,22 @@ import org.jdownloader.myjdownloader.client.json.AvailableLinkState;
 
 public class CrawledPackageView extends ChildrenView<CrawledLink> {
 
-    protected long                      fileSize;
-    private DomainInfo[]                domainInfos;
-    protected boolean                   enabled                  = false;
-    private int                         offline                  = 0;
-    private int                         online                   = 0;
-    private java.util.List<CrawledLink> items                    = new ArrayList<CrawledLink>();
-    private AtomicLong                  updatesRequired          = new AtomicLong(0);
-    private long                        updatesDone              = -1;
-    private Priority                    lowestPriority;
-    private Priority                    highestPriority;
-    private String                      commonSourceUrl;
-    private String                      availabilityColumnString = null;
-    private ChildrenAvailablility       availability             = ChildrenAvailablility.UNKNOWN;
+    protected volatile long                      fileSize                 = 0;
+    private volatile DomainInfo[]                domainInfos;
+    protected volatile boolean                   enabled                  = false;
+    private volatile int                         offline                  = 0;
+    private volatile int                         online                   = 0;
+    private volatile java.util.List<CrawledLink> items                    = new ArrayList<CrawledLink>();
+    private final AtomicLong                     updatesRequired          = new AtomicLong(0);
+    private volatile long                        updatesDone              = -1;
+    private volatile Priority                    lowestPriority;
+    private volatile Priority                    highestPriority;
+    private volatile String                      commonSourceUrl;
+    private volatile String                      availabilityColumnString = null;
+    private volatile ChildrenAvailablility       availability             = ChildrenAvailablility.UNKNOWN;
 
     public CrawledPackageView() {
-        this.fileSize = 0l;
         domainInfos = new DomainInfo[0];
-
     }
 
     @Override
@@ -68,18 +66,18 @@ public class CrawledPackageView extends ChildrenView<CrawledLink> {
     }
 
     private class Temp {
-        HashMap<String, Long> names             = new HashMap<String, Long>();
-        TreeSet<DomainInfo>   domains           = new TreeSet<DomainInfo>();
-        int                   newOnline         = 0;
-        long                  newFileSize       = 0;
-        boolean               newEnabled        = false;
-        int                   newOffline        = 0;
-        Priority              priorityLowset    = Priority.HIGHEST;
-        Priority              priorityHighest   = Priority.LOWER;
+        final HashMap<String, Long> names             = new HashMap<String, Long>();
+        final TreeSet<DomainInfo>   domains           = new TreeSet<DomainInfo>();
+        int                         newOnline         = 0;
+        long                        newFileSize       = -1;
+        boolean                     newEnabled        = false;
+        int                         newOffline        = 0;
+        Priority                    priorityLowset    = Priority.HIGHEST;
+        Priority                    priorityHighest   = Priority.LOWER;
 
-        String                sameSource        = null;
-        boolean               sameSourceFullUrl = true;
-        long                  lupdatesRequired  = updatesRequired.get();
+        String                      sameSource        = null;
+        boolean                     sameSourceFullUrl = true;
+        long                        lupdatesRequired  = updatesRequired.get();
     }
 
     public void setItems(List<CrawledLink> updatedItems) {
@@ -130,10 +128,12 @@ public class CrawledPackageView extends ChildrenView<CrawledLink> {
     }
 
     protected void addtoTmp(Temp tmp, CrawledLink link) {
-        DownloadLink dlLink = ((CrawledLink) link).getDownloadLink();
+        DownloadLink dlLink = link.getDownloadLink();
         String sourceUrl = null;
         if (dlLink.getLinkType() == DownloadLink.LINKTYPE_CONTAINER) {
-            if (dlLink.gotBrowserUrl()) sourceUrl = dlLink.getBrowserUrl();
+            if (dlLink.gotBrowserUrl()) {
+                sourceUrl = dlLink.getBrowserUrl();
+            }
         } else {
             sourceUrl = dlLink.getBrowserUrl();
         }
@@ -150,7 +150,9 @@ public class CrawledPackageView extends ChildrenView<CrawledLink> {
         }
 
         // enabled
-        if (link.isEnabled()) tmp.newEnabled = true;
+        if (link.isEnabled()) {
+            tmp.newEnabled = true;
+        }
         if (link.getLinkState() == AvailableLinkState.OFFLINE) {
             // offline
             tmp.newOffline++;
@@ -241,7 +243,9 @@ public class CrawledPackageView extends ChildrenView<CrawledLink> {
 
     @Override
     public String getMessage(Object requestor) {
-        if (requestor instanceof AvailabilityColumn) return availabilityColumnString;
+        if (requestor instanceof AvailabilityColumn) {
+            return availabilityColumnString;
+        }
         return null;
     }
 

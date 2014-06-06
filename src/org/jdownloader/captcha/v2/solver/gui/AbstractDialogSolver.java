@@ -41,7 +41,6 @@ public abstract class AbstractDialogSolver<T> extends ChallengeSolver<T> {
                     public void onSolverDone(ChallengeSolver<?> solver) {
                         if (job.isDone()) {
                             if (!job.isSolved()) {
-
                                 ChallengeResponseController.getInstance().setSkipRequest(SkipRequest.SINGLE, AbstractDialogSolver.this, job.getChallenge());
                             }
                             job.getEventSender().removeListener(this);
