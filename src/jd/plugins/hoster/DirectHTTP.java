@@ -744,6 +744,17 @@ public class DirectHTTP extends PluginForHost {
             if (length >= 0) {
                 downloadLink.setDownloadSize(length);
                 if (urlConnection.getHeaderField("X-Mod-H264-Streaming") == null && urlConnection.getHeaderField("Content-Encoding") == null) {
+                    final String contentMD5 = urlConnection.getHeaderField("Content-MD5");
+                    final String contentSHA1 = urlConnection.getHeaderField("Content-SHA1");
+                    if (downloadLink.getSha1Hash() == null) {
+                        if (contentSHA1 != null) {
+                            downloadLink.setSha1Hash(contentSHA1);
+                        }
+                    } else if (downloadLink.getMD5Hash() == null) {
+                        if (contentMD5 != null) {
+                            downloadLink.setMD5Hash(contentMD5);
+                        }
+                    }
                     downloadLink.setProperty("VERIFIEDFILESIZE", length);
                 }
             }
