@@ -12,6 +12,7 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicBoolean;
 
+import jd.SecondLevelLaunch;
 import jd.controlling.downloadcontroller.DownloadController;
 import jd.controlling.downloadcontroller.DownloadSession;
 import jd.controlling.downloadcontroller.DownloadWatchDog;
@@ -186,55 +187,61 @@ public class HostPluginController extends PluginController<PluginForHost> {
             logger.close();
         }
         System.gc();
-        DownloadWatchDog.getInstance().enqueueJob(new DownloadWatchDogJob() {
-            private final PluginFinder finder = new PluginFinder();
-
-            private final LogSource    logger = LogController.CL(false);
+        SecondLevelLaunch.INIT_COMPLETE.executeWhenReached(new Runnable() {
 
             @Override
-            public void execute(DownloadSession currentSession) {
-                DownloadController.getInstance().getChildrenByFilter(new AbstractPackageChildrenNodeFilter<DownloadLink>() {
+            public void run() {
+                DownloadWatchDog.getInstance().enqueueJob(new DownloadWatchDogJob() {
+                    private final PluginFinder finder = new PluginFinder();
+
+                    private final LogSource    logger = LogController.CL(false);
 
                     @Override
-                    public int returnMaxResults() {
-                        return 0;
-                    }
+                    public void execute(DownloadSession currentSession) {
+                        DownloadController.getInstance().getChildrenByFilter(new AbstractPackageChildrenNodeFilter<DownloadLink>() {
 
-                    private final void updatePluginInstance(DownloadLink link) {
-                        long beforeVersion = -1;
-                        if (link.getDefaultPlugin() != null) {
-                            beforeVersion = link.getDefaultPlugin().getLazyP().getVersion();
-                        }
-                        PluginForHost afterPlugin = finder.assignPlugin(link, true, logger);
-                        if (link.getFinalLinkState() == FinalLinkState.PLUGIN_DEFECT && afterPlugin != null && beforeVersion != afterPlugin.getLazyP().getVersion()) {
-                            link.setFinalLinkState(null);
-                        }
-                    }
+                            @Override
+                            public int returnMaxResults() {
+                                return 0;
+                            }
 
-                    @Override
-                    public boolean acceptNode(final DownloadLink node) {
-                        if (node.getDownloadLinkController() != null) {
-                            node.getDownloadLinkController().getJobsAfterDetach().add(new DownloadWatchDogJob() {
+                            private final void updatePluginInstance(DownloadLink link) {
+                                long beforeVersion = -1;
+                                if (link.getDefaultPlugin() != null) {
+                                    beforeVersion = link.getDefaultPlugin().getLazyP().getVersion();
+                                }
+                                PluginForHost afterPlugin = finder.assignPlugin(link, true, logger);
+                                if (link.getFinalLinkState() == FinalLinkState.PLUGIN_DEFECT && afterPlugin != null && beforeVersion != afterPlugin.getLazyP().getVersion()) {
+                                    link.setFinalLinkState(null);
+                                }
+                            }
 
-                                @Override
-                                public void execute(DownloadSession currentSession) {
+                            @Override
+                            public boolean acceptNode(final DownloadLink node) {
+                                if (node.getDownloadLinkController() != null) {
+                                    node.getDownloadLinkController().getJobsAfterDetach().add(new DownloadWatchDogJob() {
+
+                                        @Override
+                                        public void execute(DownloadSession currentSession) {
+                                            updatePluginInstance(node);
+                                        }
+
+                                        @Override
+                                        public void interrupt() {
+                                        }
+                                    });
+                                } else {
                                     updatePluginInstance(node);
                                 }
+                                return false;
+                            }
+                        });
+                    }
 
-                                @Override
-                                public void interrupt() {
-                                }
-                            });
-                        } else {
-                            updatePluginInstance(node);
-                        }
-                        return false;
+                    @Override
+                    public void interrupt() {
                     }
                 });
-            }
-
-            @Override
-            public void interrupt() {
             }
         });
         return list;

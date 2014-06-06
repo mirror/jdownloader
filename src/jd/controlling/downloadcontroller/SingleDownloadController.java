@@ -26,6 +26,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.logging.Logger;
 
+import jd.controlling.downloadcontroller.AccountCache.CachedAccount;
 import jd.controlling.downloadcontroller.DiskSpaceManager.DISKSPACERESERVATIONRESULT;
 import jd.controlling.packagecontroller.AbstractNode;
 import jd.controlling.proxy.AbstractProxySelectorImpl;
@@ -270,11 +271,9 @@ public class SingleDownloadController extends BrowserSettingsThread implements D
                 @Override
                 protected List<HTTPProxy> selectProxies(String url) throws IOException {
                     List<HTTPProxy> ret = super.selectProxies(url);
-
                     usedProxy = ret.get(0);
                     return ret;
                 }
-
             });
             livePlugin.setLogger(downloadLogger);
             livePlugin.setDownloadLink(downloadLink);
@@ -396,19 +395,24 @@ public class SingleDownloadController extends BrowserSettingsThread implements D
             SingleDownloadReturnState ret = new SingleDownloadReturnState(this, e, plugin);
             return ret;
         } finally {
-            queueItem.queueLinks.remove(downloadLink);
-            DownloadInterface di = livePlugin.getDownloadInterface();
-            resumed = di != null && di.isResumedDownload();
-            downloadLink.setLivePlugin(null);
-            finalizePlugins(downloadLogger, originalPlugin, livePlugin, validateChallenge);
-            if (downloadLink.getFilePackage() != null) {
-                // if we remove link without stopping them.. the filepackage may be the default package already here.
-                FilePackageView view = downloadLink.getFilePackage().getView();
-                if (view != null) {
-                    view.requestUpdate();
+            try {
+                queueItem.queueLinks.remove(downloadLink);
+                if (livePlugin != null) {
+                    final DownloadInterface di = livePlugin.getDownloadInterface();
+                    resumed = di != null && di.isResumedDownload();
                 }
+                downloadLink.setLivePlugin(null);
+                finalizePlugins(downloadLogger, originalPlugin, livePlugin, validateChallenge);
+                if (downloadLink.getFilePackage() != null) {
+                    // if we remove link without stopping them.. the filepackage may be the default package already here.
+                    FilePackageView view = downloadLink.getFilePackage().getView();
+                    if (view != null) {
+                        view.requestUpdate();
+                    }
+                }
+            } catch (final Throwable e) {
+                downloadLogger.log(e);
             }
-
         }
     }
 
@@ -425,40 +429,43 @@ public class SingleDownloadController extends BrowserSettingsThread implements D
     }
 
     private void finalizePlugins(LogSource logger, PluginForHost originalPlugin, PluginForHost livePlugin, boolean valid) {
-        switch (candidate.getCachedAccount().getType()) {
-        case MULTI:
-            if (originalPlugin != null) {
-                try {
-                    if (valid) {
-                        originalPlugin.validateLastChallengeResponse();
-                    } else {
-                        originalPlugin.invalidateLastChallengeResponse();
+        final CachedAccount cachedAccount = candidate.getCachedAccount();
+        if (cachedAccount != null) {
+            switch (cachedAccount.getType()) {
+            case MULTI:
+                if (originalPlugin != null) {
+                    try {
+                        if (valid) {
+                            originalPlugin.validateLastChallengeResponse();
+                        } else {
+                            originalPlugin.invalidateLastChallengeResponse();
+                        }
+                    } catch (final Throwable ignore) {
+                        logger.log(ignore);
                     }
-                } catch (final Throwable ignore) {
-                    logger.log(ignore);
-                }
-                try {
-                    originalPlugin.clean();
-                } catch (final Throwable ignore) {
-                    logger.log(ignore);
-                }
-            }
-        case ORIGINAL:
-        case NONE:
-            if (livePlugin != null) {
-                try {
-                    if (valid) {
-                        livePlugin.validateLastChallengeResponse();
-                    } else {
-                        livePlugin.invalidateLastChallengeResponse();
+                    try {
+                        originalPlugin.clean();
+                    } catch (final Throwable ignore) {
+                        logger.log(ignore);
                     }
-                } catch (final Throwable ignore) {
-                    logger.log(ignore);
                 }
-                try {
-                    livePlugin.clean();
-                } catch (final Throwable ignore) {
-                    logger.log(ignore);
+            case ORIGINAL:
+            case NONE:
+                if (livePlugin != null) {
+                    try {
+                        if (valid) {
+                            livePlugin.validateLastChallengeResponse();
+                        } else {
+                            livePlugin.invalidateLastChallengeResponse();
+                        }
+                    } catch (final Throwable ignore) {
+                        logger.log(ignore);
+                    }
+                    try {
+                        livePlugin.clean();
+                    } catch (final Throwable ignore) {
+                        logger.log(ignore);
+                    }
                 }
             }
         }
@@ -467,7 +474,7 @@ public class SingleDownloadController extends BrowserSettingsThread implements D
     @Override
     public void run() {
         LogSource downloadLogger = null;
-        PluginProgressTask task = new PluginProgressTask(null);
+        final PluginProgressTask task = new PluginProgressTask(null);
         try {
             String logID = downloadLink.getDefaultPlugin().getHost();
             if (AccountCache.ACCOUNTTYPE.MULTI.equals(candidate.getCachedAccount().getType())) {
@@ -582,7 +589,6 @@ public class SingleDownloadController extends BrowserSettingsThread implements D
 
     @Override
     public void onDownloadControllerUpdatedData(FilePackage pkg, FilePackageProperty property) {
-        System.out.println(property);
     }
 
     @Override
