@@ -27,6 +27,7 @@ import java.util.concurrent.atomic.AtomicLong;
 import java.util.logging.Logger;
 
 import jd.controlling.downloadcontroller.DiskSpaceManager.DISKSPACERESERVATIONRESULT;
+import jd.controlling.downloadcontroller.event.DownloadWatchdogEvent;
 import jd.controlling.packagecontroller.AbstractNode;
 import jd.controlling.proxy.AbstractProxySelectorImpl;
 import jd.controlling.reconnect.ipcheck.BalancedWebIPCheck;
@@ -345,22 +346,9 @@ public class SingleDownloadController extends BrowserSettingsThread implements D
 
                     @Override
                     public void run() throws Exception {
-                        final File partFile = new File(getDownloadLink().getFileOutput() + ".part");
-                        long doneSize = Math.max((partFile.exists() ? partFile.length() : 0l), getDownloadLink().getView().getBytesLoaded());
-                        final long remainingSize = downloadLink.getView().getBytesTotal() - Math.max(0, doneSize);
-                        DISKSPACERESERVATIONRESULT result = watchDog.getSession().getDiskSpaceManager().check(new DiskSpaceReservation() {
-
-                            @Override
-                            public File getDestination() {
-                                return partFile;
-                            }
-
-                            @Override
-                            public long getSize() {
-                                return remainingSize;
-                            }
-
-                        });
+                        final List<DownloadLinkCandidate> candidates = new ArrayList<DownloadLinkCandidate>();
+                        candidates.add(getDownloadLinkCandidate());
+                        final DISKSPACERESERVATIONRESULT result = watchDog.validateDiskFree(candidates);
                         switch (result) {
                         case FAILED:
                             throw new SkipReasonException(SkipReason.DISK_FULL);
@@ -468,6 +456,11 @@ public class SingleDownloadController extends BrowserSettingsThread implements D
             downloadLogger = LogController.getFastPluginLogger(logID);
             downloadLogger.info("Start Download of " + downloadLink.getDownloadURL());
             super.setLogger(downloadLogger);
+            try {
+                watchDog.getEventSender().fireEvent(new DownloadWatchdogEvent(this, DownloadWatchdogEvent.Type.LINK_STARTED, this, candidate));
+            } catch (final Throwable e) {
+                downloadLogger.log(e);
+            }
             task.open();
             addTask(task);
             SingleDownloadReturnState returnState = download(downloadLogger);

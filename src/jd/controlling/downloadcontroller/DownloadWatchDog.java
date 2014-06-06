@@ -1138,7 +1138,7 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
         throw new WTFException("This should never happen!? " + value.getResult());
     }
 
-    private DISKSPACERESERVATIONRESULT validateDiskFree(final List<DownloadLinkCandidate> downloadLinkCandidates) {
+    protected DISKSPACERESERVATIONRESULT validateDiskFree(final List<DownloadLinkCandidate> downloadLinkCandidates) {
         DownloadLink downloadLink = null;
         for (DownloadLinkCandidate downloadLinkCandidate : downloadLinkCandidates) {
             if (downloadLinkCandidate.getLink().getVerifiedFileSize() >= 0) {
@@ -2056,7 +2056,6 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
         candidate.getLink().setEnabled(true);
         getSession().getControllers().add(con);
         con.start();
-        eventSender.fireEvent(new DownloadWatchdogEvent(this, DownloadWatchdogEvent.Type.LINK_STARTED, con, candidate));
         return con;
     }
 
@@ -2126,8 +2125,11 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
                         } catch (final Throwable e) {
                             /* link can already be removed->nullpointer exception */
                         }
-                        eventSender.fireEvent(new DownloadWatchdogEvent(this, DownloadWatchdogEvent.Type.LINK_STOPPED, singleDownloadController, candidate, result));
-
+                        try {
+                            eventSender.fireEvent(new DownloadWatchdogEvent(this, DownloadWatchdogEvent.Type.LINK_STOPPED, singleDownloadController, candidate, result));
+                        } catch (final Throwable e) {
+                            logger.log(e);
+                        }
                         handleFinalLinkStates(finalLinkStateLinks, currentSession, logger, singleDownloadController);
                     } finally {
                         if (result != null) {
