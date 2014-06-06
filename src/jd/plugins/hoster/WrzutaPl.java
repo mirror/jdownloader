@@ -59,7 +59,9 @@ public class WrzutaPl extends PluginForHost {
         boolean addext = true;
         String fileid = new Regex(downloadLink.getDownloadURL(), ".*?wrzuta.pl/" + filetype + "/([^/]*)").getMatch(0);
         String host = new Regex(downloadLink.getDownloadURL(), "https?://(.*?)/").getMatch(0);
-        if (fileid == null || filetype == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (fileid == null || filetype == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         String linkurl = null;
         br.setFollowRedirects(true);
         if (filetype.equalsIgnoreCase("audio")) {
@@ -77,7 +79,13 @@ public class WrzutaPl extends PluginForHost {
                 br.getPage(playerUrl);
 
                 String flashSrcUrl = br.getRegex("var __flashSrcUrl = (.*)var __htmlSrcUrl ").getMatch(0);
+                if (flashSrcUrl == null) {
+                    String encodeURIComponent = br.getRegex("'flashSrc', encodeURIComponent\\((.*?)\\)").getMatch(0);
+
+                    flashSrcUrl = br.getRegex("var " + encodeURIComponent + " = (.*?);").getMatch(0);
+                }
                 matches = new Regex(flashSrcUrl, "\"[a-zA-z\\d:/\\.\\?=%&]*\"").getMatches();
+
                 linkurl = concatenate(matches);
             }
         } else if (filetype.equalsIgnoreCase("film")) {
@@ -87,9 +95,13 @@ public class WrzutaPl extends PluginForHost {
             addext = false;
         } else if (filetype.equalsIgnoreCase("obraz")) {
             linkurl = br.getRegex("<img id=\"image\" src=\"(.*?)\"").getMatch(0);
-            if (linkurl == null) linkurl = downloadLink.getDownloadURL().replaceFirst("obraz", "sr/f");
+            if (linkurl == null) {
+                linkurl = downloadLink.getDownloadURL().replaceFirst("obraz", "sr/f");
+            }
         }
-        if (linkurl == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (linkurl == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         br.setDebug(true);
         br.setFollowRedirects(true);
         // set one chunk as film and audio based links will reset soon as second
@@ -147,23 +159,40 @@ public class WrzutaPl extends PluginForHost {
     public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws IOException, InterruptedException, PluginException {
         this.setBrowserExclusive();
         br.getPage(downloadLink.getDownloadURL());
-        if (br.containsHTML(">Nie odnaleziono pliku\\.<")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (br.containsHTML(">Nie odnaleziono pliku\\.<")) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
         filename = (Encoding.htmlDecode(br.getRegex("<h1 class=\"header\">(.*?)</h1>").getMatch(0)));
-        if (filename == null) filename = (Encoding.htmlDecode(br.getRegex("<meta name=\"title\" content=\"(.*?)\" />").getMatch(0)));
-        if (filename == null) filename = (Encoding.htmlDecode(br.getRegex("div class=\"file-title\">.*?<h1>(.*?)</h1>").getMatch(0)));
-        if (filename == null) filename = br.getRegex("<meta content=\"(.*?)\" name=\"medium\">.+<meta content=\"(.*?)\" name=\"title\">").getMatch(1);
+        if (filename == null) {
+            filename = (Encoding.htmlDecode(br.getRegex("<meta name=\"title\" content=\"(.*?)\" />").getMatch(0)));
+        }
+        if (filename == null) {
+            filename = (Encoding.htmlDecode(br.getRegex("div class=\"file-title\">.*?<h1>(.*?)</h1>").getMatch(0)));
+        }
+        if (filename == null) {
+            filename = br.getRegex("<meta content=\"(.*?)\" name=\"medium\">.+<meta content=\"(.*?)\" name=\"title\">").getMatch(1);
+        }
         String filesize = br.getRegex("Rozmiar: <strong>(.*?)</strong>").getMatch(0);
-        if (filesize == null) filesize = br.getRegex("<span id=\"file_info_size\">[\t\n\r ]+<strong>(.*?)</strong>").getMatch(0);
-        if (filename == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (filesize == null) {
+            filesize = br.getRegex("<span id=\"file_info_size\">[\t\n\r ]+<strong>(.*?)</strong>").getMatch(0);
+        }
+        if (filename == null) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
         filetype = new Regex(downloadLink.getDownloadURL(), ".*?wrzuta.pl/([^/]*)").getMatch(0);
-        if (filesize != null) downloadLink.setDownloadSize(SizeFormatter.getSize(filesize.replace(",", ".")));
-        if (downloadLink.getIntegerProperty("nameextra", -1) != -1) filename = filename + "_" + downloadLink.getIntegerProperty("nameextra", -1);
+        if (filesize != null) {
+            downloadLink.setDownloadSize(SizeFormatter.getSize(filesize.replace(",", ".")));
+        }
+        if (downloadLink.getIntegerProperty("nameextra", -1) != -1) {
+            filename = filename + "_" + downloadLink.getIntegerProperty("nameextra", -1);
+        }
         // Set the ending if the file doesn't have it but don't set it as a
         // final filename as it could be wrong!
-        if (downloadLink.getDownloadURL().contains("/audio/") && !filename.contains(".mp3"))
+        if (downloadLink.getDownloadURL().contains("/audio/") && !filename.contains(".mp3")) {
             downloadLink.setName(Encoding.htmlDecode(filename.trim() + ".mp3"));
-        else
+        } else {
             downloadLink.setName(Encoding.htmlDecode(filename.trim()));
+        }
         return AvailableStatus.TRUE;
     }
 
