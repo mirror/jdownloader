@@ -14,6 +14,7 @@ import org.jdownloader.api.downloads.DownloadsAPI;
 import org.jdownloader.api.jdanywhere.api.interfaces.IDownloadLinkApi;
 import org.jdownloader.api.jdanywhere.api.storable.DownloadLinkInfoStorable;
 import org.jdownloader.api.jdanywhere.api.storable.DownloadLinkStorable;
+import org.jdownloader.controlling.Priority;
 
 public class DownloadLinkApi implements IDownloadLinkApi {
 
@@ -109,7 +110,7 @@ public class DownloadLinkApi implements IDownloadLinkApi {
         List<DownloadLink> list = Helper.getFilteredDownloadLinks(linkIds);
         if (list != null && !list.isEmpty()) {
             for (DownloadLink dl : list) {
-                dl.setPriority(priority);
+                dl.setPriorityEnum(Priority.getPriority(priority));
             }
         }
         return true;

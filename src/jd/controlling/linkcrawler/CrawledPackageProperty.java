@@ -3,7 +3,8 @@ package jd.controlling.linkcrawler;
 public class CrawledPackageProperty {
     public static enum Property {
         NAME,
-        FOLDER
+        FOLDER,
+        PRIORITY
     }
 
     private final Object         value;

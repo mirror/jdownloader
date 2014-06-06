@@ -13,6 +13,7 @@ import org.appwork.storage.JSonStorage;
 import org.jdownloader.api.jdanywhere.api.interfaces.IFilePackageApi;
 import org.jdownloader.api.jdanywhere.api.storable.FilePackageInfoStorable;
 import org.jdownloader.api.jdanywhere.api.storable.FilePackageStorable;
+import org.jdownloader.controlling.Priority;
 
 public class FilePackageApi implements IFilePackageApi {
 
@@ -63,9 +64,15 @@ public class FilePackageApi implements IFilePackageApi {
         boolean b = dlc.readLock();
         try {
             java.util.List<FilePackageStorable> ret = new ArrayList<FilePackageStorable>(dlc.size());
-            if (startWith > dlc.size() - 1) return ret;
-            if (startWith < 0) startWith = 0;
-            if (maxResults < 0) maxResults = dlc.size();
+            if (startWith > dlc.size() - 1) {
+                return ret;
+            }
+            if (startWith < 0) {
+                startWith = 0;
+            }
+            if (maxResults < 0) {
+                maxResults = dlc.size();
+            }
 
             for (int i = startWith; i < Math.min(startWith + maxResults, dlc.size()); i++) {
                 FilePackage fpkg = dlc.getPackages().get(i);
@@ -124,11 +131,12 @@ public class FilePackageApi implements IFilePackageApi {
         FilePackage fpkg = Helper.getFilePackageFromID(ID);
         if (fpkg != null) {
             for (DownloadLink link : fpkg.getChildren()) {
-                link.setPriority(priority);
+                link.setPriorityEnum(Priority.getPriority(priority));
             }
             return true;
-        } else
+        } else {
             return false;
+        }
     }
 
     @Override

@@ -3,8 +3,8 @@ package jd.plugins;
 public class FilePackageProperty {
     public static enum Property {
         NAME,
-        FOLDER
-
+        FOLDER,
+        PRIORITY
     }
 
     private final Object      value;

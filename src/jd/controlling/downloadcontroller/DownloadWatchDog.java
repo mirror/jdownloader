@@ -595,6 +595,9 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
         for (DownloadLink link : links) {
             count++;
             Priority prio = link.getPriorityEnum();
+            if (Priority.DEFAULT.equals(prio)) {
+                prio = link.getFilePackage().getPriorityEnum();
+            }
             java.util.List<DownloadLink> list = optimizedList.get(prio);
             if (list == null) {
                 list = new ArrayList<DownloadLink>();

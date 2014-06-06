@@ -12,17 +12,23 @@ public class DownloadLinkStorable implements Storable {
     private boolean _messageIsCountdown = false;
 
     public long getId() {
-        if (link == null) return 0;
+        if (link == null) {
+            return 0;
+        }
         return link.getUniqueID().getID();
     }
 
     public long getUUID() {
-        if (link == null) return 0;
+        if (link == null) {
+            return 0;
+        }
         return link.getUniqueID().getID();
     }
 
     public String getName() {
-        if (link == null) return null;
+        if (link == null) {
+            return null;
+        }
         return link.getView().getDisplayName();
     }
 
@@ -31,7 +37,9 @@ public class DownloadLinkStorable implements Storable {
     }
 
     public String getHost() {
-        if (link == null) return null;
+        if (link == null) {
+            return null;
+        }
         return link.getHost();
     }
 
@@ -43,52 +51,72 @@ public class DownloadLinkStorable implements Storable {
     }
 
     public String getOnlinestatus() {
-        if (link == null) return null;
+        if (link == null) {
+            return null;
+        }
         return this.link.getAvailableStatus().toString();
     }
 
     public long getSize() {
-        if (link == null) return -1l;
+        if (link == null) {
+            return -1l;
+        }
         return link.getView().getBytesTotal();
     }
 
     public long getDone() {
-        if (link == null) return -1l;
+        if (link == null) {
+            return -1l;
+        }
         return link.getView().getBytesLoaded();
     }
 
     public boolean isEnabled() {
-        if (link == null) return true;
+        if (link == null) {
+            return true;
+        }
         return link.isEnabled();
     }
 
     public long getSpeed() {
-        if (link == null) return 0;
+        if (link == null) {
+            return 0;
+        }
         return link.getView().getSpeedBps();
     }
 
     public long getAdded() {
-        if (link == null) return -1l;
+        if (link == null) {
+            return -1l;
+        }
         return link.getCreated();
     }
 
     public long getFinished() {
-        if (link == null) return -1l;
+        if (link == null) {
+            return -1l;
+        }
         return link.getFinishedDate();
     }
 
     public int getPriority() {
-        if (link == null) return 0;
-        return link.getPriority();
+        if (link == null) {
+            return 0;
+        }
+        return link.getPriorityEnum().getId();
     }
 
     public int getChunks() {
-        if (link == null) return 0;
+        if (link == null) {
+            return 0;
+        }
         return link.getChunks();
     }
 
     public LinkStatusJobStorable getLinkStatus() {
-        if (link == null) return null;
+        if (link == null) {
+            return null;
+        }
         LinkStatusJobStorable lsj = new LinkStatusJobStorable();
         lsj.setFinished(FinalLinkState.CheckFinished(link.getFinalLinkState()));
         lsj.setInProgress(link.getDownloadLinkController() != null);
@@ -100,10 +128,11 @@ public class DownloadLinkStorable implements Storable {
             lsj.setStatusText("Countdown running");
             _messageIsCountdown = true;
         }
-        if (link.isEnabled())
+        if (link.isEnabled()) {
             lsj.setStatus(1);
-        else
+        } else {
             lsj.setStatus(0);
+        }
         return lsj;
     }
 

@@ -93,7 +93,7 @@ public class DownloadLink extends Property implements Serializable, AbstractPack
     private static final String                                         PROPERTY_FINALFILENAME              = "FINAL_FILENAME";
     private static final String                                         PROPERTY_FORCEDFILENAME             = "FORCED_FILENAME";
     private static final String                                         PROPERTY_COMMENT                    = "COMMENT";
-    private static final String                                         PROPERTY_PRIORITY                   = "PRIORITY";
+    private static final String                                         PROPERTY_PRIORITY                   = "PRIORITY2";
     private static final String                                         PROPERTY_FINISHTIME                 = "FINISHTIME";
     private static final String                                         PROPERTY_ENABLED                    = "ENABLED";
     private static final String                                         PROPERTY_PWLIST                     = "PWLIST";
@@ -327,19 +327,14 @@ public class DownloadLink extends Property implements Serializable, AbstractPack
 
     public Priority getPriorityEnum() {
         try {
-            return Priority.getPriority(getPriority());
+            String priority = getStringProperty(PROPERTY_PRIORITY, null);
+            if (priority == null) {
+                return Priority.DEFAULT;
+            }
+            return Priority.valueOf(priority);
         } catch (final Throwable e) {
             return Priority.DEFAULT;
         }
-    }
-
-    @Deprecated
-    /**
-     * @deprecated use #getPriorityEnum
-     * @return
-     */
-    public int getPriority() {
-        return this.getIntegerProperty(PROPERTY_PRIORITY, 0);
     }
 
     public int getChunks() {
@@ -367,31 +362,6 @@ public class DownloadLink extends Property implements Serializable, AbstractPack
 
     public int getCustomSpeedLimit() {
         return this.getIntegerProperty(PROPERTY_SPEEDLIMIT, 0);
-    }
-
-    @Deprecated
-    /**
-     * @deprecated Use #setPriorityEnum instead
-     * @param pr
-     * 
-     */
-    public void setPriority(int pr) {
-        int oldPrio = getPriority();
-        int priority = 0;
-        if (pr >= -1 && pr < 4) {
-            priority = pr;
-        }
-        if (oldPrio == priority) {
-            return;
-        }
-        if (priority == 0) {
-            this.setProperty(PROPERTY_PRIORITY, Property.NULL);
-        } else {
-            this.setProperty(PROPERTY_PRIORITY, priority);
-        }
-        if (hasNotificationListener()) {
-            notifyChanges(AbstractNodeNotifier.NOTIFY.PROPERTY_CHANCE, new DownloadLinkProperty(this, DownloadLinkProperty.Property.PRIORITY, priority));
-        }
     }
 
     /**
@@ -1112,9 +1082,13 @@ public class DownloadLink extends Property implements Serializable, AbstractPack
     }
 
     public void setLivePlugin(PluginForHost plugin) {
+        final PluginForHost oldLivePlugin = liveplugin;
         this.liveplugin = plugin;
         if (plugin != null) {
             plugin.setDownloadLink(this);
+        }
+        if (oldLivePlugin != null && oldLivePlugin != plugin) {
+            oldLivePlugin.setDownloadLink(null);
         }
     }
 
@@ -1493,7 +1467,19 @@ public class DownloadLink extends Property implements Serializable, AbstractPack
     }
 
     public void setPriorityEnum(Priority priority) {
-        setPriority(priority.getId());
+        if (priority == null) {
+            priority = Priority.DEFAULT;
+        }
+        if (getPriorityEnum() != priority) {
+            if (Priority.DEFAULT.equals(priority)) {
+                setProperty(PROPERTY_PRIORITY, Property.NULL);
+            } else {
+                setProperty(PROPERTY_PRIORITY, priority.name());
+            }
+            if (hasNotificationListener()) {
+                notifyChanges(AbstractNodeNotifier.NOTIFY.PROPERTY_CHANCE, new DownloadLinkProperty(this, DownloadLinkProperty.Property.PRIORITY, priority));
+            }
+        }
     }
 
     public String getArchiveID() {

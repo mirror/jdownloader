@@ -10,6 +10,7 @@ import jd.controlling.packagecontroller.PackageControllerComparator;
 import org.appwork.storage.Storable;
 import org.appwork.swing.exttable.ExtColumn;
 import org.appwork.utils.logging.Log;
+import org.jdownloader.controlling.Priority;
 import org.jdownloader.gui.views.linkgrabber.LinkGrabberTableModel;
 
 public class CrawledPackageStorable implements Storable {
@@ -41,7 +42,9 @@ public class CrawledPackageStorable implements Storable {
     }
 
     public void setType(TYPE type) {
-        if (type == null) type = TYPE.NORMAL;
+        if (type == null) {
+            type = TYPE.NORMAL;
+        }
         this.type = type;
     }
 
@@ -62,7 +65,9 @@ public class CrawledPackageStorable implements Storable {
 
     public String getSorterId() {
         PackageControllerComparator<CrawledLink> lSorter = pkg.getCurrentSorter();
-        if (lSorter == null) return null;
+        if (lSorter == null) {
+            return null;
+        }
         boolean asc = lSorter.isAsc();
         return ((asc ? "ASC" : "DSC") + "." + lSorter.getID());
     }
@@ -182,7 +187,9 @@ public class CrawledPackageStorable implements Storable {
     }
 
     public String getDownloadFolder() {
-        if (!pkg.isDownloadFolderSet()) return null;
+        if (!pkg.isDownloadFolderSet()) {
+            return null;
+        }
         return pkg.getRawDownloadFolder();
     }
 
@@ -243,6 +250,17 @@ public class CrawledPackageStorable implements Storable {
      */
     public void setPackageID(String packageID) {
         this.packageID = packageID;
+    }
+
+    public String getPriority() {
+        return pkg.getPriorityEnum().name();
+    }
+
+    public void setPriority(String priority) {
+        try {
+            pkg.setPriorityEnum(Priority.valueOf(priority));
+        } catch (final Throwable e) {
+        }
     }
 
     /**

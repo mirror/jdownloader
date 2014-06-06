@@ -15,6 +15,7 @@ import org.appwork.storage.config.JsonConfig;
 import org.appwork.utils.ModifyLock;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.os.CrossSystem;
+import org.jdownloader.controlling.Priority;
 import org.jdownloader.controlling.UniqueAlltimeID;
 import org.jdownloader.controlling.packagizer.PackagizerController;
 import org.jdownloader.gui.views.linkgrabber.addlinksdialog.LinkgrabberSettings;
@@ -115,6 +116,8 @@ public class CrawledPackage implements AbstractPackageNode<CrawledLink, CrawledP
     private transient volatile ModifyLock                  lock                   = null;
 
     private PackageControllerComparator<CrawledLink>       sorter;
+
+    private Priority                                       priority               = Priority.DEFAULT;
 
     public UniqueAlltimeID getUniqueID() {
         if (uniqueID != null) {
@@ -297,6 +300,22 @@ public class CrawledPackage implements AbstractPackageNode<CrawledLink, CrawledP
                 getModifyLock().readUnlock(readL);
             }
         }
+    }
+
+    public void setPriorityEnum(Priority priority) {
+        if (priority == null) {
+            priority = Priority.DEFAULT;
+        }
+        if (getPriorityEnum() != priority) {
+            this.priority = priority;
+            if (hasNotificationListener()) {
+                nodeUpdated(this, AbstractNodeNotifier.NOTIFY.PROPERTY_CHANCE, new CrawledPackageProperty(this, CrawledPackageProperty.Property.PRIORITY, priority));
+            }
+        }
+    }
+
+    public Priority getPriorityEnum() {
+        return priority;
     }
 
     @Override
