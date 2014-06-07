@@ -183,6 +183,7 @@ public class CompiledFiletypeFilter {
     }
 
     public static enum ArchiveExtensions implements ExtensionsFilterInterface {
+        REV,
         RAR,
         ZIP,
         SevenZIP("7ZIP"),
