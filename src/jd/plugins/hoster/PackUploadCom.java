@@ -45,15 +45,21 @@ public class PackUploadCom extends PluginForHost {
 
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
-        if (link.getDownloadURL().matches(INVALIDLINKS)) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (link.getDownloadURL().matches(INVALIDLINKS)) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
         this.setBrowserExclusive();
         br.getHeaders().put("Accept-Language", "en-US,en;q=0.5");
         br.setFollowRedirects(true);
         br.getPage(link.getDownloadURL());
-        if (br.getRequest().getHttpConnection().getResponseCode() == 403 || br.containsHTML(">Oops, page non trouvée|La page que vous essayez d\\'afficher n\\'existe pas|>Fichier ou dossier indisponible<|>Unavailable file or folder<")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (br.getRequest().getHttpConnection().getResponseCode() == 403 || br.containsHTML(">Oops, page non trouvée|La page que vous essayez d\\'afficher n\\'existe pas|>Fichier ou dossier indisponible<|>Unavailable file or folder<")) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
         final String filename = br.getRegex("<title>Download ([^<>\"]*?) for free \\- PackUpload</title>").getMatch(0);
         final String filesize = br.getRegex(">Size :</span> <span style=\"[^<>\"]*?\">([^<>\"]*?)</span>").getMatch(0);
-        if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (filename == null || filesize == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         link.setName(Encoding.htmlDecode(filename.trim().replace(",", ".")));
         link.setDownloadSize(SizeFormatter.getSize(filesize));
         return AvailableStatus.TRUE;
@@ -63,11 +69,15 @@ public class PackUploadCom extends PluginForHost {
     public void handleFree(final DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
         final String dllink = br.getRegex("\"(http://s\\d+\\.packupload\\.com/[A-Z0-9]+)\"").getMatch(0);
-        if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (dllink == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         int wait = 15;
         final String waittime = br.getRegex("var delay = (\\d+);").getMatch(0);
-        if (waittime != null) wait = Integer.parseInt(waittime);
-        sleep(wait * 1001l, downloadLink);
+        if (waittime != null) {
+            wait = Integer.parseInt(waittime);
+        }
+        sleep((wait + 85) * 1001l, downloadLink); // Additional wait time is needed (You must wait ...)
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, "", false, 1);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
