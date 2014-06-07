@@ -787,7 +787,7 @@ public class VozUploadCom extends PluginForHost {
         }
         if (account.getBooleanProperty("free")) {
             ai.setStatus("Registered (free) User");
-            account.setProperty("totalMaxSim", 20);
+            account.setProperty("totalMaxSim", 1);
         } else {
             long expire = 0, expireD = 0, expireS = 0;
             final String expireDay = cbr.getRegex("(\\d{1,2} (January|February|March|April|May|June|July|August|September|October|November|December) \\d{4})").getMatch(0);
