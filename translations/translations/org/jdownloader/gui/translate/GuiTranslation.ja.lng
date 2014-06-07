@@ -941,6 +941,7 @@ SilentModeToggleAction_getNameWhenDisabled_=サイレントモード
 SilentModeToggleAction_getNameWhenEnabled_=サイレントモード
 SizeColumn_SizeColumn=サイズ
 SizeColumn_getSizeString_zero=未知
+SizeColumn_getSizeString_zero_tt=ﾌｧｲﾙｻｲｽﾞ取得不能/未知
 SkipAction_run_msg_=実行中のダウンロードをスキップして停止しますか?\nリジュームできないダウンロードが%s2あるため%s1が失われます!
 SortAction_SortAction_object_="%s1"でパッケージを並べ替え
 SortAction_SortAction_object_empty=カラムでパッケージを並べ替え
