@@ -941,6 +941,7 @@ SilentModeToggleAction_getNameWhenDisabled_=Aktiviraj Tihi Modus
 SilentModeToggleAction_getNameWhenEnabled_=Deaktiviraj Tihi Modus
 SizeColumn_SizeColumn=Veličina
 SizeColumn_getSizeString_zero=Nepoznato
+SizeColumn_getSizeString_zero_tt=Veličina dokumenta još nije dostupna/poznata
 SkipAction_run_msg_=Želite li da preskočite i zaustavite pokrenute download-e? Izgubili bi %s1  zbog %s2 Download-a koji se ne mogu nastaviti!
 SortAction_SortAction_object_=Sortiraj Pakete na '%s1'
 SortAction_SortAction_object_empty=Sortiraj paket po Koloni
