@@ -106,7 +106,7 @@ public class CZShareCom extends PluginForHost {
         if (br.getURL().contains("/error.php?co=4") || br.containsHTML("Omluvte, prosím, výpadek databáze\\. Na opravě pracujeme")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        final String filename = br.getRegex("<div class=\"left\\-col\">[\t\n\r ]+<h1>([^<>\"]*?)<span>\\&nbsp;</span>").getMatch(0);
+        final String filename = br.getRegex("<div class=\"left-col\">[\t\n\r ]+<h1>([^<>\"]*?)<span>&nbsp;</span>").getMatch(0);
         final String filesize = br.getRegex("Velikost: (.*?)<").getMatch(0);
         if (filename == null || filesize == null || "0 B".equals(filesize)) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
@@ -274,7 +274,9 @@ public class CZShareCom extends PluginForHost {
                 }
 
                 br.setFollowRedirects(true);
-                br.postPage("https://sdilej.cz/index.php", "trvale=on&Prihlasit=P%C5%99ihl%C3%A1sit+SSL&login-name=" + Encoding.urlEncode(account.getUser()) + "&login-password=" + Encoding.urlEncode(account.getPass()));
+                // br.postPage("https://sdilej.cz/index.php", "trvale=on&Prihlasit=P%C5%99ihl%C3%A1sit+SSL&login-name=" +
+                // Encoding.urlEncode(account.getUser()) + "&login-password=" + Encoding.urlEncode(account.getPass()));
+                br.postPage("http://sdilej.cz/index.php", "trvale=on&Prihlasit=P%C5%99ihl%C3%A1sit+SSL&login-name=" + Encoding.urlEncode(account.getUser()) + "&login-password=" + Encoding.urlEncode(account.getPass()));
                 if (br.getCookie(MAINPAGE, "trvale") == null) {
                     final String lang = System.getProperty("user.language");
                     if ("de".equalsIgnoreCase(lang)) {
