@@ -19,7 +19,6 @@ package jd.plugins.hoster;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.concurrent.atomic.AtomicInteger;
 
 import jd.PluginWrapper;
 import jd.config.Property;
@@ -48,7 +47,6 @@ public class SuperdownComBr extends PluginForHost {
     private static final String                            NICE_HOST          = "superdown.com.br";
     private static final String                            NICE_HOSTproperty  = NICE_HOST.replaceAll("(\\.|\\-)", "");
 
-    private static AtomicInteger                           maxPrem            = new AtomicInteger(1);
     private static Object                                  LOCK               = new Object();
     private static final String[][]                        HOSTS              = { { "4shared", "4shared.com" }, { "asfile", "asfile.com" }, { "Bitshare", "bitshare.com" }, { "datafile", "datafile.com," }, { "ddlstorage", "ddlstorage.com" }, { "Depfile", "depfile.com" }, { "depositfiles", "depositfiles.com" }, { "dizzcloud", "dizzcloud.com" }, { "easybytez", "easybytez.com" }, { "extmatrix", "extmatrix.com" }, { "fayloobmennik", "fayloobmennik.net" }, { "filecloud", "filecloud.io" }, { "Filefactory", "filefactory.com" }, { "filemonkey", "filemonkey.in" }, { "fileom", "fileom.com" }, { "Filepost", "filepost.com" }, { "filesflash", "filesflash.com" }, { "filesmonster", "filesmonster.com" }, { "Firedrive", "firedrive.com" }, { "Freakshare", "freakshare.com" }, { "hugefiles", "hugefiles.net" }, { "hulkfile", "hulkfile.eu" }, { "Keep2share", "keep2share.cc" },
             { "kingfiles", "kingfiles.net" }, { "Letitbit", "letitbit.net" }, { "Luckyshare", "luckyshare.net" }, { "lumfile", "lumfile.com" }, { "Mediafire", "mediafire.com" }, { "megairon", "megairon.net" }, { "Megashares", "megashares.com" }, { "mightyupload", "mightyupload.com" }, { "Netload", "netload.in" }, { "novafile", "novafile.com" }, { "putlocker", "putlocker.com" }, { "Rapidgator", "rapidgator.net" }, { "Rapidshare", "rapidshare.com" }, { "Ryushare", "ryushare.com" }, { "Sendspace", "sendspace.com" }, { "Shareflare", "shareflare.net" }, { "Terafile", "terafile.co" }, { "Turbobit", "turbobit.net" }, { "ultramegabit", "ultramegabit.com" }, { "Uploadable", "uploadable.ch" }, { "Uploaded.to", "uploaded.net" }, { "uppit", "uppit.com" }, { "videomega", "videomega.tv" }, { "Zippyshare", "zippyshare.com" }, { "1Fichier", "1fichier.com" }, { "2shared", "2shared.com" },
@@ -189,15 +187,14 @@ public class SuperdownComBr extends PluginForHost {
 
     @Override
     public void handleMultiHost(final DownloadLink link, final Account account) throws Exception {
-        prepBrowser();
         showMessage(link, "Task 1: Generating Link");
-        this.login(account, false);
+        login(account, false);
         String dllink = checkDirectLink(link, NICE_HOSTproperty + "directlink");
         if (dllink == null) {
             br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
             /* request Download */
             br.getPage("http://www.superdown.com.br/_gerar?link=" + Encoding.urlEncode(link.getDownloadURL()) + "&rnd=0." + System.currentTimeMillis());
-            if (br.containsHTML("Sua sess[^ ]+ expirou por inatividade. Efetue o login novamente\\.")) {
+            if (br.containsHTML("Sua sess[^ ]+ expirou por inatividade\\. Efetue o login novamente\\.")) {
                 account.setProperty("cookies", Property.NULL);
                 throw new PluginException(LinkStatus.ERROR_RETRY);
             }
@@ -252,13 +249,14 @@ public class SuperdownComBr extends PluginForHost {
 
     @Override
     public AccountInfo fetchAccountInfo(final Account account) throws Exception {
-        account.setMaxSimultanDownloads(20);
-        maxPrem.set(20);
-        prepBrowser();
         final AccountInfo ai = new AccountInfo();
-        login(account, false);
-        account.setValid(true);
-        account.setConcurrentUsePossible(true);
+        try {
+            login(account, true);
+        } catch (PluginException e) {
+            account.setValid(false);
+            ai.setProperty("multiHostSupport", Property.NULL);
+            return ai;
+        }
 
         br.getPage("http://www.superdown.com.br/en/");
 
@@ -278,6 +276,9 @@ public class SuperdownComBr extends PluginForHost {
         }
         ai.setValidUntil(System.currentTimeMillis() + Long.parseLong(days_string) * 24 * 60 * 60 * 1000l);
         ai.setUnlimitedTraffic();
+        account.setValid(true);
+        account.setMaxSimultanDownloads(20);
+        account.setConcurrentUsePossible(true);
         final ArrayList<String> supportedHosts = new ArrayList<String>();
         /* Apply supported hosts depending on account type */
         for (final String[] filehost : HOSTS) {
@@ -378,11 +379,6 @@ public class SuperdownComBr extends PluginForHost {
                 throw e;
             }
         }
-    }
-
-    @Override
-    public int getMaxSimultanPremiumDownloadNum() {
-        return maxPrem.get();
     }
 
     @Override
