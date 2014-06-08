@@ -56,9 +56,9 @@ public class Tb7Pl extends PluginForHost {
         try {
             String username = Encoding.urlEncode(account.getUser());
             br.postPage(MAINPAGE + "login", "login=" + username + "&password=" + account.getPass());
-            if (br.containsHTML("<div id=\"message\">Hasło jest nieprawidłowe</div>"))
+            if (br.containsHTML("<div id=\"message\">Hasło jest nieprawidłowe</div>")) {
                 invalid = true;
-            else {
+            } else {
                 br.getPage(MAINPAGE + "mojekonto");
             }
 
@@ -69,10 +69,14 @@ public class Tb7Pl extends PluginForHost {
         } else {
             validUntil = br.getRegex("<div class=\"textPremium\">Dostęp Premium ważny do (.*?)<br>").getMatch(0);
             validUntil = validUntil.replace(" | ", " ");
-            if (validUntil != null) expired = false;
+            if (validUntil != null) {
+                expired = false;
+            }
         }
         if (invalid) {
-            if (invalid) { throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE); }
+            if (invalid) {
+                throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+            }
         }
 
     }
@@ -98,8 +102,8 @@ public class Tb7Pl extends PluginForHost {
 
         // unfortunatelly there is no list with supported hosts anywhere on the page
         // only PNG image at the main page
-        final List<String> supportedHostsList = asList("egofiles.com", "catshare.net", "turbobit.net", "rapidgator.net", "rg.to", "netload.in", "uploaded.to", "uploaded.net", "ul.to", "bitshare.com", "freakshare.net", "freakshare.com", "rapidu.net",
-                "oboom.com", "fileparadox.in");
+        final List<String> supportedHostsList = asList("turbobit.net", "catshare.net", "rapidu.net", "rapidgator.net", "rg.to", "uploaded.to", "uploaded.net", "ul.to", "oboom.com", "fileparadox.in", "netload.in", "bitshare.com", "freakshare.net",
+                "freakshare.com", "filesaur.com", "filemonkey.in", "uploadable.ch");
         final ArrayList<String> supportedHosts = new ArrayList<String>(supportedHostsList.size());
         supportedHosts.addAll(supportedHostsList);
 
@@ -206,7 +210,9 @@ public class Tb7Pl extends PluginForHost {
                 acc.setValid(false);
                 throw new PluginException(LinkStatus.ERROR_RETRY, "Invalid username or password.");
             }
-            if (br.getBaseURL().contains("notfound")) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND, "File not found."); }
+            if (br.getBaseURL().contains("notfound")) {
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND, "File not found.");
+            }
         }
 
         if (dl.getConnection().getResponseCode() == 404) {
@@ -224,7 +230,9 @@ public class Tb7Pl extends PluginForHost {
     }
 
     private void tempUnavailableHoster(Account account, DownloadLink downloadLink, long timeout) throws PluginException {
-        if (downloadLink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, "Unable to handle this errorcode!");
+        if (downloadLink == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, "Unable to handle this errorcode!");
+        }
         synchronized (hostUnavailableMap) {
             HashMap<String, Long> unavailableMap = hostUnavailableMap.get(account);
             if (unavailableMap == null) {
@@ -247,7 +255,9 @@ public class Tb7Pl extends PluginForHost {
                     return false;
                 } else if (lastUnavailable != null) {
                     unavailableMap.remove(downloadLink.getHost());
-                    if (unavailableMap.size() == 0) hostUnavailableMap.remove(account);
+                    if (unavailableMap.size() == 0) {
+                        hostUnavailableMap.remove(account);
+                    }
                 }
             }
         }
