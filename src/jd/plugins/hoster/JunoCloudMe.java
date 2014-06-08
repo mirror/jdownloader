@@ -31,6 +31,7 @@ import java.util.SortedMap;
 import java.util.TreeMap;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicReference;
 
 import javax.script.ScriptEngine;
 import javax.script.ScriptEngineManager;
@@ -185,12 +186,12 @@ public class JunoCloudMe extends PluginForHost {
             }
         }
         if (useRUA) {
-            if (agent.string == null) {
+            if (userAgent.get() == null) {
                 /* we first have to load the plugin, before we can reference it */
                 JDUtilities.getPluginForHost("mediafire.com");
-                agent.string = jd.plugins.hoster.MediafireCom.stringUserAgent();
+                userAgent.set(jd.plugins.hoster.MediafireCom.stringUserAgent());
             }
-            prepBr.getHeaders().put("User-Agent", agent.string);
+            prepBr.getHeaders().put("User-Agent", userAgent.get());
         }
         prepBr.getHeaders().put("Accept-Language", "en-gb, en;q=0.8");
         prepBr.setCookie(COOKIE_HOST, "lang", "english");
@@ -1053,28 +1054,25 @@ public class JunoCloudMe extends PluginForHost {
     private static AtomicInteger                              maxFreeAccSimDlPerHost = new AtomicInteger(20);
     private static AtomicInteger                              maxPremAccSimDlPerHost = new AtomicInteger(20);
 
+    private static AtomicReference<String>                    userAgent              = new AtomicReference<String>(null);
+
     private static HashMap<String, String>                    cloudflareCookies      = new HashMap<String, String>();
     private static HashMap<Account, HashMap<String, Integer>> hostMap                = new HashMap<Account, HashMap<String, Integer>>();
 
     private static Object                                     ACCLOCK                = new Object();
     private static Object                                     CTRLLOCK               = new Object();
 
-    private static StringContainer                            agent                  = new StringContainer();
-
-    public static class StringContainer {
-        public String string = null;
-    }
-
     /**
      * Rules to prevent new downloads from commencing
      * 
      * */
     public boolean canHandle(DownloadLink downloadLink, Account account) {
-        // Prevent another download method of the same account type from starting, when downloadLink marked as requiring premium account to
-        // download.
         if (downloadLink.getBooleanProperty("requiresPremiumAccount", false) && (account == null || account.getBooleanProperty("free", false))) {
+            // Prevent another download method of the same account type from starting, when downloadLink marked as requiring premium account
+            // to download.
             return false;
         } else if (downloadLink.getBooleanProperty("requiresAnyAccount", false) && account == null) {
+            // Prevent another non account download method from starting, when account been determined as required.
             return false;
         } else {
             return true;
