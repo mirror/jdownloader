@@ -21,6 +21,7 @@ import java.io.IOException;
 import java.util.HashMap;
 import java.util.Locale;
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicReference;
 
 import jd.PluginWrapper;
 import jd.config.Property;
@@ -80,11 +81,15 @@ public class MountFileNet extends PluginForHost {
         prepBrowser(br);
         br.setFollowRedirects(true);
         br.getPage(link.getDownloadURL());
-        if (br.containsHTML(">File not found<") || br.getURL().equals("http://mountfile.net/")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (br.containsHTML(">File not found<") || br.getURL().equals("http://mountfile.net/")) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
         final Regex fileInfo = br.getRegex("<h2 style=\"margin:0\">([^<>\"]*?)</h2>[\t\n\r ]+<div class=\"comment\">([^<>\"]*?)</div>");
         final String filename = fileInfo.getMatch(0);
         final String filesize = fileInfo.getMatch(1);
-        if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (filename == null || filesize == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         link.setName(Encoding.htmlDecode(filename.trim()));
         link.setDownloadSize(SizeFormatter.getSize(filesize));
         return AvailableStatus.TRUE;
@@ -97,7 +102,9 @@ public class MountFileNet extends PluginForHost {
         final String fid = new Regex(downloadLink.getDownloadURL(), "([A-Za-z0-9]+)$").getMatch(0);
         br.postPage(br.getURL(), "free=Slow+download&hash=" + fid);
         final String rcID = br.getRegex("Recaptcha\\.create\\(\\'([^<>\"]*?)\\'").getMatch(0);
-        if (rcID == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (rcID == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         final long timeBefore = System.currentTimeMillis();
         final PluginForHost recplug = JDUtilities.getPluginForHost("DirectHTTP");
         final jd.plugins.hoster.DirectHTTP.Recaptcha rc = ((DirectHTTP) recplug).getReCaptcha(br);
@@ -106,25 +113,39 @@ public class MountFileNet extends PluginForHost {
         for (int i = 1; i <= 5; i++) {
             final File cf = rc.downloadCaptcha(getLocalCaptchaFile());
             final String c = getCaptchaCode(cf, downloadLink);
-            if (i == 1) waitTime(timeBefore, downloadLink);
+            if (i == 1) {
+                waitTime(timeBefore, downloadLink);
+            }
             br.postPage(br.getURL(), "free=Get+download+link&hash=" + fid + "&recaptcha_challenge_field=" + rc.getChallenge() + "&recaptcha_response_field=" + Encoding.urlEncode(c));
             String reconnectWait = br.getRegex("You should wait (\\d+) minutes before downloading next file").getMatch(0);
-            if (reconnectWait == null) reconnectWait = br.getRegex("Please wait (\\d+) minutes before downloading next file or").getMatch(0);
-            if (reconnectWait != null) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, Integer.parseInt(reconnectWait) * 60 * 1001l);
+            if (reconnectWait == null) {
+                reconnectWait = br.getRegex("Please wait (\\d+) minutes before downloading next file or").getMatch(0);
+            }
+            if (reconnectWait != null) {
+                throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, Integer.parseInt(reconnectWait) * 60 * 1001l);
+            }
             if (br.containsHTML("Recaptcha\\.create\\(\\'")) {
                 rc.reload();
                 continue;
             }
             break;
         }
-        if (br.containsHTML("Recaptcha\\.create\\(\\'")) throw new PluginException(LinkStatus.ERROR_CAPTCHA);
+        if (br.containsHTML("Recaptcha\\.create\\(\\'")) {
+            throw new PluginException(LinkStatus.ERROR_CAPTCHA);
+        }
         String dllink = br.getRegex("\"(http://d\\d+\\.mountfile.net/[^<>\"]*?)\"").getMatch(0);
-        if (dllink == null) dllink = br.getRegex("<div style=\"margin: 10px auto 20px\" class=\"center\">[\t\n\r ]+<a href=\"(http://[^<>\"]*?)\"").getMatch(0);
-        if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (dllink == null) {
+            dllink = br.getRegex("<div style=\"margin: 10px auto 20px\" class=\"center\">[\t\n\r ]+<a href=\"(http://[^<>\"]*?)\"").getMatch(0);
+        }
+        if (dllink == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, false, 1);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
-            if (br.containsHTML("not found")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error", 10 * 60 * 1000l);
+            if (br.containsHTML("not found")) {
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error", 10 * 60 * 1000l);
+            }
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl.startDownload();
@@ -140,9 +161,13 @@ public class MountFileNet extends PluginForHost {
         /** Ticket Time */
         int wait = 60;
         final String ttt = br.getRegex("var sec = (\\d+)").getMatch(0);
-        if (ttt != null) wait = Integer.parseInt(ttt);
+        if (ttt != null) {
+            wait = Integer.parseInt(ttt);
+        }
         wait -= passedTime;
-        if (wait > 0) sleep(wait * 1000l, downloadLink);
+        if (wait > 0) {
+            sleep(wait * 1000l, downloadLink);
+        }
     }
 
     private static final Object LOCK = new Object();
@@ -156,7 +181,9 @@ public class MountFileNet extends PluginForHost {
                 prepBrowser(br);
                 final Object ret = account.getProperty("cookies", null);
                 boolean acmatch = Encoding.urlEncode(account.getUser()).equals(account.getStringProperty("name", Encoding.urlEncode(account.getUser())));
-                if (acmatch) acmatch = Encoding.urlEncode(account.getPass()).equals(account.getStringProperty("pass", Encoding.urlEncode(account.getPass())));
+                if (acmatch) {
+                    acmatch = Encoding.urlEncode(account.getPass()).equals(account.getStringProperty("pass", Encoding.urlEncode(account.getPass())));
+                }
                 if (acmatch && ret != null && ret instanceof HashMap<?, ?> && !force) {
                     final HashMap<String, String> cookies = (HashMap<String, String>) ret;
                     if (account.isValid()) {
@@ -170,7 +197,9 @@ public class MountFileNet extends PluginForHost {
                 }
                 br.setFollowRedirects(true);
                 br.postPage("http://" + this.getHost() + "/account/login", "url=http%253A%252F%252Fmountfile.net%252Fpremium%252F&send=Login&captcha=&email=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()));
-                if (br.getCookie(MAINPAGE, "usid") == null) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+                if (br.getCookie(MAINPAGE, "usid") == null) {
+                    throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+                }
                 if (!br.containsHTML("eternal premium|premium till \\d{2}/\\d{2}/\\d{2}")) {
                     logger.info("Accounttype FREE is not supported!");
                     throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
@@ -201,7 +230,9 @@ public class MountFileNet extends PluginForHost {
             return ai;
         }
         String expire = br.getRegex("premium till (\\d{2}/\\d{2}/\\d{2})").getMatch(0);
-        if (expire != null) ai.setValidUntil(TimeFormatter.getMilliSeconds(expire, "MM/dd/yy", Locale.ENGLISH));
+        if (expire != null) {
+            ai.setValidUntil(TimeFormatter.getMilliSeconds(expire, "MM/dd/yy", Locale.ENGLISH));
+        }
         ai.setUnlimitedTraffic();
         account.setValid(true);
         ai.setStatus("Premium User");
@@ -219,7 +250,9 @@ public class MountFileNet extends PluginForHost {
             br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
             br.postPage("http://mountfile.net/load/premium/", "js=1&hash=" + new Regex(link.getDownloadURL(), "([A-Za-z0-9]+)$").getMatch(0));
             String dllink = br.getRegex("\"ok\":\"(http:[^<>\"]*?)\"").getMatch(0);
-            if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            if (dllink == null) {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
             dllink = dllink.replace("\\", "");
             dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, true, 0);
             if (!dl.getConnection().isContentDisposition()) {
@@ -238,22 +271,18 @@ public class MountFileNet extends PluginForHost {
     private Browser prepBrowser(Browser prepBr) {
         // define custom browser headers and language settings.
         if (useRUA) {
-            if (agent.string == null) {
+            if (userAgent.get() == null) {
                 /* we first have to load the plugin, before we can reference it */
                 JDUtilities.getPluginForHost("mediafire.com");
-                agent.string = jd.plugins.hoster.MediafireCom.stringUserAgent();
+                userAgent.set(jd.plugins.hoster.MediafireCom.stringUserAgent());
             }
-            prepBr.getHeaders().put("User-Agent", agent.string);
+            prepBr.getHeaders().put("User-Agent", userAgent.get());
         }
         prepBr.getHeaders().put("Accept-Language", "en-gb, en;q=0.8");
         return prepBr;
     }
 
-    private static StringContainer agent = new StringContainer();
-
-    public static class StringContainer {
-        public String string = null;
-    }
+    private static AtomicReference<String> userAgent = new AtomicReference<String>(null);
 
     @Override
     public void reset() {
