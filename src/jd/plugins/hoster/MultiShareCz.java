@@ -22,6 +22,7 @@ import java.util.HashMap;
 
 import jd.PluginWrapper;
 import jd.config.Property;
+import jd.http.Browser;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.plugins.Account;
@@ -44,6 +45,15 @@ public class MultiShareCz extends PluginForHost {
     }
 
     private static HashMap<Account, HashMap<String, Long>> hostUnavailableMap = new HashMap<Account, HashMap<String, Long>>();
+
+    private Browser prepBrowser(Browser prepBr) {
+        // define custom browser headers and language settings.
+        prepBr.getHeaders().put("Accept-Language", "en-gb, en;q=0.9");
+        prepBr.getHeaders().put("User-Agent", "JDownloader");
+        prepBr.setCookie(this.getHost(), "lang", "en");
+        prepBr.setCustomCharset("utf-8");
+        return prepBr;
+    }
 
     @Override
     public AccountInfo fetchAccountInfo(Account account) throws Exception {
@@ -76,7 +86,9 @@ public class MultiShareCz extends PluginForHost {
                 ArrayList<String> supportedHosts = new ArrayList<String>();
                 for (String host : hosts) {
                     host = host.replace("\"", "");
-                    if ("freakshare.net".equalsIgnoreCase(host)) host = "freakshare.com";
+                    if ("freakshare.net".equalsIgnoreCase(host)) {
+                        host = "freakshare.com";
+                    }
                     supportedHosts.add(host);
                 }
                 /*
@@ -93,7 +105,9 @@ public class MultiShareCz extends PluginForHost {
 
     private String getJson(final String parameter) {
         String result = br.getRegex("\"" + parameter + "\":(\\d+)").getMatch(0);
-        if (result == null) result = br.getRegex("\"" + parameter + "\":\"([^<>\"]*?)\"").getMatch(0);
+        if (result == null) {
+            result = br.getRegex("\"" + parameter + "\":\"([^<>\"]*?)\"").getMatch(0);
+        }
         return result;
     }
 
@@ -147,7 +161,9 @@ public class MultiShareCz extends PluginForHost {
         dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, true, 1);
         if (dl.getConnection().getContentType() != null && dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
-            if (br.containsHTML("Soubor na zdrojovém serveru pravděpodobně neexistuje")) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
+            if (br.containsHTML("Soubor na zdrojovém serveru pravděpodobně neexistuje")) {
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            }
             int timesFailed = link.getIntegerProperty("timesfailedmultisharecz_unknowndlerrorpremium", 0);
             link.getLinkStatus().setRetryCount(0);
             if (timesFailed <= 2) {
@@ -171,11 +187,13 @@ public class MultiShareCz extends PluginForHost {
     /** no override to keep plugin compatible to old stable */
     public void handleMultiHost(final DownloadLink link, final Account acc) throws Exception {
         this.setBrowserExclusive();
-        br.setCustomCharset("utf-8");
+        prepBrowser(br);
         br.setFollowRedirects(false);
         /* login to get u_ID and u_HASH */
         br.getPage("https://www.multishare.cz/api/?sub=download-link&login=" + Encoding.urlEncode(acc.getUser()) + "&password=" + Encoding.urlEncode(acc.getPass()) + "&link=" + Encoding.urlEncode(link.getDownloadURL()));
-        if (br.containsHTML("ERR: Invalid password\\.")) { throw new PluginException(LinkStatus.ERROR_PREMIUM, "Wrong password", PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE); }
+        if (br.containsHTML("ERR: Invalid password\\.")) {
+            throw new PluginException(LinkStatus.ERROR_PREMIUM, "Wrong password", PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
+        }
         String dllink = getJson("link");
         if (dllink == null) {
             int timesFailed = link.getIntegerProperty("timesfailedmultisharecz_unknown", 0);
@@ -205,7 +223,9 @@ public class MultiShareCz extends PluginForHost {
                 logger.info("No traffic available -> Temporarily disabling account");
                 throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
             }
-            if (br.containsHTML("Soubor na zdrojovém serveru pravděpodobně neexistuje")) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
+            if (br.containsHTML("Soubor na zdrojovém serveru pravděpodobně neexistuje")) {
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            }
             logger.warning("Received html code instead of file -> Plugin broken");
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
@@ -213,7 +233,7 @@ public class MultiShareCz extends PluginForHost {
 
     private void login(Account account) throws Exception {
         this.setBrowserExclusive();
-        br.setCustomCharset("utf-8");
+        prepBrowser(br);
         br.setFollowRedirects(true);
         br.getPage("https://www.multishare.cz/api/?sub=account-details&login=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()));
         if (br.containsHTML("ERR: User does not exists")) {
@@ -223,20 +243,28 @@ public class MultiShareCz extends PluginForHost {
             } else {
                 throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nInvalid username/password!\r\nQuick help:\r\nYou're sure that the username and password you entered are correct?\r\nIf your password contains special characters, change it (remove them) and try again!", PluginException.VALUE_ID_PREMIUM_DISABLE);
             }
-        } else if (br.containsHTML("ERR: Invalid password")) throw new PluginException(LinkStatus.ERROR_PREMIUM, "Invalid Password", PluginException.VALUE_ID_PREMIUM_DISABLE);
+        } else if (br.containsHTML("ERR: Invalid password")) {
+            throw new PluginException(LinkStatus.ERROR_PREMIUM, "Invalid Password", PluginException.VALUE_ID_PREMIUM_DISABLE);
+        }
     }
 
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
         this.setBrowserExclusive();
+        prepBrowser(br);
         br.setFollowRedirects(true);
-        br.setCustomCharset("utf-8");
         br.getPage(link.getDownloadURL());
-        if (br.containsHTML("(Požadovaný soubor neexistuje|Je možné, že byl již tento soubor vymazán uploaderem nebo porušoval autorská práva)")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (br.containsHTML("(Požadovaný soubor neexistuje|Je možné, že byl již tento soubor vymazán uploaderem nebo porušoval autorská práva)")) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
         String filename = br.getRegex("<title>MultiShare\\.cz :: Stáhnout soubor \"(.*?)\"</title>").getMatch(0);
-        if (filename == null) filename = br.getRegex("<li>Název: <strong>(.*?)</strong>").getMatch(0);
+        if (filename == null) {
+            filename = br.getRegex("<li>Název: <strong>(.*?)</strong>").getMatch(0);
+        }
         String filesize = br.getRegex("Velikost: <strong>(.*?)</strong").getMatch(0);
-        if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (filename == null || filesize == null) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
         link.setName(filename.trim());
         filesize = filesize.replace("&nbsp;", "");
         link.setDownloadSize(SizeFormatter.getSize(filesize));
@@ -244,7 +272,9 @@ public class MultiShareCz extends PluginForHost {
     }
 
     private void tempUnavailableHoster(final Account account, final DownloadLink downloadLink, final long timeout) throws PluginException {
-        if (downloadLink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, "Unable to handle this errorcode!");
+        if (downloadLink == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, "Unable to handle this errorcode!");
+        }
         synchronized (hostUnavailableMap) {
             HashMap<String, Long> unavailableMap = hostUnavailableMap.get(account);
             if (unavailableMap == null) {
@@ -271,7 +301,9 @@ public class MultiShareCz extends PluginForHost {
                     return false;
                 } else if (lastUnavailable != null) {
                     unavailableMap.remove(downloadLink.getHost());
-                    if (unavailableMap.size() == 0) hostUnavailableMap.remove(account);
+                    if (unavailableMap.size() == 0) {
+                        hostUnavailableMap.remove(account);
+                    }
                 }
             }
         }
