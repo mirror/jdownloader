@@ -1392,8 +1392,9 @@ public class EpicShareNet extends PluginForHost {
                 }
             }
         }
-        if (inValidate(result)) result = new Regex(source, "\"(" + dllinkRegex + ")\"").getMatch(0);
-        if (inValidate(result)) result = new Regex(source, "'(" + dllinkRegex + ")'").getMatch(0);
+        if (inValidate(result)) {
+            result = new Regex(source, "(\"|')(" + dllinkRegex + ")\\1").getMatch(1);
+        }
         return result;
     }
 
