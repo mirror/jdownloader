@@ -21,6 +21,7 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.Random;
+import java.util.concurrent.atomic.AtomicReference;
 
 import jd.PluginWrapper;
 import jd.config.Property;
@@ -65,7 +66,9 @@ public class XArtCom extends PluginForHost {
     public AvailableStatus requestFileInformation(DownloadLink parameter) throws Exception {
 
         String name = new Regex(parameter.getDownloadURL(), "([^/]+\\.(mov|mp4|wmv))").getMatch(0);
-        if (name == null) name = new Regex(parameter.getDownloadURL(), "x\\-art.com/(.+)").getMatch(0);
+        if (name == null) {
+            name = new Regex(parameter.getDownloadURL(), "x\\-art.com/(.+)").getMatch(0);
+        }
 
         parameter.setName(name);
 
@@ -126,7 +129,9 @@ public class XArtCom extends PluginForHost {
         try {
             throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);
         } catch (final Throwable e) {
-            if (e instanceof PluginException) throw (PluginException) e;
+            if (e instanceof PluginException) {
+                throw (PluginException) e;
+            }
         }
         throw new PluginException(LinkStatus.ERROR_FATAL, "X-Art members only!");
     }
@@ -140,7 +145,9 @@ public class XArtCom extends PluginForHost {
     }
 
     public boolean canHandle(DownloadLink downloadLink, Account account) {
-        if (account == null) return false;
+        if (account == null) {
+            return false;
+        }
         return true;
     }
 
@@ -149,10 +156,11 @@ public class XArtCom extends PluginForHost {
         final AccountInfo ai = new AccountInfo();
         try {
             // check if it's time for the next full login.
-            if (account.getStringProperty("nextFullLogin") != null && (System.currentTimeMillis() <= Long.parseLong(account.getStringProperty("nextFullLogin"))))
+            if (account.getStringProperty("nextFullLogin") != null && (System.currentTimeMillis() <= Long.parseLong(account.getStringProperty("nextFullLogin")))) {
                 login(account, br, false);
-            else
+            } else {
                 login(account, br, true);
+            }
         } catch (final PluginException e) {
             account.setValid(false);
             throw e;
@@ -170,7 +178,9 @@ public class XArtCom extends PluginForHost {
                 /** Load cookies */
                 final Object ret = account.getProperty("cookies", null);
                 boolean acmatch = Encoding.urlEncode(account.getUser()).equals(account.getStringProperty("name", Encoding.urlEncode(account.getUser())));
-                if (acmatch) acmatch = Encoding.urlEncode(account.getPass()).equals(account.getStringProperty("pass", Encoding.urlEncode(account.getPass())));
+                if (acmatch) {
+                    acmatch = Encoding.urlEncode(account.getPass()).equals(account.getStringProperty("pass", Encoding.urlEncode(account.getPass())));
+                }
                 if (acmatch && ret != null && ret instanceof HashMap<?, ?> && !force) {
                     final HashMap<String, String> cookies = (HashMap<String, String>) ret;
                     if (account.isValid()) {
@@ -179,7 +189,7 @@ public class XArtCom extends PluginForHost {
                             final String value = cookieEntry.getValue();
                             lbr.setCookie(this.getHost(), key, value);
                         }
-                        agent.string = account.getStringProperty("userAgent");
+                        userAgent.set(account.getStringProperty("userAgent"));
                         prepBrowser(lbr);
                         return;
                     }
@@ -235,14 +245,15 @@ public class XArtCom extends PluginForHost {
                 while (ran2 == 0 || (ran2 <= 7200000 && ran2 >= 21600000)) {
                     // generate new ran1 for each while ran2 valuation.
                     long ran1 = 0;
-                    while (ran1 <= 1)
+                    while (ran1 <= 1) {
                         ran1 = new Random().nextInt(7);
+                    }
                     // random of 1 hour, times ran1
                     ran2 = new Random().nextInt(3600000) * ran1;
                 }
                 account.setProperty("nextFullLogin", System.currentTimeMillis() + ran2);
                 account.setProperty("lastFullLogin", System.currentTimeMillis());
-                account.setProperty("userAgent", agent.string);
+                account.setProperty("userAgent", userAgent.get());
                 // end of logic
             } catch (final PluginException e) {
                 account.setProperty("cookies", Property.NULL);
@@ -261,7 +272,9 @@ public class XArtCom extends PluginForHost {
         login(account, br, false);
         br.setFollowRedirects(true);
         dl = jd.plugins.BrowserAdapter.openDownload(br, link, link.getDownloadURL(), true, 0);
-        if (dl.getConnection().getResponseCode() == 401) { throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE); }
+        if (dl.getConnection().getResponseCode() == 401) {
+            throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+        }
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -289,24 +302,20 @@ public class XArtCom extends PluginForHost {
         }
     }
 
+    private static AtomicReference<String> userAgent = new AtomicReference<String>(null);
+
     private Browser prepBrowser(Browser prepBr) {
         prepBr.getHeaders().put("Accept-Language", "en-gb, en;q=0.8");
         // prepBr.setCookie(this.getHost(), "lang", "english");
         if (useRUA) {
-            if (agent.string == null) {
+            if (userAgent.get() == null) {
                 /* we first have to load the plugin, before we can reference it */
                 JDUtilities.getPluginForHost("mediafire.com");
-                agent.string = jd.plugins.hoster.MediafireCom.stringUserAgent();
+                userAgent.set(jd.plugins.hoster.MediafireCom.stringUserAgent());
             }
-            prepBr.getHeaders().put("User-Agent", agent.string);
+            prepBr.getHeaders().put("User-Agent", userAgent.get());
         }
         return prepBr;
-    }
-
-    private static StringContainer agent = new StringContainer();
-
-    public static class StringContainer {
-        public String string = null;
     }
 
 }
