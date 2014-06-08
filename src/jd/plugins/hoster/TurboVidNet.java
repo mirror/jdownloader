@@ -21,6 +21,7 @@ import java.util.ArrayList;
 import java.util.SortedMap;
 import java.util.TreeMap;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.regex.Pattern;
 
 import jd.PluginWrapper;
@@ -40,7 +41,6 @@ import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
-import jd.plugins.hoster.DdlStorageCom.StringContainer;
 import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
 
@@ -49,42 +49,42 @@ import org.appwork.utils.formatter.SizeFormatter;
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "turbovid.net" }, urls = { "https?://(www\\.)?turbovid\\.net/(embed\\-)?[a-z0-9]{12}" }, flags = { 0 })
 public class TurboVidNet extends PluginForHost {
 
-    private String                 correctedBR                  = "";
-    private String                 passCode                     = null;
-    private static final String    PASSWORDTEXT                 = "<br><b>Passwor(d|t):</b> <input";
+    private String                         correctedBR                  = "";
+    private String                         passCode                     = null;
+    private static final String            PASSWORDTEXT                 = "<br><b>Passwor(d|t):</b> <input";
     /* primary website url, take note of redirects */
-    private static final String    COOKIE_HOST                  = "http://turbovid.net";
-    private static final String    NICE_HOST                    = COOKIE_HOST.replaceAll("(https://|http://)", "");
-    private static final String    NICE_HOSTproperty            = COOKIE_HOST.replaceAll("(https://|http://|\\.|\\-)", "");
+    private static final String            COOKIE_HOST                  = "http://turbovid.net";
+    private static final String            NICE_HOST                    = COOKIE_HOST.replaceAll("(https://|http://)", "");
+    private static final String            NICE_HOSTproperty            = COOKIE_HOST.replaceAll("(https://|http://|\\.|\\-)", "");
     /* domain names used within download links */
-    private static final String    DOMAINS                      = "(turbovid\\.net)";
-    private static final String    MAINTENANCE                  = ">This server is in maintenance mode";
-    private static final String    MAINTENANCEUSERTEXT          = JDL.L("hoster.xfilesharingprobasic.errors.undermaintenance", "This server is under maintenance");
-    private static final String    ALLWAIT_SHORT                = JDL.L("hoster.xfilesharingprobasic.errors.waitingfordownloads", "Waiting till new downloads can be started");
-    private static final String    PREMIUMONLY1                 = JDL.L("hoster.xfilesharingprobasic.errors.premiumonly1", "Max downloadable filesize for free users:");
-    private static final String    PREMIUMONLY2                 = JDL.L("hoster.xfilesharingprobasic.errors.premiumonly2", "Only downloadable via premium or registered");
-    private static final boolean   VIDEOHOSTER                  = false;
-    private static final boolean   VIDEOHOSTER_2                = false;
-    private static final boolean   SUPPORTSHTTPS                = false;
-    private final boolean          ENABLE_RANDOM_UA             = false;
-    private static StringContainer agent                        = new StringContainer();
+    private static final String            DOMAINS                      = "(turbovid\\.net)";
+    private static final String            MAINTENANCE                  = ">This server is in maintenance mode";
+    private static final String            MAINTENANCEUSERTEXT          = JDL.L("hoster.xfilesharingprobasic.errors.undermaintenance", "This server is under maintenance");
+    private static final String            ALLWAIT_SHORT                = JDL.L("hoster.xfilesharingprobasic.errors.waitingfordownloads", "Waiting till new downloads can be started");
+    private static final String            PREMIUMONLY1                 = JDL.L("hoster.xfilesharingprobasic.errors.premiumonly1", "Max downloadable filesize for free users:");
+    private static final String            PREMIUMONLY2                 = JDL.L("hoster.xfilesharingprobasic.errors.premiumonly2", "Only downloadable via premium or registered");
+    private static final boolean           VIDEOHOSTER                  = false;
+    private static final boolean           VIDEOHOSTER_2                = false;
+    private static final boolean           SUPPORTSHTTPS                = false;
+    private final boolean                  ENABLE_RANDOM_UA             = false;
+    private static AtomicReference<String> agent                        = new AtomicReference<String>(null);
     /* Connection stuff */
-    private static final boolean   FREE_RESUME                  = true;
-    private static final int       FREE_MAXCHUNKS               = -2;
-    private static final int       FREE_MAXDOWNLOADS            = 1;
-    private static final boolean   ACCOUNT_FREE_RESUME          = true;
-    private static final int       ACCOUNT_FREE_MAXCHUNKS       = 0;
-    private static final int       ACCOUNT_FREE_MAXDOWNLOADS    = 20;
-    private static final boolean   ACCOUNT_PREMIUM_RESUME       = true;
-    private static final int       ACCOUNT_PREMIUM_MAXCHUNKS    = 0;
-    private static final int       ACCOUNT_PREMIUM_MAXDOWNLOADS = 20;
+    private static final boolean           FREE_RESUME                  = true;
+    private static final int               FREE_MAXCHUNKS               = -2;
+    private static final int               FREE_MAXDOWNLOADS            = 1;
+    private static final boolean           ACCOUNT_FREE_RESUME          = true;
+    private static final int               ACCOUNT_FREE_MAXCHUNKS       = 0;
+    private static final int               ACCOUNT_FREE_MAXDOWNLOADS    = 20;
+    private static final boolean           ACCOUNT_PREMIUM_RESUME       = true;
+    private static final int               ACCOUNT_PREMIUM_MAXCHUNKS    = 0;
+    private static final int               ACCOUNT_PREMIUM_MAXDOWNLOADS = 20;
     /* note: CAN NOT be negative or zero! (ie. -1 or 0) Otherwise math sections fail. .:. use [1-20] */
-    private static AtomicInteger   totalMaxSimultanFreeDownload = new AtomicInteger(FREE_MAXDOWNLOADS);
+    private static AtomicInteger           totalMaxSimultanFreeDownload = new AtomicInteger(FREE_MAXDOWNLOADS);
     /* don't touch the following! */
-    private static AtomicInteger   maxFree                      = new AtomicInteger(1);
-    private static AtomicInteger   maxPrem                      = new AtomicInteger(1);
-    private static Object          LOCK                         = new Object();
-    private String                 fuid                         = null;
+    private static AtomicInteger           maxFree                      = new AtomicInteger(1);
+    private static AtomicInteger           maxPrem                      = new AtomicInteger(1);
+    private static Object                  LOCK                         = new Object();
+    private String                         fuid                         = null;
 
     /* DEV NOTES */
     // XfileSharingProBasic Version 2.6.5.8
@@ -452,12 +452,12 @@ public class TurboVidNet extends PluginForHost {
         br.getHeaders().put("Accept-Language", "en-gb, en;q=0.9");
         br.setCookie(COOKIE_HOST, "lang", "english");
         if (ENABLE_RANDOM_UA) {
-            if (agent.string == null) {
+            if (agent.get() == null) {
                 /* we first have to load the plugin, before we can reference it */
                 JDUtilities.getPluginForHost("mediafire.com");
-                agent.string = jd.plugins.hoster.MediafireCom.stringUserAgent();
+                agent.set(jd.plugins.hoster.MediafireCom.stringUserAgent());
             }
-            br.getHeaders().put("User-Agent", agent.string);
+            br.getHeaders().put("User-Agent", agent.get());
         }
     }
 
