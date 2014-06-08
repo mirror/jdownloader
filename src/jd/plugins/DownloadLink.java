@@ -1290,10 +1290,11 @@ public class DownloadLink extends Property implements Serializable, AbstractPack
     }
 
     public void setMD5Hash(String md5) {
-        if (StringUtils.isEmpty(md5)) {
+        // validate md5 String is a MD5 hash!
+        if (StringUtils.isEmpty(md5) || !md5.trim().matches("[a-fA-F0-9]{32}")) {
             this.setProperty(PROPERTY_MD5, Property.NULL);
         } else {
-            this.setProperty(PROPERTY_MD5, md5);
+            this.setProperty(PROPERTY_MD5, md5.trim());
             this.setProperty(PROPERTY_SHA1, Property.NULL);
         }
     }
@@ -1335,10 +1336,11 @@ public class DownloadLink extends Property implements Serializable, AbstractPack
     }
 
     public void setSha1Hash(String sha1) {
-        if (StringUtils.isEmpty(sha1)) {
+        // validate sha1 String is a SHA1 hash!
+        if (StringUtils.isEmpty(sha1) || !sha1.trim().matches("[a-fA-F0-9]{40}")) {
             this.setProperty(PROPERTY_SHA1, Property.NULL);
         } else {
-            this.setProperty(PROPERTY_SHA1, sha1);
+            this.setProperty(PROPERTY_SHA1, sha1.trim());
             this.setProperty(PROPERTY_MD5, Property.NULL);
         }
     }
