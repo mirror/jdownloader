@@ -156,6 +156,38 @@ public abstract class PluginForDecrypt extends Plugin {
     }
 
     /**
+     * creates a offline link.
+     * 
+     * @parameter link
+     * 
+     * @since JD2
+     * @author raztoki
+     * */
+    protected DownloadLink createOfflinelink(final String link) {
+        return createOfflinelink(link, null);
+    }
+
+    /**
+     * creates a offline link, with logger and comment message.
+     * 
+     * @parameter link
+     * 
+     * @since JD2
+     * @author raztoki
+     * */
+    protected DownloadLink createOfflinelink(final String link, final String message) {
+        final DownloadLink dl = new DownloadLink(null, null, getHost(), "directhttp://" + Encoding.urlDecode(link, true), false);
+        dl.setProperty("OFFLINE", true);
+        if (message != null) {
+            dl.setComment(message);
+            logger.info("Offline Link: " + link + " :: " + message);
+        } else {
+            logger.info("Offline Link: " + link);
+        }
+        return dl;
+    }
+
+    /**
      * Die Methode entschlüsselt einen einzelnen Link.
      */
     public abstract ArrayList<DownloadLink> decryptIt(CryptedLink parameter, ProgressController progress) throws Exception;
