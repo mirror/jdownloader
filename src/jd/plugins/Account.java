@@ -456,7 +456,6 @@ public class Account extends Property {
     public boolean setProperty(String key, Object value) {
         if (IS_MULTI_HOSTER_ACCOUNT.equalsIgnoreCase(key)) {
             isMulti = value != null && Boolean.TRUE.equals(value);
-            return false;
         } else if ("nopremium".equalsIgnoreCase(key)) {
             // convert.. some day we will use the setType only. The earlier we start to the correct fields, the better
             if (Boolean.TRUE.equals(value)) {
@@ -483,7 +482,6 @@ public class Account extends Property {
                 setType(AccountType.FREE);
             }
         }
-
         return super.setProperty(key, value);
 
     }
