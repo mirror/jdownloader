@@ -87,7 +87,7 @@ public class AneaNt extends PluginForDecrypt {
         // manga reader
         if (parameter.contains("manga.animea.net/")) {
             // We get the title
-            String[][] title = br.getRegex("(?i)<title>(.+) (chapter ([\\d\\.]+)) - Page 1 of (\\d+)</title>").getMatches();
+            String[][] title = br.getRegex("(?i)<title>(.+) (chapter ([\\d\\.]+)) - Page 1 of (\\d+)(?:\\s*-\\s*AnimeA)?</title>").getMatches();
             if (title == null || title.length == 0) {
                 logger.warning("Title not found! : " + parameter);
                 return null;
@@ -95,7 +95,9 @@ public class AneaNt extends PluginForDecrypt {
             String useTitle = Encoding.htmlDecode(title[0][0] + " – " + title[0][1]).trim().replaceAll("\"", "");
             // grab the total pages within viewer
             String totalPages = title[0][3];
-            if (totalPages == null) totalPages = br.getRegex("(?i)\\d+</option>[\r\n\t ]+</select>[\r\n\t ]+of (\\d+)").getMatch(0);
+            if (totalPages == null) {
+                totalPages = br.getRegex("(?i)\\d+</option>[\r\n\t ]+</select>[\r\n\t ]+of (\\d+)").getMatch(0);
+            }
             if (totalPages == null) {
                 logger.warning("'TotalPages' not found! : " + parameter);
                 return null;
@@ -115,7 +117,9 @@ public class AneaNt extends PluginForDecrypt {
                 String pageNumber = String.format(format, (i));
                 // grab the image source
                 String img = br.getRegex("(?i)<img src=\"(http?://[^\"]+)\" onerror").getMatch(0);
-                if (img == null) img = br.getRegex("(?i)(http?://img.manga.animea.net/[^\"]+)").getMatch(0);
+                if (img == null) {
+                    img = br.getRegex("(?i)(http?://img.manga.animea.net/[^\"]+)").getMatch(0);
+                }
                 if (img == null) {
                     logger.warning("No images found for page : " + pageNumber + " : " + parameter);
                     logger.warning("Continuing...");
@@ -165,8 +169,9 @@ public class AneaNt extends PluginForDecrypt {
                 return null;
             }
             if (links != null && links.length != 0) {
-                for (String dl : links)
+                for (String dl : links) {
                     decryptedLinks.add(createDownloadlink(dl));
+                }
             }
             if (fpName != null) {
                 FilePackage fp = FilePackage.getInstance();
