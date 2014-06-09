@@ -941,6 +941,7 @@ SilentModeToggleAction_getNameWhenDisabled_=Tichý režim
 SilentModeToggleAction_getNameWhenEnabled_=Tichý režim
 SizeColumn_SizeColumn=Velikost
 SizeColumn_getSizeString_zero=Neznámý
+SizeColumn_getSizeString_zero_tt=Velikost souboru není zatím dostupná nebo známá
 SkipAction_run_msg_=Chcete přeskočit a zastavit spuštěná stahování?\nPřišli byste o %s1 kvůli %s2 neobnovitelným stahováním!
 SortAction_SortAction_object_=Seřadit balíčky podle '%s1'
 SortAction_SortAction_object_empty=Seřadit balíček podle sloupce
