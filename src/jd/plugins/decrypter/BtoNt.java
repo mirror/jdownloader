@@ -59,7 +59,7 @@ public class BtoNt extends PluginForDecrypt {
         // We get the title
         String[] t = new String[6];
         // works for individual pages, with and without volume, and all in one page
-        String reg = "<title>(.*?) - (vol ([\\d\\.]+) )?(ch ([\\d\\.]+) )(Page [\\d\\.]+ )?\\|[^<]+</title";
+        String reg = "<title>(.*?) - (vol ([\\d\\.]+) )?(ch ([\\d\\.]+[a-z]*) )(Page [\\d\\.]+ )?\\|[^<]+</title";
         t = br.getRegex(reg).getRow(0);
         if (t == null) {
             logger.warning("Decrypter broken for: " + parameter + " @ t");
@@ -69,16 +69,16 @@ public class BtoNt extends PluginForDecrypt {
 
         DecimalFormat df_title = new DecimalFormat("000");
         // decimal place fks with formatting!
-        if (t[2] != null && t[2].contains(".")) {
-            String[] s = new Regex(t[2], "(\\d+)(\\.\\d+)").getRow(0);
+        if (t[2] != null && (t[2].contains(".") || t[2].matches(".+[a-z]$"))) {
+            String[] s = new Regex(t[2], "(\\d+)(\\.\\d+)?([a-z]*)").getRow(0);
             fp.setProperty("CLEANUP_NAME", false);
-            t[2] = df_title.format(Integer.parseInt(s[0])) + s[1];
+            t[2] = df_title.format(Integer.parseInt(s[0])) + (s[1] != null ? s[1] : "") + (s[2] != null ? s[2] : "");
         } else if (t[2] != null) {
             t[2] = df_title.format(Integer.parseInt(t[2]));
-        } else if (t[4] != null && t[4].contains(".")) {
-            String[] s = new Regex(t[4], "(\\d+)(\\.\\d+)").getRow(0);
+        } else if (t[4] != null && (t[4].contains(".") || t[4].matches(".+[a-z]$"))) {
+            String[] s = new Regex(t[4], "(\\d+)(\\.\\d+)?([a-z]*)").getRow(0);
             fp.setProperty("CLEANUP_NAME", false);
-            t[4] = df_title.format(Integer.parseInt(s[0])) + s[1];
+            t[4] = df_title.format(Integer.parseInt(s[0])) + (s[1] != null ? s[1] : "") + (s[2] != null ? s[2] : "");
         } else if (t[4] != null) {
             t[4] = df_title.format(Integer.parseInt(t[4]));
         } else {
@@ -91,15 +91,19 @@ public class BtoNt extends PluginForDecrypt {
         if (pages != null) {
             int numberOfPages = Integer.parseInt(pages);
             DecimalFormat df_page = new DecimalFormat("00");
-            if (numberOfPages > 999)
+            if (numberOfPages > 999) {
                 df_page = new DecimalFormat("0000");
-            else if (numberOfPages > 99) df_page = new DecimalFormat("000");
+            } else if (numberOfPages > 99) {
+                df_page = new DecimalFormat("000");
+            }
 
             // We load each page and retrieve the URL of the picture
             fp.setName(title);
             int skippedPics = 0;
             for (int i = 1; i <= numberOfPages; i++) {
-                if (i != 1) br.getPage(url + "/" + i);
+                if (i != 1) {
+                    br.getPage(url + "/" + i);
+                }
                 String pageNumber = df_page.format(i);
                 final String[] unformattedSource = br.getRegex("src=\"(http://img\\.batoto\\.net/comics/\\d{4}/\\d{1,2}/\\d{1,2}/[a-z]/read[^/]+/[^\"]+(\\.[a-z]+))\"").getRow(0);
                 if (unformattedSource == null || unformattedSource.length == 0) {
