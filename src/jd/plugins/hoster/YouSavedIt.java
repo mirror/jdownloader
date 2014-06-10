@@ -104,10 +104,7 @@ public class YouSavedIt extends PluginForHost {
         } else if (br.getURL().contains(SERVERERROR)) {
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, SERVERERRORUSERTEXT, 5 * 60 * 1000l);
         }
-        final String waittime = br.getRegex("\\$\\(\\'\\.download\\-timer\\-seconds\\'\\)\\.html\\((\\d+)\\);").getMatch(0);
-        if (waittime != null) {
-            sleep(Integer.parseInt(waittime) * 1001l, downloadLink);
-        }
+        handleWait(downloadLink);
         String downloadURL = br.getRegex("download-timer'\\)\\.html\\(\"<a href='(http://.*?)'").getMatch(0);
         if (downloadURL == null) {
             downloadURL = downloadLink.getDownloadURL() + "?d=1";
@@ -119,27 +116,34 @@ public class YouSavedIt extends PluginForHost {
             if (br.getURL().contains(SERVERERROR)) {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, SERVERERRORUSERTEXT, 5 * 60 * 1000l);
             }
-            final String captchaAction = br.getRegex("<div class=\"captchaPageTable\">[\t\n\r ]+<form method=\"POST\" action=\"(http://[^<>\"]*?)\"").getMatch(0);
-            final String rcID = br.getRegex("recaptcha/api/noscript\\?k=([^<>\"]*?)\"").getMatch(0);
-            if (rcID == null || captchaAction == null) {
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            }
-            final PluginForHost recplug = JDUtilities.getPluginForHost("DirectHTTP");
-            final jd.plugins.hoster.DirectHTTP.Recaptcha rc = ((DirectHTTP) recplug).getReCaptcha(br);
-            rc.setId(rcID);
-            rc.load();
-            for (int i = 0; i <= 5; i++) {
-                File cf = rc.downloadCaptcha(getLocalCaptchaFile());
-                String c = getCaptchaCode(cf, downloadLink);
-                dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, captchaAction, "submit=continue&submitted=1&d=1&recaptcha_challenge_field=" + rc.getChallenge() + "&recaptcha_response_field=" + c, RESUME, MAXCHUNKS);
-                if (!dl.getConnection().isContentDisposition()) {
-                    br.followConnection();
-                    rc.reload();
-                    continue;
+            if (br.containsHTML("/recaptcha/api/(challenge|noscript)\\?k=")) {
+                final String captchaAction = br.getRegex("<div class=\"captchaPageTable\">[\t\n\r ]+<form method=\"POST\" action=\"(http://[^<>\"]*?)\"").getMatch(0);
+                final String rcID = br.getRegex("recaptcha/api/noscript\\?k=([^<>\"]*?)\"").getMatch(0);
+                if (rcID == null || captchaAction == null) {
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 }
-                break;
+                final PluginForHost recplug = JDUtilities.getPluginForHost("DirectHTTP");
+                final jd.plugins.hoster.DirectHTTP.Recaptcha rc = ((DirectHTTP) recplug).getReCaptcha(br);
+                rc.setId(rcID);
+                rc.load();
+                for (int i = 0; i <= 5; i++) {
+                    File cf = rc.downloadCaptcha(getLocalCaptchaFile());
+                    String c = getCaptchaCode(cf, downloadLink);
+                    dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, captchaAction, "submit=continue&submitted=1&d=1&recaptcha_challenge_field=" + rc.getChallenge() + "&recaptcha_response_field=" + c, RESUME, MAXCHUNKS);
+                    if (!dl.getConnection().isContentDisposition()) {
+                        br.followConnection();
+                        rc.reload();
+                        continue;
+                    }
+                    break;
+                }
+                captcha = true;
+            } else if (handleWait(downloadLink)) {
+                // this shouldn't happen twice... But I've seen in #EHS-992-12739 jdlog://1981173166931/
+                dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, downloadURL, RESUME, MAXCHUNKS);
+            } else {
+                logger.warning("Possible plugin defect");
             }
-            captcha = true;
         }
         if (!dl.getConnection().isContentDisposition()) {
             br.followConnection();
@@ -149,6 +153,18 @@ public class YouSavedIt extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl.startDownload();
+    }
+
+    private boolean handleWait(final DownloadLink downloadLink) throws Exception {
+        final String waittime = br.getRegex("\\$\\('\\.download-timer-seconds'\\)\\.html\\((\\d+)\\);").getMatch(0);
+        if (waittime != null) {
+            int time = Integer.parseInt(waittime);
+            logger.info("Wait time detected : " + time);
+            sleep((time + 2) * 1001l, downloadLink);
+            return true;
+        } else {
+            return false;
+        }
     }
 
     @Override
