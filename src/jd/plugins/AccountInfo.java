@@ -223,7 +223,7 @@ public class AccountInfo extends Property {
     }
 
     /**
-     * Removes forbidden hosts from supported array and then sets AccountInfo property 'multiHostSupport'
+     * Removes forbidden hosts, adds host corrections, and then sets AccountInfo property 'multiHostSupport'
      * 
      * @author raztoki
      * @since JD2
