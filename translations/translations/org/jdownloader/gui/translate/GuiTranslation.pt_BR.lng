@@ -941,6 +941,7 @@ SilentModeToggleAction_getNameWhenDisabled_=Ativar Modo Silencioso
 SilentModeToggleAction_getNameWhenEnabled_=Desativar Modo Silencioso
 SizeColumn_SizeColumn=Tamanho
 SizeColumn_getSizeString_zero=Desconhecido
+SizeColumn_getSizeString_zero_tt=Tamanho não disponível/ainda não conhecido
 SkipAction_run_msg_=Deseja ignorar e parar os downloads em andamento?\r\nVocê irá perder %s1 pois não é possível resumir downloads do %s2 !
 SortAction_SortAction_object_=Classificar pacote(s) por '%s1'
 SortAction_SortAction_object_empty=Classificar pacote por Coluna
