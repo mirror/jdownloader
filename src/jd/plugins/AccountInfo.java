@@ -249,22 +249,22 @@ public class AccountInfo extends Property {
             // central place to fix up issues when JD 'names' doesn't match multihoster supported host array or vise versa
 
             // work around for freakshare.com
-            if (multiHostSupport.contains("freakshare.net") || multiHostSupport.contains("freakshare.com")) {
-                multiHostSupport.add("freakshare.net");
-                multiHostSupport.add("freakshare.com");
+            if (supportedHostsSet.contains("freakshare.net") || supportedHostsSet.contains("freakshare.com")) {
+                supportedHostsSet.add("freakshare.net");
+                supportedHostsSet.add("freakshare.com");
             }
             // workaround for uploaded.to
-            if (multiHostSupport.contains("uploaded.net") || multiHostSupport.contains("ul.to") || multiHostSupport.contains("uploaded.to")) {
-                multiHostSupport.add("uploaded.net");
-                multiHostSupport.add("ul.to");
-                multiHostSupport.add("uploaded.to");
+            if (supportedHostsSet.contains("uploaded.net") || supportedHostsSet.contains("ul.to") || supportedHostsSet.contains("uploaded.to")) {
+                supportedHostsSet.add("uploaded.net");
+                supportedHostsSet.add("ul.to");
+                supportedHostsSet.add("uploaded.to");
             }
             // workaround for keep2share.cc, as they keep changing hosts..
-            if (multiHostSupport.contains("keep2share.cc") || multiHostSupport.contains("k2s.cc") || multiHostSupport.contains("keep2s.cc") || multiHostSupport.contains("keep2.cc")) {
-                multiHostSupport.add("keep2share.cc");
-                multiHostSupport.add("k2s.cc");
-                multiHostSupport.add("keep2s.cc");
-                multiHostSupport.add("keep2.cc");
+            if (supportedHostsSet.contains("keep2share.cc") || supportedHostsSet.contains("k2s.cc") || supportedHostsSet.contains("keep2s.cc") || supportedHostsSet.contains("keep2.cc")) {
+                supportedHostsSet.add("keep2share.cc");
+                supportedHostsSet.add("k2s.cc");
+                supportedHostsSet.add("keep2s.cc");
+                supportedHostsSet.add("keep2.cc");
             }
             supportedHosts = new ArrayList<String>(supportedHostsSet);
         }
