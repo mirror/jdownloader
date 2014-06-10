@@ -15,6 +15,7 @@ import javax.swing.JTable;
 import javax.swing.SwingConstants;
 import javax.swing.table.JTableHeader;
 
+import jd.controlling.TaskQueue;
 import jd.controlling.linkcrawler.CrawledLink;
 import jd.controlling.linkcrawler.CrawledPackage;
 import jd.controlling.packagecontroller.AbstractNode;
@@ -28,6 +29,7 @@ import org.appwork.swing.exttable.ExtDefaultRowSorter;
 import org.appwork.swing.exttable.ExtTableHeaderRenderer;
 import org.appwork.swing.exttable.columns.ExtComboColumn;
 import org.appwork.utils.ImageProvider.ImageProvider;
+import org.appwork.utils.event.queue.QueueAction;
 import org.jdownloader.controlling.Priority;
 import org.jdownloader.gui.IconKey;
 import org.jdownloader.gui.translate._GUI;
@@ -269,15 +271,24 @@ public class PriorityColumn extends ExtComboColumn<AbstractNode, Priority> {
     }
 
     @Override
-    protected void setSelectedItem(AbstractNode object, Priority value) {
-        if (object instanceof DownloadLink) {
-            ((DownloadLink) object).setPriorityEnum(value);
-        } else if (object instanceof CrawledLink) {
-            ((CrawledLink) object).setPriority(value);
-        } else if (object instanceof FilePackage) {
-            ((FilePackage) object).setPriorityEnum(value);
-        } else if (object instanceof CrawledPackage) {
-            ((CrawledPackage) object).setPriorityEnum(value);
-        }
+    protected void setSelectedItem(final AbstractNode object, final Priority value) {
+        TaskQueue.getQueue().add(new QueueAction<Void, RuntimeException>() {
+
+            @Override
+            protected Void run() throws RuntimeException {
+                if (object instanceof DownloadLink) {
+                    ((DownloadLink) object).setPriorityEnum(value);
+                } else if (object instanceof CrawledLink) {
+                    ((CrawledLink) object).setPriority(value);
+                } else if (object instanceof FilePackage) {
+                    ((FilePackage) object).setPriorityEnum(value);
+                } else if (object instanceof CrawledPackage) {
+                    ((CrawledPackage) object).setPriorityEnum(value);
+                }
+                return null;
+            }
+
+        });
+
     }
 }

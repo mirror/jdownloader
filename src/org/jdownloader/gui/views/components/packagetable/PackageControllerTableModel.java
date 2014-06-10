@@ -25,8 +25,8 @@ import org.appwork.swing.exttable.ExtColumn;
 import org.appwork.swing.exttable.ExtTableModel;
 import org.appwork.utils.event.queue.Queue;
 import org.appwork.utils.event.queue.QueueAction;
-import org.appwork.utils.logging.Log;
 import org.appwork.utils.swing.EDTRunner;
+import org.jdownloader.logging.LogController;
 import org.jdownloader.settings.staticreferences.CFG_GUI;
 
 public abstract class PackageControllerTableModel<PackageType extends AbstractPackageNode<ChildrenType, PackageType>, ChildrenType extends AbstractPackageChildrenNode<PackageType>> extends ExtTableModel<AbstractNode> {
@@ -34,109 +34,109 @@ public abstract class PackageControllerTableModel<PackageType extends AbstractPa
      * 
      */
     private static final long serialVersionUID = 1L;
-    
+
     public static enum TOGGLEMODE {
         CURRENT,
         TOP,
         BOTTOM
     }
-    
+
     public abstract class TableDataModification {
         protected abstract void modifyTableData(List<PackageType> packages);
-        
+
         protected abstract List<ChildrenType> modifyPackageData(PackageType pkg, List<ChildrenType> unfilteredChildren);
-        
+
         protected PackageControllerTableModelCustomizer finalizeTableModification() {
             return null;
         }
     }
-    
+
     @SuppressWarnings("unchecked")
     public PackageControllerTable<PackageType, ChildrenType> getTable() {
         return (PackageControllerTable<PackageType, ChildrenType>) super.getTable();
     }
-    
+
     private boolean tristateSorterEnabled = true;
-    
+
     public boolean isTristateSorterEnabled() {
         return tristateSorterEnabled;
     }
-    
+
     public void setTristateSorterEnabled(boolean tristateSorterEnabled) {
         this.tristateSorterEnabled = tristateSorterEnabled;
     }
-    
+
     private static final String                                                               SORT_ORIGINAL         = "ORIGINAL";
-    
+
     private final DelayedRunnable                                                             asyncRefresh;
     protected final PackageController<PackageType, ChildrenType>                              pc;
     private final DelayedRunnable                                                             asyncRecreate;
     private CopyOnWriteArraySet<PackageControllerTableModelFilter<PackageType, ChildrenType>> availableTableFilters = new CopyOnWriteArraySet<PackageControllerTableModelFilter<PackageType, ChildrenType>>();
     private CopyOnWriteArrayList<TableDataModification>                                       tableModifiers        = new CopyOnWriteArrayList<TableDataModification>();
     protected PackageControllerTableModelData<PackageType, ChildrenType>                      tableData             = new PackageControllerTableModelData<PackageType, ChildrenType>();
-    
+
     public Collection<PackageControllerTableModelFilter<PackageType, ChildrenType>> getAvailableTableFilters() {
         return availableTableFilters;
     }
-    
+
     private ScheduledExecutorService queue                 = DelayedRunnable.getNewScheduledExecutorService();
-    
+
     private final DelayedRunnable    asyncRecreateFast;
-    
+
     private final Storage            storage;
-    
+
     private final AtomicBoolean      repaintFired          = new AtomicBoolean(false);
     private final AtomicBoolean      structureChangedFired = new AtomicBoolean(false);
-    
+
     public PackageControllerTableModel(final PackageController<PackageType, ChildrenType> pc, String id) {
         super(id);
         storage = getStorage();
         resetSorting();
-        
+
         this.pc = pc;
         asyncRefresh = new DelayedRunnable(queue, 150l, 500l) {
-            
+
             @Override
             public String getID() {
                 return "PackageControllerTableModel_Refresh" + pc.getClass().getName();
             }
-            
+
             @Override
             public void delayedrun() {
                 fireRepaint();
             }
         };
         asyncRecreate = new DelayedRunnable(queue, 50l, 1000l) {
-            
+
             @Override
             public String getID() {
                 return "PackageControllerTableModel_Recreate" + pc.getClass().getName();
             }
-            
+
             @Override
             public void delayedrun() {
                 fireStructureChange();
             }
         };
-        
+
         asyncRecreateFast = new DelayedRunnable(queue, 10l, 50l) {
-            
+
             @Override
             public String getID() {
                 return "PackageControllerTableModel_RecreateFast" + pc.getClass().getName();
             }
-            
+
             @Override
             public void delayedrun() {
                 fireStructureChange();
             }
         };
     }
-    
+
     private void fireRepaint() {
         if (repaintFired.compareAndSet(false, true)) {
             pc.getQueue().add(new QueueAction<Void, RuntimeException>(Queue.QueuePriority.HIGH) {
-                
+
                 @Override
                 protected Void run() throws RuntimeException {
                     try {
@@ -144,7 +144,9 @@ public abstract class PackageControllerTableModel<PackageType extends AbstractPa
                         for (AbstractNode node : getTableData()) {
                             if (node instanceof AbstractPackageNode) {
                                 ChildrenView<ChildrenType> view = ((AbstractPackageNode) node).getView();
-                                if (view.updateRequired()) viewUpdates.add(view);
+                                if (view.updateRequired()) {
+                                    viewUpdates.add(view);
+                                }
                             }
                         }
                         for (ChildrenView<ChildrenType> view : viewUpdates) {
@@ -165,11 +167,11 @@ public abstract class PackageControllerTableModel<PackageType extends AbstractPa
             });
         }
     }
-    
+
     private void fireStructureChange() {
         if (structureChangedFired.compareAndSet(false, true)) {
             pc.getQueue().add(new QueueAction<Void, RuntimeException>(Queue.QueuePriority.HIGH) {
-                
+
                 @Override
                 protected Void run() throws RuntimeException {
                     try {
@@ -182,21 +184,21 @@ public abstract class PackageControllerTableModel<PackageType extends AbstractPa
             });
         }
     }
-    
+
     public void resetSorting() {
         this.sortColumn = null;
         try {
             storage.put(ExtTableModel.SORT_ORDER_ID_KEY, (String) null);
             storage.put(ExtTableModel.SORTCOLUMN_KEY, (String) null);
         } catch (final Exception e) {
-            Log.exception(e);
+            LogController.CL(true).log(e);
         }
     }
-    
+
     public ScheduledExecutorService getThreadPool() {
         return queue;
     }
-    
+
     public void recreateModel(boolean delay) {
         if (delay) {
             asyncRecreate.run();
@@ -204,11 +206,11 @@ public abstract class PackageControllerTableModel<PackageType extends AbstractPa
             asyncRecreateFast.run();
         }
     }
-    
+
     public void recreateModel() {
         recreateModel(true);
     }
-    
+
     public void refreshModel(boolean delay) {
         if (delay) {
             asyncRefresh.run();
@@ -216,43 +218,43 @@ public abstract class PackageControllerTableModel<PackageType extends AbstractPa
             asyncRefresh.delayedrun();
         }
     }
-    
+
     public void refreshModel() {
         refreshModel(true);
     }
-    
+
     public void sortPackageChildren(final AbstractPackageNode pkg, PackageControllerComparator<ChildrenType> comparator) {
         this.resetSorting();
         pc.sortPackageChildren((PackageType) pkg, comparator);
     }
-    
+
     public PackageController<PackageType, ChildrenType> getController() {
         return pc;
     }
-    
+
     public void addTableModifier(TableDataModification tableModifier, boolean delay) {
         tableModifiers.add(tableModifier);
         recreateModel(delay);
     }
-    
+
     public void toggleFilePackageExpand(final AbstractPackageNode fp2, final TOGGLEMODE mode) {
         final java.util.List<PackageType> selectedPackages = PackageControllerTableModel.this.getTable().getSelectedPackages();
         tableModifiers.add(new TableDataModification() {
-            
+
             @Override
             protected void modifyTableData(java.util.List<PackageType> packages) {
                 final boolean cur = !fp2.isExpanded();
                 boolean doToggle = true;
                 switch (mode) {
-                    case CURRENT:
-                        fp2.setExpanded(cur);
-                        break;
-                    case TOP:
-                        doToggle = true;
-                        break;
-                    case BOTTOM:
-                        doToggle = false;
-                        break;
+                case CURRENT:
+                    fp2.setExpanded(cur);
+                    break;
+                case TOP:
+                    doToggle = true;
+                    break;
+                case BOTTOM:
+                    doToggle = false;
+                    break;
                 }
                 if (mode != TOGGLEMODE.CURRENT) {
                     if (selectedPackages.size() > 1) {
@@ -264,7 +266,9 @@ public abstract class PackageControllerTableModel<PackageType extends AbstractPa
                     for (PackageType fp : packages) {
                         if (doToggle) {
                             fp.setExpanded(cur);
-                            if (fp == fp2) doToggle = false;
+                            if (fp == fp2) {
+                                doToggle = false;
+                            }
                         } else {
                             if (fp == fp2) {
                                 doToggle = true;
@@ -274,7 +278,7 @@ public abstract class PackageControllerTableModel<PackageType extends AbstractPa
                     }
                 }
             }
-            
+
             @Override
             protected List<ChildrenType> modifyPackageData(PackageType pkg, List<ChildrenType> unfilteredChildren) {
                 return unfilteredChildren;
@@ -282,7 +286,7 @@ public abstract class PackageControllerTableModel<PackageType extends AbstractPa
         });
         asyncRecreateFast.delayedrun();
     }
-    
+
     public void setFilePackageExpand(final boolean expanded, final AbstractPackageNode... fp2) {
         tableModifiers.add(new TableDataModification() {
             @Override
@@ -291,7 +295,7 @@ public abstract class PackageControllerTableModel<PackageType extends AbstractPa
                     fp.setExpanded(expanded);
                 }
             }
-            
+
             @Override
             protected List<ChildrenType> modifyPackageData(PackageType pkg, List<ChildrenType> unfilteredChildren) {
                 return unfilteredChildren;
@@ -299,87 +303,103 @@ public abstract class PackageControllerTableModel<PackageType extends AbstractPa
         });
         asyncRecreateFast.delayedrun();
     }
-    
+
     public void addFilter(PackageControllerTableModelFilter<PackageType, ChildrenType> filter) {
-        if (filter == null) return;
+        if (filter == null) {
+            return;
+        }
         availableTableFilters.add(filter);
     }
-    
+
     public boolean isFilteredView() {
         return getTableData().isFiltered();
     }
-    
+
     @Override
     public PackageControllerTableModelData<PackageType, ChildrenType> getTableData() {
         return tableData;
     }
-    
+
     public void removeFilter(PackageControllerTableModelFilter<PackageType, ChildrenType> filter) {
-        if (filter == null) return;
+        if (filter == null) {
+            return;
+        }
         availableTableFilters.remove(filter);
     }
-    
+
     @Override
     protected void initColumns() {
     }
-    
+
     private class CompiledFilterList {
         private final List<PackageControllerTableModelFilter<PackageType, ChildrenType>> packageFilters;
-        
+
         public List<PackageControllerTableModelFilter<PackageType, ChildrenType>> getPackageFilters() {
             return packageFilters;
         }
-        
+
         public List<PackageControllerTableModelFilter<PackageType, ChildrenType>> getChildrenFilters() {
             return childrenFilters;
         }
-        
+
         private final List<PackageControllerTableModelFilter<PackageType, ChildrenType>> childrenFilters;
-        
+
         private CompiledFilterList(List<PackageControllerTableModelFilter<PackageType, ChildrenType>> packageFilters, List<PackageControllerTableModelFilter<PackageType, ChildrenType>> childrenFilters) {
             this.packageFilters = packageFilters;
             this.childrenFilters = childrenFilters;
         }
-        
+
     }
-    
+
     protected CompiledFilterList compileFilterList(Collection<PackageControllerTableModelFilter<PackageType, ChildrenType>> filters) {
         ArrayList<PackageControllerTableModelFilter<PackageType, ChildrenType>> packageFilters = new ArrayList<PackageControllerTableModelFilter<PackageType, ChildrenType>>();
         ArrayList<PackageControllerTableModelFilter<PackageType, ChildrenType>> childrendFilters = new ArrayList<PackageControllerTableModelFilter<PackageType, ChildrenType>>();
-        if (filters == null || filters.size() == 0) return new CompiledFilterList(packageFilters, childrendFilters);
+        if (filters == null || filters.size() == 0) {
+            return new CompiledFilterList(packageFilters, childrendFilters);
+        }
         for (PackageControllerTableModelFilter<PackageType, ChildrenType> filter : filters) {
-            if (filter.isFilteringPackageNodes()) packageFilters.add(filter);
-            if (filter.isFilteringChildrenNodes()) childrendFilters.add(filter);
+            if (filter.isFilteringPackageNodes()) {
+                packageFilters.add(filter);
+            }
+            if (filter.isFilteringChildrenNodes()) {
+                childrendFilters.add(filter);
+            }
         }
         if (packageFilters.size() > 0 || childrendFilters.size() > 0) {
             Comparator<PackageControllerTableModelFilter<PackageType, ChildrenType>> comparator = new Comparator<PackageControllerTableModelFilter<PackageType, ChildrenType>>() {
-                
+
                 public int compare(int x, int y) {
                     return (x < y) ? -1 : ((x == y) ? 0 : 1);
                 }
-                
+
                 @Override
                 public int compare(PackageControllerTableModelFilter<PackageType, ChildrenType> o1, PackageControllerTableModelFilter<PackageType, ChildrenType> o2) {
                     return compare(o1.getComplexity(), o2.getComplexity());
                 }
             };
-            if (packageFilters.size() > 0) Collections.sort(packageFilters, comparator);
-            if (childrendFilters.size() > 0) Collections.sort(childrendFilters, comparator);
+            if (packageFilters.size() > 0) {
+                Collections.sort(packageFilters, comparator);
+            }
+            if (childrendFilters.size() > 0) {
+                Collections.sort(childrendFilters, comparator);
+            }
         }
         return new CompiledFilterList(packageFilters, childrendFilters);
     }
-    
+
     public List<PackageControllerTableModelFilter<PackageType, ChildrenType>> getEnabledTableFilters() {
         ArrayList<PackageControllerTableModelFilter<PackageType, ChildrenType>> ret = new ArrayList<PackageControllerTableModelFilter<PackageType, ChildrenType>>();
         for (PackageControllerTableModelFilter<PackageType, ChildrenType> filter : getAvailableTableFilters()) {
-            if (filter.isFilteringPackageNodes() || filter.isFilteringChildrenNodes()) ret.add(filter);
+            if (filter.isFilteringPackageNodes() || filter.isFilteringChildrenNodes()) {
+                ret.add(filter);
+            }
         }
         Comparator<PackageControllerTableModelFilter<PackageType, ChildrenType>> comparator = new Comparator<PackageControllerTableModelFilter<PackageType, ChildrenType>>() {
-            
+
             public int compare(int x, int y) {
                 return (x < y) ? -1 : ((x == y) ? 0 : 1);
             }
-            
+
             @Override
             public int compare(PackageControllerTableModelFilter<PackageType, ChildrenType> o1, PackageControllerTableModelFilter<PackageType, ChildrenType> o2) {
                 return compare(o1.getComplexity(), o2.getComplexity());
@@ -388,14 +408,17 @@ public abstract class PackageControllerTableModel<PackageType extends AbstractPa
         Collections.sort(ret, comparator);
         return ret;
     }
-    
+
     public List<AbstractNode> refreshUnSort(final List<AbstractNode> data) {
-        if (data instanceof PackageControllerTableModelData) return data;
+        if (data instanceof PackageControllerTableModelData) {
+            return data;
+        }
         throw new IllegalArgumentException("data must be instanceof PackageControllerTableModelData");
     }
-    
+
     /*
-     * we override sort to have a better sorting of packages/files, to keep their structure alive,data is only used to specify the size of the new ArrayList
+     * we override sort to have a better sorting of packages/files, to keep their structure alive,data is only used to specify the size of
+     * the new ArrayList
      */
     @Override
     public java.util.List<AbstractNode> sort(final java.util.List<AbstractNode> data, ExtColumn<AbstractNode> column) {
@@ -407,7 +430,7 @@ public abstract class PackageControllerTableModel<PackageType extends AbstractPa
                 storage.put(ExtTableModel.SORT_ORDER_ID_KEY, (String) null);
                 storage.put(ExtTableModel.SORTCOLUMN_KEY, (String) null);
             } catch (final Exception e) {
-                Log.exception(e);
+                LogController.CL(true).log(e);
             }
         } else {
             this.sortColumn = column;
@@ -416,7 +439,7 @@ public abstract class PackageControllerTableModel<PackageType extends AbstractPa
                 storage.put(ExtTableModel.SORT_ORDER_ID_KEY, id);
                 storage.put(ExtTableModel.SORTCOLUMN_KEY, column.getID());
             } catch (final Exception e) {
-                Log.exception(e);
+                LogController.CL(true).log(e);
             }
         }
         CompiledFilterList filters = compileFilterList(getAvailableTableFilters());
@@ -436,7 +459,13 @@ public abstract class PackageControllerTableModel<PackageType extends AbstractPa
             }
         }
         /* sort packages */
-        if (column != null) Collections.sort(packages, column.getRowSorter());
+        if (column != null) {
+            try {
+                Collections.sort(packages, column.getRowSorter());
+            } catch (Throwable e) {
+                LogController.CL(true).log(e);
+            }
+        }
         List<TableDataModification> appliedTableDataModifier = new ArrayList<TableDataModification>(tableModifiers);
         tableModifiers.removeAll(appliedTableDataModifier);
         for (TableDataModification modifier : appliedTableDataModifier) {
@@ -488,14 +517,18 @@ public abstract class PackageControllerTableModel<PackageType extends AbstractPa
             if (files.size() == 1 && hideSingleChildPackages) {
                 newData.addAll(files);
             } else {
-                boolean expanded = ((PackageType) node).isExpanded();
+                boolean expanded = node.isExpanded();
                 /* only add package node if it contains children */
                 newData.add(node);
                 if (expanded) {
                     /* expanded, add its children */
                     if (column != null && files.size() > 1) {
                         /* we only have to sort children if the package is expanded */
-                        Collections.sort(files, column.getRowSorter());
+                        try {
+                            Collections.sort(files, column.getRowSorter());
+                        } catch (final Throwable e) {
+                            LogController.CL(true).log(e);
+                        }
                     }
                     newData.addAll(files);
                 }
@@ -504,15 +537,21 @@ public abstract class PackageControllerTableModel<PackageType extends AbstractPa
         List<PackageControllerTableModelCustomizer> tableDataCustomizer = new ArrayList<PackageControllerTableModelCustomizer>();
         for (TableDataModification modifier : appliedTableDataModifier) {
             PackageControllerTableModelCustomizer customizer = modifier.finalizeTableModification();
-            if (customizer != null) tableDataCustomizer.add(customizer);
+            if (customizer != null) {
+                tableDataCustomizer.add(customizer);
+            }
         }
-        if (hasPackageFilters) newData.setPackageFilters(filters.getPackageFilters());
-        if (hasChildrenFilters) newData.setChildrenFilters(filters.getChildrenFilters());
+        if (hasPackageFilters) {
+            newData.setPackageFilters(filters.getPackageFilters());
+        }
+        if (hasChildrenFilters) {
+            newData.setChildrenFilters(filters.getChildrenFilters());
+        }
         newData.setTableModelCustomizer(tableDataCustomizer);
         newData.setAllChildrenNodes(unfilteredChildrenNodes);
         return newData;
     }
-    
+
     @Override
     protected boolean postSetTableData(List<AbstractNode> newtableData) {
         boolean ret = true;
@@ -532,7 +571,7 @@ public abstract class PackageControllerTableModel<PackageType extends AbstractPa
         }
         return ret && super.postSetTableData(newtableData);
     }
-    
+
     @Override
     protected void setTableData(List<AbstractNode> data) {
         if (!(data instanceof PackageControllerTableModelData)) {
@@ -551,22 +590,22 @@ public abstract class PackageControllerTableModel<PackageType extends AbstractPa
             setVariantsSupport(vs);
         }
     }
-    
+
     protected void setVariantsSupport(boolean vs) {
     }
-    
+
     protected ExtColumn<AbstractNode> getDefaultSortColumn() {
         return null;
     }
-    
+
     protected boolean isSortStateSaverEnabled() {
         return false;
     }
-    
+
     public List<ChildrenType> getAllChildrenNodes() {
         return getTableData().getAllChildrenNodes();
     }
-    
+
     @Override
     public String getNextSortIdentifier(String sortOrderIdentifier) {
         if (!isTristateSorterEnabled()) {
@@ -578,7 +617,7 @@ public abstract class PackageControllerTableModel<PackageType extends AbstractPa
         } else {
             if (sortOrderIdentifier == null || sortOrderIdentifier.equals(SORT_ORIGINAL)) {
                 return ExtColumn.SORT_ASC;
-                
+
             } else if (sortOrderIdentifier.equals(ExtColumn.SORT_ASC)) {
                 return ExtColumn.SORT_DESC;
             } else {
@@ -586,12 +625,14 @@ public abstract class PackageControllerTableModel<PackageType extends AbstractPa
             }
         }
     }
-    
+
     public Icon getSortIcon(String sortOrderIdentifier) {
-        if (SORT_ORIGINAL.equals(sortOrderIdentifier)) { return null; }
+        if (SORT_ORIGINAL.equals(sortOrderIdentifier)) {
+            return null;
+        }
         return super.getSortIcon(sortOrderIdentifier);
     }
-    
+
     public long getTableDataVersion() {
         return tableData.getVersion();
     }

@@ -61,9 +61,23 @@ public class Main {
          * we have to make sure that this property gets set before any network stuff gets loaded!!
          */
         System.setProperty("java.net.preferIPv4Stack", "true");
+
+        /**
+         * The sorting algorithm used by java.util.Arrays.sort and (indirectly) by java.util.Collections.sort has been replaced. The new
+         * sort implementation may throw an IllegalArgumentException if it detects a Comparable that violates the Comparable contract. The
+         * previous implementation silently ignored such a situation. If the previous behavior is desired, you can use the new system
+         * property, java.util.Arrays.useLegacyMergeSort, to restore previous mergesort behavior. Nature of Incompatibility: behavioral RFE:
+         * http://bugs.sun.com/bugdatabase/view_bug.do?bug_id=6804124
+         * 
+         * Sorting live data (values changing during sorting) violates the general contract
+         * 
+         * java.lang.IllegalArgumentException: Comparison method violates its general contract!
+         */
+        System.setProperty("java.util.Arrays.useLegacyMergeSort", "true");
         try {
             /*
-             * never cache negative answers,workaround for buggy dns servers that can fail and then the cache would be polluted for cache timeout
+             * never cache negative answers,workaround for buggy dns servers that can fail and then the cache would be polluted for cache
+             * timeout
              */
             java.security.Security.setProperty("networkaddress.cache.negative.ttl", 0 + "");
         } catch (final Throwable e) {
@@ -133,7 +147,9 @@ public class Main {
             public void onWriteException(final Throwable e, final File file, final byte[] data) {
                 LogController.getInstance().getLogger("GlobalIOErrors").severe("An error occured while writing " + data.length + " bytes to " + file);
                 LogController.getInstance().getLogger("GlobalIOErrors").log(e);
-                if (reported) return;
+                if (reported) {
+                    return;
+                }
                 reported = true;
                 new Thread() {
                     public void run() {
@@ -153,7 +169,9 @@ public class Main {
             @Override
             public void onReadStreamException(final Throwable e, final java.io.InputStream fis) {
                 LogController.getInstance().getLogger("GlobalIOErrors").log(e);
-                if (reported) return;
+                if (reported) {
+                    return;
+                }
                 reported = true;
                 new Thread() {
                     public void run() {
@@ -205,7 +223,7 @@ public class Main {
 
             @Override
             public String toJSonString(JsonFactoryInterface list) {
-                return ((JsonFactoryInterface) list).toJsonString();
+                return list.toJsonString();
             }
 
             @Override
