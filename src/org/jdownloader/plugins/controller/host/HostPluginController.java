@@ -228,6 +228,7 @@ public class HostPluginController extends PluginController<PluginForHost> {
                                     newDefaultHost = null;
                                 }
                                 if (newDefaultPlugin != null && (currentDefaultVersion != newDefaultVersion || !StringUtils.equals(currentDefaultHost, newDefaultHost))) {
+                                    logger.info("Update Plugin for: " + link.getName() + ":" + link.getHost() + " to " + newDefaultPlugin.getLazyP().getDisplayName() + ":" + newDefaultPlugin.getLazyP().getVersion());
                                     link.setDefaultPlugin(newDefaultPlugin);
                                     if (link.getFinalLinkState() == FinalLinkState.PLUGIN_DEFECT) {
                                         link.setFinalLinkState(null);
