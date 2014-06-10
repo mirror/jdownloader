@@ -27,6 +27,8 @@ import java.util.TreeMap;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.regex.Pattern;
 
+import javax.script.ScriptEngine;
+import javax.script.ScriptEngineManager;
 import javax.swing.JOptionPane;
 import javax.swing.SwingUtilities;
 
@@ -95,7 +97,7 @@ public class TeraFileCo extends PluginForHost {
 
     // DEV NOTES
     // XfileSharingProBasic Version 2.6.2.8
-    // mods:
+    // mods: antiddos
     // limit-info:
     // protocol: no https
     // captchatype: null
@@ -143,10 +145,33 @@ public class TeraFileCo extends PluginForHost {
         return false;
     }
 
-    public void prepBrowser(final Browser br) {
-        // define custom browser headers and language settings.
-        br.getHeaders().put("Accept-Language", "en-gb, en;q=0.9");
-        br.setCookie(COOKIE_HOST, "lang", "english");
+    /**
+     * Defines custom browser requirements. Integrates with antiDDoS method
+     * 
+     * @author raztoki
+     * 
+     * */
+    private Browser prepBrowser(final Browser prepBr) {
+        HashMap<String, String> map = null;
+        synchronized (antiDDoSCookies) {
+            map = new HashMap<String, String>(antiDDoSCookies);
+            if (!map.isEmpty()) {
+                for (final Map.Entry<String, String> cookieEntry : map.entrySet()) {
+                    final String key = cookieEntry.getKey();
+                    final String value = cookieEntry.getValue();
+                    prepBr.setCookie(this.getHost(), key, value);
+                }
+            }
+        }
+        prepBr.getHeaders().put("Accept-Language", "en-gb, en;q=0.8");
+        prepBr.setCookie(COOKIE_HOST, "lang", "english");
+        // required for antiDDoS support, without the need to repeat requests.
+        try {
+            /* not available in old stable */
+            prepBr.setAllowedResponseCodes(new int[] { 503 });
+        } catch (Throwable e) {
+        }
+        return prepBr;
     }
 
     @Override
@@ -154,7 +179,9 @@ public class TeraFileCo extends PluginForHost {
         br.setFollowRedirects(true);
         prepBrowser(br);
         getPage(link.getDownloadURL());
-        if (new Regex(correctedBR, "(No such file|>File Not Found<|>The file was removed by|Reason for deletion:\n)").matches()) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (new Regex(correctedBR, "(No such file|>File Not Found<|>The file was removed by|Reason for deletion:\n)").matches()) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
         if (new Regex(correctedBR, MAINTENANCE).matches()) {
             link.getLinkStatus().setStatusText(MAINTENANCEUSERTEXT);
             return AvailableStatus.UNCHECKABLE;
@@ -173,10 +200,14 @@ public class TeraFileCo extends PluginForHost {
             logger.warning("filename equals null, throwing \"plugin defect\"");
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        if (fileInfo[2] != null && !fileInfo[2].equals("")) link.setMD5Hash(fileInfo[2].trim());
+        if (fileInfo[2] != null && !fileInfo[2].equals("")) {
+            link.setMD5Hash(fileInfo[2].trim());
+        }
         fileInfo[0] = fileInfo[0].replaceAll("(</b>|<b>|\\.html)", "");
         link.setName(fileInfo[0].trim());
-        if (fileInfo[1] != null && !fileInfo[1].equals("")) link.setDownloadSize(SizeFormatter.getSize(fileInfo[1]));
+        if (fileInfo[1] != null && !fileInfo[1].equals("")) {
+            link.setDownloadSize(SizeFormatter.getSize(fileInfo[1]));
+        }
         return AvailableStatus.TRUE;
     }
 
@@ -215,7 +246,9 @@ public class TeraFileCo extends PluginForHost {
                 }
             }
         }
-        if (fileInfo[2] == null) fileInfo[2] = new Regex(correctedBR, "<b>MD5.*?</b>.*?nowrap>(.*?)<").getMatch(0);
+        if (fileInfo[2] == null) {
+            fileInfo[2] = new Regex(correctedBR, "<b>MD5.*?</b>.*?nowrap>(.*?)<").getMatch(0);
+        }
         return fileInfo;
     }
 
@@ -233,7 +266,9 @@ public class TeraFileCo extends PluginForHost {
         // First, bring up saved final links
         String dllink = checkDirectLink(downloadLink, directlinkproperty);
         // Second, check for streaming links on the first page
-        if (dllink == null) dllink = getDllink();
+        if (dllink == null) {
+            dllink = getDllink();
+        }
         // Third, do they provide video hosting?
         if (dllink == null && VIDEOHOSTER) {
             try {
@@ -241,7 +276,9 @@ public class TeraFileCo extends PluginForHost {
                 final Browser brv = br.cloneBrowser();
                 brv.getPage("/vidembed-" + new Regex(downloadLink.getDownloadURL(), "([a-z0-9]+)$").getMatch(0));
                 dllink = brv.getRedirectLocation();
-                if (dllink == null) logger.info("Failed to get link via vidembed");
+                if (dllink == null) {
+                    logger.info("Failed to get link via vidembed");
+                }
             } catch (final Throwable e) {
                 logger.info("Failed to get link via vidembed");
             }
@@ -270,7 +307,9 @@ public class TeraFileCo extends PluginForHost {
         }
         if (dllink == null) {
             Form dlForm = br.getFormbyProperty("name", "F1");
-            if (dlForm == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            if (dlForm == null) {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
             // how many forms deep do you want to try.
             int repeat = 2;
             for (int i = 0; i <= repeat; i++) {
@@ -285,7 +324,9 @@ public class TeraFileCo extends PluginForHost {
                 // md5 can be on the subsequent pages
                 if (downloadLink.getMD5Hash() == null) {
                     String md5hash = new Regex(correctedBR, "<b>MD5.*?</b>.*?nowrap>(.*?)<").getMatch(0);
-                    if (md5hash != null) downloadLink.setMD5Hash(md5hash.trim());
+                    if (md5hash != null) {
+                        downloadLink.setMD5Hash(md5hash.trim());
+                    }
                 }
                 /* Captcha START */
                 if (correctedBR.contains(";background:#ccc;text-align")) {
@@ -359,15 +400,23 @@ public class TeraFileCo extends PluginForHost {
                     } catch (final Throwable e) {
                         result = null;
                     }
-                    if (result == null) throw new PluginException(LinkStatus.ERROR_CAPTCHA);
-                    if ("CANCEL".equals(result)) throw new PluginException(LinkStatus.ERROR_FATAL);
+                    if (result == null) {
+                        throw new PluginException(LinkStatus.ERROR_CAPTCHA);
+                    }
+                    if ("CANCEL".equals(result)) {
+                        throw new PluginException(LinkStatus.ERROR_FATAL);
+                    }
                     dlForm.put("capcode", result);
                     /** wait time is often skippable for reCaptcha handling */
                     skipWaittime = false;
                 }
                 /* Captcha END */
-                if (password) passCode = handlePassword(dlForm, downloadLink);
-                if (!skipWaittime) waitTime(timeBefore, downloadLink);
+                if (password) {
+                    passCode = handlePassword(dlForm, downloadLink);
+                }
+                if (!skipWaittime) {
+                    waitTime(timeBefore, downloadLink);
+                }
                 sendForm(dlForm);
                 logger.info("Submitted DLForm");
                 checkErrors(downloadLink, true);
@@ -394,7 +443,9 @@ public class TeraFileCo extends PluginForHost {
         logger.info("Final downloadlink = " + dllink + " starting the download...");
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, resumable, maxchunks);
         if (dl.getConnection().getContentType().contains("html")) {
-            if (dl.getConnection().getResponseCode() == 503) throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Connection limit reached, please contact our support!", 5 * 60 * 1000l);
+            if (dl.getConnection().getResponseCode() == 503) {
+                throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Connection limit reached, please contact our support!", 5 * 60 * 1000l);
+            }
             logger.warning("The final dllink seems not to be a file!");
             br.followConnection();
             correctBR();
@@ -469,7 +520,9 @@ public class TeraFileCo extends PluginForHost {
                 if (cryptedScripts != null && cryptedScripts.length != 0) {
                     for (String crypted : cryptedScripts) {
                         dllink = decodeDownloadLink(crypted);
-                        if (dllink != null) break;
+                        if (dllink != null) {
+                            break;
+                        }
                     }
                 }
             }
@@ -490,7 +543,9 @@ public class TeraFileCo extends PluginForHost {
 
             while (c != 0) {
                 c--;
-                if (k[c].length() != 0) p = p.replaceAll("\\b" + Integer.toString(c, a) + "\\b", k[c]);
+                if (k[c].length() != 0) {
+                    p = p.replaceAll("\\b" + Integer.toString(c, a) + "\\b", k[c]);
+                }
             }
 
             decoded = p;
@@ -531,18 +586,130 @@ public class TeraFileCo extends PluginForHost {
 
     private void getPage(final String page) throws Exception {
         br.getPage(page);
+        antiDDoS(page);
         correctBR();
     }
 
     @SuppressWarnings("unused")
     private void postPage(final String page, final String postdata) throws Exception {
         br.postPage(page, postdata);
+        antiDDoS(page);
         correctBR();
     }
 
     private void sendForm(final Form form) throws Exception {
         br.submitForm(form);
+        // you can only send form once form exists, we are under the assumption here that GET or POST has already happened
+        antiDDoS(br.getURL());
         correctBR();
+    }
+
+    private static HashMap<String, String> antiDDoSCookies = new HashMap<String, String>();
+
+    /**
+     * performs cloudflare and incapsula requirements. This will auto fill out the requirements and update cookies after each request if you
+     * need!
+     * 
+     * @author raztoki
+     **/
+    private void antiDDoS(final String URL) throws Exception {
+        if (URL == null) {
+            return;
+        }
+        final HashMap<String, String> cookies = new HashMap<String, String>();
+        if (br.getHttpConnection() != null && br.getHttpConnection().getHeaderFields("server").contains("cloudflare-nginx")) {
+            Form cloudflare = br.getFormbyProperty("id", "ChallengeForm");
+            if (cloudflare == null) {
+                cloudflare = br.getFormbyProperty("id", "challenge-form");
+            }
+            if (br.getHttpConnection().getResponseCode() == 403 && cloudflare != null) {
+                // new method seems to be within 403
+                if (cloudflare.hasInputFieldByName("recaptcha_response_field")) {
+                    // they seem to add multiple input fields which is most likely meant to be corrected by js ?
+                    // we will manually remove all those
+                    while (cloudflare.hasInputFieldByName("recaptcha_response_field")) {
+                        cloudflare.remove("recaptcha_response_field");
+                    }
+                    while (cloudflare.hasInputFieldByName("recaptcha_challenge_field")) {
+                        cloudflare.remove("recaptcha_challenge_field");
+                    }
+                    // this one is null, needs to be ""
+                    if (cloudflare.hasInputFieldByName("message")) {
+                        cloudflare.remove("message");
+                        cloudflare.put("messsage", "\"\"");
+                    }
+                    // recaptcha bullshit
+                    String apiKey = cloudflare.getRegex("/recaptcha/api/(?:challenge|noscript)\\?k=([A-Za-z0-9%_\\+\\- ]+)").getMatch(0);
+                    if (apiKey == null) {
+                        apiKey = br.getRegex("/recaptcha/api/(?:challenge|noscript)\\?k=([A-Za-z0-9%_\\+\\- ]+)").getMatch(0);
+                        if (apiKey == null) {
+                            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                        }
+                    }
+                    final DownloadLink dllink = new DownloadLink(null, "antiDDoS Provider 'Clouldflare' requires Captcha", COOKIE_HOST, COOKIE_HOST, true);
+                    final PluginForHost recplug = JDUtilities.getPluginForHost("DirectHTTP");
+                    final jd.plugins.hoster.DirectHTTP.Recaptcha rc = ((DirectHTTP) recplug).getReCaptcha(br);
+                    rc.setId(apiKey);
+                    rc.load();
+                    final File cf = rc.downloadCaptcha(getLocalCaptchaFile());
+                    final String response = getCaptchaCode(cf, dllink);
+                    cloudflare.put("recaptcha_challenge_field", rc.getChallenge());
+                    cloudflare.put("recaptcha_response_field", Encoding.urlEncode(response));
+                    br.submitForm(cloudflare);
+                    if (br.getFormbyProperty("id", "ChallengeForm") != null || br.getFormbyProperty("id", "challenge-form") != null) {
+                        logger.warning("Possible plugin error within cloudflare handling");
+                        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                    }
+                }
+            } else if (br.getHttpConnection().getResponseCode() == 503 && cloudflare != null) {
+                // 503 response code with javascript math section
+                String host = new Regex(URL, "https?://([^/]+)(:\\d+)?/").getMatch(0);
+                String math = br.getRegex("\\$\\('#jschl_answer'\\)\\.val\\(([^\\)]+)\\);").getMatch(0);
+                if (math == null) {
+                    math = br.getRegex("a\\.value = ([\\d\\-\\.\\+\\*/]+);").getMatch(0);
+                }
+                if (math == null) {
+                    String variableName = br.getRegex("(\\w+)\\s*=\\s*\\$\\('#jschl_answer'\\);").getMatch(0);
+                    if (variableName != null) {
+                        variableName = variableName.trim();
+                    }
+                    math = br.getRegex(variableName + "\\.val\\(([^\\)]+)\\)").getMatch(0);
+                }
+                if (math == null) {
+                    logger.warning("Couldn't find 'math'");
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                }
+                // use js for now, but change to Javaluator as the provided string doesn't get evaluated by JS according to Javaluator
+                // author.
+                ScriptEngineManager mgr = new ScriptEngineManager();
+                ScriptEngine engine = mgr.getEngineByName("JavaScript");
+                final long value = ((Number) engine.eval("(" + math + ") + " + host.length())).longValue();
+                cloudflare.put("jschl_answer", value + "");
+                Thread.sleep(5500);
+                br.submitForm(cloudflare);
+                if (br.getFormbyProperty("id", "ChallengeForm") != null || br.getFormbyProperty("id", "challenge-form") != null) {
+                    logger.warning("Possible plugin error within cloudflare handling");
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                }
+            } else {
+                // nothing wrong, or something wrong (unsupported format)....
+                // commenting out return prevents caching of cookies per request
+                // return;
+            }
+            // get cookies we want/need.
+            // refresh these with every getPage/postPage/submitForm?
+            final Cookies add = br.getCookies(this.getHost());
+            for (final Cookie c : add.getCookies()) {
+                if (new Regex(c.getKey(), "(cfduid|cf_clearance)").matches()) {
+                    cookies.put(c.getKey(), c.getValue());
+                }
+            }
+        }
+        // save the session!
+        synchronized (antiDDoSCookies) {
+            antiDDoSCookies.clear();
+            antiDDoSCookies.putAll(cookies);
+        }
     }
 
     private void waitTime(long timeBefore, final DownloadLink downloadLink) throws PluginException {
@@ -553,7 +720,9 @@ public class TeraFileCo extends PluginForHost {
             int tt = Integer.parseInt(ttt);
             tt -= passedTime;
             logger.info("Waittime detected, waiting " + ttt + " - " + passedTime + " seconds from now on...");
-            if (tt > 0) sleep(tt * 1000l, downloadLink);
+            if (tt > 0) {
+                sleep(tt * 1000l, downloadLink);
+            }
         }
     }
 
@@ -571,8 +740,12 @@ public class TeraFileCo extends PluginForHost {
             for (Form f : workaround) {
                 for (InputField field : f.getInputFields()) {
                     if (key != null && key.equals(field.getKey())) {
-                        if (value == null && field.getValue() == null) return f;
-                        if (value != null && value.equals(field.getValue())) return f;
+                        if (value == null && field.getValue() == null) {
+                            return f;
+                        }
+                        if (value != null && value.equals(field.getValue())) {
+                            return f;
+                        }
                     }
                 }
             }
@@ -585,7 +758,9 @@ public class TeraFileCo extends PluginForHost {
      */
     private void fixFilename(final DownloadLink downloadLink) {
         String oldName = downloadLink.getFinalFileName();
-        if (oldName == null) oldName = downloadLink.getName();
+        if (oldName == null) {
+            oldName = downloadLink.getName();
+        }
         final String serverFilename = Encoding.htmlDecode(getFileNameFromHeader(dl.getConnection()));
         String newExtension = null;
         // some streaming sites do not provide proper file.extension within headers (Content-Disposition or the fail over getURL()).
@@ -600,7 +775,9 @@ public class TeraFileCo extends PluginForHost {
         }
         if (newExtension != null && !oldName.endsWith(newExtension)) {
             String oldExtension = null;
-            if (oldName.contains(".")) oldExtension = oldName.substring(oldName.lastIndexOf("."));
+            if (oldName.contains(".")) {
+                oldExtension = oldName.substring(oldName.lastIndexOf("."));
+            }
             if (oldExtension != null && oldExtension.length() <= 5) {
                 downloadLink.setFinalFileName(oldName.replace(oldExtension, newExtension));
             } else {
@@ -610,7 +787,9 @@ public class TeraFileCo extends PluginForHost {
     }
 
     private String handlePassword(final Form pwform, final DownloadLink thelink) throws PluginException {
-        if (passCode == null) passCode = Plugin.getUserInput("Password?", thelink);
+        if (passCode == null) {
+            passCode = Plugin.getUserInput("Password?", thelink);
+        }
         if (passCode == null || passCode.equals("")) {
             logger.info("User has entered blank password, exiting handlePassword");
             passCode = null;
@@ -641,16 +820,22 @@ public class TeraFileCo extends PluginForHost {
                 logger.warning("Wrong captcha or wrong password!");
                 throw new PluginException(LinkStatus.ERROR_CAPTCHA);
             }
-            if (correctedBR.contains("\">Skipped countdown<")) throw new PluginException(LinkStatus.ERROR_FATAL, "Fatal countdown error (countdown skipped)");
+            if (correctedBR.contains("\">Skipped countdown<")) {
+                throw new PluginException(LinkStatus.ERROR_FATAL, "Fatal countdown error (countdown skipped)");
+            }
         }
         /** Wait time reconnect handling */
         if (new Regex(correctedBR, "(You have reached the download(\\-| )limit|You have to wait)").matches()) {
             // adjust this regex to catch the wait time string for COOKIE_HOST
             String WAIT = new Regex(correctedBR, "((You have reached the download(\\-| )limit|You have to wait)[^<>]+)").getMatch(0);
             String tmphrs = new Regex(WAIT, "\\s+(\\d+)\\s+hours?").getMatch(0);
-            if (tmphrs == null) tmphrs = new Regex(correctedBR, "You have to wait.*?\\s+(\\d+)\\s+hours?").getMatch(0);
+            if (tmphrs == null) {
+                tmphrs = new Regex(correctedBR, "You have to wait.*?\\s+(\\d+)\\s+hours?").getMatch(0);
+            }
             String tmpmin = new Regex(WAIT, "\\s+(\\d+)\\s+minutes?").getMatch(0);
-            if (tmpmin == null) tmpmin = new Regex(correctedBR, "You have to wait.*?\\s+(\\d+)\\s+minutes?").getMatch(0);
+            if (tmpmin == null) {
+                tmpmin = new Regex(correctedBR, "You have to wait.*?\\s+(\\d+)\\s+minutes?").getMatch(0);
+            }
             String tmpsec = new Regex(WAIT, "\\s+(\\d+)\\s+seconds?").getMatch(0);
             String tmpdays = new Regex(WAIT, "\\s+(\\d+)\\s+days?").getMatch(0);
             if (tmphrs == null && tmpmin == null && tmpsec == null && tmpdays == null) {
@@ -658,19 +843,33 @@ public class TeraFileCo extends PluginForHost {
                 throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, null, 60 * 60 * 1000l);
             } else {
                 int minutes = 0, seconds = 0, hours = 0, days = 0;
-                if (tmphrs != null) hours = Integer.parseInt(tmphrs);
-                if (tmpmin != null) minutes = Integer.parseInt(tmpmin);
-                if (tmpsec != null) seconds = Integer.parseInt(tmpsec);
-                if (tmpdays != null) days = Integer.parseInt(tmpdays);
+                if (tmphrs != null) {
+                    hours = Integer.parseInt(tmphrs);
+                }
+                if (tmpmin != null) {
+                    minutes = Integer.parseInt(tmpmin);
+                }
+                if (tmpsec != null) {
+                    seconds = Integer.parseInt(tmpsec);
+                }
+                if (tmpdays != null) {
+                    days = Integer.parseInt(tmpdays);
+                }
                 int waittime = ((days * 24 * 3600) + (3600 * hours) + (60 * minutes) + seconds + 1) * 1000;
                 logger.info("Detected waittime #2, waiting " + waittime + "milliseconds");
                 /** Not enough wait time to reconnect->Wait and try again */
-                if (waittime < 180000) { throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, JDL.L("plugins.hoster.xfilesharingprobasic.allwait", ALLWAIT_SHORT), waittime); }
+                if (waittime < 180000) {
+                    throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, JDL.L("plugins.hoster.xfilesharingprobasic.allwait", ALLWAIT_SHORT), waittime);
+                }
                 throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, null, waittime);
             }
         }
-        if (correctedBR.contains("You're using all download slots for IP")) { throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, null, 10 * 60 * 1001l); }
-        if (correctedBR.contains("Error happened when generating Download Link")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error!", 10 * 60 * 1000l);
+        if (correctedBR.contains("You're using all download slots for IP")) {
+            throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, null, 10 * 60 * 1001l);
+        }
+        if (correctedBR.contains("Error happened when generating Download Link")) {
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error!", 10 * 60 * 1000l);
+        }
         /** Error handling for only-premium links */
         if (new Regex(correctedBR, "( can download files up to |Upgrade your account to download bigger files|>Upgrade your account to download larger files|>The file you requested reached max downloads limit for Free Users|Please Buy Premium To download this file<|This file reached max downloads limit|for Premium Users only)").matches()) {
             String filesizelimit = new Regex(correctedBR, "You can download files up to(.*?)only").getMatch(0);
@@ -680,7 +879,9 @@ public class TeraFileCo extends PluginForHost {
                 try {
                     throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);
                 } catch (final Throwable e) {
-                    if (e instanceof PluginException) throw (PluginException) e;
+                    if (e instanceof PluginException) {
+                        throw (PluginException) e;
+                    }
                 }
                 throw new PluginException(LinkStatus.ERROR_FATAL, PREMIUMONLY1 + " " + filesizelimit);
             } else {
@@ -688,7 +889,9 @@ public class TeraFileCo extends PluginForHost {
                 try {
                     throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);
                 } catch (final Throwable e) {
-                    if (e instanceof PluginException) throw (PluginException) e;
+                    if (e instanceof PluginException) {
+                        throw (PluginException) e;
+                    }
                 }
                 throw new PluginException(LinkStatus.ERROR_FATAL, PREMIUMONLY2);
             }
@@ -697,12 +900,18 @@ public class TeraFileCo extends PluginForHost {
             logger.info("Only downloadable via premium");
             throw new PluginException(LinkStatus.ERROR_FATAL, PREMIUMONLY2);
         }
-        if (new Regex(correctedBR, MAINTENANCE).matches()) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, MAINTENANCEUSERTEXT, 2 * 60 * 60 * 1000l);
+        if (new Regex(correctedBR, MAINTENANCE).matches()) {
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, MAINTENANCEUSERTEXT, 2 * 60 * 60 * 1000l);
+        }
     }
 
     public void checkServerErrors() throws NumberFormatException, PluginException {
-        if (new Regex(correctedBR, Pattern.compile("No file", Pattern.CASE_INSENSITIVE)).matches()) throw new PluginException(LinkStatus.ERROR_FATAL, "Server error");
-        if (new Regex(correctedBR, "(File Not Found|<h1>404 Not Found</h1>)").matches()) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error", 30 * 60 * 1000l);
+        if (new Regex(correctedBR, Pattern.compile("No file", Pattern.CASE_INSENSITIVE)).matches()) {
+            throw new PluginException(LinkStatus.ERROR_FATAL, "Server error");
+        }
+        if (new Regex(correctedBR, "(File Not Found|<h1>404 Not Found</h1>)").matches()) {
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error", 30 * 60 * 1000l);
+        }
     }
 
     @Override
@@ -778,7 +987,9 @@ public class TeraFileCo extends PluginForHost {
                 prepBrowser(br);
                 final Object ret = account.getProperty("cookies", null);
                 boolean acmatch = Encoding.urlEncode(account.getUser()).equals(account.getStringProperty("name", Encoding.urlEncode(account.getUser())));
-                if (acmatch) acmatch = Encoding.urlEncode(account.getPass()).equals(account.getStringProperty("pass", Encoding.urlEncode(account.getPass())));
+                if (acmatch) {
+                    acmatch = Encoding.urlEncode(account.getPass()).equals(account.getStringProperty("pass", Encoding.urlEncode(account.getPass())));
+                }
                 if (acmatch && ret != null && ret instanceof HashMap<?, ?> && !force) {
                     final HashMap<String, String> cookies = (HashMap<String, String>) ret;
                     if (account.isValid()) {
@@ -851,9 +1062,13 @@ public class TeraFileCo extends PluginForHost {
                 dllink = getDllink();
                 if (dllink == null) {
                     Form dlform = br.getFormbyProperty("name", "F1");
-                    if (dlform != null && new Regex(correctedBR, PASSWORDTEXT).matches()) passCode = handlePassword(dlform, downloadLink);
+                    if (dlform != null && new Regex(correctedBR, PASSWORDTEXT).matches()) {
+                        passCode = handlePassword(dlform, downloadLink);
+                    }
                     checkErrors(downloadLink, true);
-                    if (dlform == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                    if (dlform == null) {
+                        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                    }
                     sendForm(dlform);
                     checkErrors(downloadLink, true);
                     dllink = getDllink();
@@ -866,7 +1081,9 @@ public class TeraFileCo extends PluginForHost {
             logger.info("Final downloadlink = " + dllink + " starting the download...");
             dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, ACCOUNT_PREMIUM_RESUME, ACCOUNT_PREMIUM_MAXCHUNKS);
             if (dl.getConnection().getContentType().contains("html")) {
-                if (dl.getConnection().getResponseCode() == 503) throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Connection limit reached, please contact our support!", 5 * 60 * 1000l);
+                if (dl.getConnection().getResponseCode() == 503) {
+                    throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Connection limit reached, please contact our support!", 5 * 60 * 1000l);
+                }
                 logger.warning("The final dllink seems not to be a file!");
                 br.followConnection();
                 correctBR();
@@ -907,7 +1124,9 @@ public class TeraFileCo extends PluginForHost {
                         }
                         if (CrossSystem.isOpenBrowserSupported()) {
                             int result = JOptionPane.showConfirmDialog(jd.gui.swing.jdgui.JDGui.getInstance().getMainFrame(), message, title, JOptionPane.YES_NO_OPTION, JOptionPane.INFORMATION_MESSAGE, null);
-                            if (JOptionPane.OK_OPTION == result) CrossSystem.openURL(new URL("http://update3.jdownloader.org/jdserv/BuyPremiumInterface/redirect?" + domain + "&freedialog"));
+                            if (JOptionPane.OK_OPTION == result) {
+                                CrossSystem.openURL(new URL("http://update3.jdownloader.org/jdserv/BuyPremiumInterface/redirect?" + domain + "&freedialog"));
+                            }
                         }
                     } catch (Throwable e) {
                     }
