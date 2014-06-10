@@ -395,9 +395,9 @@ public class Account extends Property {
     public String toString() {
         AccountInfo ai = this.accinfo;
         if (ai != null) {
-            return user + ":" + pass + " " + enabled + " " + super.toString() + " AccInfo: " + ai.toString();
+            return user + ":" + pass + "@" + hoster + "=" + enabled + " " + super.toString() + " AccInfo: " + ai.toString();
         } else {
-            return user + ":" + pass + " " + enabled + " " + super.toString();
+            return user + ":" + pass + "@" + hoster + "=" + enabled + " " + super.toString();
         }
     }
 

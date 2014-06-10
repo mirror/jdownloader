@@ -673,7 +673,7 @@ public abstract class PluginForHost extends Plugin {
             waitForNextStartAllowed(downloadLink, account);
             if (account != null) {
                 /* with account */
-                if (account.getHoster().equalsIgnoreCase(downloadLink.getHost())) {
+                if (StringUtils.equalsIgnoreCase(account.getHoster(), downloadLink.getHost())) {
                     handlePremium(downloadLink, account);
                 } else {
                     handleMultiHost(downloadLink, account);
@@ -705,6 +705,7 @@ public abstract class PluginForHost extends Plugin {
          * 
          * will update this doc about error handling
          */
+        logger.severe("invalid call to handleMultiHost: " + downloadLink.getName() + ":" + downloadLink.getHost() + " with " + account);
         throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
     }
 
