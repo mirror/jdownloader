@@ -138,12 +138,17 @@ public class LinkSnappyCom extends PluginForHost {
         }
         ac.setStatus(accountType + " valid");
 
-        /* Also check for negative traffic */
-        final String trafficLeft = br.getRegex("\"trafficleft\":((\\-)?[0-9\\.]+)").getMatch(0);
-        if (trafficLeft.contains("-")) {
-            ac.setTrafficLeft(0);
+        /* Find traffic left */
+        if (br.containsHTML("\"trafficleft\":\"unlimited\"")) {
+            ac.setUnlimitedTraffic();
         } else {
-            ac.setTrafficLeft((long) Double.parseDouble(trafficLeft) * 1024 * 1024);
+            final String trafficLeft = br.getRegex("\"trafficleft\":((\\-)?[0-9\\.]+)").getMatch(0);
+            /* Also check for negative traffic */
+            if (trafficLeft.contains("-")) {
+                ac.setTrafficLeft(0);
+            } else {
+                ac.setTrafficLeft((long) Double.parseDouble(trafficLeft) * 1024 * 1024);
+            }
         }
 
         /* now it's time to get all supported hosts */
@@ -182,6 +187,7 @@ public class LinkSnappyCom extends PluginForHost {
         }
     }
 
+    @SuppressWarnings("deprecation")
     private AccountInfo site_fetchAccountInfo(final Account account) throws Exception {
         final AccountInfo ac = new AccountInfo();
         String hosts[] = null;
@@ -216,13 +222,18 @@ public class LinkSnappyCom extends PluginForHost {
         String accountType = "Lifetime Premium Account";
         ac.setStatus(accountType + " valid");
 
-        /* Also check for negative traffic */
-        final String trafficleft = br.getRegex("<strong>Daily traffic left:</strong> ((\\-)?\\d+(\\.\\d+)? [A-Z]{2})").getMatch(0);
-        if (trafficleft != null) {
-            if (trafficleft.contains("-")) {
-                ac.setTrafficLeft(0);
-            } else {
-                ac.setTrafficLeft(SizeFormatter.getSize(trafficleft));
+        /* Find traffic left */
+        if (br.containsHTML("<strong>Daily traffic left:</strong> Unlimited")) {
+            ac.setUnlimitedTraffic();
+        } else {
+            final String trafficleft = br.getRegex("<strong>Daily traffic left:</strong> ((\\-)?\\d+(\\.\\d+)? [A-Z]{2})").getMatch(0);
+            if (trafficleft != null) {
+                /* Also check for negative traffic */
+                if (trafficleft.contains("-")) {
+                    ac.setTrafficLeft(0);
+                } else {
+                    ac.setTrafficLeft(SizeFormatter.getSize(trafficleft));
+                }
             }
         }
 
