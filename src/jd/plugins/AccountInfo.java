@@ -250,7 +250,7 @@ public class AccountInfo extends Property {
         // work around for freakshare.com
         if (multiHostSupport.contains("freakshare.net") || multiHostSupport.contains("freakshare.com")) {
             if (!multiHostSupport.contains("freakshare.net")) {
-                multiHostSupport.add("freakshare.com");
+                multiHostSupport.add("freakshare.net");
             }
             if (!multiHostSupport.contains("freakshare.com")) {
                 multiHostSupport.add("freakshare.com");
