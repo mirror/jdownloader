@@ -505,11 +505,11 @@ public class VKontakteRuHoster extends PluginForHost {
             if (this.FINALLINK == null || this.FINALLINK != null && !this.linkOk(dl, null)) {
                 if (base == null) {
                     this.FINALLINK = new Regex(source, q + "(\\')?:\\[(\"|\\')([^<>\"]*?)(\"|\\')").getMatch(2);
-                    if (this.FINALLINK == null) {
-                        this.FINALLINK = new Regex(source, "\"" + q + "src\":\"(http[^<>\"]*?)\"").getMatch(0);
-                    }
                     if (this.FINALLINK != null) {
                         this.FINALLINK += ".jpg";
+                    } else {
+                        /* Other source has complete links */
+                        this.FINALLINK = new Regex(source, "\"" + q + "src\":\"(http[^<>\"]*?)\"").getMatch(0);
                     }
                 } else {
                     final String linkPart = new Regex(source, q + "(\\')?:\\[(\"|\\')([^<>\"]*?)(\"|\\')").getMatch(2);
@@ -519,6 +519,14 @@ public class VKontakteRuHoster extends PluginForHost {
                 }
             } else {
                 break;
+            }
+            if (this.FINALLINK != null) {
+                /* Correct server to get files that are otherwise inaccessible */
+                final String server = new Regex(this.FINALLINK, "(https?://cs\\d+\\.vk\\.me/)").getMatch(0);
+                final String serv_id = new Regex(this.FINALLINK, "cs(\\d+)\\.vk\\.me/").getMatch(0);
+                if (server != null && serv_id != null) {
+                    this.FINALLINK = this.FINALLINK.replace(server, "https://pp.vk.me/c" + serv_id + "/");
+                }
             }
         }
     }

@@ -256,10 +256,14 @@ public class ARDMediathek extends PluginForHost {
         try {
             /* Find style --> color assignments */
             final HashMap<String, String> styles_color_names = new HashMap<String, String>();
-            final String[][] found_styles = new Regex(xmlContent, "<style id=\"(s\\d+)\" tts:color=\"([a-z]+)\"").getMatches();
-            if (found_styles != null && found_styles.length != 0) {
-                for (final String[] color_info : found_styles) {
-                    styles_color_names.put(color_info[0], color_info[1]);
+            final String[] styles = new Regex(xmlContent, "(<style id=\"s\\d+\".*?/>)").getColumn(0);
+            if (styles != null) {
+                for (final String style_info : styles) {
+                    final String style_id = new Regex(style_info, "<style id=\"(s\\d+)\"").getMatch(0);
+                    final String style_color = new Regex(style_info, "tts:color=\"([a-z]+)\"").getMatch(0);
+                    if (style_id != null && style_color != null) {
+                        styles_color_names.put(style_id, style_color);
+                    }
                 }
             }
             styles_color_names.put("s1", "black");
@@ -293,6 +297,10 @@ public class ARDMediathek extends PluginForHost {
                     text = text.replaceAll("<br />", lineseparator);
                     text = text.replaceAll("</?(p|span)>?", "");
                     text = text.trim();
+                    final String remove_color = new Regex(text, "( ?tts:color=\"[a-z0-9]+\">)").getMatch(0);
+                    if (remove_color != null) {
+                        text = text.replace(remove_color, "");
+                    }
 
                     final String color = styles_color_names.get(style);
                     final String color_code = getColorCode(color);
