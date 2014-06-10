@@ -38,11 +38,13 @@ public class FlashMirrorsCom extends PluginForDecrypt {
         final String parameter = param.toString();
         // For slow servers
         br.setReadTimeout(3 * 60 * 1000);
+        br.setFollowRedirects(true);
         br.setCookie("http://flashmirrors.com/", "rl", "is_set");
+        br.getPage(parameter);
         br.getPage("http://flashmirrors.com/mirrors/" + new Regex(parameter, "flashmirrors\\.com/files/(.+)").getMatch(0));
-        if ("http://flashmirrors.com/".equals(br.getRedirectLocation())) {
+        if ("http://flashmirrors.com/".equals(br.getURL())) {
             br.getPage("http://flashmirrors.com/mirrors/" + new Regex(parameter, "flashmirrors\\.com/files/(.+)").getMatch(0));
-            if ("http://flashmirrors.com/".equals(br.getRedirectLocation())) {
+            if ("http://flashmirrors.com/".equals(br.getURL())) {
                 logger.info("Link offline: " + parameter);
                 return decryptedLinks;
             }
@@ -51,6 +53,8 @@ public class FlashMirrorsCom extends PluginForDecrypt {
             logger.info("Link offline: " + parameter);
             return decryptedLinks;
         }
+
+        br.setFollowRedirects(false);
         final String[] links = br.getRegex("\"link_data\":\"([^<>\"]*?)\"").getColumn(0);
         if (links == null || links.length == 0) {
             if (br.containsHTML("alt=\"Not Available\"")) {
@@ -61,9 +65,11 @@ public class FlashMirrorsCom extends PluginForDecrypt {
             return null;
         }
         for (final String dl : links) {
-            if (dl.equals("")) continue;
+            if (dl.equals("")) {
+                continue;
+            }
             br.getPage("http://flashmirrors.com/download?data=" + dl);
-            final String finallink = br.getRegex("document\\.getElementById\\(\\'ifram\\'\\)\\.src=\\'(http[^<>\"]*?)\\';").getMatch(0);
+            final String finallink = br.getRegex("\\(\\'ifram\\'\\)\\.src=(\\'|\")(http[^<>\"]*?)(\\'|\")").getMatch(1);
             if (finallink == null) {
                 logger.warning("Decrypter broken for link: " + parameter);
                 return null;

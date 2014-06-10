@@ -347,7 +347,7 @@ public class VKontakteRuHoster extends PluginForHost {
         br.setCookie("http://vk.com/", "remixlang", "3");
     }
 
-    @SuppressWarnings("unchecked")
+    @SuppressWarnings("deprecation")
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
         if (link.getBooleanProperty("offline", false)) {
@@ -447,34 +447,10 @@ public class VKontakteRuHoster extends PluginForHost {
             } else {
                 this.FINALLINK = link.getStringProperty("picturedirectlink", null);
                 if (this.FINALLINK == null) {
-                    final String[] qs = { "w_", "z_", "y_", "x_", "m_" };
                     // For photos which are actually offline but their directlinks still exist
                     String directLinks = link.getStringProperty("directlinks", null);
                     if (directLinks != null) {
-                        directLinks = Encoding.htmlDecode(directLinks).replace("\\", "");
-                        /**
-                         * Try to get best quality and test links till a working link is found as it can happen that the found link is
-                         * offline but others are online
-                         */
-                        final String base = new Regex(directLinks, "base(\\')?:(\"|\\')(http://[^<>\"]*?)(\"|\\')").getMatch(2);
-                        for (final String q : qs) {
-                            /* large image */
-                            if (this.FINALLINK == null || this.FINALLINK != null && !this.linkOk(link, null)) {
-                                if (base == null) {
-                                    this.FINALLINK = new Regex(directLinks, q + "(\\')?:\\[(\"|\\')([^<>\"]*?)(\"|\\')").getMatch(2);
-                                    if (this.FINALLINK != null) {
-                                        this.FINALLINK += ".jpg";
-                                    }
-                                } else {
-                                    final String linkPart = new Regex(directLinks, q + "(\\')?:\\[(\"|\\')([^<>\"]*?)(\"|\\')").getMatch(2);
-                                    if (linkPart != null) {
-                                        this.FINALLINK = base + linkPart + ".jpg";
-                                    }
-                                }
-                            } else {
-                                break;
-                            }
-                        }
+                        getHighestQualityPic(link, directLinks);
                     }
                     if (this.FINALLINK == null) {
                         final String photoID = new Regex(link.getDownloadURL(), "vkontaktedecrypted\\.ru/picturelink/((\\-)?\\d+_\\d+)").getMatch(0);
@@ -500,25 +476,8 @@ public class VKontakteRuHoster extends PluginForHost {
                             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
                         }
                         final String correctedBR = this.br.toString().replace("\\", "");
-                        /**
-                         * Try to get best quality and test links till a working link is found as it can happen that the found link is
-                         * offline but others are online
-                         */
-                        for (final String q : qs) {
-                            /* large image */
-                            if (this.FINALLINK == null || this.FINALLINK != null && !this.linkOk(link, null)) {
-                                String base = new Regex(correctedBR, "\"id\":\"" + photoID + "\",\"base\":\"(http://.*?)\"").getMatch(0);
-                                if (base == null) {
-                                    base = "";
-                                }
-                                final String section = new Regex(correctedBR, "(\\{\"id\":\"" + photoID + "\",\"base\":\"" + base + ".*?)((,\\{)|$)").getMatch(0);
-                                if (base != null) {
-                                    this.FINALLINK = new Regex(section, "\"id\":\"" + photoID + "\",\"base\":\"" + base + "\".*?\"" + q + "src\":\"(" + base + ".*?)\"").getMatch(0);
-                                }
-                            } else {
-                                break;
-                            }
-                        }
+                        final String id_source = new Regex(correctedBR, "\\{(\"id\":\"" + photoID + ".*?)\\},\\{\"id\"").getMatch(0);
+                        getHighestQualityPic(link, id_source);
                     }
                 }
                 if (this.FINALLINK == null) {
@@ -529,7 +488,39 @@ public class VKontakteRuHoster extends PluginForHost {
             }
         }
         return AvailableStatus.TRUE;
+    }
 
+    /**
+     * Try to get best quality and test links till a working link is found as it can happen that the found link is offline but others are
+     * online
+     * 
+     * @throws IOException
+     */
+    private void getHighestQualityPic(final DownloadLink dl, String source) throws IOException {
+        source = Encoding.htmlDecode(source).replace("\\", "");
+        final String[] qs = { "w_", "z_", "y_", "x_", "m_" };
+        final String base = new Regex(source, "base(\\')?:(\"|\\')(http://[^<>\"]*?)(\"|\\')").getMatch(2);
+        for (final String q : qs) {
+            /* large image */
+            if (this.FINALLINK == null || this.FINALLINK != null && !this.linkOk(dl, null)) {
+                if (base == null) {
+                    this.FINALLINK = new Regex(source, q + "(\\')?:\\[(\"|\\')([^<>\"]*?)(\"|\\')").getMatch(2);
+                    if (this.FINALLINK == null) {
+                        this.FINALLINK = new Regex(source, "\"" + q + "src\":\"(http[^<>\"]*?)\"").getMatch(0);
+                    }
+                    if (this.FINALLINK != null) {
+                        this.FINALLINK += ".jpg";
+                    }
+                } else {
+                    final String linkPart = new Regex(source, q + "(\\')?:\\[(\"|\\')([^<>\"]*?)(\"|\\')").getMatch(2);
+                    if (linkPart != null) {
+                        this.FINALLINK = base + linkPart + ".jpg";
+                    }
+                }
+            } else {
+                break;
+            }
+        }
     }
 
     @Override

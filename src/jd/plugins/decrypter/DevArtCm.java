@@ -114,7 +114,9 @@ public class DevArtCm extends PluginForDecrypt {
             }
             // find and set pagename
             String pagename = br.getRegex("class=\"folder\\-title\">([^<>\"]*?)</span>").getMatch(0);
-            if (pagename != null) pagename = Encoding.htmlDecode(pagename.trim());
+            if (pagename != null) {
+                pagename = Encoding.htmlDecode(pagename.trim());
+            }
             // set packagename
             String fpName = "";
             if (pagename != null) {
@@ -136,7 +138,9 @@ public class DevArtCm extends PluginForDecrypt {
                 if (offsets != null && offsets.length != 0) {
                     for (final String offset : offsets) {
                         final int offs = Integer.parseInt(offset);
-                        if (offs > maxOffset) maxOffset = offs;
+                        if (offs > maxOffset) {
+                            maxOffset = offs;
+                        }
                     }
                 }
             }
@@ -157,25 +161,37 @@ public class DevArtCm extends PluginForDecrypt {
                 }
                 logger.info("Decrypting offset " + currentOffset + " of " + maxOffset);
                 if (parameter.matches(TYPE_CATPATH_1) && !parameter.contains("offset=")) {
-                    if (counter > 1) br.getPage(parameter + "&offset=" + currentOffset);
+                    if (counter > 1) {
+                        br.getPage(parameter + "&offset=" + currentOffset);
+                    }
                     // catpath links have an unknown end-offset
                     final String nextOffset = br.getRegex("\\?catpath=[A-Za-z0-9%]+\\&amp;offset=(\\d+)\"><span>Next</span></a>").getMatch(0);
-                    if (nextOffset != null) maxOffset = Integer.parseInt(nextOffset);
+                    if (nextOffset != null) {
+                        maxOffset = Integer.parseInt(nextOffset);
+                    }
                 } else if (counter > 1) {
                     br.getPage(parameter + "?offset=" + currentOffset);
                 }
                 final boolean fastcheck = SubConfiguration.getConfig("deviantart.com").getBooleanProperty(FASTLINKCHECK_2, false);
                 final String grab = br.getRegex("<smoothie q=(.*?)(class=\"folderview-bottom\"></div>|div id=\"gallery_pager\")").getMatch(0);
                 String[] artlinks = new Regex(grab, "\"(https?://[\\w\\.\\-]*?deviantart\\.com/art/[\\w\\-]+)\"").getColumn(0);
-                if (artlinks == null || artlinks.length == 0) {
+                if ((artlinks == null || artlinks.length == 0) && counter == 1) {
                     logger.warning("Possible Plugin error, with finding /art/ links: " + parameter);
                     return null;
+                } else if (artlinks == null || artlinks.length == 0) {
+                    /* We went too far - we should already have links */
+                    logger.info("Current offset contains no links --> Stopping");
+                    break;
                 }
                 if (artlinks != null && artlinks.length != 0) {
                     for (final String al : artlinks) {
                         final DownloadLink fina = createDownloadlink(al);
-                        if (fastcheck) fina.setAvailable(true);
-                        if (fp != null) fina._setFilePackage(fp);
+                        if (fastcheck) {
+                            fina.setAvailable(true);
+                        }
+                        if (fp != null) {
+                            fina._setFilePackage(fp);
+                        }
                         try {
                             distribute(fina);
                         } catch (final Throwable e) {
@@ -191,6 +207,10 @@ public class DevArtCm extends PluginForDecrypt {
             if (fpName != null) {
                 fp.addLinks(decryptedLinks);
             }
+        }
+        if (decryptedLinks.size() == 0) {
+            logger.info("Link probably offline: " + parameter);
+            return decryptedLinks;
         }
         return decryptedLinks;
     }

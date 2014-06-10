@@ -38,18 +38,28 @@ public class FileJungleComFolder extends PluginForDecrypt {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String parameter = param.toString();
         br.getPage(parameter);
-        if (br.containsHTML("The URL you entered cannot be found on the server")) return decryptedLinks;
+        if (br.containsHTML("The URL you entered cannot be found on the server")) {
+            return decryptedLinks;
+        }
         String fpName = br.getRegex("class=\"folder\"><span>\\&nbsp;</span>(.*?)</div>").getMatch(0);
-        if (fpName == null) fpName = br.getRegex("Folder name:([^/\"]+)(</b>|\\[/b\\]\\[/url\\])\"").getMatch(0);
+        if (fpName == null) {
+            fpName = br.getRegex("Folder name:([^/\"]+)(</b>|\\[/b\\]\\[/url\\])\"").getMatch(0);
+        }
         String[] links = br.getRegex("<div id=\"file_name\">[\t\n\r ]+<a href=\"(http://.*?)\"").getColumn(0);
-        if (links == null || links.length == 0) links = br.getRegex("\"(http://(www\\.)?filejungle\\.com/f/[A-Za-z0-9]+)\"").getColumn(0);
         if (links == null || links.length == 0) {
-            if (fpName != null) return decryptedLinks;
+            links = br.getRegex("\"(http://(www\\.)?filejungle\\.com/f/[A-Za-z0-9]+)\"").getColumn(0);
+        }
+        if (links == null || links.length == 0) {
+            if (fpName != null) {
+                logger.info("Link offline: " + parameter);
+                return decryptedLinks;
+            }
             logger.warning("Decrypter broken for link: " + parameter);
             return null;
         }
-        for (String dl : links)
+        for (String dl : links) {
             decryptedLinks.add(createDownloadlink(dl));
+        }
         if (fpName != null) {
             FilePackage fp = FilePackage.getInstance();
             fp.setName(Encoding.htmlDecode(fpName.trim()));

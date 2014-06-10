@@ -41,10 +41,12 @@ public class DiskYandexNetFolder extends PluginForDecrypt {
         super(wrapper);
     }
 
-    private final String primaryURLs  = "https?://(www\\.)?((mail|disk)\\.)?yandex\\.(net|com|com\\.tr|ru|ua)/(disk/)?public/(\\?hash=[A-Za-z0-9%/\\+=\\&]+|#[A-Za-z0-9%\\/+=]+)";
-    private final String shortURLs    = "https?://(www\\.)?(yadi\\.sk|yadisk\\.cc)/d/[A-Za-z0-9\\-_]+";
+    private final String        primaryURLs  = "https?://(www\\.)?((mail|disk)\\.)?yandex\\.(net|com|com\\.tr|ru|ua)/(disk/)?public/(\\?hash=[A-Za-z0-9%/\\+=\\&]+|#[A-Za-z0-9%\\/+=]+)";
+    private final String        shortURLs    = "https?://(www\\.)?(yadi\\.sk|yadisk\\.cc)/d/[A-Za-z0-9\\-_]+";
 
-    private final String DOWNLOAD_ZIP = "DOWNLOAD_ZIP_2";
+    private final String        DOWNLOAD_ZIP = "DOWNLOAD_ZIP_2";
+
+    private static final String OFFLINE_TEXT = "<title>The file you are looking for could not be found\\.|>Nothing found</span>|<title>Nothing found \\— Yandex\\.Disk</title>|_file\\-blocked\"";
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         br.setFollowRedirects(true);
@@ -55,9 +57,10 @@ public class DiskYandexNetFolder extends PluginForDecrypt {
         String hashID = null;
         if (parameter.matches(shortURLs)) {
             br.getPage(parameter);
-            if (br.containsHTML("This link was removed or not found")) {
+            if (br.containsHTML(OFFLINE_TEXT)) {
                 main.setAvailable(false);
                 main.setProperty("offline", true);
+                main.setFinalFileName(new Regex(parameter, "([A-Za-z0-9\\-_]+)$").getMatch(0));
                 decryptedLinks.add(main);
                 return decryptedLinks;
             }
@@ -90,9 +93,10 @@ public class DiskYandexNetFolder extends PluginForDecrypt {
         main.setProperty("mainlink", parameter);
         main.setName(hashID);
 
-        if (br.containsHTML("<title>The file you are looking for could not be found\\.|>Nothing found</span>|<title>Nothing found \\— Yandex\\.Disk</title>|_file\\-blocked\"")) {
+        if (br.containsHTML(OFFLINE_TEXT)) {
             main.setAvailable(false);
             main.setProperty("offline", true);
+            main.setFinalFileName(new Regex(parameter, "([A-Za-z0-9\\-_]+)$").getMatch(0));
             decryptedLinks.add(main);
             return decryptedLinks;
         }
