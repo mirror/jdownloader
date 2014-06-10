@@ -639,10 +639,10 @@ public abstract class PackageControllerTableModel<PackageType extends AbstractPa
             }
         } else {
             if (sortOrderIdentifier == null || sortOrderIdentifier.equals(SORT_ORIGINAL)) {
-                return ExtColumn.SORT_ASC;
-
-            } else if (sortOrderIdentifier.equals(ExtColumn.SORT_ASC)) {
                 return ExtColumn.SORT_DESC;
+
+            } else if (sortOrderIdentifier.equals(ExtColumn.SORT_DESC)) {
+                return ExtColumn.SORT_ASC;
             } else {
                 return SORT_ORIGINAL;
             }

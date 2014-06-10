@@ -42,10 +42,14 @@ public class SizeColumn extends ExtColumn<AbstractNode> {
 
     }
 
+    @Override
+    protected String getNextSortIdentifier() {
+        return super.getNextSortIdentifier();
+    }
+
     public SizeColumn() {
         super(_GUI._.SizeColumn_SizeColumn(), null);
         this.sizeRenderer = new RenderLabel();
-
         this.sizeRenderer.setHorizontalAlignment(SwingConstants.RIGHT);
         this.countRenderer = new RenderLabel();
         this.zeroString = _GUI._.SizeColumn_getSizeString_zero();
@@ -59,6 +63,7 @@ public class SizeColumn extends ExtColumn<AbstractNode> {
             renderer.add(sizeRenderer, "spanx,pushx,growx");
         }
         this.setRowSorter(new ExtDefaultRowSorter<AbstractNode>() {
+
             /**
              * sorts the icon by hashcode
              */
