@@ -49,7 +49,7 @@ public class MultiShareCz extends PluginForHost {
     private Browser prepBrowser(Browser prepBr) {
         // define custom browser headers and language settings.
         // prepBr.getHeaders().put("Accept-Language", "en-gb, en;q=0.9");
-        prepBr.getHeaders().put("User-Agent", "JDownloader");
+        // prepBr.getHeaders().put("User-Agent", "JDownloader");
         // prepBr.setCookie(this.getHost(), "lang", "en");
         prepBr.setCustomCharset("utf-8");
         return prepBr;
