@@ -46,10 +46,11 @@ public class FileHippoCom extends PluginForHost {
             final String linkpart = new Regex(link.getDownloadURL(), "/download_([^<>/\"]+)").getMatch(0);
             link.setUrlDownload("http://www.filehippo.com/download_" + linkpart + "/tech/" + numbers + "/");
         } else {
-            if (!link.getDownloadURL().endsWith("/"))
+            if (!link.getDownloadURL().endsWith("/")) {
                 link.setUrlDownload(link.getDownloadURL() + "/tech/");
-            else
+            } else {
                 link.setUrlDownload(link.getDownloadURL() + "tech/");
+            }
         }
     }
 
@@ -69,10 +70,14 @@ public class FileHippoCom extends PluginForHost {
         br.setCookie("http://filehippo.com/", "FH_PreferredCulture", "en-US");
         br.getPage(link.getDownloadURL());
         if (br.getRedirectLocation() != null) {
-            if (br.getRedirectLocation().equals("http://www.filehippo.com/")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            if (br.getRedirectLocation().equals("http://www.filehippo.com/")) {
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            }
             br.getPage(br.getRedirectLocation());
         }
-        if (br.containsHTML(FILENOTFOUND) || link.getDownloadURL().contains("/history")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (br.containsHTML(FILENOTFOUND) || link.getDownloadURL().contains("/history")) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
         String realLink = br.getRegex("id=\"_ctl0_contentMain_lblPath\"> <strong>\\&#187;</strong>.*?<a href=\"(/download_.*?/\\d+/)\">").getMatch(0);
         // If the user adds a wrong link we have to find the right one here and
         // set it
@@ -80,21 +85,35 @@ public class FileHippoCom extends PluginForHost {
             realLink = "http://www.filehippo.com" + realLink + "tech/";
             link.setUrlDownload(realLink);
             br.getPage(link.getDownloadURL());
-            if (br.containsHTML(FILENOTFOUND) || link.getDownloadURL().contains("/history")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            if (br.containsHTML(FILENOTFOUND) || link.getDownloadURL().contains("/history")) {
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            }
         }
         String filename = br.getRegex("<b>Filename:</b></td><td>(.*?)</td>").getMatch(0);
-        if (filename == null) filename = br.getRegex("<title>Download (.*?) \\- Technical Details \\- FileHippo\\.com</title>").getMatch(0);
-        if (filename == null) filename = br.getRegex("title: \\'Download (.*?) \\- Technical Details \\- FileHippo\\.com\\'").getMatch(0);
-        if (filename == null) filename = br.getRegex("<h1><span itemprop=\"name\">([^<>\"]*?)</span></h1>").getMatch(0);
+        if (filename == null) {
+            filename = br.getRegex("<title>Download (.*?) \\- Technical Details \\- FileHippo\\.com</title>").getMatch(0);
+        }
+        if (filename == null) {
+            filename = br.getRegex("title: \\'Download (.*?) \\- Technical Details \\- FileHippo\\.com\\'").getMatch(0);
+        }
+        if (filename == null) {
+            filename = br.getRegex("<span itemprop=\"name\">([^<>\"]*?)</span>").getMatch(0);
+        }
+        if (filename == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         String filesize = br.getRegex("\\(([0-9,]+ bytes)\\)").getMatch(0);
         if (filesize == null) {
-            filesize = br.getRegex("<b>Download<br/>This Version</b></a><br/><b>(.*?)</b><div").getMatch(0);
+            filesize = br.getRegex("Download This Version\\s+<span class=\"normal\">\\(([^<>]*?)\\)<").getMatch(0);
         }
-        if (filename == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         String md5 = br.getRegex("MD5 Checksum:</b></td><td>(.*?)</td>").getMatch(0);
-        if (md5 != null) link.setMD5Hash(md5);
+        if (md5 != null) {
+            link.setMD5Hash(md5);
+        }
         link.setName(filename.trim());
-        if (filesize != null) link.setDownloadSize(SizeFormatter.getSize(filesize.replace(",", "")));
+        if (filesize != null) {
+            link.setDownloadSize(SizeFormatter.getSize(filesize.replace(",", "")));
+        }
         return AvailableStatus.TRUE;
     }
 
@@ -103,7 +122,9 @@ public class FileHippoCom extends PluginForHost {
         requestFileInformation(downloadLink);
         br.setFollowRedirects(false);
         String normalPage = br.getRegex("id=\"dlbox\">[\n\r\t ]+<a href=\"(/.*?)\"").getMatch(0);
-        if (normalPage == null) normalPage = br.getRegex("download\\-link button\\-link active long\" href=\"(/download_[^<>\"]*?)\"").getMatch(0);
+        if (normalPage == null) {
+            normalPage = br.getRegex("download\\-link button\\-link active long\" href=\"(/download_[^<>\"]*?)\"").getMatch(0);
+        }
         final String mirrorPage = br.getRegex("table id=\"dlboxinner\"[^\n\r\t]*?<a href=\"(/.*?)\"").getMatch(0);
         final String pages[] = new String[] { mirrorPage, normalPage };
         for (String page : pages) {
@@ -118,12 +139,16 @@ public class FileHippoCom extends PluginForHost {
                     dllink = br.getRegex("(/download/file/[a-z0-9]+(/)?)\"").getMatch(0);
                 }
             }
-            if (dllink == null) continue;
+            if (dllink == null) {
+                continue;
+            }
             dllink = MAINPAGE + dllink;
             dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 1);
             if (dl.getConnection().getContentType().contains("html")) {
                 br.followConnection();
-                if (!br.getURL().contains("filehippo.com")) throw new PluginException(LinkStatus.ERROR_FATAL, "Download links to external site");
+                if (!br.getURL().contains("filehippo.com")) {
+                    throw new PluginException(LinkStatus.ERROR_FATAL, "Download links to external site");
+                }
                 continue;
             }
             downloadLink.setFinalFileName(getFileNameFromHeader(dl.getConnection()));
