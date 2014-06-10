@@ -26,6 +26,7 @@ import jd.http.Browser;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.plugins.Account;
+import jd.plugins.Account.AccountType;
 import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
@@ -101,37 +102,25 @@ public class SimplyDebridCom extends PluginForHost {
         if (!accInfo[0].equalsIgnoreCase("1")) {
             // account is not a premium account
             ac.setStatus("Account is not a premium account.");
+            account.setType(AccountType.FREE);
             account.setValid(false);
             return ac;
         }
+        account.setType(AccountType.PREMIUM);
+
         // we have a valid premium account - let's check the expire date:
         ac.setValidUntil(TimeFormatter.getMilliSeconds(accInfo[2], "dd/MM/yyyy", null));
 
         // now it's time to get all supported hosts
         page = br.getPage("http://simply-debrid.com/api.php?list=1");
-        hosts = (new Regex(page, "([^;]+)")).getColumn(0);
+        hosts = new Regex(page, "([^;]+)").getColumn(0);
         ArrayList<String> supportedHosts = new ArrayList<String>();
         if (hosts != null) {
             supportedHosts = new ArrayList<String>(Arrays.asList(hosts));
         }
-        if (supportedHosts.contains("uploaded.net") || supportedHosts.contains("ul.to") || supportedHosts.contains("uploaded.to")) {
-            if (!supportedHosts.contains("uploaded.net")) {
-                supportedHosts.add("uploaded.net");
-            }
-            if (!supportedHosts.contains("ul.to")) {
-                supportedHosts.add("ul.to");
-            }
-            if (!supportedHosts.contains("uploaded.to")) {
-                supportedHosts.add("uploaded.to");
-            }
-        }
         account.setValid(true);
-        if (supportedHosts.size() == 0) {
-            ac.setStatus("Account valid: 0 Hosts via simply-debrid.com available");
-        } else {
-            ac.setStatus("Account valid: " + supportedHosts.size() + " Hosts via simply-debrid.com available");
-            ac.setProperty("multiHostSupport", supportedHosts);
-        }
+        ac.setStatus("Premium Account");
+        ac.setMultiHostSupport(supportedHosts);
         return ac;
     }
 
@@ -184,7 +173,9 @@ public class SimplyDebridCom extends PluginForHost {
         }
 
         // crazy API
-        if (dllink.contains("Erreur")) dllink = new Regex(dllink, "(.*?)Erreur").getMatch(0);
+        if (dllink.contains("Erreur")) {
+            dllink = new Regex(dllink, "(.*?)Erreur").getMatch(0);
+        }
         if (!(dllink.startsWith("http://") || dllink.startsWith("https://")) || dllink.endsWith("/Invalid link") || dllink.contains("php_network_getaddresses: getaddrinfo failed: Name or service not known")) {
             if (dllink.contains("UNDER MAINTENANCE")) {
                 // disable host for 30min
@@ -206,7 +197,9 @@ public class SimplyDebridCom extends PluginForHost {
                 String msg = "(" + (link.getLinkStatus().getRetryCount() + 1) + "/" + 3 + ")";
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Retry in few secs" + msg, 20 * 1000l);
             }
-            if (br.containsHTML("SQLSTATE")) { throw new PluginException(LinkStatus.ERROR_RETRY, "SQL server error"); }
+            if (br.containsHTML("SQLSTATE")) {
+                throw new PluginException(LinkStatus.ERROR_RETRY, "SQL server error");
+            }
             logger.info("Error parsing Simply-Debrid download response: " + page);
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
@@ -243,7 +236,9 @@ public class SimplyDebridCom extends PluginForHost {
                 logger.info("Possible simply-debrid.com bug, NO JDownloader bug!");
                 logger.info("Directlink: " + dllink);
             }
-            if (br.containsHTML("php_network_getaddresses: getaddrinfo failed: No address associated with hostname")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, 5 * 60 * 1000l);
+            if (br.containsHTML("php_network_getaddresses: getaddrinfo failed: No address associated with hostname")) {
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, 5 * 60 * 1000l);
+            }
         }
         if (!dl.getConnection().isContentDisposition() && !StringUtils.contains(dl.getConnection().getContentType(), "application/")) {
             br.followConnection();
@@ -265,7 +260,9 @@ public class SimplyDebridCom extends PluginForHost {
         showMessage(link, "Phase 3/3: Download...");
         if (!this.dl.startDownload()) {
             try {
-                if (dl.externalDownloadStop()) return;
+                if (dl.externalDownloadStop()) {
+                    return;
+                }
             } catch (final Throwable e) {
             }
             /* unknown error, we disable multiple chunks */
@@ -291,7 +288,9 @@ public class SimplyDebridCom extends PluginForHost {
     }
 
     private void tempUnavailableHoster(Account account, DownloadLink downloadLink, long timeout) throws PluginException {
-        if (downloadLink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, "Unable to handle this errorcode!");
+        if (downloadLink == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, "Unable to handle this errorcode!");
+        }
         synchronized (hostUnavailableMap) {
             HashMap<String, Long> unavailableMap = hostUnavailableMap.get(account);
             if (unavailableMap == null) {
@@ -314,7 +313,9 @@ public class SimplyDebridCom extends PluginForHost {
                     return false;
                 } else if (lastUnavailable != null) {
                     unavailableMap.remove(downloadLink.getHost());
-                    if (unavailableMap.size() == 0) hostUnavailableMap.remove(account);
+                    if (unavailableMap.size() == 0) {
+                        hostUnavailableMap.remove(account);
+                    }
                 }
             }
         }

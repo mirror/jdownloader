@@ -19,7 +19,6 @@ package jd.plugins.hoster;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.concurrent.atomic.AtomicInteger;
 
 import jd.PluginWrapper;
 import jd.config.Property;
@@ -46,8 +45,6 @@ public class OverLoadMe extends PluginForHost {
     private static final String                            APIKEY             = "MDAwMS05YWRhMzI5Y2Y1ODk0ZjM2MGQxM2FjM2I5MTU4OGExYjUzMGE3NmVlNDg4MTQtNTMwYTc2ZWUtNGMwMS0zYWIwMTJlYw==";
     private int                                            STATUSCODE         = 0;
     private static final String                            NICE_HOSTproperty  = NICE_HOST.replaceAll("(\\.|\\-)", "");
-
-    private static AtomicInteger                           maxPrem            = new AtomicInteger(1);
 
     public OverLoadMe(PluginWrapper wrapper) {
         super(wrapper);
@@ -90,7 +87,9 @@ public class OverLoadMe extends PluginForHost {
                     return false;
                 } else if (lastUnavailable != null) {
                     unavailableMap.remove(downloadLink.getHost());
-                    if (unavailableMap.size() == 0) hostUnavailableMap.remove(account);
+                    if (unavailableMap.size() == 0) {
+                        hostUnavailableMap.remove(account);
+                    }
                 }
             }
         }
@@ -103,11 +102,6 @@ public class OverLoadMe extends PluginForHost {
     }
 
     @Override
-    public int getMaxSimultanFreeDownloadNum() {
-        return 0;
-    }
-
-    @Override
     public void handlePremium(DownloadLink link, Account account) throws Exception {
         /* handle premium should never be called */
         throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -117,7 +111,9 @@ public class OverLoadMe extends PluginForHost {
         /* we want to follow redirects in final stage */
         br.setFollowRedirects(true);
         int maxChunks = (int) account.getLongProperty("chunklimit", 1);
-        if (link.getBooleanProperty(NOCHUNKS, false)) maxChunks = 1;
+        if (link.getBooleanProperty(NOCHUNKS, false)) {
+            maxChunks = 1;
+        }
         link.setProperty(NICE_HOSTproperty + "directlink", dllink);
         dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, true, maxChunks);
         if (dl.getConnection().getContentType().contains("html")) {
@@ -151,7 +147,9 @@ public class OverLoadMe extends PluginForHost {
         try {
             if (!this.dl.startDownload()) {
                 try {
-                    if (dl.externalDownloadStop()) return;
+                    if (dl.externalDownloadStop()) {
+                        return;
+                    }
                 } catch (final Throwable e) {
                 }
                 logger.info("Download failed -> Maybe re-trying with only 1 chunk");
@@ -252,8 +250,6 @@ public class OverLoadMe extends PluginForHost {
 
     @Override
     public AccountInfo fetchAccountInfo(final Account account) throws Exception {
-        /* reset maxPrem workaround on every fetchaccount info */
-        maxPrem.set(1);
         this.br = newBrowser();
         final AccountInfo ai = new AccountInfo();
         accessAPISafe(account, null, DOMAIN + "account.php?user=" + Encoding.urlEncode(account.getUser()) + "&auth=" + Encoding.urlEncode(account.getPass()));
@@ -284,36 +280,30 @@ public class OverLoadMe extends PluginForHost {
             ai.setUnlimitedTraffic();
         }
         long maxchunks = Integer.parseInt(getJson("chunklimit"));
-        if (maxchunks <= 0)
+        if (maxchunks <= 0) {
             maxchunks = 1;
-        else if (maxchunks > 20) maxchunks = 20;
-        if (maxchunks > 1) maxchunks = -maxchunks;
+        } else if (maxchunks > 20) {
+            maxchunks = 20;
+        }
+        if (maxchunks > 1) {
+            maxchunks = -maxchunks;
+        }
         account.setProperty("chunklimit", maxchunks);
         int simultandls = Integer.parseInt(getJson("downloadlimit"));
-        if (simultandls <= 0)
+        if (simultandls <= 0) {
             simultandls = 1;
-        else if (simultandls > 20) simultandls = 20;
+        } else if (simultandls > 20) {
+            simultandls = 20;
+        }
         account.setMaxSimultanDownloads(simultandls);
-        maxPrem.set(simultandls);
         accessAPISafe(account, null, DOMAIN + "hoster.php?auth=" + Encoding.Base64Decode(APIKEY));
         final ArrayList<String> supportedHosts = new ArrayList<String>();
         final String[] hostDomains = br.getRegex("\"([^<>\"]*?)\"").getColumn(0);
         for (final String domain : hostDomains) {
             supportedHosts.add(domain);
         }
-        if (supportedHosts.contains("uploaded.net") || supportedHosts.contains("ul.to") || supportedHosts.contains("uploaded.to")) {
-            if (!supportedHosts.contains("uploaded.net")) {
-                supportedHosts.add("uploaded.net");
-            }
-            if (!supportedHosts.contains("ul.to")) {
-                supportedHosts.add("ul.to");
-            }
-            if (!supportedHosts.contains("uploaded.to")) {
-                supportedHosts.add("uploaded.to");
-            }
-        }
+        ai.setMultiHostSupport(supportedHosts);
         ai.setStatus("Account valid");
-        ai.setProperty("multiHostSupport", supportedHosts);
         return ai;
     }
 
@@ -323,12 +313,16 @@ public class OverLoadMe extends PluginForHost {
 
     private String getJson(final String parameter) {
         String result = br.getRegex("\"" + parameter + "\":((\\-)?\\d+)").getMatch(0);
-        if (result == null) result = br.getRegex("\"" + parameter + "\":\"([^<>\"]*?)\"").getMatch(0);
+        if (result == null) {
+            result = br.getRegex("\"" + parameter + "\":\"([^<>\"]*?)\"").getMatch(0);
+        }
         return result;
     }
 
     private void tempUnavailableHoster(final Account account, final DownloadLink downloadLink, final long timeout) throws PluginException {
-        if (downloadLink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, "Unable to handle this errorcode!");
+        if (downloadLink == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, "Unable to handle this errorcode!");
+        }
         synchronized (hostUnavailableMap) {
             HashMap<String, Long> unavailableMap = hostUnavailableMap.get(account);
             if (unavailableMap == null) {
@@ -483,11 +477,6 @@ public class OverLoadMe extends PluginForHost {
             logger.info(NICE_HOST + ": Exception: statusCode: " + STATUSCODE + " statusMessage: " + statusMessage);
             throw e;
         }
-    }
-
-    @Override
-    public int getMaxSimultanPremiumDownloadNum() {
-        return maxPrem.get();
     }
 
     @Override

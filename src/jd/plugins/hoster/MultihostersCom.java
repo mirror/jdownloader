@@ -75,7 +75,9 @@ public class MultihostersCom extends PluginForHost {
                 ac.setTrafficLeft(SizeFormatter.getSize(AvailableTodayTraffic + "MiB"));
             }
 
-            if (ac.isExpired()) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+            if (ac.isExpired()) {
+                throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+            }
             trafficLeft = Long.parseLong(AvailableTodayTraffic);
             hosts = br.getPage("http://www.multihosters.com/jDownloader.ashx?cmd=gethosters");
 
@@ -97,14 +99,16 @@ public class MultihostersCom extends PluginForHost {
                 String hoster[] = new Regex(hosts, "(.*?)(,|$)").getColumn(0);
                 if (hoster != null) {
                     for (String host : hoster) {
-                        if (host == null || host.length() == 0) continue;
+                        if (host == null || host.length() == 0) {
+                            continue;
+                        }
                         supportedHosts.add(host.trim());
                     }
                 }
             }
             account.setValid(true);
+            ac.setMultiHostSupport(supportedHosts);
             ac.setStatus("Account valid");
-            ac.setProperty("multiHostSupport", supportedHosts);
         }
         return ac;
     }
@@ -196,7 +200,9 @@ public class MultihostersCom extends PluginForHost {
     }
 
     private void tempUnavailableHoster(Account account, DownloadLink downloadLink, long timeout) throws PluginException {
-        if (downloadLink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, "Unable to handle this errorcode!");
+        if (downloadLink == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, "Unable to handle this errorcode!");
+        }
         synchronized (hostUnavailableMap) {
             HashMap<String, Long> unavailableMap = hostUnavailableMap.get(account);
             if (unavailableMap == null) {
@@ -219,7 +225,9 @@ public class MultihostersCom extends PluginForHost {
                     return false;
                 } else if (lastUnavailable != null) {
                     unavailableMap.remove(downloadLink.getHost());
-                    if (unavailableMap.size() == 0) hostUnavailableMap.remove(account);
+                    if (unavailableMap.size() == 0) {
+                        hostUnavailableMap.remove(account);
+                    }
                 }
             }
         }

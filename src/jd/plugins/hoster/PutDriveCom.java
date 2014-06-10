@@ -20,7 +20,6 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Locale;
-import java.util.concurrent.atomic.AtomicInteger;
 
 import jd.PluginWrapper;
 import jd.config.Property;
@@ -29,6 +28,7 @@ import jd.http.Browser.BrowserException;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
 import jd.plugins.Account;
+import jd.plugins.Account.AccountType;
 import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
@@ -44,7 +44,6 @@ public class PutDriveCom extends PluginForHost {
 
     // Based on API: http://easyfiles.pl/api_dokumentacja.php?api_en=1
     private static HashMap<Account, HashMap<String, Long>> hostUnavailableMap = new HashMap<Account, HashMap<String, Long>>();
-    private static AtomicInteger                           maxPrem            = new AtomicInteger(20);
     private static final String                            NOCHUNKS           = "NOCHUNKS";
 
     private static final String                            NICE_HOST          = "putdrive.com";
@@ -61,11 +60,6 @@ public class PutDriveCom extends PluginForHost {
     @Override
     public String getAGBLink() {
         return "http://api.putdrive.com/Terms.aspx";
-    }
-
-    @Override
-    public int getMaxSimultanDownload(DownloadLink link, Account account) {
-        return maxPrem.get();
     }
 
     private Browser newBrowser() {
@@ -87,13 +81,10 @@ public class PutDriveCom extends PluginForHost {
         final AccountInfo ac = new AccountInfo();
         api_loginJson(account);
         // login(account);
-
-        ac.setProperty("multiHostSupport", Property.NULL);
         final String trafficleft = getJson("ExtraTrafficLeftInMBytes");
         ac.setTrafficLeft(Long.parseLong(trafficleft) * 1024 * 1024);
         final String expiredate = getJson("ExpirationDate");
         ac.setValidUntil(TimeFormatter.getMilliSeconds(expiredate, "MM/dd/yyyy hh:mm:ss", Locale.ENGLISH));
-        ac.setStatus("Premium User");
         // now let's get a list of all supported hosts:
         br.getPage("http://putdrive.com/jdownloader.ashx?cmd=gethosters");
         hosts = br.toString().toLowerCase().split(",");
@@ -103,24 +94,11 @@ public class PutDriveCom extends PluginForHost {
                 supportedHosts.add(host.trim());
             }
         }
-        if (supportedHosts.contains("uploaded.net") || supportedHosts.contains("ul.to") || supportedHosts.contains("uploaded.to")) {
-            if (!supportedHosts.contains("uploaded.net")) {
-                supportedHosts.add("uploaded.net");
-            }
-            if (!supportedHosts.contains("ul.to")) {
-                supportedHosts.add("ul.to");
-            }
-            if (!supportedHosts.contains("uploaded.to")) {
-                supportedHosts.add("uploaded.to");
-            }
-        }
-
-        if (supportedHosts.size() == 0) {
-            ac.setStatus("Account valid: 0 Hosts via " + NICE_HOST + " available");
-        } else {
-            ac.setStatus("Account valid: " + supportedHosts.size() + " Hosts via " + NICE_HOST + " available");
-            ac.setProperty("multiHostSupport", supportedHosts);
-        }
+        account.setType(AccountType.PREMIUM);
+        account.setMaxSimultanDownloads(-1);
+        account.setConcurrentUsePossible(true);
+        ac.setMultiHostSupport(supportedHosts);
+        ac.setStatus("Premium User");
         return ac;
     }
 
@@ -141,7 +119,9 @@ public class PutDriveCom extends PluginForHost {
                 failed = true;
             }
         }
-        if (br.containsHTML("\"CustomerID\":\"\\-1\"")) failed = true;
+        if (br.containsHTML("\"CustomerID\":\"\\-1\"")) {
+            failed = true;
+        }
         if (failed) {
             final String lang = System.getProperty("user.language");
             if ("de".equalsIgnoreCase(lang)) {
@@ -172,7 +152,9 @@ public class PutDriveCom extends PluginForHost {
                 failed = true;
             }
         }
-        if (br.containsHTML("\"CustomerID\":\"\\-1\"")) failed = true;
+        if (br.containsHTML("\"CustomerID\":\"\\-1\"")) {
+            failed = true;
+        }
         if (failed) {
             final String lang = System.getProperty("user.language");
             if ("de".equalsIgnoreCase(lang)) {
@@ -185,7 +167,9 @@ public class PutDriveCom extends PluginForHost {
 
     private String getJson(final String parameter) {
         String result = br.getRegex("\"" + parameter + "\":(\\d+)").getMatch(0);
-        if (result == null) result = br.getRegex("\"" + parameter + "\":\"([^<>\"]*?)\"").getMatch(0);
+        if (result == null) {
+            result = br.getRegex("\"" + parameter + "\":\"([^<>\"]*?)\"").getMatch(0);
+        }
         return result;
     }
 
@@ -270,7 +254,9 @@ public class PutDriveCom extends PluginForHost {
         } catch (final Throwable charge_error) {
             charge_ok = false;
         }
-        if (charge_ok && !br.containsHTML("<ErrorCode>None</ErrorCode>")) charge_ok = false;
+        if (charge_ok && !br.containsHTML("<ErrorCode>None</ErrorCode>")) {
+            charge_ok = false;
+        }
         if (charge_ok) {
             logger.info(NICE_HOST + ": Traffic charged successfully");
         } else {
@@ -279,7 +265,9 @@ public class PutDriveCom extends PluginForHost {
         try {
             if (!this.dl.startDownload()) {
                 try {
-                    if (dl.externalDownloadStop()) return;
+                    if (dl.externalDownloadStop()) {
+                        return;
+                    }
                 } catch (final Throwable e) {
                 }
                 /* unknown error, we disable multiple chunks */
@@ -328,7 +316,9 @@ public class PutDriveCom extends PluginForHost {
     }
 
     private void tempUnavailableHoster(final Account account, final DownloadLink downloadLink, final long timeout) throws PluginException {
-        if (downloadLink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, "Unable to handle this errorcode!");
+        if (downloadLink == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, "Unable to handle this errorcode!");
+        }
         synchronized (hostUnavailableMap) {
             HashMap<String, Long> unavailableMap = hostUnavailableMap.get(account);
             if (unavailableMap == null) {
@@ -388,7 +378,9 @@ public class PutDriveCom extends PluginForHost {
                     return false;
                 } else if (lastUnavailable != null) {
                     unavailableMap.remove(downloadLink.getHost());
-                    if (unavailableMap.size() == 0) hostUnavailableMap.remove(account);
+                    if (unavailableMap.size() == 0) {
+                        hostUnavailableMap.remove(account);
+                    }
                 }
             }
         }

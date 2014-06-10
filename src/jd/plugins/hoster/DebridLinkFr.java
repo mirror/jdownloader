@@ -121,7 +121,7 @@ public class DebridLinkFr extends PluginForHost {
                 }
             }
         }
-        ac.setProperty("multiHostSupport", supportedHosts);
+        ac.setMultiHostSupport(supportedHosts);
         // end of multihoster array
         return ac;
     }

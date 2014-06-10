@@ -81,7 +81,9 @@ public class RehostTo extends PluginForHost {
                     return false;
                 } else if (lastUnavailable != null) {
                     unavailableMap.remove(downloadLink.getHost());
-                    if (unavailableMap.size() == 0) hostUnavailableMap.remove(account);
+                    if (unavailableMap.size() == 0) {
+                        hostUnavailableMap.remove(account);
+                    }
                 }
             }
         }
@@ -136,8 +138,12 @@ public class RehostTo extends PluginForHost {
         /* request Download */
         br.postPage(mProt + mName + "/process_download.php", "user=cookie&pass=" + account.getStringProperty("long_ses") + "&dl=" + Encoding.urlEncode(link.getDownloadURL()));
         handleAPIErrors(br, account, link);
-        if (br.getRedirectLocation() != null) dllink = br.getRedirectLocation();
-        if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (br.getRedirectLocation() != null) {
+            dllink = br.getRedirectLocation();
+        }
+        if (dllink == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         showMessage(link, "Task 2: Download begins!");
         handleDL(account, link, dllink);
     }
@@ -186,7 +192,9 @@ public class RehostTo extends PluginForHost {
             // assume it's not a valid account
             throw new PluginException(LinkStatus.ERROR_PREMIUM, "Login credintials incorrect", PluginException.VALUE_ID_PREMIUM_DISABLE);
         }
-        if (br.containsHTML("type\":\"free\"")) { throw new PluginException(LinkStatus.ERROR_PREMIUM, "Free accounts are not supported", PluginException.VALUE_ID_PREMIUM_DISABLE); }
+        if (br.containsHTML("type\":\"free\"")) {
+            throw new PluginException(LinkStatus.ERROR_PREMIUM, "Free accounts are not supported", PluginException.VALUE_ID_PREMIUM_DISABLE);
+        }
     }
 
     private void showMessage(DownloadLink link, String message) {
@@ -194,7 +202,9 @@ public class RehostTo extends PluginForHost {
     }
 
     private void tempUnavailableHoster(Account account, DownloadLink downloadLink, long timeout) throws PluginException {
-        if (downloadLink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, "Unable to handle this errorcode!");
+        if (downloadLink == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, "Unable to handle this errorcode!");
+        }
         synchronized (hostUnavailableMap) {
             HashMap<String, Long> unavailableMap = hostUnavailableMap.get(account);
             if (unavailableMap == null) {
@@ -210,11 +220,11 @@ public class RehostTo extends PluginForHost {
     private AccountInfo hostUpdate(Browser br, Account account, AccountInfo ai) throws Exception {
         String hostsSup = br.getPage(mProt + mName + "/api.php?cmd=get_supported_och_dl&long_ses=" + account.getStringProperty("long_ses"));
         String[] hosts = new Regex(hostsSup, "([^\",]+),?").getColumn(0);
-        if (hosts == null || hosts.length == 0) { return null; }
+        if (hosts == null || hosts.length == 0) {
+            return null;
+        }
         ArrayList<String> supportedHosts = new ArrayList<String>(Arrays.asList(hosts));
-        // Workaround for old freakshare domain
-        if (supportedHosts.contains("freakshare.net") || !supportedHosts.contains("freakshare.com")) supportedHosts.add("freakshare.com");
-        ai.setProperty("multiHostSupport", supportedHosts);
+        ai.setMultiHostSupport(supportedHosts);
         return ai;
     }
 
@@ -222,13 +232,14 @@ public class RehostTo extends PluginForHost {
         String statusMessage = null;
         String error = null;
         // error message usually provided by redirect url!
-        if (br.getRedirectLocation() != null && br.getRedirectLocation().contains("&error="))
+        if (br.getRedirectLocation() != null && br.getRedirectLocation().contains("&error=")) {
             error = new Regex(br.getRedirectLocation(), "error=([^&]+)").getMatch(0);
-        // but on download we are following redirects. We need to catch them on the current browser url!
-        else if (br.getURL().contains("&error="))
+            // but on download we are following redirects. We need to catch them on the current browser url!
+        } else if (br.getURL().contains("&error=")) {
             error = new Regex(br.getURL(), "error=([^&]+)").getMatch(0);
-        else
+        } else {
             return;
+        }
         try {
             if (error.equals("low_prem_credits")) {
                 /*
@@ -252,14 +263,17 @@ public class RehostTo extends PluginForHost {
                  * 'no_prem_available': there is currently no premium account available in our system to process this download. Please
                  * update get_supported_och_dl.
                  */
-                if (error.equals("no_prem_available"))
+                if (error.equals("no_prem_available")) {
                     statusMessage = "Download not currently possible. " + mName + " is out of hoster data";
-                else
+                } else {
                     // quota exhausted
                     statusMessage = "Out of quota for " + downloadLink.getHost();
+                }
                 AccountInfo ai = new AccountInfo();
                 hostUpdate(br, account, ai);
-                if (ai.getProperty("multiHostSupport") != null) account.getAccountInfo().setProperty("multiHostSupport", ai.getProperty("multiHostSupport"));
+                if (ai.getProperty("multiHostSupport") != null) {
+                    account.getAccountInfo().setProperty("multiHostSupport", ai.getProperty("multiHostSupport"));
+                }
                 throw new PluginException(LinkStatus.ERROR_RETRY);
             } else if (error.equals("invalid_link")) {
                 /*
@@ -272,11 +286,15 @@ public class RehostTo extends PluginForHost {
                 tempUnavailableHoster(account, downloadLink, 60 * 60 * 1000l);
                 throw new PluginException(LinkStatus.ERROR_RETRY);
             }
-            if (statusMessage == null) statusMessage = "Unknown error code, please inform JDownloader Development Team";
+            if (statusMessage == null) {
+                statusMessage = "Unknown error code, please inform JDownloader Development Team";
+            }
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         } catch (final PluginException e) {
             logger.info("Exception: statusCode: " + error + " statusMessage: " + statusMessage);
-            if (br.getRedirectLocation() != null) br.followConnection();
+            if (br.getRedirectLocation() != null) {
+                br.followConnection();
+            }
             throw e;
         }
 

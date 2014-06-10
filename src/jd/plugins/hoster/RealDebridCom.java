@@ -55,10 +55,10 @@ import org.appwork.utils.os.CrossSystem;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "real-debrid.com" }, urls = { "https?://\\w+\\.real\\-debrid\\.com/dl/\\w+/.+" }, flags = { 2 })
 public class RealDebridCom extends PluginForHost {
-    
+
     // DEV NOTES
     // supports last09 based on pre-generated links and jd2 (but disabled with interfaceVersion 3)
-    
+
     private final String                                   mName                 = "real-debrid.com";
     private final String                                   mProt                 = "https://";
     private int                                            maxChunks             = 0;
@@ -71,17 +71,17 @@ public class RealDebridCom extends PluginForHost {
     private static final long                              UNKNOWN_ERROR_RETRY_2 = 50;
     private static final long                              UNKNOWN_ERROR_RETRY_3 = 20;
     private static HashMap<Account, HashMap<String, Long>> hostUnavailableMap    = new HashMap<Account, HashMap<String, Long>>();
-    
+
     public RealDebridCom(PluginWrapper wrapper) {
         super(wrapper);
         this.enablePremium(mProt + mName + "/");
     }
-    
+
     @Override
     public String getAGBLink() {
         return mProt + mName + "/terms";
     }
-    
+
     private Browser prepBrowser(Browser prepBr) {
         // define custom browser headers and language settings.
         prepBr.getHeaders().put("Accept-Language", "en-gb, en;q=0.9");
@@ -94,14 +94,13 @@ public class RealDebridCom extends PluginForHost {
         prepBr.setAllowedResponseCodes(new int[] { 504 });
         return prepBr;
     }
-    
+
     @Override
     public AvailableStatus requestFileInformation(DownloadLink dl) throws PluginException, IOException {
         URLConnectionAdapter con = null;
         try {
             con = br.openGetConnection(dl.getDownloadURL());
             if (con.isContentDisposition()) {
-                dl.setProperty("directRD", true);
                 if (dl.getFinalFileName() == null) {
                     dl.setFinalFileName(getFileNameFromHeader(con));
                 }
@@ -109,7 +108,6 @@ public class RealDebridCom extends PluginForHost {
                 dl.setAvailable(true);
                 return AvailableStatus.TRUE;
             } else {
-                dl.setProperty("directRD", false);
                 dl.setAvailable(false);
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
@@ -121,7 +119,7 @@ public class RealDebridCom extends PluginForHost {
             }
         }
     }
-    
+
     @Override
     public boolean canHandle(DownloadLink downloadLink, Account account) {
         if (downloadLink.getDownloadURL().matches(this.getLazyP().getPatternSource())) {
@@ -148,23 +146,23 @@ public class RealDebridCom extends PluginForHost {
             return true;
         }
     }
-    
+
     @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
         handleDL(null, downloadLink, downloadLink.getDownloadURL());
     }
-    
+
     @Override
     public int getMaxSimultanFreeDownloadNum() {
         return MAX_DOWNLOADS.get();
     }
-    
+
     @Override
     public int getMaxSimultanDownload(DownloadLink link, final Account account) {
         return MAX_DOWNLOADS.get();
     }
-    
+
     @Override
     public void handlePremium(final DownloadLink link, final Account account) throws Exception {
         login(account, false);
@@ -173,7 +171,7 @@ public class RealDebridCom extends PluginForHost {
         showMessage(link, "Task 2: Download begins!");
         handleDL(account, link, link.getDownloadURL());
     }
-    
+
     private void handleDL(final Account acc, final DownloadLink link, final String dllink) throws Exception {
         // real debrid connections are flakey at times! Do this instead of repeating download steps.
         int repeat = 3;
@@ -201,7 +199,7 @@ public class RealDebridCom extends PluginForHost {
                     if (link.getLinkStatus().getErrorMessage().contains("Unexpected rangeheader format:")) {
                         logger.warning("Bad Range Header! Resuming isn't possible without resetting");
                         throw new PluginException(LinkStatus.ERROR_FATAL);
-                        
+
                         // logger.warning("BAD HEADER RANGES!, auto resetting");
                         // link.reset();
                     }
@@ -335,7 +333,7 @@ public class RealDebridCom extends PluginForHost {
             }
         }
     }
-    
+
     private void tempUnavailableHoster(Account account, DownloadLink downloadLink, long timeout) throws PluginException {
         if (downloadLink == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, "Unable to handle this errorcode!");
@@ -351,7 +349,7 @@ public class RealDebridCom extends PluginForHost {
         }
         throw new PluginException(LinkStatus.ERROR_RETRY);
     }
-    
+
     /** no override to keep plugin compatible to old stable */
     public void handleMultiHost(final DownloadLink link, final Account acc) throws Exception {
         // work around
@@ -362,7 +360,7 @@ public class RealDebridCom extends PluginForHost {
             link.setProperty("hasFailedWait", Property.NULL);
             sleep(hasFailedInt * 1001, link);
         }
-        
+
         prepBrowser(br);
         login(acc, false);
         showMessage(link, "Task 1: Generating Link");
@@ -479,7 +477,7 @@ public class RealDebridCom extends PluginForHost {
                     err = "Host is currently not possible because no server is available!";
                     num = "9";
                 }
-                
+
                 /*
                  * after x retries we disable this host and retry with normal plugin
                  */
@@ -537,22 +535,22 @@ public class RealDebridCom extends PluginForHost {
             if (br.containsHTML("An error occurr?ed while attempting to download the file.")) {
                 throw new PluginException(LinkStatus.ERROR_RETRY);
             }
-            
+
             throw e1;
         }
     }
-    
+
     private void errNoHosterTrafficLeft(Account acc, DownloadLink link) throws Exception {
         logger.info("You have run out of download quota for this hoster");
         tempUnavailableHoster(acc, link, 3 * 60 * 60 * 1000l);
         throw new PluginException(LinkStatus.ERROR_RETRY);
     }
-    
+
     private void errTooManySimCon(Account acc, DownloadLink link) throws PluginException {
         MAX_DOWNLOADS.set(RUNNING_DOWNLOADS.get());
         throw new PluginException(LinkStatus.ERROR_RETRY);
     }
-    
+
     @Override
     public AccountInfo fetchAccountInfo(Account account) throws Exception {
         AccountInfo ai = new AccountInfo();
@@ -616,44 +614,13 @@ public class RealDebridCom extends PluginForHost {
             }
             String[] hosts = new Regex(hostsSup, "\"([^\"]+)\"").getColumn(0);
             ArrayList<String> supportedHosts = new ArrayList<String>(Arrays.asList(hosts));
-            if (supportedHosts.contains("freakshare.net")) {
-                supportedHosts.add("freakshare.com");
-            }
-            // workaround for uploaded.to
-            if (supportedHosts.contains("uploaded.net") || supportedHosts.contains("ul.to") || supportedHosts.contains("uploaded.to")) {
-                if (!supportedHosts.contains("uploaded.net")) {
-                    supportedHosts.add("uploaded.net");
-                }
-                if (!supportedHosts.contains("ul.to")) {
-                    supportedHosts.add("ul.to");
-                }
-                if (!supportedHosts.contains("uploaded.to")) {
-                    supportedHosts.add("uploaded.to");
-                }
-            }
-            // workaround for keep2share.cc, as they keep changing hosts..
-            if (supportedHosts.contains("keep2share.cc") || supportedHosts.contains("k2s.cc") || supportedHosts.contains("keep2s.cc") || supportedHosts.contains("keep2.cc")) {
-                if (!supportedHosts.contains("keep2share.cc")) {
-                    supportedHosts.add("keep2share.cc");
-                }
-                if (!supportedHosts.contains("k2s.cc")) {
-                    supportedHosts.add("k2s.cc");
-                }
-                if (!supportedHosts.contains("keep2s.cc")) {
-                    supportedHosts.add("keep2s.cc");
-                }
-                if (!supportedHosts.contains("keep2.cc")) {
-                    supportedHosts.add("keep2.cc");
-                }
-            }
-            ai.setProperty("multiHostSupport", supportedHosts);
+            ai.setMultiHostSupport(supportedHosts);
         } catch (Throwable e) {
-            account.setProperty("multiHostSupport", Property.NULL);
             logger.info("Could not fetch ServerList: " + e.toString());
         }
         return ai;
     }
-    
+
     private void login(Account account, boolean force) throws Exception {
         synchronized (LOCK) {
             try {
@@ -699,7 +666,7 @@ public class RealDebridCom extends PluginForHost {
                         if (br.containsHTML("\"message\":\"PIN Code required\"")) {
                             try {
                                 SwingUtilities.invokeAndWait(new Runnable() {
-                                    
+
                                     @Override
                                     public void run() {
                                         try {
@@ -744,7 +711,7 @@ public class RealDebridCom extends PluginForHost {
                                 });
                             } catch (Throwable e) {
                             }
-                            
+
                         }
                         break;
                     } catch (SocketException e) {
@@ -754,7 +721,7 @@ public class RealDebridCom extends PluginForHost {
                         Thread.sleep(1000);
                     }
                 }
-                
+
                 if (br.getCookie(mProt + mName, "auth") == null) {
                     throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
                 }
@@ -773,22 +740,22 @@ public class RealDebridCom extends PluginForHost {
             }
         }
     }
-    
+
     private void showMessage(DownloadLink link, String message) {
         link.getLinkStatus().setStatusText(message);
     }
-    
+
     @Override
     public void reset() {
     }
-    
+
     @Override
     public void resetDownloadlink(DownloadLink link) {
         link.setProperty("retry_913", Property.NULL);
         link.setProperty("hasFailed", Property.NULL);
         link.setProperty("hasFailedWait", Property.NULL);
     }
-    
+
     /* NO OVERRIDE!! We need to stay 0.9*compatible */
     public boolean hasCaptcha(DownloadLink link, jd.plugins.Account acc) {
         if (acc == null) {
@@ -801,7 +768,7 @@ public class RealDebridCom extends PluginForHost {
         }
         return false;
     }
-    
+
     /**
      * Tries to return value of key from JSon response, from String source.
      * 
@@ -817,7 +784,7 @@ public class RealDebridCom extends PluginForHost {
         }
         return result;
     }
-    
+
     /**
      * Tries to return value of key from JSon response, from default 'br' Browser.
      * 
@@ -826,7 +793,7 @@ public class RealDebridCom extends PluginForHost {
     private String getJson(final String key) {
         return getJson(br.toString(), key);
     }
-    
+
     /**
      * Tries to return value of key from JSon response, from provided Browser.
      * 
@@ -835,5 +802,5 @@ public class RealDebridCom extends PluginForHost {
     private String getJson(final Browser ibr, final String key) {
         return getJson(ibr.toString(), key);
     }
-    
+
 }

@@ -21,7 +21,6 @@ import java.util.ArrayList;
 import java.util.HashMap;
 
 import jd.PluginWrapper;
-import jd.config.Property;
 import jd.nutils.JDHash;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
@@ -78,7 +77,9 @@ public class TwojLimitPl extends PluginForHost {
             invalid = true;
         }
         if (invalid) {
-            if (invalid) { throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE); }
+            if (invalid) {
+                throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+            }
             AccountInfo ai = account.getAccountInfo();
             if (ai == null) {
                 ai = new AccountInfo();
@@ -104,10 +105,7 @@ public class TwojLimitPl extends PluginForHost {
         AccountInfo ac = new AccountInfo();
         br.setConnectTimeout(60 * 1000);
         br.setReadTimeout(60 * 1000);
-        br.setDebug(true);
-        ac.setSpecialTraffic(true);
         String hosts = null;
-        ac.setProperty("multiHostSupport", Property.NULL);
         try {
             hosts = br.getPage("https://www.twojlimit.pl/clipboard.php");
             login(account, true);
@@ -126,7 +124,9 @@ public class TwojLimitPl extends PluginForHost {
             String hoster[] = new Regex(hosts, "(.*?)(<br />|$)").getColumn(0);
             if (hosts != null) {
                 for (String host : hoster) {
-                    if (hosts == null || host.length() == 0) continue;
+                    if (hosts == null || host.length() == 0) {
+                        continue;
+                    }
                     supportedHosts.add(host.trim());
                 }
             }
@@ -147,8 +147,8 @@ public class TwojLimitPl extends PluginForHost {
             }
 
         }
+        ac.setMultiHostSupport(supportedHosts);
         ac.setStatus("Account valid");
-        ac.setProperty("multiHostSupport", supportedHosts);
         return ac;
     }
 
@@ -237,7 +237,9 @@ public class TwojLimitPl extends PluginForHost {
                 acc.setValid(false);
                 throw new PluginException(LinkStatus.ERROR_RETRY, "Invalid username or password.");
             }
-            if (br.getBaseURL().contains("notfound")) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND, "File not found."); }
+            if (br.getBaseURL().contains("notfound")) {
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND, "File not found.");
+            }
         }
 
         if (dl.getConnection().getResponseCode() == 404) {
@@ -255,7 +257,9 @@ public class TwojLimitPl extends PluginForHost {
     }
 
     private void tempUnavailableHoster(Account account, DownloadLink downloadLink, long timeout) throws PluginException {
-        if (downloadLink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, "Unable to handle this errorcode!");
+        if (downloadLink == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, "Unable to handle this errorcode!");
+        }
         synchronized (hostUnavailableMap) {
             HashMap<String, Long> unavailableMap = hostUnavailableMap.get(account);
             if (unavailableMap == null) {
@@ -278,7 +282,9 @@ public class TwojLimitPl extends PluginForHost {
                     return false;
                 } else if (lastUnavailable != null) {
                     unavailableMap.remove(downloadLink.getHost());
-                    if (unavailableMap.size() == 0) hostUnavailableMap.remove(account);
+                    if (unavailableMap.size() == 0) {
+                        hostUnavailableMap.remove(account);
+                    }
                 }
             }
         }

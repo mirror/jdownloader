@@ -51,8 +51,6 @@ public class StahomatCz extends PluginForHost {
     private static final String                            mAPI               = "http://api.stahomat.cz/a-p-i";
     private static HashMap<Account, HashMap<String, Long>> hostUnavailableMap = new HashMap<Account, HashMap<String, Long>>();
 
-    private static final int                               MAX_SIMULTAN_DLS   = 5;
-
     private static Object                                  LOCK               = new Object();
     private String                                         TOKEN              = null;
 
@@ -287,7 +285,7 @@ public class StahomatCz extends PluginForHost {
         }
         account.setValid(true);
         account.setConcurrentUsePossible(true);
-        account.setMaxSimultanDownloads(MAX_SIMULTAN_DLS);
+        account.setMaxSimultanDownloads(5);
         ai.setValidUntil(-1);
         ai.setStatus("Premium User");
         try {
@@ -295,20 +293,8 @@ public class StahomatCz extends PluginForHost {
             String hostsSup = br.cloneBrowser().postPage(mAPI + "/get-supported-hosts", "token=" + TOKEN);
             String[] hosts = new Regex(hostsSup, "\"([^\", ]+\\.[^\", ]+)").getColumn(0);
             ArrayList<String> supportedHosts = new ArrayList<String>(Arrays.asList(hosts));
-            if (supportedHosts.contains("uploaded.net") || supportedHosts.contains("ul.to") || supportedHosts.contains("uploaded.to")) {
-                if (!supportedHosts.contains("uploaded.net")) {
-                    supportedHosts.add("uploaded.net");
-                }
-                if (!supportedHosts.contains("ul.to")) {
-                    supportedHosts.add("ul.to");
-                }
-                if (!supportedHosts.contains("uploaded.to")) {
-                    supportedHosts.add("uploaded.to");
-                }
-            }
-            ai.setProperty("multiHostSupport", supportedHosts);
+            ai.setMultiHostSupport(supportedHosts);
         } catch (Throwable e) {
-            account.setProperty("multiHostSupport", Property.NULL);
             logger.info("Could not fetch ServerList from " + mName + ": " + e.toString());
         }
         return ai;

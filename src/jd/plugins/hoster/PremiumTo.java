@@ -113,7 +113,7 @@ public class PremiumTo extends PluginForHost {
             }
         }
         ac.setStatus("Premium Account");
-        ac.setProperty("multiHostSupport", supportedHosts);
+        ac.setMultiHostSupport(supportedHosts);
         return ac;
     }
 

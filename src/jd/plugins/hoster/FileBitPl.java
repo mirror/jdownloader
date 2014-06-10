@@ -307,17 +307,6 @@ public class FileBitPl extends PluginForHost {
                 supportedHosts.add(realDomain);
             }
         }
-        if (supportedHosts.contains("uploaded.net") || supportedHosts.contains("ul.to") || supportedHosts.contains("uploaded.to")) {
-            if (!supportedHosts.contains("uploaded.net")) {
-                supportedHosts.add("uploaded.net");
-            }
-            if (!supportedHosts.contains("ul.to")) {
-                supportedHosts.add("ul.to");
-            }
-            if (!supportedHosts.contains("uploaded.to")) {
-                supportedHosts.add("uploaded.to");
-            }
-        }
         if (!"1".equals(premium)) {
             account.setType(AccountType.FREE);
             account.setProperty("free", true);
@@ -327,7 +316,7 @@ public class FileBitPl extends PluginForHost {
             account.setProperty("free", false);
             ai.setStatus("Premium Account");
         }
-        ai.setProperty("multiHostSupport", supportedHosts);
+        ai.setMultiHostSupport(supportedHosts);
         return ai;
     }
 

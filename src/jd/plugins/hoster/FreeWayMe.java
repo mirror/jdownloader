@@ -382,18 +382,19 @@ public class FreeWayMe extends PluginForHost {
         // now let's get a list of all supported hosts:
         br.getPage(hostsUrl);
         hosts = br.getRegex("\"([^\"]*)\"").getColumn(0);
-        final ArrayList<String> supportedHosts = new ArrayList<String>();
+        ArrayList<String> supportedHosts = new ArrayList<String>();
         for (String host : hosts) {
             if (!host.isEmpty()) {
                 supportedHosts.add(host.trim());
             }
         }
-
-        if (supportedHosts.size() == 0) {
+        // post set/correction, need to reload!
+        supportedHosts = (ArrayList<String>) ac.getProperty("multiHostSupport");
+        if (supportedHosts == null || supportedHosts.size() == 0) {
             ac.setStatus(getPhrase("CHECK_ZERO_HOSTERS"));
         } else {
             ac.setStatus(getPhrase("SUPPORTED_HOSTS_1") + supportedHosts.size() + getPhrase("SUPPORTED_HOSTS_2"));
-            ac.setProperty("multiHostSupport", supportedHosts);
+            ac.setMultiHostSupport(supportedHosts);
         }
         return ac;
     }

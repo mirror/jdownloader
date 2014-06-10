@@ -113,7 +113,7 @@ public class NoPremiumPl extends PluginForHost {
             }
         }
         ac.setStatus("Account valid");
-        ac.setProperty("multiHostSupport", supportedHosts);
+        ac.setMultiHostSupport(supportedHosts);
         return ac;
     }
 

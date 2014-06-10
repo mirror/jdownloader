@@ -64,17 +64,17 @@ public class MegaDebridEu extends PluginForHost {
             account.setValid(false);
             return ac;
         }
-        if (token != null)
+        if (token != null) {
             account.setProperty("token", token);
-        else {
+        } else {
             logger.warning("token could not be found");
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         ac.setValidUntil(-1);
         final String daysLeft = getJson("vip_end");
-        if (daysLeft != null && !"0".equals(daysLeft))
+        if (daysLeft != null && !"0".equals(daysLeft)) {
             ac.setValidUntil(Long.parseLong(daysLeft) * 1000l);
-        else {
+        } else {
             ac.setStatus("Can not determine account expire time!");
             logger.severe("Error, can not parse left days. API response:\r\n\r\n" + br.toString());
             account.setValid(false);
@@ -91,21 +91,9 @@ public class MegaDebridEu extends PluginForHost {
         }
         String[] hosts = br.getRegex("\\[\"([a-z0-9\\.]+)\"").getColumn(0);
         ArrayList<String> supportedHosts = new ArrayList<String>(Arrays.asList(hosts));
-        // workaround for uploaded.to
-        if (supportedHosts.contains("uploaded.net") || supportedHosts.contains("ul.to") || supportedHosts.contains("uploaded.to")) {
-            if (!supportedHosts.contains("uploaded.net")) {
-                supportedHosts.add("uploaded.net");
-            }
-            if (!supportedHosts.contains("ul.to")) {
-                supportedHosts.add("ul.to");
-            }
-            if (!supportedHosts.contains("uploaded.to")) {
-                supportedHosts.add("uploaded.to");
-            }
-        }
         account.setValid(true);
+        ac.setMultiHostSupport(supportedHosts);
         ac.setStatus("Account valid");
-        ac.setProperty("multiHostSupport", supportedHosts);
         return ac;
     }
 
@@ -126,7 +114,9 @@ public class MegaDebridEu extends PluginForHost {
             url += "/" + link.getName();
         } else if (link.getHost().matches("filefactory\\.com")) {
             // http://www.filefactory.com/file/asd/n/ads.rar
-            if (!url.endsWith("/")) url += "/";
+            if (!url.endsWith("/")) {
+                url += "/";
+            }
             url += "/n/" + link.getName();
         }
         url = Encoding.urlEncode(url);
@@ -155,8 +145,8 @@ public class MegaDebridEu extends PluginForHost {
             break;
         }
         if (br.containsHTML("Erreur : Probl\\\\u00e8me D\\\\u00e9brideur")) {
-            logger.warning("Unknown error, disabling current host for 3 hours!");
-            tempUnavailableHoster(account, link, 3 * 60 * 60 * 1000l);
+            logger.warning("Unknown error, disabling current host for 10 minutes!");
+            tempUnavailableHoster(account, link, 10 * 60 * 1000l);
         } else if (br.containsHTML("Erreur : Lien incorrect")) {
             // link is in the wrong format, needs to be corrected as above.
             logger.warning("Hi please inform JDownloader Development Team about this issue! Link correction needs to take place.");
@@ -175,7 +165,9 @@ public class MegaDebridEu extends PluginForHost {
             }
         }
         String dllink = br.getRegex("\"debridLink\":\"(.*?)\"\\}").getMatch(0);
-        if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (dllink == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         dllink = dllink.replace("\\", "").replace("\"", "");
         showMessage(link, "Phase 2/2: Download");
 
@@ -196,7 +188,9 @@ public class MegaDebridEu extends PluginForHost {
         try {
             if (!this.dl.startDownload()) {
                 try {
-                    if (dl.externalDownloadStop()) return;
+                    if (dl.externalDownloadStop()) {
+                        return;
+                    }
                 } catch (final Throwable e) {
                 }
                 /* unknown error, we disable multiple chunks */
@@ -231,7 +225,9 @@ public class MegaDebridEu extends PluginForHost {
     }
 
     private void tempUnavailableHoster(Account account, DownloadLink downloadLink, long timeout) throws PluginException {
-        if (downloadLink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, "Unable to handle this errorcode!");
+        if (downloadLink == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, "Unable to handle this errorcode!");
+        }
         synchronized (hostUnavailableMap) {
             HashMap<String, Long> unavailableMap = hostUnavailableMap.get(account);
             if (unavailableMap == null) {
@@ -254,7 +250,9 @@ public class MegaDebridEu extends PluginForHost {
                     return false;
                 } else if (lastUnavailable != null) {
                     unavailableMap.remove(downloadLink.getHost());
-                    if (unavailableMap.size() == 0) hostUnavailableMap.remove(account);
+                    if (unavailableMap.size() == 0) {
+                        hostUnavailableMap.remove(account);
+                    }
                 }
             }
         }
@@ -263,7 +261,9 @@ public class MegaDebridEu extends PluginForHost {
 
     private String getJson(final String parameter) {
         String result = br.getRegex("\"" + parameter + "\":(\\d+)").getMatch(0);
-        if (result == null) result = br.getRegex("\"" + parameter + "\":\"([^<>\"]*?)\"").getMatch(0);
+        if (result == null) {
+            result = br.getRegex("\"" + parameter + "\":\"([^<>\"]*?)\"").getMatch(0);
+        }
         return result;
     }
 

@@ -85,7 +85,9 @@ public class FfDownloaderCom extends PluginForHost {
                     return false;
                 } else if (lastUnavailable != null) {
                     unavailableMap.remove(downloadLink.getHost());
-                    if (unavailableMap.size() == 0) hostUnavailableMap.remove(account);
+                    if (unavailableMap.size() == 0) {
+                        hostUnavailableMap.remove(account);
+                    }
                 }
             }
         }
@@ -113,7 +115,9 @@ public class FfDownloaderCom extends PluginForHost {
         br.setFollowRedirects(true);
         br.setCurrentURL(null);
         int maxChunks = -10;
-        if (link.getBooleanProperty(NOCHUNKS, false)) maxChunks = 1;
+        if (link.getBooleanProperty(NOCHUNKS, false)) {
+            maxChunks = 1;
+        }
         dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, true, maxChunks);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
@@ -133,7 +137,9 @@ public class FfDownloaderCom extends PluginForHost {
         try {
             if (!this.dl.startDownload()) {
                 try {
-                    if (dl.externalDownloadStop()) return;
+                    if (dl.externalDownloadStop()) {
+                        return;
+                    }
                 } catch (final Throwable e) {
                 }
                 /* unknown error, we disable multiple chunks */
@@ -192,7 +198,9 @@ public class FfDownloaderCom extends PluginForHost {
         account.setConcurrentUsePossible(true);
         account.setMaxSimultanDownloads(-1);
         final String status = br.getRegex("account_type\":\"([^<>\"]*?)\"").getMatch(0);
-        if (!"premium".equals(status)) { throw new PluginException(LinkStatus.ERROR_PREMIUM, "This is no premium account, only premium accounts are supported for this host!", PluginException.VALUE_ID_PREMIUM_DISABLE); }
+        if (!"premium".equals(status)) {
+            throw new PluginException(LinkStatus.ERROR_PREMIUM, "This is no premium account, only premium accounts are supported for this host!", PluginException.VALUE_ID_PREMIUM_DISABLE);
+        }
         String expire = br.getRegex("\"time_left\":(\\d+)").getMatch(0);
         if (expire != null) {
             ai.setValidUntil(System.currentTimeMillis() + (Long.parseLong(expire)) * 1000);
@@ -211,8 +219,8 @@ public class FfDownloaderCom extends PluginForHost {
             hosts = new Regex(supportedhoststext, "\"([a-zA-Z0-9\\.\\-]+)\"").getColumn(0);
         }
         final ArrayList<String> supportedHosts = new ArrayList<String>(Arrays.asList(hosts));
+        ai.setMultiHostSupport(supportedHosts);
         ai.setStatus("Account valid");
-        ai.setProperty("multiHostSupport", supportedHosts);
         return ai;
     }
 
@@ -225,7 +233,9 @@ public class FfDownloaderCom extends PluginForHost {
     }
 
     private void tempUnavailableHoster(Account account, DownloadLink downloadLink, long timeout) throws PluginException {
-        if (downloadLink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, "Unable to handle this errorcode!");
+        if (downloadLink == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, "Unable to handle this errorcode!");
+        }
         synchronized (hostUnavailableMap) {
             HashMap<String, Long> unavailableMap = hostUnavailableMap.get(account);
             if (unavailableMap == null) {
@@ -240,7 +250,9 @@ public class FfDownloaderCom extends PluginForHost {
 
     private void handleAPIErrors(final Browser br, final Account account, final DownloadLink downloadLink) throws PluginException {
         String statusCode = br.getRegex("\"status\":(\\d+)").getMatch(0);
-        if (statusCode == null) return;
+        if (statusCode == null) {
+            return;
+        }
         String statusMessage = null;
         try {
             int status = this.br.getRequest().getHttpConnection().getResponseCode();
@@ -268,7 +280,9 @@ public class FfDownloaderCom extends PluginForHost {
                 throw new PluginException(LinkStatus.ERROR_PREMIUM, statusMessage, PluginException.VALUE_ID_PREMIUM_DISABLE);
             case 500:
                 /* Internal server error - should never happen */
-                if (statusMessage == null) statusMessage = "Internal server error";
+                if (statusMessage == null) {
+                    statusMessage = "Internal server error";
+                }
                 throw new PluginException(LinkStatus.ERROR_PREMIUM, statusMessage, PluginException.VALUE_ID_PREMIUM_DISABLE);
             case 503:
                 /*

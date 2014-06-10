@@ -145,19 +145,8 @@ public class ConexaomegaCom extends PluginForHost {
                 supportedHosts.add(hostSet[1]);
             }
         }
-        if (supportedHosts.contains("uploaded.net") || supportedHosts.contains("ul.to") || supportedHosts.contains("uploaded.to")) {
-            if (!supportedHosts.contains("uploaded.net")) {
-                supportedHosts.add("uploaded.net");
-            }
-            if (!supportedHosts.contains("ul.to")) {
-                supportedHosts.add("ul.to");
-            }
-            if (!supportedHosts.contains("uploaded.to")) {
-                supportedHosts.add("uploaded.to");
-            }
-        }
+        ac.setMultiHostSupport(supportedHosts);
         ac.setStatus("Account valid");
-        ac.setProperty("multiHostSupport", supportedHosts);
         return ac;
     }
 

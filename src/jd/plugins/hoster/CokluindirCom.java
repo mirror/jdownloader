@@ -245,9 +245,8 @@ public class CokluindirCom extends PluginForHost {
             String hostsSup = br.cloneBrowser().getPage(mProt + mName + "/saglayicilar.php");
             String[] hosts = new Regex(hostsSup, "\"([^\", ]+)").getColumn(0);
             ArrayList<String> supportedHosts = new ArrayList<String>(Arrays.asList(hosts));
-            ai.setProperty("multiHostSupport", supportedHosts);
+            ai.setMultiHostSupport(supportedHosts);
         } catch (Throwable e) {
-            account.setProperty("multiHostSupport", Property.NULL);
             logger.info("Could not fetch ServerList from " + mName + ": " + e.toString());
         }
         return ai;

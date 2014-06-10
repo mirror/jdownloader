@@ -55,7 +55,6 @@ public class StreamManiaCom extends PluginForHost {
         AccountInfo ac = new AccountInfo();
         br.setConnectTimeout(60 * 1000);
         br.setReadTimeout(60 * 1000);
-        br.setDebug(true);
         String username = Encoding.urlEncode(account.getUser());
         String pass = Encoding.urlEncode(account.getPass());
         String page = null;
@@ -103,15 +102,8 @@ public class StreamManiaCom extends PluginForHost {
 
         }
         if (account.isValid()) {
-            if (supportedHosts.size() == 0) {
-                ac.setStatus("Account valid: 0 Hosts via " + hostPublicDomain + " available");
-                ac.setProperty("multiHostSupport", Property.NULL);
-            } else {
-                ac.setStatus("Account valid: " + supportedHosts.size() + " Hosts via " + hostPublicDomain + " available");
-                ac.setProperty("multiHostSupport", supportedHosts);
-            }
+            ac.setMultiHostSupport(supportedHosts);
         } else {
-            account.setTempDisabled(false);
             account.setValid(false);
             ac.setProperty("multiHostSupport", Property.NULL);
             ac.setStatus("Account invalid");
@@ -146,7 +138,6 @@ public class StreamManiaCom extends PluginForHost {
         br.setFollowRedirects(true);
         br.setConnectTimeout(90 * 1000);
         br.setReadTimeout(90 * 1000);
-        br.setDebug(true);
         dl = null;
         showMessage(link, "Phase 1/2: Get download link");
         String genlink = br.getPage("http://www." + hostPublicDomain + "/api/get_ddl.php?login=" + user + "&password=" + pw + "&url=" + url);
@@ -220,7 +211,9 @@ public class StreamManiaCom extends PluginForHost {
         try {
             if (!this.dl.startDownload()) {
                 try {
-                    if (dl.externalDownloadStop()) return;
+                    if (dl.externalDownloadStop()) {
+                        return;
+                    }
                 } catch (final Throwable e) {
                 }
                 /* unknown error, we disable multiple chunks */
@@ -246,7 +239,9 @@ public class StreamManiaCom extends PluginForHost {
     }
 
     private void tempUnavailableHoster(Account account, DownloadLink downloadLink, long timeout) throws PluginException {
-        if (downloadLink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, "Unable to handle this errorcode!");
+        if (downloadLink == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, "Unable to handle this errorcode!");
+        }
         synchronized (hostUnavailableMap) {
             HashMap<String, Long> unavailableMap = hostUnavailableMap.get(account);
             if (unavailableMap == null) {
@@ -269,7 +264,9 @@ public class StreamManiaCom extends PluginForHost {
                     return false;
                 } else if (lastUnavailable != null) {
                     unavailableMap.remove(downloadLink.getHost());
-                    if (unavailableMap.size() == 0) hostUnavailableMap.remove(account);
+                    if (unavailableMap.size() == 0) {
+                        hostUnavailableMap.remove(account);
+                    }
                 }
             }
         }

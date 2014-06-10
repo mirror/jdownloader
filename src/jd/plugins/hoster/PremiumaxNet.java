@@ -20,7 +20,6 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Locale;
 import java.util.Map;
-import java.util.concurrent.atomic.AtomicInteger;
 
 import jd.PluginWrapper;
 import jd.config.Property;
@@ -45,7 +44,6 @@ import org.appwork.utils.formatter.TimeFormatter;
 public class PremiumaxNet extends PluginForHost {
 
     private static HashMap<Account, HashMap<String, Long>> hostUnavailableMap = new HashMap<Account, HashMap<String, Long>>();
-    private static AtomicInteger                           maxPrem            = new AtomicInteger(20);
     private static final String                            NOCHUNKS           = "NOCHUNKS";
     private static final String                            MAINPAGE           = "http://premiumax.net";
     private static final String                            NICE_HOST          = "premiumax.net";
@@ -61,11 +59,6 @@ public class PremiumaxNet extends PluginForHost {
     @Override
     public String getAGBLink() {
         return "http://www.premiumax.net/more/terms-and-conditions.html";
-    }
-
-    @Override
-    public int getMaxSimultanDownload(DownloadLink link, Account account) {
-        return maxPrem.get();
     }
 
     @Override
@@ -89,9 +82,13 @@ public class PremiumaxNet extends PluginForHost {
         if (expire != null) {
             ac.setValidUntil(TimeFormatter.getMilliSeconds(expire, "dd.MM.yyyy hh:mm", Locale.ENGLISH));
             ac.setStatus("Premium User");
+            account.setMaxSimultanDownloads(-1);
+            account.setConcurrentUsePossible(true);
         } else {
             ac.setStatus("Registered (free) user");
             is_freeaccount = true;
+            account.setMaxSimultanDownloads(20);
+            account.setConcurrentUsePossible(true);
         }
         ac.setUnlimitedTraffic();
         // now let's get a list of all supported hosts:
@@ -110,24 +107,8 @@ public class PremiumaxNet extends PluginForHost {
                 }
             }
         }
-        if (supportedHosts.contains("uploaded.net") || supportedHosts.contains("ul.to") || supportedHosts.contains("uploaded.to")) {
-            if (!supportedHosts.contains("uploaded.net")) {
-                supportedHosts.add("uploaded.net");
-            }
-            if (!supportedHosts.contains("ul.to")) {
-                supportedHosts.add("ul.to");
-            }
-            if (!supportedHosts.contains("uploaded.to")) {
-                supportedHosts.add("uploaded.to");
-            }
-        }
-        ac.setProperty("multiHostSupport", supportedHosts);
+        ac.setMultiHostSupport(supportedHosts);
         return ac;
-    }
-
-    @Override
-    public int getMaxSimultanFreeDownloadNum() {
-        return 0;
     }
 
     @Override
@@ -204,7 +185,9 @@ public class PremiumaxNet extends PluginForHost {
         try {
             if (!this.dl.startDownload()) {
                 try {
-                    if (dl.externalDownloadStop()) return;
+                    if (dl.externalDownloadStop()) {
+                        return;
+                    }
                 } catch (final Throwable e) {
                 }
                 /* unknown error, we disable multiple chunks */
@@ -259,7 +242,9 @@ public class PremiumaxNet extends PluginForHost {
                 br.setFollowRedirects(true);
                 final Object ret = account.getProperty("cookies", null);
                 boolean acmatch = Encoding.urlEncode(account.getUser()).equals(account.getStringProperty("name", Encoding.urlEncode(account.getUser())));
-                if (acmatch) acmatch = Encoding.urlEncode(account.getPass()).equals(account.getStringProperty("pass", Encoding.urlEncode(account.getPass())));
+                if (acmatch) {
+                    acmatch = Encoding.urlEncode(account.getPass()).equals(account.getStringProperty("pass", Encoding.urlEncode(account.getPass())));
+                }
                 if (acmatch && ret != null && ret instanceof HashMap<?, ?>) {
                     final HashMap<String, String> cookies = (HashMap<String, String>) ret;
                     if (account.isValid()) {
@@ -283,7 +268,9 @@ public class PremiumaxNet extends PluginForHost {
                     }
                 }
                 br.getPage("http://www.premiumax.net/");
-                if (br.containsHTML(">Sign out</a>")) return true;
+                if (br.containsHTML(">Sign out</a>")) {
+                    return true;
+                }
                 final String stayin = br.getRegex("type=\"hidden\" name=\"stayloggedin\" value=\"([^<>\"]*?)\"").getMatch(0);
                 if (stayin == null) {
                     if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
@@ -320,7 +307,9 @@ public class PremiumaxNet extends PluginForHost {
     }
 
     private void tempUnavailableHoster(Account account, DownloadLink downloadLink, long timeout) throws PluginException {
-        if (downloadLink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, "Unable to handle this errorcode!");
+        if (downloadLink == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, "Unable to handle this errorcode!");
+        }
         synchronized (hostUnavailableMap) {
             HashMap<String, Long> unavailableMap = hostUnavailableMap.get(account);
             if (unavailableMap == null) {
@@ -343,7 +332,9 @@ public class PremiumaxNet extends PluginForHost {
                     return false;
                 } else if (lastUnavailable != null) {
                     unavailableMap.remove(downloadLink.getHost());
-                    if (unavailableMap.size() == 0) hostUnavailableMap.remove(account);
+                    if (unavailableMap.size() == 0) {
+                        hostUnavailableMap.remove(account);
+                    }
                 }
             }
         }

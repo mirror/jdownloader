@@ -20,7 +20,6 @@ import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.concurrent.atomic.AtomicInteger;
 
 import jd.PluginWrapper;
 import jd.config.Property;
@@ -45,7 +44,6 @@ public class Rapids24Pl extends PluginForHost {
     // IMPORTANT: Sync ALL: EasyFilesPl, TurbixPl, Rapids24Pl
     // Based on API: http://easyfiles.pl/api_dokumentacja.php?api_en=1
     private static HashMap<Account, HashMap<String, Long>> hostUnavailableMap = new HashMap<Account, HashMap<String, Long>>();
-    private static AtomicInteger                           maxPrem            = new AtomicInteger(20);
     private static final String                            NOCHUNKS           = "NOCHUNKS";
 
     private static final String                            NICE_HOST          = "rapids24.pl";
@@ -62,11 +60,6 @@ public class Rapids24Pl extends PluginForHost {
     @Override
     public String getAGBLink() {
         return "http://" + NICE_HOST + "/regulamin.html";
-    }
-
-    @Override
-    public int getMaxSimultanDownload(DownloadLink link, Account account) {
-        return maxPrem.get();
     }
 
     private Browser newBrowser() {
@@ -114,20 +107,15 @@ public class Rapids24Pl extends PluginForHost {
         }
         final String[] information = br.toString().split(":");
         ac.setTrafficLeft(SizeFormatter.getSize(Long.parseLong(information[0]) + "MB"));
-        try {
-            int maxSim = Integer.parseInt(information[0]);
-            if (maxSim > 20) {
-                maxSim = 20;
-            } else if (maxSim < 0) {
-                maxSim = 1;
-            }
-            maxPrem.set(maxSim);
-            account.setMaxSimultanDownloads(maxPrem.get());
-            account.setConcurrentUsePossible(true);
-        } catch (final Throwable e) {
-            // not available in old Stable 0.9.581
+        int maxSim = Integer.parseInt(information[0]);
+        if (maxSim > 20) {
+            maxSim = 20;
+        } else if (maxSim < 0) {
+            maxSim = 1;
         }
-        ac.setStatus("Premium User");
+        account.setMaxSimultanDownloads(maxSim);
+        account.setConcurrentUsePossible(true);
+
         // now let's get a list of all supported hosts:
         br.getPage(API_HTTP + NICE_HOST + "/api2.php?cmd=get_hosts");
         hosts = br.toString().split(":");
@@ -137,24 +125,8 @@ public class Rapids24Pl extends PluginForHost {
                 supportedHosts.add(host.trim());
             }
         }
-        if (supportedHosts.contains("uploaded.net") || supportedHosts.contains("ul.to") || supportedHosts.contains("uploaded.to")) {
-            if (!supportedHosts.contains("uploaded.net")) {
-                supportedHosts.add("uploaded.net");
-            }
-            if (!supportedHosts.contains("ul.to")) {
-                supportedHosts.add("ul.to");
-            }
-            if (!supportedHosts.contains("uploaded.to")) {
-                supportedHosts.add("uploaded.to");
-            }
-        }
-
-        if (supportedHosts.size() == 0) {
-            ac.setStatus("Account valid: 0 Hosts via " + NICE_HOST + " available");
-        } else {
-            ac.setStatus("Account valid: " + supportedHosts.size() + " Hosts via " + NICE_HOST + " available");
-            ac.setProperty("multiHostSupport", supportedHosts);
-        }
+        ac.setMultiHostSupport(supportedHosts);
+        ac.setStatus("Premium User");
         return ac;
     }
 

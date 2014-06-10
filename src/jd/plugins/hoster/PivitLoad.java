@@ -111,8 +111,8 @@ public class PivitLoad extends PluginForHost {
         }
 
         if (account.isValid()) {
+            ai.setMultiHostSupport(supportedHosts);
             ai.setStatus("Account valid");
-            ai.setProperty("multiHostSupport", supportedHosts);
         } else {
             account.setValid(false);
             ai.setProperty("multiHostSupport", Property.NULL);
@@ -207,7 +207,9 @@ public class PivitLoad extends PluginForHost {
         showMessage(link, "Phase 2/2: Download begins!");
         if (!this.dl.startDownload()) {
             try {
-                if (dl.externalDownloadStop()) return;
+                if (dl.externalDownloadStop()) {
+                    return;
+                }
             } catch (final Throwable e) {
             }
             final String errormessage = link.getLinkStatus().getErrorMessage();
@@ -240,7 +242,9 @@ public class PivitLoad extends PluginForHost {
     }
 
     private void tempUnavailableHoster(Account account, DownloadLink downloadLink, long timeout) throws PluginException {
-        if (downloadLink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, "Unable to handle this errorcode!");
+        if (downloadLink == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, "Unable to handle this errorcode!");
+        }
         synchronized (hostUnavailableMap) {
             HashMap<String, Long> unavailableMap = hostUnavailableMap.get(account);
             if (unavailableMap == null) {
@@ -282,7 +286,9 @@ public class PivitLoad extends PluginForHost {
                     return false;
                 } else if (lastUnavailable != null) {
                     unavailableMap.remove(downloadLink.getHost());
-                    if (unavailableMap.size() == 0) hostUnavailableMap.remove(account);
+                    if (unavailableMap.size() == 0) {
+                        hostUnavailableMap.remove(account);
+                    }
                 }
             }
         }

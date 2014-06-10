@@ -79,7 +79,7 @@ public class FileniumCom extends PluginForHost {
         /* define custom browser headers and language settings. */
         br.getHeaders().put("Accept-Language", "en-gb, en;q=0.9, de;q=0.8");
         br.setCookie("http://filenium.com", "langid", "1");
-        br.getHeaders().put("Agent", "JDOWNLOADER");
+        br.getHeaders().put("Agent", "JDownloader");
         br.setCustomCharset("utf-8");
         br.setConnectTimeout(60 * 1000);
         br.setReadTimeout(60 * 1000);
@@ -310,18 +310,7 @@ public class FileniumCom extends PluginForHost {
         String hostsSup = br.cloneBrowser().getPage("http://" + SELECTEDDOMAIN + "/jddomains");
         String[] hosts = new Regex(hostsSup, "\"([^\"]+)\",").getColumn(0);
         final ArrayList<String> supportedHosts = new ArrayList<String>(Arrays.asList(hosts));
-        if (supportedHosts.contains("uploaded.net") || supportedHosts.contains("ul.to") || supportedHosts.contains("uploaded.to")) {
-            if (!supportedHosts.contains("uploaded.net")) {
-                supportedHosts.add("uploaded.net");
-            }
-            if (!supportedHosts.contains("ul.to")) {
-                supportedHosts.add("ul.to");
-            }
-            if (!supportedHosts.contains("uploaded.to")) {
-                supportedHosts.add("uploaded.to");
-            }
-        }
-        ai.setProperty("multiHostSupport", supportedHosts);
+        ai.setMultiHostSupport(supportedHosts);
         return ai;
     }
 

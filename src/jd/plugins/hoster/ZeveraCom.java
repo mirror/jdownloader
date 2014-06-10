@@ -73,7 +73,7 @@ public class ZeveraCom extends PluginForHost {
         // define custom browser headers and language settings.
         br.getHeaders().put("Accept-Language", "en-gb, en;q=0.9, de;q=0.8");
         br.setCookie(mProt + mName, "lang", "english");
-        br.getHeaders().put("User-Agent", "JDOWNLOADER");
+        br.getHeaders().put("User-Agent", "JDownloader");
         br.setCustomCharset("utf-8");
         br.setConnectTimeout(60 * 1000);
         br.setReadTimeout(60 * 1000);
@@ -194,11 +194,11 @@ public class ZeveraCom extends PluginForHost {
 
     private void handleDL(final DownloadLink link, String dllink) throws Exception {
 
-        // Severa uses this redirect logic to wait for the actuall file in the backend. This means: follow the redirects undtil we get Data
-        // after 10 redirects, severa shows an error page. We do not allow more than 10 redirects - so we probably never see this error page
+        // Zevera uses this redirect logic to wait for the actual file in the backend. This means: follow the redirects until we get Data!
+        // After 10 redirects Zevera shows an error. We do not allow more than 10 redirects - so we probably never see this error page
         //
-        // Besides redirects, the connections often run into socketexceptions. do the same on socket problems - retry
-        // according to zevera, 20 retries should be enough
+        // Besides redirects, the connections often run into socket exceptions. do the same on socket problems - retry
+        // according to Zevera, 20 retries should be enough
 
         br.setFollowRedirects(true);
         showMessage(link, "Phase 3/3: Check download!");
@@ -407,9 +407,8 @@ public class ZeveraCom extends PluginForHost {
              * set ArrayList<String> with all supported multiHosts of this service
              */
             // we used local cached links provided by our decrypter, locked to ip addresses. Can not use multihoster
-            ai.setProperty("multiHostSupport", supportedHosts);
+            ai.setMultiHostSupport(supportedHosts);
         } catch (Throwable e) {
-            account.setProperty("multiHostSupport", Property.NULL);
             logger.info("Could not fetch ServerList from Multishare: " + e.toString());
         }
         return ai;

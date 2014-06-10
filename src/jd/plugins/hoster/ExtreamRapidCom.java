@@ -81,7 +81,9 @@ public class ExtreamRapidCom extends PluginForHost {
             account.setValid(false);
             return ac;
         }
-        if (!"http://extreamrapid.com/vip/index.php".equals(br.getURL())) br.getPage("http://extreamrapid.com/vip/index.php");
+        if (!"http://extreamrapid.com/vip/index.php".equals(br.getURL())) {
+            br.getPage("http://extreamrapid.com/vip/index.php");
+        }
         final String acctype = br.getRegex("<td>Account Type : <font color=\"#FFC500\" class=\"userinfo\">([^<>\"]*?)</font>").getMatch(0);
         if (acctype == null || !acctype.toLowerCase().contains("vip")) {
             ac.setStatus("This is no premium account!");
@@ -111,26 +113,17 @@ public class ExtreamRapidCom extends PluginForHost {
         }
         // now let's get a list of all supported hosts:
         final String hostsText = br.getRegex("<div dir=\"rtl\" align=\"left\" style=\"padding\\-left:5px;\">(.*?)</td>").getMatch(0);
-        if (hostsText != null) hosts = new Regex(hostsText, "class=\"plugincollst\">([^<>\"]*?)</span>").getColumn(0);
+        if (hostsText != null) {
+            hosts = new Regex(hostsText, "class=\"plugincollst\">([^<>\"]*?)</span>").getColumn(0);
+        }
         ArrayList<String> supportedHosts = new ArrayList<String>();
         for (String host : hosts) {
             if (!host.isEmpty()) {
                 supportedHosts.add(host.trim());
             }
         }
-        if (supportedHosts.contains("uploaded.net") || supportedHosts.contains("ul.to") || supportedHosts.contains("uploaded.to")) {
-            if (!supportedHosts.contains("uploaded.net")) {
-                supportedHosts.add("uploaded.net");
-            }
-            if (!supportedHosts.contains("ul.to")) {
-                supportedHosts.add("ul.to");
-            }
-            if (!supportedHosts.contains("uploaded.to")) {
-                supportedHosts.add("uploaded.to");
-            }
-        }
+        ac.setMultiHostSupport(supportedHosts);
         ac.setStatus("Account valid");
-        ac.setProperty("multiHostSupport", supportedHosts);
         return ac;
     }
 
@@ -144,7 +137,9 @@ public class ExtreamRapidCom extends PluginForHost {
                 br.setFollowRedirects(true);
                 final Object ret = account.getProperty("cookies", null);
                 boolean acmatch = Encoding.urlEncode(account.getUser()).equals(account.getStringProperty("name", Encoding.urlEncode(account.getUser())));
-                if (acmatch) acmatch = Encoding.urlEncode(account.getPass()).equals(account.getStringProperty("pass", Encoding.urlEncode(account.getPass())));
+                if (acmatch) {
+                    acmatch = Encoding.urlEncode(account.getPass()).equals(account.getStringProperty("pass", Encoding.urlEncode(account.getPass())));
+                }
                 if (acmatch && ret != null && ret instanceof HashMap<?, ?> && !force) {
                     final HashMap<String, String> cookies = (HashMap<String, String>) ret;
                     if (account.isValid()) {
@@ -154,13 +149,17 @@ public class ExtreamRapidCom extends PluginForHost {
                             this.br.setCookie(COOKIE_HOST, key, value);
                         }
                         br.getPage(COOKIE_HOST + "/vip/index.php");
-                        if (!br.containsHTML("<td>User IP :")) fullLogin = true;
+                        if (!br.containsHTML("<td>User IP :")) {
+                            fullLogin = true;
+                        }
                     }
                 } else {
                     fullLogin = true;
                 }
                 if (fullLogin) {
-                    if (!"http://extreamrapid.com/vip/index.php".equals(br.getURL())) br.getPage("http://extreamrapid.com/vip/index.php");
+                    if (!"http://extreamrapid.com/vip/index.php".equals(br.getURL())) {
+                        br.getPage("http://extreamrapid.com/vip/index.php");
+                    }
                     br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
                     br.postPage(COOKIE_HOST + "/vip/login.php?action=login", "username=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()));
                     if (br.getCookie(COOKIE_HOST, "user") == null) {
@@ -246,7 +245,9 @@ public class ExtreamRapidCom extends PluginForHost {
         try {
             if (!this.dl.startDownload()) {
                 try {
-                    if (dl.externalDownloadStop()) return;
+                    if (dl.externalDownloadStop()) {
+                        return;
+                    }
                 } catch (final Throwable e) {
                 }
                 /* unknown error, we disable multiple chunks */
@@ -312,7 +313,9 @@ public class ExtreamRapidCom extends PluginForHost {
                 tempUnavailableHoster(acc, dl, 60 * 60 * 1000l);
             }
         }
-        if (dllink != null) dllink = COOKIE_HOST + dllink;
+        if (dllink != null) {
+            dllink = COOKIE_HOST + dllink;
+        }
         return dllink;
     }
 
@@ -345,7 +348,9 @@ public class ExtreamRapidCom extends PluginForHost {
     }
 
     private void tempUnavailableHoster(Account account, DownloadLink downloadLink, long timeout) throws PluginException {
-        if (downloadLink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, "Unable to handle this errorcode!");
+        if (downloadLink == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, "Unable to handle this errorcode!");
+        }
         synchronized (hostUnavailableMap) {
             HashMap<String, Long> unavailableMap = hostUnavailableMap.get(account);
             if (unavailableMap == null) {
@@ -368,7 +373,9 @@ public class ExtreamRapidCom extends PluginForHost {
                     return false;
                 } else if (lastUnavailable != null) {
                     unavailableMap.remove(downloadLink.getHost());
-                    if (unavailableMap.size() == 0) hostUnavailableMap.remove(account);
+                    if (unavailableMap.size() == 0) {
+                        hostUnavailableMap.remove(account);
+                    }
                 }
             }
         }

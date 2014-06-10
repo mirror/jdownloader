@@ -23,6 +23,7 @@ import java.util.HashMap;
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.http.Browser;
+import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.plugins.Account;
@@ -36,7 +37,7 @@ import jd.plugins.PluginForHost;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "multishare.cz" }, urls = { "https?://[\\w\\.]*?multishare\\.cz/stahnout/[0-9]+/" }, flags = { 2 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "multishare.cz" }, urls = { "https?://[\\w\\.]*?multishare\\.cz/(stahnout/[0-9]+/|html/mms_process\\.php\\?(&?u_ID=\\d+|&?u_hash=[a-f0-9]+|(&?link=https?%3A%2F%2F[^&\\?]+|&?fid=\\d+)){3})" }, flags = { 2 })
 public class MultiShareCz extends PluginForHost {
 
     public MultiShareCz(PluginWrapper wrapper) {
@@ -45,12 +46,14 @@ public class MultiShareCz extends PluginForHost {
     }
 
     private static HashMap<Account, HashMap<String, Long>> hostUnavailableMap = new HashMap<Account, HashMap<String, Long>>();
+    private final String                                   mhLink             = "https?://[\\w\\.]*?multishare\\.cz/html/mms_process\\.php\\?.+";
 
     private Browser prepBrowser(Browser prepBr) {
         // define custom browser headers and language settings.
-        // prepBr.getHeaders().put("Accept-Language", "en-gb, en;q=0.9");
-        // prepBr.getHeaders().put("User-Agent", "JDownloader");
-        // prepBr.setCookie(this.getHost(), "lang", "en");
+        prepBr.getHeaders().put("Accept-Language", "en-gb, en;q=0.9");
+        prepBr.getHeaders().put("Accept-Encoding", "json");
+        prepBr.getHeaders().put("User-Agent", "JDownloader");
+        prepBr.setCookie(this.getHost(), "lang", "en");
         prepBr.setCustomCharset("utf-8");
         return prepBr;
     }
@@ -86,29 +89,51 @@ public class MultiShareCz extends PluginForHost {
                 ArrayList<String> supportedHosts = new ArrayList<String>();
                 for (String host : hosts) {
                     host = host.replace("\"", "");
-                    if ("freakshare.net".equalsIgnoreCase(host)) {
-                        host = "freakshare.com";
-                    }
                     supportedHosts.add(host);
                 }
                 /*
                  * set ArrayList<String> with all supported multiHosts of this service
                  */
-                ai.setProperty("multiHostSupport", supportedHosts);
+                ai.setMultiHostSupport(supportedHosts);
             } catch (Throwable e) {
-                account.setProperty("multiHostSupport", Property.NULL);
                 logger.info("Could not fetch ServerList from Multishare: " + e.toString());
             }
         }
         return ai;
     }
 
-    private String getJson(final String parameter) {
-        String result = br.getRegex("\"" + parameter + "\":(\\d+)").getMatch(0);
+    /**
+     * Tries to return value of key from JSon response, from String source.
+     * 
+     * @author raztoki
+     * */
+    private String getJson(final String source, final String key) {
+        String result = new Regex(source, "\"" + key + "\":(-?\\d+(\\.\\d+)?|true|false|null)").getMatch(0);
         if (result == null) {
-            result = br.getRegex("\"" + parameter + "\":\"([^<>\"]*?)\"").getMatch(0);
+            result = new Regex(source, "\"" + key + "\":\"([^\"]+)\"").getMatch(0);
+        }
+        if (result != null) {
+            result = result.replaceAll("\\\\/", "/");
         }
         return result;
+    }
+
+    /**
+     * Tries to return value of key from JSon response, from default 'br' Browser.
+     * 
+     * @author raztoki
+     * */
+    private String getJson(final String key) {
+        return getJson(br.toString(), key);
+    }
+
+    /**
+     * Tries to return value of key from JSon response, from provided Browser.
+     * 
+     * @author raztoki
+     * */
+    private String getJson(final Browser ibr, final String key) {
+        return getJson(ibr.toString(), key);
     }
 
     @Override
@@ -128,6 +153,10 @@ public class MultiShareCz extends PluginForHost {
 
     @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception, PluginException {
+        if (downloadLink.getDownloadURL().matches(mhLink)) {
+            dlGeneratedMhLink(downloadLink);
+            return;
+        }
         requestFileInformation(downloadLink);
         br.setFollowRedirects(false);
         String fileid = new Regex(downloadLink.getDownloadURL(), "/stahnout/(\\d+)/").getMatch(0);
@@ -152,32 +181,67 @@ public class MultiShareCz extends PluginForHost {
     }
 
     @Override
-    public void handlePremium(final DownloadLink link, final Account account) throws Exception {
-        requestFileInformation(link);
+    public void handlePremium(final DownloadLink downloadLink, final Account account) throws Exception {
+        if (downloadLink.getDownloadURL().matches(mhLink)) {
+            dlGeneratedMhLink(downloadLink);
+            return;
+        }
+        requestFileInformation(downloadLink);
         login(account);
-        br.getPage(link.getDownloadURL());
-        String fileid = new Regex(link.getDownloadURL(), "/stahnout/(\\d+)/").getMatch(0);
+        br.getPage(downloadLink.getDownloadURL());
+        String fileid = new Regex(downloadLink.getDownloadURL(), "/stahnout/(\\d+)/").getMatch(0);
         String dllink = "https://www.multishare.cz/html/download_premium.php?ID=" + fileid;
-        dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, true, 1);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 1);
         if (dl.getConnection().getContentType() != null && dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
             if (br.containsHTML("Soubor na zdrojovém serveru pravděpodobně neexistuje")) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
-            int timesFailed = link.getIntegerProperty("timesfailedmultisharecz_unknowndlerrorpremium", 0);
-            link.getLinkStatus().setRetryCount(0);
+            int timesFailed = downloadLink.getIntegerProperty("timesfailedmultisharecz_unknowndlerrorpremium", 0);
+            downloadLink.getLinkStatus().setRetryCount(0);
             if (timesFailed <= 2) {
                 logger.info("multishare.cz: Unknown download error -> Retrying");
                 timesFailed++;
-                link.setProperty("timesfailedmultisharecz_unknowndlerrorpremium", timesFailed);
+                downloadLink.setProperty("timesfailedmultisharecz_unknowndlerrorpremium", timesFailed);
                 throw new PluginException(LinkStatus.ERROR_RETRY, "Unknown download error");
             } else {
                 logger.info("multishare.cz: Unknown download error -> Plugin is broken");
-                link.setProperty("timesfailedmultisharecz_unknowndlerrorpremium", Property.NULL);
+                downloadLink.setProperty("timesfailedmultisharecz_unknowndlerrorpremium", Property.NULL);
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
         }
         dl.startDownload();
+    }
+
+    private void dlGeneratedMhLink(final DownloadLink downloadLink) throws Exception {
+        requestFileInformationMh(downloadLink);
+        handleDl(downloadLink, br.getURL());
+    }
+
+    public AvailableStatus requestFileInformationMh(DownloadLink dl) throws PluginException, IOException {
+        prepBrowser(br);
+        URLConnectionAdapter con = null;
+        try {
+            br.setFollowRedirects(true);
+            con = br.openGetConnection(dl.getDownloadURL());
+            if (con.isContentDisposition()) {
+                if (dl.getFinalFileName() == null) {
+                    dl.setFinalFileName(getFileNameFromHeader(con));
+                }
+                dl.setVerifiedFileSize(con.getLongContentLength());
+                dl.setAvailable(true);
+                return AvailableStatus.TRUE;
+            } else {
+                dl.setAvailable(false);
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            }
+        } finally {
+            try {
+                /* make sure we close connection */
+                con.disconnect();
+            } catch (final Throwable e) {
+            }
+        }
     }
 
     private void showMessage(DownloadLink link, String message) {
@@ -185,31 +249,34 @@ public class MultiShareCz extends PluginForHost {
     }
 
     /** no override to keep plugin compatible to old stable */
-    public void handleMultiHost(final DownloadLink link, final Account acc) throws Exception {
+    public void handleMultiHost(final DownloadLink downloadLink, final Account acc) throws Exception {
         this.setBrowserExclusive();
         prepBrowser(br);
         br.setFollowRedirects(false);
         /* login to get u_ID and u_HASH */
-        br.getPage("https://www.multishare.cz/api/?sub=download-link&login=" + Encoding.urlEncode(acc.getUser()) + "&password=" + Encoding.urlEncode(acc.getPass()) + "&link=" + Encoding.urlEncode(link.getDownloadURL()));
+        br.getPage("https://www.multishare.cz/api/?sub=download-link&login=" + Encoding.urlEncode(acc.getUser()) + "&password=" + Encoding.urlEncode(acc.getPass()) + "&link=" + Encoding.urlEncode(downloadLink.getDownloadURL()));
         if (br.containsHTML("ERR: Invalid password\\.")) {
             throw new PluginException(LinkStatus.ERROR_PREMIUM, "Wrong password", PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
         }
         String dllink = getJson("link");
         if (dllink == null) {
-            int timesFailed = link.getIntegerProperty("timesfailedmultisharecz_unknown", 0);
+            int timesFailed = downloadLink.getIntegerProperty("timesfailedmultisharecz_unknown", 0);
             if (timesFailed <= 2) {
                 timesFailed++;
-                link.setProperty("timesfailedmultisharecz_unknown", timesFailed);
+                downloadLink.setProperty("timesfailedmultisharecz_unknown", timesFailed);
                 logger.info("multishare.cz: Download failed -> Retrying");
                 throw new PluginException(LinkStatus.ERROR_RETRY, "Server error");
             } else {
-                link.setProperty("timesfailedmultisharecz_unknown", Property.NULL);
+                downloadLink.setProperty("timesfailedmultisharecz_unknown", Property.NULL);
                 logger.info("multishare.cz: Download failed -> Plugin broken");
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
         }
-        dllink = dllink.replace("\\", "");
-        dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, true, 1);
+        handleDl(downloadLink, dllink);
+    }
+
+    private void handleDl(final DownloadLink downloadLink, final String dllink) throws Exception {
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 1);
         if (dl.getConnection().isContentDisposition()) {
             /* contentdisposition, lets download it */
             dl.startDownload();
@@ -249,11 +316,14 @@ public class MultiShareCz extends PluginForHost {
     }
 
     @Override
-    public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
+    public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws IOException, PluginException {
+        if (downloadLink.getDownloadURL().matches(mhLink)) {
+            return requestFileInformationMh(downloadLink);
+        }
         this.setBrowserExclusive();
         prepBrowser(br);
         br.setFollowRedirects(true);
-        br.getPage(link.getDownloadURL());
+        br.getPage(downloadLink.getDownloadURL());
         if (br.containsHTML("(Požadovaný soubor neexistuje|Je možné, že byl již tento soubor vymazán uploaderem nebo porušoval autorská práva)")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
@@ -265,9 +335,9 @@ public class MultiShareCz extends PluginForHost {
         if (filename == null || filesize == null) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        link.setName(filename.trim());
+        downloadLink.setName(filename.trim());
         filesize = filesize.replace("&nbsp;", "");
-        link.setDownloadSize(SizeFormatter.getSize(filesize));
+        downloadLink.setDownloadSize(SizeFormatter.getSize(filesize));
         return AvailableStatus.TRUE;
     }
 
@@ -290,6 +360,11 @@ public class MultiShareCz extends PluginForHost {
     @Override
     public boolean canHandle(DownloadLink downloadLink, Account account) {
         if (account == null) {
+            if (downloadLink.getDownloadURL().matches(mhLink)) {
+                // multihoster link
+                return true;
+            }
+
             /* without account its not possible to download the link */
             return false;
         }

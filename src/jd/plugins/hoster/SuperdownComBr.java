@@ -277,7 +277,7 @@ public class SuperdownComBr extends PluginForHost {
         ai.setValidUntil(System.currentTimeMillis() + Long.parseLong(days_string) * 24 * 60 * 60 * 1000l);
         ai.setUnlimitedTraffic();
         account.setValid(true);
-        account.setMaxSimultanDownloads(20);
+        account.setMaxSimultanDownloads(-1);
         account.setConcurrentUsePossible(true);
         final ArrayList<String> supportedHosts = new ArrayList<String>();
         /* Apply supported hosts depending on account type */
@@ -288,19 +288,8 @@ public class SuperdownComBr extends PluginForHost {
                 supportedHosts.add(realHost);
             }
         }
-        if (supportedHosts.contains("uploaded.net") || supportedHosts.contains("ul.to") || supportedHosts.contains("uploaded.to")) {
-            if (!supportedHosts.contains("uploaded.net")) {
-                supportedHosts.add("uploaded.net");
-            }
-            if (!supportedHosts.contains("ul.to")) {
-                supportedHosts.add("ul.to");
-            }
-            if (!supportedHosts.contains("uploaded.to")) {
-                supportedHosts.add("uploaded.to");
-            }
-        }
+        ai.setMultiHostSupport(supportedHosts);
         ai.setStatus("Premium account");
-        ai.setProperty("multiHostSupport", supportedHosts);
         return ai;
     }
 

@@ -16,6 +16,8 @@
 
 package jd.plugins;
 
+import java.util.ArrayList;
+
 import jd.config.Property;
 
 import org.appwork.utils.formatter.SizeFormatter;
@@ -211,12 +213,79 @@ public class AccountInfo extends Property {
     }
 
     /**
-     * JD2 ONLY
-     * 
      * @param validPremiumUntil
+     * @since JD2
      */
     public void setValidPremiumUntil(long validPremiumUntil) {
         this.validPremiumUntil = validPremiumUntil;
+    }
+
+    /**
+     * Removes forbidden hosts from supported array and then sets AccountInfo property 'multiHostSupport'
+     * 
+     * @author raztoki
+     * @since JD2
+     * */
+    public void setMultiHostSupport(final ArrayList<String> multiHostSupport) {
+        if (multiHostSupport == null || multiHostSupport.isEmpty()) {
+            return;
+        }
+        // remove forbidden hosts! needed to remove from tooltip
+
+        // change when can construct from plugin cache from canNotMultihost(), doing this manually is pain in the ass and requires core
+        // update each time.
+        final ArrayList<String> bannedHosts = new ArrayList<String>();
+        bannedHosts.add("youtube.com");
+        bannedHosts.add("youtu.be");
+        bannedHosts.add("vimeo.com");
+
+        for (final String host : bannedHosts) {
+            if (multiHostSupport.contains(host)) {
+                multiHostSupport.remove(host);
+            }
+        }
+
+        // central place to fix up issues when JD 'names' doesn't match multihoster supported host array or vise versa
+
+        // work around for freakshare.com
+        if (multiHostSupport.contains("freakshare.net") || multiHostSupport.contains("freakshare.com")) {
+            if (!multiHostSupport.contains("freakshare.net")) {
+                multiHostSupport.add("freakshare.com");
+            }
+            if (!multiHostSupport.contains("freakshare.com")) {
+                multiHostSupport.add("freakshare.com");
+            }
+        }
+        // workaround for uploaded.to
+        if (multiHostSupport.contains("uploaded.net") || multiHostSupport.contains("ul.to") || multiHostSupport.contains("uploaded.to")) {
+            if (!multiHostSupport.contains("uploaded.net")) {
+                multiHostSupport.add("uploaded.net");
+            }
+            if (!multiHostSupport.contains("ul.to")) {
+                multiHostSupport.add("ul.to");
+            }
+            if (!multiHostSupport.contains("uploaded.to")) {
+                multiHostSupport.add("uploaded.to");
+            }
+        }
+        // workaround for keep2share.cc, as they keep changing hosts..
+        if (multiHostSupport.contains("keep2share.cc") || multiHostSupport.contains("k2s.cc") || multiHostSupport.contains("keep2s.cc") || multiHostSupport.contains("keep2.cc")) {
+            if (!multiHostSupport.contains("keep2share.cc")) {
+                multiHostSupport.add("keep2share.cc");
+            }
+            if (!multiHostSupport.contains("k2s.cc")) {
+                multiHostSupport.add("k2s.cc");
+            }
+            if (!multiHostSupport.contains("keep2s.cc")) {
+                multiHostSupport.add("keep2s.cc");
+            }
+            if (!multiHostSupport.contains("keep2.cc")) {
+                multiHostSupport.add("keep2.cc");
+            }
+        }
+
+        // set array!
+        this.setProperty("multiHostSupport", multiHostSupport);
     }
 
 }

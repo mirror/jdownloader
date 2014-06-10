@@ -55,7 +55,7 @@ public class EsouboryCz extends PluginForHost {
     private static HashMap<Account, HashMap<String, Long>> hostUnavailableMap = new HashMap<Account, HashMap<String, Long>>();
 
     private void prepBr() {
-        br.getHeaders().put("User-Agent", "JDOWNLOADER");
+        br.getHeaders().put("User-Agent", "JDownloader");
     }
 
     @Override
@@ -164,25 +164,14 @@ public class EsouboryCz extends PluginForHost {
         ai.setTrafficLeft(SizeFormatter.getSize(getJson("credit") + "MB"));
         br.getPage("http://www.esoubory.cz/api/list");
         String hostsSup = br.getRegex("\"list\":\"(.*?)\"").getMatch(0);
-        hostsSup = hostsSup.replace("\\", "");
-        hostsSup = hostsSup.replace("http://www.", "");
-        hostsSup = hostsSup.replace("http://", "");
-        hostsSup = hostsSup.replace("https://www.", "");
-        hostsSup = hostsSup.replace("https://", "");
-        final String[] hosts = hostsSup.split(";");
-        final ArrayList<String> supportedHosts = new ArrayList<String>(Arrays.asList(hosts));
-        if (supportedHosts.contains("uploaded.net") || supportedHosts.contains("ul.to") || supportedHosts.contains("uploaded.to")) {
-            if (!supportedHosts.contains("uploaded.net")) {
-                supportedHosts.add("uploaded.net");
-            }
-            if (!supportedHosts.contains("ul.to")) {
-                supportedHosts.add("ul.to");
-            }
-            if (!supportedHosts.contains("uploaded.to")) {
-                supportedHosts.add("uploaded.to");
-            }
+        if (hostsSup != null) {
+            hostsSup = hostsSup.replace("\\", "");
+            hostsSup = hostsSup.replaceFirst("https?://(www\\.)?", "");
+            final String[] hosts = hostsSup.split(";");
+            final ArrayList<String> supportedHosts = new ArrayList<String>(Arrays.asList(hosts));
+            ai.setMultiHostSupport(supportedHosts);
         }
-        ai.setProperty("multiHostSupport", supportedHosts);
+
         return ai;
     }
 

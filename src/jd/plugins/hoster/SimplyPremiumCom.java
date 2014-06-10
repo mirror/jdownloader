@@ -23,6 +23,7 @@ import java.awt.Insets;
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -273,8 +274,6 @@ public class SimplyPremiumCom extends PluginForHost {
         br.setFollowRedirects(true);
         getapikey(account);
         br.getPage("http://simply-premium.com/api/user.php?apikey=" + APIKEY);
-        account.setValid(true);
-        account.setConcurrentUsePossible(true);
         final String acctype = getXML("account_typ");
         if (acctype == null) {
             final String lang = System.getProperty("user.language");
@@ -313,11 +312,8 @@ public class SimplyPremiumCom extends PluginForHost {
         if (maxSimultanDls < 1) {
             maxSimultanDls = 1;
         } else if (maxSimultanDls > 20) {
-            maxSimultanDls = 20;
+            maxSimultanDls = -1;
         }
-        account.setMaxSimultanDownloads(maxSimultanDls);
-        maxPrem.set(maxSimultanDls);
-
         long maxChunks = Integer.parseInt(getXML("chunks"));
         if (maxChunks > 1) {
             maxChunks = -maxChunks;
@@ -330,24 +326,15 @@ public class SimplyPremiumCom extends PluginForHost {
 
         /* online=1 == show only working hosts */
         br.getPage("http://www.simply-premium.com/api/hosts.php?online=1");
-        final ArrayList<String> supportedHosts = new ArrayList<String>();
         final String[] hostDomains = br.getRegex("<host>([^<>\"]*?)</host>").getColumn(0);
-        for (final String domain : hostDomains) {
-            supportedHosts.add(domain);
+        if (hostDomains != null) {
+            final ArrayList<String> supportedHosts = new ArrayList<String>(Arrays.asList(hostDomains));
+            ai.setMultiHostSupport(supportedHosts);
         }
-        if (supportedHosts.contains("uploaded.net") || supportedHosts.contains("ul.to") || supportedHosts.contains("uploaded.to")) {
-            if (!supportedHosts.contains("uploaded.net")) {
-                supportedHosts.add("uploaded.net");
-            }
-            if (!supportedHosts.contains("ul.to")) {
-                supportedHosts.add("ul.to");
-            }
-            if (!supportedHosts.contains("uploaded.to")) {
-                supportedHosts.add("uploaded.to");
-            }
-        }
-        ai.setStatus(accdesc + " - " + supportedHosts.size() + " hosts available");
-        ai.setProperty("multiHostSupport", supportedHosts);
+        account.setMaxSimultanDownloads(maxSimultanDls);
+        account.setConcurrentUsePossible(true);
+        account.setValid(true);
+        ai.setStatus(accdesc);
         return ai;
     }
 

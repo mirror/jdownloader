@@ -23,7 +23,6 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Random;
-import java.util.concurrent.atomic.AtomicInteger;
 
 import jd.PluginWrapper;
 import jd.config.Property;
@@ -47,7 +46,6 @@ import jd.plugins.PluginForHost;
 public class RapideoPl extends PluginForHost {
 
     private static HashMap<Account, HashMap<String, Long>> hostUnavailableMap = new HashMap<Account, HashMap<String, Long>>();
-    private static AtomicInteger                           maxPrem            = new AtomicInteger(20);
     private static final String                            NOCHUNKS           = "NOCHUNKS";
     private static final String                            MAINPAGE           = "http://rapideo.pl";
     private static final String                            NICE_HOST          = MAINPAGE.replaceAll("(https://|http://)", "");
@@ -66,11 +64,6 @@ public class RapideoPl extends PluginForHost {
         return "https://www.rapideo.pl/";
     }
 
-    @Override
-    public int getMaxSimultanDownload(DownloadLink link, Account account) {
-        return maxPrem.get();
-    }
-
     /*
      * TODO: Probably they also have time accounts (see answer of the browser extension API) --> Implement (we did not yet get such an
      * account type to test)
@@ -80,7 +73,6 @@ public class RapideoPl extends PluginForHost {
         final AccountInfo ac = new AccountInfo();
         br.setConnectTimeout(60 * 1000);
         br.setReadTimeout(60 * 1000);
-        ac.setProperty("multiHostSupport", Property.NULL);
         // check if account is valid
         if (!login(account, true)) {
             final String lang = System.getProperty("user.language");
@@ -106,21 +98,12 @@ public class RapideoPl extends PluginForHost {
                 supportedHosts.add(realHost);
             }
         }
-        if (supportedHosts.contains("uploaded.net") || supportedHosts.contains("ul.to") || supportedHosts.contains("uploaded.to")) {
-            if (!supportedHosts.contains("uploaded.net")) {
-                supportedHosts.add("uploaded.net");
-            }
-            if (!supportedHosts.contains("ul.to")) {
-                supportedHosts.add("ul.to");
-            }
-            if (!supportedHosts.contains("uploaded.to")) {
-                supportedHosts.add("uploaded.to");
-            }
-        }
-        ac.setStatus("Premium User");
         /* They only have accounts with traffic, no free/premium difference (other than no traffic) */
         account.setType(AccountType.PREMIUM);
-        ac.setProperty("multiHostSupport", supportedHosts);
+        account.setMaxSimultanDownloads(-1);
+        account.setConcurrentUsePossible(true);
+        ac.setMultiHostSupport(supportedHosts);
+        ac.setStatus("Premium User");
         return ac;
     }
 

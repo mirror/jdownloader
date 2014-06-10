@@ -21,7 +21,6 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Locale;
 import java.util.Map;
-import java.util.concurrent.atomic.AtomicInteger;
 
 import jd.PluginWrapper;
 import jd.config.Property;
@@ -48,7 +47,6 @@ public class ShareDirCom extends PluginForHost {
 
     // Based on API: http://easyfiles.pl/api_dokumentacja.php?api_en=1
     private static HashMap<Account, HashMap<String, Long>> hostUnavailableMap = new HashMap<Account, HashMap<String, Long>>();
-    private static AtomicInteger                           maxPrem            = new AtomicInteger(20);
     private static final String                            NOCHUNKS           = "NOCHUNKS";
 
     private static final String                            NICE_HOST          = "sharedir.com";
@@ -65,11 +63,6 @@ public class ShareDirCom extends PluginForHost {
     @Override
     public String getAGBLink() {
         return "http://sharedir.com/terms.html";
-    }
-
-    @Override
-    public int getMaxSimultanDownload(DownloadLink link, Account account) {
-        return maxPrem.get();
     }
 
     private Browser prepBr(final Browser br) {
@@ -145,19 +138,14 @@ public class ShareDirCom extends PluginForHost {
 
         ac.setProperty("multiHostSupport", Property.NULL);
         safeAPIRequest("http://sharedir.com/sdapi.php?get_dl_limit", account, null);
-        try {
-            int maxSim = Integer.parseInt(br.toString().trim());
-            if (maxSim > 20) {
-                maxSim = 20;
-            } else if (maxSim < 0) {
-                maxSim = 1;
-            }
-            maxPrem.set(maxSim);
-            account.setMaxSimultanDownloads(maxPrem.get());
-            account.setConcurrentUsePossible(true);
-        } catch (final Throwable e) {
-            // not available in old Stable 0.9.581
+        int maxSim = Integer.parseInt(br.toString().trim());
+        if (maxSim < 0) {
+            maxSim = 1;
         }
+        account.setMaxSimultanDownloads(maxSim);
+        account.setConcurrentUsePossible(true);
+
+        // this should done at the point of link generating (which this host doesn't do). As not every hoster would have the same value...
         safeAPIRequest("http://sharedir.com/sdapi.php?get_max_file_conn", account, null);
         int maxcon = Integer.parseInt(br.toString().trim());
         if (maxcon >= 20) {
@@ -177,24 +165,8 @@ public class ShareDirCom extends PluginForHost {
                 supportedHosts.add(host.trim());
             }
         }
-        if (supportedHosts.contains("uploaded.net") || supportedHosts.contains("ul.to") || supportedHosts.contains("uploaded.to")) {
-            if (!supportedHosts.contains("uploaded.net")) {
-                supportedHosts.add("uploaded.net");
-            }
-            if (!supportedHosts.contains("ul.to")) {
-                supportedHosts.add("ul.to");
-            }
-            if (!supportedHosts.contains("uploaded.to")) {
-                supportedHosts.add("uploaded.to");
-            }
-        }
-
-        if (supportedHosts.size() == 0) {
-            ac.setStatus(acctype + " valid: 0 Hosts via " + NICE_HOST + " available");
-        } else {
-            ac.setStatus(acctype + " valid: " + supportedHosts.size() + " Hosts via " + NICE_HOST + " available");
-            ac.setProperty("multiHostSupport", supportedHosts);
-        }
+        ac.setStatus(acctype);
+        ac.setMultiHostSupport(supportedHosts);
         return ac;
     }
 

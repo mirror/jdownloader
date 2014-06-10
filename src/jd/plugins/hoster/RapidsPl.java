@@ -19,7 +19,6 @@ package jd.plugins.hoster;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.concurrent.atomic.AtomicInteger;
 
 import jd.PluginWrapper;
 import jd.config.Property;
@@ -44,7 +43,6 @@ import org.appwork.utils.formatter.SizeFormatter;
 public class RapidsPl extends PluginForHost {
 
     private static HashMap<Account, HashMap<String, Long>> hostUnavailableMap = new HashMap<Account, HashMap<String, Long>>();
-    private static AtomicInteger                           maxPrem            = new AtomicInteger(20);
     private static final String                            NOCHUNKS           = "NOCHUNKS";
 
     private static final String                            NICE_HOST          = "rapids.pl";
@@ -62,11 +60,6 @@ public class RapidsPl extends PluginForHost {
     @Override
     public String getAGBLink() {
         return "http://rapids.pl/pomoc/regulamin";
-    }
-
-    @Override
-    public int getMaxSimultanDownload(DownloadLink link, Account account) {
-        return maxPrem.get();
     }
 
     private Browser newBrowser() {
@@ -102,13 +95,8 @@ public class RapidsPl extends PluginForHost {
         }
         ac.setProperty("multiHostSupport", Property.NULL);
         // check if account is valid
-        try {
-            maxPrem.set(20);
-            account.setMaxSimultanDownloads(maxPrem.get());
-            account.setConcurrentUsePossible(true);
-        } catch (final Throwable e) {
-            // not available in old Stable 0.9.581
-        }
+        account.setMaxSimultanDownloads(-1);
+        account.setConcurrentUsePossible(true);
         ac.setStatus("Premium User");
         br.getPage("http://rapids.pl/");
         final String availableTraffic = br.getRegex("Pozostały transfer: <strong>([^<>\"]*?)</strong>").getMatch(0);
@@ -130,19 +118,8 @@ public class RapidsPl extends PluginForHost {
                 }
             }
         }
-
-        if (supportedHosts.size() == 0) {
-            ac.setStatus("Account valid: 0 Hosts available");
-        } else {
-            ac.setStatus("Account valid: " + supportedHosts.size() + " Hosts available");
-            ac.setProperty("multiHostSupport", supportedHosts);
-        }
+        ac.setMultiHostSupport(supportedHosts);
         return ac;
-    }
-
-    @Override
-    public int getMaxSimultanFreeDownloadNum() {
-        return 0;
     }
 
     @Override

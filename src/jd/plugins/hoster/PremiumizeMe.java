@@ -268,11 +268,6 @@ public class PremiumizeMe extends PluginForHost {
                 tempUnavailableHoster(account, link, 60 * 60 * 1000l);
             }
         }
-        // if (true) {
-        // if (true) {
-        //
-        // throw new PluginException(LinkStatus.ERROR_PREMIUM, "Debug", PluginException.VALUE_ID_PREMIUM_DISABLE); }
-        // }
         handleAPIErrors(br, account, link);
         String dllink = br.getRegex("location\":\"(http[^\"]+)").getMatch(0);
         if (dllink == null) {
@@ -357,7 +352,7 @@ public class PremiumizeMe extends PluginForHost {
         String[] hosts = new Regex(HostsJSON, "\"([a-zA-Z0-9\\.\\-]+)\"").getColumn(0);
         ArrayList<String> supportedHosts = new ArrayList<String>(Arrays.asList(hosts));
 
-        ai.setProperty("multiHostSupport", supportedHosts);
+        ai.setMultiHostSupport(supportedHosts);
         ai.setProperty("connection_settings", response.get("connection_settings"));
         return ai;
     }
