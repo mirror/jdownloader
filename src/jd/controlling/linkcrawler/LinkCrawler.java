@@ -194,18 +194,22 @@ public class LinkCrawler {
             classLoader = PluginClassLoader.getInstance().getChild();
             pHosts = new ArrayList<LazyHostPlugin>(HostPluginController.getInstance().list());
             /* sort pHosts according to their usage */
-            Collections.sort(pHosts, new Comparator<LazyHostPlugin>() {
+            try {
+                Collections.sort(pHosts, new Comparator<LazyHostPlugin>() {
 
-                public int compare(long x, long y) {
-                    return (x < y) ? 1 : ((x == y) ? 0 : -1);
-                }
+                    public int compare(long x, long y) {
+                        return (x < y) ? 1 : ((x == y) ? 0 : -1);
+                    }
 
-                @Override
-                public int compare(LazyHostPlugin o1, LazyHostPlugin o2) {
-                    return compare(o1.getParsesCounter(), o2.getParsesCounter());
-                }
+                    @Override
+                    public int compare(LazyHostPlugin o1, LazyHostPlugin o2) {
+                        return compare(o1.getParsesCounter(), o2.getParsesCounter());
+                    }
 
-            });
+                });
+            } catch (final Throwable e) {
+                LogController.CL(true).log(e);
+            }
             for (LazyHostPlugin pHost : pHosts) {
                 if (directHTTP == null && HTTP_LINKS.equals(pHost.getDisplayName())) {
                     /* for direct access to the directhttp plugin */

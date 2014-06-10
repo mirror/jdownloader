@@ -10,8 +10,6 @@ import java.net.MalformedURLException;
 import java.net.URL;
 import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
-import java.util.Collections;
-import java.util.Comparator;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
@@ -113,13 +111,6 @@ public class D extends PluginsC {
 
         try {
             s1 = new ArrayList<URL>();
-
-            Collections.sort(s1, new Comparator<Object>() {
-                public int compare(Object a, Object b) {
-                    return (int) (Math.random() * 4.0 - 2.0);
-                }
-
-            });
             s1.add(0, new URL("http://service.jdownloader.org/dlcrypt/service.php"));
             Iterator<URL> it = s1.iterator();
 
@@ -395,7 +386,9 @@ public class D extends PluginsC {
 
             // a7b3b706e3cf3770931f081926ed0d95
             if (!br.getHttpConnection().isOK() || !br.containsHTML("rc")) {
-                if (i > 3) { return null; }
+                if (i > 3) {
+                    return null;
+                }
             } else {
                 String dk = br + "";
                 String ret = new Regex(dk, "<rc>(.*)</rc>").getMatch(0);
@@ -496,7 +489,9 @@ public class D extends PluginsC {
     }
 
     private String fds(String dcs) {
-        if (dcs == null) { return dcs; }
+        if (dcs == null) {
+            return dcs;
+        }
         dcs = dcs.trim();
         if (Regex.matches(dcs, "<dlc>(.*)<\\/dlc>")) {
             dcs = "<dlc>" + new Regex(dcs, "<dlc>(.*)<\\/dlc>").getMatch(0).trim() + "</dlc>";
@@ -534,8 +529,11 @@ public class D extends PluginsC {
                         }
                         if (data.item(entry).getNodeName().equalsIgnoreCase("password")) {
                             java.util.List<String> ret = parsePassword(data.item(entry).getTextContent());
-                            for (String pw : ret)
-                                if (!pws.contains(pw)) pws.add(pw);
+                            for (String pw : ret) {
+                                if (!pws.contains(pw)) {
+                                    pws.add(pw);
+                                }
+                            }
                         }
                         if (data.item(entry).getNodeName().equalsIgnoreCase("comment")) {
                             String cmt = data.item(entry).getTextContent();
@@ -610,8 +608,11 @@ public class D extends PluginsC {
                         }
                         if (data.item(entry).getNodeName().equalsIgnoreCase("password")) {
                             java.util.List<String> ret = parsePassword(Encoding.Base64Decode(data.item(entry).getTextContent()));
-                            for (String pw : ret)
-                                if (!pws.contains(pw)) pws.add(pw);
+                            for (String pw : ret) {
+                                if (!pws.contains(pw)) {
+                                    pws.add(pw);
+                                }
+                            }
                         }
                         if (data.item(entry).getNodeName().equalsIgnoreCase("comment")) {
                             String cmt = Encoding.Base64Decode(data.item(entry).getTextContent());
@@ -652,14 +653,20 @@ public class D extends PluginsC {
 
     private static java.util.List<String> parsePassword(String password) {
         java.util.List<String> pws = new ArrayList<String>();
-        if (password == null || password.length() == 0 || password.matches("[\\s]*")) return pws;
+        if (password == null || password.length() == 0 || password.matches("[\\s]*")) {
+            return pws;
+        }
         if (password.matches("[\\s]*\\{[\\s]*\".*\"[\\s]*\\}[\\s]*$")) {
             password = password.replaceFirst("[\\s]*\\{[\\s]*\"", "").replaceFirst("\"[\\s]*\\}[\\s]*$", "");
             for (String pw : password.split("\"[\\s]*\\,[\\s]*\"")) {
-                if (!pws.contains(pw)) pws.add(pw);
+                if (!pws.contains(pw)) {
+                    pws.add(pw);
+                }
             }
         }
-        if (pws.size() == 0) pws.add(password);
+        if (pws.size() == 0) {
+            pws.add(password);
+        }
         return pws;
     }
 
@@ -942,7 +949,9 @@ public class D extends PluginsC {
             } else {
                 url = l.getDownloadURL();
             }
-            if (url == null) continue;
+            if (url == null) {
+                continue;
+            }
             if (!map.containsKey(url)) {
                 filter.add(l);
             }

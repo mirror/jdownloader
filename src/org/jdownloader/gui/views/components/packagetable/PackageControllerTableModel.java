@@ -22,6 +22,7 @@ import jd.controlling.packagecontroller.PackageControllerComparator;
 import org.appwork.scheduler.DelayedRunnable;
 import org.appwork.storage.Storage;
 import org.appwork.swing.exttable.ExtColumn;
+import org.appwork.swing.exttable.ExtDefaultRowSorter;
 import org.appwork.swing.exttable.ExtTableModel;
 import org.appwork.utils.event.queue.Queue;
 import org.appwork.utils.event.queue.QueueAction;
@@ -352,8 +353,8 @@ public abstract class PackageControllerTableModel<PackageType extends AbstractPa
     }
 
     protected CompiledFilterList compileFilterList(Collection<PackageControllerTableModelFilter<PackageType, ChildrenType>> filters) {
-        ArrayList<PackageControllerTableModelFilter<PackageType, ChildrenType>> packageFilters = new ArrayList<PackageControllerTableModelFilter<PackageType, ChildrenType>>();
-        ArrayList<PackageControllerTableModelFilter<PackageType, ChildrenType>> childrendFilters = new ArrayList<PackageControllerTableModelFilter<PackageType, ChildrenType>>();
+        final ArrayList<PackageControllerTableModelFilter<PackageType, ChildrenType>> packageFilters = new ArrayList<PackageControllerTableModelFilter<PackageType, ChildrenType>>();
+        final ArrayList<PackageControllerTableModelFilter<PackageType, ChildrenType>> childrendFilters = new ArrayList<PackageControllerTableModelFilter<PackageType, ChildrenType>>();
         if (filters == null || filters.size() == 0) {
             return new CompiledFilterList(packageFilters, childrendFilters);
         }
@@ -378,23 +379,31 @@ public abstract class PackageControllerTableModel<PackageType extends AbstractPa
                 }
             };
             if (packageFilters.size() > 0) {
-                Collections.sort(packageFilters, comparator);
+                try {
+                    Collections.sort(packageFilters, comparator);
+                } catch (Throwable e) {
+                    LogController.CL(true).log(e);
+                }
             }
             if (childrendFilters.size() > 0) {
-                Collections.sort(childrendFilters, comparator);
+                try {
+                    Collections.sort(childrendFilters, comparator);
+                } catch (Throwable e) {
+                    LogController.CL(true).log(e);
+                }
             }
         }
         return new CompiledFilterList(packageFilters, childrendFilters);
     }
 
     public List<PackageControllerTableModelFilter<PackageType, ChildrenType>> getEnabledTableFilters() {
-        ArrayList<PackageControllerTableModelFilter<PackageType, ChildrenType>> ret = new ArrayList<PackageControllerTableModelFilter<PackageType, ChildrenType>>();
+        final ArrayList<PackageControllerTableModelFilter<PackageType, ChildrenType>> ret = new ArrayList<PackageControllerTableModelFilter<PackageType, ChildrenType>>();
         for (PackageControllerTableModelFilter<PackageType, ChildrenType> filter : getAvailableTableFilters()) {
             if (filter.isFilteringPackageNodes() || filter.isFilteringChildrenNodes()) {
                 ret.add(filter);
             }
         }
-        Comparator<PackageControllerTableModelFilter<PackageType, ChildrenType>> comparator = new Comparator<PackageControllerTableModelFilter<PackageType, ChildrenType>>() {
+        final Comparator<PackageControllerTableModelFilter<PackageType, ChildrenType>> comparator = new Comparator<PackageControllerTableModelFilter<PackageType, ChildrenType>>() {
 
             public int compare(int x, int y) {
                 return (x < y) ? -1 : ((x == y) ? 0 : 1);
@@ -405,7 +414,11 @@ public abstract class PackageControllerTableModel<PackageType extends AbstractPa
                 return compare(o1.getComplexity(), o2.getComplexity());
             }
         };
-        Collections.sort(ret, comparator);
+        try {
+            Collections.sort(ret, comparator);
+        } catch (Throwable e) {
+            LogController.CL(true).log(e);
+        }
         return ret;
     }
 
@@ -442,8 +455,8 @@ public abstract class PackageControllerTableModel<PackageType extends AbstractPa
                 LogController.CL(true).log(e);
             }
         }
-        CompiledFilterList filters = compileFilterList(getAvailableTableFilters());
-        ArrayList<PackageType> packages = pc.getPackagesCopy();
+        final CompiledFilterList filters = compileFilterList(getAvailableTableFilters());
+        final ArrayList<PackageType> packages = pc.getPackagesCopy();
         /* filter packages */
         boolean hasPackageFilters = filters.getPackageFilters().size() > 0;
         if (hasPackageFilters) {
@@ -461,7 +474,10 @@ public abstract class PackageControllerTableModel<PackageType extends AbstractPa
         /* sort packages */
         if (column != null) {
             try {
-                Collections.sort(packages, column.getRowSorter());
+                final ExtDefaultRowSorter<AbstractNode> comparator = column.getRowSorter();
+                if (comparator != null) {
+                    Collections.sort(packages, comparator);
+                }
             } catch (Throwable e) {
                 LogController.CL(true).log(e);
             }
@@ -469,7 +485,11 @@ public abstract class PackageControllerTableModel<PackageType extends AbstractPa
         List<TableDataModification> appliedTableDataModifier = new ArrayList<TableDataModification>(tableModifiers);
         tableModifiers.removeAll(appliedTableDataModifier);
         for (TableDataModification modifier : appliedTableDataModifier) {
-            modifier.modifyTableData(packages);
+            try {
+                modifier.modifyTableData(packages);
+            } catch (Throwable e) {
+                LogController.CL(true).log(e);
+            }
         }
         PackageControllerTableModelData<PackageType, ChildrenType> newData = new PackageControllerTableModelData<PackageType, ChildrenType>(Math.max(data.size(), packages.size()));
         boolean hasChildrenFilters = filters.getChildrenFilters().size() > 0;
@@ -525,7 +545,10 @@ public abstract class PackageControllerTableModel<PackageType extends AbstractPa
                     if (column != null && files.size() > 1) {
                         /* we only have to sort children if the package is expanded */
                         try {
-                            Collections.sort(files, column.getRowSorter());
+                            final ExtDefaultRowSorter<AbstractNode> comparator = column.getRowSorter();
+                            if (comparator != null) {
+                                Collections.sort(files, comparator);
+                            }
                         } catch (final Throwable e) {
                             LogController.CL(true).log(e);
                         }

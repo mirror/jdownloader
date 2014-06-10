@@ -823,24 +823,28 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
             }
         }
         ArrayList<DownloadLinkCandidate> finalCandidates = new ArrayList<DownloadLinkCandidate>(bestCandidates.values());
-        Collections.sort(finalCandidates, new Comparator<DownloadLinkCandidate>() {
+        try {
+            Collections.sort(finalCandidates, new Comparator<DownloadLinkCandidate>() {
 
-            public int compareDown(boolean x, boolean y) {
-                return (x == y) ? 0 : (x ? 1 : -1);
-            }
-
-            @Override
-            public int compare(DownloadLinkCandidate x, DownloadLinkCandidate y) {
-                int ret = x.getCachedAccount().getType().compareTo(y.getCachedAccount().getType());
-                if (ret == 0) {
-                    boolean xCaptcha = x.getCachedAccount().hasCaptcha(x.getLink());
-                    boolean yCaptcha = y.getCachedAccount().hasCaptcha(y.getLink());
-                    ret = compareDown(xCaptcha, yCaptcha);
+                public int compareDown(boolean x, boolean y) {
+                    return (x == y) ? 0 : (x ? 1 : -1);
                 }
-                return ret;
-            }
 
-        });
+                @Override
+                public int compare(DownloadLinkCandidate x, DownloadLinkCandidate y) {
+                    int ret = x.getCachedAccount().getType().compareTo(y.getCachedAccount().getType());
+                    if (ret == 0) {
+                        boolean xCaptcha = x.getCachedAccount().hasCaptcha(x.getLink());
+                        boolean yCaptcha = y.getCachedAccount().hasCaptcha(y.getLink());
+                        ret = compareDown(xCaptcha, yCaptcha);
+                    }
+                    return ret;
+                }
+
+            });
+        } catch (final Throwable e) {
+            LogController.CL(true).log(e);
+        }
         return finalCandidates.get(0);
     }
 

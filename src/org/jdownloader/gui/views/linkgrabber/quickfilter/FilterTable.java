@@ -104,7 +104,9 @@ public abstract class FilterTable extends BasicJDTable<Filter> implements Packag
                                                                                                              }
                                                                                                          }
                                                                                                      }
-                                                                                                     if (expand) pkg.setExpanded(true);
+                                                                                                     if (expand) {
+                                                                                                         pkg.setExpanded(true);
+                                                                                                     }
                                                                                                      return unfilteredChildren;
                                                                                                  }
 
@@ -173,7 +175,9 @@ public abstract class FilterTable extends BasicJDTable<Filter> implements Packag
     }
 
     private static void updateFilterTables(List<FilterTableDataUpdater> updater) {
-        if (updater.size() == 0) return;
+        if (updater.size() == 0) {
+            return;
+        }
         for (FilterTableDataUpdater update : updater) {
             update.reset();
         }
@@ -201,7 +205,9 @@ public abstract class FilterTable extends BasicJDTable<Filter> implements Packag
         HashMap<FilterTable, List<Filter>> updateTableData = new HashMap<FilterTable, List<Filter>>();
         boolean newDisabledFilters = false;
         for (FilterTableDataUpdater update : updater) {
-            if (update.hasNewDisabledFilters()) newDisabledFilters = true;
+            if (update.hasNewDisabledFilters()) {
+                newDisabledFilters = true;
+            }
             FilterTable filterTable = update.getFilterTable();
             List<Filter> filters = update.finalizeUpdater();
             if (filters.size() > 0 && filterTable.visibleKey()) {
@@ -215,22 +221,26 @@ public abstract class FilterTable extends BasicJDTable<Filter> implements Packag
                 } finally {
                     filterExceptionThread = null;
                 }
-                Collections.sort(filters, new Comparator<Filter>() {
+                try {
+                    Collections.sort(filters, new Comparator<Filter>() {
 
-                    public int compare(boolean x, boolean y) {
-                        return (x == y) ? 0 : (x ? -1 : 1);
-                    }
-
-                    @Override
-                    public int compare(Filter o1, Filter o2) {
-                        if (o1.isEnabled() == o2.isEnabled()) {
-                            return o1.getName().compareToIgnoreCase(o2.getName());
-                        } else {
-                            return compare(o1.isEnabled(), o2.isEnabled());
+                        public int compare(boolean x, boolean y) {
+                            return (x == y) ? 0 : (x ? -1 : 1);
                         }
-                    }
 
-                });
+                        @Override
+                        public int compare(Filter o1, Filter o2) {
+                            if (o1.isEnabled() == o2.isEnabled()) {
+                                return o1.getName().compareToIgnoreCase(o2.getName());
+                            } else {
+                                return compare(o1.isEnabled(), o2.isEnabled());
+                            }
+                        }
+
+                    });
+                } catch (final Throwable e) {
+                    LogController.CL(true).log(e);
+                }
             }
             updateTableData.put(filterTable, filters);
         }
@@ -240,11 +250,15 @@ public abstract class FilterTable extends BasicJDTable<Filter> implements Packag
             Entry<FilterTable, List<Filter>> next = it.next();
             next.getKey().updateTableData(next.getValue());
         }
-        if (newDisabledFilters) LinkGrabberTableModel.getInstance().recreateModel(false);
+        if (newDisabledFilters) {
+            LinkGrabberTableModel.getInstance().recreateModel(false);
+        }
     }
 
     protected static int getCountWithout(Filter filter, List<CrawledLink> filteredLinks, List<PackageControllerTableModelFilter<CrawledPackage, CrawledLink>> tableFilters) {
-        if (tableFilters == null || tableFilters.size() == 0) return 0;
+        if (tableFilters == null || tableFilters.size() == 0) {
+            return 0;
+        }
         int ret = 0;
         main: for (CrawledLink l : filteredLinks) {
             if (filter.isFiltered(l)) {
@@ -288,12 +302,16 @@ public abstract class FilterTable extends BasicJDTable<Filter> implements Packag
                     boolean addListener = FILTERTABLES.size() == 0;
                     FILTERTABLES.add(filterTableUpdater);
                     linkgrabberTable.getModel().addFilter(FilterTable.this);
-                    if (addListener) linkgrabberTable.getModel().addTableModelListener(TABLELISTENER);
+                    if (addListener) {
+                        linkgrabberTable.getModel().addTableModelListener(TABLELISTENER);
+                    }
                     FilterTable.super.setVisible(true);
                 } else {
                     FILTERTABLES.remove(filterTableUpdater);
                     linkgrabberTable.getModel().removeFilter(FilterTable.this);
-                    if (FILTERTABLES.size() == 0) FilterTable.this.linkgrabberTable.getModel().removeTableModelListener(TABLELISTENER);
+                    if (FILTERTABLES.size() == 0) {
+                        FilterTable.this.linkgrabberTable.getModel().removeTableModelListener(TABLELISTENER);
+                    }
                     FilterTable.super.setVisible(false);
                 }
                 linkgrabberTable.getModel().recreateModel(false);
@@ -371,7 +389,9 @@ public abstract class FilterTable extends BasicJDTable<Filter> implements Packag
         if (!e.isControlDown()) {
             for (FilterTableUpdater filterTableUpdater : FILTERTABLES) {
                 FilterTable f = filterTableUpdater.getTable();
-                if (f == FilterTable.this) continue;
+                if (f == FilterTable.this) {
+                    continue;
+                }
                 f.clearSelection();
             }
             return true;
@@ -380,7 +400,9 @@ public abstract class FilterTable extends BasicJDTable<Filter> implements Packag
     }
 
     protected boolean processKeyBinding(final KeyStroke stroke, final KeyEvent evt, final int condition, final boolean pressed) {
-        if (!pressed) { return super.processKeyBinding(stroke, evt, condition, pressed); }
+        if (!pressed) {
+            return super.processKeyBinding(stroke, evt, condition, pressed);
+        }
         switch (evt.getKeyCode()) {
         case KeyEvent.VK_ENTER:
         case KeyEvent.VK_BACK_SPACE:
@@ -397,7 +419,9 @@ public abstract class FilterTable extends BasicJDTable<Filter> implements Packag
         case KeyEvent.VK_UP:
         case KeyEvent.VK_DOWN:
             /* ignore move */
-            if (evt.isMetaDown() || evt.isControlDown()) { return true; }
+            if (evt.isMetaDown() || evt.isControlDown()) {
+                return true;
+            }
         }
         return super.processKeyBinding(stroke, evt, condition, pressed);
     }
@@ -419,13 +443,16 @@ public abstract class FilterTable extends BasicJDTable<Filter> implements Packag
     }
 
     protected static Filter getFilterException() {
-        if (filterException != null && Thread.currentThread() == filterExceptionThread) return filterException;
+        if (filterException != null && Thread.currentThread() == filterExceptionThread) {
+            return filterException;
+        }
         return null;
     }
 
     //
     // protected int getCountWithout(Filter filter, java.util.List<CrawledLink> filteredLinks) {
-    // java.util.List<PackageControllerTableModelFilter<CrawledPackage, CrawledLink>> tableFilters = getLinkgrabberTable().getModel().getTableFilters();
+    // java.util.List<PackageControllerTableModelFilter<CrawledPackage, CrawledLink>> tableFilters =
+    // getLinkgrabberTable().getModel().getTableFilters();
     // int ret = 0;
     // main: for (CrawledLink l : filteredLinks) {
     // if (filter.isFiltered(l)) {

@@ -74,13 +74,19 @@ public class ReconnectPluginController {
         final java.util.List<ReconnectResult> scripts = new ArrayList<ReconnectResult>();
 
         for (final RouterPlugin plg : ReconnectPluginController.this.plugins) {
-            if (Thread.currentThread().isInterrupted()) throw new InterruptedException();
+            if (Thread.currentThread().isInterrupted()) {
+                throw new InterruptedException();
+            }
             try {
 
                 feedback.setStatus(plg, null);
                 java.util.List<ReconnectResult> founds = plg.runDetectionWizard(feedback);
-                if (founds != null) scripts.addAll(founds);
-                if (scripts.size() > 0) break;
+                if (founds != null) {
+                    scripts.addAll(founds);
+                }
+                if (scripts.size() > 0) {
+                    break;
+                }
             } catch (InterruptedException e) {
                 throw e;
             } catch (Exception e) {
@@ -123,14 +129,16 @@ public class ReconnectPluginController {
 
             }
         }
+        try {
+            Collections.sort(scripts, new Comparator<ReconnectResult>() {
 
-        Collections.sort(scripts, new Comparator<ReconnectResult>() {
-
-            public int compare(ReconnectResult o1, ReconnectResult o2) {
-                return new Long(o1.getAverageSuccessDuration()).compareTo(new Long(o2.getAverageSuccessDuration()));
-            }
-        });
-
+                public int compare(ReconnectResult o1, ReconnectResult o2) {
+                    return new Long(o1.getAverageSuccessDuration()).compareTo(new Long(o2.getAverageSuccessDuration()));
+                }
+            });
+        } catch (final Throwable e) {
+            LogController.GL.log(e);
+        }
         return scripts;
     }
 
@@ -180,7 +188,9 @@ public class ReconnectPluginController {
         logger.info("IP Before=" + IPController.getInstance().getIP());
         try {
             ReconnectInvoker invoker = plg.getReconnectInvoker();
-            if (invoker == null) { throw new ReconnectException("Reconnect Plugin  " + plg.getName() + " is not set up correctly. Invoker==null"); }
+            if (invoker == null) {
+                throw new ReconnectException("Reconnect Plugin  " + plg.getName() + " is not set up correctly. Invoker==null");
+            }
             invoker.setLogger(logger);
             invoker.run();
             logger.finer("Initial Waittime: " + waittime + " seconds");
@@ -240,7 +250,9 @@ public class ReconnectPluginController {
 
     public RouterPlugin getPluginByID(final String activeID) {
         for (final RouterPlugin plg : this.plugins) {
-            if (plg.getID().equals(activeID)) { return plg; }
+            if (plg.getID().equals(activeID)) {
+                return plg;
+            }
         }
         return null;
     }

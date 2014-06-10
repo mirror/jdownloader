@@ -62,6 +62,7 @@ import org.jdownloader.actions.AppAction;
 import org.jdownloader.gui.IconKey;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.images.AbstractIcon;
+import org.jdownloader.logging.LogController;
 import org.jdownloader.plugins.controller.host.HostPluginController;
 import org.jdownloader.plugins.controller.host.LazyHostPlugin;
 import org.jdownloader.settings.GraphicalUserInterfaceSettings;
@@ -289,17 +290,21 @@ public class ServicePanel extends JPanel implements MouseListener, AccountToolti
         // final HashSet<DomainInfo> enabled = new HashSet<DomainInfo>();
         final HashMap<String, AccountServiceCollection> map = new HashMap<String, AccountServiceCollection>();
         final LinkedList<ServiceCollection<?>> services = new LinkedList<ServiceCollection<?>>();
-        Collections.sort(accs, new Comparator<Account>() {
-            public int compare(boolean x, boolean y) {
-                return (x == y) ? 0 : (x ? 1 : -1);
-            }
+        try {
+            Collections.sort(accs, new Comparator<Account>() {
+                public int compare(boolean x, boolean y) {
+                    return (x == y) ? 0 : (x ? 1 : -1);
+                }
 
-            @Override
-            public int compare(Account o1, Account o2) {
-                return compare(o1.isMulti(), o2.isMulti());
-            }
+                @Override
+                public int compare(Account o1, Account o2) {
+                    return compare(o1.isMulti(), o2.isMulti());
+                }
 
-        });
+            });
+        } catch (final Throwable e) {
+            LogController.CL(true).log(e);
+        }
         HashMap<String, LazyHostPlugin> plugins = new HashMap<String, LazyHostPlugin>();
         for (Account acc : accs) {
             AccountInfo ai = acc.getAccountInfo();

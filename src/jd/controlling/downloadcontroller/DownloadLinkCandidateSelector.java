@@ -19,6 +19,7 @@ import jd.plugins.DownloadLink;
 
 import org.appwork.exceptions.WTFException;
 import org.appwork.storage.config.JsonConfig;
+import org.jdownloader.logging.LogController;
 import org.jdownloader.settings.GeneralSettings;
 
 public class DownloadLinkCandidateSelector {
@@ -112,7 +113,11 @@ public class DownloadLinkCandidateSelector {
     public List<AbstractProxySelectorImpl> getProxies(final DownloadLinkCandidate candidate, final boolean ignoreConnectBans, final boolean ignoreAllBans) {
         List<AbstractProxySelectorImpl> ret = ProxyController.getInstance().getProxySelectors(candidate, ignoreConnectBans, ignoreAllBans);
         if (loadBalanceFreeDownloads && ret != null && candidate.getCachedAccount().getAccount() == null) {
-            Collections.sort(ret, new DownloadLinkCandidateLoadBalancer(candidate));
+            try {
+                Collections.sort(ret, new DownloadLinkCandidateLoadBalancer(candidate));
+            } catch (final Throwable e) {
+                LogController.CL(true).log(e);
+            }
         }
         return ret;
     }
@@ -313,7 +318,11 @@ public class DownloadLinkCandidateSelector {
                 default:
                     throw new WTFException("This should not happen " + candidateResult.getResult());
                 }
-                Collections.sort(results, RESULT_SORTER);
+                try {
+                    Collections.sort(results, RESULT_SORTER);
+                } catch (final Throwable e) {
+                    LogController.CL(true).log(e);
+                }
                 CandidateResultHolder mostImportantResult = results.get(0);
                 ret.put(mostImportantResult.getCandidate(), mostImportantResult.getResult());
             }

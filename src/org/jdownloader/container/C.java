@@ -24,8 +24,6 @@ import java.io.InputStream;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.ArrayList;
-import java.util.Collections;
-import java.util.Comparator;
 import java.util.Iterator;
 import java.util.Vector;
 
@@ -55,7 +53,9 @@ public class C extends PluginsC {
             is = new FileInputStream(file);
 
             long length = file.length();
-            if (length > Integer.MAX_VALUE) { return null; }
+            if (length > Integer.MAX_VALUE) {
+                return null;
+            }
             byte[] bytes = new byte[(int) length];
 
             int offset = 0;
@@ -86,12 +86,6 @@ public class C extends PluginsC {
         try {
             services = new Vector<URL>();
 
-            Collections.sort(services, new Comparator<Object>() {
-                public int compare(Object a, Object b) {
-                    return (int) (Math.random() * 4.0 - 2.0);
-                }
-
-            });
             services.add(0, new URL("http://service.jdownloader.net/dlcrypt/getDLC.php"));
             Iterator<URL> it = services.iterator();
 
