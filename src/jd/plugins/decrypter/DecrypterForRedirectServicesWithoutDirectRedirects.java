@@ -783,13 +783,16 @@ public class DecrypterForRedirectServicesWithoutDirectRedirects extends PluginFo
             } else if (parameter.contains("umhq.net/")) {
                 finallink = br.getRegex("class=\"dl\" href=\"(http[^<>\"]*?)\"").getMatch(0);
             } else if (parameter.contains("djurl.com/")) {
-                finallink = br.getRegex("var finalStr = \"(.*?)\";").getMatch(0);
+                finallink = br.getRedirectLocation();
+                if (finallink == null) {
+                    finallink = br.getRegex("var finalStr = \"(.*?)\";").getMatch(0);
+                }
                 if (finallink != null) {
                     finallink = Encoding.Base64Decode(finallink);
                 } else {
                     finallink = br.getRegex("var finalLink = \"(.*?)\";").getMatch(0);
                 }
-                if (finallink == null && br.containsHTML("<title>DJURL\\.COM \\- The DJ Link Shortener</title>") || br.getHttpConnection().getResponseCode() == 404) {
+                if (finallink == null && br.containsHTML("<title>DJURL\\.COM \\- The DJ Link Shortener</title>") || br.getHttpConnection().getResponseCode() == 404 || finallink.contains("djurl.com/")) {
                     offline = true;
                 }
             } else if (parameter.contains("bookgn.com/")) {

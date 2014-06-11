@@ -824,6 +824,9 @@ public class VKontakteRu extends PluginForDecrypt {
     }
 
     private void decryptVideoAlbum() throws Exception {
+        if (br.containsHTML("The owner of this video has either been suspended or deleted")) {
+            throw new DecrypterException(EXCEPTION_LINKOFFLINE);
+        }
         br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
         final String albumID = new Regex(this.CRYPTEDLINK_FUNCTIONAL, "((\\-)?\\d+)$").getMatch(0);
         final int numberOfEntrys = Integer.parseInt(br.getRegex("\"videoCount\":(\\d+)").getMatch(0));
