@@ -129,37 +129,34 @@ public class AdvancedConfigManagerAPIImpl implements AdvancedConfigManagerAPI {
             // check plugins
             if (interfaceName.startsWith("jd.plugins.hoster.") || interfaceName.startsWith("jd.plugins.decrypter")) {
                 ArrayList<AdvancedConfigEntry> ret = new ArrayList<AdvancedConfigEntry>();
-                PluginClassLoaderChild pluginClassLoader = PluginClassLoader.getInstance().getChild();
-                ClassLoader oldClassLoader = Thread.currentThread().getContextClassLoader();
-                try {
-                    Thread.currentThread().setContextClassLoader(pluginClassLoader);
-                    for (LazyHostPlugin hplg : HostPluginController.getInstance().list()) {
-                        String ifName = hplg.getConfigInterface();
-                        if (StringUtils.equals(ifName, interfaceName)) {
-                            ConfigInterface cf;
-                            try {
-                                cf = PluginJsonConfig.get((Class<ConfigInterface>) pluginClassLoader.loadClass(ifName));
-                                storageHandler = cf._getStorageHandler();
-                                break;
+                final PluginClassLoaderChild pluginClassLoader = PluginClassLoader.getInstance().getChild();
+                for (LazyHostPlugin hplg : HostPluginController.getInstance().list()) {
+                    String ifName = hplg.getConfigInterface();
+                    if (StringUtils.equals(ifName, interfaceName)) {
+                        ConfigInterface cf;
+                        try {
+                            cf = PluginJsonConfig.get((Class<ConfigInterface>) pluginClassLoader.loadClass(ifName));
+                            storageHandler = cf._getStorageHandler();
+                            break;
 
-                            } catch (ClassNotFoundException e) {
-                                e.printStackTrace();
-                            }
-                            System.out.println(ifName);
+                        } catch (ClassNotFoundException e) {
+                            e.printStackTrace();
                         }
+                        System.out.println(ifName);
                     }
-
-                    for (LazyCrawlerPlugin cplg : CrawlerPluginController.getInstance().list()) {
-                        String ifName = cplg.getConfigInterface();
-                        if (StringUtils.isNotEmpty(ifName)) {
-                            System.out.println(ifName);
-                        }
-                    }
-                } finally {
-                    Thread.currentThread().setContextClassLoader(oldClassLoader);
                 }
+
+                for (LazyCrawlerPlugin cplg : CrawlerPluginController.getInstance().list()) {
+                    String ifName = cplg.getConfigInterface();
+                    if (StringUtils.isNotEmpty(ifName)) {
+                        System.out.println(ifName);
+                    }
+                }
+
             }
-            if (storageHandler == null) { return null; }
+            if (storageHandler == null) {
+                return null;
+            }
         }
         KeyHandler<Object> kh = storageHandler.getKeyHandler(key);
         return kh;

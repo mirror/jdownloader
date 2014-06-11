@@ -27,11 +27,9 @@ public class PluginController<T extends Plugin> {
             ownLogger = false;
         }
         final java.util.List<PluginInfo<T>> ret = new ArrayList<PluginInfo<T>>();
-        final ClassLoader oldCL = Thread.currentThread().getContextClassLoader();
         try {
             final File path = Application.getRootByClass(jd.SecondLevelLaunch.class, hosterpath);
             final PluginClassLoaderChild cl = PluginClassLoader.getInstance().getChild();
-            Thread.currentThread().setContextClassLoader(cl);
             final File[] pluginClassFiles = path.listFiles(new FilenameFilter() {
                 public boolean accept(final File dir, final String name) {
                     if (!name.endsWith(".class") || name.contains("$")) {
@@ -100,7 +98,6 @@ public class PluginController<T extends Plugin> {
                 logger.clear();
             }
         } finally {
-            Thread.currentThread().setContextClassLoader(oldCL);
             if (ownLogger) {
                 logger.close();
             }

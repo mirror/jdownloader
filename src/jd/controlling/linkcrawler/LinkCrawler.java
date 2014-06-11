@@ -955,14 +955,11 @@ public class LinkCrawler {
             return;
         }
         if (checkStartNotify()) {
-            ClassLoader oldClassLoader = null;
             try {
-                oldClassLoader = Thread.currentThread().getContextClassLoader();
                 PluginForHost wplg = null;
                 /*
                  * use a new PluginClassLoader here
                  */
-                Thread.currentThread().setContextClassLoader(getPluginClassLoaderChild());
                 wplg = pHost.newInstance(getPluginClassLoaderChild());
                 if (wplg != null) {
                     /* now we run the plugin and let it find some links */
@@ -1044,7 +1041,6 @@ public class LinkCrawler {
                 LogController.CL().log(e);
             } finally {
                 /* restore old ClassLoader for current Thread */
-                Thread.currentThread().setContextClassLoader(oldClassLoader);
                 checkFinishNotify();
             }
         }
@@ -1242,12 +1238,9 @@ public class LinkCrawler {
         }
         if (checkStartNotify()) {
             final int generation = this.getCrawlerGeneration(true);
-            ClassLoader oldClassLoader = null;
             try {
-                oldClassLoader = Thread.currentThread().getContextClassLoader();
                 processedLinksCounter.incrementAndGet();
                 /* set new PluginClassLoaderChild because ContainerPlugin maybe uses Hoster/Crawler */
-                Thread.currentThread().setContextClassLoader(getPluginClassLoaderChild());
                 PluginsC plg = null;
                 try {
                     plg = oplg.getClass().newInstance();
@@ -1327,7 +1320,6 @@ public class LinkCrawler {
                 }
             } finally {
                 /* restore old ClassLoader for current Thread */
-                Thread.currentThread().setContextClassLoader(oldClassLoader);
                 checkFinishNotify();
             }
         }
@@ -1346,16 +1338,13 @@ public class LinkCrawler {
             return;
         }
         if (checkStartNotify()) {
-            ClassLoader oldClassLoader = null;
             try {
                 final int generation = this.getCrawlerGeneration(true);
-                oldClassLoader = Thread.currentThread().getContextClassLoader();
                 processedLinksCounter.incrementAndGet();
                 PluginForDecrypt wplg = null;
                 /*
                  * we want a fresh pluginClassLoader here
                  */
-                Thread.currentThread().setContextClassLoader(getPluginClassLoaderChild());
                 try {
                     wplg = lazyC.newInstance(getPluginClassLoaderChild());
                 } catch (UpdateRequiredClassNotFoundException e1) {
@@ -1547,7 +1536,6 @@ public class LinkCrawler {
                 }
             } finally {
                 /* restore old ClassLoader for current Thread */
-                Thread.currentThread().setContextClassLoader(oldClassLoader);
                 checkFinishNotify();
             }
         }

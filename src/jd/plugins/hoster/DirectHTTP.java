@@ -517,7 +517,6 @@ public class DirectHTTP extends PluginForHost {
         if (this.requestFileInformation(downloadLink) == AvailableStatus.UNCHECKABLE) {
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, 15 * 60 * 1000l);
         }
-
         final String auth = this.br.getHeaders().get("Authorization");
         /*
          * replace with br.setCurrentURL(null); in future (after 0.9)

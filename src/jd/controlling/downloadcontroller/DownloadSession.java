@@ -8,7 +8,10 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Set;
+import java.util.WeakHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.CopyOnWriteArraySet;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -34,6 +37,8 @@ import org.appwork.utils.StringUtils;
 import org.jdownloader.controlling.UniqueAlltimeID;
 import org.jdownloader.controlling.hosterrule.HosterRuleController;
 import org.jdownloader.logging.LogController;
+import org.jdownloader.plugins.controller.PluginClassLoader;
+import org.jdownloader.plugins.controller.PluginClassLoader.PluginClassLoaderChild;
 import org.jdownloader.settings.GeneralSettings;
 import org.jdownloader.settings.IfFileExistsAction;
 
@@ -64,21 +69,21 @@ public class DownloadSession extends Property {
         return DISK_SPACE_MANAGER;
     }
 
-    private final NullsafeAtomicReference<SessionState>               sessionState            = new NullsafeAtomicReference<SessionState>(SessionState.NORMAL);
-    private final HashMap<String, AccountCache>                       accountCache            = new HashMap<String, AccountCache>();
-    private final HashMap<DownloadLink, DownloadLinkCandidateHistory> candidateHistory        = new HashMap<DownloadLink, DownloadLinkCandidateHistory>();
-    private final HashMap<UniqueAlltimeID, IfFileExistsAction>        fileExistsActions       = new HashMap<UniqueAlltimeID, IfFileExistsAction>();
-    private final AtomicInteger                                       downloadsStarted        = new AtomicInteger(0);
-    private final AtomicInteger                                       skipCounter             = new AtomicInteger(0);
-    private final NullsafeAtomicReference<Integer>                    speedLimitBeforePause   = new NullsafeAtomicReference<Integer>(null);
-    private final NullsafeAtomicReference<Boolean>                    speedLimitedBeforePause = new NullsafeAtomicReference<Boolean>(null);
-    private volatile List<DownloadLink>                               forcedLinks             = new CopyOnWriteArrayList<DownloadLink>();
-    private volatile List<DownloadLink>                               activationRequests      = new CopyOnWriteArrayList<DownloadLink>();
-    private final HashMap<String, PluginForHost>                      activationPluginCache   = new HashMap<String, PluginForHost>();
-    private final AtomicBoolean                                       refreshCandidates       = new AtomicBoolean(false);
-    private final AtomicBoolean                                       activateForcedOnly      = new AtomicBoolean(false);
-    private AtomicLong                                                activatorRebuildRequest = new AtomicLong(1);
-    private NullsafeAtomicReference<CaptchaSettings.MODE>             captchaMode             = new NullsafeAtomicReference<CaptchaSettings.MODE>(CaptchaSettings.MODE.NORMAL);
+    private final NullsafeAtomicReference<SessionState>                   sessionState            = new NullsafeAtomicReference<SessionState>(SessionState.NORMAL);
+    private final HashMap<String, AccountCache>                           accountCache            = new HashMap<String, AccountCache>();
+    private final WeakHashMap<DownloadLink, DownloadLinkCandidateHistory> candidateHistory        = new WeakHashMap<DownloadLink, DownloadLinkCandidateHistory>();
+    private final WeakHashMap<UniqueAlltimeID, IfFileExistsAction>        fileExistsActions       = new WeakHashMap<UniqueAlltimeID, IfFileExistsAction>();
+    private final AtomicInteger                                           downloadsStarted        = new AtomicInteger(0);
+    private final AtomicInteger                                           skipCounter             = new AtomicInteger(0);
+    private final NullsafeAtomicReference<Integer>                        speedLimitBeforePause   = new NullsafeAtomicReference<Integer>(null);
+    private final NullsafeAtomicReference<Boolean>                        speedLimitedBeforePause = new NullsafeAtomicReference<Boolean>(null);
+    private volatile List<DownloadLink>                                   forcedLinks             = new CopyOnWriteArrayList<DownloadLink>();
+    private volatile List<DownloadLink>                                   activationRequests      = new CopyOnWriteArrayList<DownloadLink>();
+    private final WeakHashMap<PluginForHost, PluginClassLoaderChild>      activationPluginCache   = new WeakHashMap<PluginForHost, PluginClassLoaderChild>();
+    private final AtomicBoolean                                           refreshCandidates       = new AtomicBoolean(false);
+    private final AtomicBoolean                                           activateForcedOnly      = new AtomicBoolean(false);
+    private AtomicLong                                                    activatorRebuildRequest = new AtomicLong(1);
+    private NullsafeAtomicReference<CaptchaSettings.MODE>                 captchaMode             = new NullsafeAtomicReference<CaptchaSettings.MODE>(CaptchaSettings.MODE.NORMAL);
 
     public CaptchaSettings.MODE getCaptchaMode() {
         return captchaMode.get();
@@ -204,7 +209,7 @@ public class DownloadSession extends Property {
         return removed;
     }
 
-    public HashMap<String, PluginForHost> getActivationPluginCache() {
+    private Map<PluginForHost, PluginClassLoaderChild> getActivationPluginCache() {
         return activationPluginCache;
     }
 
@@ -255,17 +260,36 @@ public class DownloadSession extends Property {
         return proxyInfoHistory;
     }
 
-    public PluginForHost getPlugin(String host) {
-        if (StringUtils.isEmpty(host)) {
-            return null;
-        }
-        host = host.toLowerCase(Locale.ENGLISH);
-        PluginForHost plugin = getActivationPluginCache().get(host);
-        if (plugin == null) {
+    public synchronized PluginForHost getPlugin(String host) {
+        if (!StringUtils.isEmpty(host)) {
+            final Iterator<Entry<PluginForHost, PluginClassLoaderChild>> it = getActivationPluginCache().entrySet().iterator();
+            PluginForHost plugin = null;
+            while (it.hasNext()) {
+                final Entry<PluginForHost, PluginClassLoaderChild> next = it.next();
+                plugin = next.getKey();
+                if (StringUtils.equalsIgnoreCase(host, plugin.getHost())) {
+                    return plugin;
+                }
+            }
             plugin = JDUtilities.getPluginForHost(host);
-            getActivationPluginCache().put(host, plugin);
+            getActivationPluginCache().put(plugin, PluginClassLoader.getInstance().getSharedChild(plugin));
+            return plugin;
         }
-        return plugin;
+        return null;
+    }
+
+    public synchronized PluginClassLoaderChild getPluginClassLoaderChild(final PluginForHost plugin) {
+        if (plugin != null) {
+            final Iterator<Entry<PluginForHost, PluginClassLoaderChild>> it = getActivationPluginCache().entrySet().iterator();
+            while (it.hasNext()) {
+                final Entry<PluginForHost, PluginClassLoaderChild> next = it.next();
+                final PluginForHost entry = next.getKey();
+                if (entry == plugin) {
+                    return next.getValue();
+                }
+            }
+        }
+        return null;
     }
 
     public List<DownloadLink> getForcedLinks() {
@@ -484,10 +508,14 @@ public class DownloadSession extends Property {
     }
 
     public void setOnFileExistsAction(FilePackage filePackage, IfFileExistsAction doAction) {
-        if (doAction == null) {
-            fileExistsActions.remove(filePackage.getUniqueID());
+        if (filePackage == null) {
+            fileExistsActions.clear();
         } else {
-            fileExistsActions.put(filePackage.getUniqueID(), doAction);
+            if (doAction == null) {
+                fileExistsActions.remove(filePackage.getUniqueID());
+            } else {
+                fileExistsActions.put(filePackage.getUniqueID(), doAction);
+            }
         }
     }
 
@@ -553,6 +581,10 @@ public class DownloadSession extends Property {
 
     protected void setSkipCounter(int i) {
         skipCounter.set(i);
+    }
+
+    public synchronized void clearPluginCache() {
+        getActivationPluginCache().clear();
     }
 
 }

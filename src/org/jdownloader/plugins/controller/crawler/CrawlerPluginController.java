@@ -93,7 +93,6 @@ public class CrawlerPluginController extends PluginController<PluginForDecrypt> 
             logger.setAllowTimeoutFlush(false);
             logger.setAutoFlushOnThrowable(true);
             LogController.setRebirthLogger(logger);
-            final ClassLoader currentContextClassLoader = Thread.currentThread().getContextClassLoader();
             final long completeTimeStamp = System.currentTimeMillis();
             try {
                 List<LazyCrawlerPlugin> updateCache = null;
@@ -170,7 +169,6 @@ public class CrawlerPluginController extends PluginController<PluginForDecrypt> 
             } finally {
                 validateCache();
                 LogController.setRebirthLogger(null);
-                Thread.currentThread().setContextClassLoader(currentContextClassLoader);
                 final List<LazyCrawlerPlugin> llist = list;
                 if (llist != null) {
                     logger.info("@CrawlerPluginController: init took " + (System.currentTimeMillis() - completeTimeStamp) + "ms for " + llist.size());
@@ -267,7 +265,6 @@ public class CrawlerPluginController extends PluginController<PluginForDecrypt> 
                         final PluginClassLoaderChild classLoader = (PluginClassLoaderChild) c.getClazz().getClassLoader();
                         /* during init we dont want dummy libs being created */
                         classLoader.setCreateDummyLibs(false);
-                        Thread.currentThread().setContextClassLoader(classLoader);
                         for (int i = 0; i < names.length; i++) {
                             LazyCrawlerPlugin lazyCrawlerPlugin = null;
                             try {

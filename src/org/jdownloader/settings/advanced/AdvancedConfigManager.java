@@ -105,7 +105,9 @@ public class AdvancedConfigManager {
 
         for (KeyHandler m : cf._getStorageHandler().getMap().values()) {
 
-            if (map.containsKey(m)) continue;
+            if (map.containsKey(m)) {
+                continue;
+            }
 
             if (m.getAnnotation(AboutConfig.class) != null) {
                 if (m.getSetter() == null) {
@@ -126,46 +128,44 @@ public class AdvancedConfigManager {
     @SuppressWarnings("unchecked")
     public java.util.List<AdvancedConfigEntry> listPluginsInterfaces() {
         ArrayList<AdvancedConfigEntry> ret = new ArrayList<AdvancedConfigEntry>();
-        PluginClassLoaderChild pluginClassLoader = PluginClassLoader.getInstance().getChild();
-        ClassLoader oldClassLoader = Thread.currentThread().getContextClassLoader();
-        try {
-            Thread.currentThread().setContextClassLoader(pluginClassLoader);
-            for (LazyHostPlugin hplg : HostPluginController.getInstance().list()) {
-                String ifName = hplg.getConfigInterface();
-                if (StringUtils.isNotEmpty(ifName)) {
-                    ConfigInterface cf;
-                    try {
-                        cf = PluginJsonConfig.get((Class<ConfigInterface>) pluginClassLoader.loadClass(ifName));
-                        HashMap<KeyHandler, Boolean> map = new HashMap<KeyHandler, Boolean>();
-                        for (KeyHandler m : cf._getStorageHandler().getMap().values()) {
-                            if (map.containsKey(m)) continue;
-                            if (m.getAnnotation(AboutConfig.class) != null) {
-                                if (m.getSetter() == null) {
-                                    throw new RuntimeException("Setter for " + m.getGetter().getMethod() + " missing");
-                                } else if (m.getGetter() == null) {
-                                    throw new RuntimeException("Getter for " + m.getSetter().getMethod() + " missing");
-                                } else {
-                                    ret.add(new AdvancedConfigEntry(cf, m));
-                                    map.put(m, true);
-                                }
+        final PluginClassLoaderChild pluginClassLoader = PluginClassLoader.getInstance().getChild();
+
+        for (LazyHostPlugin hplg : HostPluginController.getInstance().list()) {
+            String ifName = hplg.getConfigInterface();
+            if (StringUtils.isNotEmpty(ifName)) {
+                ConfigInterface cf;
+                try {
+                    cf = PluginJsonConfig.get((Class<ConfigInterface>) pluginClassLoader.loadClass(ifName));
+                    HashMap<KeyHandler, Boolean> map = new HashMap<KeyHandler, Boolean>();
+                    for (KeyHandler m : cf._getStorageHandler().getMap().values()) {
+                        if (map.containsKey(m)) {
+                            continue;
+                        }
+                        if (m.getAnnotation(AboutConfig.class) != null) {
+                            if (m.getSetter() == null) {
+                                throw new RuntimeException("Setter for " + m.getGetter().getMethod() + " missing");
+                            } else if (m.getGetter() == null) {
+                                throw new RuntimeException("Getter for " + m.getSetter().getMethod() + " missing");
+                            } else {
+                                ret.add(new AdvancedConfigEntry(cf, m));
+                                map.put(m, true);
                             }
                         }
-                    } catch (ClassNotFoundException e) {
-                        e.printStackTrace();
                     }
-                    System.out.println(ifName);
+                } catch (ClassNotFoundException e) {
+                    e.printStackTrace();
                 }
+                System.out.println(ifName);
             }
-
-            for (LazyCrawlerPlugin cplg : CrawlerPluginController.getInstance().list()) {
-                String ifName = cplg.getConfigInterface();
-                if (StringUtils.isNotEmpty(ifName)) {
-                    System.out.println(ifName);
-                }
-            }
-        } finally {
-            Thread.currentThread().setContextClassLoader(oldClassLoader);
         }
+
+        for (LazyCrawlerPlugin cplg : CrawlerPluginController.getInstance().list()) {
+            String ifName = cplg.getConfigInterface();
+            if (StringUtils.isNotEmpty(ifName)) {
+                System.out.println(ifName);
+            }
+        }
+
         return ret;
     }
 

@@ -4,10 +4,7 @@ import jd.controlling.downloadcontroller.ManagedThrottledConnectionHandler;
 import jd.http.Browser;
 import jd.http.Request;
 import jd.http.URLConnectionAdapter;
-import jd.plugins.BrowserAdapter;
 import jd.plugins.DownloadLink;
-import jd.plugins.LinkStatus;
-import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.download.DownloadInterface;
 import jd.plugins.download.Downloadable;
@@ -73,7 +70,7 @@ public class StreamingDownloadInterface extends DownloadInterface {
         }
         connection = request.getHttpConnection();
         if (request.getLocation() != null) {
-            throw new PluginException(LinkStatus.ERROR_DOWNLOAD_INCOMPLETE, BrowserAdapter.ERROR_REDIRECTED);
+            return connection;
         }
         if (connection.getRange() != null) {
             /* we have a range response, let's use it */

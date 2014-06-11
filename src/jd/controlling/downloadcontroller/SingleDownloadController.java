@@ -58,7 +58,6 @@ import org.jdownloader.controlling.download.DownloadControllerListener;
 import org.jdownloader.logging.LogController;
 import org.jdownloader.plugins.SkipReason;
 import org.jdownloader.plugins.SkipReasonException;
-import org.jdownloader.plugins.controller.PluginClassLoader;
 import org.jdownloader.plugins.controller.PluginClassLoader.PluginClassLoaderChild;
 import org.jdownloader.plugins.tasks.PluginProgressTask;
 import org.jdownloader.plugins.tasks.PluginSubTask;
@@ -102,6 +101,8 @@ public class SingleDownloadController extends BrowserSettingsThread implements D
     private final ArrayList<PluginSubTask>                  tasks;
     private volatile HTTPProxy                              usedProxy;
     private volatile boolean                                resumed;
+
+    private final DownloadSession                           session;
 
     public WaitingQueueItem getQueueItem() {
         return queueItem;
@@ -175,6 +176,7 @@ public class SingleDownloadController extends BrowserSettingsThread implements D
         queueItem.queueLinks.add(downloadLink);
         this.queueItem = queueItem;
         linkStatus = new LinkStatus(downloadLink);
+        session = watchDog.getSession();
         setName("Download: " + downloadLink.getView().getDisplayName() + "_" + downloadLink.getHost());
     }
 
@@ -272,17 +274,11 @@ public class SingleDownloadController extends BrowserSettingsThread implements D
         PluginForHost handlePlugin = null;
         try {
             downloadLogger.info("DownloadCandidate: " + candidate);
-            final PluginClassLoaderChild cl;
-            this.setContextClassLoader(cl = PluginClassLoader.getInstance().getChild());
-            handlePlugin = candidate.getCachedAccount().getPlugin().getLazyP().newInstance(cl);
-            handlePlugin.setBrowser(getPluginBrowser());
-            handlePlugin.setLogger(downloadLogger);
-            handlePlugin.setDownloadLink(downloadLink);
-            handlePlugin.init();
-            downloadLink.setLivePlugin(handlePlugin);
             try {
                 if (AccountCache.ACCOUNTTYPE.MULTI.equals(candidate.getCachedAccount().getType())) {
-                    final PluginForHost defaultPlugin = downloadLink.getDefaultPlugin().getLazyP().newInstance(cl);
+                    final PluginClassLoaderChild defaultCL = session.getPluginClassLoaderChild(downloadLink.getDefaultPlugin());
+                    // this.setContextClassLoader(defaultCL);
+                    final PluginForHost defaultPlugin = downloadLink.getDefaultPlugin().getLazyP().newInstance(defaultCL);
                     defaultPlugin.setBrowser(getPluginBrowser());
                     defaultPlugin.setLogger(downloadLogger);
                     defaultPlugin.setDownloadLink(downloadLink);
@@ -342,6 +338,14 @@ public class SingleDownloadController extends BrowserSettingsThread implements D
                         }
                     }
                 }
+                final PluginClassLoaderChild handleCL = session.getPluginClassLoaderChild(candidate.getCachedAccount().getPlugin());
+                // this.setContextClassLoader(handleCL);
+                handlePlugin = candidate.getCachedAccount().getPlugin().getLazyP().newInstance(handleCL);
+                handlePlugin.setBrowser(getPluginBrowser());
+                handlePlugin.setLogger(downloadLogger);
+                handlePlugin.setDownloadLink(downloadLink);
+                handlePlugin.init();
+                downloadLink.setLivePlugin(handlePlugin);
                 watchDog.localFileCheck(this, new ExceptionRunnable() {
 
                     @Override

@@ -3195,9 +3195,10 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
                             stateMachine.setStatus(STOPPED_STATE);
                             latestSession.removeHistory((DownloadLink) null);
                             latestSession.removeAccountCache(null);
-                            latestSession.getActivationPluginCache().clear();
+                            latestSession.clearPluginCache();
                             latestSession.getActivationRequests().clear();
                             latestSession.getForcedLinks().clear();
+                            latestSession.setOnFileExistsAction(null, null);
                         }
 
                         @Override

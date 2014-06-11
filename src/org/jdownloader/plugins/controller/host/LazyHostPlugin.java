@@ -134,21 +134,16 @@ public class LazyHostPlugin extends LazyPlugin<PluginForHost> {
             ret.setLazyP(this);
             return ret;
         } catch (UpdateRequiredClassNotFoundException e) {
-            if (fallBackPlugin != null) {
-                /* we could not create new instance, so let us use fallback LazyHostPlugin to instance a new Plugin */
-                this.setClassname(fallBackPlugin.getClassname());
-                this.setPluginClass(null);
-                this.setClassLoader(null);
-                /* remove reference from fallBackPlugin */
-                fallBackPlugin = null;
-                /* our fallBack Plugin does not have any settings */
-                this.setHasConfig(false);
-                ret = super.newInstance(classLoader);
-                ret.setLazyP(this);
-                return ret;
-            } else {
-                throw e;
+            final LazyHostPlugin lFallBackPlugin = fallBackPlugin;
+            if (lFallBackPlugin != null && lFallBackPlugin != this) {
+                ret = lFallBackPlugin.newInstance(classLoader);
+                if (ret != null) {
+                    ret.setLazyP(lFallBackPlugin);
+                    return ret;
+                }
             }
+            throw e;
+
         }
     }
 
@@ -157,23 +152,18 @@ public class LazyHostPlugin extends LazyPlugin<PluginForHost> {
         PluginForHost ret = null;
         try {
             ret = super.getPrototype(classLoader);
+            ret.setLazyP(this);
             return ret;
         } catch (UpdateRequiredClassNotFoundException e) {
-            if (fallBackPlugin != null) {
-                /* we could not create protoType, so let us use fallback LazyHostPlugin to instance a new Prototype */
-                this.setClassname(fallBackPlugin.getClassname());
-                this.setPluginClass(null);
-                this.setClassLoader(null);
-                /* remove reference from fallBackPlugin */
-                fallBackPlugin = null;
-                /* our fallBack Plugin does not have any settings */
-                this.setHasConfig(false);
-                ret = super.getPrototype(classLoader);
-                ret.setLazyP(this);
-                return ret;
-            } else {
-                throw e;
+            final LazyHostPlugin lFallBackPlugin = fallBackPlugin;
+            if (lFallBackPlugin != null && lFallBackPlugin != this) {
+                ret = lFallBackPlugin.getPrototype(classLoader);
+                if (ret != null) {
+                    ret.setLazyP(lFallBackPlugin);
+                    return ret;
+                }
             }
+            throw e;
         }
     }
 

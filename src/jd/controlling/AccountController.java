@@ -220,8 +220,7 @@ public class AccountController implements AccountControllerListener, AccountProp
                     return ai;
                 }
             }
-            PluginClassLoaderChild cl;
-            Thread.currentThread().setContextClassLoader(cl = PluginClassLoader.getInstance().getChild());
+            final PluginClassLoaderChild cl = PluginClassLoader.getInstance().getSharedChild(account.getPlugin());
             PluginForHost plugin = null;
             try {
                 plugin = account.getPlugin().getLazyP().newInstance(cl);

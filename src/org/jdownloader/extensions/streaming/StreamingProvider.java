@@ -48,14 +48,11 @@ public class StreamingProvider {
                     @Override
                     public boolean connectStreamingOutputStream(final StreamingOutputStream streamingOutputStream, final long startPosition, long endPosition) throws IOException {
                         /* this method should be called within our VLCStreamingThread */
-                        ClassLoader oldClassLoader = null;
                         try {
                             List<Account> accounts = AccountController.getInstance().getValidAccounts(remoteLink.getHost());
-                            oldClassLoader = Thread.currentThread().getContextClassLoader();
                             final DownloadLink mirror = new DownloadLink(remoteLink.getDefaultPlugin(), remoteLink.getName(), remoteLink.getHost(), remoteLink.getDownloadURL(), true);
                             mirror.setProperties(remoteLink.getProperties());
-                            PluginClassLoaderChild cl;
-                            Thread.currentThread().setContextClassLoader(cl = PluginClassLoader.getInstance().getChild());
+                            PluginClassLoaderChild cl = PluginClassLoader.getInstance().getChild();
                             final PluginForHost plugin = remoteLink.getDefaultPlugin().getLazyP().newInstance(cl);
                             plugin.setBrowser(new Browser());
                             plugin.setCustomizedDownloadFactory(new DownloadInterfaceFactory() {
@@ -98,7 +95,9 @@ public class StreamingProvider {
                                     }
                                 }
 
-                                if (fileSize == -1) fileSize = con.getCompleteContentLength();
+                                if (fileSize == -1) {
+                                    fileSize = con.getCompleteContentLength();
+                                }
                                 new Thread("HTTP Reader Stream") {
                                     public void run() {
                                         long read = 0;
@@ -107,8 +106,12 @@ public class StreamingProvider {
                                             InputStream is = con.getInputStream();
                                             while (true) {
                                                 int ret = is.read(buffer);
-                                                if (ret == -1) break;
-                                                if (ret == 0) continue;
+                                                if (ret == -1) {
+                                                    break;
+                                                }
+                                                if (ret == 0) {
+                                                    continue;
+                                                }
                                                 read += ret;
                                                 streamingOutputStream.write(buffer, 0, ret);
                                             }
@@ -141,7 +144,6 @@ public class StreamingProvider {
 
                             throw new IOException(e);
                         } finally {
-                            Thread.currentThread().setContextClassLoader(oldClassLoader);
                         }
                     }
 
@@ -180,7 +182,9 @@ public class StreamingProvider {
                     @Override
                     public long getFinalFileSize() {
                         long ret = remoteLink.getView().getBytesTotalVerified();
-                        if (ret != -1) return ret;
+                        if (ret != -1) {
+                            return ret;
+                        }
                         return fileSize;
                     }
 

@@ -87,7 +87,6 @@ public class HostPluginController extends PluginController<PluginForHost> {
         logger.setAllowTimeoutFlush(false);
         logger.setAutoFlushOnThrowable(true);
         LogController.setRebirthLogger(logger);
-        final ClassLoader currentContextClassLoader = Thread.currentThread().getContextClassLoader();
         final long completeTimeStamp = System.currentTimeMillis();
         try {
             List<LazyHostPlugin> updateCache = null;
@@ -178,7 +177,6 @@ public class HostPluginController extends PluginController<PluginForHost> {
         } finally {
             validateCache();
             LogController.setRebirthLogger(null);
-            Thread.currentThread().setContextClassLoader(currentContextClassLoader);
             final Map<String, LazyHostPlugin> llist = list;
             if (llist != null) {
                 logger.info("@HostPluginController: init took " + (System.currentTimeMillis() - completeTimeStamp) + "ms for " + llist.size());
@@ -347,7 +345,6 @@ public class HostPluginController extends PluginController<PluginForHost> {
                         final PluginClassLoaderChild classLoader = (PluginClassLoaderChild) c.getClazz().getClassLoader();
                         /* during init we dont want dummy libs being created */
                         classLoader.setCreateDummyLibs(false);
-                        Thread.currentThread().setContextClassLoader(classLoader);
                         for (int i = 0; i < names.length; i++) {
                             LazyHostPlugin lazyHostPlugin = null;
                             try {
