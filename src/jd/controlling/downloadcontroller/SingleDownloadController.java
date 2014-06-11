@@ -58,6 +58,7 @@ import org.jdownloader.controlling.download.DownloadControllerListener;
 import org.jdownloader.logging.LogController;
 import org.jdownloader.plugins.SkipReason;
 import org.jdownloader.plugins.SkipReasonException;
+import org.jdownloader.plugins.controller.PluginClassLoader;
 import org.jdownloader.plugins.controller.PluginClassLoader.PluginClassLoaderChild;
 import org.jdownloader.plugins.tasks.PluginProgressTask;
 import org.jdownloader.plugins.tasks.PluginSubTask;
@@ -158,7 +159,7 @@ public class SingleDownloadController extends BrowserSettingsThread implements D
     }
 
     protected SingleDownloadController(DownloadLinkCandidate candidate, DownloadWatchDog watchDog) {
-        super("Download");
+        super(new ThreadGroup("Download: " + candidate.getLink().getView().getDisplayName() + "_" + candidate.getLink().getHost()), "Download");
         tasks = new ArrayList<PluginSubTask>();
         setPriority(Thread.MIN_PRIORITY);
         this.watchDog = watchDog;
@@ -252,6 +253,7 @@ public class SingleDownloadController extends BrowserSettingsThread implements D
     private PluginForHost finalizeProcessingPlugin() {
         final PluginForHost plugin;
         synchronized (processingPlugin) {
+            PluginClassLoader.setThreadPluginClassLoaderChild(null, null);
             plugin = processingPlugin.getAndClear();
             processingPlugin.notifyAll();
         }
@@ -277,6 +279,7 @@ public class SingleDownloadController extends BrowserSettingsThread implements D
             try {
                 if (AccountCache.ACCOUNTTYPE.MULTI.equals(candidate.getCachedAccount().getType())) {
                     final PluginClassLoaderChild defaultCL = session.getPluginClassLoaderChild(downloadLink.getDefaultPlugin());
+                    PluginClassLoader.setThreadPluginClassLoaderChild(defaultCL, defaultCL);
                     // this.setContextClassLoader(defaultCL);
                     final PluginForHost defaultPlugin = downloadLink.getDefaultPlugin().getLazyP().newInstance(defaultCL);
                     defaultPlugin.setBrowser(getPluginBrowser());
@@ -339,6 +342,7 @@ public class SingleDownloadController extends BrowserSettingsThread implements D
                     }
                 }
                 final PluginClassLoaderChild handleCL = session.getPluginClassLoaderChild(candidate.getCachedAccount().getPlugin());
+                PluginClassLoader.setThreadPluginClassLoaderChild(handleCL, handleCL);
                 // this.setContextClassLoader(handleCL);
                 handlePlugin = candidate.getCachedAccount().getPlugin().getLazyP().newInstance(handleCL);
                 handlePlugin.setBrowser(getPluginBrowser());

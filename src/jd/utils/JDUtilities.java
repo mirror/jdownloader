@@ -91,7 +91,9 @@ public class JDUtilities {
                 LogController.CL().log(e);
             }
         }
-        if (CONFIGURATION == null) CONFIGURATION = new Configuration();
+        if (CONFIGURATION == null) {
+            CONFIGURATION = new Configuration();
+        }
         return CONFIGURATION;
     }
 
@@ -160,34 +162,39 @@ public class JDUtilities {
      * @return Ein passendes Plugin oder null
      */
     public static PluginForDecrypt getPluginForDecrypt(final String host) {
-        LazyCrawlerPlugin l = CrawlerPluginController.getInstance().get(host);
-        if (l != null) try {
-            return l.getPrototype(PluginClassLoader.getThreadPluginClassLoaderChild());
-        } catch (UpdateRequiredClassNotFoundException e) {
-            LogController.CL().log(e);
-            return null;
+        final LazyCrawlerPlugin l = CrawlerPluginController.getInstance().get(host);
+        if (l != null) {
+            try {
+                return l.getPrototype(PluginClassLoader.getThreadPluginClassLoaderChild());
+            } catch (UpdateRequiredClassNotFoundException e) {
+                LogController.CL().log(e);
+
+            }
         }
         return null;
     }
 
     public static PluginForHost getPluginForHost(final String host) {
-        LazyHostPlugin lplugin = HostPluginController.getInstance().get(host);
-        if (lplugin != null) try {
-            return lplugin.getPrototype(PluginClassLoader.getThreadPluginClassLoaderChild());
-        } catch (UpdateRequiredClassNotFoundException e) {
-            LogController.CL().log(e);
-            return null;
+        final LazyHostPlugin lplugin = HostPluginController.getInstance().get(host);
+        if (lplugin != null) {
+            try {
+                return lplugin.getPrototype(PluginClassLoader.getThreadPluginClassLoaderChild());
+            } catch (UpdateRequiredClassNotFoundException e) {
+                LogController.CL().log(e);
+            }
         }
         return null;
     }
 
     public static PluginForHost getNewPluginForHostInstance(final String host) {
-        LazyHostPlugin lplugin = HostPluginController.getInstance().get(host);
-        if (lplugin != null) try {
-            return lplugin.newInstance(PluginClassLoader.getThreadPluginClassLoaderChild());
-        } catch (UpdateRequiredClassNotFoundException e) {
-            LogController.CL().log(e);
-            return null;
+        final LazyHostPlugin lplugin = HostPluginController.getInstance().get(host);
+        if (lplugin != null) {
+            try {
+                return lplugin.newInstance(PluginClassLoader.getThreadPluginClassLoaderChild());
+            } catch (UpdateRequiredClassNotFoundException e) {
+                LogController.CL().log(e);
+                return null;
+            }
         }
         return null;
     }
@@ -203,7 +210,9 @@ public class JDUtilities {
 
     /* DO NOT USE in old 09581 stable */
     public static long getRevisionNumber() {
-        if (REVISIONINT != -1) return REVISIONINT;
+        if (REVISIONINT != -1) {
+            return REVISIONINT;
+        }
         int rev = -1;
         try {
             rev = Formatter.filterInt(JDIO.readFileToString(JDUtilities.getResourceFile("config/version.cfg")));
@@ -225,7 +234,9 @@ public class JDUtilities {
     @Deprecated
     /* please use Application.getRessource where possible */
     public static File getResourceFile(final String resource) {
-        if (resource.startsWith("tmp/")) return Application.getTempResource(resource.substring(4));
+        if (resource.startsWith("tmp/")) {
+            return Application.getTempResource(resource.substring(4));
+        }
         return Application.getResource(resource);
 
     }
@@ -235,7 +246,9 @@ public class JDUtilities {
         if (f != null) {
             if (mkdirs) {
                 final File f2 = f.getParentFile();
-                if (f2 != null && !f2.exists()) FileCreationManager.getInstance().mkdir(f2);
+                if (f2 != null && !f2.exists()) {
+                    FileCreationManager.getInstance().mkdir(f2);
+                }
             }
             return f;
         }
@@ -262,9 +275,15 @@ public class JDUtilities {
     }
 
     public synchronized static DatabaseConnector getDatabaseConnector() throws NoOldJDDataBaseFoundException {
-        if (oldDBExists == null) oldDBExists = Application.getResource("/config/database.script").exists();
-        if (Boolean.FALSE.equals(oldDBExists)) throw new NoOldJDDataBaseFoundException();
-        if (DB_CONNECT != null) return DB_CONNECT;
+        if (oldDBExists == null) {
+            oldDBExists = Application.getResource("/config/database.script").exists();
+        }
+        if (Boolean.FALSE.equals(oldDBExists)) {
+            throw new NoOldJDDataBaseFoundException();
+        }
+        if (DB_CONNECT != null) {
+            return DB_CONNECT;
+        }
         if (DB_CONNECT == null) {
             try {
                 DB_CONNECT = new DatabaseConnector();
@@ -280,7 +299,9 @@ public class JDUtilities {
     }
 
     public static Document parseXmlString(final String xmlString, final boolean validating) {
-        if (xmlString == null) return null;
+        if (xmlString == null) {
+            return null;
+        }
         try {
             // Create a builder factory
             final DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
@@ -326,7 +347,9 @@ public class JDUtilities {
      */
     public static String getAttribute(final Node childNode, final String key) {
         final NamedNodeMap att = childNode.getAttributes();
-        if (att == null || att.getNamedItem(key) == null) { return null; }
+        if (att == null || att.getNamedItem(key) == null) {
+            return null;
+        }
         return att.getNamedItem(key).getNodeValue();
     }
 

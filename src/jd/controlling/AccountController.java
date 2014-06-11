@@ -220,7 +220,8 @@ public class AccountController implements AccountControllerListener, AccountProp
                     return ai;
                 }
             }
-            final PluginClassLoaderChild cl = PluginClassLoader.getInstance().getSharedChild(account.getPlugin());
+            final PluginClassLoaderChild cl = PluginClassLoader.getSharedChild(account.getPlugin());
+            PluginClassLoader.setThreadPluginClassLoaderChild(cl, null);
             PluginForHost plugin = null;
             try {
                 plugin = account.getPlugin().getLazyP().newInstance(cl);
@@ -405,6 +406,7 @@ public class AccountController implements AccountControllerListener, AccountProp
             }
             return ai;
         } finally {
+            PluginClassLoader.setThreadPluginClassLoaderChild(null, null);
             account.setNotifyHandler(null);
             account.setChecking(false);
             getBroadcaster().fireEvent(new AccountControllerEvent(this, AccountControllerEvent.Types.ACCOUNT_CHECKED, account));

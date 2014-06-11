@@ -741,14 +741,10 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
         for (DownloadLinkCandidate nextCandidate : candidates) {
             DownloadLink candidateLink = nextCandidate.getLink();
             DownloadLinkCandidate bestCandidate = bestCandidates.get(candidateLink);
-            if (bestCandidate != null && bestCandidate.isCustomizedAccount()) {
-                /* we keep bestCandidate for candidateLink because it has a customizedAccount */
-                continue;
-            }
             if (bestCandidate == null) {
                 /* no bestCandidate yet */
                 bestCandidates.put(candidateLink, nextCandidate);
-            } else {
+            } else if (!bestCandidate.isCustomizedAccount()) {
                 /* we have a bestCandidate, check if nextCandidate would be better */
                 final boolean bestHasCaptcha = bestCandidate.getCachedAccount().hasCaptcha(candidateLink);
                 final boolean nextHasCaptcha = nextCandidate.getCachedAccount().hasCaptcha(candidateLink);

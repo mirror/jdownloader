@@ -272,7 +272,7 @@ public class DownloadSession extends Property {
                 }
             }
             plugin = JDUtilities.getPluginForHost(host);
-            getActivationPluginCache().put(plugin, PluginClassLoader.getInstance().getSharedChild(plugin));
+            getActivationPluginCache().put(plugin, PluginClassLoader.getSharedChild(plugin));
             return plugin;
         }
         return null;

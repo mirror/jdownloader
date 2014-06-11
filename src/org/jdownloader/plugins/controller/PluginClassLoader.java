@@ -20,9 +20,11 @@ import org.appwork.utils.logging2.LogSource;
 import org.jdownloader.logging.LogController;
 
 public class PluginClassLoader extends URLClassLoader {
-    private static final WeakHashMap<Class<?>, String>                                                    sharedClasses               = new WeakHashMap<Class<?>, String>();
-    private static final WeakHashMap<PluginClassLoaderChild, WeakReference<LazyPlugin<? extends Plugin>>> sharedLazyPluginClassLoader = new WeakHashMap<PluginClassLoaderChild, WeakReference<LazyPlugin<? extends Plugin>>>();
-    private static final WeakHashMap<PluginClassLoaderChild, WeakReference<Plugin>>                       sharedPluginClassLoader     = new WeakHashMap<PluginClassLoaderChild, WeakReference<Plugin>>();
+    private static final WeakHashMap<Class<?>, String>                                                    sharedClasses                = new WeakHashMap<Class<?>, String>();
+    private static final WeakHashMap<PluginClassLoaderChild, WeakReference<LazyPlugin<? extends Plugin>>> sharedLazyPluginClassLoader  = new WeakHashMap<PluginClassLoaderChild, WeakReference<LazyPlugin<? extends Plugin>>>();
+    private static final WeakHashMap<PluginClassLoaderChild, WeakReference<Plugin>>                       sharedPluginClassLoader      = new WeakHashMap<PluginClassLoaderChild, WeakReference<Plugin>>();
+    private static final WeakHashMap<Thread, WeakReference<PluginClassLoaderChild>>                       threadPluginClassLoader      = new WeakHashMap<Thread, WeakReference<PluginClassLoaderChild>>();
+    private static final WeakHashMap<ThreadGroup, WeakReference<PluginClassLoaderChild>>                  threadGroupPluginClassLoader = new WeakHashMap<ThreadGroup, WeakReference<PluginClassLoaderChild>>();
 
     public static Class<?> findSharedClass(String name) {
         synchronized (sharedClasses) {
@@ -393,12 +395,42 @@ public class PluginClassLoader extends URLClassLoader {
         return null;
     }
 
-    public static PluginClassLoaderChild getThreadPluginClassLoaderChild() {
-        ClassLoader cl = Thread.currentThread().getContextClassLoader();
-        if (cl != null && cl instanceof PluginClassLoaderChild) {
-            return (PluginClassLoaderChild) cl;
+    public synchronized static PluginClassLoaderChild getThreadPluginClassLoaderChild() {
+        final Thread currentThread = Thread.currentThread();
+        threadPluginClassLoader.isEmpty();
+        threadGroupPluginClassLoader.isEmpty();
+        WeakReference<PluginClassLoaderChild> wcl = threadPluginClassLoader.get(currentThread);
+        PluginClassLoaderChild cl = null;
+        if (wcl != null && (cl = wcl.get()) != null) {
+            return cl;
+        }
+        ThreadGroup threadGroup = null;
+        while ((threadGroup = currentThread.getThreadGroup()) != null) {
+            wcl = threadGroupPluginClassLoader.get(threadGroup);
+            if (wcl != null && (cl = wcl.get()) != null) {
+                return cl;
+            }
         }
         return null;
     }
 
+    public synchronized static void setThreadPluginClassLoaderChild(PluginClassLoaderChild threadChild, PluginClassLoaderChild groupChild) {
+        final Thread currentThread = Thread.currentThread();
+        final ThreadGroup threadGroup = currentThread.getThreadGroup();
+        threadPluginClassLoader.isEmpty();
+        threadGroupPluginClassLoader.isEmpty();
+        if (threadChild == null) {
+            threadPluginClassLoader.remove(currentThread);
+        } else {
+            threadPluginClassLoader.put(currentThread, new WeakReference<PluginClassLoaderChild>(threadChild));
+        }
+        if (threadGroup != null) {
+            if (groupChild == null) {
+                threadGroupPluginClassLoader.remove(threadGroup);
+            } else {
+                threadGroupPluginClassLoader.put(threadGroup, new WeakReference<PluginClassLoaderChild>(groupChild));
+            }
+        }
+
+    }
 }

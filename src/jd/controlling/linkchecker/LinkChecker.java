@@ -261,7 +261,8 @@ public class LinkChecker<E extends CheckableLink> {
                                         if (plg == null && massLinkCheck.size() > 0) {
                                             /* create plugin if not done yet */
                                             final DownloadLink first = massLinkCheck.iterator().next();
-                                            final PluginClassLoaderChild cl = PluginClassLoader.getInstance().getSharedChild(first.getDefaultPlugin());
+                                            final PluginClassLoaderChild cl = PluginClassLoader.getSharedChild(first.getDefaultPlugin());
+                                            PluginClassLoader.setThreadPluginClassLoaderChild(cl, null);
                                             final LazyHostPlugin lazyp = HostPluginController.getInstance().get(first.getDefaultPlugin().getHost());
                                             plg = lazyp.newInstance(cl);
                                             plg.setLogger(logger = LogController.getFastPluginLogger(plg.getHost()));
@@ -355,6 +356,7 @@ public class LinkChecker<E extends CheckableLink> {
                             plg.clean();
                         } catch (final Throwable e) {
                         }
+                        PluginClassLoader.setThreadPluginClassLoaderChild(null, null);
                     }
                 }
 

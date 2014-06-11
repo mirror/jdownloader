@@ -65,7 +65,6 @@ import org.jdownloader.extensions.folderwatchV2.translate.FolderWatchTranslation
 import org.jdownloader.gui.IconKey;
 import org.jdownloader.gui.mainmenu.MenuManagerMainmenu;
 import org.jdownloader.gui.toolbar.MenuManagerMainToolbar;
-import org.jdownloader.plugins.controller.PluginClassLoader;
 import org.jdownloader.plugins.controller.UpdateRequiredClassNotFoundException;
 import org.jdownloader.plugins.controller.host.HostPluginController;
 
@@ -216,7 +215,9 @@ public class FolderWatchExtension extends AbstractExtension<FolderWatchConfig, F
 
                     if (s != null) {
                         File folder = new File(s);
-                        if (!folder.isAbsolute()) folder = Application.getResource(s);
+                        if (!folder.isAbsolute()) {
+                            folder = Application.getResource(s);
+                        }
                         getLogger().info("Scan " + s + " - " + folder.getAbsolutePath());
                         getLogger().info("exists: " + folder.exists());
                         getLogger().info("isDirectory: " + folder.isDirectory());
@@ -286,7 +287,9 @@ public class FolderWatchExtension extends AbstractExtension<FolderWatchConfig, F
 
             for (String line : Regex.getLines(str)) {
                 line = line.trim();
-                if (line.startsWith("#")) continue;
+                if (line.startsWith("#")) {
+                    continue;
+                }
                 int i = line.indexOf("=");
                 if (i <= 0) {
                     // next
@@ -369,7 +372,9 @@ public class FolderWatchExtension extends AbstractExtension<FolderWatchConfig, F
 
                 private PackageInfo getPackageInfo(CrawledLink link, boolean createIfNotExisting) {
                     PackageInfo packageInfo = link.getDesiredPackageInfo();
-                    if (packageInfo != null || createIfNotExisting == false) return packageInfo;
+                    if (packageInfo != null || createIfNotExisting == false) {
+                        return packageInfo;
+                    }
                     packageInfo = new PackageInfo();
                     link.setDesiredPackageInfo(packageInfo);
                     return packageInfo;
@@ -391,7 +396,9 @@ public class FolderWatchExtension extends AbstractExtension<FolderWatchConfig, F
                         if (link.hasArchiveInfo()) {
                             existing = link.getArchiveInfo().getAutoExtract();
                         }
-                        if (j.isOverwritePackagizerEnabled() || existing == null || BooleanStatus.UNSET.equals(existing)) link.getArchiveInfo().setAutoExtract(j.getExtractAfterDownload());
+                        if (j.isOverwritePackagizerEnabled() || existing == null || BooleanStatus.UNSET.equals(existing)) {
+                            link.getArchiveInfo().setAutoExtract(j.getExtractAfterDownload());
+                        }
                     }
                     if (j.isOverwritePackagizerEnabled()) {
                         link.setPriority(j.getPriority());
@@ -399,10 +406,14 @@ public class FolderWatchExtension extends AbstractExtension<FolderWatchConfig, F
                     DownloadLink dlLink = link.getDownloadLink();
                     if (dlLink != null) {
                         if (StringUtils.isNotEmpty(j.getComment())) {
-                            if (j.isOverwritePackagizerEnabled() || StringUtils.isEmpty(dlLink.getComment())) dlLink.setComment(j.getComment());
+                            if (j.isOverwritePackagizerEnabled() || StringUtils.isEmpty(dlLink.getComment())) {
+                                dlLink.setComment(j.getComment());
+                            }
                         }
                         if (StringUtils.isNotEmpty(j.getDownloadPassword())) {
-                            if (j.isOverwritePackagizerEnabled() || StringUtils.isEmpty(dlLink.getDownloadPassword())) dlLink.setDownloadPassword(j.getDownloadPassword());
+                            if (j.isOverwritePackagizerEnabled() || StringUtils.isEmpty(dlLink.getDownloadPassword())) {
+                                dlLink.setDownloadPassword(j.getDownloadPassword());
+                            }
                         }
                     }
                     if (StringUtils.isNotEmpty(j.getDownloadFolder())) {
@@ -415,8 +426,9 @@ public class FolderWatchExtension extends AbstractExtension<FolderWatchConfig, F
                     }
                     if (j.getExtractPasswords() != null && j.getExtractPasswords().length > 0) {
                         HashSet<String> list = new HashSet<String>();
-                        for (String s : j.getExtractPasswords())
+                        for (String s : j.getExtractPasswords()) {
                             list.add(s);
+                        }
                         link.getArchiveInfo().getExtractionPasswords().addAll(list);
 
                     }
@@ -446,7 +458,7 @@ public class FolderWatchExtension extends AbstractExtension<FolderWatchConfig, F
 
                 DownloadLink dl;
                 try {
-                    dl = new DownloadLink(HostPluginController.getInstance().get("directhttp").getPrototype(PluginClassLoader.getThreadPluginClassLoaderChild()), j.getText(), "folder.watch", j.getText(), false);
+                    dl = new DownloadLink(HostPluginController.getInstance().get("directhttp").getPrototype(null), j.getText(), "folder.watch", j.getText(), false);
                     FilePackage fp = FilePackage.getInstance();
                     dl.setAvailableStatus(AvailableStatus.FALSE);
                     fp.setName("FolderWatch Errors");

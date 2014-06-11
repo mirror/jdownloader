@@ -5,6 +5,8 @@ import java.util.concurrent.atomic.AtomicInteger;
 import jd.http.BrowserSettingsThread;
 import jd.plugins.PluginForDecrypt;
 
+import org.jdownloader.plugins.controller.PluginClassLoader;
+
 public class LinkCrawlerThread extends BrowserSettingsThread {
 
     private static AtomicInteger linkCrawlerThread = new AtomicInteger(0);
@@ -19,6 +21,11 @@ public class LinkCrawlerThread extends BrowserSettingsThread {
     }
 
     protected void setCurrentLinkCrawler(LinkCrawler crawler) {
+        if (crawler != null) {
+            PluginClassLoader.setThreadPluginClassLoaderChild(crawler.getPluginClassLoaderChild(), null);
+        } else {
+            PluginClassLoader.setThreadPluginClassLoaderChild(null, null);
+        }
         this.crawler = crawler;
     }
 
