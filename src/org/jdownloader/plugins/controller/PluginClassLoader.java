@@ -404,12 +404,13 @@ public class PluginClassLoader extends URLClassLoader {
         if (wcl != null && (cl = wcl.get()) != null) {
             return cl;
         }
-        ThreadGroup threadGroup = null;
-        while ((threadGroup = currentThread.getThreadGroup()) != null) {
+        ThreadGroup threadGroup = currentThread.getThreadGroup();
+        while (threadGroup != null) {
             wcl = threadGroupPluginClassLoader.get(threadGroup);
             if (wcl != null && (cl = wcl.get()) != null) {
                 return cl;
             }
+            threadGroup = threadGroup.getParent();
         }
         return null;
     }
