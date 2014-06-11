@@ -39,28 +39,28 @@ import org.jdownloader.settings.staticreferences.CFG_GUI;
 public class HosterColumn extends ExtColumn<AbstractNode> {
     private static boolean    COLORED_ICONS;
     private static boolean    FULL_HOSTNAME;
-    
+
     static {
         COLORED_ICONS = CFG_GUI.COLORED_ICONS_FOR_DISABLED_HOSTER_COLUMN_ENABLED.isEnabled();
         FULL_HOSTNAME = CFG_GUI.SHOW_FULL_HOSTNAME.isEnabled();
         CFG_GUI.SHOW_FULL_HOSTNAME.getEventSender().addListener(new GenericConfigEventListener<Boolean>() {
-            
+
             @Override
             public void onConfigValueModified(KeyHandler<Boolean> keyHandler, Boolean newValue) {
                 FULL_HOSTNAME = CFG_GUI.SHOW_FULL_HOSTNAME.isEnabled();
             }
-            
+
             @Override
             public void onConfigValidatorError(KeyHandler<Boolean> keyHandler, Boolean invalidValue, ValidationException validateException) {
             }
         });
         CFG_GUI.COLORED_ICONS_FOR_DISABLED_HOSTER_COLUMN_ENABLED.getEventSender().addListener(new GenericConfigEventListener<Boolean>() {
-            
+
             @Override
             public void onConfigValueModified(KeyHandler<Boolean> keyHandler, Boolean newValue) {
                 COLORED_ICONS = CFG_GUI.COLORED_ICONS_FOR_DISABLED_HOSTER_COLUMN_ENABLED.isEnabled();
             }
-            
+
             @Override
             public void onConfigValidatorError(KeyHandler<Boolean> keyHandler, Boolean invalidValue, ValidationException validateException) {
             }
@@ -74,20 +74,20 @@ public class HosterColumn extends ExtColumn<AbstractNode> {
     private MigPanel          panel;
     private RenderLabel[]     labels;
     private ImageIcon         moreIcon;
-    
+
     private static int        DEFAULT_ICON_COUNT = 4;
-    
+
     public JPopupMenu createHeaderPopup() {
-        
+
         return FileColumn.createColumnPopup(this, getMinWidth() == getMaxWidth() && getMaxWidth() > 0);
-        
+
     }
-    
+
     public HosterColumn() {
         super(_GUI._.HosterColumn_HosterColumn(), null);
         panel = new RendererMigPanel("ins 0 0 0 0", "[]", "[grow,fill]");
         labels = new RenderLabel[maxIcons + 1];
-        
+
         // panel.add(Box.createGlue(), "pushx,growx");
         StringBuilder sb = new StringBuilder();
         for (int i = 0; i <= maxIcons; i++) {
@@ -96,16 +96,18 @@ public class HosterColumn extends ExtColumn<AbstractNode> {
             // Color.RED));
             labels[i].setOpaque(false);
             labels[i].setBackground(null);
-            if (sb.length() > 0) sb.append("1");
+            if (sb.length() > 0) {
+                sb.append("1");
+            }
             sb.append("[18!]");
             panel.add(labels[i]);
-            
+
         }
         moreIcon = NewTheme.I().getIcon("more", -1);
         panel.setLayout(new MigLayout("ins 0 0 0 0", sb.toString(), "[fill,grow]"));
         // panel.add(Box.createGlue(), "pushx,growx");
         setRowSorter(new ExtDefaultRowSorter<AbstractNode>() {
-            
+
             /*
              * (non-Javadoc)
              * 
@@ -116,7 +118,9 @@ public class HosterColumn extends ExtColumn<AbstractNode> {
                 if (o1 instanceof AbstractPackageNode && o2 instanceof AbstractPackageNode) {
                     long l1 = ((AbstractPackageNode<?, ?>) o1).getView().getDomainInfos().length;
                     long l2 = ((AbstractPackageNode<?, ?>) o2).getView().getDomainInfos().length;
-                    if (l1 == l2) { return 0; }
+                    if (l1 == l2) {
+                        return 0;
+                    }
                     if (this.getSortOrderIdentifier() == ExtColumn.SORT_ASC) {
                         return l1 > l2 ? -1 : 1;
                     } else {
@@ -133,55 +137,59 @@ public class HosterColumn extends ExtColumn<AbstractNode> {
                 }
                 return 0;
             }
-            
+
         });
-        
+
         resetRenderer();
     }
-    
+
     @Override
     public Object getCellEditorValue() {
         return null;
     }
-    
+
     @Override
     protected boolean isDefaultResizable() {
         return false;
     }
-    
+
     @Override
     public boolean isEditable(AbstractNode obj) {
         return false;
     }
-    
+
     @Override
     public boolean isEnabled(AbstractNode obj) {
-        if (COLORED_ICONS) return true;
-        if (obj instanceof CrawledPackage) { return ((CrawledPackage) obj).getView().isEnabled(); }
+        if (COLORED_ICONS) {
+            return true;
+        }
+        if (obj instanceof CrawledPackage) {
+            return ((CrawledPackage) obj).getView().isEnabled();
+        }
         return obj.isEnabled();
     }
-    
+
     @Override
     public boolean isSortable(AbstractNode obj) {
         return true;
     }
-    
+
     @Override
     public void setValue(Object value, AbstractNode object) {
-        
+
     }
-    
+
     @Override
     public int getDefaultWidth() {
         return DEFAULT_ICON_COUNT * 19 + 7;
     }
-    
+
     // @Override
     // public int getMaxWidth() {
     //
     // return 150;
     // }
-    
+
     // public JToolTip createToolTip(final AbstractNode obj) {
     // if (obj instanceof DownloadLink) {
     // tip.setExtText(((DownloadLink) obj).getHost());
@@ -193,7 +201,7 @@ public class HosterColumn extends ExtColumn<AbstractNode> {
     // return null;
     //
     // }
-    
+
     public void configureRendererComponent(AbstractNode value, boolean isSelected, boolean hasFocus, int row, int column) {
         int width = getTableColumn().getWidth();
         int count = ((width - 6) / 19);
@@ -226,61 +234,60 @@ public class HosterColumn extends ExtColumn<AbstractNode> {
             }
         }
     }
-    
+
     @Override
     public boolean onDoubleClick(MouseEvent e, final AbstractNode obj) {
-        
+
         SwingUtilities.invokeLater(new Runnable() {
-            
+
             public void run() {
-                
+
                 if (obj instanceof AbstractPackageChildrenNode) {
-                    DomainInfo di = ((AbstractPackageChildrenNode<?>) obj).getDomainInfo();
-                    
-                    LinkedList<ServiceCollection<?>> services = ServicePanel.getInstance().groupServices(PremiumStatusBarDisplay.GROUP_BY_SUPPORTED_ACCOUNTS, false, di.getTld());
+                    final DomainInfo di = ((AbstractPackageChildrenNode<?>) obj).getDomainInfo();
+                    final LinkedList<ServiceCollection<?>> services = ServicePanel.getInstance().groupServices(PremiumStatusBarDisplay.GROUP_BY_SUPPORTED_ACCOUNTS, false, di.getTld(), null);
                     if (services.size() > 0) {
                         ToolTipController.getInstance().show(services.get(0).createTooltip(null));
-                        
                     }
-                    
+
                 } else if (obj instanceof AbstractPackageNode) {
-                    
+
                 }
-                
+
             }
         });
-        
+
         return true;
     }
-    
+
     @Override
     public ExtTooltip createToolTip(Point position, AbstractNode obj) {
-        
+
         if (obj instanceof AbstractPackageChildrenNode) {
             DomainInfo di = ((AbstractPackageChildrenNode<?>) obj).getDomainInfo();
-            
+
             return new IconLabelToolTip(di.getTld(), di.getFavIcon());
         } else if (obj instanceof AbstractPackageNode) {
-        
-        return new HosterToolTip(((AbstractPackageNode<?, ?>) obj).getView().getDomainInfos()); }
-        
+
+            return new HosterToolTip(((AbstractPackageNode<?, ?>) obj).getView().getDomainInfos());
+        }
+
         return null;
     }
-    
+
     @Override
     public JComponent getEditorComponent(AbstractNode value, boolean isSelected, int row, int column) {
         return null;
     }
-    
+
     @Override
     public JComponent getRendererComponent(AbstractNode value, boolean isSelected, boolean hasFocus, int row, int column) {
         return panel;
     }
-    
+
     @Override
     public void resetEditor() {
     }
-    
+
     @Override
     public void resetRenderer() {
         for (int i = 0; i <= maxIcons; i++) {
@@ -290,9 +297,9 @@ public class HosterColumn extends ExtColumn<AbstractNode> {
         this.panel.setOpaque(false);
         this.panel.setBackground(null);
     }
-    
+
     @Override
     public void configureEditorComponent(AbstractNode value, boolean isSelected, int row, int column) {
     }
-    
+
 }

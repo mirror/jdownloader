@@ -55,6 +55,7 @@ import org.appwork.storage.config.ValidationException;
 import org.appwork.storage.config.events.GenericConfigEventListener;
 import org.appwork.storage.config.handler.KeyHandler;
 import org.appwork.swing.components.ExtButton;
+import org.appwork.utils.StringUtils;
 import org.appwork.utils.logging.Log;
 import org.appwork.utils.swing.EDTHelper;
 import org.jdownloader.DomainInfo;
@@ -202,7 +203,7 @@ public class ServicePanel extends JPanel implements MouseListener, AccountToolti
         if (SecondLevelLaunch.ACCOUNTLIST_LOADED.isReached()) {
             if (redrawing.compareAndSet(false, true)) {
                 try {
-                    final LinkedList<ServiceCollection<?>> services = groupServices(CFG_GUI.CFG.getPremiumStatusBarDisplay(), true, null);
+                    final LinkedList<ServiceCollection<?>> services = groupServices(CFG_GUI.CFG.getPremiumStatusBarDisplay(), true, null, null);
                     new EDTHelper<Object>() {
                         @Override
                         public Object edtRun() {
@@ -284,9 +285,8 @@ public class ServicePanel extends JPanel implements MouseListener, AccountToolti
         }
     }
 
-    public LinkedList<ServiceCollection<?>> groupServices(PremiumStatusBarDisplay premiumStatusBarDisplay, boolean extend, String filter) {
+    public LinkedList<ServiceCollection<?>> groupServices(PremiumStatusBarDisplay premiumStatusBarDisplay, boolean extend, String hostFiler, Account account) {
         List<Account> accs = AccountController.getInstance().list();
-
         // final HashSet<DomainInfo> enabled = new HashSet<DomainInfo>();
         final HashMap<String, AccountServiceCollection> map = new HashMap<String, AccountServiceCollection>();
         final LinkedList<ServiceCollection<?>> services = new LinkedList<ServiceCollection<?>>();
@@ -305,26 +305,27 @@ public class ServicePanel extends JPanel implements MouseListener, AccountToolti
         } catch (final Throwable e) {
             LogController.CL(true).log(e);
         }
-        HashMap<String, LazyHostPlugin> plugins = new HashMap<String, LazyHostPlugin>();
-        for (Account acc : accs) {
-            AccountInfo ai = acc.getAccountInfo();
-
+        if (account != null) {
+            accs = new ArrayList<Account>(accs);
+            accs.remove(account);
+            accs.add(0, account);
+        }
+        final HashMap<String, LazyHostPlugin> plugins = new HashMap<String, LazyHostPlugin>();
+        for (final Account acc : accs) {
             if (acc.getLastValidTimestamp() < 0 && acc.getError() != null) {
                 continue;
             }
             if ((System.currentTimeMillis() - acc.getLastValidTimestamp()) < 14 * 7 * 24 * 60 * 60 * 1000 && acc.getError() != null) {
                 continue;
             }
-            PluginForHost plugin = acc.getPlugin();
-            DomainInfo domainInfo;
+            final PluginForHost plugin = acc.getPlugin();
             if (plugin != null) {
-                domainInfo = plugin.getDomainInfo(null);
+                final DomainInfo domainInfo = plugin.getDomainInfo(null);
                 domainInfo.getFavIcon();
-
                 AccountServiceCollection ac;
                 switch (premiumStatusBarDisplay) {
                 case DONT_GROUP:
-                    if (filter != null && !filter.equals(domainInfo.getTld())) {
+                    if (hostFiler != null && !StringUtils.equals(hostFiler, domainInfo.getTld())) {
                         continue;
                     }
                     ac = new AccountServiceCollection(domainInfo);
@@ -332,7 +333,7 @@ public class ServicePanel extends JPanel implements MouseListener, AccountToolti
                     services.add(ac);
                     break;
                 case GROUP_BY_ACCOUNT_TYPE:
-                    if (filter != null && !filter.equals(domainInfo.getTld())) {
+                    if (hostFiler != null && !StringUtils.equals(hostFiler, domainInfo.getTld())) {
                         continue;
                     }
                     ac = map.get(domainInfo.getTld());
@@ -345,8 +346,7 @@ public class ServicePanel extends JPanel implements MouseListener, AccountToolti
                     break;
                 case GROUP_BY_SUPPORTED_ACCOUNTS:
                 case GROUP_BY_SUPPORTED_HOSTS:
-
-                    ai = acc.getAccountInfo();
+                    AccountInfo ai = acc.getAccountInfo();
                     if (ai == null) {
                         continue;
                     }
@@ -359,7 +359,7 @@ public class ServicePanel extends JPanel implements MouseListener, AccountToolti
                     }
                     if (Property.NULL == supported || supported == null) {
                         // dedicated account
-                        if (filter != null && !filter.equals(domainInfo.getTld())) {
+                        if (hostFiler != null && !StringUtils.equals(hostFiler, domainInfo.getTld())) {
                             continue;
                         }
                         ac = map.get(domainInfo.getTld());
@@ -395,7 +395,7 @@ public class ServicePanel extends JPanel implements MouseListener, AccountToolti
                                         System.out.println(plg);
                                         continue;
                                     }
-                                    if (filter != null && !filter.equals(sup)) {
+                                    if (hostFiler != null && !StringUtils.equals(hostFiler, domainInfo.getTld())) {
                                         continue;
                                     }
                                     ac = map.get(sup);
