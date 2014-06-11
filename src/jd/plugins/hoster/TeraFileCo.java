@@ -152,11 +152,9 @@ public class TeraFileCo extends PluginForHost {
      * 
      * */
     private Browser prepBrowser(final Browser prepBr) {
-        HashMap<String, String> map = null;
         synchronized (antiDDoSCookies) {
-            map = new HashMap<String, String>(antiDDoSCookies);
-            if (!map.isEmpty()) {
-                for (final Map.Entry<String, String> cookieEntry : map.entrySet()) {
+            if (!antiDDoSCookies.isEmpty()) {
+                for (final Map.Entry<String, String> cookieEntry : antiDDoSCookies.entrySet()) {
                     final String key = cookieEntry.getKey();
                     final String value = cookieEntry.getValue();
                     prepBr.setCookie(this.getHost(), key, value);
@@ -289,6 +287,9 @@ public class TeraFileCo extends PluginForHost {
             final Form download1 = getFormByKey("op", "download1");
             if (download1 != null) {
                 download1.remove("method_premium");
+                if (!download1.hasInputFieldByName("method_free")) {
+                    download1.put("method_free", "Free");
+                }
                 // stable is lame, issue finding input data fields correctly. eg. closes at ' quotation mark - remove when jd2 goes stable!
                 if (downloadLink.getName().contains("'")) {
                     String fname = new Regex(br, "<input type=\"hidden\" name=\"fname\" value=\"([^\"]+)\">").getMatch(0);
