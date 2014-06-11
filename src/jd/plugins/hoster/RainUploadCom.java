@@ -64,6 +64,7 @@ public class RainUploadCom extends PluginForHost {
     private static final String  WAIT_BETWEEN_DOWNLOADS_LIMIT                 = "e=You+must+wait+";
     private static final String  WAIT_BETWEEN_DOWNLOADS_LIMIT_USERTEXT        = "You must wait between downloads!";
     private static final int     WAIT_BETWEEN_DOWNLOADS_LIMIT_MINUTES_DEFAULT = 10;
+    private static final int     ADDITIONAL_WAIT_SECONDS                      = 3;
     /* In case there is no information when accessing the main link */
     private static final boolean AVAILABLE_CHECK_OVER_INFO_PAGE               = true;
 
@@ -166,8 +167,8 @@ public class RainUploadCom extends PluginForHost {
             }
             final String waittime = br.getRegex("\\$\\(\\'\\.download\\-timer\\-seconds\\'\\)\\.html\\((\\d+)\\);").getMatch(0);
             if (waittime != null) {
-                logger.info("Found waittime, waiting (seconds): " + waittime);
-                sleep(Integer.parseInt(waittime) * 1001l, downloadLink);
+                logger.info("Found waittime, waiting (seconds): " + waittime + " + " + ADDITIONAL_WAIT_SECONDS + " additional seconds");
+                sleep((Integer.parseInt(waittime) + ADDITIONAL_WAIT_SECONDS) * 1001l, downloadLink);
             } else {
                 logger.info("Current pre-download page has no waittime");
             }
