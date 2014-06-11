@@ -39,17 +39,19 @@ import jd.utils.JDUtilities;
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "ardmediathek.de" }, urls = { "http://(www\\.)?(ardmediathek|mediathek\\.daserste)\\.de/(?!download|livestream).+" }, flags = { 32 })
 public class RDMdthk extends PluginForDecrypt {
 
-    private static final String Q_LOW        = "Q_LOW";
-    private static final String Q_MEDIUM     = "Q_MEDIUM";
-    private static final String Q_HIGH       = "Q_HIGH";
-    private static final String Q_HD         = "Q_HD";
-    private static final String Q_BEST       = "Q_BEST";
-    private static final String Q_HTTP_ONLY  = "Q_HTTP_ONLY";
-    private static final String AUDIO        = "AUDIO";
-    private static final String Q_SUBTITLES  = "Q_SUBTITLES";
-    private boolean             BEST         = false;
-    private boolean             HTTP_ONLY    = false;
-    private int                 notForStable = 0;
+    private static final String Q_LOW          = "Q_LOW";
+    private static final String Q_MEDIUM       = "Q_MEDIUM";
+    private static final String Q_HIGH         = "Q_HIGH";
+    private static final String Q_HD           = "Q_HD";
+    private static final String Q_BEST         = "Q_BEST";
+    private static final String Q_HTTP_ONLY    = "Q_HTTP_ONLY";
+    private static final String AUDIO          = "AUDIO";
+    private static final String Q_SUBTITLES    = "Q_SUBTITLES";
+    private boolean             BEST           = false;
+    private boolean             HTTP_ONLY      = false;
+    private int                 notForStable   = 0;
+
+    private static final String AGE_RESTRICTED = "(Diese Sendung ist für Jugendliche unter \\d+ Jahren nicht geeignet\\. Der Clip ist deshalb nur von \\d+ bis \\d+ Uhr verfügbar\\.)";
 
     public RDMdthk(final PluginWrapper wrapper) {
         super(wrapper);
@@ -67,7 +69,7 @@ public class RDMdthk extends PluginForDecrypt {
             offline = true;
         }
         // Add offline link so user can see it
-        if ((!br.containsHTML("data\\-ctrl\\-player=") && !br.containsHTML("id=\"box_video_player\"")) && !br.getURL().contains("/dossiers/") || offline) {
+        if ((!br.containsHTML("data\\-ctrl\\-player=") && !br.containsHTML("id=\"box_video_player\"")) && !br.getURL().contains("/dossiers/") && !br.containsHTML(AGE_RESTRICTED) || offline) {
             final DownloadLink dl = createDownloadlink(parameter.replace("http://", "decrypted://") + "&quality=offline&network=default");
             dl.setAvailable(false);
             dl.setProperty("offline", true);
@@ -81,7 +83,7 @@ public class RDMdthk extends PluginForDecrypt {
         HTTP_ONLY = cfg.getBooleanProperty(Q_HTTP_ONLY, false);
 
         final String title = br.getRegex("<meta name=\"dcterms\\.title\" content=\"([^\"]+)\"").getMatch(0);
-        final String fsk = br.getRegex("(Diese Sendung ist für Jugendliche unter \\d+ Jahren nicht geeignet\\. Der Clip ist deshalb nur von \\d+ bis \\d+ Uhr verfügbar\\.)").getMatch(0);
+        final String fsk = br.getRegex(AGE_RESTRICTED).getMatch(0);
         final String realBaseUrl = new Regex(br.getBaseURL(), "(^.*\\.de)").getMatch(0);
 
         String ID;

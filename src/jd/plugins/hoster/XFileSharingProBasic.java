@@ -911,11 +911,11 @@ public class XFileSharingProBasic extends PluginForHost {
         }
         /* If the premium account is expired we'll simply accept it as a free account. */
         final String expire = new Regex(correctedBR, "(\\d{1,2} (January|February|March|April|May|June|July|August|September|October|November|December) \\d{4})").getMatch(0);
-        long expiretime = 0;
+        long expire_milliseconds = 0;
         if (expire != null) {
-            expiretime = TimeFormatter.getMilliSeconds(expire, "dd MMMM yyyy", Locale.ENGLISH);
+            expire_milliseconds = TimeFormatter.getMilliSeconds(expire, "dd MMMM yyyy", Locale.ENGLISH);
         }
-        if (account.getBooleanProperty("nopremium") && (expiretime - System.currentTimeMillis()) <= 0) {
+        if (account.getBooleanProperty("nopremium") && (expire_milliseconds - System.currentTimeMillis()) <= 0) {
             try {
                 maxPrem.set(ACCOUNT_FREE_MAXDOWNLOADS);
                 /* free accounts can still have captcha */
@@ -927,7 +927,7 @@ public class XFileSharingProBasic extends PluginForHost {
             }
             ai.setStatus("Registered (free) user");
         } else {
-            ai.setValidUntil(expiretime);
+            ai.setValidUntil(expire_milliseconds);
             try {
                 maxPrem.set(ACCOUNT_PREMIUM_MAXDOWNLOADS);
                 account.setMaxSimultanDownloads(maxPrem.get());
