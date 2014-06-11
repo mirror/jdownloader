@@ -204,9 +204,10 @@ public class SflnkgNt extends PluginForDecrypt {
                 return 10;
             } else if (cType.equals("cats")) {
                 return 11;
+            } else {
+                // Not detected or other case
+                return 0;
             }
-            // Not detected or other case
-            return 0;
         }
 
         private void handleCaptcha(final String parameter, final CryptedLink param) throws Exception {
@@ -296,8 +297,7 @@ public class SflnkgNt extends PluginForDecrypt {
                             logger.warning(HOST + ": 500 Internal Server Error. Link: " + parameter);
                             continue;
                         }
-                        password = br.getRegex("type=\"password\" name=\"link-password\"").matches(); // password
-                                                                                                      // correct?
+                        password = br.getRegex("type=\"password\" name=\"link-password\"").matches(); // password correct?
                     }
 
                     if (!"notDetected".equals(cType) && br.containsHTML(captchaRegex.get(cType)) || password || br.containsHTML("<strong>Prove you are human</strong>")) {

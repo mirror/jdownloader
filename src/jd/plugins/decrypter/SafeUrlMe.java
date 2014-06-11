@@ -89,6 +89,7 @@ public class SafeUrlMe extends PluginForDecrypt {
             br.getPage(parameter);
             if (br.containsHTML("(\"This link does not exist\\.\"|ERROR \\- this link does not exist|Could not find links based on the given ID</div>)")) {
                 final DownloadLink offline = createDownloadlink("directhttp://" + parameter);
+                offline.setProperty("OFFLINE", true);
                 offline.setAvailable(false);
                 decryptedLinks.add(offline);
                 logger.info("Link offline: " + parameter);
