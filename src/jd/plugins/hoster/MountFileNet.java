@@ -88,6 +88,9 @@ public class MountFileNet extends PluginForHost {
         final String filename = fileInfo.getMatch(0);
         final String filesize = fileInfo.getMatch(1);
         if (filename == null || filesize == null) {
+            if (!br.containsHTML("class=\"downloadPageTableV2\"")) {
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            }
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         link.setName(Encoding.htmlDecode(filename.trim()));

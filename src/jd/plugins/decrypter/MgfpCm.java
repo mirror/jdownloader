@@ -54,10 +54,20 @@ public class MgfpCm extends PluginForDecrypt {
                  * Workaround to get all images on one page for private galleries (site buggy)
                  */
                 br.getPage("http://www.imagefap.com/gallery.php?view=2");
-            } else if (!parameter.contains("view=2")) parameter += "?view=2";
+            } else if (!parameter.contains("view=2")) {
+                parameter += "?view=2";
+            }
             try {
                 br.getPage(parameter);
             } catch (final BrowserException e) {
+                final DownloadLink link = createDownloadlink("http://imagefap.com/imagedecrypted/" + new Random().nextInt(1000000));
+                link.setFinalFileName(new Regex(parameter, "imagefap\\.com/(.+)").getMatch(0));
+                link.setAvailable(false);
+                link.setProperty("offline", true);
+                decryptedLinks.add(link);
+                return decryptedLinks;
+            }
+            if (br.containsHTML(">This gallery has been flagged")) {
                 final DownloadLink link = createDownloadlink("http://imagefap.com/imagedecrypted/" + new Random().nextInt(1000000));
                 link.setFinalFileName(new Regex(parameter, "imagefap\\.com/(.+)").getMatch(0));
                 link.setAvailable(false);
@@ -92,15 +102,21 @@ public class MgfpCm extends PluginForDecrypt {
             String galleryName = br.getRegex("<title>Porn pics of (.*?) \\(Page 1\\)</title>").getMatch(0);
             if (galleryName == null) {
                 galleryName = br.getRegex("<font face=\"verdana\" color=\"white\" size=\"4\"><b>(.*?)</b></font>").getMatch(0);
-                if (galleryName == null) galleryName = br.getRegex("<meta name=\"description\" content=\"Airplanes porn pics - Imagefap\\.com\\. The ultimate social porn pics site\" />").getMatch(0);
+                if (galleryName == null) {
+                    galleryName = br.getRegex("<meta name=\"description\" content=\"Airplanes porn pics - Imagefap\\.com\\. The ultimate social porn pics site\" />").getMatch(0);
+                }
             }
             String authorsName = br.getRegex("<b><font size=\"3\" color=\"#CC0000\">Uploaded by ([^<>\"]+)</font></b>").getMatch(0);
-            if (authorsName == null) authorsName = br.getRegex("<td class=\"mnu0\"><a href=\"http://(www\\.)?imagefap\\.com/profile\\.php\\?user=([^<>\"]+)\"").getMatch(0);
+            if (authorsName == null) {
+                authorsName = br.getRegex("<td class=\"mnu0\"><a href=\"http://(www\\.)?imagefap\\.com/profile\\.php\\?user=([^<>\"]+)\"").getMatch(0);
+            }
             if (galleryName == null) {
                 logger.warning("Gallery name could not be found!");
                 return null;
             }
-            if (authorsName == null) authorsName = "Anonymous";
+            if (authorsName == null) {
+                authorsName = "Anonymous";
+            }
             galleryName = Encoding.htmlDecode(galleryName.trim());
             authorsName = Encoding.htmlDecode(authorsName.trim());
 
@@ -108,12 +124,19 @@ public class MgfpCm extends PluginForDecrypt {
              * Max number of images per page = 1000, if we got more we always have at least 2 pages
              */
             final String[] pages = br.getRegex("<a class=link3 href=\"\\?(pgid=\\&amp;gid=\\d+\\&amp;page=|gid=\\d+\\&amp;page=)(\\d+)").getColumn(1);
-            if (pages != null && pages.length != 0) for (final String page : pages)
-                if (!allPages.contains(page)) allPages.add(page);
+            if (pages != null && pages.length != 0) {
+                for (final String page : pages) {
+                    if (!allPages.contains(page)) {
+                        allPages.add(page);
+                    }
+                }
+            }
             int counter = 1;
             DecimalFormat df = new DecimalFormat("0000");
             for (final String page : allPages) {
-                if (!page.equals("0")) br.getPage(parameter + "&page=" + page);
+                if (!page.equals("0")) {
+                    br.getPage(parameter + "&page=" + page);
+                }
                 final String info[][] = br.getRegex("<span id=\"img_(\\d+)_desc\">.*?<font face=verdana color=\"#000000\"><i>([^<>\"]*?)</i>").getMatches();
                 if (info == null || info.length == 0) {
                     logger.warning("Decrypter broken for link: " + parameter);

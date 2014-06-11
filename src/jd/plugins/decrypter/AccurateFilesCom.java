@@ -51,22 +51,32 @@ public class AccurateFilesCom extends PluginForDecrypt {
             logger.warning("Decrypter broken for link: " + parameter);
             return null;
         }
+        final String fid = new Regex(goLink, "(\\d+)$").getMatch(0);
         if (br.containsHTML("\"/captcha/")) {
             for (int i = 1; i <= 3; i++) {
-                final String c = getCaptchaCode("http://www." + currenthost + "/captcha/" + new Regex(goLink, "(\\d+)$").getMatch(0), param);
-                br.postPage(goLink, "captcha=" + Encoding.urlEncode(c));
+                final String c = getCaptchaCode("http://www." + currenthost + "/captcha/" + fid, param);
+                br.postPage(goLink, "captcha=" + Encoding.urlEncode(c) + "&file_id=" + fid);
                 if (br.getRedirectLocation() != null && br.getRedirectLocation().matches("http://(www\\.)?accuratefiles\\.com/fileinfo/[a-z0-9]+")) {
                     br.getPage(br.getRedirectLocation());
                     continue;
-                } else if (br.containsHTML("\"/captcha/")) continue;
+                } else if (br.containsHTML("\"/captcha/")) {
+                    continue;
+                }
                 break;
             }
-            if (br.containsHTML("\"/captcha/")) throw new DecrypterException(DecrypterException.CAPTCHA);
+            if (br.containsHTML("\"/captcha/")) {
+                throw new DecrypterException(DecrypterException.CAPTCHA);
+            }
         } else {
             br.getPage("http://www." + currenthost + goLink);
         }
         String finallink = br.getRegex("window\\.location\\.replace\\(\\'(http[^<>\"]*?)\\'\\)").getMatch(0);
-        if (finallink == null) finallink = br.getRedirectLocation();
+        if (finallink == null) {
+            finallink = br.getRegex("src=\"(http[^<>\"]*?)\" id=\"iframe_content\"").getMatch(0);
+        }
+        if (finallink == null) {
+            finallink = br.getRedirectLocation();
+        }
         if (finallink == null || finallink.contains(currenthost)) {
             logger.warning("Decrypter broken for link: " + parameter);
             return null;

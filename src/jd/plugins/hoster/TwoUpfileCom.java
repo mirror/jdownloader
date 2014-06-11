@@ -65,7 +65,7 @@ public class TwoUpfileCom extends PluginForHost {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         br.getPage(link.getDownloadURL());
-        if (br.getURL().contains("/error." + TYPE) || br.getURL().contains("/index." + TYPE)) {
+        if (br.getURL().contains("/error." + TYPE) || br.getURL().contains("/index." + TYPE) || !br.containsHTML("class=\"downloadPageTable(V2)?\"")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         if (br.getURL().contains(SIMULTANDLSLIMIT)) {

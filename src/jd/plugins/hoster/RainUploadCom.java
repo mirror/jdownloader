@@ -41,13 +41,13 @@ public class RainUploadCom extends PluginForHost {
     }
 
     // For sites which use this script: http://www.yetishare.com/
-    // YetiShareBasic Version 0.2.6-psp
+    // YetiShareBasic Version 0.2.7-psp
     // mods:
     // non account: chunks * maxdls
     // free account: chunks * maxdls
     // premium account: chunks * maxdls
     // protocol: no https
-    // captchatype: null recaptcha
+    // captchatype: recaptcha
 
     @Override
     public String getAGBLink() {
@@ -88,6 +88,9 @@ public class RainUploadCom extends PluginForHost {
         String filesize;
         if (AVAILABLE_CHECK_OVER_INFO_PAGE) {
             br.getPage(link.getDownloadURL() + "~i");
+            if (!br.getURL().contains("~i")) {
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            }
             filename = br.getRegex("Filename:[\t\n\r ]+</td>[\t\n\r ]+<td>([^<>\"]*?)<").getMatch(0);
             if (filename == null || inValidate(Encoding.htmlDecode(filename).trim()) || Encoding.htmlDecode(filename).trim().equals("  ")) {
                 /* Filename might not be available here either */

@@ -35,13 +35,15 @@ import jd.plugins.PluginForDecrypt;
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "br.de" }, urls = { "http://(www\\.)?br\\.de/mediathek/video/(sendungen/[A-Za-z0-9\\-_]+/)?[A-Za-z0-9\\-_]+\\.html" }, flags = { 32 })
 public class BrOnlineDeDecrypter extends PluginForDecrypt {
 
-    private static final String Q_0         = "Q_0";
-    private static final String Q_A         = "Q_A";
-    private static final String Q_B         = "Q_B";
-    private static final String Q_E         = "Q_E";
-    private static final String Q_C         = "Q_C";
-    private static final String Q_BEST      = "Q_BEST";
-    private static final String Q_SUBTITLES = "Q_SUBTITLES";
+    private static final String Q_0          = "Q_0";
+    private static final String Q_A          = "Q_A";
+    private static final String Q_B          = "Q_B";
+    private static final String Q_E          = "Q_E";
+    private static final String Q_C          = "Q_C";
+    private static final String Q_BEST       = "Q_BEST";
+    private static final String Q_SUBTITLES  = "Q_SUBTITLES";
+
+    private static final String TYPE_INVALID = "http://(www\\.)?br\\.de/mediathek/video/index\\.html";
 
     public BrOnlineDeDecrypter(final PluginWrapper wrapper) {
         super(wrapper);
@@ -59,12 +61,16 @@ public class BrOnlineDeDecrypter extends PluginForDecrypt {
         } catch (final BrowserException e) {
             offline = true;
         }
-        if (offline || br.getHttpConnection().getResponseCode() == 404) {
+        if (offline || br.getHttpConnection().getResponseCode() == 404 || parameter.matches(TYPE_INVALID)) {
             /* Add offline link so user can see it */
             final DownloadLink dl = createDownloadlink("http://brdecrypted-online.de/?format=mp4&quality=1x1&hash=" + JDHash.getMD5(parameter));
             dl.setAvailable(false);
             dl.setProperty("offline", true);
-            dl.setFinalFileName(new Regex(parameter, "br\\.de/mediathek/video/sendungen/(.+)\\.html").getMatch(0));
+            String offline_name = new Regex(parameter, "br\\.de/(.+)\\.html").getMatch(0);
+            if (offline_name == null) {
+                offline_name = new Regex(parameter, "").getMatch(0);
+            }
+            dl.setFinalFileName(offline_name);
             decryptedLinks.add(dl);
             return decryptedLinks;
         }

@@ -28,6 +28,7 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
+import jd.plugins.hoster.DirectHTTP;
 import jd.utils.JDUtilities;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "extreme-protect.com" }, urls = { "http://(www\\.)?extreme\\-protect\\.com/(mylink|linkcheck|linkidwoc)\\.php\\?linkid=[a-z]+" }, flags = { 0 })
@@ -45,12 +46,16 @@ public class ExtremeProtectCom extends PluginForDecrypt {
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String parameter = param.toString().replaceAll("linkidwoc|mylink", "linkcheck");
+        br.setFollowRedirects(true);
         br.getPage(parameter);
         boolean failed = true;
         for (int i = 0; i <= 5; i++) {
-            if (!br.containsHTML(RECAPTCHATEXT) && !br.containsHTML(RECAPTCHATEXT2)) { return null; }
-            PluginForHost recplug = JDUtilities.getPluginForHost("DirectHTTP");
-            jd.plugins.hoster.DirectHTTP.Recaptcha rc = ((jd.plugins.hoster.DirectHTTP) recplug).getReCaptcha(br);
+            if (!br.containsHTML(RECAPTCHATEXT) && !br.containsHTML(RECAPTCHATEXT2)) {
+                logger.warning("Decrypter broken for link: " + parameter);
+                return null;
+            }
+            final PluginForHost recplug = JDUtilities.getPluginForHost("DirectHTTP");
+            final jd.plugins.hoster.DirectHTTP.Recaptcha rc = ((DirectHTTP) recplug).getReCaptcha(br);
             rc.parse();
             rc.load();
             File cf = rc.downloadCaptcha(getLocalCaptchaFile());
@@ -63,7 +68,9 @@ public class ExtremeProtectCom extends PluginForDecrypt {
             failed = false;
             break;
         }
-        if (failed) throw new DecrypterException(DecrypterException.CAPTCHA);
+        if (failed) {
+            throw new DecrypterException(DecrypterException.CAPTCHA);
+        }
         if (br.containsHTML("<a href= target=_blank></a>")) {
             logger.info("Link offline: " + parameter);
             return decryptedLinks;
@@ -74,8 +81,9 @@ public class ExtremeProtectCom extends PluginForDecrypt {
             logger.warning("Decrypter broken for link: " + parameter);
             return null;
         }
-        for (String dl : links)
+        for (String dl : links) {
             decryptedLinks.add(createDownloadlink(dl));
+        }
         if (fpName != null) {
             FilePackage fp = FilePackage.getInstance();
             fp.setName(fpName.trim());

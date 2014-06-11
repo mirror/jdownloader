@@ -37,7 +37,7 @@ public class GeneralFilesCom extends PluginForDecrypt {
         super(wrapper);
     }
 
-    private static final String currenthost = "general-files.org";
+    private static final String currenthost = "general-fil.es";
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();

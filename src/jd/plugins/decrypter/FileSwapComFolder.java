@@ -40,7 +40,11 @@ public class FileSwapComFolder extends PluginForDecrypt {
         br.setCookie("http://fileswap.com", "language", "english");
         br.setFollowRedirects(true);
         br.getPage(parameter + "?v=list");
-        if (br.containsHTML("<b>The folder you requested has not been found or may no longer be available</b>|Sorry\\, the page you requested could no longer be found\\.")) {
+        if (br.containsHTML("<b>The folder you requested has not been found or may no longer be available</b>|Sorry\\, the page you requested could no longer be found\\.|Folder Not Found")) {
+            logger.info("Link offline: " + parameter);
+            return decryptedLinks;
+        } else if (br.containsHTML("There are no files shared in this folder")) {
+            logger.info("Link offline (folder empty): " + parameter);
             return decryptedLinks;
         }
         final String fpName = br.getRegex("<span class=\"textheader\">[\r\n\t]+Shared Folder &#187; (.*?)[\r\n\t]+</span>").getMatch(0);

@@ -789,7 +789,7 @@ public class DecrypterForRedirectServicesWithoutDirectRedirects extends PluginFo
                 } else {
                     finallink = br.getRegex("var finalLink = \"(.*?)\";").getMatch(0);
                 }
-                if (finallink == null && br.containsHTML("<title>DJURL\\.COM \\- The DJ Link Shortener</title>")) {
+                if (finallink == null && br.containsHTML("<title>DJURL\\.COM \\- The DJ Link Shortener</title>") || br.getHttpConnection().getResponseCode() == 404) {
                     offline = true;
                 }
             } else if (parameter.contains("bookgn.com/")) {
