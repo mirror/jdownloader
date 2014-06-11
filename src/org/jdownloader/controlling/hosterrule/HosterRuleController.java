@@ -19,6 +19,8 @@ import jd.controlling.downloadcontroller.AccountCache.CachedAccount;
 import jd.controlling.downloadcontroller.DownloadSession;
 import jd.gui.swing.jdgui.views.settings.panels.accountmanager.orderpanel.dialog.EditHosterRuleDialog;
 import jd.plugins.Account;
+import jd.plugins.DownloadLink;
+import jd.plugins.PluginForHost;
 
 import org.appwork.scheduler.DelayedRunnable;
 import org.appwork.shutdown.ShutdownController;
@@ -37,6 +39,7 @@ import org.appwork.utils.swing.dialog.DialogCanceledException;
 import org.appwork.utils.swing.dialog.DialogClosedException;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.logging.LogController;
+import org.jdownloader.plugins.controller.host.PluginFinder;
 
 public class HosterRuleController implements AccountControllerListener {
     private static final HosterRuleController INSTANCE = new HosterRuleController();
@@ -59,12 +62,15 @@ public class HosterRuleController implements AccountControllerListener {
     private final Queue                           queue;
 
     /**
-     * Create a new instance of HosterRuleController. This is a singleton class. Access the only existing instance by using {@link #getInstance()}.
+     * Create a new instance of HosterRuleController. This is a singleton class. Access the only existing instance by using
+     * {@link #getInstance()}.
      */
     private HosterRuleController() {
         eventSender = new HosterRuleControllerEventSender();
         configFile = Application.getResource("cfg/accountUsageRules.json");
-        if (!configFile.getParentFile().exists()) configFile.getParentFile().mkdirs();
+        if (!configFile.getParentFile().exists()) {
+            configFile.getParentFile().mkdirs();
+        }
         logger = LogController.getInstance().getLogger(HosterRuleController.class.getName());
         queue = new Queue("HosterRuleController") {
             @Override
@@ -96,12 +102,19 @@ public class HosterRuleController implements AccountControllerListener {
 
             @Override
             public void run() {
-                try {
-                    load();
-                    AccountController.getInstance().getBroadcaster().addListener(HosterRuleController.this);
-                } finally {
-                    initDone.set(true);
-                }
+                queue.add(new QueueAction<Void, RuntimeException>() {
+
+                    @Override
+                    protected Void run() throws RuntimeException {
+                        try {
+                            load();
+                            AccountController.getInstance().getBroadcaster().addListener(HosterRuleController.this);
+                        } finally {
+                            initDone.set(true);
+                        }
+                        return null;
+                    }
+                });
             }
         });
 
@@ -114,11 +127,19 @@ public class HosterRuleController implements AccountControllerListener {
                 }, null);
                 if (loaded != null && loaded.size() > 0) {
                     ArrayList<Account> availableAccounts = AccountController.getInstance().list(null);
+                    final PluginFinder pluginFinder = new PluginFinder();
                     List<AccountUsageRule> rules = new ArrayList<AccountUsageRule>();
                     for (AccountRuleStorable ars : loaded) {
                         try {
-                            AccountUsageRule rule = ars.restore(availableAccounts);
+                            final AccountUsageRule rule = ars.restore(availableAccounts);
                             rule.setOwner(this);
+                            final DownloadLink link = new DownloadLink(null, "", rule.getHoster(), "", false);
+                            PluginForHost plugin = pluginFinder.assignPlugin(link, true, logger);
+                            if (plugin == null) {
+                                rule.setEnabled(false);
+                            } else {
+                                rule.setHoster(plugin.getHost());
+                            }
                             rules.add(rule);
                         } catch (Throwable e) {
                             logger.log(e);
@@ -147,14 +168,18 @@ public class HosterRuleController implements AccountControllerListener {
     }
 
     public AccountCache getAccountCache(String host, final DownloadSession session) {
-        if (StringUtils.isEmpty(host)) return null;
+        if (StringUtils.isEmpty(host)) {
+            return null;
+        }
         final String finalHost = host.toLowerCase(Locale.ENGLISH);
         return queue.addWait(new QueueAction<AccountCache, RuntimeException>() {
 
             @Override
             protected AccountCache run() throws RuntimeException {
                 for (AccountUsageRule hr : loadedRules) {
-                    if (!hr.isEnabled()) continue;
+                    if (!hr.isEnabled()) {
+                        continue;
+                    }
                     if (finalHost.equalsIgnoreCase(hr.getHoster())) {
                         int lastCacheSize = 0;
                         ArrayList<CachedAccount> newCache = new ArrayList<CachedAccount>();
@@ -166,7 +191,9 @@ public class HosterRuleController implements AccountControllerListener {
                                 rules.add(null);
                             }
                             for (AccountReference acr : ag.getChildren()) {
-                                if (!acr.isEnabled()) continue;
+                                if (!acr.isEnabled()) {
+                                    continue;
+                                }
                                 CachedAccount cachedAccount = null;
                                 if (FreeAccountReference.isFreeAccount(acr)) {
                                     cachedAccount = new CachedAccount(finalHost, null, ACCOUNTTYPE.NONE, session.getPlugin(finalHost));
@@ -276,7 +303,9 @@ public class HosterRuleController implements AccountControllerListener {
                 onlyMultiAccounts.getChildren().addAll(refList);
             } else {
                 int index = freeAccountGroup == null ? hr.getAccounts().size() : hr.getAccounts().indexOf(freeAccountGroup);
-                if (index < 0) index = hr.getAccounts().size();
+                if (index < 0) {
+                    index = hr.getAccounts().size();
+                }
                 hr.getAccounts().add(index, new AccountGroup(refList, _GUI._.HosterRuleController_validateRule_multi_hoster_account()));
             }
         }
@@ -315,7 +344,9 @@ public class HosterRuleController implements AccountControllerListener {
     }
 
     public void add(final AccountUsageRule rule) {
-        if (rule == null) return;
+        if (rule == null) {
+            return;
+        }
         queue.add(new QueueAction<Void, RuntimeException>() {
 
             @Override
@@ -332,7 +363,9 @@ public class HosterRuleController implements AccountControllerListener {
     }
 
     public void fireUpdate(final AccountUsageRule rule) {
-        if (rule == null) return;
+        if (rule == null) {
+            return;
+        }
         queue.add(new QueueAction<Void, RuntimeException>() {
 
             @Override
@@ -349,7 +382,9 @@ public class HosterRuleController implements AccountControllerListener {
     }
 
     public void showEditPanel(final AccountUsageRule editing) {
-        if (editing == null) return;
+        if (editing == null) {
+            return;
+        }
         EditHosterRuleDialog d = new EditHosterRuleDialog(editing);
         try {
             Dialog.getInstance().showDialog(d);
@@ -372,7 +407,9 @@ public class HosterRuleController implements AccountControllerListener {
     }
 
     public void remove(final AccountUsageRule rule) {
-        if (rule == null) return;
+        if (rule == null) {
+            return;
+        }
         queue.add(new QueueAction<Void, RuntimeException>() {
 
             @Override
