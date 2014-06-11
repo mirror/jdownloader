@@ -352,11 +352,8 @@ public class FreeWayMe extends PluginForHost {
             logger.info("{fetchAccInfo} Unlimited traffic, api response: " + accInfoAPIResp);
             ac.setUnlimitedTraffic(); // workaround
         }
-        try {
-            account.setConcurrentUsePossible(true);
-        } catch (final Throwable e) {
-            // not available in old Stable 0.9.581
-        }
+        account.setConcurrentUsePossible(true);
+
         String accountType = getRegexTag(accInfoAPIResp, "premium").getMatch(0);
         ac.setValidUntil(-1);
         if (accountType != null) {
@@ -388,6 +385,8 @@ public class FreeWayMe extends PluginForHost {
                 supportedHosts.add(host.trim());
             }
         }
+        // set
+        ac.setMultiHostSupport(supportedHosts);
         // post set/correction, need to reload!
         supportedHosts = (ArrayList<String>) ac.getProperty("multiHostSupport");
         if (supportedHosts == null || supportedHosts.size() == 0) {
