@@ -10,6 +10,7 @@ import jd.gui.swing.jdgui.MainTabbedPane;
 import jd.gui.swing.jdgui.interfaces.View;
 
 import org.appwork.swing.exttable.ExtColumn;
+import org.appwork.swing.exttable.ExtDefaultRowSorter;
 import org.appwork.utils.event.queue.Queue.QueuePriority;
 import org.appwork.utils.event.queue.QueueAction;
 import org.jdownloader.controlling.contextmenu.CustomizableTableContextAppAction;
@@ -66,7 +67,9 @@ public class SortAction<PackageType extends AbstractPackageNode<ChildrenType, Pa
     }
 
     public void actionPerformed(ActionEvent e) {
-        if (!isEnabled()) return;
+        if (!isEnabled()) {
+            return;
+        }
         if (column.getModel() instanceof PackageControllerTableModel) {
             PackageControllerTableModel model = (PackageControllerTableModel) column.getModel();
             model.getController().getQueue().add(new QueueAction<Void, RuntimeException>(QueuePriority.HIGH) {
@@ -81,18 +84,20 @@ public class SortAction<PackageType extends AbstractPackageNode<ChildrenType, Pa
                         for (PackageView<PackageType, ChildrenType> node : getSelection().getPackageViews()) {
 
                             if (comparator == null) {
-                                if (node.getPackage().getCurrentSorter() == null || !node.getPackage().getCurrentSorter().getID().equals(column.getModel().getModelID() + ".Column." + column.getID()) || node.getPackage().getCurrentSorter().isAsc()) {
+                                final PackageControllerComparator currentSorter = node.getPackage().getCurrentSorter();
+                                final String currentID = column.getModel().getModelID() + ".Column." + column.getID();
+                                final ExtDefaultRowSorter<AbstractNode> sorter = column.getRowSorter();
+                                if (currentSorter == null || !currentSorter.getID().equals(currentID) || currentSorter.isAsc()) {
+
                                     comparator = new PackageControllerComparator<AbstractNode>() {
 
                                         public int compare(AbstractNode o1, AbstractNode o2) {
-
-                                            return column.getRowSorter().compare(o2, o1);
-
+                                            return sorter.compare(o1, o2);
                                         }
 
                                         @Override
                                         public String getID() {
-                                            return column.getModel().getModelID() + ".Column." + column.getID();
+                                            return currentID;
                                         }
 
                                         @Override
@@ -100,19 +105,16 @@ public class SortAction<PackageType extends AbstractPackageNode<ChildrenType, Pa
                                             return false;
                                         }
                                     };
-
                                 } else {
                                     comparator = new PackageControllerComparator<AbstractNode>() {
 
                                         public int compare(AbstractNode o1, AbstractNode o2) {
-
-                                            return column.getRowSorter().compare(o1, o2);
-
+                                            return sorter.compare(o2, o1);
                                         }
 
                                         @Override
                                         public String getID() {
-                                            return column.getModel().getModelID() + ".Column." + column.getID();
+                                            return currentID;
                                         }
 
                                         @Override
@@ -120,9 +122,10 @@ public class SortAction<PackageType extends AbstractPackageNode<ChildrenType, Pa
                                             return true;
                                         }
                                     };
+
                                 }
                             }
-                            model.sortPackageChildren((AbstractPackageNode) node.getPackage(), comparator);
+                            model.sortPackageChildren(node.getPackage(), comparator);
 
                         }
                     }
