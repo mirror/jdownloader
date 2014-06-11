@@ -30,7 +30,6 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Set;
-import java.util.concurrent.atomic.AtomicInteger;
 
 import javax.swing.Icon;
 import javax.swing.JLabel;
@@ -74,7 +73,6 @@ import org.jdownloader.images.NewTheme;
 public class FreeWayMe extends PluginForHost {
 
     private static HashMap<Account, HashMap<String, Long>> hostUnavailableMap                  = new HashMap<Account, HashMap<String, Long>>();
-    private static AtomicInteger                           maxPrem                             = new AtomicInteger(1);
     private final String                                   ALLOWRESUME                         = "ALLOWRESUME";
     private final String                                   BETAUSER                            = "FREEWAYBETAUSER";
 
@@ -91,6 +89,9 @@ public class FreeWayMe extends PluginForHost {
     public final String                                    ACC_PROPERTY_UNKOWN_FAILS           = "timesfailedfreewayme_unknown";
     public final String                                    ACC_PROPERTY_CURL_FAIL_RESOLVE_HOST = "timesfailedfreewayme_curl_resolve_host";
 
+    /**
+     * @author flubshi
+     * */
     public FreeWayMe(PluginWrapper wrapper) {
         super(wrapper);
         setStartIntervall(1 * 1000l);
@@ -108,9 +109,7 @@ public class FreeWayMe extends PluginForHost {
                                                       put("ERROR_UNKNOWN", "Unknown error");
                                                       put("ERROR_UNKNOWN_FULL", "Unknown account status (deactivated)!");
                                                       put("ERROR_NO_STABLE_ACCOUNTS", "Found no stable accounts");
-                                                      put("CHECK_ZERO_HOSTERS", "Account valid: 0 Hosts via free-way.me available");
-                                                      put("SUPPORTED_HOSTS_1", "Account valid: ");
-                                                      put("SUPPORTED_HOSTS_2", " Hosts via free-way.me available");
+                                                      put("SUPPORTED_HOSTS_1", "Account valid");
                                                       put("ERROR_INVALID_URL", "Invalid URL");
                                                       put("ERROR_RETRY_SECONDS", "Error: Retry in few secs");
                                                       put("ERROR_SERVER", "Server error");
@@ -150,9 +149,7 @@ public class FreeWayMe extends PluginForHost {
                                                       put("ERROR_UNKNOWN", "Unbekannter Fehler");
                                                       put("ERROR_UNKNOWN_FULL", "Unbekannter Accountstatus (deaktiviert)!");
                                                       put("ERROR_NO_STABLE_ACCOUNTS", "Keine stabilen Accounts verfügbar");
-                                                      put("CHECK_ZERO_HOSTERS", "Account gültig: 0 Hosts via free-way.me verfügbar");
-                                                      put("SUPPORTED_HOSTS_1", "Account gültig: ");
-                                                      put("SUPPORTED_HOSTS_2", " Hoster über free-way.me verfügbar");
+                                                      put("SUPPORTED_HOSTS_1", "Account gültig");
                                                       put("ERROR_INVALID_URL", "Ungültige URL");
                                                       put("ERROR_RETRY_SECONDS", "Fehler: Erneuter Versuch in wenigen sek.");
                                                       put("ERROR_SERVER", "Server Fehler");
@@ -183,8 +180,8 @@ public class FreeWayMe extends PluginForHost {
                                               };
 
     /**
-     * Returns a germen/english translation of a phrase - we don't use the JDownloader translation framework since we need only germen and
-     * english (provider is german)
+     * Returns a German/English translation of a phrase. We don't use the JDownloader translation framework since we need only German and
+     * English.
      * 
      * @param key
      * @return
@@ -240,8 +237,6 @@ public class FreeWayMe extends PluginForHost {
     public AccountInfo fetchAccountInfo(final Account account) throws Exception {
         logger.info("{fetchAccInfo} Update free-way account: " + account.getUser());
         AccountInfo ac = new AccountInfo();
-        /* reset maxPrem workaround on every fetchaccount info */
-        maxPrem.set(1);
         br.setConnectTimeout(70 * 1000);
         br.setReadTimeout(65 * 1000);
         String username = Encoding.urlTotalEncode(account.getUser().trim());
@@ -280,7 +275,6 @@ public class FreeWayMe extends PluginForHost {
             maxPremi = Integer.parseInt(maxPremApi);
         }
         account.setProperty(ACC_PROPERTY_CONNECTIONS, maxPremi);
-        maxPrem.set(maxPremi);
 
         // get available fullspeed traffic
         account.setProperty(ACC_PROPERTY_REST_FULLSPEED_TRAFFIC, getJson("restgb", accInfoAPIResp));
@@ -387,14 +381,7 @@ public class FreeWayMe extends PluginForHost {
         }
         // set
         ac.setMultiHostSupport(supportedHosts);
-        // post set/correction, need to reload!
-        supportedHosts = (ArrayList<String>) ac.getProperty("multiHostSupport");
-        if (supportedHosts == null || supportedHosts.size() == 0) {
-            ac.setStatus(getPhrase("CHECK_ZERO_HOSTERS"));
-        } else {
-            ac.setStatus(getPhrase("SUPPORTED_HOSTS_1") + supportedHosts.size() + getPhrase("SUPPORTED_HOSTS_2"));
-            ac.setMultiHostSupport(supportedHosts);
-        }
+        ac.setStatus(accountType + " Account");
         return ac;
     }
 
