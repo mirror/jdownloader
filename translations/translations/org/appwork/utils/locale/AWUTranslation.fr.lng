@@ -118,6 +118,7 @@ proxy_http=%s1:%s2 (Http Proxy)
 proxy_none=Direct
 proxy_socks4=%s1:%s2 (Socks4 Proxy)
 proxy_socks5=%s1:%s2 (Socks5 Proxy)
+proxydialog_remember=Se rappeller
 proxydialog_title=Aucune connexion internet
 tableheader_tooltip_locked=%s1 (Redimensionnement Bloqué)
 tableheader_tooltip_normal=%s1
