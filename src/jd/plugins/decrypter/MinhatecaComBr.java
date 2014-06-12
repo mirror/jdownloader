@@ -54,7 +54,7 @@ public class MinhatecaComBr extends PluginForDecrypt {
 
         /* Differ between single links and folders */
         if (br.containsHTML("id=\"fileDetails\"")) {
-            String filename = br.getRegex("Biaxar: <b>([^<>\"]*?)</b>").getMatch(0);
+            String filename = br.getRegex("Baixar: <b>([^<>\"]*?)</b>").getMatch(0);
             final String filesize = br.getRegex("class=\"fileSize\">([^<>\"]*?)</p>").getMatch(0);
             final String fid = br.getRegex("name=\"FileId\" value=\"(\\d+)\"").getMatch(0);
             if (filename == null || filesize == null || fid == null) {
