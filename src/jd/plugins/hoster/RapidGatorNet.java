@@ -659,8 +659,13 @@ public class RapidGatorNet extends PluginForHost {
             ai.setUnlimitedTraffic();
         } else {
             this.br.getPage("http://rapidgator.net/profile/index");
-            final String availableTraffic = this.br.getRegex(">Bandwith available</td>[\t\n\r ]+<td>([^<>\"]*?) of").getMatch(0);
+            String availableTraffic = this.br.getRegex(">Bandwith available</td>\\s+<td>\\s+([^<>\"]*?) of").getMatch(0);
+            logger.info("availableTraffic = " + availableTraffic);
             if (availableTraffic != null) {
+                Long avtr = SizeFormatter.getSize(availableTraffic.trim());
+                if (avtr == 0) {
+                    availableTraffic = "1024 GB"; // SizeFormatter can't handle TB (Temporary workaround)
+                }
                 ai.setTrafficLeft(SizeFormatter.getSize(availableTraffic.trim()));
             } else {
                 /* Probably not true but our errorhandling for empty traffic should work well */
