@@ -476,7 +476,7 @@ public class VKontakteRuHoster extends PluginForHost {
                             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
                         }
                         final String correctedBR = this.br.toString().replace("\\", "");
-                        final String id_source = new Regex(correctedBR, "\\{(\"id\":\"" + photoID + ".*?)\\},\\{\"id\"").getMatch(0);
+                        final String id_source = new Regex(correctedBR, "\\{(\"id\":\"" + photoID + ".*?)(\"id\"|\\}\\})").getMatch(0);
                         getHighestQualityPic(link, id_source);
                     }
                 }

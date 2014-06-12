@@ -32,7 +32,7 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "deviantart.com" }, urls = { "https?://[\\w\\.\\-]*?deviantart\\.com/((gallery|favourites)/\\d+(\\?offset=\\d+)?|(gallery|favourites)/(\\?offset=\\d+|\\?catpath(=.+)?)?|[A-Za-z0-9\\-]+/collections/\\d+)" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "deviantart.com" }, urls = { "https?://[\\w\\.\\-]*?deviantart\\.com/(?!art/)[^<>\"]+" }, flags = { 0 })
 public class DevArtCm extends PluginForDecrypt {
 
     /**
@@ -207,6 +207,9 @@ public class DevArtCm extends PluginForDecrypt {
             if (fpName != null) {
                 fp.addLinks(decryptedLinks);
             }
+        } else {
+            logger.info("Link unsupported: " + parameter);
+            return decryptedLinks;
         }
         if (decryptedLinks.size() == 0) {
             logger.info("Link probably offline: " + parameter);

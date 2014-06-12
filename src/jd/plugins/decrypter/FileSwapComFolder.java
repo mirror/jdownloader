@@ -20,11 +20,14 @@ import java.util.ArrayList;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
+import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.plugins.CryptedLink;
+import jd.plugins.DecrypterException;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
+import jd.plugins.Plugin;
 import jd.plugins.PluginForDecrypt;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "fileswap.com" }, urls = { "https?://(www\\.)?fileswap\\.com/folder/[a-zA-Z0-9]+/" }, flags = { 0 })
@@ -39,6 +42,24 @@ public class FileSwapComFolder extends PluginForDecrypt {
         String parameter = param.toString();
         br.setCookie("http://fileswap.com", "language", "english");
         br.setFollowRedirects(true);
+        br.getPage(parameter);
+        if (br.containsHTML("Password Protected Share")) {
+            String pass = null;
+            for (int retry = 1; retry <= 3; retry++) {
+                pass = Plugin.getUserInput(null, param);
+                if (pass == null || pass.equals("")) {
+                    logger.info("User abored/entered blank password");
+                    return decryptedLinks;
+                }
+                br.postPage(br.getURL(), "pass=" + Encoding.urlEncode(pass));
+                if (br.containsHTML("Password Protected Share")) {
+                    continue;
+                }
+            }
+            if (br.containsHTML("Password Protected Share")) {
+                throw new DecrypterException(DecrypterException.PASSWORD);
+            }
+        }
         br.getPage(parameter + "?v=list");
         if (br.containsHTML("<b>The folder you requested has not been found or may no longer be available</b>|Sorry\\, the page you requested could no longer be found\\.|Folder Not Found")) {
             logger.info("Link offline: " + parameter);
