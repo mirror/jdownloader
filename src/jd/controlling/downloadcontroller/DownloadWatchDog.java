@@ -716,32 +716,88 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
         final DownloadSession currentSession = selector.getSession();
         while (newDLStartAllowed(currentSession)) {
             final List<DownloadLinkCandidate> nextCandidates = nextDownloadLinkCandidates(selector);
-            if (nextCandidates == null || nextCandidates.size() == 0) {
-                break;
-            }
-            final DownloadLinkCandidate nextCandidate = findFinalCandidate(selector, nextCandidates);
-            if (nextCandidate != null) {
-                selector.setExcluded(nextCandidate.getLink());
-                final MirrorLoading condition = new MirrorLoading(nextCandidate.getLink());
-                for (DownloadLink mirror : findDownloadLinkMirrors(nextCandidate.getLink())) {
-                    selector.setExcluded(mirror);
-                    if (mirror.getFinalLinkState() == null || FinalLinkState.CheckFailed(mirror.getFinalLinkState())) {
-                        mirror.setConditionalSkipReason(condition);
+            if (nextCandidates != null && nextCandidates.size() > 0) {
+                final DownloadLinkCandidate nextCandidate = findFinalCandidate(selector, nextCandidates);
+                if (nextCandidate != null) {
+                    selector.setExcluded(nextCandidate.getLink());
+                    final MirrorLoading condition = new MirrorLoading(nextCandidate.getLink());
+                    for (DownloadLink mirror : findDownloadLinkMirrors(nextCandidate.getLink())) {
+                        selector.setExcluded(mirror);
+                        if (mirror.getFinalLinkState() == null || FinalLinkState.CheckFailed(mirror.getFinalLinkState())) {
+                            mirror.setConditionalSkipReason(condition);
+                        }
                     }
+                    return nextCandidate;
                 }
-                return nextCandidate;
+            } else {
+                break;
             }
         }
         return null;
     }
 
-    private DownloadLinkCandidate findFinalCandidate(DownloadLinkCandidateSelector selector, final List<DownloadLinkCandidate> candidates) {
+    private DownloadLinkCandidate findFinalCandidate(DownloadLinkCandidateSelector selector, List<DownloadLinkCandidate> candidates) {
         if (candidates == null || candidates.size() == 0) {
             return null;
         }
-        LinkedHashMap<DownloadLink, DownloadLinkCandidate> bestCandidates = new LinkedHashMap<DownloadLink, DownloadLinkCandidate>();
+        final LinkedHashMap<DownloadLink, LinkedHashMap<String, ArrayList<DownloadLinkCandidate>>> preferredFiltered = new LinkedHashMap<DownloadLink, LinkedHashMap<String, ArrayList<DownloadLinkCandidate>>>();
         for (DownloadLinkCandidate nextCandidate : candidates) {
-            DownloadLink candidateLink = nextCandidate.getLink();
+            final DownloadLink candidateLink = nextCandidate.getLink();
+            LinkedHashMap<String, ArrayList<DownloadLinkCandidate>> map = preferredFiltered.get(candidateLink);
+            if (map == null) {
+                map = new LinkedHashMap<String, ArrayList<DownloadLinkCandidate>>();
+                preferredFiltered.put(candidateLink, map);
+            }
+            final String host = nextCandidate.getCachedAccount().getPlugin().getHost();
+            ArrayList<DownloadLinkCandidate> list = map.get(host);
+            if (list == null) {
+                list = new ArrayList<DownloadLinkCandidate>();
+                map.put(host, list);
+            }
+            if (list.isEmpty() || !list.get(0).isCustomizedAccount()) {
+                list.add(nextCandidate);
+            }
+        }
+        candidates = new ArrayList<DownloadLinkCandidate>();
+        final Iterator<Entry<DownloadLink, LinkedHashMap<String, ArrayList<DownloadLinkCandidate>>>> it = preferredFiltered.entrySet().iterator();
+        while (it.hasNext()) {
+            final Entry<DownloadLink, LinkedHashMap<String, ArrayList<DownloadLinkCandidate>>> next = it.next();
+            final DownloadLink downloadLink = next.getKey();
+            final LinkedHashMap<String, ArrayList<DownloadLinkCandidate>> map = next.getValue();
+            final Iterator<Entry<String, ArrayList<DownloadLinkCandidate>>> it2 = map.entrySet().iterator();
+            while (it2.hasNext()) {
+                final Entry<String, ArrayList<DownloadLinkCandidate>> next2 = it2.next();
+                final ArrayList<DownloadLinkCandidate> list = next2.getValue();
+                if (list.size() > 1) {
+                    final ArrayList<DownloadLinkCandidate> newList = new ArrayList<DownloadLinkCandidate>();
+                    try {
+                        final ArrayList<Account> accList = new ArrayList<Account>();
+                        final LinkedHashMap<Account, DownloadLinkCandidate> accMap = new LinkedHashMap<Account, DownloadLinkCandidate>();
+                        for (final DownloadLinkCandidate candidate : list) {
+                            accMap.put(candidate.getCachedAccount().getAccount(), candidate);
+                            accList.add(candidate.getCachedAccount().getAccount());
+                        }
+                        for (Account account : list.get(0).getCachedAccount().getPlugin().sort(accList, downloadLink)) {
+                            final DownloadLinkCandidate candidate = accMap.remove(account);
+                            if (candidate != null) {
+                                newList.add(candidate);
+                            }
+                        }
+                    } catch (final Throwable e) {
+                        logger.log(e);
+                    }
+                    if (newList.size() == list.size()) {
+                        candidates.addAll(newList);
+                        continue;
+                    }
+                }
+                candidates.addAll(list);
+            }
+        }
+
+        final LinkedHashMap<DownloadLink, DownloadLinkCandidate> bestCandidates = new LinkedHashMap<DownloadLink, DownloadLinkCandidate>();
+        for (DownloadLinkCandidate nextCandidate : candidates) {
+            final DownloadLink candidateLink = nextCandidate.getLink();
             DownloadLinkCandidate bestCandidate = bestCandidates.get(candidateLink);
             if (bestCandidate == null) {
                 /* no bestCandidate yet */
@@ -830,13 +886,13 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
 
                 @Override
                 public int compare(DownloadLinkCandidate x, DownloadLinkCandidate y) {
-                    int ret = x.getCachedAccount().getType().compareTo(y.getCachedAccount().getType());
-                    if (ret == 0) {
-                        boolean xCaptcha = x.getCachedAccount().hasCaptcha(x.getLink());
-                        boolean yCaptcha = y.getCachedAccount().hasCaptcha(y.getLink());
-                        ret = compareDown(xCaptcha, yCaptcha);
+                    final int ret = x.getCachedAccount().getType().compareTo(y.getCachedAccount().getType());
+                    if (ret != 0) {
+                        return ret;
                     }
-                    return ret;
+                    final boolean xCaptcha = x.getCachedAccount().hasCaptcha(x.getLink());
+                    final boolean yCaptcha = y.getCachedAccount().hasCaptcha(y.getLink());
+                    return compareDown(xCaptcha, yCaptcha);
                 }
 
             });

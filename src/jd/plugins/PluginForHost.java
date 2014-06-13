@@ -1300,6 +1300,17 @@ public abstract class PluginForHost extends Plugin {
     }
 
     /**
+     * JD2 ONLY
+     * 
+     * @param accounts
+     * @param downloadLink
+     * @return
+     */
+    public List<Account> sort(List<Account> accounts, DownloadLink downloadLink) {
+        return accounts;
+    }
+
+    /**
      * THIS IS JDOWNLOADER 2 ONLY!
      * 
      * @param domain

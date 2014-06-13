@@ -613,11 +613,13 @@ public class RapidGatorNet extends PluginForHost {
                             } catch (final Throwable e) {
                                 // not available in old Stable 0.9.581
                             }
+                            account.setProperty("free", false);
                             return ai;
                         }
                     }
+                    account.setProperty("free", true);
                     ai.setStatus("Free account");
-                    account.setProperty("session_type", null);
+                    account.setProperty("session_type", Property.NULL);
                     try {
                         RapidGatorNet.maxPrem.set(1);
                         account.setMaxSimultanDownloads(1);
@@ -628,10 +630,11 @@ public class RapidGatorNet extends PluginForHost {
                     return ai;
                 }
                 account.setValid(false);
-                account.setProperty("session_type", null);
+                account.setProperty("session_type", Property.NULL);
                 return ai;
             } catch (final PluginException e) {
-                account.setProperty("session_type", null);
+                account.setProperty("free", Property.NULL);
+                account.setProperty("session_type", Property.NULL);
                 account.setValid(false);
                 throw e;
             }
@@ -772,6 +775,7 @@ public class RapidGatorNet extends PluginForHost {
                 account.setProperty("cookies", cookies);
                 return cookies;
             } catch (final PluginException e) {
+                account.setProperty("free", Property.NULL);
                 account.setProperty("cookies", Property.NULL);
                 throw e;
             }
