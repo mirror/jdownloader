@@ -586,12 +586,14 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
                         }
                     }
                     if (packageName == null) {
-                        packageName = LinknameCleaner.cleanFileName(link.getName());
                         if (isMultiArchive) {
                             packageID = lArchiver.createArchiveID(clf);
                             if (packageID != null) {
-                                packageName = _JDT._.LinkCollector_archiv(LinknameCleaner.cleanFileName(lArchiver.getArchiveName(clf), false, true, true, true));
+                                packageName = _JDT._.LinkCollector_archiv(LinknameCleaner.cleanFileName(lArchiver.getArchiveName(clf), false, true, LinknameCleaner.EXTENSION_SETTINGS.REMOVE_KNOWN, true));
                             }
+                        }
+                        if (packageName == null) {
+                            packageName = LinknameCleaner.cleanFileName(link.getName(), false, true, LinknameCleaner.EXTENSION_SETTINGS.REMOVE_ALL, true);
                         }
                     }
 

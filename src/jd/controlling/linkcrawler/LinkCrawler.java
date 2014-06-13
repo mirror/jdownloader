@@ -1124,7 +1124,7 @@ public class LinkCrawler {
                 if (Boolean.FALSE.equals(dp.getBooleanProperty(PACKAGE_CLEANUP_NAME, true))) {
                     fpi.setName(dp.getName());
                 } else {
-                    fpi.setName(LinknameCleaner.cleanFileName(dp.getName(), false, true, true, true));
+                    fpi.setName(LinknameCleaner.cleanFileName(dp.getName(), false, true, LinknameCleaner.EXTENSION_SETTINGS.REMOVE_KNOWN, true));
                 }
 
                 if (dp.hasProperty(PACKAGE_ALLOW_MERGE)) {

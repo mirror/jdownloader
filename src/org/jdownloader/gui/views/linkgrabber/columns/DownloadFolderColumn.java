@@ -71,7 +71,9 @@ public class DownloadFolderColumn extends ExtTextColumn<AbstractNode> {
         if (CrossSystem.isOpenFileSupported() && value != null) {
 
             File ret = LinkTreeUtils.getDownloadDirectory(value);
-            if (ret != null && ret.exists() && ret.isDirectory()) CrossSystem.openFile(ret);
+            if (ret != null && ret.exists() && ret.isDirectory()) {
+                CrossSystem.openFile(ret);
+            }
             return true;
         }
         return false;
@@ -92,7 +94,9 @@ public class DownloadFolderColumn extends ExtTextColumn<AbstractNode> {
 
     @Override
     protected void setStringValue(final String value, final AbstractNode object) {
-        if (StringUtils.isEmpty(value) || object == null) return;
+        if (StringUtils.isEmpty(value) || object == null) {
+            return;
+        }
         File oldPath = LinkTreeUtils.getDownloadDirectory(object);
         File newPath = LinkTreeUtils.getDownloadDirectory(value, null);
         if (oldPath.equals(newPath)) {
@@ -129,7 +133,13 @@ public class DownloadFolderColumn extends ExtTextColumn<AbstractNode> {
             final CrawledPackage pkg = new CrawledPackage();
             pkg.setExpanded(true);
             if (TYPE.NORMAL != p.getType()) {
-                pkg.setName(LinknameCleaner.cleanFileName(object.getName()));
+                final String pkgName;
+                if (object instanceof AbstractPackageNode) {
+                    pkgName = LinknameCleaner.cleanFileName(object.getName(), false, true, LinknameCleaner.EXTENSION_SETTINGS.REMOVE_KNOWN, true);
+                } else {
+                    pkgName = LinknameCleaner.cleanFileName(object.getName(), false, true, LinknameCleaner.EXTENSION_SETTINGS.REMOVE_ALL, true);
+                }
+                pkg.setName(pkgName);
             } else {
                 pkg.setName(p.getName());
             }
@@ -152,14 +162,18 @@ public class DownloadFolderColumn extends ExtTextColumn<AbstractNode> {
 
     @Override
     public boolean isEnabled(final AbstractNode obj) {
-        if (obj instanceof AbstractPackageNode) { return ((AbstractPackageNode) obj).getView().isEnabled(); }
+        if (obj instanceof AbstractPackageNode) {
+            return ((AbstractPackageNode) obj).getView().isEnabled();
+        }
         return obj.isEnabled();
     }
 
     @Override
     public String getStringValue(AbstractNode value) {
         File ret = LinkTreeUtils.getDownloadDirectory(value);
-        if (ret != null) return ret.toString();
+        if (ret != null) {
+            return ret.toString();
+        }
         return null;
     }
 

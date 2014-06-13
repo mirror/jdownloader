@@ -48,7 +48,8 @@ public class SetDownloadFolderInLinkgrabberAction extends SetDownloadFolderActio
         final CrawledPackage pkg = new CrawledPackage();
         pkg.setExpanded(true);
         if (TYPE.NORMAL != entry.getType()) {
-            pkg.setName(LinknameCleaner.cleanFileName(getSelection().getPackageView(entry).getChildren().get(0).getName()));
+            final String pkgName = LinknameCleaner.cleanFileName(getSelection().getPackageView(entry).getChildren().get(0).getName(), false, true, LinknameCleaner.EXTENSION_SETTINGS.REMOVE_ALL, true);
+            pkg.setName(pkgName);
         } else {
             pkg.setName(entry.getName());
         }

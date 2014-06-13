@@ -45,15 +45,13 @@ public class LinknameCleaner {
     public static final Pattern   pat19    = Pattern.compile("(.*)\\.i\\d{2}$", Pattern.CASE_INSENSITIVE);
     public static final Pattern[] iszPats  = new Pattern[] { pat18, pat19 };                                                         ;
 
-    public static String cleanFileName(String name) {
-        return cleanFileName(name, false);
+    public static enum EXTENSION_SETTINGS {
+        KEEP,
+        REMOVE_KNOWN,
+        REMOVE_ALL
     }
 
-    public static String cleanFileName(String name, boolean splitUpperLowerCase) {
-        return cleanFileName(name, splitUpperLowerCase, false, true, true);
-    }
-
-    public static String cleanFileName(String name, boolean splitUpperLowerCase, boolean ignoreArchiveFilters, boolean removeExtension, boolean cleanup) {
+    public static String cleanFileName(String name, boolean splitUpperLowerCase, boolean ignoreArchiveFilters, final EXTENSION_SETTINGS extensionSettings, boolean cleanup) {
         boolean extensionStilExists = true;
         String before = name;
         if (!ignoreArchiveFilters) {
@@ -130,7 +128,7 @@ public class LinknameCleaner {
         }
 
         /* remove extension */
-        if (extensionStilExists && removeExtension) {
+        if (EXTENSION_SETTINGS.REMOVE_ALL.equals(extensionSettings) || EXTENSION_SETTINGS.REMOVE_KNOWN.equals(extensionSettings)) {
             int lastPoint = name.lastIndexOf(".");
             if (lastPoint <= 0) {
                 lastPoint = name.lastIndexOf("_");
@@ -139,7 +137,7 @@ public class LinknameCleaner {
                 int extLength = (name.length() - (lastPoint + 1));
                 if (extLength <= 3) {
                     final String ext = name.substring(lastPoint + 1);
-                    if (CompiledFiletypeFilter.getExtensionsFilterInterface(ext) != null) {
+                    if (EXTENSION_SETTINGS.REMOVE_ALL.equals(extensionSettings) || CompiledFiletypeFilter.getExtensionsFilterInterface(ext) != null) {
                         /* make sure to cut off only known extensions */
                         name = name.substring(0, lastPoint);
                     }
