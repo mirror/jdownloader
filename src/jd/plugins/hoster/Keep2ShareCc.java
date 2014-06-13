@@ -90,11 +90,9 @@ public class Keep2ShareCc extends PluginForHost {
             prepBr.setAllowedResponseCodes(new int[] { 503 });
         } catch (Throwable e) {
         }
-        HashMap<String, String> map = null;
-        synchronized (cloudflareCookies) {
-            map = new HashMap<String, String>(cloudflareCookies);
-            if (!map.isEmpty()) {
-                for (final Map.Entry<String, String> cookieEntry : map.entrySet()) {
+        synchronized (antiDDoSCookies) {
+            if (!antiDDoSCookies.isEmpty()) {
+                for (final Map.Entry<String, String> cookieEntry : antiDDoSCookies.entrySet()) {
                     final String key = cookieEntry.getKey();
                     final String value = cookieEntry.getValue();
                     prepBr.setCookie(this.getHost(), key, value);
@@ -749,55 +747,7 @@ public class Keep2ShareCc extends PluginForHost {
                     throw e;
                 }
             }
-            // prevention is better than cure
-            if (br.getHttpConnection() != null && br.getHttpConnection().getResponseCode() == 503 && br.getHttpConnection().getHeaderFields("server").contains("cloudflare-nginx")) {
-                String host = new Regex(page, "https?://([^/]+)(:\\d+)?/").getMatch(0);
-                Form cloudflare = br.getFormbyProperty("id", "ChallengeForm");
-                if (cloudflare == null) {
-                    cloudflare = br.getFormbyProperty("id", "challenge-form");
-                }
-                if (cloudflare != null) {
-                    String math = br.getRegex("\\$\\('#jschl_answer'\\)\\.val\\(([^\\)]+)\\);").getMatch(0);
-                    if (math == null) {
-                        math = br.getRegex("a\\.value = ([\\d\\-\\.\\+\\*/]+);").getMatch(0);
-                    }
-                    if (math == null) {
-                        String variableName = br.getRegex("(\\w+)\\s*=\\s*\\$\\(\'#jschl_answer\'\\);").getMatch(0);
-                        if (variableName != null) {
-                            variableName = variableName.trim();
-                        }
-                        math = br.getRegex(variableName + "\\.val\\(([^\\)]+)\\)").getMatch(0);
-                    }
-                    if (math == null) {
-                        logger.warning("Couldn't find 'math'");
-                        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                    }
-                    // use js for now, but change to Javaluator as the provided string doesn't get evaluated by JS according to Javaluator
-                    // author.
-                    ScriptEngineManager mgr = new ScriptEngineManager();
-                    ScriptEngine engine = mgr.getEngineByName("JavaScript");
-                    final long value = ((Number) engine.eval("(" + math + ") + " + host.length())).longValue();
-                    cloudflare.put("jschl_answer", value + "");
-                    Thread.sleep(5500);
-                    br.submitForm(cloudflare);
-                    if (br.getFormbyProperty("id", "ChallengeForm") != null || br.getFormbyProperty("id", "challenge-form") != null) {
-                        logger.warning("Possible plugin error within cloudflare handling");
-                        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                    }
-                    // lets save cloudflare cookie to reduce the need repeat cloudFlare()
-                    final HashMap<String, String> cookies = new HashMap<String, String>();
-                    final Cookies add = br.getCookies(this.getHost());
-                    for (final Cookie c : add.getCookies()) {
-                        if (new Regex(c.getKey(), "(cfduid|cf_clearance)").matches()) {
-                            cookies.put(c.getKey(), c.getValue());
-                        }
-                    }
-                    synchronized (cloudflareCookies) {
-                        cloudflareCookies.clear();
-                        cloudflareCookies.putAll(cookies);
-                    }
-                }
-            }
+            antiDDoS();
         } finally {
             br.setFollowRedirects(follows_redirects);
         }
@@ -817,6 +767,7 @@ public class Keep2ShareCc extends PluginForHost {
         br.getHeaders().put("Content-Type", "application/x-www-form-urlencoded");
         try {
             br.postPage(page, postData);
+            antiDDoS();
         } finally {
             br.getHeaders().put("Content-Type", null);
         }
@@ -863,8 +814,122 @@ public class Keep2ShareCc extends PluginForHost {
         }
         try {
             br.submitForm(form);
+            antiDDoS();
         } finally {
             br.getHeaders().put("Content-Type", null);
+        }
+    }
+
+    private static HashMap<String, String> antiDDoSCookies = new HashMap<String, String>();
+
+    /**
+     * Performs Cloudflare and Incapsula requirements.<br />
+     * Auto fill out the required fields and updates antiDDoSCookies session.<br />
+     * Always called after Browser Request!
+     * 
+     * @version 0.02
+     * @author raztoki
+     **/
+    private void antiDDoS() throws Exception {
+        if (br == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        final HashMap<String, String> cookies = new HashMap<String, String>();
+        if (br.getHttpConnection() != null) {
+            final String URL = br.getURL();
+            if (br.getHttpConnection().getHeaderFields("server").contains("cloudflare-nginx")) {
+                Form cloudflare = br.getFormbyProperty("id", "ChallengeForm");
+                if (cloudflare == null) {
+                    cloudflare = br.getFormbyProperty("id", "challenge-form");
+                }
+                if (br.getHttpConnection().getResponseCode() == 403 && cloudflare != null) {
+                    // new method seems to be within 403
+                    if (cloudflare.hasInputFieldByName("recaptcha_response_field")) {
+                        // they seem to add multiple input fields which is most likely meant to be corrected by js ?
+                        // we will manually remove all those
+                        while (cloudflare.hasInputFieldByName("recaptcha_response_field")) {
+                            cloudflare.remove("recaptcha_response_field");
+                        }
+                        while (cloudflare.hasInputFieldByName("recaptcha_challenge_field")) {
+                            cloudflare.remove("recaptcha_challenge_field");
+                        }
+                        // this one is null, needs to be ""
+                        if (cloudflare.hasInputFieldByName("message")) {
+                            cloudflare.remove("message");
+                            cloudflare.put("messsage", "\"\"");
+                        }
+                        // recaptcha bullshit
+                        String apiKey = cloudflare.getRegex("/recaptcha/api/(?:challenge|noscript)\\?k=([A-Za-z0-9%_\\+\\- ]+)").getMatch(0);
+                        if (apiKey == null) {
+                            apiKey = br.getRegex("/recaptcha/api/(?:challenge|noscript)\\?k=([A-Za-z0-9%_\\+\\- ]+)").getMatch(0);
+                            if (apiKey == null) {
+                                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                            }
+                        }
+                        final DownloadLink dllink = new DownloadLink(null, "antiDDoS Provider 'Clouldflare' requires Captcha", MAINPAGE, MAINPAGE, true);
+                        final PluginForHost recplug = JDUtilities.getPluginForHost("DirectHTTP");
+                        final jd.plugins.hoster.DirectHTTP.Recaptcha rc = ((DirectHTTP) recplug).getReCaptcha(br);
+                        rc.setId(apiKey);
+                        rc.load();
+                        final File cf = rc.downloadCaptcha(getLocalCaptchaFile());
+                        final String response = getCaptchaCode(cf, dllink);
+                        cloudflare.put("recaptcha_challenge_field", rc.getChallenge());
+                        cloudflare.put("recaptcha_response_field", Encoding.urlEncode(response));
+                        br.submitForm(cloudflare);
+                        if (br.getFormbyProperty("id", "ChallengeForm") != null || br.getFormbyProperty("id", "challenge-form") != null) {
+                            logger.warning("Possible plugin error within cloudflare handling");
+                            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                        }
+                    }
+                } else if (br.getHttpConnection().getResponseCode() == 503 && cloudflare != null) {
+                    // 503 response code with javascript math section
+                    String host = new Regex(URL, "https?://([^/]+)(:\\d+)?/").getMatch(0);
+                    String math = br.getRegex("\\$\\('#jschl_answer'\\)\\.val\\(([^\\)]+)\\);").getMatch(0);
+                    if (math == null) {
+                        math = br.getRegex("a\\.value = ([\\d\\-\\.\\+\\*/]+);").getMatch(0);
+                    }
+                    if (math == null) {
+                        String variableName = br.getRegex("(\\w+)\\s*=\\s*\\$\\('#jschl_answer'\\);").getMatch(0);
+                        if (variableName != null) {
+                            variableName = variableName.trim();
+                        }
+                        math = br.getRegex(variableName + "\\.val\\(([^\\)]+)\\)").getMatch(0);
+                    }
+                    if (math == null) {
+                        logger.warning("Couldn't find 'math'");
+                        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                    }
+                    // use js for now, but change to Javaluator as the provided string doesn't get evaluated by JS according to Javaluator
+                    // author.
+                    ScriptEngineManager mgr = new ScriptEngineManager();
+                    ScriptEngine engine = mgr.getEngineByName("JavaScript");
+                    final long value = ((Number) engine.eval("(" + math + ") + " + host.length())).longValue();
+                    cloudflare.put("jschl_answer", value + "");
+                    Thread.sleep(5500);
+                    br.submitForm(cloudflare);
+                    if (br.getFormbyProperty("id", "ChallengeForm") != null || br.getFormbyProperty("id", "challenge-form") != null) {
+                        logger.warning("Possible plugin error within cloudflare handling");
+                        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                    }
+                } else {
+                    // nothing wrong, or something wrong (unsupported format)....
+                    // commenting out return prevents caching of cookies per request
+                    // return;
+                }
+                // get cookies we want/need.
+                // refresh these with every getPage/postPage/submitForm?
+                final Cookies add = br.getCookies(this.getHost());
+                for (final Cookie c : add.getCookies()) {
+                    if (new Regex(c.getKey(), "(cfduid|cf_clearance)").matches()) {
+                        cookies.put(c.getKey(), c.getValue());
+                    }
+                }
+            }
+            // save the session!
+            synchronized (antiDDoSCookies) {
+                antiDDoSCookies.clear();
+                antiDDoSCookies.putAll(cookies);
+            }
         }
     }
 
