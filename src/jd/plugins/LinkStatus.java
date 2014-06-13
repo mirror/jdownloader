@@ -159,11 +159,13 @@ public class LinkStatus implements Serializable {
             if (java.lang.reflect.Modifier.isStatic(f.getModifiers()) && f.getType() == int.class) {
 
                 try {
-                    if (BinaryLogic.containsAll(status, f.getInt(null))) {
-                        if (ret.length() > 0) {
-                            ret.append(", ");
+                    if (!f.getName().startsWith("VALUE")) {
+                        if (BinaryLogic.containsAll(status, f.getInt(null))) {
+                            if (ret.length() > 0) {
+                                ret.append(", ");
+                            }
+                            ret.append(f.getName());
                         }
-                        ret.append(f.getName());
                     }
                 } catch (IllegalArgumentException e) {
                     e.printStackTrace();

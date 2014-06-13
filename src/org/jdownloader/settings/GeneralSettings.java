@@ -485,7 +485,13 @@ public interface GeneralSettings extends ConfigInterface {
             public String getLabel() {
                 return _GUI._.OnSkipDueToAlreadyExistsAction_mark_successful();
             }
-        };
+        },
+
+        SET_FILE_TO_SUCCESSFUL_MIRROR {
+            public String getLabel() {
+                return _GUI._.OnSkipDueToAlreadyExistsAction_mark_successful_mirror();
+            }
+        }
 
     }
 

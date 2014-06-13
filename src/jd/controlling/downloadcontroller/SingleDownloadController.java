@@ -349,25 +349,33 @@ public class SingleDownloadController extends BrowserSettingsThread implements D
                 handlePlugin.setLogger(downloadLogger);
                 handlePlugin.setDownloadLink(downloadLink);
                 handlePlugin.init();
-                downloadLink.setLivePlugin(handlePlugin);
-                watchDog.localFileCheck(this, new ExceptionRunnable() {
+                try {
+                    downloadLink.setLivePlugin(handlePlugin);
+                    watchDog.localFileCheck(this, new ExceptionRunnable() {
 
-                    @Override
-                    public void run() throws Exception {
-                        final List<DownloadLinkCandidate> candidates = new ArrayList<DownloadLinkCandidate>();
-                        candidates.add(getDownloadLinkCandidate());
-                        final DISKSPACERESERVATIONRESULT result = watchDog.validateDiskFree(candidates);
-                        switch (result) {
-                        case FAILED:
-                            throw new SkipReasonException(SkipReason.DISK_FULL);
-                        case INVALIDDESTINATION:
-                            throw new SkipReasonException(SkipReason.INVALID_DESTINATION);
+                        @Override
+                        public void run() throws Exception {
+                            final List<DownloadLinkCandidate> candidates = new ArrayList<DownloadLinkCandidate>();
+                            candidates.add(getDownloadLinkCandidate());
+                            final DISKSPACERESERVATIONRESULT result = watchDog.validateDiskFree(candidates);
+                            switch (result) {
+                            case FAILED:
+                                throw new SkipReasonException(SkipReason.DISK_FULL);
+                            case INVALIDDESTINATION:
+                                throw new SkipReasonException(SkipReason.INVALID_DESTINATION);
+                            }
                         }
+                    }, null);
+                    processingPlugin.set(handlePlugin);
+                    startTimestamp = System.currentTimeMillis();
+                    handlePlugin.handle(downloadLink, account);
+                } catch (DeferredRunnableException e) {
+                    if (e.getExceptionRunnable() != null) {
+                        e.getExceptionRunnable().run();
+                    } else {
+                        throw e;
                     }
-                }, null);
-                processingPlugin.set(handlePlugin);
-                startTimestamp = System.currentTimeMillis();
-                handlePlugin.handle(downloadLink, account);
+                }
                 SingleDownloadReturnState ret = new SingleDownloadReturnState(this, null, finalizeProcessingPlugin());
                 return ret;
             } catch (final BrowserException browserException) {

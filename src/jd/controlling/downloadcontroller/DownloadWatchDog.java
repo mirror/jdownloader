@@ -86,6 +86,8 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.PluginsC;
 import jd.plugins.download.DownloadInterface;
+import jd.plugins.download.DownloadLinkDownloadable;
+import jd.plugins.download.HashInfo;
 import jd.plugins.download.HashResult;
 import jd.plugins.download.raf.FileBytesCache;
 
@@ -1072,7 +1074,7 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
             if (onDetach) {
                 currentSession.removeHistory(link);
                 candidate.getLink().setFinishedDate(value.getFinishTime());
-                if (hashResult != null && hashResult.hashMatch()) {
+                if (hashResult != null && hashResult.match()) {
                     switch (hashResult.getHashInfo().getType()) {
                     case CRC32:
                         candidate.getLink().setFinalLinkState(FinalLinkState.FINISHED_CRC32);
@@ -1103,7 +1105,7 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
         case FAILED:
             if (onDetach) {
                 currentSession.removeHistory(link);
-                if (hashResult != null && hashResult.hashMatch() == false) {
+                if (hashResult != null && hashResult.match() == false) {
                     switch (hashResult.getHashInfo().getType()) {
                     case CRC32:
                         candidate.getLink().setFinalLinkState(FinalLinkState.FAILED_CRC32);
@@ -3348,9 +3350,9 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
                 if (controller.isAborting()) {
                     throw new InterruptedException("Controller is aborted");
                 }
-                DownloadLink downloadLink = controller.getDownloadLink();
+                final DownloadLink downloadLink = controller.getDownloadLink();
                 String localCheck = downloadLink.getFileOutput(false, true);
-                File fileOutput = new File(localCheck);
+                final File fileOutput = new File(localCheck);
                 if (fileOutput.isDirectory()) {
                     controller.getLogger().severe("fileOutput is a directory " + fileOutput);
                     throw new SkipReasonException(SkipReason.INVALID_DESTINATION);
@@ -3393,7 +3395,8 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
                         writeTest.delete();
                     }
                 }
-                if (controller.getDownloadInstance() == null) {
+                final boolean insideDownloadInstance = controller.getDownloadInstance() != null;
+                if (!insideDownloadInstance) {
                     /* we are outside DownloadInterface */
                     String localCheck2 = downloadLink.getFileOutput(true, true);
                     if (localCheck2 == null) {
@@ -3456,6 +3459,35 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
                     switch (doAction) {
                     case SKIP_FILE:
                         switch (CFG_GENERAL.CFG.getOnSkipDueToAlreadyExistsAction()) {
+                        case SET_FILE_TO_SUCCESSFUL_MIRROR:
+                            if (!fileInProgress) {
+                                throw new DeferredRunnableException(new ExceptionRunnable() {
+
+                                    @Override
+                                    public void run() throws Exception {
+                                        final DownloadLinkDownloadable downloadable = new DownloadLinkDownloadable(downloadLink);
+                                        switch (config.getMirrorDetectionDecision()) {
+                                        case AUTO:
+                                            final HashInfo hashInfo = downloadable.getHashInfo();
+                                            if (hashInfo != null) {
+                                                final HashResult hashResult = downloadable.getHashResult(hashInfo, fileOutput);
+                                                if (hashResult != null && hashResult.match()) {
+                                                    downloadable.setHashResult(hashResult);
+                                                    throw new PluginException(LinkStatus.FINISHED);
+                                                }
+                                            }
+                                        case FILENAME_FILESIZE:
+                                            final long fileSize = downloadable.getVerifiedFileSize();
+                                            if (fileSize >= 0 && fileSize == fileOutput.length()) {
+                                                throw new PluginException(LinkStatus.FINISHED);
+                                            }
+                                        }
+                                        throw new PluginException(LinkStatus.ERROR_ALREADYEXISTS);
+                                    }
+                                });
+                            } else {
+                                throw new PluginException(LinkStatus.ERROR_ALREADYEXISTS);
+                            }
                         case SET_FILE_TO_SUCCESSFUL:
                             throw new PluginException(LinkStatus.FINISHED);
                         default:

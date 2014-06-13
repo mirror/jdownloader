@@ -15,7 +15,7 @@ public class HashResult {
         this.fileHash = fileHash;
     }
     
-    public boolean hashMatch() {
+    public boolean match() {
         return fileHash != null && hashInfo.getHash().equalsIgnoreCase(fileHash);
     }
     
@@ -25,6 +25,6 @@ public class HashResult {
     
     @Override
     public String toString() {
-        return "HashInfo: " + hashInfo + "|HashResult:" + getFileHash() + "=" + hashMatch();
+        return "HashInfo: " + hashInfo + "|HashResult:" + getFileHash() + "=" + match();
     }
 }
