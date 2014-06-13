@@ -14,7 +14,6 @@ import jd.controlling.AccountController;
 import jd.controlling.AccountControllerEvent;
 import jd.controlling.AccountControllerListener;
 import jd.controlling.downloadcontroller.AccountCache;
-import jd.controlling.downloadcontroller.AccountCache.ACCOUNTTYPE;
 import jd.controlling.downloadcontroller.AccountCache.CachedAccount;
 import jd.controlling.downloadcontroller.DownloadSession;
 import jd.gui.swing.jdgui.views.settings.panels.accountmanager.orderpanel.dialog.EditHosterRuleDialog;
@@ -177,13 +176,10 @@ public class HosterRuleController implements AccountControllerListener {
             @Override
             protected AccountCache run() throws RuntimeException {
                 for (AccountUsageRule hr : loadedRules) {
-                    if (!hr.isEnabled()) {
-                        continue;
-                    }
-                    if (finalHost.equalsIgnoreCase(hr.getHoster())) {
+                    if (hr.isEnabled() && finalHost.equalsIgnoreCase(hr.getHoster())) {
                         int lastCacheSize = 0;
-                        ArrayList<CachedAccount> newCache = new ArrayList<CachedAccount>();
-                        ArrayList<AccountGroup.Rules> rules = new ArrayList<AccountGroup.Rules>();
+                        final ArrayList<CachedAccount> newCache = new ArrayList<CachedAccount>();
+                        final ArrayList<AccountGroup.Rules> rules = new ArrayList<AccountGroup.Rules>();
                         for (AccountGroup ag : hr.getAccounts()) {
                             if (lastCacheSize != newCache.size()) {
                                 lastCacheSize = newCache.size();
@@ -191,27 +187,23 @@ public class HosterRuleController implements AccountControllerListener {
                                 rules.add(null);
                             }
                             for (AccountReference acr : ag.getChildren()) {
-                                if (!acr.isEnabled()) {
-                                    continue;
-                                }
-                                CachedAccount cachedAccount = null;
-                                if (FreeAccountReference.isFreeAccount(acr)) {
-                                    cachedAccount = new CachedAccount(finalHost, null, ACCOUNTTYPE.NONE, session.getPlugin(finalHost));
-                                } else {
-                                    Account acc = acr.getAccount();
-                                    if (acc != null) {
-                                        if (acc.isMulti()) {
-                                            cachedAccount = new CachedAccount(finalHost, acc, ACCOUNTTYPE.MULTI, session.getPlugin(acc.getHoster()));
+                                if (acr.isEnabled()) {
+                                    final CachedAccount cachedAccount;
+                                    if (FreeAccountReference.isFreeAccount(acr)) {
+                                        cachedAccount = new CachedAccount(finalHost, null, session.getPlugin(finalHost));
+                                    } else {
+                                        final Account acc = acr.getAccount();
+                                        if (acc != null) {
+                                            cachedAccount = new CachedAccount(finalHost, acc, session.getPlugin(acc.getHoster()));
                                         } else {
-                                            cachedAccount = new CachedAccount(finalHost, acc, ACCOUNTTYPE.ORIGINAL, session.getPlugin(finalHost));
+                                            cachedAccount = null;
                                         }
                                     }
+                                    if (cachedAccount != null) {
+                                        newCache.add(cachedAccount);
+                                        rules.add(ag.getRule());
+                                    }
                                 }
-                                if (cachedAccount != null) {
-                                    newCache.add(cachedAccount);
-                                    rules.add(ag.getRule());
-                                }
-
                             }
                         }
                         return new AccountCache(newCache, rules);
@@ -234,7 +226,6 @@ public class HosterRuleController implements AccountControllerListener {
             AccountGroup ag = it1.next();
             boolean onlyReal = ag.getChildren().size() > 0;
             boolean onlyMulti = ag.getChildren().size() > 0;
-
             for (Iterator<AccountReference> it = ag.getChildren().iterator(); it.hasNext();) {
                 AccountReference ar = it.next();
 
@@ -249,7 +240,7 @@ public class HosterRuleController implements AccountControllerListener {
                     logger.info("Removed " + ar + " from " + ag);
                     it.remove();
                 } else {
-                    if (!ar.getAccount().isMulti()) {
+                    if (StringUtils.equalsIgnoreCase(ar.getAccount().getHoster(), host)) {
                         onlyMulti = false;
                     } else {
                         onlyReal = false;

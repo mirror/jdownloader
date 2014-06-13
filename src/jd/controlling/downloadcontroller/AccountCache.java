@@ -12,6 +12,7 @@ import jd.plugins.DownloadLink;
 import jd.plugins.PluginForHost;
 
 import org.appwork.utils.NullsafeAtomicReference;
+import org.appwork.utils.StringUtils;
 import org.jdownloader.controlling.hosterrule.AccountGroup;
 import org.jdownloader.controlling.hosterrule.AccountGroup.Rules;
 
@@ -35,9 +36,17 @@ public class AccountCache implements Iterable<CachedAccount> {
             return host;
         }
 
-        public CachedAccount(String host, Account account, ACCOUNTTYPE type, PluginForHost plugin) {
+        public CachedAccount(String host, Account account, PluginForHost plugin) {
             this.account = account;
-            this.type = type;
+            if (account == null) {
+                this.type = ACCOUNTTYPE.NONE;
+            } else {
+                if (StringUtils.equalsIgnoreCase(host, account.getHoster())) {
+                    this.type = ACCOUNTTYPE.ORIGINAL;
+                } else {
+                    this.type = ACCOUNTTYPE.MULTI;
+                }
+            }
             this.plugin = plugin;
             this.host = host;
             StringBuilder sb = new StringBuilder();
@@ -47,9 +56,7 @@ public class AccountCache implements Iterable<CachedAccount> {
             if (account != null) {
                 sb.append("ACC").append(account.hashCode());
             }
-            if (type != null) {
-                sb.append("TYPE").append(type.name());
-            }
+            sb.append("TYPE").append(type.name());
             if (plugin != null) {
                 sb.append("PLUGIN").append(plugin.getLazyP().getHost());
             }
@@ -74,17 +81,23 @@ public class AccountCache implements Iterable<CachedAccount> {
         }
 
         public boolean hasCaptcha(DownloadLink link) {
-            if (plugin == null) return false;
+            if (plugin == null) {
+                return false;
+            }
             return plugin.hasCaptcha(link, account);
         }
 
         public boolean canHandle(DownloadLink link) {
-            if (plugin == null) return false;
-            PluginForHost linkPlugin = link.getDefaultPlugin();
+            if (plugin == null) {
+                return false;
+            }
+            final PluginForHost linkPlugin = link.getDefaultPlugin();
             boolean canHandle = linkPlugin == null ? true : linkPlugin.allowHandle(link, plugin);
-            if (canHandle) canHandle = plugin.canHandle(link, account) && plugin.enoughTrafficFor(link, account);
+            if (canHandle) {
+                canHandle = plugin.canHandle(link, account) && plugin.enoughTrafficFor(link, account);
+            }
             if (canHandle && ACCOUNTTYPE.MULTI.equals(getType()) && getAccount() != null) {
-                AccountInfo ai = getAccount().getAccountInfo();
+                final AccountInfo ai = getAccount().getAccountInfo();
                 /* verify again because plugins can modify list on runtime */
                 if (ai != null) {
                     Object multiHostSupport = ai.getProperty("multiHostSupport", null);
@@ -103,14 +116,28 @@ public class AccountCache implements Iterable<CachedAccount> {
 
         @Override
         public boolean equals(Object obj) {
-            if (obj == null || !(obj instanceof CachedAccount)) return false;
-            if (obj == this) return true;
+            if (obj == null || !(obj instanceof CachedAccount)) {
+                return false;
+            }
+            if (obj == this) {
+                return true;
+            }
             CachedAccount other = (CachedAccount) obj;
-            if (getType() != other.getType()) return false;
-            if ((getAccount() == null && other.getAccount() != null) || (other.getAccount() == null && getAccount() != null)) return false;
-            if ((other.getPlugin() == null && getPlugin() != null) || (other.getPlugin() != null && getPlugin() == null)) return false;
-            if (getPlugin() != null && !getPlugin().getLazyP().equals(other.getPlugin().getLazyP())) return false;
-            if (getAccount() != null && !getAccount().equals(other.getAccount())) return false;
+            if (getType() != other.getType()) {
+                return false;
+            }
+            if ((getAccount() == null && other.getAccount() != null) || (other.getAccount() == null && getAccount() != null)) {
+                return false;
+            }
+            if ((other.getPlugin() == null && getPlugin() != null) || (other.getPlugin() != null && getPlugin() == null)) {
+                return false;
+            }
+            if (getPlugin() != null && !getPlugin().getLazyP().equals(other.getPlugin().getLazyP())) {
+                return false;
+            }
+            if (getAccount() != null && !getAccount().equals(other.getAccount())) {
+                return false;
+            }
             return true;
         }
     }
@@ -155,7 +182,9 @@ public class AccountCache implements Iterable<CachedAccount> {
     public AccountCache(ArrayList<CachedAccount> cache, ArrayList<AccountGroup.Rules> rules) {
         this.cache = cache;
         if (rules != null) {
-            if (rules != null && rules.size() < cache.size()) throw new IllegalArgumentException("rules must have at least <= length of cache!");
+            if (rules != null && rules.size() < cache.size()) {
+                throw new IllegalArgumentException("rules must have at least <= length of cache!");
+            }
             customized = true;
             boolean nonOrder = false;
             AccountGroup.Rules lastRule = null;
@@ -168,13 +197,17 @@ public class AccountCache implements Iterable<CachedAccount> {
                     if (lastRule == null) {
                         lastRule = rule;
                     } else {
-                        if (!lastRule.equals(rule)) { throw new IllegalArgumentException("different rules within same rulegroup?!"); }
+                        if (!lastRule.equals(rule)) {
+                            throw new IllegalArgumentException("different rules within same rulegroup?!");
+                        }
                         nonOrder = true;
                         break;
                     }
                 }
             }
-            if (nonOrder == false) rules = null;
+            if (nonOrder == false) {
+                rules = null;
+            }
         } else {
             customized = false;
         }
@@ -182,7 +215,9 @@ public class AccountCache implements Iterable<CachedAccount> {
     }
 
     protected Iterator<CachedAccount> getRuleAwareIterator() {
-        if (rules == null) return cache.iterator();
+        if (rules == null) {
+            return cache.iterator();
+        }
         ArrayList<CachedAccount> orderedCache = new ArrayList<AccountCache.CachedAccount>(cache);
         int startRandom = -1;
         for (int index = 0; index < orderedCache.size(); index++) {
@@ -196,7 +231,9 @@ public class AccountCache implements Iterable<CachedAccount> {
             }
             switch (rule) {
             case RANDOM:
-                if (startRandom < 0) startRandom = index;
+                if (startRandom < 0) {
+                    startRandom = index;
+                }
                 break;
             default:
                 if (startRandom >= 0 && index - startRandom > 1) {
@@ -227,22 +264,33 @@ public class AccountCache implements Iterable<CachedAccount> {
             @Override
             public CachedAccount next() {
                 CachedAccount ret = next.getAndSet(null);
-                if (ret != null) return ret;
+                if (ret != null) {
+                    return ret;
+                }
                 if (hasNext()) {
                     return next.getAndSet(null);
-                } else
+                } else {
                     return null;
+                }
             }
 
             @Override
             public boolean hasNext() {
-                if (next.get() != null) return true;
+                if (next.get() != null) {
+                    return true;
+                }
                 while (it.hasNext()) {
                     CachedAccount iNext = it.next();
                     if (iNext.getAccount() != null) {
-                        if (iNext.getAccount().getAccountController() == null) continue;
-                        if (!iNext.getAccount().isEnabled()) continue;
-                        if (!iNext.getAccount().isValid()) continue;
+                        if (iNext.getAccount().getAccountController() == null) {
+                            continue;
+                        }
+                        if (!iNext.getAccount().isEnabled()) {
+                            continue;
+                        }
+                        if (!iNext.getAccount().isValid()) {
+                            continue;
+                        }
                     }
                     next.set(iNext);
                     break;

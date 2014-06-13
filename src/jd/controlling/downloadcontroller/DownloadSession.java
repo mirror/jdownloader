@@ -21,7 +21,6 @@ import java.util.concurrent.atomic.AtomicLong;
 import jd.config.Property;
 import jd.controlling.AccountController;
 import jd.controlling.captcha.CaptchaSettings;
-import jd.controlling.downloadcontroller.AccountCache.ACCOUNTTYPE;
 import jd.controlling.downloadcontroller.AccountCache.CachedAccount;
 import jd.controlling.downloadcontroller.event.DownloadWatchdogEvent;
 import jd.plugins.Account;
@@ -396,15 +395,15 @@ public class DownloadSession extends Property {
         if (ret == null) {
             ArrayList<CachedAccount> newCache = new ArrayList<CachedAccount>();
             for (Account acc : AccountController.getInstance().list(host)) {
-                newCache.add(new CachedAccount(host, acc, ACCOUNTTYPE.ORIGINAL, getPlugin(host)));
+                newCache.add(new CachedAccount(host, acc, getPlugin(host)));
             }
             List<Account> multiHosts = AccountController.getInstance().getMultiHostAccounts(host);
             if (multiHosts != null) {
                 for (Account acc : multiHosts) {
-                    newCache.add(new CachedAccount(host, acc, ACCOUNTTYPE.MULTI, getPlugin(acc.getHoster())));
+                    newCache.add(new CachedAccount(host, acc, getPlugin(acc.getHoster())));
                 }
             }
-            newCache.add(new CachedAccount(host, null, ACCOUNTTYPE.NONE, getPlugin(host)));
+            newCache.add(new CachedAccount(host, null, getPlugin(host)));
             try {
                 Collections.sort(newCache, new Comparator<CachedAccount>() {
 

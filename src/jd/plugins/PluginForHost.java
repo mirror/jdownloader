@@ -707,7 +707,7 @@ public abstract class PluginForHost extends Plugin {
          * 
          * will update this doc about error handling
          */
-        logger.severe("invalid call to handleMultiHost: " + downloadLink.getName() + ":" + downloadLink.getHost() + " with " + account);
+        logger.severe("invalid call to handleMultiHost: " + downloadLink.getName() + ":" + downloadLink.getHost() + " to " + getHost() + ":" + this.getVersion() + " with " + account);
         throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
     }
 
