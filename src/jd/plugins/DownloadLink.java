@@ -327,7 +327,7 @@ public class DownloadLink extends Property implements Serializable, AbstractPack
 
     public Priority getPriorityEnum() {
         try {
-            final String priority = getStringProperty(PROPERTY_PRIORITY, null);
+            String priority = getStringProperty(PROPERTY_PRIORITY, null);
             if (priority == null) {
                 return Priority.DEFAULT;
             }
@@ -796,15 +796,15 @@ public class DownloadLink extends Property implements Serializable, AbstractPack
     }
 
     public void setAvailableStatus(AvailableStatus availableStatus) {
-        if (this.availableStatus == availableStatus) {
-            return;
-        }
-        this.availableStatus = availableStatus;
         if (AvailableStatus.UNCHECKED.equals(availableStatus)) {
             lastAvailableStatusChange = -1;
         } else {
             lastAvailableStatusChange = System.currentTimeMillis();
         }
+        if (this.availableStatus == availableStatus) {
+            return;
+        }
+        this.availableStatus = availableStatus;
         switch (availableStatus) {
         case FALSE:
             if (getFinalLinkState() == null) {
@@ -862,8 +862,6 @@ public class DownloadLink extends Property implements Serializable, AbstractPack
         }
         setChunksProgress(null);
         setChunks(0);
-        setSha1Hash(null);
-        setMD5Hash(null);
         setCustomSpeedLimit(0);
         setDownloadCurrent(0);
         setFinishedDate(-1l);

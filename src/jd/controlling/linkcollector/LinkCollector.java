@@ -942,6 +942,7 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
      */
     private FilePackage createFilePackage(final CrawledPackage pkg, java.util.List<CrawledLink> plinks) {
         FilePackage ret = FilePackage.getInstance();
+        ret.setPriorityEnum(pkg.getPriorityEnum());
         /* set values */
         ret.setName(pkg.getName());
         /* FilePackage contains full absolute path! */
