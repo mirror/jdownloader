@@ -251,8 +251,8 @@ public class SimpleFTPDownloadInterface extends DownloadInterface {
             }
             HashResult result = onDownloadReady();
             if (result != null) {
-                logger.info(result.getHashInfo().getType() + "-Check: " + (result.hashMatch() ? "ok" : "failed"));
-                if (result.hashMatch()) {
+                logger.info(result.getHashInfo().getType() + "-Check: " + (result.match() ? "ok" : "failed"));
+                if (result.match()) {
                     downloadable.setLinkStatusText(_JDT._.system_download_doCRC2_success(result.getHashInfo().getType()));
                 } else {
                     throw new PluginException(LinkStatus.ERROR_DOWNLOAD_FAILED, _JDT._.system_download_doCRC2_failed(result.getHashInfo().getType()));
