@@ -86,7 +86,7 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.PluginsC;
 import jd.plugins.download.DownloadInterface;
-import jd.plugins.download.DownloadLinkDownloadable;
+import jd.plugins.download.Downloadable;
 import jd.plugins.download.HashInfo;
 import jd.plugins.download.HashResult;
 import jd.plugins.download.raf.FileBytesCache;
@@ -3346,7 +3346,7 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
         final NullsafeAtomicReference<Object> asyncResult = new NullsafeAtomicReference<Object>(null);
         enqueueJob(new DownloadWatchDogJob() {
 
-            private void check(DownloadSession session, SingleDownloadController controller) throws Exception {
+            private void check(DownloadSession session, final SingleDownloadController controller) throws Exception {
                 if (controller.isAborting()) {
                     throw new InterruptedException("Controller is aborted");
                 }
@@ -3465,21 +3465,26 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
 
                                     @Override
                                     public void run() throws Exception {
-                                        final DownloadLinkDownloadable downloadable = new DownloadLinkDownloadable(downloadLink);
-                                        switch (config.getMirrorDetectionDecision()) {
-                                        case AUTO:
-                                            final HashInfo hashInfo = downloadable.getHashInfo();
-                                            if (hashInfo != null) {
-                                                final HashResult hashResult = downloadable.getHashResult(hashInfo, fileOutput);
-                                                if (hashResult != null && hashResult.match()) {
-                                                    downloadable.setHashResult(hashResult);
-                                                    throw new PluginException(LinkStatus.FINISHED);
+                                        final PluginForHost plugin = controller.getProcessingPlugin();
+                                        if (plugin != null) {
+                                            final Downloadable downloadable = plugin.newDownloadable(downloadLink, null);
+                                            if (downloadable != null) {
+                                                switch (config.getMirrorDetectionDecision()) {
+                                                case AUTO:
+                                                    final HashInfo hashInfo = downloadable.getHashInfo();
+                                                    if (hashInfo != null) {
+                                                        final HashResult hashResult = downloadable.getHashResult(hashInfo, fileOutput);
+                                                        if (hashResult != null && hashResult.match()) {
+                                                            downloadable.setHashResult(hashResult);
+                                                            throw new PluginException(LinkStatus.FINISHED);
+                                                        }
+                                                    }
+                                                case FILENAME_FILESIZE:
+                                                    final long fileSize = downloadable.getVerifiedFileSize();
+                                                    if (fileSize >= 0 && fileSize == fileOutput.length()) {
+                                                        throw new PluginException(LinkStatus.FINISHED);
+                                                    }
                                                 }
-                                            }
-                                        case FILENAME_FILESIZE:
-                                            final long fileSize = downloadable.getVerifiedFileSize();
-                                            if (fileSize >= 0 && fileSize == fileOutput.length()) {
-                                                throw new PluginException(LinkStatus.FINISHED);
                                             }
                                         }
                                         throw new PluginException(LinkStatus.ERROR_ALREADYEXISTS);

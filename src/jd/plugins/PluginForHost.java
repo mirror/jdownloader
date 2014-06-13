@@ -43,6 +43,8 @@ import jd.nutils.Formatter;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.download.DownloadInterface;
 import jd.plugins.download.DownloadInterfaceFactory;
+import jd.plugins.download.DownloadLinkDownloadable;
+import jd.plugins.download.Downloadable;
 
 import org.appwork.storage.config.JsonConfig;
 import org.appwork.uio.UIOManager;
@@ -1282,6 +1284,19 @@ public abstract class PluginForHost extends Plugin {
     }
 
     public void extendDownloadsTableContextMenu(JComponent parent, PluginView<DownloadLink> pv) {
+    }
+
+    public Downloadable newDownloadable(DownloadLink downloadLink, final Browser br) {
+        if (br != null) {
+            return new DownloadLinkDownloadable(downloadLink) {
+                @Override
+                public Browser getContextBrowser() {
+                    return br.cloneBrowser();
+                }
+
+            };
+        }
+        return new DownloadLinkDownloadable(downloadLink);
     }
 
     /**
