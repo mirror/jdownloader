@@ -627,6 +627,7 @@ TaskColumn_getStringValue_extraction_error_file_not_found=Chyba rozbaľovania: s
 TaskColumn_getStringValue_extraction_error_space=Chyba rozbaľovania: nie je dostatok miesta
 TaskColumn_getStringValue_extraction_success=Rozbalenie OK
 TaskColumn_getStringValue_finished_=Dokončené
+TaskColumn_getStringValue_finished_mirror=Dokončené (zrkadlo)
 TaskColumn_getStringValue_running_=Prebieha
 TaskColumn_onSingleClick_object_=Aktuálna IP je blokovaná kvôli %s1
 TestAction_TestAction_object_=Testovanie %s1 výrazu
