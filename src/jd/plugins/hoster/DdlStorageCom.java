@@ -79,14 +79,14 @@ public class DdlStorageCom extends PluginForHost {
 
     // Site Setters
     // primary website url, take note of redirects
-    private final String               COOKIE_HOST                  = "http://ddlstorage.com";
+    private final String               COOKIE_HOST                  = "https://ddlstorage.com";
     // domain names used within download links.
     private final String               DOMAINS                      = "(ddlstorage\\.com)";
     private final String               PASSWORDTEXT                 = "<br><b>Passwor(d|t):</b> <input";
     private final String               MAINTENANCE                  = ">This server is in maintenance mode";
     private final String               dllinkRegex                  = "https?://(\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}|([\\w\\-]+\\.)?" + DOMAINS + ")(:\\d{1,5})?/(files(/(dl|download))?|d|cgi-bin/dl\\.cgi)/(\\d+/)?([a-z0-9]+/){1,4}[^/<>\r\n\t]+";
-    private final boolean              supportsHTTPS                = false;
-    private final boolean              enforcesHTTPS                = false;
+    private final boolean              supportsHTTPS                = true;
+    private final boolean              enforcesHTTPS                = true;
     private final boolean              useRUA                       = false;
     private final boolean              useAltLinkCheck              = false;
     private final boolean              useVidEmbed                  = false;
