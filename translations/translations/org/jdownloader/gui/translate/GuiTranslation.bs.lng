@@ -729,6 +729,7 @@ OboomController_run_renew_title=Obnovi svoj OBOOM.com nalog
 OboomController_run_renew_title_expired=Obnovi svoj OBOOM.com nalog
 OboomController_run_renew_title_noaccount=Nabavi OBOOM.com nalog
 OnSkipDueToAlreadyExistsAction_mark_successful=Preskoči Dokument i označi ga kao završen
+OnSkipDueToAlreadyExistsAction_mark_successful_mirror=Preskoči Dokument i označi kao završen kada je dokument mirror
 OnSkipDueToAlreadyExistsAction_skip_file=Preskoči dokument
 OpenDownloadFolderAction_actionPerformed_button_=Istraži
 OpenDownloadFolderAction_actionPerformed_object_=Download Direktorij za %s1
