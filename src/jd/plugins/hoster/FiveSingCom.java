@@ -55,12 +55,17 @@ public class FiveSingCom extends PluginForHost {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         br.getPage(link.getDownloadURL());
-        if (br.getURL().contains("FileNotFind")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (br.getURL().contains("FileNotFind")) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
         final String extension = br.getRegex("<em>格式：</em>([^<>\"]*?)<br").getMatch(0);
         final String filename = br.getRegex("var SongName   = \"([^<>\"]*?)\"").getMatch(0);
+        final String fileid = br.getRegex("var SongID     = ([^<>\"]*?);").getMatch(0);
         final String filesize = br.getRegex("<em>大小：</em>([^<>\"]*?)<br").getMatch(0);
-        if (filename == null || filesize == null || extension == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        link.setFinalFileName(Encoding.htmlDecode(filename.trim()) + "." + Encoding.htmlDecode(extension.trim()));
+        if (filename == null || filesize == null || extension == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        link.setFinalFileName(Encoding.htmlDecode(filename.trim()) + "-" + fileid + "." + Encoding.htmlDecode(extension.trim()));
         link.setDownloadSize(SizeFormatter.getSize(filesize + "b"));
         return AvailableStatus.TRUE;
     }
@@ -69,8 +74,12 @@ public class FiveSingCom extends PluginForHost {
     public void handleFree(final DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
         String dllink = br.getRegex("file: \"(http://[^<>\"]*?)\"").getMatch(0);
-        if (dllink == null) dllink = br.getRegex("\"(http://data\\d+\\.5sing\\.com/[^<>\"]*?)\"").getMatch(0);
-        if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (dllink == null) {
+            dllink = br.getRegex("\"(http://data\\d+\\.5sing\\.com/[^<>\"]*?)\"").getMatch(0);
+        }
+        if (dllink == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 0);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
