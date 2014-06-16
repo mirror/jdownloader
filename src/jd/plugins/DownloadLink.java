@@ -1164,19 +1164,19 @@ public class DownloadLink extends Property implements Serializable, AbstractPack
      * 
      * @param path
      */
-    public void setCustomFinalName(String name) {
-        String oldName = getCustomFinalName();
-        if (StringUtils.isEmpty(oldName)) {
-            oldName = getName();
+    public void setCustomFinalName(final String newCustom) {
+        final String oldFullName = getName();
+        String oldCustom = getCustomFinalName();
+        if (StringUtils.isEmpty(oldCustom)) {
+            oldCustom = getName();
         }
-        if (!StringUtils.equals(name, oldName)) {
-            final String customFinalName = CrossSystem.alleviatePathParts(name);
-            this.customFinalName = customFinalName;
+        if (!StringUtils.equals(oldCustom, newCustom)) {
+            this.customFinalName = CrossSystem.alleviatePathParts(newCustom);
             setLinkInfo(null);
-            if (hasNotificationListener()) {
-                notifyChanges(AbstractNodeNotifier.NOTIFY.PROPERTY_CHANCE, new DownloadLinkProperty(this, DownloadLinkProperty.Property.NAME, customFinalName));
+            final String newName = getName();
+            if (!StringUtils.equals(oldFullName, newName) && hasNotificationListener()) {
+                notifyChanges(AbstractNodeNotifier.NOTIFY.PROPERTY_CHANCE, new DownloadLinkProperty(this, DownloadLinkProperty.Property.NAME, newName));
             }
-            return;
         }
     }
 
