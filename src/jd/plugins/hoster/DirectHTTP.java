@@ -548,8 +548,12 @@ public class DirectHTTP extends PluginForHost {
         }
         try {
             if (!this.dl.startDownload()) {
-                if (this.dl.externalDownloadStop()) {
-                    return;
+                try {
+                    if (this.dl.externalDownloadStop()) {
+                        return;
+                    }
+                } catch (final Throwable e) {
+                    // not stable compatible
                 }
             }
         } catch (Exception e) {
@@ -570,6 +574,7 @@ public class DirectHTTP extends PluginForHost {
                     throw new PluginException(LinkStatus.ERROR_RETRY);
                 }
             }
+            throw e;
         }
     }
 
