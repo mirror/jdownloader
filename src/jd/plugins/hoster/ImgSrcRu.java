@@ -16,6 +16,8 @@
 
 package jd.plugins.hoster;
 
+import java.util.concurrent.atomic.AtomicReference;
+
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.http.Browser;
@@ -36,11 +38,10 @@ public class ImgSrcRu extends PluginForHost {
     // DEV NOTES
     // drop requests on too much traffic, I suspect at the firewall on connection.
 
-    private String  agent    = null;
-    private String  ddlink   = null;
-    private String  password = null;
-    private boolean loaded   = false;
-    private String  js       = null;
+    private String                  ddlink    = null;
+    private String                  password  = null;
+    private String                  js        = null;
+    private AtomicReference<String> userAgent = new AtomicReference<String>(null);
 
     public ImgSrcRu(PluginWrapper wrapper) {
         super(wrapper);
@@ -77,7 +78,7 @@ public class ImgSrcRu extends PluginForHost {
         return false;
     }
 
-    private Browser prepBrowser(Browser prepBr, Boolean neu) {
+    public Browser prepBrowser(Browser prepBr, Boolean neu) {
         if (neu) {
             String refer = prepBr.getHeaders().get("Referer");
             prepBr = new Browser();
@@ -86,15 +87,12 @@ public class ImgSrcRu extends PluginForHost {
         prepBr.setFollowRedirects(true);
         prepBr.setReadTimeout(180000);
         prepBr.setConnectTimeout(180000);
-        if (agent == null || neu) {
+        if (userAgent.get() == null || neu) {
             /* we first have to load the plugin, before we can reference it */
-            if (!loaded) {
-                JDUtilities.getPluginForHost("mediafire.com");
-                loaded = true;
-            }
-            agent = jd.plugins.hoster.MediafireCom.stringUserAgent();
+            JDUtilities.getPluginForHost("mediafire.com");
+            userAgent.set(jd.plugins.hoster.MediafireCom.stringUserAgent());
         }
-        prepBr.getHeaders().put("User-Agent", agent);
+        prepBr.getHeaders().put("User-Agent", userAgent.get());
         prepBr.getHeaders().put("Accept-Language", "en-gb, en;q=0.9");
         prepBr.setCookie(this.getHost(), "iamlegal", "yeah");
         prepBr.setCookie(this.getHost(), "lang", "en");
@@ -257,7 +255,7 @@ public class ImgSrcRu extends PluginForHost {
 
     @Override
     public int getMaxSimultanFreeDownloadNum() {
-        return -1;
+        return 3;
     }
 
     @Override

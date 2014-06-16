@@ -34,6 +34,7 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
+import jd.plugins.PluginForHost;
 import jd.utils.JDUtilities;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "imgsrc.ru" }, urls = { "http://(www\\.)?imgsrc\\.(ru|su|ro)/(main/passchk\\.php\\?(ad|id)=\\d+(&pwd=[a-z0-9]{32})?|main/(preword|pic_tape|warn|pic)\\.php\\?ad=\\d+(&pwd=[a-z0-9]{32})?|[^/]+/a?\\d+\\.html)" }, flags = { 2 })
@@ -47,16 +48,15 @@ public class ImgSrcRu extends PluginForDecrypt {
     }
 
     private String                  password         = null;
-    private String                  agent            = null;
     private String                  parameter        = null;
     private String                  username         = null;
     private String                  uaid             = null;
     private String                  pwd              = null;
     private boolean                 exaustedPassword = false;
-    private boolean                 loaded           = false;
     private boolean                 offline          = false;
-    private ArrayList<DownloadLink> decryptedLinks   = new ArrayList<DownloadLink>();
+    private PluginForHost           plugin           = null;
     private static Object           ctrlLock         = new Object();
+    private ArrayList<DownloadLink> decryptedLinks   = new ArrayList<DownloadLink>();
 
     @Override
     public void init() {
@@ -64,29 +64,15 @@ public class ImgSrcRu extends PluginForDecrypt {
     }
 
     private Browser prepBrowser(Browser prepBr, Boolean neu) {
-        if (neu) {
-            String refer = prepBr.getHeaders().get("Referer");
-            prepBr = new Browser();
-            prepBr.getHeaders().put("Referer", refer);
-        }
-        prepBr.setFollowRedirects(true);
-        prepBr.setReadTimeout(180000);
-        prepBr.setConnectTimeout(180000);
-        if (agent == null || neu) {
-            /* we first have to load the plugin, before we can reference it */
-            if (!loaded) {
-                JDUtilities.getPluginForHost("mediafire.com");
-                loaded = true;
+        if (plugin == null) {
+            plugin = JDUtilities.getPluginForHost("imgsrc.com");
+            if (plugin == null) {
+                throw new IllegalStateException("imgsrc.com hoster plugin not found!");
             }
-            agent = jd.plugins.hoster.MediafireCom.stringUserAgent();
+            // set cross browser support
+            ((jd.plugins.hoster.ImgSrcRu) plugin).setBrowser(br);
         }
-        prepBr.getHeaders().put("User-Agent", agent);
-        prepBr.getHeaders().put("Accept-Language", "en-gb, en;q=0.9");
-        prepBr.setCookie(this.getHost(), "iamlegal", "yeah");
-        prepBr.setCookie(this.getHost(), "lang", "en");
-        prepBr.setCookie(this.getHost(), "per_page", "48");
-
-        return prepBr;
+        return ((jd.plugins.hoster.ImgSrcRu) plugin).prepBrowser(prepBr, neu);
     }
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
