@@ -58,21 +58,27 @@ public class FiveSingCom extends PluginForHost {
         if (br.getURL().contains("FileNotFind")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        final String extension = br.getRegex("<em>格式：</em>([^<>\"]*?)<br").getMatch(0);
+        String extension = br.getRegex("<em>格式：</em>([^<>\"]*?)<br").getMatch(0);
+        if (extension == null && br.containsHTML("<em>演唱：</em>")) {
+            extension = "mp3";
+        }
         final String filename = br.getRegex("var SongName   = \"([^<>\"]*?)\"").getMatch(0);
         final String fileid = br.getRegex("var SongID     = ([^<>\"]*?);").getMatch(0);
         final String filesize = br.getRegex("<em>大小：</em>([^<>\"]*?)<br").getMatch(0);
-        if (filename == null || filesize == null || extension == null) {
+        if (filename == null || extension == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         link.setFinalFileName(Encoding.htmlDecode(filename.trim()) + "-" + fileid + "." + Encoding.htmlDecode(extension.trim()));
-        link.setDownloadSize(SizeFormatter.getSize(filesize + "b"));
+        if (filesize != null) {
+            link.setDownloadSize(SizeFormatter.getSize(filesize + "b"));
+        }
         return AvailableStatus.TRUE;
     }
 
     @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
+        // file: "http://data9.5sing.com/T1zbhLB4xT1R47IVrK.mp3"
         String dllink = br.getRegex("file: \"(http://[^<>\"]*?)\"").getMatch(0);
         if (dllink == null) {
             dllink = br.getRegex("\"(http://data\\d+\\.5sing\\.com/[^<>\"]*?)\"").getMatch(0);

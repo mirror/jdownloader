@@ -238,8 +238,9 @@ public class VKontakteRu extends PluginForDecrypt {
                 /* General errorhandling start */
                 if (br.containsHTML("Unknown error|Неизвестная ошибка|Nieznany b\\&#322;\\&#261;d")) {
                     throw new DecrypterException(EXCEPTION_LINKOFFLINE);
-                }
-                if (br.containsHTML("Access denied|Ошибка доступа")) {
+                } else if (br.containsHTML("Access denied|Ошибка доступа")) {
+                    throw new DecrypterException(EXCEPTION_LINKOFFLINE);
+                } else if (br.getRedirectLocation() != null && br.getRedirectLocation().contains("vk.com/blank.php")) {
                     throw new DecrypterException(EXCEPTION_LINKOFFLINE);
                 }
                 /* General errorhandling end */

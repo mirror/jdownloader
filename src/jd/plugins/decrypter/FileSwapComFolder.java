@@ -55,6 +55,7 @@ public class FileSwapComFolder extends PluginForDecrypt {
                 if (br.containsHTML("Password Protected Share")) {
                     continue;
                 }
+                break;
             }
             if (br.containsHTML("Password Protected Share")) {
                 throw new DecrypterException(DecrypterException.PASSWORD);

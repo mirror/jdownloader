@@ -41,7 +41,7 @@ import jd.utils.JDUtilities;
 
 import org.appwork.utils.formatter.TimeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "tenlua.vn" }, urls = { "http://(www\\.)?tenlua\\.vn/[^<>\"]+" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "tenlua.vn" }, urls = { "http://tenluadecrypted\\.vn/\\d+" }, flags = { 0 })
 public class TenluaVn extends PluginForHost {
 
     public TenluaVn(PluginWrapper wrapper) {
@@ -60,7 +60,8 @@ public class TenluaVn extends PluginForHost {
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
         this.setBrowserExclusive();
-        final String fid = new Regex(link.getDownloadURL(), "#download([a-z0-9]+)").getMatch(0);
+        final String fid = new Regex(link.getStringProperty("specified_link", null), "#download([a-z0-9]+)").getMatch(0);
+        link.setName(fid);
         /* No fid --> We have no downloadable link */
         if (fid == null) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);

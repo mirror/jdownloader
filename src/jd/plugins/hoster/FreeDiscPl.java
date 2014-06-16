@@ -56,20 +56,36 @@ public class FreeDiscPl extends PluginForHost {
         try {
             br.getPage(link.getDownloadURL());
         } catch (final BrowserException e) {
-            if (br.getRequest().getHttpConnection().getResponseCode() == 410) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            if (br.getRequest().getHttpConnection().getResponseCode() == 410) {
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            }
             throw e;
         }
-        if (br.containsHTML("Ten plik został usunięty przez użytkownika lub administratora")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (br.containsHTML("Ten plik został usunięty przez użytkownika lub administratora") || !br.getURL().contains(",f")) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
         // Handle no public files as offline
-        if (br.containsHTML("Ten plik nie jest publicznie dostępny")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (br.containsHTML("Ten plik nie jest publicznie dostępny")) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
         String filename = br.getRegex("itemprop=\"name\">([^<>\"]*?)</h2>").getMatch(0);
         // itemprop="name" style=" font-size: 17px; margin-top: 6px;">Alternatywne Metody Analizy technicznej .pdf</h1>
-        if (filename == null) filename = br.getRegex("itemprop=\"name\"( style=\"[^<>\"/]+\")?>([^<>\"]*?)</h1>").getMatch(1);
+        if (filename == null) {
+            filename = br.getRegex("itemprop=\"name\"( style=\"[^<>\"/]+\")?>([^<>\"]*?)</h1>").getMatch(1);
+        }
         String filesize = br.getRegex("class=\\'frameFilesSize\\'>Rozmiar pliku</div>[\t\n\r ]+<div class=\\'frameFilesCountNumber\\'>([^<>\"]*?)</div>").getMatch(0);
-        if (filesize == null) filesize = br.getRegex("Rozmiar pliku</div>[\t\n\r ]+<div class=\\'frameFilesCountNumber\\'>([^<>\"]*?)</div>").getMatch(0);
-        if (filesize == null) filesize = br.getRegex("</i> Rozmiar pliku</div><div class=\\'frameFilesCountNumber\\'>([^<>\"]*?)</div>").getMatch(0);
-        if (filesize == null) filesize = br.getRegex("class=\\'frameFilesCountNumber\\'>([^<>\"]*?)</div><div class=\\'frameFilesViews\\'><i class=").getMatch(0);
-        if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (filesize == null) {
+            filesize = br.getRegex("Rozmiar pliku</div>[\t\n\r ]+<div class=\\'frameFilesCountNumber\\'>([^<>\"]*?)</div>").getMatch(0);
+        }
+        if (filesize == null) {
+            filesize = br.getRegex("</i> Rozmiar pliku</div><div class=\\'frameFilesCountNumber\\'>([^<>\"]*?)</div>").getMatch(0);
+        }
+        if (filesize == null) {
+            filesize = br.getRegex("class=\\'frameFilesCountNumber\\'>([^<>\"]*?)</div><div class=\\'frameFilesViews\\'><i class=").getMatch(0);
+        }
+        if (filename == null || filesize == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         link.setFinalFileName(Encoding.htmlDecode(filename.trim()));
         link.setDownloadSize(SizeFormatter.getSize(filesize));
         return AvailableStatus.TRUE;
@@ -82,7 +98,9 @@ public class FreeDiscPl extends PluginForHost {
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, false, 1);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
-            if (br.getURL().contains("freedisc.pl/pierrw,f-")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error", 5 * 60 * 1000l);
+            if (br.getURL().contains("freedisc.pl/pierrw,f-")) {
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error", 5 * 60 * 1000l);
+            }
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl.startDownload();

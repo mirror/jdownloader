@@ -31,7 +31,7 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "filestube.com" }, urls = { "http://(www\\.|beta\\.)?(filestube\\.(com|to)/([^<>/\"]+\\.html|[A-Za-z0-9]{10,})|video\\.filestube\\.com/(watch,[a-z0-9]+/.+\\.html|[a-z0-9]+))" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "filestube.com" }, urls = { "http://(www\\.|beta\\.)?filestube\\.(com|to)/((video/)?[^<>/\"]+\\.html|[A-Za-z0-9]{10,})" }, flags = { 0 })
 public class FlStbCm extends PluginForDecrypt {
 
     public FlStbCm(PluginWrapper wrapper) {
@@ -41,7 +41,7 @@ public class FlStbCm extends PluginForDecrypt {
 
     private static final String INVALIDLINKS = "http://(www\\.|beta\\.)?filestube\\.(com|to)/(source\\.html|advanced_search\\.html|search|look_for\\.html.+|sponsored_go\\.html|account|about\\.html|alerts/|api\\.html|contact\\.html|dmca\\.html|feedback|privacy\\.html|terms\\.html|trends/|last_added_files\\.html|add_contact\\.html|apidoc\\.html|submit\\.html|query\\.html|affiliation\\.html|affiliation_clickrates\\.html|cookies_policy\\.html)";
     private static final String NICE_HOST    = "filestube.to";
-    private static final String VIDEOLINK    = "http://(www\\.)?video\\.filestube\\.com/(watch,[a-z0-9]+/.+\\.html|[a-z0-9]+)";
+    private static final String VIDEOLINK    = "http://(www\\.)?filestube\\.to/video/[^<>/\"]+\\.html";
 
     @Override
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
@@ -221,6 +221,11 @@ public class FlStbCm extends PluginForDecrypt {
                 return decryptedLinks;
             }
             externID = br.getRegex("\"http://(www\\.)?dailymotion\\.com/swf/(\\d+)\"").getMatch(0);
+            if (externID != null) {
+                logger.info("Found unsupported dailymotion videolink, stopping...." + parameter);
+                return decryptedLinks;
+            }
+            externID = br.getRegex("<iframe src=\"(http://(www\\.)?sockshare\\.com/embed/[^<>\"]*?)\"").getMatch(0);
             if (externID != null) {
                 logger.info("Found unsupported dailymotion videolink, stopping...." + parameter);
                 return decryptedLinks;

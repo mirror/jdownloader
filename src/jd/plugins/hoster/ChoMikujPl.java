@@ -74,17 +74,23 @@ public class ChoMikujPl extends PluginForHost {
     public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
         this.setBrowserExclusive();
         // Offline from decrypter
-        if (link.getBooleanProperty("offline", false)) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (link.getBooleanProperty("offline", false)) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
         if (!getDllink(link, br.cloneBrowser(), false)) {
             link.getLinkStatus().setStatusText(JDL.L("plugins.hoster.chomikujpl.only4registered", PREMIUMONLYUSERTEXT));
             return AvailableStatus.TRUE;
         }
-        if (br.containsHTML("Najprawdopodobniej plik został w miedzyczasie usunięty z konta")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (br.containsHTML("Najprawdopodobniej plik został w miedzyczasie usunięty z konta")) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
         if (br.containsHTML(PREMIUMONLY)) {
             link.getLinkStatus().setStatusText(JDL.L("plugins.hoster.chomikujpl.only4registered", PREMIUMONLYUSERTEXT));
             return AvailableStatus.TRUE;
         }
-        if (DLLINK == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (DLLINK == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         // In case the link redirects to the finallink
         br.setFollowRedirects(true);
         URLConnectionAdapter con = null;
@@ -94,7 +100,9 @@ public class ChoMikujPl extends PluginForHost {
                 link.setDownloadSize(con.getLongContentLength());
                 // Only set final filename if it wasn't set before as video and
                 // audio streams can have bad filenames
-                if (link.getFinalFileName() == null) link.setFinalFileName(Encoding.htmlDecode(getFileNameFromHeader(con)));
+                if (link.getFinalFileName() == null) {
+                    link.setFinalFileName(Encoding.htmlDecode(getFileNameFromHeader(con)));
+                }
             } else {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
@@ -111,7 +119,9 @@ public class ChoMikujPl extends PluginForHost {
         /* we have to make sure the youtube plugin is loaded */
         if (pluginloaded == false) {
             final PluginForHost plugin = JDUtilities.getPluginForHost("youtube.com");
-            if (plugin == null) throw new IllegalStateException("youtube plugin not found!");
+            if (plugin == null) {
+                throw new IllegalStateException("youtube plugin not found!");
+            }
             pluginloaded = true;
         }
         return jd.plugins.hoster.Youtube.unescape(s);
@@ -144,14 +154,18 @@ public class ChoMikujPl extends PluginForHost {
         // Set by the decrypter if the link is password protected
         String savedLink = theLink.getStringProperty("savedlink");
         String savedPost = theLink.getStringProperty("savedpost");
-        if (savedLink != null && savedPost != null) br.postPage(savedLink, savedPost);
+        if (savedLink != null && savedPost != null) {
+            br.postPage(savedLink, savedPost);
+        }
         br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
         // Premium users can always download the original file
         if (theLink.getBooleanProperty("video") && !premium) {
             br.setFollowRedirects(true);
             videolink = true;
             br.getPage("http://chomikuj.pl/ShowVideo.aspx?id=" + fid);
-            if (br.getURL().contains("chomikuj.pl/Error404.aspx") || br.containsHTML("(Nie znaleziono|Strona, której szukasz nie została odnaleziona w portalu\\.<|>Sprawdź czy na pewno posługujesz się dobrym adresem)")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            if (br.getURL().contains("chomikuj.pl/Error404.aspx") || br.containsHTML("(Nie znaleziono|Strona, której szukasz nie została odnaleziona w portalu\\.<|>Sprawdź czy na pewno posługujesz się dobrym adresem)")) {
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            }
             br.setFollowRedirects(false);
             br.getPage("http://chomikuj.pl/Video.ashx?id=" + fid + "&type=1&ts=" + new Random().nextInt(1000000000) + "&file=video&start=0");
             DLLINK = br.getRedirectLocation();
@@ -163,8 +177,12 @@ public class ChoMikujPl extends PluginForHost {
         } else {
             br.getPage("http://chomikuj.pl/action/fileDetails/Index/" + fid);
             final String filesize = br.getRegex("<p class=\"fileSize\">([^<>\"]*?)</p>").getMatch(0);
-            if (filesize != null) theLink.setDownloadSize(SizeFormatter.getSize(filesize.replace(",", ".")));
-            if (br.getRedirectLocation() != null && br.getRedirectLocation().contains("fileDetails/Unavailable")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            if (filesize != null) {
+                theLink.setDownloadSize(SizeFormatter.getSize(filesize.replace(",", ".")));
+            }
+            if (br.getRedirectLocation() != null && br.getRedirectLocation().contains("fileDetails/Unavailable")) {
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            }
             String requestVerificationToken = theLink.getStringProperty("requestverificationtoken");
             if (requestVerificationToken == null) {
                 br.setFollowRedirects(true);
@@ -172,8 +190,12 @@ public class ChoMikujPl extends PluginForHost {
                 br.setFollowRedirects(false);
                 requestVerificationToken = br.getRegex("<div id=\"content\">[\t\n\r ]+<input name=\"__RequestVerificationToken\" type=\"hidden\" value=\"([^<>\"]*?)\"").getMatch(0);
             }
-            if (requestVerificationToken == null) requestVerificationToken = theLink.getStringProperty("__RequestVerificationToken_Lw__", null);
-            if (requestVerificationToken == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            if (requestVerificationToken == null) {
+                requestVerificationToken = theLink.getStringProperty("__RequestVerificationToken_Lw__", null);
+            }
+            if (requestVerificationToken == null) {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
             br.setCookie("http://chomikuj.pl/", "__RequestVerificationToken_Lw__", requestVerificationToken);
 
             final String chomikID = theLink.getStringProperty("chomikID");
@@ -191,14 +213,26 @@ public class ChoMikujPl extends PluginForHost {
             }
 
             br.postPage("http://chomikuj.pl/action/License/Download", "fileId=" + fid + "&__RequestVerificationToken=" + Encoding.urlEncode(requestVerificationToken));
-            if (br.containsHTML(PREMIUMONLY)) return false;
-            if (br.containsHTML(ACCESSDENIED)) return false;
+            if (br.containsHTML(PREMIUMONLY)) {
+                return false;
+            }
+            if (br.containsHTML(ACCESSDENIED)) {
+                return false;
+            }
             DLLINK = br.getRegex("redirectUrl\":\"(http://.*?)\"").getMatch(0);
-            if (DLLINK == null) DLLINK = br.getRegex("\\\\u003ca href=\\\\\"([^\"]*?)\\\\\" title").getMatch(0);
-            if (DLLINK == null) DLLINK = br.getRegex("\"(http://[A-Za-z0-9\\-_\\.]+\\.chomikuj\\.pl/File\\.aspx[^<>\"]*?)\\\\\"").getMatch(0);
-            if (DLLINK != null) DLLINK = Encoding.htmlDecode(DLLINK);
+            if (DLLINK == null) {
+                DLLINK = br.getRegex("\\\\u003ca href=\\\\\"([^\"]*?)\\\\\" title").getMatch(0);
+            }
+            if (DLLINK == null) {
+                DLLINK = br.getRegex("\"(http://[A-Za-z0-9\\-_\\.]+\\.chomikuj\\.pl/File\\.aspx[^<>\"]*?)\\\\\"").getMatch(0);
+            }
+            if (DLLINK != null) {
+                DLLINK = Encoding.htmlDecode(DLLINK);
+            }
         }
-        if (DLLINK != null) DLLINK = unescape(DLLINK);
+        if (DLLINK != null) {
+            DLLINK = unescape(DLLINK);
+        }
         br.setFollowRedirects(redirectsSetting);
         return true;
     }
@@ -210,13 +244,19 @@ public class ChoMikujPl extends PluginForHost {
         // Set by the decrypter if the link is password protected
         String savedLink = theLink.getStringProperty("savedlink");
         String savedPost = theLink.getStringProperty("savedpost");
-        if (savedLink != null && savedPost != null) br.postPage(savedLink, savedPost);
+        if (savedLink != null && savedPost != null) {
+            br.postPage(savedLink, savedPost);
+        }
         br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
         // Premium users can always download the original file
         br.getPage("http://chomikuj.pl/action/fileDetails/Index/" + fid);
         final String filesize = br.getRegex("<p class=\"fileSize\">([^<>\"]*?)</p>").getMatch(0);
-        if (filesize != null) theLink.setDownloadSize(SizeFormatter.getSize(filesize.replace(",", ".")));
-        if (br.getRedirectLocation() != null && br.getRedirectLocation().contains("fileDetails/Unavailable")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (filesize != null) {
+            theLink.setDownloadSize(SizeFormatter.getSize(filesize.replace(",", ".")));
+        }
+        if (br.getRedirectLocation() != null && br.getRedirectLocation().contains("fileDetails/Unavailable")) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
         String requestVerificationToken = theLink.getStringProperty("requestverificationtoken");
         if (requestVerificationToken == null) {
             br.setFollowRedirects(true);
@@ -224,8 +264,12 @@ public class ChoMikujPl extends PluginForHost {
             br.setFollowRedirects(false);
             requestVerificationToken = br.getRegex("<div id=\"content\">[\t\n\r ]+<input name=\"__RequestVerificationToken\" type=\"hidden\" value=\"([^<>\"]*?)\"").getMatch(0);
         }
-        if (requestVerificationToken == null) requestVerificationToken = theLink.getStringProperty("__RequestVerificationToken_Lw__", null);
-        if (requestVerificationToken == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (requestVerificationToken == null) {
+            requestVerificationToken = theLink.getStringProperty("__RequestVerificationToken_Lw__", null);
+        }
+        if (requestVerificationToken == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         br.setCookie("http://chomikuj.pl/", "__RequestVerificationToken_Lw__", requestVerificationToken);
 
         final String chomikID = theLink.getStringProperty("chomikID");
@@ -244,7 +288,9 @@ public class ChoMikujPl extends PluginForHost {
 
         br.getHeaders().put("Referer", theLink.getDownloadURL());
         postPage(br, "http://chomikuj.pl/action/License/DownloadContext", "fileId=" + fid + "&__RequestVerificationToken=" + Encoding.urlEncode(requestVerificationToken));
-        if (br.containsHTML(ACCESSDENIED)) return false;
+        if (br.containsHTML(ACCESSDENIED)) {
+            return false;
+        }
         /* Low traffic wearning */
         if (br.containsHTML("action=\"/action/License/DownloadWarningAccept\"")) {
             final String serializedUserSelection = br.getRegex("name=\"SerializedUserSelection\" type=\"hidden\" value=\"([^<>\"]*?)\"").getMatch(0);
@@ -256,10 +302,18 @@ public class ChoMikujPl extends PluginForHost {
             br.postPage("http://chomikuj.pl/action/License/DownloadWarningAccept", "FileId=" + fid + "&SerializedUserSelection=" + Encoding.urlEncode(serializedUserSelection) + "&SerializedOrgFile=" + Encoding.urlEncode(serializedOrgFile) + "&__RequestVerificationToken=" + Encoding.urlEncode(requestVerificationToken));
         }
         DLLINK = br.getRegex("redirectUrl\":\"(http://.*?)\"").getMatch(0);
-        if (DLLINK == null) DLLINK = br.getRegex("\\\\u003ca href=\\\\\"([^\"]*?)\\\\\" title").getMatch(0);
-        if (DLLINK == null) DLLINK = br.getRegex("\"(http://[A-Za-z0-9\\-_\\.]+\\.chomikuj\\.pl/File\\.aspx[^<>\"]*?)\\\\\"").getMatch(0);
-        if (DLLINK != null) DLLINK = Encoding.htmlDecode(DLLINK);
-        if (DLLINK != null) DLLINK = unescape(DLLINK);
+        if (DLLINK == null) {
+            DLLINK = br.getRegex("\\\\u003ca href=\\\\\"([^\"]*?)\\\\\" title").getMatch(0);
+        }
+        if (DLLINK == null) {
+            DLLINK = br.getRegex("\"(http://[A-Za-z0-9\\-_\\.]+\\.chomikuj\\.pl/File\\.aspx[^<>\"]*?)\\\\\"").getMatch(0);
+        }
+        if (DLLINK != null) {
+            DLLINK = Encoding.htmlDecode(DLLINK);
+        }
+        if (DLLINK != null) {
+            DLLINK = unescape(DLLINK);
+        }
         br.setFollowRedirects(redirectsSetting);
         return true;
     }
@@ -291,7 +345,9 @@ public class ChoMikujPl extends PluginForHost {
             try {
                 throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);
             } catch (final Throwable e) {
-                if (e instanceof PluginException) throw (PluginException) e;
+                if (e instanceof PluginException) {
+                    throw (PluginException) e;
+                }
             }
             throw new PluginException(LinkStatus.ERROR_FATAL, JDL.L("plugins.hoster.chomikujpl.only4registered", PREMIUMONLYUSERTEXT));
         }
@@ -300,15 +356,21 @@ public class ChoMikujPl extends PluginForHost {
                 try {
                     throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);
                 } catch (final Throwable e) {
-                    if (e instanceof PluginException) throw (PluginException) e;
+                    if (e instanceof PluginException) {
+                        throw (PluginException) e;
+                    }
                 }
                 throw new PluginException(LinkStatus.ERROR_FATAL, JDL.L("plugins.hoster.chomikujpl.only4registered", PREMIUMONLYUSERTEXT));
             }
         }
-        if (DLLINK == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (DLLINK == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, DLLINK, false, 1);
         if (dl.getConnection().getContentType().contains("html")) {
+            logger.warning("The final dllink seems not to be a file!");
             br.followConnection();
+            handleServerErrors();
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl.startDownload();
@@ -328,18 +390,27 @@ public class ChoMikujPl extends PluginForHost {
         if (DLLINK == null) {
             String argh1 = br.getRegex("orgFile\\\\\" value=\\\\\"(.*?)\\\\\"").getMatch(0);
             String argh2 = br.getRegex("userSelection\\\\\" value=\\\\\"(.*?)\\\\\"").getMatch(0);
-            if (argh1 == null || argh2 == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            if (argh1 == null || argh2 == null) {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
             // For some files they ask
             // "Do you really want to download this file", so we have to confirm
             // it with "YES" here ;)
-            if (br.containsHTML("Właściciel tego chomika udostępnia darmowy transfer, ale jego ilość jest obecnie zbyt mała, aby można było pobrać plik"))
+            if (br.containsHTML("Właściciel tego chomika udostępnia darmowy transfer, ale jego ilość jest obecnie zbyt mała, aby można było pobrać plik")) {
                 br.postPage("http://chomikuj.pl/action/License/AcceptOwnTransfer?fileId=" + link.getStringProperty("fileid"), "orgFile=" + Encoding.urlEncode(argh1) + "&userSelection=" + Encoding.urlEncode(argh2) + "&__RequestVerificationToken=" + Encoding.urlEncode(link.getStringProperty("requestverificationtoken")));
-            else
+            } else {
                 br.postPage("http://chomikuj.pl/action/License/acceptLargeTransfer?fileId=" + link.getStringProperty("fileid"), "orgFile=" + Encoding.urlEncode(argh1) + "&userSelection=" + Encoding.urlEncode(argh2) + "&__RequestVerificationToken=" + Encoding.urlEncode(link.getStringProperty("requestverificationtoken")));
+            }
             DLLINK = br.getRegex("redirectUrl\":\"(http://.*?)\"").getMatch(0);
-            if (DLLINK == null) DLLINK = br.getRegex("\\\\u003ca href=\\\\\"([^\"]*?)\\\\\" title").getMatch(0);
-            if (DLLINK != null) DLLINK = Encoding.htmlDecode(DLLINK);
-            if (DLLINK == null) getDllink(link, br, true);
+            if (DLLINK == null) {
+                DLLINK = br.getRegex("\\\\u003ca href=\\\\\"([^\"]*?)\\\\\" title").getMatch(0);
+            }
+            if (DLLINK != null) {
+                DLLINK = Encoding.htmlDecode(DLLINK);
+            }
+            if (DLLINK == null) {
+                getDllink(link, br, true);
+            }
         }
         if (DLLINK == null) {
             logger.warning("Final downloadlink (String is \"dllink\") regex didn't match!");
@@ -350,9 +421,16 @@ public class ChoMikujPl extends PluginForHost {
         if (dl.getConnection().getContentType().contains("html")) {
             logger.warning("The final dllink seems not to be a file!");
             br.followConnection();
+            handleServerErrors();
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl.startDownload();
+    }
+
+    private void handleServerErrors() throws PluginException {
+        if (br.getURL().contains("Error.aspx")) {
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error", 15 * 60 * 1000l);
+        }
     }
 
     @SuppressWarnings("unchecked")
@@ -364,7 +442,9 @@ public class ChoMikujPl extends PluginForHost {
                 br.setFollowRedirects(true);
                 final Object ret = account.getProperty("cookies", null);
                 boolean acmatch = Encoding.urlEncode(account.getUser()).equals(account.getStringProperty("name", Encoding.urlEncode(account.getUser())));
-                if (acmatch) acmatch = Encoding.urlEncode(account.getPass()).equals(account.getStringProperty("pass", Encoding.urlEncode(account.getPass())));
+                if (acmatch) {
+                    acmatch = Encoding.urlEncode(account.getPass()).equals(account.getStringProperty("pass", Encoding.urlEncode(account.getPass())));
+                }
                 if (acmatch && ret != null && ret instanceof HashMap<?, ?> && !force) {
                     final HashMap<String, String> cookies = (HashMap<String, String>) ret;
                     if (account.isValid()) {

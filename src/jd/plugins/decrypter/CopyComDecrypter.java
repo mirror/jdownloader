@@ -144,6 +144,7 @@ public class CopyComDecrypter extends PluginForDecrypt {
                 dl.setDownloadSize(Long.parseLong(filesize));
                 dl.setFinalFileName(name);
                 dl.setProperty("plain_name", name);
+                dl.setProperty("LINKDUPEID", "copycom" + additionalPath + "_" + name);
                 dl.setProperty("plain_size", filesize);
                 dl.setProperty("mainlink", parameter);
                 dl.setProperty("specified_link", url);
