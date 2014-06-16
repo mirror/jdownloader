@@ -54,13 +54,14 @@ public class SaveTvDecrypter extends PluginForDecrypt {
 
     /* Settings stuff */
     private final String           USEAPI                            = "USEAPI";
-    private final String           PREFERH264MOBILE                  = "PREFERH264MOBILE";
+    private final String           selected_video_format             = "selected_video_format";
 
     private final String           CRAWLER_ACTIVATE                  = "CRAWLER_ACTIVATE";
     private final String           CRAWLER_ENABLE_FASTER             = "CRAWLER_ENABLE_FASTER";
     private final String           CRAWLER_DISABLE_DIALOGS           = "CRAWLER_DISABLE_DIALOGS";
     private final String           CRAWLER_LASTDAYS_COUNT            = "CRAWLER_LASTDAYS_COUNT";
 
+    public static final double     QUALITY_HD_MB_PER_MINUTE          = jd.plugins.hoster.SaveTv.QUALITY_HD_MB_PER_MINUTE;
     private static final double    QUALITY_H264_NORMAL_MB_PER_MINUTE = jd.plugins.hoster.SaveTv.QUALITY_H264_NORMAL_MB_PER_MINUTE;
     private static final double    QUALITY_H264_MOBILE_MB_PER_MINUTE = jd.plugins.hoster.SaveTv.QUALITY_H264_MOBILE_MB_PER_MINUTE;
 
@@ -322,7 +323,7 @@ public class SaveTvDecrypter extends PluginForDecrypt {
         if (site_run_time == null) {
             site_run_time = "0";
         }
-        final long calculated_filesize = jd.plugins.hoster.SaveTv.calculateFilesize(site_run_time, mobilePreferred());
+        final long calculated_filesize = jd.plugins.hoster.SaveTv.calculateFilesize(site_run_time);
         final Regex nameRegex = new Regex(id_info, "class=\"normal\">([^<>\"]*?)</a>([^<>\"]*?)</td>");
         String name = nameRegex.getMatch(0);
         if (name == null) {
@@ -426,10 +427,6 @@ public class SaveTvDecrypter extends PluginForDecrypt {
             }
             break;
         }
-    }
-
-    private boolean mobilePreferred() {
-        return cfg.getBooleanProperty(PREFERH264MOBILE, false);
     }
 
     private void handleEndDialogs() {

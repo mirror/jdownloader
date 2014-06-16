@@ -18,7 +18,6 @@ package jd.plugins.hoster;
 
 import java.io.IOException;
 import java.util.HashMap;
-import java.util.Locale;
 import java.util.Map;
 
 import jd.PluginWrapper;
@@ -30,6 +29,7 @@ import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.plugins.Account;
+import jd.plugins.Account.AccountType;
 import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
@@ -39,9 +39,7 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.utils.JDUtilities;
 
-import org.appwork.utils.formatter.TimeFormatter;
-
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "tenlua.vn" }, urls = { "http://tenluadecrypted\\.vn/\\d+" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "tenlua.vn" }, urls = { "http://tenluadecrypted\\.vn/\\d+" }, flags = { 2 })
 public class TenluaVn extends PluginForHost {
 
     public TenluaVn(PluginWrapper wrapper) {
@@ -56,11 +54,12 @@ public class TenluaVn extends PluginForHost {
 
     private long    req_num      = 0;
     private boolean pluginloaded = false;
+    private String  sid          = null;
 
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
         this.setBrowserExclusive();
-        final String fid = new Regex(link.getStringProperty("specified_link", null), "#download([a-z0-9]+)").getMatch(0);
+        final String fid = get_fid(link);
         link.setName(fid);
         /* No fid --> We have no downloadable link */
         if (fid == null) {
@@ -83,7 +82,14 @@ public class TenluaVn extends PluginForHost {
     @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
+        doFree(downloadLink);
+    }
 
+    private String get_fid(final DownloadLink dl) {
+        return new Regex(dl.getStringProperty("specified_link", null), "#download([a-z0-9]+)").getMatch(0);
+    }
+
+    public void doFree(final DownloadLink downloadLink) throws Exception, PluginException {
         String dllink = checkDirectLink(downloadLink, "directlink");
         if (dllink == null) {
             dllink = getJson("url", br.toString());
@@ -157,8 +163,25 @@ public class TenluaVn extends PluginForHost {
                     }
                 }
                 br.setFollowRedirects(false);
-                postPageRaw("http://api.tenlua.vn/?id=", "[{\"a\":\"user_login\",\"user\":\"" + Encoding.urlEncode(account.getUser()) + "\",\"password\":\"" + Encoding.urlEncode(account.getPass()) + "\",\"permanent\":true}]");
-                if (br.toString().equals("-9")) {
+                postPageRaw("http://api.tenlua.vn/?id=", "[{\"a\":\"user_login\",\"user\":\"" + account.getUser() + "\",\"password\":\"" + account.getPass() + "\",\"permanent\":true}]");
+                if ("-9".equals(br.toString())) {
+                    if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
+                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUngültiger Benutzername oder ungültiges Passwort!\r\nSchnellhilfe: \r\nDu bist dir sicher, dass dein eingegebener Benutzername und Passwort stimmen?\r\nFalls dein Passwort Sonderzeichen enthält, ändere es und versuche es erneut!", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                    } else {
+                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nInvalid username/password!\r\nQuick help:\r\nYou're sure that the username and password you entered are correct?\r\nIf your password contains special characters, change it (remove them) and try again!", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                    }
+                }
+                sid = br.getRegex("\\[\"([^<>\"/]*?)\"\\]").getMatch(0);
+                if (sid == null) {
+                    if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
+                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nPlugin defekt, bitte den JDownloader Support kontaktieren!", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                    } else {
+                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nPlugin broken, please contact the JDownloader Support!", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                    }
+                }
+                postPageRaw("http://api.tenlua.vn/?id=", "[{\"a\":\"user_getuser\"}]");
+                /* So far, only free accounts are supported */
+                if (!br.containsHTML("\"type\":\"2\"")) {
                     if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
                         throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUngültiger Benutzername oder ungültiges Passwort!\r\nSchnellhilfe: \r\nDu bist dir sicher, dass dein eingegebener Benutzername und Passwort stimmen?\r\nFalls dein Passwort Sonderzeichen enthält, ändere es und versuche es erneut!", PluginException.VALUE_ID_PREMIUM_DISABLE);
                     } else {
@@ -190,45 +213,27 @@ public class TenluaVn extends PluginForHost {
             account.setValid(false);
             throw e;
         }
-        String space = br.getRegex("").getMatch(0);
-        if (space != null) {
-            ai.setUsedSpace(space.trim());
-        }
         ai.setUnlimitedTraffic();
-        final String expire = br.getRegex("<td>Premium-Account expire:</td>.*?<td>(.*?)</td>").getMatch(0);
-        if (expire == null) {
-            final String lang = System.getProperty("user.language");
-            if ("de".equalsIgnoreCase(lang)) {
-                throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUngültiger Benutzername/Passwort oder nicht unterstützter Account Typ!\r\nSchnellhilfe: \r\nDu bist dir sicher, dass dein eingegebener Benutzername und Passwort stimmen?\r\nFalls dein Passwort Sonderzeichen enthält, ändere es und versuche es erneut!", PluginException.VALUE_ID_PREMIUM_DISABLE);
-            } else {
-                throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nInvalid username/password or unsupported account type!\r\nQuick help:\r\nYou're sure that the username and password you entered are correct?\r\nIf your password contains special characters, change it (remove them) and try again!", PluginException.VALUE_ID_PREMIUM_DISABLE);
-            }
-        } else {
-            ai.setValidUntil(TimeFormatter.getMilliSeconds(expire, "dd MMMM yyyy", Locale.ENGLISH));
+        try {
+            account.setConcurrentUsePossible(false);
+            account.setType(AccountType.FREE);
+        } catch (final Throwable e) {
+            /* not available in old Stable 0.9.581 */
         }
+        /* So far, only free accounts are supported */
+        ai.setStatus("Registered (free) user");
         account.setValid(true);
-        ai.setStatus("Premium User");
         return ai;
     }
 
     @Override
     public void handlePremium(final DownloadLink link, final Account account) throws Exception {
         requestFileInformation(link);
-        login(account, false);
+        /* Always do a full login to get the sid value */
+        login(account, true);
         br.setFollowRedirects(false);
-        br.getPage(link.getDownloadURL());
-        String dllink = br.getRegex("").getMatch(0);
-        if (dllink == null) {
-            logger.warning("Final downloadlink (String is \"dllink\") regex didn't match!");
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
-        dl = jd.plugins.BrowserAdapter.openDownload(br, link, Encoding.htmlDecode(dllink), true, 0);
-        if (dl.getConnection().getContentType().contains("html")) {
-            logger.warning("The final dllink seems not to be a file!");
-            br.followConnection();
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
-        dl.startDownload();
+        postPageRaw("http://api.tenlua.vn/?id=", "[{\"a\":\"filemanager_builddownload_getinfo\",\"n\":\"" + get_fid(link) + "\",\"r\":0." + System.currentTimeMillis() + "}]");
+        doFree(link);
     }
 
     private String getJson(final String parameter, final String source) {
@@ -245,7 +250,11 @@ public class TenluaVn extends PluginForHost {
         } else {
             req_num++;
         }
-        br.postPageRaw(url + req_num, postData);
+        String action_data = Long.toString(req_num);
+        if (sid != null) {
+            action_data += "&sid=" + sid;
+        }
+        br.postPageRaw(url + action_data, postData);
     }
 
     private String unescape(final String s) {

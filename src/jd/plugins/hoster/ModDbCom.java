@@ -41,7 +41,7 @@ public class ModDbCom extends PluginForHost {
 
     private final String   moddbservers  = "moddbservers";
 
-    /** The list of server values displayed to the user */
+    /* The list of server values displayed to the user */
     private final String[] servers       = new String[] { "fdcservers.net(WORLDWIDE)", "moddb.com #4(TEXAS, US)", "moddb.com #5(COLORADO, US)", "moddb.com #6(COLORADO, US)", "Mod DB #8 (CALIFORNIA, US)", "Mod DB #10 (NETHERLANDS, EU)", "Mod DB #11 (NETHERLANDS, EU)", "Mod DB #13 (NETHERLANDS, EU)" };
 
     private String         FDCCDNREGEX1  = "Mirror provided by FDCCDN.*?<a href=\"(.*?)\"";
@@ -64,7 +64,9 @@ public class ModDbCom extends PluginForHost {
         // Try to find the link for the selected servers
         if (configuredServer == 1) {
             dllink = br.getRegex(FDCCDNREGEX1).getMatch(0);
-            if (dllink == null) dllink = br.getRegex(FDCCDNREGEX2).getMatch(0);
+            if (dllink == null) {
+                dllink = br.getRegex(FDCCDNREGEX2).getMatch(0);
+            }
 
         } else if (configuredServer == 2) {
             dllink = br.getRegex(SERVER4REGEX).getMatch(0);
@@ -93,37 +95,59 @@ public class ModDbCom extends PluginForHost {
         if (dllink == null) {
             logger.warning("Something is broken here, your selected server hasn't been found so jd will try to find an alternative link");
             dllink = br.getRegex(FDCCDNREGEX1).getMatch(0);
-            if (dllink != null && dllink.contains("members/register")) dllink = null;
+            if (dllink != null && dllink.contains("members/register")) {
+                dllink = null;
+            }
             if (dllink == null) {
                 dllink = br.getRegex(FDCCDNREGEX2).getMatch(0);
-                if (dllink != null && dllink.contains("members/register")) dllink = null;
+                if (dllink != null && dllink.contains("members/register")) {
+                    dllink = null;
+                }
                 if (dllink == null) {
                     dllink = br.getRegex(SERVER4REGEX).getMatch(0);
-                    if (dllink != null && dllink.contains("members/register")) dllink = null;
+                    if (dllink != null && dllink.contains("members/register")) {
+                        dllink = null;
+                    }
                     if (dllink == null) {
                         dllink = br.getRegex(SERVER5REGEX).getMatch(0);
-                        if (dllink != null && dllink.contains("members/register")) dllink = null;
+                        if (dllink != null && dllink.contains("members/register")) {
+                            dllink = null;
+                        }
                         if (dllink == null) {
                             dllink = br.getRegex(SERVER6REGEX).getMatch(0);
-                            if (dllink != null && dllink.contains("members/register")) dllink = null;
+                            if (dllink != null && dllink.contains("members/register")) {
+                                dllink = null;
+                            }
                             if (dllink == null) {
                                 dllink = br.getRegex(SERVER8REGEX).getMatch(0);
-                                if (dllink != null && dllink.contains("members/register")) dllink = null;
+                                if (dllink != null && dllink.contains("members/register")) {
+                                    dllink = null;
+                                }
                                 if (dllink == null) {
                                     dllink = br.getRegex(SERVER10REGEX).getMatch(0);
-                                    if (dllink != null && dllink.contains("members/register")) dllink = null;
+                                    if (dllink != null && dllink.contains("members/register")) {
+                                        dllink = null;
+                                    }
                                     if (dllink == null) {
                                         dllink = br.getRegex(SERVER11REGEX).getMatch(0);
-                                        if (dllink != null && dllink.contains("members/register")) dllink = null;
+                                        if (dllink != null && dllink.contains("members/register")) {
+                                            dllink = null;
+                                        }
                                         if (dllink == null) {
                                             dllink = br.getRegex(SERVER13REGEX).getMatch(0);
-                                            if (dllink != null && dllink.contains("members/register")) dllink = null;
+                                            if (dllink != null && dllink.contains("members/register")) {
+                                                dllink = null;
+                                            }
                                             if (dllink == null) {
                                                 dllink = br.getRegex("Mirror provided by Mod DB.*?<a href=\"(.*?)\"").getMatch(0);
-                                                if (dllink != null && dllink.contains("members/register")) dllink = null;
+                                                if (dllink != null && dllink.contains("members/register")) {
+                                                    dllink = null;
+                                                }
                                                 if (dllink == null) {
                                                     dllink = br.getRegex("Click to <a href=\"(.*?)</a>").getMatch(0);
-                                                    if (dllink != null && dllink.contains("members/register")) dllink = null;
+                                                    if (dllink != null && dllink.contains("members/register")) {
+                                                        dllink = null;
+                                                    }
                                                     if (dllink == null) {
                                                         if (singlemirrorpage != null) {
                                                             br.getPage("http://www.moddb.com" + singlemirrorpage);
@@ -238,7 +262,9 @@ public class ModDbCom extends PluginForHost {
             br.getPage("http://www.moddb.com/downloads/start/" + mirrorid + "/all");
         } else {
             String standardmirrorpage = br.getRegex("attr\\(\"href\", \"(.*?)\\&amp;").getMatch(0);
-            if (standardmirrorpage != null) br.getPage("http://www.moddb.com" + standardmirrorpage);
+            if (standardmirrorpage != null) {
+                br.getPage("http://www.moddb.com" + standardmirrorpage);
+            }
         }
         return singlemirrorpage;
     }
@@ -248,11 +274,17 @@ public class ModDbCom extends PluginForHost {
         this.setBrowserExclusive();
         br.setFollowRedirects(false);
         br.getPage(downloadLink.getDownloadURL());
-        if (br.containsHTML("An error has occured") || br.containsHTML("The download requested could not be found")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (br.containsHTML("An error has occured") || br.containsHTML("The download requested could not be found")) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
         String filename = br.getRegex("<h5>Filename</h5>.*?<span class=\"summary\">(.*?)</span>").getMatch(0);
         String filesize = br.getRegex("<h5>Size</h5>.*?<span class=\"summary\">.*?\\((.*?bytes)\\)</span>").getMatch(0);
-        if (filesize == null) filesize = br.getRegex("<h5>Size</h5>.*?<span class=\"summary\">(.*?)\\(").getMatch(0);
-        if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (filesize == null) {
+            filesize = br.getRegex("<h5>Size</h5>.*?<span class=\"summary\">(.*?)\\(").getMatch(0);
+        }
+        if (filename == null || filesize == null) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
         downloadLink.setName(filename);
         downloadLink.setDownloadSize(SizeFormatter.getSize(filesize.replace(",", "")));
         return AvailableStatus.TRUE;

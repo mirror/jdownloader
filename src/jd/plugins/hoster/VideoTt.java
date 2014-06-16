@@ -28,7 +28,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "video.tt" }, urls = { "http://(www\\.)?video\\.tt/(watch_video\\.php\\?v=|video/)[A-Za-z0-9]+" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "video.tt" }, urls = { "http://(www\\.)?video\\.tt/(watch_video\\.php\\?v=|video/|e/)[A-Za-z0-9]+" }, flags = { 0 })
 public class VideoTt extends PluginForHost {
 
     public VideoTt(PluginWrapper wrapper) {
@@ -41,13 +41,23 @@ public class VideoTt extends PluginForHost {
     }
 
     @Override
+    public void correctDownloadLink(final DownloadLink link) {
+        final String fid = new Regex(link.getDownloadURL(), "([A-Za-z0-9]+)$").getMatch(0);
+        link.setUrlDownload("http://video.tt/watch_video.php?v=" + fid);
+    }
+
+    @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         br.getPage(link.getDownloadURL());
-        if (br.containsHTML("class=\"error_alert\"")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (br.containsHTML("class=\"error_alert\"")) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
         String filename = br.getRegex("content=\"videott \\-([^<>\"]*?)\"  name=\"\" property=\"og:title\"").getMatch(0);
-        if (filename == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (filename == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         link.setFinalFileName(Encoding.htmlDecode(filename.trim()) + ".mp4");
         return AvailableStatus.TRUE;
     }
