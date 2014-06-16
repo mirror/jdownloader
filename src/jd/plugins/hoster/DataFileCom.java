@@ -23,6 +23,7 @@ import java.util.HashMap;
 import java.util.Locale;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import javax.swing.JOptionPane;
 import javax.swing.SwingUtilities;
@@ -62,10 +63,14 @@ public class DataFileCom extends PluginForHost {
         return "http://www.datafile.com/terms.html";
     }
 
-    private final String  PREMIUMONLY           = "(\"Sorry\\. Only premium users can download this file\"|>This file can be downloaded only by users with<br />Premium account!<)";
-    private final boolean SKIPRECONNECTWAITTIME = true;
-    private final boolean SKIPWAITTIME          = true;
-    private final String  DAILYLIMIT            = ">You exceeded your free daily download limit";
+    private final String               PREMIUMONLY                  = "(\"Sorry\\. Only premium users can download this file\"|>This file can be downloaded only by users with<br />Premium account!<)";
+    private final boolean              SKIPRECONNECTWAITTIME        = true;
+    private final boolean              SKIPWAITTIME                 = true;
+    private final String               DAILYLIMIT                   = ">You exceeded your free daily download limit";
+
+    // Connection Management
+    // note: CAN NOT be negative or zero! (ie. -1 or 0) Otherwise math sections fail. .:. use [1-20]
+    private static final AtomicInteger totalMaxSimultanFreeDownload = new AtomicInteger(1);
 
     /**
      * They have a linkchecker but it doesn't show filenames if they're not included in the URL: http://www.datafile.com/linkchecker.html
@@ -127,10 +132,10 @@ public class DataFileCom extends PluginForHost {
     @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
-        doFree(downloadLink);
+        doFree(downloadLink, null);
     }
 
-    private void doFree(final DownloadLink downloadLink) throws Exception {
+    private void doFree(final DownloadLink downloadLink, final Account account) throws Exception {
         if (br.containsHTML(DAILYLIMIT) || br.getURL().contains("error.html?code=7")) {
             throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 2 * 60 * 60 * 1000l);
         }
@@ -223,7 +228,14 @@ public class DataFileCom extends PluginForHost {
             }
             downloadLink.setFinalFileName(finalFixedName);
             downloadLink.setProperty("directlink", dllink);
-            dl.startDownload();
+            // add download slot
+            controlSlot(+1, account);
+            try {
+                dl.startDownload();
+            } finally {
+                // remove download slot
+                controlSlot(-1, account);
+            }
         } catch (final PluginException e) {
             if (e.getLinkStatus() == LinkStatus.ERROR_DOWNLOAD_INCOMPLETE) {
                 logger.info("Retry on ERROR_DOWNLOAD_INCOMPLETE");
@@ -321,65 +333,81 @@ public class DataFileCom extends PluginForHost {
     @Override
     public AccountInfo fetchAccountInfo(final Account account) throws Exception {
         AccountInfo ai = new AccountInfo();
-        try {
-            login(account, true);
-        } catch (PluginException e) {
-            account.setValid(false);
-            throw e;
-        }
-        br.getPage("/profile.html");
-        final String filesNum = br.getRegex(">Files: <span class=\"lime\">(\\d+)</span>").getMatch(0);
-        if (filesNum != null) {
-            ai.setFilesNum(Long.parseLong(filesNum));
-        }
-        final String space = br.getRegex(">Storage: <span class=\"lime\">([^<>\"]*?)</span>").getMatch(0);
-        if (space != null) {
-            ai.setUsedSpace(space.trim());
-        }
-        ai.setUnlimitedTraffic();
-        String expire = br.getRegex("([a-zA-Z]{3} \\d{1,2}, \\d{4} \\d{1,2}:\\d{1,2})").getMatch(0);
-        if (expire == null) {
-            logger.info("JD could not detect account expire time, your account has been determined as a free account");
-            account.setProperty("free", true);
-            ai.setStatus("Free User");
+        if (useAPI.get()) {
+            return fetchAccountInfo_API(account, ai);
         } else {
-            account.setProperty("free", false);
-            ai.setValidUntil(TimeFormatter.getMilliSeconds(expire, "MMM dd, yyyy HH:mm", Locale.ENGLISH));
-            ai.setStatus("Premium User");
+            try {
+                login(account, true);
+            } catch (PluginException e) {
+                account.setValid(false);
+                throw e;
+            }
+            br.getPage("/profile.html");
+            final String filesNum = br.getRegex(">Files: <span class=\"lime\">(\\d+)</span>").getMatch(0);
+            if (filesNum != null) {
+                ai.setFilesNum(Long.parseLong(filesNum));
+            }
+            final String space = br.getRegex(">Storage: <span class=\"lime\">([^<>\"]*?)</span>").getMatch(0);
+            if (space != null) {
+                ai.setUsedSpace(space.trim());
+            }
+            ai.setUnlimitedTraffic();
+            String expire = br.getRegex("([a-zA-Z]{3} \\d{1,2}, \\d{4} \\d{1,2}:\\d{1,2})").getMatch(0);
+            if (expire == null) {
+                logger.info("JD could not detect account expire time, your account has been determined as a free account");
+                account.setProperty("free", true);
+                ai.setStatus("Free User");
+            } else {
+                account.setProperty("free", false);
+                ai.setValidUntil(TimeFormatter.getMilliSeconds(expire, "MMM dd, yyyy HH:mm", Locale.ENGLISH));
+                ai.setStatus("Premium User");
+            }
+            account.setValid(true);
         }
-        account.setValid(true);
         return ai;
+
     }
 
     @Override
     public void handlePremium(final DownloadLink downloadLink, final Account account) throws Exception {
-        requestFileInformation(downloadLink);
-        login(account, false);
-        if (account.getBooleanProperty("free")) {
-            br.getPage(downloadLink.getDownloadURL());
-            // if the cached cookie expired, relogin.
-            if (br.getCookie(MAINPAGE, "hash") == null || br.getCookie(MAINPAGE, "user") == null) {
-                synchronized (LOCK) {
-                    account.setProperty("cookies", Property.NULL);
-                    // if you retry, it can use another account...
-                    throw new PluginException(LinkStatus.ERROR_RETRY);
+        if (useAPI.get() && !account.getBooleanProperty("free", false)) {
+            handlePremium_API(downloadLink, account);
+        } else {
+            requestFileInformation(downloadLink);
+            login(account, false);
+            if (account.getBooleanProperty("free")) {
+                br.getPage(downloadLink.getDownloadURL());
+                // if the cached cookie expired, relogin.
+                if (br.getCookie(MAINPAGE, "hash") == null || br.getCookie(MAINPAGE, "user") == null) {
+                    synchronized (LOCK) {
+                        account.setProperty("cookies", Property.NULL);
+                        // if you retry, it can use another account...
+                        throw new PluginException(LinkStatus.ERROR_RETRY);
+                    }
                 }
+                handleGeneralErrors(account);
+                doFree(downloadLink, account);
             }
-            handleGeneralErrors(account);
-            doFree(downloadLink);
-        }
-        br.setFollowRedirects(true);
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, downloadLink.getDownloadURL(), true, 0);
-        if (dl.getConnection().getContentType().contains("html")) {
-            if (dl.getConnection().getResponseCode() == 404) {
-                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 404", 30 * 60 * 1000l);
+            br.setFollowRedirects(true);
+            dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, downloadLink.getDownloadURL(), true, 0);
+            if (dl.getConnection().getContentType().contains("html")) {
+                if (dl.getConnection().getResponseCode() == 404) {
+                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 404", 30 * 60 * 1000l);
+                }
+                logger.warning("The final dllink seems not to be a file!");
+                br.followConnection();
+                handleGeneralErrors(account);
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
-            logger.warning("The final dllink seems not to be a file!");
-            br.followConnection();
-            handleGeneralErrors(account);
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            // add download slot
+            controlSlot(+1, account);
+            try {
+                dl.startDownload();
+            } finally {
+                // remove download slot
+                controlSlot(-1, account);
+            }
         }
-        dl.startDownload();
     }
 
     private void handleGeneralErrors(final Account account) throws PluginException {
@@ -427,7 +455,7 @@ public class DataFileCom extends PluginForHost {
 
     @Override
     public int getMaxSimultanPremiumDownloadNum() {
-        return -1;
+        return maxPrem.get();
     }
 
     @Override
@@ -436,7 +464,7 @@ public class DataFileCom extends PluginForHost {
 
     @Override
     public int getMaxSimultanFreeDownloadNum() {
-        return 1;
+        return maxFree.get();
     }
 
     @Override
@@ -454,6 +482,243 @@ public class DataFileCom extends PluginForHost {
             return true;
         }
         return false;
+    }
+
+    private static AtomicBoolean useAPI = new AtomicBoolean(true);
+    private final String         apiURL = "https://api.datafile.com";
+
+    private Browser prepApiBrowser(final Browser ibr) {
+        return ibr;
+    }
+
+    private synchronized void getPage(final Browser ibr, final String url, final Account account) throws Exception {
+        if (account != null) {
+            String apiToken = getApiToken(account);
+            ibr.getPage(url + (url.matches("(" + apiURL + ")?/[a-zA-Z0-9]+/[a-zA-Z0-9]+\\?[a-zA-Z0-9]+.+") ? "&" : "?") + "token=" + apiToken);
+            if (sessionTokenInValid(account, ibr)) {
+                apiToken = getApiToken(account);
+                if (apiToken != null) {
+                    // can't sessionKeyInValid because getApiKey/loginKey return String, and loginKey uses a new Browser.
+                    ibr.getPage(url + (url.matches("(" + apiURL + ")?/[a-zA-Z0-9]+/[a-zA-Z0-9]+\\?[a-zA-Z0-9]+.+") ? "&" : "?") + "token=" + apiToken);
+                } else {
+                    // failure occurred.
+                    throw new PluginException(LinkStatus.ERROR_FATAL);
+                }
+            }
+            // account specific errors which could happen at any point in time!
+            if (sessionTokenInValid(account, ibr)) {
+                throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\n" + errorMsg(ibr), PluginException.VALUE_ID_PREMIUM_DISABLE);
+            }
+        } else {
+            ibr.getPage(url);
+        }
+        // error handling for generic errors which could occur at any point in time!
+        if (("718".equalsIgnoreCase(getJson(ibr, "code")))) {
+            // 718 ERR_API_IP_SUSPENDED The IP Address initiating the request has been suspended
+            throw new PluginException(LinkStatus.ERROR_FATAL, "\r\n" + errorMsg(ibr));
+        }
+    }
+
+    private String errorMsg(final Browser ibr) {
+        final String message = getJson(ibr, "message");
+        logger.warning(message);
+        return message;
+    }
+
+    private synchronized String getApiToken(final Account account) throws Exception {
+        String apiToken = account.getStringProperty("apiToken", null);
+        if (apiToken == null) {
+            apiToken = loginToken(account);
+        }
+        return apiToken;
+    }
+
+    private boolean sessionTokenInValid(final Account account, final Browser ibr) {
+        final String code = getJson(ibr, "code");
+        if (("909".equalsIgnoreCase(code) || "910".equalsIgnoreCase(code))) {
+            // 909 Token not valid
+            // 910 Token Expired
+            account.setProperty("apiToken", Property.NULL);
+            return true;
+        } else {
+            return false;
+        }
+    }
+
+    private AccountInfo fetchAccountInfo_API(final Account account, final AccountInfo ai) throws Exception {
+        try {
+            loginToken(account);
+        } catch (PluginException e) {
+            account.setValid(false);
+            return ai;
+        }
+        return account.getAccountInfo();
+    }
+
+    private void handlePremium_API(final DownloadLink downloadLink, final Account account) throws Exception {
+        // No API method for linkchecking, but can done based on this request response!
+        getPage(br, apiURL + "/files/download?file=" + Encoding.urlEncode(downloadLink.getDownloadURL()), account);
+        final String ddlink = getJson("download_url");
+        if (ddlink == null) {
+            final String code = getJson("code");
+            if ("700".equalsIgnoreCase(code) || "701".equalsIgnoreCase(code)) {
+                // 700 File url not valid
+                // 701 File removed
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            } else if ("702".equalsIgnoreCase(code) || "703".equalsIgnoreCase(code)) {
+                // 702 File blocked
+                // 703 File download prohibited
+                /*
+                 * not sure about this either, blocked..why ?? download prohibited..why ??
+                 */
+                // set this for now...
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE);
+            } else if ("704".equalsIgnoreCase(code)) {
+                // 704 Not enough traffic
+                /*
+                 * This is a problem under current JD frame work.. For example: the file downloaded could be 10GiB, the hoster prevents
+                 * because user has only 5GiB traffic left... yet we can't disable the account due to this, because they have 5GB traffic
+                 * left. Also could be due to out of sync account stats? we don't have an exception to handle this...
+                 */
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE);
+            } else {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, "Unhandled Error code or 'download_url' could not be found");
+            }
+        }
+        br.setFollowRedirects(true);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, ddlink, true, 0);
+        if (dl.getConnection().getContentType().contains("html")) {
+            if (dl.getConnection().getResponseCode() == 404) {
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 404", 30 * 60 * 1000l);
+            }
+            logger.warning("The final dllink seems not to be a file!");
+            br.followConnection();
+            handleGeneralErrors(account);
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        // add download slot
+        controlSlot(+1, account);
+        try {
+            dl.startDownload();
+        } finally {
+            // remove download slot
+            controlSlot(-1, account);
+        }
+
+    }
+
+    private String loginToken(final Account account) throws Exception {
+        final Browser nbr = new Browser();
+        prepApiBrowser(nbr);
+        nbr.getPage(apiURL + "/users/auth?login=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()));
+        final String apiToken = getJson(nbr, "token");
+        final String code = getJson(nbr, "code");
+        if (apiToken != null) {
+            account.setProperty("apiToken", apiToken);
+            // all is good! lets update account info whilst we are at it. It's all here!
+            AccountInfo ai = new AccountInfo();
+            final String traffic_left = getJson(nbr, "traffic_left");
+            final String primium_till = getJson(nbr, "premium_till");
+            final String space_left = getJson(nbr, "space_left");
+            if (primium_till != null) {
+                // premium_till - time when user premium had expired, unix_timestamp, int (0 -no premium access)
+                ai.setValidUntil(Long.parseLong(primium_till + "000"));
+                if (!"0".equalsIgnoreCase(primium_till) || !ai.isExpired()) {
+                    account.setProperty("free", false);
+                    account.setProperty("totalMaxSim", 20);
+                    ai.setStatus("Premium Account");
+                } else {
+                    account.setProperty("free", true);
+                    account.setProperty("totalMaxSim", 1);
+                    ai.setStatus("Free Account");
+                    ai.setUnlimitedTraffic();
+                }
+            }
+            if (traffic_left != null) {
+                // traffic_left - user traffic left bytes for download files, int (-1 unlimited, 0 no traffic left)
+                ai.setTrafficLeft(Long.parseLong(traffic_left));
+            }
+            if (space_left != null) {
+                // space_left - user storage space left bytes for upload files, int ( -1 unlimited, 0 no space)
+                // we only have space used not space left...
+                // ai.setUsedSpace(Long.parseLong(space_left));
+            }
+            account.setAccountInfo(ai);
+        } else if ("900".equalsIgnoreCase(code) || "901".equalsIgnoreCase(code) || "902".equalsIgnoreCase(code) || "903".equalsIgnoreCase(code)) {
+            // 900 User not found
+            // 901 Login can not be empty
+            // 902 Password can not be empty
+            // 903 User inactive
+            throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\n" + errorMsg(nbr), PluginException.VALUE_ID_PREMIUM_DISABLE);
+        }
+        return apiToken;
+    }
+
+    /**
+     * Tries to return value of key from JSon response, from String source.
+     * 
+     * @author raztoki
+     * */
+    private String getJson(final String source, final String key) {
+        String result = new Regex(source, "\"" + key + "\":(-?\\d+(\\.\\d+)?|true|false|null)").getMatch(0);
+        if (result == null) {
+            result = new Regex(source, "\"" + key + "\":\"([^\"]+)\"").getMatch(0);
+        }
+        if (result != null) {
+            result = result.replaceAll("\\\\/", "/");
+        }
+        return result;
+    }
+
+    /**
+     * Tries to return value of key from JSon response, from default 'br' Browser.
+     * 
+     * @author raztoki
+     * */
+    private String getJson(final String key) {
+        return getJson(br.toString(), key);
+    }
+
+    /**
+     * Tries to return value of key from JSon response, from provided Browser.
+     * 
+     * @author raztoki
+     * */
+    private String getJson(final Browser ibr, final String key) {
+        return getJson(ibr.toString(), key);
+    }
+
+    private static Object        CTRLLOCK = new Object();
+
+    private static AtomicInteger maxPrem  = new AtomicInteger(1);
+    private static AtomicInteger maxFree  = new AtomicInteger(1);
+
+    /**
+     * Prevents more than one free download from starting at a given time. One step prior to dl.startDownload(), it adds a slot to maxFree
+     * which allows the next singleton download to start, or at least try.
+     * 
+     * This is needed because xfileshare(website) only throws errors after a final dllink starts transferring or at a given step within pre
+     * download sequence. But this template(XfileSharingProBasic) allows multiple slots(when available) to commence the download sequence,
+     * this.setstartintival does not resolve this issue. Which results in x(20) captcha events all at once and only allows one download to
+     * start. This prevents wasting peoples time and effort on captcha solving and|or wasting captcha trading credits. Users will experience
+     * minimal harm to downloading as slots are freed up soon as current download begins.
+     * 
+     * @param controlSlot
+     *            (+1|-1)
+     * @author raztoki
+     * */
+    private void controlSlot(final int num, final Account account) {
+        synchronized (CTRLLOCK) {
+            if (account == null) {
+                int was = maxFree.get();
+                maxFree.set(Math.min(Math.max(1, maxFree.addAndGet(num)), totalMaxSimultanFreeDownload.get()));
+                logger.info("maxFree was = " + was + " && maxFree now = " + maxFree.get());
+            } else {
+                int was = maxPrem.get();
+                maxPrem.set(Math.min(Math.max(1, maxPrem.addAndGet(num)), account.getIntegerProperty("totalMaxSim", 20)));
+                logger.info("maxPrem was = " + was + " && maxPrem now = " + maxPrem.get());
+            }
+        }
     }
 
     private boolean isJava7nJDStable() {
