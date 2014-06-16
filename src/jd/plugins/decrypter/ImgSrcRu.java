@@ -65,9 +65,9 @@ public class ImgSrcRu extends PluginForDecrypt {
 
     private Browser prepBrowser(Browser prepBr, Boolean neu) {
         if (plugin == null) {
-            plugin = JDUtilities.getPluginForHost("imgsrc.com");
+            plugin = JDUtilities.getPluginForHost("imgsrc.ru");
             if (plugin == null) {
-                throw new IllegalStateException("imgsrc.com hoster plugin not found!");
+                throw new IllegalStateException("imgsrc.ru hoster plugin not found!");
             }
             // set cross browser support
             ((jd.plugins.hoster.ImgSrcRu) plugin).setBrowser(br);
