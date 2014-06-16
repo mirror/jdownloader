@@ -729,6 +729,7 @@ OboomController_run_renew_title=Obnovte svůj účet OBOOM.com
 OboomController_run_renew_title_expired=Obnovte svůj účet OBOOM.com
 OboomController_run_renew_title_noaccount=Získat účet OBOOM.com
 OnSkipDueToAlreadyExistsAction_mark_successful=Přeskočit soubor a označit jako dokončené
+OnSkipDueToAlreadyExistsAction_mark_successful_mirror=Přeskočit soubor a označit jako dokončený, pokud je soubor zrcadlem
 OnSkipDueToAlreadyExistsAction_skip_file=Přeskočit soubor
 OpenDownloadFolderAction_actionPerformed_button_=Prozkoumat
 OpenDownloadFolderAction_actionPerformed_object_=Adresář pro stahování pro %s1
