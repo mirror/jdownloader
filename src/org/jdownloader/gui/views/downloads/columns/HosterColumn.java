@@ -116,16 +116,26 @@ public class HosterColumn extends ExtColumn<AbstractNode> {
             @Override
             public int compare(AbstractNode o1, AbstractNode o2) {
                 if (o1 instanceof AbstractPackageNode && o2 instanceof AbstractPackageNode) {
-                    long l1 = ((AbstractPackageNode<?, ?>) o1).getView().getDomainInfos().length;
-                    long l2 = ((AbstractPackageNode<?, ?>) o2).getView().getDomainInfos().length;
-                    if (l1 == l2) {
-                        return 0;
+                    DomainInfo[] dis1 = ((AbstractPackageNode<?, ?>) o1).getView().getDomainInfos();
+                    DomainInfo[] dis2 = ((AbstractPackageNode<?, ?>) o2).getView().getDomainInfos();
+
+                    for (int i = 0; i < Math.max(dis1.length, dis2.length); i++) {
+                        String d1 = i < dis1.length ? dis1[i].getTld() : "";
+                        String d2 = i < dis2.length ? dis2[i].getTld() : "";
+                        if (this.getSortOrderIdentifier() == ExtColumn.SORT_ASC) {
+                            int ret = d1.compareTo(d2);
+                            if (ret != 0) {
+                                return ret;
+                            }
+                        } else {
+                            int ret = d2.compareTo(d1);
+                            if (ret != 0) {
+                                return ret;
+                            }
+                        }
                     }
-                    if (this.getSortOrderIdentifier() == ExtColumn.SORT_ASC) {
-                        return l1 > l2 ? -1 : 1;
-                    } else {
-                        return l1 < l2 ? -1 : 1;
-                    }
+
+                    return 0;
                 } else if (o1 instanceof AbstractPackageChildrenNode && o2 instanceof AbstractPackageChildrenNode) {
                     String l1 = ((AbstractPackageChildrenNode<?>) o1).getDomainInfo().getTld();
                     String l2 = ((AbstractPackageChildrenNode<?>) o2).getDomainInfo().getTld();
