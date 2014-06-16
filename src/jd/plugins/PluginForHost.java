@@ -36,6 +36,7 @@ import jd.controlling.accountchecker.AccountCheckerThread;
 import jd.controlling.captcha.CaptchaSettings;
 import jd.controlling.captcha.SkipException;
 import jd.controlling.captcha.SkipRequest;
+import jd.controlling.downloadcontroller.SingleDownloadController;
 import jd.controlling.downloadcontroller.SingleDownloadController.WaitingQueueItem;
 import jd.controlling.linkcrawler.CrawledLink;
 import jd.http.Browser;
@@ -842,7 +843,26 @@ public abstract class PluginForHost extends Plugin {
     public void resetPluginGlobals() {
     }
 
+    /**
+     * JD2 only
+     * 
+     * @return
+     */
+    public boolean isAbort() {
+        final DownloadLink link = getDownloadLink();
+        if (link != null) {
+            final SingleDownloadController con = link.getDownloadLinkController();
+            if (con != null) {
+                return con.isAborting() || Thread.currentThread().isInterrupted();
+            }
+        }
+        return super.isAbort();
+    }
+
     protected void sleep(long i, DownloadLink downloadLink, final String message) throws PluginException {
+        if (downloadLink.getDownloadLinkController().isAborting()) {
+            throw new PluginException(LinkStatus.ERROR_RETRY);
+        }
         PluginProgress progress = new SleepPluginProgress(i, message);
         progress.setProgressSource(this);
         PluginProgress old = null;
@@ -855,7 +875,7 @@ public abstract class PluginForHost extends Plugin {
                 }
                 i -= 1000;
             }
-        } catch (InterruptedException e) {
+        } catch (final InterruptedException e) {
             throw new PluginException(LinkStatus.ERROR_RETRY);
         } finally {
             downloadLink.compareAndSetPluginProgress(progress, old);

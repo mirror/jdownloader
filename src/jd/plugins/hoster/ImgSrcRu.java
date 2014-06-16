@@ -215,12 +215,15 @@ public class ImgSrcRu extends PluginForHost {
         boolean failed = false;
         int repeat = 4;
         for (int i = 0; i <= repeat; i++) {
-            long meep = new Random().nextInt(4) * 1000;
             if (failed) {
-                Thread.sleep(meep);
+                final long meep = new Random().nextInt(4) * 1000;
+                sleep(meep, downloadLink);
                 failed = false;
             }
             try {
+                if (isAbort()) {
+                    throw new PluginException(LinkStatus.ERROR_RETRY);
+                }
                 br.getPage(url);
                 if (br.containsHTML(">This album has not been checked by the moderators yet\\.|<u>Proceed at your own risk</u>")) {
                     br.getPage(br.getURL() + "?warned=yeah");
@@ -270,6 +273,9 @@ public class ImgSrcRu extends PluginForHost {
                     // because one page grab could have multiple steps, you can not break after each if statement
                     break;
                 }
+            } catch (InterruptedException e) {
+                failed = true;
+                throw e;
             } catch (PluginException e) {
                 failed = true;
                 throw e;

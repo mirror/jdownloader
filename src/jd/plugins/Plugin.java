@@ -34,6 +34,7 @@ import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.SubConfiguration;
 import jd.controlling.downloadcontroller.SingleDownloadController;
+import jd.controlling.linkcrawler.LinkCrawler;
 import jd.controlling.linkcrawler.LinkCrawlerThread;
 import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
@@ -250,6 +251,19 @@ public abstract class Plugin implements ActionListener {
             return ((SingleDownloadController) currentThread).getProcessingPlugin();
         }
         return null;
+    }
+
+    public boolean isAbort() {
+        final Thread currentThread = Thread.currentThread();
+        if (currentThread instanceof LinkCrawlerThread) {
+            final LinkCrawlerThread lct = (LinkCrawlerThread) currentThread;
+            final LinkCrawler lc = lct.getCurrentLinkCrawler();
+            return currentThread.isInterrupted() || lc != null && lc.isCrawlingAllowed();
+        } else if (currentThread instanceof SingleDownloadController) {
+            final SingleDownloadController sdc = (SingleDownloadController) currentThread;
+            return sdc.isAborting() || currentThread.isInterrupted();
+        }
+        return currentThread.isInterrupted();
     }
 
     /**

@@ -561,11 +561,11 @@ public abstract class PluginForDecrypt extends Plugin {
      * @return
      */
     public boolean isAbort() {
-        LinkCrawlerAbort llinkCrawlerAbort = linkCrawlerAbort;
+        final LinkCrawlerAbort llinkCrawlerAbort = linkCrawlerAbort;
         if (llinkCrawlerAbort != null) {
-            return llinkCrawlerAbort.isAbort();
+            return llinkCrawlerAbort.isAbort() || Thread.currentThread().isInterrupted();
         }
-        return Thread.currentThread().isInterrupted();
+        return super.isAbort();
     }
 
     public void setCrawler(LinkCrawler linkCrawler) {
