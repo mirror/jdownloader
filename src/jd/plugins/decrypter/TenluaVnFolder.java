@@ -96,7 +96,7 @@ public class TenluaVnFolder extends PluginForDecrypt {
                 fp.addLinks(decryptedLinks);
             }
         } else {
-            String name = getJson("name", br.toString());
+            String name = getJson("n", br.toString());
             if (name == null) {
                 logger.warning("Decrypter broken for link: " + parameter);
                 return null;
