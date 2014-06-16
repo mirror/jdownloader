@@ -487,7 +487,8 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
         }
     }
 
-    public void moveOrAddAt(final CrawledPackage pkg, final List<CrawledLink> movechildren, final int index) {
+    @Override
+    public void moveOrAddAt(CrawledPackage pkg, final List<CrawledLink> movechildren, int moveChildrenindex, int pkgIndex) {
         QUEUE.add(new QueueAction<Void, RuntimeException>() {
 
             @Override
@@ -499,9 +500,7 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
             }
 
         });
-
-        super.moveOrAddAt(pkg, movechildren, index);
-
+        super.moveOrAddAt(pkg, movechildren, moveChildrenindex, pkgIndex);
     }
 
     public void addCrawledLink(final CrawledLink link) {
