@@ -59,7 +59,9 @@ public class Srnnks extends PluginForDecrypt {
             try {
                 Thread.sleep(FW_WAIT);
                 try {
-                    if (isAbort()) return;
+                    if (isAbort()) {
+                        return;
+                    }
                 } catch (final Throwable e) {
                     /* not available in old 09581 stable */
                 }
@@ -74,7 +76,9 @@ public class Srnnks extends PluginForDecrypt {
                     if (link != null) {
                         Thread.sleep(FW_WAIT);
                         try {
-                            if (isAbort()) return;
+                            if (isAbort()) {
+                                return;
+                            }
                         } catch (final Throwable e) {
                             /* not available in old 09581 stable */
                         }
@@ -109,7 +113,7 @@ public class Srnnks extends PluginForDecrypt {
     private static AtomicInteger    RUNNING                = new AtomicInteger(0);
     // Always use real-expire-seconds minus 2
     private int                     CAPTCHA_EXPIRE_SECONDS = 58;
-    private int                     CAPTCHA_MAXRETRIES     = 5;
+    private int                     CAPTCHA_MAXRETRIES     = 8;
 
     private synchronized static boolean limitsReached(final Browser br) throws IOException {
         int ret = -100;
@@ -126,7 +130,9 @@ public class Srnnks extends PluginForDecrypt {
 
             if (br.containsHTML("Du hast zu oft das Captcha falsch")) {
                 Srnnks.LATEST_BLOCK_DETECT.set(System.currentTimeMillis());
-                if (System.currentTimeMillis() - OldBlock < 60000) { return true; }
+                if (System.currentTimeMillis() - OldBlock < 60000) {
+                    return true;
+                }
                 if (System.currentTimeMillis() - OldReconnect < 15000) {
                     // redo the request
                     br.loadConnection(br.openRequestConnection(null));
@@ -137,7 +143,9 @@ public class Srnnks extends PluginForDecrypt {
             }
             if (br.containsHTML("Download-Limit")) {
                 Srnnks.LATEST_BLOCK_DETECT.set(System.currentTimeMillis());
-                if (System.currentTimeMillis() - OldBlock < 60000) { return true; }
+                if (System.currentTimeMillis() - OldBlock < 60000) {
+                    return true;
+                }
                 if (System.currentTimeMillis() - OldReconnect < 15000) {
                     // redo the request
                     br.loadConnection(br.openRequestConnection(null));
@@ -200,8 +208,9 @@ public class Srnnks extends PluginForDecrypt {
             String grab = br.getRegex("<p><strong>[\\w\\-\\.]+</strong><br />(.*?)<div class=\"post\\_details\">").getMatch(0);
             String[] links = new Regex(grab, "href=\"(http://[\\w\\.]*?serienjunkies\\.org/.*?)\" target").getColumn(0);
             if (links != null && links.length != 0) {
-                for (String link : links)
+                for (String link : links) {
                     decryptedLinks.add(createDownloadlink(link));
+                }
             }
             return decryptedLinks;
 
@@ -230,7 +239,9 @@ public class Srnnks extends PluginForDecrypt {
                     for (int i = 0; i < CAPTCHA_MAXRETRIES; i++) {
                         progress.setRange(100);
                         try {
-                            if (isAbort()) return new ArrayList<DownloadLink>(ret);
+                            if (isAbort()) {
+                                return new ArrayList<DownloadLink>(ret);
+                            }
                         } catch (final Throwable e) {
                             /* not available in old 09581 stable */
                         }
@@ -240,27 +251,35 @@ public class Srnnks extends PluginForDecrypt {
                                 synchronized (Srnnks.GLOBAL_LOCK) {
                                     Thread.sleep(FW_WAIT);
                                     try {
-                                        if (isAbort()) return new ArrayList<DownloadLink>(ret);
+                                        if (isAbort()) {
+                                            return new ArrayList<DownloadLink>(ret);
+                                        }
                                     } catch (final Throwable e) {
                                         /* not available in old 09581 stable */
                                     }
                                     this.br.getPage(parameter.getCryptedUrl());
                                 }
-                                if (Srnnks.limitsReached(this.br)) { return new ArrayList<DownloadLink>(ret); }
+                                if (Srnnks.limitsReached(this.br)) {
+                                    return new ArrayList<DownloadLink>(ret);
+                                }
 
                                 if (this.br.containsHTML("<FRAME SRC")) {
                                     // progress.setStatusText("Lade Downloadseitenframe");
                                     synchronized (Srnnks.GLOBAL_LOCK) {
                                         Thread.sleep(FW_WAIT);
                                         try {
-                                            if (isAbort()) return new ArrayList<DownloadLink>(ret);
+                                            if (isAbort()) {
+                                                return new ArrayList<DownloadLink>(ret);
+                                            }
                                         } catch (final Throwable e) {
                                             /* not available in old 09581 stable */
                                         }
                                         this.br.getPage(this.br.getRegex("<FRAME SRC=\"(.*?)\"").getMatch(0));
                                     }
                                 }
-                                if (Srnnks.limitsReached(this.br)) { return new ArrayList<DownloadLink>(ret); }
+                                if (Srnnks.limitsReached(this.br)) {
+                                    return new ArrayList<DownloadLink>(ret);
+                                }
                                 progress.increase(5);
 
                                 // linkendung kommt auch im action der form vor
@@ -279,7 +298,9 @@ public class Srnnks extends PluginForDecrypt {
                                 int bestdist = Integer.MAX_VALUE;
                                 if (forms != null) {
                                     for (final Form form1 : forms) {
-                                        if (form1.getAction() == null) continue;
+                                        if (form1.getAction() == null) {
+                                            continue;
+                                        }
                                         final int dist = EditDistance.damerauLevenshteinDistance(sublink, form1.getAction());
                                         if (dist < bestdist) {
                                             form = form1;
@@ -295,7 +316,9 @@ public class Srnnks extends PluginForDecrypt {
                                     form = null;
                                 }
 
-                                if (form == null) { throw new Exception("Serienjunkies Captcha Form konnte nicht gefunden werden!"); }
+                                if (form == null) {
+                                    throw new Exception("Serienjunkies Captcha Form konnte nicht gefunden werden!");
+                                }
                                 progress.increase(5);
 
                                 // das bild in der Form ist das captcha
@@ -314,7 +337,9 @@ public class Srnnks extends PluginForDecrypt {
                                     }
 
                                     crawlStatus = br.getRegex("<TITLE>.* \\- (.*?)</TITLE>").getMatch(0);
-                                    if (crawlStatus == null) crawlStatus = "";
+                                    if (crawlStatus == null) {
+                                        crawlStatus = "";
+                                    }
                                     crawlStatus += "(" + RUNNING.intValue() + " pending)";
                                     final File captcha = this.getLocalCaptchaFile(".png");
                                     String code = null;
@@ -324,7 +349,9 @@ public class Srnnks extends PluginForDecrypt {
                                         synchronized (Srnnks.GLOBAL_LOCK) {
                                             Thread.sleep(FW_WAIT);
                                             try {
-                                                if (isAbort()) return new ArrayList<DownloadLink>(ret);
+                                                if (isAbort()) {
+                                                    return new ArrayList<DownloadLink>(ret);
+                                                }
                                             } catch (final Throwable e) {
                                                 /* not available in old 09581 stable */
                                             }
@@ -336,7 +363,9 @@ public class Srnnks extends PluginForDecrypt {
                                             logger.warning("Dummy Captcha. wait 3 seconds");
                                             Thread.sleep(3000);
                                             try {
-                                                if (isAbort()) return new ArrayList<DownloadLink>(ret);
+                                                if (isAbort()) {
+                                                    return new ArrayList<DownloadLink>(ret);
+                                                }
                                             } catch (final Throwable e) {
                                                 /* not available in old 09581 stable */
                                             }
@@ -353,7 +382,9 @@ public class Srnnks extends PluginForDecrypt {
                                     } finally {
                                         captcha.delete();
                                     }
-                                    if (code == null) { return ret; }
+                                    if (code == null) {
+                                        return ret;
+                                    }
                                     if (code.length() != 3) {
                                         progress.setStatus(30);
                                         Thread.sleep(1100);
@@ -382,7 +413,9 @@ public class Srnnks extends PluginForDecrypt {
                             System.out.println(RUNNING.decrementAndGet());
                         }
 
-                        if (Srnnks.limitsReached(this.br)) { return new ArrayList<DownloadLink>(ret); }
+                        if (Srnnks.limitsReached(this.br)) {
+                            return new ArrayList<DownloadLink>(ret);
+                        }
                         if (this.br.getRedirectLocation() != null) {
                             ret.add(this.createDownloadlink(this.br.getRedirectLocation()));
                             progress.doFinalize();
@@ -418,7 +451,9 @@ public class Srnnks extends PluginForDecrypt {
                             synchronized (Srnnks.GLOBAL_LOCK) {
                                 for (int d = 0; d < actions.size(); d++) {
                                     try {
-                                        if (isAbort()) return new ArrayList<DownloadLink>(ret);
+                                        if (isAbort()) {
+                                            return new ArrayList<DownloadLink>(ret);
+                                        }
                                     } catch (final Throwable e) {
                                         /* not available in old 09581 stable */
                                     }
@@ -428,7 +463,9 @@ public class Srnnks extends PluginForDecrypt {
                             }
 
                             // wenn keine links drinnen sind ist bestimmt was mit dem captcha schief gegangen einfach nochmal versuchen
-                            if (ret.size() != 0) { return ret; }
+                            if (ret.size() != 0) {
+                                return ret;
+                            }
                         }
 
                     }

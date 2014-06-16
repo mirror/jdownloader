@@ -4,7 +4,7 @@ import java.io.File;
 
 import jd.plugins.Plugin;
 
-import org.appwork.utils.StringUtils;
+import org.jdownloader.captcha.v2.solverjob.ResponseList;
 
 public abstract class BasicCaptchaChallenge extends ImageCaptchaChallenge<String> {
 
@@ -14,8 +14,8 @@ public abstract class BasicCaptchaChallenge extends ImageCaptchaChallenge<String
     }
 
     public boolean isSolved() {
-        if (getResult() == null) return false;
-        return StringUtils.isNotEmpty(getResult().getValue());
+        final ResponseList<String> results = getResult();
+        return results != null && results.getValue() != null;
     }
 
 }
