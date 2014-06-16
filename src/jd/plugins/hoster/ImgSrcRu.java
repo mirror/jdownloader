@@ -16,8 +16,6 @@
 
 package jd.plugins.hoster;
 
-import java.util.Random;
-
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.http.Browser;
@@ -210,85 +208,51 @@ public class ImgSrcRu extends PluginForHost {
         dl.startDownload();
     }
 
-    private boolean getPage(String url, DownloadLink downloadLink) throws Exception {
-        // if (url == null || parameter == null) return false;
-        boolean failed = false;
-        int repeat = 4;
-        for (int i = 0; i <= repeat; i++) {
-            if (failed) {
-                final long meep = new Random().nextInt(4) * 1000;
-                sleep(meep, downloadLink);
-                failed = false;
-            }
-            try {
-                if (isAbort()) {
-                    throw new PluginException(LinkStatus.ERROR_RETRY);
-                }
-                br.getPage(url);
-                if (br.containsHTML(">This album has not been checked by the moderators yet\\.|<u>Proceed at your own risk</u>")) {
-                    br.getPage(br.getURL() + "?warned=yeah");
-                }
-                // needs to be before password
-                if (br.containsHTML(">Album foreword:.+Continue to album >></a>")) {
-                    final String newLink = br.getRegex(">shortcut\\.add\\(\"Right\",function\\(\\) \\{window\\.location=\\'(http://imgsrc\\.ru/[^<>\"\\'/]+/[a-z0-9]+\\.html(\\?pwd=([a-z0-9]{32})?)?)\\'").getMatch(0);
-                    if (newLink == null) {
-                        logger.warning("Couldn't process Album forward");
-                        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                    }
-                    br.getPage(newLink);
-                }
-                if (br.containsHTML(">Album owner has protected his work from unauthorized access")) {
-                    Form pwForm = br.getFormbyProperty("name", "passchk");
-                    if (pwForm == null) {
-                        logger.warning("Password form finder failed!");
-                        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                    }
-                    if (password == null) {
-                        password = downloadLink.getStringProperty("password");
-                        if (password == null) {
-                            password = getUserInput("Enter password for link:", downloadLink);
-                            if (password == null || password.equals("")) {
-                                logger.info("User abored/entered blank password");
-                                throw new PluginException(LinkStatus.ERROR_FATAL);
-                            }
-                        }
-                    }
-                    pwForm.put("pwd", password);
-                    br.submitForm(pwForm);
-                    pwForm = br.getFormbyProperty("name", "passchk");
-                    if (pwForm != null) {
-                        downloadLink.setProperty("password", Property.NULL);
-                        password = null;
-                        failed = true;
-                        continue;
-                    }
-                    downloadLink.setProperty("password", password);
-                    break;
-                }
-                if (br.getURL().equals("http://imgsrc.ru/")) {
-                    // link has been removed!
-                    throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-                }
-                if (br.getURL().contains(url) || !failed) {
-                    // because one page grab could have multiple steps, you can not break after each if statement
-                    break;
-                }
-            } catch (InterruptedException e) {
-                failed = true;
-                throw e;
-            } catch (PluginException e) {
-                failed = true;
-                throw e;
-            } catch (Throwable e) {
-                failed = true;
-                continue;
-            }
+    private void getPage(String url, DownloadLink downloadLink) throws Exception {
+        if (url == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        if (failed) {
-            logger.warning("Exausted retry getPage count");
-            throw new PluginException(LinkStatus.ERROR_RETRY);
+        br.getPage(url);
+        if (br.containsHTML(">This album has not been checked by the moderators yet\\.|<u>Proceed at your own risk</u>")) {
+            br.getPage(br.getURL() + "?warned=yeah");
         }
-        return true;
+        // needs to be before password
+        if (br.containsHTML(">Album foreword:.+Continue to album >></a>")) {
+            final String newLink = br.getRegex(">shortcut\\.add\\(\"Right\",function\\(\\) \\{window\\.location=\\'(http://imgsrc\\.ru/[^<>\"\\'/]+/[a-z0-9]+\\.html(\\?pwd=([a-z0-9]{32})?)?)\\'").getMatch(0);
+            if (newLink == null) {
+                logger.warning("Couldn't process Album forward");
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
+            br.getPage(newLink);
+        }
+        if (br.containsHTML(">Album owner has protected his work from unauthorized access")) {
+            Form pwForm = br.getFormbyProperty("name", "passchk");
+            if (pwForm == null) {
+                logger.warning("Password form finder failed!");
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
+            if (password == null) {
+                password = downloadLink.getStringProperty("password");
+                if (password == null) {
+                    password = getUserInput("Enter password for link:", downloadLink);
+                    if (password == null || password.equals("")) {
+                        logger.info("User abored/entered blank password");
+                        throw new PluginException(LinkStatus.ERROR_FATAL);
+                    }
+                }
+            }
+            pwForm.put("pwd", password);
+            br.submitForm(pwForm);
+            pwForm = br.getFormbyProperty("name", "passchk");
+            if (pwForm != null) {
+                downloadLink.setProperty("password", Property.NULL);
+                password = null;
+            }
+            downloadLink.setProperty("password", password);
+        } else if (br.getURL().equals("http://imgsrc.ru/")) {
+            // link has been removed!
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
     }
 
     @Override
