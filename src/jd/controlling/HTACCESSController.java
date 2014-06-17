@@ -16,13 +16,16 @@
 
 package jd.controlling;
 
-import jd.controlling.authentication.AuthenticationController;
-import jd.controlling.authentication.AuthenticationInfo;
-import jd.controlling.authentication.AuthenticationInfo.Type;
+import java.util.List;
+
 import jd.http.Browser;
 
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.logging.Log;
+import org.jdownloader.auth.AuthenticationController;
+import org.jdownloader.auth.AuthenticationInfo;
+import org.jdownloader.auth.AuthenticationInfo.Type;
+import org.jdownloader.auth.Login;
 
 /**
  * @Deprecated Only here for stable plugin compatibility
@@ -35,13 +38,17 @@ public class HTACCESSController {
     }
 
     public String get(final String url) {
-        String[] ret = AuthenticationController.getInstance().getLogins(url);
-        if (ret == null) return null;
-        return ret[0] + ":" + ret[1];
+        List<Login> ret = AuthenticationController.getInstance().getSortedLoginsList(url);
+        if (ret == null || ret.size() == 0) {
+            return null;
+        }
+        return ret.get(0).getUsername() + ":" + ret.get(0).getPassword();
     }
 
     public void addValidatedAuthentication(String url, String username, String password) {
-        if (StringUtils.isEmpty(url)) return;
+        if (StringUtils.isEmpty(url)) {
+            return;
+        }
         AuthenticationInfo.Type type = null;
         if (url.startsWith("ftp")) {
             type = Type.FTP;

@@ -561,4 +561,13 @@ public interface JdownloaderTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "%s2: Connection to %s1 failed" })
     String ConnectExceptionInPluginBan_plugin(String proxy, String plugin);
 
+    @Default(lngs = { "en" }, values = { "Authentication is required!" })
+    String Plugin_requestLogins_message();
+
+    @Default(lngs = { "en" }, values = { "Wrong username!" })
+    String plugins_errors_wrongusername();
+
+    @Default(lngs = { "en" }, values = { "A username and a password is required to download this file. Please enter the credentials below." })
+    String DirectHTTP_getBasicAuth_message();
+
 }

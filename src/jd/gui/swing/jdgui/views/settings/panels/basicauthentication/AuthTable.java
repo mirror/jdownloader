@@ -5,10 +5,10 @@ import java.awt.event.MouseEvent;
 
 import javax.swing.JPopupMenu;
 
-import jd.controlling.authentication.AuthenticationInfo;
 import jd.gui.swing.jdgui.BasicJDTable;
 
 import org.appwork.swing.exttable.ExtColumn;
+import org.jdownloader.auth.AuthenticationInfo;
 
 public class AuthTable extends BasicJDTable<AuthenticationInfo> {
     private static final long serialVersionUID = 1L;

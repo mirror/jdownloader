@@ -468,22 +468,34 @@ public class DirectHTTP extends PluginForHost {
         return "";
     }
 
-    private String[] getBasicAuth(final DownloadLink link) {
-        String url;
-        if (link.getLinkType() == DownloadLink.LINKTYPE_CONTAINER) {
-            url = link.getHost();
-        } else {
-            url = link.getBrowserUrl();
-        }
+    private String[] getBasicAuth(final DownloadLink link) throws PluginException {
         String username = null;
         String password = null;
+
         try {
-            username = Plugin.getUserInput(JDL.LF(DirectHTTP.JDL_PREFIX + "username", "Username (BasicAuth) for %s", url), link);
-            password = Plugin.getUserInput(JDL.LF(DirectHTTP.JDL_PREFIX + "password", "Password (BasicAuth) for %s", url), link);
-        } catch (final Exception e) {
-            return null;
+            // jd2
+
+            org.jdownloader.auth.Login logins = requestLogins(org.jdownloader.translate._JDT._.DirectHTTP_getBasicAuth_message(), link);
+            return new String[] { logins.toBasicAuth(), logins.getUsername(), logins.getPassword() };
+        } catch (PluginException e) {
+            throw e;
+        } catch (Throwable t) {
+            // jd1
+            String url;
+            if (link.getLinkType() == DownloadLink.LINKTYPE_CONTAINER) {
+                url = link.getHost();
+            } else {
+                url = link.getBrowserUrl();
+            }
+
+            try {
+                username = Plugin.getUserInput(JDL.LF(DirectHTTP.JDL_PREFIX + "username", "Username (BasicAuth) for %s", url), link);
+                password = Plugin.getUserInput(JDL.LF(DirectHTTP.JDL_PREFIX + "password", "Password (BasicAuth) for %s", url), link);
+            } catch (final Exception e) {
+                return null;
+            }
+            return new String[] { "Basic " + Encoding.Base64Encode(username + ":" + password), username, password };
         }
-        return new String[] { "Basic " + Encoding.Base64Encode(username + ":" + password), username, password };
     }
 
     @Override
@@ -622,9 +634,20 @@ public class DirectHTTP extends PluginForHost {
             /* convert property to auth */
             pwTries.add("Basic " + Encoding.Base64Encode(authProperty));
         }
-        if ((authSaved = HTACCESSController.getInstance().get(downloadLink.getDownloadURL())) != null) {
-            /* use auth from saved ones */
-            pwTries.add("Basic " + Encoding.Base64Encode(authSaved));
+
+        try {
+            // jd2 only
+
+            for (org.jdownloader.auth.Login l : org.jdownloader.auth.AuthenticationController.getInstance().getSortedLoginsList(downloadLink.getDownloadURL())) {
+                pwTries.add(l.toBasicAuth());
+            }
+        } catch (Throwable e) {
+
+            // /jd1
+            if ((authSaved = HTACCESSController.getInstance().get(downloadLink.getDownloadURL())) != null) {
+                /* use auth from saved ones */
+                pwTries.add("Basic " + Encoding.Base64Encode(authSaved));
+            }
         }
         this.br.setFollowRedirects(true);
         URLConnectionAdapter urlConnection = null;
@@ -654,7 +677,9 @@ public class DirectHTTP extends PluginForHost {
                         throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
                     }
                     urlConnection.disconnect();
+                    invalidateLogins(pw, downloadLink);
                 } else {
+                    validateLogins(downloadLink, pw);
                     break;
                 }
             }
@@ -671,6 +696,8 @@ public class DirectHTTP extends PluginForHost {
                     throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND, JDL.L("plugins.hoster.httplinks.errors.basicauthneeded", "BasicAuth needed"));
                 }
                 HTACCESSController.getInstance().addValidatedAuthentication(downloadLink.getDownloadURL(), basicauthInfo[1], basicauthInfo[2]);
+                validateLogins(downloadLink, basicauthInfo[1], basicauthInfo[2]);
+
             }
             if (urlConnection.getResponseCode() == 404 || !urlConnection.isOK()) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
@@ -791,6 +818,39 @@ public class DirectHTTP extends PluginForHost {
             }
         }
         throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+    }
+
+    private void validateLogins(DownloadLink downloadLink, String basicAuth) {
+        try {
+
+            org.jdownloader.auth.AuthenticationController.getInstance().validate(new org.jdownloader.auth.BasicAuth(basicAuth), downloadLink.getDownloadURL());
+        } catch (org.jdownloader.auth.InvalidBasicAuthFormatException e) {
+
+        } catch (Throwable e) {
+            // jd1
+        }
+    }
+
+    private void validateLogins(DownloadLink downloadLink, String username, String password) {
+        try {
+
+            org.jdownloader.auth.AuthenticationController.getInstance().validate(new org.jdownloader.auth.BasicAuth(username, password), downloadLink.getDownloadURL());
+            // } catch (org.jdownloader.auth.InvalidBasicAuthFormatException e) {
+
+        } catch (Throwable e) {
+            // jd1
+        }
+    }
+
+    private void invalidateLogins(String basicAuth, DownloadLink downloadLink) {
+        try {
+
+            org.jdownloader.auth.AuthenticationController.getInstance().invalidate(new org.jdownloader.auth.BasicAuth(basicAuth), downloadLink.getDownloadURL());
+        } catch (org.jdownloader.auth.InvalidBasicAuthFormatException e) {
+
+        } catch (Throwable e) {
+            // jd1
+        }
     }
 
     /**

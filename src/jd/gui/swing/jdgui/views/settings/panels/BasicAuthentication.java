@@ -19,11 +19,11 @@ package jd.gui.swing.jdgui.views.settings.panels;
 import javax.swing.ImageIcon;
 
 import jd.controlling.TaskQueue;
-import jd.controlling.authentication.AuthenticationController;
 import jd.gui.swing.jdgui.views.settings.panels.basicauthentication.BasicAuthenticationPanel;
 
 import org.appwork.utils.event.queue.Queue.QueuePriority;
 import org.appwork.utils.event.queue.QueueAction;
+import org.jdownloader.auth.AuthenticationController;
 import org.jdownloader.gui.settings.AbstractConfigPanel;
 import org.jdownloader.images.NewTheme;
 import org.jdownloader.translate._JDT;

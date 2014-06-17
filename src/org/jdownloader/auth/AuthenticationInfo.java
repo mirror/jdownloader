@@ -1,4 +1,4 @@
-package jd.controlling.authentication;
+package org.jdownloader.auth;
 
 import java.util.Locale;
 
@@ -14,7 +14,26 @@ public class AuthenticationInfo implements Storable {
         HTTP
     }
 
-    private boolean enabled = true;
+    private long created = System.currentTimeMillis();
+
+    public long getCreated() {
+        return created;
+    }
+
+    public void setCreated(long created) {
+        this.created = created;
+    }
+
+    public long getLastValidated() {
+        return lastValidated;
+    }
+
+    public void setLastValidated(long lastValidated) {
+        this.lastValidated = lastValidated;
+    }
+
+    private long    lastValidated = -1;
+    private boolean enabled       = true;
 
     public boolean isEnabled() {
         return enabled;

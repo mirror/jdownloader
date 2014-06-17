@@ -47,10 +47,13 @@ import org.appwork.uio.CloseReason;
 import org.appwork.uio.UIOManager;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.net.httpconnection.HTTPConnectionUtils;
+import org.jdownloader.auth.Login;
 import org.jdownloader.gui.dialog.AskCrawlerPasswordDialogInterface;
 import org.jdownloader.gui.dialog.AskDownloadPasswordDialogInterface;
 import org.jdownloader.gui.dialog.AskForCryptedLinkPasswordDialog;
 import org.jdownloader.gui.dialog.AskForPasswordDialog;
+import org.jdownloader.gui.dialog.AskForUserAndPasswordDialog;
+import org.jdownloader.gui.dialog.AskUsernameAndPasswordDialogInterface;
 import org.jdownloader.images.NewTheme;
 import org.jdownloader.logging.LogController;
 import org.jdownloader.plugins.UserIOProgress;
@@ -267,6 +270,44 @@ public abstract class Plugin implements ActionListener {
     }
 
     /**
+     * Show a USername + password dialog
+     * 
+     * @param link
+     * @return
+     * @throws PluginException
+     */
+    protected Login requestLogins(String message, DownloadLink link) throws PluginException {
+        if (message == null) {
+            message = _JDT._.Plugin_requestLogins_message();
+        }
+        UserIOProgress prg = new UserIOProgress(message);
+        prg.setProgressSource(this);
+        PluginProgress old = null;
+        try {
+            old = link.setPluginProgress(prg);
+            AskUsernameAndPasswordDialogInterface handle = UIOManager.I().show(AskUsernameAndPasswordDialogInterface.class, new AskForUserAndPasswordDialog(message, link));
+            if (handle.getCloseReason() == CloseReason.OK) {
+                String password = handle.getPassword();
+
+                if (StringUtils.isEmpty(password)) {
+                    throw new PluginException(LinkStatus.ERROR_FATAL, _JDT._.plugins_errors_wrongpassword());
+                }
+
+                String username = handle.getUsername();
+                if (StringUtils.isEmpty(username)) {
+                    throw new PluginException(LinkStatus.ERROR_FATAL, _JDT._.plugins_errors_wrongusername());
+                }
+                return new Login(username, password);
+            } else {
+                throw new PluginException(LinkStatus.ERROR_FATAL, _JDT._.plugins_errors_wrongpassword());
+            }
+
+        } finally {
+            link.compareAndSetPluginProgress(prg, old);
+        }
+    }
+
+    /**
      * 
      * @param message
      *            The message to be displayed or <code>null</code> to display a Password prompt
@@ -276,7 +317,10 @@ public abstract class Plugin implements ActionListener {
      * @throws PluginException
      *             if the user aborts the input
      */
-    public static String getUserInput(final String message, final DownloadLink link) throws PluginException {
+    public static String getUserInput(String message, final DownloadLink link) throws PluginException {
+        if (message == null) {
+            message = "Please enter the password to continue...";
+        }
         UserIOProgress prg = new UserIOProgress(message);
         prg.setProgressSource(getCurrentActivePlugin());
         PluginProgress old = null;

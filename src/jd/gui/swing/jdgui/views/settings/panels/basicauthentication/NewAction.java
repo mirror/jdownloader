@@ -3,10 +3,10 @@ package jd.gui.swing.jdgui.views.settings.panels.basicauthentication;
 import java.awt.event.ActionEvent;
 
 import jd.controlling.TaskQueue;
-import jd.controlling.authentication.AuthenticationController;
-import jd.controlling.authentication.AuthenticationInfo;
 
 import org.appwork.utils.event.queue.QueueAction;
+import org.jdownloader.auth.AuthenticationController;
+import org.jdownloader.auth.AuthenticationInfo;
 import org.jdownloader.gui.views.components.AbstractAddAction;
 
 public class NewAction extends AbstractAddAction {

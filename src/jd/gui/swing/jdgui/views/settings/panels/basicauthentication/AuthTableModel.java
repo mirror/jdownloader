@@ -8,9 +8,6 @@ import javax.swing.DefaultComboBoxModel;
 import javax.swing.JTable;
 import javax.swing.table.JTableHeader;
 
-import jd.controlling.authentication.AuthenticationController;
-import jd.controlling.authentication.AuthenticationInfo;
-import jd.controlling.authentication.AuthenticationInfo.Type;
 
 import org.appwork.swing.exttable.ExtTableHeaderRenderer;
 import org.appwork.swing.exttable.ExtTableModel;
@@ -20,6 +17,9 @@ import org.appwork.swing.exttable.columns.ExtPasswordEditorColumn;
 import org.appwork.swing.exttable.columns.ExtTextColumn;
 import org.appwork.utils.event.predefined.changeevent.ChangeEvent;
 import org.appwork.utils.event.predefined.changeevent.ChangeListener;
+import org.jdownloader.auth.AuthenticationController;
+import org.jdownloader.auth.AuthenticationInfo;
+import org.jdownloader.auth.AuthenticationInfo.Type;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.images.NewTheme;
 

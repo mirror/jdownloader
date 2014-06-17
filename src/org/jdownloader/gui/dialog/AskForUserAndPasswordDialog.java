@@ -17,25 +17,26 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 
 import org.appwork.swing.MigPanel;
+import org.appwork.swing.components.ExtPasswordField;
 import org.appwork.uio.UIOManager;
 import org.appwork.utils.BinaryLogic;
 import org.appwork.utils.StringUtils;
+import org.appwork.utils.swing.EDTHelper;
 import org.appwork.utils.swing.SwingUtils;
 import org.appwork.utils.swing.dialog.Dialog;
 import org.appwork.utils.swing.dialog.InputDialog;
 import org.jdownloader.DomainInfo;
-import org.jdownloader.gui.IconKey;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.gui.views.SelectionInfo;
 import org.jdownloader.gui.views.SelectionInfo.PackageView;
 import org.jdownloader.gui.views.downloads.table.DownloadsTableModel;
-import org.jdownloader.images.AbstractIcon;
 
-public class AskForPasswordDialog extends InputDialog implements AskDownloadPasswordDialogInterface {
-    private DownloadLink downloadLink;
+public class AskForUserAndPasswordDialog extends InputDialog implements AskUsernameAndPasswordDialogInterface {
+    private DownloadLink     downloadLink;
+    private ExtPasswordField password;
 
-    public AskForPasswordDialog(String message, DownloadLink link) {
-        super(UIOManager.LOGIC_COUNTDOWN, _GUI._.AskForPasswordDialog_AskForPasswordDialog_title_(), message, null, new AbstractIcon(IconKey.ICON_PASSWORD, 32), _GUI._.lit_continue(), null);
+    public AskForUserAndPasswordDialog(String message, DownloadLink link) {
+        super(UIOManager.LOGIC_COUNTDOWN | Dialog.STYLE_HIDE_ICON, _GUI._.AskForUserAndPasswordDialog_AskForUserAndPasswordDialog_title_(), message, null, null, _GUI._.lit_continue(), null);
         this.downloadLink = link;
         setTimeout(10 * 60 * 1000);
     }
@@ -82,6 +83,7 @@ public class AskForPasswordDialog extends InputDialog implements AskDownloadPass
             p.add(SwingUtils.toBold(new JLabel(_GUI._.IfFileExistsDialog_layoutDialogContent_package())), "split 2,sizegroup left,alignx left");
             p.add(leftLabel(packagename));
         }
+
         p.add(SwingUtils.toBold(new JLabel(_GUI._.lit_hoster())), "split 2,sizegroup left,alignx left");
         DomainInfo di = downloadLink.getDomainInfo();
         JLabel ret = new JLabel(di.getTld());
@@ -92,8 +94,14 @@ public class AskForPasswordDialog extends InputDialog implements AskDownloadPass
         input = getSmallInputComponent();
         // this.input.setBorder(BorderFactory.createEtchedBorder());
         input.setText(defaultMessage);
-        p.add(SwingUtils.toBold(new JLabel(_GUI._.ExtractionListenerList_layoutDialogContent_password())), "split 2,sizegroup left,alignx left");
+        p.add(SwingUtils.toBold(new JLabel(_GUI._.lit_username())), "split 2,sizegroup left,alignx left");
         p.add((JComponent) input, "w 450,pushx,growx");
+
+        password = new ExtPasswordField();
+        password.addKeyListener(this);
+        password.addMouseListener(this);
+        p.add(SwingUtils.toBold(new JLabel(_GUI._.lit_password())), "split 2,sizegroup left,alignx left");
+        p.add(password, "w 450,pushx,growx");
         getDialog().addWindowFocusListener(new WindowFocusListener() {
 
             @Override
@@ -145,7 +153,7 @@ public class AskForPasswordDialog extends InputDialog implements AskDownloadPass
 
     @Override
     public String getLinkHost() {
-        return downloadLink.getDomainInfo().getTld();
+        return downloadLink.getHost();
     }
 
     @Override
@@ -154,5 +162,25 @@ public class AskForPasswordDialog extends InputDialog implements AskDownloadPass
             return null;
         }
         return downloadLink.getParentNode().getName();
+    }
+
+    @Override
+    public String getUsername() {
+        return new EDTHelper<String>() {
+            @Override
+            public String edtRun() {
+                return input.getText();
+            }
+        }.getReturnValue();
+    }
+
+    @Override
+    public String getPassword() {
+        return new EDTHelper<String>() {
+            @Override
+            public String edtRun() {
+                return password.getText();
+            }
+        }.getReturnValue();
     }
 }

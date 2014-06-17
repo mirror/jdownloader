@@ -5046,4 +5046,14 @@ public interface GuiTranslation extends TranslateInterface {
 
     @Default(lngs = { "en" }, values = { "Add a Premium Account..." })
     String StatusBarImpl_add_premium();
+
+    @Default(lngs = { "en" }, values = { "Please enter username and password..." })
+    String AskForUserAndPasswordDialog_AskForUserAndPasswordDialog_title_();
+
+    @Default(lngs = { "en" }, values = { "Username" })
+    String lit_username();
+
+    @Default(lngs = { "en" }, values = { "Password" })
+    String lit_password();
+
 }
