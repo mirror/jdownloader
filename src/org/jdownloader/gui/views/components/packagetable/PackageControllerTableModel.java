@@ -92,7 +92,7 @@ public abstract class PackageControllerTableModel<PackageType extends AbstractPa
     private final AtomicBoolean      repaintFired          = new AtomicBoolean(false);
     private final AtomicBoolean      structureChangedFired = new AtomicBoolean(false);
 
-    private boolean                  hideSinglePackage     = false;
+    private volatile boolean         hideSinglePackage     = false;
 
     public boolean isHideSinglePackage() {
         return hideSinglePackage;
@@ -102,18 +102,18 @@ public abstract class PackageControllerTableModel<PackageType extends AbstractPa
         super(id);
         storage = getStorage();
         resetSorting();
-        hideSinglePackage = CFG_GUI.HIDE_SINGLE_CHILD_PACKAGES.isEnabled();
         CFG_GUI.HIDE_SINGLE_CHILD_PACKAGES.getEventSender().addListener(new GenericConfigEventListener<Boolean>() {
 
             @Override
             public void onConfigValueModified(KeyHandler<Boolean> keyHandler, Boolean newValue) {
-                hideSinglePackage = newValue == Boolean.TRUE;
+                hideSinglePackage = Boolean.TRUE.equals(newValue);
             }
 
             @Override
             public void onConfigValidatorError(KeyHandler<Boolean> keyHandler, Boolean invalidValue, ValidationException validateException) {
             }
         }, false);
+        hideSinglePackage = CFG_GUI.HIDE_SINGLE_CHILD_PACKAGES.isEnabled();
         this.pc = pc;
         asyncRefresh = new DelayedRunnable(queue, 150l, 500l) {
 
