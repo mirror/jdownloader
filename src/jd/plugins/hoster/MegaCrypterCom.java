@@ -344,9 +344,10 @@ public class MegaCrypterCom extends PluginForHost {
         FileInputStream fis = null;
         FileOutputStream fos = null;
         boolean deleteDst = true;
+        PluginProgress progress = null;
         try {
             long total = src.length();
-            final PluginProgress progress = new PluginProgress(0, total, null) {
+            progress = new PluginProgress(0, total, null) {
                 long lastCurrent    = -1;
                 long startTimeStamp = -1;
 
@@ -384,7 +385,7 @@ public class MegaCrypterCom extends PluginForHost {
             progress.setProgressSource(this);
             progress.setIcon(NewTheme.I().getIcon("lock", 16));
             link.getLinkStatus().setStatusText("Decrypting");
-            link.setPluginProgress(progress);
+            link.addPluginProgress(progress);
             fis = new FileInputStream(src);
             if (tmp != null) {
                 fos = new FileOutputStream(tmp);
@@ -427,7 +428,6 @@ public class MegaCrypterCom extends PluginForHost {
                 tmp.renameTo(dst);
             }
         } finally {
-            link.setPluginProgress(null);
             try {
                 fis.close();
             } catch (final Throwable e) {
@@ -436,6 +436,7 @@ public class MegaCrypterCom extends PluginForHost {
                 fos.close();
             } catch (final Throwable e) {
             }
+            link.removePluginProgress(progress);
             if (deleteDst) {
                 if (tmp != null) {
                     tmp.delete();

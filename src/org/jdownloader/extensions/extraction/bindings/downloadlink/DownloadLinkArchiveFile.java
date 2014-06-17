@@ -53,11 +53,17 @@ public class DownloadLinkArchiveFile implements ArchiveFile {
 
     @Override
     public boolean equals(Object obj) {
-        if (obj == null || !(obj instanceof DownloadLinkArchiveFile)) return false;
-        if (obj == this) return true;
+        if (obj == null || !(obj instanceof DownloadLinkArchiveFile)) {
+            return false;
+        }
+        if (obj == this) {
+            return true;
+        }
         // this equals is used by the build method of ExtractionExtension. If we have one matching link, the archivefile matches as well
         for (DownloadLink dl : ((DownloadLinkArchiveFile) obj).downloadLinks) {
-            if (downloadLinks.contains(dl)) return true;
+            if (downloadLinks.contains(dl)) {
+                return true;
+            }
         }
         return false;
     }
@@ -65,7 +71,9 @@ public class DownloadLinkArchiveFile implements ArchiveFile {
     @Override
     public boolean isComplete() {
         for (DownloadLink downloadLink : downloadLinks) {
-            if ((SkipReason.FILE_EXISTS.equals(downloadLink.getSkipReason()) || FinalLinkState.FAILED_EXISTS.equals(downloadLink.getFinalLinkState()) || FinalLinkState.CheckFinished(downloadLink.getFinalLinkState())) && new File(filePath).exists()) return true;
+            if ((SkipReason.FILE_EXISTS.equals(downloadLink.getSkipReason()) || FinalLinkState.FAILED_EXISTS.equals(downloadLink.getFinalLinkState()) || FinalLinkState.CheckFinished(downloadLink.getFinalLinkState())) && new File(filePath).exists()) {
+                return true;
+            }
         }
         return false;
     }
@@ -92,27 +100,31 @@ public class DownloadLinkArchiveFile implements ArchiveFile {
         for (DownloadLink downloadLink : downloadLinks) {
             downloadLink.setExtractionStatus(status);
             PluginProgress progress = downloadLink.getPluginProgress();
-            if (progress != null && progress instanceof ExtractionProgress) ((ExtractionProgress) progress).setMessage(status.getExplanation());
+            if (progress != null && progress instanceof ExtractionProgress) {
+                ((ExtractionProgress) progress).setMessage(status.getExplanation());
+            }
         }
     }
 
     public void setMessage(ExtractionController controller, String text) {
         for (DownloadLink downloadLink : downloadLinks) {
             PluginProgress progress = downloadLink.getPluginProgress();
-            if (progress != null && progress instanceof ExtractionProgress) ((ExtractionProgress) progress).setMessage(text);
+            if (progress != null && progress instanceof ExtractionProgress) {
+                ((ExtractionProgress) progress).setMessage(text);
+            }
         }
     }
 
     public void setProgress(ExtractionController controller, long value, long max, Color color) {
-        PluginProgress progress = controller.getExtractionProgress();
+        final PluginProgress progress = controller.getExtractionProgress();
         progress.updateValues(value, max);
         progress.setColor(color);
         for (DownloadLink downloadLink : downloadLinks) {
             if (value <= 0 && max <= 0) {
-                downloadLink.compareAndSetPluginProgress(progress, null);
+                downloadLink.addPluginProgress(progress);
             } else {
-                if (downloadLink.getPluginProgress() == progress || downloadLink.compareAndSetPluginProgress(null, progress)) {
-                    FilePackageView view = downloadLink.getParentNode().getView();
+                if (downloadLink.getPluginProgress() == progress || downloadLink.hasPluginProgress(progress)) {
+                    final FilePackageView view = downloadLink.getParentNode().getView();
                     if (view != null) {
                         view.requestUpdate();
                     }
@@ -145,7 +157,9 @@ public class DownloadLinkArchiveFile implements ArchiveFile {
 
     public Object getProperty(String key) {
         for (DownloadLink downloadLink : downloadLinks) {
-            if (downloadLink.hasProperty(key)) { return downloadLink.getProperty(key); }
+            if (downloadLink.hasProperty(key)) {
+                return downloadLink.getProperty(key);
+            }
         }
         return null;
     }
@@ -160,10 +174,14 @@ public class DownloadLinkArchiveFile implements ArchiveFile {
                 ret = AvailableStatus.UNCHECKED;
                 break;
             case UNCHECKABLE:
-                if (ret != AvailableStatus.UNCHECKED) ret = AvailableStatus.UNCHECKABLE;
+                if (ret != AvailableStatus.UNCHECKED) {
+                    ret = AvailableStatus.UNCHECKABLE;
+                }
                 break;
             case FALSE:
-                if (ret == null) ret = AvailableStatus.FALSE;
+                if (ret == null) {
+                    ret = AvailableStatus.FALSE;
+                }
                 break;
             }
         }
@@ -173,7 +191,7 @@ public class DownloadLinkArchiveFile implements ArchiveFile {
     @Override
     public void onCleanedUp(final ExtractionController controller) {
         for (final DownloadLink downloadLink : downloadLinks) {
-            downloadLink.compareAndSetPluginProgress(controller.getExtractionProgress(), null);
+            downloadLink.removePluginProgress(controller.getExtractionProgress());
             switch (CFG_GENERAL.CFG.getCleanupAfterDownloadAction()) {
             case CLEANUP_IMMEDIATELY:
                 DownloadController.getInstance().getQueue().add(new QueueAction<Void, RuntimeException>() {

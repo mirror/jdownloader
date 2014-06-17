@@ -3,7 +3,6 @@ package org.jdownloader.gui.views.components.packagetable.context;
 import java.awt.Color;
 import java.awt.event.ActionEvent;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
 
 import jd.controlling.TaskQueue;
@@ -26,11 +25,9 @@ import org.jdownloader.plugins.PluginTaskID;
 public class CheckStatusAction extends CustomizableTableContextAppAction {
 
     public static final class LinkCheckProgress extends PluginProgress {
-        private DownloadLink link;
 
-        public LinkCheckProgress(DownloadLink link) {
+        public LinkCheckProgress() {
             super(-1, 100, Color.ORANGE);
-            this.link = link;
             icon = new AbstractIcon(IconKey.ICON_HELP, 18);
         }
 
@@ -69,18 +66,14 @@ public class CheckStatusAction extends CustomizableTableContextAppAction {
             protected Void run() throws RuntimeException {
                 List<?> children = getSelection().getChildren();
                 final List<CheckableLink> checkableLinks = new ArrayList<CheckableLink>(children.size());
-                final HashMap<DownloadLink, PluginProgress> pluginProgresses = new HashMap<DownloadLink, PluginProgress>();
-                final HashMap<DownloadLink, LinkCheckProgress> newPLuginProgresses = new HashMap<DownloadLink, LinkCheckProgress>();
+                final LinkCheckProgress linkCheckProgress = new LinkCheckProgress();
                 for (Object l : children) {
                     if (l instanceof DownloadLink || l instanceof CrawledLink) {
                         checkableLinks.add(((CheckableLink) l));
                     }
                     if (l instanceof DownloadLink) {
-                        DownloadLink link = (DownloadLink) l;
-                        final LinkCheckProgress newProgress = new LinkCheckProgress(link);
-                        PluginProgress oldProgress = link.setPluginProgress(newProgress);
-                        pluginProgresses.put(link, oldProgress);
-                        newPLuginProgresses.put(link, newProgress);
+                        final DownloadLink link = (DownloadLink) l;
+                        link.addPluginProgress(linkCheckProgress);
                     }
                 }
                 LinkChecker<CheckableLink> linkChecker = new LinkChecker<CheckableLink>(true);
@@ -89,14 +82,8 @@ public class CheckStatusAction extends CustomizableTableContextAppAction {
                     @Override
                     public void linkCheckDone(CheckableLink l) {
                         if (l instanceof DownloadLink) {
-                            DownloadLink link = (DownloadLink) l;
-                            final PluginProgress oldProgress;
-                            final PluginProgress newProgress;
-                            synchronized (LOCK) {
-                                newProgress = newPLuginProgresses.remove(link);
-                                oldProgress = pluginProgresses.remove(link);
-                            }
-                            link.compareAndSetPluginProgress(newProgress, oldProgress);
+                            final DownloadLink link = (DownloadLink) l;
+                            link.removePluginProgress(linkCheckProgress);
                         }
                     }
                 });

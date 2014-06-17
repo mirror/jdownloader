@@ -27,7 +27,6 @@ import java.util.List;
 import java.util.logging.Level;
 
 import jd.plugins.DownloadLink;
-import jd.plugins.PluginProgress;
 import jd.utils.JDHexUtils;
 
 import org.appwork.utils.logging2.LogSource;
@@ -136,10 +135,16 @@ public class FlvFixer {
 
         fixedFile = new File(corruptFile.getAbsolutePath().replace(".part", ".fixed"));
 
-        if (progressView) setProgress(0, 0, null);
-
+        final FlvFixerProgress progress;
+        if (progressView) {
+            progress = new FlvFixerProgress(0, 0, null);
+            progress.setIcon(NewTheme.I().getIcon("wait", 16));
+            progress.setProgressSource(this);
+        } else {
+            progress = null;
+        }
         try {
-
+            downloadLink.addPluginProgress(progress);
             fis = new FileInputStream(corruptFile);
             fos = new FileOutputStream(fixedFile);
 
@@ -159,7 +164,9 @@ public class FlvFixer {
             logger.info("#### " + msg + " ####");
             logger.info("processing file: " + corruptFile.getAbsolutePath());
 
-            if (DEBUG) logOutput("Type :", formatDebug, "CurrentTS", "PreviousTS", "Size", "Position", Level.FINEST);
+            if (DEBUG) {
+                logOutput("Type :", formatDebug, "CurrentTS", "PreviousTS", "Size", "Position", Level.FINEST);
+            }
 
             try {
                 while (filePos < fileSize) {
@@ -172,7 +179,9 @@ public class FlvFixer {
                     packetSize = getInt(flvTag, 1);
                     packetTS = getInt(flvTag, 4) | (flvTag[7] & 0xff) << 24;
 
-                    if (baseTS < 0 && (packetType == Tag.AUDIO.hex || packetType == Tag.VIDEO.hex)) baseTS = packetTS;
+                    if (baseTS < 0 && (packetType == Tag.AUDIO.hex || packetType == Tag.VIDEO.hex)) {
+                        baseTS = packetTS;
+                    }
                     if (baseTS > 1000) {
                         packetTS -= baseTS;
                         writeFlvTimestamp(packetTS, flvTag);
@@ -226,7 +235,9 @@ public class FlvFixer {
                                 }
                                 pAudioTagPos = fos.getChannel().position();
                                 fos.write(newflvTag);
-                                if (DEBUG) logOutput("AUDIO:", formatDebug, packetTS, prevAudioTS, packetSize, pAudioTagPos, Level.FINEST);
+                                if (DEBUG) {
+                                    logOutput("AUDIO:", formatDebug, packetTS, prevAudioTS, packetSize, pAudioTagPos, Level.FINEST);
+                                }
                                 if (!(CodecID == Tag.CODEC_ID_AAC.hex && AAC_PacketType == Tag.AAC_SEQUENCE_HEADER.hex)) {
                                     prevAACHeader = false;
                                     prevAudioTS = packetTS;
@@ -239,7 +250,9 @@ public class FlvFixer {
                         } else {
                             logOutput("Skipping audio packet AUDIO:", format, packetTS, prevAudioTS, packetSize, Level.INFO);
                         }
-                        if (!audio) audio = true;
+                        if (!audio) {
+                            audio = true;
+                        }
                         break;
                     case VIDEO:
                         if (packetTS > prevVideoTS - FRAMEGAP_DURATION * 5) {
@@ -277,7 +290,9 @@ public class FlvFixer {
                                 }
                                 pVideoTagPos = fos.getChannel().position();
                                 fos.write(newflvTag);
-                                if (DEBUG) logOutput("VIDEO:", formatDebug, packetTS, prevVideoTS, packetSize, pVideoTagPos, Level.FINEST);
+                                if (DEBUG) {
+                                    logOutput("VIDEO:", formatDebug, packetTS, prevVideoTS, packetSize, pVideoTagPos, Level.FINEST);
+                                }
                                 if (!(CodecID == Tag.CODEC_ID_AVC.hex && AVC_PacketType == Tag.AVC_SEQUENCE_HEADER.hex)) {
                                     prevAVCHeader = false;
                                     prevVideoTS = packetTS;
@@ -290,21 +305,27 @@ public class FlvFixer {
                         } else {
                             logOutput("Skipping video packet VIDEO:", format, packetTS, prevVideoTS, packetSize, Level.INFO);
                         }
-                        if (!video) video = true;
+                        if (!video) {
+                            video = true;
+                        }
                         break;
                     case SCRIPT_DATA:
                         if (metadata) {
                             pMetaTagPos = fos.getChannel().position();
                             fos.write(newflvTag);
-                            if (DEBUG) logOutput("META :", formatDebug, packetTS, 0, packetSize, pMetaTagPos, Level.FINEST);
+                            if (DEBUG) {
+                                logOutput("META :", formatDebug, packetTS, 0, packetSize, pMetaTagPos, Level.FINEST);
+                            }
                         }
                         break;
                     }
                     filePos += totalTagLen;
-                    cFilePos = (int) filePos / (1024 * 1024);
+                    cFilePos = filePos / (1024 * 1024);
                     if (progressView) {
                         if (cFilePos > pFilePos && cFilePos % 10 == 0 || cFilePos == 0) {
-                            setProgress(filePos, fileSize, Color.YELLOW.darker());
+                            progress.updateValues(filePos, fileSize);
+                            progress.setCurrent(filePos);
+                            progress.setColor(Color.YELLOW.darker());
                             pFilePos = cFilePos;
                         }
                     }
@@ -322,7 +343,11 @@ public class FlvFixer {
                     logger.info("Fix flv header --> " + (audio ? "audio" : "video"));
                 }
 
-                if (progressView) setProgress(fileSize, fileSize, Color.YELLOW.darker());
+                if (progressView) {
+                    progress.updateValues(fileSize, fileSize);
+                    progress.setCurrent(fileSize);
+                    progress.setColor(Color.YELLOW.darker());
+                }
             } catch (ClosedByInterruptException e) {
                 msg = String.format("FlvFixer: User aborted processing! Processed: %d/%.2f MB", (filePos / (1024 * 1024)), (double) (fileSize / (1024 * 1024)));
                 logger.warning("#### " + msg);
@@ -346,26 +371,9 @@ public class FlvFixer {
                 fos.close();
             } catch (final Throwable e) {
             }
-            downloadLink.setPluginProgress(null);
+            downloadLink.removePluginProgress(progress);
         }
         return true;
-    }
-
-    private void setProgress(long value, long max, Color color) {
-        if (value <= 0 && max <= 0) {
-            downloadLink.setPluginProgress(null);
-        } else {
-            PluginProgress progress = downloadLink.getPluginProgress();
-            if (progress != null) {
-                progress.updateValues(value, max);
-                progress.setCurrent(value);
-            } else {
-                progress = new FlvFixerProgress(value, max, color);
-                progress.setIcon(NewTheme.I().getIcon("wait", 16));
-                progress.setProgressSource(this);
-                downloadLink.setPluginProgress(progress);
-            }
-        }
     }
 
     private void logOutput(String msg, String formatter, Integer a, Integer b, Integer c, Level l) {

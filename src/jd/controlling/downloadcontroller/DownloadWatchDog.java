@@ -3904,7 +3904,13 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
                 if (downloadLink.getDefaultPlugin() == null || downloadLink.getDownloadLinkController() != null) {
                     downloadLink.setCustomFinalName(value);
                 } else {
-                    downloadLink.getDefaultPlugin().move(downloadLink, value, null);
+                    try {
+                        downloadLink.getDefaultPlugin().move(downloadLink, value, null);
+                    } catch (Throwable e) {
+                        logger.log(e);
+                    } finally {
+                        downloadLink.setCustomFinalName(null);
+                    }
                 }
             }
 

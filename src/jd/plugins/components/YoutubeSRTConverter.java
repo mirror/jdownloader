@@ -26,7 +26,8 @@ public class YoutubeSRTConverter implements YoutubeConverter {
     }
 
     /**
-     * Create a new instance of YoutubeSRTConverter. This is a singleton class. Access the only existing instance by using {@link #getInstance()}.
+     * Create a new instance of YoutubeSRTConverter. This is a singleton class. Access the only existing instance by using
+     * {@link #getInstance()}.
      */
     private YoutubeSRTConverter() {
 
@@ -34,10 +35,9 @@ public class YoutubeSRTConverter implements YoutubeConverter {
 
     @Override
     public void run(DownloadLink downloadLink) {
-        PluginProgress old = null;
         PluginProgress set = null;
         try {
-            old = downloadLink.setPluginProgress(set = new PluginProgress(0, 100, null) {
+            downloadLink.addPluginProgress(set = new PluginProgress(0, 100, null) {
                 {
                     setIcon(new AbstractIcon(IconKey.ICON_TEXT, 18));
 
@@ -55,13 +55,17 @@ public class YoutubeSRTConverter implements YoutubeConverter {
 
                 @Override
                 public Icon getIcon(Object requestor) {
-                    if (requestor instanceof ETAColumn) return null;
+                    if (requestor instanceof ETAColumn) {
+                        return null;
+                    }
                     return super.getIcon(requestor);
                 }
 
                 @Override
                 public String getMessage(Object requestor) {
-                    if (requestor instanceof ETAColumn) return "";
+                    if (requestor instanceof ETAColumn) {
+                        return "";
+                    }
                     return "Convert";
                 }
             });
@@ -75,7 +79,7 @@ public class YoutubeSRTConverter implements YoutubeConverter {
             } catch (final Throwable e) {
             }
         } finally {
-            downloadLink.compareAndSetPluginProgress(set, old);
+            downloadLink.removePluginProgress(set);
         }
 
     }

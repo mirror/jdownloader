@@ -253,9 +253,8 @@ public abstract class PluginForHost extends Plugin {
         final CaptchaStepProgress progress = new CaptchaStepProgress(0, 1, null);
         progress.setProgressSource(this);
         this.hasCaptchas = true;
-        PluginProgress old = null;
         try {
-            old = link.setPluginProgress(progress);
+            link.addPluginProgress(progress);
             String orgCaptchaImage = link.getStringProperty("orgCaptchaFile", null);
             if (orgCaptchaImage != null && new File(orgCaptchaImage).exists()) {
                 file = new File(orgCaptchaImage);
@@ -357,7 +356,7 @@ public abstract class PluginForHost extends Plugin {
             }
             throw new CaptchaException(e.getSkipRequest());
         } finally {
-            link.compareAndSetPluginProgress(progress, old);
+            link.removePluginProgress(progress);
         }
     }
 
@@ -771,13 +770,12 @@ public abstract class PluginForHost extends Plugin {
         };
         progress.setIcon(NewTheme.I().getIcon("wait", 16));
         progress.setProgressSource(this);
-        PluginProgress old = null;
         try {
             long lastQueuePosition = -1;
             long waitQueuePosition = -1;
             long waitMax = 0;
             long waitCur = 0;
-            old = downloadLink.setPluginProgress(progress);
+            downloadLink.addPluginProgress(progress);
             while ((waitQueuePosition = queueItem.indexOf(downloadLink)) >= 0 && !downloadLink.getDownloadLinkController().isAborting()) {
                 if (waitQueuePosition != lastQueuePosition) {
                     waitMax = (queueItem.lastStartTimestamp.get() - System.currentTimeMillis()) + ((waitQueuePosition + 1) * wait);
@@ -804,7 +802,7 @@ public abstract class PluginForHost extends Plugin {
             }
             throw e;
         } finally {
-            downloadLink.compareAndSetPluginProgress(progress, old);
+            downloadLink.removePluginProgress(progress);
         }
     }
 
@@ -863,11 +861,10 @@ public abstract class PluginForHost extends Plugin {
         if (downloadLink.getDownloadLinkController().isAborting()) {
             throw new PluginException(LinkStatus.ERROR_RETRY);
         }
-        PluginProgress progress = new SleepPluginProgress(i, message);
+        final PluginProgress progress = new SleepPluginProgress(i, message);
         progress.setProgressSource(this);
-        PluginProgress old = null;
         try {
-            old = downloadLink.setPluginProgress(progress);
+            downloadLink.addPluginProgress(progress);
             while (i > 0 && !downloadLink.getDownloadLinkController().isAborting()) {
                 progress.setCurrent(i);
                 synchronized (this) {
@@ -878,7 +875,7 @@ public abstract class PluginForHost extends Plugin {
         } catch (final InterruptedException e) {
             throw new PluginException(LinkStatus.ERROR_RETRY);
         } finally {
-            downloadLink.compareAndSetPluginProgress(progress, old);
+            downloadLink.removePluginProgress(progress);
         }
         if (downloadLink.getDownloadLinkController().isAborting()) {
             throw new PluginException(LinkStatus.ERROR_RETRY);
@@ -1362,7 +1359,7 @@ public abstract class PluginForHost extends Plugin {
      * @param link
      * @param value
      */
-    public void move(DownloadLink link, String newName, File newParentFile) {
+    public void move(DownloadLink link, String newName, File newParentFile) throws Exception {
         if (StringUtils.isNotEmpty(newName)) {
             try {
                 String oldName = link.getName();

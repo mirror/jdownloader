@@ -46,25 +46,25 @@ public class MegaConz extends PluginForHost {
     private final String      USE_SSL   = "USE_SSL_V2";
     private final String      USE_TMP   = "USE_TMP_V2";
     private final String      encrypted = ".encrypted";
-    
+
     public MegaConz(PluginWrapper wrapper) {
         super(wrapper);
         setConfigElements();
     }
-    
+
     @Override
     public String getAGBLink() {
         return "https://mega.co.nz/#terms";
     }
-    
+
     @Override
     public void correctDownloadLink(final DownloadLink link) {
         link.setUrlDownload(link.getDownloadURL().replaceAll("%21", "!"));
     }
-    
+
     @Override
     public AvailableStatus requestFileInformation(DownloadLink link) throws Exception {
-        
+
         setBrowserExclusive();
         boolean publicFile = true;
         String fileID = getPublicFileID(link);
@@ -74,7 +74,9 @@ public class MegaConz extends PluginForHost {
             keyString = getNodeFileKey(link);
             publicFile = false;
         }
-        if (fileID == null || keyString == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (fileID == null || keyString == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         br.getHeaders().put("APPID", "JDownloader");
         try {
             if (publicFile) {
@@ -84,7 +86,9 @@ public class MegaConz extends PluginForHost {
             }
         } catch (IOException e) {
             // java.io.IOException: 500 Server Too Busy
-            if (br.getRequest() != null && br.getRequest().getHttpConnection() != null && br.getRequest().getHttpConnection() != null && br.getRequest().getHttpConnection().getResponseCode() == 500) { return AvailableStatus.UNCHECKABLE; }
+            if (br.getRequest() != null && br.getRequest().getHttpConnection() != null && br.getRequest().getHttpConnection() != null && br.getRequest().getHttpConnection().getResponseCode() == 500) {
+                return AvailableStatus.UNCHECKABLE;
+            }
             throw e;
         }
         String fileSize = br.getRegex("\"s\"\\s*?:\\s*?(\\d+)").getMatch(0);
@@ -98,7 +102,9 @@ public class MegaConz extends PluginForHost {
             }
         }
         String at = br.getRegex("\"at\"\\s*?:\\s*?\"(.*?)\"").getMatch(0);
-        if (at == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (at == null) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
         String fileInfo = null;
         try {
             fileInfo = decrypt(at, keyString);
@@ -107,7 +113,9 @@ public class MegaConz extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         String fileName = new Regex(fileInfo, "\"n\"\\s*?:\\s*?\"(.*?)\"").getMatch(0);
-        if (fileName == null) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
+        if (fileName == null) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
         link.setFinalFileName(fileName);
         try {
             if (link.getCustomFileOutputFilename() == null) {
@@ -117,15 +125,19 @@ public class MegaConz extends PluginForHost {
         }
         link.setProperty("ALLOW_HASHCHECK", false);
         return AvailableStatus.TRUE;
-        
+
     }
-    
+
     @Override
     public void handleFree(DownloadLink link) throws Exception {
         AvailableStatus available = requestFileInformation(link);
-        if (AvailableStatus.FALSE == available) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        if (AvailableStatus.TRUE != available) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server is Busy", 1 * 60 * 1000l);
-        
+        if (AvailableStatus.FALSE == available) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
+        if (AvailableStatus.TRUE != available) {
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server is Busy", 1 * 60 * 1000l);
+        }
+
         boolean publicFile = true;
         String fileID = getPublicFileID(link);
         String keyString = getPublicFileKey(link);
@@ -135,7 +147,9 @@ public class MegaConz extends PluginForHost {
             publicFile = false;
         }
         try {
-            if (fileID == null || keyString == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            if (fileID == null || keyString == null) {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
             if (publicFile) {
                 br.postPageRaw("https://eu.api.mega.co.nz/cs?id=" + CS.incrementAndGet(), "[{\"a\":\"g\",\"g\":\"1\",\"ssl\":" + useSSL() + ",\"p\":\"" + fileID + "\"}]");
             } else {
@@ -147,12 +161,18 @@ public class MegaConz extends PluginForHost {
                 /*
                  * https://mega.co.nz/#doc
                  */
-                if ("-11".equals(error)) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Access violation", 5 * 60 * 1000l);
-                if ("-18".equals(error)) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Resource temporarily not available, please try again later", 5 * 60 * 1000l);
-                if ("-3".equals(error) || br.getRequest().getHtmlCode().trim().equals("-3")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Retry again later", 2 * 60 * 1000l);
-                
+                if ("-11".equals(error)) {
+                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Access violation", 5 * 60 * 1000l);
+                }
+                if ("-18".equals(error)) {
+                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Resource temporarily not available, please try again later", 5 * 60 * 1000l);
+                }
+                if ("-3".equals(error) || br.getRequest().getHtmlCode().trim().equals("-3")) {
+                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Retry again later", 2 * 60 * 1000l);
+                }
+
                 checkServerBusy();
-                
+
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
             if (oldStyle()) {
@@ -173,18 +193,22 @@ public class MegaConz extends PluginForHost {
             }
         } catch (IOException e) {
             checkServerBusy();
-            if (dl != null && dl.getConnection() != null && dl.getConnection().getResponseCode() == 500) { throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server is Busy", 1 * 60 * 1000l); }
+            if (dl != null && dl.getConnection() != null && dl.getConnection().getResponseCode() == 500) {
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server is Busy", 1 * 60 * 1000l);
+            }
             throw e;
         }
     }
-    
+
     /**
      * @throws PluginException
      */
     public void checkServerBusy() throws PluginException {
-        if (br.getRequest() != null && br.getRequest().getHttpConnection() != null && br.getRequest().getHttpConnection() != null && br.getRequest().getHttpConnection().getResponseCode() == 500) { throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server is Busy", 1 * 60 * 1000l); }
+        if (br.getRequest() != null && br.getRequest().getHttpConnection() != null && br.getRequest().getHttpConnection() != null && br.getRequest().getHttpConnection().getResponseCode() == 500) {
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server is Busy", 1 * 60 * 1000l);
+        }
     }
-    
+
     private String decrypt(String input, String keyString) throws NoSuchAlgorithmException, NoSuchPaddingException, InvalidKeyException, InvalidAlgorithmParameterException, IllegalBlockSizeException, BadPaddingException, UnsupportedEncodingException, PluginException {
         byte[] b64Dec = b64decode(keyString);
         int[] intKey = aByte_to_aInt(b64Dec);
@@ -210,15 +234,19 @@ public class MegaConz extends PluginForHost {
         }
         return ret;
     }
-    
+
     public String getError(Browser br) {
-        if (br == null) return null;
+        if (br == null) {
+            return null;
+        }
         return br.getRegex("\"e\"\\s*?:\\s*?(-?\\d+)").getMatch(0);
     }
-    
+
     private boolean oldStyle() {
         String style = System.getProperty("ftpStyle", null);
-        if ("new".equalsIgnoreCase(style)) return false;
+        if ("new".equalsIgnoreCase(style)) {
+            return false;
+        }
         String prev = JDUtilities.getRevision();
         if (prev == null || prev.length() < 3) {
             prev = "0";
@@ -226,10 +254,12 @@ public class MegaConz extends PluginForHost {
             prev = prev.replaceAll(",|\\.", "");
         }
         int rev = Integer.parseInt(prev);
-        if (rev < 10000) return true;
+        if (rev < 10000) {
+            return true;
+        }
         return false;
     }
-    
+
     private RAFDownload createHackedDownloadInterface2(final PluginForHost plugin, final DownloadLink downloadLink, final Request request) throws IOException, PluginException {
         final RAFDownload dl = new RAFDownload(plugin, downloadLink, request);
         plugin.setDownloadInterface(dl);
@@ -237,7 +267,7 @@ public class MegaConz extends PluginForHost {
         dl.setChunkNum(1);
         return dl;
     }
-    
+
     /* Workaround for Bug in old 09581 Downloadsystem bug */
     private RAFDownload createHackedDownloadInterface(final PluginForHost plugin, final Browser br, final DownloadLink downloadLink, final String url) throws IOException, PluginException, Exception {
         Request r = br.createRequest(url);
@@ -247,7 +277,7 @@ public class MegaConz extends PluginForHost {
             dl.connect(br);
         } catch (final PluginException e) {
             if (e.getValue() == -1) {
-                
+
                 int maxRedirects = 10;
                 while (maxRedirects-- > 0) {
                     dl = this.createHackedDownloadInterface2(plugin, downloadLink, r = br.createGetRequestRedirectedRequest(r));
@@ -259,8 +289,10 @@ public class MegaConz extends PluginForHost {
                         continue;
                     }
                 }
-                if (maxRedirects <= 0) { throw new PluginException(LinkStatus.ERROR_FATAL, "Redirectloop"); }
-                
+                if (maxRedirects <= 0) {
+                    throw new PluginException(LinkStatus.ERROR_FATAL, "Redirectloop");
+                }
+
             }
         }
         if (plugin.getBrowser() == br) {
@@ -268,12 +300,12 @@ public class MegaConz extends PluginForHost {
         }
         return dl;
     }
-    
+
     private void setConfigElements() {
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), USE_SSL, JDL.L("plugins.hoster.megaconz.usessl", "Use SSL?")).setDefaultValue(false));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), USE_TMP, JDL.L("plugins.hoster.megaconz.usetmp", "Use tmp decrypting file?")).setDefaultValue(false));
     }
-    
+
     private void decrypt(DownloadLink link, String keyString) throws NoSuchAlgorithmException, NoSuchPaddingException, InvalidKeyException, InvalidAlgorithmParameterException, IOException {
         byte[] b64Dec = b64decode(keyString);
         int[] intKey = aByte_to_aInt(b64Dec);
@@ -300,28 +332,33 @@ public class MegaConz extends PluginForHost {
             dst = new File(path);
         }
         if (tmp != null) {
-            if (tmp.exists() && tmp.delete() == false) throw new IOException("Could not delete " + tmp);
+            if (tmp.exists() && tmp.delete() == false) {
+                throw new IOException("Could not delete " + tmp);
+            }
         } else {
-            if (dst.exists() && dst.delete() == false) throw new IOException("Could not delete " + dst);
+            if (dst.exists() && dst.delete() == false) {
+                throw new IOException("Could not delete " + dst);
+            }
         }
         FileInputStream fis = null;
         FileOutputStream fos = null;
         boolean deleteDst = true;
+        PluginProgress progress = null;
         try {
             long total = src.length();
-            final PluginProgress progress = new PluginProgress(0, total, null) {
+            progress = new PluginProgress(0, total, null) {
                 long lastCurrent    = -1;
                 long startTimeStamp = -1;
-                
+
                 public String getMessage(Object requestor) {
                     return "Decrypting";
                 }
-                
+
                 @Override
                 public PluginTaskID getID() {
                     return PluginTaskID.DECRYPTING;
                 }
-                
+
                 @Override
                 public void updateValues(long current, long total) {
                     super.updateValues(current, total);
@@ -332,24 +369,28 @@ public class MegaConz extends PluginForHost {
                         return;
                     }
                     long currentTimeDifference = System.currentTimeMillis() - startTimeStamp;
-                    if (currentTimeDifference <= 0) return;
+                    if (currentTimeDifference <= 0) {
+                        return;
+                    }
                     long speed = (current * 10000) / currentTimeDifference;
-                    if (speed == 0) return;
+                    if (speed == 0) {
+                        return;
+                    }
                     long eta = ((total - current) * 10000) / speed;
                     this.setETA(eta);
                 }
-                
+
             };
             progress.setProgressSource(this);
             progress.setIcon(NewTheme.I().getIcon("lock", 16));
-            link.setPluginProgress(progress);
+            link.addPluginProgress(progress);
             fis = new FileInputStream(src);
             if (tmp != null) {
                 fos = new FileOutputStream(tmp);
             } else {
                 fos = new FileOutputStream(dst);
             }
-            
+
             Cipher cipher = Cipher.getInstance("AES/CTR/nopadding");
             cipher.init(Cipher.ENCRYPT_MODE, skeySpec, ivSpec);
             final CipherOutputStream cos = new CipherOutputStream(fos, cipher);
@@ -385,7 +426,6 @@ public class MegaConz extends PluginForHost {
                 tmp.renameTo(dst);
             }
         } finally {
-            link.setPluginProgress(null);
             try {
                 fis.close();
             } catch (final Throwable e) {
@@ -394,6 +434,7 @@ public class MegaConz extends PluginForHost {
                 fos.close();
             } catch (final Throwable e) {
             }
+            link.removePluginProgress(progress);
             if (deleteDst) {
                 if (tmp != null) {
                     tmp.delete();
@@ -402,32 +443,32 @@ public class MegaConz extends PluginForHost {
                 }
             }
         }
-        
+
     }
-    
+
     private String getPublicFileID(DownloadLink link) {
         return new Regex(link.getDownloadURL(), "#\\!([a-zA-Z0-9]+)\\!").getMatch(0);
     }
-    
+
     private String getPublicFileKey(DownloadLink link) {
         return new Regex(link.getDownloadURL(), "#\\![a-zA-Z0-9]+\\!([a-zA-Z0-9_,\\-]+)").getMatch(0);
     }
-    
+
     private String getNodeFileID(DownloadLink link) {
         return new Regex(link.getDownloadURL(), "#N\\!([a-zA-Z0-9]+)\\!").getMatch(0);
     }
-    
+
     private String getNodeFileKey(DownloadLink link) {
         return new Regex(link.getDownloadURL(), "#N\\![a-zA-Z0-9]+\\!([a-zA-Z0-9_,\\-]+)").getMatch(0);
     }
-    
+
     private byte[] b64decode(String data) {
         data = data.replace(",", "");
         data += "==".substring((2 - data.length() * 3) & 3);
         data = data.replace("-", "+").replace("_", "/");
         return Base64.decode(data);
     }
-    
+
     private byte[] aInt_to_aByte(int... intKey) {
         byte[] buffer = new byte[intKey.length * 4];
         ByteBuffer bb = ByteBuffer.wrap(buffer);
@@ -436,7 +477,7 @@ public class MegaConz extends PluginForHost {
         }
         return bb.array();
     }
-    
+
     private int[] aByte_to_aInt(byte[] bytes) {
         ByteBuffer bb = ByteBuffer.wrap(bytes);
         int[] res = new int[bytes.length / 4];
@@ -445,7 +486,7 @@ public class MegaConz extends PluginForHost {
         }
         return res;
     }
-    
+
     private String useSSL() {
         if (getPluginConfig().getBooleanProperty(USE_SSL, false)) {
             return "1";
@@ -453,7 +494,7 @@ public class MegaConz extends PluginForHost {
             return "0";
         }
     }
-    
+
     private boolean useTMP() {
         if (getPluginConfig().getBooleanProperty(USE_TMP, false)) {
             return true;
@@ -461,23 +502,23 @@ public class MegaConz extends PluginForHost {
             return false;
         }
     }
-    
+
     @Override
     public int getMaxSimultanFreeDownloadNum() {
         return -1;
     }
-    
+
     /* NO OVERRIDE!! We need to stay 0.9*compatible */
     public boolean allowHandle(final DownloadLink downloadLink, final PluginForHost plugin) {
         return downloadLink.getHost().equalsIgnoreCase(plugin.getHost());
     }
-    
+
     @Override
     public void reset() {
     }
-    
+
     @Override
     public void resetDownloadlink(DownloadLink link) {
     }
-    
+
 }

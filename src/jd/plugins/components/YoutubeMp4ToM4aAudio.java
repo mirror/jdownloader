@@ -7,7 +7,6 @@ import jd.controlling.downloadcontroller.DownloadWatchDog;
 import jd.plugins.DownloadLink;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
-import jd.plugins.PluginProgress;
 
 import org.appwork.storage.config.JsonConfig;
 import org.appwork.utils.logging2.LogSource;
@@ -46,10 +45,9 @@ public class YoutubeMp4ToM4aAudio implements YoutubeConverter {
 
     @Override
     public void run(DownloadLink downloadLink) throws Exception {
-        PluginProgress old = null;
-        FFMpegProgress set = null;
+        final FFMpegProgress set = new FFMpegProgress();
         try {
-            old = downloadLink.setPluginProgress(set = new FFMpegProgress());
+            downloadLink.addPluginProgress(set);
             File file = new File(downloadLink.getFileOutput());
 
             // String[] commands = new String[] { "-i", "%input", "-acodec", "mp3", "-ac", "2", "-f", "mp3", "-ab", "128", "%output" };
@@ -61,14 +59,13 @@ public class YoutubeMp4ToM4aAudio implements YoutubeConverter {
                         logger.warning("Please set FFMPEG: BinaryPath in advanced options");
                         throw new SkipReasonException(SkipReason.FFMPEG_MISSING);
                     }
-                    FFMpegInstallProgress progress = new FFMpegInstallProgress();
+                    final FFMpegInstallProgress progress = new FFMpegInstallProgress();
                     progress.setProgressSource(this);
-                    PluginProgress old2 = null;
                     try {
-                        old = downloadLink.setPluginProgress(progress);
+                        downloadLink.addPluginProgress(progress);
                         FFmpegProvider.getInstance().install(progress, _GUI._.YoutubeDash_handleDownload_youtube_dash());
                     } finally {
-                        downloadLink.compareAndSetPluginProgress(progress, old2);
+                        downloadLink.removePluginProgress(progress);
                     }
                     ffmpeg.setPath(JsonConfig.create(FFmpegSetup.class).getBinaryPath());
                     if (!ffmpeg.isAvailable()) {
@@ -89,7 +86,9 @@ public class YoutubeMp4ToM4aAudio implements YoutubeConverter {
             }
             downloadLink.setFinalFileOutput(null);
             File finalFile = new File(downloadLink.getFileOutput(false, true));
-            if (!ffmpeg.demuxMp4(set, finalFile.getAbsolutePath(), file.getAbsolutePath())) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, _GUI._.YoutubeDash_handleFree_error_()); }
+            if (!ffmpeg.demuxMp4(set, finalFile.getAbsolutePath(), file.getAbsolutePath())) {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, _GUI._.YoutubeDash_handleFree_error_());
+            }
 
             file.delete();
             downloadLink.setDownloadSize(finalFile.length());
@@ -101,7 +100,7 @@ public class YoutubeMp4ToM4aAudio implements YoutubeConverter {
             } catch (final Throwable e) {
             }
         } finally {
-            downloadLink.compareAndSetPluginProgress(set, old);
+            downloadLink.removePluginProgress(set);
         }
 
     }

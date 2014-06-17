@@ -182,7 +182,7 @@ public class EasyFilesPl extends PluginForHost {
             }
             showMessage(link, "Phase 2/3: Checking status of internal download on " + NICE_HOST);
             boolean success = false;
-            PluginProgress waitProgress = new PluginProgress(0, 1000, null) {
+            final PluginProgress waitProgress = new PluginProgress(0, 1000, null) {
                 protected long lastCurrent    = -1;
                 protected long lastTotal      = -1;
                 protected long startTimeStamp = -1;
@@ -221,9 +221,8 @@ public class EasyFilesPl extends PluginForHost {
             };
             waitProgress.setIcon(NewTheme.I().getIcon("wait", 16));
             waitProgress.setProgressSource(this);
-            PluginProgress old = null;
             try {
-                old = link.setPluginProgress(waitProgress);
+                link.addPluginProgress(waitProgress);
                 for (int i = 1; i <= 120; i++) {
                     apiRequest(API_HTTP + NICE_HOST + "/api.php?cmd=get_file_status&id=" + dlid + "&login=" + Encoding.urlEncode(acc.getUser()) + "&pass=" + Encoding.urlEncode(acc.getPass()), acc, link);
                     String progress = br.toString().trim();
@@ -247,7 +246,7 @@ public class EasyFilesPl extends PluginForHost {
             } catch (InterruptedException e) {
                 throw new PluginException(LinkStatus.ERROR_RETRY);
             } finally {
-                link.compareAndSetPluginProgress(waitProgress, old);
+                link.removePluginProgress(waitProgress);
             }
             if (!success) {
                 handleAPIErrors(this.br, acc, link);

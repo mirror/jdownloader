@@ -280,11 +280,10 @@ public abstract class Plugin implements ActionListener {
         if (message == null) {
             message = _JDT._.Plugin_requestLogins_message();
         }
-        UserIOProgress prg = new UserIOProgress(message);
+        final UserIOProgress prg = new UserIOProgress(message);
         prg.setProgressSource(this);
-        PluginProgress old = null;
         try {
-            old = link.setPluginProgress(prg);
+            link.addPluginProgress(prg);
             AskUsernameAndPasswordDialogInterface handle = UIOManager.I().show(AskUsernameAndPasswordDialogInterface.class, new AskForUserAndPasswordDialog(message, link));
             if (handle.getCloseReason() == CloseReason.OK) {
                 String password = handle.getPassword();
@@ -303,7 +302,7 @@ public abstract class Plugin implements ActionListener {
             }
 
         } finally {
-            link.compareAndSetPluginProgress(prg, old);
+            link.removePluginProgress(prg);
         }
     }
 
@@ -321,11 +320,10 @@ public abstract class Plugin implements ActionListener {
         if (message == null) {
             message = "Please enter the password to continue...";
         }
-        UserIOProgress prg = new UserIOProgress(message);
+        final UserIOProgress prg = new UserIOProgress(message);
         prg.setProgressSource(getCurrentActivePlugin());
-        PluginProgress old = null;
         try {
-            old = link.setPluginProgress(prg);
+            link.addPluginProgress(prg);
             AskDownloadPasswordDialogInterface handle = UIOManager.I().show(AskDownloadPasswordDialogInterface.class, new AskForPasswordDialog(message, link));
             if (handle.getCloseReason() == CloseReason.OK) {
                 String password = handle.getText();
@@ -339,7 +337,7 @@ public abstract class Plugin implements ActionListener {
             }
 
         } finally {
-            link.compareAndSetPluginProgress(prg, old);
+            link.removePluginProgress(prg);
         }
     }
 

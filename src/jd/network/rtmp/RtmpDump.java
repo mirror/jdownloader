@@ -23,7 +23,6 @@ import jd.plugins.DownloadLink;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-import jd.plugins.PluginProgress;
 import jd.plugins.hoster.RTMPDownload;
 
 import org.appwork.storage.config.JsonConfig;
@@ -293,7 +292,6 @@ public class RtmpDump extends RTMPDownload {
             }
         };
         File tmpFile = new File(downloadable.getFileOutput() + ".part");
-        PluginProgress oldProgress = null;
         final DownloadPluginProgress downloadPluginProgress = new DownloadPluginProgress(downloadable, this, Color.GREEN.darker()) {
 
             @Override
@@ -314,7 +312,7 @@ public class RtmpDump extends RTMPDownload {
         try {
             getManagedConnetionHandler().addThrottledConnection(tcon);
             downloadable.setConnectionHandler(getManagedConnetionHandler());
-            oldProgress = downloadable.setPluginProgress(downloadPluginProgress);
+            downloadable.addPluginProgress(downloadPluginProgress);
 
             rtmpConnection.connect();
 
@@ -460,7 +458,7 @@ public class RtmpDump extends RTMPDownload {
                     }
                 }
             } finally {
-                downloadable.compareAndSetPluginProgress(downloadPluginProgress, oldProgress);
+                downloadable.removePluginProgress(downloadPluginProgress);
                 executor.shutdownNow();
                 if (rtmpConnection != null) {
                     rtmpConnection.disconnect();
@@ -556,7 +554,7 @@ public class RtmpDump extends RTMPDownload {
                 downloadable.setDownloadBytesLoaded(BYTESLOADED);
             }
             plg.setDownloadInterface(null);
-            downloadable.setPluginProgress(null);
+            downloadable.removePluginProgress(downloadPluginProgress);
             getManagedConnetionHandler().removeThrottledConnection(tcon);
             downloadable.removeConnectionHandler(getManagedConnetionHandler());
 
