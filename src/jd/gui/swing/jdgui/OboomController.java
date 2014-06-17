@@ -24,6 +24,7 @@ import jd.gui.swing.jdgui.oboom.OboomDialog;
 import jd.http.Browser;
 import jd.plugins.Account;
 import jd.plugins.AccountInfo;
+import jd.plugins.PluginForHost;
 
 import org.appwork.storage.config.ValidationException;
 import org.appwork.storage.config.events.GenericConfigEventListener;
@@ -47,7 +48,6 @@ import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.images.AbstractIcon;
 import org.jdownloader.images.NewTheme;
 import org.jdownloader.logging.LogController;
-import org.jdownloader.plugins.controller.host.LazyHostPlugin;
 import org.jdownloader.settings.staticreferences.CFG_GUI;
 import org.jdownloader.statistics.StatsManager;
 
@@ -492,7 +492,11 @@ public class OboomController implements TopRightPainter, AccountControllerListen
     }
 
     private void notify(final Account account, String title, String msg) {
-        final LazyHostPlugin plg = account.getPlugin().getLazyP();
+        final PluginForHost plugin = account.getPlugin();
+        String url = null;
+        if (plugin == null || StringUtils.isEmpty(url = plugin.getBuyPremiumUrl())) {
+            return;
+        }
         final Icon fav = DomainInfo.getInstance(account.getHoster()).getFavIcon();
         final ExtMergedIcon hosterIcon = new ExtMergedIcon(new AbstractIcon(IconKey.ICON_REFRESH, 32)).add(fav, 32 - fav.getIconWidth(), 32 - fav.getIconHeight());
         final ConfirmDialog d = new ConfirmDialog(UIOManager.BUTTONS_HIDE_CANCEL | UIOManager.LOGIC_COUNTDOWN | Dialog.STYLE_SHOW_DO_NOT_DISPLAY_AGAIN, title, msg, hosterIcon, _GUI._.lit_continue(), null) {
@@ -515,7 +519,7 @@ public class OboomController implements TopRightPainter, AccountControllerListen
         try {
             Dialog.getInstance().showDialog(d);
             StatsManager.I().track("PremiumExpireWarning/" + account.getHoster() + "/OK");
-            CrossSystem.openURL("https://www.oboom.com/ref/501C81?ref_token=" + getLatestRefID());
+            CrossSystem.openURL(AccountController.createFullBuyPremiumUrl(url, "controller/notify"));
         } catch (DialogNoAnswerException e) {
             e.printStackTrace();
             StatsManager.I().track("PremiumExpireWarning/" + account.getHoster() + "/CANCELED");
