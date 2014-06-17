@@ -37,8 +37,6 @@ public class CryptedLink extends Property {
     // Password welches dem Decrypter-Plugin übergeben wird (zb FolderPassword)
     private String             decrypterPassword;
 
-    private DownloadLink       link             = null;
-
     public CryptedLink(String cryptedUrl) {
         // this.cryptedUrl = cryptedUrl;
         // this.decrypterPassword = null;
@@ -56,10 +54,6 @@ public class CryptedLink extends Property {
         this.progress = null;
     }
 
-    public CryptedLink(DownloadLink link) {
-        this.link = link;
-    }
-
     public void setProgressController(final ProgressController progress) {
         this.progress = progress;
     }
@@ -73,10 +67,6 @@ public class CryptedLink extends Property {
      */
     public String getCryptedUrl() {
         return this.cryptedUrl;
-    }
-
-    public DownloadLink getDecryptedLink() {
-        return this.link;
     }
 
     /**

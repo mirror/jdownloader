@@ -97,34 +97,10 @@ import org.jdownloader.translate._JDT;
 
 public class LinkCollector extends PackageController<CrawledPackage, CrawledLink> implements LinkCheckerHandler<CrawledLink>, LinkCrawlerHandler, ShutdownVetoListener {
 
-    public static final class CrawledLinkCrawler extends LinkCollectorCrawler {
-        private LinkCollector linkCollector;
-
-        public CrawledLinkCrawler(LinkCollector linkCollector) {
-            this.linkCollector = linkCollector;
-            setFilter(linkCollector.getCrawlerFilter());
-            setHandler(linkCollector);
-        }
-
-        @Override
-        protected void crawlerStopped() {
-            linkCollector.onCrawlerStopped(this);
-            super.crawlerStopped();
-
-        }
-
-        @Override
-        protected void crawlerStarted() {
-            linkCollector.onCrawlerStarted(this);
-            super.crawlerStarted();
-
-        }
-    }
-
     public static final class JobLinkCrawler extends LinkCollectorCrawler {
-        private final LinkCollectingJob   job;
-        private LinkCollectingInformation collectingInfo;
-        private LinkCollector             linkCollector;
+        private final LinkCollectingJob         job;
+        private final LinkCollectingInformation collectingInfo;
+        private final LinkCollector             linkCollector;
 
         public JobLinkCrawler(final LinkCollector linkCollector, final LinkCollectingJob job) {
             this.job = job;
@@ -170,7 +146,7 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
 
         @Override
         protected CrawledLink crawledLinkFactorybyURL(String url) {
-            CrawledLink ret = new CrawledLink(url);
+            final CrawledLink ret = new CrawledLink(url);
             if (job != null) {
                 ret.setOrigin(job.getOrigin());
             }
@@ -802,7 +778,7 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
         return lofflinePackage;
     }
 
-    public LinkCrawler addCrawlerJob(final java.util.List<CrawledLink> links) {
+    public LinkCrawler addCrawlerJob(final java.util.List<CrawledLink> links, final LinkCollectingJob job) {
         if (links == null || links.size() == 0) {
             throw new IllegalArgumentException("no links");
         }
@@ -811,18 +787,9 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
             if (ShutdownController.getInstance().isShutDownRequested()) {
                 return null;
             }
-            final LinkCollectorCrawler lc = new CrawledLinkCrawler(this);
-
-            LinkCollectingInformation collectingInfo = new LinkCollectingInformation(lc, linkChecker);
+            final JobLinkCrawler lc = new JobLinkCrawler(this, job);
             java.util.List<CrawledLink> jobs = new ArrayList<CrawledLink>(links);
-            collectingInfo.setLinkCrawler(lc);
-            collectingInfo.setLinkChecker(linkChecker);
-            for (CrawledLink job : jobs) {
-                job.setCollectingInfo(collectingInfo);
-            }
-            onCrawlerAdded(lc);
             lc.crawl(jobs);
-
             return lc;
         }
     }

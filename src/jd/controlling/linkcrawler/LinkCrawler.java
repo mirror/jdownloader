@@ -19,6 +19,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.logging.Logger;
 import java.util.regex.Pattern;
 
+import jd.controlling.linkcollector.LinkCollector.JobLinkCrawler;
 import jd.controlling.linkcollector.LinknameCleaner;
 import jd.http.Browser;
 import jd.parser.html.HTMLParser;
@@ -903,14 +904,9 @@ public class LinkCrawler {
         /*
          * we dont need memory optimization here as downloadlink, crypted link itself take care of this
          */
-        String[] hits = new Regex(possibleCryptedLink.getURL(), pattern).getColumn(-1);
-        java.util.List<CrawledLink> chits = null;
+        final String[] hits = new Regex(possibleCryptedLink.getURL(), pattern).getColumn(-1);
         if (hits != null && hits.length > 0) {
-            chits = new ArrayList<CrawledLink>(hits.length);
-        } else {
-            chits = new ArrayList<CrawledLink>();
-        }
-        if (hits != null && hits.length > 0) {
+            final ArrayList<CrawledLink> chits = new ArrayList<CrawledLink>(hits.length);
             for (String hit : hits) {
                 String file = hit;
                 file = file.trim();
@@ -924,26 +920,35 @@ public class LinkCrawler {
                 file = file.trim();
                 chits.add(new CrawledLink(new CryptedLink(file)));
             }
-        }
-        for (CrawledLink decryptThis : chits) {
-            /*
-             * forward important data to new ones
-             */
-            forwardCrawledLinkInfos(possibleCryptedLink, decryptThis, modifier, null);
-            if (possibleCryptedLink.getCryptedLink() != null) {
+            for (CrawledLink decryptThis : chits) {
                 /*
-                 * source contains CryptedLink, so lets forward important infos
+                 * forward important data to new ones
                  */
-                Map<String, Object> props = possibleCryptedLink.getCryptedLink().getProperties();
-                if (props != null && !props.isEmpty()) {
-                    decryptThis.getCryptedLink().setProperties(props);
+                forwardCrawledLinkInfos(possibleCryptedLink, decryptThis, modifier, null);
+                if (possibleCryptedLink.getCryptedLink() != null) {
+                    /*
+                     * source contains CryptedLink, so lets forward important infos
+                     */
+                    Map<String, Object> props = possibleCryptedLink.getCryptedLink().getProperties();
+                    if (props != null && !props.isEmpty()) {
+                        decryptThis.getCryptedLink().setProperties(props);
+                    }
                 }
-                decryptThis.getCryptedLink().setDecrypterPassword(possibleCryptedLink.getCryptedLink().getDecrypterPassword());
-            } else if (possibleCryptedLink.getDownloadLink() != null) {
-                decryptThis.getCryptedLink().setDecrypterPassword(possibleCryptedLink.getDownloadLink().getDownloadPassword());
+                final String pw;
+                if (possibleCryptedLink.getCryptedLink() != null && possibleCryptedLink.getCryptedLink().getDecrypterPassword() != null) {
+                    pw = possibleCryptedLink.getCryptedLink().getDecrypterPassword();
+                } else if (LinkCrawler.this instanceof JobLinkCrawler && ((JobLinkCrawler) LinkCrawler.this).getJob().getCrawlerPassword() != null) {
+                    pw = ((JobLinkCrawler) LinkCrawler.this).getJob().getCrawlerPassword();
+                } else if (possibleCryptedLink.getSourceLink() != null && possibleCryptedLink.getSourceLink().getDownloadLink() != null) {
+                    pw = possibleCryptedLink.getSourceLink().getDownloadLink().getDownloadPassword();
+                } else {
+                    pw = null;
+                }
+                decryptThis.getCryptedLink().setDecrypterPassword(pw);
             }
+            return chits;
         }
-        return chits;
+        return null;
     }
 
     protected void processHostPlugin(LazyHostPlugin pHost, CrawledLink possibleCryptedLink) {
@@ -1067,7 +1072,6 @@ public class LinkCrawler {
         dest.setOrigin(source.getOrigin());
         dest.setSourceUrls(sourceURLs);
         dest.setMatchingFilter(source.getMatchingFilter());
-        dest.setSourceJob(source.getSourceJob());
         final CrawledLinkModifier childCustomModifier = dest.getCustomCrawledLinkModifier();
         if (childCustomModifier == null) {
             dest.setCustomCrawledLinkModifier(linkModifier);

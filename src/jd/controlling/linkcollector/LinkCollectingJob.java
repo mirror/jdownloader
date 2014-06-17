@@ -8,6 +8,15 @@ public class LinkCollectingJob {
     private String              customSourceUrl;
     private CrawledLinkModifier crawledLinkModifier = null;
     private boolean             deepAnalyse;
+    private String              crawlerPassword     = null;
+
+    public String getCrawlerPassword() {
+        return crawlerPassword;
+    }
+
+    public void setCrawlerPassword(String crawlerPassword) {
+        this.crawlerPassword = crawlerPassword;
+    }
 
     public CrawledLinkModifier getCrawledLinkModifier() {
         return crawledLinkModifier;

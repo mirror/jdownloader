@@ -52,7 +52,7 @@ public class AddFilteredStuffAction extends CustomizableAppAction implements Act
             @Override
             protected Void run() throws RuntimeException {
                 java.util.List<CrawledLink> filteredStuff = LinkCollector.getInstance().getFilteredStuff(true);
-                LinkCollector.getInstance().addCrawlerJob(filteredStuff);
+                LinkCollector.getInstance().addCrawlerJob(filteredStuff, null);
                 return null;
             }
         });

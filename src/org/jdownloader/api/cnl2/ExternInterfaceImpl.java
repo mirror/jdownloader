@@ -521,10 +521,9 @@ public class ExternInterfaceImpl implements Cnl2APIBasics, Cnl2APIFlash {
                             link.setDownloadLink(direct);
                         }
                     });
-                    link.setSourceJob(job);
                     links.add(link);
                 }
-                LinkCollector.getInstance().addCrawlerJob(links);
+                LinkCollector.getInstance().addCrawlerJob(links, job);
             }
             writeString(response, request, sb.toString(), true);
         } catch (final Throwable e) {
