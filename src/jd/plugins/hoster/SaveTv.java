@@ -1751,7 +1751,7 @@ public class SaveTv extends PluginForHost {
                         title = "Save.tv Plugin - 16.06.14 - HD verfügbar";
                         message += "Hallo lieber save.tv Nutzer/liebe save.tv NutzerIn\r\n";
                         message += "Ab sofort kannst du HD als bevorzugtes Format in den Plugin Einstellungen auswählen (standardmäßig bevorzugt).\r\n";
-                        message += "Bedenkt bitte, dass dies über die API (noch) nicht funktioniert!\r\n";
+                        message += "Bedenke bitte, dass dies über die API (noch) nicht funktioniert!\r\n";
                         message += getMessageEnd();
                         JOptionPane.showConfirmDialog(jd.gui.swing.jdgui.JDGui.getInstance().getMainFrame(), message, title, JOptionPane.PLAIN_MESSAGE, JOptionPane.INFORMATION_MESSAGE, null);
                     } catch (Throwable e) {
