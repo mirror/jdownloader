@@ -2,10 +2,6 @@ package org.jdownloader.scripting;
 
 import java.util.concurrent.ConcurrentHashMap;
 
-import javax.script.ScriptEngine;
-import javax.script.ScriptEngineManager;
-
-import org.appwork.exceptions.WTFException;
 import org.appwork.utils.logging.Log;
 import org.mozilla.javascript.ClassShutter;
 import org.mozilla.javascript.Context;
@@ -182,58 +178,6 @@ public class JSPermissionRestricter {
     }
 
     public static void init() {
-        try {
-
-            sun.org.mozilla.javascript.internal.ContextFactory.initGlobal(new sun.org.mozilla.javascript.internal.ContextFactory() {
-
-                @Override
-                protected sun.org.mozilla.javascript.internal.Context makeContext() {
-                    throw new WTFException("No Allowed. Use org.mozilla.javascript.* or net.sourceforge.htmlunit.corejs.javascript.* (JD2 only!) instead");
-                }
-
-                @Override
-                protected boolean hasFeature(sun.org.mozilla.javascript.internal.Context context, int i) {
-                    throw new WTFException("No Allowed. Use org.mozilla.javascript.* or net.sourceforge.htmlunit.corejs.javascript.* (JD2 only!) instead");
-                }
-
-                @Override
-                protected sun.org.mozilla.javascript.internal.GeneratedClassLoader createClassLoader(ClassLoader classloader) {
-                    throw new WTFException("No Allowed. Use org.mozilla.javascript.* or net.sourceforge.htmlunit.corejs.javascript.* (JD2 only!) instead");
-                }
-
-                @Override
-                protected Object doTopCall(sun.org.mozilla.javascript.internal.Callable callable, sun.org.mozilla.javascript.internal.Context context, sun.org.mozilla.javascript.internal.Scriptable scriptable, sun.org.mozilla.javascript.internal.Scriptable scriptable1, Object[] aobj) {
-                    throw new WTFException("No Allowed. Use org.mozilla.javascript.* or net.sourceforge.htmlunit.corejs.javascript.* (JD2 only!) instead");
-                }
-
-                @Override
-                protected void observeInstructionCount(sun.org.mozilla.javascript.internal.Context context, int i) {
-                    throw new WTFException("No Allowed. Use org.mozilla.javascript.* or net.sourceforge.htmlunit.corejs.javascript.* (JD2 only!) instead");
-                }
-
-                @Override
-                protected void onContextCreated(sun.org.mozilla.javascript.internal.Context context) {
-                    throw new WTFException("No Allowed. Use org.mozilla.javascript.* or net.sourceforge.htmlunit.corejs.javascript.* (JD2 only!) instead");
-                }
-
-                @Override
-                protected void onContextReleased(sun.org.mozilla.javascript.internal.Context context) {
-                    throw new WTFException("No Allowed. Use org.mozilla.javascript.* or net.sourceforge.htmlunit.corejs.javascript.* (JD2 only!) instead");
-                }
-            });
-            // let's do a test
-            final ScriptEngineManager manager = new ScriptEngineManager();
-            final ScriptEngine engine = manager.getEngineByName("javascript");
-
-            if (engine != null) {
-                throw new WTFException("Failed to disable internal Rhino");
-            }
-        } catch (ExceptionInInitializerError e) {
-            // desired exception.
-        } catch (Throwable e) {
-            // sun.org.mozilla.javascript.internal.* may be unavailable
-            e.printStackTrace();
-        }
 
         try {
             ContextFactory.initGlobal(new SandboxContextFactory());

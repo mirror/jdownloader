@@ -10,6 +10,9 @@ import java.util.HashSet;
 import javax.crypto.Cipher;
 import javax.crypto.spec.IvParameterSpec;
 import javax.crypto.spec.SecretKeySpec;
+import javax.script.ScriptEngine;
+import javax.script.ScriptEngineManager;
+import javax.script.ScriptException;
 import javax.swing.ImageIcon;
 
 import jd.controlling.linkcollector.LinkCollectingJob;
@@ -25,12 +28,9 @@ import jd.http.Browser;
 import jd.plugins.DownloadLink;
 import jd.plugins.Plugin;
 import jd.plugins.PluginForHost;
+import jd.utils.JDHexUtils;
 import jd.utils.JDUtilities;
 import net.sf.image4j.codec.ico.ICOEncoder;
-import net.sourceforge.htmlunit.corejs.javascript.ClassShutter;
-import net.sourceforge.htmlunit.corejs.javascript.Context;
-import net.sourceforge.htmlunit.corejs.javascript.ContextFactory;
-import net.sourceforge.htmlunit.corejs.javascript.Scriptable;
 
 import org.appwork.net.protocol.http.HTTPConstants;
 import org.appwork.remoteapi.RemoteAPI;
@@ -216,32 +216,22 @@ public class ExternInterfaceImpl implements Cnl2APIBasics, Cnl2APIFlash {
     public static String decrypt(String crypted, final String jk, String k) {
         byte[] key = null;
         if (jk != null) {
-            Context cx = null;
+
             try {
-                try {
-                    cx = ContextFactory.getGlobal().enterContext();
-                    cx.setClassShutter(new ClassShutter() {
-                        public boolean visibleToScripts(String className) {
-                            if (className.startsWith("adapter")) {
-                                return true;
-                            } else {
-                                throw new RuntimeException("Security Violation");
-                            }
-                        }
-                    });
-                } catch (java.lang.SecurityException e) {
-                    /* in case classshutter already set */
-                }
-                Scriptable scope = cx.initStandardObjects();
-                String fun = jk + "  f()";
-                Object result = cx.evaluateString(scope, fun, "<cmd>", 1, null);
-                key = HexFormatter.hexToByteArray(Context.toString(result));
-            } finally {
-                try {
-                    Context.exit();
-                } catch (final Throwable e) {
-                }
+                final ScriptEngineManager manager = jd.plugins.hoster.DummyScriptEnginePlugin.getScriptEngineManager(null);
+                final ScriptEngine engine = manager.getEngineByName("javascript");
+
+                final String fun = jk + "  f()";
+
+                final Object result = engine.eval(fun);
+
+                key = JDHexUtils.getByteArray(result + "");
+
+            } catch (ScriptException e) {
+
+                throw new RuntimeException(e);
             }
+
         } else {
             key = HexFormatter.hexToByteArray(k);
         }

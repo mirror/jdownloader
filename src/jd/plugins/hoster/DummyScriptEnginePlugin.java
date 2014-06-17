@@ -5,7 +5,9 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.Reader;
 import java.io.StringReader;
+import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.Method;
+import java.lang.reflect.Proxy;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -638,6 +640,55 @@ public class DummyScriptEnginePlugin extends PluginForHost {
 
     }
 
+    public static class InterfaceImplementor {
+
+        private Invocable engine;
+
+        /** Creates a new instance of Invocable */
+        public InterfaceImplementor(Invocable engine) {
+            this.engine = engine;
+        }
+
+        public class InterfaceImplementorInvocationHandler implements InvocationHandler {
+            private Invocable engine;
+            private Object    thiz;
+
+            public InterfaceImplementorInvocationHandler(Invocable engine, Object thiz) {
+
+                this.engine = engine;
+                this.thiz = thiz;
+            }
+
+            @Override
+            public Object invoke(Object proxy, Method method, Object[] args) throws java.lang.Throwable {
+                // give chance to convert input args
+                args = convertArguments(method, args);
+                Object result = engine.invokeMethod(thiz, method.getName(), args);
+                // give chance to convert the method result
+                return convertResult(method, result);
+            }
+        }
+
+        public <T> T getInterface(Object thiz, Class<T> iface) throws ScriptException {
+            if (iface == null || !iface.isInterface()) {
+                throw new IllegalArgumentException("interface Class expected");
+            }
+            return iface.cast(Proxy.newProxyInstance(iface.getClassLoader(), new Class[] { iface }, new InterfaceImplementorInvocationHandler(engine, thiz)));
+        }
+
+        // called to convert method result after invoke
+        protected Object convertResult(Method method, Object res) throws ScriptException {
+            // default is identity conversion
+            return res;
+        }
+
+        // called to convert method arguments before invoke
+        protected Object[] convertArguments(Method method, Object[] args) throws ScriptException {
+            // default is identity conversion
+            return args;
+        }
+    }
+
     /**
      * Implementation of <code>ScriptEngine</code> using the Mozilla Rhino interpreter.
      * 
@@ -673,7 +724,7 @@ public class DummyScriptEnginePlugin extends PluginForHost {
             try {
                 topLevel = new RhinoTopLevel(cx, this);
             } finally {
-                cx.exit();
+                Context.exit();
             }
 
             indexedProps = new HashMap<Object, Object>();
@@ -735,7 +786,7 @@ public class DummyScriptEnginePlugin extends PluginForHost {
             if (factory != null) {
                 return factory;
             } else {
-                return new RhinoScriptEngineFactory();
+                return new CustomRhinoScriptEngineFactory();
             }
         }
 
