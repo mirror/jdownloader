@@ -230,8 +230,8 @@ public class DownloadLinkDownloadable implements Downloadable {
     }
 
     @Override
-    public PluginProgress setPluginProgress(PluginProgress progress) {
-        return downloadLink.setPluginProgress(progress);
+    public void addPluginProgress(PluginProgress progress) {
+        downloadLink.addPluginProgress(progress);
     }
 
     @Override
@@ -436,8 +436,8 @@ public class DownloadLinkDownloadable implements Downloadable {
     }
 
     @Override
-    public boolean compareAndSetPluginProgress(PluginProgress expect, PluginProgress set) {
-        return downloadLink.compareAndSetPluginProgress(expect, set);
+    public boolean removePluginProgress(PluginProgress remove) {
+        return downloadLink.removePluginProgress(remove);
     }
 
     @Override
@@ -456,11 +456,10 @@ public class DownloadLinkDownloadable implements Downloadable {
         }
         TYPE type = hashInfo.getType();
         File outputPartFile = file;
-        PluginProgress hashProgress = new HashCheckPluginProgress(outputPartFile, Color.YELLOW.darker(), type);
+        final PluginProgress hashProgress = new HashCheckPluginProgress(outputPartFile, Color.YELLOW.darker(), type);
         hashProgress.setProgressSource(this);
-        PluginProgress old = null;
         try {
-            old = setPluginProgress(hashProgress);
+            addPluginProgress(hashProgress);
             final byte[] b = new byte[32767];
             String hashFile = null;
             FileInputStream fis = null;
@@ -508,7 +507,7 @@ public class DownloadLinkDownloadable implements Downloadable {
             }
             return new HashResult(hashInfo, hashFile);
         } finally {
-            compareAndSetPluginProgress(hashProgress, old);
+            removePluginProgress(hashProgress);
         }
     }
 

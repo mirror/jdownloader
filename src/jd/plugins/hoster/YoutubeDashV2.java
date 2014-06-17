@@ -1053,12 +1053,13 @@ public class YoutubeDashV2 extends PluginForHost {
             }
 
             @Override
-            public PluginProgress setPluginProgress(final PluginProgress progress) {
+            public void addPluginProgress(final PluginProgress progress) {
                 if (progress != null && progress instanceof DownloadPluginProgress) {
                     DownloadPluginProgress dashVideoProgress = new DashDownloadPluginProgress(this, (DownloadInterface) progress.getProgressSource(), progress.getColor(), totalSize, progress, chunkOffset);
-                    return downloadLink.setPluginProgress(dashVideoProgress);
+                    downloadLink.addPluginProgress(dashVideoProgress);
+                    return;
                 }
-                return downloadLink.setPluginProgress(progress);
+                downloadLink.addPluginProgress(progress);
             }
         };
         dl = BrowserAdapter.openDownload(br, dashDownloadable, request, true, getChunksPerStream());
@@ -1186,11 +1187,10 @@ public class YoutubeDashV2 extends PluginForHost {
                     /* audioStream also finished */
                     /* Do we need an exception here? If a Video is downloaded it is always finished before the audio part. TheCrap */
                     if (videoStreamPath != null && new File(videoStreamPath).exists()) {
-                        FFMpegProgress progress = new FFMpegProgress();
+                        final FFMpegProgress progress = new FFMpegProgress();
                         progress.setProgressSource(this);
-                        PluginProgress old = null;
                         try {
-                            old = downloadLink.setPluginProgress(progress);
+                            downloadLink.addPluginProgress(progress);
                             if (ffmpeg.muxToMp4(progress, downloadLink.getFileOutput(), videoStreamPath, getAudioStreamPath(downloadLink))) {
                                 downloadLink.getLinkStatus().setStatus(LinkStatus.FINISHED);
                                 new File(videoStreamPath).delete();
@@ -1200,7 +1200,7 @@ public class YoutubeDashV2 extends PluginForHost {
 
                             }
                         } finally {
-                            downloadLink.compareAndSetPluginProgress(progress, old);
+                            downloadLink.removePluginProgress(progress);
                         }
                     } else {
                         if (variant instanceof YoutubeVariant) {
@@ -1208,11 +1208,10 @@ public class YoutubeDashV2 extends PluginForHost {
 
                             if (ytVariant.getFileExtension().toLowerCase(Locale.ENGLISH).equals("aac")) {
 
-                                FFMpegProgress progress = new FFMpegProgress();
+                                final FFMpegProgress progress = new FFMpegProgress();
                                 progress.setProgressSource(this);
-                                PluginProgress old = null;
                                 try {
-                                    old = downloadLink.setPluginProgress(progress);
+                                    downloadLink.addPluginProgress(progress);
 
                                     if (ffmpeg.generateAac(progress, downloadLink.getFileOutput(), getAudioStreamPath(downloadLink))) {
                                         downloadLink.getLinkStatus().setStatus(LinkStatus.FINISHED);
@@ -1222,15 +1221,14 @@ public class YoutubeDashV2 extends PluginForHost {
 
                                     }
                                 } finally {
-                                    downloadLink.compareAndSetPluginProgress(progress, old);
+                                    downloadLink.removePluginProgress(progress);
                                 }
                             } else if (ytVariant.getFileExtension().toLowerCase(Locale.ENGLISH).equals("m4a")) {
 
-                                FFMpegProgress progress = new FFMpegProgress();
+                                final FFMpegProgress progress = new FFMpegProgress();
                                 progress.setProgressSource(this);
-                                PluginProgress old = null;
                                 try {
-                                    old = downloadLink.setPluginProgress(progress);
+                                    downloadLink.addPluginProgress(progress);
 
                                     if (ffmpeg.generateM4a(progress, downloadLink.getFileOutput(), getAudioStreamPath(downloadLink))) {
                                         downloadLink.getLinkStatus().setStatus(LinkStatus.FINISHED);
@@ -1240,7 +1238,7 @@ public class YoutubeDashV2 extends PluginForHost {
 
                                     }
                                 } finally {
-                                    downloadLink.compareAndSetPluginProgress(progress, old);
+                                    downloadLink.removePluginProgress(progress);
                                 }
 
                             } else {
@@ -1261,7 +1259,7 @@ public class YoutubeDashV2 extends PluginForHost {
             }
         } finally {
             if (oldView != null) {
-                downloadLink.compareAndSetView(newView, oldView);
+                downloadLink.setView(oldView);
             }
         }
     }
@@ -1448,14 +1446,13 @@ public class YoutubeDashV2 extends PluginForHost {
                     getLogger().warning("Please set FFMPEG: BinaryPath in advanced options");
                     throw new SkipReasonException(SkipReason.FFMPEG_MISSING);
                 }
-                FFMpegInstallProgress progress = new FFMpegInstallProgress();
+                final FFMpegInstallProgress progress = new FFMpegInstallProgress();
                 progress.setProgressSource(this);
-                PluginProgress old = null;
                 try {
-                    old = downloadLink.setPluginProgress(progress);
+                    downloadLink.addPluginProgress(progress);
                     FFmpegProvider.getInstance().install(progress, reason);
                 } finally {
-                    downloadLink.compareAndSetPluginProgress(progress, old);
+                    downloadLink.removePluginProgress(progress);
                 }
                 ffmpeg.setPath(JsonConfig.create(FFmpegSetup.class).getBinaryPath());
                 if (!ffmpeg.isAvailable()) {

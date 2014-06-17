@@ -116,9 +116,9 @@ public interface Downloadable {
      */
     long getKnownDownloadSize();
 
-    PluginProgress setPluginProgress(PluginProgress downloadPluginProgress);
+    void addPluginProgress(PluginProgress downloadPluginProgress);
 
-    boolean compareAndSetPluginProgress(PluginProgress expect, PluginProgress set);
+    boolean removePluginProgress(PluginProgress remove);
 
     HashInfo getHashInfo();
 

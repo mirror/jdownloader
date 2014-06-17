@@ -234,7 +234,7 @@ public class SimpleFTPDownloadInterface extends DownloadInterface {
                 }
                 startTimeStamp = System.currentTimeMillis();
                 downloadPluginProgress = new DownloadPluginProgress(downloadable, this, Color.GREEN.darker());
-                downloadable.setPluginProgress(downloadPluginProgress);
+                downloadable.addPluginProgress(downloadPluginProgress);
                 downloadable.setAvailable(AvailableStatus.TRUE);
                 download(filePath, outputPartFileRaf, downloadable.isResumable());
             } finally {
@@ -247,7 +247,7 @@ public class SimpleFTPDownloadInterface extends DownloadInterface {
                     downloadable.addDownloadTime(System.currentTimeMillis() - getStartTimeStamp());
                 } catch (final Throwable e) {
                 }
-                downloadable.setPluginProgress(null);
+                downloadable.removePluginProgress(downloadPluginProgress);
             }
             HashResult result = onDownloadReady();
             if (result != null) {

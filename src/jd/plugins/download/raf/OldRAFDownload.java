@@ -526,7 +526,7 @@ public class OldRAFDownload extends DownloadInterface {
                     }
                     startTimeStamp = System.currentTimeMillis();
                     downloadPluginProgress = new DownloadPluginProgress(downloadable, this, Color.GREEN.darker());
-                    downloadable.setPluginProgress(downloadPluginProgress);
+                    downloadable.addPluginProgress(downloadPluginProgress);
                     setupChunks();
                     /* download in progress so file should be online ;) */
                     downloadable.setAvailable(AvailableStatus.TRUE);
@@ -541,7 +541,7 @@ public class OldRAFDownload extends DownloadInterface {
                         downloadable.addDownloadTime(System.currentTimeMillis() - getStartTimeStamp());
                     } catch (final Throwable e) {
                     }
-                    downloadable.setPluginProgress(null);
+                    downloadable.removePluginProgress(downloadPluginProgress);
                 }
                 HashResult result = onChunksReady();
                 if (result != null) {
