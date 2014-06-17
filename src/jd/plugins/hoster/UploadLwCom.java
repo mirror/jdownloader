@@ -115,7 +115,7 @@ public class UploadLwCom extends PluginForHost {
                 final String page_piece = br.getRegex("(<div class=\"contentPageWrapper\">.*?class=\"link btn\\-free\")").getMatch(0);
                 if (page_piece != null) {
                     final String endings = jd.plugins.hoster.DirectHTTP.ENDINGS;
-                    filename = new Regex(page_piece, "(File: )?([^<>/\r\n\t]+" + endings + ")").getMatch(1);
+                    filename = new Regex(page_piece, "([^<>/\r\n\t:\\?\"]+" + endings + "[^<>/\r\n\t:\\?\"]*)").getMatch(0);
                     filesize = new Regex(page_piece, "(\\d+(,\\d+)?(\\.\\d+)? (KB|MB|GB))").getMatch(0);
                 }
             }

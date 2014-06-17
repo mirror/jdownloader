@@ -120,7 +120,7 @@ public class StreaminTo extends PluginForHost {
         prepBrowser(br);
         setFUID(link);
         getPage(link.getDownloadURL());
-        if (new Regex(correctedBR, "(No such file|>File Not Found<|>The file was removed by|Reason for deletion:\n|<Title>Watch </Title>)").matches()) {
+        if (new Regex(correctedBR, "(No such file|>File Not Found<|>The file was removed by|Reason for deletion:|<Title>Watch </Title>)").matches()) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         if (new Regex(correctedBR, MAINTENANCE).matches()) {

@@ -35,14 +35,18 @@ public class FreeDiscPlFolder extends PluginForDecrypt {
         super(wrapper);
     }
 
+    private static final String TYPE_FOLDER = "http://(www\\.)?freedisc\\.pl/[A-Za-z0-9\\-_]+,d\\-\\d+";
+
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         final String parameter = param.toString();
+        br.setFollowRedirects(true);
         br.getPage(parameter);
         final String username = new Regex(parameter, "freedisc\\.pl/([A-Za-z0-9\\-_]+),d\\-\\d+").getMatch(0);
         final String fpName = br.getRegex("<title>([^<>\"]*?)\\-  Freedisc\\.pl</title>").getMatch(0);
-        final String[] links = br.getRegex("<div style=\\'float: left; overflow: auto;\\'>[\t\n\r ]+<a  href=\"(/[^<>\"]*?)\"").getColumn(0);
-        if ((links == null || links.length == 0) && br.containsHTML("class=\"directoryText previousDirLinkFS\"")) {
+        // style='float: left; overflow: auto;'><a href="
+        final String[] links = br.getRegex("<div style=\\'float: left; overflow: auto;\\'>([\t\n\r ]+)?<a  href=\"(/[^<>\"]*?)\"").getColumn(1);
+        if ((links == null || links.length == 0) && br.containsHTML("class=\"directoryText previousDirLinkFS\"") || !br.getURL().matches(TYPE_FOLDER)) {
             logger.info("Link offline: " + parameter);
             return decryptedLinks;
         }
@@ -50,8 +54,9 @@ public class FreeDiscPlFolder extends PluginForDecrypt {
             logger.warning("Decrypter broken for link: " + parameter);
             return null;
         }
-        for (final String singleLink : links)
+        for (final String singleLink : links) {
             decryptedLinks.add(createDownloadlink("http://freedisc.pl" + singleLink));
+        }
         if (fpName != null) {
             final FilePackage fp = FilePackage.getInstance();
             fp.setName(Encoding.htmlDecode(fpName.trim()));

@@ -97,19 +97,15 @@ public class TenluaVnFolder extends PluginForDecrypt {
             }
         } else {
             String name = getJson("n", br.toString());
-            if (name == null) {
+            final DownloadLink dl = createDownloadlink("http://tenluadecrypted.vn/" + System.currentTimeMillis() + new Random().nextInt(100000));
+            final String filesize = getJson("real_size", br.toString());
+            /* Mainlink = single link */
+            final String url = parameter;
+            if (filesize == null || url == null || name == null) {
                 logger.warning("Decrypter broken for link: " + parameter);
                 return null;
             }
             name = unescape(Encoding.htmlDecode(name.trim()));
-            final DownloadLink dl = createDownloadlink("http://tenluadecrypted.vn/" + System.currentTimeMillis() + new Random().nextInt(100000));
-            final String filesize = getJson("real_size", br.toString());
-            String url = getJson("link", br.toString());
-            if (filesize == null || url == null) {
-                logger.warning("Decrypter broken for link: " + parameter);
-                return null;
-            }
-            url = url.replace("\\", "");
             dl.setDownloadSize(Long.parseLong(filesize));
             dl.setFinalFileName(name);
             dl.setProperty("plain_name", name);

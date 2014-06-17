@@ -43,6 +43,10 @@ public class TinyCc extends PluginForDecrypt {
         }
         br.setFollowRedirects(false);
         br.getPage(parameter);
+        if (br.containsHTML("Sorry, we weren't able to locate that URL")) {
+            logger.info("Link offline: " + parameter);
+            return decryptedLinks;
+        }
         final String finallink = br.getRedirectLocation();
         if (finallink == null) {
             logger.warning("Decrypter broken for link: " + parameter);

@@ -55,16 +55,16 @@ public class FiveSingCom extends PluginForHost {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         br.getPage(link.getDownloadURL());
-        if (br.getURL().contains("FileNotFind")) {
+        if (br.getURL().contains("FileNotFind") || br.getURL().contains("5sing.com/404.htm")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         String extension = br.getRegex("(<em>)?格式：(</em>)?([^<>\"]*?)(<|&)").getMatch(2);
         if (extension == null && br.containsHTML("<em>演唱：</em>")) {
             extension = "mp3";
         }
-        final String filename = br.getRegex("var SongName   = \"([^<>\"]*?)\"").getMatch(0);
-        final String fileid = br.getRegex("var SongID     = ([^<>\"]*?);").getMatch(0);
-        final String stype = br.getRegex("var SongType   = \"([^<>\"]*?)\";").getMatch(0);
+        final String filename = br.getRegex("var SongName[^<>\"\t\n\r]*= \"([^<>\"]*?)\"").getMatch(0);
+        final String fileid = br.getRegex("var SongID[^<>\"\t\n\r]*= ([^<>\"]*?);").getMatch(0);
+        final String stype = br.getRegex("var SongType[^<>\"\t\n\r]*= \"([^<>\"]*?)\";").getMatch(0);
         String filesize = br.getRegex("(<em>)?大小：(</em>)?([^<>\"]*?)(<|\")").getMatch(2);
         if (filename == null || extension == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
