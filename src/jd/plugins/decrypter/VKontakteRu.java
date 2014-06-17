@@ -322,6 +322,7 @@ public class VKontakteRu extends PluginForDecrypt {
                         return decryptedLinks2;
                     } else if (e.getMessage().equals(EXCEPTION_LINKOFFLINE)) {
                         final DownloadLink offline = createDownloadlink("http://vkontaktedecrypted.ru/videolink/" + System.currentTimeMillis() + new Random().nextInt(10000000));
+                        offline.setAvailable(false);
                         offline.setProperty("offline", true);
                         offline.setName(new Regex(CRYPTEDLINK_FUNCTIONAL, "vk\\.com/(.+)").getMatch(0));
                         decryptedLinks2.add(offline);

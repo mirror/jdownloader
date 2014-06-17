@@ -1084,6 +1084,10 @@ public class SaveTv extends PluginForHost {
             }
             break;
         }
+        /* Filesize for desired format not found ? Set filesize of standard quality. */
+        if (filesize == null && filesizes_length != 0) {
+            filesize = filesizes[0];
+        }
         return filesize;
     }
 
