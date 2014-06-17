@@ -70,18 +70,28 @@ public class ClipHunterCom extends PluginForHost {
         setBrowserExclusive();
         br.setFollowRedirects(true);
         br.setCookie("cliphunter.com", "qchange", "h");
-        if (downloadLink.getBooleanProperty("offline")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (downloadLink.getBooleanProperty("offline")) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
         DLLINK = downloadLink.getStringProperty("directlink");
 
         if (!linkOk(downloadLink)) {
             br.getPage(downloadLink.getStringProperty("originallink"));
-            if (br.getURL().contains("error/missing") || br.containsHTML("(>Ooops, This Video is not available|>This video was removed and is no longer available at our site|<title></title>)")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            if (br.getURL().contains("error/missing") || br.containsHTML("(>Ooops, This Video is not available|>This video was removed and is no longer available at our site|<title></title>)")) {
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            }
             final LinkedHashMap<String, String> foundQualities = findAvailableVideoQualities();
-            if (foundQualities == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            if (foundQualities == null) {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
             final String selectedQuality = downloadLink.getStringProperty("selectedquality");
             DLLINK = foundQualities.get(selectedQuality);
-            if (DLLINK == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            if (!linkOk(downloadLink)) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            if (DLLINK == null) {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
+            if (!linkOk(downloadLink)) {
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            }
         }
         return AvailableStatus.TRUE;
     }
@@ -117,7 +127,7 @@ public class ClipHunterCom extends PluginForHost {
 
     public static String decryptUrl(final String fun, final String value) {
         Object result = new Object();
-        final ScriptEngineManager manager = new ScriptEngineManager();
+        final ScriptEngineManager manager = jd.plugins.hoster.DummyScriptEnginePlugin.getScriptEngineManager(null);
         final ScriptEngine engine = manager.getEngineByName("javascript");
         final Invocable inv = (Invocable) engine;
         try {
@@ -138,11 +148,15 @@ public class ClipHunterCom extends PluginForHost {
         // parse decryptalgo
         final String jsUrl = br.getRegex("<script.*src=\"(http://s\\.gexo.*?player\\.js)\"").getMatch(0);
         final String[] encryptedUrls = br.getRegex("var pl_fiji(_p|_i)? = \\'(.*?)\\'").getColumn(1);
-        if (jsUrl == null || encryptedUrls == null || encryptedUrls.length == 0) return null;
+        if (jsUrl == null || encryptedUrls == null || encryptedUrls.length == 0) {
+            return null;
+        }
         final Browser br2 = br.cloneBrowser();
         br2.getPage(jsUrl);
         String decryptAlgo = new Regex(br2, "decrypt\\:\\s?function(.*?\\})(,|;)").getMatch(0);
-        if (decryptAlgo == null) return null;
+        if (decryptAlgo == null) {
+            return null;
+        }
         // Find available links
         final LinkedHashMap<String, String> foundQualities = new LinkedHashMap<String, String>();
         decryptAlgo = "function decrypt" + decryptAlgo + ";";

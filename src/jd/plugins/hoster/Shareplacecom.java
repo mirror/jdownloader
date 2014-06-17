@@ -137,7 +137,7 @@ public class Shareplacecom extends PluginForHost {
 
     private String rhino(final String s) {
         Object result = new Object();
-        final ScriptEngineManager manager = new ScriptEngineManager();
+        final ScriptEngineManager manager = jd.plugins.hoster.DummyScriptEnginePlugin.getScriptEngineManager(this);
         final ScriptEngine engine = manager.getEngineByName("javascript");
         try {
             engine.eval(s);

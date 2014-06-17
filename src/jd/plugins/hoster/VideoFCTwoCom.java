@@ -292,7 +292,7 @@ public class VideoFCTwoCom extends PluginForHost {
         if (javaScript == null) javaScript = br.getRegex("(var __[0-9a-zA-Z]+ = \'undefined\'.*?\\})[\r\n]+\\-\\->").getMatch(0);
         if (javaScript == null) return null;
         Object result = new Object();
-        ScriptEngineManager manager = new ScriptEngineManager();
+        ScriptEngineManager manager = jd.plugins.hoster.DummyScriptEnginePlugin.getScriptEngineManager(this);
         ScriptEngine engine = manager.getEngineByName("javascript");
         Invocable inv = (Invocable) engine;
         try {

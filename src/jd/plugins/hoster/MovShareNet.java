@@ -148,7 +148,7 @@ public class MovShareNet extends PluginForHost {
         String fn = br.getRegex("eval\\((function\\(.*?\'\\))\\);").getMatch(0);
         if (fn == null) return null;
         HashMap<String, String> values = new HashMap<String, String>();
-        final ScriptEngineManager manager = new ScriptEngineManager();
+        final ScriptEngineManager manager = jd.plugins.hoster.DummyScriptEnginePlugin.getScriptEngineManager(this);
         final ScriptEngine engine = manager.getEngineByName("javascript");
         try {
             engine.eval("var res = " + fn);

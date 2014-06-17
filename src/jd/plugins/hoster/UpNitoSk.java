@@ -183,7 +183,7 @@ public class UpNitoSk extends PluginForHost {
 
     private String jsAlgo(final String function, final String fun, final String gwt, final String token) throws Exception {
         Object result = new Object();
-        final ScriptEngineManager manager = new ScriptEngineManager();
+        final ScriptEngineManager manager = jd.plugins.hoster.DummyScriptEnginePlugin.getScriptEngineManager(this);
         final ScriptEngine engine = manager.getEngineByName("javascript");
         final Invocable inv = (Invocable) engine;
         final String injectFn = "function encrypt(g,y){gz=g.split(';');_y=y;mz(bB);b=gz[0]+aB+gz[1]+aB+mz(gz[1]+gz[0]+bB+_y+mz(bB));return b;};function decrypt(g,y){gz=g.split(';');_y=y;mz(DD);c=mz(gz[0]+_y+DD+gz[1]+ED+mz(DD));return c;}";

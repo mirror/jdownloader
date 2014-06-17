@@ -104,7 +104,7 @@ public class ReverBnationComHoster extends PluginForHost {
         final String binRate = "1.000000E+015";
         Object result = new Object();
         final String fun = "(" + rk + "+" + tk + "*" + sID + "*" + keyCode + "+" + constantKey + ")%" + binRate;
-        final ScriptEngineManager manager = new ScriptEngineManager();
+        final ScriptEngineManager manager = jd.plugins.hoster.DummyScriptEnginePlugin.getScriptEngineManager(this);
         final ScriptEngine engine = manager.getEngineByName("javascript");
         try {
             result = ((Double) engine.eval(fun)).longValue();

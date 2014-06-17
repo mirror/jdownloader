@@ -72,7 +72,7 @@ public class AdcrunCh extends PluginForDecrypt {
                     br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
 
                     String result = null;
-                    final ScriptEngineManager manager = new ScriptEngineManager();
+                    final ScriptEngineManager manager = jd.plugins.hoster.DummyScriptEnginePlugin.getScriptEngineManager(this);
                     final ScriptEngine engine = manager.getEngineByName("javascript");
                     try {
                         result = engine.eval(br.getRegex("eval(.*?)\n").getMatch(0)).toString();

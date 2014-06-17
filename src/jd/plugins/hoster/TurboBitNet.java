@@ -926,7 +926,7 @@ public class TurboBitNet extends PluginForHost {
 
     private String rhino(final String s, final int b) {
         Object result = new Object();
-        final ScriptEngineManager manager = new ScriptEngineManager();
+        final ScriptEngineManager manager = jd.plugins.hoster.DummyScriptEnginePlugin.getScriptEngineManager(this);
         final ScriptEngine engine = manager.getEngineByName("javascript");
         try {
             switch (b) {

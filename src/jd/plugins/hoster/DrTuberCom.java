@@ -57,7 +57,7 @@ public class DrTuberCom extends PluginForHost {
         if (fun == null) { return null; }
         fun = fun.replaceAll("s1\\.addVariable\\(\\'config\\',", "var result = ").replaceAll("params\\);", "params;");
         Object result = new Object();
-        ScriptEngineManager manager = new ScriptEngineManager();
+        ScriptEngineManager manager = jd.plugins.hoster.DummyScriptEnginePlugin.getScriptEngineManager(this);
         ScriptEngine engine = manager.getEngineByName("javascript");
         try {
             engine.eval(fun);

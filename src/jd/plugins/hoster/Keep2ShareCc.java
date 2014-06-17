@@ -901,7 +901,7 @@ public class Keep2ShareCc extends PluginForHost {
                     }
                     // use js for now, but change to Javaluator as the provided string doesn't get evaluated by JS according to Javaluator
                     // author.
-                    ScriptEngineManager mgr = new ScriptEngineManager();
+                    ScriptEngineManager mgr = jd.plugins.hoster.DummyScriptEnginePlugin.getScriptEngineManager(this);
                     ScriptEngine engine = mgr.getEngineByName("JavaScript");
                     final long value = ((Number) engine.eval("(" + math + ") + " + host.length())).longValue();
                     cloudflare.put("jschl_answer", value + "");

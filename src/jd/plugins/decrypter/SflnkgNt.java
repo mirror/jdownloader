@@ -340,7 +340,7 @@ public class SflnkgNt extends PluginForDecrypt {
 
             /* execute javascript */
             Object result = new Object();
-            final ScriptEngineManager manager = new ScriptEngineManager();
+            final ScriptEngineManager manager = jd.plugins.hoster.DummyScriptEnginePlugin.getScriptEngineManager(this);
             final ScriptEngine engine = manager.getEngineByName("javascript");
             try {
                 /*

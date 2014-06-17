@@ -64,7 +64,7 @@ public class FilEarnCom extends PluginForHost {
 
     private String execJS(String fun) throws Exception {
         Object result = new Object();
-        final ScriptEngineManager manager = new ScriptEngineManager();
+        final ScriptEngineManager manager = jd.plugins.hoster.DummyScriptEnginePlugin.getScriptEngineManager(this);
         final ScriptEngine engine = manager.getEngineByName("javascript");
         String returnVar = new Regex(fun, "return ([A-Za-z0-9]+);").getMatch(0);
         if (returnVar == null) return null;

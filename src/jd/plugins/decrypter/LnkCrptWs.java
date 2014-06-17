@@ -128,7 +128,9 @@ public class LnkCrptWs extends PluginForDecrypt {
                 }
             }
             Form ret = new Form();
-            if (result == null) return null;
+            if (result == null) {
+                return null;
+            }
             ret.put("aera", result);
             ret.put("adscaptcha_challenge_field", challenge);
             ret.put("adscaptcha_response_field", result);
@@ -143,22 +145,30 @@ public class LnkCrptWs extends PluginForDecrypt {
                 prev = prev.replaceAll(",|\\.", "");
             }
             final int rev = Integer.parseInt(prev);
-            if (rev < 10000) return true;
+            if (rev < 10000) {
+                return true;
+            }
             return false;
         }
 
         private void load() throws Exception {
             acBr = br.cloneBrowser();
-            if (!checkIfSupported()) throw new Exception("AdsCaptcha: Captcha type not supported!");
+            if (!checkIfSupported()) {
+                throw new Exception("AdsCaptcha: Captcha type not supported!");
+            }
             acBr.getPage(captchaAddress);
             getChallenge();
             getPublicKey();
             getImageCount();
-            if (challenge == null || publicKey == null) throw new Exception("AdsCaptcha: challenge and/or publickey equal null!");
+            if (challenge == null || publicKey == null) {
+                throw new Exception("AdsCaptcha: challenge and/or publickey equal null!");
+            }
 
             if (!isStableEnviroment()) {
                 final URL[] images = imageUrls();
-                if (count <= 0 && images.length == 1) throw new Exception("AdsCaptcha modul broken!");
+                if (count <= 0 && images.length == 1) {
+                    throw new Exception("AdsCaptcha modul broken!");
+                }
                 SwingUtilities.invokeAndWait(new Runnable() {
 
                     @Override
@@ -180,32 +190,48 @@ public class LnkCrptWs extends PluginForDecrypt {
 
         private void getPublicKey() {
             publicKey = acBr.getRegex("\"publicKey\":\"([0-9a-f\\-]+)\"").getMatch(0);
-            if (publicKey == null) publicKey = new Regex(captchaAddress, "PublicKey=([0-9a-f\\-]+)\\&").getMatch(0);
+            if (publicKey == null) {
+                publicKey = new Regex(captchaAddress, "PublicKey=([0-9a-f\\-]+)\\&").getMatch(0);
+            }
         }
 
         private void getImageCount() {
             String c = acBr.getRegex("\"count\":\"?(\\d+)\"?").getMatch(0);
-            if (c != null) count = Integer.parseInt(c);
+            if (c != null) {
+                count = Integer.parseInt(c);
+            }
         }
 
         private boolean checkIfSupported() throws Exception {
             captchaAddress = acBr.getRegex("src=\'(http://api\\.adscaptcha\\.com/Get\\.aspx\\?CaptchaId=\\d+\\&PublicKey=[^\'<>]+)").getMatch(0);
             captchaId = new Regex(captchaAddress, "CaptchaId=(\\d+)\\&").getMatch(0);
-            if (captchaAddress == null || captchaId == null) throw new Exception("AdsCaptcha: Captcha address not found!");
-            if (!"3671".equals(captchaId)) return false;
+            if (captchaAddress == null || captchaId == null) {
+                throw new Exception("AdsCaptcha: Captcha address not found!");
+            }
+            if (!"3671".equals(captchaId)) {
+                return false;
+            }
             return true;
         }
 
         private URL[] imageUrls() throws Exception {
             acBr.getPage("http://api.minteye.com/Slider/SliderData.ashx?cid=" + challenge + "&CaptchaId=" + captchaId + "&PublicKey=" + publicKey + "&w=180&h=150");
             String urls[] = acBr.getRegex("\\{\'src\':\\s\'(https?://[^\']+)\'\\}").getColumn(0);
-            if (urls == null || urls.length == 0) urls = acBr.getRegex("\\{\'src\':\\s\'(//[^\']+)\'\\}").getColumn(0);
-            if (urls == null || urls.length == 0) urls = acBr.getRegex("(\'|\")spriteUrl(\'|\"):\\s*(\'|\")(.*?)(\'|\")").getColumn(3);
-            if (urls == null || urls.length == 0) throw new Exception("AdsCaptcha: Image urls not found!");
+            if (urls == null || urls.length == 0) {
+                urls = acBr.getRegex("\\{\'src\':\\s\'(//[^\']+)\'\\}").getColumn(0);
+            }
+            if (urls == null || urls.length == 0) {
+                urls = acBr.getRegex("(\'|\")spriteUrl(\'|\"):\\s*(\'|\")(.*?)(\'|\")").getColumn(3);
+            }
+            if (urls == null || urls.length == 0) {
+                throw new Exception("AdsCaptcha: Image urls not found!");
+            }
             URL out[] = new URL[urls.length];
             int i = 0;
             for (String u : urls) {
-                if (u.startsWith("//")) u = "http:" + u;
+                if (u.startsWith("//")) {
+                    u = "http:" + u;
+                }
                 out[i++] = new URL(u);
             }
             return out;
@@ -245,7 +271,9 @@ public class LnkCrptWs extends PluginForDecrypt {
             setCountdownTime(120);
             this.images = imageUrls.length - 1;
             this.imageUrls = imageUrls;
-            if (images == 0) images = count--;
+            if (images == 0) {
+                images = count--;
+            }
         }
 
         @Override
@@ -409,14 +437,20 @@ public class LnkCrptWs extends PluginForDecrypt {
             if (e.getSource() == dynamicOkButton) {
                 Log.L.fine("Answer: Button<OK:" + dynamicOkButton.getText() + ">");
                 setReturnmask(true);
-            } else if (e.getActionCommand().equals("enterPushed")) return;
+            } else if (e.getActionCommand().equals("enterPushed")) {
+                return;
+            }
             super.actionPerformed(e);
         }
 
         @Override
         protected String createReturnValue() {
-            if (!download.isInterrupted()) download.interrupt();
-            if (Dialog.isOK(getReturnmask())) return String.valueOf(pos);
+            if (!download.isInterrupted()) {
+                download.interrupt();
+            }
+            if (Dialog.isOK(getReturnmask())) {
+                return String.valueOf(pos);
+            }
             return null;
         }
 
@@ -474,30 +508,42 @@ public class LnkCrptWs extends PluginForDecrypt {
 
             // this prevents solvemedia group from seeing referrer
             try {
-                if (clearReferer) smBr.setCurrentURL(null);
+                if (clearReferer) {
+                    smBr.setCurrentURL(null);
+                }
             } catch (final Throwable e) {
                 /* 09581 will break here */
             }
             // end of privacy protection
 
-            if (this.challenge == null) getChallengeKey();
+            if (this.challenge == null) {
+                getChallengeKey();
+            }
             setServer();
             setPath();
             if (!smBr.getURL().contains("solvemedia.com/")) {
                 // when we retry solving a solvemedia session, we reuse smBr, browser already contains the info we need!
                 smBr.getPage(server + path + challenge);
             }
-            if (smBr.containsHTML(">error: domain / ckey mismatch")) throw new Exception(FAIL_CAUSE_CKEY_MISSING);
+            if (smBr.containsHTML(">error: domain / ckey mismatch")) {
+                throw new Exception(FAIL_CAUSE_CKEY_MISSING);
+            }
             if (noscript) {
                 verify = smBr.getForm(0);
                 captchaAddress = smBr.getRegex("<img src=\"(/papi/media\\?c=[^\"]+)").getMatch(0);
-                if (captchaAddress == null) captchaAddress = smBr.getRegex("src=\"(/papi/media\\?c=[^\"]+)").getMatch(0);
-                if (verify == null) throw new Exception("SolveMedia Module fails");
+                if (captchaAddress == null) {
+                    captchaAddress = smBr.getRegex("src=\"(/papi/media\\?c=[^\"]+)").getMatch(0);
+                }
+                if (verify == null) {
+                    throw new Exception("SolveMedia Module fails");
+                }
             } else {
                 chId = smBr.getRegex("\"chid\"\\s+?:\\s+?\"(.*?)\",").getMatch(0);
                 captchaAddress = chId != null ? server + "/papi/media?c=" + chId : null;
             }
-            if (captchaAddress == null) throw new Exception("SolveMedia Module fails");
+            if (captchaAddress == null) {
+                throw new Exception("SolveMedia Module fails");
+            }
         }
 
         private void getChallengeKey() {
@@ -509,18 +555,26 @@ public class LnkCrptWs extends PluginForDecrypt {
             if (challenge == null) {
                 secure = true;
                 challenge = br.getRegex("ckey:\'([\\w\\-\\.]+)\'").getMatch(0);
-                if (challenge == null) challenge = br.getRegex("https://api\\-secure\\.solvemedia\\.com/papi/_?challenge\\.script\\?k=(.{32})").getMatch(0);
-                if (challenge == null) secure = false;
+                if (challenge == null) {
+                    challenge = br.getRegex("https://api\\-secure\\.solvemedia\\.com/papi/_?challenge\\.script\\?k=(.{32})").getMatch(0);
+                }
+                if (challenge == null) {
+                    secure = false;
+                }
             }
         }
 
         public String getChallenge() {
-            if (captchaAddress == null) return null;
+            if (captchaAddress == null) {
+                return null;
+            }
             return new Regex(captchaAddress, "/papi/media\\?c=(.*?)$").getMatch(0);
         }
 
         public String getChallenge(final String code) throws Exception {
-            if (!noscript) return chId;
+            if (!noscript) {
+                return chId;
+            }
 
             /** FIXME stable Browser Bug --> Form action handling */
             String url = smBr.getURL();
@@ -530,8 +584,12 @@ public class LnkCrptWs extends PluginForDecrypt {
             verify.put("adcopy_response", Encoding.urlEncode(code));
             smBr.submitForm(verify);
             String verifyUrl = smBr.getRegex("URL=(http[^\"]+)").getMatch(0);
-            if (verifyUrl == null) return null;
-            if (secure) verifyUrl = verifyUrl.replaceAll("http://", "https://");
+            if (verifyUrl == null) {
+                return null;
+            }
+            if (secure) {
+                verifyUrl = verifyUrl.replaceAll("http://", "https://");
+            }
             try {
                 smBr.getPage(verifyUrl);
             } catch (Throwable e) {
@@ -549,7 +607,9 @@ public class LnkCrptWs extends PluginForDecrypt {
          * @parameter if true uses "https://api-secure.solvemedia.com" instead of "http://api.solvemedia.com"
          */
         public void setSecure(boolean secure) {
-            if (secure) secure = true;
+            if (secure) {
+                secure = true;
+            }
         }
 
         /**
@@ -557,17 +617,23 @@ public class LnkCrptWs extends PluginForDecrypt {
          * @parameter if false uses "_challenge.js" instead of "challenge.noscript" as url path
          */
         public void setNoscript(boolean noscript) {
-            if (!noscript) noscript = false;
+            if (!noscript) {
+                noscript = false;
+            }
         }
 
         private void setServer() {
             server = "http://api.solvemedia.com";
-            if (secure) server = "https://api-secure.solvemedia.com";
+            if (secure) {
+                server = "https://api-secure.solvemedia.com";
+            }
         }
 
         private void setPath() {
             path = "/papi/challenge.noscript?k=";
-            if (!noscript) path = "/papi/_challenge.js?k=";
+            if (!noscript) {
+                path = "/papi/_challenge.js?k=";
+            }
         }
 
         public void setChallengeKey(final String challengeKey) {
@@ -640,12 +706,14 @@ public class LnkCrptWs extends PluginForDecrypt {
                 prev = prev.replaceAll(",|\\.", "");
             }
             final int rev = Integer.parseInt(prev);
-            if (rev < 10000) return true;
+            if (rev < 10000) {
+                return true;
+            }
             return false;
         }
 
         private String getAdditionalQuery(String query) {
-            ScriptEngineManager manager = new ScriptEngineManager();
+            ScriptEngineManager manager = jd.plugins.hoster.DummyScriptEnginePlugin.getScriptEngineManager(this);
             ScriptEngine engine = manager.getEngineByName("javascript");
             String js = rcBr.toString();
             String doc = new Regex(query, "(document.*?)$").getMatch(0);
@@ -666,7 +734,7 @@ public class LnkCrptWs extends PluginForDecrypt {
         }
 
         private void makeFirstRequest() {
-            ScriptEngineManager manager = new ScriptEngineManager();
+            ScriptEngineManager manager = jd.plugins.hoster.DummyScriptEnginePlugin.getScriptEngineManager(this);
             ScriptEngine engine = manager.getEngineByName("javascript");
             try {
                 /* creating pseudo functions: document.location */
@@ -697,7 +765,9 @@ public class LnkCrptWs extends PluginForDecrypt {
                 SERVERSTRING = null;
                 PARAMS.put("s_s_c_web_server_sign4", rcBr.getRegex("s_s_c_web_server_sign4=\"(.*?)\"").getMatch(0));
                 String[] next = rcBr.getRegex("\\.setAttribute\\(\"src\",\"(.*?)\"\\+(.*?)\\+").getRow(0);
-                if (next == null) throw new Exception("KeyCaptcha Module fails");
+                if (next == null) {
+                    throw new Exception("KeyCaptcha Module fails");
+                }
                 SERVERSTRING = next[0];
 
                 /* a little bit js processing */
@@ -719,7 +789,9 @@ public class LnkCrptWs extends PluginForDecrypt {
                     PARAMS.put("s_s_c_web_server_sign4", signFour);
                 }
                 SERVERSTRING = rcBr.getRegex("\\.s_s_c_resurl=\'([^\']+)\'\\+").getMatch(0);
-                if (stImgs == null || sscStc == null || SERVERSTRING == null) throw new Exception("KeyCaptcha Module fails");
+                if (stImgs == null || sscStc == null || SERVERSTRING == null) {
+                    throw new Exception("KeyCaptcha Module fails");
+                }
                 SERVERSTRING += Encoding.urlEncode(getGjsParameter() + additionalQuery);
             } else {
                 throw new Exception("KeyCaptcha Module fails");
@@ -749,7 +821,9 @@ public class LnkCrptWs extends PluginForDecrypt {
                 } else {
                     PARAMS = new HashMap<String, String>();
                     String[][] parameter = FORM.getRegex("(s_s_c_\\w+) = \'(.*?)\'").getMatches();
-                    if (parameter == null || parameter.length == 0) parameter = FORM.getRegex("(s_s_c_\\w+) = \"(.*?)\"").getMatches();
+                    if (parameter == null || parameter.length == 0) {
+                        parameter = FORM.getRegex("(s_s_c_\\w+) = \"(.*?)\"").getMatches();
+                    }
                     for (final String[] para : parameter) {
                         if (para.length != 2) {
                             continue;
@@ -762,7 +836,9 @@ public class LnkCrptWs extends PluginForDecrypt {
                         String src = FORM.getRegex("src=\'([^']+keycaptcha\\.com[^']+)\'").getMatch(0);
                         if (src == null) {
                             src = FORM.getRegex("src=\"([^\"]+keycaptcha\\.com[^\"]+)\"").getMatch(0);
-                            if (src == null) { throw new Exception("KeyCaptcha Module fails"); }
+                            if (src == null) {
+                                throw new Exception("KeyCaptcha Module fails");
+                            }
                         }
                         PARAMS.put("src", src);
                     }
@@ -793,7 +869,9 @@ public class LnkCrptWs extends PluginForDecrypt {
                 sscGetImagest(stImgs[0], stImgs[1], stImgs[2], Boolean.parseBoolean(stImgs[3]));// fragmentierte Puzzleteile
                 sscGetImagest(sscStc[0], sscStc[1], sscStc[2], Boolean.parseBoolean(sscStc[3]));// fragmentiertes Hintergrundbild
 
-                if (sscStc == null || sscStc.length == 0 || stImgs == null || stImgs.length == 0 || fmsImg == null || fmsImg.size() == 0) return "CANCEL";
+                if (sscStc == null || sscStc.length == 0 || stImgs == null || stImgs.length == 0 || fmsImg == null || fmsImg.size() == 0) {
+                    return "CANCEL";
+                }
 
                 String out = null;
                 ArrayList<Integer> marray = new ArrayList<Integer>();
@@ -812,7 +890,9 @@ public class LnkCrptWs extends PluginForDecrypt {
                     } catch (final Throwable e) {
                         out = null;
                     }
-                    if (out == null) throw new DecrypterException(DecrypterException.CAPTCHA);
+                    if (out == null) {
+                        throw new DecrypterException(DecrypterException.CAPTCHA);
+                    }
                     if (vC.getReturnmask() == 4) {
                         out = "CANCEL";
                     }
@@ -831,18 +911,24 @@ public class LnkCrptWs extends PluginForDecrypt {
                     }
                     out = vC.POSITION;
                 }
-                if (out == null) return null;
+                if (out == null) {
+                    return null;
+                }
                 if ("CANCEL".equals(out)) {
                     System.out.println("KeyCaptcha: User aborted captcha dialog.");
                     return out;
                 }
 
                 String key = rcBr.getRegex("\\|([0-9a-zA-Z]+)\'\\.split").getMatch(0);
-                if (key == null) key = Encoding.Base64Decode("OTNodk9FZmhNZGU=");
+                if (key == null) {
+                    key = Encoding.Base64Decode("OTNodk9FZmhNZGU=");
+                }
 
                 String cOut = "";
                 for (Integer i : marray) {
-                    if (cOut.length() > 1) cOut += ".";
+                    if (cOut.length() > 1) {
+                        cOut += ".";
+                    }
                     cOut += String.valueOf(i);
                 }
 
@@ -851,7 +937,9 @@ public class LnkCrptWs extends PluginForDecrypt {
                 out = rcBr.getPage(SERVERSTRING.substring(0, SERVERSTRING.lastIndexOf("%7C")));
                 out = new Regex(out, "s_s_c_setcapvalue\\( \"(.*?)\" \\)").getMatch(0);
                 // validate final response
-                if (!out.matches("[0-9a-f]+\\|[0-9a-f]+\\|http://back\\d+\\.keycaptcha\\.com/swfs/ckc/[0-9a-f-]+\\|[0-9a-f-\\.]+\\|(0|1)")) return null;
+                if (!out.matches("[0-9a-f]+\\|[0-9a-f]+\\|http://back\\d+\\.keycaptcha\\.com/swfs/ckc/[0-9a-f-]+\\|[0-9a-f-\\.]+\\|(0|1)")) {
+                    return null;
+                }
                 return out;
             } finally {
                 LOCKDIALOG.unlock();
@@ -860,7 +948,9 @@ public class LnkCrptWs extends PluginForDecrypt {
 
         private String sscFsmCheckFour(String arg0, final String arg1) {
             try {
-                if (arg0 == null || arg0.length() < 8 || arg1 == null) { return null; }
+                if (arg0 == null || arg0.length() < 8 || arg1 == null) {
+                    return null;
+                }
                 String prand = "";
                 for (int i = 0; i < arg1.length(); i++) {
                     prand += arg1.codePointAt(i);
@@ -896,7 +986,9 @@ public class LnkCrptWs extends PluginForDecrypt {
 
         private String sscFsmCheckTwo(final String arg0, final String arg1) {
             try {
-                if (arg1 == null) { return null; }
+                if (arg1 == null) {
+                    return null;
+                }
                 String prand = "";
                 for (int i = 0; i < arg1.length(); i++) {
                     prand += arg1.codePointAt(i);
@@ -905,7 +997,9 @@ public class LnkCrptWs extends PluginForDecrypt {
                 final int mult = Integer.parseInt(String.valueOf(prand.charAt(sPos) + "" + prand.charAt(sPos * 2) + "" + prand.charAt(sPos * 3) + "" + prand.charAt(sPos * 4) + "" + prand.charAt(sPos * 5 - 1)));
                 final int incr = (int) Math.ceil(arg1.length() / 3d);
                 final long modu = (int) Math.pow(2, 31);
-                if (mult < 2) { return null; }
+                if (mult < 2) {
+                    return null;
+                }
                 int salt = (int) Math.round(Math.random() * 1000000000) % 100000000;
                 prand += salt;
                 while (prand.length() > 9) {
@@ -1002,7 +1096,9 @@ public class LnkCrptWs extends PluginForDecrypt {
 
         @Override
         protected String createReturnValue() {
-            if (Dialog.isOK(getReturnmask())) { return getPosition(drawPanel); }
+            if (Dialog.isOK(getReturnmask())) {
+                return getPosition(drawPanel);
+            }
             return null;
         }
 
@@ -1528,14 +1624,14 @@ public class LnkCrptWs extends PluginForDecrypt {
             int zx, zy;
 
             x = this.x + 1 & 0xff;
-            zx = (int) z[x];
+            zx = z[x];
             y = zx + this.y & 0xff;
-            zy = (int) z[y];
+            zy = z[y];
             this.x = x;
             this.y = y;
             z[y] = (byte) (zx & 0xff);
             z[x] = (byte) (zy & 0xff);
-            return (int) z[(zx + zy & 0xff)];
+            return z[(zx + zy & 0xff)];
         }
 
         private void B(final byte[] b) {
@@ -1550,9 +1646,9 @@ public class LnkCrptWs extends PluginForDecrypt {
             w = 0;
             m = 0;
             for (n = 0; n < 256; n++) {
-                p = (int) z[n];
+                p = z[n];
                 m = m + b[w] + p & 0xff;
-                o = (int) z[m];
+                o = z[m];
                 z[m] = (byte) (p & 0xff);
                 z[n] = (byte) (o & 0xff);
                 if (++w >= b.length) {
@@ -1564,7 +1660,7 @@ public class LnkCrptWs extends PluginForDecrypt {
         public synchronized void C(final byte[] a, final int b, final byte[] c, final int d, final int e) {
             final int end = b + e;
             for (int si = b, di = d; si < end; si++, di++) {
-                c[di] = (byte) (((int) a[si] ^ A()) & 0xff);
+                c[di] = (byte) ((a[si] ^ A()) & 0xff);
             }
         }
 
@@ -1587,7 +1683,9 @@ public class LnkCrptWs extends PluginForDecrypt {
             /* packed with extended ascii */
             if (new Regex(packedJavaScript, "c%a\\+161").matches()) {
                 String packed[] = new Regex(packedJavaScript, ("\\}\\(\'(.*?)\',(\\d+),(\\d+),\'(.*?)\'\\.split\\(\'\\|\\'\\),(\\d+)")).getRow(0);
-                if (packed == null) return null;
+                if (packed == null) {
+                    return null;
+                }
                 return nativeDecode(packed[0], Integer.parseInt(packed[1]), Integer.parseInt(packed[2]), packed[3].split("\\|"), Integer.parseInt(packed[4]));
             }
             return rhinoDecode(packedJavaScript);
@@ -1607,7 +1705,7 @@ public class LnkCrptWs extends PluginForDecrypt {
 
         private static String rhinoDecode(String eval) {
             Object result = new Object();
-            final ScriptEngineManager manager = new ScriptEngineManager();
+            final ScriptEngineManager manager = jd.plugins.hoster.DummyScriptEnginePlugin.getScriptEngineManager(null);
             final ScriptEngine engine = manager.getEngineByName("javascript");
             try {
                 result = engine.eval(eval);
@@ -1631,7 +1729,9 @@ public class LnkCrptWs extends PluginForDecrypt {
         /*
          * CHECK: we should always use new String (bytes,charset) to avoid issues with system charset and utf-8
          */
-        if (b != null) { return new String(v.D(o, JDHexUtils.getByteArray(b))); }
+        if (b != null) {
+            return new String(v.D(o, JDHexUtils.getByteArray(b)));
+        }
         return new String(v.D(o, JDHexUtils.getByteArray("E3CEACB19040D08244C9E5C29D115AE220F83AB417")));
     }
 
@@ -1684,14 +1784,18 @@ public class LnkCrptWs extends PluginForDecrypt {
                 if (result == null) {
                     continue;
                 }
-                if ("CANCEL".equals(result)) { throw new DecrypterException(DecrypterException.CAPTCHA); }
+                if ("CANCEL".equals(result)) {
+                    throw new DecrypterException(DecrypterException.CAPTCHA);
+                }
                 br.postPage(parameter, "capcode=" + Encoding.urlEncode(result));
                 if (!br.containsHTML("<\\!\\-\\- KeyCAPTCHA code")) {
                     break;
                 }
             }
         }
-        if (br.containsHTML("<\\!\\-\\- KeyCAPTCHA code")) { throw new DecrypterException(DecrypterException.CAPTCHA); }
+        if (br.containsHTML("<\\!\\-\\- KeyCAPTCHA code")) {
+            throw new DecrypterException(DecrypterException.CAPTCHA);
+        }
         if (br.containsHTML("CaptX|TextX")) {
             final int max_attempts = 3;
             for (int attempts = 0; attempts < max_attempts; attempts++) {
@@ -1709,7 +1813,9 @@ public class LnkCrptWs extends PluginForDecrypt {
                             final File file = this.getLocalCaptchaFile();
                             br.cloneBrowser().getDownload(file, url);
                             final Point p = UserIO.getInstance().requestClickPositionDialog(file, "LinkCrypt.ws | " + String.valueOf(max_attempts - attempts), capDescription);
-                            if (p == null) { throw new DecrypterException(DecrypterException.CAPTCHA); }
+                            if (p == null) {
+                                throw new DecrypterException(DecrypterException.CAPTCHA);
+                            }
                             captcha.put("x", p.x + "");
                             captcha.put("y", p.y + "");
                             br.submitForm(captcha);
@@ -1723,7 +1829,9 @@ public class LnkCrptWs extends PluginForDecrypt {
                 }
             }
         }
-        if (!valid) throw new DecrypterException(DecrypterException.CAPTCHA);
+        if (!valid) {
+            throw new DecrypterException(DecrypterException.CAPTCHA);
+        }
         // check for a password. Store latest password in DB
         Form password = br.getForm(0);
         if (password != null && password.hasInputFieldByName("password")) {
@@ -1751,7 +1859,9 @@ public class LnkCrptWs extends PluginForDecrypt {
                 break;
             }
         }
-        if (password != null && password.hasInputFieldByName("password")) throw new DecrypterException(DecrypterException.PASSWORD);
+        if (password != null && password.hasInputFieldByName("password")) {
+            throw new DecrypterException(DecrypterException.PASSWORD);
+        }
         // Look for containers
         String[] containers = br.getRegex("eval(.*?)[\r\n]+").getColumn(0);
         final String tmpc = br.getRegex("<div id=\"containerfiles\"(.*?)</script>").getMatch(0);
@@ -1763,14 +1873,20 @@ public class LnkCrptWs extends PluginForDecrypt {
             decryptedJS = JavaScriptUnpacker.decode(c);
             String[] row = new Regex(decryptedJS, "href=\"(http.*?)\".*?(dlc|ccf|rsdf)").getRow(0);// all
                                                                                                    // container
-            if (row == null) row = new Regex(decryptedJS, "href=\"([^\"]+)\"[^>]*>.*?<img.*?image/(.*?)\\.").getRow(0); // cnl
-            if (row == null) row = new Regex(decryptedJS, "(http://linkcrypt\\.ws/container/[^\"]+)\".*?http://linkcrypt\\.ws/image/([a-z]+)\\.").getRow(0); // fallback
+            if (row == null) {
+                row = new Regex(decryptedJS, "href=\"([^\"]+)\"[^>]*>.*?<img.*?image/(.*?)\\.").getRow(0); // cnl
+            }
+            if (row == null) {
+                row = new Regex(decryptedJS, "(http://linkcrypt\\.ws/container/[^\"]+)\".*?http://linkcrypt\\.ws/image/([a-z]+)\\.").getRow(0); // fallback
+            }
             if (row != null) {
                 if ("cnl".equalsIgnoreCase(row[1])) {
                     row[1] = "cnl";
                     row[0] = decryptedJS;
                 }
-                if (!map.containsKey(row[1])) map.put(row[1], row[0]);
+                if (!map.containsKey(row[1])) {
+                    map.put(row[1], row[0]);
+                }
             }
         }
 
@@ -1831,7 +1947,9 @@ public class LnkCrptWs extends PluginForDecrypt {
                 } else {
                     try {
                         cnlbr.submitForm(cnlForm);
-                        if (cnlbr.containsHTML("success")) return decryptedLinks;
+                        if (cnlbr.containsHTML("success")) {
+                            return decryptedLinks;
+                        }
                         if (cnlbr.containsHTML("^failed")) {
                             logger.warning("linkcrypt.ws: CNL2 Postrequest was failed! Please upload now a logfile, contact our support and add this loglink to your bugreport!");
                             logger.warning("linkcrypt.ws: CNL2 Message: " + cnlbr.toString());
@@ -1856,11 +1974,15 @@ public class LnkCrptWs extends PluginForDecrypt {
                 logger.info("Container found: " + container);
                 decryptedLinks.addAll(JDUtilities.getController().getContainerLinks(container));
                 container.delete();
-                if (decryptedLinks.size() == 0) continue;
+                if (decryptedLinks.size() == 0) {
+                    continue;
+                }
             }
         }
 
-        if (decryptedLinks.size() > 0) return decryptedLinks;
+        if (decryptedLinks.size() > 0) {
+            return decryptedLinks;
+        }
 
         // Webdecryption
         if (webDecryption) {
@@ -1887,7 +2009,9 @@ public class LnkCrptWs extends PluginForDecrypt {
                                 final String[] evals = clone.getRegex("eval(.*?)[\r\n]+").getColumn(0);
                                 for (final String c : evals) {
                                     String code = JavaScriptUnpacker.decode(c);
-                                    if (code == null) continue;
+                                    if (code == null) {
+                                        continue;
+                                    }
                                     if (code.contains("ba2se") || code.contains("premfree")) {
                                         code = code.replaceAll("\\\\", "");
                                         String versch = new Regex(code, "ba2se=\'(.*?)\'").getMatch(0);
@@ -1907,7 +2031,9 @@ public class LnkCrptWs extends PluginForDecrypt {
                                             }
                                             decryptedLinks.add(dl);
                                             try {
-                                                if (this.isAbort()) return decryptedLinks;
+                                                if (this.isAbort()) {
+                                                    return decryptedLinks;
+                                                }
                                             } catch (Throwable e) {
                                                 /* does not exist in 09581 */
                                             }

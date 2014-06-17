@@ -102,7 +102,7 @@ public class CNL extends PluginForDecrypt {
         if (jk != null) {
 
             try {
-                final ScriptEngineManager manager = new ScriptEngineManager();
+                final ScriptEngineManager manager = jd.plugins.hoster.DummyScriptEnginePlugin.getScriptEngineManager(this);
                 final ScriptEngine engine = manager.getEngineByName("javascript");
 
                 final String fun = jk + "  f()";

@@ -74,7 +74,7 @@ public class TomWansCom extends PluginForHost {
 
     private String getFinalLink(String s) {
         Object result = null;
-        ScriptEngineManager manager = new ScriptEngineManager();
+        ScriptEngineManager manager = jd.plugins.hoster.DummyScriptEnginePlugin.getScriptEngineManager(this);
         ScriptEngine engine = manager.getEngineByName("javascript");
         try {
             /* unpacked js */

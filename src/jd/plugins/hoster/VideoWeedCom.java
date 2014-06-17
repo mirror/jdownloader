@@ -160,7 +160,7 @@ public class VideoWeedCom extends PluginForHost {
         if (fn == null) {
             return null;
         }
-        final ScriptEngineManager manager = new ScriptEngineManager();
+        final ScriptEngineManager manager = jd.plugins.hoster.DummyScriptEnginePlugin.getScriptEngineManager(this);
         final ScriptEngine engine = manager.getEngineByName("ECMAScript");
         try {
             engine.eval("var res = " + fn);

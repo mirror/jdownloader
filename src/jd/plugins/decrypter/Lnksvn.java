@@ -332,7 +332,7 @@ public class Lnksvn extends PluginForDecrypt {
         String js = br.getRegex("<script type=\"text/javascript\">(.+?)</script>").getMatch(0);
         try {
 
-            final ScriptEngineManager manager = new ScriptEngineManager();
+            final ScriptEngineManager manager = jd.plugins.hoster.DummyScriptEnginePlugin.getScriptEngineManager(this);
             final ScriptEngine engine = manager.getEngineByName("javascript");
 
             engine.eval("document = {};document.text=\"\";document.write= function (a) { document.text+=a;};");

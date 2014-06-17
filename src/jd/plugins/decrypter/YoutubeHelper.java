@@ -732,7 +732,7 @@ public class YoutubeHelper {
         des = new Regex(jsContent, Pattern.compile(func)).getMatch(1);
         try {
 
-            final ScriptEngineManager manager = new ScriptEngineManager();
+            final ScriptEngineManager manager = jd.plugins.hoster.DummyScriptEnginePlugin.getScriptEngineManager(this);
             final ScriptEngine engine = manager.getEngineByName("javascript");
 
             String all = new Regex(jsContent, Pattern.compile("function " + descrambler + "\\(([^)]+)\\)\\{(.+?return.*?)\\}.*?\\{.*?\\}")).getMatch(-1);

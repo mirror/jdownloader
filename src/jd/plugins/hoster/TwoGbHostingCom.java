@@ -84,7 +84,7 @@ public class TwoGbHostingCom extends PluginForHost {
 
     private String decodeDownloadLink(final String s) {
         Object result = new Object();
-        final ScriptEngineManager manager = new ScriptEngineManager();
+        final ScriptEngineManager manager = jd.plugins.hoster.DummyScriptEnginePlugin.getScriptEngineManager(this);
         final ScriptEngine engine = manager.getEngineByName("javascript");
         try {
             result = engine.eval(new Regex(s, "eval(.*?)$").getMatch(0));

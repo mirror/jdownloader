@@ -181,7 +181,7 @@ public class RapidGatorNet extends PluginForHost {
 
     private String executeJavaScriptRedirect(final String retVal, final String script) {
         Object result = new Object();
-        final ScriptEngineManager manager = new ScriptEngineManager();
+        final ScriptEngineManager manager = jd.plugins.hoster.DummyScriptEnginePlugin.getScriptEngineManager(this);
         final ScriptEngine engine = manager.getEngineByName("javascript");
         try {
             engine.eval(script);

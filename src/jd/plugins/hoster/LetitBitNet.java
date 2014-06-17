@@ -531,7 +531,7 @@ public class LetitBitNet extends PluginForHost {
     }
 
     private void decryptingForm(Form encryptedForm) {
-        final ScriptEngineManager manager = new ScriptEngineManager();
+        final ScriptEngineManager manager = jd.plugins.hoster.DummyScriptEnginePlugin.getScriptEngineManager(this);
         final ScriptEngine engine = manager.getEngineByName("javascript");
 
         HashMap<String, String> encValues = new HashMap<String, String>(getFormIds(encryptedForm));

@@ -46,7 +46,7 @@ public class TimSahCom extends PluginForHost {
 
     private String execJS(final String fun) throws Exception {
         Object result = new Object();
-        final ScriptEngineManager manager = new ScriptEngineManager();
+        final ScriptEngineManager manager = jd.plugins.hoster.DummyScriptEnginePlugin.getScriptEngineManager(this);
         final ScriptEngine engine = manager.getEngineByName("javascript");
         try {
             result = engine.eval(fun);

@@ -220,7 +220,7 @@ public class AnySendCom extends PluginForHost {
         String code[] = br.getRegex("code:eval\\((.*?)\\)(\\(.*?\\))").getRow(0);
         if (code == null || code.length < 2) return null;
         String result = null;
-        final ScriptEngineManager manager = new ScriptEngineManager();
+        final ScriptEngineManager manager = jd.plugins.hoster.DummyScriptEnginePlugin.getScriptEngineManager(this);
         final ScriptEngine engine = manager.getEngineByName("javascript");
         try {
             result = (String) engine.eval(code[0]);
