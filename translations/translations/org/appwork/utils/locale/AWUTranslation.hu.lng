@@ -118,6 +118,7 @@ proxy_http=%s1:%s2 (Http Proxy)
 proxy_none=Közvetlen
 proxy_socks4=%s1:%s2 (Socks4 Proxy)
 proxy_socks5=%s1:%s2 (Socks5 Proxy)
+proxydialog_remember=Emlékezzen rá
 proxydialog_title=Nincs Internetkapcsolat
 tableheader_tooltip_locked=%s1 (Átméretezés lezárva)
 tableheader_tooltip_normal=%s1
