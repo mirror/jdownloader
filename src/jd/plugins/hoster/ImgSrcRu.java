@@ -22,6 +22,7 @@ import jd.PluginWrapper;
 import jd.config.Property;
 import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
+import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.parser.html.Form;
 import jd.plugins.DownloadLink;
@@ -212,7 +213,15 @@ public class ImgSrcRu extends PluginForHost {
         }
         br.getPage(url);
         if (br.containsHTML(">This album has not been checked by the moderators yet\\.|<u>Proceed at your own risk</u>")) {
-            br.getPage(br.getURL() + "?warned=yeah");
+            // /main/passcheck.php?ad=\d+ links can not br.getURL + "?warned=yeah"
+            // lets look for the link
+            final String yeah = br.getRegex("/[^/]+/a\\d+\\.html\\??warned=yeah").getMatch(-1);
+            if (yeah != null) {
+                br.getPage(yeah);
+            } else {
+                // fail over
+                br.getPage(br.getURL() + "?warned=yeah");
+            }
         }
         // needs to be before password
         if (br.containsHTML(">Album foreword:.+Continue to album >></a>")) {
@@ -230,7 +239,7 @@ public class ImgSrcRu extends PluginForHost {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
             if (password == null) {
-                password = downloadLink.getStringProperty("password");
+                password = downloadLink.getStringProperty("pass");
                 if (password == null) {
                     password = getUserInput("Enter password for link:", downloadLink);
                     if (password == null || password.equals("")) {
@@ -239,14 +248,15 @@ public class ImgSrcRu extends PluginForHost {
                     }
                 }
             }
-            pwForm.put("pwd", password);
+            pwForm.put("pwd", Encoding.urlEncode(password));
             br.submitForm(pwForm);
             pwForm = br.getFormbyProperty("name", "passchk");
             if (pwForm != null) {
-                downloadLink.setProperty("password", Property.NULL);
+                downloadLink.setProperty("pass", Property.NULL);
                 password = null;
+                throw new PluginException(LinkStatus.ERROR_RETRY);
             }
-            downloadLink.setProperty("password", password);
+            downloadLink.setProperty("pass", password);
         } else if (br.getURL().equals("http://imgsrc.ru/")) {
             // link has been removed!
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);

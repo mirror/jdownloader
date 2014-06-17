@@ -16,7 +16,6 @@
 
 package jd.plugins.decrypter;
 
-import java.net.SocketException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Random;
@@ -25,6 +24,7 @@ import jd.PluginWrapper;
 import jd.config.Property;
 import jd.controlling.ProgressController;
 import jd.http.Browser;
+import jd.http.Browser.BrowserException;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.parser.html.Form;
@@ -207,7 +207,7 @@ public class ImgSrcRu extends PluginForDecrypt {
                 img.setFinalFileName(upid);
                 img.setAvailable(true);
                 if (password != null) {
-                    img.setProperty("password", password);
+                    img.setProperty("pass", password);
                 }
                 decryptedLinks.add(img);
             }
@@ -251,7 +251,15 @@ public class ImgSrcRu extends PluginForDecrypt {
             try {
                 br.getPage(url);
                 if (br.containsHTML(">This album has not been checked by the moderators yet\\.|<u>Proceed at your own risk</u>")) {
-                    br.getPage(br.getURL() + "?warned=yeah");
+                    // /main/passcheck.php?ad=\d+ links can not br.getURL + "?warned=yeah"
+                    // lets look for the link
+                    final String yeah = br.getRegex("/[^/]+/a\\d+\\.html\\??warned=yeah").getMatch(-1);
+                    if (yeah != null) {
+                        br.getPage(yeah);
+                    } else {
+                        // fail over
+                        br.getPage(br.getURL() + "?warned=yeah");
+                    }
                 }
                 // needs to be before password
                 if (br.containsHTML(">Album foreword:.+Continue to album >></a>")) {
@@ -268,22 +276,37 @@ public class ImgSrcRu extends PluginForDecrypt {
                         logger.warning("Decrypter broken for link: " + parameter);
                         return false;
                     }
+                    int passUsed = 0;
                     if (password == null) {
-                        password = this.getPluginConfig().getStringProperty("lastusedpassword");
-                        if (password == null) {
-                            password = getUserInput("Enter password for link: " + param.getCryptedUrl(), param);
-                            if (password == null || password.equals("")) {
-                                logger.info("User aborted/entered blank password");
-                                exaustedPassword = true;
-                                return false;
+                        password = param.getDecrypterPassword();
+                        if (password != null) {
+                            passUsed = 1;
+                        } else {
+                            password = this.getPluginConfig().getStringProperty("lastusedpassword");
+                            if (password != null) {
+                                passUsed = 2;
+                            } else {
+                                password = getUserInput("Enter password for link: " + param.getCryptedUrl(), param);
+                                if (password == null || password.equals("")) {
+                                    logger.info("User aborted/entered blank password");
+                                    exaustedPassword = true;
+                                    return false;
+                                } else {
+                                    passUsed = 3;
+                                }
                             }
                         }
                     }
-                    pwForm.put("pwd", password);
+                    pwForm.put("pwd", Encoding.urlEncode(password));
                     br.submitForm(pwForm);
                     pwForm = br.getFormbyProperty("name", "passchk");
                     if (pwForm != null) {
-                        this.getPluginConfig().setProperty("lastusedpassword", Property.NULL);
+                        // nullify wrong storable to prevent retry loop of the same passwd multiple times.
+                        if (passUsed == 1) {
+                            param.setDecrypterPassword(null);
+                        } else if (passUsed == 2) {
+                            this.getPluginConfig().setProperty("lastusedpassword", Property.NULL);
+                        }
                         password = null;
                         failed = true;
                         if (i == repeat) {
@@ -307,7 +330,7 @@ public class ImgSrcRu extends PluginForDecrypt {
                     // because one page grab could have multiple steps, you can not break after each if statement
                     break;
                 }
-            } catch (final SocketException e) {
+            } catch (final BrowserException e) {
                 failed = true;
                 continue;
             }
