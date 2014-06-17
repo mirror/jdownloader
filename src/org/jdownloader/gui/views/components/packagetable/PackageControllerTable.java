@@ -127,6 +127,7 @@ public abstract class PackageControllerTable<ParentType extends AbstractPackageN
     public PackageControllerTable(PackageControllerTableModel<ParentType, ChildrenType> pctm) {
         super(pctm);
         tableModel = pctm;
+
         this.setShowVerticalLines(false);
         this.setSelectionMode(ListSelectionModel.MULTIPLE_INTERVAL_SELECTION);
 
@@ -287,7 +288,9 @@ public abstract class PackageControllerTable<ParentType extends AbstractPackageN
         final java.util.List<ChildrenType> ret = new ArrayList<ChildrenType>();
         int iMin = selectionModel.getMinSelectionIndex();
         int iMax = selectionModel.getMaxSelectionIndex();
-        if ((iMin == -1) || (iMax == -1)) { return; }
+        if ((iMin == -1) || (iMax == -1)) {
+            return;
+        }
         List<AbstractNode> tableData = getModel().getTableData();
         for (int i = iMin; i <= iMax; i++) {
             if (selectionModel.isSelectedIndex(i)) {
@@ -296,6 +299,14 @@ public abstract class PackageControllerTable<ParentType extends AbstractPackageN
                     if (node instanceof AbstractPackageNode<?, ?> && selectedPkgs != null) {
                         selectedPkgs.add((ParentType) node);
                     } else if (node instanceof AbstractPackageChildrenNode<?> && selectedChld != null) {
+
+                        if (tableModel.isHideSinglePackage()) {
+                            Object pNode = ((AbstractPackageChildrenNode) node).getParentNode();
+                            if (pNode instanceof AbstractPackageNode && ((AbstractPackageNode) pNode).getChildren().size() == 1) {
+                                selectedPkgs.add((ParentType) pNode);
+                                continue;
+                            }
+                        }
                         selectedChld.add((ChildrenType) node);
                     }
                 }
@@ -310,7 +321,9 @@ public abstract class PackageControllerTable<ParentType extends AbstractPackageN
             boolean lock = false;
             try {
                 lock = pkg.getModifyLock().readLock();
-                if (pkg.isExpanded()) allInPackages.addAll(pkg.getChildren());
+                if (pkg.isExpanded()) {
+                    allInPackages.addAll(pkg.getChildren());
+                }
             } finally {
                 pkg.getModifyLock().readUnlock(lock);
             }
@@ -331,7 +344,9 @@ public abstract class PackageControllerTable<ParentType extends AbstractPackageN
         for (ChildrenType child : selectedChld) {
             if (sameParent == null) {
                 sameParent = child.getParentNode();
-            } else if (sameParent != child.getParentNode()) { return new boolean[] { false, false }; }
+            } else if (sameParent != child.getParentNode()) {
+                return new boolean[] { false, false };
+            }
         }
         /* move up check */
         boolean moveUp = false;
@@ -386,12 +401,16 @@ public abstract class PackageControllerTable<ParentType extends AbstractPackageN
     }
 
     protected boolean updateMoveButtonEnabledStatus() {
-        if (getModel().isFilteredView()) return false;
+        if (getModel().isFilteredView()) {
+            return false;
+        }
         return true;
     }
 
     protected boolean moveUpPossible(java.util.List<ParentType> pkgs, java.util.List<ChildrenType> selectedChld) {
-        if (getModel().isFilteredView()) return false;
+        if (getModel().isFilteredView()) {
+            return false;
+        }
         // let's check if we have only full packages selected. that means, that selectedChld contains all links in the packages
         boolean onlyFullPackagesSelected = true;
         HashSet<ChildrenType> allInPackages = new HashSet<ChildrenType>();
@@ -399,7 +418,9 @@ public abstract class PackageControllerTable<ParentType extends AbstractPackageN
             boolean lock = false;
             try {
                 lock = pkg.getModifyLock().readLock();
-                if (pkg.isExpanded()) allInPackages.addAll(pkg.getChildren());
+                if (pkg.isExpanded()) {
+                    allInPackages.addAll(pkg.getChildren());
+                }
             } finally {
                 pkg.getModifyLock().readUnlock(lock);
             }
@@ -420,19 +441,25 @@ public abstract class PackageControllerTable<ParentType extends AbstractPackageN
         for (ChildrenType child : selectedChld) {
             if (sameParent == null) {
                 sameParent = child.getParentNode();
-            } else if (sameParent != child.getParentNode()) { return false; }
+            } else if (sameParent != child.getParentNode()) {
+                return false;
+            }
         }
         PackageController<ParentType, ChildrenType> pc = this.getController();
         int index = 0;
         for (ParentType parent : pkgs) {
-            if (pc.indexOf(parent) != index++) return true;
+            if (pc.indexOf(parent) != index++) {
+                return true;
+            }
         }
         if (sameParent != null) {
             boolean readL = sameParent.getModifyLock().readLock();
             try {
                 index = 0;
                 for (ChildrenType child : selectedChld) {
-                    if (sameParent.indexOf(child) != index++) return true;
+                    if (sameParent.indexOf(child) != index++) {
+                        return true;
+                    }
                 }
             } finally {
                 sameParent.getModifyLock().readUnlock(readL);
@@ -442,14 +469,18 @@ public abstract class PackageControllerTable<ParentType extends AbstractPackageN
     }
 
     protected boolean moveDownPossible(java.util.List<ParentType> pkgs, java.util.List<ChildrenType> selectedChld) {
-        if (getModel().isFilteredView()) return false;
+        if (getModel().isFilteredView()) {
+            return false;
+        }
         boolean onlyFullPackagesSelected = true;
         HashSet<ChildrenType> allInPackages = new HashSet<ChildrenType>();
         for (ParentType pkg : pkgs) {
             boolean lock = false;
             try {
                 lock = pkg.getModifyLock().readLock();
-                if (pkg.isExpanded()) allInPackages.addAll(pkg.getChildren());
+                if (pkg.isExpanded()) {
+                    allInPackages.addAll(pkg.getChildren());
+                }
             } finally {
                 pkg.getModifyLock().readUnlock(lock);
             }
@@ -470,13 +501,17 @@ public abstract class PackageControllerTable<ParentType extends AbstractPackageN
         for (ChildrenType child : selectedChld) {
             if (sameParent == null) {
                 sameParent = child.getParentNode();
-            } else if (sameParent != child.getParentNode()) { return false; }
+            } else if (sameParent != child.getParentNode()) {
+                return false;
+            }
         }
         PackageController<ParentType, ChildrenType> pc = this.getController();
         int index = pc.size() - 1;
         for (int i = pkgs.size() - 1; i >= 0; i--) {
             ParentType parent = pkgs.get(i);
-            if (pc.indexOf(parent) != index--) return true;
+            if (pc.indexOf(parent) != index--) {
+                return true;
+            }
         }
         if (sameParent != null) {
             boolean readL = sameParent.getModifyLock().readLock();
@@ -484,7 +519,9 @@ public abstract class PackageControllerTable<ParentType extends AbstractPackageN
                 index = sameParent.getChildren().size() - 1;
                 for (int i = selectedChld.size() - 1; i >= 0; i--) {
                     ChildrenType child = selectedChld.get(i);
-                    if (sameParent.indexOf(child) != index--) return true;
+                    if (sameParent.indexOf(child) != index--) {
+                        return true;
+                    }
                 }
             } finally {
                 sameParent.getModifyLock().readUnlock(readL);
@@ -514,7 +551,9 @@ public abstract class PackageControllerTable<ParentType extends AbstractPackageN
                     @Override
                     protected Void run() throws RuntimeException {
                         boolean moveUpPossible = moveUpPossible(selectedPkgs, selectedChld);
-                        if (moveUpPossible == false) return null;
+                        if (moveUpPossible == false) {
+                            return null;
+                        }
                         PackageController<ParentType, ChildrenType> pc = getController();
                         if (selectedPkgs.size() > 0) {
                             /* move package to top of list */
@@ -551,7 +590,9 @@ public abstract class PackageControllerTable<ParentType extends AbstractPackageN
                     @Override
                     protected Void run() throws RuntimeException {
                         boolean moveUpPossible = moveUpPossible(selectedPkgs, selectedChld);
-                        if (moveUpPossible == false) return null;
+                        if (moveUpPossible == false) {
+                            return null;
+                        }
                         PackageController<ParentType, ChildrenType> pc = getController();
                         if (selectedPkgs.size() > 0) {
                             ParentType after = null;
@@ -613,7 +654,9 @@ public abstract class PackageControllerTable<ParentType extends AbstractPackageN
                     @Override
                     protected Void run() throws RuntimeException {
                         boolean moveDownPossible = moveDownPossible(selectedPkgs, selectedChld);
-                        if (moveDownPossible == false) return null;
+                        if (moveDownPossible == false) {
+                            return null;
+                        }
                         PackageController<ParentType, ChildrenType> pc = getController();
                         if (selectedPkgs.size() > 0) {
                             ParentType after = null;
@@ -670,7 +713,9 @@ public abstract class PackageControllerTable<ParentType extends AbstractPackageN
                     @Override
                     protected Void run() throws RuntimeException {
                         boolean moveDownPossible = moveDownPossible(selectedPkgs, selectedChld);
-                        if (moveDownPossible == false) return null;
+                        if (moveDownPossible == false) {
+                            return null;
+                        }
                         PackageController<ParentType, ChildrenType> pc = getController();
                         if (selectedPkgs.size() > 0) {
                             ParentType after = null;
@@ -714,7 +759,9 @@ public abstract class PackageControllerTable<ParentType extends AbstractPackageN
 
     @Override
     protected boolean processKeyBinding(KeyStroke stroke, KeyEvent evt, int condition, boolean pressed) {
-        if (!pressed) { return super.processKeyBinding(stroke, evt, condition, pressed); }
+        if (!pressed) {
+            return super.processKeyBinding(stroke, evt, condition, pressed);
+        }
 
         if (stroke.equals(KEY_STROKE_KP_LEFT) || stroke.equals(KEY_STROKE_LEFT)) {
             AbstractNode element = this.getModel().getElementAt(this.getSelectedRow());
@@ -804,7 +851,9 @@ public abstract class PackageControllerTable<ParentType extends AbstractPackageN
         if (sortNotifyColor != null && sortColumn != null) {
             filteredColumn = sortColumn.getIndex();
         }
-        if (filteredView == false && filteredColumn < 0) return;
+        if (filteredView == false && filteredColumn < 0) {
+            return;
+        }
         Graphics2D g2 = (Graphics2D) g;
         Composite comp = g2.getComposite();
         final Rectangle visibleRect = this.getVisibleRect();
@@ -831,13 +880,21 @@ public abstract class PackageControllerTable<ParentType extends AbstractPackageN
         final java.util.List<ParentType> ret = new ArrayList<ParentType>();
         int iMin = selectionModel.getMinSelectionIndex();
         int iMax = selectionModel.getMaxSelectionIndex();
-        if ((iMin == -1) || (iMax == -1)) { return ret; }
+        if ((iMin == -1) || (iMax == -1)) {
+            return ret;
+        }
         List<AbstractNode> tableData = getModel().getTableData();
         for (int i = iMin; i <= iMax; i++) {
             if (selectionModel.isSelectedIndex(i)) {
                 final AbstractNode node = tableData.get(i);
                 if (node != null && node instanceof AbstractPackageNode<?, ?>) {
                     ret.add((ParentType) node);
+                } else if (node != null && tableModel.isHideSinglePackage()) {
+                    Object pNode = ((AbstractPackageChildrenNode) node).getParentNode();
+                    if (pNode instanceof AbstractPackageNode && ((AbstractPackageNode) pNode).getChildren().size() == 1) {
+                        ret.add((ParentType) pNode);
+
+                    }
                 }
             }
         }
@@ -849,12 +906,21 @@ public abstract class PackageControllerTable<ParentType extends AbstractPackageN
         final java.util.List<ChildrenType> ret = new ArrayList<ChildrenType>();
         int iMin = selectionModel.getMinSelectionIndex();
         int iMax = selectionModel.getMaxSelectionIndex();
-        if ((iMin == -1) || (iMax == -1)) { return ret; }
+        if ((iMin == -1) || (iMax == -1)) {
+            return ret;
+        }
         List<AbstractNode> tableData = getModel().getTableData();
         for (int i = iMin; i <= iMax; i++) {
             if (selectionModel.isSelectedIndex(i)) {
                 final AbstractNode node = tableData.get(i);
                 if (node != null && node instanceof AbstractPackageChildrenNode<?>) {
+                    if (tableModel.isHideSinglePackage()) {
+                        Object pNode = ((AbstractPackageChildrenNode) node).getParentNode();
+                        if (pNode instanceof AbstractPackageNode && ((AbstractPackageNode) pNode).getChildren().size() == 1) {
+                            continue;
+
+                        }
+                    }
                     ret.add((ChildrenType) node);
                 }
             }

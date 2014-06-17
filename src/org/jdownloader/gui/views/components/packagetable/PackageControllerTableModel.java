@@ -21,6 +21,9 @@ import jd.controlling.packagecontroller.PackageControllerComparator;
 
 import org.appwork.scheduler.DelayedRunnable;
 import org.appwork.storage.Storage;
+import org.appwork.storage.config.ValidationException;
+import org.appwork.storage.config.events.GenericConfigEventListener;
+import org.appwork.storage.config.handler.KeyHandler;
 import org.appwork.swing.exttable.ExtColumn;
 import org.appwork.swing.exttable.ExtDefaultRowSorter;
 import org.appwork.swing.exttable.ExtTableModel;
@@ -89,11 +92,28 @@ public abstract class PackageControllerTableModel<PackageType extends AbstractPa
     private final AtomicBoolean      repaintFired          = new AtomicBoolean(false);
     private final AtomicBoolean      structureChangedFired = new AtomicBoolean(false);
 
+    private boolean                  hideSinglePackage     = false;
+
+    public boolean isHideSinglePackage() {
+        return hideSinglePackage;
+    }
+
     public PackageControllerTableModel(final PackageController<PackageType, ChildrenType> pc, String id) {
         super(id);
         storage = getStorage();
         resetSorting();
+        hideSinglePackage = CFG_GUI.HIDE_SINGLE_CHILD_PACKAGES.isEnabled();
+        CFG_GUI.HIDE_SINGLE_CHILD_PACKAGES.getEventSender().addListener(new GenericConfigEventListener<Boolean>() {
 
+            @Override
+            public void onConfigValueModified(KeyHandler<Boolean> keyHandler, Boolean newValue) {
+                hideSinglePackage = newValue == Boolean.TRUE;
+            }
+
+            @Override
+            public void onConfigValidatorError(KeyHandler<Boolean> keyHandler, Boolean invalidValue, ValidationException validateException) {
+            }
+        }, false);
         this.pc = pc;
         asyncRefresh = new DelayedRunnable(queue, 150l, 500l) {
 
