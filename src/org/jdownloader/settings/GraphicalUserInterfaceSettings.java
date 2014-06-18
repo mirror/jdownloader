@@ -1067,4 +1067,11 @@ public interface GraphicalUserInterfaceSettings extends ConfigInterface {
     boolean isPremiumExpireWarningEnabled();
 
     void setPremiumExpireWarningEnabled(boolean b);
+
+    @AboutConfig
+    @RequiresRestart("Restart is Required")
+    @DefaultBooleanValue(true)
+    boolean isStatusBarAddPremiumButtonVisible();
+
+    void setStatusBarAddPremiumButtonVisible(boolean b);
 }

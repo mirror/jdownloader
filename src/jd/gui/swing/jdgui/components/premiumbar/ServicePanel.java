@@ -238,7 +238,7 @@ public class ServicePanel extends JPanel implements MouseListener, AccountToolti
                                         }
 
                                     }
-                                    if (!hasValidAccount) {
+                                    if (!hasValidAccount && CFG_GUI.CFG.isStatusBarAddPremiumButtonVisible()) {
                                         ExtButton addPremium = new ExtButton(new AppAction() {
                                             {
                                                 setName(_GUI._.StatusBarImpl_add_premium());
