@@ -39,6 +39,11 @@ public class UploadSessionLogDialog extends AbstractDialog<Object> implements Up
     private int          desiredWidh = 0;
     private String       dK;
 
+    @Override
+    public boolean isRemoteAPIEnabled() {
+        return true;
+    }
+
     public UploadSessionLogDialog(String errorID, DownloadLink downloadLink) {
         super(UIOManager.LOGIC_COUNTDOWN | Dialog.STYLE_SHOW_DO_NOT_DISPLAY_AGAIN | UIOManager.LOGIC_DONT_SHOW_AGAIN_IGNORES_CANCEL, _GUI._.UploadSessionLogDialog_UploadSessionLogDialog_object_title2(), new AbstractIcon(IconKey.ICON_BOTTY_STOP, -1), _GUI._.UploadSessionLogDialog_UploadSessionLogDialog_yes(), _GUI._.UploadSessionLogDialog_UploadSessionLogDialog_no());
         setTimeout(10 * 60 * 1000);

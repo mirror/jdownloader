@@ -30,6 +30,11 @@ public class FFMpegInstallTypeChooserDialog extends AbstractDialog<Object> imple
         this.task = task;
     }
 
+    @Override
+    public boolean isRemoteAPIEnabled() {
+        return true;
+    }
+
     public static class FoundException extends Exception {
 
         private File file;
@@ -52,7 +57,9 @@ public class FFMpegInstallTypeChooserDialog extends AbstractDialog<Object> imple
 
         try {
             if (file.isFile() && file.canExecute()) {
-                if (new FFmpeg(file.getAbsolutePath()).validateBinary()) { return file; }
+                if (new FFmpeg(file.getAbsolutePath()).validateBinary()) {
+                    return file;
+                }
             }
             Files.walkThroughStructure(new Handler<FoundException>() {
                 private HashSet<File> dupe;
@@ -67,16 +74,24 @@ public class FFMpegInstallTypeChooserDialog extends AbstractDialog<Object> imple
 
                 @Override
                 public void onFile(File f) throws FoundException {
-                    if (!dupe.add(f)) return;
-                    if (Thread.interrupted()) throw new FoundException(null);
+                    if (!dupe.add(f)) {
+                        return;
+                    }
+                    if (Thread.interrupted()) {
+                        throw new FoundException(null);
+                    }
 
                     switch (CrossSystem.getOSFamily()) {
                     case WINDOWS:
-                        if (f.getName().equalsIgnoreCase("ffmpeg.exe") && f.isFile()) { throw new FoundException(f); }
+                        if (f.getName().equalsIgnoreCase("ffmpeg.exe") && f.isFile()) {
+                            throw new FoundException(f);
+                        }
                         break;
                     case LINUX:
                     case MAC:
-                        if (f.getName().equalsIgnoreCase("ffmpeg") && f.isFile() && f.canExecute()) { throw new FoundException(f); }
+                        if (f.getName().equalsIgnoreCase("ffmpeg") && f.isFile() && f.canExecute()) {
+                            throw new FoundException(f);
+                        }
                         break;
                     }
                 }

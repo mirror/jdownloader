@@ -31,6 +31,11 @@ public class UploadGeneralSessionLogDialog extends AbstractDialog<Object> implem
     }
 
     @Override
+    public boolean isRemoteAPIEnabled() {
+        return true;
+    }
+
+    @Override
     protected Object createReturnValue() {
         return null;
     }

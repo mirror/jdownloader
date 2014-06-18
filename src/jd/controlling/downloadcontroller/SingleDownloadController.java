@@ -231,6 +231,9 @@ public class SingleDownloadController extends BrowserSettingsThread implements D
                             if (!isActive() || SingleDownloadController.this.isAlive() == false) {
                                 return;
                             }
+                            // this is importent to interrupt dialogs, captcha windows and other processes. we have to ensure that all
+                            // download steps support proper interruptions
+                            SingleDownloadController.this.interrupt();
                             try {
                                 processingPlugin.wait(1000);
                             } catch (final InterruptedException e) {

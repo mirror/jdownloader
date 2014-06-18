@@ -73,8 +73,8 @@ public class RemoteAPIIOHandlerWrapper implements UserIOHandlerInterface {
                 try {
                     if (dialog.evaluateDontShowAgainFlag()) {
 
-                    return impl;
-                    //
+                        return impl;
+                        //
                     }
 
                 } catch (Exception e) {
@@ -205,13 +205,17 @@ public class RemoteAPIIOHandlerWrapper implements UserIOHandlerInterface {
 
                 }
                 try {
-                    if (handle != null) handle.dispose();
+                    if (handle != null) {
+                        handle.dispose();
+                    }
                 } catch (Exception e) {
 
                 }
             }
 
-            if (handle == null) return impl;
+            if (handle == null) {
+                return impl;
+            }
             return (T) (handle.getAnswer() != null ? handle.getAnswer() : impl);
         } else {
             throw new WTFException("Dialog Type not supported");
@@ -226,7 +230,9 @@ public class RemoteAPIIOHandlerWrapper implements UserIOHandlerInterface {
         if (impl instanceof AbstractDialog) {
             AbstractDialog<?> dialog = (AbstractDialog<?>) impl;
             if (dialog.getModalityType() == ModalityType.MODELESS) {
-                if (SwingUtilities.isEventDispatchThread()) throw new IllegalStateException("Cannot call a Modeless Blocking dialog in the EDT. Use a Wrapperthread");
+                if (SwingUtilities.isEventDispatchThread()) {
+                    throw new IllegalStateException("Cannot call a Modeless Blocking dialog in the EDT. Use a Wrapperthread");
+                }
                 return showModeless(class1, impl);
             }
             try {
@@ -271,9 +277,13 @@ public class RemoteAPIIOHandlerWrapper implements UserIOHandlerInterface {
             } catch (final DialogCanceledException e) {
                 // no Reason to log here
             } finally {
-                if (handle != null) handle.dispose();
+                if (handle != null) {
+                    handle.dispose();
+                }
             }
-            if (handle == null) return impl;
+            if (handle == null) {
+                return impl;
+            }
             return (T) (handle.getAnswer() != null ? handle.getAnswer() : impl);
         } catch (Exception e) {
             e.printStackTrace();

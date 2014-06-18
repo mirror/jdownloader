@@ -54,7 +54,12 @@ public class DialogApiImpl implements EventPublisher, DialogApiInterface {
     }
 
     public <T extends UserIODefinition> ApiHandle enqueue(Class<T> class1, T impl) {
-        if (class1 == null) return null;
+        if (class1 == null) {
+            return null;
+        }
+        if (!impl.isRemoteAPIEnabled()) {
+            return null;
+        }
         final ApiHandle ret = new ApiHandle(class1, impl, id.incrementAndGet(), Thread.currentThread());
         synchronized (map) {
             map.put(ret.getId(), ret);
@@ -114,13 +119,17 @@ public class DialogApiImpl implements EventPublisher, DialogApiInterface {
         synchronized (map) {
             handle = map.get(id);
         }
-        if (handle == null) { throw new InvalidIdException(id); }
+        if (handle == null) {
+            throw new InvalidIdException(id);
+        }
         DialogInfo ret = new DialogInfo();
         ret.setType(handle.getIface().getName());
         if (properties) {
             for (Method m : handle.getIface().getMethods()) {
                 m.setAccessible(true);
-                if (m.getParameterTypes().length > 0 || m.getAnnotation(Out.class) == null) continue;
+                if (m.getParameterTypes().length > 0 || m.getAnnotation(Out.class) == null) {
+                    continue;
+                }
                 try {
 
                     if (m.getName().startsWith("get")) {
@@ -193,10 +202,14 @@ public class DialogApiImpl implements EventPublisher, DialogApiInterface {
             for (ApiHandle ah : map.values()) {
                 max = Math.max(max, ah.getId());
             }
-            if (max > id) throw new BadOrderException(max);
+            if (max > id) {
+                throw new BadOrderException(max);
+            }
             handle = map.get(id);
         }
-        if (handle == null) { throw new InvalidIdException(id); }
+        if (handle == null) {
+            throw new InvalidIdException(id);
+        }
         final CloseReason closeReason = CloseReason.valueOf(data.get("closereason").toString().toUpperCase(Locale.ENGLISH));
         UserIODefinition ret = (UserIODefinition) Proxy.newProxyInstance(DialogApiImpl.class.getClassLoader(), new Class<?>[] { handle.getIface() }, new InvocationHandler() {
 
@@ -246,7 +259,9 @@ public class DialogApiImpl implements EventPublisher, DialogApiInterface {
 
             for (Method m : cls.getMethods()) {
                 m.setAccessible(true);
-                if (m.getParameterTypes().length > 0) continue;
+                if (m.getParameterTypes().length > 0) {
+                    continue;
+                }
                 try {
 
                     if (m.getName().startsWith("get")) {

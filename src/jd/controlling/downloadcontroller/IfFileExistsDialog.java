@@ -33,6 +33,11 @@ public class IfFileExistsDialog extends AbstractDialog<IfFileExistsAction> imple
     private IfFileExistsAction result;
     private String             packagename;
 
+    @Override
+    public boolean isRemoteAPIEnabled() {
+        return true;
+    }
+
     public String getPackagename() {
         return packagename;
     }
@@ -70,8 +75,12 @@ public class IfFileExistsDialog extends AbstractDialog<IfFileExistsAction> imple
 
     @Override
     protected IfFileExistsAction createReturnValue() {
-        if (okButton != null) okButton.removeFocusListener(this);
-        if (result != null) org.jdownloader.settings.staticreferences.CFG_GUI.CFG.setLastIfFileExists(result);
+        if (okButton != null) {
+            okButton.removeFocusListener(this);
+        }
+        if (result != null) {
+            org.jdownloader.settings.staticreferences.CFG_GUI.CFG.setLastIfFileExists(result);
+        }
         return result;
     }
 
@@ -140,7 +149,9 @@ public class IfFileExistsDialog extends AbstractDialog<IfFileExistsAction> imple
         p.add(overwrite, "gapleft 10");
         p.add(rename, "gapleft 10");
         IfFileExistsAction def = org.jdownloader.settings.staticreferences.CFG_GUI.CFG.getLastIfFileExists();
-        if (def == null) def = IfFileExistsAction.SKIP_FILE;
+        if (def == null) {
+            def = IfFileExistsAction.SKIP_FILE;
+        }
         switch (def) {
         case AUTO_RENAME:
             rename.setSelected(true);
