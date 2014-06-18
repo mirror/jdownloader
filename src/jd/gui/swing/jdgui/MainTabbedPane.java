@@ -51,6 +51,7 @@ public class MainTabbedPane extends JTabbedPane implements MouseMotionListener, 
 
     private static MainTabbedPane INSTANCE;
     protected View                latestSelection;
+    protected Component           latestSelectionTabHeader;
     public static AtomicBoolean   SPECIAL_DEALS_ENABLED          = new AtomicBoolean(false);
     public static AtomicBoolean   SPECIAL_DEALS_REMINDER_ENABLED = new AtomicBoolean(false);
 
@@ -120,7 +121,8 @@ public class MainTabbedPane extends JTabbedPane implements MouseMotionListener, 
 
         super.addTab(view.getTitle(), view.getIcon(), view, view.getTooltip());
         view.getBroadcaster().fireEvent(new SwitchPanelEvent(view, SwitchPanelEvent.ON_ADD));
-        this.setTabComponentAt(this.getTabCount() - 1, new ClosableTabHeader(view));
+        ClosableTabHeader header;
+        this.setTabComponentAt(this.getTabCount() - 1, header = new ClosableTabHeader(view));
 
         this.setFocusable(false);
 
@@ -151,15 +153,25 @@ public class MainTabbedPane extends JTabbedPane implements MouseMotionListener, 
                     JDGui.getInstance().setWaiting(true);
                 }
                 try {
+
                     View comp = (View) getSelectedComponent();
+                    Component tabComp = getTabComponentAt(getSelectedIndex());
                     if (comp == latestSelection) {
                         return;
                     }
                     if (latestSelection != null) {
                         latestSelection.setHidden();
+
+                    }
+                    if (latestSelectionTabHeader != null && latestSelectionTabHeader instanceof ClosableTabHeader) {
+                        ((ClosableTabHeader) latestSelectionTabHeader).setHidden();
                     }
                     GUIEventSender.getInstance().fireEvent(new GUIEvent(MainTabbedPane.this, GUIEvent.Type.TAB_SWITCH, latestSelection, comp));
                     latestSelection = comp;
+                    latestSelectionTabHeader = tabComp;
+                    if (tabComp != null && tabComp instanceof ClosableTabHeader) {
+                        ((ClosableTabHeader) tabComp).setShown();
+                    }
                     comp.setShown();
                     revalidate();
 

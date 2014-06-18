@@ -16,6 +16,7 @@
 
 package jd.gui.swing.jdgui.maintab;
 
+import java.awt.Font;
 import java.awt.event.MouseEvent;
 
 import javax.swing.JLabel;
@@ -29,6 +30,21 @@ import net.miginfocom.swing.MigLayout;
 public class ClosableTabHeader extends JPanel {
 
     private static final long serialVersionUID = 4463352125800695922L;
+    private boolean           selected;
+    private JLabel            label;
+    private Font              fontUnselected;
+    private Font              fontSelected;
+
+    public void setBounds(int x, int y, int width, int height) {
+        // workaround to have proper pixel exact layouting of the tab header
+        // http://svn.jdownloader.org/issues/43349
+        if (selected) {
+            super.setBounds(x - 2, y + 1, width + 2, height - 1);
+        } else {
+            super.setBounds(x - 2, y - 1, width + 2, height + 1);
+        }
+
+    }
 
     public ClosableTabHeader(final ClosableView view) {
         setLayout(new MigLayout("ins 0", "[grow,fill]push[]", "[]"));
@@ -78,13 +94,27 @@ public class ClosableTabHeader extends JPanel {
 
         putClientProperty("paintActive", Boolean.TRUE);
 
-        final JLabel label = new JLabel(view.getTitle());
+        label = new JLabel(view.getTitle());
         label.setIcon(view.getIcon());
         label.setOpaque(false);
+        fontUnselected = label.getFont();
 
+        fontSelected = fontUnselected.deriveFont(fontUnselected.getStyle() ^ Font.BOLD);
         add(label);
         add(view.getCloseButton(), "aligny center,gapleft 5,width 16!,height 16!,gaptop 3");
         view.getCloseButton().setOpaque(false);
+    }
+
+    public void setHidden() {
+        selected = false;
+        label.setFont(fontUnselected);
+        repaint();
+    }
+
+    public void setShown() {
+        selected = true;
+        label.setFont(fontSelected);
+        repaint();
     }
 
 }
