@@ -24,6 +24,7 @@ import javax.swing.JSeparator;
 import javax.swing.JToggleButton;
 import javax.swing.ListCellRenderer;
 import javax.swing.SpinnerNumberModel;
+import javax.swing.SwingUtilities;
 import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
 import javax.swing.text.JTextComponent;
@@ -61,6 +62,7 @@ import org.jdownloader.gui.IconKey;
 import org.jdownloader.gui.packagehistorycontroller.DownloadPathHistoryManager;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.gui.views.DownloadFolderChooserDialog;
+import org.jdownloader.images.AbstractIcon;
 import org.jdownloader.images.NewTheme;
 
 public class PackagizerFilterRuleDialog extends ConditionDialog<PackagizerRule> {
@@ -833,8 +835,9 @@ public class PackagizerFilterRuleDialog extends ConditionDialog<PackagizerRule> 
                 cb.setSelected(true);
             }
         };
-        for (JComponent c : components)
+        for (JComponent c : components) {
             c.addMouseListener(ml);
+        }
     }
 
     private JLabel createLbl(String packagizerFilterRuleDialog_layoutDialogContent_dest) {
@@ -859,6 +862,19 @@ public class PackagizerFilterRuleDialog extends ConditionDialog<PackagizerRule> 
 
     private static final HashMap<PackagizerRule, PackagizerFilterRuleDialog> ACTIVE_DIALOGS = new HashMap<PackagizerRule, PackagizerFilterRuleDialog>();
 
+    @Override
+    protected void packed() {
+        super.packed();
+        SwingUtilities.invokeLater(new Runnable() {
+
+            @Override
+            public void run() {
+
+                JDGui.help(_GUI._.PackagizerFilterRuleDialog_run_help_title(), _GUI._.PackagizerFilterRuleDialog_run_help_msg(), new AbstractIcon(IconKey.ICON_PACKAGIZER, 32));
+            }
+        });
+    }
+
     public static void showDialog(final PackagizerRule rule, final Runnable doAfterShow) {
         new Thread("ShowRuleDialogThread:" + rule) {
             public void run() {
@@ -875,7 +891,9 @@ public class PackagizerFilterRuleDialog extends ConditionDialog<PackagizerRule> 
                 } else {
                     try {
                         CloseReason closeReason = UIOManager.I().show(null, d).getCloseReason();
-                        if (CloseReason.OK.equals(closeReason) && doAfterShow != null) doAfterShow.run();
+                        if (CloseReason.OK.equals(closeReason) && doAfterShow != null) {
+                            doAfterShow.run();
+                        }
                     } catch (final Throwable e) {
                         e.printStackTrace();
                     }

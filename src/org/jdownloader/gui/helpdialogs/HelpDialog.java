@@ -5,7 +5,7 @@ import java.awt.Point;
 import java.awt.PointerInfo;
 import java.awt.event.WindowEvent;
 
-import javax.swing.ImageIcon;
+import javax.swing.Icon;
 
 import org.appwork.storage.JSonStorage;
 import org.appwork.storage.config.JsonConfig;
@@ -22,79 +22,93 @@ import org.jdownloader.settings.GraphicalUserInterfaceSettings;
 import org.jdownloader.updatev2.RestartController;
 
 public class HelpDialog {
-    
-    public static void show(final Point point, final String dontShowAgainKey, int flags, String title, String msg, ImageIcon icon) {
+
+    public static void show(final Point point, final String dontShowAgainKey, int flags, String title, String msg, Icon icon) {
         show(null, null, point, dontShowAgainKey, flags, title, msg, icon);
     }
-    
+
     public static Point getMouseLocation() {
         PointerInfo pointerInfo = MouseInfo.getPointerInfo();
-        if (pointerInfo == null) return null;
+        if (pointerInfo == null) {
+            return null;
+        }
         return pointerInfo.getLocation();
     }
-    
-    public static void show(final Boolean expandToBottom, final Boolean expandToRight, final Point point, final String dontShowAgainKey, int flags, String title, String msg, ImageIcon icon) {
+
+    public static void show(final Boolean expandToBottom, final Boolean expandToRight, final Point point, final String dontShowAgainKey, int flags, String title, String msg, Icon icon) {
         final boolean test = RestartController.getInstance().getParameterParser(null).hasCommandSwitch("translatortest");
-        if (!JsonConfig.create(GraphicalUserInterfaceSettings.class).isBalloonNotificationEnabled()) return;
-        
-        if (dontShowAgainKey != null) {
-            
-            Integer ret = JSonStorage.getPlainStorage("Dialogs").get(dontShowAgainKey, -1);
-            if (ret != null && ret > 0) return;
+        if (!JsonConfig.create(GraphicalUserInterfaceSettings.class).isBalloonNotificationEnabled()) {
+            return;
         }
-        
+
+        if (dontShowAgainKey != null) {
+
+            Integer ret = JSonStorage.getPlainStorage("Dialogs").get(dontShowAgainKey, -1);
+            if (ret != null && ret > 0) {
+                return;
+            }
+        }
+
         try {
-            
+
             ConfirmDialog d = new ConfirmDialog(flags | UIOManager.BUTTONS_HIDE_CANCEL | Dialog.STYLE_SHOW_DO_NOT_DISPLAY_AGAIN, title, _GUI._.literall_usage_tipp() + "\r\n\r\n..." + msg, icon, null, null) {
                 {
-                    if (point != null) setLocator(new DialogLocator() {
-                        
-                        @Override
-                        public Point getLocationOnScreen(AbstractDialog<?> abstractDialog) {
-                            if (Boolean.FALSE.equals(expandToBottom)) {
-                                point.y -= abstractDialog.getPreferredSize().height;
+                    if (point != null) {
+                        setLocator(new DialogLocator() {
+
+                            @Override
+                            public Point getLocationOnScreen(AbstractDialog<?> abstractDialog) {
+                                if (Boolean.FALSE.equals(expandToBottom)) {
+                                    point.y -= abstractDialog.getPreferredSize().height;
+                                }
+                                if (Boolean.FALSE.equals(expandToRight)) {
+                                    point.x -= abstractDialog.getPreferredSize().width;
+                                }
+                                return AbstractLocator.correct(point, abstractDialog.getDialog());
                             }
-                            if (Boolean.FALSE.equals(expandToRight)) {
-                                point.x -= abstractDialog.getPreferredSize().width;
+
+                            @Override
+                            public void onClose(AbstractDialog<?> abstractDialog) {
                             }
-                            return AbstractLocator.correct(point, abstractDialog.getDialog());
-                        }
-                        
-                        @Override
-                        public void onClose(AbstractDialog<?> abstractDialog) {
-                        }
-                        
-                    });
+
+                        });
+                    }
                 }
-                
+
                 @Override
                 public String getDontShowAgainKey() {
-                    if (test) return "bla_" + System.currentTimeMillis();
-                    if (dontShowAgainKey == null) return super.getDontShowAgainKey();
+                    if (test) {
+                        return "bla_" + System.currentTimeMillis();
+                    }
+                    if (dontShowAgainKey == null) {
+                        return super.getDontShowAgainKey();
+                    }
                     return dontShowAgainKey;
                 }
-                
+
                 public void windowClosing(final WindowEvent arg0) {
                     setReturnmask(false);
                     this.dispose();
                 }
-                
+
             };
-            
+
             if (BinaryLogic.containsAll(flags, Dialog.STYLE_SHOW_DO_NOT_DISPLAY_AGAIN)) {
                 d.setDoNotShowAgainSelected(true);
             }
             Integer ret = JSonStorage.getPlainStorage("Dialogs").get(d.getDontShowAgainKey(), -1);
-            if (ret != null && ret > 0) return;
+            if (ret != null && ret > 0) {
+                return;
+            }
             d.show();
         } catch (Throwable e) {
             Log.exception(e);
         }
-        
+
     }
-    
-    public static void show(int flags, String title, String msg, ImageIcon icon) {
+
+    public static void show(int flags, String title, String msg, Icon icon) {
         show(null, title, flags, title, msg, icon);
     }
-    
+
 }

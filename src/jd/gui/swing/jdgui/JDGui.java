@@ -175,7 +175,7 @@ public class JDGui implements UpdaterListener, OwnerFinder {
         return JDGui.INSTANCE;
     }
 
-    public static void help(final String title, final String msg, final ImageIcon icon) {
+    public static void help(final String title, final String msg, final Icon icon) {
 
         Timer timer = new Timer(200, new ActionListener() {
 

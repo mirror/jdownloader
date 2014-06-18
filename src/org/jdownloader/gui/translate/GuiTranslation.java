@@ -5089,4 +5089,10 @@ public interface GuiTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "To restore a backup, JDownloader has to restart.\r\nIf you load a backup, JDownloader will replace all current settings and linklists with the one from the backup file.\r\nHowever, JDownloader will create an auto-backup of the current settings in %s1 before the restore process.\r\nContinue?" })
     String BackupRestoreAction_run_restart_ask(String autobackuppath);
 
+    @Default(lngs = { "en" }, values = { "First Steps: Packagizer" })
+    String PackagizerFilterRuleDialog_run_help_title();
+
+    @Default(lngs = { "en" }, values = { "You can automate almost everything using Packagizer rules. Most of the rule setup is self-explaining.\r\nHowever, it is important to note, that you can use \"*\" placeholders in many conditions.\r\nThese placeholders can be used in the \"then\" blocks afterwards. Just rightlick in the textfields to see all available dynamic variables." })
+    String PackagizerFilterRuleDialog_run_help_msg();
+
 }
