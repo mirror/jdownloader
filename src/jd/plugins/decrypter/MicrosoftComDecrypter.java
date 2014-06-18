@@ -26,8 +26,6 @@ import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
-import jd.plugins.LinkStatus;
-import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 
 import org.appwork.utils.formatter.SizeFormatter;
@@ -43,9 +41,11 @@ public class MicrosoftComDecrypter extends PluginForDecrypt {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         final String dlid = new Regex(param.toString(), "(\\d+)$").getMatch(0);
         final String parameter = "http://www.microsoft.com/en-us/download/details.aspx?id=" + dlid;
+        br.setFollowRedirects(true);
         br.getPage(parameter);
-        if (br.containsHTML(">We are sorry, the page you requested cannot be found")) {
-            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (br.getHttpConnection().getResponseCode() == 404) {
+            logger.info("Link offline: " + parameter);
+            return decryptedLinks;
         }
         br.getPage("http://www.microsoft.com/en-us/download/confirmation.aspx?id=" + dlid);
         String fpName = br.getRegex("<h2 class=\"title\">([^<>\"]*?)</h2>").getMatch(0);

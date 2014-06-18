@@ -62,6 +62,16 @@ public class TenluaVnFolder extends PluginForDecrypt {
             return decryptedLinks;
         } else if ("folder".equals(type)) {
             final String fpName = getJson("folder_name", br.toString());
+
+            /* Check for empty folder */
+            if ("0".equals(getJson("totalfile", br.toString()))) {
+                final DownloadLink offline = createDownloadlink("directhttp://" + parameter);
+                offline.setFinalFileName(fpName);
+                offline.setAvailable(false);
+                decryptedLinks.add(offline);
+                return decryptedLinks;
+            }
+
             final String jsonArray = br.getRegex("\"content\":\\[(.*?)\\]\\}").getMatch(0);
             final String[] links = jsonArray.split("\\},\\{");
 

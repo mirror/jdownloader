@@ -917,6 +917,7 @@ public class XFileSharingProBasic extends PluginForHost {
         }
         if (account.getBooleanProperty("nopremium") && (expire_milliseconds - System.currentTimeMillis()) <= 0) {
             try {
+                account.setType(AccountType.FREE);
                 maxPrem.set(ACCOUNT_FREE_MAXDOWNLOADS);
                 /* free accounts can still have captcha */
                 totalMaxSimultanFreeDownload.set(maxPrem.get());
@@ -929,6 +930,7 @@ public class XFileSharingProBasic extends PluginForHost {
         } else {
             ai.setValidUntil(expire_milliseconds);
             try {
+                account.setType(AccountType.PREMIUM);
                 maxPrem.set(ACCOUNT_PREMIUM_MAXDOWNLOADS);
                 account.setMaxSimultanDownloads(maxPrem.get());
                 account.setConcurrentUsePossible(true);
@@ -989,18 +991,8 @@ public class XFileSharingProBasic extends PluginForHost {
                 }
                 if (!new Regex(correctedBR, "(Premium(\\-| )Account expire|>Renew premium<)").matches()) {
                     account.setProperty("nopremium", true);
-                    try {
-                        account.setType(AccountType.FREE);
-                    } catch (final Throwable e) {
-                        /* Not available in old 0.9.581 Stable */
-                    }
                 } else {
                     account.setProperty("nopremium", false);
-                    try {
-                        account.setType(AccountType.PREMIUM);
-                    } catch (final Throwable e) {
-                        /* Not available in old 0.9.581 Stable */
-                    }
                 }
                 /* Save cookies */
                 final HashMap<String, String> cookies = new HashMap<String, String>();

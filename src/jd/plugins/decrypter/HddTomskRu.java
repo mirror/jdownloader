@@ -32,11 +32,12 @@ import jd.plugins.Plugin;
 import jd.plugins.PluginForDecrypt;
 import jd.utils.JDUtilities;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "hdd.tomsk.ru" }, urls = { "http://(www|download\\.)?hdd\\.tomsk\\.ru/desk/(?!notfound)[a-z]{8}" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "hdd.tomsk.ru" }, urls = { "http://(www|download\\.)?hdd\\.tomsk\\.ru/desk/[a-z]{8}" }, flags = { 0 })
 public class HddTomskRu extends PluginForDecrypt {
 
     private static final String DESK_ENTER_PASSWORD = "http://hdd.tomsk.ru/?rm=desk_enter_password";
     private static final String PWTEXT              = ">Для доступа к столу необходим пароль<";
+    private static final String TYPE_INVALID        = "http://(www|download\\.)?hdd\\.tomsk\\.ru/desk/(notfound)";
 
     /**
      * @author rnw
@@ -49,10 +50,22 @@ public class HddTomskRu extends PluginForDecrypt {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         final String parameter = param.toString();
 
+        if (parameter.matches(TYPE_INVALID)) {
+            logger.info("Link invalid: " + parameter);
+            return decryptedLinks;
+        }
+
         final SubConfiguration hosterPluginConfig = JDUtilities.getPluginForHost("hdd.tomsk.ru").getPluginConfig();
         String hddSid = hosterPluginConfig.getStringProperty(jd.plugins.hoster.HddTomskRu.HDDSID);
-        if (hddSid != null) br.setCookie(jd.plugins.hoster.HddTomskRu.DOMAIN, jd.plugins.hoster.HddTomskRu.HDDSID, hddSid);
+        if (hddSid != null) {
+            br.setCookie(jd.plugins.hoster.HddTomskRu.DOMAIN, jd.plugins.hoster.HddTomskRu.HDDSID, hddSid);
+        }
         br.getPage(parameter);
+
+        if (!br.getURL().matches("http://(www|download\\.)?hdd\\.tomsk\\.ru/desk/[a-z]{8}")) {
+            logger.info("Link offline: " + parameter);
+            return decryptedLinks;
+        }
 
         final String deskId = new Regex(parameter, "([a-z]{8})$").getMatch(0);
         final String deskTitle = "hdd.tomsk.ru - Стол " + deskId;
@@ -70,11 +83,17 @@ public class HddTomskRu extends PluginForDecrypt {
             for (int i = 0; i <= 3; i++) {
                 final String passCode = Plugin.getUserInput("Enter password for: " + deskTitle, param);
                 br.postPage(DESK_ENTER_PASSWORD, "password=" + Encoding.urlEncode(passCode) + "&signature=" + deskId);
-                if (br.getRedirectLocation() != null) br.getPage(br.getRedirectLocation());
-                if (br.containsHTML(PWTEXT)) continue;
+                if (br.getRedirectLocation() != null) {
+                    br.getPage(br.getRedirectLocation());
+                }
+                if (br.containsHTML(PWTEXT)) {
+                    continue;
+                }
                 break;
             }
-            if (br.containsHTML(PWTEXT)) throw new DecrypterException(DecrypterException.PASSWORD);
+            if (br.containsHTML(PWTEXT)) {
+                throw new DecrypterException(DecrypterException.PASSWORD);
+            }
             redirectLocation = br.getRedirectLocation();
         }
 
@@ -93,8 +112,8 @@ public class HddTomskRu extends PluginForDecrypt {
 
         final String[] results = br.getRegex("Window_DeskItem_File[^\n\r]+(\"file_mime_type\"[^\r\n]+)").getColumn(0);
         if (results == null || results.length == 0) {
-            logger.warning("Decrypter broken for link: " + parameter);
-            return null;
+            logger.info("Link probably offline: " + parameter);
+            return decryptedLinks;
         }
         for (String result : results) {
             result = result.replaceAll("\\\\/", "/");
@@ -102,12 +121,22 @@ public class HddTomskRu extends PluginForDecrypt {
             String filename = getRegex("file_original_name", result);
             String filesize = getRegex("size_in_bytes", result);
             String sha1 = getRegex("file_sha1", result);
-            if (uid == null) continue;
+            if (uid == null) {
+                continue;
+            }
             DownloadLink dl = createDownloadlink("http://hdd.tomsk.ru/file/" + uid);
-            if (filename != null) dl.setFinalFileName(filename);
-            if (filesize != null) dl.setDownloadSize(Integer.parseInt(filesize));
-            if (sha1 != null) dl.setSha1Hash(sha1);
-            if (filename != null) dl.setAvailable(true);
+            if (filename != null) {
+                dl.setFinalFileName(filename);
+            }
+            if (filesize != null) {
+                dl.setDownloadSize(Integer.parseInt(filesize));
+            }
+            if (sha1 != null) {
+                dl.setSha1Hash(sha1);
+            }
+            if (filename != null) {
+                dl.setAvailable(true);
+            }
             decryptedLinks.add(dl);
         }
         if (decryptedLinks.size() == 0) {
