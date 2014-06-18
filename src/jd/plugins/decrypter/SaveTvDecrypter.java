@@ -54,14 +54,14 @@ public class SaveTvDecrypter extends PluginForDecrypt {
 
     /* Settings stuff */
     private final String           USEAPI                            = "USEAPI";
-    private final String           selected_video_format             = "selected_video_format";
+    private final String           USEORIGINALFILENAME               = "USEORIGINALFILENAME";
 
     private final String           CRAWLER_ACTIVATE                  = "CRAWLER_ACTIVATE";
     private final String           CRAWLER_ENABLE_FASTER             = "CRAWLER_ENABLE_FASTER";
     private final String           CRAWLER_DISABLE_DIALOGS           = "CRAWLER_DISABLE_DIALOGS";
     private final String           CRAWLER_LASTDAYS_COUNT            = "CRAWLER_LASTDAYS_COUNT";
 
-    public static final double     QUALITY_HD_MB_PER_MINUTE          = jd.plugins.hoster.SaveTv.QUALITY_HD_MB_PER_MINUTE;
+    private static final double    QUALITY_HD_MB_PER_MINUTE          = jd.plugins.hoster.SaveTv.QUALITY_HD_MB_PER_MINUTE;
     private static final double    QUALITY_H264_NORMAL_MB_PER_MINUTE = jd.plugins.hoster.SaveTv.QUALITY_H264_NORMAL_MB_PER_MINUTE;
     private static final double    QUALITY_H264_MOBILE_MB_PER_MINUTE = jd.plugins.hoster.SaveTv.QUALITY_H264_MOBILE_MB_PER_MINUTE;
 
@@ -343,6 +343,7 @@ public class SaveTvDecrypter extends PluginForDecrypt {
         final long current_tdifference = System.currentTimeMillis() - datemilliseconds;
         if (tdifference_milliseconds == 0 || current_tdifference <= tdifference_milliseconds) {
 
+            String filename;
             final DownloadLink dl = createDownloadlink(telecast_url);
             /* Nothing to hide - Always show original links in JD */
             dl.setBrowserUrl(telecast_url);
@@ -370,8 +371,14 @@ public class SaveTvDecrypter extends PluginForDecrypt {
             dl.setProperty("plainfilename", name);
             dl.setProperty("type", ".mp4");
             dl.setProperty("originaldate", datemilliseconds);
-            final String formatted_filename = jd.plugins.hoster.SaveTv.getFormattedFilename(dl);
-            dl.setName(formatted_filename);
+
+            /* Get and set filename */
+            if (cfg.getBooleanProperty(USEORIGINALFILENAME)) {
+                filename = jd.plugins.hoster.SaveTv.getFakeOriginalFilename(dl);
+            } else {
+                filename = jd.plugins.hoster.SaveTv.getFormattedFilename(dl);
+            }
+            dl.setName(filename);
 
             try {
                 distribute(dl);

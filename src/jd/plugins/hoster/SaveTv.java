@@ -268,6 +268,7 @@ public class SaveTv extends PluginForHost {
             }
             filesize = site_get_filesize();
             category = br.getRegex("<label>Kategorie:</label>([^<>\"]*?)</p>").getMatch(0);
+            /* Check for unknown error state */
             if (site_title == null || (filesize == null && !br.containsHTML(SITE_DL_IMPOSSIBLE)) || category == null) {
                 logger.warning("Save.tv: Availablecheck failed!");
                 return AvailableStatus.UNCHECKABLE;
@@ -285,7 +286,7 @@ public class SaveTv extends PluginForHost {
             broadcastTime = br.getRegex("<b>Ausstrahlungszeitraum:</b>[\t\n\r ]+(\\d{2}:\\d{2}) \\-").getMatch(0);
 
             if (br.containsHTML(GENERAL_REGEX)) {
-                /* Find out if it's a series or if we should handle it like a movie */
+                /* Find out if it's a series or if we should treat it as a movie */
                 final Regex seriesInfo = br.getRegex(INFOREGEX);
                 String testtitle = seriesInfo.getMatch(0);
                 if (testtitle != null) {
@@ -398,9 +399,9 @@ public class SaveTv extends PluginForHost {
                             /* A little errorhandling but this should never happen */
                             if (producecountry != null) {
                                 producecountry = correctData(producecountry);
-                            }
-                            if (producecountry != null && producecountry.equals("")) {
-                                producecountry = null;
+                                if (producecountry.equals("")) {
+                                    producecountry = null;
+                                }
                             }
 
                         }
@@ -470,14 +471,18 @@ public class SaveTv extends PluginForHost {
         link.setProperty("producecountry", producecountry);
         link.setProperty("plain_site_category", category);
 
-        /* Add remaining information */
+        /* Add remaining basic information */
         link.setProperty("plainfilename", site_title);
         link.setProperty("type", ".mp4");
         link.setProperty("originaldate", datemilliseconds);
 
-        /* No custom filename if not all required tags are given */
+        /*
+         * No custom filename if not all required tags are given, if the user prefers original filenames or if custom user regexes for
+         * specified series or movies match to force original filenames
+         */
         final boolean force_original_general = (datemilliseconds == 0 || getPluginConfig().getBooleanProperty(USEORIGINALFILENAME) || SESSIONID != null || getLongProperty(link, "category", 0l) == 0);
         boolean force_original_series = false;
+
         try {
             if (getLongProperty(link, "category", 0l) == 2 && seriestitle.matches(getPluginConfig().getStringProperty(FORCE_ORIGINALFILENAME_SERIES, null))) {
                 force_original_series = true;
@@ -501,7 +506,7 @@ public class SaveTv extends PluginForHost {
         } else {
             availablecheck_filename = getFormattedFilename(link);
         }
-        /* Reset from previous state so we can use the final filename as final filename later even if it has changed before */
+        /* Reset (final) filename from previous state so we can use the final filename as final filename later even if it has changed before */
         link.setFinalFileName(null);
         link.setName(availablecheck_filename);
         link.setName(availablecheck_filename);
@@ -522,7 +527,7 @@ public class SaveTv extends PluginForHost {
             }
             throw new PluginException(LinkStatus.ERROR_FATAL, "Only downloadable for premium users");
         }
-        // http://svn.jdownloader.org/issues/10306
+        // Bad workaround for bug: http://svn.jdownloader.org/issues/10306
         logger.warning("Downloading as premium in free mode as a workaround for bug #10306");
         try {
             handlePremium(downloadLink, aa);
@@ -1317,7 +1322,7 @@ public class SaveTv extends PluginForHost {
     }
 
     /* Attempt to build filenames which look like the original save.tv server-filenames */
-    private String getFakeOriginalFilename(final DownloadLink downloadLink) throws ParseException {
+    public static String getFakeOriginalFilename(final DownloadLink downloadLink) throws ParseException {
         String ext = downloadLink.getStringProperty("type", null);
         if (ext == null) {
             ext = ".mp4";
@@ -1344,6 +1349,7 @@ public class SaveTv extends PluginForHost {
         final int random2 = new Random().nextInt(100000);
         String formattedFilename = downloadLink.getStringProperty("apiplainfilename", null);
         if (formattedFilename != null) {
+            /* API filename = already plain filename - no need to 'fake' anything */
         } else {
             if (belongsToCategoryMovie(downloadLink) || getLongProperty(downloadLink, "category", 0l) == 0l) {
                 final String title = downloadLink.getStringProperty("plainfilename", null);
