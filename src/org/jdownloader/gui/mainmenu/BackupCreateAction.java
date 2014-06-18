@@ -126,18 +126,21 @@ public class BackupCreateAction extends CustomizableAppAction {
 
     public static void create(File auto) throws IOException {
         ZipIOWriter zipper = null;
+        boolean bad = true;
         try {
-            auto.getParentFile().mkdirs();
+            if (!auto.getParentFile().exists()) {
+                auto.getParentFile().mkdirs();
+            }
             zipper = new ZipIOWriter(auto);
-            final File root = Application.getResource("cfg").getParentFile();
-            final ZipIOWriter fZipper = zipper;
-
             zipper.addDirectory(Application.getResource("cfg"), false, null);
-
+            bad = false;
         } finally {
             try {
                 zipper.close();
             } catch (Throwable e) {
+            }
+            if (bad) {
+                auto.delete();
             }
         }
     }
