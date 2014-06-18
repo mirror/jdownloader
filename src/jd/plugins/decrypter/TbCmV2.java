@@ -30,6 +30,7 @@ import java.util.Map.Entry;
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.http.Browser;
+import jd.http.Browser.BrowserException;
 import jd.nutils.encoding.Encoding;
 import jd.nutils.encoding.HTMLEntities;
 import jd.parser.Regex;
@@ -956,7 +957,16 @@ public class TbCmV2 extends PluginForDecrypt {
                     checkErrors(br);
                     content = br.toString();
                 } else {
-                    br.getPage(pageUrl);
+                    try {
+                        br.getPage(pageUrl);
+                    } catch (final BrowserException b) {
+                        if (br.getHttpConnection() != null && br.getHttpConnection().getResponseCode() == 400) {
+                            logger.warning("Youtube issue!");
+                            return ret;
+                        } else {
+                            throw b;
+                        }
+                    }
                     checkErrors(br);
                     content = jd.plugins.hoster.Youtube.unescape(br.toString());
                 }
