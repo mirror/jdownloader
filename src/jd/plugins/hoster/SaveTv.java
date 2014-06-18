@@ -551,6 +551,7 @@ public class SaveTv extends PluginForHost {
         }
         final SubConfiguration cfg = SubConfiguration.getConfig("save.tv");
         final boolean preferAdsFree = cfg.getBooleanProperty(PREFERADSFREE);
+        final String downloadWithoutAds_request_value = Boolean.toString(preferAdsFree);
         FORCE_LINKCHECK = true;
         requestFileInformation(downloadLink);
 
@@ -614,20 +615,16 @@ public class SaveTv extends PluginForHost {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, NOCUTAVAILABLETEXT, userDefinedWaitHours * 60 * 60 * 1000l);
             }
         }
-        String downloadWithoutAds = "false";
-        if (preferAdsFree) {
-            downloadWithoutAds = "true";
-        }
 
         /* Set download options (ads-free or with ads) and get download url */
         String stv_request_selected_format_value = null;
         if (SESSIONID != null && is_API_enabled()) {
             stv_request_selected_format_value = api_get_format_request_value();
-            api_postDownloadPage(downloadLink, stv_request_selected_format_value, downloadWithoutAds);
+            api_postDownloadPage(downloadLink, stv_request_selected_format_value, downloadWithoutAds_request_value);
             dllink = br.getRegex("<a:DownloadUrl>(http://[^<>\"]*?)</a").getMatch(0);
         } else {
             stv_request_selected_format_value = site_get_format_request_value();
-            postDownloadPage(downloadLink, stv_request_selected_format_value, downloadWithoutAds);
+            postDownloadPage(downloadLink, stv_request_selected_format_value, downloadWithoutAds_request_value);
             if (br.containsHTML("Die Aufnahme liegt nicht im gewünschten Format vor")) {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, PREFERREDFORMATNOTAVAILABLETEXT, 4 * 60 * 60 * 1000l);
             }

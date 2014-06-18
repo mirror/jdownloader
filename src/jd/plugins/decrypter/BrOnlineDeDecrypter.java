@@ -55,6 +55,7 @@ public class BrOnlineDeDecrypter extends PluginForDecrypt {
         String parameter = param.toString();
         boolean offline = false;
         br.setFollowRedirects(true);
+        br.setCustomCharset("utf-8");
 
         try {
             br.getPage(parameter);
