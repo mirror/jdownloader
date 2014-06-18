@@ -5056,4 +5056,37 @@ public interface GuiTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "Password" })
     String lit_password();
 
+    @Default(lngs = { "en" }, values = { "Backup" })
+    String BackupMenuContainer_BackupMenuContainer();
+
+    @Default(lngs = { "en" }, values = { "Backup all settings" })
+    String BackupCreateAction_BackupCreateAction();
+
+    @Default(lngs = { "en" }, values = { "Create a backup of all settings, incl. linklists." })
+    String BackupCreateAction_BackupCreateAction_tt();
+
+    @Default(lngs = { "en" }, values = { "Restore settings" })
+    String BackupRestoreAction_BackupRestoreAction();
+
+    @Default(lngs = { "en" }, values = { "Load a backup file and restore all settings inside." })
+    String BackupRestoreAction_BackupRestoreAction_tt();
+
+    @Default(lngs = { "en" }, values = { "Choose save location" })
+    String BackupCreateAction_actionPerformed_filechooser_title();
+
+    @Default(lngs = { "en" }, values = { "Overwrite?" })
+    String lit_overwrite();
+
+    @Default(lngs = { "en" }, values = { "The file %s1 exists. Do you want to overwrite it?" })
+    String file_exists_want_to_overwrite_question(String filename);
+
+    @Default(lngs = { "en" }, values = { "To create a backup of all settings, JDownloader has to restart. Continue?" })
+    String BackupCreateAction_run_restart_ask();
+
+    @Default(lngs = { "en" }, values = { "Open" })
+    String lit_open();
+
+    @Default(lngs = { "en" }, values = { "To restore a backup, JDownloader has to restart.\r\nIf you load a backup, JDownloader will replace all current settings and linklists with the one from the backup file.\r\nHowever, JDownloader will create an auto-backup of the current settings in %s1 before the restore process.\r\nContinue?" })
+    String BackupRestoreAction_run_restart_ask(String autobackuppath);
+
 }
