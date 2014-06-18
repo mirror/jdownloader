@@ -21,6 +21,7 @@ import java.io.IOException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Calendar;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.Locale;
 import java.util.Map;
@@ -71,7 +72,9 @@ public class CatShareNet extends PluginForHost {
                 String waitTime = br.getRegex("<script>[ \t\n\r\f]+var count = ([0-9]+);").getMatch(0);
                 logger.warning("Waittime detected for link " + theLink.getDownloadURL());
                 Long waitTimeSeconds = Long.parseLong(waitTime);
-                if (waitTimeSeconds != 60l) { throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, "Waittime detected", (waitTimeSeconds + 5) * 1000L); }
+                if (waitTimeSeconds != 60l) {
+                    throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, "Waittime detected", (waitTimeSeconds + 5) * 1000L);
+                }
 
             }
         }
@@ -80,7 +83,9 @@ public class CatShareNet extends PluginForHost {
 
     // never got one, but left this for future usage
     public void checkServerErrors() throws NumberFormatException, PluginException {
-        if (new Regex(BRBEFORE, Pattern.compile("No file", Pattern.CASE_INSENSITIVE)).matches()) throw new PluginException(LinkStatus.ERROR_FATAL, "Server error");
+        if (new Regex(BRBEFORE, Pattern.compile("No file", Pattern.CASE_INSENSITIVE)).matches()) {
+            throw new PluginException(LinkStatus.ERROR_FATAL, "Server error");
+        }
         if (new Regex(BRBEFORE, "(Not Found|<h1>(404 )?Not Found</h1>)").matches()) {
             logger.warning("Server says link offline, please recheck that!");
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
@@ -100,7 +105,9 @@ public class CatShareNet extends PluginForHost {
         Form dlForm = new Form();
         if (new Regex(BRBEFORE, "(api\\.recaptcha\\.net|google\\.com/recaptcha/api/)").matches()) {
             dlForm = br.getForm(0);
-            if (dlForm == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, "no reCaptcha form!");
+            if (dlForm == null) {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, "no reCaptcha form!");
+            }
 
             logger.info("Detected captcha method \"Re Captcha\" for this host");
             PluginForHost recplug = JDUtilities.getPluginForHost("DirectHTTP");
@@ -156,7 +163,9 @@ public class CatShareNet extends PluginForHost {
             checkServerErrors();
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        if (passCode != null) downloadLink.setProperty("pass", passCode);
+        if (passCode != null) {
+            downloadLink.setProperty("pass", passCode);
+        }
         downloadLink.setProperty("freelink", dllink);
         dl.startDownload();
     }
@@ -229,7 +238,9 @@ public class CatShareNet extends PluginForHost {
         br.setFollowRedirects(false);
         br.getPage(downloadURL);
         doSomething();
-        if (br.containsHTML("<title>Error 404</title>")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (br.containsHTML("<title>Error 404</title>")) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
 
         String fileName = new Regex(BRBEFORE, "<h3 class=\"pull-left\" style=\"margin-left: 10px;\">(.*)</h3>[ \t\n\r\f]+<h3 class=\"pull-right\"").getMatch(0);
 
@@ -250,6 +261,7 @@ public class CatShareNet extends PluginForHost {
     @Override
     public AccountInfo fetchAccountInfo(Account account) throws Exception {
         AccountInfo ai = new AccountInfo();
+        boolean hours = false;
         try {
             login(account, true);
         } catch (PluginException e) {
@@ -263,8 +275,9 @@ public class CatShareNet extends PluginForHost {
         if (dailyLimitLeft != null) {
             ai.setTrafficMax(SizeFormatter.getSize("20 GB"));
             ai.setTrafficLeft(SizeFormatter.getSize(dailyLimitLeft));
-        } else
+        } else {
             ai.setUnlimitedTraffic();
+        }
 
         String expire = br.getRegex(">Konto premium ważne do : <strong>(\\d{4}\\-\\d+{2}\\-\\d{2} \\d{2}:\\d{2}:\\d{2})<").getMatch(0);
         if (expire == null) {
@@ -274,6 +287,10 @@ public class CatShareNet extends PluginForHost {
                 if (br.containsHTML("Konto premium ważne do : <strong>-</strong></span>")) {
                     // 0 days left
                     expire = br.getRegex("<a href=\"/premium\">(Konto:[\t\n\r ]+)*Premium \\(<b>(\\d) dni</b>\\)+[ \t\n\r]+</a>").getMatch(1);
+                    if (expire == null) {
+                        expire = br.getRegex("(Konto:[\r\t\n ]+)+Premium \\(<b><span style=\"color: red\">(\\d+) godzin</span></b>\\)").getMatch(1);
+                        hours = true;
+                    }
                 }
                 if (expire == null) {
                     ai.setExpired(true);
@@ -287,8 +304,20 @@ public class CatShareNet extends PluginForHost {
             String dateNow = formatter.format(Calendar.getInstance().getTime());
             dateNow = dateNow + " 23:59:59";
             ai.setValidUntil(TimeFormatter.getMilliSeconds(dateNow, "yyyy-MM-dd HH:mm:ss", Locale.ENGLISH));
-        } else
-            ai.setValidUntil(TimeFormatter.getMilliSeconds(expire, "yyyy-MM-dd HH:mm:ss", Locale.ENGLISH));
+        } else {
+            if (hours) {
+                SimpleDateFormat formatter = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+                Calendar cal = Calendar.getInstance();
+                cal.setTime(new Date());
+                cal.add(Calendar.HOUR_OF_DAY, Integer.parseInt(expire));
+                String dateExpire = formatter.format(cal.getTime());
+
+                ai.setValidUntil(TimeFormatter.getMilliSeconds(dateExpire, "yyyy-MM-dd HH:mm:ss", Locale.ENGLISH));
+
+            } else {
+                ai.setValidUntil(TimeFormatter.getMilliSeconds(expire, "yyyy-MM-dd HH:mm:ss", Locale.ENGLISH));
+            }
+        }
         account.setValid(true);
         try {
             account.setMaxSimultanDownloads(-1);
@@ -308,7 +337,9 @@ public class CatShareNet extends PluginForHost {
                 br.setCookiesExclusive(true);
                 final Object ret = account.getProperty("cookies", null);
                 boolean acmatch = Encoding.urlEncode(account.getUser()).equals(account.getStringProperty("name", Encoding.urlEncode(account.getUser())));
-                if (acmatch) acmatch = Encoding.urlEncode(account.getPass()).equals(account.getStringProperty("pass", Encoding.urlEncode(account.getPass())));
+                if (acmatch) {
+                    acmatch = Encoding.urlEncode(account.getPass()).equals(account.getStringProperty("pass", Encoding.urlEncode(account.getPass())));
+                }
                 if (acmatch && ret != null && ret instanceof HashMap<?, ?> && !force) {
                     final HashMap<String, String> cookies = (HashMap<String, String>) ret;
                     if (account.isValid()) {
@@ -330,7 +361,7 @@ public class CatShareNet extends PluginForHost {
                 login.put("user_password", Encoding.urlEncode(account.getPass()));
                 br.submitForm(login);
                 br.getPage("/");
-                if (!br.containsHTML("(Konto:[\r\t\n ]+)*Premium \\(<b>\\d+ dni</b>\\)")) {
+                if ((!br.containsHTML("(Konto:[\r\t\n ]+)*Premium \\(<b>\\d+ dni</b>\\)")) && (!br.containsHTML("(Konto:[\r\t\n ]+)+Premium \\(<b><span style=\"color: red\">\\d+ godzin</span></b>\\)"))) {
                     logger.warning("Couldn't determine premium status or account is Free not Premium!");
                     throw new PluginException(LinkStatus.ERROR_PREMIUM, "Premium Account is invalid: it's free or not recognized!", PluginException.VALUE_ID_PREMIUM_DISABLE);
                 }
@@ -384,10 +415,13 @@ public class CatShareNet extends PluginForHost {
             if (br.containsHTML("Twój dzienny limit transferu")) {
                 UserIO.getInstance().requestMessageDialog(0, "CatShare.net Premium Error", "Daily Limit exceeded!" + "\r\nPremium disabled, will continue downloads as Free User");
                 throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
-            } else
+            } else {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
         }
-        if (passCode != null) downloadLink.setProperty("pass", passCode);
+        if (passCode != null) {
+            downloadLink.setProperty("pass", passCode);
+        }
         dl.startDownload();
     }
 
