@@ -118,6 +118,7 @@ proxy_http=%s1:%s2 (Διακομιστής Http)
 proxy_none=Απευθείας
 proxy_socks4=%s1:%s2 (Διακομιστής Socks4)
 proxy_socks5=%s1:%s2 (Διακομιστής Socks5)
+proxydialog_remember=Διατήρηση
 proxydialog_title=Δεν υπάρχει σύνδεση στο Διαδίκτυο
 tableheader_tooltip_locked=%s1 (Κλείδωμα αναλογιών)
 tableheader_tooltip_normal=%s1
