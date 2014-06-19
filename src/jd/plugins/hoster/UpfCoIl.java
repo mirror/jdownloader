@@ -20,6 +20,7 @@ import java.io.IOException;
 
 import jd.PluginWrapper;
 import jd.nutils.encoding.Encoding;
+import jd.parser.html.Form;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
@@ -46,11 +47,15 @@ public class UpfCoIl extends PluginForHost {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         br.getPage(link.getDownloadURL());
-        if (br.getURL().contains("file-not-exits.html") || br.containsHTML("<b>שגיאה:</b> קובץ הורדה לא נמצא\\.<br />")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (br.getURL().contains("file-not-exits.html") || br.containsHTML("<b>שגיאה:</b> קובץ הורדה לא נמצא\\.<br />")) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
         final String filename = br.getRegex("<title>([^<>\"]*?) להורדה \\- UpF\\.co\\.il</title>").getMatch(0);
         final String ext = br.getRegex("title=\\'הורד קובץ זה רק אם אתה בטוח שאינו מזיק\\'>([^<>\"]*?)</span>").getMatch(0);
         final String filesize = br.getRegex("<b>גודל הורדה</b><br />([^<>\"]*?)<br /><br").getMatch(0);
-        if (filename == null || ext == null || filesize == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (filename == null || ext == null || filesize == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         link.setFinalFileName(Encoding.htmlDecode(filename.trim()) + "." + Encoding.htmlDecode(ext.trim()));
         link.setDownloadSize(SizeFormatter.getSize(filesize));
         return AvailableStatus.TRUE;
@@ -59,8 +64,17 @@ public class UpfCoIl extends PluginForHost {
     @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
+        final Form dlform = br.getForm(0);
+        if (dlform == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        br.submitForm(dlform);
+        // not really needed or verified.
+        sleep(2500, downloadLink);
         final String dllink = br.getRegex("\"(http://[a-z0-9\\-_]+\\.upf\\.co\\.il/downloadnew/file/[^<>\"]*?)\"").getMatch(0);
-        if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (dllink == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 0);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
