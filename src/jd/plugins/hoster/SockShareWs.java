@@ -47,11 +47,15 @@ public class SockShareWs extends PluginForHost {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         br.getPage(link.getDownloadURL());
-        if (br.getRequest().getHttpConnection().getResponseCode() == 404) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        final Regex finfo = br.getRegex("<h1>([^<>\"]*?)<strong>\\( ([^<>\"]*?) \\)</strong></h1>");
+        if ((br.getRequest().getHttpConnection().getResponseCode() == 404) || (br.containsHTML("<h1><strong>")) || (!br.containsHTML("name=\"hash\""))) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
+        final Regex finfo = br.getRegex("<h1>([^<>\"]*)<strong>\\( ([^<>\"]*?) \\)</strong></h1>");
         String filename = finfo.getMatch(0);
         String filesize = finfo.getMatch(1);
-        if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (filename == null || filesize == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         link.setName(Encoding.htmlDecode(filename.trim()));
         link.setDownloadSize(SizeFormatter.getSize(filesize));
         return AvailableStatus.TRUE;
@@ -61,11 +65,15 @@ public class SockShareWs extends PluginForHost {
     public void handleFree(final DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
         final String hash = br.getRegex("value=\"([A-Za-z0-9]+)\" name=\"hash\"").getMatch(0);
-        if (hash == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (hash == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         // this.sleep(5000l, downloadLink);
         br.postPage(br.getURL(), "hash=" + hash + "&agreeButton=Continue+as+Free+User");
         final String dllink = br.getRegex("\"(http://fs\\d+\\.sockshare\\.ws(:\\d+)?/[^<>\"]*?)\"").getMatch(0);
-        if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (dllink == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 0);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
