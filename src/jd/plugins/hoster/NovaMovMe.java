@@ -52,15 +52,22 @@ public class NovaMovMe extends PluginForHost {
         setBrowserExclusive();
         br.setFollowRedirects(true);
         br.getPage(downloadLink.getDownloadURL());
-        if (br.containsHTML("This file no longer exists on our servers|The file has failed to convert!|content=\"Watch  online\"") || br.getURL().contains("novamov.me/index.php")) {
+        if (br.getURL().contains("novamov.me/index.php")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        String filename = br.getRegex("name=\"title\" content=\"Watch(.*?)online\"").getMatch(0);
+        String filename = br.getRegex("<h1>(.*?)</h1>").getMatch(0);
         if (filename == null) {
-            filename = br.getRegex("<title>Watch(.*?)online \\| NovaMov - Free and reliable flash video hosting</title>").getMatch(0);
-        }
-        if (filename == null) {
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            filename = br.getRegex("name=\"title\" content=\"Watch(.*?)online\"").getMatch(0);
+            if (filename == null) {
+                filename = br.getRegex("<title>Watch(.*?)online \\| NovaMov - Free and reliable flash video hosting</title>").getMatch(0);
+                // lets try this here.... prevent abuse
+                if (br.containsHTML("This file no longer exists on our servers|The file has failed to convert!")) {
+                    throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+                }
+                if (filename == null) {
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                }
+            }
         }
         filename = filename.trim();
         downloadLink.setFinalFileName(filename.replace(filename.substring(filename.length() - 4, filename.length()), "") + ".mp4");
