@@ -253,7 +253,7 @@ public class ImgSrcRu extends PluginForDecrypt {
                 if (br.containsHTML(">This album has not been checked by the moderators yet\\.|<u>Proceed at your own risk</u>")) {
                     // /main/passcheck.php?ad=\d+ links can not br.getURL + "?warned=yeah"
                     // lets look for the link
-                    final String yeah = br.getRegex("/[^/]+/a\\d+\\.html\\??warned=yeah").getMatch(-1);
+                    final String yeah = br.getRegex("/[^/]+/a\\d+\\.html\\?warned=yeah").getMatch(-1);
                     if (yeah != null) {
                         br.getPage(yeah);
                     } else {

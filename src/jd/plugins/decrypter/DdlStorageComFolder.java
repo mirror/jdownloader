@@ -25,7 +25,7 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "ddlstorage.com" }, urls = { "http://(www\\.)?ddlstorage\\.com/folder/[A-Za-z0-9]+" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "ddlstorage.com" }, urls = { "https?://(www\\.)?ddlstorage\\.com/folder/[A-Za-z0-9]+" }, flags = { 0 })
 public class DdlStorageComFolder extends PluginForDecrypt {
 
     public DdlStorageComFolder(PluginWrapper wrapper) {
@@ -53,8 +53,9 @@ public class DdlStorageComFolder extends PluginForDecrypt {
             logger.warning("Decrypter broken for link: " + parameter);
             return null;
         }
-        for (String singleLink : links)
+        for (String singleLink : links) {
             decryptedLinks.add(createDownloadlink(singleLink));
+        }
 
         return decryptedLinks;
     }

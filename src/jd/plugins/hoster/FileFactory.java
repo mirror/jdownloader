@@ -1074,6 +1074,7 @@ public class FileFactory extends PluginForHost {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             } else if (br.containsHTML("\"type\":\"error\"") && br.containsHTML("\"code\":713")) {
                 // 713 ERR_API_FILE_OFFLINE
+                // {"type":"error","message":"File is temporarily unavailable due to system maintenance","code":713}
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE);
             } else if (br.containsHTML("\"type\":\"error\"") && br.containsHTML("\"code\":714")) {
                 // 714 ERR_API_FILE_SERVER_LOAD || free account == too many ppl dling

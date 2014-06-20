@@ -129,7 +129,7 @@ public class PururinCom extends PluginForHost {
 
     private boolean                        prepBrSet       = false;
     private int                            responseCode52x = 0;
-    private static AtomicReference<String> agent           = new AtomicReference<String>(null);
+    private static AtomicReference<String> userAgent       = new AtomicReference<String>(null);
     private static HashMap<String, String> antiDDoSCookies = new HashMap<String, String>();
 
     private Browser prepBrowser(final Browser prepBr) {
@@ -149,12 +149,12 @@ public class PururinCom extends PluginForHost {
                 }
             }
         }
-        if (agent.get() == null) {
+        if (userAgent.get() == null) {
             /* we first have to load the plugin, before we can reference it */
             JDUtilities.getPluginForHost("mediafire.com");
-            agent.set(jd.plugins.hoster.MediafireCom.stringUserAgent());
+            userAgent.set(jd.plugins.hoster.MediafireCom.stringUserAgent());
         }
-        prepBr.getHeaders().put("User-Agent", agent.get());
+        prepBr.getHeaders().put("User-Agent", userAgent.get());
         prepBr.getHeaders().put("Accept-Language", "en-gb, en;q=0.8");
         prepBr.getHeaders().put("Accept-Charset", null);
         prepBr.getHeaders().put("Cache-Control", null);
