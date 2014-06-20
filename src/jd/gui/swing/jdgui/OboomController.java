@@ -134,33 +134,37 @@ public class OboomController implements TopRightPainter, AccountControllerListen
 
     @Override
     public Rectangle paint(Graphics2D g) {
-        MainTabbedPane pane = MainTabbedPane.getInstance();
+        final MainTabbedPane pane = MainTabbedPane.getInstance();
         if (isVisible()) {
             if (getProMode.get()) {
-                Icon icon = getproIcon;
-                icon.paintIcon(pane, g, pane.getWidth() - icon.getIconWidth() - 2, 22 - icon.getIconHeight());
-                Rectangle specialDealBounds = new Rectangle(pane.getWidth() - icon.getIconWidth() - 2, 22 - icon.getIconHeight(), icon.getIconWidth(), icon.getIconHeight() + 2);
-                if (mouseover) {
-                    g.setColor(Color.GRAY);
-                    g.drawLine(specialDealBounds.x, specialDealBounds.y + specialDealBounds.height - 1, specialDealBounds.x + specialDealBounds.width - 2, specialDealBounds.y + specialDealBounds.height - 1);
-                    g.setColor(Color.WHITE);
-                    g.fillRect(pane.getWidth() - close.getIconWidth() - 3, 22 - icon.getIconHeight() - 2, 9, 11);
-                    closeBounds = new Rectangle(pane.getWidth() - close.getIconWidth() - 3, 22 - icon.getIconHeight() - 2, 9, 11);
-                    close.paintIcon(pane, g, pane.getWidth() - close.getIconWidth() - 2, 22 - icon.getIconHeight());
+                final Icon icon = getproIcon;
+                if (icon != null && pane != null && close != null) {
+                    icon.paintIcon(pane, g, pane.getWidth() - icon.getIconWidth() - 2, 22 - icon.getIconHeight());
+                    final Rectangle specialDealBounds = new Rectangle(pane.getWidth() - icon.getIconWidth() - 2, 22 - icon.getIconHeight(), icon.getIconWidth(), icon.getIconHeight() + 2);
+                    if (mouseover) {
+                        g.setColor(Color.GRAY);
+                        g.drawLine(specialDealBounds.x, specialDealBounds.y + specialDealBounds.height - 1, specialDealBounds.x + specialDealBounds.width - 2, specialDealBounds.y + specialDealBounds.height - 1);
+                        g.setColor(Color.WHITE);
+                        g.fillRect(pane.getWidth() - close.getIconWidth() - 3, 22 - icon.getIconHeight() - 2, 9, 11);
+                        closeBounds = new Rectangle(pane.getWidth() - close.getIconWidth() - 3, 22 - icon.getIconHeight() - 2, 9, 11);
+                        close.paintIcon(pane, g, pane.getWidth() - close.getIconWidth() - 2, 22 - icon.getIconHeight());
+                    }
+                    return specialDealBounds;
                 }
-                return specialDealBounds;
             } else {
-                icon.paintIcon(pane, g, pane.getWidth() - icon.getIconWidth() - 2, 22 - icon.getIconHeight());
-                Rectangle specialDealBounds = new Rectangle(pane.getWidth() - icon.getIconWidth() - 2, 22 - icon.getIconHeight(), icon.getIconWidth(), icon.getIconHeight() + 2);
-                if (mouseover) {
-                    g.setColor(Color.GRAY);
-                    g.drawLine(specialDealBounds.x, specialDealBounds.y + specialDealBounds.height - 1, specialDealBounds.x + specialDealBounds.width - 2, specialDealBounds.y + specialDealBounds.height - 1);
-                    g.setColor(Color.WHITE);
-                    g.fillRect(pane.getWidth() - close.getIconWidth() - 3, 22 - icon.getIconHeight() - 2, 9, 11);
-                    closeBounds = new Rectangle(pane.getWidth() - close.getIconWidth() - 3, 22 - icon.getIconHeight() - 2, 9, 11);
-                    close.paintIcon(pane, g, pane.getWidth() - close.getIconWidth() - 2, 22 - icon.getIconHeight());
+                if (icon != null && pane != null && close != null) {
+                    icon.paintIcon(pane, g, pane.getWidth() - icon.getIconWidth() - 2, 22 - icon.getIconHeight());
+                    final Rectangle specialDealBounds = new Rectangle(pane.getWidth() - icon.getIconWidth() - 2, 22 - icon.getIconHeight(), icon.getIconWidth(), icon.getIconHeight() + 2);
+                    if (mouseover) {
+                        g.setColor(Color.GRAY);
+                        g.drawLine(specialDealBounds.x, specialDealBounds.y + specialDealBounds.height - 1, specialDealBounds.x + specialDealBounds.width - 2, specialDealBounds.y + specialDealBounds.height - 1);
+                        g.setColor(Color.WHITE);
+                        g.fillRect(pane.getWidth() - close.getIconWidth() - 3, 22 - icon.getIconHeight() - 2, 9, 11);
+                        closeBounds = new Rectangle(pane.getWidth() - close.getIconWidth() - 3, 22 - icon.getIconHeight() - 2, 9, 11);
+                        close.paintIcon(pane, g, pane.getWidth() - close.getIconWidth() - 2, 22 - icon.getIconHeight());
+                    }
+                    return specialDealBounds;
                 }
-                return specialDealBounds;
             }
         }
         return null;
