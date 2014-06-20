@@ -69,7 +69,7 @@ public class Shareplacecom extends PluginForHost {
         if (br.getRedirectLocation() == null) {
             final String iframe = br.getRegex("<frame name=\"main\" src=\"(.*?)\">").getMatch(0);
             br.getPage("http://shareplace.com/" + iframe);
-            if (br.containsHTML("Your requested file is not found")) {
+            if (br.containsHTML("Your requested file is not found") || !br.containsHTML("Filename:<")) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
             final String filename = br.getRegex("Filename:</font></b>(.*?)<b><br>").getMatch(0);
