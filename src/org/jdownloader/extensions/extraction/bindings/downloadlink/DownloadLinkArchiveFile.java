@@ -108,7 +108,7 @@ public class DownloadLinkArchiveFile implements ArchiveFile {
 
     public void setMessage(ExtractionController controller, String text) {
         for (DownloadLink downloadLink : downloadLinks) {
-            PluginProgress progress = downloadLink.getPluginProgress();
+            final PluginProgress progress = downloadLink.getPluginProgress();
             if (progress != null && progress instanceof ExtractionProgress) {
                 ((ExtractionProgress) progress).setMessage(text);
             }
@@ -123,7 +123,10 @@ public class DownloadLinkArchiveFile implements ArchiveFile {
             if (value <= 0 && max <= 0) {
                 downloadLink.addPluginProgress(progress);
             } else {
-                if (downloadLink.getPluginProgress() == progress || downloadLink.hasPluginProgress(progress)) {
+                if (!downloadLink.hasPluginProgress(progress)) {
+                    downloadLink.addPluginProgress(progress);
+                }
+                if (downloadLink.getPluginProgress() == progress) {
                     final FilePackageView view = downloadLink.getParentNode().getView();
                     if (view != null) {
                         view.requestUpdate();
@@ -140,7 +143,7 @@ public class DownloadLinkArchiveFile implements ArchiveFile {
 
     @Override
     public void deleteLink() {
-        java.util.List<DownloadLink> list = new ArrayList<DownloadLink>(downloadLinks);
+        final java.util.List<DownloadLink> list = new ArrayList<DownloadLink>(downloadLinks);
         DownloadController.getInstance().removeChildren(list);
     }
 
@@ -191,7 +194,6 @@ public class DownloadLinkArchiveFile implements ArchiveFile {
     @Override
     public void onCleanedUp(final ExtractionController controller) {
         for (final DownloadLink downloadLink : downloadLinks) {
-            downloadLink.removePluginProgress(controller.getExtractionProgress());
             switch (CFG_GENERAL.CFG.getCleanupAfterDownloadAction()) {
             case CLEANUP_IMMEDIATELY:
                 DownloadController.getInstance().getQueue().add(new QueueAction<Void, RuntimeException>() {
@@ -256,11 +258,16 @@ public class DownloadLinkArchiveFile implements ArchiveFile {
 
     @Override
     public void notifyChanges(Object type) {
-
         for (DownloadLink link : getDownloadLinks()) {
             link.firePropertyChanged(DownloadLinkProperty.Property.ARCHIVE, type);
         }
+    }
 
+    @Override
+    public void removePluginProgress(ExtractionController controller) {
+        for (final DownloadLink downloadLink : downloadLinks) {
+            downloadLink.removePluginProgress(controller.getExtractionProgress());
+        }
     }
 
 }

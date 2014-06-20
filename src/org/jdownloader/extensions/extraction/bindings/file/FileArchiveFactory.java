@@ -27,18 +27,18 @@ import org.jdownloader.extensions.extraction.bindings.downloadlink.DownloadLinkA
 import org.jdownloader.settings.GeneralSettings;
 
 public class FileArchiveFactory extends FileArchiveFile implements ArchiveFactory {
-    
+
     private final Archive origin;
-    
+
     public FileArchiveFactory(File archiveStartFile) {
         this(archiveStartFile, null);
     }
-    
+
     public FileArchiveFactory(File archiveStartFile, Archive origin) {
         super(archiveStartFile);
         this.origin = origin;
     }
-    
+
     public java.util.List<ArchiveFile> createPartFileList(String file, String pattern) {
         final Pattern pat = Pattern.compile(pattern, CrossSystem.isWindows() ? Pattern.CASE_INSENSITIVE : 0);
         List<ArchiveFile> ret = new ArrayList<ArchiveFile>();
@@ -46,14 +46,16 @@ public class FileArchiveFactory extends FileArchiveFile implements ArchiveFactor
             File[] list = getFile().getParentFile().listFiles();
             if (list != null) {
                 for (File f : list) {
-                    if (f.isDirectory()) continue;
+                    if (f.isDirectory()) {
+                        continue;
+                    }
                     String nodeFile = f.getAbsolutePath();
                     if (nodeFile.equals(file) || pat.matcher(nodeFile).matches()) {
                         if (origin == null) {
                             ret.add(new FileArchiveFile(f));
                         } else {
                             ret.add(new FileArchiveFile(f) {
-                                
+
                                 @Override
                                 public void setStatus(ExtractionController controller, ExtractionStatus error) {
                                     if (isFirstArchiveFile()) {
@@ -65,7 +67,7 @@ public class FileArchiveFactory extends FileArchiveFile implements ArchiveFactor
                                     }
                                     super.setStatus(controller, error);
                                 }
-                                
+
                                 @Override
                                 public void setMessage(ExtractionController controller, String plugins_optional_extraction_status_notenoughspace) {
                                     if (isFirstArchiveFile()) {
@@ -77,7 +79,7 @@ public class FileArchiveFactory extends FileArchiveFile implements ArchiveFactor
                                     }
                                     super.setMessage(controller, plugins_optional_extraction_status_notenoughspace);
                                 }
-                                
+
                                 @Override
                                 public void setProgress(ExtractionController controller, long value, long max, Color color) {
                                     if (isFirstArchiveFile()) {
@@ -85,7 +87,15 @@ public class FileArchiveFactory extends FileArchiveFile implements ArchiveFactor
                                     }
                                     super.setProgress(controller, value, max, color);
                                 }
-                                
+
+                                @Override
+                                public void removePluginProgress(ExtractionController controller) {
+                                    if (isFirstArchiveFile()) {
+                                        origin.getFirstArchiveFile().removePluginProgress(controller);
+                                    }
+                                    super.removePluginProgress(controller);
+                                }
+
                             });
                         }
                     }
@@ -94,16 +104,18 @@ public class FileArchiveFactory extends FileArchiveFile implements ArchiveFactor
         }
         return ret;
     }
-    
+
     public Archive createArchive() {
-        if (origin == null) return new Archive(this);
+        if (origin == null) {
+            return new Archive(this);
+        }
         return new Archive(this) {
-            
+
             @Override
             public Archive getPreviousArchive() {
                 return origin;
             }
-            
+
             @Override
             public void setFirstArchiveFile(ArchiveFile firstArchiveFile) {
                 if (firstArchiveFile instanceof FileArchiveFile) {
@@ -113,26 +125,28 @@ public class FileArchiveFactory extends FileArchiveFile implements ArchiveFactor
             }
         };
     }
-    
+
     public Collection<? extends String> getGuessedPasswordList(Archive archive) {
         HashSet<String> ret = new HashSet<String>();
         ret.add(new File(archive.getFirstArchiveFile().getFilePath()).getName());
         return ret;
     }
-    
+
     public void fireArchiveAddedToQueue(Archive archive) {
     }
-    
+
     public String createDefaultExtractToPath(Archive archive) {
         return getFile().getParent();
     }
-    
+
     public String createExtractSubPath(String path, Archive archiv) {
         try {
             if (path.contains(PACKAGENAME)) {
                 String packageName = null;
                 for (ArchiveFile file : archiv.getArchiveFiles()) {
-                    if (packageName != null) break;
+                    if (packageName != null) {
+                        break;
+                    }
                     if (file instanceof DownloadLinkArchiveFile) {
                         DownloadLinkArchiveFile daf = (DownloadLinkArchiveFile) file;
                         if (daf.getDownloadLinks() != null) {
@@ -169,11 +183,11 @@ public class FileArchiveFactory extends FileArchiveFile implements ArchiveFactor
             if (path.contains("$DATE:")) {
                 int start = path.indexOf("$DATE:");
                 int end = start + 6;
-                
+
                 while (end < path.length() && path.charAt(end) != '$') {
                     end++;
                 }
-                
+
                 try {
                     SimpleDateFormat format = new SimpleDateFormat(path.substring(start + 6, end));
                     path = path.replace(path.substring(start, end + 1), format.format(new Date()));
@@ -193,28 +207,28 @@ public class FileArchiveFactory extends FileArchiveFile implements ArchiveFactor
         }
         return null;
     }
-    
+
     public File toFile(String path) {
         return new File(path);
     }
-    
+
     @Override
     public File getFolder() {
         return getFile().getParentFile();
     }
-    
+
     @Override
     public String getID() {
         return Hash.getMD5(getFolder() + "/" + getName());
     }
-    
+
     @Override
     public void onArchiveFinished(Archive archive) {
     }
-    
+
     @Override
     public BooleanStatus getDefaultAutoExtract() {
         return BooleanStatus.UNSET;
     }
-    
+
 }

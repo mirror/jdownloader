@@ -41,11 +41,17 @@ public class CrawledLinkArchiveFile implements ArchiveFile {
 
     @Override
     public boolean equals(Object obj) {
-        if (obj == null || !(obj instanceof CrawledLinkArchiveFile)) return false;
-        if (obj == this) return true;
+        if (obj == null || !(obj instanceof CrawledLinkArchiveFile)) {
+            return false;
+        }
+        if (obj == this) {
+            return true;
+        }
         // this equals is used by the build method of ExtractionExtension. If we have one matching link, the archivefile matches as well
         for (CrawledLink dl : ((CrawledLinkArchiveFile) obj).links) {
-            if (links.contains(dl)) return true;
+            if (links.contains(dl)) {
+                return true;
+            }
         }
         return false;
     }
@@ -108,10 +114,14 @@ public class CrawledLinkArchiveFile implements ArchiveFile {
                 ret = AvailableStatus.UNCHECKED;
                 break;
             case UNKNOWN:
-                if (ret != AvailableStatus.UNCHECKED) ret = AvailableStatus.UNCHECKABLE;
+                if (ret != AvailableStatus.UNCHECKED) {
+                    ret = AvailableStatus.UNCHECKABLE;
+                }
                 break;
             case OFFLINE:
-                if (ret == null) ret = AvailableStatus.FALSE;
+                if (ret == null) {
+                    ret = AvailableStatus.FALSE;
+                }
                 break;
             }
         }
@@ -148,5 +158,9 @@ public class CrawledLinkArchiveFile implements ArchiveFile {
             link.firePropertyChanged(CrawledLinkProperty.Property.ARCHIVE, type);
         }
 
+    }
+
+    @Override
+    public void removePluginProgress(ExtractionController controller) {
     }
 }

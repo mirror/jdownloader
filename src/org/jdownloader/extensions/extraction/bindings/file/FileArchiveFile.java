@@ -50,8 +50,12 @@ public class FileArchiveFile implements ArchiveFile {
 
     @Override
     public boolean equals(Object obj) {
-        if (obj == null || !(obj instanceof FileArchiveFile)) return false;
-        if (obj == this) return true;
+        if (obj == null || !(obj instanceof FileArchiveFile)) {
+            return false;
+        }
+        if (obj == this) {
+            return true;
+        }
         return file.equals(((FileArchiveFile) obj).file);
     }
 
@@ -106,6 +110,10 @@ public class FileArchiveFile implements ArchiveFile {
 
     @Override
     public void notifyChanges(Object type) {
+    }
+
+    @Override
+    public void removePluginProgress(ExtractionController controller) {
     }
 
 }

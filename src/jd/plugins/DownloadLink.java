@@ -1314,8 +1314,8 @@ public class DownloadLink extends Property implements Serializable, AbstractPack
             synchronized (this) {
                 List<PluginProgress> lPluginProgress = pluginProgress;
                 if (lPluginProgress == null) {
+                    /* to avoid concurrentmodificationexception */
                     lPluginProgress = new CopyOnWriteArrayList<PluginProgress>();
-                    pluginProgress = lPluginProgress;
                 }
                 if (!lPluginProgress.contains(progress)) {
                     lPluginProgress.add(0, progress);
@@ -1326,6 +1326,8 @@ public class DownloadLink extends Property implements Serializable, AbstractPack
                 } else {
                     return;
                 }
+                /* pluginProgress must always contain at least 1 item, see getPluginProgress */
+                pluginProgress = lPluginProgress;
             }
             if (hasNotificationListener()) {
                 notifyChanges(AbstractNodeNotifier.NOTIFY.PROPERTY_CHANCE, new DownloadLinkProperty(this, DownloadLinkProperty.Property.PLUGIN_PROGRESS, progress));
@@ -1333,19 +1335,20 @@ public class DownloadLink extends Property implements Serializable, AbstractPack
         }
     }
 
-    public boolean removePluginProgress(PluginProgress remove) {
+    public boolean removePluginProgress(final PluginProgress remove) {
         if (remove != null) {
             final PluginProgress latest;
             synchronized (this) {
                 List<PluginProgress> lPluginProgress = pluginProgress;
-                if (lPluginProgress == null || lPluginProgress.remove(remove) == false) {
+                if (lPluginProgress == null || lPluginProgress.contains(remove) == false) {
                     return false;
                 }
-                if (lPluginProgress.size() > 0) {
+                if (lPluginProgress.size() > 1) {
+                    lPluginProgress.remove(remove);
                     latest = lPluginProgress.get(0);
                 } else {
-                    pluginProgress = null;
                     latest = null;
+                    pluginProgress = null;
                 }
             }
             if (hasNotificationListener()) {
@@ -1359,7 +1362,11 @@ public class DownloadLink extends Property implements Serializable, AbstractPack
     public PluginProgress getPluginProgress() {
         final List<PluginProgress> lPluginProgress = pluginProgress;
         if (lPluginProgress != null) {
-            return lPluginProgress.get(0);
+            try {
+                return lPluginProgress.get(0);
+            } catch (IndexOutOfBoundsException e) {
+                e.printStackTrace();
+            }
         }
         return null;
     }

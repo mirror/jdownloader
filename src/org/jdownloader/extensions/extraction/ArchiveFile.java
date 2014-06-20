@@ -26,6 +26,8 @@ public interface ArchiveFile {
 
     public void setProgress(ExtractionController controller, long value, long max, Color color);
 
+    public void removePluginProgress(ExtractionController controller);
+
     public void onCleanedUp(ExtractionController controller);
 
     public void setArchive(Archive archive);
