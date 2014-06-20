@@ -4,15 +4,11 @@ import java.awt.Dialog.ModalityType;
 import java.io.File;
 import java.io.IOException;
 import java.io.OutputStream;
+import java.io.UnsupportedEncodingException;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.HashSet;
 
-import javax.crypto.Cipher;
-import javax.crypto.spec.IvParameterSpec;
-import javax.crypto.spec.SecretKeySpec;
-import javax.script.ScriptEngine;
-import javax.script.ScriptEngineManager;
-import javax.script.ScriptException;
 import javax.swing.ImageIcon;
 
 import jd.controlling.linkcollector.LinkCollectingJob;
@@ -28,7 +24,6 @@ import jd.http.Browser;
 import jd.plugins.DownloadLink;
 import jd.plugins.Plugin;
 import jd.plugins.PluginForHost;
-import jd.utils.JDHexUtils;
 import jd.utils.JDUtilities;
 import net.sf.image4j.codec.ico.ICOEncoder;
 
@@ -37,6 +32,7 @@ import org.appwork.remoteapi.RemoteAPI;
 import org.appwork.remoteapi.RemoteAPIRequest;
 import org.appwork.remoteapi.RemoteAPIResponse;
 import org.appwork.remoteapi.exceptions.InternalApiException;
+import org.appwork.storage.JSonStorage;
 import org.appwork.storage.config.JsonConfig;
 import org.appwork.storage.simplejson.JSonObject;
 import org.appwork.storage.simplejson.JSonValue;
@@ -46,7 +42,6 @@ import org.appwork.utils.Application;
 import org.appwork.utils.IO;
 import org.appwork.utils.Regex;
 import org.appwork.utils.StringUtils;
-import org.appwork.utils.encoding.Base64;
 import org.appwork.utils.formatter.HexFormatter;
 import org.appwork.utils.images.IconIO;
 import org.appwork.utils.logging.Log;
@@ -140,10 +135,14 @@ public class ExternInterfaceImpl implements Cnl2APIBasics, Cnl2APIFlash {
 
     // For My JD API
     public void addcrypted2Remote(String crypted, String jk, String source) {
-        String urls = decrypt(crypted, jk, null);
-        LinkCollectingJob job = new LinkCollectingJob(new LinkOriginDetails(LinkOrigin.CNL, null), urls);
-        job.setCustomSourceUrl(source);
-        LinkCollector.getInstance().addCrawlerJob(job);
+        try {
+            String urls = decrypt(crypted, jk, null);
+            LinkCollectingJob job = new LinkCollectingJob(new LinkOriginDetails(LinkOrigin.CNL, null), urls);
+            job.setCustomSourceUrl(source);
+            LinkCollector.getInstance().addCrawlerJob(job);
+        } catch (Throwable e) {
+            e.printStackTrace();
+        }
     }
 
     private void clickAndLoad2Add(LinkOriginDetails origin, String urls, RemoteAPIRequest request) throws IOException {
@@ -197,50 +196,17 @@ public class ExternInterfaceImpl implements Cnl2APIBasics, Cnl2APIFlash {
         LinkCollector.getInstance().addCrawlerJob(job);
     }
 
-    /* decrypt given bytearray with given aes key */
-    public static String decrypt(byte[] b, byte[] key) {
-        Cipher cipher;
-        try {
-            IvParameterSpec ivSpec = new IvParameterSpec(key);
-            SecretKeySpec skeySpec = new SecretKeySpec(key, "AES");
-            cipher = Cipher.getInstance("AES/CBC/NoPadding");
-            cipher.init(Cipher.DECRYPT_MODE, skeySpec, ivSpec);
-            return new String(cipher.doFinal(b), "UTF-8");
-        } catch (Throwable e) {
-            Log.exception(e);
-        }
-        return null;
-    }
-
-    /* decrypt given crypted string with js encrypted aes key */
-    public static String decrypt(String crypted, final String jk, String k) {
-        byte[] key = null;
+    public String decrypt(String crypted, final String jk, String k) throws UnsupportedEncodingException {
+        final HashMap<String, String> infos = new HashMap<String, String>();
+        infos.put("crypted", crypted);
         if (jk != null) {
-
-            try {
-                /* needed as the callerClass is no Plugin */
-                JDUtilities.getPluginForHost("DummyScriptEnginePlugin");
-                final ScriptEngineManager manager = jd.plugins.hoster.DummyScriptEnginePlugin.getScriptEngineManager(null);
-                final ScriptEngine engine = manager.getEngineByName("javascript");
-
-                final String fun = jk + "  f()";
-
-                final Object result = engine.eval(fun);
-
-                key = JDHexUtils.getByteArray(result + "");
-
-            } catch (ScriptException e) {
-
-                throw new RuntimeException(e);
-            }
-
-        } else {
-            key = HexFormatter.hexToByteArray(k);
+            infos.put("jk", jk);
         }
-        /* workaround for wrong relink post encoding! */
-        crypted = crypted.trim().replaceAll("\\s", "+");
-        byte[] baseDecoded = Base64.decode(crypted);
-        return decrypt(baseDecoded, key).trim();
+        if (k != null) {
+            infos.put("k", k);
+        }
+        final String json = JSonStorage.toString(infos);
+        return "http://dummycnl.jdownloader.org/" + HexFormatter.byteArrayToHex(json.getBytes("UTF-8"));
     }
 
     public void add(RemoteAPIResponse response, RemoteAPIRequest request) throws InternalApiException {
