@@ -1052,15 +1052,37 @@ public class YoutubeDashV2 extends PluginForHost {
                 return downloadLink.getDownloadLinkController();
             }
 
+            final HashMap<PluginProgress, PluginProgress> pluginProgressMap = new HashMap<PluginProgress, PluginProgress>();
+
             @Override
             public void addPluginProgress(final PluginProgress progress) {
-                if (progress != null && progress instanceof DownloadPluginProgress) {
-                    DownloadPluginProgress dashVideoProgress = new DashDownloadPluginProgress(this, (DownloadInterface) progress.getProgressSource(), progress.getColor(), totalSize, progress, chunkOffset);
-                    downloadLink.addPluginProgress(dashVideoProgress);
-                    return;
+                final PluginProgress mapped;
+                synchronized (pluginProgressMap) {
+                    if (pluginProgressMap.containsKey(progress)) {
+                        mapped = pluginProgressMap.get(progress);
+                    } else if (progress != null && progress instanceof DownloadPluginProgress) {
+                        mapped = new DashDownloadPluginProgress(this, (DownloadInterface) progress.getProgressSource(), progress.getColor(), totalSize, progress, chunkOffset);
+                        pluginProgressMap.put(progress, mapped);
+                    } else {
+                        mapped = progress;
+                    }
                 }
                 downloadLink.addPluginProgress(progress);
             }
+
+            @Override
+            public boolean removePluginProgress(PluginProgress remove) {
+                final PluginProgress mapped;
+                synchronized (pluginProgressMap) {
+                    if (pluginProgressMap.containsKey(remove)) {
+                        mapped = pluginProgressMap.remove(remove);
+                    } else {
+                        mapped = remove;
+                    }
+                }
+                return downloadLink.removePluginProgress(mapped);
+            }
+
         };
         dl = BrowserAdapter.openDownload(br, dashDownloadable, request, true, getChunksPerStream());
         if (!this.dl.getConnection().isContentDisposition() && !this.dl.getConnection().getContentType().startsWith("video") && !this.dl.getConnection().getContentType().startsWith("audio") && !this.dl.getConnection().getContentType().startsWith("application")) {
