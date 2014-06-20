@@ -2854,6 +2854,7 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
             @Override
             public void run() {
                 this.setName("WatchDog: downloadWatchDog");
+                boolean jobExecuterStarted = false;
                 DownloadControllerListener listener = null;
                 AccountControllerListener accListener = null;
                 HosterRuleControllerListener hrcListener = null;
@@ -3208,6 +3209,7 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
                     logger.info("DownloadWatchDog: stopping");
                     synchronized (DownloadWatchDog.this) {
                         startDownloadJobExecuter();
+                        jobExecuterStarted = !isWatchDogThread();
                     }
                     /* stop all remaining downloads */
                     abortAllSingleDownloadControllers();
@@ -3235,8 +3237,10 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
                         }
                     });
                 } finally {
-                    synchronized (DownloadWatchDog.this) {
-                        startDownloadJobExecuter();
+                    if (jobExecuterStarted == false) {
+                        synchronized (DownloadWatchDog.this) {
+                            startDownloadJobExecuter();
+                        }
                     }
                     /* full stop reached */
                     logger.info("DownloadWatchDog: stopped");
