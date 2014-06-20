@@ -1067,7 +1067,7 @@ public class YoutubeDashV2 extends PluginForHost {
                         mapped = progress;
                     }
                 }
-                downloadLink.addPluginProgress(progress);
+                downloadLink.addPluginProgress(mapped);
             }
 
             @Override
