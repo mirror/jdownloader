@@ -54,13 +54,16 @@ public class ApunkaBollyWoodNet extends PluginForDecrypt {
             return null;
         }
         if (links != null && links.length != 0) {
-            for (final String singleLink : links)
+            for (final String singleLink : links) {
                 decryptedLinks.add(createDownloadlink(singleLink));
+            }
         } else if (downloadLinks != null && downloadLinks.length != 0) {
             final String fpName = br.getRegex("<h1>([^<>\"]*?)</h1>").getMatch(0);
             final FilePackage fp = FilePackage.getInstance();
             fp.setName("Album: " + new Regex(parameter, "(\\d+)$").getMatch(0));
-            if (fpName != null) fp.setName(Encoding.htmlDecode(fpName.trim()));
+            if (fpName != null) {
+                fp.setName(Encoding.htmlDecode(fpName.trim()));
+            }
             for (final String downloadLink[] : downloadLinks) {
                 br.getPage(downloadLink[0]);
                 final String finallink = br.getRegex("<div id=\"DownloadBox\">[\t\n\r ]+<H1><a href=\"(http://[^<>\"]*?)\"").getMatch(0);
@@ -72,7 +75,7 @@ public class ApunkaBollyWoodNet extends PluginForDecrypt {
                 dl.setFinalFileName(Encoding.htmlDecode(downloadLink[2].trim()) + ".mp3");
                 dl.setDownloadSize(SizeFormatter.getSize(Encoding.htmlDecode(downloadLink[3].trim())));
                 dl.setAvailable(true);
-                dl._setFilePackage(fp);
+                fp.add(dl);
                 try {
                     distribute(dl);
                 } catch (final Throwable e) {

@@ -190,7 +190,7 @@ public class DevArtCm extends PluginForDecrypt {
                             fina.setAvailable(true);
                         }
                         if (fp != null) {
-                            fina._setFilePackage(fp);
+                            fp.add(fina);
                         }
                         try {
                             distribute(fina);

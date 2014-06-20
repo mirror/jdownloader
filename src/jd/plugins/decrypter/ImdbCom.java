@@ -52,11 +52,15 @@ public class ImdbCom extends PluginForDecrypt {
         if (pages != null && pages.length != 0) {
             for (final String page : pages) {
                 final int curpage = Integer.parseInt(page);
-                if (curpage > maxpage) maxpage = curpage;
+                if (curpage > maxpage) {
+                    maxpage = curpage;
+                }
             }
         }
         String fpName = br.getRegex("itemprop=\\'url\\'>([^<>\"]*?)</a>").getMatch(0);
-        if (fpName == null) fpName = "imdb.com - " + new Regex(parameter, "([a-z]{2}\\d+)").getMatch(0);
+        if (fpName == null) {
+            fpName = "imdb.com - " + new Regex(parameter, "([a-z]{2}\\d+)").getMatch(0);
+        }
         fpName = Encoding.htmlDecode(fpName.trim());
         final FilePackage fp = FilePackage.getInstance();
         fp.setName(fpName);
@@ -69,7 +73,9 @@ public class ImdbCom extends PluginForDecrypt {
             } catch (final Throwable e) {
                 // Not available in old 0.9.581 Stable
             }
-            if (i > 1) br.getPage(parameter + "?page=" + i);
+            if (i > 1) {
+                br.getPage(parameter + "?page=" + i);
+            }
             final String[][] links = br.getRegex("\"(/media/rm\\d+/(nm|tt|rg)\\d+)([^<>\"/]+)?\"( title=\"([^<>\"]*?)\")?").getMatches();
             if (links == null || links.length == 0) {
                 logger.warning("Decrypter broken for link: " + parameter);
@@ -79,7 +85,7 @@ public class ImdbCom extends PluginForDecrypt {
                 final String link = "http://imdb.com" + linkinfo[0];
                 final DownloadLink dl = createDownloadlink(link);
                 final String id = new Regex(link, "rm(\\d+)").getMatch(0);
-                dl._setFilePackage(fp);
+                fp.add(dl);
                 final String subtitle = Encoding.htmlDecode(linkinfo[4]);
                 if (subtitle != null) {
                     dl.setName(fpName + "_" + id + "_" + Encoding.htmlDecode(subtitle.trim()) + ".jpg");

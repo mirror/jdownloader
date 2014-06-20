@@ -73,7 +73,7 @@ public class TwitterCom extends PluginForDecrypt {
                 if (embed_links != null && embed_links.length != 0) {
                     for (final String single_embed_ink : embed_links) {
                         final DownloadLink dl = createDownloadlink(single_embed_ink);
-                        dl._setFilePackage(fp);
+                        fp.add(dl);
                         try {
                             distribute(dl);
                         } catch (final Throwable e) {
@@ -95,7 +95,7 @@ public class TwitterCom extends PluginForDecrypt {
                             singleLink = singleLink.replace(remove, "");
                         }
                         final DownloadLink dl = createDownloadlink("directhttp://" + Encoding.htmlDecode(singleLink.trim()));
-                        dl._setFilePackage(fp);
+                        fp.add(dl);
                         dl.setAvailable(true);
                         try {
                             distribute(dl);

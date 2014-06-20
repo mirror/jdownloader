@@ -92,7 +92,7 @@ public class SlideShareNetDecrypter extends PluginForDecrypt {
                         dl.setProperty("directpiclink", singleLink);
                         dl.setProperty("directname", currentfilename);
                         dl.setFinalFileName(currentfilename);
-                        dl._setFilePackage(fp);
+                        fp.add(dl);
                         dl.setAvailable(true);
                         decryptedLinks.add(dl);
                         counter++;

@@ -253,7 +253,7 @@ public class FaceBookComGallery extends PluginForDecrypt {
                         }
                         // Set temp name, correct name will be set in hosterplugin later
                         dl.setName(fpName + "_" + picID + ".jpg");
-                        dl._setFilePackage(fp);
+                        fp.add(dl);
                         lastfirstID = picID;
                         try {
                             distribute(dl);
@@ -360,7 +360,7 @@ public class FaceBookComGallery extends PluginForDecrypt {
                         }
                         // Set temp name, correct name will be set in hosterplugin later
                         dl.setName(fpName + "_" + picID + ".jpg");
-                        dl._setFilePackage(fp);
+                        fp.add(dl);
                         lastfirstID = picID;
                         try {
                             distribute(dl);
@@ -525,7 +525,7 @@ public class FaceBookComGallery extends PluginForDecrypt {
                     }
                     // Set temp name, correct name will be set in hosterplugin later
                     dl.setName(fpName + "_" + picID + ".jpg");
-                    dl._setFilePackage(fp);
+                    fp.add(dl);
                     try {
                         distribute(dl);
                     } catch (final Throwable e) {
@@ -663,7 +663,7 @@ public class FaceBookComGallery extends PluginForDecrypt {
                     }
                     // Set temp name, correct name will be set in hosterplugin later
                     dl.setName(fpName + "_" + picID + ".jpg");
-                    dl._setFilePackage(fp);
+                    fp.add(dl);
                     try {
                         distribute(dl);
                     } catch (final Throwable e) {

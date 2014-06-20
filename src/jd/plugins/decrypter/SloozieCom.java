@@ -64,11 +64,13 @@ public class SloozieCom extends PluginForDecrypt {
                 br.getRequest().setHtmlCode(br.toString().replace("\\", ""));
             }
             final String[] links = br.getRegex("\"(http://(www\\.)?sloozie\\.com/(galleries|videos)/[a-z0-9]+/[^<>\"/]*?)\"").getColumn(0);
-            if (links == null || links.length == 0) break;
+            if (links == null || links.length == 0) {
+                break;
+            }
             for (final String singleLink : links) {
                 final DownloadLink dl = createDownloadlink(singleLink);
                 dl.setAvailable(true);
-                dl._setFilePackage(fp);
+                fp.add(dl);
                 try {
                     distribute(dl);
                 } catch (final Throwable e) {

@@ -55,7 +55,7 @@ public class EbaGovTrFolder extends PluginForDecrypt {
                         filename = Encoding.htmlDecode(titlefirst.trim() + " - " + Encoding.htmlDecode(filename.trim()));
                         main.setName(filename);
                         fp.setName(filename);
-                        main._setFilePackage(fp);
+                        fp.add(main);
                         main.setAvailable(true);
                     }
                 }
@@ -68,14 +68,16 @@ public class EbaGovTrFolder extends PluginForDecrypt {
                 if (filename != null) {
                     String coverfilename = null;
                     String oldext = null;
-                    if (filename.contains(".")) oldext = filename.substring(filename.lastIndexOf("."));
+                    if (filename.contains(".")) {
+                        oldext = filename.substring(filename.lastIndexOf("."));
+                    }
                     if (oldext != null) {
                         coverfilename = filename.replace(oldext, ".png");
                     } else {
                         coverfilename = filename + ".png";
                     }
                     cover.setFinalFileName(coverfilename);
-                    cover._setFilePackage(fp);
+                    fp.add(cover);
                     cover.setAvailable(true);
                     decryptedLinks.add(cover);
                 }
@@ -87,13 +89,17 @@ public class EbaGovTrFolder extends PluginForDecrypt {
                 return decryptedLinks;
             }
             String fpName = br.getRegex("<h1>Video <small>([^<>\"]*?)</small></h1>").getMatch(0);
-            if (fpName == null || fpName.equals("")) fpName = new Regex(parameter, "([a-z0-9\\-_]+)").getMatch(0);
+            if (fpName == null || fpName.equals("")) {
+                fpName = new Regex(parameter, "([a-z0-9\\-_]+)").getMatch(0);
+            }
             int maxPage = 1;
             final String[] pages = br.getRegex("\"/video/[A-Za-z0-9\\-_]+/\\d+\">(\\d+)</a>").getColumn(0);
             if (pages != null && pages.length != 0) {
                 for (final String apage : pages) {
                     final int currentint = Integer.parseInt(apage);
-                    if (currentint > maxPage) maxPage = currentint;
+                    if (currentint > maxPage) {
+                        maxPage = currentint;
+                    }
                 }
             }
             final FilePackage fp = FilePackage.getInstance();
@@ -120,7 +126,7 @@ public class EbaGovTrFolder extends PluginForDecrypt {
                     final DownloadLink dl = createDownloadlink("http://www.eba.gov.tr" + singleLinkInfo[0]);
                     dl.setName(Encoding.htmlDecode(singleLinkInfo[1].trim()) + ".mp4");
                     dl.setAvailable(true);
-                    dl._setFilePackage(fp);
+                    fp.add(dl);
                     try {
                         distribute(dl);
                     } catch (final Throwable e) {

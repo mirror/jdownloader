@@ -61,7 +61,9 @@ public class AkatsukiSubsNet extends PluginForDecrypt {
         }
         if (parameter.matches(PROJECTLINK)) {
             String fpName = br.getRegex("<title>([^<>\"]*?)\\| Akatsuki\\-Subs</title>").getMatch(0);
-            if (fpName == null) fpName = new Regex(parameter, "/projekte/(laufend|abgeschlossen)/([a-z0-9\\-]+)/").getMatch(1);
+            if (fpName == null) {
+                fpName = new Regex(parameter, "/projekte/(laufend|abgeschlossen)/([a-z0-9\\-]+)/").getMatch(1);
+            }
             fpName = Encoding.htmlDecode(fpName.trim());
             // Get all tables
             final String[] tables = br.getRegex("<table (class|id)=\"dl\"(.*?)</table>").getColumn(1);
@@ -84,7 +86,7 @@ public class AkatsukiSubsNet extends PluginForDecrypt {
                                 } else {
                                     fp.setName(fpName + " (other)");
                                 }
-                                dl._setFilePackage(fp);
+                                fp.add(dl);
                                 decryptedLinks.add(dl);
                                 counter++;
                             }

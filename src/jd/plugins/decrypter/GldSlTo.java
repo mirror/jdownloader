@@ -50,7 +50,9 @@ public class GldSlTo extends PluginForDecrypt {
         }
 
         String fpName = br.getRegex("<title>([^<>\"]*?) \\&raquo; goldesel\\.to</title>").getMatch(0);
-        if (fpName == null) fpName = new Regex(br.getURL(), "goldesel\\.to/(.+)").getMatch(0);
+        if (fpName == null) {
+            fpName = new Regex(br.getURL(), "goldesel\\.to/(.+)").getMatch(0);
+        }
         fpName = Encoding.htmlDecode(fpName).trim();
         final FilePackage fp = FilePackage.getInstance();
         fp.setName(fpName);
@@ -107,7 +109,9 @@ public class GldSlTo extends PluginForDecrypt {
                         logger.info("We have to wait because the user entered too many wrong captchas...");
                         int wait = 60;
                         String waittime = br.getRegex("<strong>(\\d+) Sekunden</strong> warten\\.").getMatch(0);
-                        if (waittime != null) wait = Integer.parseInt(waittime);
+                        if (waittime != null) {
+                            wait = Integer.parseInt(waittime);
+                        }
                         this.sleep(wait * 1001, param);
                         br.postPage("http://goldesel.to/res/links", "data=" + Encoding.urlEncode(decryptID));
                         continue;
@@ -127,7 +131,7 @@ public class GldSlTo extends PluginForDecrypt {
             final String[] finallinks = br.getRegex("url=\"(http[^<>\"]*?)\"").getColumn(0);
             for (final String finallink : finallinks) {
                 final DownloadLink dl = createDownloadlink(Encoding.htmlDecode(finallink));
-                dl._setFilePackage(fp);
+                fp.add(dl);
                 try {
                     distribute(dl);
                 } catch (final Throwable e) {
@@ -138,7 +142,9 @@ public class GldSlTo extends PluginForDecrypt {
             counter++;
         }
         /* Only 1 link + wrong captcha --> */
-        if (decryptedLinks.size() == 0 && captchafailed) throw new DecrypterException(DecrypterException.CAPTCHA);
+        if (decryptedLinks.size() == 0 && captchafailed) {
+            throw new DecrypterException(DecrypterException.CAPTCHA);
+        }
         if (decryptedLinks.size() == 0) {
             logger.warning("Decrypter broken for link: " + parameter);
             return null;

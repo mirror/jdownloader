@@ -220,7 +220,7 @@ public class DailyMotionComDecrypter extends PluginForDecrypt {
             }
             for (final String videolink : videos) {
                 final DownloadLink fina = createDownloadlink("http://www.dailymotion.com" + videolink);
-                fina._setFilePackage(fp);
+                fp.add(fina);
                 try {
                     distribute(fina);
                 } catch (final Throwable e) {
@@ -320,7 +320,7 @@ public class DailyMotionComDecrypter extends PluginForDecrypt {
             }
             for (final String videolink : videos) {
                 final DownloadLink fina = createDownloadlink("http://www.dailymotion.com" + videolink);
-                fina._setFilePackage(fp);
+                fp.add(fina);
                 try {
                     distribute(fina);
                 } catch (final Throwable e) {

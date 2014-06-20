@@ -118,7 +118,7 @@ public class JBbergCom extends PluginForDecrypt {
                 continue;
             }
             final DownloadLink dl = createDownloadlink(finallink.replace("\\", ""));
-            dl._setFilePackage(fp);
+            fp.add(dl);
             try {
                 distribute(dl);
             } catch (final Throwable e) {
