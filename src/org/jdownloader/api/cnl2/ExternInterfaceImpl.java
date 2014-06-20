@@ -218,6 +218,8 @@ public class ExternInterfaceImpl implements Cnl2APIBasics, Cnl2APIFlash {
         if (jk != null) {
 
             try {
+                /* needed as the callerClass is no Plugin */
+                JDUtilities.getPluginForHost("DummyScriptEnginePlugin");
                 final ScriptEngineManager manager = jd.plugins.hoster.DummyScriptEnginePlugin.getScriptEngineManager(null);
                 final ScriptEngine engine = manager.getEngineByName("javascript");
 
