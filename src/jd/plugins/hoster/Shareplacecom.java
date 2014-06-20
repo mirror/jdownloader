@@ -45,6 +45,7 @@ public class Shareplacecom extends PluginForHost {
     @Override
     public void correctDownloadLink(final DownloadLink link) {
         link.setUrlDownload(link.getDownloadURL().replaceFirst("\\.org", ".com"));
+        link.setUrlDownload(link.getDownloadURL().replaceFirst("Download", ""));
     }
 
     @Override

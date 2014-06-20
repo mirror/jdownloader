@@ -52,7 +52,7 @@ public class NovaMovMe extends PluginForHost {
         setBrowserExclusive();
         br.setFollowRedirects(true);
         br.getPage(downloadLink.getDownloadURL());
-        if (br.containsHTML("This file no longer exists on our servers|The file has failed to convert!") || br.getURL().contains("novamov.me/index.php")) {
+        if (br.containsHTML("This file no longer exists on our servers|The file has failed to convert!|content=\"Watch  online\"") || br.getURL().contains("novamov.me/index.php")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         String filename = br.getRegex("name=\"title\" content=\"Watch(.*?)online\"").getMatch(0);
