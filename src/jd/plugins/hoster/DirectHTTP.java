@@ -901,7 +901,7 @@ public class DirectHTTP extends PluginForHost {
         if (custom != null && custom.size() > 0) {
             for (final Object header : custom) {
                 /*
-                 * this is needed because we no longer serialize the stuff, we use json as storage and it does not differ between String[]
+                 * this is needed because we no longer serialize the stuff. We use JSON as storage and it does not differ between String[]
                  * and ArrayList<String>
                  */
                 if (header instanceof ArrayList) {
@@ -927,6 +927,10 @@ public class DirectHTTP extends PluginForHost {
         }
         if (downloadLink.getStringProperty("cookies", null) != null) {
             br.getCookies(downloadLink.getDownloadURL()).add(Cookies.parseCookies(downloadLink.getStringProperty("cookies", null), Browser.getHost(downloadLink.getDownloadURL()), null));
+        }
+        if (downloadLink.getStringProperty("Referer", null) != null) {
+            // used in MANY plugins!
+            br.getHeaders().put("Referer", downloadLink.getStringProperty("Referer", null));
         }
         this.downloadWorkaround(br, downloadLink);
     }

@@ -254,13 +254,18 @@ public class ImageHosterDecrypter extends PluginForDecrypt {
         } else if (parameter.contains("imgpizza.com/")) {
             finallink = parameter.replace("/viewer.php?file=", "/images/");
         } else if (parameter.contains("imgserve.net/")) {
+            // uses cloudflare.... will cause issues in high load situations without dedicated plugin with antiddos methods.
             br.setFollowRedirects(true);
             br.getPage(parameter);
             if (br.containsHTML(">Image Removed or Bad Link")) {
                 logger.info("Link offline: " + parameter);
                 return decryptedLinks;
             }
-            finallink = br.getRegex("class=\\'centred(_resized)?\\' src=\\'(http://[^<>\"]*?)\\'").getMatch(1);
+            finallink = br.getRegex("class='centred(?:_resized)?' src='(http://[^']+)'").getMatch(0);
+            final DownloadLink img = createDownloadlink("directhttp://" + finallink);
+            img.setProperty("Referer", br.getURL());
+            decryptedLinks.add(img);
+            return decryptedLinks;
         } else if (parameter.contains("twitpic.com/")) {
             br.setFollowRedirects(false);
             br.getPage(parameter);
