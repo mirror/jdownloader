@@ -45,13 +45,19 @@ public class HrnOxCm extends PluginForDecrypt {
             return decryptedLinks;
         }
         br.getPage(parameter);
-
+        if (!br.getURL().matches("https?://(www\\.)?hornoxe\\.com/.+")) {
+            // covers redirects, may or may not be supported content.
+            decryptedLinks.add(createDownloadlink(br.getURL()));
+            return decryptedLinks;
+        }
         if (br.containsHTML(">Seite nicht gefunden<") || br.containsHTML("No htmlCode read") || br.containsHTML(">404 \\- Not Found<")) {
             logger.info("Link offline: " + parameter);
             return decryptedLinks;
         }
         String pageName = br.getRegex("og:title\" content=\"(.*?)\" />").getMatch(0);
-        if (pageName == null) pageName = br.getRegex("<title>(.*?) \\- Hornoxe\\.com</title>").getMatch(0);
+        if (pageName == null) {
+            pageName = br.getRegex("<title>(.*?) \\- Hornoxe\\.com</title>").getMatch(0);
+        }
         if (pageName == null) {
             logger.warning("Decrypter failed for link: " + parameter);
             return null;
@@ -80,7 +86,9 @@ public class HrnOxCm extends PluginForDecrypt {
             urls = br.getRegex("\\'(http://gifdumps\\.hornoxe\\.com/gifdump[^<>\"]*?)\\'").getColumn(0);
         } else {
             urls = br.getRegex("\"(http://(www\\.)?hornoxe\\.com/wp\\-content/picdumps/[^<>\"]*?)\"").getColumn(0);
-            if (urls == null || urls.length == 0) urls = br.getRegex("\"(https?://(www\\.)hornoxe\\.com/wp\\-content/uploads/(?!thumb)[^<>\"]+)\"").getColumn(0);
+            if (urls == null || urls.length == 0) {
+                urls = br.getRegex("\"(https?://(www\\.)hornoxe\\.com/wp\\-content/uploads/(?!thumb)[^<>\"]+)\"").getColumn(0);
+            }
         }
         if (urls != null && urls.length != 0) {
             String title = br.getRegex("<meta property=\"og\\:title\" content=\"(.*?)\" \\/>").getMatch(0);
@@ -101,7 +109,9 @@ public class HrnOxCm extends PluginForDecrypt {
                     urls = br.getRegex("\\'(http://gifdumps\\.hornoxe\\.com/gifdump[^<>\"]*?)\\'").getColumn(0);
                 } else {
                     urls = br.getRegex("\"(http://(www\\.)?hornoxe\\.com/wp\\-content/picdumps/[^<>\"]*?)\"").getColumn(0);
-                    if (urls == null || urls.length == 0) urls = br.getRegex("\"(https?://(www\\.)hornoxe\\.com/wp\\-content/uploads[^<>\"]+)\"").getColumn(0);
+                    if (urls == null || urls.length == 0) {
+                        urls = br.getRegex("\"(https?://(www\\.)hornoxe\\.com/wp\\-content/uploads[^<>\"]+)\"").getColumn(0);
+                    }
                 }
                 add(decryptedLinks, urls, fp);
             }
@@ -123,7 +133,9 @@ public class HrnOxCm extends PluginForDecrypt {
     private void add(ArrayList<DownloadLink> decryptedLinks, String[] urls, FilePackage fp) {
 
         for (final String url : urls) {
-            if (url.contains("fliege.gif")) continue;
+            if (url.contains("fliege.gif")) {
+                continue;
+            }
             DownloadLink link = createDownloadlink("directhttp://" + url);
             fp.add(link);
             decryptedLinks.add(link);
