@@ -44,23 +44,37 @@ public class PururinCom extends PluginForDecrypt {
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String parameter = param.toString();
-        // they seem to detect that you haven't been to gallery.
         parameter = parameter.replaceFirst("pururin\\.com/(gallery|thumbs)/", "pururin\\.com/gallery/");
-        param.setCryptedUrl(parameter);
+        getPage(parameter);
+        parameter = br.getURL();
+        // the uid can be determined by redirect after first page get. http://svn.jdownloader.org/issues/45635
+        // http://pururin.com/gallery/55/alice-in-sexland.html -> http://pururin.com/gallery/12159/alice-first.html
         final String uid = new Regex(parameter, "/(?:thumbs|gallery)/(\\d+)/").getMatch(0);
         if (uid == null) {
             logger.warning("Plugin Defect 'uid' == null");
             return null;
         }
-        getPage(parameter);
+        // correct cryptedUrl
+        param.setCryptedUrl(parameter);
+
         if (br.containsHTML(">Page not found")) {
             logger.info("Link offline: " + parameter);
             return decryptedLinks;
         }
+        if (br.containsHTML("<h1>Pururin is under maintenance</h1>")) {
+            logger.info("Pururin is under maintenance");
+            return decryptedLinks;
+        }
         if (!br.getURL().contains("/thumbs/")) {
-            // without sleep they will redirect you each time back to gallery.
-            Thread.sleep(2500);
+            Thread.sleep(500);
             getPage(parameter.replaceFirst("pururin\\.com/(gallery|thumbs)/", "pururin\\.com/thumbs/"));
+            if (br.containsHTML("<h1>Pururin is under maintenance</h1>")) {
+                logger.info("Pururin is under maintenance");
+                return decryptedLinks;
+            } else if (!br.getURL().contains("/thumbs/")) {
+                logger.warning("FAIL!");
+                return null;
+            }
         }
         final String fpName = br.getRegex("<h1>([^<>\"]*?) Thumbnails</h1>").getMatch(0);
         final String[] links = br.getRegex("\"(/view/" + uid + "/\\d+/[a-z0-9\\-_]+\\.html)\"").getColumn(0);
@@ -104,6 +118,7 @@ public class PururinCom extends PluginForDecrypt {
             ((jd.plugins.hoster.PururinCom) plugin).setBrowser(br);
         }
         ((jd.plugins.hoster.PururinCom) plugin).getPage(parameter);
+
     }
 
 }
