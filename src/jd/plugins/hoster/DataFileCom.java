@@ -632,6 +632,7 @@ public class DataFileCom extends PluginForHost {
                     account.setProperty("totalMaxSim", 1);
                     ai.setStatus("Free Account");
                     ai.setUnlimitedTraffic();
+                    ai.setValidUntil(-1);
                 }
             }
             if (traffic_left != null) {
