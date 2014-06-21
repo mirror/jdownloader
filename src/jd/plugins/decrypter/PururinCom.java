@@ -44,14 +44,25 @@ public class PururinCom extends PluginForDecrypt {
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String parameter = param.toString();
-        parameter = parameter.replace("/gallery/", "/thumbs/");
+        // they seem to detect that you haven't been to gallery.
+        parameter = parameter.replaceFirst("pururin\\.com/(gallery|thumbs)/", "pururin\\.com/gallery/");
+        param.setCryptedUrl(parameter);
+        final String uid = new Regex(parameter, "/(?:thumbs|gallery)/(\\d+)/").getMatch(0);
+        if (uid == null) {
+            logger.warning("Plugin Defect 'uid' == null");
+            return null;
+        }
         getPage(parameter);
         if (br.containsHTML(">Page not found")) {
             logger.info("Link offline: " + parameter);
             return decryptedLinks;
         }
+        if (!br.getURL().contains("/thumbs/")) {
+            // without sleep they will redirect you each time back to gallery.
+            Thread.sleep(2500);
+            getPage(parameter.replaceFirst("pururin\\.com/(gallery|thumbs)/", "pururin\\.com/thumbs/"));
+        }
         final String fpName = br.getRegex("<h1>([^<>\"]*?) Thumbnails</h1>").getMatch(0);
-        final String uid = new Regex(parameter, "/thumbs/(\\d+)").getMatch(0);
         final String[] links = br.getRegex("\"(/view/" + uid + "/\\d+/[a-z0-9\\-_]+\\.html)\"").getColumn(0);
         if (links == null || links.length == 0) {
             logger.warning("Decrypter broken for link: " + parameter);
