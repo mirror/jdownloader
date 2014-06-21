@@ -65,7 +65,7 @@ public class FilesMonsterCom extends PluginForHost {
         this.enablePremium("http://filesmonster.com/service.php");
     }
 
-    public void correctDownloadLink(DownloadLink link) {
+    public void correctDownloadLink(final DownloadLink link) {
         link.setUrlDownload(link.getDownloadURL().replace("filesmonsterdecrypted.com/", "filesmonster.com/"));
     }
 
@@ -75,7 +75,7 @@ public class FilesMonsterCom extends PluginForHost {
     }
 
     // @Override to keep compatible to stable
-    public boolean canHandle(DownloadLink downloadLink, Account account) {
+    public boolean canHandle(final DownloadLink downloadLink, final Account account) {
         if (downloadLink.getBooleanProperty("PREMIUMONLY") && account == null) {
             /* premium only */
             return false;
@@ -154,7 +154,7 @@ public class FilesMonsterCom extends PluginForHost {
 
     }
 
-    private String getNewTemporaryLink(String mainlink, String originalfilename) throws IOException, PluginException {
+    private String getNewTemporaryLink(final String mainlink, final String originalfilename) throws IOException, PluginException {
         // Find a new temporary link
         String mainlinkpart = new Regex(mainlink, "filesmonster\\.com/download\\.php\\?id=(.+)").getMatch(0);
         String temporaryLink = null;
@@ -215,7 +215,7 @@ public class FilesMonsterCom extends PluginForHost {
     }
 
     @Override
-    public void handleFree(DownloadLink downloadLink) throws Exception {
+    public void handleFree(final DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
         if (downloadLink.getBooleanProperty("PREMIUMONLY")) {
             try {
@@ -426,7 +426,7 @@ public class FilesMonsterCom extends PluginForHost {
     }
 
     @Override
-    public AccountInfo fetchAccountInfo(Account account) throws Exception {
+    public AccountInfo fetchAccountInfo(final Account account) throws Exception {
         AccountInfo ai = new AccountInfo();
         try {
             // CAPTCHA is shown after 30 successful logins since beginning of the day or after 5 unsuccessful login attempts.
@@ -445,7 +445,7 @@ public class FilesMonsterCom extends PluginForHost {
             br.getPage("http://filesmonster.com/");
         }
         ai.setUnlimitedTraffic();
-        String expires = br.getRegex("<span>Valid until: <span class=\\'green\\'>([^<>\"]*?)</span>").getMatch(0);
+        String expires = br.getRegex("<span>\\s*Valid until: <span class='green'>([^<>\"]+)</span>").getMatch(0);
         long ms = 0;
         if (expires != null) {
             ms = TimeFormatter.getMilliSeconds(expires, "MM/dd/yy HH:mm", null);
@@ -467,7 +467,7 @@ public class FilesMonsterCom extends PluginForHost {
     }
 
     @Override
-    public void handlePremium(DownloadLink downloadLink, Account account) throws Exception {
+    public void handlePremium(final DownloadLink downloadLink, final Account account) throws Exception {
         requestFileInformation(downloadLink);
         if (!downloadLink.getDownloadURL().contains("download.php?id=")) {
             logger.info(downloadLink.getDownloadURL());
@@ -524,7 +524,7 @@ public class FilesMonsterCom extends PluginForHost {
         dl.startDownload();
     }
 
-    private AccountInfo trafficUpdate(AccountInfo importedAi, Account account) throws IOException {
+    private AccountInfo trafficUpdate(final AccountInfo importedAi, final Account account) throws IOException {
         AccountInfo ai = new AccountInfo();
         if (importedAi == null) {
             ai = account.getAccountInfo();
@@ -611,11 +611,11 @@ public class FilesMonsterCom extends PluginForHost {
     }
 
     @Override
-    public void resetDownloadlink(DownloadLink link) {
+    public void resetDownloadlink(final DownloadLink link) {
     }
 
     /* NO OVERRIDE!! We need to stay 0.9*compatible */
-    public boolean hasCaptcha(DownloadLink link, jd.plugins.Account acc) {
+    public boolean hasCaptcha(final DownloadLink link, final jd.plugins.Account acc) {
         if (acc == null) {
             /* no account, yes we can expect captcha */
             return true;
