@@ -60,11 +60,17 @@ public class WorldClipsRu extends PluginForHost {
     public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
         this.setBrowserExclusive();
         br.getPage(link.getDownloadURL());
-        if (br.containsHTML("<font size=\"8\">404</font><h2|> К сожалению, запрашиваемая страница не найдена<")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (br.containsHTML("<font size=\"8\">404</font><h2|> К сожалению, запрашиваемая страница не найдена<")) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
         final String off = br.getRegex("<tr class=\"off\">(.*?)</tr>").getMatch(0);
-        if (off == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (off == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         final String[] rows = new Regex(off, "<td>([^<>\"]*?)</td>").getColumn(0);
-        if (rows == null || rows.length == 0) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (rows == null || rows.length == 0) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         final Regex urlFilename = new Regex(link.getDownloadURL(), "worldclips\\.ru/clips/([^<>\"/]*?)/([^<>\"/]+)");
         String filename = urlFilename.getMatch(0) + " - " + urlFilename.getMatch(1) + "." + rows[1];
         String filesize = rows[0];
@@ -94,7 +100,9 @@ public class WorldClipsRu extends PluginForHost {
         try {
             throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);
         } catch (final Throwable e) {
-            if (e instanceof PluginException) throw (PluginException) e;
+            if (e instanceof PluginException) {
+                throw (PluginException) e;
+            }
         }
         throw new PluginException(LinkStatus.ERROR_FATAL, "This file is only available to premium members");
     }
@@ -110,7 +118,9 @@ public class WorldClipsRu extends PluginForHost {
                 br.setCookiesExclusive(true);
                 final Object ret = account.getProperty("cookies", null);
                 boolean acmatch = Encoding.urlEncode(account.getUser()).equals(account.getStringProperty("name", Encoding.urlEncode(account.getUser())));
-                if (acmatch) acmatch = Encoding.urlEncode(account.getPass()).equals(account.getStringProperty("pass", Encoding.urlEncode(account.getPass())));
+                if (acmatch) {
+                    acmatch = Encoding.urlEncode(account.getPass()).equals(account.getStringProperty("pass", Encoding.urlEncode(account.getPass())));
+                }
                 if (acmatch && ret != null && ret instanceof HashMap<?, ?> && !force) {
                     final HashMap<String, String> cookies = (HashMap<String, String>) ret;
                     if (account.isValid()) {
@@ -124,7 +134,9 @@ public class WorldClipsRu extends PluginForHost {
                 }
                 br.setFollowRedirects(false);
                 br.postPage("http://worldclips.ru/personal", "expire=on&auth=1&mail=" + Encoding.urlEncode(account.getUser()) + "&pass=" + Encoding.urlEncode(account.getPass()));
-                if (br.getCookie(MAINPAGE, "member_hash") == null) throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nInvalid username/password!\r\nUngültiger Benutzername oder ungültiges Passwort!", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                if (br.getCookie(MAINPAGE, "member_hash") == null) {
+                    throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nInvalid username/password!\r\nUngültiger Benutzername oder ungültiges Passwort!", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                }
                 // Save cookies
                 final HashMap<String, String> cookies = new HashMap<String, String>();
                 final Cookies add = this.br.getCookies(MAINPAGE);
@@ -163,7 +175,7 @@ public class WorldClipsRu extends PluginForHost {
         br.setFollowRedirects(false);
         br.getPage(link.getDownloadURL());
         final String clipID = getClipID();
-        dl = jd.plugins.BrowserAdapter.openDownload(br, link, br.getURL(), "download_clip_id=" + clipID + "&x=" + new Random().nextInt(100) + "&y=" + new Random().nextInt(100), true, -2);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, link, br.getURL(), "download_clip_id=" + clipID + "&x=" + new Random().nextInt(100) + "&y=" + new Random().nextInt(100), true, 1);
         if (dl.getConnection().getContentType().contains("html")) {
             logger.warning("The final dllink seems not to be a file!");
             br.followConnection();
@@ -174,8 +186,12 @@ public class WorldClipsRu extends PluginForHost {
 
     private String getClipID() throws PluginException {
         String clipID = br.getRegex("name=\"download_clip_id\" value=\"(\\d+)\"").getMatch(0);
-        if (clipID == null) clipID = br.getRegex("name=\"clip_id\" value=\"(\\d+)\"").getMatch(0);
-        if (clipID == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (clipID == null) {
+            clipID = br.getRegex("name=\"clip_id\" value=\"(\\d+)\"").getMatch(0);
+        }
+        if (clipID == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         return clipID;
     }
 
