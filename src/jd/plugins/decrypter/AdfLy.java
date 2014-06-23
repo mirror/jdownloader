@@ -36,7 +36,7 @@ import jd.utils.locale.JDL;
 
 import org.jdownloader.logging.LogController;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "adf.ly" }, urls = { "https?://(www\\.)?(adf\\.ly|j\\.gs|q\\.gs|adclicks\\.pw|ay\\.gy|(dl|david)\\.nhachot\\.info|chathu\\.apkmania\\.co|alien\\.apkmania\\.co|n\\.shareme\\.in|proxy\\.doujin\\.us)/[^<>\r\n\t]+" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "adf.ly" }, urls = { "https?://(www\\.)?(adf\\.ly|j\\.gs|q\\.gs|adclicks\\.pw|ay\\.gy|(dl|david)\\.nhachot\\.info|chathu\\.apkmania\\.co|alien\\.apkmania\\.co|n\\.shareme\\.in|proxy\\.doujin\\.us|free\\.singlem4a\\.com)/[^<>\r\n\t]+" }, flags = { 0 })
 @SuppressWarnings("deprecation")
 public class AdfLy extends PluginForDecrypt {
 
@@ -52,7 +52,7 @@ public class AdfLy extends PluginForDecrypt {
     // belongs to adfly group
     private static final String adfDomains   = "adf\\.ly|j\\.gs|q\\.gs|adclicks\\.pw|ay\\.gy";
     // belongs to other people who use subdomains and use adf.ly service
-    private static final String subDomains   = "dl\\.nhachot\\.info|chathu\\.apkmania\\.co|alien\\.apkmania\\.co|n\\.shareme\\.in|proxy\\.doujin\\.us";
+    private static final String subDomains   = "dl\\.nhachot\\.info|chathu\\.apkmania\\.co|alien\\.apkmania\\.co|n\\.shareme\\.in|proxy\\.doujin\\.us|free\\.singlem4a\\.com";
     // builds final String for method calling (no need to edit).
     private static final String HOSTS        = adfPre + "(" + adfDomains + "|" + subDomains + ")";
     private static final String INVALIDLINKS = "/(link-deleted\\.php|index|login|static).+";
@@ -133,7 +133,9 @@ public class AdfLy extends PluginForDecrypt {
                 String countdown = getWaittime();
                 // they also have secondary zzz variable within 'function adf_counter()', but it's the same.
                 String zzz = br.getRegex("var zzz\\s?+=\\s?+'?([\\d,\\.]+|http[^'\"]+)'?;").getMatch(0);
-                if (zzz != null && zzz.matches("(https?|ftp)://.+")) finallink = zzz;
+                if (zzz != null && zzz.matches("(https?|ftp)://.+")) {
+                    finallink = zzz;
+                }
                 String easyUrl = br.getRegex("var easyUrl\\s?+=\\s?+'?(true|false)'?;").getMatch(0);
                 String url = br.getRegex("var url\\s?+=\\s?+'?([^\';]+)'?;").getMatch(0);
                 // 201307xx
@@ -159,7 +161,9 @@ public class AdfLy extends PluginForDecrypt {
                 }
                 if (finallink == null) {
                     finallink = br.getRegex("window\\.location = ('|\")(.*?)('|\");").getMatch(1);
-                    if (finallink != null && finallink.contains("/noscript.php")) finallink = null;
+                    if (finallink != null && finallink.contains("/noscript.php")) {
+                        finallink = null;
+                    }
                 }
                 if (finallink == null) {
                     finallink = br.getRegex("close_bar.*?self\\.location = '(.*?)';").getMatch(0);
@@ -177,16 +181,21 @@ public class AdfLy extends PluginForDecrypt {
                     if (extendedProtectionPage == null) {
                         // 201307xx
                         extendedProtectionPage = new Regex(finallink, "(" + hosts + ")?(/go(/|\\.php\\?)[^<>\"']+)").getMatch(3);
-                        if (extendedProtectionPage != null)
+                        if (extendedProtectionPage != null) {
                             extendedProtectionPage = protocol + "adf.ly" + extendedProtectionPage;
-                        else
+                        } else {
                             break;
+                        }
                     }
                     int wait = 7;
                     String waittime = getWaittime();
                     // because of possible page action via ajax request, we use old wait time.
-                    if (waittime == null) waittime = countdown;
-                    if (waittime != null && Integer.parseInt(waittime) <= 20) wait = Integer.parseInt(waittime);
+                    if (waittime == null) {
+                        waittime = countdown;
+                    }
+                    if (waittime != null && Integer.parseInt(waittime) <= 20) {
+                        wait = Integer.parseInt(waittime);
+                    }
                     if (skipWait) {
                         skipWait();
                         // Wait a seconds. Not waiting can cause the skipWait feature to fail
@@ -217,7 +226,9 @@ public class AdfLy extends PluginForDecrypt {
                         finallink = br.getRegex("<META HTTP-EQUIV=\"Refresh\" CONTENT=\"\\d+; URL=(https?://[^<>\"']+)\"").getMatch(0);
                         break;
                     }
-                } else if (finallink != null && finallink.matches("(https?|ftp)://.+")) break;
+                } else if (finallink != null && finallink.matches("(https?|ftp)://.+")) {
+                    break;
+                }
             }
             if (finallink != null && finallink.contains("/link-deleted.php")) {
                 logger.info(parameter + " has been removed from adf.ly service provider.");
@@ -255,7 +266,9 @@ public class AdfLy extends PluginForDecrypt {
         }
 
         public void addHost(final String h) {
-            if (h == null) return;
+            if (h == null) {
+                return;
+            }
             final String domain = new Regex(h, "https?://([^/]+)/").getMatch(0);
             // only add it if it's not already inside hosts pattern
             if (!hosts.replace("\\.", ".").contains(domain)) {
@@ -284,7 +297,9 @@ public class AdfLy extends PluginForDecrypt {
                         config = SubConfiguration.getConfig("adf.ly", false);
                         if (isJD2()) {
                             defaultProtocol.set(config.getStringProperty("savedDefaultProtocol", null));
-                            if (defaultProtocol.get() != null) return defaultProtocol.get();
+                            if (defaultProtocol.get() != null) {
+                                return defaultProtocol.get();
+                            }
                         }
                         if (defaultProtocol.get() == null) {
                             String lng = System.getProperty("user.language");
@@ -318,10 +333,11 @@ public class AdfLy extends PluginForDecrypt {
         }
 
         private boolean isJD2() {
-            if (System.getProperty("jd.revision.jdownloaderrevision") != null)
+            if (System.getProperty("jd.revision.jdownloaderrevision") != null) {
                 return true;
-            else
+            } else {
                 return false;
+            }
         }
 
         /**
@@ -329,10 +345,11 @@ public class AdfLy extends PluginForDecrypt {
          * 
          */
         private boolean isProtocolHTTPS() {
-            if ("https://".equalsIgnoreCase(this.protocol))
+            if ("https://".equalsIgnoreCase(this.protocol)) {
                 return true;
-            else
+            } else {
                 return false;
+            }
         }
 
     }
