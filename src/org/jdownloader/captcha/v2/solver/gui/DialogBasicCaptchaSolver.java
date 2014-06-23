@@ -8,7 +8,6 @@ import jd.controlling.captcha.SkipException;
 import jd.plugins.PluginForDecrypt;
 
 import org.appwork.storage.config.JsonConfig;
-import org.appwork.utils.StringUtils;
 import org.jdownloader.api.myjdownloader.MyJDownloaderSettings;
 import org.jdownloader.captcha.v2.AbstractResponse;
 import org.jdownloader.captcha.v2.Challenge;
@@ -108,20 +107,34 @@ public class DialogBasicCaptchaSolver extends AbstractDialogSolver<String> {
                     focusRequested = false;
                     waitingThread = Thread.currentThread();
                     job.waitFor(config.getCaptchaDialogJAntiCaptchaTimeout(), JACSolver.getInstance());
-                    if (configDBC.isEnabled() && config.getCaptchaDialogDBCTimeout() > 0) job.waitFor(config.getCaptchaDialogDBCTimeout(), DeathByCaptchaSolver.getInstance());
-                    if (config9kw.isEnabled() && config.getCaptchaDialog9kwTimeout() > 0) job.waitFor(config.getCaptchaDialog9kwTimeout(), Captcha9kwSolver.getInstance());
+                    if (configDBC.isEnabled() && config.getCaptchaDialogDBCTimeout() > 0) {
+                        job.waitFor(config.getCaptchaDialogDBCTimeout(), DeathByCaptchaSolver.getInstance());
+                    }
+                    if (config9kw.isEnabled() && config.getCaptchaDialog9kwTimeout() > 0) {
+                        job.waitFor(config.getCaptchaDialog9kwTimeout(), Captcha9kwSolver.getInstance());
+                    }
                     if (Challenge.getPlugin(job.getChallenge()) instanceof PluginForDecrypt) {
-                        if (configMyJD.isCESEnabled() && config.getCaptchaDialogMyJDCESForCrawlerPluginsTimeout() > 0) job.waitFor(config.getCaptchaDialogMyJDCESForCrawlerPluginsTimeout(), CaptchaMyJDSolver.getInstance());
+                        if (configMyJD.isCESEnabled() && config.getCaptchaDialogMyJDCESForCrawlerPluginsTimeout() > 0) {
+                            job.waitFor(config.getCaptchaDialogMyJDCESForCrawlerPluginsTimeout(), CaptchaMyJDSolver.getInstance());
+                        }
                     } else {
-                        if (configMyJD.isCESEnabled() && config.getCaptchaDialogMyJDCESForHostPluginsTimeout() > 0) job.waitFor(config.getCaptchaDialogMyJDCESForHostPluginsTimeout(), CaptchaMyJDSolver.getInstance());
+                        if (configMyJD.isCESEnabled() && config.getCaptchaDialogMyJDCESForHostPluginsTimeout() > 0) {
+                            job.waitFor(config.getCaptchaDialogMyJDCESForHostPluginsTimeout(), CaptchaMyJDSolver.getInstance());
+                        }
                     }
 
-                    if (configcbh.isEnabled() && config.getCaptchaDialogCaptchaBrotherhoodTimeout() > 0) job.waitFor(config.getCaptchaDialogCaptchaBrotherhoodTimeout(), CBSolver.getInstance());
-                    if (configresolutor.isEnabled() && config.getCaptchaDialogResolutorCaptchaTimeout() > 0) job.waitFor(config.getCaptchaDialogResolutorCaptchaTimeout(), CaptchaResolutorCaptchaSolver.getInstance());
+                    if (configcbh.isEnabled() && config.getCaptchaDialogCaptchaBrotherhoodTimeout() > 0) {
+                        job.waitFor(config.getCaptchaDialogCaptchaBrotherhoodTimeout(), CBSolver.getInstance());
+                    }
+                    if (configresolutor.isEnabled() && config.getCaptchaDialogResolutorCaptchaTimeout() > 0) {
+                        job.waitFor(config.getCaptchaDialogResolutorCaptchaTimeout(), CaptchaResolutorCaptchaSolver.getInstance());
+                    }
 
                 } catch (InterruptedException e) {
                     e.printStackTrace();
-                    if (!focusRequested) throw e;
+                    if (!focusRequested) {
+                        throw e;
+                    }
                 } finally {
                     waitingThread = null;
                     focusRequested = false;
@@ -170,12 +183,14 @@ public class DialogBasicCaptchaSolver extends AbstractDialogSolver<String> {
 
                     handler.run();
 
-                    if (StringUtils.isNotEmpty(handler.getCaptchaCode())) {
+                    if (handler.getCaptchaCode() != null) {
                         job.addAnswer(new CaptchaResponse(captchaChallenge, this, handler.getCaptchaCode(), 100));
                     }
                 } finally {
                     job.getLogger().info("Dialog closed. Response far: " + job.getResponse());
-                    if (jacListener != null) job.getEventSender().removeListener(jacListener);
+                    if (jacListener != null) {
+                        job.getEventSender().removeListener(jacListener);
+                    }
                     handler = null;
                 }
             }
