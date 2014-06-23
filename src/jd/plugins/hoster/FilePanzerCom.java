@@ -109,7 +109,11 @@ public class FilePanzerCom extends PluginForHost {
             for (int i = 1; i <= 3; i++) {
                 br.getPage("http://filepanzer.com/index.php/file/canDownload/" + fid);
                 br.getRequest().setHtmlCode(br.toString().replace("\\", ""));
-                final String captcha_url = br.getRegex("\"(http:[^<>\"]*?)\"").getMatch(0);
+                /* Check if there is a captcha */
+                if (br.containsHTML("\"status\":1")) {
+                    break;
+                }
+                final String captcha_url = br.getRegex("\"captcha\":\"<img src=\"(http://[^<>\"]*?)\"").getMatch(0);
                 if (captcha_url == null) {
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 }
@@ -214,6 +218,8 @@ public class FilePanzerCom extends PluginForHost {
                     }
                 }
                 br.setFollowRedirects(false);
+                br.getHeaders().put("Accept", "application/json, text/javascript, */*; q=0.01");
+                br.getHeaders().put("X-Requested-With", "X-Requested-With");
                 br.postPage("http://filepanzer.com/index.php/login/userLogin", "loginName=" + Encoding.urlEncode(account.getUser()) + "&loginPassword=" + Encoding.urlEncode(account.getPass()));
                 /* This should never happen because account has been checked before via API */
                 if (!br.containsHTML("\"status\":1")) {
