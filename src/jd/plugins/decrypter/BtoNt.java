@@ -21,6 +21,7 @@ import java.util.ArrayList;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
+import jd.http.Browser;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.plugins.CryptedLink;
@@ -37,6 +38,10 @@ public class BtoNt extends PluginForDecrypt {
      */
     public BtoNt(PluginWrapper wrapper) {
         super(wrapper);
+    }
+
+    public void init() {
+        Browser.setRequestIntervalLimitGlobal(this.getHost(), 250);
     }
 
     @Override
