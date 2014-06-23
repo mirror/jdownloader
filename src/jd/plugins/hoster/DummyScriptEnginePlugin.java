@@ -978,7 +978,7 @@ public class DummyScriptEnginePlugin extends PluginForHost {
             } else if (key.equals(ScriptEngine.ENGINE_VERSION)) {
                 return "1.6 release 2";
             } else if (key.equals(ScriptEngine.LANGUAGE)) {
-                return "ECMAScript";
+                return "javascript";
             } else if (key.equals(ScriptEngine.LANGUAGE_VERSION)) {
                 return "1.6";
             } else if (key.equals("THREADING")) {
@@ -1066,8 +1066,8 @@ public class DummyScriptEnginePlugin extends PluginForHost {
             NAMES.add("rhino");
             NAMES.add("JavaScript");
             NAMES.add("javascript");
-            NAMES.add("ECMAScript");
-            NAMES.add("ecmascript");
+            NAMES.add("javascript");
+            NAMES.add("javascript");
             NAMES = Collections.unmodifiableList(NAMES);
 
             MIME_TYPES = new ArrayList<String>(4);
@@ -1095,7 +1095,7 @@ public class DummyScriptEnginePlugin extends PluginForHost {
         }
 
         public String getLanguageName() {
-            return "ECMAScript";
+            return "javascript";
         }
 
         public String getLanguageVersion() {
@@ -1128,6 +1128,7 @@ public class DummyScriptEnginePlugin extends PluginForHost {
         public CustomizedScriptEngineManager() {
             this.registerEngineName("javascript", new CustomRhinoScriptEngineFactory());
             this.registerEngineName("js", new CustomRhinoScriptEngineFactory());
+
         }
     }
 

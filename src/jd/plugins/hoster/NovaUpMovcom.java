@@ -189,7 +189,7 @@ public class NovaUpMovcom extends PluginForHost {
             return null;
         }
         final ScriptEngineManager manager = jd.plugins.hoster.DummyScriptEnginePlugin.getScriptEngineManager(this);
-        final ScriptEngine engine = manager.getEngineByName("ECMAScript");
+        final ScriptEngine engine = manager.getEngineByName("javascript");
         try {
             engine.eval("var res = " + fn);
             result = (String) engine.get("res");

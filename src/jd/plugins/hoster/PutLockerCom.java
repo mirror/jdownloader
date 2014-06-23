@@ -266,7 +266,7 @@ public class PutLockerCom extends PluginForHost {
             passCode = handlePassword(downloadLink);
         }
         // HTTP/1.0 302 Moved
-        // Location: http://10.251.45.****:15871/cgi-bin/blockpage.cgi?ws-session=****
+        // LocationInList: http://10.251.45.****:15871/cgi-bin/blockpage.cgi?ws-session=****
 
         // unknown HTTP response
 

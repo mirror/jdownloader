@@ -205,7 +205,7 @@ public class MidUploadCom extends PluginForHost {
         String dllink = br.getRedirectLocation();
         if (dllink == null) {
             dllink = br.getRegex(Pattern.compile("<br>.*<a href=\"(.*?)\"><img src=\"http://www\\.midupload\\.com/images/download-button\\.gif\" border=\"0\">", Pattern.DOTALL)).getMatch(0);
-            if (dllink == null) dllink = br.getRegex("Location: (http://.+)").getMatch(0);
+            if (dllink == null) dllink = br.getRegex("LocationInList: (http://.+)").getMatch(0);
         }
         if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         dllink = dllink.trim();

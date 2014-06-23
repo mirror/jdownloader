@@ -241,7 +241,7 @@ public class RealDebridCom extends PluginForHost {
                         } else if (new Regex(msg, "An error occurr?ed while attempting to download the file").matches()) {
                             // An error occured while attempting to download the file. Too many attempts, please contact an Administrator
                             // with these following informations :
-                            // An error occured while attempting to download the file. Multiple "Location:" headers, please contact an
+                            // An error occured while attempting to download the file. Multiple "LocationInList:" headers, please contact an
                             // Administrator with these following informations : issue with THIS downloadlink, throw instantly to next
                             // download routine. ** Using Jiaz new handling..
                             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE);

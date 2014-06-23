@@ -176,7 +176,7 @@ public class Vipfilecom extends PluginForHost {
             br.getPage(downloadLink.getDownloadURL());
             br.setFollowRedirects(false);
             if (br.containsHTML(FILEOFFLINE)) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-            /* DownloadLink holen, 2x der Location folgen */
+            /* DownloadLink holen, 2x der LocationInList folgen */
             /* we have to wait little because server too buggy */
             sleep(2000, downloadLink);
             link = Encoding.htmlDecode(br.getRegex(Pattern.compile(FREELINKREGEX, Pattern.CASE_INSENSITIVE)).getMatch(0));

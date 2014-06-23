@@ -355,7 +355,7 @@ public class Lnksvn extends PluginForDecrypt {
                 link2 = br.getRedirectLocation();
             }
             if (link2 == null) {
-                link2 = br.getHttpConnection().getHeaderField("Location");
+                link2 = br.getHttpConnection().getHeaderField("LocationInList");
             }
         } catch (Throwable e) {
             e.printStackTrace();
@@ -394,7 +394,7 @@ public class Lnksvn extends PluginForDecrypt {
         // link2 = eb.getCommContext().getRedirectLocation();
         // }
         // if (link2 == null) {
-        // link2 = eb.getCommContext().getHttpConnection().getHeaderField("Location");
+        // link2 = eb.getCommContext().getHttpConnection().getHeaderField("LocationInList");
         // }
         // if (link2 == null && eb.getCommContext().getHttpConnection().getContentType().contains("html")) {
         // if (eb.getCommContext().containsHTML("404 - Not Found")) {
