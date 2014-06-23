@@ -98,11 +98,19 @@ public class FlickrCom extends PluginForDecrypt {
             logger.info("Login failed or no accounts active/existing -> Continuing without account");
         }
         br.getPage(parameter);
-        if (br.containsHTML("class=\"ThinCase Interst\"") && !logged_in) {
+        if ((br.containsHTML("class=\"ThinCase Interst\"") || br.getURL().contains("/login.yahoo.com/")) && !logged_in) {
             logger.info("Account needed to decrypt this link: " + parameter);
+            final DownloadLink offline = createDownloadlink("directhttp://" + parameter);
+            offline.setAvailable(false);
+            offline.setProperty("offline", true);
+            decryptedLinks.add(offline);
             return decryptedLinks;
         } else if (br.containsHTML("doesn\\'t have anything available to you")) {
             logger.info("Link offline (empty): " + parameter);
+            final DownloadLink offline = createDownloadlink("directhttp://" + parameter);
+            offline.setAvailable(false);
+            offline.setProperty("offline", true);
+            decryptedLinks.add(offline);
             return decryptedLinks;
         }
         /* Check if we have a single link */

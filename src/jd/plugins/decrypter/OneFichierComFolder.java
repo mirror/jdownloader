@@ -45,7 +45,10 @@ public class OneFichierComFolder extends PluginForDecrypt {
         prepareBrowser(br);
         br.getPage(parameter + "?e=1");
         if (br.toString().equals("bad")) {
-            logger.info("Link offline:" + parameter);
+            final DownloadLink offline = createDownloadlink("directhttp://" + parameter);
+            offline.setAvailable(false);
+            offline.setProperty("offline", true);
+            decryptedLinks.add(offline);
             return decryptedLinks;
         }
         String passCode = null;
@@ -53,10 +56,14 @@ public class OneFichierComFolder extends PluginForDecrypt {
             for (int i = 0; i <= 3; i++) {
                 passCode = getUserInput("Enter password for: " + parameter, param);
                 br.postPage(parameter + "?e=1", "pass=" + Encoding.urlEncode(passCode));
-                if (br.containsHTML("password")) continue;
+                if (br.containsHTML("password")) {
+                    continue;
+                }
                 break;
             }
-            if (br.containsHTML("password")) throw new DecrypterException(DecrypterException.PASSWORD);
+            if (br.containsHTML("password")) {
+                throw new DecrypterException(DecrypterException.PASSWORD);
+            }
         }
         String[][] linkInfo = br.getRegex("(https?://[a-z0-9\\-]+\\..*?);([^;]+);([0-9]+)").getMatches();
         if (linkInfo == null || linkInfo.length == 0) {
@@ -69,9 +76,13 @@ public class OneFichierComFolder extends PluginForDecrypt {
             long size = -1;
             dl.setDownloadSize(size = SizeFormatter.getSize(singleLinkInfo[2]));
             if (size > 0) {
-                if (size > 0) dl.setProperty("VERIFIEDFILESIZE", size);
+                if (size > 0) {
+                    dl.setProperty("VERIFIEDFILESIZE", size);
+                }
             }
-            if (passCode != null) dl.setProperty("pass", passCode);
+            if (passCode != null) {
+                dl.setProperty("pass", passCode);
+            }
             dl.setAvailable(true);
             decryptedLinks.add(dl);
         }
@@ -80,7 +91,9 @@ public class OneFichierComFolder extends PluginForDecrypt {
 
     private void prepareBrowser(final Browser br) {
         try {
-            if (br == null) { return; }
+            if (br == null) {
+                return;
+            }
             br.getHeaders().put("User-Agent", "Mozilla/5.0 (X11; U; Linux x86_64; en-US; rv:1.9.2.16) Gecko/20110323 Ubuntu/10.10 (maverick) Firefox/3.6.16");
             br.getHeaders().put("Accept", "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8");
             br.getHeaders().put("Accept-Language", "en-us,en;q=0.5");

@@ -95,7 +95,13 @@ public class AmateurDumperCom extends PluginForDecrypt {
         }
         externID = br.getRegex("var urlAddress = \"(http://.*?)\"").getMatch(0);
         if (externID != null) {
-            DownloadLink dl = createDownloadlink(externID);
+            final DownloadLink dl = createDownloadlink(externID);
+            decryptedLinks.add(dl);
+            return decryptedLinks;
+        }
+        externID = br.getRegex("\"(http://(www\\.)?xxxhdd\\.com/embed/\\d+)\"").getMatch(0);
+        if (externID != null) {
+            final DownloadLink dl = createDownloadlink(externID);
             decryptedLinks.add(dl);
             return decryptedLinks;
         }

@@ -56,9 +56,14 @@ public class WorldClipsRu extends PluginForHost {
         link.setUrlDownload(link.getDownloadURL().replace("dev.worldclips.ru/", "worldclips.ru/"));
     }
 
+    private static final String TYPE_INVALID = "http://(www\\.)?worldclips\\.ru/clips/(top|new)/\\d+";
+
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
         this.setBrowserExclusive();
+        if (link.getDownloadURL().matches(TYPE_INVALID)) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
         br.getPage(link.getDownloadURL());
         if (br.containsHTML("<font size=\"8\">404</font><h2|> К сожалению, запрашиваемая страница не найдена<")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);

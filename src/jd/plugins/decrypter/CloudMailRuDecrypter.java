@@ -37,7 +37,7 @@ public class CloudMailRuDecrypter extends PluginForDecrypt {
         super(wrapper);
     }
 
-    public static final String  BUILD            = "hotfix-17-7.201403131547";
+    public static final String  BUILD            = "release-21.201406171800";
     /* Max .zip filesize = 4 GB */
     private static final double MAX_ZIP_FILESIZE = 4194304;
     private static final String DOWNLOAD_ZIP     = "DOWNLOAD_ZIP_2";
@@ -46,13 +46,14 @@ public class CloudMailRuDecrypter extends PluginForDecrypt {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         final String parameter = Encoding.htmlDecode(param.toString()).replace("http://", "https://");
         final String id = new Regex(parameter, "cloud\\.mail\\.ru/public/(.+)").getMatch(0);
+        final String id_url_encoded = Encoding.urlEncode(id);
         final DownloadLink main = createDownloadlink("http://clouddecrypted.mail.ru/" + System.currentTimeMillis() + new Random().nextInt(100000));
         main.setProperty("plain_request_id", id);
         main.setProperty("mainlink", parameter);
         main.setName(new Regex(parameter, "public/[a-z0-9]+/(.+)").getMatch(0));
 
         prepBR();
-        br.getPage("https://cloud.mail.ru/api/v1/folder/recursive?storage=public&id=" + Encoding.urlEncode(id) + "&sort=%7B%22type%22%3A%22name%22%2C%22order%22%3A%22asc%22%7D&api=1&htmlencoded=false&build=" + BUILD);
+        br.getPage("https://cloud.mail.ru/api/v1/folder/recursive?storage=public&id=" + id_url_encoded + "&sort=%7B%22type%22%3A%22name%22%2C%22order%22%3A%22asc%22%7D&offset=0&limit=500&api=1&htmlencoded=false&build=" + BUILD);
         if (br.containsHTML("\"status\":400")) {
             main.setAvailable(false);
             main.setProperty("offline", true);
@@ -63,7 +64,9 @@ public class CloudMailRuDecrypter extends PluginForDecrypt {
 
         String fpName = null;
         String mainName = br.getRegex("\"url\":.*?\\},\"name\":\"([^<>\"]*?)\",\"id").getMatch(0);
-        if (mainName == null) mainName = new Regex(parameter, "public/([a-z0-9]+)/").getMatch(0);
+        if (mainName == null) {
+            mainName = new Regex(parameter, "public/([a-z0-9]+)/").getMatch(0);
+        }
         final String detailedName = new Regex(parameter, "([^<>\"/]+)/?$").getMatch(0);
         mainName = Encoding.htmlDecode(mainName.trim());
         if (detailedName != null) {
@@ -71,7 +74,7 @@ public class CloudMailRuDecrypter extends PluginForDecrypt {
         } else {
             fpName = mainName;
         }
-        final String[] links = getList();
+        final String[] links = getList(id);
         if (links == null || links.length == 0) {
             logger.warning("Decrypter broken for link: " + parameter);
             return null;
@@ -129,19 +132,29 @@ public class CloudMailRuDecrypter extends PluginForDecrypt {
         return decryptedLinks;
     }
 
-    private String[] getList() {
-        String[] lists = br.getRegex("\"list\":\\[(.*?)\\]").getColumn(0);
-        if (lists == null) return null;
+    private String[] getList(String id) {
+        /* id is not (yet) needed in the RegEx below */
+        if (id.endsWith("/")) {
+            id = id.substring(0, id.length() - 1);
+        }
+        String[] lists = br.getRegex("\"list\":\\[\\{(.*?\\})\\]").getColumn(0);
+        if (lists == null) {
+            return null;
+        }
         final String linktext = lists[lists.length - 1];
 
         final String[] links = linktext.split("\\},\\{");
-        if (links == null || links.length == 0) { return null; }
+        if (links == null || links.length == 0) {
+            return null;
+        }
         return links;
     }
 
     private String getJson(final String parameter, final String source) {
         String result = new Regex(source, "\"" + parameter + "\":([\t\n\r ]+)?([0-9\\.]+)").getMatch(1);
-        if (result == null) result = new Regex(source, "\"" + parameter + "\":([\t\n\r ]+)?\"([^<>\"]*?)\"").getMatch(1);
+        if (result == null) {
+            result = new Regex(source, "\"" + parameter + "\":([\t\n\r ]+)?\"([^<>\"]*?)\"").getMatch(1);
+        }
         return result;
     }
 

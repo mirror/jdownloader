@@ -58,22 +58,33 @@ public class U115ComFolder extends PluginForDecrypt {
         br.setCookiesExclusive(true);
         br.getPage(parameter);
         if (br.containsHTML("(>文件夹提取码不存在<|>文件拥有者未分享该文件夹。<)")) {
-            logger.warning("Invalid URL: " + parameter);
+            final DownloadLink offline = createDownloadlink("directhttp://" + parameter);
+            offline.setAvailable(false);
+            offline.setProperty("offline", true);
+            decryptedLinks.add(offline);
             return decryptedLinks;
         }
         if (br.containsHTML(PASSCODETEXT)) {
             for (int i = 0; i <= 3; i++) {
                 final String passCode = getUserInput("Enter password for: " + parameter, param);
                 br.postPage(parameter, "pass=" + Encoding.urlEncode(passCode));
-                if (br.containsHTML(PASSCODETEXT)) continue;
+                if (br.containsHTML(PASSCODETEXT)) {
+                    continue;
+                }
                 break;
             }
-            if (br.containsHTML(PASSCODETEXT)) throw new Exception(DecrypterException.PASSWORD);
+            if (br.containsHTML(PASSCODETEXT)) {
+                throw new Exception(DecrypterException.PASSWORD);
+            }
         }
         // Set package name and prevent null field from creating plugin errors
         String fpName = br.getRegex("<i class=\"file\\-type tp\\-folder\"></i><span class=\"file\\-name\">(.*?)</span>").getMatch(0);
-        if (fpName == null) fpName = br.getRegex("desc:\\'分享好资源\\|   (.*?) http://").getMatch(0);
-        if (fpName == null) fpName = "Untitled";
+        if (fpName == null) {
+            fpName = br.getRegex("desc:\\'分享好资源\\|   (.*?) http://").getMatch(0);
+        }
+        if (fpName == null) {
+            fpName = "Untitled";
+        }
 
         // API STUFF
         String API = br.getRegex("(var UAPI = \\{[^\\}]+)").getMatch(0);
@@ -95,6 +106,10 @@ public class U115ComFolder extends PluginForDecrypt {
         // Errorhandling
         if (br.containsHTML("\"count\":0")) {
             logger.info("This folder is empty: " + parameter);
+            final DownloadLink offline = createDownloadlink("directhttp://" + parameter);
+            offline.setAvailable(false);
+            offline.setProperty("offline", true);
+            decryptedLinks.add(offline);
             return decryptedLinks;
         }
 
@@ -111,10 +126,11 @@ public class U115ComFolder extends PluginForDecrypt {
                 DownloadLink dl = createDownloadlink(new Regex(param, "(https?)://").getMatch(0) + "://115.com/file/" + formatThis[0][3]);
                 dl.setName(unescape(formatThis[0][0].trim()));
                 dl.setDownloadSize(SizeFormatter.getSize(formatThis[0][1]));
-                if (formatThis[0][2].equals("1"))
+                if (formatThis[0][2].equals("1")) {
                     dl.setAvailable(true);
-                else
+                } else {
                     dl.setAvailable(false);
+                }
                 decryptedLinks.add(dl);
             }
         } else {
@@ -134,7 +150,9 @@ public class U115ComFolder extends PluginForDecrypt {
         /* we have to make sure the youtube plugin is loaded */
 
         final PluginForHost plugin = JDUtilities.getPluginForHost("youtube.com");
-        if (plugin == null) throw new IllegalStateException("youtube plugin not found!");
+        if (plugin == null) {
+            throw new IllegalStateException("youtube plugin not found!");
+        }
 
         return jd.plugins.hoster.Youtube.unescape(s);
     }

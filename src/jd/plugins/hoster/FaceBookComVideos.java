@@ -125,7 +125,9 @@ public class FaceBookComVideos extends PluginForHost {
             }
         } else {
             filename = br.getRegex("id=\"pageTitle\">([^<>\"]*?)\\| Facebook</title>").getMatch(0);
-
+            if (filename == null) {
+                filename = br.getRegex("id=\"pageTitle\">([^<>\"]*?)</title>").getMatch(0);
+            }
         }
         if (filename == null) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);

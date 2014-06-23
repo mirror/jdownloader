@@ -66,7 +66,8 @@ public class AmateurMasturbationsCom extends PluginForDecrypt {
             decryptedLinks.add(createDownloadlink("http://www.xvideos.com/video" + externID));
             return decryptedLinks;
         }
-        externID = br.getRegex("pornyeah\\.com/playerConfig\\.php\\?[a-z0-9]+\\.[a-z0-9\\.]+\\|(\\d+)").getMatch(0);
+        // pornyeah.com/playerConfig.php?4ea5d02e3538a093_s_te.mp4|6290|418"/><param name="mov
+        externID = br.getRegex("pornyeah\\.com/playerConfig\\.php\\?[^<>\"\t\n\r]+\\|(\\d+)").getMatch(0);
         if (externID != null) {
             DownloadLink dl = createDownloadlink("http://www.pornyeah.com/videos/" + Integer.toString(new Random().nextInt(1000000)) + "-" + externID + ".html");
             decryptedLinks.add(dl);
