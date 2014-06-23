@@ -1738,9 +1738,9 @@ public class JDGui implements UpdaterListener, OwnerFinder {
     }
 
     private String generateTitle(String title) {
-        String speedpattern = "\\|(.*?)\\#SPEED(.*?)\\|";
-        String titlepattern = "\\|(.*?)\\#TITLE(.*?)\\|";
-        String updatepattern = "\\|(.*?)\\#UPDATENOTIFY(.*?)\\|";
+        String speedpattern = "\\|([^\\|]*)\\#SPEED([^\\|]*)\\|";
+        String titlepattern = "\\|([^\\|]*)\\#TITLE([^\\|]*)\\|";
+        String updatepattern = "\\|([^\\|]*)\\#UPDATENOTIFY([^\\|]*)\\|";
         String pattern = CFG_GUI.CFG.getTitlePattern();
         pattern = pattern.replaceAll(titlepattern, "$1" + title + "$2");
 
@@ -1785,7 +1785,7 @@ public class JDGui implements UpdaterListener, OwnerFinder {
 
         }
 
-        return pattern;
+        return pattern.trim();
     }
 
     public static void init() {
