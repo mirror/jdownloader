@@ -1066,8 +1066,7 @@ public class DummyScriptEnginePlugin extends PluginForHost {
             NAMES.add("rhino");
             NAMES.add("JavaScript");
             NAMES.add("javascript");
-            NAMES.add("javascript");
-            NAMES.add("javascript");
+
             NAMES = Collections.unmodifiableList(NAMES);
 
             MIME_TYPES = new ArrayList<String>(4);
