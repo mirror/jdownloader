@@ -61,13 +61,17 @@ public class OpenInBrowserAction extends CustomizableTableContextAppAction<Crawl
     }
 
     public void actionPerformed(ActionEvent e) {
-        if (!isEnabled()) return;
+        if (!isEnabled()) {
+            return;
+        }
         SelectionInfo<CrawledPackage, CrawledLink> lselection = getSelection();
-        if (lselection == null) return;
+        if (lselection == null) {
+            return;
+        }
         final List<CrawledLink> links = lselection.getChildren();
         new Thread("OpenInBrowserAction") {
             public void run() {
-                final HashSet<String> urls = LinkTreeUtils.getURLs(links);
+                final HashSet<String> urls = LinkTreeUtils.getURLs(links, true);
                 if (links.size() < 5) {
                     for (String url : urls) {
                         CrossSystem.openURLOrShowMessage(url);
@@ -97,7 +101,9 @@ public class OpenInBrowserAction extends CustomizableTableContextAppAction<Crawl
 
                     @Override
                     public int getProgress() {
-                        if (total == 0) return -1;
+                        if (total == 0) {
+                            return -1;
+                        }
                         int ret = (current * 100) / total;
 
                         return ret;

@@ -130,8 +130,10 @@ public class LinkURLEditor<PackageType extends AbstractPackageNode<ChildrenType,
                     links.addAll(selectedObjects);
 
                 }
-                for (String url : LinkTreeUtils.getURLs(links)) {
-                    if (sb.length() > 0) sb.append("\r\n");
+                for (String url : LinkTreeUtils.getURLs(links, false)) {
+                    if (sb.length() > 0) {
+                        sb.append("\r\n");
+                    }
                     sb.append(url);
                 }
                 ClipboardMonitoring.getINSTANCE().setCurrentContent(sb.toString());

@@ -28,15 +28,21 @@ public class DownloadsTransferable extends PackageControllerTableTransferable<Fi
 
     @Override
     public Object getTransferData(DataFlavor flavor) throws UnsupportedFlavorException, IOException {
-        if (!isDataFlavorSupported(flavor)) throw new UnsupportedFlavorException(flavor);
-        if (flavor.equals(FLAVOR)) return content;
+        if (!isDataFlavorSupported(flavor)) {
+            throw new UnsupportedFlavorException(flavor);
+        }
+        if (flavor.equals(FLAVOR)) {
+            return content;
+        }
         if (flavor.equals(ClipboardUtils.stringFlavor)) {
             StringBuilder sb = new StringBuilder();
             HashSet<String> urls = getURLs();
             if (urls != null) {
                 Iterator<String> it = urls.iterator();
                 while (it.hasNext()) {
-                    if (sb.length() > 0) sb.append("\r\n");
+                    if (sb.length() > 0) {
+                        sb.append("\r\n");
+                    }
                     sb.append(it.next());
                 }
             }
@@ -47,7 +53,9 @@ public class DownloadsTransferable extends PackageControllerTableTransferable<Fi
 
     private HashSet<String> getURLs() {
         PackageControllerTableTransferableContent<FilePackage, DownloadLink> lcontent = content;
-        if (lcontent == null) return null;
+        if (lcontent == null) {
+            return null;
+        }
         java.util.List<AbstractNode> nodes = new ArrayList<AbstractNode>();
         if (lcontent.getLinks() != null) {
             nodes.addAll(lcontent.getLinks());
@@ -55,7 +63,7 @@ public class DownloadsTransferable extends PackageControllerTableTransferable<Fi
         if (lcontent.getPackages() != null) {
             nodes.addAll(lcontent.getPackages());
         }
-        return LinkTreeUtils.getURLs(nodes);
+        return LinkTreeUtils.getURLs(nodes, false);
     }
 
 }

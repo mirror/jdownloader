@@ -72,12 +72,9 @@ public class LinkTreeUtils {
                 ret.add((T) node);
             } else {
 
-                // if we selected a package, and ALL it's links, we want all
-                // links
-                // if we selected a package, and nly afew links, we probably
-                // want only these few links.
-                // if we selected a package, and it is NOT expanded, we want all
-                // links
+                // if we selected a package, and ALL it's links, we want all links
+                // if we selected a package, and only a few links, we probably want only these few links.
+                // if we selected a package, and it is NOT expanded, we want all links
                 boolean readL = ((AbstractPackageNode) node).getModifyLock().readLock();
                 try {
                     if (!((AbstractPackageNode) node).isExpanded()) {
@@ -114,7 +111,9 @@ public class LinkTreeUtils {
         String directory = null;
         if (node instanceof DownloadLink) {
             FilePackage parent = ((DownloadLink) node).getFilePackage();
-            if (parent != null) directory = parent.getDownloadDirectory();
+            if (parent != null) {
+                directory = parent.getDownloadDirectory();
+            }
 
             return getDownloadDirectory(directory, parent == null ? null : parent.getName());
         } else if (node instanceof FilePackage) {
@@ -123,7 +122,9 @@ public class LinkTreeUtils {
             return getDownloadDirectory(directory, ((FilePackage) node).getName());
         } else if (node instanceof CrawledLink) {
             CrawledPackage parent = ((CrawledLink) node).getParentNode();
-            if (parent != null) directory = parent.getDownloadFolder();
+            if (parent != null) {
+                directory = parent.getDownloadFolder();
+            }
 
             return getDownloadDirectory(directory, parent == null ? null : parent.getName());
         } else if (node instanceof CrawledPackage) {
@@ -140,21 +141,28 @@ public class LinkTreeUtils {
         String directory = null;
         if (node instanceof DownloadLink) {
             FilePackage parent = ((DownloadLink) node).getFilePackage();
-            if (parent != null) directory = parent.getDownloadDirectory();
+            if (parent != null) {
+                directory = parent.getDownloadDirectory();
+            }
         } else if (node instanceof FilePackage) {
             directory = ((FilePackage) node).getDownloadDirectory();
         } else if (node instanceof CrawledLink) {
             CrawledPackage parent = ((CrawledLink) node).getParentNode();
-            if (parent != null) directory = parent.getRawDownloadFolder();
+            if (parent != null) {
+                directory = parent.getRawDownloadFolder();
+            }
         } else if (node instanceof CrawledPackage) {
             directory = ((CrawledPackage) node).getRawDownloadFolder();
-        } else
+        } else {
             throw new WTFException("Unknown Type: " + node.getClass());
+        }
         return getRawDownloadDirectory(directory);
     }
 
     private static File getRawDownloadDirectory(String path) {
-        if (path == null) return null;
+        if (path == null) {
+            return null;
+        }
 
         if (CrossSystem.isAbsolutePath(path)) {
             return new File(path);
@@ -165,7 +173,9 @@ public class LinkTreeUtils {
     }
 
     public static File getDownloadDirectory(String path, String packagename) {
-        if (path == null) return null;
+        if (path == null) {
+            return null;
+        }
         path = PackagizerController.replaceDynamicTags(path, packagename);
         if (CrossSystem.isAbsolutePath(path)) {
             return new File(path);
@@ -175,9 +185,11 @@ public class LinkTreeUtils {
         }
     }
 
-    public static HashSet<String> getURLs(List<? extends AbstractNode> links) {
+    public static HashSet<String> getURLs(List<? extends AbstractNode> links, final boolean openInBrowser) {
         HashSet<String> urls = new HashSet<String>();
-        if (links == null || links.size() == 0) return urls;
+        if (links == null || links.size() == 0) {
+            return urls;
+        }
         String rawURL = null;
         for (AbstractNode node : links) {
             DownloadLink link = null;
@@ -193,7 +205,7 @@ public class LinkTreeUtils {
                 } finally {
                     ((AbstractPackageNode) node).getModifyLock().readUnlock(readL);
                 }
-                urls.addAll(getURLs(children));
+                urls.addAll(getURLs(children, openInBrowser));
             }
             if (link != null) {
                 rawURL = link.getDownloadURL();
@@ -208,7 +220,10 @@ public class LinkTreeUtils {
                 }
             }
         }
-        if (links.size() == 1 && (rawURL != null && (!rawURL.matches("((?-i)ftp|https?)://.+"))) && JsonConfig.create(GeneralSettings.class).isCopySingleRealURL()) {
+        if (openInBrowser) {
+            // should always open browserURL, otherwise you get users going to final links returned from decrypters into directhttp or
+            // dedicated hoster plugins.
+        } else if (links.size() == 1 && (rawURL != null && (!rawURL.matches("((?-i)ftp|https?)://.+"))) && JsonConfig.create(GeneralSettings.class).isCopySingleRealURL()) {
             // for 'copy urls' and 'open in browser', when youtube type of prefixes are pointless within this context! Only open rawURL when
             // URL are actually traditional browser URL structure.
         } else if (links.size() == 1 && rawURL != null && JsonConfig.create(GeneralSettings.class).isCopySingleRealURL()) {
