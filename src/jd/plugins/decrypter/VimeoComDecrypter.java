@@ -35,7 +35,9 @@ import jd.plugins.DecrypterException;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
+import jd.plugins.LinkStatus;
 import jd.plugins.Plugin;
+import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
 import jd.utils.JDUtilities;
@@ -64,9 +66,12 @@ public class VimeoComDecrypter extends PluginForDecrypt {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String parameter = param.toString();
         final SubConfiguration cfg = SubConfiguration.getConfig("vimeo.com");
-        final Browser br = new Browser();
+        // when testing and dropping to frame, components will fail without clean browser.
+        br = new Browser();
         setBrowserExclusive();
         br.setFollowRedirects(true);
+        // we do not want German headers!
+        br.getHeaders().put("Accept-Language", "en-gb, en;q=0.8");
         br.setCookie("vimeo.com", "v6f", "1");
 
         if (parameter.matches(LINKTYPE_USER)) {
@@ -188,33 +193,31 @@ public class VimeoComDecrypter extends PluginForDecrypt {
 
             }
 
-            final String date = br.getRegex("itemprop=\"dateCreated\" content=\"(\\d{4}\\-\\d{2}\\-\\d{2}T\\d{2}:\\d{2}:\\d{2})").getMatch(0);
-            final String channelName = br.getRegex("itemtype=\"http://schema\\.org/Person\">[\t\n\r ]+<meta itemprop=\"name\" content=\"([^<>\"]*?)\"").getMatch(0);
-            String title = br.getRegex("\"title\":\"([^<>\"]*?)\"").getMatch(0);
-            if (title == null) {
-                title = br.getRegex("<meta property=\"og:title\" content=\"([^<>\"]*?)\">").getMatch(0);
+            String date = br.getRegex("itemprop=\"dateCreated\" content=\"(\\d{4}\\-\\d{2}\\-\\d{2}T\\d{2}:\\d{2}:\\d{2})").getMatch(0);
+            String channelName = br.getRegex("itemtype=\"http://schema\\.org/Person\">[\t\n\r ]+<meta itemprop=\"name\" content=\"([^<>\"]+)\"").getMatch(0);
+            if (channelName != null) {
+                channelName = getFormattedString(channelName);
             }
-            if (title == null) {
-                logger.warning("Decrypter broken for link: " + parameter);
-                return null;
-            }
-            title = unescape(title);
-            title = Encoding.htmlDecode(title).trim();
-            title = encodeUnicode(title);
-            final PluginForHost hostPlugin = JDUtilities.getPluginForHost("vimeo.com");
 
-            String qualities[][] = getQualities(br, ID, title);
+            // lets assume this chan change at any point (like youtube)
+            final String title = getTitle(br);
+
+            String qualities[][] = getQualities(br, ID);
             if (qualities == null) {
                 return null;
             }
+            // qx[0] = url
+            // qx[1] = extension
+            // qx[2] = format (mobile|sd|hd)
+            // qx[3] = frameSize (\d+x\d+)
+            // qx[4] = bitrate (\d+)
+            // qx[5] = fileSize (\d [a-zA-Z]{2})
             ArrayList<DownloadLink> newRet = new ArrayList<DownloadLink>();
             HashMap<String, DownloadLink> bestMap = new HashMap<String, DownloadLink>();
             int format = 0;
             for (String quality[] : qualities) {
                 String url = quality[0];
-                String name = Encoding.htmlDecode(quality[1]);
                 String fmt = quality[2];
-                name = name.replaceFirst("\\.mp4$", "") + "_" + fmt.replaceAll(" ?\\.MP4 file$", "");
                 if (fmt != null) {
                     fmt = fmt.toLowerCase(Locale.ENGLISH).trim();
                 }
@@ -250,41 +253,36 @@ public class VimeoComDecrypter extends PluginForDecrypt {
                         }
                     }
                 }
-                if (url == null || name == null) {
+                if (url == null) {
                     continue;
                 }
                 if (!url.startsWith("http://")) {
                     url = "http://vimeo.com" + url;
                 }
-                final String qualityPart = new Regex(name, "(\\d+x\\d+_.+)$").getMatch(0);
+
                 final DownloadLink link = createDownloadlink(parameter.replace("http://", "decryptedforVimeoHosterPlugin" + format + "://"));
                 link.setProperty("directURL", url);
-                link.setProperty("directQuality", fmt);
-                link.setProperty("LINKDUPEID", "vimeo" + ID + name + fmt);
-                link.setProperty("direct_id", ID);
+                // videoTitle is required!
+                link.setProperty("videoTitle", title);
+                link.setProperty("videoQuality", fmt);
+                link.setProperty("videoExt", quality[1]);
+                link.setProperty("videoID", ID);
+                link.setProperty("videoFrameSize", quality[3]);
+                link.setProperty("videoBitrate", quality[4]);
+                link.setProperty("LINKDUPEID", ID + "_" + fmt);
                 link.setProperty("pass", password);
-
                 if (date != null) {
-                    link.setProperty("originaldate", date);
+                    link.setProperty("originalDate", date);
                 }
                 if (channelName != null) {
-                    link.setProperty("channel", Encoding.htmlDecode(channelName.trim()));
+                    link.setProperty("channel", channelName);
                 }
-                if (qualityPart != null) {
-                    link.setProperty("plainfilename", title + " (" + qualityPart + ")");
-                } else {
-                    link.setProperty("plainfilename", name);
-                }
-                /* make sure the plugin is loaded! */
-                JDUtilities.getPluginForHost("vimeo.com");
-                final String formattedFilename = ((jd.plugins.hoster.VimeoCom) hostPlugin).getFormattedFilename(link);
-                link.setFinalFileName(formattedFilename);
-                link.setProperty("directName", formattedFilename);
+                link.setFinalFileName(getFormattedFilename(link));
 
-                if (quality[3] != null) {
-                    link.setDownloadSize(SizeFormatter.getSize(quality[3].trim()));
-                    link.setAvailable(true);
+                if (quality[5] != null) {
+                    link.setDownloadSize(SizeFormatter.getSize(quality[5].trim()));
                 }
+                link.setAvailable(true);
                 DownloadLink best = bestMap.get(fmt);
                 if (best == null || link.getDownloadSize() > best.getDownloadSize()) {
                     bestMap.put(fmt, link);
@@ -309,9 +307,6 @@ public class VimeoComDecrypter extends PluginForDecrypt {
                         newRet.add(keep);
                     }
                 }
-                /*
-                 * only replace original found links by new ones, when we have some
-                 */
                 if (newRet.size() > 1) {
                     String fpName = "";
                     if (channelName != null) {
@@ -319,7 +314,7 @@ public class VimeoComDecrypter extends PluginForDecrypt {
                     }
                     if (date != null) {
                         try {
-                            final String userDefinedDateFormat = cfg.getStringProperty("CUSTOM_DATE_2", "dd.MM.yyyy_HH-mm-ss");
+                            final String userDefinedDateFormat = cfg.getStringProperty("CUSTOM_DATE_3", "dd.MM.yyyy_HH-mm-ss");
                             final String[] dateStuff = date.split("T");
                             SimpleDateFormat formatter = new SimpleDateFormat("yyyy-MM-dd:hh:mm:ss");
                             Date dateStr = formatter.parse(dateStuff[0] + ":" + dateStuff[1]);
@@ -349,61 +344,35 @@ public class VimeoComDecrypter extends PluginForDecrypt {
         return decryptedLinks;
     }
 
-    // IMPOORTANT: Sync with HOSTER AND DECRYPTER plugin
-    public String[][] getQualities(Browser br, String ID, String title) throws Exception {
-        /*
-         * little pause needed so the next call does not return trash
-         */
-        Thread.sleep(1000);
-        String qualities[][] = null;
-        String configURL = br.getRegex("data-config-url=\"(https?://player.vimeo.com/v2/video/\\d+/config.*?)\"").getMatch(0);
-        if (br.containsHTML("iconify_down_b")) {
-            /* With dl button */
-            br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
-            br.getPage("http://vimeo.com/" + ID + "?action=download");
-            qualities = br.getRegex("href=\"[^\"]+(/\\d+/download.*?)\" download=\"(.*?)\" .*?>(.*? file)<.*?\\d+x\\d+ /(.*?)\\)").getMatches();
-        } else if (configURL != null) {
-            configURL = configURL.replaceAll("&amp;", "&");
-            br.getPage(configURL);
-            String fmts = br.getRegex("\"files\":\\{\"(h264|vp6)\":\\{(.*?)\\}\\}").getMatch(1);
-            if (fmts != null) {
-                String quality[][] = new Regex(fmts, "\"(.*?)\":\\{(.*?)(\\}|$)").getMatches();
-                qualities = new String[quality.length][4];
-                for (int i = 0; i < quality.length; i++) {
-                    String url = new Regex(quality[i][1], "\"url\":\"(http.*?)\"").getMatch(0);
-                    qualities[i][0] = url;
-                    qualities[i][1] = title;
-                    qualities[i][2] = quality[i][0];
-                    qualities[i][3] = null;
-                }
-            }
-        } else {
-            /* withoutDlBtn */
-            String sig = br.getRegex("\"signature\":\"([0-9a-f]+)\"").getMatch(0);
-            String time = br.getRegex("\"timestamp\":(\\d+)").getMatch(0);
-            if (sig != null && time != null) {
-                String fmts = br.getRegex("\"files\":\\{\"h264\":\\[(.*?)\\]\\}").getMatch(0);
-                if (fmts != null) {
-                    String quality[] = fmts.replaceAll("\"", "").split(",");
-                    qualities = new String[quality.length][4];
-                    for (int i = 0; i < quality.length; i++) {
-                        qualities[i][0] = "http://player.vimeo.com/play_redirect?clip_id=" + ID + "&sig=" + sig + "&time=" + time + "&quality=" + quality[i];
-                        qualities[i][1] = title;
-                        qualities[i][2] = quality[i];
-                        qualities[i][3] = null;
-                    }
-                } else {
-                    // Nothing found so SD should be available at least...
-                    qualities = new String[1][4];
-                    qualities[0][0] = br.getRegex("").getMatch(0);
-                    qualities[0][0] = "http://player.vimeo.com/play_redirect?clip_id=" + ID + "&sig=" + sig + "&time=" + time + "&quality=sd&codecs=H264,VP8,VP6&type=moogaloop_local&embed_location=&seek=0";
-                    qualities[0][1] = title;
-                    qualities[0][2] = "sd";
-                    qualities[0][3] = null;
-                }
+    private String getFormattedString(final String s) throws PluginException {
+        pluginLoaded();
+        return ((jd.plugins.hoster.VimeoCom) vimeo_hostPlugin).getFormattedString(s);
+    }
+
+    private String getTitle(final Browser ibr) throws PluginException {
+        pluginLoaded();
+        return ((jd.plugins.hoster.VimeoCom) vimeo_hostPlugin).getTitle(ibr);
+    }
+
+    private PluginForHost vimeo_hostPlugin = null;
+
+    private String[][] getQualities(Browser ibr, String ID) throws Exception {
+        pluginLoaded();
+        return ((jd.plugins.hoster.VimeoCom) vimeo_hostPlugin).getQualities(ibr, ID);
+    }
+
+    private String getFormattedFilename(DownloadLink link) throws Exception {
+        pluginLoaded();
+        return ((jd.plugins.hoster.VimeoCom) vimeo_hostPlugin).getFormattedFilename(link);
+    }
+
+    private void pluginLoaded() throws PluginException {
+        if (vimeo_hostPlugin == null) {
+            vimeo_hostPlugin = JDUtilities.getPluginForHost("vimeo.com");
+            if (vimeo_hostPlugin == null) {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
         }
-        return qualities;
     }
 
     private void handlePW(CryptedLink param, Browser br) throws Exception {
@@ -460,35 +429,6 @@ public class VimeoComDecrypter extends PluginForDecrypt {
                 throw new DecrypterException(DecrypterException.PASSWORD);
             }
         }
-    }
-
-    private static boolean pluginloaded = false;
-
-    private static synchronized String unescape(final String s) {
-        /* we have to make sure the youtube plugin is loaded */
-        if (pluginloaded == false) {
-            final PluginForHost plugin = JDUtilities.getPluginForHost("youtube.com");
-            if (plugin == null) {
-                throw new IllegalStateException("youtube plugin not found!");
-            }
-            pluginloaded = true;
-        }
-        return jd.plugins.hoster.Youtube.unescape(s);
-    }
-
-    private String encodeUnicode(final String input) {
-        String output = input;
-        output = output.replace(":", ";");
-        output = output.replace("|", "¦");
-        output = output.replace("<", "[");
-        output = output.replace(">", "]");
-        output = output.replace("/", "⁄");
-        output = output.replace("\\", "∖");
-        output = output.replace("*", "#");
-        output = output.replace("?", "¿");
-        output = output.replace("!", "¡");
-        output = output.replace("\"", "'");
-        return output;
     }
 
     /* NO OVERRIDE!! */
