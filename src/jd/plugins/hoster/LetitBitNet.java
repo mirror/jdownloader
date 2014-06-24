@@ -75,6 +75,7 @@ public class LetitBitNet extends PluginForHost {
     private static final String  NICE_HOSTproperty                 = COOKIE_HOST.replaceAll("(https://|http://|\\.|\\-)", "");
     private static AtomicInteger maxFree                           = new AtomicInteger(1);
     private static final String  ENABLEUNLIMITEDSIMULTANMAXFREEDLS = "ENABLEUNLIMITEDSIMULTANMAXFREEDLS";
+    private static final boolean TRYTOGETRECAPTCHA                 = false;
     /*
      * For linkcheck and premium download we're using their API: http://api.letitbit.net/reg/static/api.pdf
      */
@@ -85,7 +86,7 @@ public class LetitBitNet extends PluginForHost {
     private static final boolean PLUGIN_BROKEN                     = false;
     private static Object        PREMIUMLOCK                       = new Object();
     private static final int     MAXSIMULTAN_FREE                  = 1;
-    // Max 10 requests per minute limited by API
+    /* Max 10 requests per minute limited by API */
     private static final int     MAXSIMULTAN_PREMIUM               = 20;
 
     public LetitBitNet(PluginWrapper wrapper) {
@@ -131,7 +132,9 @@ public class LetitBitNet extends PluginForHost {
                         }
                         if (CrossSystem.isOpenBrowserSupported()) {
                             int result = JOptionPane.showConfirmDialog(jd.gui.swing.jdgui.JDGui.getInstance().getMainFrame(), message, title, JOptionPane.YES_NO_OPTION, JOptionPane.INFORMATION_MESSAGE, null);
-                            if (JOptionPane.OK_OPTION == result) CrossSystem.openURL(new URL("http://update3.jdownloader.org/jdserv/BuyPremiumInterface/redirect?" + domain + "&freedialog"));
+                            if (JOptionPane.OK_OPTION == result) {
+                                CrossSystem.openURL(new URL("http://update3.jdownloader.org/jdserv/BuyPremiumInterface/redirect?" + domain + "&freedialog"));
+                            }
                         }
                     } catch (Throwable e) {
                     }
@@ -195,7 +198,9 @@ public class LetitBitNet extends PluginForHost {
                         }
                         if (CrossSystem.isOpenBrowserSupported()) {
                             int result = JOptionPane.showConfirmDialog(jd.gui.swing.jdgui.JDGui.getInstance().getMainFrame(), message, title, JOptionPane.YES_NO_OPTION, JOptionPane.ERROR_MESSAGE, null);
-                            if (JOptionPane.OK_OPTION == result) CrossSystem.openURL(new URL("http://board.jdownloader.org/showthread.php?t=47255"));
+                            if (JOptionPane.OK_OPTION == result) {
+                                CrossSystem.openURL(new URL("http://board.jdownloader.org/showthread.php?t=47255"));
+                            }
                         }
                     } catch (Throwable e) {
                     }
@@ -234,7 +239,9 @@ public class LetitBitNet extends PluginForHost {
      * */
     @Override
     public boolean checkLinks(final DownloadLink[] urls) {
-        if (urls == null || urls.length == 0) { return false; }
+        if (urls == null || urls.length == 0) {
+            return false;
+        }
         try {
             final Browser br = new Browser();
             prepBrowser(br);
@@ -273,7 +280,9 @@ public class LetitBitNet extends PluginForHost {
                         dllink.setFinalFileName(Encoding.htmlDecode(fInfo.getMatch(0)));
                         dllink.setDownloadSize(Long.parseLong(fInfo.getMatch(2)));
                         dllink.setAvailable(true);
-                        if (!md5.equals("0")) dllink.setMD5Hash(md5);
+                        if (!md5.equals("0")) {
+                            dllink.setMD5Hash(md5);
+                        }
                     }
                 }
                 if (index == urls.length) {
@@ -289,8 +298,12 @@ public class LetitBitNet extends PluginForHost {
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws Exception {
         checkLinks(new DownloadLink[] { downloadLink });
-        if (!downloadLink.isAvailabilityStatusChecked()) { return AvailableStatus.UNCHECKED; }
-        if (downloadLink.isAvailabilityStatusChecked() && !downloadLink.isAvailable()) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
+        if (!downloadLink.isAvailabilityStatusChecked()) {
+            return AvailableStatus.UNCHECKED;
+        }
+        if (downloadLink.isAvailabilityStatusChecked() && !downloadLink.isAvailable()) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
         return AvailableStatus.TRUE;
     }
 
@@ -311,7 +324,9 @@ public class LetitBitNet extends PluginForHost {
             /* only available after 0.9xx version */
         }
         maxFree.set(MAXSIMULTAN_FREE);
-        if (getPluginConfig().getBooleanProperty(ENABLEUNLIMITEDSIMULTANMAXFREEDLS, false)) maxFree.set(20);
+        if (getPluginConfig().getBooleanProperty(ENABLEUNLIMITEDSIMULTANMAXFREEDLS, false)) {
+            maxFree.set(20);
+        }
         requestFileInformation(downloadLink);
         String url = getLinkViaSkymonkDownloadMethod(downloadLink.getDownloadURL());
         if (url == null) {
@@ -320,17 +335,25 @@ public class LetitBitNet extends PluginForHost {
             // Enable unlimited simultan downloads for skymonk users
             maxFree.set(-1);
         }
-        if (url == null) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
+        if (url == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, url, true, 1);
         if (!dl.getConnection().isOK()) {
             dl.getConnection().disconnect();
-            if (dl.getConnection().getResponseCode() == 404) { throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error", 30 * 60 * 1000); }
+            if (dl.getConnection().getResponseCode() == 404) {
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error", 30 * 60 * 1000);
+            }
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE);
         }
         if (!dl.getConnection().isContentDisposition()) {
             br.followConnection();
-            if (br.containsHTML("<title>Error</title>") || br.containsHTML("Error")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error", 30 * 60 * 1000);
-            if (br.containsHTML(">Welcome to nginx")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Ngix server error", 30 * 60 * 1000);
+            if (br.containsHTML("<title>Error</title>") || br.containsHTML("Error")) {
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error", 30 * 60 * 1000);
+            }
+            if (br.containsHTML(">Welcome to nginx")) {
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Ngix server error", 30 * 60 * 1000);
+            }
             handlePluginBroken(downloadLink, "unknown_server_error", 3);
         }
         dl.startDownload();
@@ -352,7 +375,9 @@ public class LetitBitNet extends PluginForHost {
     }
 
     private String getLinkViaSkymonkDownloadMethod(String s) throws IOException {
-        if (!getPluginConfig().getBooleanProperty("STATUS", true)) return null;
+        if (!getPluginConfig().getBooleanProperty("STATUS", true)) {
+            return null;
+        }
         Browser skymonk = new Browser();
         skymonk.setCustomCharset("UTF-8");
         skymonk.getHeaders().put("Pragma", null);
@@ -367,7 +392,9 @@ public class LetitBitNet extends PluginForHost {
 
         skymonk.postPage("http://api.letitbit.net/internal/index4.php", "action=LINK_GET_DIRECT&link=" + s + "&free_link=1&appid=" + JDHash.getMD5(String.valueOf(Math.random())) + "&version=2.1");
         String[] result = skymonk.getRegex("([^\r\n]+)").getColumn(0);
-        if (result == null || result.length == 0) return null;
+        if (result == null || result.length == 0) {
+            return null;
+        }
 
         if ("NO".equals(result[0].trim())) {
             if (result.length > 1) {
@@ -383,7 +410,9 @@ public class LetitBitNet extends PluginForHost {
                 res.add(r);
             }
         }
-        if (res.size() > 1) return res.get(1);
+        if (res.size() > 1) {
+            return res.get(1);
+        }
         return res.size() == 1 ? res.get(0) : null;
     }
 
@@ -394,6 +423,11 @@ public class LetitBitNet extends PluginForHost {
         br.getPage(downloadLink.getDownloadURL());
         br.setFollowRedirects(false);
         handleNonApiErrors(downloadLink);
+        final boolean plugin_broken = true;
+        if (plugin_broken) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        /* KAPUTT, Form mit ganz vielen "null"s wird gesendet, die korrekte Form wird weder erkannt, noch korrekt entschlüsselt */
         submitFreeForm();// born_iframe.php with encrypted form
 
         // Russians can get the downloadlink here, they don't have to enter captchas
@@ -407,24 +441,30 @@ public class LetitBitNet extends PluginForHost {
             }
         } else {
             String urlPrefix = new Regex(br.getURL(), "http://(www\\.)?([a-z0-9]+\\.)letitbit\\.net/.+").getMatch(1);
-            if (urlPrefix == null) urlPrefix = "";
+            if (urlPrefix == null) {
+                urlPrefix = "";
+            }
             final String ajaxmainurl = "http://" + urlPrefix + "letitbit.net";
 
             String dlFunction = getdlFunction();
             if (dlFunction == null) {
-                if (!submitFreeForm()) logger.info("letitbit.net: plain form processing --> download3.php");
+                if (!submitFreeForm()) {
+                    logger.info("letitbit.net: plain form processing --> download3.php");
+                }
                 if ((dlFunction = getdlFunction()) == null) {
-                    if (!submitFreeForm()) logger.info("letitbit.net: encrypted form processing --> download3.php");
-                    if ((dlFunction = getdlFunction()) == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                    if (!submitFreeForm()) {
+                        logger.info("letitbit.net: encrypted form processing --> download3.php");
+                    }
+                    if ((dlFunction = getdlFunction()) == null) {
+                        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                    }
                 }
             }
-
-            String ajaxPostpage = new Regex(dlFunction, "\\$\\.post\\(\"(/ajax/[^<>\"]*?)\"").getMatch(0);
-            if (ajaxPostpage == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            ajaxPostpage = ajaxmainurl + ajaxPostpage;
             int wait = 60;
             String waittime = br.getRegex("id=\"seconds\" style=\"font\\-size:18px\">(\\d+)</span>").getMatch(0);
-            if (waittime == null) waittime = br.getRegex("seconds = (\\d+)").getMatch(0);
+            if (waittime == null) {
+                waittime = br.getRegex("seconds = (\\d+)").getMatch(0);
+            }
             if (waittime != null) {
                 logger.info("Waittime found, waittime is " + waittime + " seconds .");
                 wait = Integer.parseInt(waittime);
@@ -443,49 +483,114 @@ public class LetitBitNet extends PluginForHost {
             /* we need to remove the newline in old browser */
             final String resp = br2.toString().replaceAll("%0D%0A", "").trim();
             if (!"1".equals(resp)) {
-                if (br2.containsHTML("No htmlCode read")) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, "Daily limit reached", 60 * 60 * 1000l);
+                if (br2.containsHTML("No htmlCode read")) {
+                    throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, "Daily limit reached", 60 * 60 * 1000l);
+                }
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
-            // reCaptcha handling
-            if (ajaxPostpage.contains("recaptcha")) {
-                final String rcControl = new Regex(dlFunction, "var recaptcha_control_field = \\'([^<>\"]*?)\\'").getMatch(0);
-                String rcID = br.getRegex("challenge\\?k=([^<>\"]*?)\"").getMatch(0);
-                if (rcID == null) rcID = Encoding.Base64Decode("NkxjOXpkTVNBQUFBQUYtN3Myd3VRLTAzNnBMUmJNMHA4ZERhUWRBTQ==");
-                if (rcID == null || rcControl == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                final PluginForHost recplug = JDUtilities.getPluginForHost("DirectHTTP");
-                jd.plugins.hoster.DirectHTTP.Recaptcha rc = ((DirectHTTP) recplug).getReCaptcha(br);
-                rc.setId(rcID);
-                rc.load();
-                for (int i = 0; i <= 5; i++) {
-                    final File cf = rc.downloadCaptcha(getLocalCaptchaFile());
-                    final String c = getCaptchaCode(cf, downloadLink);
-                    br2.postPage(ajaxPostpage, "recaptcha_challenge_field=" + rc.getChallenge() + "&recaptcha_response_field=" + c + "&recaptcha_control_field=" + Encoding.urlEncode(rcControl));
-                    if (br2.toString().length() < 2 || br2.toString().contains("error_wrong_captcha")) {
-                        rc.reload();
-                        continue;
+
+            String captcha_action = null;
+            if (br.containsHTML("vc = new videoCaptcha\\(\\$\\(\\'#captchav\\'\\)")) {
+                if (LetitBitNet.TRYTOGETRECAPTCHA) {
+                    captcha_action = new Regex(dlFunction, "\\$\\.post\\(\"(/ajax/[^<>\"]*?)\"").getMatch(0);
+                    if (captcha_action == null) {
+                        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                     }
-                    break;
+                    captcha_action = ajaxmainurl + captcha_action;
+                    final String rcControl = new Regex(dlFunction, "var recaptcha_control_field = \\'([^<>\"]*?)\\'").getMatch(0);
+                    String rcID = br.getRegex("challenge\\?k=([^<>\"]*?)\"").getMatch(0);
+                    if (rcID == null) {
+                        rcID = Encoding.Base64Decode("NkxjOXpkTVNBQUFBQUYtN3Myd3VRLTAzNnBMUmJNMHA4ZERhUWRBTQ==");
+                    }
+                    if (rcID == null || rcControl == null) {
+                        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                    }
+                    final PluginForHost recplug = JDUtilities.getPluginForHost("DirectHTTP");
+                    jd.plugins.hoster.DirectHTTP.Recaptcha rc = ((DirectHTTP) recplug).getReCaptcha(br);
+                    rc.setId(rcID);
+                    rc.load();
+                    for (int i = 0; i <= 5; i++) {
+                        final File cf = rc.downloadCaptcha(getLocalCaptchaFile());
+                        final String c = getCaptchaCode(cf, downloadLink);
+                        br2.postPage(captcha_action, "recaptcha_challenge_field=" + rc.getChallenge() + "&recaptcha_response_field=" + c + "&recaptcha_control_field=" + Encoding.urlEncode(rcControl));
+                        if (br2.toString().length() < 2 || br2.toString().contains("error_wrong_captcha")) {
+                            rc.reload();
+                            continue;
+                        }
+                        break;
+                    }
+                    if (br2.toString().length() < 2 || br2.toString().contains("error_wrong_captcha")) {
+                        throw new PluginException(LinkStatus.ERROR_CAPTCHA);
+                    }
+                } else {
+                    dlFunction = br.getRegex("function getLinkV\\(\\)(.*?)(function|</script>)").getMatch(0);
+                    if (dlFunction == null) {
+                        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                    }
+                    captcha_action = ajaxmainurl + "/ajax/check_videocaptcha.php";
+                    final String vcControl = new Regex(dlFunction, "var vcaptcha_control_field = \\'([^<>\"]*?)\\'").getMatch(0);
+                    if (captcha_action == null || vcControl == null) {
+                        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                    }
+                    captcha_action = ajaxmainurl + captcha_action;
+                    final String r = br.getRegex("castom_verificator:getLinkV,key:\\'([a-z0-9]{32})\\'\\}").getMatch(0);
+                    if (r == null) {
+                        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                    }
+                    br2.getPage("http://videocaptcha.letitbit.net/stat?callback=jQuery" + System.currentTimeMillis() + "_" + System.currentTimeMillis() + "&r=%5B%22" + r + "%22%2C%5B%5B%22captchaCreated%22%2C%7B%22key%22%3A%22%22%7D%5D%5D%5D&_=" + System.currentTimeMillis());
+                    if (!br2.containsHTML("\"status\":\"ok\"")) {
+                        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                    }
+                    for (int i = 0; i <= 5; i++) {
+                        br2.getPage("http://videocaptcha.letitbit.net/data?callback=jQuery" + System.currentTimeMillis() + "_" + System.currentTimeMillis() + "&r=%5B%22" + r + "%22%2C%5B%5B%22get_code%22%5D%5D%5D&_=" + System.currentTimeMillis());
+                        // We have different formats here
+                        String videoURL = br2.getRegex("\"video\\\\/webm\":\"(http:[^<>\"]*?)\"").getMatch(0);
+                        if (videoURL == null) {
+                            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                        }
+                        videoURL = videoURL.replace("\\", "");
+                        br2.postPage(captcha_action, "videocapcha_token=&videocapcha_val=" + "RESULT_FROM_USER" + "&vcaptcha_control_field=" + Encoding.urlEncode(vcControl) + "&videocapcha_skey=");
+                        if (br2.toString().contains("error_wrong_captcha")) {
+                            continue;
+                        }
+                        break;
+                    }
+                    if (br2.toString().contains("error_wrong_captcha")) {
+                        throw new PluginException(LinkStatus.ERROR_CAPTCHA);
+                    }
                 }
-                if (br2.toString().length() < 2 || br2.toString().contains("error_wrong_captcha")) throw new PluginException(LinkStatus.ERROR_CAPTCHA);
             } else {
-                // Normal captcha handling, UNTESTED!
+                /* Normal captcha handling SEEMS NOT TO WORK ANYMORE, captchas are not accepted by the server even if typed in correctly */
+                captcha_action = ajaxmainurl + "/ajax/check_captcha.php";
                 final DecimalFormat df = new DecimalFormat("0000");
                 for (int i = 0; i <= 5; i++) {
                     final String code = getCaptchaCode("letitbitnew", ajaxmainurl + "/captcha_new.php?rand=" + df.format(new Random().nextInt(1000)), downloadLink);
                     sleep(2000, downloadLink);
-                    br2.postPage(ajaxPostpage, "code=" + Encoding.urlEncode(code));
-                    if (br2.toString().contains("error_wrong_captcha")) continue;
+                    br2.postPage(captcha_action, "code=" + Encoding.urlEncode(code));
+                    if (br2.toString().contains("error_wrong_captcha")) {
+                        continue;
+                    }
                     break;
                 }
-                if (br2.toString().contains("error_wrong_captcha")) throw new PluginException(LinkStatus.ERROR_CAPTCHA);
+                if (br2.toString().contains("error_wrong_captcha")) {
+                    throw new PluginException(LinkStatus.ERROR_CAPTCHA);
+                }
             }
             // Download limit is per day so let's just wait 3 hours
-            if (br2.containsHTML("error_free_download_blocked")) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 3 * 60 * 60 * 1000l);
-            if (br2.containsHTML("callback_file_unavailable")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error", 30 * 60 * 1000l);
-            if (br2.containsHTML("No htmlCode read")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error", 10 * 60 * 1000l);
+            if (br2.containsHTML("error_free_download_blocked")) {
+                throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 3 * 60 * 60 * 1000l);
+            }
+            if (br2.containsHTML("callback_file_unavailable")) {
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error", 30 * 60 * 1000l);
+            }
+            if (br2.containsHTML("No htmlCode read")) {
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error", 10 * 60 * 1000l);
+            }
             url = getFinalLink(br2.toString());
             if (url == null || url.length() > 1000 || !url.startsWith("http")) {
-                if (br2.containsHTML("error_free_download_blocked")) { throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, "Free download blocked", 2 * 60 * 60 * 1000l); }
+                if (br2.containsHTML("error_free_download_blocked")) {
+                    throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, "Free download blocked", 2 * 60 * 60 * 1000l);
+                }
                 logger.warning("url couldn't be found!");
                 logger.severe(url);
                 logger.severe(br2.toString());
@@ -510,12 +615,16 @@ public class LetitBitNet extends PluginForHost {
     private boolean submitFreeForm() throws Exception {
         // this finds the form to "click" on the next "free download" button
         Form down = null;
-        for (Form singleform : br.getForms()) {
+        final Form[] allForms = br.getForms();
+        for (Form singleform : allForms) {
             // id=\"phone_submit_form\" is in the 2nd free form when you have a russian IP
             if (singleform.getAction() != null) {
                 if (!"".equals(singleform.getAction())) {
                     singleform.setAction(singleform.getAction().trim());
-                    if (singleform.containsHTML("class=\"Instead_parsing_Use_API_Luke\"")) decryptingForm(singleform);
+                    /* KAPUTT */
+                    if (singleform.containsHTML("class=\"Instead_parsing_Use_API_Luke\"")) {
+                        decryptingForm(singleform);
+                    }
                     if (singleform.getInputField("md5crypt") != null || "/download3.php".equals(singleform.getAction())) {
                         if (!singleform.containsHTML("/sms/check") && !singleform.containsHTML("id=\"phone_submit_form\"")) {
                             down = singleform;
@@ -525,7 +634,9 @@ public class LetitBitNet extends PluginForHost {
                 }
             }
         }
-        if (down == null) return false;
+        if (down == null) {
+            return false;
+        }
         br.submitForm(down);
         return true;
     }
@@ -569,7 +680,9 @@ public class LetitBitNet extends PluginForHost {
 
             /* parsing decrypt call function */
             String callMethod = jsbeautifier(engine.eval(jsFn[jsFn.length - 1]).toString());
-            if (callMethod == null) return;
+            if (callMethod == null) {
+                return;
+            }
 
             engine.put("encValues", encValues);
             engine.put("formMap", inputFieldMap);
@@ -585,7 +698,9 @@ public class LetitBitNet extends PluginForHost {
             final Iterator<InputField> it = encryptedForm.getInputFields().iterator();
             while (it.hasNext()) {
                 final InputField ipf = it.next();
-                if (ipf.getKey() == null) it.remove();
+                if (ipf.getKey() == null) {
+                    it.remove();
+                }
             }
             /* put decrypted Inputfields into final form */
             for (Entry<String, String> next : inputFieldMap.entrySet()) {
@@ -628,7 +743,9 @@ public class LetitBitNet extends PluginForHost {
 
     private String jsbeautifier(String s) {
         String extract = new Regex(s, "(var jac\\d+.*?\\);)").getMatch(0);
-        if (extract == null) return null;
+        if (extract == null) {
+            return null;
+        }
         return extract;
     }
 
@@ -648,7 +765,9 @@ public class LetitBitNet extends PluginForHost {
                     key = ipf.getProperty("ID", null) != null ? ipf.getProperty("ID", null).toString() : null;
                 }
             }
-            if (key == null) continue;
+            if (key == null) {
+                continue;
+            }
             ret.put(key, ipf.getValue());
         }
         return ret;
@@ -658,10 +777,16 @@ public class LetitBitNet extends PluginForHost {
         LinkedList<String> finallinksx = new LinkedList<String>();
         String[] finallinks = new Regex(source, "\"(http:[^<>\"]*?)\"").getColumn(0);
         // More common for shareflare.net
-        if ((finallinks == null || finallinks.length == 0) && source.length() < 500) finallinks = new Regex(source, "(http:[^<>\"].+)").getColumn(0);
-        if (finallinks == null || finallinks.length == 0) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
+        if ((finallinks == null || finallinks.length == 0) && source.length() < 500) {
+            finallinks = new Regex(source, "(http:[^<>\"].+)").getColumn(0);
+        }
+        if (finallinks == null || finallinks.length == 0) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         for (final String finallink : finallinks) {
-            if (!finallinksx.contains(finallink) && finallink.startsWith("http")) finallinksx.add(finallink);
+            if (!finallinksx.contains(finallink) && finallink.startsWith("http")) {
+                finallinksx.add(finallink);
+            }
         }
         // Grab last links, this might changes and has to be fixed if users get
         // "server error" in JD while it's working via browser. If this
@@ -704,7 +829,9 @@ public class LetitBitNet extends PluginForHost {
                 prepBrowser(br);
                 final Object ret = account.getProperty("cookies", null);
                 boolean acmatch = Encoding.urlEncode(account.getUser()).matches(account.getStringProperty("name", Encoding.urlEncode(account.getUser())));
-                if (acmatch) acmatch = Encoding.urlEncode(account.getPass()).matches(account.getStringProperty("pass", Encoding.urlEncode(account.getPass())));
+                if (acmatch) {
+                    acmatch = Encoding.urlEncode(account.getPass()).matches(account.getStringProperty("pass", Encoding.urlEncode(account.getPass())));
+                }
                 if (acmatch && ret != null && ret instanceof Map<?, ?> && !force) {
                     final Map<String, String> cookies = (Map<String, String>) ret;
                     if (account.isValid()) {
@@ -721,8 +848,12 @@ public class LetitBitNet extends PluginForHost {
                  */
                 br.postPage("http://letitbit.net/", "login=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()) + "&act=login");
                 String check = br.getCookie(COOKIE_HOST, "log");
-                if (check == null) check = br.getCookie(COOKIE_HOST, "pas");
-                if (check == null) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+                if (check == null) {
+                    check = br.getCookie(COOKIE_HOST, "pas");
+                }
+                if (check == null) {
+                    throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+                }
                 final HashMap<String, String> cookies = new HashMap<String, String>();
                 final Cookies add = this.br.getCookies(COOKIE_HOST);
                 for (final Cookie c : add.getCookies()) {
@@ -781,13 +912,18 @@ public class LetitBitNet extends PluginForHost {
                 logger.info("Wrong password, disabling the account!");
                 throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
             }
-            if (br.containsHTML("\"data\":\"no mirrors\"")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-            if (br.containsHTML("\"data\":\"file is not found\"")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            if (br.containsHTML("\"data\":\"no mirrors\"")) {
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            }
+            if (br.containsHTML("\"data\":\"file is not found\"")) {
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            }
             dlUrl = br.getRegex("\"(http:[^<>\"]*?)\"").getMatch(0);
-            if (dlUrl != null)
+            if (dlUrl != null) {
                 dlUrl = dlUrl.replace("\\", "");
-            else
+            } else {
                 dlUrl = handleOldPremiumPassWay(account, downloadLink);
+            }
         } else {
             /* account login */
             boolean freshLogin = false;
@@ -800,11 +936,15 @@ public class LetitBitNet extends PluginForHost {
                 }
                 br.setFollowRedirects(true);
                 br.getPage(downloadLink.getDownloadURL());
-                if (br.containsHTML(">Please wait, there is a file search")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Download not possible at the moment", 2 * 60 * 60 * 1000l);
+                if (br.containsHTML(">Please wait, there is a file search")) {
+                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Download not possible at the moment", 2 * 60 * 60 * 1000l);
+                }
                 handleNonApiErrors(downloadLink);
                 dlUrl = getUrl(account);
             }
-            if (dlUrl == null && br.containsHTML("callback_file_unavailable")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server Error", 15 * 60 * 1000l);
+            if (dlUrl == null && br.containsHTML("callback_file_unavailable")) {
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server Error", 15 * 60 * 1000l);
+            }
             // Maybe invalid or free account
             if (dlUrl == null && br.containsHTML("If you already have a premium")) {
                 if (freshLogin == false) {
@@ -833,13 +973,17 @@ public class LetitBitNet extends PluginForHost {
                 br.getPage(br.getRedirectLocation());
             }
             logger.severe(br.toString());
-            if (br.containsHTML("callback_file_unavailable")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "ServerError", 30 * 60 * 1000l);
+            if (br.containsHTML("callback_file_unavailable")) {
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "ServerError", 30 * 60 * 1000l);
+            }
             if (br.containsHTML("callback_tied_to_another")) {
                 /*
                  * premium code is bound to a registered account,must login with username/password
                  */
                 AccountInfo ai = account.getAccountInfo();
-                if (ai != null) ai.setStatus("You must login with username/password!");
+                if (ai != null) {
+                    ai.setStatus("You must login with username/password!");
+                }
                 throw new PluginException(LinkStatus.ERROR_PREMIUM, "You must login with username/password!", PluginException.VALUE_ID_PREMIUM_DISABLE);
             }
             throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
@@ -850,7 +994,9 @@ public class LetitBitNet extends PluginForHost {
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dlUrl, true, 0);
         if (!dl.getConnection().isContentDisposition()) {
             br.followConnection();
-            if (br.containsHTML("Error")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "ServerError", 2 * 1000l);
+            if (br.containsHTML("Error")) {
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "ServerError", 2 * 1000l);
+            }
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl.startDownload();
@@ -868,14 +1014,18 @@ public class LetitBitNet extends PluginForHost {
         logger.info("Premium with pw only");
         Form premiumform = null;
         final Form[] allforms = br.getForms();
-        if (allforms == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (allforms == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         for (Form singleform : allforms) {
             if (singleform.containsHTML("pass") && singleform.containsHTML("uid5") && singleform.containsHTML("uid") && singleform.containsHTML("name") && singleform.containsHTML("pin") && singleform.containsHTML("realuid") && singleform.containsHTML("realname") && singleform.containsHTML("host") && singleform.containsHTML("ssserver") && singleform.containsHTML("sssize") && singleform.containsHTML("optiondir")) {
                 premiumform = singleform;
                 break;
             }
         }
-        if (premiumform == null) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+        if (premiumform == null) {
+            throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+        }
         premiumform.put("pass", Encoding.urlEncode(account.getPass()));
         br.submitForm(premiumform);
         String iFrame = br.getRegex("\"(/sms/check2_iframe\\.php\\?ids=[0-9_]+\\&ids_emerg=\\&emergency_mode=)\"").getMatch(0);
@@ -898,17 +1048,25 @@ public class LetitBitNet extends PluginForHost {
         // it here
         String points = br.getRegex("\">Points:</acronym>(.*?)</li>").getMatch(0);
         String expireDate = br.getRegex("\">Expire date:</acronym> ([0-9\\-]+) \\[<acronym class").getMatch(0);
-        if (expireDate == null) expireDate = br.getRegex("\">Period of validity:</acronym>(.*?) \\[<acronym").getMatch(0);
+        if (expireDate == null) {
+            expireDate = br.getRegex("\">Period of validity:</acronym>(.*?) \\[<acronym").getMatch(0);
+        }
         if (expireDate != null || points != null) {
             final AccountInfo accInfo = new AccountInfo();
             // 1 point = 1 GB
-            if (points != null) accInfo.setTrafficLeft(SizeFormatter.getSize(points.trim() + "GB"));
+            if (points != null) {
+                accInfo.setTrafficLeft(SizeFormatter.getSize(points.trim() + "GB"));
+            }
             if (expireDate != null) {
                 accInfo.setValidUntil(TimeFormatter.getMilliSeconds(expireDate.trim(), "yyyy-MM-dd", null));
             } else {
                 expireDate = br.getRegex("\"Total days remaining\">(\\d+)</acronym>").getMatch(0);
-                if (expireDate == null) expireDate = br.getRegex("\"Days remaining in Your account\">(\\d+)</acronym>").getMatch(0);
-                if (expireDate != null) accInfo.setValidUntil(System.currentTimeMillis() + (Long.parseLong(expireDate) * 24 * 60 * 60 * 1000));
+                if (expireDate == null) {
+                    expireDate = br.getRegex("\"Days remaining in Your account\">(\\d+)</acronym>").getMatch(0);
+                }
+                if (expireDate != null) {
+                    accInfo.setValidUntil(System.currentTimeMillis() + (Long.parseLong(expireDate) * 24 * 60 * 60 * 1000));
+                }
             }
             account.setAccountInfo(accInfo);
         }
@@ -942,7 +1100,9 @@ public class LetitBitNet extends PluginForHost {
         /*
          * last time they did not block the user-agent, we just need this stuff below ;)
          */
-        if (br == null) { return; }
+        if (br == null) {
+            return;
+        }
         br.getHeaders().put("Accept", "*/*");
         br.getHeaders().put("Pragma", "no-cache");
         br.getHeaders().put("Cache-Control", "no-cache");
@@ -952,7 +1112,9 @@ public class LetitBitNet extends PluginForHost {
 
     private Browser prepBrowser(Browser prepBr) {
         // define custom browser headers and language settings.
-        if (prepBr == null) prepBr = new Browser();
+        if (prepBr == null) {
+            prepBr = new Browser();
+        }
         if (agent == null) {
             /* we first have to load the plugin, before we can reference it */
             JDUtilities.getPluginForHost("mediafire.com");
