@@ -35,6 +35,7 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.FilePackage;
+import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
@@ -155,14 +156,8 @@ public class SoundCloudComDecrypter extends PluginForDecrypt {
             }
 
             br.setFollowRedirects(true);
-            boolean decryptList = parameter.matches(".*?soundcloud\\.com/[a-z\\-_0-9]+/(tracks|favorites)(\\?page=\\d+)?");
-            if (!decryptList) {
-                decryptList = !parameter.matches(".*?soundcloud\\.com/[A-Za-z\\-_0-9]+/([A-Za-z\\-_0-9]+/([A-Za-z\\-_0-9]+)?|[A-Za-z\\-_0-9]+/?)");
-                if (!decryptList) {
-                    decryptList = (parameter.contains("/groups/") || parameter.contains("/sets"));
-                }
-            }
-            decryptList = true;
+
+            final boolean decryptList = decryptList(parameter);
             if (decryptList) {
                 final String clientID = jd.plugins.hoster.SoundcloudCom.CLIENTID;
                 String username = null;
@@ -444,6 +439,18 @@ public class SoundCloudComDecrypter extends PluginForDecrypt {
             }
         }
         return decryptedLinks;
+    }
+
+    private boolean decryptList(final String parameter) throws PluginException {
+        if (parameter == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, "parameter == null");
+        } else if (parameter.matches(".*?soundcloud\\.com/[a-z\\-_0-9]+/(tracks|favorites)(\\?page=\\d+)?") || parameter.contains("/groups/") || parameter.contains("/sets")) {
+            return true;
+        } else if (parameter.matches(".*?soundcloud\\.com(/[A-Za-z\\-_0-9]+){2,3}/?")) {
+            return false;
+        } else {
+            return true;
+        }
     }
 
     private DownloadLink get500Thumbnail(final DownloadLink audiolink, final String source) throws ParseException {
