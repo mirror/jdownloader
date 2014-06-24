@@ -22,6 +22,7 @@ import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
 import java.util.ArrayList;
 import java.util.concurrent.CopyOnWriteArraySet;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 import javax.swing.BorderFactory;
 import javax.swing.JComponent;
@@ -280,20 +281,38 @@ public class StatusBarImpl extends JPanel implements DownloadWatchdogListener {
         throw new WTFException("Use #addProcessIndicator");
     }
 
+    private final AtomicBoolean   linkgrabberIndicatorEnabled = new AtomicBoolean(false);
+    private final DelayedRunnable linkgrabberIndicatorUpdater = new DelayedRunnable(ToolTipController.EXECUTER, 500, 2000) {
+                                                                  @Override
+                                                                  public String getID() {
+                                                                      return "StatusBar:LinkGrabberIndicatorUpdater";
+                                                                  }
+
+                                                                  @Override
+                                                                  public void delayedrun() {
+                                                                      updateLinkGrabberIndicator();
+                                                                  }
+                                                              };
+
     private void updateLinkGrabberIndicator() {
-        final boolean enabled = LinkChecker.isChecking() || LinkCrawler.isCrawling();
-        new EDTRunner() {
-            @Override
-            protected void runInEDT() {
-                linkGrabberIndicator.setEnabled(enabled);
-                linkGrabberIndicator.setIndeterminate(enabled);
-                if (enabled) {
-                    linkGrabberIndicator.setDescription(_GUI._.StatusBarImpl_initGUI_linkgrabber_desc());
-                } else {
-                    linkGrabberIndicator.setDescription(_GUI._.StatusBarImpl_initGUI_linkgrabber_desc_inactive());
+        final boolean enabled = LinkChecker.isChecking() || LinkCrawler.isCrawling() || LinkCollector.getInstance().isCollecting();
+        if (enabled) {
+            linkgrabberIndicatorUpdater.resetAndStart();
+        }
+        if (linkgrabberIndicatorEnabled.compareAndSet(!enabled, enabled)) {
+            new EDTRunner() {
+                @Override
+                protected void runInEDT() {
+                    linkGrabberIndicator.setEnabled(enabled);
+                    linkGrabberIndicator.setIndeterminate(enabled);
+                    if (enabled) {
+                        linkGrabberIndicator.setDescription(_GUI._.StatusBarImpl_initGUI_linkgrabber_desc());
+                    } else {
+                        linkGrabberIndicator.setDescription(_GUI._.StatusBarImpl_initGUI_linkgrabber_desc_inactive());
+                    }
                 }
-            }
-        };
+            };
+        }
     }
 
     private JComponent lazyGetDownloadWatchdogIndicator() {

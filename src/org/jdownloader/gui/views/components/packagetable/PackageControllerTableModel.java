@@ -27,8 +27,6 @@ import org.appwork.storage.config.handler.KeyHandler;
 import org.appwork.swing.exttable.ExtColumn;
 import org.appwork.swing.exttable.ExtDefaultRowSorter;
 import org.appwork.swing.exttable.ExtTableModel;
-import org.appwork.utils.event.queue.Queue;
-import org.appwork.utils.event.queue.QueueAction;
 import org.appwork.utils.swing.EDTRunner;
 import org.jdownloader.logging.LogController;
 import org.jdownloader.settings.staticreferences.CFG_GUI;
@@ -155,54 +153,48 @@ public abstract class PackageControllerTableModel<PackageType extends AbstractPa
     }
 
     private void fireRepaint() {
-        if (repaintFired.compareAndSet(false, true)) {
-            pc.getQueue().add(new QueueAction<Void, RuntimeException>(Queue.QueuePriority.HIGH) {
-
-                @Override
-                protected Void run() throws RuntimeException {
-                    try {
-                        ArrayList<ChildrenView<ChildrenType>> viewUpdates = new ArrayList<ChildrenView<ChildrenType>>();
-                        for (AbstractNode node : getTableData()) {
-                            if (node instanceof AbstractPackageNode) {
-                                ChildrenView<ChildrenType> view = ((AbstractPackageNode) node).getView();
-                                if (view.updateRequired()) {
-                                    viewUpdates.add(view);
-                                }
-                            }
+        if (structureChangedFired.get() == false && repaintFired.compareAndSet(false, true)) {
+            boolean set = false;
+            try {
+                ArrayList<ChildrenView<ChildrenType>> viewUpdates = new ArrayList<ChildrenView<ChildrenType>>();
+                for (AbstractNode node : getTableData()) {
+                    if (node instanceof AbstractPackageNode) {
+                        ChildrenView<ChildrenType> view = ((AbstractPackageNode) node).getView();
+                        if (view.updateRequired()) {
+                            viewUpdates.add(view);
                         }
-                        for (ChildrenView<ChildrenType> view : viewUpdates) {
-                            view.aggregate();
-                        }
-                    } finally {
-                        repaintFired.set(false);
                     }
-                    new EDTRunner() {
-                        @Override
-                        protected void runInEDT() {
-                            /* we just want to repaint */
-                            getTable().repaint();
-                        }
-                    };
-                    return null;
                 }
-            });
+                for (ChildrenView<ChildrenType> view : viewUpdates) {
+                    view.aggregate();
+                }
+                new EDTRunner() {
+                    @Override
+                    protected void runInEDT() {
+                        /* we just want to repaint */
+                        try {
+                            getTable().repaint();
+                        } finally {
+                            repaintFired.set(false);
+                        }
+                    }
+                };
+                set = true;
+            } finally {
+                if (set == false) {
+                    repaintFired.set(false);
+                }
+            }
         }
     }
 
     private void fireStructureChange() {
         if (structureChangedFired.compareAndSet(false, true)) {
-            pc.getQueue().add(new QueueAction<Void, RuntimeException>(Queue.QueuePriority.HIGH) {
-
-                @Override
-                protected Void run() throws RuntimeException {
-                    try {
-                        _fireTableStructureChanged(getTableData(), true);
-                    } finally {
-                        structureChangedFired.set(false);
-                    }
-                    return null;
-                }
-            });
+            try {
+                _fireTableStructureChanged(getTableData(), true);
+            } finally {
+                structureChangedFired.set(false);
+            }
         }
     }
 
@@ -515,13 +507,7 @@ public abstract class PackageControllerTableModel<PackageType extends AbstractPa
         boolean hasChildrenFilters = filters.getChildrenFilters().size() > 0;
         ArrayList<ChildrenType> unfilteredChildrenNodes = new ArrayList<ChildrenType>();
         for (PackageType node : packages) {
-            List<ChildrenType> files = null;
-            boolean readL = node.getModifyLock().readLock();
-            try {
-                files = new ArrayList<ChildrenType>(node.getChildren());
-            } finally {
-                node.getModifyLock().readUnlock(readL);
-            }
+            List<ChildrenType> files = pc.getChildrenCopy(node);
             if (hasChildrenFilters) {
                 ArrayList<ChildrenType> reverseUnfilteredChildrenNotes = new ArrayList<ChildrenType>();
                 /* filter children of this package */

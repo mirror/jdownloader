@@ -10,7 +10,6 @@ import java.util.Map.Entry;
 import java.util.Set;
 import java.util.WeakHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
-import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 
 import org.appwork.utils.ModifyLock;
@@ -40,7 +39,7 @@ public abstract class PackageController<PackageType extends AbstractPackageNode<
         final java.util.List<ChildType> ret = new ArrayList<ChildType>();
         final boolean readL = readLock();
         try {
-            for (final PackageType fp : packages) {
+            for (final PackageType fp : getPackages()) {
                 final boolean readL2 = fp.getModifyLock().readLock();
                 try {
                     ret.addAll(fp.getChildren());
@@ -64,17 +63,23 @@ public abstract class PackageController<PackageType extends AbstractPackageNode<
 
     protected ArrayList<PackageType> packages = new ArrayList<PackageType>();
     protected ModifyLock             lock     = new ModifyLock();
-    protected final Queue            QUEUE    = new Queue(getClass().getName()) {
+    protected ModifyLock             mapLock  = new ModifyLock();
 
-                                                  @Override
-                                                  public void killQueue() {
-                                                      Log.exception(new Throwable("YOU CANNOT KILL ME!"));
-                                                      /*
-                                                       * this queue can't be killed
-                                                       */
-                                                  }
+    protected ModifyLock getMapLock() {
+        return mapLock;
+    }
 
-                                              };
+    protected final Queue QUEUE = new Queue(getClass().getName()) {
+
+                                    @Override
+                                    public void killQueue() {
+                                        Log.exception(new Throwable("YOU CANNOT KILL ME!"));
+                                        /*
+                                         * this queue can't be killed
+                                         */
+                                    }
+
+                                };
 
     /**
      * add a Package at given position position in this PackageController. in case the Package is already controlled by this
@@ -91,25 +96,24 @@ public abstract class PackageController<PackageType extends AbstractPackageNode<
         return QUEUE;
     }
 
-    protected void updateUniqueAlltimeIDMaps(List<PackageType> packages) {
-        if (packages == null || packages.size() == 0) {
-            return;
-        }
-        writeLock();
-        try {
-            for (final PackageType pkg : packages) {
-                uniqueAlltimeIDPackageMap.put(pkg.getUniqueID(), pkg);
-                boolean readL = pkg.getModifyLock().readLock();
-                try {
-                    for (ChildType child : pkg.getChildren()) {
-                        uniqueAlltimeIDChildrenMap.put(child.getUniqueID(), child);
+    protected void updateUniqueAlltimeIDMaps(final List<PackageType> packages) {
+        if (packages != null && packages.size() > 0) {
+            getMapLock().writeLock();
+            try {
+                for (final PackageType pkg : packages) {
+                    uniqueAlltimeIDPackageMap.put(pkg.getUniqueID(), pkg);
+                    final boolean readL = pkg.getModifyLock().readLock();
+                    try {
+                        for (ChildType child : pkg.getChildren()) {
+                            uniqueAlltimeIDChildrenMap.put(child.getUniqueID(), child);
+                        }
+                    } finally {
+                        pkg.getModifyLock().readUnlock(readL);
                     }
-                } finally {
-                    pkg.getModifyLock().readUnlock(readL);
                 }
+            } finally {
+                getMapLock().writeUnlock();
             }
-        } finally {
-            writeUnlock();
         }
     }
 
@@ -120,21 +124,21 @@ public abstract class PackageController<PackageType extends AbstractPackageNode<
      * @TODO: Needs optimization!
      */
     public int getChildrenCount() {
-        final AtomicInteger count = new AtomicInteger(0);
-        getChildrenByFilter(new AbstractPackageChildrenNodeFilter<ChildType>() {
-
-            @Override
-            public boolean acceptNode(ChildType node) {
-                count.incrementAndGet();
-                return false;
+        int ret = 0;
+        final boolean readL = readLock();
+        try {
+            for (final PackageType fp : getPackages()) {
+                final boolean readL2 = fp.getModifyLock().readLock();
+                try {
+                    ret = ret + fp.getChildren().size();
+                } finally {
+                    fp.getModifyLock().readUnlock(readL2);
+                }
             }
-
-            @Override
-            public int returnMaxResults() {
-                return 0;
-            }
-        });
-        return count.get();
+        } finally {
+            readUnlock(readL);
+        }
+        return ret;
     }
 
     public void sortPackageChildren(final PackageType pkg, final PackageControllerComparator<ChildType> comparator) {
@@ -143,20 +147,23 @@ public abstract class PackageController<PackageType extends AbstractPackageNode<
 
                 @Override
                 protected Void run() throws RuntimeException {
+                    final ArrayList<ChildType> children = getChildrenCopy(pkg);
                     try {
-                        pkg.getModifyLock().writeLock();
-                        pkg.setCurrentSorter(comparator);
-                        for (ChildType child : pkg.getChildren()) {
-                            /* this resets getPreviousParentNodeID */
-                            child.setParentNode(pkg);
-                        }
+                        Collections.sort(children, comparator);
                         try {
-                            Collections.sort(pkg.getChildren(), comparator);
-                        } catch (final Throwable e) {
-                            LogController.CL(true).log(e);
+                            pkg.getModifyLock().writeLock();
+                            pkg.setCurrentSorter(comparator);
+                            for (ChildType child : children) {
+                                /* this resets getPreviousParentNodeID */
+                                child.setParentNode(pkg);
+                            }
+                            pkg.getChildren().clear();
+                            pkg.getChildren().addAll(children);
+                        } finally {
+                            pkg.getModifyLock().writeUnlock();
                         }
-                    } finally {
-                        pkg.getModifyLock().writeUnlock();
+                    } catch (final Throwable e) {
+                        LogController.CL(true).log(e);
                     }
                     structureChanged.incrementAndGet();
                     _controllerPackageNodeStructureChanged(pkg, this.getQueuePrio());
@@ -182,7 +189,7 @@ public abstract class PackageController<PackageType extends AbstractPackageNode<
                     /**
                      * iterate through all packages, remove the existing one and add at given position
                      */
-                    PackageController<PackageType, ChildType> controller = pkg.getControlledBy();
+                    final PackageController<PackageType, ChildType> controller = pkg.getControlledBy();
                     boolean need2Remove = false;
                     if (PackageController.this == controller) {
                         /* we have to reposition the package */
@@ -193,11 +200,11 @@ public abstract class PackageController<PackageType extends AbstractPackageNode<
                     }
                     writeLock();
                     try {
-                        ListIterator<PackageType> li = packages.listIterator();
+                        final ListIterator<PackageType> li = getPackages().listIterator();
                         int currentIndex = 0;
                         boolean done = false;
                         boolean addLast = false;
-                        if (index < 0 || index > packages.size() - 1) {
+                        if (index < 0 || index > getPackages().size() - 1) {
                             /* lets add pkg at end of list */
                             done = true;
                             addLast = true;
@@ -231,13 +238,19 @@ public abstract class PackageController<PackageType extends AbstractPackageNode<
                             currentIndex++;
                         }
                         if (!done || addLast) {
-                            packages.add(pkg);
+                            getPackages().add(pkg);
                         }
+                        pkg.setControlledBy(PackageController.this);
+                    } finally {
+                        writeUnlock();
+                    }
+                    getMapLock().writeLock();
+                    try {
                         /*
                          * update uniqueAlltimeIDmaps
                          */
                         uniqueAlltimeIDPackageMap.put(pkg.getUniqueID(), pkg);
-                        boolean readL = pkg.getModifyLock().readLock();
+                        final boolean readL = pkg.getModifyLock().readLock();
                         try {
                             for (ChildType child : pkg.getChildren()) {
                                 uniqueAlltimeIDChildrenMap.put(child.getUniqueID(), child);
@@ -245,9 +258,8 @@ public abstract class PackageController<PackageType extends AbstractPackageNode<
                         } finally {
                             pkg.getModifyLock().readUnlock(readL);
                         }
-                        pkg.setControlledBy(PackageController.this);
                     } finally {
-                        writeUnlock();
+                        getMapLock().writeUnlock();
                     }
                     structureChanged.incrementAndGet();
                     if (isNew) {
@@ -313,7 +325,7 @@ public abstract class PackageController<PackageType extends AbstractPackageNode<
                 @Override
                 protected Void run() throws RuntimeException {
                     boolean removed = false;
-                    PackageController<PackageType, ChildType> controller = pkg.getControlledBy();
+                    final PackageController<PackageType, ChildType> controller = pkg.getControlledBy();
                     if (controller == null) {
                         logger.log(new Throwable("NO CONTROLLER!!!"));
                         return null;
@@ -326,25 +338,23 @@ public abstract class PackageController<PackageType extends AbstractPackageNode<
                         pkg.setControlledBy(null);
                         writeLock();
                         try {
-                            removed = controller.packages.remove(pkg);
-                            if (removed) {
-                                uniqueAlltimeIDPackageMap.remove(pkg.getUniqueID());
-                            }
+                            removed = controller.getPackages().remove(pkg);
                         } finally {
                             writeUnlock();
                         }
                     }
                     if (removed) {
-                        java.util.List<ChildType> remove = null;
-                        boolean readL = pkg.getModifyLock().readLock();
+                        final List<ChildType> remove = getChildrenCopy(pkg);
+                        getMapLock().writeLock();
                         try {
-                            remove = new ArrayList<ChildType>(pkg.getChildren());
-                            for (ChildType child : remove) {
+                            uniqueAlltimeIDPackageMap.remove(pkg.getUniqueID());
+                            for (final ChildType child : remove) {
                                 uniqueAlltimeIDChildrenMap.remove(child.getUniqueID());
                             }
                         } finally {
-                            pkg.getModifyLock().readUnlock(readL);
+                            getMapLock().writeUnlock();
                         }
+
                         if (remove.size() > 0) {
                             childrenChanged.incrementAndGet();
                             controller._controllerParentlessLinks(remove, this.getQueuePrio());
@@ -366,12 +376,12 @@ public abstract class PackageController<PackageType extends AbstractPackageNode<
 
                 @Override
                 protected Void run() throws RuntimeException {
-                    List<ChildType> children = new ArrayList<ChildType>(removechildren);
+                    final List<ChildType> children = new ArrayList<ChildType>(removechildren);
                     /* build map for removal of children links */
                     boolean childrenRemoved = false;
-                    HashMap<PackageType, List<ChildType>> removeaddMap = new HashMap<PackageType, List<ChildType>>();
-                    for (ChildType child : children) {
-                        PackageType parent = child.getParentNode();
+                    final HashMap<PackageType, List<ChildType>> removeaddMap = new HashMap<PackageType, List<ChildType>>();
+                    for (final ChildType child : children) {
+                        final PackageType parent = child.getParentNode();
                         if (parent == null) {
                             continue;
                         }
@@ -383,13 +393,13 @@ public abstract class PackageController<PackageType extends AbstractPackageNode<
                         }
                         pmap.add(child);
                     }
-                    Set<Entry<PackageType, List<ChildType>>> eset = removeaddMap.entrySet();
-                    Iterator<Entry<PackageType, List<ChildType>>> it = eset.iterator();
+                    final Set<Entry<PackageType, List<ChildType>>> eset = removeaddMap.entrySet();
+                    final Iterator<Entry<PackageType, List<ChildType>>> it = eset.iterator();
                     while (it.hasNext()) {
                         /* remove children from other packages */
-                        Entry<PackageType, List<ChildType>> next = it.next();
-                        PackageType cpkg = next.getKey();
-                        PackageController<PackageType, ChildType> controller = cpkg.getControlledBy();
+                        final Entry<PackageType, List<ChildType>> next = it.next();
+                        final PackageType cpkg = next.getKey();
+                        final PackageController<PackageType, ChildType> controller = cpkg.getControlledBy();
                         if (controller == null) {
                             logger.log(new Throwable("NO CONTROLLER!!!"));
                         } else {
@@ -414,28 +424,17 @@ public abstract class PackageController<PackageType extends AbstractPackageNode<
      * @return
      */
     public List<ChildType> getChildrenByFilter(AbstractPackageChildrenNodeFilter<ChildType> filter) {
-        java.util.List<ChildType> ret = new ArrayList<ChildType>();
-        boolean readL = readLock();
-        try {
-            for (PackageType pkg : packages) {
-
-                boolean readL2 = pkg.getModifyLock().readLock();
-                try {
-                    for (ChildType child : pkg.getChildren()) {
-                        if (filter != null && filter.returnMaxResults() > 0 && ret.size() == filter.returnMaxResults()) {
-                            /* max results found, lets return */
-                            return ret;
-                        }
-                        if (filter == null || filter.acceptNode(child)) {
-                            ret.add(child);
-                        }
-                    }
-                } finally {
-                    pkg.getModifyLock().readUnlock(readL2);
+        final List<ChildType> ret = new ArrayList<ChildType>();
+        for (PackageType pkg : getPackagesCopy()) {
+            for (ChildType child : getChildrenCopy(pkg)) {
+                if (filter != null && filter.returnMaxResults() > 0 && ret.size() == filter.returnMaxResults()) {
+                    /* max results found, lets return */
+                    return ret;
+                }
+                if (filter == null || filter.acceptNode(child)) {
+                    ret.add(child);
                 }
             }
-        } finally {
-            readUnlock(readL);
         }
         return ret;
     }
@@ -532,7 +531,7 @@ public abstract class PackageController<PackageType extends AbstractPackageNode<
 
                 @Override
                 protected Void run() throws RuntimeException {
-                    List<ChildType> elementsToMove = new ArrayList<ChildType>(movechildren);
+                    final List<ChildType> elementsToMove = new ArrayList<ChildType>(movechildren);
                     if (PackageController.this != pkg.getControlledBy()) {
                         /*
                          * package not yet under control of this PackageController so lets add it
@@ -541,9 +540,9 @@ public abstract class PackageController<PackageType extends AbstractPackageNode<
                     }
                     /* build map for removal of children links */
                     boolean newChildren = false;
-                    HashMap<PackageType, List<ChildType>> removeaddMap = new HashMap<PackageType, List<ChildType>>();
-                    for (ChildType child : elementsToMove) {
-                        PackageType parent = child.getParentNode();
+                    final HashMap<PackageType, List<ChildType>> removeaddMap = new HashMap<PackageType, List<ChildType>>();
+                    for (final ChildType child : elementsToMove) {
+                        final PackageType parent = child.getParentNode();
                         if (parent == null || pkg == parent) {
                             /* parent is our destination, so no need here */
                             if (parent == null) {
@@ -558,71 +557,73 @@ public abstract class PackageController<PackageType extends AbstractPackageNode<
                         }
                         pmap.add(child);
                     }
-                    Set<Entry<PackageType, List<ChildType>>> eset = removeaddMap.entrySet();
-                    Iterator<Entry<PackageType, List<ChildType>>> it = eset.iterator();
+                    final Set<Entry<PackageType, List<ChildType>>> eset = removeaddMap.entrySet();
+                    final Iterator<Entry<PackageType, List<ChildType>>> it = eset.iterator();
                     while (it.hasNext()) {
                         /* remove children from other packages */
-                        Entry<PackageType, List<ChildType>> next = it.next();
+                        final Entry<PackageType, List<ChildType>> next = it.next();
                         PackageType cpkg = next.getKey();
-                        PackageController<PackageType, ChildType> controller = cpkg.getControlledBy();
+                        final PackageController<PackageType, ChildType> controller = cpkg.getControlledBy();
                         if (controller == null) {
                             logger.log(new Throwable("NO CONTROLLER!!!"));
                         } else {
                             controller.removeChildren(cpkg, next.getValue(), false);
                         }
                     }
+                    final ArrayList<ChildType> children = getChildrenCopy(pkg);
+                    int destIndex = moveChildrenindex;
+                    /* remove all */
+                    /*
+                     * TODO: speed optimization, we have to correct the index to match changes in children structure
+                     */
+                    for (final ChildType child : elementsToMove) {
+                        int childI = children.indexOf(child);
+                        if (childI >= 0) {
+                            if (childI < destIndex) {
+                                destIndex -= 1;
+                            }
+                            children.remove(childI);
+                        }
+                    }
+                    /* add at wanted position */
+                    if (destIndex < 0 || destIndex > children.size()) {
+                        /* add at the end */
+                        final PackageControllerComparator<ChildType> sorter = pkg.getCurrentSorter();
+                        if (sorter != null) {
+                            for (final ChildType c : elementsToMove) {
+                                children.add(search(children, c, sorter), c);
+                            }
+                        } else {
+                            children.addAll(elementsToMove);
+                        }
+                    } else {
+                        pkg.setCurrentSorter(null);
+                        children.addAll(destIndex, elementsToMove);
+                    }
+                    final long t = System.currentTimeMillis();
+                    autoFileNameCorrection(children);
+                    System.out.println("autoFileNameCorrection: " + children.size() + " took " + (System.currentTimeMillis() - t) + " ms");
                     try {
                         pkg.getModifyLock().writeLock();
-
-                        int destIndex = moveChildrenindex;
-                        List<ChildType> pkgchildren = pkg.getChildren();
-                        for (ChildType child : pkgchildren) {
+                        for (final ChildType child : elementsToMove) {
+                            child.setParentNode(pkg);
+                        }
+                        for (final ChildType child : children) {
                             /* this resets getPreviousParentNodeID */
                             child.setParentNode(pkg);
                         }
-
-                        /* remove all */
-                        /*
-                         * TODO: speed optimization, we have to correct the index to match changes in children structure
-                         */
-                        for (ChildType child : elementsToMove) {
-                            int childI = pkgchildren.indexOf(child);
-                            if (childI >= 0) {
-                                if (childI < destIndex) {
-                                    destIndex -= 1;
-                                }
-                                pkgchildren.remove(childI);
-                            }
-                        }
-                        /* add at wanted position */
-                        if (destIndex < 0 || destIndex > pkgchildren.size()) {
-                            /* add at the end */
-                            PackageControllerComparator<ChildType> sorter = pkg.getCurrentSorter();
-                            if (sorter != null) {
-                                for (ChildType c : elementsToMove) {
-                                    pkgchildren.add(search(pkgchildren, c, sorter), c);
-                                }
-                            } else {
-                                pkgchildren.addAll(elementsToMove);
-                            }
-                        } else {
-                            pkg.setCurrentSorter(null);
-                            pkgchildren.addAll(destIndex, elementsToMove);
-                        }
-                        for (ChildType child : elementsToMove) {
-                            child.setParentNode(pkg);
-                        }
-                        autoFileNameCorrection(pkgchildren);
+                        pkg.getChildren().clear();
+                        pkg.getChildren().addAll(children);
                     } finally {
                         pkg.getModifyLock().writeUnlock();
                     }
-                    writeLock();
+                    getMapLock().writeLock();
                     try {
                         for (ChildType child : elementsToMove) {
                             uniqueAlltimeIDChildrenMap.put(child.getUniqueID(), child);
                         }
                     } finally {
-                        writeUnlock();
+                        getMapLock().writeUnlock();
                     }
                     structureChanged.incrementAndGet();
                     if (newChildren) {
@@ -630,7 +631,6 @@ public abstract class PackageController<PackageType extends AbstractPackageNode<
                     }
                     _controllerPackageNodeStructureChanged(pkg, this.getQueuePrio());
                     _controllerStructureChanged(this.getQueuePrio());
-
                     return null;
                 }
             });
@@ -654,22 +654,22 @@ public abstract class PackageController<PackageType extends AbstractPackageNode<
 
                 @Override
                 protected Void run() throws RuntimeException {
-                    ArrayList<ChildType> links = new ArrayList<ChildType>(children);
-                    PackageController<PackageType, ChildType> controller = pkg.getControlledBy();
+                    final ArrayList<ChildType> links = new ArrayList<ChildType>(children);
+                    final PackageController<PackageType, ChildType> controller = pkg.getControlledBy();
                     if (controller == null) {
                         logger.log(new Throwable("NO CONTROLLER!!!"));
                         return null;
                     }
                     try {
                         pkg.getModifyLock().writeLock();
-                        List<ChildType> pkgchildren = pkg.getChildren();
-                        for (ChildType child : pkgchildren) {
+                        final List<ChildType> pkgchildren = pkg.getChildren();
+                        for (final ChildType child : pkgchildren) {
                             /* this resets getPreviousParentNodeID */
                             child.setParentNode(pkg);
                         }
-                        ListIterator<ChildType> it = links.listIterator(links.size());
+                        final ListIterator<ChildType> it = links.listIterator(links.size());
                         while (it.hasPrevious()) {
-                            ChildType dl = it.previous();
+                            final ChildType dl = it.previous();
                             if (pkgchildren.remove(dl)) {
                                 /*
                                  * set FilePackage to null if the link was controlled by this FilePackage
@@ -690,14 +690,14 @@ public abstract class PackageController<PackageType extends AbstractPackageNode<
                     if (links.size() > 0) {
                         controller.structureChanged.incrementAndGet();
                         if (doNotifyParentlessLinks) {
-                            writeLock();
+                            getMapLock().writeLock();
                             childrenChanged.incrementAndGet();
                             try {
-                                for (ChildType child : links) {
+                                for (final ChildType child : links) {
                                     uniqueAlltimeIDChildrenMap.remove(child.getUniqueID());
                                 }
                             } finally {
-                                writeUnlock();
+                                getMapLock().writeUnlock();
                             }
                             controller._controllerParentlessLinks(links, this.getQueuePrio());
                         }
@@ -798,10 +798,18 @@ public abstract class PackageController<PackageType extends AbstractPackageNode<
     public ArrayList<PackageType> getPackagesCopy() {
         final boolean readL = readLock();
         try {
-            /* get all packages from controller */
             return new ArrayList<PackageType>(getPackages());
         } finally {
             readUnlock(readL);
+        }
+    }
+
+    public ArrayList<ChildType> getChildrenCopy(final PackageType pkg) {
+        final boolean readL2 = pkg.getModifyLock().readLock();
+        try {
+            return new ArrayList<ChildType>(pkg.getChildren());
+        } finally {
+            pkg.getModifyLock().readUnlock(readL2);
         }
     }
 
@@ -812,7 +820,7 @@ public abstract class PackageController<PackageType extends AbstractPackageNode<
     public int indexOf(PackageType pkg) {
         boolean readL = readLock();
         try {
-            return packages.indexOf(pkg);
+            return getPackages().indexOf(pkg);
         } finally {
             readUnlock(readL);
         }
@@ -825,65 +833,69 @@ public abstract class PackageController<PackageType extends AbstractPackageNode<
 
                 @Override
                 protected Void run() throws RuntimeException {
-                    writeLock();
+                    final ArrayList<PackageType> lpackages = getPackagesCopy();
                     try {
-                        try {
-                            Collections.sort(packages, comparator);
-                        } catch (final Throwable e) {
-                            LogController.CL(true).log(e);
-                        }
-                    } finally {
-                        writeUnlock();
+                        Collections.sort(lpackages, comparator);
+                    } catch (final Throwable e) {
+                        LogController.CL(true).log(e);
                     }
-
                     if (sortPackages) {
-                        boolean readL = readLock();
-                        ArrayList<PackageType> informChanges = new ArrayList<PackageType>();
+                        final PackageControllerComparator<ChildType> sorter = new PackageControllerComparator<ChildType>() {
+
+                            @Override
+                            public int compare(ChildType o1, ChildType o2) {
+                                return comparator.compare(o1, o2);
+                            }
+
+                            @Override
+                            public String getID() {
+                                return comparator.getID();
+                            }
+
+                            @Override
+                            public boolean isAsc() {
+                                return comparator.isAsc();
+                            }
+
+                        };
                         try {
-                            for (PackageType pkg : packages) {
+                            for (final PackageType pkg : lpackages) {
+                                final ArrayList<ChildType> children = getChildrenCopy(pkg);
                                 try {
-                                    pkg.getModifyLock().writeLock();
-                                    pkg.setCurrentSorter(new PackageControllerComparator<ChildType>() {
-
-                                        @Override
-                                        public int compare(ChildType o1, ChildType o2) {
-                                            return comparator.compare(o1, o2);
-                                        }
-
-                                        @Override
-                                        public String getID() {
-                                            return comparator.getID();
-                                        }
-
-                                        @Override
-                                        public boolean isAsc() {
-                                            return comparator.isAsc();
-                                        }
-
-                                    });
-                                    for (ChildType child : pkg.getChildren()) {
+                                    Collections.sort(pkg.getChildren(), comparator);
+                                } catch (final Throwable e) {
+                                    LogController.CL(true).log(e);
+                                }
+                                pkg.getModifyLock().writeLock();
+                                try {
+                                    pkg.setCurrentSorter(sorter);
+                                    for (ChildType child : children) {
                                         /* this resets getPreviousParentNodeID */
                                         child.setParentNode(pkg);
                                     }
-                                    try {
-                                        Collections.sort(pkg.getChildren(), comparator);
-                                    } catch (final Throwable e) {
-                                        LogController.CL(true).log(e);
-                                    }
+                                    pkg.getChildren().clear();
+                                    pkg.getChildren().addAll(children);
                                 } finally {
                                     pkg.getModifyLock().writeUnlock();
                                 }
-                                structureChanged.incrementAndGet();
-                                informChanges.add(pkg);
                             }
                         } finally {
-                            readUnlock(readL);
+                            structureChanged.incrementAndGet();
                         }
-                        for (PackageType pkg : informChanges) {
+                    }
+                    writeLock();
+                    try {
+                        getPackages().clear();
+                        getPackages().addAll(lpackages);
+                    } finally {
+                        writeUnlock();
+                    }
+                    structureChanged.incrementAndGet();
+                    if (sortPackages) {
+                        for (final PackageType pkg : lpackages) {
                             _controllerPackageNodeStructureChanged(pkg, this.getQueuePrio());
                         }
                     }
-                    structureChanged.incrementAndGet();
                     _controllerStructureChanged(this.getQueuePrio());
                     return null;
                 }
@@ -892,64 +904,64 @@ public abstract class PackageController<PackageType extends AbstractPackageNode<
     }
 
     public PackageType getPackageByID(long longID) {
-        UniqueAlltimeID packageId = new UniqueAlltimeID(longID);
-        boolean readL = readLock();
+        final UniqueAlltimeID packageId = new UniqueAlltimeID(longID);
+        final boolean readL = getMapLock().readLock();
         try {
-            PackageType pkg = uniqueAlltimeIDPackageMap.get(packageId);
+            final PackageType pkg = uniqueAlltimeIDPackageMap.get(packageId);
             if (pkg != null) {
                 return pkg;
             }
             return null;
         } finally {
-            readUnlock(readL);
+            getMapLock().readUnlock(readL);
         }
     }
 
     public List<PackageType> getPackagesByID(long[] packageUUIDs) {
-        boolean readL = readLock();
+        final boolean readL = getMapLock().readLock();
         try {
-            ArrayList<PackageType> ret = new ArrayList<PackageType>(packageUUIDs.length);
-            for (long longID : packageUUIDs) {
-                UniqueAlltimeID packageId = new UniqueAlltimeID(longID);
-                PackageType pkg = uniqueAlltimeIDPackageMap.get(packageId);
+            final ArrayList<PackageType> ret = new ArrayList<PackageType>(packageUUIDs.length);
+            for (final long longID : packageUUIDs) {
+                final UniqueAlltimeID packageId = new UniqueAlltimeID(longID);
+                final PackageType pkg = uniqueAlltimeIDPackageMap.get(packageId);
                 if (pkg != null) {
                     ret.add(pkg);
                 }
             }
             return ret;
         } finally {
-            readUnlock(readL);
+            getMapLock().readUnlock(readL);
         }
     }
 
     public ChildType getLinkByID(long longID) {
-        UniqueAlltimeID childID = new UniqueAlltimeID(longID);
-        boolean readL = readLock();
+        final UniqueAlltimeID childID = new UniqueAlltimeID(longID);
+        final boolean readL = getMapLock().readLock();
         try {
-            ChildType child = uniqueAlltimeIDChildrenMap.get(childID);
+            final ChildType child = uniqueAlltimeIDChildrenMap.get(childID);
             if (child != null) {
                 return child;
             }
             return null;
         } finally {
-            readUnlock(readL);
+            getMapLock().readUnlock(readL);
         }
     }
 
     public List<ChildType> getLinksByID(long[] childUUIDs) {
-        boolean readL = readLock();
+        final boolean readL = getMapLock().readLock();
         try {
-            ArrayList<ChildType> ret = new ArrayList<ChildType>(childUUIDs.length);
-            for (long longID : childUUIDs) {
-                UniqueAlltimeID childID = new UniqueAlltimeID(longID);
-                ChildType child = uniqueAlltimeIDChildrenMap.get(childID);
+            final ArrayList<ChildType> ret = new ArrayList<ChildType>(childUUIDs.length);
+            for (final long longID : childUUIDs) {
+                final UniqueAlltimeID childID = new UniqueAlltimeID(longID);
+                final ChildType child = uniqueAlltimeIDChildrenMap.get(childID);
                 if (child != null) {
                     ret.add(child);
                 }
             }
             return ret;
         } finally {
-            readUnlock(readL);
+            getMapLock().readUnlock(readL);
         }
     }
 

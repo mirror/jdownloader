@@ -17,6 +17,7 @@ import java.util.Locale;
 import java.util.Map.Entry;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.atomic.AtomicLong;
 import java.util.zip.ZipEntry;
 
 import jd.controlling.TaskQueue;
@@ -104,7 +105,7 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
 
         public JobLinkCrawler(final LinkCollector linkCollector, final LinkCollectingJob job) {
             this.job = job;
-            collectingInfo = new LinkCollectingInformation(this, linkCollector.getLinkChecker());
+            collectingInfo = new LinkCollectingInformation(this, linkCollector.getLinkChecker(), linkCollector);
             this.linkCollector = linkCollector;
             setFilter(linkCollector.getCrawlerFilter());
             final LinkCrawlerHandler defaultHandler = defaulHandlerFactory();
@@ -186,27 +187,27 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
         eventsender.fireEvent(new LinkCollectorEvent(this, LinkCollectorEvent.TYPE.CRAWLER_STARTED, crawledLinkCrawler, QueuePriority.NORM));
     }
 
-    private transient LinkCollectorEventSender           eventsender          = new LinkCollectorEventSender();
-    public final ScheduledExecutorService                TIMINGQUEUE          = DelayedRunnable.getNewScheduledExecutorService();
-    public static SingleReachableState                   CRAWLERLIST_LOADED   = new SingleReachableState("CRAWLERLIST_COMPLETE");
-    private static LinkCollector                         INSTANCE             = new LinkCollector();
+    private transient LinkCollectorEventSender           eventsender        = new LinkCollectorEventSender();
+    public final ScheduledExecutorService                TIMINGQUEUE        = DelayedRunnable.getNewScheduledExecutorService();
+    public static SingleReachableState                   CRAWLERLIST_LOADED = new SingleReachableState("CRAWLERLIST_COMPLETE");
+    private static LinkCollector                         INSTANCE           = new LinkCollector();
 
-    private volatile LinkChecker<CrawledLink>            linkChecker          = null;
+    private volatile LinkChecker<CrawledLink>            linkChecker        = null;
     /**
      * NOTE: only access these fields inside the IOEQ
      */
-    private HashSet<String>                              dupeCheckMap         = new HashSet<String>();
-    private HashMap<String, CrawledPackage>              packageMap           = new HashMap<String, CrawledPackage>();
+    private HashSet<String>                              dupeCheckMap       = new HashSet<String>();
+    private HashMap<String, CrawledPackage>              packageMap         = new HashMap<String, CrawledPackage>();
 
     /* sync on filteredStuff itself when accessing it */
-    private java.util.List<CrawledLink>                  filteredStuff        = new ArrayList<CrawledLink>();
+    private java.util.List<CrawledLink>                  filteredStuff      = new ArrayList<CrawledLink>();
 
-    private LinkCrawlerFilter                            crawlerFilter        = null;
+    private LinkCrawlerFilter                            crawlerFilter      = null;
 
     private ExtractionExtension                          archiver;
-    private DelayedRunnable                              asyncSaving          = null;
+    private DelayedRunnable                              asyncSaving        = null;
 
-    private PackagizerInterface                          packagizer           = null;
+    private PackagizerInterface                          packagizer         = null;
 
     protected CrawledPackage                             offlinePackage;
 
@@ -214,17 +215,25 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
 
     protected CrawledPackage                             permanentofflinePackage;
 
-    private final CopyOnWriteArrayList<File>             linkcollectorLists   = new CopyOnWriteArrayList<File>();
+    private final CopyOnWriteArrayList<File>             linkcollectorLists = new CopyOnWriteArrayList<File>();
 
-    private HashMap<String, java.util.List<CrawledLink>> offlineMap           = new HashMap<String, java.util.List<CrawledLink>>();
-    private HashMap<String, java.util.List<CrawledLink>> variousMap           = new HashMap<String, java.util.List<CrawledLink>>();
-    private HashMap<String, java.util.List<CrawledLink>> hosterMap            = new HashMap<String, java.util.List<CrawledLink>>();
+    private HashMap<String, java.util.List<CrawledLink>> offlineMap         = new HashMap<String, java.util.List<CrawledLink>>();
+    private HashMap<String, java.util.List<CrawledLink>> variousMap         = new HashMap<String, java.util.List<CrawledLink>>();
+    private HashMap<String, java.util.List<CrawledLink>> hosterMap          = new HashMap<String, java.util.List<CrawledLink>>();
     private HashMap<Object, Object>                      autoRenameCache;
     private DelayedRunnable                              asyncCacheCleanup;
+    private final AtomicLong                             collectingID       = new AtomicLong(0);
 
-    private boolean                                      restoreButtonEnabled = false;
+    public long getCollectingID() {
+        return collectingID.get();
+    }
 
-    private final AutoStartManager                       autoStartManager;
+    private final AtomicLong       collectingRequested  = new AtomicLong(0);
+    private final AtomicLong       collectingProcessed  = new AtomicLong(0);
+
+    private boolean                restoreButtonEnabled = false;
+
+    private final AutoStartManager autoStartManager;
 
     private LinkCollector() {
         autoRenameCache = new HashMap<Object, Object>();
@@ -415,17 +424,23 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
     }
 
     public void abort() {
+        collectingID.incrementAndGet();
         eventsender.fireEvent(new LinkCollectorEvent(LinkCollector.this, LinkCollectorEvent.TYPE.ABORT));
-        if (linkChecker != null) {
-            linkChecker.stopChecking();
+        final LinkChecker<CrawledLink> llinkChecker = linkChecker;
+        if (llinkChecker != null) {
+            llinkChecker.stopChecking();
         }
     }
 
     public boolean isCollecting() {
-        return linkChecker != null && linkChecker.isRunning();
+        final LinkChecker<CrawledLink> llinkChecker = linkChecker;
+        return llinkChecker != null && llinkChecker.isRunning() || (collectingRequested.get() != collectingProcessed.get());
     }
 
     protected void autoFileNameCorrection(List<CrawledLink> pkgchildren) {
+        if (true) {
+            return;
+        }
         // long t = System.currentTimeMillis();
         // if we have only one single hoster, we can hardly learn anything
         if (CFG_LINKGRABBER.AUTO_FILENAME_CORRECTION_ENABLED.isEnabled() && hosterMap.size() > 1) {
@@ -480,7 +495,7 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
     }
 
     public void addCrawledLink(final CrawledLink link) {
-
+        collectingRequested.incrementAndGet();
         /* try to find good matching package or create new one */
         QUEUE.add(new QueueAction<Void, RuntimeException>() {
 
@@ -509,177 +524,180 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
             @Override
             protected Void run() throws RuntimeException {
                 try {
-                    dupeCheckMap.add(link.getLinkID());
-                    LinkCollectingJob job = link.getSourceJob();
-                    if (job != null) {
-                        try {
-                            if (job.getCrawledLinkModifier() != null) {
-                                job.getCrawledLinkModifier().modifyCrawledLink(link);
+                    final LinkCollectingInformation info = link.getCollectingInfo();
+                    if (info == null || info.getCollectingID() == getCollectingID()) {
+                        dupeCheckMap.add(link.getLinkID());
+                        LinkCollectingJob job = link.getSourceJob();
+                        if (job != null) {
+                            try {
+                                if (job.getCrawledLinkModifier() != null) {
+                                    job.getCrawledLinkModifier().modifyCrawledLink(link);
+                                }
+                            } catch (final Throwable e) {
+                                logger.log(e);
                             }
-                        } catch (final Throwable e) {
-                            logger.log(e);
+                            if (link.getDownloadLink() != null && StringUtils.isNotEmpty(job.getCustomSourceUrl())) {
+                                link.getDownloadLink().setBrowserUrl(job.getCustomSourceUrl());
+                            }
                         }
-                        if (link.getDownloadLink() != null && StringUtils.isNotEmpty(job.getCustomSourceUrl())) {
-                            link.getDownloadLink().setBrowserUrl(job.getCustomSourceUrl());
+                        if (link.getDownloadLink() != null) {
+                            /* set CrawledLink as changeListener to its DownloadLink */
+                            link.getDownloadLink().setNodeChangeListener(link);
                         }
-                    }
-                    if (link.getDownloadLink() != null) {
-                        /* set CrawledLink as changeListener to its DownloadLink */
-                        link.getDownloadLink().setNodeChangeListener(link);
-                    }
-                    PackageInfo dpi = link.getDesiredPackageInfo();
-                    UniqueAlltimeID uID = null;
+                        PackageInfo dpi = link.getDesiredPackageInfo();
+                        UniqueAlltimeID uID = null;
 
-                    String packageName = null;
-                    String packageID = null;
-                    String downloadFolder = null;
-                    boolean ignoreSpecialPackages = dpi != null && (dpi.isPackagizerRuleMatched() || dpi.isIgnoreVarious());
-                    boolean isMultiArchive = false;
-                    if (dpi != null) {
-                        packageName = dpi.getName();
-                        if ((uID = dpi.getUniqueId()) != null) {
-                            packageID = dpi.getUniqueId().toString();
-                        }
-                        downloadFolder = dpi.getDestinationFolder();
-                        if (downloadFolder != null) {
-                            downloadFolder = downloadFolder.replaceFirst("/$", "");
-                            String defaultFolder = JsonConfig.create(GeneralSettings.class).getDefaultDownloadFolder();
-                            if (defaultFolder != null) {
-                                defaultFolder = defaultFolder.replaceFirst("/$", "");
+                        String packageName = null;
+                        String packageID = null;
+                        String downloadFolder = null;
+                        boolean ignoreSpecialPackages = dpi != null && (dpi.isPackagizerRuleMatched() || dpi.isIgnoreVarious());
+                        boolean isMultiArchive = false;
+                        if (dpi != null) {
+                            packageName = dpi.getName();
+                            if ((uID = dpi.getUniqueId()) != null) {
+                                packageID = dpi.getUniqueId().toString();
                             }
-                            if (!downloadFolder.equals(defaultFolder)) {
-                                /* we have a custom downloadFolder, so let's not use various package */
-                                ignoreSpecialPackages = true;
+                            downloadFolder = dpi.getDestinationFolder();
+                            if (downloadFolder != null) {
+                                downloadFolder = downloadFolder.replaceFirst("/$", "");
+                                String defaultFolder = JsonConfig.create(GeneralSettings.class).getDefaultDownloadFolder();
+                                if (defaultFolder != null) {
+                                    defaultFolder = defaultFolder.replaceFirst("/$", "");
+                                }
+                                if (!downloadFolder.equals(defaultFolder)) {
+                                    /* we have a custom downloadFolder, so let's not use various package */
+                                    ignoreSpecialPackages = true;
+                                }
                             }
                         }
-                    }
-                    CrawledLinkFactory clf = new CrawledLinkFactory(link);
-                    ExtractionExtension lArchiver = archiver;
-                    if (lArchiver != null && org.jdownloader.settings.staticreferences.CFG_LINKGRABBER.ARCHIVE_PACKAGIZER_ENABLED.getValue()) {
-                        if (lArchiver.isMultiPartArchive(clf)) {
-                            isMultiArchive = true;
-                        }
-                    }
-                    if (packageName == null) {
-                        if (isMultiArchive) {
-                            packageID = lArchiver.createArchiveID(clf);
-                            if (packageID != null) {
-                                packageName = _JDT._.LinkCollector_archiv(LinknameCleaner.cleanFileName(lArchiver.getArchiveName(clf), false, true, LinknameCleaner.EXTENSION_SETTINGS.REMOVE_KNOWN, true));
+                        CrawledLinkFactory clf = new CrawledLinkFactory(link);
+                        ExtractionExtension lArchiver = archiver;
+                        if (lArchiver != null && org.jdownloader.settings.staticreferences.CFG_LINKGRABBER.ARCHIVE_PACKAGIZER_ENABLED.getValue()) {
+                            if (lArchiver.isMultiPartArchive(clf)) {
+                                isMultiArchive = true;
                             }
                         }
                         if (packageName == null) {
-                            packageName = LinknameCleaner.cleanFileName(link.getName(), false, true, LinknameCleaner.EXTENSION_SETTINGS.REMOVE_ALL, true);
-                        }
-                    }
-
-                    String identifier = (packageID + "_||_" + packageName + "_||_" + downloadFolder);
-                    if (CrossSystem.isWindows() || CFG_LINKGRABBER.AUTO_FILENAME_CORRECTION_ENABLED.isEnabled()) {
-                        // only on windows, because mac and linux have case sensitive file systems.
-                        identifier = identifier.toLowerCase(Locale.ENGLISH);
-                    }
-                    LazyHostPlugin lazyPlg = null;
-                    PluginForHost plg = link.gethPlugin();
-                    if (plg != null && CFG_LINKGRABBER.AUTO_PACKAGE_MATCHING_CORRECTION_ENABLED.isEnabled()) {
-                        identifier = plg.filterPackageID(identifier);
-                        // run through all active hosts, and filter the identifier
-                        for (String host : hosterMap.keySet()) {
-                            lazyPlg = HostPluginController.getInstance().get(host);
-                            PluginForHost plg2 = null;
-                            if (lazyPlg != null) {
-                                try {
-                                    plg2 = lazyPlg.getPrototype(null);
-                                } catch (UpdateRequiredClassNotFoundException e) {
-                                    logger.log(e);
+                            if (isMultiArchive) {
+                                packageID = lArchiver.createArchiveID(clf);
+                                if (packageID != null) {
+                                    packageName = _JDT._.LinkCollector_archiv(LinknameCleaner.cleanFileName(lArchiver.getArchiveName(clf), false, true, LinknameCleaner.EXTENSION_SETTINGS.REMOVE_KNOWN, true));
                                 }
                             }
-                            if (plg2 != null) {
-                                identifier = plg2.filterPackageID(identifier);
+                            if (packageName == null) {
+                                packageName = LinknameCleaner.cleanFileName(link.getName(), false, true, LinknameCleaner.EXTENSION_SETTINGS.REMOVE_ALL, true);
                             }
                         }
-                        java.util.List<CrawledLink> list = hosterMap.get(link.getHost());
 
-                        if (list == null || list.size() == 0) {
-                            // new hoster - we have to update all identifiers and maps
-
-                            HashMap<String, CrawledPackage> newMap = new HashMap<String, CrawledPackage>();
-                            Entry<String, CrawledPackage> next;
-                            for (Iterator<Entry<String, CrawledPackage>> it = packageMap.entrySet().iterator(); it.hasNext();) {
-                                next = it.next();
-                                String newID = plg.filterPackageID(next.getKey());
-                                if (!next.getKey().equals(newID)) {
-                                    it.remove();
-
-                                    CrawledPackage existing = newMap.get(newID);
-
-                                    if (existing != null) {
-                                        List<CrawledLink> links = null;
-                                        boolean readL = existing.getModifyLock().readLock();
-                                        try {
-                                            links = existing.getChildren();
-                                        } finally {
-                                            existing.getModifyLock().readUnlock(readL);
-                                        }
-                                        moveOrAddAt(next.getValue(), links, -1);
+                        String identifier = (packageID + "_||_" + packageName + "_||_" + downloadFolder);
+                        if (CrossSystem.isWindows() || CFG_LINKGRABBER.AUTO_FILENAME_CORRECTION_ENABLED.isEnabled()) {
+                            // only on windows, because mac and linux have case sensitive file systems.
+                            identifier = identifier.toLowerCase(Locale.ENGLISH);
+                        }
+                        LazyHostPlugin lazyPlg = null;
+                        PluginForHost plg = link.gethPlugin();
+                        if (plg != null && CFG_LINKGRABBER.AUTO_PACKAGE_MATCHING_CORRECTION_ENABLED.isEnabled()) {
+                            identifier = plg.filterPackageID(identifier);
+                            // run through all active hosts, and filter the identifier
+                            for (String host : hosterMap.keySet()) {
+                                lazyPlg = HostPluginController.getInstance().get(host);
+                                PluginForHost plg2 = null;
+                                if (lazyPlg != null) {
+                                    try {
+                                        plg2 = lazyPlg.getPrototype(null);
+                                    } catch (UpdateRequiredClassNotFoundException e) {
+                                        logger.log(e);
                                     }
-                                    newMap.put(newID, next.getValue());
+                                }
+                                if (plg2 != null) {
+                                    identifier = plg2.filterPackageID(identifier);
                                 }
                             }
+                            java.util.List<CrawledLink> list = hosterMap.get(link.getHost());
 
-                            for (Iterator<Entry<String, CrawledPackage>> it = newMap.entrySet().iterator(); it.hasNext();) {
-                                next = it.next();
-                                CrawledPackage current = packageMap.remove(next.getKey());
+                            if (list == null || list.size() == 0) {
+                                // new hoster - we have to update all identifiers and maps
 
-                                if (current != null) {
-                                    moveOrAddAt(current, next.getValue().getChildren(), -1);
-                                } else {
-                                    packageMap.put(next.getKey(), next.getValue());
+                                HashMap<String, CrawledPackage> newMap = new HashMap<String, CrawledPackage>();
+                                Entry<String, CrawledPackage> next;
+                                for (Iterator<Entry<String, CrawledPackage>> it = packageMap.entrySet().iterator(); it.hasNext();) {
+                                    next = it.next();
+                                    String newID = plg.filterPackageID(next.getKey());
+                                    if (!next.getKey().equals(newID)) {
+                                        it.remove();
+
+                                        CrawledPackage existing = newMap.get(newID);
+
+                                        if (existing != null) {
+                                            List<CrawledLink> links = null;
+                                            boolean readL = existing.getModifyLock().readLock();
+                                            try {
+                                                links = existing.getChildren();
+                                            } finally {
+                                                existing.getModifyLock().readUnlock(readL);
+                                            }
+                                            moveOrAddAt(next.getValue(), links, -1);
+                                        }
+                                        newMap.put(newID, next.getValue());
+                                    }
                                 }
 
+                                for (Iterator<Entry<String, CrawledPackage>> it = newMap.entrySet().iterator(); it.hasNext();) {
+                                    next = it.next();
+                                    CrawledPackage current = packageMap.remove(next.getKey());
+
+                                    if (current != null) {
+                                        moveOrAddAt(current, next.getValue().getChildren(), -1);
+                                    } else {
+                                        packageMap.put(next.getKey(), next.getValue());
+                                    }
+
+                                }
+                                remapIdentifier(variousMap, plg);
+                                remapIdentifier(offlineMap, plg);
                             }
-                            remapIdentifier(variousMap, plg);
-                            remapIdentifier(offlineMap, plg);
+
                         }
+                        // add to hostermap
+                        java.util.List<CrawledLink> hosterlist = getIdentifiedMap(link.getHost(), hosterMap);
+                        hosterlist.add(link);
 
-                    }
-                    // add to hostermap
-                    java.util.List<CrawledLink> hosterlist = getIdentifiedMap(link.getHost(), hosterMap);
-                    hosterlist.add(link);
-
-                    CrawledPackage pkg = packageMap.get(identifier);
-                    if (pkg == null) {
-                        if (!ignoreSpecialPackages && LinkCrawler.PERMANENT_OFFLINE_ID == uID) {
-                            /* these links will never come back online */
-                            List<CrawledLink> add = new ArrayList<CrawledLink>(1);
-                            add.add(link);
-                            LinkCollector.this.moveOrAddAt(getPermanentOfflineCrawledPackage(), add, -1);
-                        } else if (!ignoreSpecialPackages && link.getLinkState() == AvailableLinkState.OFFLINE && org.jdownloader.settings.staticreferences.CFG_LINKGRABBER.OFFLINE_PACKAGE_ENABLED.getValue()) {
-                            java.util.List<CrawledLink> list = getIdentifiedMap(identifier, offlineMap);
-                            list.add(link);
-                            List<CrawledLink> add = new ArrayList<CrawledLink>(1);
-                            add.add(link);
-                            LinkCollector.this.moveOrAddAt(getOfflineCrawledPackage(), add, -1);
-                        } else if (!ignoreSpecialPackages && org.jdownloader.settings.staticreferences.CFG_LINKGRABBER.VARIOUS_PACKAGE_LIMIT.getValue() > 0 && CFG_LINKGRABBER.VARIOUS_PACKAGE_ENABLED.isEnabled()) {
-                            java.util.List<CrawledLink> list = getIdentifiedMap(identifier, variousMap);
-                            list.add(link);
-                            if (list.size() > org.jdownloader.settings.staticreferences.CFG_LINKGRABBER.VARIOUS_PACKAGE_LIMIT.getValue()) {
-                                newPackage(null, packageName, downloadFolder, identifier);
-                            } else {
+                        CrawledPackage pkg = packageMap.get(identifier);
+                        if (pkg == null) {
+                            if (!ignoreSpecialPackages && LinkCrawler.PERMANENT_OFFLINE_ID == uID) {
+                                /* these links will never come back online */
                                 List<CrawledLink> add = new ArrayList<CrawledLink>(1);
                                 add.add(link);
-                                LinkCollector.this.moveOrAddAt(getVariousCrawledPackage(), add, -1);
+                                LinkCollector.this.moveOrAddAt(getPermanentOfflineCrawledPackage(), add, -1);
+                            } else if (!ignoreSpecialPackages && link.getLinkState() == AvailableLinkState.OFFLINE && org.jdownloader.settings.staticreferences.CFG_LINKGRABBER.OFFLINE_PACKAGE_ENABLED.getValue()) {
+                                java.util.List<CrawledLink> list = getIdentifiedMap(identifier, offlineMap);
+                                list.add(link);
+                                List<CrawledLink> add = new ArrayList<CrawledLink>(1);
+                                add.add(link);
+                                LinkCollector.this.moveOrAddAt(getOfflineCrawledPackage(), add, -1);
+                            } else if (!ignoreSpecialPackages && org.jdownloader.settings.staticreferences.CFG_LINKGRABBER.VARIOUS_PACKAGE_LIMIT.getValue() > 0 && CFG_LINKGRABBER.VARIOUS_PACKAGE_ENABLED.isEnabled()) {
+                                java.util.List<CrawledLink> list = getIdentifiedMap(identifier, variousMap);
+                                list.add(link);
+                                if (list.size() > org.jdownloader.settings.staticreferences.CFG_LINKGRABBER.VARIOUS_PACKAGE_LIMIT.getValue()) {
+                                    newPackage(null, packageName, downloadFolder, identifier);
+                                } else {
+                                    List<CrawledLink> add = new ArrayList<CrawledLink>(1);
+                                    add.add(link);
+                                    LinkCollector.this.moveOrAddAt(getVariousCrawledPackage(), add, -1);
+                                }
+                            } else {
+                                java.util.List<CrawledLink> add = new ArrayList<CrawledLink>(1);
+                                add.add(link);
+                                newPackage(add, packageName, downloadFolder, identifier);
                             }
                         } else {
-                            java.util.List<CrawledLink> add = new ArrayList<CrawledLink>(1);
+                            List<CrawledLink> add = new ArrayList<CrawledLink>(1);
                             add.add(link);
-                            newPackage(add, packageName, downloadFolder, identifier);
+                            LinkCollector.this.moveOrAddAt(pkg, add, -1);
                         }
-                    } else {
-                        List<CrawledLink> add = new ArrayList<CrawledLink>(1);
-                        add.add(link);
-                        LinkCollector.this.moveOrAddAt(pkg, add, -1);
+                        eventsender.fireEvent(new LinkCollectorEvent(LinkCollector.this, LinkCollectorEvent.TYPE.ADDED_LINK, link, QueuePriority.NORM));
+                        autoStartManager.onLinkAdded(link);
                     }
-                    eventsender.fireEvent(new LinkCollectorEvent(LinkCollector.this, LinkCollectorEvent.TYPE.ADDED_LINK, link, QueuePriority.NORM));
-                    autoStartManager.onLinkAdded(link);
                     return null;
                 } catch (Throwable e) {
                     dupeCheckMap.remove(link.getLinkID());
@@ -693,6 +711,7 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
                     link.setCollectingInfo(null);
                     link.setSourceJob(null);
                     link.setMatchingFilter(null);
+                    collectingProcessed.incrementAndGet();
                 }
             }
         });
@@ -832,23 +851,29 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
             /* clear references */
             filtered.setSourceJob(null);
             return;
-        }
-        QUEUE.add(new QueueAction<Void, RuntimeException>() {
+        } else {
+            collectingRequested.incrementAndGet();
+            QUEUE.add(new QueueAction<Void, RuntimeException>() {
 
-            @Override
-            protected Void run() throws RuntimeException {
-                if (checkDupe && !dupeCheckMap.add(filtered.getLinkID())) {
-                    /* clear references */
-                    filtered.setSourceJob(null);
-                    filtered.setMatchingFilter(null);
-                    eventsender.fireEvent(new LinkCollectorEvent(LinkCollector.this, LinkCollectorEvent.TYPE.DUPE_LINK, filtered, QueuePriority.NORM));
+                @Override
+                protected Void run() throws RuntimeException {
+                    try {
+                        if (checkDupe && !dupeCheckMap.add(filtered.getLinkID())) {
+                            /* clear references */
+                            filtered.setSourceJob(null);
+                            filtered.setMatchingFilter(null);
+                            eventsender.fireEvent(new LinkCollectorEvent(LinkCollector.this, LinkCollectorEvent.TYPE.DUPE_LINK, filtered, QueuePriority.NORM));
+                            return null;
+                        }
+                        filteredStuff.add(filtered);
+                        eventsender.fireEvent(new LinkCollectorEvent(LinkCollector.this, LinkCollectorEvent.TYPE.FILTERED_AVAILABLE));
+                    } finally {
+                        collectingProcessed.incrementAndGet();
+                    }
                     return null;
                 }
-                filteredStuff.add(filtered);
-                eventsender.fireEvent(new LinkCollectorEvent(LinkCollector.this, LinkCollectorEvent.TYPE.FILTERED_AVAILABLE));
-                return null;
-            }
-        });
+            });
+        }
 
     }
 
@@ -1004,50 +1029,58 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
     }
 
     public void handleFinalLink(final CrawledLink link) {
-        if (org.jdownloader.settings.staticreferences.CFG_LINKCOLLECTOR.DO_LINK_CHECK.isEnabled()) {
-            QUEUE.add(new QueueAction<Void, RuntimeException>() {
-
-                @Override
-                protected Void run() throws RuntimeException {
-                    /* avoid additional linkCheck when linkID already exists */
-                    /* update dupeCheck map */
-                    String id = link.getLinkID();
-                    if (!dupeCheckMap.add(id)) {
-                        /* clear references */
-                        link.setCollectingInfo(null);
-                        link.setSourceJob(null);
-                        link.setMatchingFilter(null);
-                        eventsender.fireEvent(new LinkCollectorEvent(LinkCollector.this, LinkCollectorEvent.TYPE.DUPE_LINK, link, QueuePriority.NORM));
-                        return null;
-                    }
-                    linkChecker.check(link);
-                    return null;
-                }
-            });
+        final LinkCollectingInformation info = link.getCollectingInfo();
+        if (info != null && info.getCollectingID() != getCollectingID()) {
+            link.setCollectingInfo(null);
+            link.setSourceJob(null);
+            link.setMatchingFilter(null);
         } else {
-            PackagizerInterface pc;
-            if ((pc = getPackagizer()) != null) {
-                /* run packagizer on un-checked link */
-                pc.runByUrl(link);
-            }
-            QUEUE.add(new QueueAction<Void, RuntimeException>() {
+            if (org.jdownloader.settings.staticreferences.CFG_LINKCOLLECTOR.DO_LINK_CHECK.isEnabled()) {
+                QUEUE.add(new QueueAction<Void, RuntimeException>() {
 
-                @Override
-                protected Void run() throws RuntimeException {
-                    /* update dupeCheck map */
-                    String id = link.getLinkID();
-                    if (!dupeCheckMap.add(id)) {
-                        /* clear references */
-                        link.setCollectingInfo(null);
-                        link.setSourceJob(null);
-                        link.setMatchingFilter(null);
-                        eventsender.fireEvent(new LinkCollectorEvent(LinkCollector.this, LinkCollectorEvent.TYPE.DUPE_LINK, link, QueuePriority.NORM));
+                    @Override
+                    protected Void run() throws RuntimeException {
+
+                        /* avoid additional linkCheck when linkID already exists */
+                        /* update dupeCheck map */
+                        String id = link.getLinkID();
+                        if (!dupeCheckMap.add(id)) {
+                            /* clear references */
+                            link.setCollectingInfo(null);
+                            link.setSourceJob(null);
+                            link.setMatchingFilter(null);
+                            eventsender.fireEvent(new LinkCollectorEvent(LinkCollector.this, LinkCollectorEvent.TYPE.DUPE_LINK, link, QueuePriority.NORM));
+                            return null;
+                        }
+                        linkChecker.check(link);
                         return null;
                     }
-                    addCrawledLink(link);
-                    return null;
+                });
+            } else {
+                PackagizerInterface pc;
+                if ((pc = getPackagizer()) != null) {
+                    /* run packagizer on un-checked link */
+                    pc.runByUrl(link);
                 }
-            });
+                QUEUE.add(new QueueAction<Void, RuntimeException>() {
+
+                    @Override
+                    protected Void run() throws RuntimeException {
+                        /* update dupeCheck map */
+                        String id = link.getLinkID();
+                        if (!dupeCheckMap.add(id)) {
+                            /* clear references */
+                            link.setCollectingInfo(null);
+                            link.setSourceJob(null);
+                            link.setMatchingFilter(null);
+                            eventsender.fireEvent(new LinkCollectorEvent(LinkCollector.this, LinkCollectorEvent.TYPE.DUPE_LINK, link, QueuePriority.NORM));
+                            return null;
+                        }
+                        addCrawledLink(link);
+                        return null;
+                    }
+                });
+            }
         }
     }
 

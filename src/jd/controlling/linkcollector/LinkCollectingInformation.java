@@ -10,15 +10,23 @@ public class LinkCollectingInformation {
 
     private MinTimeWeakReference<LinkCrawler>              linkCrawler = null;
     private MinTimeWeakReference<LinkChecker<CrawledLink>> linkChecker = null;
+    private final long                                     id;
 
-    public LinkCollectingInformation(LinkCrawler lc, LinkChecker<CrawledLink> lch) {
+    public long getCollectingID() {
+        return id;
+    }
+
+    public LinkCollectingInformation(LinkCrawler lc, LinkChecker<CrawledLink> lch, LinkCollector linkCollector) {
         this.setLinkCrawler(lc);
         this.setLinkChecker(lch);
+        this.id = linkCollector.getCollectingID();
     }
 
     public LinkCrawler getLinkCrawler() {
         MinTimeWeakReference<LinkCrawler> lCopy = this.linkCrawler;
-        if (lCopy == null) return null;
+        if (lCopy == null) {
+            return null;
+        }
         LinkCrawler ret = lCopy.get();
         if (ret == null) {
             linkCrawler = null;
@@ -37,7 +45,9 @@ public class LinkCollectingInformation {
 
     public LinkChecker<CrawledLink> getLinkChecker() {
         MinTimeWeakReference<LinkChecker<CrawledLink>> lCopy = this.linkChecker;
-        if (lCopy == null) return null;
+        if (lCopy == null) {
+            return null;
+        }
         LinkChecker<CrawledLink> ret = lCopy.get();
         if (ret == null) {
             linkChecker = null;
