@@ -116,13 +116,13 @@ public class DocsGoogleCom extends PluginForHost {
         if (filename == null) {
             filename = br.getRegex("\"filename\":\"([^\"]+)\",").getMatch(0);
         }
-        String size = br.getRegex("\"sizeInBytes\":(\\d+),").getMatch(0);
+        final String size = br.getRegex("\"sizeInBytes\":(\\d+),").getMatch(0);
         if (filename == null) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-
         link.setName(filename.trim());
         if (size != null) {
+            link.setVerifiedFileSize(Long.parseLong(size));
             link.setDownloadSize(SizeFormatter.getSize(size));
         }
         return AvailableStatus.TRUE;
@@ -132,41 +132,45 @@ public class DocsGoogleCom extends PluginForHost {
     public void handleFree(final DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
         br.setFollowRedirects(false);
-        String dllink;
+        String dllink = null;
+        String streamLink = null;
         /* Download not possible ? Download stream! */
         final String stream_map = br.getRegex("\"fmt_stream_map\":\"(.*?)\"").getMatch(0);
         if (stream_map != null) {
             final String[] links = stream_map.split("\\|");
-            dllink = links[links.length - 1];
-            dllink = unescape(dllink);
-        } else {
-            br.getPage("https://docs.google.com/uc?id=" + getID(downloadLink) + "&export=download");
-            if (br.containsHTML("<p class=\"error\\-subcaption\">Too many users have viewed or downloaded this file recently\\. Please try accessing the file again later\\.")) {
-                // so its not possible to download at this time.
-                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Download not possible at this point in time.", 60 * 60 * 1000);
-            }
-            dllink = br.getRedirectLocation();
-            if (dllink == null) {
-                dllink = br.getRegex("href=\"([^\"]+)\">Download anyway</a>").getMatch(0);
-                if (dllink == null) {
-                    dllink = br.getRegex("href=\"(/uc\\?export=download[^\"]+)\">").getMatch(0);
-                    if (dllink == null) {
-                        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                    }
-                }
-                br.getPage(HTMLEntities.unhtmlentities(dllink));
-                dllink = br.getRedirectLocation();
-                if (dllink == null) {
-                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                }
-            }
+            streamLink = links[links.length - 1];
+            streamLink = unescape(streamLink);
         }
 
+        br.getPage("https://docs.google.com/uc?id=" + getID(downloadLink) + "&export=download");
+        if (br.containsHTML("<p class=\"error\\-subcaption\">Too many users have viewed or downloaded this file recently\\. Please try accessing the file again later\\.")) {
+            // so its not possible to download at this time.
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Download not possible at this point in time.", 60 * 60 * 1000);
+        }
+        dllink = br.getRedirectLocation();
+        if (dllink == null) {
+            dllink = br.getRegex("href=\"([^\"]+)\">Download anyway</a>").getMatch(0);
+            if (dllink == null) {
+                dllink = br.getRegex("href=\"(/uc\\?export=download[^\"]+)\">").getMatch(0);
+                if (dllink != null) {
+                    dllink = HTMLEntities.unhtmlentities(dllink);
+                }
+            } else {
+                br.getPage(HTMLEntities.unhtmlentities(dllink));
+                dllink = br.getRedirectLocation();
+            }
+        }
+        if (dllink == null && streamLink == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        if (dllink == null) {
+            dllink = streamLink;
+        }
         int maxChunks = 0;
         if (downloadLink.getBooleanProperty(DocsGoogleCom.NOCHUNKS, false)) {
             maxChunks = 1;
         }
-
+        br.setFollowRedirects(true);
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, maxChunks);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
