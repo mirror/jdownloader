@@ -135,6 +135,12 @@ public class DreamAmateursCom extends PluginForDecrypt {
             logger.info("Link offline: " + parameter);
             return decryptedLinks;
         }
+        externID = br.getRegex("\"(http://(www\\.)?xxxhdd\\.com/embed/\\d+)\"").getMatch(0);
+        if (externID != null) {
+            final DownloadLink dl = createDownloadlink(externID);
+            decryptedLinks.add(dl);
+            return decryptedLinks;
+        }
         if (externID == null) {
             logger.warning("Decrypter broken for link: " + parameter);
             return null;

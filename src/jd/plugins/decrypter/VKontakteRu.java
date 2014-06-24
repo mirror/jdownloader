@@ -93,6 +93,7 @@ public class VKontakteRu extends PluginForDecrypt {
     private static final String     PATTERN_WALL_POST_LINK               = "https?://(www\\.)?vk\\.com/wall\\-\\d+_\\d+";
     private static final String     PATTERN_PUBLIC_LINK                  = "https?://(www\\.)?vk\\.com/public\\d+";
     private static final String     PATTERN_CLUB_LINK                    = "https?://(www\\.)?vk\\.com/club\\d+";
+    private static final String     PATTERN_EVENT_LINK                   = "https?://(www\\.)?vk\\.com/event\\d+";
     private static final String     PATTERN_ID_LINK                      = "https?://(www\\.)?vk\\.com/id\\d+";
 
     /* Some html text patterns */
@@ -166,7 +167,7 @@ public class VKontakteRu extends PluginForDecrypt {
 
                 /* Replace section start */
                 String newLink = CRYPTEDLINK_FUNCTIONAL;
-                if (CRYPTEDLINK_FUNCTIONAL.matches(PATTERN_PUBLIC_LINK) || CRYPTEDLINK_FUNCTIONAL.matches(PATTERN_CLUB_LINK)) {
+                if (CRYPTEDLINK_FUNCTIONAL.matches(PATTERN_PUBLIC_LINK) || CRYPTEDLINK_FUNCTIONAL.matches(PATTERN_CLUB_LINK) || CRYPTEDLINK_FUNCTIONAL.matches(PATTERN_EVENT_LINK)) {
                     // group and club links --> wall links
                     newLink = MAINPAGE + "/wall-" + new Regex(CRYPTEDLINK_FUNCTIONAL, "((\\-)?\\d+)$").getMatch(0);
                 } else if (CRYPTEDLINK_FUNCTIONAL.matches(PATTERN_ID_LINK)) {

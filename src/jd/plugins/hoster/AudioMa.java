@@ -44,11 +44,19 @@ public class AudioMa extends PluginForHost {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         br.getPage(link.getDownloadURL());
-        if (br.containsHTML(">Page not found<")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (br.containsHTML(">Page not found<")) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
         String filename = br.getRegex("<aside class=\"span2\">[\t\n\r ]+<h1>([^<>\"]*?)</h1>").getMatch(0);
-        if (filename == null) filename = br.getRegex("<title>([^<>\"]*?) \\- download and stream \\| AudioMack</title>").getMatch(0);
-        if (filename == null) filename = br.getRegex("name=\"twitter:title\" content=\"([^<>\"]*?)\"").getMatch(0);
-        if (filename == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (filename == null) {
+            filename = br.getRegex("<title>([^<>\"]*?) \\- download and stream \\| AudioMack</title>").getMatch(0);
+        }
+        if (filename == null) {
+            filename = br.getRegex("name=\"twitter:title\" content=\"([^<>\"]*?)\"").getMatch(0);
+        }
+        if (filename == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         link.setFinalFileName(Encoding.htmlDecode(filename.trim()) + ".mp3");
         return AvailableStatus.TRUE;
     }
@@ -57,11 +65,17 @@ public class AudioMa extends PluginForHost {
     public void handleFree(DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
         /* download */
-        String dllink = br.getRegex("\"(http://[^<>\"]*?)\" onClick=\"_gaq\\.push\\(\\[\\'_trackEvent\\', \\'Downloads\\'").getMatch(0);
+        String dllink = br.getRegex("\"(http://music\\.audiomack\\.com/[^<>\"]*?)\"").getMatch(0);
         /* stream */
-        if (dllink == null) dllink = br.getRegex("id=\"audiomack\\-embed\"[\t\n\r ]+src=\"(http://[^<>\"]*?)\"").getMatch(0);
-        if (dllink == null) dllink = br.getRegex("\"(http://music\\.audiomack\\.com/tracks/[a-z0-9\\-_]+/[^<>\"]*?)\"").getMatch(0);
-        if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (dllink == null) {
+            dllink = br.getRegex("id=\"audiomack\\-embed\"[\t\n\r ]+src=\"(http://[^<>\"]*?)\"").getMatch(0);
+        }
+        if (dllink == null) {
+            dllink = br.getRegex("\"(http://music\\.audiomack\\.com/tracks/[a-z0-9\\-_]+/[^<>\"]*?)\"").getMatch(0);
+        }
+        if (dllink == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 0);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();

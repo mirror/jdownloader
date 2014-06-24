@@ -21,6 +21,7 @@ import java.util.Random;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
+import jd.http.Browser.BrowserException;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.plugins.CryptedLink;
@@ -41,11 +42,30 @@ public class MinhatecaComBr extends PluginForDecrypt {
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         final String parameter = param.toString();
-        br.getPage(parameter);
+        try {
+            br.getPage(parameter);
+        } catch (final BrowserException e) {
+            final DownloadLink dl = createDownloadlink("http://minhatecadecrypted.com.br/" + System.currentTimeMillis() + new Random().nextInt(1000000));
+            dl.setFinalFileName(parameter);
+            dl.setProperty("mainlink", parameter);
+            dl.setProperty("offline", true);
+            decryptedLinks.add(dl);
+            return decryptedLinks;
+        }
 
         /* empty folder | no folder */
         if (br.containsHTML("class=\"noFile\"") || !br.containsHTML("name=\"FolderId\"|id=\"fileDetails\"")) {
             final DownloadLink dl = createDownloadlink("http://minhatecadecrypted.com.br/" + System.currentTimeMillis() + new Random().nextInt(1000000));
+            dl.setFinalFileName(parameter);
+            dl.setProperty("mainlink", parameter);
+            dl.setProperty("offline", true);
+            decryptedLinks.add(dl);
+            return decryptedLinks;
+        }
+        /* Password protected link --> Not yet supported */
+        if (br.containsHTML(">Digite senha:</label>")) {
+            final DownloadLink dl = createDownloadlink("http://minhatecadecrypted.com.br/" + System.currentTimeMillis() + new Random().nextInt(1000000));
+            dl.setFinalFileName(parameter);
             dl.setProperty("mainlink", parameter);
             dl.setProperty("offline", true);
             decryptedLinks.add(dl);
@@ -75,7 +95,7 @@ public class MinhatecaComBr extends PluginForDecrypt {
 
             decryptedLinks.add(dl);
         } else {
-            final String fpName = br.getRegex("class=\"T_selected\">([^<>\"]*?)</span>").getMatch(0);
+            final String fpName = br.getRegex("class=\"T_selected\">([^<>\"]*?)<").getMatch(0);
             final String[] linkinfo = br.getRegex("<div class=\"fileinfo tab\">(.*?)<span class=\"filedescription\"").getColumn(0);
             if (linkinfo == null || linkinfo.length == 0 || fpName == null) {
                 logger.warning("Decrypter broken for link: " + parameter);
