@@ -39,7 +39,7 @@ import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
 import jd.utils.JDUtilities;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "facebook.com" }, urls = { "https?://(www\\.)?(on\\.fb\\.me/[A-Za-z0-9]+\\+?|facebook\\.com/((media/set/\\?set=|[^<>\"/]*?/media_set\\?set=)a\\.\\d+\\.\\d+\\.\\d+|media/set/\\?set=vb\\.\\d+|[a-z0-9\\.]+/photos(_(of|all|albums|stream))?|profile\\.php\\?id=\\d+\\&sk=photos\\&collection_token=[A-Z0-9%]+))" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "facebook.com" }, urls = { "https?://(www\\.)?(on\\.fb\\.me/[A-Za-z0-9]+\\+?|facebook\\.com/((media/set/\\?set=|[^<>\"/]*?/media_set\\?set=)o?a[0-9\\.]+|media/set/\\?set=vb\\.\\d+|[a-z0-9\\.]+/photos(_(of|all|albums|stream))?|profile\\.php\\?id=\\d+\\&sk=photos\\&collection_token=[A-Z0-9%]+))" }, flags = { 0 })
 public class FaceBookComGallery extends PluginForDecrypt {
 
     public FaceBookComGallery(PluginWrapper wrapper) {
@@ -53,7 +53,7 @@ public class FaceBookComGallery extends PluginForDecrypt {
     private static final String   SINGLEPHOTO                    = "http(s)?://(www\\.)?facebook\\.com/photo\\.php\\?fbid=\\d+";
     private int                   DIALOGRETURN                   = -1;
     private static final String   FASTLINKCHECK_PICTURES         = "FASTLINKCHECK_PICTURES";
-    private static final String   TYPE_SET_LINK_PHOTO            = "http(s)?://(www\\.)?facebook\\.com/(media/set/\\?set=|[^<>\"/]*?/media_set\\?set=)a\\.\\d+\\.\\d+\\.\\d+";
+    private static final String   TYPE_SET_LINK_PHOTO            = "http(s)?://(www\\.)?facebook\\.com/(media/set/\\?set=|[^<>\"/]*?/media_set\\?set=)o?a[0-9\\.]+";
     private static final String   TYPE_SET_LINK_VIDEO            = "https?://(www\\.)?facebook\\.com/media/set/\\?set=vb\\.\\d+";
     private static final String   TYPE_ALBUMS_LINK               = "https?://(www\\.)?facebook\\.com/[A-Za-z0-9\\.]+/photos_albums";
     private static final String   TYPE_PHOTOS_OF_LINK            = "https?://(www\\.)?facebook\\.com/[A-Za-z0-9\\.]+/photos_of";
