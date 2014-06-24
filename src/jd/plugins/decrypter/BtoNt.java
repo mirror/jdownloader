@@ -57,22 +57,41 @@ public class BtoNt extends PluginForDecrypt {
         // Access chapter one
         br.getPage(url + "/1");
 
-        if (br.containsHTML("<div style=\"text-align:center;\"><img src=\"http://www.batoto.net/images/404-Error.jpg\" alt=\"File not found\" /></div>")) {
+        if (br.containsHTML("<div style=\"text-align:center;\"><img src=\"http://www.batoto.net/images/404-Error\\.jpg\" alt=\"File not found\" /></div>")) {
             logger.warning("Invalid link or release not yet available, check in your browser: " + parameter);
             return decryptedLinks;
+        } else if (br.containsHTML(">This chapter has been removed due to infringement\\.<")) {
+            logger.info("Offline content: " + parameter);
+            return decryptedLinks;
         }
+
         // We get the title
         String[] t = new String[6];
         // works for individual pages, with and without volume, and all in one page
-        String reg = "<title>(.*?) - (vol ([\\d\\.]+) )?(ch ([\\d\\.]+[a-z]*) )(Page [\\d\\.]+ )?\\|[^<]+</title";
+        String reg = "<title>(.*?) - (vol ([\\d\\.]+) )?(ch ([\\d\\.v\\-]+[a-z]*) )(Page [\\d\\.]+ )?\\|[^<]+</title";
         t = br.getRegex(reg).getRow(0);
         if (t == null) {
-            logger.warning("Decrypter broken for: " + parameter + " @ t");
-            return null;
+            // some times no chapter or page is shown, this is a bug on there side.. we can then construct ourselves.
+            String titties = br.getRegex("<title>(.*?) - (vol ([\\d\\.]+) )?(ch ([\\d\\.v\\-]+[a-z]*) )?(Page [\\d\\.]+ )?\\|[^<]+</title").getMatch(0);
+            String chapter = br.getRegex("selected=\"selected\">Ch\\.([\\d\\.v\\-]+[\\: a-z]*)</option>").getMatch(0);
+            if (titties != null && chapter != null) {
+                t = new String[6];
+                t[0] = titties;
+                t[4] = chapter;
+            }
+            if (t == null) {
+                logger.warning("Decrypter broken for: " + parameter + " @ t");
+                return null;
+            }
         }
         final FilePackage fp = FilePackage.getInstance();
 
         DecimalFormat df_title = new DecimalFormat("000");
+        // some rudimentary cleanup
+        if (t[4] != null) {
+            t[4] = t[4].replaceAll("[\\-\\: ]", "");
+        }
+
         // decimal place fks with formatting!
         if (t[2] != null && (t[2].contains(".") || t[2].matches(".+[a-z]$"))) {
             String[] s = new Regex(t[2], "(\\d+)(\\.\\d+)?([a-z]*)").getRow(0);
@@ -80,8 +99,8 @@ public class BtoNt extends PluginForDecrypt {
             t[2] = df_title.format(Integer.parseInt(s[0])) + (s[1] != null ? s[1] : "") + (s[2] != null ? s[2] : "");
         } else if (t[2] != null) {
             t[2] = df_title.format(Integer.parseInt(t[2]));
-        } else if (t[4] != null && (t[4].contains(".") || t[4].matches(".+[a-z]$"))) {
-            String[] s = new Regex(t[4], "(\\d+)(\\.\\d+)?([a-z]*)").getRow(0);
+        } else if (t[4] != null && (t[4].matches("(\\d+)([\\.v]+\\d+)?([A-Za-z]*)"))) {
+            String[] s = new Regex(t[4], "(\\d+)([\\.v]+\\d+)?([A-Za-z]*)").getRow(0);
             fp.setProperty("CLEANUP_NAME", false);
             t[4] = df_title.format(Integer.parseInt(s[0])) + (s[1] != null ? s[1] : "") + (s[2] != null ? s[2] : "");
         } else if (t[4] != null) {
