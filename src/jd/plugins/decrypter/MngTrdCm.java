@@ -40,14 +40,16 @@ public class MngTrdCm extends PluginForDecrypt {
         br.setFollowRedirects(false);
         br.getPage(parameter);
         // return error message for invalid url
-        if (br.containsHTML(">Error \\- Page Not Found<|This series is on our <a")) {
+        if (br.containsHTML(">Error \\- Page Not Found<|This series is on our <a") || br.getHttpConnection().getResponseCode() == 404) {
             logger.warning("Invalid URL: " + parameter);
             return decryptedLinks;
         }
 
         // Set package name and prevent null field from creating plugin errors
         String fpName = br.getRegex("<title>Manga Traders \\- (.*?)</title>").getMatch(0);
-        if (fpName == null) fpName = "Untitled";
+        if (fpName == null) {
+            fpName = "Untitled";
+        }
         FilePackage fp = FilePackage.getInstance();
         fp.setName(fpName);
 
@@ -56,14 +58,17 @@ public class MngTrdCm extends PluginForDecrypt {
         String[] pages = br.getRegex("<a href=\"(/manga/series/\\d+/page/\\d+/)\">").getColumn(0);
 
         // Catch first page for links
-        if (links == null || links.length == 0) links = br.getRegex("\"/download/file/(\\d+)?\"").getColumn(0);
+        if (links == null || links.length == 0) {
+            links = br.getRegex("\"/download/file/(\\d+)?\"").getColumn(0);
+        }
         if ((links == null || links.length == 0) && (pages == null || pages.length == 0)) {
             logger.warning("Decrypter broken for link: " + parameter);
             return null;
         }
         if (links != null && links.length != 0) {
-            for (String dl : links)
+            for (String dl : links) {
                 decryptedLinks.add(createDownloadlink("http://www.mangatraders.com/download/file/" + dl));
+            }
         }
 
         // Catch for the first page and links within subsequence pages. Instead of loading back into the plugin as this creates multiple
@@ -73,14 +78,17 @@ public class MngTrdCm extends PluginForDecrypt {
             for (String page : pages) {
                 br.getPage(page);
                 links = br.getRegex("<a href=\"/view/file/(\\d+)\" class=\"link20\">").getColumn(0);
-                if (links == null || links.length == 0) links = br.getRegex("\"/download/file/(\\d+)?\"").getColumn(0);
+                if (links == null || links.length == 0) {
+                    links = br.getRegex("\"/download/file/(\\d+)?\"").getColumn(0);
+                }
                 if ((links == null || links.length == 0)) {
                     logger.warning("Decrypter broken for link: " + parameter);
                     return null;
                 }
                 if (links != null && links.length != 0) {
-                    for (String dl : links)
+                    for (String dl : links) {
                         decryptedLinks.add(createDownloadlink("http://www.mangatraders.com/download/file/" + dl));
+                    }
                 }
             }
         }
