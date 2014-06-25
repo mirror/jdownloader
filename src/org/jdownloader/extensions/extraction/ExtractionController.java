@@ -43,9 +43,9 @@ import org.jdownloader.settings.IfFileExistsAction;
 
 /**
  * Responsible for the correct procedure of the extraction process. Contains one IExtraction instance.
- * 
+ *
  * @author botzi
- * 
+ *
  */
 public class ExtractionController extends QueueAction<Void, RuntimeException> {
     private List<String>                     passwordList;
@@ -100,7 +100,9 @@ public class ExtractionController extends QueueAction<Void, RuntimeException> {
     }
 
     public FileSignatures getFileSignatures() {
-        if (fileSignatures == null) fileSignatures = new FileSignatures();
+        if (fileSignatures == null) {
+            fileSignatures = new FileSignatures();
+        }
         return fileSignatures;
     }
 
@@ -144,7 +146,9 @@ public class ExtractionController extends QueueAction<Void, RuntimeException> {
 
     private boolean checkPassword(String pw, boolean optimized) throws ExtractionException {
         logger.info("Check Password: " + pw);
-        if (StringUtils.isEmpty(pw)) return false;
+        if (StringUtils.isEmpty(pw)) {
+            return false;
+        }
 
         fireEvent(ExtractionEvent.Type.PASSWORT_CRACKING);
         return extractor.findPassword(this, pw, optimized);
@@ -193,7 +197,9 @@ public class ExtractionController extends QueueAction<Void, RuntimeException> {
                 return null;
             }
 
-            if (gotKilled()) return null;
+            if (gotKilled()) {
+                return null;
+            }
             crashLog.write("Prepare");
             if (extractor.prepare()) {
                 extractToFolder = extension.getFinalExtractToFolder(archive);
@@ -215,14 +221,20 @@ public class ExtractionController extends QueueAction<Void, RuntimeException> {
                         passwordList.addAll(archive.getFactory().getGuessedPasswordList(archive));
                         passwordList.add(archive.getName());
                         java.util.List<String> pwList = extractor.config.getPasswordList();
-                        if (pwList == null) pwList = new ArrayList<String>();
+                        if (pwList == null) {
+                            pwList = new ArrayList<String>();
+                        }
                         passwordList.addAll(pwList);
                         fireEvent(ExtractionEvent.Type.START_CRACK_PASSWORD);
                         logger.info("Start password finding for " + archive);
                         String correctPW = null;
                         for (String password : passwordList) {
-                            if (password == null) continue;
-                            if (gotKilled()) return null;
+                            if (password == null) {
+                                continue;
+                            }
+                            if (gotKilled()) {
+                                return null;
+                            }
                             crashLog.write("Try Password: " + password);
                             if (checkPassword(password, extension.getSettings().isPasswordFindOptimizationEnabled())) {
                                 correctPW = password;
@@ -246,7 +258,9 @@ public class ExtractionController extends QueueAction<Void, RuntimeException> {
                             fireEvent(ExtractionEvent.Type.PASSWORD_NEEDED_TO_CONTINUE);
                             crashLog.write("Ask for password");
                             logger.info("Found no password in passwordlist " + archive);
-                            if (gotKilled()) return null;
+                            if (gotKilled()) {
+                                return null;
+                            }
                             if (!checkPassword(archive.getFinalPassword(), false)) {
                                 fireEvent(ExtractionEvent.Type.EXTRACTION_FAILED);
                                 logger.info("No password found for " + archive);
@@ -319,16 +333,24 @@ public class ExtractionController extends QueueAction<Void, RuntimeException> {
                         extractor.extract(this);
                     } finally {
                         crashLog.write("Extractor Returned");
-                        if (timer != null) timer.cancel(false);
-                        if (scheduler != null) scheduler.shutdown();
+                        if (timer != null) {
+                            timer.cancel(false);
+                        }
+                        if (scheduler != null) {
+                            scheduler.shutdown();
+                        }
                         extractor.close();
-                        if (extractor.getLastAccessedArchiveFile() != null) crashLog.write("Last used File: " + extractor.getLastAccessedArchiveFile());
+                        if (extractor.getLastAccessedArchiveFile() != null) {
+                            crashLog.write("Last used File: " + extractor.getLastAccessedArchiveFile());
+                        }
                         fireEvent(ExtractionEvent.Type.EXTRACTING);
                     }
                 } finally {
                     DownloadWatchDog.getInstance().getSession().getDiskSpaceManager().free(extractReservation, this);
                 }
-                if (gotKilled()) { return null; }
+                if (gotKilled()) {
+                    return null;
+                }
                 if (extractor.getException() != null) {
                     exception = extractor.getException();
                     logger.log(exception);
@@ -340,7 +362,7 @@ public class ExtractionController extends QueueAction<Void, RuntimeException> {
                 crashLog.write("ExitCode: " + archive.getExitCode());
                 switch (archive.getExitCode()) {
                 case ExtractionControllerConstants.EXIT_CODE_SUCCESS:
-                    logger.info("Unpacking successful for " + archive + " interrupted: " + archive.getGotInterrupted());
+                    logger.info("Unpacking successful for " + archive);
                     archive.getSettings().setExtractionInfo(new ExtractionInfo(getExtractToFolder(), archive));
                     crashLog.write("Info: \r\n" + JSonStorage.serializeToJson(new ExtractionInfo(getExtractToFolder(), archive)));
                     crashLog.write("Successful");
@@ -446,7 +468,7 @@ public class ExtractionController extends QueueAction<Void, RuntimeException> {
 
     /**
      * Returns a thrown exception.
-     * 
+     *
      * @return The thrown exception.
      */
     public Exception getException() {
@@ -454,9 +476,9 @@ public class ExtractionController extends QueueAction<Void, RuntimeException> {
     }
 
     /**
-     * 
+     *
      * Returns the current password finding process.
-     * 
+     *
      * @return
      */
     public int getCrackProgress() {
@@ -465,7 +487,7 @@ public class ExtractionController extends QueueAction<Void, RuntimeException> {
 
     /**
      * Gets the passwordlist size
-     * 
+     *
      * @return
      */
     public int getPasswordListSize() {
@@ -474,7 +496,7 @@ public class ExtractionController extends QueueAction<Void, RuntimeException> {
 
     /**
      * Should the archives be deleted after extracting.
-     * 
+     *
      * @param deleteOption
      */
     void setRemoveAfterExtract(FileCreationManager.DeleteOption deleteOption) {
@@ -490,7 +512,7 @@ public class ExtractionController extends QueueAction<Void, RuntimeException> {
 
     /**
      * Returns the {@link Archive}.
-     * 
+     *
      * @return
      */
     public Archive getArchiv() {
@@ -499,7 +521,7 @@ public class ExtractionController extends QueueAction<Void, RuntimeException> {
 
     /**
      * Sets a exception that occurs during unpacking.
-     * 
+     *
      * @param e
      */
     public void setExeption(Exception e) {
@@ -538,8 +560,12 @@ public class ExtractionController extends QueueAction<Void, RuntimeException> {
     }
 
     public void setCurrentActiveItem(Item item) {
-        if (currentActiveItem == item) return;
-        if (currentActiveItem != null && item != null && StringUtils.equals(currentActiveItem.getPath(), item.getPath())) return;
+        if (currentActiveItem == item) {
+            return;
+        }
+        if (currentActiveItem != null && item != null && StringUtils.equals(currentActiveItem.getPath(), item.getPath())) {
+            return;
+        }
         this.currentActiveItem = item;
         fireEvent(ExtractionEvent.Type.ACTIVE_ITEM);
     }
