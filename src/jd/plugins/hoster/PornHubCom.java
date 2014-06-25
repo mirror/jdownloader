@@ -52,7 +52,9 @@ public class PornHubCom extends PluginForHost {
     @Override
     public void handleFree(final DownloadLink link) throws Exception {
         requestVideo(link);
-        if (dlUrl == null) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
+        if (dlUrl == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         dl = jd.plugins.BrowserAdapter.openDownload(br, link, dlUrl, true, 0);
         if (dl.getConnection().getContentType().contains("html")) {
             dl.getConnection().disconnect();
@@ -96,44 +98,64 @@ public class PornHubCom extends PluginForHost {
         br.getPage(downloadLink.getDownloadURL());
         // Convert embed links to normal links
         if (downloadLink.getDownloadURL().matches("http://(www\\.)?pornhub\\.com/embed_player\\.php\\?id=\\d+")) {
-            if (br.containsHTML("No htmlCode read") || br.containsHTML("flash/novideo\\.flv")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-            final String newLink = br.getRegex("<link_url>(http://(www\\.)?pornhub\\.com/view_video\\.php\\?viewkey=\\d+)</link_url>").getMatch(0);
-            if (newLink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            if (br.containsHTML("No htmlCode read") || br.containsHTML("flash/novideo\\.flv")) {
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            }
+            final String newLink = br.getRegex("<link_url>(http://(www\\.)?pornhub\\.com/view_video\\.php\\?viewkey=[a-f0-9]+)</link_url>").getMatch(0);
+            if (newLink == null) {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
             downloadLink.setUrlDownload(newLink);
             br.getPage(downloadLink.getDownloadURL());
         }
-        if (br.getURL().equals("http://www.pornhub.com/") || !br.containsHTML("\\.swf")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (br.getURL().equals("http://www.pornhub.com/") || !br.containsHTML("\\.swf")) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
 
         String file_name = br.getRegex("<title>([^<>]*?) \\- Pornhub\\.com</title>").getMatch(0);
-        if (file_name == null) file_name = br.getRegex("\"section_title overflow\\-title overflow\\-title\\-width\">([^<>]*?)</h1>").getMatch(0);
+        if (file_name == null) {
+            file_name = br.getRegex("\"section_title overflow\\-title overflow\\-title\\-width\">([^<>]*?)</h1>").getMatch(0);
+        }
 
         getVideoLink(downloadLink.getDownloadURL());
 
-        if (file_name == null || dlUrl == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (file_name == null || dlUrl == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         downloadLink.setFinalFileName(file_name.replace("\"", "'") + ".mp4");
         return AvailableStatus.TRUE;
     }
 
     private void getVideoLink(String dllink) throws Exception {
         String flashVars = br.getRegex("var flashvars = \\{([^\\}]+)").getMatch(0);
-        if (flashVars == null) return;
+        if (flashVars == null) {
+            return;
+        }
         flashVars = flashVars.replaceAll("\"", "");
         Map<String, String> values = new HashMap<String, String>();
 
         for (String s : flashVars.split(",")) {
-            if (!s.matches(".+:.+")) continue;
+            if (!s.matches(".+:.+")) {
+                continue;
+            }
             values.put(s.split(":")[0], Encoding.htmlDecode(s.split(":", 2)[1]));
         }
 
-        if (values == null || values.size() < 1) return;
+        if (values == null || values.size() < 1) {
+            return;
+        }
         dlUrl = values.get("video_url");
         if (dlUrl == null) {
             int q = 0;
             for (Entry<String, String> next : values.entrySet()) {
                 String key = next.getKey();
-                if (!(key.startsWith("quality_"))) continue;
+                if (!(key.startsWith("quality_"))) {
+                    continue;
+                }
                 String quality = new Regex(key, "quality_(\\d+)p").getMatch(0);
-                if (quality == null) continue;
+                if (quality == null) {
+                    continue;
+                }
                 if (Integer.parseInt(quality) > q) {
                     q = Integer.parseInt(quality);
                     dlUrl = values.get("quality_" + q + "p");
@@ -159,13 +181,17 @@ public class PornHubCom extends PluginForHost {
 
     /**
      * AES CTR(Counter) Mode for Java ported from AES-CTR-Mode implementation in JavaScript by Chris Veness
-     * 
+     *
      * @see <a
      *      href="http://csrc.nist.gov/publications/nistpubs/800-38a/sp800-38a.pdf">"Recommendation for Block Cipher Modes of Operation - Methods and Techniques"</a>
      */
     private String AESCounterModeDecrypt(String cipherText, String key, int nBits) throws Exception {
-        if (!(nBits == 128 || nBits == 192 || nBits == 256)) return "Error: Must be a key mode of either 128, 192, 256 bits";
-        if (cipherText == null || key == null) return "Error: cipher and/or key equals null";
+        if (!(nBits == 128 || nBits == 192 || nBits == 256)) {
+            return "Error: Must be a key mode of either 128, 192, 256 bits";
+        }
+        if (cipherText == null || key == null) {
+            return "Error: cipher and/or key equals null";
+        }
         String res = null;
         nBits = nBits / 8;
         byte[] data = Base64.decode(cipherText.toCharArray());
@@ -189,7 +215,9 @@ public class PornHubCom extends PluginForHost {
             cipher.init(Cipher.ENCRYPT_MODE, secretKey);
             keyBytes = cipher.doFinal(keyBytes);
         } catch (InvalidKeyException e) {
-            if (e.getMessage().contains("Illegal key size")) getPolicyFiles();
+            if (e.getMessage().contains("Illegal key size")) {
+                getPolicyFiles();
+            }
             throw new PluginException(LinkStatus.ERROR_FATAL, "Unlimited Strength JCE Policy Files needed!");
         } catch (Throwable e1) {
             return null;
@@ -200,8 +228,12 @@ public class PornHubCom extends PluginForHost {
 
     private class BouncyCastleAESCounterModeDecrypt {
         private String decrypt(String cipherText, String key, int nBits) throws Exception {
-            if (!(nBits == 128 || nBits == 192 || nBits == 256)) return "Error: Must be a key mode of either 128, 192, 256 bits";
-            if (cipherText == null || key == null) return "Error: cipher and/or key equals null";
+            if (!(nBits == 128 || nBits == 192 || nBits == 256)) {
+                return "Error: Must be a key mode of either 128, 192, 256 bits";
+            }
+            if (cipherText == null || key == null) {
+                return "Error: cipher and/or key equals null";
+            }
             byte[] decrypted;
             nBits = nBits / 8;
             byte[] data = Base64.decode(cipherText.toCharArray());
@@ -214,7 +246,7 @@ public class PornHubCom extends PluginForHost {
             byte[] nonceBytes = Arrays.copyOf(Arrays.copyOf(data, 8), nBits / 2);
             IvParameterSpec nonce = new IvParameterSpec(nonceBytes);
             /* true == encrypt; false == decrypt */
-            cipher.init(true, new org.bouncycastle.crypto.params.ParametersWithIV(new org.bouncycastle.crypto.params.KeyParameter(secretKey.getEncoded()), ((IvParameterSpec) nonce).getIV()));
+            cipher.init(true, new org.bouncycastle.crypto.params.ParametersWithIV(new org.bouncycastle.crypto.params.KeyParameter(secretKey.getEncoded()), nonce.getIV()));
             decrypted = new byte[cipher.getOutputSize(data.length - 8)];
             int decLength = cipher.processBytes(data, 8, data.length - 8, decrypted, 0);
             cipher.doFinal(decrypted, decLength);
