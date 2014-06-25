@@ -2160,18 +2160,20 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
             public void execute(DownloadSession currentSession) {
                 LogSource logger = null;
                 try {
-                    logger = new LogSource("Dummy") {
-
-                        @Override
-                        public synchronized void clear() {
-                        }
-
-                        public synchronized void log(java.util.logging.LogRecord record) {
-                            DownloadWatchDog.this.logger.log(record);
-                        };
-                    };
                     if (singleDownloadController.getLogger() instanceof LogSource) {
                         logger = (LogSource) singleDownloadController.getLogger();
+                    }
+                    if (logger == null) {
+                        logger = new LogSource("Dummy") {
+
+                            @Override
+                            public synchronized void clear() {
+                            }
+
+                            public synchronized void log(java.util.logging.LogRecord record) {
+                                DownloadWatchDog.this.logger.log(record);
+                            };
+                        };
                     }
                     DownloadLinkCandidate candidate = singleDownloadController.getDownloadLinkCandidate();
                     final DownloadLink link = candidate.getLink();
@@ -2182,23 +2184,22 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
                     try {
                         try {
                             result = handleReturnState(logger, singleDownloadController, returnState);
-
                             result.setStartTime(singleDownloadController.getStartTimestamp());
                             result.setFinishTime(returnState.getTimeStamp());
                             setFinalLinkStatus(candidate, result, singleDownloadController);
                             DownloadLinkCandidateHistory existingHistory = currentSession.getHistory(link);
                             if (existingHistory != null && !existingHistory.dettach(candidate, result)) {
-                                logger.severe("Could not detach from History: " + candidate);
+                                DownloadWatchDog.this.logger.severe("Could not detach from History: " + candidate);
                             }
                         } catch (final Throwable e) {
-                            logger.log(e);
+                            DownloadWatchDog.this.logger.log(e);
                         }
                         currentSession.getControllers().remove(singleDownloadController);
                         for (DownloadWatchDogJob job : singleDownloadController.getJobsAfterDetach()) {
                             try {
                                 job.execute(currentSession);
                             } catch (Throwable e) {
-                                logger.log(e);
+                                DownloadWatchDog.this.logger.log(e);
                             }
                         }
                         String cFinal = link.getCustomFinalName();
@@ -2206,7 +2207,9 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
                             try {
                                 candidate.getCachedAccount().getPlugin().move(link, cFinal, null);
                             } catch (Throwable e) {
-                                logger.log(e);
+                                if (logger != null) {
+                                    logger.log(e);
+                                }
                             } finally {
                                 link.setCustomFinalName(null);
                             }
@@ -2222,9 +2225,9 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
                         try {
                             eventSender.fireEvent(new DownloadWatchdogEvent(this, DownloadWatchdogEvent.Type.LINK_STOPPED, singleDownloadController, candidate, result));
                         } catch (final Throwable e) {
-                            logger.log(e);
+                            DownloadWatchDog.this.logger.log(e);
                         }
-                        handleFinalLinkStates(finalLinkStateLinks, currentSession, logger, singleDownloadController);
+                        handleFinalLinkStates(finalLinkStateLinks, currentSession, DownloadWatchDog.this.logger, singleDownloadController);
                     } finally {
                         if (result != null) {
                             // cleanup
@@ -2232,7 +2235,10 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
                         }
                     }
                 } catch (final Throwable e) {
-                    logger.log(e);
+                    DownloadWatchDog.this.logger.log(e);
+                    if (logger != null) {
+                        logger.log(e);
+                    }
                 } finally {
                     if (logger != null) {
                         logger.close();
@@ -3250,13 +3256,16 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
 
                         @Override
                         public void execute(DownloadSession currentSession) {
-                            stateMachine.setStatus(STOPPED_STATE);
-                            latestSession.removeHistory((DownloadLink) null);
-                            latestSession.removeAccountCache(null);
-                            latestSession.clearPluginCache();
-                            latestSession.getActivationRequests().clear();
-                            latestSession.getForcedLinks().clear();
-                            latestSession.setOnFileExistsAction(null, null);
+                            try {
+                                latestSession.removeHistory((DownloadLink) null);
+                                latestSession.removeAccountCache(null);
+                                latestSession.clearPluginCache();
+                                latestSession.getActivationRequests().clear();
+                                latestSession.getForcedLinks().clear();
+                                latestSession.setOnFileExistsAction(null, null);
+                            } finally {
+                                stateMachine.setStatus(STOPPED_STATE);
+                            }
                         }
 
                         @Override

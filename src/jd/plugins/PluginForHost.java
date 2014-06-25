@@ -1146,9 +1146,11 @@ public abstract class PluginForHost extends Plugin {
                         cache.put(prototypeName + pattern.toString(), prototypesplit);
                     }
                 }
-
+                if (fileNameSplit[0].equals(prototypesplit)) {
+                    continue;
+                }
                 if (isHosterManipulatesFilenames() && fileNameSplit[0].length() == prototypesplit.length() && filteredName.equalsIgnoreCase(filterPackageID(prototypesplit))) {
-                    newName = getFixedFileName(originalFilename, originalReplaces, prototypesplit, next.getDefaultPlugin().getFilenameReplaceMap());
+                    newName = getFixedFileName(cache, originalFilename, originalReplaces, prototypesplit, next.getDefaultPlugin().getFilenameReplaceMap());
                     if (newName != null) {
                         String caseFix = fixCase(cache, newName + fileNameSplit[1], prototypeName);
                         if (caseFix != null) {
@@ -1174,30 +1176,60 @@ public abstract class PluginForHost extends Plugin {
         return null;
     }
 
-    protected String getFixedFileName(String originalFilename, char[] originalReplaces, String prototypeName, char[] prototypeReplaces) {
+    protected String getFixedFileName(HashMap<Object, Object> cache, String originalFilename, char[] originalReplaces, String prototypeName, char[] prototypeReplaces) {
         if (originalReplaces.length == 0 && prototypeReplaces.length == 0) {
             /* no replacements available */
             return null;
         }
-        StringBuilder sb = new StringBuilder();
+        final Boolean original = (Boolean) cache.get(originalFilename + new String(originalReplaces));
+        final Boolean prototype = (Boolean) cache.get(prototypeName + new String(prototypeReplaces));
+        if (Boolean.FALSE.equals(original) && Boolean.FALSE.equals(prototype)) {
+            return null;
+        }
+        final ArrayList<Character> foundOriginalReplaces = new ArrayList<Character>(originalReplaces.length);
+        final ArrayList<Character> foundPrototypeReplaces = new ArrayList<Character>(prototypeReplaces.length);
+        if (original == null) {
+            for (int index = 0; index < originalReplaces.length; index++) {
+                if (originalFilename.indexOf(originalReplaces[index]) >= 0) {
+                    foundOriginalReplaces.add(originalReplaces[index]);
+                }
+            }
+        }
+        if (prototype == null) {
+            for (int index = 0; index < prototypeReplaces.length; index++) {
+                if (prototypeName.indexOf(prototypeReplaces[index]) >= 0) {
+                    foundPrototypeReplaces.add(prototypeReplaces[index]);
+                }
+            }
+        }
+        if (original == null && foundOriginalReplaces.size() == 0) {
+            cache.put(originalFilename + new String(originalReplaces), Boolean.FALSE);
+        }
+        if (prototype == null && foundPrototypeReplaces.size() == 0) {
+            cache.put(prototypeName + new String(prototypeReplaces), Boolean.FALSE);
+        }
+        if (foundOriginalReplaces.size() == 0 && foundOriginalReplaces.size() == 0) {
+            return null;
+        }
+        final StringBuilder sb = new StringBuilder();
         mainLoop: for (int i = 0; i < prototypeName.length(); i++) {
             char oC = originalFilename.charAt(i);
             char pC = prototypeName.charAt(i);
             if (Character.toLowerCase(oC) != Character.toLowerCase(pC)) {
-                for (char oCC : originalReplaces) {
+                for (Character oCC : foundOriginalReplaces) {
                     /*
                      * first we check if char from Original is on replacement List, if so, we use char from prototype
                      */
-                    if (oC == oCC) {
+                    if (oC == oCC.charValue()) {
                         sb.append(pC);
                         continue mainLoop;
                     }
                 }
-                for (char pCC : prototypeReplaces) {
+                for (Character pCC : foundPrototypeReplaces) {
                     /*
                      * then we check if char from prototype is on replacement List, if so, we use char from original
                      */
-                    if (pC == pCC) {
+                    if (pC == pCC.charValue()) {
                         sb.append(oC);
                         continue mainLoop;
                     }

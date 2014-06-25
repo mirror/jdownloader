@@ -353,6 +353,7 @@ public class SingleDownloadController extends BrowserSettingsThread implements D
                 handlePlugin.setDownloadLink(downloadLink);
                 handlePlugin.init();
                 try {
+                    processingPlugin.set(handlePlugin);
                     downloadLink.setLivePlugin(handlePlugin);
                     watchDog.localFileCheck(this, new ExceptionRunnable() {
 
@@ -369,7 +370,6 @@ public class SingleDownloadController extends BrowserSettingsThread implements D
                             }
                         }
                     }, null);
-                    processingPlugin.set(handlePlugin);
                     startTimestamp = System.currentTimeMillis();
                     handlePlugin.handle(downloadLink, account);
                 } catch (DeferredRunnableException e) {

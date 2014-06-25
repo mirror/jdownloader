@@ -556,6 +556,7 @@ public abstract class PackageController<PackageType extends AbstractPackageNode<
                             removeaddMap.put(parent, pmap);
                         }
                         pmap.add(child);
+                        newChildren = true;
                     }
                     final Set<Entry<PackageType, List<ChildType>>> eset = removeaddMap.entrySet();
                     final Iterator<Entry<PackageType, List<ChildType>>> it = eset.iterator();
@@ -600,9 +601,13 @@ public abstract class PackageController<PackageType extends AbstractPackageNode<
                         pkg.setCurrentSorter(null);
                         children.addAll(destIndex, elementsToMove);
                     }
-                    final long t = System.currentTimeMillis();
-                    autoFileNameCorrection(children);
-                    System.out.println("autoFileNameCorrection: " + children.size() + " took " + (System.currentTimeMillis() - t) + " ms");
+                    if (newChildren) {
+                        try {
+                            autoFileNameCorrection(children, pkg);
+                        } catch (final Throwable e) {
+                            logger.log(e);
+                        }
+                    }
                     try {
                         pkg.getModifyLock().writeLock();
                         for (final ChildType child : elementsToMove) {
@@ -637,7 +642,7 @@ public abstract class PackageController<PackageType extends AbstractPackageNode<
         }
     }
 
-    protected void autoFileNameCorrection(List<ChildType> pkgchildren) {
+    protected void autoFileNameCorrection(List<ChildType> pkgchildren, PackageType pkg) {
     }
 
     /**

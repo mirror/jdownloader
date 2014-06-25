@@ -91,9 +91,11 @@ public class VKontakteRuHoster extends PluginForHost {
                 throw new PluginException(LinkStatus.ERROR_FATAL, "This document is available only to its owner");
             }
         }
+        br.getHeaders().put("Accept-Encoding", "identity");
         this.dl = jd.plugins.BrowserAdapter.openDownload(this.br, downloadLink, this.FINALLINK, true, this.MAXCHUNKS);
         final URLConnectionAdapter con = this.dl.getConnection();
         if (con.getResponseCode() == 416) {
+            con.disconnect();
             this.logger.info("Resume failed --> Retrying from zero");
             downloadLink.setChunksProgress(null);
             throw new PluginException(LinkStatus.ERROR_RETRY);
@@ -103,11 +105,7 @@ public class VKontakteRuHoster extends PluginForHost {
             this.br.followConnection();
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        try {
-            this.dl.startDownload();
-        } catch (final PluginException e) {
-            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "FATAL server error", 5 * 60 * 1000l);
-        }
+        this.dl.startDownload();
     }
 
     @Override
@@ -237,6 +235,7 @@ public class VKontakteRuHoster extends PluginForHost {
         br2.setFollowRedirects(true);
         URLConnectionAdapter con = null;
         try {
+            br2.getHeaders().put("Accept-Encoding", "identity");
             con = br2.openGetConnection(this.FINALLINK);
             if (!con.getContentType().contains("html")) {
                 downloadLink.setDownloadSize(con.getLongContentLength());
