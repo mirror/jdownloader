@@ -130,7 +130,7 @@ public class ShareOnlineBiz extends PluginForHost {
                     c++;
                 }
                 br.postPage(userProtocol() + "://api.share-online.biz/cgi-bin?q=checklinks&md5=1", sb.toString());
-                String infos[][] = br.getRegex(Pattern.compile("(.*?);([^;]+);(.*?)\\s*?;(\\d+);([0-9a-fA-F]{32})")).getMatches();
+                String infos[][] = br.getRegex(Pattern.compile("(.*?);\\s*?(OK)\\s*?;(.*?)\\s*?;(\\d+);([0-9a-fA-F]{32})")).getMatches();
                 for (DownloadLink dl : links) {
                     String id = getID(dl);
                     int hit = -1;
