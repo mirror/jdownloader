@@ -63,7 +63,9 @@ public class LinkgrabberOverview extends AbstractOverviewPanel<AggregatedCrawler
 
             @Override
             public void valueChanged(ListSelectionEvent e) {
-                if (e == null || e.getValueIsAdjusting() || table.getModel().isTableSelectionClearing()) { return; }
+                if (e == null || e.getValueIsAdjusting() || table.getModel().isTableSelectionClearing()) {
+                    return;
+                }
                 onConfigValueModified(null, null);
             }
         });
@@ -174,9 +176,15 @@ public class LinkgrabberOverview extends AbstractOverviewPanel<AggregatedCrawler
 
             @Override
             public void setData(AggregatedCrawlerNumbers total, AggregatedCrawlerNumbers filtered, AggregatedCrawlerNumbers selected) {
-                if (total != null) setTotal(total.getPackageCount() + "");
-                if (filtered != null) setFiltered(filtered.getPackageCount() + "");
-                if (selected != null) setSelected(selected.getPackageCount() + "");
+                if (total != null) {
+                    setTotal(total.getPackageCount() + "");
+                }
+                if (filtered != null) {
+                    setFiltered(filtered.getPackageCount() + "");
+                }
+                if (selected != null) {
+                    setSelected(selected.getPackageCount() + "");
+                }
             }
 
             @Override
@@ -189,9 +197,15 @@ public class LinkgrabberOverview extends AbstractOverviewPanel<AggregatedCrawler
 
             @Override
             public void setData(AggregatedCrawlerNumbers total, AggregatedCrawlerNumbers filtered, AggregatedCrawlerNumbers selected) {
-                if (total != null) setTotal(total.getTotalBytesString(CFG_GUI.OVERVIEW_PANEL_DOWNLOAD_PANEL_INCLUDE_DISABLED_LINKS.isEnabled()));
-                if (filtered != null) setFiltered(filtered.getTotalBytesString(CFG_GUI.OVERVIEW_PANEL_DOWNLOAD_PANEL_INCLUDE_DISABLED_LINKS.isEnabled()));
-                if (selected != null) setSelected(selected.getTotalBytesString(CFG_GUI.OVERVIEW_PANEL_DOWNLOAD_PANEL_INCLUDE_DISABLED_LINKS.isEnabled()));
+                if (total != null) {
+                    setTotal(total.getTotalBytesString(CFG_GUI.OVERVIEW_PANEL_DOWNLOAD_PANEL_INCLUDE_DISABLED_LINKS.isEnabled()));
+                }
+                if (filtered != null) {
+                    setFiltered(filtered.getTotalBytesString(CFG_GUI.OVERVIEW_PANEL_DOWNLOAD_PANEL_INCLUDE_DISABLED_LINKS.isEnabled()));
+                }
+                if (selected != null) {
+                    setSelected(selected.getTotalBytesString(CFG_GUI.OVERVIEW_PANEL_DOWNLOAD_PANEL_INCLUDE_DISABLED_LINKS.isEnabled()));
+                }
             }
 
             @Override
@@ -205,9 +219,15 @@ public class LinkgrabberOverview extends AbstractOverviewPanel<AggregatedCrawler
 
             @Override
             public void setData(AggregatedCrawlerNumbers total, AggregatedCrawlerNumbers filtered, AggregatedCrawlerNumbers selected) {
-                if (total != null) setTotal(total.getLinkCount() + "");
-                if (filtered != null) setFiltered(filtered.getLinkCount() + "");
-                if (selected != null) setSelected(selected.getLinkCount() + "");
+                if (total != null) {
+                    setTotal(total.getLinkCount() + "");
+                }
+                if (filtered != null) {
+                    setFiltered(filtered.getLinkCount() + "");
+                }
+                if (selected != null) {
+                    setSelected(selected.getLinkCount() + "");
+                }
             }
 
             @Override
@@ -220,9 +240,15 @@ public class LinkgrabberOverview extends AbstractOverviewPanel<AggregatedCrawler
 
             @Override
             public void setData(AggregatedCrawlerNumbers total, AggregatedCrawlerNumbers filtered, AggregatedCrawlerNumbers selected) {
-                if (total != null) setTotal(total.getHoster().size() + "");
-                if (filtered != null) setFiltered(total.getHoster().size() + "");
-                if (selected != null) setSelected(total.getHoster().size() + "");
+                if (total != null) {
+                    setTotal(total.getHoster().size() + "");
+                }
+                if (filtered != null) {
+                    setFiltered(filtered.getHoster().size() + "");
+                }
+                if (selected != null) {
+                    setSelected(selected.getHoster().size() + "");
+                }
             }
 
             @Override
@@ -235,9 +261,15 @@ public class LinkgrabberOverview extends AbstractOverviewPanel<AggregatedCrawler
 
             @Override
             public void setData(AggregatedCrawlerNumbers total, AggregatedCrawlerNumbers filtered, AggregatedCrawlerNumbers selected) {
-                if (total != null) setTotal(total.getStatusOnline() + "");
-                if (filtered != null) setFiltered(filtered.getStatusOnline() + "");
-                if (selected != null) setSelected(selected.getStatusOnline() + "");
+                if (total != null) {
+                    setTotal(total.getStatusOnline() + "");
+                }
+                if (filtered != null) {
+                    setFiltered(filtered.getStatusOnline() + "");
+                }
+                if (selected != null) {
+                    setSelected(selected.getStatusOnline() + "");
+                }
             }
 
             @Override
@@ -250,9 +282,15 @@ public class LinkgrabberOverview extends AbstractOverviewPanel<AggregatedCrawler
 
             @Override
             public void setData(AggregatedCrawlerNumbers total, AggregatedCrawlerNumbers filtered, AggregatedCrawlerNumbers selected) {
-                if (total != null) setTotal(total.getStatusOffline() + "");
-                if (filtered != null) setFiltered(filtered.getStatusOffline() + "");
-                if (selected != null) setSelected(selected.getStatusOffline() + "");
+                if (total != null) {
+                    setTotal(total.getStatusOffline() + "");
+                }
+                if (filtered != null) {
+                    setFiltered(filtered.getStatusOffline() + "");
+                }
+                if (selected != null) {
+                    setSelected(selected.getStatusOffline() + "");
+                }
             }
 
             @Override
@@ -265,9 +303,15 @@ public class LinkgrabberOverview extends AbstractOverviewPanel<AggregatedCrawler
 
             @Override
             public void setData(AggregatedCrawlerNumbers total, AggregatedCrawlerNumbers filtered, AggregatedCrawlerNumbers selected) {
-                if (total != null) setTotal(total.getStatusUnknown() + "");
-                if (filtered != null) setFiltered(filtered.getStatusUnknown() + "");
-                if (selected != null) setSelected(selected.getStatusUnknown() + "");
+                if (total != null) {
+                    setTotal(total.getStatusUnknown() + "");
+                }
+                if (filtered != null) {
+                    setFiltered(filtered.getStatusUnknown() + "");
+                }
+                if (selected != null) {
+                    setSelected(selected.getStatusUnknown() + "");
+                }
             }
 
             @Override
