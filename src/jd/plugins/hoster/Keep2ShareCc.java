@@ -655,8 +655,7 @@ public class Keep2ShareCc extends PluginForHost {
 
     private void handleGeneralServerErrors(final Account account) throws PluginException {
         final String alreadyDownloading = "Your current tariff doesn't allow to download more files then you are downloading now\\.";
-
-        if (account == null && br.containsHTML(alreadyDownloading)) {
+        if ((account == null || account.getBooleanProperty("free", false)) && br.containsHTML(alreadyDownloading)) {
             // found from jdlog://4140408642041 also note: ISP seems to have transparent proxy!
             // should only happen to free.
             // We also only have 1 max free sim currently, if we go higher we need to track current transfers against
