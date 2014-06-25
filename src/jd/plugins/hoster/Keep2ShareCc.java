@@ -51,6 +51,7 @@ import jd.utils.JDUtilities;
 
 import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.formatter.TimeFormatter;
+import org.appwork.utils.net.HTTPHeader;
 import org.appwork.utils.os.CrossSystem;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "keep2share.cc" }, urls = { "http://keep2sharedecrypted\\.cc/file/[a-z0-9]+" }, flags = { 2 })
@@ -87,7 +88,7 @@ public class Keep2ShareCc extends PluginForHost {
         // required for native cloudflare support, without the need to repeat requests.
         try {
             /* not available in old stable */
-            prepBr.setAllowedResponseCodes(new int[] { 503 });
+            prepBr.setAllowedResponseCodes(new int[] { 503, 522 });
         } catch (Throwable e) {
         }
         synchronized (antiDDoSCookies) {
@@ -245,12 +246,12 @@ public class Keep2ShareCc extends PluginForHost {
     @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
-        doFree(downloadLink);
+        doFree(downloadLink, null);
     }
 
-    private void doFree(final DownloadLink downloadLink) throws Exception {
+    private void doFree(final DownloadLink downloadLink, final Account account) throws Exception {
         checkShowFreeDialog();
-        handleGeneralErrors();
+        handleGeneralErrors(account);
         br.setFollowRedirects(false);
         if (br.containsHTML("File size to large\\!<") || br.containsHTML("Only <b>Premium</b> access<br>") || br.containsHTML("only for premium members")) {
             try {
@@ -343,7 +344,7 @@ public class Keep2ShareCc extends PluginForHost {
             logger.info(br.toString());
             dllink = br.getRegex("\"url\":\"(http:[^<>\"]*?)\"").getMatch(0);
             if (dllink == null) {
-                handleGeneralServerErrors();
+                handleGeneralServerErrors(account);
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
             dllink = dllink.replace("\\", "");
@@ -582,11 +583,11 @@ public class Keep2ShareCc extends PluginForHost {
         }
         if (br.containsHTML("class=\"free\">Free</a>")) {
             getPage(link.getDownloadURL());
-            doFree(link);
+            doFree(link, account);
         } else {
             br.setFollowRedirects(false);
             br.getPage(link.getDownloadURL());
-            handleGeneralErrors();
+            handleGeneralErrors(account);
             // Set cookies for other domain if it is changed via redirect
             String currentDomain = MAINPAGE.replace("http://", "");
             String newDomain = null;
@@ -636,14 +637,14 @@ public class Keep2ShareCc extends PluginForHost {
             if (dl.getConnection().getContentType().contains("html")) {
                 logger.warning("The final dllink seems not to be a file!");
                 br.followConnection();
-                handleGeneralServerErrors();
+                handleGeneralServerErrors(account);
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
             dl.startDownload();
         }
     }
 
-    private void handleGeneralErrors() throws PluginException {
+    private void handleGeneralErrors(final Account account) throws PluginException {
         if (br.containsHTML("<title>Keep2Share\\.cc - Error</title>")) {
             if (br.containsHTML("<li>Sorry, our store is not available, please try later")) {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 'Store is temporarily unavailable'", 5 * 60 * 1000l);
@@ -652,8 +653,16 @@ public class Keep2ShareCc extends PluginForHost {
         }
     }
 
-    private void handleGeneralServerErrors() throws PluginException {
-        if (dl.getConnection().getResponseCode() == 404 || br.containsHTML(">Not Found<")) {
+    private void handleGeneralServerErrors(final Account account) throws PluginException {
+        final String alreadyDownloading = "Your current tariff doesn't allow to download more files then you are downloading now\\.";
+
+        if (account == null && br.containsHTML(alreadyDownloading)) {
+            // found from jdlog://4140408642041 also note: ISP seems to have transparent proxy!
+            // should only happen to free.
+            // We also only have 1 max free sim currently, if we go higher we need to track current transfers against
+            // connection_candidate(proxy|direct) IP address, and reduce max sim by one.
+            throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, alreadyDownloading, 10 * 60 * 1000);
+        } else if (dl.getConnection().getResponseCode() == 404 || br.containsHTML(">Not Found<")) {
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 404", 30 * 60 * 1000l);
         }
     }
@@ -716,6 +725,13 @@ public class Keep2ShareCc extends PluginForHost {
     }
 
     private static HashMap<String, String> cloudflareCookies = new HashMap<String, String>();
+
+    /**
+     * because stable is lame!
+     * */
+    public void setBrowser(final Browser ibr) {
+        this.br = ibr;
+    }
 
     /**
      * Gets page <br />
@@ -837,7 +853,7 @@ public class Keep2ShareCc extends PluginForHost {
         final HashMap<String, String> cookies = new HashMap<String, String>();
         if (br.getHttpConnection() != null) {
             final String URL = br.getURL();
-            if (br.getHttpConnection().getHeaderFields("server").contains("cloudflare-nginx")) {
+            if (requestHeadersHasKeyNValueContains("server", "cloudflare-nginx")) {
                 Form cloudflare = br.getFormbyProperty("id", "ChallengeForm");
                 if (cloudflare == null) {
                     cloudflare = br.getFormbyProperty("id", "challenge-form");
@@ -931,6 +947,38 @@ public class Keep2ShareCc extends PluginForHost {
                 antiDDoSCookies.putAll(cookies);
             }
         }
+    }
+
+    /**
+     * 
+     * @author raztoki
+     * */
+    private boolean requestHeadersHasKeyNValueStartsWith(final String k, final String v) {
+        if (k == null || v == null) {
+            return false;
+        }
+        for (HTTPHeader s : br.getRequest().getHeaders()) {
+            if (s.getKey().startsWith(k) && s.getValue().startsWith(v)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    /**
+     * 
+     * @author raztoki
+     * */
+    private boolean requestHeadersHasKeyNValueContains(final String k, final String v) {
+        if (k == null || v == null) {
+            return false;
+        }
+        for (HTTPHeader s : br.getRequest().getHeaders()) {
+            if (s.getKey().contains(k) && s.getValue().contains(v)) {
+                return true;
+            }
+        }
+        return false;
     }
 
     private boolean isJava7nJDStable() {
