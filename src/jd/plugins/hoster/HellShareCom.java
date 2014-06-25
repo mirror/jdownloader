@@ -59,6 +59,37 @@ public class HellShareCom extends PluginForHost {
         }
     }
 
+    private boolean isPremium() {
+        String premiumActive = br.getRegex("<div class=\"icon-timecredit icon\">[\n\t\r]+<h4>Premium account</h4>[\n\t\r]+(.*)[\n\t\r]+<br />[\n\t\r]+<a href=\"/credit/time\">Buy</a>").getMatch(0);
+
+        if (premiumActive == null) {
+            // Premium User
+            premiumActive = br.getRegex("<div class=\"icon-timecredit icon\">[\n\t\r]+<h4>Premium account</h4>[\n\t\r]+(.*)<br />[\n\t\r]+<a href=\"/credit/time\">Buy</a>").getMatch(0);
+        }
+
+        if (premiumActive == null) {
+            // User with Credits
+            premiumActive = br.getRegex("<div class=\"icon-credit icon\">[\n\t\r]+<h4>(.*)</h4>[\n\t\r]+<table>+[\n\t\r]+<tr>[\n\t\r]+<th>Current:</th>[\n\t\r]+<td>(.*?)</td>[\n\t\r]+</tr>").getMatch(0);
+        }
+
+        if (premiumActive == null) {
+            return false;
+        } else if (premiumActive.contains("Inactive")) {
+            return false;
+        } else if (premiumActive.contains("Active")) {
+
+            String validUntil = premiumActive.substring(premiumActive.indexOf(":") + 1);
+            // page only displays full day, so JD fails in the last day of Premium
+            // added time as if the account is Premium until the midnight
+            validUntil += " 23:59:59";
+            return TimeFormatter.getMilliSeconds(validUntil, "dd.MM.yyyy HH:mm:ss", null) > System.currentTimeMillis();
+        } else if (premiumActive.contains("Download credit")) {
+            final String trafficleft = br.getRegex("id=\"info_credit\" class=\"va-middle\">[\n\t\r ]+<strong>(.*?)</strong>").getMatch(0);
+            return trafficleft != null && SizeFormatter.getSize(trafficleft) > 0;
+        }
+        return false;
+    }
+
     @Override
     public AccountInfo fetchAccountInfo(final Account account) throws Exception {
         final AccountInfo ai = new AccountInfo();
@@ -71,7 +102,7 @@ public class HellShareCom extends PluginForHost {
             account.setValid(false);
             return ai;
         }
-        final String hostedFiles = br.getRegex(">Number of your files:</label></th>.*?<td id=\"info_files_counter\"><strong>(\\d+)</strong></td>").getMatch(0);
+        final String hostedFiles = br.getRegex(">Number of your files:</label></th>.*?<td id=\"info_files_counter\">.*?>(\\d+)</").getMatch(0);
         if (hostedFiles != null) {
             ai.setFilesNum(Long.parseLong(hostedFiles));
         }
@@ -116,6 +147,7 @@ public class HellShareCom extends PluginForHost {
             if (trafficleft != null) {
                 ai.setTrafficLeft(SizeFormatter.getSize(trafficleft));
             }
+            ai.setValidUntil(-1);
             ai.setStatus("User with Credits");
             account.setValid(true);
 
@@ -315,7 +347,7 @@ public class HellShareCom extends PluginForHost {
         // edt
         // checking if the account is "Free User", if so then download as Free
         AccountInfo ai = account.getAccountInfo();
-        if (ai.getStatus().equals("Free User") & ai.getTrafficLeft() == 0l) {
+        if (isPremium() == false) {
             handleFree(downloadLink);
             return;
         }
@@ -394,24 +426,21 @@ public class HellShareCom extends PluginForHost {
     public void login(final Account account) throws Exception {
         setBrowserExclusive();
         /* to prefer english page */
-        br.getHeaders().put("Accept-Language", "en-gb;q=0.9, en;q=0.8");
-        br.setFollowRedirects(false);
-        br.setDebug(true);
         br.setFollowRedirects(true);
-        br.postPage("http://www.hellshare.com/login?do=loginForm-submit", "username=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()) + "&login=odeslat&DownloadRedirect=");
+        br.setDebug(true);
+        br.getPage("http://www.hellshare.com/login?do=loginForm-submit");
+        br.postPage("http://www.hellshare.cz/uzivatel/prihlaseni?do=loginForm-submit", "username=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()) + "&perm_login=on&login=Log+in");
 
         /*
          * this will change account language to eng,needed because language is saved in profile
          */
-        final String changetoeng = br.getRegex("\"(http://www\\.en\\.hellshare\\.com/--.*?profile.*?)\"").getMatch(0);
-        if (changetoeng == null) {
-            // Do NOT throw an exeption here as this part isn't that important
-            // but it's bad that the plugin breaks just because of this regex
-            logger.warning("Language couldn't be changed. This will probably cause trouble...");
-        } else {
-            br.getPage(changetoeng);
+        String cookie = br.getCookie(br.getURL(), "PHPSESSID");
+        String permLogin = br.getCookie(br.getURL(), "permlogin");
+        if (permLogin == null || br.containsHTML("zadal jsi špatné uživatelské")) {
+            throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
         }
-        if (br.containsHTML("Wrong user name or wrong password.") || !br.containsHTML("credit for downloads") || br.containsHTML("Špatně zadaný login nebo heslo uživatele")) {
+        br.getPage("http://www.hellshare.com/--" + cookie + "-/members/");
+        if (br.containsHTML("Wrong user name or wrong password.") || !br.containsHTML("credit for downloads") || br.containsHTML("Špatně zadaný login nebo heslo uživatele") || br.containsHTML("zadal jsi špatné uživatelské")) {
             throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
         }
 
