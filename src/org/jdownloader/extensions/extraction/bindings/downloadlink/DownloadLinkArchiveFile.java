@@ -99,7 +99,7 @@ public class DownloadLinkArchiveFile implements ArchiveFile {
     public void setStatus(ExtractionController controller, ExtractionStatus status) {
         for (DownloadLink downloadLink : downloadLinks) {
             downloadLink.setExtractionStatus(status);
-            PluginProgress progress = downloadLink.getPluginProgress();
+            final PluginProgress progress = downloadLink.getPluginProgress();
             if (progress != null && progress instanceof ExtractionProgress) {
                 ((ExtractionProgress) progress).setMessage(status.getExplanation());
             }

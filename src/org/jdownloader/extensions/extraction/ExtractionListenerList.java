@@ -268,7 +268,9 @@ public class ExtractionListenerList implements ExtractionListener {
                     }
                 }
                 for (ArchiveFile link : controller.getArchiv().getArchiveFiles()) {
-                    if (link == null) continue;
+                    if (link == null) {
+                        continue;
+                    }
                     if (af != null && af == link) {
                         link.setStatus(controller, ExtractionStatus.ERROR_CRC);
                     } else {
@@ -330,12 +332,16 @@ public class ExtractionListenerList implements ExtractionListener {
                 logger.warning("Extraction failed(CRC)");
                 if (controller.getArchiv().getCrcError().size() != 0) {
                     for (ArchiveFile link : controller.getArchiv().getCrcError()) {
-                        if (link == null) continue;
+                        if (link == null) {
+                            continue;
+                        }
                         link.setStatus(controller, ExtractionStatus.ERROR_CRC);
                     }
                 } else {
                     for (ArchiveFile link : controller.getArchiv().getArchiveFiles()) {
-                        if (link == null) continue;
+                        if (link == null) {
+                            continue;
+                        }
                         link.setMessage(controller, T._.plugins_optional_extraction_error_extrfailedcrc());
                     }
                 }
@@ -396,13 +402,20 @@ public class ExtractionListenerList implements ExtractionListener {
                 }
             } finally {
                 controller.getArchiv().setActive(false);
-                controller.getArchiv().getFirstArchiveFile().setProgress(controller, 0, 0, null);
+                controller.getArchiv().getFirstArchiveFile().removePluginProgress(controller);
                 ex.removeArchive(controller.getArchiv());
-                if (controller.isSuccessful() && !controller.getArchiv().getGotInterrupted()) {
-
+                for (ArchiveFile link : controller.getArchiv().getArchiveFiles()) {
+                    if (link != null) {
+                        link.removePluginProgress(controller);
+                    }
+                }
+                if (controller.gotKilled()) {
+                    controller.getArchiv().setStatus(controller, null);
+                } else if (controller.isSuccessful()) {
                     for (ArchiveFile link : controller.getArchiv().getArchiveFiles()) {
-                        if (link == null) continue;
-                        link.onCleanedUp(controller);
+                        if (link != null) {
+                            link.onCleanedUp(controller);
+                        }
                     }
                     controller.removeArchiveFiles();
                 }

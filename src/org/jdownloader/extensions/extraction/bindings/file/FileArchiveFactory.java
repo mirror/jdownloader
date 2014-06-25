@@ -92,6 +92,10 @@ public class FileArchiveFactory extends FileArchiveFile implements ArchiveFactor
                                 public void removePluginProgress(ExtractionController controller) {
                                     if (isFirstArchiveFile()) {
                                         origin.getFirstArchiveFile().removePluginProgress(controller);
+                                    } else {
+                                        for (ArchiveFile archiveFile : origin.getArchiveFiles()) {
+                                            archiveFile.removePluginProgress(controller);
+                                        }
                                     }
                                     super.removePluginProgress(controller);
                                 }

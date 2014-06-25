@@ -49,8 +49,8 @@ public class Archive {
     }
 
     /**
-     * do not use this setter. if you feel like setting a password outside the extracting internals, use getSettings().setPasswords.. this setter is used to set
-     * the CORRECT password in the password finding algorithm only
+     * do not use this setter. if you feel like setting a password outside the extracting internals, use getSettings().setPasswords.. this
+     * setter is used to set the CORRECT password in the password finding algorithm only
      * 
      * @param password
      */
@@ -140,7 +140,9 @@ public class Archive {
     }
 
     public String toString() {
-        if (getFirstArchiveFile() == null) return "Incomplete Archive";
+        if (getFirstArchiveFile() == null) {
+            return "Incomplete Archive";
+        }
         return "Archive " + getFirstArchiveFile().getFilePath();
     }
 
@@ -164,16 +166,10 @@ public class Archive {
         }
     }
 
-    public void setGotInterrupted(final boolean gotInterrupted) {
-        this.gotInterrupted = gotInterrupted;
-    }
-
-    public boolean getGotInterrupted() {
-        return gotInterrupted;
-    }
-
     public void setFirstArchiveFile(ArchiveFile firstArchiveFile) {
-        if (this.firstArchiveFile != null) throw new IllegalStateException("firstArchiveFile is already set!");
+        if (this.firstArchiveFile != null) {
+            throw new IllegalStateException("firstArchiveFile is already set!");
+        }
         this.firstArchiveFile = firstArchiveFile;
     }
 
@@ -182,8 +178,8 @@ public class Archive {
     }
 
     /**
-     * Returns how much bytes got extracted. this is NOT getSize() after extracting in some cases. Because files may be filtered, or not extracted due to
-     * overwrite rules. user {@link ExtractionController#getProgress()} to get the extraction progress
+     * Returns how much bytes got extracted. this is NOT getSize() after extracting in some cases. Because files may be filtered, or not
+     * extracted due to overwrite rules. user {@link ExtractionController#getProgress()} to get the extraction progress
      * 
      * @return
      */
@@ -251,7 +247,9 @@ public class Archive {
             if (files != null && files.size() > 0) {
                 ContentView newView = new ContentView();
                 for (ArchiveItem item : files) {
-                    if (item.getPath().trim().equals("")) continue;
+                    if (item.getPath().trim().equals("")) {
+                        continue;
+                    }
                     newView.add(new PackedFile(item.isFolder(), item.getPath(), item.getSize()));
 
                 }
@@ -272,7 +270,9 @@ public class Archive {
 
     public ArchiveFile getArchiveFileByPath(String filename) {
         for (ArchiveFile af : archives) {
-            if (filename.equals(af.getFilePath())) { return af; }
+            if (filename.equals(af.getFilePath())) {
+                return af;
+            }
         }
         return null;
     }
@@ -288,7 +288,9 @@ public class Archive {
 
     public void setStatus(ExtractionController controller, ExtractionStatus status) {
         for (ArchiveFile link : getArchiveFiles()) {
-            if (link == null) continue;
+            if (link == null) {
+                continue;
+            }
             link.setStatus(controller, status);
         }
     }
@@ -314,7 +316,9 @@ public class Archive {
     }
 
     public void setAutoExtract(BooleanStatus booleanStatus) {
-        if (getSettings().getAutoExtract() == booleanStatus) return;
+        if (getSettings().getAutoExtract() == booleanStatus) {
+            return;
+        }
 
         getSettings().setAutoExtract(booleanStatus);
         notifyChanges(ArchiveSettings.AUTO_EXTRACT);
