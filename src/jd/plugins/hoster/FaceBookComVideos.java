@@ -60,6 +60,7 @@ public class FaceBookComVideos extends PluginForHost {
     private static final String TYPE_VIDEO                 = "https?://(www\\.)?facebook\\.com/video/video\\.php\\?v=\\d+";
 
     private String              DLLINK                     = null;
+    private boolean             loggedIN                   = false;
     private static final String FASTLINKCHECK_PICTURES     = "FASTLINKCHECK_PICTURES";
     private static final String USE_ALBUM_NAME_IN_FILENAME = "USE_ALBUM_NAME_IN_FILENAME";
 
@@ -100,14 +101,15 @@ public class FaceBookComVideos extends PluginForHost {
         br.setCookie("http://www.facebook.com", "locale", "en_GB");
         br.setFollowRedirects(true);
         final boolean accountNeeded = accountNeeded(link);
-        if (accountNeeded) {
-            final Account aa = AccountController.getInstance().getValidAccount(this);
+        final Account aa = AccountController.getInstance().getValidAccount(this);
+        if (accountNeeded || aa != null) {
             if (aa == null || !aa.isValid()) {
                 link.setName(new Regex(link.getDownloadURL(), "(\\d+)$").getMatch(0));
                 link.getLinkStatus().setStatusText(JDL.L("plugins.hoster.facebookvideos.only4registered", "Links can only be checked if a valid account is entered"));
                 return AvailableStatus.UNCHECKABLE;
             }
             login(aa, false, br);
+            loggedIN = true;
         }
         br.getPage(link.getDownloadURL());
         String getThisPage = br.getRegex("window\\.location\\.replace\\(\"(http:.*?)\"").getMatch(0);
@@ -115,10 +117,11 @@ public class FaceBookComVideos extends PluginForHost {
             br.getPage(getThisPage.replace("\\", ""));
         }
         if (br.containsHTML("<h2 class=\"accessible_elem\">")) {
+            link.setFinalFileName(link.getDownloadURL());
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         String filename;
-        if (accountNeeded) {
+        if (accountNeeded || loggedIN) {
             filename = br.getRegex("id=\"pageTitle\">([^<>\"]*?)</title>").getMatch(0);
             if (filename == null) {
                 filename = br.getRegex("class=\"mtm mbs mrs fsm fwn fcg\">[A-Za-z0-9:]+</span>([^<>\"]*?)</div>").getMatch(0);

@@ -38,7 +38,7 @@ import jd.utils.JDHexUtils;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "fileblaze.net" }, urls = { "https?://((www|betastage)\\.)?fileblaze\\.net/external(\\-html)?\\.html\\?key=[0-9a-f]+|http://fblaz\\.in/\\w+" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "fileblaze.net" }, urls = { "https?://((www|betastage)\\.)?fileblaze\\.net/external(\\-(html|fileblaze))?\\.html\\?key=[0-9a-f]+|http://fblaz\\.in/\\w+" }, flags = { 0 })
 public class FileBlazeNetA extends PluginForDecrypt {
 
     private String KEY = null;
@@ -61,7 +61,9 @@ public class FileBlazeNetA extends PluginForDecrypt {
                 }
             }
         }
-        if (sb == null || sb.length() == 0) { return null; }
+        if (sb == null || sb.length() == 0) {
+            return null;
+        }
         return sb.toString().replaceAll("#+", "#");
     }
 
@@ -74,7 +76,7 @@ public class FileBlazeNetA extends PluginForDecrypt {
     }
 
     private String correctCryptedLink(String s) {
-        return s.replaceAll("external\\.html", "external-html.html");
+        return s.replaceAll("external\\.html", "external-fileblaze.html");
     }
 
     private byte[] createAMFRequest(final boolean b) {
@@ -93,6 +95,7 @@ public class FileBlazeNetA extends PluginForDecrypt {
         return JDHexUtils.getByteArray(data);
     }
 
+    /* At the moment we're using a workaround (force HTML5) to avoid the amf stuff */
     public ArrayList<DownloadLink> decryptIt(final CryptedLink param, final ProgressController progress) throws Exception {
         final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String parameter = param.toString();
@@ -104,20 +107,29 @@ public class FileBlazeNetA extends PluginForDecrypt {
         parameter = parameter.replace("https://", "http://");
         final String domainValue = parameter.startsWith("http://betastage.") ? "betastageflash" : "stream";
         KEY = new Regex(parameter, "key=(\\w+)").getMatch(0);
-        if (KEY == null) { return null; }
+        if (KEY == null) {
+            return null;
+        }
         boolean htmlFive = true;
 
         br.getPage(correctCryptedLink(parameter));
         if (br.getHttpConnection().getResponseCode() == 200) { // HTML5 Version
-            br.getPage("/soundblaze/external/template?key=" + KEY);
             String sId = br.getRegex("\"sessionId\":\"([0-9A-F]+)\"").getMatch(0);
             String fpName = br.getRegex("\"title\":\"(.*?)\",").getMatch(0);
-            if (sId == null || fpName == null) htmlFive = false;
+            /* Force HTML5 */
+            if (sId == null) {
+                sId = "ABCDEF0123456789";
+            }
+            // if (sId == null || fpName == null) {
+            // htmlFive = false;
+            // }
             if (htmlFive) {
                 br.getPage("/soundblaze/api/folder?key=" + KEY);
                 String[][] songs = br.getRegex("\\{.*?\\}").getMatches();
                 FilePackage fp = FilePackage.getInstance();
-                fp.setName(fpName.replaceAll("\\\\\"", ""));
+                if (fpName != null) {
+                    fp.setName(fpName.replaceAll("\\\\\"", ""));
+                }
                 for (String[] song : songs) {
                     HashMap<String, String> ret = new HashMap<String, String>();
                     for (String[] ss : new Regex(song[0], "\"(.*?)\":(\".*?\"|\\d+|true|false)").getMatches()) {
@@ -128,12 +140,18 @@ public class FileBlazeNetA extends PluginForDecrypt {
                         dlLink.setProperty(next.getKey(), next.getValue());
                     }
                     String filename = dlLink.getStringProperty("title", "UnknownSong");
-                    if (filename.endsWith(".zip")) continue;
+                    if (filename.endsWith(".zip")) {
+                        continue;
+                    }
                     dlLink.setName(Encoding.htmlDecode(filename.trim()));
                     String filesize = ret.get("size");
-                    if (filesize != null) dlLink.setDownloadSize(SizeFormatter.getSize(filesize));
+                    if (filesize != null) {
+                        dlLink.setDownloadSize(SizeFormatter.getSize(filesize));
+                    }
                     dlLink.setAvailable(true);
-                    fp.add(dlLink);
+                    if (fpName != null) {
+                        fp.add(dlLink);
+                    }
                     decryptedLinks.add(dlLink);
                 }
             }
@@ -144,17 +162,23 @@ public class FileBlazeNetA extends PluginForDecrypt {
             getAMFRequest(amf, createAMFRequest(false));
             String result = beautifierString(amf);
             ID = new Regex(result, "([a-f0-9]{8}\\-[a-f0-9]{4}\\-[a-f0-9]{4}\\-[a-f0-9]{4}\\-[a-f0-9]{12})").getMatch(0);
-            if (ID == null) { return null; }
+            if (ID == null) {
+                return null;
+            }
             // Finalrequest
             getAMFRequest(amf, createAMFRequest(true));
             result = beautifierString(amf);
-            if (result == null || !checkForErrors(result, parameter)) { return null; }
+            if (result == null || !checkForErrors(result, parameter)) {
+                return null;
+            }
             // parsing downloadkeys
             final String[] res = new Regex(result, "([a-f0-9]{8}\\-[a-f0-9]{4}\\-[a-f0-9]{4}\\-[a-f0-9]{4}\\-[a-f0-9]{12})#Bs").getColumn(0);
             String dllink = null;
             for (final String s : res) {
                 dllink = "http://" + domainValue + ".fileblaze.net/soundblaze/download/file?key=" + s.toLowerCase();
-                if (!isAvailable(dllink)) continue;
+                if (!isAvailable(dllink)) {
+                    continue;
+                }
                 DownloadLink dl = createDownloadlink(dllink);
                 try {
                     distribute(dl);
@@ -163,6 +187,13 @@ public class FileBlazeNetA extends PluginForDecrypt {
                 }
                 decryptedLinks.add(dl);
             }
+        }
+        if (decryptedLinks.size() == 0) {
+            final DownloadLink dl = createDownloadlink("http://www.fileblaze.net/soundblaze/external/music;jsessionid=ABCDEF0123456789?key=" + System.currentTimeMillis());
+            dl.setAvailable(false);
+            dl.setProperty("offline", true);
+            dl.setFinalFileName(parameter);
+            decryptedLinks.add(dl);
         }
         return decryptedLinks;
     }
@@ -184,7 +215,9 @@ public class FileBlazeNetA extends PluginForDecrypt {
         URLConnectionAdapter con = null;
         try {
             con = br.openGetConnection(s);
-            if (!con.getContentType().contains("html")) return true;
+            if (!con.getContentType().contains("html")) {
+                return true;
+            }
         } finally {
             try {
                 con.disconnect();

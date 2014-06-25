@@ -37,6 +37,7 @@ import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
+import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.utils.JDUtilities;
@@ -57,6 +58,7 @@ public class XHamsterCom extends PluginForHost {
 
     private static final String MOBILELINK = "http://(www\\.)?m\\.xhamster\\.com/preview/\\d+";
     private static final String NORESUME   = "NORESUME";
+    private String              DLLINK     = null;
 
     public void correctDownloadLink(final DownloadLink link) {
         link.setUrlDownload(link.getDownloadURL().replaceAll("://(www\\.)?([a-z]{2}\\.)?", "://"));
@@ -91,6 +93,7 @@ public class XHamsterCom extends PluginForHost {
                 dllink = server + "/key=" + file;
             }
         }
+        DLLINK = Encoding.htmlDecode(dllink);
         return Encoding.htmlDecode(dllink);
     }
 
@@ -132,7 +135,33 @@ public class XHamsterCom extends PluginForHost {
             downloadLink.getLinkStatus().setStatusText("Only downloadable for friends of " + onlyfor);
             downloadLink.setName(new Regex(downloadLink.getDownloadURL(), "movies/[0-9]+/(.*?)\\.html").getMatch(0) + ".flv");
             return AvailableStatus.TRUE;
+        } else if (br.containsHTML("id=\\'videoPass\\'")) {
+            downloadLink.getLinkStatus().setStatusText("This video is password protected");
+            return AvailableStatus.TRUE;
         }
+        final String filename = getFilename();
+        if (filename == null) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
+        downloadLink.setFinalFileName(filename);
+        URLConnectionAdapter con = null;
+        try {
+            con = br.openGetConnection(DLLINK);
+            if (!con.getContentType().contains("html")) {
+                downloadLink.setDownloadSize(con.getLongContentLength());
+            } else {
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            }
+            return AvailableStatus.TRUE;
+        } finally {
+            try {
+                con.disconnect();
+            } catch (Throwable e) {
+            }
+        }
+    }
+
+    private String getFilename() throws PluginException, IOException {
         String filename = br.getRegex("<title>(.*?) \\- xHamster\\.com</title>").getMatch(0);
         if (filename == null) {
             filename = br.getRegex("<meta name=\"description\" content=\"(.*?)\"").getMatch(0);
@@ -149,28 +178,13 @@ public class XHamsterCom extends PluginForHost {
         if (filename == null) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        String dllink = getDllink();
-        String ext = dllink.substring(dllink.lastIndexOf("."));
+        DLLINK = getDllink();
+        String ext = DLLINK.substring(DLLINK.lastIndexOf("."));
         if (ext == null || ext.length() > 5) {
             ext = ".flv";
         }
         filename = Encoding.htmlDecode(filename.trim() + ext);
-        downloadLink.setFinalFileName(filename);
-        URLConnectionAdapter con = null;
-        try {
-            con = br.openGetConnection(dllink);
-            if (!con.getContentType().contains("html")) {
-                downloadLink.setDownloadSize(con.getLongContentLength());
-            } else {
-                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-            }
-            return AvailableStatus.TRUE;
-        } finally {
-            try {
-                con.disconnect();
-            } catch (Throwable e) {
-            }
-        }
+        return filename;
     }
 
     @Override
@@ -179,8 +193,9 @@ public class XHamsterCom extends PluginForHost {
         doFree(downloadLink);
     }
 
-    public void doFree(DownloadLink downloadLink) throws Exception {
+    public void doFree(final DownloadLink downloadLink) throws Exception {
         // Access the page again to get a new direct link because by checking the availability the first linkisn't valid anymore
+        String passCode = downloadLink.getStringProperty("pass", null);
         br.getPage(downloadLink.getDownloadURL());
         final String onlyfor = br.getRegex(">([^<>\"]*?)</a>\\'s friends only</div>").getMatch(0);
         if (onlyfor != null) {
@@ -192,6 +207,16 @@ public class XHamsterCom extends PluginForHost {
                 }
             }
             throw new PluginException(LinkStatus.ERROR_FATAL, "Only downloadable for friends of " + onlyfor);
+        } else if (br.containsHTML("id=\\'videoPass\\'")) {
+            if (passCode == null) {
+                passCode = Plugin.getUserInput("Password?", downloadLink);
+            }
+            br.postPage(br.getURL(), "password=" + Encoding.urlEncode(passCode));
+            if (br.containsHTML("id=\\'videoPass\\'")) {
+                downloadLink.setProperty("pass", Property.NULL);
+                throw new PluginException(LinkStatus.ERROR_RETRY, "Wrong password entered");
+            }
+            downloadLink.setFinalFileName(getFilename());
         }
         final String dllink = getDllink();
 
@@ -231,6 +256,7 @@ public class XHamsterCom extends PluginForHost {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
         }
+        downloadLink.setProperty("pass", passCode);
         dl.startDownload();
     }
 

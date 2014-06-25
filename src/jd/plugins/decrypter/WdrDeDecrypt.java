@@ -73,7 +73,7 @@ public class WdrDeDecrypt extends PluginForDecrypt {
         }
         /* fernsehen/.* links |mediathek/.* links */
         final boolean page_contains_video = br.containsHTML("class=\"videoButton play\"|class=\"moContainer\"");
-        if (offline || parameter.matches(TYPE_INVALID) || parameter.contains("filterseite-") || parameter.contains("uebersicht") || br.getURL().contains("/fehler.xml") || br.getHttpConnection().getResponseCode() == 404 || br.getURL().length() < 38 || !page_contains_video) {
+        if (offline || parameter.matches(TYPE_INVALID) || parameter.contains("filterseite-") || br.getURL().contains("/fehler.xml") || br.getHttpConnection().getResponseCode() == 404 || br.getURL().length() < 38 || !page_contains_video) {
             /* Add offline link so user can see it */
             final DownloadLink dl = createDownloadlink("http://wdrdecrypted.de/?format=mp4&quality=1x1&hash=" + JDHash.getMD5(parameter));
             dl.setAvailable(false);

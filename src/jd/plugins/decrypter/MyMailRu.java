@@ -45,6 +45,7 @@ public class MyMailRu extends PluginForDecrypt {
             parameter = parameter.replace("my.mail.rudecrypted/", "my.mail.ru/");
         }
 
+        br.setFollowRedirects(true);
         br.getPage(parameter);
         final String username = new Regex(parameter, "http://(www\\.)?my.mail.ru/[^<>/\"]+/([^<>/\"]+)/.+").getMatch(1);
         final String dirname = new Regex(parameter, "http://(www\\.)?my.mail.ru/([^<>/\"]+)/[^<>/\"]+/.+").getMatch(1);
@@ -71,19 +72,26 @@ public class MyMailRu extends PluginForDecrypt {
                     br.getRequest().setHtmlCode(br.toString().replace("\\", ""));
                 }
                 final String[] items = br.getRegex("(<div class=\"l\\-catalog_item\" data\\-bubble\\-config=.*?</div>)").getColumn(0);
-                for (final String item : items) {
-                    final String url = new Regex(item, "style=\"background\\-image:url\\((http://content[a-z0-9\\-_\\.]+\\.my\\.mail\\.ru/[^<>\"]+p\\-\\d+\\.jpg)\\);").getMatch(0);
-                    final String mainlink = new Regex(item, "\"(http://my\\.mail\\.ru/[^<>\"]+/photo/\\d+/\\d+\\.html)\"").getMatch(0);
-                    final String ending = url.substring(url.lastIndexOf("."));
-                    final DownloadLink dl = createDownloadlink("http://my.mail.ru/jdeatme" + System.currentTimeMillis() + new Random().nextInt(100000));
-                    dl.setProperty("mainlink", mainlink);
-                    dl.setProperty("ext", ending);
-                    dl.setFinalFileName(new Regex(mainlink, "(\\d+)\\.html").getMatch(0) + ending);
-                    dl.setAvailable(true);
-                    decryptedLinks.add(dl);
+                if (items != null && items.length != 0) {
+                    for (final String item : items) {
+                        final String url = new Regex(item, "style=\"background\\-image:url\\((http://content[a-z0-9\\-_\\.]+\\.my\\.mail\\.ru/[^<>\"]+p\\-\\d+\\.jpg)\\);").getMatch(0);
+                        final String mainlink = new Regex(item, "\"(http://my\\.mail\\.ru/[^<>\"]+/photo/\\d+/\\d+\\.html)\"").getMatch(0);
+                        if (url != null && mainlink != null) {
+                            final String ending = url.substring(url.lastIndexOf("."));
+                            final DownloadLink dl = createDownloadlink("http://my.mail.ru/jdeatme" + System.currentTimeMillis() + new Random().nextInt(100000));
+                            dl.setProperty("mainlink", mainlink);
+                            dl.setProperty("ext", ending);
+                            dl.setFinalFileName(new Regex(mainlink, "(\\d+)\\.html").getMatch(0) + ending);
+                            dl.setAvailable(true);
+                            decryptedLinks.add(dl);
+                        }
+                    }
+                    offset += maxPicsPerSegment;
+                    segment++;
+                } else {
+                    logger.info("Nothing to decrypt here, stopping");
+                    break;
                 }
-                offset += maxPicsPerSegment;
-                segment++;
             }
             if (fpName != null && setPackagename) {
                 final FilePackage fp = FilePackage.getInstance();

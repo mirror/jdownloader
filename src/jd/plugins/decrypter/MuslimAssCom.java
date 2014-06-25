@@ -36,7 +36,7 @@ public class MuslimAssCom extends PluginForDecrypt {
         super(wrapper);
     }
 
-    private final String INVALIDLINK = "http://(www\\.)?muslimass\\.com/(category|feed|wp\\-(content|includes)|about|login|webmaster)";
+    private final String INVALIDLINK = "http://(www\\.)?muslimass\\.com/(category|feed|wp\\-(content|includes)|about|login|webmaster)/?";
 
     // This is a site which shows embedded videos of other sites so we may have
     // to add regexes/handlings here
@@ -49,19 +49,23 @@ public class MuslimAssCom extends PluginForDecrypt {
             return decryptedLinks;
         }
         br.getPage(parameter);
-        if (br.containsHTML(">Error 404 \\- Not Found<|>Nothing found for")) {
+        if (br.containsHTML(">Error 404 \\- Not Found<|>Nothing found for") || br.getURL().matches(INVALIDLINK)) {
             logger.info("Link offline: " + parameter);
             return decryptedLinks;
         }
         String filename = br.getRegex("<link rel=\"alternate\" type=\"application/rss\\+xml\" title=\"muslimass\\.com \\&raquo; (.*?) Comments Feed\" href=\"").getMatch(0);
-        if (filename == null) filename = br.getRegex("title=\"Permanent Link to (.*?)\"").getMatch(0);
+        if (filename == null) {
+            filename = br.getRegex("title=\"Permanent Link to (.*?)\"").getMatch(0);
+        }
         if (filename == null) {
             logger.warning("hqmaturetube decrypter broken(filename regex) for link: " + parameter);
             return null;
         }
         filename = Encoding.htmlDecode(filename.trim());
         String externID = br.getRegex("<p style=\"text-align: center;\"><a href=\"(http://.*?)\"").getMatch(0);
-        if (externID == null) externID = br.getRegex("\"(http://(www\\.)?xvideohost\\.com/video\\.php\\?id=[a-z0-9]+)\"").getMatch(0);
+        if (externID == null) {
+            externID = br.getRegex("\"(http://(www\\.)?xvideohost\\.com/video\\.php\\?id=[a-z0-9]+)\"").getMatch(0);
+        }
         if (externID != null) {
             decryptedLinks.add(createDownloadlink(Encoding.htmlDecode(externID)));
             return decryptedLinks;
@@ -91,14 +95,18 @@ public class MuslimAssCom extends PluginForDecrypt {
         final String pagePiece = br.getRegex("<div class=\"entry\">(.*?)(<p>\\&nbsp;</p>|<\\!\\-\\- AddThis Button BEGIN \\-\\->)").getMatch(0);
         if (pagePiece != null) {
             String fpName = br.getRegex("<title>([^<>\"]*?) \\| muslimass\\.com</title>").getMatch(0);
-            if (fpName == null) fpName = new Regex(parameter, "muslimass\\.com/(.+)").getMatch(0);
+            if (fpName == null) {
+                fpName = new Regex(parameter, "muslimass\\.com/(.+)").getMatch(0);
+            }
             final String[] allLinks = HTMLParser.getHttpLinks(pagePiece, "");
             if (allLinks == null || allLinks.length == 0) {
                 logger.info("Link offline: " + parameter);
                 return decryptedLinks;
             }
             for (final String aLink : allLinks) {
-                if (!aLink.matches("http://(www\\.)?muslimass\\.com/.+")) decryptedLinks.add(createDownloadlink(aLink));
+                if (!aLink.matches("http://(www\\.)?muslimass\\.com/.+")) {
+                    decryptedLinks.add(createDownloadlink(aLink));
+                }
             }
             final FilePackage fp = FilePackage.getInstance();
             fp.setName(Encoding.htmlDecode(fpName.trim()));

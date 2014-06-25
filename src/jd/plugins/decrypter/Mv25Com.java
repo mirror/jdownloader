@@ -28,26 +28,28 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "movie25.com" }, urls = { "http://(www\\.)?movie25\\.(com|so)/(movies/[a-z0-9\\-]+\\.html|watch[a-z0-9\\-]+\\.html)" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "movie25.com" }, urls = { "http://(www\\.)?movie25\\.(com|so|tw)/[a-z0-9\\-]+\\.html" }, flags = { 0 })
 public class Mv25Com extends PluginForDecrypt {
 
     public Mv25Com(PluginWrapper wrapper) {
         super(wrapper);
     }
 
-    private static final String SINGLELINK = "http://(www\\.)?movie25\\.so/watch[a-z0-9\\-]+\\.html";
-    private static final String DOMAIN     = "movie25.so";
+    private static final String SINGLELINK = "http://(www\\.)?movie25\\.tw/watch[a-z0-9\\-]+\\.html";
+    private static final String DOMAIN     = "movie25.tw";
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-        final String parameter = param.toString().replace("movie25.com/", DOMAIN + "/");
+        final String parameter = param.toString().replaceAll("movie25\\.(com|so)/", DOMAIN + "/");
         br.setFollowRedirects(true);
         br.getPage(parameter);
         // for some users they present html based redirect!
-        String redirect = br.getRegex("<meta http-equiv=\"refresh\" content=\"\\d+;url=(https?://(www\\.)?movie25\\.so/[^\"]+\\.html)\"").getMatch(0);
-        if (redirect != null) br.getPage(redirect);
+        String redirect = br.getRegex("<meta http-equiv=\"refresh\" content=\"\\d+;url=(https?://(www\\.)?movie25\\.tw/[^\"]+\\.html)\"").getMatch(0);
+        if (redirect != null) {
+            br.getPage(redirect);
+        }
 
-        if (br.getURL().equals("http://www." + DOMAIN + "/404.shtml")) {
+        if (br.getURL().equals("http://www." + DOMAIN + "/404.shtml") || br.getHttpConnection().getResponseCode() == 404) {
             logger.info("Link offline: " + parameter);
             return decryptedLinks;
         }
@@ -102,7 +104,9 @@ public class Mv25Com extends PluginForDecrypt {
 
     private DownloadLink decryptSingleLink() throws IOException {
         final String finallink = br.getRegex("location\\.href=(\\\\\\'|\\')(http[^<>\"]*?)(\\'\\\\\"|\\')").getMatch(1);
-        if (finallink == null) return null;
+        if (finallink == null) {
+            return null;
+        }
         return createDownloadlink(finallink);
     }
 

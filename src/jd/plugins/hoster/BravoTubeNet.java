@@ -73,7 +73,7 @@ public class BravoTubeNet extends PluginForHost {
         setBrowserExclusive();
         br.setFollowRedirects(true);
         br.getPage(downloadLink.getDownloadURL());
-        if (br.containsHTML("(<title>Page Not Found|>Channels</h1>)")) {
+        if (br.containsHTML("(<title>Page Not Found|>Channels</h1>)") || br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         String filename = br.getRegex("<div class=\"heading\"><h2>(.*?)</h2></div>").getMatch(0);

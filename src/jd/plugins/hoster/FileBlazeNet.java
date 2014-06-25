@@ -55,6 +55,9 @@ public class FileBlazeNet extends PluginForHost {
 
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws Exception {
+        if (downloadLink.getBooleanProperty("offline", false)) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
         setBrowserExclusive();
         // In case the link redirects to the finallink
         br.setFollowRedirects(true);
@@ -62,8 +65,12 @@ public class FileBlazeNet extends PluginForHost {
         try {
             con = br.openGetConnection(downloadLink.getDownloadURL());
             downloadLink.setDownloadSize(con.getLongContentLength());
-            if (downloadLink.getStringProperty("title", null) == null) downloadLink.setFinalFileName(FileBlazeNet.getFileNameFromHeader(con));
-            if (con.getResponseCode() == 404) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
+            if (downloadLink.getStringProperty("title", null) == null) {
+                downloadLink.setFinalFileName(FileBlazeNet.getFileNameFromHeader(con));
+            }
+            if (con.getResponseCode() == 404) {
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            }
             return AvailableStatus.TRUE;
         } finally {
             try {

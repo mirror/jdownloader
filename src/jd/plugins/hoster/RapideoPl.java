@@ -264,10 +264,10 @@ public class RapideoPl extends PluginForHost {
             logger.info(NICE_HOST + ": " + error + " -> Retrying");
             timesFailed++;
             dl.setProperty(NICE_HOSTproperty + "failedtimes_" + error, timesFailed);
-            throw new PluginException(LinkStatus.ERROR_RETRY, "Final download link not found");
+            throw new PluginException(LinkStatus.ERROR_RETRY, error);
         } else {
             dl.setProperty(NICE_HOSTproperty + "failedtimes_" + error, Property.NULL);
-            logger.info(NICE_HOST + ": " + error + " -> Plugin is broken");
+            logger.info(NICE_HOST + ": " + error + " -> Disabling current host");
             tempUnavailableHoster(acc, dl, 1 * 60 * 60 * 1000l);
         }
     }
