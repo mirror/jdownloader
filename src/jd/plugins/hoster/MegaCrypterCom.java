@@ -417,8 +417,8 @@ public class MegaCrypterCom extends PluginForHost {
             link.getLinkStatus().setStatusText("Finished");
             try {
                 link.setFinalFileOutput(dst.getAbsolutePath());
-                link.setInternalTmpFilenameAppend(null);
-                link.setInternalTmpFilename(null);
+                link.setCustomFileOutputFilenameAppend(null);
+                link.setCustomFileOutputFilename(null);
             } catch (final Throwable e) {
             }
             if (tmp == null) {
