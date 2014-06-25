@@ -1,6 +1,7 @@
 package org.jdownloader.gui.packagehistorycontroller;
 
 import org.appwork.storage.Storable;
+import org.appwork.utils.StringUtils;
 
 public class DownloadPath implements Storable, HistoryEntry {
     @SuppressWarnings("unused")
@@ -19,8 +20,13 @@ public class DownloadPath implements Storable, HistoryEntry {
     }
 
     public boolean equals(Object obj) {
-        if (obj == null) return false;
-        return hashCode() == obj.hashCode();
+        if (obj == this) {
+            return true;
+        }
+        if (obj != null && obj instanceof DownloadPath) {
+            return StringUtils.equals(getName(), ((DownloadPath) obj).getName());
+        }
+        return false;
     }
 
     public int hashCode() {
@@ -42,9 +48,13 @@ public class DownloadPath implements Storable, HistoryEntry {
     private String name;
     private long   time;
 
+    private static int compare(long x, long y) {
+        return (x < y) ? 1 : ((x == y) ? 0 : -1);
+    }
+
     @Override
     public int compareTo(HistoryEntry o) {
-        return new Long(o.getTime()).compareTo(new Long(getTime()));
+        return compare(o.getTime(), getTime());
     }
 
 }

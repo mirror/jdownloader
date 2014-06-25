@@ -11,12 +11,12 @@ import org.appwork.shutdown.ShutdownRequest;
 import org.appwork.utils.StringUtils;
 
 public abstract class HistoryManager<T extends HistoryEntry> {
-    
-    private ArrayList<T> packageHistory;
-    private boolean      changed = false;
-    
+
+    private final ArrayList<T> packageHistory;
+    private volatile boolean   changed = false;
+
     public HistoryManager(List<T> packageNameHistory, int max) {
-        
+
         if (packageNameHistory == null) {
             packageNameHistory = new ArrayList<T>();
         }
@@ -32,9 +32,9 @@ public abstract class HistoryManager<T extends HistoryEntry> {
                 it.remove();
             }
         }
-        
+
         ShutdownController.getInstance().addShutdownEvent(new ShutdownEvent() {
-            
+
             @Override
             public void onShutdown(ShutdownRequest shutdownRequest) {
                 if (changed) {
@@ -42,13 +42,13 @@ public abstract class HistoryManager<T extends HistoryEntry> {
                 }
             }
         });
-        
+
     }
-    
+
     public synchronized List<T> list() {
         return Collections.unmodifiableList(packageHistory);
     }
-    
+
     public synchronized void add(String packageName) {
         if (!StringUtils.isEmpty(packageName)) {
             changed = true;
@@ -68,9 +68,9 @@ public abstract class HistoryManager<T extends HistoryEntry> {
             Collections.sort(packageHistory);
         }
     }
-    
+
     abstract protected T createNew(String name);
-    
+
     abstract protected void save(List<T> list);
-    
+
 }
