@@ -417,9 +417,11 @@ public class FilePackageView extends ChildrenView<DownloadLink> {
             case OFFLINE:
             case PLUGIN_DEFECT:
                 id = "error" + link.getHost();
-                ps = PluginState.create(_GUI._.FilePackageView_addLinkToTemp_downloaderror_() + " (" + link.getDomainInfo().getTld() + ")", new FavitIcon(this.falseIcon, link.getDomainInfo()));
-                if (ps != null) {
-                    tmp.pluginStates.put(id, ps);
+                if (!tmp.pluginStates.containsKey(id)) {
+                    ps = PluginState.create(_GUI._.FilePackageView_addLinkToTemp_downloaderror_() + " (" + link.getDomainInfo().getTld() + ")", new FavitIcon(this.falseIcon, link.getDomainInfo()));
+                    if (ps != null) {
+                        tmp.pluginStates.put(id, ps);
+                    }
                 }
                 break;
             case FINISHED:
@@ -445,9 +447,11 @@ public class FilePackageView extends ChildrenView<DownloadLink> {
                     // ExtractionExtension.getIntance().createArchiveID(new DownloadLinkArchiveFactory(link));
                     if (StringUtils.isNotEmpty(archiveID)) {
                         id = "extractError:" + archiveID;
-                        ps = PluginState.create(extractionStatus.getExplanation() + " (" + link.getFinalFileName() + ")", new ExtractIconVariant("error", 18, 10));
-                        if (ps != null) {
-                            tmp.pluginStates.put(id, ps);
+                        if (!tmp.pluginStates.containsKey(id)) {
+                            ps = PluginState.create(extractionStatus.getExplanation() + " (" + link.getName() + ")", new ExtractIconVariant("error", 18, 10));
+                            if (ps != null) {
+                                tmp.pluginStates.put(id, ps);
+                            }
                         }
                     }
                     break;
@@ -457,10 +461,11 @@ public class FilePackageView extends ChildrenView<DownloadLink> {
                     // ExtractionExtension.getIntance().createArchiveID(new DownloadLinkArchiveFactory(link));
                     if (StringUtils.isNotEmpty(archiveID)) {
                         id = "ExtractSuccess:" + archiveID;
-                        ps = PluginState.create(extractionStatus.getExplanation() + " (" + link.getFinalFileName() + ")", new ExtractIconVariant("ok", 18, 10));
-
-                        if (ps != null) {
-                            tmp.pluginStates.put(id, ps);
+                        if (!tmp.pluginStates.containsKey(id)) {
+                            ps = PluginState.create(extractionStatus.getExplanation() + " (" + link.getName() + ")", new ExtractIconVariant("ok", 18, 10));
+                            if (ps != null) {
+                                tmp.pluginStates.put(id, ps);
+                            }
                         }
                     }
                     break;
@@ -475,18 +480,17 @@ public class FilePackageView extends ChildrenView<DownloadLink> {
                         ps = null;
                         if (prog != null) {
                             if (prog instanceof ExtractionProgress) {
-
                                 if (!tmp.pluginStates.containsKey(id)) {
-                                    ps = PluginState.create(prog.getMessage(FilePackageView.this) + " (" + link.getFinalFileName() + ")", new ExtractIconVariant(IconKey.ICON_MEDIA_PLAYBACK_START, 18, 16, 3, 3).crop());
+                                    ps = PluginState.create(prog.getMessage(FilePackageView.this) + " (" + link.getName() + ")", new ExtractIconVariant(IconKey.ICON_MEDIA_PLAYBACK_START, 18, 16, 3, 3).crop());
                                     if (ps != null) {
                                         tmp.pluginStates.put(id, ps);
                                     }
                                 }
                             }
                         }
-                        if (ps == null) {
-                            ps = PluginState.create(extractionStatus.getExplanation() + " (" + link.getFinalFileName() + ")", new ExtractIconVariant(IconKey.ICON_MEDIA_PLAYBACK_START, 18, 16, 3, 3).crop());
-                            if (ps != null && !tmp.pluginStates.containsKey(id)) {
+                        if (ps == null && !tmp.pluginStates.containsKey(id)) {
+                            ps = PluginState.create(extractionStatus.getExplanation() + " (" + link.getName() + ")", new ExtractIconVariant(IconKey.ICON_MEDIA_PLAYBACK_START, 18, 16, 3, 3).crop());
+                            if (ps != null) {
                                 tmp.pluginStates.put(id, ps);
                             }
                         }
