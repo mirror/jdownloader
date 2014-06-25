@@ -159,6 +159,9 @@ public abstract class PluginForHost extends Plugin {
         this.lazyP = (LazyHostPlugin) wrapper.getLazy();
     }
 
+    /**
+     * @since JD2
+     * */
     public void setBrowser(Browser brr) {
         br = brr;
     }

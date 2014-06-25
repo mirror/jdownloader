@@ -115,6 +115,9 @@ public abstract class PluginForDecrypt extends Plugin {
         this.lazyC = (LazyCrawlerPlugin) wrapper.getLazy();
     }
 
+    /**
+     * @since JD2
+     * */
     public void setBrowser(Browser br) {
         this.br = br;
     }
