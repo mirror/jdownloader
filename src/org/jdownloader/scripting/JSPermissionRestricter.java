@@ -114,7 +114,8 @@ public class JSPermissionRestricter {
                     }
                     if (className.startsWith("adapter")) {
                         return true;
-
+                    } else if (className.startsWith("org.mozilla.javascript.ConsString")) {
+                        return true;
                     } else if (className.equals("net.sourceforge.htmlunit.corejs.javascript.EcmaError")) {
                         Log.L.severe("Javascript error occured");
                         return true;
