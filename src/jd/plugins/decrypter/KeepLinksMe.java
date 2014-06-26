@@ -38,7 +38,7 @@ import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
 import jd.utils.JDUtilities;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "keeplinks.me" }, urls = { "https?://(www\\.)?keeplinks\\.me/(p|d)/[a-z0-9]+" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "keeplinks.me" }, urls = { "https?://(www\\.)?keeplinks\\.(me|eu)/(p|d)/[a-z0-9]+" }, flags = { 0 })
 public class KeepLinksMe extends SaveLinksNet {
 
     public KeepLinksMe(PluginWrapper wrapper) {
@@ -46,7 +46,7 @@ public class KeepLinksMe extends SaveLinksNet {
     }
 
     private static Object ctrlLock = new Object();
-    private String        HOST     = "keeplinks.me";
+    private String        domains  = "keeplinks\\.(me|eu)";
     private String        cType    = "notDetected";
 
     @Override
@@ -67,7 +67,7 @@ public class KeepLinksMe extends SaveLinksNet {
                     handleCaptcha(parameter, param);
                     String[] links = br.getRegex("class=\"selecttext live\">(http[^<>\"]*?)</a>").getColumn(0);
                     if (links == null || links.length == 0) {
-                        links = br.getRegex("\"(http://(www\\.)?keeplinks\\.me/d/[a-z0-9]+)\" id=\"direct\\d+\"").getColumn(0);
+                        links = br.getRegex("\"(http://(www\\.)?" + domains + "/d/[a-z0-9]+)\" id=\"direct\\d+\"").getColumn(0);
                     }
                     if (links == null || links.length == 0) {
                         logger.warning("Decrypter broken for link: " + parameter);
@@ -101,8 +101,8 @@ public class KeepLinksMe extends SaveLinksNet {
         LinkedHashMap<String, String> captchaRegex = new LinkedHashMap<String, String>();
         captchaRegex.put("solvemedia", "api(\\-secure)?\\.solvemedia\\.com/(papi)?");
         captchaRegex.put("recaptcha", "(api\\.recaptcha\\.net|google\\.com/recaptcha/api/)");
-        captchaRegex.put("basic", "(https?://" + HOST + "/includes/captcha_factory/securimage/securimage_(show\\.php\\?hash=[a-z0-9]+|register\\.php\\?hash=[^\"]+sid=[a-z0-9]{32}))");
-        captchaRegex.put("threeD", "\"(https?://" + HOST + "/includes/captcha_factory/3dcaptcha/3DCaptcha\\.php)\"");
+        captchaRegex.put("basic", "(https?://" + domains + "/includes/captcha_factory/securimage/securimage_(show\\.php\\?hash=[a-z0-9]+|register\\.php\\?hash=[^\"]+sid=[a-z0-9]{32}))");
+        captchaRegex.put("threeD", "\"(https?://" + domains + "/includes/captcha_factory/3dcaptcha/3DCaptcha\\.php)\"");
         captchaRegex.put("fancy", "name=\"captchatype\" id=\"captchatype\" value=\"Fancy\"");
         captchaRegex.put("qaptcha", "class=\"protected\\-captcha\"><div id=\"QapTcha\"");
         captchaRegex.put("simplecaptcha", "\"http://(www\\.)?keeplinks\\.me/simplecaptcha/captcha\\.php\"");
@@ -171,17 +171,17 @@ public class KeepLinksMe extends SaveLinksNet {
                     break;
                 case 5:
                     captchaBr.getHeaders().put("X-Requested-With", "XMLHttpRequest");
-                    captchaBr.getPage("http://www." + HOST + "/fancycaptcha/captcha/captcha.php");
+                    captchaBr.getPage("/fancycaptcha/captcha/captcha.php");
                     data += "&captchatype=Fancy&captcha=" + captchaBr.toString().trim();
                     break;
                 case 6:
                     captchaBr.getHeaders().put("X-Requested-With", "XMLHttpRequest");
-                    captchaBr.postPage("https://" + HOST + "/includes/captcha_factory/Qaptcha.jquery.php?hash=" + new Regex(parameter, "/p/(.+)").getMatch(0), "action=qaptcha");
+                    captchaBr.postPage("/includes/captcha_factory/Qaptcha.jquery.php?hash=" + new Regex(parameter, "/p/(.+)").getMatch(0), "action=qaptcha");
                     if (!captchaBr.containsHTML("\"error\":false")) {
                         logger.warning("Decrypter broken for link: " + parameter + "\n");
                         logger.warning("Qaptcha handling broken");
                         if (password) {
-                            throw new DecrypterException("Decrypter for " + HOST + " is broken");
+                            throw new DecrypterException("Decrypter for " + br.getHost() + " is broken");
                         }
                     }
                     data += "&iQapTcha=";
@@ -205,11 +205,10 @@ public class KeepLinksMe extends SaveLinksNet {
                 if (captchaRegex.containsKey(cType) || data.contains("link-password")) {
                     br.postPage(parameter, data);
                     if (br.getHttpConnection().getResponseCode() == 500) {
-                        logger.warning(HOST + ": 500 Internal Server Error. Link: " + parameter);
+                        logger.warning(br.getHost() + ": 500 Internal Server Error. Link: " + parameter);
                         continue;
                     }
-                    password = br.getRegex("type=\"password\" name=\"link-password\"").matches(); // password
-                                                                                                  // correct?
+                    password = br.getRegex("type=\"password\" name=\"link-password\"").matches(); // password correct?
                 }
 
                 if (!"notDetected".equals(cType) && br.containsHTML(captchaRegex.get(cType)) || (!br.containsHTML("class=\"co_form_title\">Live Link") && !br.containsHTML("class=\"co_form_title\">Direct Link")) || password || br.containsHTML("<strong>Prove you are human</strong>")) {
@@ -268,7 +267,7 @@ public class KeepLinksMe extends SaveLinksNet {
             }
         }
 
-        logger.info("notDetected".equals(cType) ? "Captcha not detected." : "Detected captcha type \"" + cType + "\" for this " + HOST + ".");
+        logger.info("notDetected".equals(cType) ? "Captcha not detected." : "Detected captcha type \"" + cType + "\" for this " + br.getHost() + ".");
 
         /* detect javascript */
         String javaScript = null;
