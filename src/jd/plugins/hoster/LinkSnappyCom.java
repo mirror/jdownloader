@@ -86,7 +86,7 @@ public class LinkSnappyCom extends PluginForHost {
     public AccountInfo fetchAccountInfo(final Account account) throws Exception {
         supportedHosts = new ArrayList<String>();
         AccountInfo ac;
-        prepBr(br);
+        prepBrowser(br);
         if (this.getPluginConfig().getBooleanProperty(USE_API, default_api)) {
             ac = api_fetchAccountInfo(account);
         } else {
@@ -136,7 +136,7 @@ public class LinkSnappyCom extends PluginForHost {
             ac.setValidUntil(Long.parseLong(expire) * 1000);
             accountType = "Premium Account";
         }
-        ac.setStatus(accountType + " valid");
+        ac.setStatus(accountType);
 
         /* Find traffic left */
         if (br.containsHTML("\"trafficleft\":\"unlimited\"")) {
@@ -220,13 +220,13 @@ public class LinkSnappyCom extends PluginForHost {
         }
         /* Via site, only lifetime is supported at the moment */
         String accountType = "Lifetime Premium Account";
-        ac.setStatus(accountType + " valid");
+        ac.setStatus(accountType);
 
         /* Find traffic left */
         if (br.containsHTML("<strong>Daily traffic left:</strong> Unlimited")) {
             ac.setUnlimitedTraffic();
         } else {
-            final String trafficleft = br.getRegex("<strong>Daily traffic left:</strong> ((\\-)?\\d+(\\.\\d+)? [A-Z]{2})").getMatch(0);
+            final String trafficleft = br.getRegex("<strong>Daily traffic left:</strong> (-?\\d+(\\.\\d+)? [A-Z]{2})").getMatch(0);
             if (trafficleft != null) {
                 /* Also check for negative traffic */
                 if (trafficleft.contains("-")) {
@@ -250,6 +250,7 @@ public class LinkSnappyCom extends PluginForHost {
 
     /** no override to keep plugin compatible to old stable */
     public void handleMultiHost(final DownloadLink link, final Account account) throws Exception {
+        prepBrowser(br);
         currentLink = link;
         currentAcc = account;
         br.setFollowRedirects(true);
@@ -626,9 +627,11 @@ public class LinkSnappyCom extends PluginForHost {
         return dllink;
     }
 
-    private void prepBr(final Browser br) {
-        br.setConnectTimeout(60 * 1000);
-        br.setReadTimeout(60 * 1000);
+    private Browser prepBrowser(final Browser prepBr) {
+        prepBr.setConnectTimeout(60 * 1000);
+        prepBr.setReadTimeout(60 * 1000);
+        prepBr.getHeaders().put("User-Agent", "JDownloader");
+        return prepBr;
     }
 
     @Override
@@ -645,10 +648,15 @@ public class LinkSnappyCom extends PluginForHost {
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), CLEAR_DOWNLOAD_HISTORY, JDL.L("plugins.hoster.linksnappycom.clear_serverside_download_history", "Clear download history in linksnappy account after each download?")).setDefaultValue(default_clear_download_history).setEnabledCondidtion(ce, false));
     }
 
+    /**
+     * Tries to return value of key from JSon response, from String source.
+     *
+     * @author raztoki
+     * */
     private String getJson(final String source, final String key) {
-        String result = new Regex(source, "\"" + key + "\":(-?\\d+(\\.\\d+)?|true|false)").getMatch(0);
+        String result = new Regex(source, "\"" + key + "\":(-?\\d+(\\.\\d+)?|true|false|null)").getMatch(0);
         if (result == null) {
-            result = new Regex(source, "\"" + key + "\":\"([^<>\"]*?)\"").getMatch(0);
+            result = new Regex(source, "\"" + key + "\":\"([^\"]+)\"").getMatch(0);
         }
         if (result != null) {
             result = result.replaceAll("\\\\/", "/");
@@ -656,10 +664,20 @@ public class LinkSnappyCom extends PluginForHost {
         return result;
     }
 
+    /**
+     * Tries to return value of key from JSon response, from default 'br' Browser.
+     *
+     * @author raztoki
+     * */
     private String getJson(final String key) {
         return getJson(br.toString(), key);
     }
 
+    /**
+     * Tries to return value of key from JSon response, from provided Browser.
+     *
+     * @author raztoki
+     * */
     private String getJson(final Browser ibr, final String key) {
         return getJson(ibr.toString(), key);
     }
