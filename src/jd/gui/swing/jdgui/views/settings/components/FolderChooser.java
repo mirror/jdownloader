@@ -46,22 +46,28 @@ public class FolderChooser extends PathChooser implements SettingsComponent {
         this.txt.getDocument().addDocumentListener(new DocumentListener() {
 
             public void removeUpdate(DocumentEvent e) {
-                if (!setting) eventSender.fireEvent(new StateUpdateEvent<FolderChooser>(FolderChooser.this));
+                if (!setting) {
+                    eventSender.fireEvent(new StateUpdateEvent<FolderChooser>(FolderChooser.this));
+                }
             }
 
             public void insertUpdate(DocumentEvent e) {
-                if (!setting) eventSender.fireEvent(new StateUpdateEvent<FolderChooser>(FolderChooser.this));
+                if (!setting) {
+                    eventSender.fireEvent(new StateUpdateEvent<FolderChooser>(FolderChooser.this));
+                }
             }
 
             public void changedUpdate(DocumentEvent e) {
-                if (!setting) eventSender.fireEvent(new StateUpdateEvent<FolderChooser>(FolderChooser.this));
+                if (!setting) {
+                    eventSender.fireEvent(new StateUpdateEvent<FolderChooser>(FolderChooser.this));
+                }
             }
         });
         this.destination.addPopupMenuListener(new PopupMenuListener() {
 
             @Override
             public void popupMenuWillBecomeVisible(PopupMenuEvent e) {
-                destination.setList(DownloadPathHistoryManager.getInstance().listPathes(getPath()));
+                destination.setList(DownloadPathHistoryManager.getInstance().listPathes());
             }
 
             @Override
@@ -127,9 +133,13 @@ public class FolderChooser extends PathChooser implements SettingsComponent {
 
     public String getText() {
         File file = getFile();
-        if (file == null) return null;
+        if (file == null) {
+            return null;
+        }
         file = checkPath(file, originalPath == null ? null : new File(originalPath));
-        if (file == null) return null;
+        if (file == null) {
+            return null;
+        }
         DownloadPathHistoryManager.getInstance().add(file.getAbsolutePath());
 
         return file.getAbsolutePath();

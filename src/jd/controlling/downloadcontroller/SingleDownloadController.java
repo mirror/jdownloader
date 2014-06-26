@@ -300,15 +300,25 @@ public class SingleDownloadController extends BrowserSettingsThread implements D
                             if (AvailableStatus.FALSE == availableStatus) {
                                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
                             }
+                        } catch (final BrowserException browserException) {
+                            downloadLogger.log(browserException);
+                            try {
+                                if (browserException.getRequest() != null) {
+                                    browserException.getRequest().disconnect();
+                                }
+                            } catch (final Throwable ignore) {
+                            }
                         } catch (final SkipReasonException e) {
                             if (SkipReason.CAPTCHA.equals(e.getSkipReason())) {
                                 try {
+                                    /* captcha during linkcheck should not stop multihoster */
                                     defaultPlugin.invalidateLastChallengeResponse();
                                 } catch (final Throwable ignore) {
                                     downloadLogger.log(ignore);
                                 }
+                            } else {
+                                throw e;
                             }
-                            throw e;
                         } catch (final PluginException e) {
                             switch (e.getLinkStatus()) {
                             case LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE:
@@ -321,10 +331,12 @@ public class SingleDownloadController extends BrowserSettingsThread implements D
                                 throw e;
                             case LinkStatus.ERROR_CAPTCHA:
                                 try {
+                                    /* captcha during linkcheck should not stop multihoster */
                                     defaultPlugin.invalidateLastChallengeResponse();
                                 } catch (final Throwable ignore) {
                                     downloadLogger.log(ignore);
                                 }
+                                break;
                             default:
                                 availableStatus = AvailableStatus.UNCHECKABLE;
                                 throw e;
@@ -419,7 +431,6 @@ public class SingleDownloadController extends BrowserSettingsThread implements D
                     } catch (final IPCheckException e2) {
                     }
                 }
-
             }
             downloadLogger.info("Exception: ");
             downloadLogger.log(e);
@@ -430,6 +441,11 @@ public class SingleDownloadController extends BrowserSettingsThread implements D
                 downloadLink.setLivePlugin(null);
                 queueItem.queueLinks.remove(downloadLink);
                 if (handlePlugin != null) {
+                    try {
+                        handlePlugin.validateLastChallengeResponse();
+                    } catch (final Throwable ignore) {
+                        downloadLogger.log(ignore);
+                    }
                     final DownloadInterface di = handlePlugin.getDownloadInterface();
                     resumed = di != null && di.isResumedDownload();
                     try {

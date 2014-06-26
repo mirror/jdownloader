@@ -390,6 +390,7 @@ public class AddLinksDialog extends AbstractDialog<LinkCollectingJob> {
         comment = new ExtTextField();
         comment.setHelpText(_GUI._.AddLinksDialog_layoutDialogContent_comment_help());
         comment.setBorder(BorderFactory.createCompoundBorder(comment.getBorder(), BorderFactory.createEmptyBorder(2, 6, 1, 6)));
+
         destination.setQuickSelectionList(DownloadPathHistoryManager.getInstance().listPathes(org.appwork.storage.config.JsonConfig.create(GeneralSettings.class).getDefaultDownloadFolder()));
 
         String latest = config.getLatestDownloadDestinationFolder();

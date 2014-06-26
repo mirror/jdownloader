@@ -342,6 +342,7 @@ public class DownloadLink extends Property implements Serializable, AbstractPack
         } else {
             setProperty(PROPERTY_CHUNKS, chunks);
         }
+
     }
 
     public void setCustomSpeedLimit(int limit) {
@@ -804,6 +805,9 @@ public class DownloadLink extends Property implements Serializable, AbstractPack
     }
 
     public void setAvailableStatus(AvailableStatus availableStatus) {
+        if (availableStatus == null) {
+            availableStatus = AvailableStatus.UNCHECKED;
+        }
         if (AvailableStatus.UNCHECKED.equals(availableStatus)) {
             lastAvailableStatusChange = -1;
         } else {

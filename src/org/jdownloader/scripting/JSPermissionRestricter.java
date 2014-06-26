@@ -120,7 +120,6 @@ public class JSPermissionRestricter {
                         Log.L.severe("Javascript error occured");
                         return true;
                     } else {
-
                         throw new RuntimeException("Security Violation " + className);
                     }
 
