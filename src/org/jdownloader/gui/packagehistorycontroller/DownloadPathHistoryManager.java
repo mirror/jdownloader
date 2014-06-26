@@ -20,7 +20,8 @@ public class DownloadPathHistoryManager extends HistoryManager<DownloadPath> {
     }
 
     /**
-     * Create a new instance of PackageHistoryManager. This is a singleton class. Access the only existing instance by using {@link #getInstance()}.
+     * Create a new instance of PackageHistoryManager. This is a singleton class. Access the only existing instance by using
+     * {@link #getInstance()}.
      */
     private DownloadPathHistoryManager() {
         super(CFG_LINKGRABBER.CFG.getDownloadDestinationHistory(), 25);
@@ -44,15 +45,30 @@ public class DownloadPathHistoryManager extends HistoryManager<DownloadPath> {
     }
 
     public List<String> listPathes(String... strings) {
-        List<DownloadPath> l = list();
-        LinkedHashSet<String> dupe = new LinkedHashSet<String>();
-        if (strings != null) {
+        return listPathes(false, strings);
+    }
+
+    public List<String> listPathes(boolean atTop, String... strings) {
+        final List<DownloadPath> l = list();
+        final LinkedHashSet<String> dupe = new LinkedHashSet<String>();
+        if (atTop && strings != null) {
             for (String s : strings) {
-                if (StringUtils.isNotEmpty(s)) dupe.add(s);
+                if (StringUtils.isNotEmpty(s)) {
+                    dupe.add(s);
+                }
             }
         }
         for (DownloadPath p : l) {
-            if (p != null && StringUtils.isNotEmpty(p.getName())) dupe.add(p.getName());
+            if (p != null && StringUtils.isNotEmpty(p.getName())) {
+                dupe.add(p.getName());
+            }
+        }
+        if (!atTop && strings != null) {
+            for (String s : strings) {
+                if (StringUtils.isNotEmpty(s)) {
+                    dupe.add(s);
+                }
+            }
         }
         return Lists.unique(dupe);
     }
