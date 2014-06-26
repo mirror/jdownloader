@@ -622,22 +622,16 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
 
     /**
      * returns how many downloads are currently watched by this DownloadWatchDog
-     * 
+     *
      * @return
      */
     public int getActiveDownloads() {
-        int ret = 0;
-        for (SingleDownloadController controller : getSession().getControllers()) {
-            if (controller.isActive()) {
-                ret++;
-            }
-        }
-        return ret;
+        return getSession().getControllers().size();
     }
 
     /**
      * returns the ThrottledConnectionManager of this DownloadWatchDog
-     * 
+     *
      * @return
      */
     public DownloadSpeedManager getDownloadSpeedManager() {
@@ -1523,7 +1517,7 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
 
     /**
      * returns current pause state
-     * 
+     *
      * @return
      */
     public boolean isPaused() {
@@ -1536,7 +1530,7 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
 
     /**
      * may the DownloadWatchDog start new Downloads?
-     * 
+     *
      * @return
      */
     private boolean newDLStartAllowed(DownloadSession session) {
@@ -1571,7 +1565,7 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
 
     /**
      * pauses the DownloadWatchDog
-     * 
+     *
      * @param value
      */
 
@@ -1987,7 +1981,7 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
 
     /**
      * activates new Downloads as long as possible and returns how many got activated
-     * 
+     *
      * @return
      **/
     private List<SingleDownloadController> activateDownloads() throws Exception {
@@ -2015,7 +2009,7 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
                 /* first process forcedLinks */
                 selector.setForcedOnly(true);
                 loopCounter = 0;
-                while (abort == false && session.isForcedLinksWaiting() && (getActiveDownloads() < maxConcurrentForced) && loopCounter < session.getForcedLinks().size()) {
+                while (abort == false && session.isForcedLinksWaiting() && (getActiveDownloads() < maxConcurrentForced) && loopCounter < maxConcurrentForced) {
                     try {
                         if (abort || (abort = (!this.newDLStartAllowed(session)))) {
                             break;
@@ -2033,7 +2027,7 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
             loopCounter = 0;
             selector.setForcedOnly(false);
             /* then process normal activationRequests */
-            while (abort == false && getActiveDownloads() < maxConcurrentNormal && loopCounter < session.getActivationRequests().size()) {
+            while (abort == false && getActiveDownloads() < maxConcurrentNormal && loopCounter < maxConcurrentNormal) {
                 try {
                     if (abort || (abort = (!this.newDLStartAllowed(session) || session.isStopMarkReached()))) {
                         break;
@@ -2122,27 +2116,12 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
 
     /**
      * activates a new SingleDownloadController for the given SingleDownloadControllerActivator
-     * 
+     *
      * @param activator
      */
     private SingleDownloadController attach(final DownloadLinkCandidate candidate) {
         logger.info("Start new Download: Host:" + candidate);
-        boolean ignoreUnsafe = true;
 
-        String downloadTo = candidate.getLink().getFileOutput(ignoreUnsafe, false);
-        if (StringUtils.isEmpty(downloadTo)) {
-            ignoreUnsafe = false;
-            downloadTo = candidate.getLink().getFileOutput(ignoreUnsafe, false);
-        }
-        String customDownloadTo = candidate.getLink().getFileOutput(ignoreUnsafe, true);
-        if (ignoreUnsafe) {
-            logger.info("Download To: " + downloadTo);
-        } else {
-            logger.info("Download To(Unsafe): " + downloadTo);
-        }
-        if (!StringUtils.equalsIgnoreCase(downloadTo, customDownloadTo)) {
-            logger.info("Download To(custom): " + customDownloadTo);
-        }
         DownloadLinkCandidateHistory history = getSession().buildHistory(candidate.getLink());
         if (history == null || !history.attach(candidate)) {
             logger.severe("Could not attach to History: " + candidate);
@@ -2152,6 +2131,21 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
 
             @Override
             protected Void run() throws RuntimeException {
+                boolean ignoreUnsafe = true;
+                String downloadTo = candidate.getLink().getFileOutput(ignoreUnsafe, false);
+                if (StringUtils.isEmpty(downloadTo)) {
+                    ignoreUnsafe = false;
+                    downloadTo = candidate.getLink().getFileOutput(ignoreUnsafe, false);
+                }
+                String customDownloadTo = candidate.getLink().getFileOutput(ignoreUnsafe, true);
+                if (ignoreUnsafe) {
+                    logger.info("Download To: " + downloadTo);
+                } else {
+                    logger.info("Download To(Unsafe): " + downloadTo);
+                }
+                if (!StringUtils.equalsIgnoreCase(downloadTo, customDownloadTo)) {
+                    logger.info("Download To(custom): " + customDownloadTo);
+                }
                 con.setSessionDownloadDirectory(candidate.getLink().getParentNode().getDownloadDirectory());
                 return null;
             }
@@ -3987,39 +3981,6 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
                             for (DownloadLink downloadLink : pkg.getChildren()) {
                                 if (downloadLink.getDownloadLinkController() != null) {
                                     // running
-                                    for (File f : downloadLink.getDefaultPlugin().listProcessFiles(downloadLink)) {
-                                        try {
-                                            if (f.getName().endsWith(".part")) {
-                                                // try to create an empty file;
-                                                final File filetocreate = new File(newFilePath, f.getName());
-                                                if (filetocreate.exists()) {
-
-                                                    // todo: houston
-                                                } else {
-                                                    filetocreate.getParentFile().mkdirs();
-                                                    filetocreate.createNewFile();
-
-                                                    downloadLink.getDownloadLinkController().getJobsAfterDetach().add(new DownloadWatchDogJob() {
-
-                                                        @Override
-                                                        public void interrupt() {
-                                                        }
-
-                                                        @Override
-                                                        public void execute(DownloadSession currentSession) {
-                                                            /* now we can reset the link */
-                                                            if (filetocreate.exists() && filetocreate.length() == 0) {
-                                                                filetocreate.delete();
-                                                                filetocreate.getParentFile().delete();
-                                                            }
-                                                        }
-                                                    });
-                                                }
-                                            }
-                                        } catch (IOException e) {
-                                            logger.log(e);
-                                        }
-                                    }
                                 } else if (downloadLink.getDefaultPlugin() != null) {
                                     move(downloadLink, old, downloadLink.getName(), path, null);
                                 }
