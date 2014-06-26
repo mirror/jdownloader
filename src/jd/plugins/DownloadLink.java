@@ -102,7 +102,6 @@ public class DownloadLink extends Property implements Serializable, AbstractPack
     private static final String                                 PROPERTY_SPEEDLIMIT                 = "SPEEDLIMIT";
     private static final String                                 PROPERTY_VERIFIEDFILESIZE           = "VERIFIEDFILESIZE";
     public static final String                                  PROPERTY_RESUMEABLE                 = "PROPERTY_RESUMEABLE";
-    // public static final String PROPERTY_FINALLOCATION = "FINALLOCATION";
     public static final String                                  PROPERTY_CUSTOM_LOCALFILENAME       = "CUSTOM_LOCALFILENAME";
     public static final String                                  PROPERTY_CUSTOM_LOCALFILENAMEAPPEND = "CUSTOM_LOCALFILENAMEAPPEND";                    ;
     public static final String                                  PROPERTY_DOWNLOADTIME               = "DOWNLOADTIME";
@@ -188,7 +187,7 @@ public class DownloadLink extends Property implements Serializable, AbstractPack
 
     private transient volatile long                             lastAvailableStatusChange           = -1;
 
-    private FilePackage                                         lastValidFilePackage;
+    private transient volatile FilePackage                      lastValidFilePackage                = null;
 
     public FilePackage getLastValidFilePackage() {
         return lastValidFilePackage;
@@ -469,10 +468,6 @@ public class DownloadLink extends Property implements Serializable, AbstractPack
         return browserurl != null;
     }
 
-    // public String getFinalFileOutput() {
-    // return this.getStringProperty(PROPERTY_FINALLOCATION, null);
-    // }
-
     public String getFileOutput() {
 
         return getFileOutput(false, false);
@@ -489,12 +484,6 @@ public class DownloadLink extends Property implements Serializable, AbstractPack
     }
 
     public String getFileOutput(boolean ignoreUnsafe, boolean ignoreCustom) {
-
-        // String ret = getFinalFileOutput();
-        // if (!StringUtils.isEmpty(ret)) {
-        // /* we have a fixed final location */
-        // return ret;
-        // }
         String downloadDirectory = getDownloadDirectory();
         String fileName = getInternalTmpFilename();
         if (!StringUtils.isEmpty(fileName) && !ignoreCustom) {
@@ -517,13 +506,16 @@ public class DownloadLink extends Property implements Serializable, AbstractPack
         if (Thread.currentThread() instanceof SingleDownloadController) {
             return ((SingleDownloadController) Thread.currentThread()).getSessionDownloadDirectory();
         }
-
-        FilePackage fp = getFilePackage();
-        String downloadDirectory = lastValidFilePackage.getDownloadDirectory();
-        if (StringUtils.isEmpty(downloadDirectory)) {
-            throw new WTFException("what the fuck just happened here? defaultFilePackage: " + FilePackage.isDefaultFilePackage(fp));
+        final FilePackage fp = getLastValidFilePackage();
+        if (fp != null) {
+            final String downloadDirectory = fp.getDownloadDirectory();
+            if (StringUtils.isEmpty(downloadDirectory)) {
+                throw new WTFException("what the fuck just happened here? defaultFilePackage: " + FilePackage.isDefaultFilePackage(fp));
+            }
+            return downloadDirectory;
+        } else {
+            throw new WTFException("what the fuck just happened here? no lastValidFilePackage");
         }
-        return downloadDirectory;
     }
 
     /**
@@ -659,7 +651,6 @@ public class DownloadLink extends Property implements Serializable, AbstractPack
      * @return
      */
     public String getName(boolean ignoreUnsafe, boolean ignoreForcedFilename) {
-
         String ret = this.getForcedFileName();
         if (ret != null) {
             return ret;
@@ -672,7 +663,6 @@ public class DownloadLink extends Property implements Serializable, AbstractPack
             return null;
         }
         try {
-
             if (name != null) {
                 return name;
             }
@@ -761,7 +751,6 @@ public class DownloadLink extends Property implements Serializable, AbstractPack
     }
 
     public String getForcedFileName() {
-
         // workaround. all plugin calls should return the forced filename from the singledownloadcontroller - if available
         if (Thread.currentThread() instanceof SingleDownloadController) {
             return ((SingleDownloadController) Thread.currentThread()).getSessionDownloadFilename();
@@ -1195,35 +1184,6 @@ public class DownloadLink extends Property implements Serializable, AbstractPack
         return this;
     }
 
-    //
-    // private transient String tmpAsynchRenameFilename;
-    //
-    // /**
-    // * use only to set the final filename if the link is in the downloadlist. use for custom names only. like custom renames..
-    // *
-    // * @param path
-    // */
-    // public void setTmpAsynchRenameFilename(final String newCustom) {
-    // final String oldFullName = getName();
-    // String oldCustom = getTmpAsynchRenameFilename();
-    // if (StringUtils.isEmpty(oldCustom)) {
-    // oldCustom = getName();
-    // }
-    // if (!StringUtils.equals(oldCustom, newCustom)) {
-    // this.tmpAsynchRenameFilename = CrossSystem.alleviatePathParts(newCustom);
-    // setLinkInfo(null);
-    // final String newName = getName();
-    // if (!StringUtils.equals(oldFullName, newName) && hasNotificationListener()) {
-    // notifyChanges(AbstractNodeNotifier.NOTIFY.PROPERTY_CHANCE, new DownloadLinkProperty(this, DownloadLinkProperty.Property.NAME,
-    // newName));
-    // }
-    // }
-    // }
-    //
-    // public String getTmpAsynchRenameFilename() {
-    // return tmpAsynchRenameFilename;
-    // }
-
     /**
      * Filename Setter for Plugins if the plugin is 100% sure that this is the correct filename
      * 
@@ -1531,19 +1491,6 @@ public class DownloadLink extends Property implements Serializable, AbstractPack
     public void setNodeChangeListener(AbstractNodeNotifier propertyListener) {
         this.propertyListener = propertyListener;
     }
-
-    // /**
-    // * WARNING: DO NOT use in 09581 stable!
-    // *
-    // * @since JD2
-    // */
-    // public void setFinalFileOutput(String absolutePath) {
-    // if (!StringUtils.isEmpty(absolutePath)) {
-    // setProperty(DownloadLink.PROPERTY_FINALLOCATION, absolutePath);
-    // } else {
-    // setProperty(DownloadLink.PROPERTY_FINALLOCATION, Property.NULL);
-    // }
-    // }
 
     public void setPriorityEnum(Priority priority) {
         if (priority == null) {
