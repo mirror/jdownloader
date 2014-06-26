@@ -30,7 +30,7 @@ import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
 import jd.utils.JDUtilities;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "docs.google.com" }, urls = { "https?://(www\\.)?(docs\\.google\\.com/folder/d/[a-zA-Z0-9\\-_]+|(docs|drive)\\.google\\.com/folderview\\?(pli=1\\&id=[A-Za-z0-9_]+(\\&tid=[A-Za-z0-9]+)?|id=[A-Za-z0-9_]+&usp=sharing))" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "docs.google.com" }, urls = { "https?://(www\\.)?(docs\\.google\\.com/folder/d/[a-zA-Z0-9\\-_]+|(docs|drive)\\.google\\.com/folderview\\?(pli=1\\&id=[A-Za-z0-9_]+(\\&tid=[A-Za-z0-9]+)?|id=[A-Za-z0-9_]+))" }, flags = { 0 })
 public class DocsGoogleCom extends PluginForDecrypt {
 
     /**
@@ -51,7 +51,10 @@ public class DocsGoogleCom extends PluginForDecrypt {
     // user-agent required to use new ones otherwise blocks with javascript notice.
 
     private static final String FOLDER_NORMAL = "https?://(www\\.)?docs\\.google\\.com/folder/d/[a-zA-Z0-9\\-_]+";
-    private static final String FOLDER_SECOND = "https?://(www\\.)?(docs|drive)\\.google\\.com/folderview\\?(pli=1\\&id=[A-Za-z0-9_]+(\\&tid=[A-Za-z0-9]+)?|id=[A-Za-z0-9_]+&usp=sharing)";
+    private static final String FOLDER_OLD    = "https?://(www\\.)?docs\\.google\\.com/folderview\\?(pli=1\\&id=[A-Za-z0-9_]+(\\&tid=[A-Za-z0-9]+)?|id=[A-Za-z0-9_]+\\&usp=sharing)";
+    private static final String FOLDER_NEW    = "https?://(www\\.)?drive\\.google\\.com/folderview\\?id=?[A-Za-z0-9_\\\\]+";
+
+    boolean                     USE_OLD_WAY   = false;
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
@@ -70,9 +73,16 @@ public class DocsGoogleCom extends PluginForDecrypt {
             logger.info("Link is offline or Invalid URL been provided " + parameter);
             return decryptedLinks;
         }
+        final String fid = new Regex(parameter, "id=([A-Za-z0-9]+)").getMatch(0);
+        if (fid == null) {
+            logger.warning("Decrypter broken for link: " + parameter);
+            return null;
+        }
 
         String fpName = br.getRegex("\"title\":\"([^\"]+)\",\"urlPrefix\"").getMatch(0);
-        if (fpName == null) fpName = br.getRegex("<title>([^<>\"]*?)</title>").getMatch(0);
+        if (fpName == null) {
+            fpName = br.getRegex("<title>([^<>\"]*?)</title>").getMatch(0);
+        }
 
         String[] results = br.getRegex("(\\{\"description\":[^\\}]+),").getColumn(0);
         // if (results == null || results.length == 0) {
@@ -93,25 +103,44 @@ public class DocsGoogleCom extends PluginForDecrypt {
             }
         }
         if (decryptedLinks.size() == 0) {
-            // New way
+            /* Other handling removed 26.06.14 in Revision 24087 */
             final String content = br.getRegex("\\{folderModel: \\[(.*?\\])[\t\n\r ]+\\]").getMatch(0);
-            if (content != null) {
-                final String[] filelinks = new Regex(content, "\"(https?://docs\\.google\\.com/file/d/[A-Za-z0-9_]+/?)").getColumn(0);
-                if (filelinks != null && filelinks.length != 0) {
-                    for (final String filelink : filelinks) {
-                        decryptedLinks.add(createDownloadlink(filelink));
+            /* Even if there are no FILES, we will get an array - empty! */
+            final String all_items = br.getRegex("viewerItems: \\[(.*?)\\][\t\n\r ]+,\\};").getMatch(0);
+            if (all_items == null || content == null) {
+                logger.warning("Decrypter broken for link: " + parameter);
+                return null;
+            }
+            final String[] all_items_list = all_items.split("\\][\r\t\n ]+,\\[");
+            final String[] filelinks = new Regex(content, "\"(https?://docs\\.google\\.com/file/d/[^<>\"]*?)\"\\]").getColumn(0);
+            if (filelinks != null && all_items_list != null && all_items_list.length == filelinks.length) {
+                int counter = 0;
+                for (final String item : all_items_list) {
+                    String filename = new Regex(item, "\"([^<>\"]*?)\"").getMatch(0);
+                    String final_link = filelinks[counter];
+                    if (filename != null) {
+                        filename = unescape(filename);
+                        final_link = unescape(final_link);
+                        final DownloadLink fina = createDownloadlink(final_link);
+                        fina.setName(filename);
+                        fina.setAvailable(true);
+                        decryptedLinks.add(fina);
                     }
+                    counter++;
                 }
+            }
 
-                final String[] folderlinks = new Regex(content, "(" + FOLDER_SECOND + ")").getColumn(0);
-                if (folderlinks != null && folderlinks.length != 0) {
-                    for (String folderlink : folderlinks) {
-                        folderlink = unescape(folderlink);
-                        // return folder links back into the plugin again.
+            final String[] folderlinks = new Regex(content, "(" + FOLDER_NEW + ")").getColumn(0);
+            if (folderlinks != null && folderlinks.length != 0) {
+                for (String folderlink : folderlinks) {
+                    folderlink = unescape(folderlink);
+                    // return folder links back into the plugin again.
+                    if (!folderlink.contains("id=" + fid)) {
                         decryptedLinks.add(createDownloadlink(folderlink));
                     }
                 }
             }
+
         }
         if (decryptedLinks.size() == 0) {
             logger.info("Found nothing to download: " + parameter);
@@ -129,7 +158,9 @@ public class DocsGoogleCom extends PluginForDecrypt {
         if (result != null) {
             String link = new Regex(result, "\"openURL\":\"(http.+(\\\\/|/)file(\\\\/|/)d(\\\\/|/)[^\"]+)").getMatch(0);
             String filename = new Regex(result, "\"name\":\"([^\"]+)").getMatch(0);
-            if (filename == null) filename = new Regex(result, ">(.*?)</a>").getMatch(0);
+            if (filename == null) {
+                filename = new Regex(result, ">(.*?)</a>").getMatch(0);
+            }
             if (link != null && filename != null) {
                 DownloadLink dl = createDownloadlink(link.replaceAll("\\\\/", "/"));
                 dl.setName(filename);
@@ -142,7 +173,9 @@ public class DocsGoogleCom extends PluginForDecrypt {
     private static synchronized String unescape(final String s) {
         /* we have to make sure the youtube plugin is loaded */
         final PluginForHost plugin = JDUtilities.getPluginForHost("youtube.com");
-        if (plugin == null) throw new IllegalStateException("youtube plugin not found!");
+        if (plugin == null) {
+            throw new IllegalStateException("youtube plugin not found!");
+        }
 
         return jd.plugins.hoster.Youtube.unescape(s);
     }

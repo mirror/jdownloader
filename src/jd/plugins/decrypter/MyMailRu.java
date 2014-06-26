@@ -47,6 +47,17 @@ public class MyMailRu extends PluginForDecrypt {
 
         br.setFollowRedirects(true);
         br.getPage(parameter);
+        if (br.containsHTML("class=\"l\\-button l\\-button_password\"")) {
+            logger.info("Password protected my.mail.ry links are not (yet) supported: " + parameter);
+            return decryptedLinks;
+        } else if (br.containsHTML("class=\"photo\\-catalog_nofound\"")) {
+            final DownloadLink offline = createDownloadlink("directhttp://" + parameter);
+            offline.setAvailable(false);
+            offline.setProperty("offline", true);
+            offline.setFinalFileName(new Regex(parameter, "my\\.mail\\.ru/(.+)").getMatch(0));
+            decryptedLinks.add(offline);
+            return decryptedLinks;
+        }
         final String username = new Regex(parameter, "http://(www\\.)?my.mail.ru/[^<>/\"]+/([^<>/\"]+)/.+").getMatch(1);
         final String dirname = new Regex(parameter, "http://(www\\.)?my.mail.ru/([^<>/\"]+)/[^<>/\"]+/.+").getMatch(1);
         if (parameter.matches("http://(www\\.)?my\\.mail\\.ru/[^<>/\"]+/[^<>/\"]+/photo\\?album_id=[a-z0-9\\-_]+")) {

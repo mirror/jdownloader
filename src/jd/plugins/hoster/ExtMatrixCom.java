@@ -198,6 +198,9 @@ public class ExtMatrixCom extends PluginForHost {
             }
             br.setFollowRedirects(true);
             br.postPage(MAINPAGE + "/login.php", "user=" + Encoding.urlEncode(account.getUser()) + "&pass=" + Encoding.urlEncode(account.getPass()) + "&captcha=&submit=Login&task=dologin&return=.%2Fmembers%2Fmyfiles.php");
+            if (br.getHttpConnection().getResponseCode() == 404) {
+                br.getPage(MAINPAGE + "/members/myfiles.php");
+            }
             if (!br.containsHTML("title=\"Logout\">Logout</a>")) {
                 final String lang = System.getProperty("user.language");
                 if ("de".equalsIgnoreCase(lang)) {
@@ -259,7 +262,7 @@ public class ExtMatrixCom extends PluginForHost {
             ai.setStatus("Registered (free) user");
         } else {
             try {
-                maxPrem.set(2);
+                maxPrem.set(20);
                 account.setMaxSimultanDownloads(maxPrem.get());
                 account.setConcurrentUsePossible(true);
             } catch (final Throwable e) {
