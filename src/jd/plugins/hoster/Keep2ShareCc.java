@@ -661,6 +661,8 @@ public class Keep2ShareCc extends PluginForHost {
             // We also only have 1 max free sim currently, if we go higher we need to track current transfers against
             // connection_candidate(proxy|direct) IP address, and reduce max sim by one.
             throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, alreadyDownloading, 10 * 60 * 1000);
+        } else if (dl.getConnection().getResponseCode() == 503) {
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 503", 5 * 60 * 1000l);
         } else if (dl.getConnection().getResponseCode() == 404 || br.containsHTML(">Not Found<")) {
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 404", 30 * 60 * 1000l);
         }
@@ -723,8 +725,6 @@ public class Keep2ShareCc extends PluginForHost {
         return false;
     }
 
-    private static HashMap<String, String> cloudflareCookies = new HashMap<String, String>();
-
     /**
      * because stable is lame!
      * */
@@ -735,7 +735,7 @@ public class Keep2ShareCc extends PluginForHost {
     /**
      * Gets page <br />
      * - natively supports silly cloudflare anti DDoS crapola
-     * 
+     *
      * @author raztoki
      */
     public void getPage(final String page) throws Exception {
@@ -841,7 +841,7 @@ public class Keep2ShareCc extends PluginForHost {
      * Performs Cloudflare and Incapsula requirements.<br />
      * Auto fill out the required fields and updates antiDDoSCookies session.<br />
      * Always called after Browser Request!
-     * 
+     *
      * @version 0.02
      * @author raztoki
      **/
@@ -949,7 +949,7 @@ public class Keep2ShareCc extends PluginForHost {
     }
 
     /**
-     * 
+     *
      * @author raztoki
      * */
     private boolean requestHeadersHasKeyNValueStartsWith(final String k, final String v) {
@@ -965,7 +965,7 @@ public class Keep2ShareCc extends PluginForHost {
     }
 
     /**
-     * 
+     *
      * @author raztoki
      * */
     private boolean requestHeadersHasKeyNValueContains(final String k, final String v) {
