@@ -430,7 +430,20 @@ public class HellShareCom extends PluginForHost {
         br.setDebug(true);
         br.getPage("http://www.hellshare.com/login?do=loginForm-submit");
         final String domain = br.getHost();
-        br.postPage("http://www." + domain + "/uzivatel/prihlaseni?do=loginForm-submit", "username=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()) + "&perm_login=on&login=Log+in");
+        Form loginForm = null;
+        for (Form form : br.getForms()) {
+            if (form.getAction() != null && form.getAction().contains("loginForm")) {
+                loginForm = form;
+                break;
+            }
+        }
+        if (loginForm == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        loginForm.put("username", Encoding.urlEncode(account.getUser()));
+        loginForm.put("password", Encoding.urlEncode(account.getPass()));
+        loginForm.put("perm_login", "on");
+        br.submitForm(loginForm);
 
         /*
          * this will change account language to eng,needed because language is saved in profile
