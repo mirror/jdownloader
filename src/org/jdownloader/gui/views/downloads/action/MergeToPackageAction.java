@@ -1,11 +1,11 @@
-package org.jdownloader.gui.views.linkgrabber.contextmenu;
+package org.jdownloader.gui.views.downloads.action;
 
 import java.awt.event.ActionEvent;
 import java.util.List;
 
-import jd.controlling.linkcollector.LinkCollector;
-import jd.controlling.linkcrawler.CrawledLink;
-import jd.controlling.linkcrawler.CrawledPackage;
+import jd.controlling.downloadcontroller.DownloadController;
+import jd.plugins.DownloadLink;
+import jd.plugins.FilePackage;
 
 import org.appwork.utils.event.queue.QueueAction;
 import org.appwork.utils.swing.dialog.Dialog;
@@ -18,8 +18,9 @@ import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.gui.views.SelectionInfo;
 import org.jdownloader.gui.views.SelectionInfo.PackageView;
 import org.jdownloader.gui.views.components.LocationInList;
+import org.jdownloader.gui.views.linkgrabber.contextmenu.NewPackageDialog;
 
-public class MergeToPackageAction extends CustomizableTableContextAppAction<CrawledPackage, CrawledLink> implements ActionContext {
+public class MergeToPackageAction extends CustomizableTableContextAppAction<FilePackage, DownloadLink> implements ActionContext {
 
     /**
      * 
@@ -64,7 +65,7 @@ public class MergeToPackageAction extends CustomizableTableContextAppAction<Craw
             return;
         }
         try {
-            final SelectionInfo<CrawledPackage, CrawledLink> sel = getSelection();
+            final SelectionInfo<FilePackage, DownloadLink> sel = getSelection();
             final NewPackageDialog d = new NewPackageDialog(sel);
             if (isLastPathDefault()) {
                 List<String> pathes = DownloadPathHistoryManager.getInstance().listPathes((String[]) null);
@@ -79,41 +80,46 @@ public class MergeToPackageAction extends CustomizableTableContextAppAction<Craw
                 return;
             }
 
-            LinkCollector.getInstance().getQueue().add(new QueueAction<Void, RuntimeException>() {
+            DownloadController.getInstance().getQueue().add(new QueueAction<Void, RuntimeException>() {
 
                 @Override
                 protected Void run() throws RuntimeException {
-                    CrawledPackage newPackage = new CrawledPackage();
+                    FilePackage newPackage = FilePackage.getInstance();
 
                     newPackage.setName(name);
                     String f = d.getDownloadFolder();
-                    newPackage.setDownloadFolder(f);
+                    newPackage.setDownloadDirectory(f);
 
                     switch (getLocation()) {
                     case AFTER_SELECTION:
                         int index = -1;
-                        for (PackageView<CrawledPackage, CrawledLink> pv : sel.getPackageViews()) {
-                            index = Math.max(index, LinkCollector.getInstance().indexOf(pv.getPackage()) + 1);
+                        for (PackageView<FilePackage, DownloadLink> pv : sel.getPackageViews()) {
+                            index = Math.max(index, DownloadController.getInstance().indexOf(pv.getPackage()) + 1);
                         }
-                        LinkCollector.getInstance().moveOrAddAt(newPackage, getSelection().getChildren(), 0, index);
+
+                        DownloadController.getInstance().moveOrAddAt(newPackage, getSelection().getChildren(), 0, index);
+
                         return null;
                     case BEFORE_SELECTION:
                         index = Integer.MAX_VALUE;
-                        for (PackageView<CrawledPackage, CrawledLink> pv : sel.getPackageViews()) {
-                            index = Math.min(index, LinkCollector.getInstance().indexOf(pv.getPackage()));
+                        for (PackageView<FilePackage, DownloadLink> pv : sel.getPackageViews()) {
+                            index = Math.min(index, DownloadController.getInstance().indexOf(pv.getPackage()));
                         }
                         if (index == Integer.MAX_VALUE) {
                             index = 0;
                         }
-                        LinkCollector.getInstance().moveOrAddAt(newPackage, getSelection().getChildren(), 0, index);
+                        DownloadController.getInstance().moveOrAddAt(newPackage, getSelection().getChildren(), 0, index);
+
                         return null;
 
                     case END_OF_LIST:
-                        LinkCollector.getInstance().moveOrAddAt(newPackage, getSelection().getChildren(), 0, -1);
+                        DownloadController.getInstance().moveOrAddAt(newPackage, getSelection().getChildren(), 0, -1);
+
                         return null;
 
                     case TOP_OF_LIST:
-                        LinkCollector.getInstance().moveOrAddAt(newPackage, getSelection().getChildren(), 0, 0);
+                        DownloadController.getInstance().moveOrAddAt(newPackage, getSelection().getChildren(), 0, 0);
+
                         return null;
                     }
 

@@ -254,7 +254,7 @@ public class DownloadLinkDownloadable implements Downloadable {
                 boolean readL = filePackage.getModifyLock().readLock();
                 try {
                     for (DownloadLink dl : filePackage.getChildren()) {
-                        if (dl.getFileOutput().toLowerCase().endsWith(".sfv") && FinalLinkState.CheckFinished(dl.getFinalLinkState())) {
+                        if (getFileOutput().toLowerCase().endsWith(".sfv") && FinalLinkState.CheckFinished(dl.getFinalLinkState())) {
                             SFVs.add(dl);
                         }
                     }
@@ -263,7 +263,7 @@ public class DownloadLinkDownloadable implements Downloadable {
                 }
                 /* SFV File Available, lets use it */
                 for (DownloadLink SFV : SFVs) {
-                    File file = new File(SFV.getFileOutput());
+                    File file = getFileOutput(SFV, false);
                     if (file.exists()) {
                         String sfvText;
                         try {
@@ -286,6 +286,21 @@ public class DownloadLinkDownloadable implements Downloadable {
             }
         }
         return null;
+    }
+
+    private File getFileOutput(DownloadLink link, boolean ignoreCustom) {
+
+        // SingleDownloadController controller = link.getDownloadLinkController();
+        // if (controller != null) {
+        // return controller.getDownloadPath(this, false, false);
+        // }
+        SingleDownloadController controller = link.getDownloadLinkController();
+        if (controller == null) {
+            return new File(link.getFileOutput(false, ignoreCustom));
+        } else {
+            return controller.getFileOutput(false, ignoreCustom);
+        }
+
     }
 
     @Override
@@ -355,10 +370,10 @@ public class DownloadLinkDownloadable implements Downloadable {
         return renameOkay;
     }
 
-    @Override
-    public void setFinalFileOutput(String absolutePath) {
-        downloadLink.setFinalFileOutput(absolutePath);
-    }
+    // @Override
+    // public void setFinalFileOutput(String absolutePath) {
+    // downloadLink.setFinalFileOutput(absolutePath);
+    // }
 
     @Override
     public void waitForNextConnectionAllowed() throws InterruptedException {
@@ -373,7 +388,8 @@ public class DownloadLinkDownloadable implements Downloadable {
 
     @Override
     public String getFileOutput() {
-        return downloadLink.getFileOutput();
+        return getFileOutput(downloadLink, false).getAbsolutePath();
+
     }
 
     @Override
@@ -388,7 +404,8 @@ public class DownloadLinkDownloadable implements Downloadable {
 
     @Override
     public String getFinalFileOutput() {
-        return downloadLink.getFileOutput(false, true);
+
+        return getFileOutput(downloadLink, true).getAbsolutePath();
     }
 
     @Override

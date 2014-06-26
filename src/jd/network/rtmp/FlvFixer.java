@@ -140,6 +140,7 @@ public class FlvFixer {
             progress = new FlvFixerProgress(0, 0, null);
             progress.setIcon(NewTheme.I().getIcon("wait", 16));
             progress.setProgressSource(this);
+
         } else {
             progress = null;
         }

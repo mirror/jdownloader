@@ -3,6 +3,7 @@ package org.jdownloader.gui.views.downloads.action;
 import java.util.List;
 
 import jd.controlling.downloadcontroller.DownloadController;
+import jd.controlling.downloadcontroller.DownloadWatchDog;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 
@@ -34,7 +35,9 @@ public class SetDownloadFolderInDownloadTableAction extends SetDownloadFolderAct
             @Override
             protected Void run() throws RuntimeException {
                 int index = DownloadController.getInstance().indexOf(source);
+
                 DownloadController.getInstance().moveOrAddAt(pkg, selectedLinksByPackage, -1, index);
+
                 return null;
             }
         });
@@ -54,7 +57,8 @@ public class SetDownloadFolderInDownloadTableAction extends SetDownloadFolderAct
 
     @Override
     protected void set(FilePackage pkg, String absolutePath) {
-        pkg.setDownloadDirectory(PackagizerController.replaceDynamicTags(absolutePath, pkg.getName()));
+        DownloadWatchDog.getInstance().setDownloadDirectory(pkg, PackagizerController.replaceDynamicTags(absolutePath, pkg.getName()));
+
     }
 
     @Override

@@ -73,9 +73,9 @@ public class YoutubeSRTConverter implements YoutubeConverter {
             File finalFile;
             SubtitleConverter.convertGoogleCC2SRTSubtitles(file, finalFile = new File(file.getAbsolutePath().replaceFirst("\\.srt\\.tmp$", ".srt")));
             try {
-                downloadLink.setFinalFileOutput(finalFile.getAbsolutePath());
-                downloadLink.setCustomFileOutputFilenameAppend(null);
-                downloadLink.setCustomFileOutputFilename(null);
+
+                downloadLink.setInternalTmpFilenameAppend(null);
+                downloadLink.setInternalTmpFilename(null);
             } catch (final Throwable e) {
             }
         } finally {

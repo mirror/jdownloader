@@ -65,7 +65,7 @@ public class DownloadsAPIV2Impl implements DownloadsAPIV2 {
                 FilePackageAPIStorableV2 fps = new FilePackageAPIStorableV2(fp);
 
                 if (queryParams.isSaveTo()) {
-                    fps.setSaveTo(fp.getDownloadDirectory());
+                    fps.setSaveTo(fp.getView().getDownloadDirectory());
 
                 }
                 if (queryParams.isBytesTotal()) {

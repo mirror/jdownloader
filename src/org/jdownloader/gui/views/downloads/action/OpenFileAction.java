@@ -35,7 +35,7 @@ public class OpenFileAction extends CustomizableTableContextAppAction<FilePackag
                 this.file = getSelection() == null ? null : new File(getSelection().getContextLink().getFileOutput());
 
             } else {
-                this.file = getSelection() == null ? null : new File(getSelection().getContextPackage().getDownloadDirectory());
+                this.file = getSelection() == null ? null : new File(getSelection().getContextPackage().getView().getDownloadDirectory());
                 // Do not show for packages
                 setVisible(false);
             }
@@ -56,7 +56,9 @@ public class OpenFileAction extends CustomizableTableContextAppAction<FilePackag
     public void actionPerformed(ActionEvent e) {
         while (!file.exists()) {
             File p = file.getParentFile();
-            if (p == null || p.equals(file)) return;
+            if (p == null || p.equals(file)) {
+                return;
+            }
             file = p;
         }
         CrossSystem.openFile(file);

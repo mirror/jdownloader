@@ -276,6 +276,7 @@ public class StatsManager implements GenericConfigEventListener<Object>, Downloa
 
     private ConcurrentHashMap<String, ErrorDetails> errors                = new ConcurrentHashMap<String, ErrorDetails>(10, 0.9f, 1);
     private HashSet<String>                         requestedErrorDetails = new HashSet<String>();
+    private HashSet<String>                         requestedLogs         = new HashSet<String>();
 
     @Override
     public void onDownloadControllerStopped(SingleDownloadController downloadController, DownloadLinkCandidate candidate, DownloadLinkCandidateResult result) {
@@ -702,6 +703,9 @@ public class StatsManager implements GenericConfigEventListener<Object>, Downloa
                                                 break;
 
                                             case REQUEST_LOG:
+                                                if (!requestedLogs.add(action.getData())) {
+                                                    break;
+                                                }
                                                 boolean found = false;
                                                 if (action.getData() != null) {
                                                     for (AbstractLogEntry s : sendRequest) {
@@ -759,34 +763,38 @@ public class StatsManager implements GenericConfigEventListener<Object>, Downloa
                                                     new Thread("Log Requestor") {
                                                         @Override
                                                         public void run() {
-                                                            UploadGeneralSessionLogDialogInterface d = UIOManager.I().show(UploadGeneralSessionLogDialogInterface.class, new UploadGeneralSessionLogDialog());
-                                                            if (d.getCloseReason() == CloseReason.OK) {
-                                                                UIOManager.I().show(ProgressInterface.class, new ProgressDialog(new ProgressGetter() {
+                                                            if (config.isAlwaysAllowLogUploads()) {
+                                                                createAndUploadLog(action, true);
+                                                            } else {
+                                                                UploadGeneralSessionLogDialogInterface d = UIOManager.I().show(UploadGeneralSessionLogDialogInterface.class, new UploadGeneralSessionLogDialog());
+                                                                if (d.getCloseReason() == CloseReason.OK) {
+                                                                    UIOManager.I().show(ProgressInterface.class, new ProgressDialog(new ProgressGetter() {
 
-                                                                    @Override
-                                                                    public void run() throws Exception {
-                                                                        createAndUploadLog(action, false);
-                                                                    }
+                                                                        @Override
+                                                                        public void run() throws Exception {
+                                                                            createAndUploadLog(action, false);
+                                                                        }
 
-                                                                    @Override
-                                                                    public String getString() {
-                                                                        return null;
-                                                                    }
+                                                                        @Override
+                                                                        public String getString() {
+                                                                            return null;
+                                                                        }
 
-                                                                    @Override
-                                                                    public int getProgress() {
-                                                                        return -1;
-                                                                    }
+                                                                        @Override
+                                                                        public int getProgress() {
+                                                                            return -1;
+                                                                        }
 
-                                                                    @Override
-                                                                    public String getLabelString() {
-                                                                        return null;
-                                                                    }
-                                                                }, 0, _GUI._.StatsManager_run_upload_error_title(), _GUI._.StatsManager_run_upload_error_message(), new AbstractIcon(IconKey.ICON_UPLOAD, 32)) {
-                                                                    public java.awt.Dialog.ModalityType getModalityType() {
-                                                                        return ModalityType.MODELESS;
-                                                                    };
-                                                                });
+                                                                        @Override
+                                                                        public String getLabelString() {
+                                                                            return null;
+                                                                        }
+                                                                    }, 0, _GUI._.StatsManager_run_upload_error_title(), _GUI._.StatsManager_run_upload_error_message(), new AbstractIcon(IconKey.ICON_UPLOAD, 32)) {
+                                                                        public java.awt.Dialog.ModalityType getModalityType() {
+                                                                            return ModalityType.MODELESS;
+                                                                        };
+                                                                    });
+                                                                }
                                                             }
                                                         }
                                                     }.start();
@@ -1000,40 +1008,43 @@ public class StatsManager implements GenericConfigEventListener<Object>, Downloa
 
                                 case REQUEST_LOG:
 
-                                    new Thread("Log Requestor") {
-                                        @Override
-                                        public void run() {
-                                            UploadGeneralSessionLogDialogInterface d = UIOManager.I().show(UploadGeneralSessionLogDialogInterface.class, new UploadGeneralSessionLogDialog());
-                                            if (d.getCloseReason() == CloseReason.OK) {
-                                                UIOManager.I().show(ProgressInterface.class, new ProgressDialog(new ProgressGetter() {
-
-                                                    @Override
-                                                    public void run() throws Exception {
-                                                        createAndUploadLog(action, false);
-                                                    }
-
-                                                    @Override
-                                                    public String getString() {
-                                                        return null;
-                                                    }
-
-                                                    @Override
-                                                    public int getProgress() {
-                                                        return -1;
-                                                    }
-
-                                                    @Override
-                                                    public String getLabelString() {
-                                                        return null;
-                                                    }
-                                                }, 0, _GUI._.StatsManager_run_upload_error_title(), _GUI._.StatsManager_run_upload_error_message(), new AbstractIcon(IconKey.ICON_UPLOAD, 32)) {
-                                                    public java.awt.Dialog.ModalityType getModalityType() {
-                                                        return ModalityType.MODELESS;
-                                                    };
-                                                });
-                                            }
-                                        }
-                                    }.start();
+                                    // new Thread("Log Requestor") {
+                                    // @Override
+                                    // public void run() {
+                                    // UploadGeneralSessionLogDialogInterface d =
+                                    // UIOManager.I().show(UploadGeneralSessionLogDialogInterface.class, new
+                                    // UploadGeneralSessionLogDialog());
+                                    // if (d.getCloseReason() == CloseReason.OK) {
+                                    // UIOManager.I().show(ProgressInterface.class, new ProgressDialog(new ProgressGetter() {
+                                    //
+                                    // @Override
+                                    // public void run() throws Exception {
+                                    // createAndUploadLog(action, false);
+                                    // }
+                                    //
+                                    // @Override
+                                    // public String getString() {
+                                    // return null;
+                                    // }
+                                    //
+                                    // @Override
+                                    // public int getProgress() {
+                                    // return -1;
+                                    // }
+                                    //
+                                    // @Override
+                                    // public String getLabelString() {
+                                    // return null;
+                                    // }
+                                    // }, 0, _GUI._.StatsManager_run_upload_error_title(), _GUI._.StatsManager_run_upload_error_message(),
+                                    // new AbstractIcon(IconKey.ICON_UPLOAD, 32)) {
+                                    // public java.awt.Dialog.ModalityType getModalityType() {
+                                    // return ModalityType.MODELESS;
+                                    // };
+                                    // });
+                                    // }
+                                    // }
+                                    // }.start();
                                     // non-error related log request
                                 }
                                 // if (StringUtils.equals(getErrorID(), action.getData())) {

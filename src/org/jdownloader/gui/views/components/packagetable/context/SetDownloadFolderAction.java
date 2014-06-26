@@ -54,24 +54,36 @@ public abstract class SetDownloadFolderAction<PackageType extends AbstractPackag
      * @return
      */
     public static boolean isDownloadFolderValid(File file) {
-        if (file == null || file.isFile()) return false;
-        if (file.isDirectory()) return true;
+        if (file == null || file.isFile()) {
+            return false;
+        }
+        if (file.isDirectory()) {
+            return true;
+        }
         File parent = file.getParentFile();
-        if (parent != null && parent.isDirectory() && parent.exists()) return true;
+        if (parent != null && parent.isDirectory() && parent.exists()) {
+            return true;
+        }
         return false;
     }
 
     @Override
     public void actionPerformed(ActionEvent e) {
-        if (!isEnabled()) return;
+        if (!isEnabled()) {
+            return;
+        }
         try {
             final File file = dialog(path);
-            if (file == null) return;
+            if (file == null) {
+                return;
+            }
+
             final SelectionInfo<PackageType, ChildrenType> lselection = getSelection();
             getQueue().add(new QueueAction<Object, RuntimeException>() {
 
                 @Override
                 protected Object run() {
+                    System.out.println(1);
                     for (PackageView<PackageType, ChildrenType> pkg : lselection.getPackageViews()) {
                         if (pkg.isFull()) {
                             set(pkg.getPackage(), file.getAbsolutePath());
@@ -88,7 +100,9 @@ public abstract class SetDownloadFolderAction<PackageType extends AbstractPackag
                 try {
                     File oldPath = LinkTreeUtils.getDownloadDirectory(entry);
                     File newPath = file;
-                    if (oldPath.equals(newPath)) continue;
+                    if (oldPath.equals(newPath)) {
+                        continue;
+                    }
 
                     Dialog.getInstance().showConfirmDialog(Dialog.LOGIC_DONOTSHOW_BASED_ON_TITLE_ONLY | Dialog.STYLE_SHOW_DO_NOT_DISPLAY_AGAIN, _JDT._.SetDownloadFolderAction_actionPerformed_(entry.getName()), _JDT._.SetDownloadFolderAction_msg(entry.getName(), pkgView.getChildren().size()), null, _JDT._.SetDownloadFolderAction_yes(), _JDT._.SetDownloadFolderAction_no());
 

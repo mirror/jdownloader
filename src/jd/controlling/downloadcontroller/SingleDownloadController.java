@@ -52,6 +52,7 @@ import jd.plugins.download.DownloadInterface;
 import jd.plugins.download.HashResult;
 
 import org.appwork.utils.NullsafeAtomicReference;
+import org.appwork.utils.StringUtils;
 import org.appwork.utils.logging2.LogSource;
 import org.appwork.utils.net.httpconnection.HTTPProxy;
 import org.jdownloader.controlling.download.DownloadControllerListener;
@@ -604,6 +605,107 @@ public class SingleDownloadController extends BrowserSettingsThread implements D
             return new ArrayList<PluginSubTask>(tasks);
         }
 
+    }
+
+    private String sessionDownloadDirectory;
+
+    public void setSessionDownloadDirectory(String downloadDirectory) {
+        this.sessionDownloadDirectory = downloadDirectory;
+    }
+
+    public String getSessionDownloadDirectory() {
+        return sessionDownloadDirectory;
+    }
+
+    // public String getDownloadPath(Object caller, boolean ignoreUnsafe, boolean ignoreCustom) {
+    // String ret = downloadLink.getFileOutput(ignoreUnsafe, ignoreCustom);
+    // if (sessionDownloadDirectory != null) {
+    // ret = new File(new File(sessionDownloadDirectory), new File(ret).getName()).getAbsolutePath();
+    // }
+    //
+    // return ret;
+    // }
+
+    private String sessionDownloadFilename;
+
+    public void setSessionDownloadFilename(String downloadFilename) {
+        if (StringUtils.equals(sessionDownloadFilename, downloadFilename)) {
+            return;
+        }
+        this.sessionDownloadFilename = downloadFilename;
+        if (downloadLink.hasNotificationListener()) {
+            downloadLink.firePropertyChange(new DownloadLinkProperty(downloadLink, DownloadLinkProperty.Property.NAME, downloadFilename));
+        }
+
+    }
+
+    public String getSessionDownloadFilename() {
+        return sessionDownloadFilename;
+    }
+
+    public File getFileOutput(boolean ignoreUnsafe, boolean ignoreCustom) {
+
+        String name = getSessionDownloadFilename();
+
+        if (!ignoreCustom) {
+            String tmpName = downloadLink.getInternalTmpFilename();
+            if (!StringUtils.isEmpty(tmpName)) {
+                /* we have a customized fileOutputFilename */
+                name = tmpName;
+            }
+
+            String customAppend = downloadLink.getInternalTmpFilenameAppend();
+            if (!StringUtils.isEmpty(customAppend)) {
+                name = name + customAppend;
+            }
+        }
+
+        if (StringUtils.isEmpty(name)) {
+            name = downloadLink.getName(ignoreUnsafe, true);
+            if (name == null) {
+                return null;
+            }
+        }
+
+        return new File(getSessionDownloadDirectory(), name);
+
+    }
+
+    /**
+     * Called only internally by downloadlink to get stable compatibility. We cannot change all plugins to get their filenames and pathes
+     * from singledownloadcontroller. This we redirect all calls within the SingleDownloadControllerThread. This should be removed once we
+     * kick jd09
+     * 
+     * @param actualFileoutput
+     * @param ignoreUnsafe
+     * @param ignoreCustom
+     * @return
+     */
+    public String getInternalJD09WorkaroundFileOutput(String actualFileoutput, boolean ignoreUnsafe, boolean ignoreCustom) {
+        String name = getSessionDownloadFilename();
+
+        if (!ignoreCustom) {
+            String tmpName = downloadLink.getInternalTmpFilename();
+            if (!StringUtils.isEmpty(tmpName)) {
+                /* we have a customized fileOutputFilename */
+                name = tmpName;
+            }
+
+            String customAppend = downloadLink.getInternalTmpFilenameAppend();
+            if (!StringUtils.isEmpty(customAppend)) {
+                name = name + customAppend;
+            }
+        }
+
+        if (StringUtils.isEmpty(name)) {
+            String path = actualFileoutput;
+            if (path == null) {
+                return null;
+            }
+            name = new File(path).getName();
+        }
+
+        return new File(getSessionDownloadDirectory(), name).getAbsolutePath();
     }
 
 }

@@ -27,6 +27,7 @@ import java.util.HashSet;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Map.Entry;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.zip.ZipEntry;
@@ -104,6 +105,26 @@ public class DownloadController extends PackageController<FilePackage, DownloadL
      */
     public static DownloadController getInstance() {
         return INSTANCE;
+    }
+
+    @Override
+    public void moveOrAddAt(FilePackage pkg, List<DownloadLink> movechildren, int moveChildrenindex, int pkgIndex) {
+        HashMap<FilePackage, List<DownloadLink>> sourceMap = new HashMap<FilePackage, List<DownloadLink>>();
+        for (DownloadLink dl : movechildren) {
+            List<DownloadLink> list = sourceMap.get(dl.getParentNode());
+            if (list == null) {
+                list = new ArrayList<DownloadLink>();
+                sourceMap.put(dl.getParentNode(), list);
+            }
+            list.add(dl);
+        }
+
+        super.moveOrAddAt(pkg, movechildren, moveChildrenindex, pkgIndex);
+
+        for (Entry<FilePackage, List<DownloadLink>> s : sourceMap.entrySet()) {
+            DownloadWatchDog.getInstance().handleMovedDownloadLinks(pkg, s.getKey(), s.getValue());
+        }
+
     }
 
     private DownloadController() {

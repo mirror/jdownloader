@@ -20,6 +20,7 @@ import org.jdownloader.controlling.UniqueAlltimeID;
 import org.jdownloader.controlling.packagizer.PackagizerController;
 import org.jdownloader.gui.views.linkgrabber.addlinksdialog.LinkgrabberSettings;
 import org.jdownloader.settings.GeneralSettings;
+import org.jdownloader.settings.staticreferences.CFG_LINKCOLLECTOR;
 
 public class CrawledPackage implements AbstractPackageNode<CrawledLink, CrawledPackage> {
 
@@ -109,7 +110,7 @@ public class CrawledPackage implements AbstractPackageNode<CrawledLink, CrawledP
 
     private boolean                                        downloadFolderSet      = false;
 
-    private boolean                                        expanded               = false;
+    private boolean                                        expanded               = CFG_LINKCOLLECTOR.CFG.isPackageAutoExpanded();
     private transient volatile UniqueAlltimeID             uniqueID               = null;
     protected CrawledPackageView                           view;
     private String                                         compiledDownloadFolder = null;

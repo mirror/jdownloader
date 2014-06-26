@@ -16,6 +16,7 @@
 
 package jd.plugins;
 
+import java.awt.Component;
 import java.io.File;
 import java.io.IOException;
 import java.net.URISyntaxException;
@@ -28,6 +29,9 @@ import java.util.Map.Entry;
 import java.util.regex.Pattern;
 
 import javax.swing.JComponent;
+import javax.swing.JLabel;
+import javax.swing.JPanel;
+import javax.swing.SwingConstants;
 
 import jd.PluginWrapper;
 import jd.captcha.JACMethod;
@@ -47,19 +51,28 @@ import jd.plugins.download.DownloadInterfaceFactory;
 import jd.plugins.download.DownloadLinkDownloadable;
 import jd.plugins.download.Downloadable;
 
+import org.appwork.storage.JSonStorage;
 import org.appwork.storage.config.JsonConfig;
+import org.appwork.swing.MigPanel;
 import org.appwork.uio.UIOManager;
 import org.appwork.utils.Application;
+import org.appwork.utils.Files;
 import org.appwork.utils.IO;
+import org.appwork.utils.IO.SYNC;
+import org.appwork.utils.ProgressFeedback;
 import org.appwork.utils.Regex;
 import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.logging2.LogSource;
 import org.appwork.utils.os.CrossSystem;
+import org.appwork.utils.swing.SwingUtils;
 import org.appwork.utils.swing.dialog.AbstractDialog;
 import org.appwork.utils.swing.dialog.Dialog;
 import org.appwork.utils.swing.dialog.DialogCanceledException;
 import org.appwork.utils.swing.dialog.DialogClosedException;
 import org.appwork.utils.swing.dialog.DialogNoAnswerException;
+import org.appwork.utils.swing.dialog.ProgressDialog;
+import org.appwork.utils.swing.dialog.ProgressDialog.ProgressGetter;
 import org.jdownloader.DomainInfo;
 import org.jdownloader.captcha.blacklist.BlacklistEntry;
 import org.jdownloader.captcha.blacklist.BlockAllDownloadCaptchasEntry;
@@ -76,11 +89,13 @@ import org.jdownloader.captcha.v2.challenge.stringcaptcha.BasicCaptchaChallenge;
 import org.jdownloader.captcha.v2.solverjob.ResponseList;
 import org.jdownloader.controlling.FileCreationManager;
 import org.jdownloader.controlling.linkcrawler.LinkVariant;
+import org.jdownloader.gui.IconKey;
 import org.jdownloader.gui.dialog.AskToUsePremiumDialog;
 import org.jdownloader.gui.dialog.AskToUsePremiumDialogInterface;
 import org.jdownloader.gui.helpdialogs.HelpDialog;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.gui.views.SelectionInfo.PluginView;
+import org.jdownloader.images.AbstractIcon;
 import org.jdownloader.images.NewTheme;
 import org.jdownloader.logging.LogController;
 import org.jdownloader.plugins.CaptchaStepProgress;
@@ -88,6 +103,7 @@ import org.jdownloader.plugins.PluginTaskID;
 import org.jdownloader.plugins.SleepPluginProgress;
 import org.jdownloader.plugins.accounts.AccountFactory;
 import org.jdownloader.plugins.controller.host.LazyHostPlugin;
+import org.jdownloader.settings.staticreferences.CFG_GENERAL;
 import org.jdownloader.settings.staticreferences.CFG_GUI;
 import org.jdownloader.translate._JDT;
 
@@ -97,6 +113,8 @@ import org.jdownloader.translate._JDT;
  * @author astaldo
  */
 public abstract class PluginForHost extends Plugin {
+    private static final String         COPY_MOVE_FILE        = "CopyMoveFile";
+
     private static Pattern[]            PATTERNS              = new Pattern[] {
                                                               /**
                                                                * these patterns should split filename and fileextension (extension must
@@ -255,6 +273,7 @@ public abstract class PluginForHost extends Plugin {
     protected String getCaptchaCode(final String method, File file, final int flag, final DownloadLink link, final String defaultValue, final String explain) throws Exception {
         final CaptchaStepProgress progress = new CaptchaStepProgress(0, 1, null);
         progress.setProgressSource(this);
+        progress.setDisplayInProgressColumnEnabled(false);
         this.hasCaptchas = true;
         try {
             link.addPluginProgress(progress);
@@ -723,9 +742,11 @@ public abstract class PluginForHost extends Plugin {
 
     public List<File> listProcessFiles(DownloadLink link) {
         List<File> ret = new ArrayList<File>();
-        ret.add(new File(link.getFileOutput() + ".part"));
-        ret.add(new File(link.getFileOutput()));
-        ret.add(new File(link.getFileOutput(false, true)));
+
+        ret.add(new File(link.getFileOutputForPlugin(false, false) + ".part"));
+        ret.add(new File(link.getFileOutputForPlugin(false, false)));
+        ret.add(new File(link.getFileOutputForPlugin(false, true)));
+
         return ret;
     }
 
@@ -773,6 +794,7 @@ public abstract class PluginForHost extends Plugin {
         };
         progress.setIcon(NewTheme.I().getIcon("wait", 16));
         progress.setProgressSource(this);
+        progress.setDisplayInProgressColumnEnabled(false);
         try {
             long lastQueuePosition = -1;
             long waitQueuePosition = -1;
@@ -866,6 +888,7 @@ public abstract class PluginForHost extends Plugin {
         }
         final PluginProgress progress = new SleepPluginProgress(i, message);
         progress.setProgressSource(this);
+        progress.setDisplayInProgressColumnEnabled(false);
         try {
             downloadLink.addPluginProgress(progress);
             while (i > 0 && !downloadLink.getDownloadLinkController().isAborting()) {
@@ -1387,67 +1410,292 @@ public abstract class PluginForHost extends Plugin {
 
     }
 
+    public static class FilePair {
+        public FilePair(File oldFile, File newFile) {
+            this.oldFile = oldFile;
+            this.newFile = newFile;
+        }
+
+        private File oldFile;
+
+        public File getOldFile() {
+            return oldFile;
+        }
+
+        public File getNewFile() {
+            return newFile;
+        }
+
+        private File newFile;
+    }
+
     /**
      * Do not call directly. This method is called from the DownloadWatchdog.rename method only. The DownloadWatchdog assures, that the
-     * method is not called during a processing download, but afterwards
+     * method is not called during a processing download, but afterwards. Avoid to override this method. if possible, try to override
+     * #listFilePairsToMove instead
      * 
      * @param link
+     * @param string2
+     * @param string
      * @param value
      */
-    public void move(DownloadLink link, String newName, File newParentFile) throws Exception {
-        if (StringUtils.isNotEmpty(newName)) {
-            try {
-                String oldName = link.getName();
-                if (StringUtils.equals(newName, oldName)) {
-                    return;
-                }
-                newName = CrossSystem.alleviatePathParts(newName);
-                if (StringUtils.isNotEmpty(newName)) {
-                    // File old = new File(link.getFileOutput(false, false));
-                    // if (old.exists()) {
-                    // File newFile = new File(old.getParentFile(), value);
-                    // // FileAccessManager am = DownloadWatchDog.getInstance().getSession().getFileAccessManager();
-                    //
-                    // old.renameTo(newFile);
-                    // if (link.getFinalFileOutput() != null && new File(link.getFinalFileOutput()).equals(old)) {
-                    // link.setFinalFileOutput(newFile.getAbsolutePath());
-                    // }
-                    //
-                    // }
-                    //
-                    // old = new File(link.getFileOutput(false, true));
-                    // if (old.exists()) {
-                    // File newFile = new File(old.getParentFile(), value);
-                    // // FileAccessManager am = DownloadWatchDog.getInstance().getSession().getFileAccessManager();
-                    //
-                    // old.renameTo(newFile);
-                    // if (link.getFinalFileOutput() != null && new File(link.getFinalFileOutput()).equals(old)) {
-                    // link.setFinalFileOutput(newFile.getAbsolutePath());
-                    // }
-                    //
-                    // }
-                    //
-                    // old = new File(link.getFileOutput(false, false) + ".part");
-                    // if (old.exists()) {
-                    // File newFile = new File(old.getParentFile(), value + ".part");
-                    // // FileAccessManager am = DownloadWatchDog.getInstance().getSession().getFileAccessManager();
-                    //
-                    // old.renameTo(newFile);
-                    // }
-                    //
-                    // old = new File(link.getFileOutput(false, true) + ".part");
-                    // if (old.exists()) {
-                    // File newFile = new File(old.getParentFile(), value + ".part");
-                    // // FileAccessManager am = DownloadWatchDog.getInstance().getSession().getFileAccessManager();
-                    //
-                    // old.renameTo(newFile);
-                    // }
-                    // link.forceFileName(newName);
-                }
-            } finally {
-                link.setCustomFinalName(null);
+    public void move(DownloadLink link, String currentDirectory, String currentName, String newDirectory, String newName) throws Exception {
+
+        ArrayList<Runnable> revertList = new ArrayList<Runnable>();
+        if (StringUtils.isEmpty(newName)) {
+            newName = currentName;
+        }
+        if (StringUtils.isEmpty(newDirectory)) {
+            newDirectory = currentDirectory;
+        }
+        if (CrossSystem.isWindows()) {
+            if (StringUtils.equalsIgnoreCase(currentDirectory, newDirectory) && StringUtils.equalsIgnoreCase(currentName, newName)) {
+                return;
+            }
+        } else {
+            if (StringUtils.equals(currentDirectory, newDirectory) && StringUtils.equals(currentName, newName)) {
+                return;
             }
         }
+
+        MovePluginProgress progress = new MovePluginProgress();
+        try {
+            link.addPluginProgress(progress);
+            progress.setProgressSource(this);
+            for (FilePair filesToHandle : listFilePairsToMove(link, currentDirectory, currentName, newDirectory, newName)) {
+                handle(revertList, link, progress, filesToHandle.getOldFile(), filesToHandle.getNewFile());
+            }
+
+        } catch (Exception e) {
+            getLogger().log(e);
+            // revert
+            for (Runnable r : revertList) {
+                if (r == null) {
+                    continue;
+                }
+                try {
+                    r.run();
+                } catch (Throwable e1) {
+                    getLogger().log(e1);
+                }
+            }
+            throw e;
+        } finally {
+            link.removePluginProgress(progress);
+        }
+
+    }
+
+    protected FilePair[] listFilePairsToMove(DownloadLink link, String currentDirectory, String currentName, String newDirectory, String newName) {
+        FilePair[] ret = new FilePair[2];
+        ret[0] = new FilePair(new File(new File(currentDirectory), currentName + ".part"), new File(new File(newDirectory), newName + ".part"));
+        ret[1] = new FilePair(new File(new File(currentDirectory), currentName), new File(new File(newDirectory), newName));
+
+        return ret;
+    }
+
+    private void handle(ArrayList<Runnable> revertList, final DownloadLink downloadLink, final MovePluginProgress progress, final File currentFile, final File newFile) throws FileExistsException, CouldNotRenameException, IOException {
+        if (!currentFile.exists() || currentFile.equals(newFile)) {
+            return;
+        }
+        progress.setFile(newFile);
+        renameOrMove(progress, downloadLink, currentFile, newFile);
+
+        revertList.add(new Runnable() {
+
+            @Override
+            public void run() {
+                try {
+                    renameOrMove(progress, downloadLink, newFile, currentFile);
+                } catch (FileExistsException e) {
+                    e.printStackTrace();
+                } catch (CouldNotRenameException e) {
+                    e.printStackTrace();
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+            }
+        });
+    }
+
+    private void renameOrMove(MovePluginProgress progress, final DownloadLink downloadLink, File old, File newFile) throws FileExistsException, CouldNotRenameException, IOException {
+        newFile.getParentFile().mkdirs();
+
+        // TODO: what if newFile exists?
+        if (newFile.exists()) {
+            throw new FileExistsException(old, newFile);
+        }
+        if (Files.getCommonParent(old, newFile) == null) {
+            copyMove(progress, downloadLink, old, newFile);
+        } else {
+            try {
+
+                if (Application.getJavaVersion() >= Application.JAVA17) {
+                    // since java 1.7
+                    java.nio.file.Files.move(java.nio.file.Paths.get(old.toURI()), java.nio.file.Paths.get(newFile.toURI()));
+                } else {
+                    if (!old.renameTo(newFile)) {
+                        throw new CouldNotRenameException(old, newFile);
+                    }
+                }
+
+            } catch (CouldNotRenameException e) {
+                copyMove(progress, downloadLink, old, newFile);
+
+            } catch (IOException e) {
+                copyMove(progress, downloadLink, old, newFile);
+
+            }
+        }
+        // TODO copy optimiz
+        // if (old.exists()) {
+        if (!newFile.getParentFile().equals(old.getParentFile())) {
+            // check if we have to delete the old path;
+            if (!old.getParentFile().equals(new File(CFG_GENERAL.DEFAULT_DOWNLOAD_FOLDER.getValue()))) {
+                // we ignore the dynamic tags here. if the default downloaddirectory contains dynamic tags, we can delete the folders
+                // anyaway if empty.
+                old.getParentFile().delete();
+            }
+
+        }
+        // }
+    }
+
+    private void copyMove(final MovePluginProgress progress, final DownloadLink downloadLink, final File old, final File newFile) throws IOException {
+        if (!old.exists() && newFile.exists()) {
+            return;
+        }
+
+        if (old.exists()) {
+            // we did an file exists check earlier. so if the file exists here, the only reason is a failed rename/move;
+            newFile.delete();
+        }
+        if (!old.exists()) {
+            throw new IOException("Cannot move " + old + " to " + newFile + ". The File does not exist!");
+        }
+        Thread thread = null;
+        if (JSonStorage.getPlainStorage("Dialogs").get(COPY_MOVE_FILE, -1) < 0) {
+            // System.out.println("Thread start");
+            thread = new Thread() {
+                public void run() {
+                    try {
+                        Thread.sleep(3000);
+                        // System.out.println("Dialog go");
+                        ProgressDialog dialog = new ProgressDialog(new ProgressGetter() {
+
+                            @Override
+                            public void run() throws Exception {
+                                while (true) {
+                                    Thread.sleep(1000);
+                                }
+                            }
+
+                            @Override
+                            public String getString() {
+                                return _JDT._.lit_please_wait();
+                            }
+
+                            @Override
+                            public int getProgress() {
+                                double perc = progress.getPercent();
+
+                                return Math.min(99, (int) (perc));
+                            }
+
+                            @Override
+                            public String getLabelString() {
+                                return null;
+                            }
+                        }, Dialog.STYLE_SHOW_DO_NOT_DISPLAY_AGAIN, _GUI._.PluginForHost_copyMove_progressdialog_title(), null, new AbstractIcon(IconKey.ICON_SAVETO, 32), null, _JDT._.lit_hide()) {
+                            @Override
+                            public String getDontShowAgainKey() {
+                                return COPY_MOVE_FILE;
+                            }
+
+                            private Component leftLabel(String name) {
+                                JLabel ret = new JLabel(name);
+                                ret.setHorizontalAlignment(SwingConstants.LEFT);
+                                return ret;
+                            }
+
+                            protected void extendLayout(JPanel p) {
+
+                                if (p.getComponentCount() == 0) {
+                                    final JPanel subp = new MigPanel("ins 0,wrap 1", "[]", "[][]");
+                                    p.add(subp, "wrap");
+                                    p = subp;
+
+                                    String packagename = downloadLink.getParentNode().getName();
+
+                                    p.add(SwingUtils.toBold(new JLabel(_GUI._.lit_hoster())), "split 2,sizegroup left,alignx left");
+                                    DomainInfo di = downloadLink.getDomainInfo();
+                                    JLabel ret = new JLabel(di.getTld());
+                                    ret.setHorizontalAlignment(SwingConstants.LEFT);
+                                    ret.setIcon(di.getFavIcon());
+                                    p.add(ret);
+
+                                    if (downloadLink.getParentNode() != FilePackage.getDefaultFilePackage()) {
+                                        p.add(SwingUtils.toBold(new JLabel(_GUI._.IfFileExistsDialog_layoutDialogContent_package())), "split 2,sizegroup left,alignx left");
+                                        p.add(leftLabel(packagename));
+                                    }
+                                    p.add(SwingUtils.toBold(new JLabel(_GUI._.lit_filesize())), "split 2,sizegroup left,alignx left");
+                                    p.add(leftLabel(SizeFormatter.formatBytes(old.length())));
+
+                                    if (newFile.getName().equals(old.getName())) {
+                                        p.add(SwingUtils.toBold(new JLabel(_GUI._.lit_filename())), "split 2,sizegroup left,alignx left");
+                                        p.add(leftLabel(newFile.getName()));
+                                    } else {
+                                        p.add(SwingUtils.toBold(new JLabel(_GUI._.PLUGINFORHOST_MOVECOPY_DIALOG_OLDFILENAME())), "split 2,sizegroup left,alignx left");
+                                        p.add(leftLabel(old.getName()));
+                                        p.add(SwingUtils.toBold(new JLabel(_GUI._.PLUGINFORHOST_MOVECOPY_DIALOG_NEWFILENAME())), "split 2,sizegroup left,alignx left");
+                                        p.add(leftLabel(newFile.getName()));
+                                    }
+
+                                    p.add(SwingUtils.toBold(new JLabel(_GUI._.PLUGINFORHOST_MOVECOPY_DIALOG_OLD())), "split 2,sizegroup left,alignx left");
+                                    p.add(leftLabel(old.getParent()));
+
+                                    p.add(SwingUtils.toBold(new JLabel(_GUI._.PLUGINFORHOST_MOVECOPY_DIALOG_NEW())), "split 2,sizegroup left,alignx left");
+                                    p.add(leftLabel(newFile.getParent()));
+                                }
+                            }
+
+                        };
+                        UIOManager.I().show(null, dialog);
+                    } catch (InterruptedException e) {
+                        e.printStackTrace();
+                    }
+
+                }
+            };
+            thread.start();
+        } else {
+            // System.out.println("Do not show again " + JSonStorage.getPlainStorage("Dialogs").get(COPY_MOVE_FILE, -1));
+        }
+        try {
+
+            IO.copyFile(new ProgressFeedback() {
+
+                @Override
+                public void setBytesTotal(long length) {
+                    progress.setTotal(length);
+                }
+
+                @Override
+                public void setBytesProcessed(long position) {
+                    progress.setCurrent(position);
+                }
+            }, old, newFile, SYNC.META_AND_DATA);
+
+            old.delete();
+        } catch (IOException io) {
+            newFile.delete();
+            throw io;
+        } finally {
+            if (thread != null) {
+                thread.interrupt();
+            }
+        }
+
     }
 
     public boolean isProxyRotationEnabledForLinkChecker() {

@@ -67,14 +67,14 @@ public class MirrorPackage {
             // hash mismatch
             return id + "/" + link.getSha1Hash().toLowerCase(Locale.ENGLISH);
         }
-        finished |= FinalLinkState.CheckFinished(link.getFinalLinkState()) && (link.getExtractionStatus() == ExtractionStatus.SUCCESSFUL || new File(link.getFileOutput()).exists());
+        finished |= FinalLinkState.CheckFinished(link.getFinalLinkState()) && (link.getExtractionStatus() == ExtractionStatus.SUCCESSFUL || new File(getFileOutput(link)).exists());
 
         if (setup.isLocalFileUsageEnabled()) {
-            File a = new File(link.getFileOutput() + ".part");
+            File a = new File(getFileOutput(link) + ".part");
             if (a.exists()) {
                 bytesLoaded = Math.max(bytesLoaded, a.length());
             } else {
-                a = new File(link.getFileOutput());
+                a = new File(getFileOutput(link));
                 if (a.exists()) {
 
                     bytesLoaded = Math.max(bytesLoaded, a.length());
@@ -92,7 +92,9 @@ public class MirrorPackage {
         if (StringUtils.isEmpty(sha1) && StringUtils.isNotEmpty(link.getSha1Hash())) {
             sha1 = link.getSha1Hash().toLowerCase(Locale.ENGLISH);
         }
-        if (bytesTotal < 0) bytesTotal = link.getView().getBytesTotal();
+        if (bytesTotal < 0) {
+            bytesTotal = link.getView().getBytesTotal();
+        }
 
         online |= link.getAvailableStatus() == AvailableStatus.TRUE;
         offline &= link.getAvailableStatus() == AvailableStatus.FALSE;
@@ -100,6 +102,11 @@ public class MirrorPackage {
         speed = Math.max(speed, link.getView().getSpeedBps());
         list.add(link);
         return null;
+    }
+
+    private String getFileOutput(DownloadLink link) {
+
+        return link.getFileOutput();
     }
 
     public long getTotalBytes() {

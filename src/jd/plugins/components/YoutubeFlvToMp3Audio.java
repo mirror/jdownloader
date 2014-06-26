@@ -83,8 +83,8 @@ public class YoutubeFlvToMp3Audio implements YoutubeConverter {
                     }
                 }
             }
-            downloadLink.setFinalFileOutput(null);
-            File finalFile = new File(downloadLink.getFileOutput(false, true));
+
+            File finalFile = downloadLink.getDownloadLinkController().getFileOutput(false, true);
             if (!ffmpeg.demuxMp3(set, finalFile.getAbsolutePath(), file.getAbsolutePath())) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, _GUI._.YoutubeDash_handleFree_error_());
             }
@@ -93,9 +93,9 @@ public class YoutubeFlvToMp3Audio implements YoutubeConverter {
             downloadLink.setDownloadSize(finalFile.length());
             downloadLink.setDownloadCurrent(finalFile.length());
             try {
-                downloadLink.setFinalFileOutput(finalFile.getAbsolutePath());
-                downloadLink.setCustomFileOutputFilenameAppend(null);
-                downloadLink.setCustomFileOutputFilename(null);
+
+                downloadLink.setInternalTmpFilenameAppend(null);
+                downloadLink.setInternalTmpFilename(null);
             } catch (final Throwable e) {
             }
         } finally {

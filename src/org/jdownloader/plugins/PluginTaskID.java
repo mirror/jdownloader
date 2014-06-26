@@ -12,6 +12,7 @@ public enum PluginTaskID {
     DECRYPTING,
     CONVERT,
     PLUGIN,
-    USERIO
+    USERIO,
+    MOVE_FILE
 
 }

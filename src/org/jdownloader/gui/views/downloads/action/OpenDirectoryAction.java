@@ -32,20 +32,22 @@ public class OpenDirectoryAction extends CustomizableTableContextAppAction<FileP
         file = null;
         directory = null;
         if (hasSelection()) {
-            this.directory = new File(getSelection().getContextPackage().getDownloadDirectory());
+            this.directory = new File(getSelection().getContextPackage().getView().getDownloadDirectory());
             if (getSelection().isLinkContext()) {
 
                 this.file = new File(getSelection().getContextLink().getFileOutput());
 
             } else {
-                this.directory = new File(getSelection().getContextPackage().getDownloadDirectory());
+                this.directory = new File(getSelection().getContextPackage().getView().getDownloadDirectory());
 
             }
         }
     }
 
     public void actionPerformed(ActionEvent e) {
-        if (!isEnabled()) return;
+        if (!isEnabled()) {
+            return;
+        }
         if (file == null) {
             CrossSystem.openFile(directory);
         } else {

@@ -111,13 +111,14 @@ public class LinkTreeUtils {
         String directory = null;
         if (node instanceof DownloadLink) {
             FilePackage parent = ((DownloadLink) node).getFilePackage();
+
             if (parent != null) {
-                directory = parent.getDownloadDirectory();
+                directory = parent.getView().getDownloadDirectory();
             }
 
             return getDownloadDirectory(directory, parent == null ? null : parent.getName());
         } else if (node instanceof FilePackage) {
-            directory = ((FilePackage) node).getDownloadDirectory();
+            directory = ((FilePackage) node).getView().getDownloadDirectory();
 
             return getDownloadDirectory(directory, ((FilePackage) node).getName());
         } else if (node instanceof CrawledLink) {
@@ -141,11 +142,13 @@ public class LinkTreeUtils {
         String directory = null;
         if (node instanceof DownloadLink) {
             FilePackage parent = ((DownloadLink) node).getFilePackage();
+
             if (parent != null) {
-                directory = parent.getDownloadDirectory();
+                directory = parent.getView().getDownloadDirectory();
             }
+
         } else if (node instanceof FilePackage) {
-            directory = ((FilePackage) node).getDownloadDirectory();
+            directory = ((FilePackage) node).getView().getDownloadDirectory();
         } else if (node instanceof CrawledLink) {
             CrawledPackage parent = ((CrawledLink) node).getParentNode();
             if (parent != null) {

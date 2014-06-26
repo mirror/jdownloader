@@ -27,9 +27,10 @@ public class MirrorLoading implements ConditionalSkipReason, DownloadLinkConditi
             link.setFinalLinkState(FinalLinkState.FINISHED_MIRROR);
             link.setFinishedDate(getDownloadLink().getFinishedDate());
             link.setName(getDownloadLink().getName());
-            link.setFinalFileOutput(getDownloadLink().getFinalFileOutput());
             long fileSize = getDownloadLink().getView().getBytesTotal();
-            if (fileSize >= 0) link.setDownloadSize(fileSize);
+            if (fileSize >= 0) {
+                link.setDownloadSize(fileSize);
+            }
             link.setDownloadCurrent(getDownloadLink().getView().getBytesLoaded());
         }
     }
@@ -46,13 +47,17 @@ public class MirrorLoading implements ConditionalSkipReason, DownloadLinkConditi
 
     @Override
     public String getMessage(Object requestor, AbstractNode node) {
-        if (requestor instanceof ETAColumn) return null;
+        if (requestor instanceof ETAColumn) {
+            return null;
+        }
         return mirror;
     }
 
     @Override
     public ImageIcon getIcon(Object requestor, AbstractNode node) {
-        if (requestor instanceof ETAColumn) return null;
+        if (requestor instanceof ETAColumn) {
+            return null;
+        }
         return icon;
     }
 

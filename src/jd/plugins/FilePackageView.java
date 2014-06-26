@@ -651,4 +651,13 @@ public class FilePackageView extends ChildrenView<DownloadLink> {
         return null;
     }
 
+    public String getDownloadDirectory() {
+
+        return fp.getDownloadDirectory();
+    }
+
+    public boolean isRunning() {
+        return lastRunningState;
+    }
+
 }

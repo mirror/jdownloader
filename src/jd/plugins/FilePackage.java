@@ -323,6 +323,7 @@ public class FilePackage extends Property implements Serializable, AbstractPacka
      * private constructor for FilePackage, sets created timestamp and downloadDirectory
      */
     private FilePackage() {
+
         downloadDirectory = org.appwork.storage.config.JsonConfig.create(GeneralSettings.class).getDefaultDownloadFolder();
         created = System.currentTimeMillis();
         /* till refactoring is complete */
@@ -698,6 +699,15 @@ public class FilePackage extends Property implements Serializable, AbstractPacka
             lock = new ModifyLock();
         }
         return lock;
+    }
+
+    public void copyPropertiesTo(FilePackage dest) {
+        if (dest == null || dest == this) {
+            return;
+        }
+        dest.name = name;
+        dest.setComment(getComment());
+        dest.setDownloadDirectory(getView().getDownloadDirectory());
     }
 
 }

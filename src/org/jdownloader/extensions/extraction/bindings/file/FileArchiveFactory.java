@@ -11,7 +11,6 @@ import java.util.List;
 import java.util.regex.Pattern;
 
 import jd.plugins.DownloadLink;
-import jd.plugins.FilePackage;
 
 import org.appwork.utils.Hash;
 import org.appwork.utils.StringUtils;
@@ -155,12 +154,8 @@ public class FileArchiveFactory extends FileArchiveFile implements ArchiveFactor
                         DownloadLinkArchiveFile daf = (DownloadLinkArchiveFile) file;
                         if (daf.getDownloadLinks() != null) {
                             for (DownloadLink link : daf.getDownloadLinks()) {
-                                if (!FilePackage.isDefaultFilePackage(link.getFilePackage())) {
-                                    packageName = CrossSystem.alleviatePathParts(link.getFilePackage().getName());
-                                    break;
-                                } else if ((packageName = link.getStringProperty(DownloadLink.PROPERTY_LASTFPNAME, null)) != null) {
-                                    break;
-                                }
+                                packageName = CrossSystem.alleviatePathParts(link.getLastValidFilePackage().getName());
+                                break;
                             }
                         }
                     }

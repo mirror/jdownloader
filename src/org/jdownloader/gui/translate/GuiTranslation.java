@@ -5095,4 +5095,28 @@ public interface GuiTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "You can automate almost everything using Packagizer rules. Most of the rule setup is self-explaining.\r\nHowever, it is important to note, that you can use \"*\" placeholders in many conditions.\r\nThese placeholders can be used in the \"then\" blocks afterwards. Just rightlick in the textfields to see all available dynamic variables." })
     String PackagizerFilterRuleDialog_run_help_msg();
 
+    @Default(lngs = { "en" }, values = { "Moving File" })
+    String PluginForHost_copyMove_progressdialog_title();
+
+    @Default(lngs = { "en" }, values = { "Move downloaded data from \r\n%s1\r\nto\r\n%s2" })
+    String PluginForHost_copyMove_progressdialog_msg(String absolutePath, String absolutePath2);
+
+    @Default(lngs = { "en" }, values = { "Move from" })
+    String PLUGINFORHOST_MOVECOPY_DIALOG_OLD();
+
+    @Default(lngs = { "en" }, values = { "to" })
+    String PLUGINFORHOST_MOVECOPY_DIALOG_NEW();
+
+    @Default(lngs = { "en" }, values = { "Filesize" })
+    String lit_filesize();
+
+    @Default(lngs = { "en" }, values = { "Old Filename" })
+    String PLUGINFORHOST_MOVECOPY_DIALOG_OLDFILENAME();
+
+    @Default(lngs = { "en" }, values = { "New Filename" })
+    String PLUGINFORHOST_MOVECOPY_DIALOG_NEWFILENAME();
+
+    @Default(lngs = { "en" }, values = { "Cannot move file to \r\n%s1\r\nbecause there is not enough free diskspace." })
+    String DownloadWatchDog_move_exception_disk_full(String string);
+
 }

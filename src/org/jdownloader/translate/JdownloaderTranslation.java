@@ -570,4 +570,13 @@ public interface JdownloaderTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "A username and a password is required to download this file. Please enter the credentials below." })
     String DirectHTTP_getBasicAuth_message();
 
+    @Default(lngs = { "en" }, values = { "Moving file to %s1" })
+    String MovePluginProgress(String string);
+
+    @Default(lngs = { "en" }, values = { "Hide" })
+    String lit_hide();
+
+    @Default(lngs = { "en" }, values = { "Please wait..." })
+    String lit_please_wait();
+
 }

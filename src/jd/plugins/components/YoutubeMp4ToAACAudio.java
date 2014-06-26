@@ -83,8 +83,8 @@ public class YoutubeMp4ToAACAudio implements YoutubeConverter {
                     }
                 }
             }
-            downloadLink.setFinalFileOutput(null);
-            File finalFile = new File(downloadLink.getFileOutput(false, true));
+
+            File finalFile = downloadLink.getDownloadLinkController().getFileOutput(false, true);
             if (!ffmpeg.demuxAAC(set, finalFile.getAbsolutePath(), file.getAbsolutePath())) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, _GUI._.YoutubeDash_handleFree_error_());
             }
@@ -93,9 +93,9 @@ public class YoutubeMp4ToAACAudio implements YoutubeConverter {
             downloadLink.setDownloadSize(finalFile.length());
             downloadLink.setDownloadCurrent(finalFile.length());
             try {
-                downloadLink.setFinalFileOutput(finalFile.getAbsolutePath());
-                downloadLink.setCustomFileOutputFilenameAppend(null);
-                downloadLink.setCustomFileOutputFilename(null);
+
+                downloadLink.setInternalTmpFilenameAppend(null);
+                downloadLink.setInternalTmpFilename(null);
             } catch (final Throwable e) {
             }
         } finally {

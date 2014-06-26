@@ -2,8 +2,6 @@ package org.jdownloader.controlling;
 
 import jd.plugins.DownloadLink;
 
-import org.appwork.utils.StringUtils;
-
 public class DefaultDownloadLinkViewImpl implements DownloadLinkView {
 
     protected DownloadLink link;
@@ -52,11 +50,7 @@ public class DefaultDownloadLinkViewImpl implements DownloadLinkView {
 
     @Override
     public String getDisplayName() {
-        String name = link.getCustomFinalName();
-        if (StringUtils.isNotEmpty(name)) {
-            //
-            return name;
-        }
+
         return link.getName();
     }
 

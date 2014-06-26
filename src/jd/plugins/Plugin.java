@@ -282,6 +282,7 @@ public abstract class Plugin implements ActionListener {
         }
         final UserIOProgress prg = new UserIOProgress(message);
         prg.setProgressSource(this);
+        prg.setDisplayInProgressColumnEnabled(false);
         try {
             link.addPluginProgress(prg);
             AskUsernameAndPasswordDialogInterface handle = UIOManager.I().show(AskUsernameAndPasswordDialogInterface.class, new AskForUserAndPasswordDialog(message, link));
@@ -322,6 +323,7 @@ public abstract class Plugin implements ActionListener {
         }
         final UserIOProgress prg = new UserIOProgress(message);
         prg.setProgressSource(getCurrentActivePlugin());
+        prg.setDisplayInProgressColumnEnabled(false);
         try {
             link.addPluginProgress(prg);
             AskDownloadPasswordDialogInterface handle = UIOManager.I().show(AskDownloadPasswordDialogInterface.class, new AskForPasswordDialog(message, link));

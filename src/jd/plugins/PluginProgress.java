@@ -26,12 +26,17 @@ import org.jdownloader.plugins.PluginTaskID;
 public abstract class PluginProgress {
     protected long   total;
     protected long   current;
-    protected long   eta            = -1;
+    protected long   eta                            = -1;
 
     protected Color  color;
-    protected Icon   icon           = null;
-    protected Object progressSource = null;
+    protected Icon   icon                           = null;
+    protected Object progressSource                 = null;
     private long     started;
+    private boolean  displayInProgressColumnEnabled = true;
+
+    public void setDisplayInProgressColumnEnabled(boolean displayInProgressColumnEnabled) {
+        this.displayInProgressColumnEnabled = displayInProgressColumnEnabled;
+    }
 
     public abstract String getMessage(Object requestor);
 
@@ -88,7 +93,9 @@ public abstract class PluginProgress {
     }
 
     public Icon getIcon(Object requestor) {
-        if (requestor instanceof ETAColumn) return null;
+        if (requestor instanceof ETAColumn) {
+            return null;
+        }
         return icon;
     }
 
@@ -124,6 +131,10 @@ public abstract class PluginProgress {
     }
 
     public void abort() {
+    }
+
+    public boolean isDisplayInProgressColumnEnabled() {
+        return displayInProgressColumnEnabled;
     }
 
 }

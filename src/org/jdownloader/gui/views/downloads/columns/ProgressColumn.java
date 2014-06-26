@@ -223,7 +223,7 @@ public class ProgressColumn extends ExtProgressColumn<AbstractNode> {
             long size = -1;
             if (dLink.getDefaultPlugin() == null) {
                 return 100;
-            } else if ((progress = dLink.getPluginProgress()) != null && !(progress.getProgressSource() instanceof PluginForHost)) {
+            } else if ((progress = dLink.getPluginProgress()) != null && (progress.isDisplayInProgressColumnEnabled())) {
                 return (progress.getTotal());
             } else if (FinalLinkState.CheckFinished(dLink.getFinalLinkState())) {
                 return 100;
@@ -262,7 +262,8 @@ public class ProgressColumn extends ExtProgressColumn<AbstractNode> {
             PluginProgress progress = null;
             if (dLink.getDefaultPlugin() == null) {
                 return -1;
-            } else if ((progress = dLink.getPluginProgress()) != null && !(progress.getProgressSource() instanceof PluginForHost)) {
+            } else if ((progress = dLink.getPluginProgress()) != null && (progress.isDisplayInProgressColumnEnabled())) {
+
                 return (progress.getCurrent());
             } else if (FinalLinkState.CheckFinished(dLink.getFinalLinkState())) {
                 return 100;

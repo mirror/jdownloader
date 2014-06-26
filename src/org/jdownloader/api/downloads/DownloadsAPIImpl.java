@@ -66,9 +66,15 @@ public class DownloadsAPIImpl implements DownloadsAPI {
         List<FilePackageAPIStorable> ret = new ArrayList<FilePackageAPIStorable>(dlc.size());
         int startWith = queryParams.getStartAt();
         int maxResults = queryParams.getMaxResults();
-        if (startWith > dlc.size() - 1) return ret;
-        if (startWith < 0) startWith = 0;
-        if (maxResults < 0) maxResults = dlc.size();
+        if (startWith > dlc.size() - 1) {
+            return ret;
+        }
+        if (startWith < 0) {
+            startWith = 0;
+        }
+        if (maxResults < 0) {
+            maxResults = dlc.size();
+        }
 
         for (int i = startWith; i < Math.min(startWith + maxResults, dlc.size()); i++) {
             FilePackage fp = packages.get(i);
@@ -79,7 +85,7 @@ public class DownloadsAPIImpl implements DownloadsAPI {
                 org.jdownloader.myjdownloader.client.json.JsonMap infomap = new org.jdownloader.myjdownloader.client.json.JsonMap();
 
                 if (queryParams._getQueryParam("saveTo", Boolean.class, false)) {
-                    infomap.put("saveTo", fp.getDownloadDirectory());
+                    infomap.put("saveTo", fp.getView().getDownloadDirectory());
                 }
                 if (queryParams._getQueryParam("size", Boolean.class, false)) {
                     long size = 0;
@@ -196,14 +202,22 @@ public class DownloadsAPIImpl implements DownloadsAPI {
             }
         }
 
-        if (links.isEmpty()) return result;
+        if (links.isEmpty()) {
+            return result;
+        }
 
         int startWith = queryParams.getStartAt();
         int maxResults = queryParams.getMaxResults();
 
-        if (startWith > links.size() - 1) return result;
-        if (startWith < 0) startWith = 0;
-        if (maxResults < 0) maxResults = links.size();
+        if (startWith > links.size() - 1) {
+            return result;
+        }
+        if (startWith < 0) {
+            startWith = 0;
+        }
+        if (maxResults < 0) {
+            maxResults = links.size();
+        }
 
         for (int i = startWith; i < Math.min(startWith + maxResults, links.size()); i++) {
 
@@ -242,7 +256,9 @@ public class DownloadsAPIImpl implements DownloadsAPI {
             if (queryParams.fieldRequested("url")) {
                 infomap.put("url", dl.getBrowserUrl());
             }
-            if (queryParams.fieldRequested("enabled")) infomap.put("enabled", dl.isEnabled());
+            if (queryParams.fieldRequested("enabled")) {
+                infomap.put("enabled", dl.isEnabled());
+            }
             if (queryParams.fieldRequested("extractionStatus")) {
                 if (dl.getExtractionStatus() != null) {
                     infomap.put("extractionStatus", dl.getExtractionStatus().toString());
@@ -276,7 +292,9 @@ public class DownloadsAPIImpl implements DownloadsAPI {
 
     @Override
     public boolean removeLinks(final List<Long> linkIds, final List<Long> packageIds) {
-        if (linkIds == null) return true;
+        if (linkIds == null) {
+            return true;
+        }
 
         DownloadController dlc = DownloadController.getInstance();
 
@@ -318,7 +336,9 @@ public class DownloadsAPIImpl implements DownloadsAPI {
 
     @Override
     public boolean enableLinks(final List<Long> linkIds) {
-        if (linkIds == null) return true;
+        if (linkIds == null) {
+            return true;
+        }
         return enableLinks(linkIds, null);
     }
 
@@ -333,7 +353,9 @@ public class DownloadsAPIImpl implements DownloadsAPI {
 
     @Override
     public boolean disableLinks(final List<Long> linkIds) {
-        if (linkIds == null) return true;
+        if (linkIds == null) {
+            return true;
+        }
         return disableLinks(linkIds, null);
     }
 
@@ -448,7 +470,9 @@ public class DownloadsAPIImpl implements DownloadsAPI {
 
             @Override
             public boolean acceptNode(DownloadLink node) {
-                if (linkIds.contains(node.getUniqueID().getID())) return true;
+                if (linkIds.contains(node.getUniqueID().getID())) {
+                    return true;
+                }
                 return false;
             }
         });
