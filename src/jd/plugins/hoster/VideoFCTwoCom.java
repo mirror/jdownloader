@@ -76,7 +76,9 @@ public class VideoFCTwoCom extends PluginForHost {
                 br.setCookiesExclusive(true);
                 Object ret = account.getProperty("cookies", null);
                 boolean acmatch = Encoding.urlEncode(account.getUser()).equals(account.getStringProperty("name", Encoding.urlEncode(account.getUser())));
-                if (acmatch) acmatch = Encoding.urlEncode(account.getPass()).equals(account.getStringProperty("pass", Encoding.urlEncode(account.getPass())));
+                if (acmatch) {
+                    acmatch = Encoding.urlEncode(account.getPass()).equals(account.getStringProperty("pass", Encoding.urlEncode(account.getPass())));
+                }
                 if (acmatch && ret != null && ret instanceof HashMap<?, ?> && !force) {
                     HashMap<String, String> cookies = (HashMap<String, String>) ret;
                     if (account.isValid()) {
@@ -96,13 +98,17 @@ public class VideoFCTwoCom extends PluginForHost {
                 br.setCookie(br.getHost(), "language", "en");
                 br.postPage("https://secure.id.fc2.com/index.php?mode=login&switch_language=en", "email=" + Encoding.urlEncode(account.getUser()) + "&pass=" + Encoding.urlEncode(account.getPass()) + "&done=&image.x=" + (int) (200 * Math.random() + 1) + "&image.y=" + (int) (47 * Math.random() + 1) + "&keep_login=1&image=Log+in&done=");
                 String loginDone = br.getRegex("(http://id\\.fc2\\.com/\\?.*?login=done.*?)").getMatch(0);
-                if (loginDone == null) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+                if (loginDone == null) {
+                    throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+                }
                 br.getPage(loginDone);
                 // Save cookies
                 HashMap<String, String> cookies = new HashMap<String, String>();
                 Cookies add = this.br.getCookies(MAINPAGE);
                 for (Cookie c : add.getCookies()) {
-                    if ("login_status".equals(c.getKey()) || "secure_check_fc2".equals(c.getKey()) || "Max-Age".equals(c.getKey()) || "glgd_val".equals(c.getKey())) continue;
+                    if ("login_status".equals(c.getKey()) || "secure_check_fc2".equals(c.getKey()) || "Max-Age".equals(c.getKey()) || "glgd_val".equals(c.getKey())) {
+                        continue;
+                    }
                     cookies.put(c.getKey(), c.getValue());
                 }
                 account.setProperty("name", Encoding.urlEncode(account.getUser()));
@@ -172,16 +178,22 @@ public class VideoFCTwoCom extends PluginForHost {
                 logger.info("video.fc2.com: Unknown error code: " + error);
             }
         }
-        if (finalURL == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (finalURL == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         if (onlyForPremiumUsers(downloadLink)) {
-            if (downloadLink.getDownloadSize() > 0) throw new PluginException(LinkStatus.ERROR_FATAL, "This is a sample video. Full video is only downloadable for Premium Users!");
+            if (downloadLink.getDownloadSize() > 0) {
+                throw new PluginException(LinkStatus.ERROR_FATAL, "This is a sample video. Full video is only downloadable for Premium Users!");
+            }
             throw new PluginException(LinkStatus.ERROR_FATAL, "Only downloadable for Premium Users!");
         }
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, finalURL, true, 0);
         if (dl.getConnection().getContentType().contains("html")) {
             logger.warning("The dllink seems not to be a file!");
             br.followConnection();
-            if (br.containsHTML("not found")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error", 60 * 60 * 1000l);
+            if (br.containsHTML("not found")) {
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error", 60 * 60 * 1000l);
+            }
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl.startDownload();
@@ -204,22 +216,24 @@ public class VideoFCTwoCom extends PluginForHost {
     public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws Exception {
         br.setFollowRedirects(true);
         br.setCustomCharset("utf-8");
-        return requestVideo(downloadLink);
-    }
-
-    private AvailableStatus requestVideo(DownloadLink downloadLink) throws Exception {
         String dllink = downloadLink.getDownloadURL();
         br.getPage(dllink);
-        if (br.containsHTML("This content has already been deleted") || br.getURL().contains("/err.php") || br.getURL().contains("/404.php")) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
+        if (br.containsHTML("This content has already been deleted") || br.getURL().contains("/err.php") || br.getURL().contains("/404.php")) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
         String filename = br.getRegex("<title>.*?◎?(.*?) \\-").getMatch(0);
         if (filename == null) {
             filename = br.getRegex("title=\".*?◎([^\"]+)").getMatch(0);
         }
 
-        if (dllink.endsWith("/")) dllink = dllink.substring(0, dllink.length() - 1);
+        if (dllink.endsWith("/")) {
+            dllink = dllink.substring(0, dllink.length() - 1);
+        }
         String upid = dllink.substring(dllink.lastIndexOf("/") + 1);
         String gk = getKey();
-        if (filename == null || upid == null || gk == null) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
+        if (filename == null || upid == null || gk == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
 
         filename = filename.replaceAll("\\p{Z}", " ");
         filename = filename.replaceAll("[\\.\\d]{3,}$", "");
@@ -233,11 +247,15 @@ public class VideoFCTwoCom extends PluginForHost {
         downloadLink.setProperty("ONLYFORPREMIUM", false);
         br.getPage("/ginfo.php?otag=0&tk=null&href=" + Encoding.urlEncode(dllink).replaceAll("\\.", "%2E") + "&upid=" + upid + "&gk=" + gk + "&fversion=" + Encoding.urlEncode("WIN 11,1,102,62").replaceAll("\\+", "%20") + "&playid=null&lang=en&playlistid=null&mimi=" + getMimi(upid) + "&v=" + upid);
 
-        if (br.containsHTML("err_code=403")) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
+        if (br.containsHTML("err_code=403")) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
 
         br.getHeaders().put("Referer", null);
         String error = br.getRegex("^err_code=(\\d+)$").getMatch(0);
-        if (br.getRegex("\\&charge_second=\\d+").matches()) error = "603";
+        if (br.getRegex("\\&charge_second=\\d+").matches()) {
+            error = "603";
+        }
         if (error != null) {
             switch (Integer.parseInt(error)) {
             case 503:
@@ -289,14 +307,20 @@ public class VideoFCTwoCom extends PluginForHost {
 
     private String getKey() {
         String javaScript = br.getRegex("eval(\\(f.*?)[\r\n]+").getMatch(0);
-        if (javaScript == null) javaScript = br.getRegex("(var __[0-9a-zA-Z]+ = \'undefined\'.*?\\})[\r\n]+\\-\\->").getMatch(0);
-        if (javaScript == null) return null;
+        if (javaScript == null) {
+            javaScript = br.getRegex("(var __[0-9a-zA-Z]+ = \'undefined\'.*?\\})[\r\n]+\\-\\->").getMatch(0);
+        }
+        if (javaScript == null) {
+            return null;
+        }
         Object result = new Object();
         ScriptEngineManager manager = jd.plugins.hoster.DummyScriptEnginePlugin.getScriptEngineManager(this);
         ScriptEngine engine = manager.getEngineByName("javascript");
         Invocable inv = (Invocable) engine;
         try {
-            if (!javaScript.startsWith("var")) engine.eval(engine.eval(javaScript).toString());
+            if (!javaScript.startsWith("var")) {
+                engine.eval(engine.eval(javaScript).toString());
+            }
             engine.eval(javaScript);
             engine.eval("var window = new Object();");
             result = inv.invokeFunction("getKey");
@@ -312,7 +336,9 @@ public class VideoFCTwoCom extends PluginForHost {
             String t = new Regex(finalURL, "cdnt=(\\d+)").getMatch(0);
             String h = new Regex(finalURL, "cdnh=([0-9a-f]+)").getMatch(0);
             finalURL = new Regex(finalURL, "(.*?)\\&sec=").getMatch(0);
-            if (t != null && h != null) finalURL = finalURL + "&px-time=" + t + "&px-hash=" + h;
+            if (t != null && h != null) {
+                finalURL = finalURL + "&px-time=" + t + "&px-hash=" + h;
+            }
         }
     }
 
