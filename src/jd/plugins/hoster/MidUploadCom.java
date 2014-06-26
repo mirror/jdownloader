@@ -69,11 +69,17 @@ public class MidUploadCom extends PluginForHost {
         if (br.containsHTML("You have to wait")) {
             int minutes = 0, seconds = 0, hours = 0;
             String tmphrs = br.getRegex("You have to wait.*?\\s+(\\d+)\\s+hours?").getMatch(0);
-            if (tmphrs != null) hours = Integer.parseInt(tmphrs);
+            if (tmphrs != null) {
+                hours = Integer.parseInt(tmphrs);
+            }
             String tmpmin = br.getRegex("You have to wait.*?\\s+(\\d+)\\s+minutes?").getMatch(0);
-            if (tmpmin != null) minutes = Integer.parseInt(tmpmin);
+            if (tmpmin != null) {
+                minutes = Integer.parseInt(tmpmin);
+            }
             String tmpsec = br.getRegex("You have to wait.*?\\s+(\\d+)\\s+seconds?").getMatch(0);
-            if (tmpsec != null) seconds = Integer.parseInt(tmpsec);
+            if (tmpsec != null) {
+                seconds = Integer.parseInt(tmpsec);
+            }
             int waittime = ((3600 * hours) + (60 * minutes) + seconds + 1) * 1000;
             logger.info("Detected waittime #1, waiting " + waittime + "milliseconds");
             throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, null, waittime);
@@ -87,17 +93,29 @@ public class MidUploadCom extends PluginForHost {
                 throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, null, 60 * 60 * 1000l);
             } else {
                 int minutes = 0, seconds = 0, hours = 0, days = 0;
-                if (tmphrs != null) hours = Integer.parseInt(tmphrs);
-                if (tmpmin != null) minutes = Integer.parseInt(tmpmin);
-                if (tmpsec != null) seconds = Integer.parseInt(tmpsec);
-                if (tmpdays != null) days = Integer.parseInt(tmpdays);
+                if (tmphrs != null) {
+                    hours = Integer.parseInt(tmphrs);
+                }
+                if (tmpmin != null) {
+                    minutes = Integer.parseInt(tmpmin);
+                }
+                if (tmpsec != null) {
+                    seconds = Integer.parseInt(tmpsec);
+                }
+                if (tmpdays != null) {
+                    days = Integer.parseInt(tmpdays);
+                }
                 int waittime = ((days * 24 * 3600) + (3600 * hours) + (60 * minutes) + seconds + 1) * 1000;
                 logger.info("Detected waittime #2, waiting " + waittime + "milliseconds");
                 throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, null, waittime);
             }
         }
-        if (br.containsHTML("You're using all download slots for IP")) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, null, 10 * 60 * 1001l);
-        if (br.containsHTML("Error happened when generating Download Link")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error!", 10 * 60 * 1000l);
+        if (br.containsHTML("You're using all download slots for IP")) {
+            throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, null, 10 * 60 * 1001l);
+        }
+        if (br.containsHTML("Error happened when generating Download Link")) {
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error!", 10 * 60 * 1000l);
+        }
         // Errorhandling for only-premium links
         if (br.containsHTML("(You can download files up to.*?only|Upgrade your account to download bigger files|This file reached max downloads)")) {
             String filesizelimit = br.getRegex("You can download files up to(.*?)only").getMatch(0);
@@ -107,7 +125,9 @@ public class MidUploadCom extends PluginForHost {
                 try {
                     throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);
                 } catch (final Throwable e) {
-                    if (e instanceof PluginException) throw (PluginException) e;
+                    if (e instanceof PluginException) {
+                        throw (PluginException) e;
+                    }
                 }
                 throw new PluginException(LinkStatus.ERROR_FATAL, "Free users can only download files up to " + filesizelimit);
             } else {
@@ -115,7 +135,9 @@ public class MidUploadCom extends PluginForHost {
                 try {
                     throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);
                 } catch (final Throwable e) {
-                    if (e instanceof PluginException) throw (PluginException) e;
+                    if (e instanceof PluginException) {
+                        throw (PluginException) e;
+                    }
                 }
                 throw new PluginException(LinkStatus.ERROR_FATAL, "Only downloadable via premium");
             }
@@ -123,7 +145,9 @@ public class MidUploadCom extends PluginForHost {
     }
 
     public void checkServerErrors() throws NumberFormatException, PluginException {
-        if (br.containsHTML("No file")) throw new PluginException(LinkStatus.ERROR_FATAL, "Server error");
+        if (br.containsHTML("No file")) {
+            throw new PluginException(LinkStatus.ERROR_FATAL, "Server error");
+        }
         if (br.containsHTML("(File Not Found|<h1>404 Not Found</h1>)")) {
             logger.warning("Server says link offline, please recheck that!");
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
@@ -131,7 +155,9 @@ public class MidUploadCom extends PluginForHost {
     }
 
     public void doFree(DownloadLink link) throws Exception {
-        if (br.containsHTML("This server is in maintenance mode")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "This server is in maintenance mode");
+        if (br.containsHTML("This server is in maintenance mode")) {
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "This server is in maintenance mode");
+        }
         Form freeform = br.getFormBySubmitvalue("Kostenloser+Download");
         if (freeform == null) {
             freeform = br.getFormBySubmitvalue("Free+Download");
@@ -146,7 +172,9 @@ public class MidUploadCom extends PluginForHost {
         String passCode = null;
         checkErrors(link, false, passCode);
         Form captchaForm = br.getFormbyProperty("name", "F1");
-        if (captchaForm == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (captchaForm == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         // Ticket Time
         String ttt = br.getRegex("countdown\">.*?(\\d+).*?</span>").getMatch(0);
         if (ttt != null) {
@@ -205,9 +233,13 @@ public class MidUploadCom extends PluginForHost {
         String dllink = br.getRedirectLocation();
         if (dllink == null) {
             dllink = br.getRegex(Pattern.compile("<br>.*<a href=\"(.*?)\"><img src=\"http://www\\.midupload\\.com/images/download-button\\.gif\" border=\"0\">", Pattern.DOTALL)).getMatch(0);
-            if (dllink == null) dllink = br.getRegex("LocationInList: (http://.+)").getMatch(0);
+            if (dllink == null) {
+                dllink = br.getRegex("Location: (http://.+)").getMatch(0);
+            }
         }
-        if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (dllink == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         dllink = dllink.trim();
         dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, true, 1);
         if (dl.getConnection().getContentType().contains("html")) {
@@ -228,7 +260,9 @@ public class MidUploadCom extends PluginForHost {
             return ai;
         }
         String space = br.getRegex(Pattern.compile("<td>Used space:</td>.*?<td.*?b>(.*?)of.*?Mb</b>", Pattern.DOTALL | Pattern.CASE_INSENSITIVE)).getMatch(0);
-        if (space != null) ai.setUsedSpace(space.trim() + " Mb");
+        if (space != null) {
+            ai.setUsedSpace(space.trim() + " Mb");
+        }
         account.setValid(true);
         String availabletraffic = br.getRegex("Traffic available.*?:</TD><TD><b>(.*?)</b>").getMatch(0);
         if (availabletraffic != null) {
@@ -301,7 +335,9 @@ public class MidUploadCom extends PluginForHost {
             String dllink = br.getRedirectLocation();
             if (dllink == null) {
                 Form DLForm = br.getFormbyProperty("name", "F1");
-                if (DLForm == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                if (DLForm == null) {
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                }
                 if (br.containsHTML(passwordText)) {
                     passCode = handlePassword(passCode, DLForm, link);
                 }
@@ -350,14 +386,22 @@ public class MidUploadCom extends PluginForHost {
         br.setDebug(true);
         br.getPage(COOKIE_HOST + "/login.html");
         Form loginform = br.getForm(0);
-        if (loginform == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (loginform == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         loginform.put("login", Encoding.urlEncode(account.getUser()));
         loginform.put("password", Encoding.urlEncode(account.getPass()));
         br.submitForm(loginform);
         br.getPage(COOKIE_HOST + "/?op=my_account");
-        if (br.getCookie(COOKIE_HOST, "login") == null || br.getCookie(COOKIE_HOST, "xfss") == null) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
-        if (!br.containsHTML("Premium-Account expire") && !br.containsHTML("Upgrade to premium")) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
-        if (!br.containsHTML("Premium-Account expire")) nopremium = true;
+        if (br.getCookie(COOKIE_HOST, "login") == null || br.getCookie(COOKIE_HOST, "xfss") == null) {
+            throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+        }
+        if (!br.containsHTML("Premium-Account expire") && !br.containsHTML("Upgrade to premium")) {
+            throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+        }
+        if (!br.containsHTML("Premium-Account expire")) {
+            nopremium = true;
+        }
     }
 
     @Override
@@ -377,7 +421,9 @@ public class MidUploadCom extends PluginForHost {
             freeform.remove("method_premium");
             br.submitForm(freeform);
         }
-        if (br.containsHTML("This server is in maintenance mode")) return AvailableStatus.UNCHECKABLE;
+        if (br.containsHTML("This server is in maintenance mode")) {
+            return AvailableStatus.UNCHECKABLE;
+        }
         if (br.containsHTML("You have reached the download-limit")) {
             logger.warning("Waittime detected, please reconnect to make the linkchecker work!");
             return AvailableStatus.UNCHECKABLE;

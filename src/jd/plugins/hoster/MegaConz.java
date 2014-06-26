@@ -118,8 +118,8 @@ public class MegaConz extends PluginForHost {
         }
         link.setFinalFileName(fileName);
         try {
-            if (link.getInternalTmpFilename() == null) {
-                link.setInternalTmpFilenameAppend(encrypted);
+            if (link.getCustomFileOutputFilename() == null) {
+                link.setCustomFileOutputFilenameAppend(encrypted);
             }
         } catch (final Throwable e) {
         }
@@ -415,8 +415,8 @@ public class MegaConz extends PluginForHost {
             link.getLinkStatus().setStatusText("Finished");
             try {
 
-                link.setInternalTmpFilenameAppend(null);
-                link.setInternalTmpFilename(null);
+                link.setCustomFileOutputFilenameAppend(null);
+                link.setCustomFileOutputFilename(null);
             } catch (final Throwable e) {
             }
             if (tmp == null) {

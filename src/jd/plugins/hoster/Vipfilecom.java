@@ -70,7 +70,9 @@ public class Vipfilecom extends PluginForHost {
      * */
     @Override
     public boolean checkLinks(final DownloadLink[] urls) {
-        if (urls == null || urls.length == 0) { return false; }
+        if (urls == null || urls.length == 0) {
+            return false;
+        }
         try {
             final Browser br = new Browser();
             br.setCookiesExclusive(true);
@@ -108,7 +110,9 @@ public class Vipfilecom extends PluginForHost {
                         dllink.setFinalFileName(Encoding.htmlDecode(fInfo.getMatch(0)));
                         dllink.setDownloadSize(Long.parseLong(fInfo.getMatch(1)));
                         dllink.setAvailable(true);
-                        if (!md5.equals("0")) dllink.setMD5Hash(md5);
+                        if (!md5.equals("0")) {
+                            dllink.setMD5Hash(md5);
+                        }
                     }
                 }
                 if (index == urls.length) {
@@ -124,8 +128,12 @@ public class Vipfilecom extends PluginForHost {
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws Exception {
         checkLinks(new DownloadLink[] { downloadLink });
-        if (!downloadLink.isAvailabilityStatusChecked()) { return AvailableStatus.UNCHECKED; }
-        if (downloadLink.isAvailabilityStatusChecked() && !downloadLink.isAvailable()) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
+        if (!downloadLink.isAvailabilityStatusChecked()) {
+            return AvailableStatus.UNCHECKED;
+        }
+        if (downloadLink.isAvailabilityStatusChecked() && !downloadLink.isAvailable()) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
         return AvailableStatus.TRUE;
     }
 
@@ -175,8 +183,10 @@ public class Vipfilecom extends PluginForHost {
             br.setFollowRedirects(true);
             br.getPage(downloadLink.getDownloadURL());
             br.setFollowRedirects(false);
-            if (br.containsHTML(FILEOFFLINE)) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-            /* DownloadLink holen, 2x der LocationInList folgen */
+            if (br.containsHTML(FILEOFFLINE)) {
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            }
+            /* DownloadLink holen, 2x der Location folgen */
             /* we have to wait little because server too buggy */
             sleep(2000, downloadLink);
             link = Encoding.htmlDecode(br.getRegex(Pattern.compile(FREELINKREGEX, Pattern.CASE_INSENSITIVE)).getMatch(0));
@@ -184,7 +194,9 @@ public class Vipfilecom extends PluginForHost {
                 try {
                     throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);
                 } catch (final Throwable e) {
-                    if (e instanceof PluginException) throw (PluginException) e;
+                    if (e instanceof PluginException) {
+                        throw (PluginException) e;
+                    }
                 }
                 throw new PluginException(LinkStatus.ERROR_FATAL, JDL.L("plugins.hoster.vipfilecom.errors.nofreedownloadlink", "No free download link for this file"));
             }
@@ -194,9 +206,13 @@ public class Vipfilecom extends PluginForHost {
             br.getPage(link);
             link = br.getRedirectLocation();
         }
-        if (link == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (link == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         if (!skymonk) {
-            if (!link.contains("vip-file.com")) throw new PluginException(LinkStatus.ERROR_FATAL, JDL.L("plugins.hoster.vipfilecom.errors.nofreedownloadlink", "No free download link for this file"));
+            if (!link.contains("vip-file.com")) {
+                throw new PluginException(LinkStatus.ERROR_FATAL, JDL.L("plugins.hoster.vipfilecom.errors.nofreedownloadlink", "No free download link for this file"));
+            }
         }
         // link = link.replaceAll("file.com.*?/", "file.com:8080/");
         br.setFollowRedirects(true);
@@ -225,7 +241,9 @@ public class Vipfilecom extends PluginForHost {
         int rd = (int) Math.random() * 6 + 1;
         skymonk.postPage("http://api.letitbit.net/internal/index4.php", "action=LINK_GET_DIRECT&link=" + s + "&free_link=1&sh=" + JDHash.getMD5(String.valueOf(Math.random())) + rd + "&sp=" + (49 + rd) + "&appid=" + JDHash.getMD5(String.valueOf(Math.random())) + "&version=2.12");
         String[] result = skymonk.getRegex("([^\r\n]+)").getColumn(0);
-        if (result == null || result.length == 0) return null;
+        if (result == null || result.length == 0) {
+            return null;
+        }
 
         if ("NO".equals(result[0].trim())) {
             if (result.length > 1) {
@@ -241,7 +259,9 @@ public class Vipfilecom extends PluginForHost {
                 res.add(r);
             }
         }
-        if (res.size() > 1) return res.get(1);
+        if (res.size() > 1) {
+            return res.get(1);
+        }
         return res.size() == 1 ? res.get(0) : null;
     }
 
@@ -264,14 +284,21 @@ public class Vipfilecom extends PluginForHost {
             logger.info("Wrong password, disabling the account!");
             throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
         }
-        if (br.containsHTML("\"data\":\"no mirrors\"")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        if (br.containsHTML("\"data\":\"file is not found\"")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (br.containsHTML("\"data\":\"no mirrors\"")) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
+        if (br.containsHTML("\"data\":\"file is not found\"")) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
         String dlUrl = br.getRegex("\"(http:[^<>\"]*?)\"").getMatch(0);
-        if (dlUrl != null)
+        if (dlUrl != null) {
             dlUrl = dlUrl.replace("\\", "");
-        else
+        } else {
             dlUrl = handleOldPremiumPassWay(account, downloadLink);
-        if (dlUrl == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        if (dlUrl == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         dlUrl = dlUrl.trim();
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dlUrl, true, 0);
         if (dl.getConnection().getContentType().contains("html")) {
@@ -289,9 +316,13 @@ public class Vipfilecom extends PluginForHost {
         br.setFollowRedirects(true);
         br.getPage(downloadLink.getDownloadURL());
         br.setFollowRedirects(false);
-        if (br.containsHTML(FILEOFFLINE)) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (br.containsHTML(FILEOFFLINE)) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
         final Form[] allForms = br.getForms();
-        if (allForms == null || allForms.length == 0) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (allForms == null || allForms.length == 0) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         Form premiumform = null;
         for (Form singleForm : allForms) {
             if (singleForm.containsHTML("pass") && singleForm.containsHTML("sms/check2.php")) {
@@ -299,14 +330,18 @@ public class Vipfilecom extends PluginForHost {
                 break;
             }
         }
-        if (premiumform == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (premiumform == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         premiumform.put("pass", Encoding.urlEncode(account.getPass()));
         br.submitForm(premiumform);
         // Try to find the remaining traffic, 1 Point = 1 GB
         String trafficLeft = br.getRegex("\">Points:</acronym> ([0-9\\.]+)</li>").getMatch(0);
         if (trafficLeft != null && !trafficLeft.equals("")) {
             AccountInfo ai = account.getAccountInfo();
-            if (ai == null) ai = new AccountInfo();
+            if (ai == null) {
+                ai = new AccountInfo();
+            }
             ai.setTrafficLeft(SizeFormatter.getSize(trafficLeft + "GB"));
             ai.setStatus("Premium User");
             account.setAccountInfo(ai);
@@ -314,11 +349,15 @@ public class Vipfilecom extends PluginForHost {
         String expireDate = br.getRegex(">Period of validity:</acronym> (.*?) \\[<acronym").getMatch(0);
         if (expireDate != null) {
             AccountInfo ai = account.getAccountInfo();
-            if (ai == null) ai = new AccountInfo();
+            if (ai == null) {
+                ai = new AccountInfo();
+            }
             ai.setValidUntil(TimeFormatter.getMilliSeconds(expireDate, "yyyy-MM-dd", null));
             ai.setStatus("Premium User");
             account.setAccountInfo(ai);
-            if (ai.isExpired()) { throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE); }
+            if (ai.isExpired()) {
+                throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+            }
         }
         String urls[] = br.getRegex(Pattern.compile("title=\"Link to the file download\" href=\"(http://[^<>\"\\']+)\"", Pattern.CASE_INSENSITIVE)).getColumn(0);
         if (urls == null) {

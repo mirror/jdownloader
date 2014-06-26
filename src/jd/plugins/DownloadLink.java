@@ -654,7 +654,8 @@ public class DownloadLink extends Property implements Serializable, AbstractPack
      * 3.) unsafeFileName (eg set by plugin when no api is available, or no filename provided)
      * 
      * @param ignoreUnsafe
-     * @param ignoreForcedFilename TODO
+     * @param ignoreForcedFilename
+     *            TODO
      * @return
      */
     public String getName(boolean ignoreUnsafe, boolean ignoreForcedFilename) {
@@ -1797,6 +1798,20 @@ public class DownloadLink extends Property implements Serializable, AbstractPack
 
     public void firePropertyChange(DownloadLinkProperty downloadLinkProperty) {
         notifyChanges(AbstractNodeNotifier.NOTIFY.PROPERTY_CHANCE, downloadLinkProperty);
+    }
+
+    // compatibility.. can be removed after next full build
+    public void setCustomFileOutputFilenameAppend(String object) {
+        setInternalTmpFilenameAppend(object);
+    }
+
+    // compatibility.. can be removed after next full build
+    public void setCustomFileOutputFilename(String object) {
+        setInternalTmpFilename(object);
+    }
+
+    public String getCustomFileOutputFilename() {
+        return getInternalTmpFilename();
     }
 
 }
