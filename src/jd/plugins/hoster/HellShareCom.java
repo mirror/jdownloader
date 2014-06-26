@@ -429,7 +429,8 @@ public class HellShareCom extends PluginForHost {
         br.setFollowRedirects(true);
         br.setDebug(true);
         br.getPage("http://www.hellshare.com/login?do=loginForm-submit");
-        br.postPage("http://www.hellshare.cz/uzivatel/prihlaseni?do=loginForm-submit", "username=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()) + "&perm_login=on&login=Log+in");
+        final String domain = br.getHost();
+        br.postPage("http://www." + domain + "/uzivatel/prihlaseni?do=loginForm-submit", "username=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()) + "&perm_login=on&login=Log+in");
 
         /*
          * this will change account language to eng,needed because language is saved in profile
@@ -439,7 +440,7 @@ public class HellShareCom extends PluginForHost {
         if (permLogin == null || br.containsHTML("zadal jsi špatné uživatelské")) {
             throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
         }
-        br.getPage("http://www.hellshare.com/--" + cookie + "-/members/");
+        br.getPage("http://www." + domain + "/--" + cookie + "-/members/");
         if (br.containsHTML("Wrong user name or wrong password.") || !br.containsHTML("credit for downloads") || br.containsHTML("Špatně zadaný login nebo heslo uživatele") || br.containsHTML("zadal jsi špatné uživatelské")) {
             throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
         }
