@@ -13,7 +13,6 @@ import java.util.regex.Pattern;
 import jd.controlling.downloadcontroller.DownloadController;
 import jd.controlling.packagecontroller.AbstractPackageChildrenNodeFilter;
 import jd.plugins.DownloadLink;
-import jd.plugins.FilePackage;
 
 import org.appwork.exceptions.WTFException;
 import org.appwork.utils.StringUtils;
@@ -38,12 +37,10 @@ public class DownloadLinkArchiveFactory extends DownloadLinkArchiveFile implemen
     }
 
     public String createExtractSubPath(String path, Archive archive) {
-        DownloadLink link = getFirstLink(archive);
+        final DownloadLink link = getFirstLink(archive);
         try {
             if (path.contains(PACKAGENAME)) {
-                FilePackage fp = link.getFilePackage();
-                String packageName = CrossSystem.alleviatePathParts(link.getLastValidFilePackage().getName());
-
+                final String packageName = CrossSystem.alleviatePathParts(link.getLastValidFilePackage().getName());
                 if (!StringUtils.isEmpty(packageName)) {
                     path = path.replace(PACKAGENAME, packageName);
                 } else {

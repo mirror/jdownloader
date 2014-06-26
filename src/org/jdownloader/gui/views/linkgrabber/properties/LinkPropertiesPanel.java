@@ -18,6 +18,7 @@ import jd.plugins.DownloadLink;
 import org.appwork.utils.ImageProvider.ImageProvider;
 import org.appwork.utils.swing.EDTRunner;
 import org.jdownloader.controlling.Priority;
+import org.jdownloader.controlling.UniqueAlltimeID;
 import org.jdownloader.extensions.extraction.Archive;
 import org.jdownloader.extensions.extraction.BooleanStatus;
 import org.jdownloader.extensions.extraction.contextmenu.downloadlist.ArchiveValidator;
@@ -33,68 +34,6 @@ public class LinkPropertiesPanel extends AbstractNodePropertiesPanel implements 
 
     protected volatile CrawledLink currentLink;
 
-    //
-    // protected void saveInEDT() {
-    // if (currentPackage != null) {
-    // if (priority.isShowing()) {
-    // Priority priop = priority.getSelectedItem();
-    // currentLink.setPriority(priop);
-    // }
-    // if (comment.isShowing()) {
-    // currentLink.getDownloadLink().setComment(comment.getText());
-    // }
-    // if (filename.isShowing()) {
-    // currentLink.setName(filename.getText());
-    // }
-    // if (downloadpassword.isShowing()) {
-    // currentLink.getDownloadLink().setDownloadPassword(downloadpassword.getText());
-    // }
-    // if (checksum.isShowing()) {
-    // String cs = checksum.getText();
-    // cs = cs.replaceAll("\\[.*?\\]", "").trim();
-    // if (cs.length() == 32) {
-    // currentLink.getDownloadLink().setMD5Hash(cs);
-    // } else if (cs.length() == 40) {
-    // currentLink.getDownloadLink().setSha1Hash(cs);
-    // } else {
-    // currentLink.getDownloadLink().setMD5Hash(null);
-    // currentLink.getDownloadLink().setSha1Hash(null);
-    // }
-    // }
-    // if (packagename.isShowing()) {
-    // if (!currentPackage.getName().equals(packagename.getText())) {
-    // currentPackage.setName(packagename.getText());
-    // PackageHistoryManager.getInstance().add(packagename.getText());
-    // }
-    // }
-    //
-    // if (password.isShowing()) {
-    // if (currentArchive != null) {
-    // System.out.println("SAVE");
-    // ArrayList<String> passwords = null;
-    // String txt = password.getText().trim();
-    // if (txt.startsWith("[") && txt.endsWith("]")) {
-    // passwords = JSonStorage.restoreFromString(password.getText(), new TypeRef<ArrayList<String>>() {
-    // }, null);
-    // }
-    // if (passwords != null && passwords.size() > 0) {
-    // currentArchive.getSettings().setPasswords(new HashSet<String>(passwords));
-    // } else {
-    // HashSet<String> hs = new HashSet<String>();
-    // if (StringUtils.isNotEmpty(password.getText())) hs.add(password.getText().trim());
-    // currentArchive.getSettings().setPasswords(hs);
-    // }
-    // currentArchive.getSettings().setAutoExtract(autoExtract.getSelectedItem());
-    //
-    // if (!LinkTreeUtils.getRawDownloadDirectory(currentPackage).equals(new File(destination.getPath()))) {
-    // currentPackage.setDownloadFolder(destination.getPath());
-    // DownloadPathHistoryManager.getInstance().add(destination.getPath());
-    // }
-    // }
-    // }
-    //
-    // }
-    // }
     @Override
     protected void saveSaveTo(final String str) {
         new SetDownloadFolderInLinkgrabberAction(new SelectionInfo<CrawledPackage, CrawledLink>(currentLink, null, false)) {
@@ -265,7 +204,6 @@ public class LinkPropertiesPanel extends AbstractNodePropertiesPanel implements 
             // example:package is selected,and we change the archive password. this fires events on the packages links
             refresh();
         }
-        ;
     }
 
     @Override
@@ -303,13 +241,17 @@ public class LinkPropertiesPanel extends AbstractNodePropertiesPanel implements 
 
     @Override
     protected void saveArchivePasswords(List<String> hashSet) {
-        if (currentArchive == null) return;
+        if (currentArchive == null) {
+            return;
+        }
         currentArchive.getSettings().setPasswords(hashSet);
     }
 
     @Override
     protected void saveAutoExtract(BooleanStatus selectedItem) {
-        if (currentArchive == null) return;
+        if (currentArchive == null) {
+            return;
+        }
         currentArchive.getSettings().setAutoExtract(selectedItem);
     }
 
@@ -398,5 +340,18 @@ public class LinkPropertiesPanel extends AbstractNodePropertiesPanel implements 
     @Override
     protected boolean isAbstractNodeSelected() {
         return currentLink != null || currentPackage != null;
+    }
+
+    @Override
+    protected UniqueAlltimeID getCurrentUniqueID() {
+        final CrawledLink lcurrentLink = currentLink;
+        if (lcurrentLink != null) {
+            return lcurrentLink.getUniqueID();
+        }
+        final CrawledPackage lcurrentPackage = currentPackage;
+        if (lcurrentPackage != null) {
+            return lcurrentPackage.getUniqueID();
+        }
+        return null;
     }
 }

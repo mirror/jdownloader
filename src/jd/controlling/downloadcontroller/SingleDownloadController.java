@@ -160,7 +160,7 @@ public class SingleDownloadController extends BrowserSettingsThread implements D
     }
 
     protected SingleDownloadController(DownloadLinkCandidate candidate, DownloadWatchDog watchDog) {
-        super(new ThreadGroup("Download: " + candidate.getLink().getView().getDisplayName() + "_" + candidate.getLink().getHost()), "Download");
+        super(new SingleDownloadControllerThreadGroup("Download: " + candidate.getLink().getView().getDisplayName() + "_" + candidate.getLink().getHost()), "Download");
         tasks = new ArrayList<PluginSubTask>();
         setPriority(Thread.MIN_PRIORITY);
         this.watchDog = watchDog;
@@ -604,10 +604,9 @@ public class SingleDownloadController extends BrowserSettingsThread implements D
         synchronized (tasks) {
             return new ArrayList<PluginSubTask>(tasks);
         }
-
     }
 
-    private String sessionDownloadDirectory;
+    private volatile String sessionDownloadDirectory;
 
     public void setSessionDownloadDirectory(String downloadDirectory) {
         this.sessionDownloadDirectory = downloadDirectory;
@@ -617,16 +616,7 @@ public class SingleDownloadController extends BrowserSettingsThread implements D
         return sessionDownloadDirectory;
     }
 
-    // public String getDownloadPath(Object caller, boolean ignoreUnsafe, boolean ignoreCustom) {
-    // String ret = downloadLink.getFileOutput(ignoreUnsafe, ignoreCustom);
-    // if (sessionDownloadDirectory != null) {
-    // ret = new File(new File(sessionDownloadDirectory), new File(ret).getName()).getAbsolutePath();
-    // }
-    //
-    // return ret;
-    // }
-
-    private String sessionDownloadFilename;
+    private volatile String sessionDownloadFilename;
 
     public void setSessionDownloadFilename(String downloadFilename) {
         if (StringUtils.equals(sessionDownloadFilename, downloadFilename)) {
@@ -636,7 +626,6 @@ public class SingleDownloadController extends BrowserSettingsThread implements D
         if (downloadLink.hasNotificationListener()) {
             downloadLink.firePropertyChange(new DownloadLinkProperty(downloadLink, DownloadLinkProperty.Property.NAME, downloadFilename));
         }
-
     }
 
     public String getSessionDownloadFilename() {
@@ -644,68 +633,25 @@ public class SingleDownloadController extends BrowserSettingsThread implements D
     }
 
     public File getFileOutput(boolean ignoreUnsafe, boolean ignoreCustom) {
-
         String name = getSessionDownloadFilename();
-
         if (!ignoreCustom) {
             String tmpName = downloadLink.getInternalTmpFilename();
             if (!StringUtils.isEmpty(tmpName)) {
                 /* we have a customized fileOutputFilename */
                 name = tmpName;
             }
-
             String customAppend = downloadLink.getInternalTmpFilenameAppend();
             if (!StringUtils.isEmpty(customAppend)) {
                 name = name + customAppend;
             }
         }
-
         if (StringUtils.isEmpty(name)) {
             name = downloadLink.getName(ignoreUnsafe, true);
             if (name == null) {
                 return null;
             }
         }
-
         return new File(getSessionDownloadDirectory(), name);
-
-    }
-
-    /**
-     * Called only internally by downloadlink to get stable compatibility. We cannot change all plugins to get their filenames and pathes
-     * from singledownloadcontroller. This we redirect all calls within the SingleDownloadControllerThread. This should be removed once we
-     * kick jd09
-     * 
-     * @param actualFileoutput
-     * @param ignoreUnsafe
-     * @param ignoreCustom
-     * @return
-     */
-    public String getInternalJD09WorkaroundFileOutput(String actualFileoutput, boolean ignoreUnsafe, boolean ignoreCustom) {
-        String name = getSessionDownloadFilename();
-
-        if (!ignoreCustom) {
-            String tmpName = downloadLink.getInternalTmpFilename();
-            if (!StringUtils.isEmpty(tmpName)) {
-                /* we have a customized fileOutputFilename */
-                name = tmpName;
-            }
-
-            String customAppend = downloadLink.getInternalTmpFilenameAppend();
-            if (!StringUtils.isEmpty(customAppend)) {
-                name = name + customAppend;
-            }
-        }
-
-        if (StringUtils.isEmpty(name)) {
-            String path = actualFileoutput;
-            if (path == null) {
-                return null;
-            }
-            name = new File(path).getName();
-        }
-
-        return new File(getSessionDownloadDirectory(), name).getAbsolutePath();
     }
 
 }

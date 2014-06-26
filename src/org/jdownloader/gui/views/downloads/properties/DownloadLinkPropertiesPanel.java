@@ -21,6 +21,7 @@ import org.appwork.swing.components.ExtTextField;
 import org.appwork.utils.ImageProvider.ImageProvider;
 import org.appwork.utils.swing.EDTRunner;
 import org.jdownloader.controlling.Priority;
+import org.jdownloader.controlling.UniqueAlltimeID;
 import org.jdownloader.controlling.download.DownloadControllerListener;
 import org.jdownloader.extensions.extraction.Archive;
 import org.jdownloader.extensions.extraction.BooleanStatus;
@@ -58,25 +59,6 @@ public class DownloadLinkPropertiesPanel extends AbstractNodePropertiesPanel imp
                 // delayedSave();
             }
 
-            // protected boolean processKeyBinding(KeyStroke ks, KeyEvent e, int condition, boolean pressed) {
-            // InputMap map = getInputMap(condition);
-            // ActionMap am = getActionMap();
-            //
-            // if (map != null && am != null && isEnabled()) {
-            // Object binding = map.get(ks);
-            // Action action = (binding == null) ? null : am.get(binding);
-            //
-            // if (action != null) {
-            //
-            // if (action instanceof CopyAction) { return super.processKeyBinding(ks, e, condition, pressed); }
-            // if ("select-all".equals(binding)) return super.processKeyBinding(ks, e, condition, pressed);
-            // if (action instanceof TextAction) { return false; }
-            //
-            // }
-            //
-            // }
-            // return super.processKeyBinding(ks, e, condition, pressed);
-            // }
         };
     }
 
@@ -257,25 +239,33 @@ public class DownloadLinkPropertiesPanel extends AbstractNodePropertiesPanel imp
 
     @Override
     protected void saveArchivePasswords(List<String> hashSet) {
-        if (currentArchive == null) return;
+        if (currentArchive == null) {
+            return;
+        }
         currentArchive.getSettings().setPasswords(hashSet);
     }
 
     @Override
     protected void saveAutoExtract(BooleanStatus selectedItem) {
-        if (currentArchive == null) return;
+        if (currentArchive == null) {
+            return;
+        }
         currentArchive.getSettings().setAutoExtract(selectedItem);
     }
 
     @Override
     protected void saveComment(String text) {
-        if (currentArchive == null) return;
+        if (currentArchive == null) {
+            return;
+        }
         currentLink.getDownloadLink().setComment(text);
     }
 
     @Override
     protected void saveDownloadPassword(String text) {
-        if (currentArchive == null) return;
+        if (currentArchive == null) {
+            return;
+        }
         currentLink.getDownloadLink().setDownloadPassword(text);
     }
 
@@ -345,6 +335,19 @@ public class DownloadLinkPropertiesPanel extends AbstractNodePropertiesPanel imp
             }
         };
 
+    }
+
+    @Override
+    protected UniqueAlltimeID getCurrentUniqueID() {
+        final DownloadLink lcurrentLink = currentLink;
+        if (lcurrentLink != null) {
+            return lcurrentLink.getUniqueID();
+        }
+        final FilePackage lcurrentPackage = currentPackage;
+        if (lcurrentPackage != null) {
+            return lcurrentPackage.getUniqueID();
+        }
+        return null;
     }
 
     @Override

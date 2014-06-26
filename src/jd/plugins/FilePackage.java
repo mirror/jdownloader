@@ -702,12 +702,14 @@ public class FilePackage extends Property implements Serializable, AbstractPacka
     }
 
     public void copyPropertiesTo(FilePackage dest) {
-        if (dest == null || dest == this) {
+        if (dest != null && dest != this) {
+            /* do not copy Property Properties as it currently only contains comment/expanded state */
+            dest.name = name;
+            dest.setComment(getComment());
+            dest.setDownloadDirectory(getView().getDownloadDirectory());
+            dest.setPriorityEnum(getPriorityEnum());
             return;
         }
-        dest.name = name;
-        dest.setComment(getComment());
-        dest.setDownloadDirectory(getView().getDownloadDirectory());
     }
 
 }

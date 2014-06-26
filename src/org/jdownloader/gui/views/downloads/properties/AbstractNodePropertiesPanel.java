@@ -51,6 +51,7 @@ import org.appwork.utils.swing.SwingUtils;
 import org.appwork.utils.swing.dialog.DialogCanceledException;
 import org.appwork.utils.swing.dialog.DialogClosedException;
 import org.jdownloader.controlling.Priority;
+import org.jdownloader.controlling.UniqueAlltimeID;
 import org.jdownloader.controlling.packagizer.PackagizerController;
 import org.jdownloader.extensions.extraction.Archive;
 import org.jdownloader.extensions.extraction.BooleanStatus;
@@ -87,8 +88,10 @@ public abstract class AbstractNodePropertiesPanel extends MigPanel implements Ac
     protected final AtomicInteger                 savingLock  = new AtomicInteger(0);
     protected final AtomicInteger                 settingLock = new AtomicInteger(0);
     private DelayedRunnable                       updateDelayer;
-    private long                                  lastSave;
+
     private String                                lastSavedPath;
+    private UniqueAlltimeID                       lastSavedPathUniqueID;
+    private long                                  lastSavedPathTimeStamp;
 
     @Override
     public void setVisible(boolean aFlag) {
@@ -789,6 +792,8 @@ public abstract class AbstractNodePropertiesPanel extends MigPanel implements Ac
 
     abstract protected boolean isAbstractNodeSelected();
 
+    abstract protected UniqueAlltimeID getCurrentUniqueID();
+
     protected void saveInEDT() {
         if (priority.getParent() != null) {
             savePriority(priority.getSelectedItem());
@@ -846,8 +851,9 @@ public abstract class AbstractNodePropertiesPanel extends MigPanel implements Ac
         String path;
         if (destination.getDestination().getParent() != null && !loadSaveTo().equals(path = destination.getPath())) {
             // avoid double save and ouble dialogs to ask wether to create a new package or change path for the full package.
-            if (System.currentTimeMillis() - lastSave > 2000 || !StringUtils.equals(lastSavedPath, path)) {
-                lastSave = System.currentTimeMillis();
+            if (System.currentTimeMillis() - lastSavedPathTimeStamp > 2000 || !StringUtils.equals(lastSavedPath, path) || (lastSavedPathUniqueID != null && !lastSavedPathUniqueID.equals(getCurrentUniqueID()))) {
+                lastSavedPathUniqueID = getCurrentUniqueID();
+                lastSavedPathTimeStamp = System.currentTimeMillis();
                 lastSavedPath = path;
                 saveSaveTo(PackagizerController.replaceDynamicTags(path, loadPackageName()));
                 DownloadPathHistoryManager.getInstance().add(path);

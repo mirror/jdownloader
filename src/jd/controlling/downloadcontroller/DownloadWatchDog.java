@@ -2148,7 +2148,14 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
             logger.severe("Could not attach to History: " + candidate);
         }
         final SingleDownloadController con = new SingleDownloadController(candidate, this);
-        con.setSessionDownloadDirectory(candidate.getLink().getParentNode().getDownloadDirectory());
+        DownloadController.getInstance().getQueue().addWait(new QueueAction<Void, RuntimeException>() {
+
+            @Override
+            protected Void run() throws RuntimeException {
+                con.setSessionDownloadDirectory(candidate.getLink().getParentNode().getDownloadDirectory());
+                return null;
+            }
+        });
         con.setSessionDownloadFilename(candidate.getLink().getForcedFileName());
         if (candidate.getProxySelector() != null) {
             candidate.getProxySelector().add(con);
@@ -2208,19 +2215,15 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
                                 DownloadWatchDog.this.logger.log(e);
                             }
                         }
-
-                        // String cFinal = link.getTmpAsynchRenameFilename();
-
-                        File desiredPath = new File(link.getFileOutput(false, false));
-
-                        File usedPath = singleDownloadController.getFileOutput(false, false);
-                        //
-                        if (!desiredPath.equals(usedPath)) {
-
-                            move(link, usedPath.getParent(), usedPath.getName(), desiredPath.getParent(), desiredPath.getName());
-
+                        try {
+                            final File desiredPath = new File(link.getFileOutput(false, false));
+                            final File usedPath = singleDownloadController.getFileOutput(false, false);
+                            if (!desiredPath.equals(usedPath)) {
+                                move(link, usedPath.getParent(), usedPath.getName(), desiredPath.getParent(), desiredPath.getName());
+                            }
+                        } catch (final Throwable e) {
+                            DownloadWatchDog.this.logger.log(e);
                         }
-
                         HashSet<DownloadLink> finalLinkStateLinks = finalizeConditionalSkipReasons(currentSession);
                         /* after each download, the order/position of next downloadCandidate could have changed */
                         currentSession.refreshCandidates();
@@ -2599,10 +2602,6 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
 
     private synchronized void startDownloadJobExecuter() {
         Thread thread = new Thread() {
-            {
-                System.out.println(1);
-            }
-
             @Override
             public void run() {
                 this.setName("WatchDog: jobExecuter");
@@ -3296,7 +3295,7 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
      * tell the DownloadWatchDog to stop all running Downloads
      */
     public void stopDownloads() {
-        DownloadWatchDogJob job = getCurrentDownloadWatchDogJob();
+        final DownloadWatchDogJob job = getCurrentDownloadWatchDogJob();
         if (job != null) {
             job.interrupt();
         }
@@ -3498,9 +3497,10 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
                         if (block == downloadLink) {
                             continue;
                         }
+                        final String localCheck = fileOutput.getAbsolutePath();
                         if (session.getFileAccessManager().isLockedBy(fileOutput, downloadController)) {
                             /* fileOutput is already locked */
-                            if (block.getFilePackage() == downloadLink.getFilePackage() && isMirrorCandidate(downloadLink, fileOutput.getAbsolutePath(), block)) {
+                            if (block.getFilePackage() == downloadLink.getFilePackage() && isMirrorCandidate(downloadLink, localCheck, block)) {
                                 /* only throw ConditionalSkipReasonException when file is from same package */
                                 throw new ConditionalSkipReasonException(new MirrorLoading(block));
                             } else {
@@ -3924,45 +3924,34 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
     }
 
     public void renameLink(final DownloadLink downloadLink, final String value) {
-        System.out.println("rename");
-        enqueueJob(new DownloadWatchDogJob() {
-            @Override
-            public void execute(DownloadSession currentSession) {
-                if (StringUtils.equals(downloadLink.getForcedFileName(), value)) {
-                    return;
+        if (!StringUtils.equals(downloadLink.getForcedFileName(), value)) {
+            System.out.println("rename");
+            enqueueJob(new DownloadWatchDogJob() {
+                @Override
+                public void execute(DownloadSession currentSession) {
+                    if (!StringUtils.equals(downloadLink.getForcedFileName(), value)) {
+                        if (downloadLink.getDownloadLinkController() != null) {
+                            downloadLink.forceFileName(value);
+                        } else if (downloadLink.getDefaultPlugin() != null) {
+                            move(downloadLink, downloadLink.getParentNode().getDownloadDirectory(), downloadLink.getName(), downloadLink.getParentNode().getDownloadDirectory(), value);
+                            downloadLink.forceFileName(value);
+                        }
+                    }
                 }
 
-                if (downloadLink.getDownloadLinkController() != null) {
-                    downloadLink.forceFileName(value);
-                    // running
-
-                } else if (downloadLink.getDefaultPlugin() != null) {
-                    move(downloadLink, downloadLink.getParentNode().getDownloadDirectory(), downloadLink.getName(), downloadLink.getParentNode().getDownloadDirectory(), value);
-                    downloadLink.forceFileName(value);
+                @Override
+                public void interrupt() {
                 }
-            }
-
-            @Override
-            public void interrupt() {
-            }
-        });
-
+            });
+        }
     }
 
     public void handleMovedDownloadLinks(final FilePackage dest, final FilePackage source, final List<DownloadLink> links) {
-
-        if (source == dest) {
-            return;
-        }
-
-        enqueueJob(new DownloadWatchDogJob() {
-            @Override
-            public void execute(DownloadSession currentSession) {
-
-                try {
-
+        if (source != dest) {
+            enqueueJob(new DownloadWatchDogJob() {
+                @Override
+                public void execute(DownloadSession currentSession) {
                     for (DownloadLink downloadLink : links) {
-
                         if (downloadLink.getDownloadLinkController() != null) {
                             // running
                             // TODO
@@ -3971,97 +3960,81 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
                             // selector.addExcluded(candidate, new DownloadLinkCandidateResult(SkipReason.DISK_FULL, null, null));
                             // }
                             // }
-
                         } else if (downloadLink.getDefaultPlugin() != null) {
                             move(downloadLink, source.getDownloadDirectory(), downloadLink.getName(), dest.getDownloadDirectory(), null);
-
                         }
                     }
-
-                } finally {
-
                 }
-            }
 
-            @Override
-            public void interrupt() {
-            }
-        });
-
+                @Override
+                public void interrupt() {
+                }
+            });
+        }
     }
 
     public void setDownloadDirectory(final FilePackage pkg, final String path) {
-        if (new File(pkg.getDownloadDirectory()).equals(new File(path))) {
-            return;
-        }
+        if (!new File(pkg.getDownloadDirectory()).equals(new File(path))) {
+            enqueueJob(new DownloadWatchDogJob() {
+                @Override
+                public void execute(DownloadSession currentSession) {
+                    final String old = pkg.getDownloadDirectory();
+                    if (!new File(pkg.getDownloadDirectory()).equals(new File(path))) {
+                        pkg.setDownloadDirectory(path);
+                        File newFilePath = new File(path);
+                        boolean readL = pkg.getModifyLock().readLock();
+                        try {
+                            for (DownloadLink downloadLink : pkg.getChildren()) {
+                                if (downloadLink.getDownloadLinkController() != null) {
+                                    // running
+                                    for (File f : downloadLink.getDefaultPlugin().listProcessFiles(downloadLink)) {
+                                        try {
+                                            if (f.getName().endsWith(".part")) {
+                                                // try to create an empty file;
+                                                final File filetocreate = new File(newFilePath, f.getName());
+                                                if (filetocreate.exists()) {
 
-        enqueueJob(new DownloadWatchDogJob() {
-            @Override
-            public void execute(DownloadSession currentSession) {
+                                                    // todo: houston
+                                                } else {
+                                                    filetocreate.getParentFile().mkdirs();
+                                                    filetocreate.createNewFile();
 
-                String old = pkg.getDownloadDirectory();
-                if (new File(pkg.getDownloadDirectory()).equals(new File(path))) {
-                    return;
-                }
-                pkg.setDownloadDirectory(path);
-                File newFilePath = new File(path);
-                boolean readL = pkg.getModifyLock().readLock();
-                try {
+                                                    downloadLink.getDownloadLinkController().getJobsAfterDetach().add(new DownloadWatchDogJob() {
 
-                    for (DownloadLink downloadLink : pkg.getChildren()) {
+                                                        @Override
+                                                        public void interrupt() {
+                                                        }
 
-                        if (downloadLink.getDownloadLinkController() != null) {
-                            // running
-
-                            for (File f : downloadLink.getDefaultPlugin().listProcessFiles(downloadLink)) {
-                                try {
-                                    if (f.getName().endsWith(".part")) {
-                                        // try to create an empty file;
-                                        final File filetocreate = new File(newFilePath, f.getName());
-                                        if (filetocreate.exists()) {
-
-                                            // todo: houston
-                                        } else {
-                                            filetocreate.getParentFile().mkdirs();
-                                            filetocreate.createNewFile();
-
-                                            downloadLink.getDownloadLinkController().getJobsAfterDetach().add(new DownloadWatchDogJob() {
-
-                                                @Override
-                                                public void interrupt() {
+                                                        @Override
+                                                        public void execute(DownloadSession currentSession) {
+                                                            /* now we can reset the link */
+                                                            if (filetocreate.exists() && filetocreate.length() == 0) {
+                                                                filetocreate.delete();
+                                                                filetocreate.getParentFile().delete();
+                                                            }
+                                                        }
+                                                    });
                                                 }
-
-                                                @Override
-                                                public void execute(DownloadSession currentSession) {
-                                                    /* now we can reset the link */
-                                                    if (filetocreate.exists() && filetocreate.length() == 0) {
-                                                        filetocreate.delete();
-                                                        filetocreate.getParentFile().delete();
-                                                    }
-                                                }
-                                            });
+                                            }
+                                        } catch (IOException e) {
+                                            logger.log(e);
                                         }
                                     }
-                                } catch (IOException e) {
-                                    e.printStackTrace();
+                                } else if (downloadLink.getDefaultPlugin() != null) {
+                                    move(downloadLink, old, downloadLink.getName(), path, null);
                                 }
                             }
-                        } else if (downloadLink.getDefaultPlugin() != null) {
-
-                            move(downloadLink, old, downloadLink.getName(), path, null);
-
+                        } finally {
+                            pkg.getModifyLock().readUnlock(readL);
                         }
                     }
-
-                } finally {
-                    pkg.getModifyLock().readUnlock(readL);
                 }
-            }
 
-            @Override
-            public void interrupt() {
-            }
-        });
+                @Override
+                public void interrupt() {
+                }
+            });
+        }
 
     }
 
@@ -4076,7 +4049,6 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
         } catch (Throwable e) {
             logger.log(e);
             UIOManager.I().show(ExceptionDialogInterface.class, new ExceptionDialog(UIOManager.BUTTONS_HIDE_CANCEL, _GUI._.lit_error_occured(), e.getMessage(), e, _GUI._.lit_close(), null));
-
         }
     }
 }

@@ -54,10 +54,8 @@ public class SplitPackagesByHost extends CustomizableTableContextAppAction<FileP
                 final HashMap<FilePackage, HashMap<String, ArrayList<DownloadLink>>> splitMap = new HashMap<FilePackage, HashMap<String, ArrayList<DownloadLink>>>();
                 int insertAt = -1;
                 switch (getLocation()) {
-
                 case BEFORE_SELECTION:
                     insertAt = Integer.MAX_VALUE;
-
                 }
                 for (AbstractNode child : getSelection().getChildren()) {
                     if (child instanceof DownloadLink) {
@@ -75,28 +73,20 @@ public class SplitPackagesByHost extends CustomizableTableContextAppAction<FileP
                             parentMap.put(host, hostList);
                         }
                         hostList.add(cL);
-
                         switch (getLocation()) {
                         case AFTER_SELECTION:
-
                             insertAt = Math.max(insertAt, DownloadController.getInstance().indexOf(((DownloadLink) child).getParentNode()) + 1);
-
                             break;
                         case BEFORE_SELECTION:
-
                             insertAt = Math.min(insertAt, DownloadController.getInstance().indexOf(((DownloadLink) child).getParentNode()));
-
                             break;
-
                         case END_OF_LIST:
                             insertAt = -1;
                             break;
-
                         case TOP_OF_LIST:
                             insertAt = 0;
                             break;
                         }
-
                     }
                 }
                 if (insertAt == Integer.MAX_VALUE) {
@@ -128,13 +118,10 @@ public class SplitPackagesByHost extends CustomizableTableContextAppAction<FileP
                             newPkg = destPackage;
                         } else {
                             newPkg = FilePackage.getInstance();
-
                             sourcePackage.copyPropertiesTo(newPkg);
                             newPkg.setName(newPackageName);
                         }
-
                         DownloadController.getInstance().moveOrAddAt(newPkg, next2.getValue(), 0, insertAt);
-
                         insertAt++;
                     }
                 }

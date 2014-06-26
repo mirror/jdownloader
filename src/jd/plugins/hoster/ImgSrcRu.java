@@ -129,7 +129,7 @@ public class ImgSrcRu extends PluginForHost {
         return AvailableStatus.TRUE;
     }
 
-    private String processJS() {
+    private String processJS() throws Exception {
         // process the javascript within rhino vs doing this!!
         // was
         // <script type="text/javascript">
@@ -155,7 +155,9 @@ public class ImgSrcRu extends PluginForHost {
         String e = "";
         String notn = new Regex(js, "e=([^;]+)").getMatch(0);
         String[][] jn = new Regex(notn, "([a-z])\\.charAt\\((\\d+)\\)").getMatches();
-
+        if (jn == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         for (String[] a : jn) {
             if ("n".equals(a[0])) {
                 e = e + n.charAt(Integer.parseInt(a[1]));
@@ -185,7 +187,7 @@ public class ImgSrcRu extends PluginForHost {
         return best;
     }
 
-    private void getDllink() {
+    private void getDllink() throws Exception {
         processJS();
         if (ddlink == null) {
             ddlink = br.getRegex("name=bb onclick='select\\(\\);' type=text style='\\{width:\\d+;\\}' value='\\[URL=[^<>\"]+\\]\\[IMG\\](http://[^<>\"]*?)\\[/IMG\\]").getMatch(0);

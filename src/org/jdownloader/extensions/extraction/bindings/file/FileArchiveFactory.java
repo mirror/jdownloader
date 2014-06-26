@@ -151,7 +151,7 @@ public class FileArchiveFactory extends FileArchiveFile implements ArchiveFactor
                         break;
                     }
                     if (file instanceof DownloadLinkArchiveFile) {
-                        DownloadLinkArchiveFile daf = (DownloadLinkArchiveFile) file;
+                        final DownloadLinkArchiveFile daf = (DownloadLinkArchiveFile) file;
                         if (daf.getDownloadLinks() != null) {
                             for (DownloadLink link : daf.getDownloadLinks()) {
                                 packageName = CrossSystem.alleviatePathParts(link.getLastValidFilePackage().getName());

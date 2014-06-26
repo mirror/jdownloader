@@ -55,10 +55,8 @@ public class SplitPackagesByHost extends CustomizableTableContextAppAction<Crawl
                 final HashMap<CrawledPackage, HashMap<String, ArrayList<CrawledLink>>> splitMap = new HashMap<CrawledPackage, HashMap<String, ArrayList<CrawledLink>>>();
                 int insertAt = -1;
                 switch (getLocation()) {
-
                 case BEFORE_SELECTION:
                     insertAt = Integer.MAX_VALUE;
-
                 }
                 for (AbstractNode child : getSelection().getChildren()) {
                     if (child instanceof CrawledLink) {
@@ -76,28 +74,20 @@ public class SplitPackagesByHost extends CustomizableTableContextAppAction<Crawl
                             parentMap.put(host, hostList);
                         }
                         hostList.add(cL);
-
                         switch (getLocation()) {
                         case AFTER_SELECTION:
-
                             insertAt = Math.max(insertAt, LinkCollector.getInstance().indexOf(((CrawledLink) child).getParentNode()) + 1);
-
                             break;
                         case BEFORE_SELECTION:
-
                             insertAt = Math.min(insertAt, LinkCollector.getInstance().indexOf(((CrawledLink) child).getParentNode()));
-
                             break;
-
                         case END_OF_LIST:
                             insertAt = -1;
                             break;
-
                         case TOP_OF_LIST:
                             insertAt = 0;
                             break;
                         }
-
                     }
                 }
                 if (insertAt == Integer.MAX_VALUE) {
@@ -129,12 +119,10 @@ public class SplitPackagesByHost extends CustomizableTableContextAppAction<Crawl
                             newPkg = destPackage;
                         } else {
                             newPkg = new CrawledPackage();
-
                             newPkg.setExpanded(CFG_LINKCOLLECTOR.CFG.isPackageAutoExpanded());
                             sourcePackage.copyPropertiesTo(newPkg);
                             newPkg.setName(newPackageName);
                         }
-
                         LinkCollector.getInstance().moveOrAddAt(newPkg, next2.getValue(), 0, insertAt);
                         insertAt++;
                     }

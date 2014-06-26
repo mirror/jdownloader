@@ -108,23 +108,27 @@ public class DownloadController extends PackageController<FilePackage, DownloadL
     }
 
     @Override
-    public void moveOrAddAt(FilePackage pkg, List<DownloadLink> movechildren, int moveChildrenindex, int pkgIndex) {
-        HashMap<FilePackage, List<DownloadLink>> sourceMap = new HashMap<FilePackage, List<DownloadLink>>();
-        for (DownloadLink dl : movechildren) {
-            List<DownloadLink> list = sourceMap.get(dl.getParentNode());
-            if (list == null) {
-                list = new ArrayList<DownloadLink>();
-                sourceMap.put(dl.getParentNode(), list);
+    public void moveOrAddAt(final FilePackage pkg, final List<DownloadLink> movechildren, final int moveChildrenindex, final int pkgIndex) {
+        getQueue().add(new QueueAction<Void, RuntimeException>() {
+
+            @Override
+            protected Void run() throws RuntimeException {
+                final HashMap<FilePackage, List<DownloadLink>> sourceMap = new HashMap<FilePackage, List<DownloadLink>>();
+                for (final DownloadLink dl : movechildren) {
+                    List<DownloadLink> list = sourceMap.get(dl.getParentNode());
+                    if (list == null) {
+                        list = new ArrayList<DownloadLink>();
+                        sourceMap.put(dl.getParentNode(), list);
+                    }
+                    list.add(dl);
+                }
+                DownloadController.super.moveOrAddAt(pkg, movechildren, moveChildrenindex, pkgIndex);
+                for (final Entry<FilePackage, List<DownloadLink>> s : sourceMap.entrySet()) {
+                    DownloadWatchDog.getInstance().handleMovedDownloadLinks(pkg, s.getKey(), s.getValue());
+                }
+                return null;
             }
-            list.add(dl);
-        }
-
-        super.moveOrAddAt(pkg, movechildren, moveChildrenindex, pkgIndex);
-
-        for (Entry<FilePackage, List<DownloadLink>> s : sourceMap.entrySet()) {
-            DownloadWatchDog.getInstance().handleMovedDownloadLinks(pkg, s.getKey(), s.getValue());
-        }
-
+        });
     }
 
     private DownloadController() {

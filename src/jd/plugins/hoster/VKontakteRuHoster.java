@@ -495,7 +495,10 @@ public class VKontakteRuHoster extends PluginForHost {
      * 
      * @throws IOException
      */
-    private void getHighestQualityPic(final DownloadLink dl, String source) throws IOException {
+    private void getHighestQualityPic(final DownloadLink dl, String source) throws Exception {
+        if (source == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         source = Encoding.htmlDecode(source).replace("\\", "");
         final String[] qs = { "w_", "z_", "y_", "x_", "m_" };
         final String base = new Regex(source, "base(\\')?:(\"|\\')(http://[^<>\"]*?)(\"|\\')").getMatch(2);

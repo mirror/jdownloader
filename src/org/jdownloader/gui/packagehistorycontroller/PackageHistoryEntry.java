@@ -53,6 +53,6 @@ public class PackageHistoryEntry implements Storable, HistoryEntry {
 
     @Override
     public int compareTo(HistoryEntry o) {
-        return compare(o.getTime(), getTime());
+        return compare(getTime(), o.getTime());
     }
 }

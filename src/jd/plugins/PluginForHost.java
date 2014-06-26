@@ -40,6 +40,7 @@ import jd.controlling.accountchecker.AccountCheckerThread;
 import jd.controlling.captcha.CaptchaSettings;
 import jd.controlling.captcha.SkipException;
 import jd.controlling.captcha.SkipRequest;
+import jd.controlling.downloadcontroller.ExceptionRunnable;
 import jd.controlling.downloadcontroller.SingleDownloadController;
 import jd.controlling.downloadcontroller.SingleDownloadController.WaitingQueueItem;
 import jd.controlling.linkcrawler.CrawledLink;
@@ -56,7 +57,6 @@ import org.appwork.storage.config.JsonConfig;
 import org.appwork.swing.MigPanel;
 import org.appwork.uio.UIOManager;
 import org.appwork.utils.Application;
-import org.appwork.utils.Files;
 import org.appwork.utils.IO;
 import org.appwork.utils.IO.SYNC;
 import org.appwork.utils.ProgressFeedback;
@@ -1416,7 +1416,7 @@ public abstract class PluginForHost extends Plugin {
             this.newFile = newFile;
         }
 
-        private File oldFile;
+        private final File oldFile;
 
         public File getOldFile() {
             return oldFile;
@@ -1426,7 +1426,7 @@ public abstract class PluginForHost extends Plugin {
             return newFile;
         }
 
-        private File newFile;
+        private final File newFile;
     }
 
     /**
@@ -1440,8 +1440,7 @@ public abstract class PluginForHost extends Plugin {
      * @param value
      */
     public void move(DownloadLink link, String currentDirectory, String currentName, String newDirectory, String newName) throws Exception {
-
-        ArrayList<Runnable> revertList = new ArrayList<Runnable>();
+        final ArrayList<ExceptionRunnable> revertList = new ArrayList<ExceptionRunnable>();
         if (StringUtils.isEmpty(newName)) {
             newName = currentName;
         }
@@ -1457,98 +1456,79 @@ public abstract class PluginForHost extends Plugin {
                 return;
             }
         }
-
-        MovePluginProgress progress = new MovePluginProgress();
+        final MovePluginProgress progress = new MovePluginProgress();
         try {
             link.addPluginProgress(progress);
             progress.setProgressSource(this);
             for (FilePair filesToHandle : listFilePairsToMove(link, currentDirectory, currentName, newDirectory, newName)) {
                 handle(revertList, link, progress, filesToHandle.getOldFile(), filesToHandle.getNewFile());
             }
-
+            revertList.clear();
         } catch (Exception e) {
             getLogger().log(e);
-            // revert
-            for (Runnable r : revertList) {
-                if (r == null) {
-                    continue;
-                }
-                try {
-                    r.run();
-                } catch (Throwable e1) {
-                    getLogger().log(e1);
-                }
-            }
             throw e;
         } finally {
-            link.removePluginProgress(progress);
+            try {
+                // revert
+                for (final ExceptionRunnable r : revertList) {
+                    try {
+                        if (r != null) {
+                            r.run();
+                        }
+                    } catch (Throwable e1) {
+                        getLogger().log(e1);
+                    }
+                }
+            } finally {
+                link.removePluginProgress(progress);
+            }
         }
-
     }
 
     protected FilePair[] listFilePairsToMove(DownloadLink link, String currentDirectory, String currentName, String newDirectory, String newName) {
         FilePair[] ret = new FilePair[2];
         ret[0] = new FilePair(new File(new File(currentDirectory), currentName + ".part"), new File(new File(newDirectory), newName + ".part"));
         ret[1] = new FilePair(new File(new File(currentDirectory), currentName), new File(new File(newDirectory), newName));
-
         return ret;
     }
 
-    private void handle(ArrayList<Runnable> revertList, final DownloadLink downloadLink, final MovePluginProgress progress, final File currentFile, final File newFile) throws FileExistsException, CouldNotRenameException, IOException {
+    private void handle(ArrayList<ExceptionRunnable> revertList, final DownloadLink downloadLink, final MovePluginProgress progress, final File currentFile, final File newFile) throws FileExistsException, CouldNotRenameException, IOException {
         if (!currentFile.exists() || currentFile.equals(newFile)) {
             return;
         }
         progress.setFile(newFile);
-        renameOrMove(progress, downloadLink, currentFile, newFile);
-
-        revertList.add(new Runnable() {
+        revertList.add(new ExceptionRunnable() {
 
             @Override
-            public void run() {
-                try {
-                    renameOrMove(progress, downloadLink, newFile, currentFile);
-                } catch (FileExistsException e) {
-                    e.printStackTrace();
-                } catch (CouldNotRenameException e) {
-                    e.printStackTrace();
-                } catch (IOException e) {
-                    e.printStackTrace();
-                }
+            public void run() throws Exception {
+                renameOrMove(progress, downloadLink, newFile, currentFile);
             }
         });
+        renameOrMove(progress, downloadLink, currentFile, newFile);
     }
 
     private void renameOrMove(MovePluginProgress progress, final DownloadLink downloadLink, File old, File newFile) throws FileExistsException, CouldNotRenameException, IOException {
-        newFile.getParentFile().mkdirs();
-
         // TODO: what if newFile exists?
         if (newFile.exists()) {
             throw new FileExistsException(old, newFile);
         }
-        if (Files.getCommonParent(old, newFile) == null) {
-            copyMove(progress, downloadLink, old, newFile);
-        } else {
-            try {
-
-                if (Application.getJavaVersion() >= Application.JAVA17) {
-                    // since java 1.7
-                    java.nio.file.Files.move(java.nio.file.Paths.get(old.toURI()), java.nio.file.Paths.get(newFile.toURI()));
-                } else {
-                    if (!old.renameTo(newFile)) {
-                        throw new CouldNotRenameException(old, newFile);
-                    }
-                }
-
-            } catch (CouldNotRenameException e) {
-                copyMove(progress, downloadLink, old, newFile);
-
-            } catch (IOException e) {
-                copyMove(progress, downloadLink, old, newFile);
-
+        if (!newFile.getParentFile().exists() && !newFile.getParentFile().mkdirs()) {
+            throw new IOException("Could not create " + newFile.getParent());
+        }
+        try {
+            if (CrossSystem.isWindows() && Application.getJavaVersion() >= Application.JAVA17) {
+                java.nio.file.Files.move(java.nio.file.Paths.get(old.toURI()), java.nio.file.Paths.get(newFile.toURI()), java.nio.file.StandardCopyOption.ATOMIC_MOVE);
+            } else if (!old.renameTo(newFile)) {
+                throw new CouldNotRenameException(old, newFile);
             }
+        } catch (CouldNotRenameException e) {
+            getLogger().log(e);
+            copyMove(progress, downloadLink, old, newFile);
+        } catch (IOException e) {
+            getLogger().log(e);
+            copyMove(progress, downloadLink, old, newFile);
         }
         // TODO copy optimiz
-        // if (old.exists()) {
         if (!newFile.getParentFile().equals(old.getParentFile())) {
             // check if we have to delete the old path;
             if (!old.getParentFile().equals(new File(CFG_GENERAL.DEFAULT_DOWNLOAD_FOLDER.getValue()))) {
@@ -1556,21 +1536,17 @@ public abstract class PluginForHost extends Plugin {
                 // anyaway if empty.
                 old.getParentFile().delete();
             }
-
         }
-        // }
     }
 
     private void copyMove(final MovePluginProgress progress, final DownloadLink downloadLink, final File old, final File newFile) throws IOException {
         if (!old.exists() && newFile.exists()) {
             return;
         }
-
         if (old.exists()) {
             // we did an file exists check earlier. so if the file exists here, the only reason is a failed rename/move;
             newFile.delete();
-        }
-        if (!old.exists()) {
+        } else {
             throw new IOException("Cannot move " + old + " to " + newFile + ". The File does not exist!");
         }
         Thread thread = null;
@@ -1672,7 +1648,6 @@ public abstract class PluginForHost extends Plugin {
             // System.out.println("Do not show again " + JSonStorage.getPlainStorage("Dialogs").get(COPY_MOVE_FILE, -1));
         }
         try {
-
             IO.copyFile(new ProgressFeedback() {
 
                 @Override
@@ -1685,7 +1660,6 @@ public abstract class PluginForHost extends Plugin {
                     progress.setCurrent(position);
                 }
             }, old, newFile, SYNC.META_AND_DATA);
-
             old.delete();
         } catch (IOException io) {
             newFile.delete();
@@ -1699,7 +1673,6 @@ public abstract class PluginForHost extends Plugin {
     }
 
     public boolean isProxyRotationEnabledForLinkChecker() {
-        // if (AccountController.getInstance().hasAccounts(plg.getHost())) {
         return true;
     }
 
