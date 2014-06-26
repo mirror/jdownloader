@@ -9,11 +9,15 @@ import java.lang.reflect.InvocationTargetException;
 import javax.swing.JCheckBox;
 import javax.swing.JLabel;
 import javax.swing.KeyStroke;
+import javax.swing.SpinnerNumberModel;
+import javax.swing.event.ChangeEvent;
+import javax.swing.event.ChangeListener;
 
 import org.appwork.storage.config.annotations.EnumLabel;
 import org.appwork.storage.config.annotations.LabelInterface;
 import org.appwork.swing.MigPanel;
 import org.appwork.swing.components.CheckBoxIcon;
+import org.appwork.swing.components.ExtSpinner;
 import org.appwork.swing.components.ExtTextField;
 import org.appwork.utils.GetterSetter;
 import org.appwork.utils.ReflectionUtils;
@@ -71,7 +75,7 @@ public class CustomPanel extends MigPanel {
                     public void actionPerformed(ActionEvent e) {
                         actionData.putSetup(gs.getKey(), jb.isSelected());
                         if (action instanceof CustomizableAppAction) {
-                            ((CustomizableAppAction) action).loadContextSetups();
+                            action.loadContextSetups();
                         }
                         managerFrame.repaint();
 
@@ -124,7 +128,7 @@ public class CustomPanel extends MigPanel {
                             actionData.putSetup(gs.getKey(), null);
                         }
                         if (action instanceof CustomizableAppAction) {
-                            ((CustomizableAppAction) action).loadContextSetups();
+                            action.loadContextSetups();
                         }
 
                         managerFrame.repaint();
@@ -147,9 +151,13 @@ public class CustomPanel extends MigPanel {
 
                 int index = 0;
                 for (int i = 0; i < values.length; i++) {
-                    if (values[i].toString().equals(value)) myValue = values[i];
+                    if (values[i].toString().equals(value)) {
+                        myValue = values[i];
+                    }
 
-                    if (myValue == values[i]) index = i;
+                    if (myValue == values[i]) {
+                        index = i;
+                    }
 
                 }
                 final PseudoCombo cb = new PseudoCombo(values) {
@@ -158,7 +166,9 @@ public class CustomPanel extends MigPanel {
                     }
 
                     protected javax.swing.Icon getIcon(Object v, boolean closed) {
-                        if (closed) return null;
+                        if (closed) {
+                            return null;
+                        }
                         if (getSelectedItem() == v) {
                             return CheckBoxIcon.TRUE;
                         } else {
@@ -170,7 +180,7 @@ public class CustomPanel extends MigPanel {
                     public void onChanged(Object newValue) {
                         actionData.putSetup(gs.getKey(), getSelectedItem().toString());
                         if (action instanceof CustomizableAppAction) {
-                            ((CustomizableAppAction) action).loadContextSetups();
+                            action.loadContextSetups();
                         }
                         managerFrame.repaint();
                     };
@@ -236,7 +246,7 @@ public class CustomPanel extends MigPanel {
                     public void onChanged() {
                         actionData.putSetup(gs.getKey(), getText());
                         if (action instanceof CustomizableAppAction) {
-                            ((CustomizableAppAction) action).loadContextSetups();
+                            action.loadContextSetups();
                         }
                         managerFrame.repaint();
                     }
@@ -246,6 +256,30 @@ public class CustomPanel extends MigPanel {
                 cb.setText(value);
                 add(new JLabel(gs.getAnnotation(Customizer.class).name()), "growx,spanx,wrap");
                 add(cb, "growx,spanx,wrap,pushx,growx");
+            } else if (Clazz.isInteger(gs.getType())) {
+
+                Integer value = (Integer) actionData.fetchSetup(gs.getKey());
+
+                if (value == null) {
+                    value = (Integer) gs.get(actionClass);
+
+                }
+
+                final ExtSpinner spinner = new ExtSpinner(new SpinnerNumberModel(value.intValue(), -1, 10000, 1));
+                spinner.addChangeListener(new ChangeListener() {
+
+                    @Override
+                    public void stateChanged(ChangeEvent e) {
+                        actionData.putSetup(gs.getKey(), ((Number) spinner.getValue()).intValue());
+                        if (action instanceof CustomizableAppAction) {
+                            action.loadContextSetups();
+                        }
+                        managerFrame.repaint();
+                    }
+                });
+
+                add(new JLabel(gs.getAnnotation(Customizer.class).name()), "growx,spanx,wrap");
+                add(spinner, "growx,spanx,wrap,pushx,growx");
             }
         } catch (Exception e) {
             logger.log(e);
