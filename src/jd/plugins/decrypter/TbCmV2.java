@@ -811,7 +811,7 @@ public class TbCmV2 extends PluginForDecrypt {
 
     /**
      * Parse a playlist id and return all found video ids
-     * 
+     *
      * @param decryptedLinks
      * @param dupeCheckSet
      * @param base
@@ -1020,9 +1020,10 @@ public class TbCmV2 extends PluginForDecrypt {
     private void checkErrors(Browser br) throws InterruptedException {
         if (br.containsHTML(">404 Not Found<")) {
             throw new InterruptedException("404 Not Found");
-        }
-        if (br.containsHTML("iframe style=\"display:block;border:0;\" src=\"/error")) {
+        } else if (br.containsHTML("iframe style=\"display:block;border:0;\" src=\"/error")) {
             throw new InterruptedException("Unknown Error");
+        } else if (br.containsHTML("<h2>\\s*This channel does not exist\\.\\s*</h2>")) {
+            throw new InterruptedException("Channel does not exist.");
         }
 
     }
