@@ -731,6 +731,7 @@ public class YoutubeDashV2 extends PluginForHost {
         if (info == null) {
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, vid.error);
         }
+
         // write properties in old links and update properties in all others
         downloadLink.setProperty(YoutubeHelper.YT_TITLE, vid.title);
         downloadLink.setProperty(YoutubeHelper.YT_ID, vid.videoID);
@@ -759,6 +760,7 @@ public class YoutubeDashV2 extends PluginForHost {
         if (variant.getiTagData() != null) {
             YoutubeStreamData data = info.get(variant.getiTagData());
             if (data == null) {
+                getLogger().info(info + "");
                 throw new PluginException(LinkStatus.ERROR_FATAL, "Variant not found: " + variant + "(Itag missing: " + variant.getiTagData() + ")");
             }
             downloadLink.setProperty(YoutubeHelper.YT_STREAMURL_DATA, data.getUrl());
@@ -766,6 +768,7 @@ public class YoutubeDashV2 extends PluginForHost {
         if (variant.getiTagAudio() != null) {
             YoutubeStreamData audioStream = info.get(variant.getiTagAudio());
             if (audioStream == null) {
+                getLogger().info(info + "");
                 throw new PluginException(LinkStatus.ERROR_FATAL, "Variant not found: " + variant + "(Itag missing: " + variant.getiTagAudio() + ")");
             }
             downloadLink.setProperty(YoutubeHelper.YT_STREAMURL_AUDIO, audioStream.getUrl());
@@ -774,6 +777,7 @@ public class YoutubeDashV2 extends PluginForHost {
         if (variant.getiTagVideo() != null) {
             YoutubeStreamData videoStream = info.get(variant.getiTagVideo());
             if (videoStream == null) {
+                getLogger().info(info + "");
                 throw new PluginException(LinkStatus.ERROR_FATAL, "Variant not found: " + variant + "(Itag missing: " + variant.getiTagVideo() + ")");
             }
             downloadLink.setProperty(YoutubeHelper.YT_STREAMURL_VIDEO, videoStream.getUrl());
