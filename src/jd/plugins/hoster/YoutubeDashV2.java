@@ -1397,7 +1397,7 @@ public class YoutubeDashV2 extends PluginForHost {
             if (cfg.isSubtitleCopyforEachVideoVariant()) {
                 FilePackage pkg = downloadLink.getParentNode();
                 boolean readL2 = pkg.getModifyLock().readLock();
-                File finalFile = downloadLink.getDownloadLinkController().getFileOutput(false, false);
+                File finalFile = new File(downloadLink.getFileOutput(false, false));
                 boolean copied = false;
                 try {
                     String myID = downloadLink.getStringProperty(YoutubeHelper.YT_ID, null);
