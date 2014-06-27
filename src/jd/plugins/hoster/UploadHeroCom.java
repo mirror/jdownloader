@@ -116,14 +116,24 @@ public class UploadHeroCom extends PluginForHost {
         br.setCookie(MAINPAGE, "lang", "en");
         br.getPage(link.getDownloadURL());
         generalErrorhandling();
-        if (br.containsHTML("<p>You are currently using a dedicated server") || br.containsHTML("<title>UploadHero - VPN</title>")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "VPN forbidden", 10 * 60 * 1000l);
-        if (br.containsHTML("(>The following download is not available on our server|>The file link is invalid|>The uploader has deleted the file|>The file was illegal and was deleted|<title>UploadHero \\- File Sharing made easy\\!</title>)")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (br.containsHTML("<p>You are currently using a dedicated server") || br.containsHTML("<title>UploadHero - VPN</title>")) {
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "VPN forbidden", 10 * 60 * 1000l);
+        }
+        if (br.containsHTML("(>The following download is not available on our server|>The file link is invalid|>The uploader has deleted the file|>The file was illegal and was deleted|<title>UploadHero \\- File Sharing made easy\\!</title>)")) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
         String filename = br.getRegex("<div class=\"nom_de_fichier\">([^<>\"/]+)</div>").getMatch(0);
-        if (filename == null) filename = br.getRegex("<title>(.*?) \\- UploadHero</title>").getMatch(0);
+        if (filename == null) {
+            filename = br.getRegex("<title>(.*?) \\- UploadHero</title>").getMatch(0);
+        }
         String filesize = br.getRegex("<span class=\"noir\">Filesize: </span><strong>([^<>\"\\'/]+)</strong>").getMatch(0);
-        if (filename == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (filename == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         link.setName(Encoding.htmlDecode(filename.trim()));
-        if (filesize != null) link.setDownloadSize(SizeFormatter.getSize(filesize));
+        if (filesize != null) {
+            link.setDownloadSize(SizeFormatter.getSize(filesize));
+        }
         return AvailableStatus.TRUE;
     }
 
@@ -137,7 +147,9 @@ public class UploadHeroCom extends PluginForHost {
         final Regex blockRegex = br.getRegex("/lightbox_block_download\\.php\\?min=(\\d+)\\&sec=(\\d+)\"");
         final String blockmin = blockRegex.getMatch(0);
         final String blocksec = blockRegex.getMatch(1);
-        if (blockmin != null && blocksec != null) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, ((Integer.parseInt(blockmin) + 5) * 60 + Integer.parseInt(blocksec)) * 1001l);
+        if (blockmin != null && blocksec != null) {
+            throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, ((Integer.parseInt(blockmin) + 5) * 60 + Integer.parseInt(blocksec)) * 1001l);
+        }
         final String captchaLink = br.getRegex("\"(/captchadl\\.php\\?[a-z0-9]+)\"").getMatch(0);
         if (captchaLink == null) {
             generalErrorhandling();
@@ -147,18 +159,28 @@ public class UploadHeroCom extends PluginForHost {
         }
         String wait = br.getRegex("\\$\\(this\\)\\.oneTime\\((\\d+),").getMatch(0);
         String dllink = getDllink();
-        if (dllink != null && wait != null) sleep((Integer.parseInt(wait) * 100) + 3333, downloadLink);
+        if (dllink != null && wait != null) {
+            sleep((Integer.parseInt(wait) * 100) + 3333, downloadLink);
+        }
         if (dllink == null) {
-            if (!br.containsHTML("\"dddl\"") || br.getRegex("\"(/captchadl\\.php\\?[a-z0-9]+)\"").getMatch(0) != null) throw new PluginException(LinkStatus.ERROR_CAPTCHA);
+            if (!br.containsHTML("\"dddl\"") || br.getRegex("\"(/captchadl\\.php\\?[a-z0-9]+)\"").getMatch(0) != null) {
+                throw new PluginException(LinkStatus.ERROR_CAPTCHA);
+            }
             generalErrorhandling();
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, Encoding.htmlDecode(dllink), false, 1);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
-            if (br.containsHTML("File not found")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-            if (br.containsHTML("404 Not Found")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, 60 * 60 * 1000l);
-            if (br.containsHTML("Link sharing is forbidden")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Link sharing is forbidden", 10 * 60 * 1000l);
+            if (br.containsHTML("File not found")) {
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            }
+            if (br.containsHTML("404 Not Found")) {
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, 60 * 60 * 1000l);
+            }
+            if (br.containsHTML("Link sharing is forbidden")) {
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Link sharing is forbidden", 10 * 60 * 1000l);
+            }
             generalErrorhandling();
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
@@ -167,7 +189,9 @@ public class UploadHeroCom extends PluginForHost {
 
     private String getDllink() {
         String dllink = br.getRegex("var magicomfg = \\'<a href=\"(http://[^<>\"]*?)\"").getMatch(0);
-        if (dllink == null) dllink = br.getRegex("\"(http://storage\\d+\\.uploadhero\\.com?/\\?d=[A-Za-z0-9]+/[^<>\"/]+)\"").getMatch(0);
+        if (dllink == null) {
+            dllink = br.getRegex("\"(http://storage\\d+\\.uploadhero\\.com?/\\?d=[A-Za-z0-9]+/[^<>\"/]+)\"").getMatch(0);
+        }
         return dllink;
     }
 
@@ -179,7 +203,9 @@ public class UploadHeroCom extends PluginForHost {
                 br.setCookiesExclusive(true);
                 final Object ret = account.getProperty("cookies", null);
                 boolean acmatch = Encoding.urlEncode(account.getUser()).equals(account.getStringProperty("name", Encoding.urlEncode(account.getUser())));
-                if (acmatch) acmatch = Encoding.urlEncode(account.getPass()).equals(account.getStringProperty("pass", Encoding.urlEncode(account.getPass())));
+                if (acmatch) {
+                    acmatch = Encoding.urlEncode(account.getPass()).equals(account.getStringProperty("pass", Encoding.urlEncode(account.getPass())));
+                }
                 if (acmatch && ret != null && ret instanceof Map<?, ?> && !force) {
                     final Map<String, String> cookies = (Map<String, String>) ret;
                     if (account.isValid()) {
@@ -196,7 +222,9 @@ public class UploadHeroCom extends PluginForHost {
                 br.getPage("http://uploadhero.co/home");
                 br.postPage(MAINPAGE + "/lib/connexion.php", "pseudo_login=" + Encoding.urlEncode(account.getUser()) + "&password_login=" + Encoding.urlEncode(account.getPass()));
                 final String cookie = br.getRegex("id=\"cookietransitload\" style=\"display:none;\">([^<>\"]*?)</div>").getMatch(0);
-                if (cookie == null) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+                if (cookie == null) {
+                    throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+                }
                 br.setCookie(MAINPAGE, "uh", cookie);
                 // Save cookies
                 final HashMap<String, String> cookies = new HashMap<String, String>();
@@ -226,9 +254,13 @@ public class UploadHeroCom extends PluginForHost {
         br.getPage(MAINPAGE + "/my-account");
         final Regex otherStuff = br.getRegex("\">Used storage</div><div class=\"champdeux\">([^<>\"]*?) \\- (\\d+) Files</div></div>");
         String space = otherStuff.getMatch(0);
-        if (space != null) ai.setUsedSpace(space.trim());
+        if (space != null) {
+            ai.setUsedSpace(space.trim());
+        }
         String filesNum = otherStuff.getMatch(1);
-        if (filesNum != null) ai.setFilesNum(Integer.parseInt(filesNum));
+        if (filesNum != null) {
+            ai.setFilesNum(Integer.parseInt(filesNum));
+        }
         ai.setUnlimitedTraffic();
         final String expire = br.getRegex("<td><b>Days:</b></td>[\t\n\r ]+<td>(\\d+) days</td>").getMatch(0);
         if (expire == null) {
@@ -268,22 +300,30 @@ public class UploadHeroCom extends PluginForHost {
             doFree(link);
         } else {
             String dllink = br.getRedirectLocation();
-            if (dllink == null) dllink = getDllink();
+            if (dllink == null) {
+                dllink = getDllink();
+            }
             if (dllink == null) {
                 logger.warning("Final downloadlink (String is \"dllink\") regex didn't match!");
                 generalErrorhandling();
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
             // small wait to maybe help with file not found .. maybe caused by backend not in sync with db server?
-            sleep(1250, link);
+            sleep(2500, link);
             dl = jd.plugins.BrowserAdapter.openDownload(br, link, Encoding.htmlDecode(dllink), true, 0);
             if (dl.getConnection().getContentType().contains("html")) {
                 logger.warning("The final dllink seems not to be a file!");
                 br.followConnection();
                 generalErrorhandling();
-                if (br.containsHTML("File not found")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-                if (br.containsHTML("404 Not Found")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, 60 * 60 * 1000l);
-                if (br.containsHTML("Link sharing is forbidden")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Link sharing is forbidden", 10 * 60 * 1000l);
+                if (br.containsHTML("File not found")) {
+                    throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+                }
+                if (br.containsHTML("404 Not Found")) {
+                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, 60 * 60 * 1000l);
+                }
+                if (br.containsHTML("Link sharing is forbidden")) {
+                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Link sharing is forbidden", 10 * 60 * 1000l);
+                }
                 /* check if cookie is outdated */
                 synchronized (LOCK) {
                     Object ret = account.getProperty("cookies", null);
@@ -308,7 +348,9 @@ public class UploadHeroCom extends PluginForHost {
     }
 
     private void generalErrorhandling() throws PluginException {
-        if (br.getURL().contains("/optmizing") || br.containsHTML(">UploadHero is on maintenance|Maintenance en cours")) throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Server is in maintenance mode", 30 * 60 * 1000l);
+        if (br.getURL().contains("/optmizing") || br.containsHTML(">UploadHero is on maintenance|Maintenance en cours")) {
+            throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Server is in maintenance mode", 30 * 60 * 1000l);
+        }
     }
 
     @Override
