@@ -453,7 +453,7 @@ public class HellShareCom extends PluginForHost {
         if (permLogin == null || br.containsHTML("zadal jsi špatné uživatelské")) {
             throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
         }
-        br.getPage("http://www." + domain + "/--" + cookie + "-/members/");
+        br.getPage("http://www.hellshare.com/--" + cookie + "-/members/");
         if (br.containsHTML("Wrong user name or wrong password.") || !br.containsHTML("credit for downloads") || br.containsHTML("Špatně zadaný login nebo heslo uživatele") || br.containsHTML("zadal jsi špatné uživatelské")) {
             throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
         }
