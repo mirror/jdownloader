@@ -454,7 +454,7 @@ public class SaveTv extends PluginForHost {
         /* Set properties which are needed for filenames */
         /* Add series information */
         if (episodenumber != null) {
-            link.setProperty("episodenumber", Integer.parseInt(episodenumber));
+            link.setProperty("episodenumber", Long.parseLong(episodenumber));
         }
         link.setProperty("seriestitle", seriestitle);
         link.setProperty("episodename", episodename);
@@ -762,6 +762,9 @@ public class SaveTv extends PluginForHost {
                     logger.info("Long session cookie exists");
                 }
                 /* Find account details */
+                /* Find user-ID */
+                br.getPage("https://www.save.tv/STV/M/obj/user/usEdit.cfm");
+                final String acc_username = br.getRegex("<td>([^<>\"]*?)\\&nbsp;\\&nbsp;<a href=\"/STV/M/obj/user/usEditUsername\\.cfm\\?\"").getMatch(0);
                 br.getPage("https://www.save.tv/STV/M/obj/user/contract/coUpgrade.cfm");
                 if (br.containsHTML(">XL-Status:</label></span>[\t\n\r ]+Ja<br")) {
                     acctype = "XL Account";
@@ -791,6 +794,9 @@ public class SaveTv extends PluginForHost {
                 }
                 if (runtime != null) {
                     account.setProperty("acc_runtime", correctData(runtime));
+                }
+                if (acc_username != null) {
+                    this.getPluginConfig().setProperty("acc_username", correctData(acc_username));
                 }
 
                 br.getPage("https://www.save.tv/STV/M/obj/user/usShowVideoArchive.cfm?");
@@ -1212,6 +1218,7 @@ public class SaveTv extends PluginForHost {
     public static String getFormattedFilename(final DownloadLink downloadLink) throws ParseException {
         final SubConfiguration cfg = SubConfiguration.getConfig("save.tv");
         final String customStringForEmptyTags = cfg.getStringProperty(CUSTOM_FILENAME_EMPTY_TAG_STRING, defaultCustomStringForEmptyTags);
+        final String acc_username = cfg.getStringProperty("acc_username", customStringForEmptyTags);
         final String ext = downloadLink.getStringProperty("type", ".mp4");
         final String genre = downloadLink.getStringProperty("genre", customStringForEmptyTags);
         final String producecountry = downloadLink.getStringProperty("producecountry", customStringForEmptyTags);
@@ -1245,7 +1252,7 @@ public class SaveTv extends PluginForHost {
                 formattedFilename = defaultCustomFilename;
             }
             formattedFilename = formattedFilename.toLowerCase();
-            if (!formattedFilename.contains("*endung*") || (!formattedFilename.contains("*videotitel*") && !formattedFilename.contains("*zufallszahl*") && !formattedFilename.contains("*telecastid*") && !formattedFilename.contains("*sendername*"))) {
+            if (!formattedFilename.contains("*username*") && !formattedFilename.contains("*endung*") || (!formattedFilename.contains("*videotitel*") && !formattedFilename.contains("*zufallszahl*") && !formattedFilename.contains("*telecastid*") && !formattedFilename.contains("*sendername*"))) {
                 formattedFilename = defaultCustomFilename;
             }
 
@@ -1258,6 +1265,7 @@ public class SaveTv extends PluginForHost {
             formattedFilename = formattedFilename.replace("*kategorie*", site_category);
             formattedFilename = formattedFilename.replace("*genre*", genre);
             formattedFilename = formattedFilename.replace("*produktionsland*", producecountry);
+            formattedFilename = formattedFilename.replace("*username*", acc_username);
             /* Insert actual filename at the end to prevent errors with tags */
             formattedFilename = formattedFilename.replace("*videotitel*", title);
         } else {
@@ -1267,7 +1275,7 @@ public class SaveTv extends PluginForHost {
                 formattedFilename = defaultCustomFilename;
             }
             formattedFilename = formattedFilename.toLowerCase();
-            if (!formattedFilename.contains("*endung*") || (!formattedFilename.contains("*serientitel*") && !formattedFilename.contains("*episodenname*") && !formattedFilename.contains("*episodennummer*") && !formattedFilename.contains("*zufallszahl*") && !formattedFilename.contains("*telecastid*") && !formattedFilename.contains("*sendername*"))) {
+            if (!formattedFilename.contains("*username*") && !formattedFilename.contains("*endung*") || (!formattedFilename.contains("*serientitel*") && !formattedFilename.contains("*episodenname*") && !formattedFilename.contains("*episodennummer*") && !formattedFilename.contains("*zufallszahl*") && !formattedFilename.contains("*telecastid*") && !formattedFilename.contains("*sendername*"))) {
                 formattedFilename = defaultCustomFilename;
             }
 
@@ -1285,6 +1293,7 @@ public class SaveTv extends PluginForHost {
             formattedFilename = formattedFilename.replace("*kategorie*", site_category);
             formattedFilename = formattedFilename.replace("*genre*", genre);
             formattedFilename = formattedFilename.replace("*produktionsland*", producecountry);
+            formattedFilename = formattedFilename.replace("*username*", acc_username);
             /* Insert filename at the end to prevent errors with tags */
             formattedFilename = formattedFilename.replace("*serientitel*", seriestitle);
             formattedFilename = formattedFilename.replace("*episodenname*", episodename);
@@ -1320,6 +1329,7 @@ public class SaveTv extends PluginForHost {
 
     /* Attempt to build filenames which look like the original save.tv server-filenames */
     public static String getFakeOriginalFilename(final DownloadLink downloadLink) throws ParseException {
+        final SubConfiguration cfg = SubConfiguration.getConfig("save.tv");
         String ext = downloadLink.getStringProperty("type", null);
         if (ext == null) {
             ext = ".mp4";
@@ -1327,23 +1337,32 @@ public class SaveTv extends PluginForHost {
 
         final long date = getLongProperty(downloadLink, "originaldate", 0l);
         String formattedDate = null;
-        final String userDefinedDateFormat = "yyyy-MM-dd";
+        /* Get correctly formatted date */
+        String dateFormat = "yyyy-MM-dd";
         SimpleDateFormat formatter = new SimpleDateFormat("dd.MM.yyyy");
         Date theDate = new Date(date);
-        if (userDefinedDateFormat != null) {
-            try {
-                formatter = new SimpleDateFormat(userDefinedDateFormat);
-                formattedDate = formatter.format(theDate);
-            } catch (Exception e) {
-                /* prevent user error killing plugin */
-                formattedDate = "";
-            }
+        try {
+            formatter = new SimpleDateFormat(dateFormat);
+            formattedDate = formatter.format(theDate);
+        } catch (Exception e) {
+            /* prevent user error killing plugin */
+            formattedDate = "";
+        }
+        /* Get correctly formatted time */
+        dateFormat = "HHmm";
+        String time = "0000";
+        try {
+            formatter = new SimpleDateFormat(dateFormat);
+            time = formatter.format(theDate);
+        } catch (Exception e) {
+            /* prevent user error killing plugin */
+            time = "0000";
         }
 
         final DecimalFormat df = new DecimalFormat("0000");
-        final int random1 = new Random().nextInt(1000);
-        final DecimalFormat df2 = new DecimalFormat("000000");
-        final int random2 = new Random().nextInt(100000);
+        final int random = new Random().nextInt(1000);
+        final String random_string = df.format(random);
+        final String acc_username = cfg.getStringProperty("acc_username", random_string);
         String formattedFilename = downloadLink.getStringProperty("apiplainfilename", null);
         if (formattedFilename != null) {
             /* API filename = already plain filename - no need to 'fake' anything */
@@ -1352,7 +1371,6 @@ public class SaveTv extends PluginForHost {
                 final String title = downloadLink.getStringProperty("plainfilename", null);
                 formattedFilename = title.replace(" ", "_") + "_";
                 formattedFilename += formattedDate + "_";
-                formattedFilename += df.format(random1) + "_" + df2.format(random2);
             } else {
                 final String seriestitle = downloadLink.getStringProperty("seriestitle", null);
                 final String episodename = downloadLink.getStringProperty("episodename", null);
@@ -1361,8 +1379,8 @@ public class SaveTv extends PluginForHost {
                 formattedFilename = seriestitle.replace(" ", "_") + "_";
                 formattedFilename += episodename.replace(" ", "_") + "_";
                 formattedFilename += "Folge" + episodenumber + "_" + formattedDate + "_";
-                formattedFilename += df.format(random1) + "_" + df2.format(random2);
             }
+            formattedFilename += time + "_" + acc_username;
             formattedFilename += ".mp4";
             formattedFilename = encodeUnicode(formattedFilename);
         }
@@ -1497,6 +1515,7 @@ public class SaveTv extends PluginForHost {
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_TEXTFIELD, getPluginConfig(), CUSTOM_FILENAME2, JDL.L("plugins.hoster.savetv.customfilenamemovies", "Eigener Dateiname für Filme/Shows:")).setDefaultValue(defaultCustomFilename).setEnabledCondidtion(origName, false));
         final StringBuilder sb = new StringBuilder();
         sb.append("Erklärung der verfügbaren Tags:\r\n");
+        sb.append("*username* = Benutzername\r\n");
         sb.append("*datum* = Datum der Ausstrahlung der aufgenommenen Sendung\r\n[Erscheint im oben definierten Format, wird von der save.tv Seite ausgelesen]\r\n");
         sb.append("*genre* = Das Genre\r\n");
         sb.append("*produktionsland* = Name des Produktionslandes\r\n");
@@ -1512,6 +1531,7 @@ public class SaveTv extends PluginForHost {
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_TEXTFIELD, getPluginConfig(), CUSTOM_FILENAME_SERIES2, JDL.L("plugins.hoster.savetv.customseriesfilename", "Eigener Dateiname für Serien:")).setDefaultValue(defaultCustomSeriesFilename).setEnabledCondidtion(origName, false));
         final StringBuilder sbseries = new StringBuilder();
         sbseries.append("Erklärung der verfügbaren Tags:\r\n");
+        sbseries.append("*username* = Benutzername\r\n");
         sbseries.append("*datum* = Datum der Ausstrahlung der aufgenommenen Sendung\r\n[Erscheint im oben definierten Format, wird von der save.tv Seite ausgelesen]\r\n");
         sbseries.append("*genre* = Das Genre\r\n");
         sbseries.append("*produktionsland* = Name des Produktionslandes\r\n");
@@ -1774,6 +1794,7 @@ public class SaveTv extends PluginForHost {
         if (ai != null) {
             final String windowTitleLangText = "Account Zusatzinformationen";
             final String accType = account.getStringProperty("acc_type", "Premium Account");
+            final String accUsername = account.getStringProperty("acc_username", "?");
             final String acc_expire = account.getStringProperty("acc_expire", "?");
             final String acc_package = account.getStringProperty("acc_package", "?");
             final String acc_price = account.getStringProperty("acc_price", "?");
@@ -1799,6 +1820,7 @@ public class SaveTv extends PluginForHost {
 
             panelGenerator.addCategory("Account");
             panelGenerator.addEntry("Name:", account.getUser());
+            panelGenerator.addEntry("Username:", accUsername);
             panelGenerator.addEntry("Account Typ:", accType);
             panelGenerator.addEntry("Paket:", acc_package);
             panelGenerator.addEntry("Laufzeit:", acc_runtime);

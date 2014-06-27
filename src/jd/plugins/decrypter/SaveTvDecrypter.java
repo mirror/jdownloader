@@ -358,6 +358,15 @@ public class SaveTvDecrypter extends PluginForDecrypt {
                 if (sur_name.startsWith("- ")) {
                     sur_name = sur_name.substring(2, sur_name.length());
                 }
+                /* Handle episodenumber */
+                final String episode_part = new Regex(sur_name, "( \\- \\d+)$").getMatch(0);
+                if (episode_part != null) {
+                    /* Remove episode from episodename */
+                    sur_name = sur_name.replace(episode_part, "");
+                    /* Find and set episodenumber */
+                    final String episodenumber = new Regex(episode_part, "(\\d+)$").getMatch(0);
+                    dl.setProperty("episodenumber", Long.parseLong(episodenumber));
+                }
                 dl.setProperty("category", 2);
                 dl.setProperty("seriestitle", name);
                 dl.setProperty("episodename", sur_name);
