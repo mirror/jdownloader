@@ -128,7 +128,9 @@ public class LinkGrabberPanel extends SwitchPanel implements LinkCollectorListen
 
             @Override
             public void valueChanged(ListSelectionEvent e) {
-                if (e == null || e.getValueIsAdjusting() || table.getModel().isTableSelectionClearing() || !CFG_GUI.LINKGRABBER_TAB_PROPERTIES_PANEL_VISIBLE.isEnabled()) return;
+                if (e == null || e.getValueIsAdjusting() || table.getModel().isTableSelectionClearing() || !CFG_GUI.LINKGRABBER_TAB_PROPERTIES_PANEL_VISIBLE.isEnabled()) {
+                    return;
+                }
                 propertiesDelayer.run();
             }
         });
@@ -168,7 +170,9 @@ public class LinkGrabberPanel extends SwitchPanel implements LinkCollectorListen
                     protected void runInEDT() {
                         try {
                             System.out.println("Highlight");
-                            if (CFG_GUI.CFG.isSwitchToLinkgrabberTabOnNewLinksAddedEnabled()) JDGui.getInstance().requestPanel(JDGui.Panels.LINKGRABBER);
+                            if (CFG_GUI.CFG.isSwitchToLinkgrabberTabOnNewLinksAddedEnabled()) {
+                                JDGui.getInstance().requestPanel(JDGui.Panels.LINKGRABBER);
+                            }
 
                             switch (CFG_GUI.CFG.getNewLinksAction()) {
                             case FOCUS:
@@ -190,7 +194,7 @@ public class LinkGrabberPanel extends SwitchPanel implements LinkCollectorListen
 
             @Override
             public boolean isThisListenerEnabled() {
-                return org.jdownloader.settings.staticreferences.CFG_GUI.CFG.isLinkgrabberAutoTabSwitchEnabled() || CFG_GUI.CFG.getNewLinksAction() != NewLinksInLinkgrabberAction.NOTHING;
+                return org.jdownloader.settings.staticreferences.CFG_GUI.CFG.isSwitchToLinkgrabberTabOnNewLinksAddedEnabled() || CFG_GUI.CFG.getNewLinksAction() != NewLinksInLinkgrabberAction.NOTHING;
             }
 
             @Override
@@ -298,7 +302,9 @@ public class LinkGrabberPanel extends SwitchPanel implements LinkCollectorListen
                     CustomizeableActionBar iconComp = rightBar;
                     Point loc = rightBar.getLocationOnScreen();
 
-                    if (CFG_GUI.HELP_DIALOGS_ENABLED.isEnabled()) HelpDialog.show(false, false, new Point(loc.x + iconComp.getWidth() - iconComp.getHeight() / 2, loc.y + iconComp.getHeight() / 2), "overviewclosed", Dialog.STYLE_SHOW_DO_NOT_DISPLAY_AGAIN, _GUI._.DownloadsPanel_onCloseAction(), _GUI._.DownloadsPanel_onCloseAction_help(), NewTheme.I().getIcon("bottombar", 32));
+                    if (CFG_GUI.HELP_DIALOGS_ENABLED.isEnabled()) {
+                        HelpDialog.show(false, false, new Point(loc.x + iconComp.getWidth() - iconComp.getHeight() / 2, loc.y + iconComp.getHeight() / 2), "overviewclosed", Dialog.STYLE_SHOW_DO_NOT_DISPLAY_AGAIN, _GUI._.DownloadsPanel_onCloseAction(), _GUI._.DownloadsPanel_onCloseAction_help(), NewTheme.I().getIcon("bottombar", 32));
+                    }
 
                 }
             });
@@ -360,8 +366,12 @@ public class LinkGrabberPanel extends SwitchPanel implements LinkCollectorListen
                 createSidebar();
             }
             int height = 1;
-            if (CFG_GUI.LINKGRABBER_TAB_OVERVIEW_VISIBLE.isEnabled()) height++;
-            if (propertiesPanelVisible) height++;
+            if (CFG_GUI.LINKGRABBER_TAB_OVERVIEW_VISIBLE.isEnabled()) {
+                height++;
+            }
+            if (propertiesPanelVisible) {
+                height++;
+            }
 
             add(sidebarScrollPane, "spany " + height);
         } else {
@@ -416,7 +426,9 @@ public class LinkGrabberPanel extends SwitchPanel implements LinkCollectorListen
                 CFG_GUI.LINKGRABBER_TAB_PROPERTIES_PANEL_VISIBLE.setValue(false);
                 CustomizeableActionBar iconComp = rightBar;
                 Point loc = iconComp.getLocationOnScreen();
-                if (CFG_GUI.HELP_DIALOGS_ENABLED.isEnabled()) HelpDialog.show(false, false, new Point(loc.x + iconComp.getWidth() - iconComp.getHeight() / 2, loc.y + iconComp.getHeight() / 2), "propertiesclosed", Dialog.STYLE_SHOW_DO_NOT_DISPLAY_AGAIN, _GUI._.DownloadsPanel_onCloseAction(), _GUI._.Linkgrabber_properties_onCloseAction_help(), NewTheme.I().getIcon("bottombar", 32));
+                if (CFG_GUI.HELP_DIALOGS_ENABLED.isEnabled()) {
+                    HelpDialog.show(false, false, new Point(loc.x + iconComp.getWidth() - iconComp.getHeight() / 2, loc.y + iconComp.getHeight() / 2), "propertiesclosed", Dialog.STYLE_SHOW_DO_NOT_DISPLAY_AGAIN, _GUI._.DownloadsPanel_onCloseAction(), _GUI._.Linkgrabber_properties_onCloseAction_help(), NewTheme.I().getIcon("bottombar", 32));
+                }
 
             }
         });
@@ -486,7 +498,9 @@ public class LinkGrabberPanel extends SwitchPanel implements LinkCollectorListen
         tableModel.recreateModel(false);
         LinkCollector.getInstance().getEventsender().addListener(this);
         table.requestFocusInWindow();
-        if (propertiesPanel != null) propertiesPanel.refreshAfterTabSwitch();
+        if (propertiesPanel != null) {
+            propertiesPanel.refreshAfterTabSwitch();
+        }
     }
 
     @Override
@@ -506,7 +520,9 @@ public class LinkGrabberPanel extends SwitchPanel implements LinkCollectorListen
                     if (table.getSelectionModel().isSelectionEmpty()) {
                         if (table.getRowCount() == 0) {
 
-                            if (CFG_GUI.HELP_DIALOGS_ENABLED.isEnabled()) HelpDialog.show(false, false, null, "propertiespanelvisible", Dialog.STYLE_SHOW_DO_NOT_DISPLAY_AGAIN, _GUI._.LinkGrabberPanel_setPropertiesPanelVisible(), _GUI._.LinkGrabberPanel_setPropertiesPanelVisible_help(), NewTheme.I().getIcon("bottombar", 32));
+                            if (CFG_GUI.HELP_DIALOGS_ENABLED.isEnabled()) {
+                                HelpDialog.show(false, false, null, "propertiespanelvisible", Dialog.STYLE_SHOW_DO_NOT_DISPLAY_AGAIN, _GUI._.LinkGrabberPanel_setPropertiesPanelVisible(), _GUI._.LinkGrabberPanel_setPropertiesPanelVisible_help(), NewTheme.I().getIcon("bottombar", 32));
+                            }
 
                         } else {
                             table.getSelectionModel().setSelectionInterval(0, 0);

@@ -982,44 +982,44 @@ public abstract class PluginForHost extends Plugin {
             File hostPluginsDir = new File(home, "src/jd/plugins/hoster/");
             for (File f : hostPluginsDir.listFiles()) {
                 if (f.getName().endsWith(".java")) {
-                    StringBuilder method = new StringBuilder();
-                    String src = IO.readFileToString(f);
-                    if (src.toLowerCase().contains("captcha")) {
-                        if (new Regex(src, "(boolean\\s+hasCaptcha\\(\\s*DownloadLink .*?\\,\\s*Account .*?\\))").matches()) {
-                            continue;
-                        }
-                        if (src.contains("enablePremium")) {
-                            method.append("\r\n/* NO OVERRIDE!! We need to stay 0.9*compatible */");
-                            method.append("\r\npublic boolean hasCaptcha(DownloadLink link, jd.plugins.Account acc) {");
-                            method.append("\r\nif (acc == null) {");
-                            method.append("\r\n/* no account, yes we can expect captcha */");
-                            method.append("\r\nreturn true;");
-                            method.append("\r\n}");
-
-                            method.append("\r\n if (Boolean.TRUE.equals(acc.getBooleanProperty(\"free\"))) {");
-                            method.append("\r\n/* free accounts also have captchas */");
-                            method.append("\r\nreturn true;");
-                            method.append("\r\n}");
-                            method.append("\r\nreturn false;");
-                            method.append("\r\n}");
-
-                        } else {
-                            method.append("\r\n/* NO OVERRIDE!! We need to stay 0.9*compatible */");
-                            method.append("\r\npublic boolean hasCaptcha(DownloadLink link, jd.plugins.Account acc) {");
-                            method.append("\r\nreturn true;");
-                            method.append("\r\n}");
-                        }
-
-                    } else {
-
-                    }
-
-                    if (method.length() > 0) {
-
-                        src = src.substring(0, src.lastIndexOf("}")) + method.toString() + "\r\n}";
-                        FileCreationManager.getInstance().delete(f, null);
-                        IO.writeStringToFile(f, src);
-                    }
+                    // StringBuilder method = new StringBuilder();
+                    // String src = IO.readFileToString(f);
+                    // if (src.toLowerCase().contains("captcha")) {
+                    // if (new Regex(src, "(boolean\\s+hasCaptcha\\(\\s*DownloadLink .*?\\,\\s*Account .*?\\))").matches()) {
+                    // continue;
+                    // }
+                    // if (src.contains("enablePremium")) {
+                    // method.append("\r\n/* NO OVERRIDE!! We need to stay 0.9*compatible */");
+                    // method.append("\r\npublic boolean hasCaptcha(DownloadLink link, jd.plugins.Account acc) {");
+                    // method.append("\r\nif (acc == null) {");
+                    // method.append("\r\n/* no account, yes we can expect captcha */");
+                    // method.append("\r\nreturn true;");
+                    // method.append("\r\n}");
+                    //
+                    // method.append("\r\n if (Boolean.TRUE.equals(acc.getBooleanProperty(\"free\"))) {");
+                    // method.append("\r\n/* free accounts also have captchas */");
+                    // method.append("\r\nreturn true;");
+                    // method.append("\r\n}");
+                    // method.append("\r\nreturn false;");
+                    // method.append("\r\n}");
+                    //
+                    // } else {
+                    // method.append("\r\n/* NO OVERRIDE!! We need to stay 0.9*compatible */");
+                    // method.append("\r\npublic boolean hasCaptcha(DownloadLink link, jd.plugins.Account acc) {");
+                    // method.append("\r\nreturn true;");
+                    // method.append("\r\n}");
+                    // }
+                    //
+                    // } else {
+                    //
+                    // }
+                    //
+                    // if (method.length() > 0) {
+                    //
+                    // src = src.substring(0, src.lastIndexOf("}")) + method.toString() + "\r\n}";
+                    // FileCreationManager.getInstance().delete(f, null);
+                    // IO.writeStringToFile(f, src);
+                    // }
 
                 }
             }
@@ -1674,6 +1674,17 @@ public abstract class PluginForHost extends Plugin {
 
     public boolean isProxyRotationEnabledForLinkChecker() {
         return true;
+    }
+
+    /**
+     * plugins may set a mirrorid to help the mirror detector. You have to ensure, that two mirrors either get the same mirror id, or no
+     * mirrorid(null)
+     * 
+     * @return
+     */
+
+    public String getMirrorID(DownloadLink link) {
+        return null;
     }
 
 }

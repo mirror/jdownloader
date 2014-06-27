@@ -622,7 +622,7 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
 
     /**
      * returns how many downloads are currently watched by this DownloadWatchDog
-     *
+     * 
      * @return
      */
     public int getActiveDownloads() {
@@ -631,7 +631,7 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
 
     /**
      * returns the ThrottledConnectionManager of this DownloadWatchDog
-     *
+     * 
      * @return
      */
     public DownloadSpeedManager getDownloadSpeedManager() {
@@ -900,6 +900,14 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
     }
 
     private boolean isMirrorCandidate(DownloadLink linkCandidate, String cachedLinkCandidateName, DownloadLink mirrorCandidate) {
+
+        String cachedLinkMirrorID = linkCandidate.getDefaultPlugin().getMirrorID(linkCandidate);
+        String mirrorCandidateMirrorID = mirrorCandidate.getDefaultPlugin().getMirrorID(mirrorCandidate);
+        if (cachedLinkMirrorID != null && mirrorCandidateMirrorID != null) {
+
+            return StringUtils.equals(cachedLinkMirrorID, mirrorCandidateMirrorID);
+        }
+
         if (cachedLinkCandidateName == null) {
             cachedLinkCandidateName = linkCandidate.getView().getDisplayName();
         }
@@ -1517,7 +1525,7 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
 
     /**
      * returns current pause state
-     *
+     * 
      * @return
      */
     public boolean isPaused() {
@@ -1530,7 +1538,7 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
 
     /**
      * may the DownloadWatchDog start new Downloads?
-     *
+     * 
      * @return
      */
     private boolean newDLStartAllowed(DownloadSession session) {
@@ -1565,7 +1573,7 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
 
     /**
      * pauses the DownloadWatchDog
-     *
+     * 
      * @param value
      */
 
@@ -1981,7 +1989,7 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
 
     /**
      * activates new Downloads as long as possible and returns how many got activated
-     *
+     * 
      * @return
      **/
     private List<SingleDownloadController> activateDownloads() throws Exception {
@@ -2116,7 +2124,7 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
 
     /**
      * activates a new SingleDownloadController for the given SingleDownloadControllerActivator
-     *
+     * 
      * @param activator
      */
     private SingleDownloadController attach(final DownloadLinkCandidate candidate) {
@@ -3491,6 +3499,7 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
                         if (block == downloadLink) {
                             continue;
                         }
+
                         final String localCheck = fileOutput.getAbsolutePath();
                         if (session.getFileAccessManager().isLockedBy(fileOutput, downloadController)) {
                             /* fileOutput is already locked */
@@ -3545,6 +3554,7 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
                                         if (plugin != null) {
                                             final Downloadable downloadable = plugin.newDownloadable(downloadLink, null);
                                             if (downloadable != null) {
+
                                                 switch (config.getMirrorDetectionDecision()) {
                                                 case AUTO:
                                                     final HashInfo hashInfo = downloadable.getHashInfo();
@@ -3560,7 +3570,11 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
                                                     if (fileSize >= 0 && fileSize == fileOutput.length()) {
                                                         throw new PluginException(LinkStatus.FINISHED);
                                                     }
+                                                    break;
+                                                case FILENAME:
+                                                    // nothing
                                                 }
+
                                             }
                                         }
                                         throw new PluginException(LinkStatus.ERROR_ALREADYEXISTS);
@@ -3625,6 +3639,8 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
                                     break;
                                 }
                             }
+                            // we can do this, because the localFilecheck always runs BEFORE the download
+                            controller.setSessionDownloadFilename(newName);
                             downloadLink.forceFileName(newName);
                             downloadLink.setChunksProgress(null);
                         } catch (Throwable e) {

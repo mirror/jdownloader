@@ -25,6 +25,7 @@ import jd.config.ConfigContainer;
 import jd.config.Property;
 import jd.config.SubConfiguration;
 import jd.controlling.downloadcontroller.DownloadWatchDog;
+import jd.controlling.downloadcontroller.ExceptionRunnable;
 import jd.controlling.downloadcontroller.FileIsLockedException;
 import jd.controlling.downloadcontroller.SingleDownloadController;
 import jd.controlling.linkchecker.LinkChecker;
@@ -448,6 +449,10 @@ public class YoutubeDashV2 extends PluginForHost {
 
         String video;
         String audio;
+    }
+
+    public String getMirrorID(DownloadLink link) {
+        return "Youtube:" + link.getStringProperty(YoutubeHelper.YT_VARIANT) + link.getName() + "_" + link.getView().getBytesTotal();
     }
 
     @Override
@@ -1157,13 +1162,28 @@ public class YoutubeDashV2 extends PluginForHost {
             requestFileInformation(downloadLink);
 
             final SingleDownloadController dlc = downloadLink.getDownloadLinkController();
-            List<File> locks = new ArrayList<File>();
+            final List<File> locks = new ArrayList<File>();
             locks.addAll(listProcessFiles(downloadLink));
             try {
-                for (File lock : locks) {
-                    logger.info("Lock " + lock);
-                    dlc.lockFile(lock);
-                }
+                new DownloadLinkDownloadable(downloadLink).checkIfWeCanWrite(new ExceptionRunnable() {
+
+                    @Override
+                    public void run() throws Exception {
+                        try {
+                            for (File lock : locks) {
+                                logger.info("Lock " + lock);
+                                dlc.lockFile(lock);
+                            }
+                        } catch (FileIsLockedException e) {
+                            for (File lock : locks) {
+                                dlc.unlockFile(lock);
+                            }
+                            throw e;
+                        }
+
+                    }
+                }, null);
+
                 String videoStreamPath = getVideoStreamPath(downloadLink);
                 if (videoStreamPath != null && new File(videoStreamPath).exists()) {
                     data.setDashVideoFinished(true);
@@ -1275,9 +1295,11 @@ public class YoutubeDashV2 extends PluginForHost {
             } catch (final FileIsLockedException e) {
                 throw new PluginException(LinkStatus.ERROR_ALREADYEXISTS);
             } finally {
+
                 for (File lock : locks) {
                     dlc.unlockFile(lock);
                 }
+
             }
         } finally {
             if (oldView != null) {

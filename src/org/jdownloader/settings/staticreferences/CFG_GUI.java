@@ -60,7 +60,7 @@ public class CFG_GUI {
      * JDownloader uses a workaround to bring it's window or dialogs to focused to front. It simulates an ALT key shortcut. If disabled, you
      * will get focus problems
      **/
-    public static final ListHandler<int[]>                             WINDOWS_WINDOW_MANAGER_ALT_KEY_COMBI                    = (ListHandler<int[]>) SH.getKeyHandler("WindowsWindowManagerAltKeyCombi", ListHandler.class);
+    public static final ListHandler<int[]>                             WINDOWS_WINDOW_MANAGER_ALT_KEY_COMBI                    = SH.getKeyHandler("WindowsWindowManagerAltKeyCombi", ListHandler.class);
 
     public static final IntegerKeyHandler                              SPEED_METER_FRAMES_PER_SECOND                           = SH.getKeyHandler("SpeedMeterFramesPerSecond", IntegerKeyHandler.class);
 
@@ -125,11 +125,6 @@ public class CFG_GUI {
     public static final EnumKeyHandler                                 FILE_CHOOSER_VIEW                                       = SH.getKeyHandler("FileChooserView", EnumKeyHandler.class);
 
     public static final EnumKeyHandler                                 CONFIRM_INCOMPLETE_ARCHIVE_ACTION                       = SH.getKeyHandler("ConfirmIncompleteArchiveAction", EnumKeyHandler.class);
-
-    /**
-     * If enabled, The User Interface will switch to Linkgrabber Tab if a new job has been added
-     **/
-    public static final BooleanKeyHandler                              LINKGRABBER_AUTO_TAB_SWITCH_ENABLED                     = SH.getKeyHandler("LinkgrabberAutoTabSwitchEnabled", BooleanKeyHandler.class);
 
     /**
      * Packages get a different background color if enabled

@@ -166,11 +166,6 @@ public interface GraphicalUserInterfaceSettings extends ConfigInterface {
 
     @AboutConfig
     @DefaultBooleanValue(true)
-    @DescriptionForConfigEntry("If enabled, The User Interface will switch to Linkgrabber Tab if a new job has been added")
-    boolean isLinkgrabberAutoTabSwitchEnabled();
-
-    @AboutConfig
-    @DefaultBooleanValue(true)
     @LookUpKeys({ "linkgrabberhighlighonnewlinksenabled" })
     @DescriptionForConfigEntry("If enabled, JDownloader GUI switch to Linkgrabber Tab when new links are added")
     boolean isSwitchToLinkgrabberTabOnNewLinksAddedEnabled();
@@ -349,8 +344,6 @@ public interface GraphicalUserInterfaceSettings extends ConfigInterface {
     public void setLastFrameStatus(FrameStatus status);
 
     void setLastIfFileExists(IfFileExistsAction value);
-
-    void setLinkgrabberAutoTabSwitchEnabled(boolean b);
 
     void setLinkgrabberSidebarVisible(boolean b);
 
