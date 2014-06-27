@@ -3,9 +3,12 @@ package org.jdownloader.gui.packagehistorycontroller;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.appwork.storage.config.ValidationException;
+import org.appwork.storage.config.events.GenericConfigEventListener;
+import org.appwork.storage.config.handler.KeyHandler;
 import org.jdownloader.settings.staticreferences.CFG_LINKGRABBER;
 
-public class PackageHistoryManager extends HistoryManager<PackageHistoryEntry> {
+public class PackageHistoryManager extends HistoryManager<PackageHistoryEntry> implements GenericConfigEventListener<Object> {
     private static final PackageHistoryManager INSTANCE = new PackageHistoryManager();
 
     /**
@@ -18,10 +21,12 @@ public class PackageHistoryManager extends HistoryManager<PackageHistoryEntry> {
     }
 
     /**
-     * Create a new instance of PackageHistoryManager. This is a singleton class. Access the only existing instance by using {@link #getInstance()}.
+     * Create a new instance of PackageHistoryManager. This is a singleton class. Access the only existing instance by using
+     * {@link #getInstance()}.
      */
     private PackageHistoryManager() {
         super(CFG_LINKGRABBER.CFG.getPackageNameHistory(), 25);
+        CFG_LINKGRABBER.PACKAGE_NAME_HISTORY.getEventSender().addListener(this);
 
     }
 
@@ -47,5 +52,33 @@ public class PackageHistoryManager extends HistoryManager<PackageHistoryEntry> {
         }
 
         return ret;
+    }
+
+    @Override
+    public void onConfigValueModified(KeyHandler<Object> keyHandler, Object newValue) {
+        if (!isShutdown()) {
+            if (newValue == null) {
+                clear();
+            } else if (newValue instanceof List) {
+                final List<Object> list = (List<Object>) newValue;
+                if (list.size() == 0) {
+                    clear();
+                } else {
+                    synchronized (this) {
+                        clear();
+                        for (int i = list.size() - 1; i >= 0; i--) {
+                            Object item = list.get(i);
+                            if (item != null && item instanceof PackageHistoryEntry) {
+                                add(((PackageHistoryEntry) item).getName());
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    @Override
+    public void onConfigValidatorError(KeyHandler<Object> keyHandler, Object invalidValue, ValidationException validateException) {
     }
 }
