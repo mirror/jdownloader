@@ -48,7 +48,7 @@ import jd.utils.JDUtilities;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "rapidu.net" }, urls = { "http://rapidu\\.net/(\\d+)(/)?" }, flags = { 2 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "rapidu.net" }, urls = { "https?://rapidu\\.(net|pl)/(\\d+)(/)?" }, flags = { 2 })
 public class RapiduNet extends PluginForHost {
 
     private String userAgent = "Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/33.0.1750.149 Safari/537.36 OPR/20.0.1387.77";
@@ -68,11 +68,17 @@ public class RapiduNet extends PluginForHost {
         if (urls == null || urls.length == 0) {
             return false;
         }
+
         // correct link stuff goes here, stable is lame!
         for (DownloadLink link : urls) {
             if (link.getProperty("FILEID") == null) {
                 String downloadUrl = link.getDownloadURL();
-                String fileID = new Regex(downloadUrl, MAINPAGE + "/([0-9]+)").getMatch(0);
+                String fileID;
+                if (downloadUrl.contains("https")) {
+                    fileID = new Regex(downloadUrl, "https://rapidu\\.(net|pl)/([0-9]+)/?").getMatch(1);
+                } else {
+                    fileID = new Regex(downloadUrl, "http://rapidu\\.(net|pl)/([0-9]+)/?").getMatch(1);
+                }
                 link.setProperty("FILEID", fileID);
             }
         }
@@ -104,7 +110,7 @@ public class RapiduNet extends PluginForHost {
                     sb.append(dl.getProperty("FILEID"));
                     first = false;
                 }
-                br.postPage(MAINPAGE + "/api/getFileDetails/", "id=" + sb.toString());
+                br.postPage("http://rapidu.net/api/getFileDetails/", "id=" + sb.toString());
 
                 // (int) [fileStatus] - Status pliku - 1 - plik poprawny, 0 - plik usunięty lub zawiera błędy
                 // (int) [fileId] - Identyfikator pliku
@@ -175,7 +181,7 @@ public class RapiduNet extends PluginForHost {
     }
 
     public void doFree(final DownloadLink downloadLink) throws Exception, PluginException {
-
+        setMainPage(downloadLink.getDownloadURL());
         br.setCookiesExclusive(true);
         br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
         br.setAcceptLanguage("pl-PL,pl;q=0.9,en;q=0.8");
@@ -255,7 +261,7 @@ public class RapiduNet extends PluginForHost {
     }
 
     void setLoginData(final Account account) throws Exception {
-        br.getPage(MAINPAGE);
+        br.getPage("http://rapidu.net/");
         br.setCookiesExclusive(true);
         final Object ret = account.getProperty("cookies", null);
         final HashMap<String, String> cookies = (HashMap<String, String>) ret;
@@ -263,7 +269,7 @@ public class RapiduNet extends PluginForHost {
             for (final Map.Entry<String, String> cookieEntry : cookies.entrySet()) {
                 final String key = cookieEntry.getKey();
                 final String value = cookieEntry.getValue();
-                this.br.setCookie(MAINPAGE, key, value);
+                this.br.setCookie("http://rapidu.net/", key, value);
             }
         }
     }
@@ -271,6 +277,7 @@ public class RapiduNet extends PluginForHost {
     @Override
     public void handlePremium(final DownloadLink downloadLink, final Account account) throws Exception {
         boolean retry;
+        setMainPage(downloadLink.getDownloadURL());
         String response = "";
 
         // loop because wrong handling of
@@ -332,7 +339,13 @@ public class RapiduNet extends PluginForHost {
 
                         logger.info("Hoster: RapiduNet reports:" + errors + " with link: " + downloadLink.getDownloadURL());
                         if (errors.contains("errorFileNotFound")) {
-                            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+                            // API incorrectly informs when the server is in maintenance mode
+                            br.getPage(downloadLink.getDownloadURL());
+                            if (br.containsHTML("Trwają prace techniczne")) {
+                                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Hoster in Maintenance Mode", 1 * 60 * 1000l);
+                            } else {
+                                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+                            }
                         } else {
                             throw new PluginException(LinkStatus.ERROR_DOWNLOAD_FAILED, errors);
                         }
@@ -361,8 +374,8 @@ public class RapiduNet extends PluginForHost {
 
     }
 
-    private static final String MAINPAGE = "http://rapidu.net";
-    private static Object       LOCK     = new Object();
+    private String        MAINPAGE = "http://rapidu.net";
+    private static Object LOCK     = new Object();
 
     @SuppressWarnings("unchecked")
     private String login(final Account account, final boolean force) throws Exception {
@@ -504,5 +517,13 @@ public class RapiduNet extends PluginForHost {
             result = new Regex(source, "\"" + parameter + "\":[{]?\"(.+?)\"[}]?").getMatch(0);
         }
         return result;
+    }
+
+    void setMainPage(String downloadUrl) {
+        if (downloadUrl.contains("https://")) {
+            MAINPAGE = "https://rapidu.net";
+        } else {
+            MAINPAGE = "http://rapidu.net";
+        }
     }
 }
