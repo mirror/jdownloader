@@ -58,10 +58,10 @@ public class MyMailRu extends PluginForDecrypt {
             decryptedLinks.add(offline);
             return decryptedLinks;
         }
-        final String username = new Regex(parameter, "http://(www\\.)?my.mail.ru/[^<>/\"]+/([^<>/\"]+)/.+").getMatch(1);
-        final String dirname = new Regex(parameter, "http://(www\\.)?my.mail.ru/([^<>/\"]+)/[^<>/\"]+/.+").getMatch(1);
+        final String username = new Regex(parameter, "http://(www\\.)?my\\.mail\\.ru/[^<>/\"]+/([^<>/\"]+)/.+").getMatch(1);
+        final String dirname = new Regex(parameter, "http://(www\\.)?my\\.mail\\.ru/([^<>/\"]+)/[^<>/\"]+/.+").getMatch(1);
         if (parameter.matches("http://(www\\.)?my\\.mail\\.ru/[^<>/\"]+/[^<>/\"]+/photo\\?album_id=[a-z0-9\\-_]+")) {
-            // Decrypt an album
+            /* Decrypt an album */
             if (br.containsHTML("class=oranzhe><b>Ошибка</b>")) {
                 logger.info("Link offline: " + parameter);
                 return decryptedLinks;
@@ -113,8 +113,13 @@ public class MyMailRu extends PluginForDecrypt {
         } else {
             final String albumsAllText = br.getRegex("\"albumsAll\": \\[(.*?)\\]").getMatch(0);
             if (albumsAllText == null) {
-                logger.warning("Decrypter broken for link: " + parameter);
-                return null;
+                /* Probably offline */
+                final DownloadLink offline = createDownloadlink("directhttp://" + parameter);
+                offline.setAvailable(false);
+                offline.setProperty("offline", true);
+                offline.setFinalFileName(new Regex(parameter, "my\\.mail\\.ru/(.+)").getMatch(0));
+                decryptedLinks.add(offline);
+                return decryptedLinks;
             }
             final String[] albumsAll = new Regex(albumsAllText, "\"([^<>\"]*?)\"").getColumn(0);
             if (albumsAll == null || albumsAll.length == 0) {

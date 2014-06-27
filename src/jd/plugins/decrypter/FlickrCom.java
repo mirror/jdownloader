@@ -78,7 +78,7 @@ public class FlickrCom extends PluginForDecrypt {
         br.getPage(parameter);
         if (br.containsHTML("Page Not Found<|>This member is no longer active") || br.getHttpConnection().getResponseCode() == 404) {
             final DownloadLink offline = createDownloadlink("http://flickrdecrypted.com/photos/xxoffline/" + System.currentTimeMillis() + new Random().nextInt(10000));
-            offline.setName(new Regex(parameter, "flickr\\.com/(.+)").getMatch(0));
+            offline.setFinalFileName(new Regex(parameter, "flickr\\.com/(.+)").getMatch(0));
             offline.setAvailable(false);
             offline.setProperty("offline", true);
             decryptedLinks.add(offline);
@@ -87,6 +87,14 @@ public class FlickrCom extends PluginForDecrypt {
             /* Favourite link but user has no favourites */
             final DownloadLink offline = createDownloadlink("http://flickrdecrypted.com/photos/xxoffline/" + System.currentTimeMillis() + new Random().nextInt(10000));
             offline.setName(new Regex(parameter, "flickr\\.com/photos/([^<>\"/]+)/favorites").getMatch(0));
+            offline.setAvailable(false);
+            offline.setProperty("offline", true);
+            decryptedLinks.add(offline);
+            return decryptedLinks;
+        } else if (parameter.matches(PHOTOLINK) && br.containsHTML("class=\"refresh\\-empty\\-state\\-photostream\"")) {
+            /* Photos link has no photos */
+            final DownloadLink offline = createDownloadlink("http://flickrdecrypted.com/photos/xxoffline/" + System.currentTimeMillis() + new Random().nextInt(10000));
+            offline.setName(new Regex(parameter, "flickr\\.com/photos/(.+)").getMatch(0));
             offline.setAvailable(false);
             offline.setProperty("offline", true);
             decryptedLinks.add(offline);

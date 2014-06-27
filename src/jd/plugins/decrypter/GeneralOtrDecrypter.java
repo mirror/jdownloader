@@ -29,7 +29,7 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "die-schnelle-kuh.de", "otr-share.de", "tivootix.co.cc", "otr-drive.com", "otr.seite.com" }, urls = { "http://(www\\.)?die\\-schnelle\\-kuh\\.de/\\?file=[^<>\"\\']+", "http://(www\\.)?otr\\-share\\.de/\\?s=download\\&key=[^<>\"\\']+", "http://(www\\.)?tivootix\\.co\\.cc/\\?file=[^<>\"\\']+", "http://(www\\.)?otr\\-drive\\.com/(index\\.php)?\\?file=[^<>\"\\']+", "http://(www\\.)?otr\\.seite\\.com/get\\.php\\?file=[^<>\"\\']+" }, flags = { 0, 0, 0, 0, 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "otr-share.de", "tivootix.co.cc", "otr-drive.com", "otr.seite.com" }, urls = { "http://(www\\.)?otr\\-share\\.de/\\?s=download\\&key=[^<>\"\\']+", "http://(www\\.)?tivootix\\.co\\.cc/\\?file=[^<>\"\\']+", "http://(www\\.)?otr\\-drive\\.com/(index\\.php)?\\?file=[^<>\"\\']+", "http://(www\\.)?otr\\.seite\\.com/get\\.php\\?file=[^<>\"\\']+" }, flags = { 0, 0, 0, 0 })
 public class GeneralOtrDecrypter extends PluginForDecrypt {
 
     public GeneralOtrDecrypter(PluginWrapper wrapper) {
@@ -40,32 +40,7 @@ public class GeneralOtrDecrypter extends PluginForDecrypt {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String parameter = param.toString();
         br.setFollowRedirects(false);
-        if (parameter.contains("die-schnelle-kuh.de/")) {
-            br.getPage(parameter);
-            if (br.containsHTML("Leider bieten wir diese Datei nicht als Download an")) {
-                logger.info("Link offline: " + parameter);
-                return decryptedLinks;
-            }
-            final String contnue = br.getRegex("onclick=\"window\\.location\\.href=\\'(\\?[^<>\"\\']+)\\'\"").getMatch(0);
-            if (contnue == null) {
-                logger.warning("Decrypter broken for link: " + parameter);
-                return null;
-            }
-            br.getPage("http://die-schnelle-kuh.de/" + contnue);
-            String finallink = br.getRegex("type=\"text\" style=\"width:100px;\" value=\"(http://die\\-schnelle\\-kuh\\.de/[^<>\"\\']+)\"").getMatch(0);
-            if (finallink == null) finallink = br.getRegex("\"(http://die\\-schnelle\\-kuh\\.de/index\\.php\\?kick\\&fileid=\\d+\\&ticket=\\d+\\&hash=[a-z0-9]+\\&filename=[^<>\"\\']+)\"").getMatch(0);
-            if (finallink == null) {
-                logger.warning("Decrypter broken for link: " + parameter);
-                return null;
-            }
-            br.getPage(finallink);
-            finallink = br.getRedirectLocation();
-            if (finallink == null) {
-                logger.warning("Decrypter broken for link: " + parameter);
-                return null;
-            }
-            decryptedLinks.add(createDownloadlink(finallink));
-        } else if (parameter.contains("otr-share.de/")) {
+        if (parameter.contains("otr-share.de/")) {
             br.getPage(parameter);
             final String linkTable = br.getRegex("<table align=\"center\" class=\"stable\" width=\"360\">(.*?)</table>").getMatch(0);
             if (linkTable == null) {
@@ -78,11 +53,17 @@ public class GeneralOtrDecrypter extends PluginForDecrypt {
                 return null;
             }
             for (String ochLink : ochLinks) {
-                if (!ochLink.contains("otr-share.de/")) decryptedLinks.add(createDownloadlink(ochLink));
+                if (!ochLink.contains("otr-share.de/")) {
+                    decryptedLinks.add(createDownloadlink(ochLink));
+                }
             }
             String ftpLink = br.getRegex("<td><center><strong><a href=\"(ftp://[^<<\"\\']+)\"").getMatch(0);
-            if (ftpLink == null) ftpLink = br.getRegex("\"(ftp://[A-Za-z0-9]+:[A-Za-z0-9]+@dl\\d+\\.otr\\-share\\.de/dl\\d+/[^<>\"\\']+)\"").getMatch(0);
-            if (ftpLink != null) decryptedLinks.add(createDownloadlink(ftpLink));
+            if (ftpLink == null) {
+                ftpLink = br.getRegex("\"(ftp://[A-Za-z0-9]+:[A-Za-z0-9]+@dl\\d+\\.otr\\-share\\.de/dl\\d+/[^<>\"\\']+)\"").getMatch(0);
+            }
+            if (ftpLink != null) {
+                decryptedLinks.add(createDownloadlink(ftpLink));
+            }
             FilePackage fp = FilePackage.getInstance();
             fp.setName(new Regex(parameter, "otr\\-share\\.de/\\?s=download\\&key=(.+)").getMatch(0));
             fp.addLinks(decryptedLinks);
@@ -100,7 +81,9 @@ public class GeneralOtrDecrypter extends PluginForDecrypt {
                 return null;
             }
             for (String ochLink : ochLinks) {
-                if (!ochLink.contains("tivootix.co.cc/")) decryptedLinks.add(createDownloadlink(ochLink));
+                if (!ochLink.contains("tivootix.co.cc/")) {
+                    decryptedLinks.add(createDownloadlink(ochLink));
+                }
             }
             FilePackage fp = FilePackage.getInstance();
             fp.setName(new Regex(parameter, "tivootix\\.co\\.cc/\\?file=(.+)").getMatch(0));
@@ -108,7 +91,9 @@ public class GeneralOtrDecrypter extends PluginForDecrypt {
         } else if (parameter.contains("otr-drive.com/")) {
             br.getPage(parameter);
             String continu = br.getRegex("<big><big>>>> <a href=\"(http://[^<>\"\\']+)\"").getMatch(0);
-            if (continu == null) continu = br.getRegex("\"(http://(www\\.)?otr\\-drive\\.com/index\\.php\\?file=[^<>\"\\']+)\"").getMatch(0);
+            if (continu == null) {
+                continu = br.getRegex("\"(http://(www\\.)?otr\\-drive\\.com/index\\.php\\?file=[^<>\"\\']+)\"").getMatch(0);
+            }
             if (continu == null) {
                 logger.warning("Decrypter broken for link: " + parameter);
                 return null;

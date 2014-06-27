@@ -198,6 +198,7 @@ public class ExtMatrixCom extends PluginForHost {
             }
             br.setFollowRedirects(true);
             br.postPage(MAINPAGE + "/login.php", "user=" + Encoding.urlEncode(account.getUser()) + "&pass=" + Encoding.urlEncode(account.getPass()) + "&captcha=&submit=Login&task=dologin&return=.%2Fmembers%2Fmyfiles.php");
+            /* Workaround for wrong after-login-redirect */
             if (br.getHttpConnection().getResponseCode() == 404) {
                 br.getPage(MAINPAGE + "/members/myfiles.php");
             }
