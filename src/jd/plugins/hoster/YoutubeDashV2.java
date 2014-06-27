@@ -599,10 +599,10 @@ public class YoutubeDashV2 extends PluginForHost {
             downloadLink.setFinalFileName(oldLinkName);
         }
 
-        downloadLink.setInternalTmpFilenameAppend(null);
+        downloadLink.setCustomFileOutputFilenameAppend(null);
         YoutubeVariantInterface v = getVariant(downloadLink);
         if (v.hasConverer(downloadLink)) {
-            downloadLink.setInternalTmpFilenameAppend(".tmp");
+            downloadLink.setCustomFileOutputFilenameAppend(".tmp");
         }
 
         if (totalSize > 0) {
