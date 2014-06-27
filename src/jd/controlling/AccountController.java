@@ -182,6 +182,9 @@ public class AccountController implements AccountControllerListener, AccountProp
 
     public AccountInfo updateAccountInfo(final Account account, final boolean forceupdate) {
         AccountInfo ai = account.getAccountInfo();
+        if (account.getPlugin() == null) {
+            return ai;
+        }
         final AccountError errorBefore = account.getError();
         final String errorMessageBefore = account.getErrorString();
         final HashMap<AccountProperty.Property, AccountProperty> propertyChanges = new HashMap<AccountProperty.Property, AccountProperty>();

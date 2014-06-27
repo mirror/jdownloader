@@ -224,7 +224,7 @@ public class ConnectionColumn extends ExtColumn<AbstractNode> {
                     labels[index].setVisible(true);
                 }
                 index++;
-                if (sdc.getAccount() != null) {
+                if (sdc.getAccount() != null && sdc.getAccount().getPlugin() != null) {
                     Icon icon = sdc.getAccount().getPlugin().getDomainInfo(dlLink).getFavIcon();
                     labels[index].setIcon(icon);
                     labels[index].setVisible(true);
@@ -319,7 +319,7 @@ public class ConnectionColumn extends ExtColumn<AbstractNode> {
                     SwingUtils.setOpaque(lbl, false);
                     lbl.setForeground(new Color(this.getConfig().getForegroundColor()));
                 }
-                if (sdc.getAccount() != null) {
+                if (sdc.getAccount() != null && sdc.getAccount().getPlugin() != null) {
                     /* account in use? */
                     Icon icon = sdc.getAccount().getPlugin().getDomainInfo(link).getFavIcon();
                     panel.add(lbl = new JLabel(_GUI._.ConnectionColumn_DownloadUsesAccount(sdc.getAccount().getUser()), icon, JLabel.LEADING));

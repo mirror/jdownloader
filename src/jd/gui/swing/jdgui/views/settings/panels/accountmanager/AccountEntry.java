@@ -5,16 +5,12 @@ import jd.plugins.PluginForHost;
 
 import org.jdownloader.logging.LogController;
 
-public class AccountEntry extends Object {
+public class AccountEntry {
 
-    private Account account;
+    private final Account account;
 
     public Account getAccount() {
         return account;
-    }
-
-    public void setAccount(Account account) {
-        this.account = account;
     }
 
     private boolean hasAccountDetailsMethod = false;
@@ -22,9 +18,11 @@ public class AccountEntry extends Object {
     public AccountEntry(Account acc) {
         this.account = acc;
         try {
-            Class<? extends PluginForHost> cls = account.getPlugin().getClass();
-            if (cls.getDeclaredMethod("showAccountDetailsDialog", new Class[] { Account.class }) != null) {
-                hasAccountDetailsMethod = true;
+            if (account != null && account.getPlugin() != null) {
+                Class<? extends PluginForHost> cls = account.getPlugin().getClass();
+                if (cls.getDeclaredMethod("showAccountDetailsDialog", new Class[] { Account.class }) != null) {
+                    hasAccountDetailsMethod = true;
+                }
             }
         } catch (Throwable e) {
         }
@@ -37,7 +35,9 @@ public class AccountEntry extends Object {
     public void showAccountInfoDialog() {
         if (hasAccountDetailsMethod) {
             try {
-                account.getPlugin().showAccountDetailsDialog(account);
+                if (account != null && account.getPlugin() != null) {
+                    account.getPlugin().showAccountDetailsDialog(account);
+                }
             } catch (Throwable e) {
                 LogController.CL(true).log(e);
             }
