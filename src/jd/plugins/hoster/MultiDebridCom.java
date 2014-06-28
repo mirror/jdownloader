@@ -74,8 +74,8 @@ public class MultiDebridCom extends PluginForHost {
             return ac;
         }
         try {
-            String daysLeft = (new Regex(page, "\"days_left\":([0-9]*)")).getMatch(0);
-            long validuntil = System.currentTimeMillis() + (Long.parseLong(daysLeft) * 1000 * 60 * 60 * 24);
+            String daysLeft = (new Regex(page, "\"days_left\":([0-9\\.]+)")).getMatch(0);
+            long validuntil = System.currentTimeMillis() + (long) (Float.parseFloat(daysLeft) * 1000 * 60 * 60 * 24);
             ac.setValidUntil(validuntil);
         } catch (Exception e) {
             ac.setStatus("can not get left days.");
