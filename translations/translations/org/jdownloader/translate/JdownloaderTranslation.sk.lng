@@ -20,6 +20,7 @@ DownloadWatchDog_onShutdownRequest_=Prebieha sťahovanie!
 DownloadWatchDog_onShutdownRequest_msg=Naozaj chcete zastaviť prebiehajúce sťahovanie a ukončiť JDownloader?
 DownloadWatchDog_onShutdownRequest_nonresumable=Práve prebiehajú nenaviazateľné sťahovania!
 DuplicateAction_DuplicateAction_=Duplikovať pravidlo
+ExportAction_ExportAction_tt=Uložit pravidlé do súboru.\n- Zálohujte\n- Zdieľajte s ostatnými
 Extraction_onShutdownRequest_=Rozbaľovanie stále prebieha!
 Extraction_onShutdownRequest_msg=Prerušiť rozbaľovanie?
 ImportAction_tt=Importovať pravidla z *.jdfilter (*.jdregexfilter) súborov
