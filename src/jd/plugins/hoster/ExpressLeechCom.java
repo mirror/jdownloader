@@ -106,7 +106,8 @@ public class ExpressLeechCom extends PluginForHost {
     // last XfileSharingProBasic compare :: 2.6.2.1
     // captchatype: 4dignum
     // other: no redirects
-    // mods: linkcheck, they don't publish filenames. but filesize is possible by checklinks, do NOT upgrade!
+    // mods: linkcheck, they don't publish filenames. but filesize is possible by checklinks, do NOT upgrade!,
+    // fetchAccountInfo[Recognization of free accounts]
 
     private void setConstants(final Account account) {
         if (account != null && account.getBooleanProperty("free")) {
@@ -759,7 +760,7 @@ public class ExpressLeechCom extends PluginForHost {
             getPage(myAccount);
         }
         // what type of account?
-        if (!cbr.containsHTML("(Premium(-| )Account expire|>Renew premium<)")) {
+        if (cbr.containsHTML("<li>Account Type <span style=\"[^<>\"/]+\">Free</span>")) {
             account.setProperty("free", true);
         } else {
             account.setProperty("free", false);

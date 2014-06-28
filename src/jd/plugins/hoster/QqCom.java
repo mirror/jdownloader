@@ -51,15 +51,21 @@ public class QqCom extends PluginForHost {
 
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
-        if (link.getBooleanProperty("offline", false)) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (link.getBooleanProperty("offline", false)) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
         setBrowserExclusive();
         br.setFollowRedirects(true);
         br.setCustomCharset("utf-8");
         br.getPage(link.getStringProperty("mainlink", null));
-        if (br.containsHTML(">很抱歉，此资源已被删除或包含敏感信息不能查看啦<")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (br.containsHTML(">很抱歉，此资源已被删除或包含敏感信息不能查看啦<")) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
         final String originalqhref = link.getStringProperty("qhref", null);
         final String[] qhrefs = br.getRegex("qhref=\"(qqdl://[^<>\"]+)\"").getColumn(0);
-        if (qhrefs == null || qhrefs.length == 0) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (qhrefs == null || qhrefs.length == 0) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         boolean failed = true;
         for (final String currentqhref : qhrefs) {
             if (currentqhref.equals(originalqhref)) {
@@ -67,7 +73,9 @@ public class QqCom extends PluginForHost {
                 break;
             }
         }
-        if (failed) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (failed) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         return AvailableStatus.TRUE;
     }
 
@@ -76,23 +84,39 @@ public class QqCom extends PluginForHost {
         requestFileInformation(downloadLink);
         final String hash = downloadLink.getStringProperty("filehash", null);
         // This should never happen
-        if (hash == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (hash == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         br.getHeaders().put("User-Agent", "Mozilla/4.0 (compatible; MSIE 9.11; Windows NT 6.1; SLCC2; .NET CLR 2.0.50727; .NET CLR 3.5.30729; .NET CLR 3.0.30729; Media Center PC 6.0; .NET4.0C; .NET4.0E)");
         br.postPage("http://fenxiang.qq.com/upload/index.php/share/handler_c/getComUrl", "filename=" + Encoding.urlEncode(downloadLink.getName()) + "&filehash=" + hash);
-        if (br.containsHTML("No htmlCode read")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error", 5 * 60 * 1000l);
-        final String finallink = br.getRegex("\"com_url\":\"(htt[^<>\"]*?)\"").getMatch(0);
+        if (br.containsHTML("No htmlCode read")) {
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error", 5 * 60 * 1000l);
+        }
+        String finallink = br.getRegex("\"com_url\":\"(htt[^<>\"]*?)\"").getMatch(0);
         final String cookie = br.getRegex("\"com_cookie\":\"([^<>\"]*?)\"").getMatch(0);
-        if (finallink == null || cookie == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (finallink == null || cookie == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         final String finalhost = new Regex(finallink, "(https?://[A-Za-z0-9\\-\\.]+)(:|/)").getMatch(0);
         br.setCookie(finalhost, "FTN5K", cookie);
 
         int maxChunks = 0;
-        if (downloadLink.getBooleanProperty(NOCHUNKS, false)) maxChunks = 1;
+        if (downloadLink.getBooleanProperty(NOCHUNKS, false)) {
+            maxChunks = 1;
+        }
+
+        /* Get better speeds - source: https://github.com/rhyzx/xuanfeng-userscript/blob/master/xuanfeng.user.js */
+        finallink = finallink.replace("xflx.store.cd.qq.com:443", "xfcd.ctfs.ftn.qq.com");
+        finallink = finallink.replace("xflx.sz.ftn.qq.com:80", "sz.disk.ftn.qq.com");
+        finallink = finallink.replace("xflx.cd.ftn.qq.com:80", "cd.ctfs.ftn.qq.com");
+        finallink = finallink.replace("xflxsrc.store.qq.com:443", "xfxa.ctfs.ftn.qq.com");
 
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, finallink, true, maxChunks);
 
         if (dl.getConnection().getResponseCode() == 503) {
-            if (dl.getConnection().getResponseMessage().equals("Service Unavailable")) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, " Service Unavailable!");
+            if (dl.getConnection().getResponseMessage().equals("Service Unavailable")) {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, " Service Unavailable!");
+            }
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, 10 * 60 * 1000l);
         }
         if (dl.getConnection().getContentType().contains("html")) {
@@ -102,7 +126,9 @@ public class QqCom extends PluginForHost {
         try {
             if (!this.dl.startDownload()) {
                 try {
-                    if (dl.externalDownloadStop()) return;
+                    if (dl.externalDownloadStop()) {
+                        return;
+                    }
                 } catch (final Throwable e) {
                 }
                 /* unknown error, we disable multiple chunks */

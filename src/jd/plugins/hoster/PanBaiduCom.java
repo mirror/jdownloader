@@ -45,20 +45,24 @@ public class PanBaiduCom extends PluginForHost {
     private String              DLLINK                                     = null;
     private static final String TYPE_FOLDER_LINK_NORMAL_PASSWORD_PROTECTED = "http://(www\\.)?pan\\.baidu\\.com/share/init\\?shareid=\\d+\\&uk=\\d+";
     private static final String NOCHUNKS                                   = "NOCHUNKS";
-    private static final String USER_AGENT                                 = "netdisk;4.5.1.5;PC;PC-Windows;6.2.9200;WindowsBaiduYunGuanJia";
+    private static final String USER_AGENT                                 = "netdisk;4.6.4.1;PC;PC-Windows;6.3.9600;WindowsBaiduYunGuanJia";
 
     private static final String NICE_HOST                                  = "pan.baidu.com";
     private static final String NICE_HOSTproperty                          = "panbaiducom";
 
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws Exception {
-        if (downloadLink.getBooleanProperty("offline", false)) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (downloadLink.getBooleanProperty("offline", false)) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
         // Other or older User-Agents might get slow speed
         br.getHeaders().put("User-Agent", USER_AGENT);
         // From decrypter
         DLLINK = downloadLink.getStringProperty("dlink", null);
         // From host plugin
-        if (DLLINK == null) DLLINK = downloadLink.getStringProperty("panbaidudirectlink", null);
+        if (DLLINK == null) {
+            DLLINK = downloadLink.getStringProperty("panbaidudirectlink", null);
+        }
         if (DLLINK == null) {
             // We might need to enter a captcha to get the link so let's just stop here
             downloadLink.setAvailable(true);
@@ -123,7 +127,9 @@ public class PanBaiduCom extends PluginForHost {
             }
             final String sign = br.getRegex("FileUtils\\.share_sign=\"([a-z0-9]+)\"").getMatch(0);
             final String tsamp = br.getRegex("FileUtils\\.share_timestamp=\"(\\d+)\"").getMatch(0);
-            if (sign == null || tsamp == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            if (sign == null || tsamp == null) {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
             final String fsid = downloadLink.getStringProperty("important_fsid", null);
             final String postLink = "http://pan.baidu.com/share/download?channel=chunlei&clienttype=0&web=1&uk=" + uk + "&shareid=" + shareid + "&timestamp=" + tsamp + "&sign=" + sign + "&bdstoken=null&channel=chunlei&clienttype=0&web=1";
             br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
@@ -143,18 +149,24 @@ public class PanBaiduCom extends PluginForHost {
                 }
                 br.postPage(postLink, "fid_list=%5B" + fsid + "%5D&input=" + Encoding.urlEncode(code) + "&vcode=" + captchaid);
             }
-            if (getJson("img") != null) throw new PluginException(LinkStatus.ERROR_CAPTCHA);
+            if (getJson("img") != null) {
+                throw new PluginException(LinkStatus.ERROR_CAPTCHA);
+            }
             if (br.containsHTML("\"errno\":\\-20")) {
                 handlePluginBroken(downloadLink, "unknownerror20", 3);
             } else if (br.containsHTML("\"errno\":112")) {
                 handlePluginBroken(downloadLink, "unknownerror112", 3);
             }
             DLLINK = getJson("dlink");
-            if (DLLINK == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            if (DLLINK == null) {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
         }
 
         int maxChunks = 0;
-        if (downloadLink.getBooleanProperty(NOCHUNKS, false)) maxChunks = 1;
+        if (downloadLink.getBooleanProperty(NOCHUNKS, false)) {
+            maxChunks = 1;
+        }
 
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, DLLINK, true, maxChunks);
         if (dl.getConnection().getContentType().contains("html")) {
@@ -162,12 +174,16 @@ public class PanBaiduCom extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         downloadLink.setFinalFileName(Encoding.htmlDecode(getFileNameFromHeader(dl.getConnection())));
-        if (passCode != null) downloadLink.setProperty("pass", passCode);
+        if (passCode != null) {
+            downloadLink.setProperty("pass", passCode);
+        }
         downloadLink.setProperty("panbaidudirectlink", DLLINK);
         try {
             if (!this.dl.startDownload()) {
                 try {
-                    if (dl.externalDownloadStop()) return;
+                    if (dl.externalDownloadStop()) {
+                        return;
+                    }
                 } catch (final Throwable e) {
                 }
                 /* unknown error, we disable multiple chunks */
@@ -190,7 +206,9 @@ public class PanBaiduCom extends PluginForHost {
     private String getJson(final String parameter) {
         br.getRequest().setHtmlCode(br.toString().replace("\\", ""));
         String result = br.getRegex("\"" + parameter + "\":(\\d+)").getMatch(0);
-        if (result == null) result = br.getRegex("\"" + parameter + "\":\"([^<>\"]*?)\"").getMatch(0);
+        if (result == null) {
+            result = br.getRegex("\"" + parameter + "\":\"([^<>\"]*?)\"").getMatch(0);
+        }
         return result;
     }
 

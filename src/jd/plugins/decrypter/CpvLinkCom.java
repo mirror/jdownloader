@@ -46,7 +46,18 @@ public class CpvLinkCom extends PluginForDecrypt {
         br.setFollowRedirects(false);
         br.getPage(parameter);
         if (br.getHttpConnection().getResponseCode() == 404) {
-            logger.info("Link offline: " + parameter);
+            final DownloadLink offline = createDownloadlink("directhttp://" + parameter);
+            offline.setFinalFileName(new Regex(parameter, "https?://[^<>\"/]+/(.+)").getMatch(0));
+            offline.setAvailable(false);
+            offline.setProperty("offline", true);
+            decryptedLinks.add(offline);
+            return decryptedLinks;
+        } else if (br.getRedirectLocation() != null && br.getRedirectLocation().equals("http://cpv.li/")) {
+            final DownloadLink offline = createDownloadlink("directhttp://" + parameter);
+            offline.setFinalFileName(new Regex(parameter, "https?://[^<>\"/]+/(.+)").getMatch(0));
+            offline.setAvailable(false);
+            offline.setProperty("offline", true);
+            decryptedLinks.add(offline);
             return decryptedLinks;
         }
         String finallink = null;
@@ -65,31 +76,45 @@ public class CpvLinkCom extends PluginForDecrypt {
                     logger.warning("Decrypter broken for link: " + parameter);
                     return null;
                 }
-                if (token == null) token = "";
+                if (token == null) {
+                    token = "";
+                }
                 final File cf = rc.downloadCaptcha(getLocalCaptchaFile());
                 final String c = getCaptchaCode(cf, param);
                 final String postData = "_token=" + token + "&recaptcha_challenge_field=" + rc.getChallenge() + "&recaptcha_response_field=" + Encoding.urlEncode(c) + "&url_id=" + urlid + "&url_url=" + lid + "&recaptcha_id=" + reid;
                 br.postPage("http://shr77.com/recaptcha", postData);
                 handleContinueLink();
-                if (br.containsHTML("404 \\- Page Not Found")) continue;
+                if (br.containsHTML("404 \\- Page Not Found")) {
+                    continue;
+                }
                 final String redirect = br.getRedirectLocation();
                 if (redirect == null) {
                     logger.warning("Decrypter broken for link: " + parameter);
                     return null;
                 }
-                if (redirect.contains("shr77.com/")) continue;
-                if (br.containsHTML("(api\\.recaptcha\\.net|google\\.com/recaptcha/api/)")) continue;
+                if (redirect.contains("shr77.com/")) {
+                    continue;
+                }
+                if (br.containsHTML("(api\\.recaptcha\\.net|google\\.com/recaptcha/api/)")) {
+                    continue;
+                }
                 finallink = redirect;
                 break;
             }
-            if (br.containsHTML("(api\\.recaptcha\\.net|google\\.com/recaptcha/api/)")) throw new DecrypterException(DecrypterException.CAPTCHA);
+            if (br.containsHTML("(api\\.recaptcha\\.net|google\\.com/recaptcha/api/)")) {
+                throw new DecrypterException(DecrypterException.CAPTCHA);
+            }
         } else {
             handleContinueLink();
             // No-ad link
             finallink = br.getRegex("http\\-equiv=\"refresh\" content=\"\\d+(\\.\\d+)?; ?url=(http[^<>\"]*?)\"").getMatch(1);
-            if (finallink == null) finallink = br.getRegex("\\$\\(\\'a#loading\\'\\)\\.attr\\(\\'href\\',\"(htt[^<>\"]*?)\"\\)").getMatch(0);
+            if (finallink == null) {
+                finallink = br.getRegex("\\$\\(\\'a#loading\\'\\)\\.attr\\(\\'href\\',\"(htt[^<>\"]*?)\"\\)").getMatch(0);
+            }
             // ad-link
-            if (finallink == null) finallink = br.getRegex("class=\"head\\-button\">[\t\n\r ]+<a href=\"(http[^<>\"]*?)\"").getMatch(0);
+            if (finallink == null) {
+                finallink = br.getRegex("class=\"head\\-button\">[\t\n\r ]+<a href=\"(http[^<>\"]*?)\"").getMatch(0);
+            }
             if (finallink == null || finallink.contains("shr77.com/")) {
                 logger.warning("Decrypter broken for link: " + parameter);
                 return null;
@@ -103,12 +128,17 @@ public class CpvLinkCom extends PluginForDecrypt {
     private void handleContinueLink() throws IOException {
         for (int i = 1; i <= 3; i++) {
             String continuelink = br.getRegex("window\\.location\\.replace\\(\"(http://shr77\\.com/[A-Za-z0-9]+)\"\\);").getMatch(0);
-            if (continuelink == null) continuelink = br.getRegex("http\\-equiv=\"refresh\" content=\"\\d+(\\.\\d+)?; url=(http://shr77\\.com/[A-Za-z0-9]+)\"").getMatch(1);
-            if (continuelink == null) continuelink = br.getRegex("Redirecting to <a href=\"(http://shr77\\.com/[A-Za-z0-9]+)\"").getMatch(0);
-            if (continuelink != null)
+            if (continuelink == null) {
+                continuelink = br.getRegex("http\\-equiv=\"refresh\" content=\"\\d+(\\.\\d+)?; url=(http://shr77\\.com/[A-Za-z0-9]+)\"").getMatch(1);
+            }
+            if (continuelink == null) {
+                continuelink = br.getRegex("Redirecting to <a href=\"(http://shr77\\.com/[A-Za-z0-9]+)\"").getMatch(0);
+            }
+            if (continuelink != null) {
                 br.getPage(continuelink);
-            else
+            } else {
                 break;
+            }
         }
     }
 

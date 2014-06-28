@@ -22,6 +22,7 @@ import java.util.ArrayList;
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.http.Browser;
+import jd.http.Browser.BrowserException;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.plugins.CryptedLink;
@@ -30,7 +31,7 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision: 25040 $", interfaceVersion = 2, names = { "batoto.net" }, urls = { "http://[\\w\\.]*?batoto\\.net/read/_/\\d+/[\\w\\-_\\.]+" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "batoto.net" }, urls = { "http://[\\w\\.]*?batoto\\.net/read/_/\\d+/[\\w\\-_\\.]+" }, flags = { 0 })
 public class BtoNt extends PluginForDecrypt {
 
     /**
@@ -55,7 +56,12 @@ public class BtoNt extends PluginForDecrypt {
         // enforcing one img per page because you can't always get all images displayed on one page.
         br.setCookie(this.getHost(), "supress_webtoon", "t");
         // Access chapter one
-        br.getPage(url + "/1");
+        try {
+            br.getPage(url + "/1");
+        } catch (final BrowserException e) {
+            logger.info("Link offline ? (server error): " + parameter);
+            return decryptedLinks;
+        }
 
         if (br.containsHTML("<div style=\"text-align:center;\"><img src=\"http://www.batoto.net/images/404-Error\\.jpg\" alt=\"File not found\" /></div>")) {
             logger.warning("Invalid link or release not yet available, check in your browser: " + parameter);
@@ -125,6 +131,14 @@ public class BtoNt extends PluginForDecrypt {
             fp.setName(title);
             int skippedPics = 0;
             for (int i = 1; i <= numberOfPages; i++) {
+                try {
+                    if (this.isAbort()) {
+                        logger.info("Decryption aborted by user: " + parameter);
+                        return decryptedLinks;
+                    }
+                } catch (final Throwable e) {
+                    // Not available in old 0.9.581 Stable
+                }
                 if (i != 1) {
                     br.getPage(url + "/" + i);
                 }
