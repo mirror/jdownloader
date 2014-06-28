@@ -1026,6 +1026,29 @@ public enum YoutubeVariant implements YoutubeVariantInterface {
             return _GUI._.YoutubeVariant_filenametag_WEBM_1080();
         }
     },
+
+    WEBM_1440(null, YoutubeVariantInterface.VariantGroup.VIDEO, YoutubeVariantInterface.DownloadType.VIDEO, "webm", YoutubeITAG.WEBM_VIDEO_1440P_VP9_AUDIO_VORBIS, null, null, null, null) {
+        @Override
+        public String getName() {
+            return "1440p WebM-Video";
+        }
+
+        @Override
+        public String getQualityExtension() {
+            return "1440p";
+        }
+    },
+    WEBM_2160(null, YoutubeVariantInterface.VariantGroup.VIDEO, YoutubeVariantInterface.DownloadType.VIDEO, "webm", YoutubeITAG.WEBM_VIDEO_2160P_VP9_AUDIO_VORBIS, null, null, null, null) {
+        @Override
+        public String getName() {
+            return "2160p WebM-Video";
+        }
+
+        @Override
+        public String getQualityExtension() {
+            return "2160p";
+        }
+    },
     WEBM_360(null, YoutubeVariantInterface.VariantGroup.VIDEO, YoutubeVariantInterface.DownloadType.VIDEO, "webm", YoutubeITAG.WEBM_VIDEO_360P_VP8_AUDIO_VORBIS, null, null, null, null) {
         @Override
         public String getName() {
