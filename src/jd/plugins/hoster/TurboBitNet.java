@@ -465,6 +465,7 @@ public class TurboBitNet extends PluginForHost {
                 maxWait = realWait;
             }
         }
+        boolean waited = false;
         int tt = 60;
         if (ttt != null) {
             tt = Integer.parseInt(ttt);
@@ -480,75 +481,98 @@ public class TurboBitNet extends PluginForHost {
             if (tt > 250) {
                 throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, "Limit reached or IP already loading", tt * 1001l);
             }
+            waited = true;
         }
+        final boolean use_js = false;
 
-        final Browser tOut = br.cloneBrowser();
-        final String to = br.getRegex("(?i)(/\\w+/timeout\\.js\\?\\w+=[^\"\'<>]+)").getMatch(0);
-        tOut.getPage(to == null ? "/files/timeout.js?ver=" + JDHash.getMD5(String.valueOf(Math.random())).toUpperCase(Locale.ENGLISH) : to);
-        final String fun = escape(tOut.toString());
-        br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
+        if (use_js) {
+            final Browser tOut = br.cloneBrowser();
+            final String to = br.getRegex("(?i)(/\\w+/timeout\\.js\\?\\w+=[^\"\'<>]+)").getMatch(0);
+            tOut.getPage(to == null ? "/files/timeout.js?ver=" + JDHash.getMD5(String.valueOf(Math.random())).toUpperCase(Locale.ENGLISH) : to);
+            final String fun = escape(tOut.toString());
+            br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
 
-        // realtime update
-        String rtUpdate = getPluginConfig().getStringProperty("rtupdate", null);
-        final boolean isUpdateNeeded = getPluginConfig().getBooleanProperty("isUpdateNeeded", false);
-        int attemps = getPluginConfig().getIntegerProperty("attemps", 1);
+            // realtime update
+            String rtUpdate = getPluginConfig().getStringProperty("rtupdate", null);
+            final boolean isUpdateNeeded = getPluginConfig().getBooleanProperty("isUpdateNeeded", false);
+            int attemps = getPluginConfig().getIntegerProperty("attemps", 1);
 
-        if (isUpdateNeeded || rtUpdate == null) {
-            final Browser rt = new Browser();
-            try {
-                rtUpdate = rt.getPage("http://update0.jdownloader.org/pluginstuff/tbupdate.js");
-                rtUpdate = JDHexUtils.toString(jd.plugins.decrypter.LnkCrptWs.IMAGEREGEX(rtUpdate.split("[\r\n]+")[1]));
-                getPluginConfig().setProperty("rtupdate", rtUpdate);
-            } catch (Throwable e) {
+            if (isUpdateNeeded || rtUpdate == null) {
+                final Browser rt = new Browser();
+                try {
+                    rtUpdate = rt.getPage("http://update0.jdownloader.org/pluginstuff/tbupdate.js");
+                    rtUpdate = JDHexUtils.toString(jd.plugins.decrypter.LnkCrptWs.IMAGEREGEX(rtUpdate.split("[\r\n]+")[1]));
+                    getPluginConfig().setProperty("rtupdate", rtUpdate);
+                } catch (Throwable e) {
+                }
+                getPluginConfig().setProperty("isUpdateNeeded", false);
+                getPluginConfig().setProperty("attemps", attemps++);
+                getPluginConfig().save();
             }
-            getPluginConfig().setProperty("isUpdateNeeded", false);
-            getPluginConfig().setProperty("attemps", attemps++);
-            getPluginConfig().save();
-        }
 
-        String res = rhino("var id = \'" + id + "\';@" + fun + "@" + rtUpdate, 666);
-        if (res == null || res != null && !res.matches(tb(10))) {
-            res = rhino("var id = \'" + id + "\';@" + fun + "@" + rtUpdate, 100);
-            if (new Regex(res, "/~ID~/").matches()) {
-                res = res.replaceAll("/~ID~/", id);
+            String res = rhino("var id = \'" + id + "\';@" + fun + "@" + rtUpdate, 666);
+            if (res == null || res != null && !res.matches(tb(10))) {
+                res = rhino("var id = \'" + id + "\';@" + fun + "@" + rtUpdate, 100);
+                if (new Regex(res, "/~ID~/").matches()) {
+                    res = res.replaceAll("/~ID~/", id);
+                }
             }
-        }
 
-        if (res != null && res.matches(tb(10))) {
-            sleep(tt * 1001, downloadLink);
+            if (res != null && res.matches(tb(10))) {
+                sleep(tt * 1001, downloadLink);
+                // Wed Jun 13 12:29:47 UTC 0200 2012
+                SimpleDateFormat df = new SimpleDateFormat("EEE MMM dd HH:mm:ss zZ yyyy");
+                Date date = new Date();
+                br.setCookie(br.getHost(), "turbobit1", Encoding.urlEncode_light(df.format(date)).replace(":", "%3A"));
+
+                br.getPage(res);
+                downloadUrl = rhino(escape(br.toString()) + "@" + rtUpdate, 999);
+                if (downloadUrl != null) {
+                    downloadUrl = downloadUrl.replaceAll(MAINPAGE, "");
+                    if (downloadUrl.equals("/download/free/" + id)) {
+                        downloadUrl = null;
+                    }
+                }
+                if (downloadUrl == null) {
+                    downloadUrl = br.getRegex("(/download/redirect/[0-9A-F]{32}/" + dllink.replaceAll(MAINPAGE, "") + ")").getMatch(0);
+                    if (downloadUrl == null) {
+                        downloadUrl = br.getRegex("<a href=\'([^\']+)").getMatch(0);
+                    }
+                }
+            }
+            if (downloadUrl == null) {
+                getPluginConfig().setProperty("isUpdateNeeded", true);
+                if (br.containsHTML("The file is not avaliable now because of technical problems")) {
+                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, 15 * 60 * 1000l);
+                }
+
+                if (attemps > 1) {
+                    getPluginConfig().setProperty("isUpdateNeeded", false);
+                    getPluginConfig().setProperty("attemps", 1);
+                    getPluginConfig().save();
+                    throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, BLOCKED, 10 * 60 * 60 * 1000l);
+                } else {
+                    throw new PluginException(LinkStatus.ERROR_RETRY);
+                }
+            }
+        } else {
+            String continueLink = br.getRegex("\\$\\(\\'#timeoutBox\\'\\)\\.load\\(\"(/[^<>\"]*?)\"\\);").getMatch(0);
+            if (continueLink == null) {
+                continueLink = "/download/getLinkTimeout/" + id;
+            }
+            continueLink = "http://turbobit.net" + continueLink;
+            if (!waited) {
+                this.sleep(tt * 1001l, downloadLink);
+            }
+            br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
+            br.getPage(continueLink);
             // Wed Jun 13 12:29:47 UTC 0200 2012
             SimpleDateFormat df = new SimpleDateFormat("EEE MMM dd HH:mm:ss zZ yyyy");
             Date date = new Date();
             br.setCookie(br.getHost(), "turbobit1", Encoding.urlEncode_light(df.format(date)).replace(":", "%3A"));
-
-            br.getPage(res);
-            downloadUrl = rhino(escape(br.toString()) + "@" + rtUpdate, 999);
-            if (downloadUrl != null) {
-                downloadUrl = downloadUrl.replaceAll(MAINPAGE, "");
-                if (downloadUrl.equals("/download/free/" + id)) {
-                    downloadUrl = null;
-                }
-            }
+            downloadUrl = br.getRegex("(\"|\\')(/download/redirect/[^<>\"]*?)(\"|\\')").getMatch(1);
             if (downloadUrl == null) {
-                downloadUrl = br.getRegex("(/download/redirect/[0-9A-F]{32}/" + dllink.replaceAll(MAINPAGE, "") + ")").getMatch(0);
-                if (downloadUrl == null) {
-                    downloadUrl = br.getRegex("<a href=\'([^\']+)").getMatch(0);
-                }
-            }
-        }
-        if (downloadUrl == null) {
-            getPluginConfig().setProperty("isUpdateNeeded", true);
-            if (br.containsHTML("The file is not avaliable now because of technical problems")) {
-                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, 15 * 60 * 1000l);
-            }
-
-            if (attemps > 1) {
-                getPluginConfig().setProperty("isUpdateNeeded", false);
-                getPluginConfig().setProperty("attemps", 1);
-                getPluginConfig().save();
-                throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, BLOCKED, 10 * 60 * 60 * 1000l);
-            } else {
-                throw new PluginException(LinkStatus.ERROR_RETRY);
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
         }
         br.setFollowRedirects(false);
