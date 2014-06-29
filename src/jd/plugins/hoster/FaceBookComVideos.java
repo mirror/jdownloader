@@ -57,8 +57,7 @@ public class FaceBookComVideos extends PluginForHost {
     public static String        Agent                      = "Mozilla/5.0 (Windows NT 6.1; WOW64; rv:27.0) Gecko/20100101 Firefox/27.0";
     private boolean             pluginloaded               = false;
     private static final String TYPE_PHOTO                 = "https?://(www\\.)?facebook\\.com/photo\\.php\\?fbid=\\d+";
-    private static final String TYPE_VIDEO                 = "https?://(www\\.)?facebook\\.com/video/video\\.php\\?v=\\d+";
-
+    private static final String TYPE_VIDEO                 = "https?://(www\\.)?facebook\\.com/(video/video|photo)\\.php\\?v=\\d+";
     private String              DLLINK                     = null;
     private boolean             loggedIN                   = false;
     private static final String FASTLINKCHECK_PICTURES     = "FASTLINKCHECK_PICTURES";
@@ -79,16 +78,6 @@ public class FaceBookComVideos extends PluginForHost {
         link.setUrlDownload(thislink);
     }
 
-    public String decodeUnicode(final String s) {
-        final Pattern p = Pattern.compile("\\\\u([0-9a-fA-F]{4})");
-        String res = s;
-        final Matcher m = p.matcher(res);
-        while (m.find()) {
-            res = res.replaceAll("\\" + m.group(0), Character.toString((char) Integer.parseInt(m.group(1), 16)));
-        }
-        return res;
-    }
-
     /**
      * JD2 CODE. DO NOT USE OVERRIDE FOR JD=) COMPATIBILITY REASONS!
      */
@@ -100,6 +89,7 @@ public class FaceBookComVideos extends PluginForHost {
         link.setName(new Regex(link.getDownloadURL(), "(\\d+)$").getMatch(0));
         br.setCookie("http://www.facebook.com", "locale", "en_GB");
         br.setFollowRedirects(true);
+        final String lid = new Regex(link.getDownloadURL(), "(\\d+)$").getMatch(0);
         final boolean accountNeeded = accountNeeded(link);
         final Account aa = AccountController.getInstance().getValidAccount(this);
         if (accountNeeded || aa != null) {
@@ -185,7 +175,7 @@ public class FaceBookComVideos extends PluginForHost {
                     throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
                 }
                 if (this.getPluginConfig().getBooleanProperty(USE_ALBUM_NAME_IN_FILENAME, false)) {
-                    link.setFinalFileName(filename + "_" + new Regex(link.getDownloadURL(), "(\\d+)$").getMatch(0) + ".jpg");
+                    link.setFinalFileName(filename + "_" + lid + ".jpg");
                 } else {
                     link.setFinalFileName(Encoding.htmlDecode(getFileNameFromHeader(con)).trim());
                 }
@@ -197,7 +187,7 @@ public class FaceBookComVideos extends PluginForHost {
                 }
             }
         } else {
-            link.setFinalFileName(filename + ".mp4");
+            link.setFinalFileName(filename + "_" + lid + ".mp4");
             return AvailableStatus.TRUE;
         }
     }
@@ -539,6 +529,16 @@ public class FaceBookComVideos extends PluginForHost {
             pluginloaded = true;
         }
         return jd.plugins.hoster.Youtube.unescape(s);
+    }
+
+    public String decodeUnicode(final String s) {
+        final Pattern p = Pattern.compile("\\\\u([0-9a-fA-F]{4})");
+        String res = s;
+        final Matcher m = p.matcher(res);
+        while (m.find()) {
+            res = res.replaceAll("\\" + m.group(0), Character.toString((char) Integer.parseInt(m.group(1), 16)));
+        }
+        return res;
     }
 
     private void checkFeatureDialog() {
