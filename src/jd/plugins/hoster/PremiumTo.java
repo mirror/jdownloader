@@ -18,6 +18,7 @@ package jd.plugins.hoster;
 
 import java.net.URL;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -49,6 +50,8 @@ public class PremiumTo extends PluginForHost {
     private static final String                            NOCHUNKS           = "NOCHUNKS";
     private static Object                                  LOCK               = new Object();
     private final String                                   lang               = System.getProperty("user.language");
+    private static final String                            normalTraffic      = "normalTraffic";
+    private static final String                            specialTraffic     = "specialTraffic";
 
     public PremiumTo(PluginWrapper wrapper) {
         super(wrapper);
@@ -98,22 +101,31 @@ public class PremiumTo extends PluginForHost {
             account.setValid(false);
             throw e;
         }
-        final String traffic = br.getPage("http://premium.to/traffic.php").trim() + " MB";
-        final String hosts = br.getPage("http://premium.to/hosts.php");
-        ac.setTrafficLeft(traffic);
-        account.setValid(true);
-        ArrayList<String> supportedHosts = new ArrayList<String>();
-        String hosters[] = new Regex(hosts.trim(), "(.+?)(;|$)").getColumn(0);
-        if (hosters != null) {
-            for (String hoster : hosters) {
-                if (hoster == null || hoster.length() == 0) {
-                    continue;
-                }
-                supportedHosts.add(hoster.trim());
+        {
+            Browser tbr = br.cloneBrowser();
+            tbr.getPage("http://premium.to/straffic.php");
+            String[] traffic = tbr.toString().split(";");
+            if (traffic != null && traffic.length == 2) {
+                // because we can no account for separate traffic allocations.
+                final long nT = Long.parseLong(traffic[0]);
+                final long sT = Long.parseLong(traffic[1]);
+                ac.setTrafficLeft(nT + sT + "MiB");
+                // set both so we can check in canHandle.
+                account.setProperty(normalTraffic, nT);
+                account.setProperty(specialTraffic, sT);
             }
         }
+        {
+            Browser hbr = br.cloneBrowser();
+            hbr.getPage("http://premium.to/hosts.php");
+            String hosters[] = hbr.toString().split(";");
+            if (hosters != null && hosters.length != 0) {
+                ArrayList<String> supportedHosts = new ArrayList<String>(Arrays.asList(hosters));
+                ac.setMultiHostSupport(supportedHosts);
+            }
+        }
+        account.setValid(true);
         ac.setStatus("Premium Account");
-        ac.setMultiHostSupport(supportedHosts);
         return ac;
     }
 
@@ -426,7 +438,21 @@ public class PremiumTo extends PluginForHost {
             }
             shareOnlineLocked.set(true);
         }
-        return true;
+        if (downloadLink.getHost().matches("uploaded\\.net|uploaded\\.to|ul\\.to|netload\\.in|filemonkey\\.in|oboom\\.com")) {
+            // some routine to check traffic allocations: normalTraffic specialTraffic
+            if (account.getLongProperty(specialTraffic, 0) > 0) {
+                return true;
+            } else {
+                return false;
+            }
+        } else {
+            // normal traffic
+            if (account.getLongProperty(normalTraffic, 0) > 0) {
+                return true;
+            } else {
+                return false;
+            }
+        }
     }
 
     @Override
