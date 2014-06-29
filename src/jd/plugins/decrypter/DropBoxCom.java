@@ -34,7 +34,7 @@ import jd.utils.JDUtilities;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "dropbox.com" }, urls = { "https?://(www\\.)?dropbox\\.com/(sh/[A-Za-z0-9\\-_/]+|l/[A-Za-z0-9]+)" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "dropbox.com" }, urls = { "https?://(www\\.)?dropbox\\.com/(sh/[A-Za-z0-9\\-_/]+|l/[A-Za-z0-9]+)|https?://(www\\.)?db\\.tt/[A-Za-z0-9]+" }, flags = { 0 })
 public class DropBoxCom extends PluginForDecrypt {
 
     private boolean pluginloaded;
@@ -43,8 +43,9 @@ public class DropBoxCom extends PluginForDecrypt {
         super(wrapper);
     }
 
-    private final String NORMALLINK   = "https?://(www\\.)?dropbox\\.com/sh/.+";
-    private final String REDIRECTLINK = "https?://(www\\.)?dropbox\\.com/l/[A-Za-z0-9]+";
+    private static final String TYPE_NORMAL   = "https?://(www\\.)?dropbox\\.com/sh/.+";
+    private static final String TYPE_REDIRECT = "https?://(www\\.)?dropbox\\.com/l/[A-Za-z0-9]+";
+    private static final String TYPE_SHORT    = "https://(www\\.)?db\\.tt/[A-Za-z0-9]+";
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
@@ -65,8 +66,12 @@ public class DropBoxCom extends PluginForDecrypt {
                 decryptedLinks.add(dl);
                 return decryptedLinks;
             }
-            if (con.getResponseCode() == 302 && parameter.matches(REDIRECTLINK)) {
+            if (con.getResponseCode() == 302 && (parameter.matches(TYPE_REDIRECT) || parameter.matches(TYPE_SHORT))) {
                 parameter = br.getRedirectLocation();
+                if (!parameter.matches(TYPE_NORMAL)) {
+                    logger.warning("Decrypter broken or unsupported redirect-url: " + parameter);
+                    return null;
+                }
             }
             br.followConnection();
         } finally {
@@ -150,7 +155,9 @@ public class DropBoxCom extends PluginForDecrypt {
             return decryptedLinks;
         }
         if (fpName != null) {
-            if (fpName.contains("\\")) fpName = unescape(fpName);
+            if (fpName.contains("\\")) {
+                fpName = unescape(fpName);
+            }
             FilePackage fp = FilePackage.getInstance();
             fp.setName(Encoding.htmlDecode(fpName.trim()));
             fp.addLinks(decryptedLinks);
@@ -162,7 +169,9 @@ public class DropBoxCom extends PluginForDecrypt {
         /* we have to make sure the youtube plugin is loaded */
         if (pluginloaded == false) {
             final PluginForHost plugin = JDUtilities.getPluginForHost("youtube.com");
-            if (plugin == null) throw new IllegalStateException("youtube plugin not found!");
+            if (plugin == null) {
+                throw new IllegalStateException("youtube plugin not found!");
+            }
             pluginloaded = true;
         }
         return jd.plugins.hoster.Youtube.unescape(s);
