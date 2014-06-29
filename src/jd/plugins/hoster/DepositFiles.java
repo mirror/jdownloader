@@ -110,7 +110,9 @@ public class DepositFiles extends PluginForHost {
                 String baseURL = new Regex(testBr.getURL(), "(https?://[^/]+)").getMatch(0);
                 StringContainer main = new StringContainer();
                 main.string = baseURL;
-                if (baseURL != null) MAINPAGE = main;
+                if (baseURL != null) {
+                    MAINPAGE = main;
+                }
                 System.out.println("depositfiles setter MAINPAGE = " + MAINPAGE.string);
             } catch (Throwable e) {
                 e.printStackTrace();
@@ -180,7 +182,9 @@ public class DepositFiles extends PluginForHost {
                         }
                         if (CrossSystem.isOpenBrowserSupported()) {
                             int result = JOptionPane.showConfirmDialog(jd.gui.swing.jdgui.JDGui.getInstance().getMainFrame(), message, title, JOptionPane.YES_NO_OPTION, JOptionPane.INFORMATION_MESSAGE, null);
-                            if (JOptionPane.OK_OPTION == result) CrossSystem.openURL(new URL("http://update3.jdownloader.org/jdserv/BuyPremiumInterface/redirect?" + domain + "&freedialog"));
+                            if (JOptionPane.OK_OPTION == result) {
+                                CrossSystem.openURL(new URL("http://update3.jdownloader.org/jdserv/BuyPremiumInterface/redirect?" + domain + "&freedialog"));
+                            }
                         }
                     } catch (Throwable e) {
                     }
@@ -231,7 +235,9 @@ public class DepositFiles extends PluginForHost {
         br.getPage(link);
 
         // Datei geloescht?
-        if (br.containsHTML(FILE_NOT_FOUND)) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
+        if (br.containsHTML(FILE_NOT_FOUND)) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
         if (br.containsHTML("<strong>Achtung! Sie haben ein Limit")) {
             downloadLink.getLinkStatus().setStatusText(JDL.L("plugins.hoster.depositfilescom.errors.limitreached", "Download limit reached"));
             return AvailableStatus.TRUE;
@@ -254,7 +260,9 @@ public class DepositFiles extends PluginForHost {
             }
         }
         String fixedName = new Regex(fileName, "(.+)\\?").getMatch(0);
-        if (fixedName != null) fileName = fixedName;
+        if (fixedName != null) {
+            fileName = fixedName;
+        }
         downloadLink.setName(Encoding.htmlDecode(fileName));
         downloadLink.setDownloadSize(SizeFormatter.getSize(Encoding.htmlDecode(fileSizeString)));
         return AvailableStatus.TRUE;
@@ -262,27 +270,45 @@ public class DepositFiles extends PluginForHost {
 
     public void checkErrors() throws NumberFormatException, PluginException {
         logger.info("Checking errors...");
-        if (br.containsHTML("Zugang zur folgenden Datei ist begrenzt oder Datei wurde entfernt|Diese Datei besteht nicht, der Zugang zur folgenden Datei ist begrenzt oder Datei wurde entfernt, wegen der Urheberrechtsverletzung\\.")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        if (br.containsHTML("Leider, sind alle Slots f")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "No Free Downloadslot", 20 * 60 * 1000l);
+        if (br.containsHTML("Zugang zur folgenden Datei ist begrenzt oder Datei wurde entfernt|Diese Datei besteht nicht, der Zugang zur folgenden Datei ist begrenzt oder Datei wurde entfernt, wegen der Urheberrechtsverletzung\\.")) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
+        if (br.containsHTML("Leider, sind alle Slots f")) {
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "No Free Downloadslot", 20 * 60 * 1000l);
+        }
         /* Server under maintenance */
-        if (br.containsHTML("(html_download_api-temporary_unavailable|The site is temporarily unavailable for we are making some important upgrades)")) { throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Under maintenance, contact depositfiles support", 30 * 60 * 1000l); }
+        if (br.containsHTML("(html_download_api-temporary_unavailable|The site is temporarily unavailable for we are making some important upgrades)")) {
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Under maintenance, contact depositfiles support", 30 * 60 * 1000l);
+        }
         /* download not available at the moment */
-        if (br.containsHTML("Entschuldigung aber im Moment koennen Sie nur diesen Downloadmodus")) { throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, 20 * 60 * 1000l); }
+        if (br.containsHTML("Entschuldigung aber im Moment koennen Sie nur diesen Downloadmodus")) {
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, 20 * 60 * 1000l);
+        }
         /* limit reached */
         if (br.containsHTML("(Sie haben ein Limit fuer Downloaden ausgeschoepft|You used up your limit|Please try in|You have reached your download time limit)")) {
             String wait = br.getRegex("html_download_api-limit_interval\">(\\d+)</span>").getMatch(0);
-            if (wait != null) { throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, Integer.parseInt(wait) * 1000l); }
+            if (wait != null) {
+                throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, Integer.parseInt(wait) * 1000l);
+            }
             wait = br.getRegex(">Try in (\\d+) minutes or use GOLD account").getMatch(0);
-            if (wait != null) { throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, (Integer.parseInt(wait) + 1) * 60 * 1000l); }
+            if (wait != null) {
+                throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, (Integer.parseInt(wait) + 1) * 60 * 1000l);
+            }
             wait = br.getRegex(">Try in (\\d+) seconds or use GOLD account").getMatch(0);
-            if (wait != null) { throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, Integer.parseInt(wait) * 1000l); }
+            if (wait != null) {
+                throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, Integer.parseInt(wait) * 1000l);
+            }
             throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 30 * 60 * 1000l);
         }
         if (br.containsHTML("(Anschlusslimit|Bitte versuchen Sie in)")) {
             String wait = br.getRegex("versuchen Sie in.*?(\\d+) minu").getMatch(0);
-            if (wait != null) { throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, (Integer.parseInt(wait) + 1) * 60 * 1000l); }
+            if (wait != null) {
+                throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, (Integer.parseInt(wait) + 1) * 60 * 1000l);
+            }
             wait = br.getRegex("versuchen Sie in.*?(\\d+) Seku").getMatch(0);
-            if (wait != null) { throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, Integer.parseInt(wait) * 1000l); }
+            if (wait != null) {
+                throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, Integer.parseInt(wait) * 1000l);
+            }
             throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 30 * 60 * 1000l);
         }
         /* country slots full */
@@ -294,17 +320,25 @@ public class DepositFiles extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, JDL.L("plugins.hoster.depositfilescom.errors.allslotsbusy", "All download slots for your country are busy"), 1 * 60 * 1000l);
         }
         /* already loading */
-        if (br.containsHTML("Von Ihren IP-Addresse werden schon einige")) { throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 5 * 60 * 1001l); }
-        if (br.containsHTML("You cannot download more than one file in parallel")) { throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 5 * 60 * 1001l); }
+        if (br.containsHTML("Von Ihren IP-Addresse werden schon einige")) {
+            throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 5 * 60 * 1001l);
+        }
+        if (br.containsHTML("You cannot download more than one file in parallel")) {
+            throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 5 * 60 * 1001l);
+        }
         /* unknown error, try again */
         final String wait = br.getRegex("Bitte versuchen Sie noch mal nach(.*?)<\\/strong>").getMatch(0);
-        if (wait != null) { throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, TimeFormatter.getMilliSeconds(wait)); }
+        if (wait != null) {
+            throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, TimeFormatter.getMilliSeconds(wait));
+        }
         /* You have exceeded the 15 GB 24-hour limit */
         if (br.containsHTML("GOLD users can download no more than")) {
             logger.info("GOLD users can download no more than 15 GB for the last 24 hours");
             throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
         }
-        if (br.containsHTML("Entweder existiert diese Datei nicht oder sie wurde aufgrund von")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (br.containsHTML("Entweder existiert diese Datei nicht oder sie wurde aufgrund von")) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
     }
 
     private String getDllink() throws Exception {
@@ -313,7 +347,9 @@ public class DepositFiles extends PluginForHost {
             crap = br.getRegex("download_container.*load\\((.*?)\n").getMatch(0);
         } else {
             String finallink = br.getRegex("class=\"download_url\">[\t\n\r ]+<a href=\"(https?://[^<>\"]*?)\"").getMatch(0);
-            if (finallink == null) finallink = br.getRegex("\"(https?://[a-z0-9\\-]+\\.dfiles\\.eu/auth[^<>\"]*?)\"").getMatch(0);
+            if (finallink == null) {
+                finallink = br.getRegex("\"(https?://[a-z0-9\\-]+\\.dfiles\\.eu/auth[^<>\"]*?)\"").getMatch(0);
+            }
             return finallink;
         }
         if (crap != null) {
@@ -329,7 +365,9 @@ public class DepositFiles extends PluginForHost {
             return lol[0];
         } else {
             String fid = br.getRegex("var fid = '(.*?)'").getMatch(0);
-            if (fid != null) { return MAINPAGE.string + "/get_file.php?fid=" + fid; }
+            if (fid != null) {
+                return MAINPAGE.string + "/get_file.php?fid=" + fid;
+            }
         }
         return null;
     }
@@ -388,7 +426,9 @@ public class DepositFiles extends PluginForHost {
                     con.disconnect();
                     throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, 10 * 60 * 1000l);
                 }
+                downloadLink.setProperty("finallink", dllink);
                 dl.startDownload();
+                return;
             } else {
                 logger.info("Entering form-handling.");
                 final Form form = new Form();
@@ -408,10 +448,14 @@ public class DepositFiles extends PluginForHost {
                 }
                 br.submitForm(form);
                 checkErrors();
-                if (br.getRedirectLocation() != null && br.getRedirectLocation().indexOf("error") > 0) { throw new PluginException(LinkStatus.ERROR_RETRY); }
+                if (br.getRedirectLocation() != null && br.getRedirectLocation().indexOf("error") > 0) {
+                    throw new PluginException(LinkStatus.ERROR_RETRY);
+                }
                 if (br.containsHTML("\"file_password\"")) {
                     logger.info("This file seems to be password protected.");
-                    if (passCode == null) passCode = getUserInput(null, downloadLink);
+                    if (passCode == null) {
+                        passCode = getUserInput(null, downloadLink);
+                    }
                     br.postPage(br.getURL().replaceFirst("https?://", protocol), "file_password=" + passCode);
                     logger.info("Put password \"" + passCode + "\" entered by user in the DLForm.");
                     if (br.containsHTML("(>The file's password is incorrect. Please check your password and try to enter it again\\.<|\"file_password\")")) {
@@ -428,7 +472,9 @@ public class DepositFiles extends PluginForHost {
                 /*
                  * seems something wrong with wait time parsing so we do wait each time to be sure
                  */
-                if (fid == null || dllink == null || id == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                if (fid == null || dllink == null || id == null) {
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                }
                 Form dlForm = new Form();
                 dlForm.setMethod(MethodType.GET);
                 dlForm.put("fid", fid);
@@ -441,9 +487,13 @@ public class DepositFiles extends PluginForHost {
                 String c = getCaptchaCode(cf, downloadLink);
                 int passedTime = (int) ((System.currentTimeMillis() - timeBefore) / 1000) - 1;
                 int waitThis = 62;
-                if (wait != null) waitThis = Integer.parseInt(wait);
+                if (wait != null) {
+                    waitThis = Integer.parseInt(wait);
+                }
                 waitThis -= passedTime;
-                if (waitThis > 0) this.sleep(waitThis * 1001l, downloadLink);
+                if (waitThis > 0) {
+                    this.sleep(waitThis * 1001l, downloadLink);
+                }
                 // Important! Setup Header
                 br.getHeaders().put("Accept-Charset", null);
                 br.getHeaders().put("Pragma", null);
@@ -455,10 +505,16 @@ public class DepositFiles extends PluginForHost {
                 br.setFollowRedirects(true);
                 br.getPage(dllink);
                 br.getPage(MAINPAGE.string + "/get_file.php?fid=" + fid + "&challenge=" + rc.getChallenge() + "&response=" + Encoding.urlEncode(c));
-                if (br.containsHTML("(onclick=\"check_recaptcha|load_recaptcha)")) throw new PluginException(LinkStatus.ERROR_CAPTCHA);
+                if (br.containsHTML("(onclick=\"check_recaptcha|load_recaptcha)")) {
+                    throw new PluginException(LinkStatus.ERROR_CAPTCHA);
+                }
                 finallink = br.getRegex("\"(https?://fileshare\\d+\\." + DOMAINS + "/auth.*?)\"").getMatch(0);
-                if (finallink == null) finallink = br.getRegex("<form action=\"(https?://.*?)\"").getMatch(0);
-                if (finallink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                if (finallink == null) {
+                    finallink = br.getRegex("<form action=\"(https?://.*?)\"").getMatch(0);
+                }
+                if (finallink == null) {
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                }
             }
         }
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, finallink, true, 1);
@@ -466,7 +522,9 @@ public class DepositFiles extends PluginForHost {
         if (Plugin.getFileNameFromHeader(con) == null || Plugin.getFileNameFromHeader(con).indexOf("?") >= 0) {
             if (!con.isContentDisposition()) {
                 con.disconnect();
-                if (con.getHeaderField("Guest-Limit") != null) { throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 10 * 60 * 1000l); }
+                if (con.getHeaderField("Guest-Limit") != null) {
+                    throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 10 * 60 * 1000l);
+                }
                 throw new PluginException(LinkStatus.ERROR_RETRY);
             }
         }
@@ -478,7 +536,9 @@ public class DepositFiles extends PluginForHost {
             br.followConnection();
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error", 10 * 60 * 1000l);
         }
-        if (passCode != null) downloadLink.setProperty("pass", passCode);
+        if (passCode != null) {
+            downloadLink.setProperty("pass", passCode);
+        }
         if (con.getContentType().contains("html")) {
             logger.warning("The finallink doesn't lead to a file, following connection...");
             if (con.getHeaderField("Guest-Limit") != null) {
@@ -486,7 +546,9 @@ public class DepositFiles extends PluginForHost {
                 throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 10 * 60 * 1000l);
             }
             br.followConnection();
-            if (br.containsHTML("(<title>404 Not Found</title>|<h1>404 Not Found</h1>)")) { throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error", 10 * 60 * 1000l); }
+            if (br.containsHTML("(<title>404 Not Found</title>|<h1>404 Not Found</h1>)")) {
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error", 10 * 60 * 1000l);
+            }
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         String name = Plugin.getFileNameFromHeader(con);
@@ -502,21 +564,28 @@ public class DepositFiles extends PluginForHost {
     private void setConstants() {
         // set session protocol based on user setting and jd version && java version
         protocol = fixLinkSSL("https://");
-        if (isJava7nJDStable()) protocol = "http://";
+        if (isJava7nJDStable()) {
+            protocol = "http://";
+        }
     }
 
     public boolean isFreeAccount(Account acc, boolean force) throws IOException {
         synchronized (LOCK) {
             Object free = acc.getBooleanProperty("free", false);
-            if (free != null && free instanceof Boolean && !force) return (Boolean) free;
+            if (free != null && free instanceof Boolean && !force) {
+                return (Boolean) free;
+            }
             if (accountData != null && accountData.containsKey("mode")) {
-                if ("gold".equalsIgnoreCase(accountData.get("mode").toString()))
+                if ("gold".equalsIgnoreCase(accountData.get("mode").toString())) {
                     return true;
-                else
+                } else {
                     return false;
+                }
             }
             setLangtoGer();
-            if (!br.getURL().contains("/gold/")) br.getPage(MAINPAGE.string + "/de/gold/");
+            if (!br.getURL().contains("/gold/")) {
+                br.getPage(MAINPAGE.string + "/de/gold/");
+            }
             boolean ret = false;
             if (br.containsHTML("Ihre aktuelle Status: Frei - Mitglied</div>")) {
                 ret = false;
@@ -553,7 +622,9 @@ public class DepositFiles extends PluginForHost {
                     ai = new AccountInfo();
                 }
             }
-            if (!useAPI.get()) ai = webFetchAccountInfo(account);
+            if (!useAPI.get()) {
+                ai = webFetchAccountInfo(account);
+            }
             return ai;
         }
     }
@@ -583,8 +654,12 @@ public class DepositFiles extends PluginForHost {
             } catch (final Throwable e) {
             }
             String expire = br.getRegex("Gold-Zugriff: <b>(.*?)</b></div>").getMatch(0);
-            if (expire == null) expire = br.getRegex("Gold Zugriff bis: <b>(.*?)</b></div>").getMatch(0);
-            if (expire == null) expire = br.getRegex("Gold(-| )(Zugriff|Zugang)( bis)?: <b>(.*?)</b></div>").getMatch(3);
+            if (expire == null) {
+                expire = br.getRegex("Gold Zugriff bis: <b>(.*?)</b></div>").getMatch(0);
+            }
+            if (expire == null) {
+                expire = br.getRegex("Gold(-| )(Zugriff|Zugang)( bis)?: <b>(.*?)</b></div>").getMatch(3);
+            }
             final SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd hh:mm:ss", Locale.UK);
             if (expire == null) {
                 ai.setStatus(JDL.L("plugins.hoster.depositfilescom.accountbad", "Account expired or not valid."));
@@ -616,7 +691,9 @@ public class DepositFiles extends PluginForHost {
                 final Object ret = account.getProperty("cookies", null);
                 final Object free = account.getProperty("free", (Boolean) null);
                 boolean acmatch = Encoding.urlEncode(account.getUser()).equals(account.getStringProperty("name", Encoding.urlEncode(account.getUser())));
-                if (acmatch) acmatch = Encoding.urlEncode(account.getPass()).equals(account.getStringProperty("pass", Encoding.urlEncode(account.getPass())));
+                if (acmatch) {
+                    acmatch = Encoding.urlEncode(account.getPass()).equals(account.getStringProperty("pass", Encoding.urlEncode(account.getPass())));
+                }
                 if (free != null && acmatch && ret != null && ret instanceof HashMap<?, ?> && !force) {
                     final HashMap<String, String> cookies = (HashMap<String, String>) ret;
                     if (account.isValid()) {
@@ -631,7 +708,9 @@ public class DepositFiles extends PluginForHost {
                 // web fail over method
                 logger.info("Depositfiles website login method!");
                 String uprand = account.getStringProperty("uprand", null);
-                if (uprand != null) br.setCookie(MAINPAGE.string, "uprand", uprand);
+                if (uprand != null) {
+                    br.setCookie(MAINPAGE.string, "uprand", uprand);
+                }
                 br.setReadTimeout(3 * 60 * 1000);
                 br.getHeaders().put("User-Agent", UA);
                 br.setFollowRedirects(true);
@@ -752,7 +831,9 @@ public class DepositFiles extends PluginForHost {
             String passCode = downloadLink.getStringProperty("pass", null);
             if (br.containsHTML("\"file_password\"")) {
                 logger.info("This file seems to be password protected.");
-                if (passCode == null) passCode = getUserInput(null, downloadLink);
+                if (passCode == null) {
+                    passCode = getUserInput(null, downloadLink);
+                }
                 br.postPage(br.getURL().replaceFirst("https?://", protocol), "file_password=" + passCode);
                 logger.info("Put password \"" + passCode + "\" entered by user in the DLForm.");
                 if (br.containsHTML("(>The file's password is incorrect. Please check your password and try to enter it again\\.<|\"file_password\")")) {
@@ -788,7 +869,9 @@ public class DepositFiles extends PluginForHost {
                 String fixedName = new Regex(name, "(.+)\\?").getMatch(0);
                 downloadLink.setFinalFileName(fixedName);
             }
-            if (passCode != null) downloadLink.setProperty("pass", passCode);
+            if (passCode != null) {
+                downloadLink.setProperty("pass", passCode);
+            }
             dl.startDownload();
         }
     }
@@ -809,27 +892,31 @@ public class DepositFiles extends PluginForHost {
             br.getHeaders().put("Cache-Control", "no-store, no-cache, must-revalidate, post-check=0, pre-check=0");
             br.getPage("http://depositfiles.com/api/update/check?" + apiKeyVal() + "&appkey=dfmanager2&version=" + newAppVersion);
             br.getHeaders().put("Cache-Control", "no-cache");
-            if (br.containsHTML("\"data\":\\{\"status\":\"UpToDate\"\\}"))
+            if (br.containsHTML("\"data\":\\{\"status\":\"UpToDate\"\\}")) {
                 return true;
-            else
+            } else {
                 // not sure if we need to bother?? set to true for now.
                 return true;
+            }
         }
     }
 
     private HashMap<String, Object> accountData = new HashMap<String, Object>();
 
     private void saveAccountData(Account account) {
-        if (!accountData.isEmpty())
+        if (!accountData.isEmpty()) {
             account.setProperty("accountData", accountData);
-        else
+        } else {
             account.setProperty("accountData", Property.NULL);
+        }
     }
 
     private void setConstants(Account account) {
         @SuppressWarnings("unchecked")
         HashMap<String, Object> tempHM = (HashMap<String, Object>) account.getProperty("accountData", null);
-        if (tempHM != null) accountData = tempHM;
+        if (tempHM != null) {
+            accountData = tempHM;
+        }
     }
 
     private void getPage(String url) throws Exception {
@@ -873,7 +960,7 @@ public class DepositFiles extends PluginForHost {
 
     /**
      * new AccountInfo method for /api/
-     * 
+     *
      * @author raztoki
      */
     private AccountInfo apiFetchAccountInfo(final Account account) throws Exception {
@@ -899,10 +986,11 @@ public class DepositFiles extends PluginForHost {
                         return ai;
                     }
                     br.getPage("http://depositfiles.com/api/user/login?recaptcha_challenge_field=" + rc.getChallenge() + "&recaptcha_response_field=" + Encoding.urlEncode(c) + "&" + apiKeyVal() + "&login=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()));
-                    if (br.containsHTML("\"error\":\"CaptchaInvalid\""))
+                    if (br.containsHTML("\"error\":\"CaptchaInvalid\"")) {
                         logger.info("Invalid Captcha response!");
-                    else
+                    } else {
                         break;
+                    }
                 }
             }
             if (br.containsHTML("\"error\":\"LoginInvalid\"")) {
@@ -917,28 +1005,29 @@ public class DepositFiles extends PluginForHost {
             if (token != null) {
                 token = token.replaceAll("\\\\/", "/");
                 token = Encoding.urlEncode(token);
-            } else
+            } else {
                 token = br.getCookie(br.getHost(), "autologin");
+            }
             if (token == null) {
                 logger.warning("Could not find 'token'");
                 useAPI.set(false);
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
-            accountData.put("token", (Object) token);
+            accountData.put("token", token);
             String passKey = getJson("member_passkey");
             if (passKey == null) {
                 logger.warning("Could not find 'passKey'");
                 useAPI.set(false);
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
-            accountData.put("passKey", (Object) passKey);
+            accountData.put("passKey", passKey);
             String mode = getJson("mode");
             if (mode == null) {
                 logger.warning("Could not find 'mode'");
                 useAPI.set(false);
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
-            accountData.put("mode", (Object) mode);
+            accountData.put("mode", mode);
             if ("gold".equalsIgnoreCase(mode)) {
                 account.setProperty("free", false);
                 try {
@@ -952,8 +1041,12 @@ public class DepositFiles extends PluginForHost {
                 mainpageCookies(br);
                 br.getPage(MAINPAGE.string + "/de/gold/");
                 String expire = br.getRegex("Gold-Zugriff: <b>(.*?)</b></div>").getMatch(0);
-                if (expire == null) expire = br.getRegex("Gold Zugriff bis: <b>(.*?)</b></div>").getMatch(0);
-                if (expire == null) expire = br.getRegex("Gold(-| )(Zugriff|Zugang)( bis)?: <b>(.*?)</b></div>").getMatch(3);
+                if (expire == null) {
+                    expire = br.getRegex("Gold Zugriff bis: <b>(.*?)</b></div>").getMatch(0);
+                }
+                if (expire == null) {
+                    expire = br.getRegex("Gold(-| )(Zugriff|Zugang)( bis)?: <b>(.*?)</b></div>").getMatch(3);
+                }
                 final SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd hh:mm:ss", Locale.UK);
                 if (expire == null) {
                     ai.setStatus(JDL.L("plugins.hoster.depositfilescom.accountbad", "Account expired or not valid."));
@@ -1012,8 +1105,12 @@ public class DepositFiles extends PluginForHost {
         if (br.containsHTML("\"error\":\"FileIsPasswordProtected\"")) {
             logger.info("This file seems to be password protected.");
             for (int i = 0; i <= 2; i++) {
-                if (pass == null) pass = getUserInput(null, downloadLink);
-                if (pass == null || pass.equals("")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Download requires valid password");
+                if (pass == null) {
+                    pass = getUserInput(null, downloadLink);
+                }
+                if (pass == null || pass.equals("")) {
+                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Download requires valid password");
+                }
                 getPage("http://depositfiles.com/api/download/file?token=" + getToken(account) + "&file_id=" + fuid(downloadLink) + "&" + apiKeyVal() + "&file_password=" + pass);
                 if ("FilePasswordIsIncorrect".equalsIgnoreCase(getJson("error"))) {
                     pass = null;
@@ -1024,16 +1121,22 @@ public class DepositFiles extends PluginForHost {
                 }
             }
         }
-        if ("FilePasswordIsIncorrect".equalsIgnoreCase(getJson("error"))) throw new PluginException(LinkStatus.ERROR_FATAL, "File Password protected!");
-        if ("FileDoesNotExist".equalsIgnoreCase(getJson("error")) && "Error".equalsIgnoreCase(getJson("status"))) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if ("FilePasswordIsIncorrect".equalsIgnoreCase(getJson("error"))) {
+            throw new PluginException(LinkStatus.ERROR_FATAL, "File Password protected!");
+        }
+        if ("FileDoesNotExist".equalsIgnoreCase(getJson("error")) && "Error".equalsIgnoreCase(getJson("status"))) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
         if (account.getBooleanProperty("free", false)) {
             String mode = getJson("mode");
             String delay = getJson("delay");
             String dlToken = getJson("download_token");
             if (delay == null && mode == null && dlToken == null) {
                 logger.warning("api epic fail");
-                if (useAPI.getAndSet(false) == true) return;
-                // throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                if (useAPI.getAndSet(false) == true) {
+                    return;
+                    // throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                }
             }
             // download modes seem to indicate if the user can download as 'gold' or 'free' connection ratios?. User can download there
             // own uploads under gold even though they don't have gold account status.
@@ -1057,10 +1160,11 @@ public class DepositFiles extends PluginForHost {
                             throw new PluginException(LinkStatus.ERROR_CAPTCHA);
                         }
                         getPage("http://depositfiles.com/api/download/file?token=" + getToken(account) + "&file_id=" + fuid(downloadLink) + "&" + apiKeyVal() + (pass != null ? "&file_password=" + Encoding.urlEncode(pass) : "") + "&download_token=" + dlToken + "&recaptcha_challenge_field=" + rc.getChallenge() + "&recaptcha_response_field=" + Encoding.urlEncode(c));
-                        if (br.containsHTML("\"error\":\"CaptchaInvalid\""))
+                        if (br.containsHTML("\"error\":\"CaptchaInvalid\"")) {
                             logger.info("Invalid Captcha response!");
-                        else
+                        } else {
                             break;
+                        }
                     }
                 }
                 if (br.containsHTML("\"error\":\"CaptchaInvalid\"")) {
@@ -1072,8 +1176,10 @@ public class DepositFiles extends PluginForHost {
         String dllink = getJson("download_url");
         if (dllink == null) {
             logger.warning("Could not find 'dllink'");
-            if (useAPI.getAndSet(false) == true) return;
-            // throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            if (useAPI.getAndSet(false) == true) {
+                return;
+                // throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
         }
         dllink = dllink.replaceAll("\\\\/", "/");
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, apiResumes, apiChunks);
@@ -1104,7 +1210,9 @@ public class DepositFiles extends PluginForHost {
 
     private String getJson(String object) {
         String result = br.getRegex("\"" + object + "\":\"([^\"]+)").getMatch(0);
-        if (result == null) result = br.getRegex("\"" + object + "\":(\\d+)").getMatch(0);
+        if (result == null) {
+            result = br.getRegex("\"" + object + "\":(\\d+)").getMatch(0);
+        }
         return result;
     }
 
@@ -1137,10 +1245,11 @@ public class DepositFiles extends PluginForHost {
     }
 
     private boolean userChangedSslSetting() {
-        if (MAINPAGE != null && MAINPAGE.string != null && (checkSsl() && MAINPAGE.string.startsWith("http://")) || (!checkSsl() && MAINPAGE.string.startsWith("https://")))
+        if (MAINPAGE != null && MAINPAGE.string != null && (checkSsl() && MAINPAGE.string.startsWith("http://")) || (!checkSsl() && MAINPAGE.string.startsWith("https://"))) {
             return true;
-        else
+        } else {
             return false;
+        }
     }
 
     private boolean checkSsl() {
@@ -1148,18 +1257,20 @@ public class DepositFiles extends PluginForHost {
     }
 
     private String fixLinkSSL(String link) {
-        if (checkSsl())
+        if (checkSsl()) {
             link = link.replace("http://", "https://");
-        else
+        } else {
             link = link.replace("https://", "http://");
+        }
         return link;
     }
 
     private boolean isJava7nJDStable() {
-        if (System.getProperty("jd.revision.jdownloaderrevision") == null && System.getProperty("java.version").matches("1\\.[7-9].+"))
+        if (System.getProperty("jd.revision.jdownloaderrevision") == null && System.getProperty("java.version").matches("1\\.[7-9].+")) {
             return true;
-        else
+        } else {
             return false;
+        }
     }
 
     private static AtomicBoolean stableSucks = new AtomicBoolean(false);
@@ -1181,33 +1292,38 @@ public class DepositFiles extends PluginForHost {
                             message += "Wir haben eine Notloesung ergaenzt durch die man weiterhin diese JDownloader Version nutzen kann.\r\n";
                             message += "Bitte bedenke, dass HTTPS Post Requests als HTTP gesendet werden. Nutzung auf eigene Gefahr!\r\n";
                             message += "Falls du keine unverschluesselten Daten versenden willst, update bitte auf JDownloader 2!\r\n";
-                            if (xSystem)
+                            if (xSystem) {
                                 message += "JDownloader 2 Installationsanleitung und Downloadlink: Klicke -OK- (per Browser oeffnen)\r\n ";
-                            else
+                            } else {
                                 message += "JDownloader 2 Installationsanleitung und Downloadlink:\r\n" + new URL("http://board.jdownloader.org/showthread.php?t=37365") + "\r\n";
+                            }
                         } else if ("es".equalsIgnoreCase(lng)) {
                             title = domain + " :: Java 7+ && HTTPS Solicitudes Post.";
                             message = "Debido a un bug en Java 7+, al utilizar esta versión de JDownloader, no se puede enviar correctamente las solicitudes Post en HTTPS\r\n";
                             message += "Por ello, hemos añadido una solución alternativa para que pueda seguir utilizando esta versión de JDownloader...\r\n";
                             message += "Tenga en cuenta que las peticiones Post de HTTPS se envían como HTTP. Utilice esto a su propia discreción.\r\n";
                             message += "Si usted no desea enviar información o datos desencriptados, por favor utilice JDownloader 2!\r\n";
-                            if (xSystem)
+                            if (xSystem) {
                                 message += " Las instrucciones para descargar e instalar Jdownloader 2 se muestran a continuación: Hacer Click en -Aceptar- (El navegador de internet se abrirá)\r\n ";
-                            else
+                            } else {
                                 message += " Las instrucciones para descargar e instalar Jdownloader 2 se muestran a continuación, enlace :\r\n" + new URL("http://board.jdownloader.org/showthread.php?t=37365") + "\r\n";
+                            }
                         } else {
                             title = domain + " :: Java 7+ && HTTPS Post Requests.";
                             message = "Due to a bug in Java 7+ when using this version of JDownloader, we can not successfully send HTTPS Post Requests.\r\n";
                             message += "We have added a work around so you can continue to use this version of JDownloader...\r\n";
                             message += "Please be aware that HTTPS Post Requests are sent as HTTP. Use at your own discretion.\r\n";
                             message += "If you do not want to send unecrypted data, please upgrade to JDownloader 2!\r\n";
-                            if (xSystem)
+                            if (xSystem) {
                                 message += "Jdownloader 2 install instructions and download link: Click -OK- (open in browser)\r\n ";
-                            else
+                            } else {
                                 message += "JDownloader 2 install instructions and download link:\r\n" + new URL("http://board.jdownloader.org/showthread.php?t=37365") + "\r\n";
+                            }
                         }
                         int result = JOptionPane.showConfirmDialog(jd.gui.swing.jdgui.JDGui.getInstance().getMainFrame(), message, title, JOptionPane.CLOSED_OPTION, JOptionPane.CLOSED_OPTION);
-                        if (xSystem && JOptionPane.OK_OPTION == result) CrossSystem.openURL(new URL("http://board.jdownloader.org/showthread.php?t=37365"));
+                        if (xSystem && JOptionPane.OK_OPTION == result) {
+                            CrossSystem.openURL(new URL("http://board.jdownloader.org/showthread.php?t=37365"));
+                        }
                         stableSucks.set(true);
                     } catch (Throwable e) {
                     }
