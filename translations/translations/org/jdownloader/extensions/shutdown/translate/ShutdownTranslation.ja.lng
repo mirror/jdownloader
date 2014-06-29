@@ -1,4 +1,4 @@
-action_tooltip=ダウンロード完了後、システムをシャットダウンする
+action_tooltip=ダウンロード完了後、システムをシャットダウンします
 addons_jdshutdown_statusmessage_disabled=このシステムはJDownloaderでシャットダウンできません!
 addons_jdshutdown_statusmessage_enabled=JDownloader はダウンロード完了後にシステムをシャットダウンします。
 config_active_by_default=シャットダウンの設定を維持する
