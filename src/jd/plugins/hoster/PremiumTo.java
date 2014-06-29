@@ -438,8 +438,9 @@ public class PremiumTo extends PluginForHost {
             }
             shareOnlineLocked.set(true);
         }
+        // some routine to check traffic allocations: normalTraffic specialTraffic
         if (downloadLink.getHost().matches("uploaded\\.net|uploaded\\.to|ul\\.to|netload\\.in|filemonkey\\.in|oboom\\.com")) {
-            // some routine to check traffic allocations: normalTraffic specialTraffic
+            // special traffic
             if (account.getLongProperty(specialTraffic, 0) > 0) {
                 return true;
             } else {
@@ -450,6 +451,10 @@ public class PremiumTo extends PluginForHost {
             if (account.getLongProperty(normalTraffic, 0) > 0) {
                 return true;
             } else {
+                // guess we should nullify that...
+                if (downloadLink.getHost().equals("share-online.biz")) {
+                    shareOnlineLocked.set(false);
+                }
                 return false;
             }
         }
