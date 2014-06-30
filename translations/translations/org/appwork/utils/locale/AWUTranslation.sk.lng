@@ -106,6 +106,7 @@ proxy_http=%s1:%s2 (Http Proxy)
 proxy_none=Priame
 proxy_socks4=%s1:%s2 (Socks4 Proxy)
 proxy_socks5=%s1:%s2 (Socks5 Proxy)
+proxydialog_remember=Zapamätať
 proxydialog_title=Žiadne pripojenie na Internet
 tableheader_tooltip_locked=%s1 (Zmena veľkosti uzamknutá)
 tableheader_tooltip_normal=%s1
