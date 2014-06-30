@@ -106,6 +106,13 @@ public class QqCom extends PluginForHost {
         }
 
         /* Get better speeds - source: https://github.com/rhyzx/xuanfeng-userscript/blob/master/xuanfeng.user.js */
+        final Regex server_regex = new Regex(finallink, "(xflx\\.store\\.([a-z0-9]+)\\.qq\\.com:443)");
+        final String old_Server = server_regex.getMatch(0);
+        if (old_Server != null) {
+            final String server = server_regex.getMatch(1);
+            final String new_server = "xf" + server + ".ctfs.ftn.qq.com";
+            finallink = finallink.replace(old_Server, new_server);
+        }
         finallink = finallink.replace("xflx.store.cd.qq.com:443", "xfcd.ctfs.ftn.qq.com");
         finallink = finallink.replace("xflx.sz.ftn.qq.com:80", "sz.disk.ftn.qq.com");
         finallink = finallink.replace("xflx.cd.ftn.qq.com:80", "cd.ctfs.ftn.qq.com");

@@ -722,32 +722,48 @@ public class RapidGatorNet extends PluginForHost {
 
                 this.br.setFollowRedirects(true);
 
-                this.br.getPage(RapidGatorNet.MAINPAGE);
-                final Form loginForm = this.br.getFormbyProperty("id", "login");
-                String loginPostData = "LoginForm%5Bemail%5D=" + Encoding.urlEncode(account.getUser()) + "&LoginForm%5Bpassword%5D=" + Encoding.urlEncode(account.getPass());
-                if (loginForm != null) {
-                    String user = loginForm.getBestVariable("email");
-                    String pass = loginForm.getBestVariable("password");
-                    if (user == null) {
-                        user = "LoginForm%5Bemail%5D";
+                for (int i = 1; i <= 3; i++) {
+                    logger.info("Site login attempt " + i + " of 3");
+                    this.br.getPage("https://rapidgator.net/auth/login");
+                    String loginPostData = "LoginForm%5Bemail%5D=" + Encoding.urlEncode(account.getUser()) + "&LoginForm%5Bpassword%5D=" + Encoding.urlEncode(account.getPass());
+                    final Form loginForm = this.br.getFormbyProperty("id", "login");
+                    final String captcha_url = br.getRegex("\"(/auth/captcha/v/[a-z0-9]+)\"").getMatch(0);
+                    String code = null;
+                    if (captcha_url != null) {
+                        final DownloadLink dummyLink = new DownloadLink(this, "Account", "rapidgator.net", "http://rapidgator.net", true);
+                        code = getCaptchaCode("https://rapidgator.net" + captcha_url, dummyLink);
+                        loginPostData += "&LoginForm%5BverifyCode%5D=" + Encoding.urlEncode(code);
                     }
-                    if (pass == null) {
-                        pass = "LoginForm%5Bpassword%5D";
+                    if (loginForm != null) {
+                        String user = loginForm.getBestVariable("email");
+                        String pass = loginForm.getBestVariable("password");
+                        if (user == null) {
+                            user = "LoginForm%5Bemail%5D";
+                        }
+                        if (pass == null) {
+                            pass = "LoginForm%5Bpassword%5D";
+                        }
+                        loginForm.put(user, Encoding.urlEncode(account.getUser()));
+                        loginForm.put(pass, Encoding.urlEncode(account.getPass()));
+                        if (captcha_url != null) {
+                            loginForm.put("LoginForm%5BverifyCode%5D", Encoding.urlEncode(code));
+                        }
+                        this.br.submitForm(loginForm);
+                        loginPostData = loginForm.getPropertyString();
+                    } else {
+                        this.br.postPage("https://rapidgator.net/auth/login", loginPostData);
                     }
-                    loginForm.put(user, Encoding.urlEncode(account.getUser()));
-                    loginForm.put(pass, Encoding.urlEncode(account.getPass()));
-                    this.br.submitForm(loginForm);
-                    loginPostData = loginForm.getPropertyString();
-                } else {
-                    this.br.postPage("https://rapidgator.net/auth/login", loginPostData);
-                }
-
-                /* jsRedirect */
-                final String reDirHash = this.handleJavaScriptRedirect();
-                if (reDirHash != null) {
-                    this.logger.info("JSRedirect in login");
-                    // prob should be https also!!
-                    this.br.postPage("https://rapidgator.net/auth/login", loginPostData + "&" + reDirHash);
+                    /* jsRedirect */
+                    final String reDirHash = this.handleJavaScriptRedirect();
+                    if (reDirHash != null) {
+                        this.logger.info("JSRedirect in login");
+                        // prob should be https also!!
+                        this.br.postPage("https://rapidgator.net/auth/login", loginPostData + "&" + reDirHash);
+                    }
+                    if (this.br.getCookie(RapidGatorNet.MAINPAGE, "user__") == null) {
+                        continue;
+                    }
+                    break;
                 }
 
                 if (this.br.getCookie(RapidGatorNet.MAINPAGE, "user__") == null) {
@@ -904,10 +920,10 @@ public class RapidGatorNet extends PluginForHost {
                 if (errorMessage.contains("Please wait")) {
                     if (link == null) {
                         /* we are inside fetchAccountInfo */
-                        throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
+                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "Server says: 'Please wait ...'", PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
                     } else {
                         /* we are inside handlePremium */
-                        throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, 10 * 60 * 1000l);
+                        throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Server says: 'Please wait ...'", 10 * 60 * 1000l);
                     }
                 }
                 if (errorMessage.contains("User is not PREMIUM") || errorMessage.contains("This file can be downloaded by premium only") || errorMessage.contains("You can download files up to")) {

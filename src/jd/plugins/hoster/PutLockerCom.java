@@ -34,6 +34,7 @@ import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.parser.html.Form;
 import jd.plugins.Account;
+import jd.plugins.Account.AccountType;
 import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
@@ -210,11 +211,25 @@ public class PutLockerCom extends PluginForHost {
         }
         br.getPage("http://www.firedrive.com/my_settings?_=" + System.currentTimeMillis());
         final String validUntil = br.getRegex("Pro(Lite)? features end on: ([^<>\"]*?)</span>").getMatch(1);
-        if (validUntil != null) {
-            ai.setValidUntil(TimeFormatter.getMilliSeconds(validUntil, "MMMM dd, yyyy", Locale.ENGLISH));
+        if (validUntil != null || br.containsHTML("id=\\'storage_total\\'>Unlimited remaining</div>")) {
+            try {
+                account.setType(AccountType.PREMIUM);
+                account.setConcurrentUsePossible(true);
+            } catch (final Throwable e) {
+                /* not available in old Stable 0.9.581 */
+            }
+            if (validUntil != null) {
+                ai.setValidUntil(TimeFormatter.getMilliSeconds(validUntil, "MMMM dd, yyyy", Locale.ENGLISH));
+            }
             account.setProperty("free", false);
             ai.setStatus("Premium User");
         } else {
+            try {
+                account.setType(AccountType.FREE);
+                account.setConcurrentUsePossible(false);
+            } catch (final Throwable e) {
+                /* not available in old Stable 0.9.581 */
+            }
             account.setProperty("free", true);
             ai.setStatus("Registered (free) user");
         }

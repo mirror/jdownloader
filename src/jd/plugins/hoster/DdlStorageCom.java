@@ -814,7 +814,7 @@ public class DdlStorageCom extends PluginForHost {
             } else {
                 expire = expireD;
             }
-            account.setProperty("totalMaxSim", 20);
+            account.setProperty("totalMaxSim", 3);
             ai.setValidUntil(expire);
             ai.setStatus("Premium User");
         }

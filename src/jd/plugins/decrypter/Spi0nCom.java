@@ -59,7 +59,7 @@ public class Spi0nCom extends PluginForDecrypt {
             decryptedLinks.add(offline);
             return decryptedLinks;
         }
-        String finallink = br.getRegex("\"(http://(www\\.)?dailymotion\\.com/video/[A-Za-z0-9\\-_]+)\"").getMatch(0);
+        String finallink = br.getRegex("\"(http://(www\\.)?dailymotion\\.com/(embed/)?video/[^<>\"]*?)\"").getMatch(0);
         if (finallink == null) {
             finallink = br.getRegex("\"((http:)?//(www\\.)?youtube\\.com/embed/[^<>\"/]+)\"").getMatch(0);
             if (finallink != null && !finallink.startsWith("http:")) {
@@ -76,7 +76,10 @@ public class Spi0nCom extends PluginForDecrypt {
         /* Maybe its a picture gallery */
         if (finallink == null) {
             final String fpName = br.getRegex("class=\"headline\">([^<>\"]*?)<").getMatch(0);
-            final String[] pictures = br.getRegex("size\\-(large|full) wp\\-image\\-\\d+\" alt=\"[^<>\"/]+\" src=\"(http://(www\\.)?spi0n\\.com/wp\\-content/uploads/[^<>\"]*?)\"").getColumn(1);
+            String[] pictures = br.getRegex("size\\-(large|full) wp\\-image\\-\\d+\"( title=\"[^<>\"/]*?\")? alt=\"[^<>\"/]*?\" src=\"(http://(www\\.)?spi0n\\.com/wp\\-content/uploads/[^<>\"]*?)\"").getColumn(2);
+            if (fpName == null || pictures == null || pictures.length == 0) {
+                pictures = br.getRegex("size\\-(large|full) wp\\-image\\-\\d+\" title=\"[^<>\"/]+\" src=\"(http://(www\\.)?spi0n\\.com/wp\\-content/uploads/[^<>\"]*?)\"").getColumn(1);
+            }
             if (fpName == null || pictures == null || pictures.length == 0) {
                 logger.warning("Decrypter broken for link: " + parameter);
                 return null;
