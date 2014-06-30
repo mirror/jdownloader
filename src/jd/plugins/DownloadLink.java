@@ -227,8 +227,10 @@ public class DownloadLink extends Property implements Serializable, AbstractPack
      *            Markiert diesen DownloadLink als aktiviert oder deaktiviert
      */
     public DownloadLink(PluginForHost plugin, String name, String host, String urlDownload, boolean isEnabled) {
-        this.defaultplugin = plugin;
+
+        setDefaultPlugin(plugin);
         setView(new DefaultDownloadLinkViewImpl());
+
         setName(name);
         downloadMax = -1;
         setHost(host);

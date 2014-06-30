@@ -44,7 +44,7 @@ import org.jdownloader.extensions.extraction.bindings.downloadlink.DownloadLinkA
 import org.jdownloader.gui.views.DownloadFolderChooserDialog;
 import org.jdownloader.settings.staticreferences.CFG_GENERAL;
 
-public class PackagizerController implements PackagizerInterface, FileCreationListener, GenericConfigEventListener<String> {
+public class PackagizerController implements PackagizerInterface, FileCreationListener {
     private PackagizerSettings                    config;
     private ArrayList<PackagizerRule>             list;
     private ChangeEventSender                     eventSender;
@@ -158,8 +158,7 @@ public class PackagizerController implements PackagizerInterface, FileCreationLi
 
             FileCreationManager.getInstance().getEventSender().addListener(this);
 
-            CFG_GENERAL.DEFAULT_DOWNLOAD_FOLDER.getEventSender().addListener(this, true);
-            onConfigValueModified(null, null);
+      
         }
         addReplacer(new PackagizerReplacer() {
 
@@ -751,29 +750,7 @@ public class PackagizerController implements PackagizerInterface, FileCreationLi
         }
     }
 
-    @Override
-    public void onConfigValidatorError(KeyHandler<String> keyHandler, String invalidValue, ValidationException validateException) {
-    }
+   
 
-    @Override
-    public void onConfigValueModified(KeyHandler<String> keyHandler, String newValue) {
-
-        if (subFolderByPackgeRule != null) {
-            if (newValue == null) {
-                newValue = CFG_GENERAL.DEFAULT_DOWNLOAD_FOLDER.getValue();
-            }
-            if (newValue != null) {
-
-                if (newValue.endsWith(DownloadFolderChooserDialog.PACKAGETAG)) {
-                    subFolderByPackgeRule.setEnabled(true);
-
-                } else {
-                    subFolderByPackgeRule.setEnabled(false);
-                }
-
-                updateInternal();
-            }
-        }
-    }
 
 }

@@ -9,6 +9,7 @@ import org.jdownloader.gui.views.components.packagetable.columns.ChecksumColumn;
 import org.jdownloader.gui.views.components.packagetable.columns.CommentColumn;
 import org.jdownloader.gui.views.components.packagetable.columns.DownloadPasswordColumn;
 import org.jdownloader.gui.views.components.packagetable.columns.FileTypeColumn;
+import org.jdownloader.gui.views.components.packagetable.columns.HasCaptchaColumn;
 import org.jdownloader.gui.views.downloads.columns.AddedDateColumn;
 import org.jdownloader.gui.views.downloads.columns.AvailabilityColumn;
 import org.jdownloader.gui.views.downloads.columns.ConnectionColumn;
@@ -80,7 +81,7 @@ public class DownloadsTableModel extends PackageControllerTableModel<FilePackage
         this.addColumn(new DownloadPasswordColumn());
         this.addColumn(new ChecksumColumn());
         this.addColumn(new FileTypeColumn());
-
+        this.addColumn(new HasCaptchaColumn());
         this.addColumn(stopSignColumn = new StopSignColumn());
 
         // reset sort
