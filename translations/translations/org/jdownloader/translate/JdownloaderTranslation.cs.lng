@@ -56,6 +56,7 @@ LinkgrabberFilterRule_duplicate=%s1 (kopie)
 Main_run_autostart_=Spouštění stahování
 Main_run_autostart_msg=Stahování začne za několik sekund...
 Mainstart_now=Spustit NYNÍ!
+MovePluginProgress=Přesouvání souboru do %s1
 MyJDownloaderController_onError_account_unconfirmed=Váš e-mail pro 'My JDownloader' nebyl ještě potvrzen.\nZkontrolujte své e-maily a klikněte na potvrzovací odkaz.
 MyJDownloaderController_onError_badlogins=Vaše přihlašovací údaje k 'My JDownloader' nejsou správné.\nZkontrolujte uživatelské jméno nebo e-mail a heslo!
 MyJDownloaderController_onError_outdated=JDownloader se nemohl připojit ke službě My JDownloader. Aktualizujte JDownloader!
@@ -156,6 +157,8 @@ jd_controlling_reconnect_Reconnector_progress_failed2=Znovupřipojení selhalo p
 jd_controlling_reconnect_plugins_DummyRouterPlugin_getGUI2=<b><u>Není vybráno žádné znovupřipojení</u></b><br/><p>Znovupřipojení je pokročilý způsob pro přeskočení dlouhého čekání, které někteří hostitelé zavádějí pro bezplatné uživatele.<br>Pokud používáte prémiový účet, není to pro vás užitečné.</p><p>Více o znovupřipojení najdete <a href='http://support.jdownloader.org/index.php?/Knowledgebase/Article/View/1/0/why-should-i-set-up-my-reconnect'>zde</a></p>
 jd_controlling_reconnect_plugins_DummyRouterPlugin_getName=Žádné znovupřipojení
 jd_plugins_PluginUtils_askPassword=Zadejte heslo pro\n%s1
+lit_hide=Skrýt
+lit_please_wait=Čekejte...
 literally_offline=Offline
 literally_yes=Ano
 other_files_description=Všechny soubory kromě audia, archivů, videa a obrázků
