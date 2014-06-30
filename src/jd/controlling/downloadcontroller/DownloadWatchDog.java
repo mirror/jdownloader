@@ -3938,6 +3938,7 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
     }
 
     public void renameLink(final DownloadLink downloadLink, final String value) {
+        logger.log(new Exception("Rename"));
         if (!StringUtils.equals(downloadLink.getForcedFileName(), value)) {
             logger.info("Requested Rename of " + downloadLink + " to " + value);
             enqueueJob(new DownloadWatchDogJob() {
