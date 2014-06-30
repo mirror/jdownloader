@@ -443,20 +443,18 @@ public class PremiumTo extends PluginForHost {
             // special traffic
             if (account.getLongProperty(specialTraffic, 0) > 0) {
                 return true;
-            } else {
-                return false;
             }
+            // else { return false; }
+        }
+        // normal traffic, can include special traffic hosts also... (yes confusing)
+        if (account.getLongProperty(normalTraffic, 0) > 0) {
+            return true;
         } else {
-            // normal traffic
-            if (account.getLongProperty(normalTraffic, 0) > 0) {
-                return true;
-            } else {
-                // guess we should nullify that...
-                if (downloadLink.getHost().equals("share-online.biz")) {
-                    shareOnlineLocked.set(false);
-                }
-                return false;
+            // guess we should nullify that...
+            if (downloadLink.getHost().equals("share-online.biz")) {
+                shareOnlineLocked.set(false);
             }
+            return false;
         }
     }
 
