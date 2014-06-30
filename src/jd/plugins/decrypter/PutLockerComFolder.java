@@ -54,13 +54,17 @@ public class PutLockerComFolder extends PluginForDecrypt {
                 for (int i = 1; i <= 3; i++) {
                     passCode = getUserInput("Password?", param);
                     br.postPage(br.getURL(), "item_pass=" + Encoding.urlEncode(passCode));
-                    if (br.containsHTML("id=\"file_password_container\"")) continue;
+                    if (br.containsHTML("id=\"file_password_container\"")) {
+                        continue;
+                    }
                     break;
                 }
-                if (br.containsHTML("id=\"file_password_container\"")) throw new DecrypterException(DecrypterException.PASSWORD);
+                if (br.containsHTML("id=\"file_password_container\"")) {
+                    throw new DecrypterException(DecrypterException.PASSWORD);
+                }
             }
             fpName = br.getRegex("class=\"public_title_left\">([^<>\"]*?)</div>").getMatch(0);
-            ids = br.getRegex("public=\\'([A-Z0-9]+)\\'").getColumn(0);
+            ids = br.getRegex("public='([A-Z0-9]+)'").getColumn(0);
         } else {
             br.getPage(parameter);
             ids = new Regex(parameter, "firedrive\\.com/share/(.+)").getMatch(0).split("-");
@@ -70,19 +74,23 @@ public class PutLockerComFolder extends PluginForDecrypt {
             return null;
         }
         for (final String fid : ids) {
-            final Regex finfo = br.getRegex("public=\\'" + fid + "\\' data\\-name=\"([^<>\"]*?)\" data\\-type=\"([^<>\"]*?)\" data\\-size=\"(\\d+)\"");
+            final Regex finfo = br.getRegex("public='" + fid + "'\\s*data-name=\"([^\"]+)\"\\s*data-type=\"[^\"]*\"\\s*data-size=\"(\\d+)\"");
             final String filename = finfo.getMatch(0);
-            final String filesize = finfo.getMatch(2);
+            final String filesize = finfo.getMatch(1);
             final DownloadLink dl = createDownloadlink("http://www.firedrive.com/file/" + fid);
-            if (filename == null || filesize == null) {
+            if (filename == null) {
                 dl.setName(fid);
                 dl.setAvailable(false);
             } else {
                 dl.setName(Encoding.htmlDecode(filename.trim()));
-                dl.setDownloadSize(Long.parseLong(filesize));
+                if (filesize != null) {
+                    dl.setDownloadSize(Long.parseLong(filesize));
+                }
                 dl.setAvailable(true);
             }
-            if (passCode != null) dl.setProperty("pass", passCode);
+            if (passCode != null) {
+                dl.setProperty("pass", passCode);
+            }
             decryptedLinks.add(dl);
         }
 
