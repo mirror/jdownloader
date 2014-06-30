@@ -20,6 +20,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 
 import jd.PluginWrapper;
+import jd.config.SubConfiguration;
 import jd.controlling.ProgressController;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
@@ -46,6 +47,8 @@ public class DropBoxCom extends PluginForDecrypt {
     private static final String TYPE_NORMAL   = "https?://(www\\.)?dropbox\\.com/sh/.+";
     private static final String TYPE_REDIRECT = "https?://(www\\.)?dropbox\\.com/l/[A-Za-z0-9]+";
     private static final String TYPE_SHORT    = "https://(www\\.)?db\\.tt/[A-Za-z0-9]+";
+
+    private static final String DOWNLOAD_ZIP  = "DOWNLOAD_ZIP";
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
@@ -82,19 +85,19 @@ public class DropBoxCom extends PluginForDecrypt {
         }
         br.getPage(parameter);
         // Handling for single links
-        if (br.containsHTML(new Regex(parameter, ".*?(\\.com/sh/[a-z0-9]+).+").getMatch(0) + "[^<>\"]+" + "dl=1([^<>\"]*?)\"")) {
-            final DownloadLink dl = createDownloadlink(parameter.replace("dropbox.com/", "dropboxdecrypted.com/"));
-            dl.setProperty("decrypted", true);
-            decryptedLinks.add(dl);
-            return decryptedLinks;
-        }
-        // Decrypt "Download as zip" link
-        final String zipLink = br.getRegex("data\\-dl\\-link=\"(https?://dl\\.[^<>\"]*?)\" onclick=\"FreshDropdown\\.hide_all\\(\\)\"><img src=\"[^<>\"]*?\" class=\"[a-z0-9\\-_ ]+\" />Download as \\.zip</a>").getMatch(0);
-        if (zipLink != null) {
+        /* TODO: Fix handling for single links - disabled by now to prevent errors */
+        // if (br.containsHTML(new Regex(parameter, ".*?(\\.com/sh/[a-z0-9]+).+").getMatch(0) + "[^<>\"]+" + "dl=1([^<>\"]*?)\"")) {
+        // final DownloadLink dl = createDownloadlink(parameter.replace("dropbox.com/", "dropboxdecrypted.com/"));
+        // dl.setProperty("decrypted", true);
+        // decryptedLinks.add(dl);
+        // return decryptedLinks;
+        // }
+        /* Decrypt "Download as zip" link if available and wished by the user */
+        if (br.containsHTML(">Download as \\.zip<") && SubConfiguration.getConfig("dropbox.com").getBooleanProperty(DOWNLOAD_ZIP, false)) {
             final DownloadLink dl = createDownloadlink(parameter.replace("dropbox.com/", "dropboxdecrypted.com/"));
             dl.setProperty("decrypted", true);
             dl.setProperty("type", "zip");
-            dl.setProperty("directlink", Encoding.htmlDecode(zipLink));
+            dl.setProperty("directlink", parameter + "?dl=1");
             decryptedLinks.add(dl);
         }
         // Decrypt file- and folderlinks
