@@ -56,6 +56,7 @@ LinkgrabberFilterRule_duplicate=%s1 (cópia)
 Main_run_autostart_=Iniciando Downloads
 Main_run_autostart_msg=Downloads iniciarão em alguns segundos...
 Mainstart_now=Iniciar AGORA!
+MovePluginProgress=Movendo arquivo para %s1
 MyJDownloaderController_onError_account_unconfirmed=Seu e-mail 'My.JDownloader' não foi confirmado ainda.\r\nPor favor, verifique seus e-mails e clique no link de confirmação.
 MyJDownloaderController_onError_badlogins=Seu login 'My.JDownloader' não está correto.\r\nPor favor, verifique o usuário/e-mail e senha!
 MyJDownloaderController_onError_outdated=O JDownloader não pôde se conectar ao serviço My JDownloader. Por favor, atualize o JDownloader!
@@ -156,6 +157,8 @@ jd_controlling_reconnect_Reconnector_progress_failed2=A Reconexão falhou vária
 jd_controlling_reconnect_plugins_DummyRouterPlugin_getGUI2=<b><u>Nenhuma Reconexão selecionada</u></b><br/><p>Reconexão é uma abordagem avançada para evitar longas esperas que alguns servidores impoem para usuários free. <br>Não é útil ao usar uma conta premium.</p><p>Leia mais sobre Reconexão <a href='http://support.jdownloader.org/index.php?_m=knowledgebase&_a=viewarticle&kbarticleid=1'>here</a></p>
 jd_controlling_reconnect_plugins_DummyRouterPlugin_getName=Sem Reconexão
 jd_plugins_PluginUtils_askPassword=Por favor, insira a senha para %s1
+lit_hide=Ocultar
+lit_please_wait=Aguarde...
 literally_offline=Offline
 literally_yes=Sim
 other_files_description=Todos os arquivos, exceto arquivos de áudio, compactados, vídeos & imagens
