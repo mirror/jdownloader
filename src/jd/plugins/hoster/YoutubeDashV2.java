@@ -606,10 +606,10 @@ public class YoutubeDashV2 extends PluginForHost {
             downloadLink.setFinalFileName(oldLinkName);
         }
 
-        downloadLink.setCustomFileOutputFilenameAppend(null);
+        downloadLink.setInternalTmpFilenameAppend(null);
         YoutubeVariantInterface v = getVariant(downloadLink);
         if (v.hasConverer(downloadLink)) {
-            downloadLink.setCustomFileOutputFilenameAppend(".tmp");
+            downloadLink.setInternalTmpFilenameAppend(".tmp");
         }
 
         if (totalSize > 0) {
@@ -1548,59 +1548,51 @@ public class YoutubeDashV2 extends PluginForHost {
         return "JDownloader's YouTube Plugin helps downloading videoclips from youtube.com. YouTube provides different video formats and qualities. JDownloader is able to extract audio after download, and save it as mp3 file. \r\n - Hear your favourite YouTube Clips on your MP3 Player.";
     }
 
-    // protected FilePair[] listFilePairsToMove(DownloadLink link, String currentDirectory, String currentName, String newDirectory, String
-    // newName) {
-    // List<FilePair> ret = new ArrayList<PluginForHost.FilePair>();
-    // ret.add(new FilePair(new File(new File(currentDirectory), currentName + ".part"), new File(new File(newDirectory), newName +
-    // ".part")));
-    // ret.add(new FilePair(new File(new File(currentDirectory), currentName), new File(new File(newDirectory), newName)));
-    // try {
-    // YoutubeVariantInterface variant = getVariant(link);
-    // if (variant != null) {
-    // for (File f : variant.listProcessFiles(link)) {
-    // FilePair fp = new FilePair(new File(new File(currentDirectory), f.getName()), new File(new File(newDirectory), newName +
-    // f.getName().substring(currentName.length())));
-    // ret.add(fp);
-    // fp = new FilePair(new File(new File(currentDirectory), f.getName() + ".part"), new File(new File(newDirectory), newName +
-    // f.getName().substring(currentName.length()) + ".part"));
-    // ret.add(fp);
-    // }
-    //
-    // switch (variant.getType()) {
-    // case DASH_AUDIO:
-    // case DASH_VIDEO:
-    // String vs = getVideoStreamPath(link);
-    // String as = getAudioStreamPath(link);
-    // if (StringUtils.isNotEmpty(vs)) {
-    // // aac only does not have video streams
-    // // ret.add(new File(vs));
-    // // ret.add(new File(vs + ".part"));
-    //
-    // ret.add(new FilePair(new File(new File(currentDirectory), new File(vs).getName() + ".part"), new File(new File(newDirectory), new
-    // File(vs).getName() + ".part")));
-    // ret.add(new FilePair(new File(new File(currentDirectory), new File(vs).getName()), new File(new File(newDirectory), new
-    // File(vs).getName())));
-    //
-    // }
-    // if (StringUtils.isNotEmpty(as)) {
-    // ret.add(new FilePair(new File(new File(currentDirectory), new File(as).getName() + ".part"), new File(new File(newDirectory), new
-    // File(as).getName() + ".part")));
-    // ret.add(new FilePair(new File(new File(currentDirectory), new File(as).getName()), new File(new File(newDirectory), new
-    // File(as).getName())));
-    // }
-    //
-    // break;
-    //
-    // default:
-    //
-    // }
-    // }
-    // } catch (PluginException e) {
-    // e.printStackTrace();
-    // }
-    //
-    // return ret.toArray(new FilePair[] {});
-    // }
+    protected FilePair[] listFilePairsToMove(DownloadLink link, String currentDirectory, String currentName, String newDirectory, String newName) {
+        List<FilePair> ret = new ArrayList<PluginForHost.FilePair>();
+        ret.add(new FilePair(new File(new File(currentDirectory), currentName + ".part"), new File(new File(newDirectory), newName + ".part")));
+        ret.add(new FilePair(new File(new File(currentDirectory), currentName), new File(new File(newDirectory), newName)));
+        try {
+            YoutubeVariantInterface variant = getVariant(link);
+            if (variant != null) {
+                for (File f : variant.listProcessFiles(link)) {
+                    FilePair fp = new FilePair(new File(new File(currentDirectory), f.getName()), new File(new File(newDirectory), newName + f.getName().substring(currentName.length())));
+                    ret.add(fp);
+                    fp = new FilePair(new File(new File(currentDirectory), f.getName() + ".part"), new File(new File(newDirectory), newName + f.getName().substring(currentName.length()) + ".part"));
+                    ret.add(fp);
+                }
+
+                switch (variant.getType()) {
+                case DASH_AUDIO:
+                case DASH_VIDEO:
+                    String vs = getVideoStreamPath(link);
+                    String as = getAudioStreamPath(link);
+                    if (StringUtils.isNotEmpty(vs)) {
+                        // aac only does not have video streams
+                        // ret.add(new File(vs));
+                        // ret.add(new File(vs + ".part"));
+
+                        ret.add(new FilePair(new File(new File(currentDirectory), new File(vs).getName() + ".part"), new File(new File(newDirectory), new File(vs).getName() + ".part")));
+                        ret.add(new FilePair(new File(new File(currentDirectory), new File(vs).getName()), new File(new File(newDirectory), new File(vs).getName())));
+
+                    }
+                    if (StringUtils.isNotEmpty(as)) {
+                        ret.add(new FilePair(new File(new File(currentDirectory), new File(as).getName() + ".part"), new File(new File(newDirectory), new File(as).getName() + ".part")));
+                        ret.add(new FilePair(new File(new File(currentDirectory), new File(as).getName()), new File(new File(newDirectory), new File(as).getName())));
+                    }
+
+                    break;
+
+                default:
+
+                }
+            }
+        } catch (PluginException e) {
+            e.printStackTrace();
+        }
+
+        return ret.toArray(new FilePair[] {});
+    }
 
     @Override
     public List<File> listProcessFiles(DownloadLink link) {

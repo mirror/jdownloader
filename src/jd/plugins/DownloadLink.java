@@ -1751,18 +1751,4 @@ public class DownloadLink extends Property implements Serializable, AbstractPack
         notifyChanges(AbstractNodeNotifier.NOTIFY.PROPERTY_CHANCE, downloadLinkProperty);
     }
 
-    // compatibility.. can be removed after next full build
-    public void setCustomFileOutputFilenameAppend(String object) {
-        setInternalTmpFilenameAppend(object);
-    }
-
-    // compatibility.. can be removed after next full build
-    public void setCustomFileOutputFilename(String object) {
-        setInternalTmpFilename(object);
-    }
-
-    public String getCustomFileOutputFilename() {
-        return getInternalTmpFilename();
-    }
-
 }
