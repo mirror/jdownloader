@@ -1516,6 +1516,7 @@ public abstract class PluginForHost extends Plugin {
             throw new IOException("Could not create " + newFile.getParent());
         }
         try {
+            getLogger().info("Move " + old + " to " + newFile);
             if (CrossSystem.isWindows() && Application.getJavaVersion() >= Application.JAVA17) {
                 java.nio.file.Files.move(java.nio.file.Paths.get(old.toURI()), java.nio.file.Paths.get(newFile.toURI()), java.nio.file.StandardCopyOption.ATOMIC_MOVE);
             } else if (!old.renameTo(newFile)) {

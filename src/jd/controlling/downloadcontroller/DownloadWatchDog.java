@@ -2218,9 +2218,13 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
                             }
                         }
                         try {
+                            logger.info("Rename after Download?");
                             final File desiredPath = new File(link.getFileOutput(false, false));
+                            logger.info("Desired Path: " + desiredPath);
                             final File usedPath = singleDownloadController.getFileOutput(false, false);
+                            logger.info("Actually Used path: " + usedPath);
                             if (!desiredPath.equals(usedPath)) {
+                                logger.info("Move");
                                 move(link, usedPath.getParent(), usedPath.getName(), desiredPath.getParent(), desiredPath.getName());
                             }
                         } catch (final Throwable e) {
@@ -3935,14 +3939,16 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
 
     public void renameLink(final DownloadLink downloadLink, final String value) {
         if (!StringUtils.equals(downloadLink.getForcedFileName(), value)) {
-            System.out.println("rename");
+            logger.info("Requested Rename of " + downloadLink + " to " + value);
             enqueueJob(new DownloadWatchDogJob() {
                 @Override
                 public void execute(DownloadSession currentSession) {
                     if (!StringUtils.equals(downloadLink.getForcedFileName(), value)) {
                         if (downloadLink.getDownloadLinkController() != null) {
+                            logger.info("Requested Rename of " + downloadLink + " to " + value + " DELAYED");
                             downloadLink.forceFileName(value);
                         } else if (downloadLink.getDefaultPlugin() != null) {
+                            logger.info("Requested Rename of " + downloadLink + " to " + value + " NOW");
                             move(downloadLink, downloadLink.getParentNode().getDownloadDirectory(), downloadLink.getName(), downloadLink.getParentNode().getDownloadDirectory(), value);
                             downloadLink.forceFileName(value);
                         }
@@ -4020,8 +4026,11 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
             ArrayList<DownloadLinkCandidate> lst = new ArrayList<DownloadLinkCandidate>();
             lst.add(new DownloadLinkCandidate(downloadLink, true));
             if (DISKSPACERESERVATIONRESULT.FAILED.equals(validateDiskFree(lst))) {
+
                 throw new IOException(_GUI._.DownloadWatchDog_move_exception_disk_full(downloadLink.getFileOutput()));
             }
+            logger.info("Move " + downloadLink);
+            logger.info("From " + oldDir + "/" + oldName + " to " + newDir + "/" + newName);
             downloadLink.getDefaultPlugin().move(downloadLink, oldDir, oldName, newDir, newName);
         } catch (Throwable e) {
             logger.log(e);
