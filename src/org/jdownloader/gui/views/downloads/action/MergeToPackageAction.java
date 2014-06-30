@@ -13,6 +13,7 @@ import org.appwork.utils.swing.dialog.DialogNoAnswerException;
 import org.jdownloader.controlling.contextmenu.ActionContext;
 import org.jdownloader.controlling.contextmenu.CustomizableTableContextAppAction;
 import org.jdownloader.controlling.contextmenu.Customizer;
+import org.jdownloader.controlling.packagizer.PackagizerController;
 import org.jdownloader.gui.packagehistorycontroller.DownloadPathHistoryManager;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.gui.views.SelectionInfo;
@@ -88,7 +89,8 @@ public class MergeToPackageAction extends CustomizableTableContextAppAction<File
 
                     newPackage.setName(name);
                     String f = d.getDownloadFolder();
-                    newPackage.setDownloadDirectory(f);
+
+                    newPackage.setDownloadDirectory(PackagizerController.replaceDynamicTags(f, name));
 
                     switch (getLocation()) {
                     case AFTER_SELECTION:
