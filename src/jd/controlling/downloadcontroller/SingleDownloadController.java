@@ -650,6 +650,12 @@ public class SingleDownloadController extends BrowserSettingsThread implements D
 
     public File getFileOutput(boolean ignoreUnsafe, boolean ignoreCustom) {
         String name = getSessionDownloadFilename();
+        if (StringUtils.isEmpty(name)) {
+            name = downloadLink.getName(ignoreUnsafe, true);
+            if (name == null) {
+                return null;
+            }
+        }
         if (!ignoreCustom) {
             String tmpName = downloadLink.getInternalTmpFilename();
             if (!StringUtils.isEmpty(tmpName)) {
@@ -659,12 +665,6 @@ public class SingleDownloadController extends BrowserSettingsThread implements D
             String customAppend = downloadLink.getInternalTmpFilenameAppend();
             if (!StringUtils.isEmpty(customAppend)) {
                 name = name + customAppend;
-            }
-        }
-        if (StringUtils.isEmpty(name)) {
-            name = downloadLink.getName(ignoreUnsafe, true);
-            if (name == null) {
-                return null;
             }
         }
         return new File(getSessionDownloadDirectory(), name);
