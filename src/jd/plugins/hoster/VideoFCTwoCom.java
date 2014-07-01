@@ -218,10 +218,7 @@ public class VideoFCTwoCom extends PluginForHost {
         br.setCustomCharset("utf-8");
         String dllink = downloadLink.getDownloadURL();
         br.getPage(dllink);
-        if (br.containsHTML("This content has already been deleted") || br.getURL().contains("/err.php") || br.getURL().contains("/404.php") || br.containsHTML("class=\"errmsg\"")) {
-            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        }
-        String filename = br.getRegex("<title>.*?◎?(.*?) \\-").getMatch(0);
+        String filename = br.getRegex("<title>.*?◎?(.*?) -").getMatch(0);
         if (filename == null) {
             filename = br.getRegex("title=\".*?◎([^\"]+)").getMatch(0);
         }
@@ -232,7 +229,13 @@ public class VideoFCTwoCom extends PluginForHost {
         String upid = dllink.substring(dllink.lastIndexOf("/") + 1);
         String gk = getKey();
         if (filename == null || upid == null || gk == null) {
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            // quite a few of these patterns are too generic, 'this content... is now in javascript variable. errmsg span is also present in
+            // ALL pages just doesn't contain text when not valid...
+            if (br.containsHTML("This content has already been deleted") || br.getURL().contains("/err.php") || br.getURL().contains("/404.php") || br.containsHTML("class=\"errmsg\"")) {
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            } else {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
         }
 
         filename = filename.replaceAll("\\p{Z}", " ");
