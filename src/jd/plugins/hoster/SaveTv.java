@@ -209,11 +209,9 @@ public class SaveTv extends PluginForHost {
         }
         login(this.br, aa, false);
 
-        final String string_for_empty_tags = this.getPluginConfig().getStringProperty(CUSTOM_FILENAME_EMPTY_TAG_STRING, defaultCustomStringForEmptyTags);
         String site_title = null;
         String filesize = null;
         long datemilliseconds = 0;
-        String date = null;
         String category = null;
 
         /* For series only */
@@ -248,7 +246,8 @@ public class SaveTv extends PluginForHost {
                 site_title = apifilename.replace(filenameReplace, "");
             }
 
-            date = fName.getMatch(1);
+            /* SET here but never used */
+            runtime_start = fName.getMatch(1);
             /* Test code to correct the date here - not possible (yet) because AM/PM time-state is not given: http://pastebin.com/SZJFYn1W */
             link.setProperty("apiplainfilename", apifilename);
             filesize += " KB";
@@ -257,22 +256,10 @@ public class SaveTv extends PluginForHost {
             if (getJson(br.toString(), "ITELECASTID") == null || !br.getURL().contains("TelecastID=")) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
-            site_title = getJson(br.toString(), "STITLE");
+            site_title = correctData(getJson(br.toString(), "STITLE"));
             runtime_start = br.getRegex("\"D?STARTDATE\":\"([0-9:\\- ]+)\"").getMatch(0);
             runtime_end = br.getRegex("\"D?ENDDATE\":\"([0-9:\\- ]+)\"").getMatch(0);
-            category = getJson(br.toString(), "TVCATEGORYID");
-            /* Check for unknown error state */
-            /* TODO: Check if this errormessage (SITE_DL_IMPOSSIBLE) still exists */
-            if (site_title == null || category == null) {
-                logger.warning("Save.tv: Availablecheck failed!");
-                return AvailableStatus.UNCHECKABLE;
-            }
-            site_title = correctData(site_title);
-            category = correctData(category);
-
-            /* Find custom filename stuff */
-            date = runtime_start;
-            datemilliseconds = TimeFormatter.getMilliSeconds(date, "yyyy-mm-dd hh:mm:ss", Locale.GERMAN);
+            category = correctData(getJson(br.toString(), "TVCATEGORYID"));
 
             genre = getJson(br.toString(), "SCHAR");
             produceyear = br.getRegex("\"SPRODUCTIONYEAR\":(\\d+)\\.0").getMatch(0);
@@ -294,26 +281,12 @@ public class SaveTv extends PluginForHost {
                 /* For movies and magazines */
                 link.setProperty("category", 1);
             } else {
-                /* For everything else */
-                link.setProperty("category", 0);
+                /* For everything else - same as movie but */
+                link.setProperty("category", 1);
+                // link.setProperty("category", 0);
             }
         }
         link.setAvailable(true);
-
-        /* Filesize stuff */
-        /* Download impossible or filesize not given --> No filesize given --> Calculate it over bitrate */
-        final long site_run_time = (TimeFormatter.getMilliSeconds(runtime_end, "yyyy-mm-dd hh:mm:ss", Locale.GERMAN) - datemilliseconds) / 1000 / 60;
-        /* TODO: Check if this errormessage still exists */
-        if (br.containsHTML(SITE_DL_IMPOSSIBLE) || filesize == null) {
-            if (br.containsHTML(SITE_DL_IMPOSSIBLE)) {
-                link.getLinkStatus().setStatusText(DL_IMPOSSIBLE_USER_TEXT);
-            }
-            link.setDownloadSize(calculateFilesize(site_run_time));
-        } else {
-            filesize = filesize.replace(".", "");
-            final long page_size = SizeFormatter.getSize(filesize.replace(".", ""));
-            link.setDownloadSize(page_size);
-        }
 
         /* Set properties which are needed for filenames */
         /* Add series information */
@@ -325,13 +298,12 @@ public class SaveTv extends PluginForHost {
 
         /* Add other information */
         if (produceyear != null) {
-            produceyear = produceyear.replace("/", "-");
+            produceyear = produceyear.replace("/", this.getPluginConfig().getStringProperty(CUSTOM_FILENAME_SEPERATION_MARK, defaultCustomSeperationMark));
             link.setProperty("produceyear", produceyear);
         }
-        if (genre == null) {
-            genre = string_for_empty_tags;
+        if (genre != null) {
+            link.setProperty("genre", correctData(genre));
         }
-        link.setProperty("genre", correctData(genre));
         link.setProperty("producecountry", producecountry);
         link.setProperty("plain_site_category", category);
         link.setProperty("plain_tv_station", tv_station);
@@ -375,6 +347,22 @@ public class SaveTv extends PluginForHost {
         link.setFinalFileName(null);
         link.setName(availablecheck_filename);
         link.setName(availablecheck_filename);
+
+        /* Filesize stuff */
+        /* Download impossible or filesize not given --> No filesize given --> Calculate it over bitrate */
+        datemilliseconds = TimeFormatter.getMilliSeconds(runtime_start, "yyyy-mm-dd hh:mm:ss", Locale.GERMAN);
+        final long site_run_time = (TimeFormatter.getMilliSeconds(runtime_end, "yyyy-mm-dd hh:mm:ss", Locale.GERMAN) - datemilliseconds) / 1000 / 60;
+        /* TODO: Check if this errormessage still exists */
+        if (br.containsHTML(SITE_DL_IMPOSSIBLE) || filesize == null) {
+            if (br.containsHTML(SITE_DL_IMPOSSIBLE)) {
+                link.getLinkStatus().setStatusText(DL_IMPOSSIBLE_USER_TEXT);
+            }
+            link.setDownloadSize(calculateFilesize(site_run_time));
+        } else {
+            filesize = filesize.replace(".", "");
+            final long page_size = SizeFormatter.getSize(filesize.replace(".", ""));
+            link.setDownloadSize(page_size);
+        }
         return AvailableStatus.TRUE;
     }
 

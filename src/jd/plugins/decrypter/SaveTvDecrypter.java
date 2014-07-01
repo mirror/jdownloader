@@ -20,7 +20,6 @@ import java.text.DecimalFormat;
 import java.text.ParseException;
 import java.util.ArrayList;
 import java.util.Locale;
-import java.util.Random;
 
 import javax.swing.JOptionPane;
 import javax.swing.SwingUtilities;
@@ -31,7 +30,6 @@ import jd.config.SubConfiguration;
 import jd.controlling.AccountController;
 import jd.controlling.ProgressController;
 import jd.http.Browser.BrowserException;
-import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.plugins.Account;
 import jd.plugins.CryptedLink;
@@ -45,7 +43,7 @@ import jd.utils.JDUtilities;
 
 import org.appwork.utils.formatter.TimeFormatter;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "save.tv" }, urls = { "https?://(www\\.)?save\\.tv/STV/M/obj/user/usShowVideoArchive\\.cfm(\\?iPageNumber=\\d+)?" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "save.tv" }, urls = { "https?://(www\\.)?save\\.tv/STV/M/obj/user/usShowVideoArchive\\.cfm" }, flags = { 0 })
 public class SaveTvDecrypter extends PluginForDecrypt {
 
     public SaveTvDecrypter(PluginWrapper wrapper) {
@@ -68,9 +66,10 @@ public class SaveTvDecrypter extends PluginForDecrypt {
     private final SubConfiguration cfg                               = SubConfiguration.getConfig("save.tv");
     private final boolean          FAST_LINKCHECK                    = cfg.getBooleanProperty(CRAWLER_ENABLE_FASTER, false);
 
-    private final String           CONTAINSPAGE                      = "https?://(www\\.)?save\\.tv/STV/M/obj/user/usShowVideoArchive\\.cfm\\?iPageNumber=\\d+";
-
     private boolean                crawler_DialogsDisabled           = false;
+
+    /* Decrypter constants */
+    private static final int       ENTRIES_PER_REQUEST               = 800;
 
     final ArrayList<DownloadLink>  decryptedLinks                    = new ArrayList<DownloadLink>();
     private long                   grab_last_days_num                = 0;
@@ -79,7 +78,6 @@ public class SaveTvDecrypter extends PluginForDecrypt {
     private int                    totalLinksNum                     = 0;
     private int                    maxPage                           = 1;
     private long                   time_crawl_started                = 0;
-    private boolean                grab_specified_page_only          = false;
 
     /**
      * JD2 CODE: DO NOIT USE OVERRIDE FÒR COMPATIBILITY REASONS!!!!!
@@ -112,22 +110,17 @@ public class SaveTvDecrypter extends PluginForDecrypt {
         tdifference_milliseconds = grab_last_days_num * 24 * 60 * 60 * 1000;
 
         try {
-            getPageSafe(parameter);
-            if (parameter.matches(CONTAINSPAGE)) {
-                grab_specified_page_only = true;
-                maxPage = Integer.parseInt(new Regex(parameter, "iPageNumber=(\\d+)").getMatch(0));
-            } else {
-                final String[] pages = br.getRegex("PageNumber=(\\d+)\\&bLoadLast=1\"").getColumn(0);
-                if (pages != null && pages.length != 0) {
-                    for (final String page : pages) {
-                        final int currentpage = Integer.parseInt(page);
-                        if (currentpage > maxPage) {
-                            maxPage = currentpage;
-                        }
+            getPageSafe("https://www.save.tv/STV/M/obj/archive/JSON/VideoArchiveApi.cfm?iEntriesPerPage=" + ENTRIES_PER_REQUEST);
+            final String[] pages = br.getRegex("PageNumber=(\\d+)\\&bLoadLast=1\"").getColumn(0);
+            if (pages != null && pages.length != 0) {
+                for (final String page : pages) {
+                    final int currentpage = Integer.parseInt(page);
+                    if (currentpage > maxPage) {
+                        maxPage = currentpage;
                     }
                 }
             }
-            final String totalLinks = br.getRegex(">Gefundene Sendungen: (\\d+)").getMatch(0);
+            final String totalLinks = getJson(br.toString(), "ITOTALENTRIES");
             if (totalLinks == null) {
                 logger.warning("Decrypter broken for link: " + parameter);
                 return decryptedLinks;
@@ -137,8 +130,6 @@ public class SaveTvDecrypter extends PluginForDecrypt {
             totalLinksNum = Integer.parseInt(totalLinks);
             final DecimalFormat df = new DecimalFormat("0000");
             final DecimalFormat df2 = new DecimalFormat("0000000000000");
-            final String random_one = df.format(new Random().nextInt(10000));
-            final String random_two = df2.format(new Random().nextInt(1000000000));
 
             final ArrayList<String> ajaxLoad = new ArrayList<String>();
 
@@ -159,11 +150,7 @@ public class SaveTvDecrypter extends PluginForDecrypt {
                         }
                     }
 
-                    if (grab_specified_page_only) {
-                        logger.info("save.tv: Decrypting specified page " + maxPage);
-                    } else {
-                        logger.info("save.tv: Decrypting page " + i + " of " + maxPage);
-                    }
+                    logger.info("save.tv: Decrypting page " + i + " of " + maxPage);
 
                     if (i > 1) {
                         br.getPage("https://www.save.tv/STV/M/obj/user/usShowVideoArchive.cfm?iPageNumber=" + i + "&bLoadLast=1");
@@ -190,94 +177,28 @@ public class SaveTvDecrypter extends PluginForDecrypt {
                         logger.info("save.tv. Can't find entries, stopping at page: " + i + " of " + maxPage);
                         break;
                     }
-                    if (grab_specified_page_only) {
-                        logger.info("Found " + added_entries + " entries on desired page " + i);
-                        break;
-                    } else {
-                        logger.info("Found " + added_entries + " entries on page " + i + " of " + maxPage);
-                        continue;
-                    }
-                }
-
-                /* Do all ajax requests */
-                if (ajaxLoad.size() > 0) {
-                    final int total_ajax_requests = ajaxLoad.size();
-                    int counter_ajax = 1;
-                    for (final String ajax_info : ajaxLoad) {
-                        try {
-                            try {
-                                if (this.isAbort()) {
-                                    decryptAborted = true;
-                                    throw new DecrypterException("Decrypt aborted!");
-                                }
-                            } catch (final DecrypterException e) {
-                                /* Not available in old 0.9.581 Stable */
-                                if (decryptAborted) {
-                                    throw e;
-                                }
-                            }
-                            logger.info("Making ajax request " + counter_ajax + " of maximum " + total_ajax_requests);
-                            if (ajax_info.contains("data-load=\"2\"")) {
-                                logger.info("ajax request " + counter_ajax + " is not needed, continuing...");
-                                continue;
-                            }
-                            final Regex info = new Regex(ajax_info, "data\\-rownumber=\"(\\d+)\", data\\-title=\"([^<>\"]*?)\"");
-                            final String dlid = info.getMatch(0);
-                            final String dlname = Encoding.htmlDecode(info.getMatch(1));
-                            br.postPage("https://www.save.tv/STV/M/obj/user/usShowVideoArchiveLoadEntries.cfm?null.GetVideoEntries", "ajax=true&clientAuthenticationKey=&callCount=1&c0-scriptName=null&c0-methodName=GetVideoEntries&c0-id=" + random_one + "_" + random_two + "&c0-param0=string:1&c0-param1=string:&c0-param2=string:1&c0-param3=string:984899&c0-param4=string:1&c0-param5=string:0&c0-param6=string:1&c0-param7=string:0&c0-param8=string:1&c0-param9=string:&c0-param10=string:" + Encoding.urlEncode(dlname) + "&c0-param11=string:" + dlid + "&c0-param12=string:toggleSerial&xml=true&extend=function (object) for (property in object) { this[property] = object[property]; } return this;}&");
-                            br.getRequest().setHtmlCode(br.toString().replace("\\", ""));
-                            final String[] directIDs = get_telecast_ids();
-                            if (directIDs == null || directIDs.length == 0) {
-                                logger.warning("Decrypter broken for link: " + parameter);
-                                return decryptedLinks;
-                            }
-                            for (final String singleid : directIDs) {
-                                addID(singleid);
-                            }
-                            logger.info("Found " + directIDs.length + " telecast-ids in ajax request " + counter_ajax + " of maximum " + total_ajax_requests);
-                        } finally {
-                            counter_ajax++;
-                        }
-                    }
+                    logger.info("Found " + added_entries + " entries on page " + i + " of " + maxPage);
+                    continue;
                 }
 
             } catch (final DecrypterException edec) {
                 logger.info("Decrypt process aborted by user: " + parameter);
                 if (!crawler_DialogsDisabled) {
-                    if (grab_specified_page_only) {
-                        try {
-                            SwingUtilities.invokeAndWait(new Runnable() {
-                                @Override
-                                public void run() {
-                                    try {
-                                        String title = "Save.tv Archiv-Crawler - Crawler abgebrochen";
-                                        String message = "Save.tv - Der Crawler wurde frühzeitig vom Benutzer beendet!\r\n";
-                                        message += "Es wurden bisher " + decryptedLinks.size() + " Links (telecastIDs) auf Archivseite " + maxPage + " gefunden!";
-                                        message += getDialogEnd();
-                                        JOptionPane.showConfirmDialog(jd.gui.swing.jdgui.JDGui.getInstance().getMainFrame(), message, title, JOptionPane.PLAIN_MESSAGE, JOptionPane.ERROR_MESSAGE, null);
-                                    } catch (final Throwable e) {
-                                    }
+                    try {
+                        SwingUtilities.invokeAndWait(new Runnable() {
+                            @Override
+                            public void run() {
+                                try {
+                                    String title = "Save.tv Archiv-Crawler - Crawler abgebrochen";
+                                    String message = "Save.tv - Der Crawler wurde frühzeitig vom Benutzer beendet!\r\n";
+                                    message += "Es wurden bisher " + decryptedLinks.size() + " von " + totalLinksNum + " Links (telecastIDs) gefunden!";
+                                    message += getDialogEnd();
+                                    JOptionPane.showConfirmDialog(jd.gui.swing.jdgui.JDGui.getInstance().getMainFrame(), message, title, JOptionPane.PLAIN_MESSAGE, JOptionPane.ERROR_MESSAGE, null);
+                                } catch (final Throwable e) {
                                 }
-                            });
-                        } catch (Throwable e2) {
-                        }
-                    } else {
-                        try {
-                            SwingUtilities.invokeAndWait(new Runnable() {
-                                @Override
-                                public void run() {
-                                    try {
-                                        String title = "Save.tv Archiv-Crawler - Crawler abgebrochen";
-                                        String message = "Save.tv - Der Crawler wurde frühzeitig vom Benutzer beendet!\r\n";
-                                        message += "Es wurden bisher " + decryptedLinks.size() + " von " + totalLinksNum + " Links (telecastIDs) gefunden!";
-                                        message += getDialogEnd();
-                                        JOptionPane.showConfirmDialog(jd.gui.swing.jdgui.JDGui.getInstance().getMainFrame(), message, title, JOptionPane.PLAIN_MESSAGE, JOptionPane.ERROR_MESSAGE, null);
-                                    } catch (final Throwable e) {
-                                    }
-                                }
-                            });
-                        } catch (Throwable e2) {
-                        }
+                            }
+                        });
+                    } catch (Throwable e2) {
                     }
                 }
                 return decryptedLinks;
@@ -425,7 +346,7 @@ public class SaveTvDecrypter extends PluginForDecrypt {
         // Max 3 accesses of the link possible
         // -> Max 9 total requests
         for (int i = 0; i <= 2; i++) {
-            br.getPage(url);
+            jd.plugins.hoster.SaveTv.getPageCorrectBr(this.br, url);
             if (br.getURL().contains("Token=MSG_LOGOUT_B")) {
                 for (int i2 = 0; i2 <= 1; i2++) {
                     logger.info("Link redirected to login page, logging in again to retry this: " + url);
@@ -445,28 +366,25 @@ public class SaveTvDecrypter extends PluginForDecrypt {
         }
     }
 
+    /**
+     * Tries to return value of key from JSon response, from String source.
+     * 
+     * @author raztoki
+     * */
+    private String getJson(final String source, final String key) {
+        String result = new Regex(source, "\"" + key + "\":(-?\\d+(\\.\\d+)?|true|false|null)").getMatch(0);
+        if (result == null) {
+            result = new Regex(source, "\"" + key + "\":\"([^\"]+)\"").getMatch(0);
+        }
+        if (result != null) {
+            result = result.replaceAll("\\\\/", "/");
+        }
+        return result;
+    }
+
     private void handleEndDialogs() {
         if (!crawler_DialogsDisabled) {
-            if (grab_specified_page_only && grab_last_days_num > 0 && decryptedLinks.size() == 0) {
-                try {
-                    SwingUtilities.invokeAndWait(new Runnable() {
-                        @Override
-                        public void run() {
-                            try {
-                                String title = "Save.tv Archiv-Crawler - nichts gefunden";
-                                String message = "Save.tv - leider wurden keine Links gefunden!\r\n";
-                                message += "Bedenke, dass du nur alle Aufnahmen der Seite " + maxPage + " deines\r\n";
-                                message += "und außerdem nur die der letzten " + grab_last_days_num + " Tage wolltest!\r\n";
-                                message += "Vermutlich gab es auf dieser Archivseite und/oder in diesem Zeitraum keine Aufnahmen!";
-                                message += getDialogEnd();
-                                JOptionPane.showConfirmDialog(jd.gui.swing.jdgui.JDGui.getInstance().getMainFrame(), message, title, JOptionPane.PLAIN_MESSAGE, JOptionPane.ERROR_MESSAGE, null);
-                            } catch (final Throwable e) {
-                            }
-                        }
-                    });
-                } catch (final Throwable e) {
-                }
-            } else if (grab_last_days_num > 0 && decryptedLinks.size() == 0) {
+            if (grab_last_days_num > 0 && decryptedLinks.size() == 0) {
                 try {
                     SwingUtilities.invokeAndWait(new Runnable() {
                         @Override
@@ -484,24 +402,6 @@ public class SaveTvDecrypter extends PluginForDecrypt {
                     });
                 } catch (final Throwable e) {
                 }
-            } else if (grab_specified_page_only && grab_last_days_num > 0) {
-                try {
-                    SwingUtilities.invokeAndWait(new Runnable() {
-
-                        @Override
-                        public void run() {
-                            try {
-                                String title = "Save.tv Archiv-Crawler - alle Aufnahmen aus Seite " + maxPage + " deines Archives und der letzten " + grab_last_days_num + " Tage wurden gefunden!";
-                                String message = "Save.tv Archiv-Crawler - alle Aufnahmen aus Seite " + maxPage + "deines Archives und der letzten " + grab_last_days_num + " Tage wurden gefunden!\r\n";
-                                message += "Es wurden " + decryptedLinks.size() + " Links gefunden!";
-                                message += getDialogEnd();
-                                JOptionPane.showConfirmDialog(jd.gui.swing.jdgui.JDGui.getInstance().getMainFrame(), message, title, JOptionPane.PLAIN_MESSAGE, JOptionPane.INFORMATION_MESSAGE, null);
-                            } catch (Throwable e) {
-                            }
-                        }
-                    });
-                } catch (final Throwable e) {
-                }
             } else if (grab_last_days_num > 0) {
                 try {
                     SwingUtilities.invokeAndWait(new Runnable() {
@@ -511,24 +411,6 @@ public class SaveTvDecrypter extends PluginForDecrypt {
                             try {
                                 String title = "Save.tv Archiv-Crawler - alle Aufnahmen der letzten " + grab_last_days_num + " Tage wurden gefunden";
                                 String message = "Save.tv Archiv-Crawler - alle Aufnahmen der letzten " + grab_last_days_num + " Tage wurden ergolgreich gefunden!\r\n";
-                                message += "Es wurden " + decryptedLinks.size() + " Links gefunden!";
-                                message += getDialogEnd();
-                                JOptionPane.showConfirmDialog(jd.gui.swing.jdgui.JDGui.getInstance().getMainFrame(), message, title, JOptionPane.PLAIN_MESSAGE, JOptionPane.INFORMATION_MESSAGE, null);
-                            } catch (Throwable e) {
-                            }
-                        }
-                    });
-                } catch (final Throwable e) {
-                }
-            } else if (grab_specified_page_only) {
-                try {
-                    SwingUtilities.invokeAndWait(new Runnable() {
-
-                        @Override
-                        public void run() {
-                            try {
-                                String title = "Save.tv Archiv-Crawler - Aufnahmen der Archivseite komplett gefunden";
-                                String message = "Save.tv - alle Links der eingefügten Archivseite Nummer " + maxPage + " wurden erfolgreich gefunden!\r\n";
                                 message += "Es wurden " + decryptedLinks.size() + " Links gefunden!";
                                 message += getDialogEnd();
                                 JOptionPane.showConfirmDialog(jd.gui.swing.jdgui.JDGui.getInstance().getMainFrame(), message, title, JOptionPane.PLAIN_MESSAGE, JOptionPane.INFORMATION_MESSAGE, null);
