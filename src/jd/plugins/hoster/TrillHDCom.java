@@ -52,22 +52,42 @@ public class TrillHDCom extends PluginForHost {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         br.getPage(downloadLink.getDownloadURL());
-        if (br.getURL().equals("http://www.trillhd.com/") || br.containsHTML("youtube\\.com/embed/")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        String filename = br.getRegex("<div class=\"title\">([^<>\"]*?)</div>").getMatch(0);
-        if (filename == null) filename = br.getRegex("property='og:title'[\t\n\r ]+content='TrillHD \\| ([^<>\"]*?)'>").getMatch(0);
-        if (filename == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (br.getURL().equals("http://www.trillhd.com/") || br.containsHTML("youtube\\.com/embed/")) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
+        String filename = br.getRegex("<div class=\"title\">([^<>]*?)</div>").getMatch(0);
+        if (filename == null) {
+            filename = br.getRegex("property='og:title'[\t\n\r ]+content='TrillHD \\| ([^<>]*?)'>").getMatch(0);
+        }
+        if (filename == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        filename = encodeUnicode(filename);
         filename = Encoding.htmlDecode(filename.trim());
         if (br.containsHTML("id=\"unreleased_clicker\"")) {
             downloadLink.getLinkStatus().setStatusText("Not yet released");
             downloadLink.setName(filename + ".mp4");
             return AvailableStatus.TRUE;
         }
-        DLLINK = br.getRegex("\"480p\": \\[\"(http://[^<>\"]*?)\"\\]").getMatch(0);
-        if (DLLINK == null) DLLINK = br.getRegex("\"(http://stream\\d+\\.trillhd\\.com/trill/[^<>\"]*?)\"").getMatch(0);
-        if (DLLINK == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        DLLINK = br.getRegex("\"720p\":\"(http:[^<>\"]*?)\"").getMatch(0);
+        if (DLLINK == null) {
+            DLLINK = br.getRegex("\"480p\":\"(http:[^<>\"]*?)\"").getMatch(0);
+        }
+        if (DLLINK == null) {
+            DLLINK = br.getRegex("\"480p\": \\[\"(http://[^<>\"]*?)\"\\]").getMatch(0);
+        }
+        if (DLLINK == null) {
+            DLLINK = br.getRegex("\"(http://stream\\d+\\.trillhd\\.com/trill/[^<>\"]*?)\"").getMatch(0);
+        }
+        if (DLLINK == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        DLLINK = DLLINK.replace("\\", "");
         DLLINK = Encoding.htmlDecode(DLLINK);
         String ext = DLLINK.substring(DLLINK.lastIndexOf("."));
-        if (ext == null || ext.length() > 5) ext = ".mp4";
+        if (ext == null || ext.length() > 5) {
+            ext = ".mp4";
+        }
         downloadLink.setFinalFileName(filename + ext);
         final Browser br2 = br.cloneBrowser();
         // In case the link redirects to the finallink
@@ -75,10 +95,11 @@ public class TrillHDCom extends PluginForHost {
         URLConnectionAdapter con = null;
         try {
             con = br2.openGetConnection(DLLINK);
-            if (!con.getContentType().contains("html"))
+            if (!con.getContentType().contains("html")) {
                 downloadLink.setDownloadSize(con.getLongContentLength());
-            else
+            } else {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            }
             return AvailableStatus.TRUE;
         } finally {
             try {
@@ -91,13 +112,31 @@ public class TrillHDCom extends PluginForHost {
     @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
-        if (br.containsHTML("id=\"unreleased_clicker\"")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Not yet released", 12 * 60 * 60 * 1000l);
+        if (br.containsHTML("id=\"unreleased_clicker\"")) {
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Not yet released", 12 * 60 * 60 * 1000l);
+        }
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, DLLINK, true, 0);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl.startDownload();
+    }
+
+    /* Avoid chars which are not allowed in filenames under certain OS' */
+    private static String encodeUnicode(final String input) {
+        String output = input;
+        output = output.replace(":", ";");
+        output = output.replace("|", "¦");
+        output = output.replace("<", "[");
+        output = output.replace(">", "]");
+        output = output.replace("/", "⁄");
+        output = output.replace("\\", "∖");
+        output = output.replace("*", "#");
+        output = output.replace("?", "¿");
+        output = output.replace("!", "¡");
+        output = output.replace("\"", "'");
+        return output;
     }
 
     @Override

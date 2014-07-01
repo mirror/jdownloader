@@ -478,13 +478,15 @@ public class DecrypterForRedirectServicesWithoutDirectRedirects extends PluginFo
                 if (click == null) {
                     click = br.getRegex("(http://adfoc\\.us/serve/click/\\?id=[a-z0-9]+\\&servehash=[a-z0-9]+\\&timestamp=\\d+)").getMatch(0);
                 }
-                if (click != null) {
+                if (click != null && click.contains("adfoc.us/")) {
                     br.getHeaders().put("Referer", parameter);
                     br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
                     br.getPage(HTMLEntities.unhtmlentities(click));
                     if (br.getRedirectLocation() != null && !br.getRedirectLocation().matches("http://adfoc.us/")) {
                         finallink = br.getRedirectLocation();
                     }
+                } else {
+                    finallink = click;
                 }
             } else if (parameter.contains("unlimfiles.com/")) {
                 finallink = br.getRegex("<iframe src=\"(.*?)\"").getMatch(0);

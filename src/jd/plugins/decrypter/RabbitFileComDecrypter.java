@@ -28,7 +28,7 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "rabbitfile.com" }, urls = { "http://(www\\.)?rabbitfile\\.com/download_regular\\.php\\?file=[A-Za-z0-9]+" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "rabbitfile.com" }, urls = { "http://(www\\.)?rabbitfile\\.com/(download_regular\\.php\\?file=|dl\\.php\\?f=)[A-Za-z0-9]+" }, flags = { 0 })
 public class RabbitFileComDecrypter extends PluginForDecrypt {
 
     public RabbitFileComDecrypter(PluginWrapper wrapper) {
@@ -43,8 +43,9 @@ public class RabbitFileComDecrypter extends PluginForDecrypt {
         main.setProperty("plain_code", code);
         main.setProperty("mainlink", parameter);
 
+        br.setFollowRedirects(true);
         br.getPage(parameter);
-        if (br.toString().length() < 300) {
+        if (br.toString().length() < 300 || br.getHttpConnection().getResponseCode() == 404) {
             main.setFinalFileName(code);
             main.setAvailable(false);
             main.setProperty("offline", true);

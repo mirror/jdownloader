@@ -34,7 +34,7 @@ public class Spi0nCom extends PluginForDecrypt {
         super(wrapper);
     }
 
-    private static final String INVALIDLINKS = "http://www\\.spi0n\\.com/favicon";
+    private static final String INVALIDLINKS = "http://www\\.spi0n\\.com/(favicon|\\d{4})";
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
@@ -77,8 +77,11 @@ public class Spi0nCom extends PluginForDecrypt {
         if (finallink == null) {
             final String fpName = br.getRegex("class=\"headline\">([^<>\"]*?)<").getMatch(0);
             String[] pictures = br.getRegex("size\\-(large|full) wp\\-image\\-\\d+\"( title=\"[^<>\"/]*?\")? alt=\"[^<>\"/]*?\" src=\"(http://(www\\.)?spi0n\\.com/wp\\-content/uploads/[^<>\"]*?)\"").getColumn(2);
-            if (fpName == null || pictures == null || pictures.length == 0) {
+            if (pictures == null || pictures.length == 0) {
                 pictures = br.getRegex("size\\-(large|full) wp\\-image\\-\\d+\" title=\"[^<>\"/]+\" src=\"(http://(www\\.)?spi0n\\.com/wp\\-content/uploads/[^<>\"]*?)\"").getColumn(1);
+            }
+            if (pictures == null || pictures.length == 0) {
+                pictures = br.getRegex("src=\"(http://(www\\.)?spi0n\\.com/wp\\-content/uploads/[^<>\"]*?)\" alt=\"").getColumn(0);
             }
             if (fpName == null || pictures == null || pictures.length == 0) {
                 logger.warning("Decrypter broken for link: " + parameter);
