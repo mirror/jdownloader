@@ -244,15 +244,32 @@ public class DownloadsAPIV2Impl implements DownloadsAPIV2 {
     @Override
     public void renamePackage(Long packageId, String newName) {
         DownloadController dlc = DownloadController.getInstance();
-        dlc.writeLock();
-        for (FilePackage fp : dlc.getPackages()) {
-            if (packageId.equals(fp.getUniqueID().getID())) {
-                fp.setName(newName);
-                break;
+        try {
+            dlc.writeLock();
+            for (FilePackage fp : dlc.getPackages()) {
+                if (packageId.equals(fp.getUniqueID().getID())) {
+                    fp.setName(newName);
+                    break;
+                }
             }
+        } finally {
+            dlc.writeUnlock();
         }
-        dlc.writeUnlock();
 
+    }
+
+    @Override
+    public void renameLink(Long linkId, String newName) {
+        DownloadController dlc = DownloadController.getInstance();
+        try {
+            dlc.writeLock();
+            DownloadLink link = dlc.getLinkByID(linkId);
+            if (link != null) {
+                link.setName(newName);
+            }
+        } finally {
+            dlc.writeUnlock();
+        }
     }
 
     @Override
@@ -400,6 +417,34 @@ public class DownloadsAPIV2Impl implements DownloadsAPIV2 {
         org.jdownloader.controlling.Priority jdPriority = org.jdownloader.controlling.Priority.valueOf(priority.name());
         for (DownloadLink dl : getSelectionInfo(linkIds, packageIds).getChildren()) {
             dl.setPriorityEnum(jdPriority);
+        }
+    }
+
+    @Override
+    public void setStopMark(long linkId, long packageId) {
+        for (DownloadLink dl : getSelectionInfo(new long[] { linkId }, new long[] { packageId }).getChildren()) {
+            DownloadWatchDog.getInstance().getSession().setStopMark(dl);
+        }
+    }
+
+    @Override
+    public void removeStopMark() {
+        DownloadWatchDog.getInstance().getSession().setStopMark(null);
+    }
+
+    @Override
+    public void resumeLinks(long[] linkIds, long[] packageIds) throws BadParameterException {
+        DownloadWatchDog dwd = DownloadWatchDog.getInstance();
+        List<DownloadLink> links = getSelectionInfo(linkIds, packageIds).getChildren();
+        dwd.resume(links);
+    }
+
+    @Override
+    public void setDownloadDirectory(String directory, long[] packageIds) {
+        DownloadWatchDog dwd = DownloadWatchDog.getInstance();
+        List<FilePackage> pkgs = convertIdsToPackages(packageIds);
+        for (FilePackage pkg : pkgs) {
+            dwd.setDownloadDirectory(pkg, directory);
         }
     }
 
