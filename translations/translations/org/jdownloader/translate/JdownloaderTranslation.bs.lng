@@ -56,6 +56,7 @@ LinkgrabberFilterRule_duplicate=%s1 (kopija)
 Main_run_autostart_=Pokretanje Download-a
 Main_run_autostart_msg=Download-i će startati za nekoliko sekundi...
 Mainstart_now=Pokreni SADA!
+MovePluginProgress=Premiještanje dokumenta u %s1
 MyJDownloaderController_onError_account_unconfirmed=Vaš 'My JDownloader' email još nije bio potvrđen. \r\nMolimo provjerite svoje email-ove i kliknite na Link za potvrdu
 MyJDownloaderController_onError_badlogins=Vsaš 'My JDownloader' podaci za logiranje nisu ispravni. \r\nMolimo provjerite korisničko ime/email i šifru!
 MyJDownloaderController_onError_outdated=JDownloader se nije mogao konektovati na My JDownloader servis. Molimo nadgradite svoj JDownloader!
@@ -156,6 +157,8 @@ jd_controlling_reconnect_Reconnector_progress_failed2=Ponovno konektovanje suvi�
 jd_controlling_reconnect_plugins_DummyRouterPlugin_getGUI2=<b><u>Nije izabrana Ponovna konekcija</u></b><br/><p>Ponovna konekcija je napredni pristup za preskakanje dugih čekanja koja neki domaćini nameću korisnicima koji ne plaćaju. <br>Nije od pomoći kada koristite premium nalog.</p><p>Pročitajte više o Ponovnom konektovanju <a href='http://support.jdownloader.org/index.php?_m=knowledgebase&_a=viewarticle&kbarticleid=1'>ovdje</a></p>
 jd_controlling_reconnect_plugins_DummyRouterPlugin_getName=Nema Ponovne konekcije
 jd_plugins_PluginUtils_askPassword=Molimo unesite šifru za %s1
+lit_hide=Sakrij
+lit_please_wait=Molimo sačekajte...
 literally_offline=Offline
 literally_yes=Da
 other_files_description=Svi dokumenti, osim audio, arhiva, video i slika
