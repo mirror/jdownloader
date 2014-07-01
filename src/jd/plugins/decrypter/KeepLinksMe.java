@@ -54,10 +54,12 @@ public class KeepLinksMe extends SaveLinksNet {
         synchronized (ctrlLock) {
             ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
             final GeneralSafelinkingHandling gsh = new GeneralSafelinkingHandling(br, param, getHost());
-            final String parameter = param.toString();
+            final String parameter = param.toString().replace(".me/", ".eu/");
             gsh.startUp();
             try {
+                br.setFollowRedirects(true);
                 br.getPage(parameter);
+                br.setFollowRedirects(false);
                 handleErrors(parameter);
                 /* unprotected links */
                 if (parameter.contains("/d/")) {
