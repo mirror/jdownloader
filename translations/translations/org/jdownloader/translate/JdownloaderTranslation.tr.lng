@@ -56,6 +56,7 @@ LinkgrabberFilterRule_duplicate=%s1 (kopya)
 Main_run_autostart_=İndirmeler başlatılıyor
 Main_run_autostart_msg=İndirmeler birkaç saniyeye kadar başlayacak...
 Mainstart_now=HEMEN Başlat!
+MovePluginProgress=Dosya %s1 konumuna taşınıyor
 MyJDownloaderController_onError_account_unconfirmed='JDownloader'ım' epostanız henüz onaylanmadı.\nLütfen epostalarınızı kontrol edin ve onaylama Bağlantısına tıklayın
 MyJDownloaderController_onError_badlogins='JDownloader'ım' oturum açma bilgileriniz doğru değil.\nLütfen kullanıcı adı/eposta ve parolanızı kontrol edin!
 MyJDownloaderController_onError_outdated=JDownloader, JDownloader'ım hizmetine bağlanamadı. Lütfen JDownloader'ınızı güncelleyin!
@@ -156,6 +157,8 @@ jd_controlling_reconnect_Reconnector_progress_failed2=Yeniden bağlanma çok sı
 jd_controlling_reconnect_plugins_DummyRouterPlugin_getGUI2=<b><u>Yeniden Bağlanma Kapalı seçildi</u></b><br/><p>Yeniden bağlanma ücretsiz kullanıcıları uzun bekleyişlere zorlayan barındırıcıları atlatmak için gelişmiş bir yaklaşımdır. <br>Premium hesap kullanırken faydalı değildir.</p><p>Yeniden Bağlanma hakkında <a href='http://support.jdownloader.org/index.php?_m=knowledgebase&_a=viewarticle&kbarticleid=1'>buradan</a> daha fazlasını okuyun</p>
 jd_controlling_reconnect_plugins_DummyRouterPlugin_getName=Yeniden Bağlanma Kapalı
 jd_plugins_PluginUtils_askPassword=Lütfen %s1 için parola girin
+lit_hide=Gizle
+lit_please_wait=Lütfen bekleyin...
 literally_offline=Çevrimdışı
 literally_yes=Evet
 other_files_description=Tüm doyalar; ses, arşiv, görüntü ve resim dosyaları hariç
