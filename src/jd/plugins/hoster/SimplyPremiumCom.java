@@ -360,19 +360,20 @@ public class SimplyPremiumCom extends PluginForHost {
             final DownloadLink dummyLink = new DownloadLink(this, "Account", "simply-premium.com", "http://simply-premium.com", true);
             final PluginForHost recplug = JDUtilities.getPluginForHost("DirectHTTP");
             final jd.plugins.hoster.DirectHTTP.Recaptcha rc = ((DirectHTTP) recplug).getReCaptcha(br);
-            rc.setId("6LfBs-8SAAAAAKRWHd9j-sq-qpoOnjwoZlA4s3Ix");
+            final String rcID = getXML("captcha");
+            rc.setId(rcID);
             rc.load();
             for (int i = 1; i <= 3; i++) {
                 final File cf = rc.downloadCaptcha(getLocalCaptchaFile());
                 final String c = getCaptchaCode(cf, dummyLink);
                 br.getPage("http://simply-premium.com/login.php?login_name=" + Encoding.urlEncode(account.getUser()) + "&login_pass=" + Encoding.urlEncode(account.getPass()) + "&recaptcha_challenge_field=" + rc.getChallenge() + "&recaptcha_response_field=" + Encoding.urlEncode(c));
-                if (br.containsHTML("<error>captcha_required</error>")) {
+                if (br.containsHTML("<error>captcha_incorrect</error>")) {
                     rc.reload();
                     continue;
                 }
                 break;
             }
-            if (br.containsHTML("<error>captcha_required</error>")) {
+            if (br.containsHTML("<error>captcha_incorrect</error>")) {
                 if ("de".equalsIgnoreCase(lang)) {
                     throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUngültiger Benutzername, ungültiges Passwort und/oder ungültiges Login-Captcha!\r\nDu bist dir sicher, dass dein eingegebener Benutzername und Passwort stimmen? Versuche folgendes:\r\n1. Falls dein Passwort Sonderzeichen enthält, ändere es (entferne diese) und versuche es erneut!\r\n2. Gib deine Zugangsdaten per Hand (ohne kopieren/einfügen) ein.", PluginException.VALUE_ID_PREMIUM_DISABLE);
                 } else {
