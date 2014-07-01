@@ -17,6 +17,8 @@
 package jd.plugins.hoster;
 
 import java.io.IOException;
+import java.util.Random;
+import java.util.concurrent.atomic.AtomicReference;
 
 import jd.PluginWrapper;
 import jd.nutils.encoding.Encoding;
@@ -26,6 +28,7 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.utils.JDUtilities;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
@@ -41,7 +44,8 @@ public class PackUploadCom extends PluginForHost {
         return "http://www.packupload.com/cgu";
     }
 
-    private static final String INVALIDLINKS = "http://([a-z]+\\.)?packupload.com/(contact|reportFile|register|functionalities|news|about|emptyPage|connect|donate|myfiles)";
+    private static final String            INVALIDLINKS = "http://([a-z]+\\.)?packupload.com/(contact|reportFile|register|functionalities|news|about|emptyPage|connect|donate|myfiles)";
+    private static AtomicReference<String> userAgent    = new AtomicReference<String>(null);
 
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
@@ -49,6 +53,12 @@ public class PackUploadCom extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         this.setBrowserExclusive();
+        if (userAgent.get() == null) {
+            /* we first have to load the plugin, before we can reference it */
+            JDUtilities.getPluginForHost("mediafire.com");
+            userAgent.set(jd.plugins.hoster.MediafireCom.stringUserAgent());
+        }
+        br.getHeaders().put("User-Agent", userAgent.get());
         br.getHeaders().put("Accept-Language", "en-US,en;q=0.5");
         br.setFollowRedirects(true);
         br.getPage(link.getDownloadURL());
@@ -72,15 +82,23 @@ public class PackUploadCom extends PluginForHost {
         if (dllink == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
+        // following wont be used
         int wait = 15;
         final String waittime = br.getRegex("var delay = (\\d+);").getMatch(0);
         if (waittime != null) {
             wait = Integer.parseInt(waittime);
         }
-        sleep((wait + 85) * 1001l, downloadLink); // Additional wait time is needed (You must wait ...)
+        // these guys impose more wait than advertised, in browser and in JD
+        while (wait < 100 || wait > 180) {
+            wait = new Random().nextInt(180);
+        }
+        sleep(wait * 1001l, downloadLink); // Additional wait time is needed (You must wait ...)
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, "", false, 1);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
+            if (br.containsHTML(">You must wait befor downloading this file\\.<")) {
+                throw new PluginException(LinkStatus.ERROR_RETRY);
+            }
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl.startDownload();
