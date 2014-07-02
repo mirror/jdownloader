@@ -138,7 +138,7 @@ public class SaveTvDecrypter extends PluginForDecrypt {
                         }
                     }
 
-                    logger.info("save.tv: Decrypting page " + i + " of " + requestCount);
+                    logger.info("save.tv: Decrypting request " + i + " of " + requestCount);
 
                     getPageSafe("https://www.save.tv/STV/M/obj/archive/JSON/VideoArchiveApi.cfm?iEntriesPerPage=" + ENTRIES_PER_REQUEST + "&iCurrentPage=" + i);
                     final String array_text = br.getRegex("\"ARRVIDEOARCHIVEENTRIES\":\\[(.*?)\\]").getMatch(0);
@@ -150,10 +150,10 @@ public class SaveTvDecrypter extends PluginForDecrypt {
                     }
 
                     if (added_entries == 0) {
-                        logger.info("save.tv. Can't find entries, stopping at page: " + i + " of " + requestCount);
+                        logger.info("save.tv. Can't find entries, stopping at request: " + i + " of " + requestCount);
                         break;
                     }
-                    logger.info("Found " + added_entries + " entries on page " + i + " of " + requestCount);
+                    logger.info("Found " + added_entries + " entries in request " + i + " of " + requestCount);
                     continue;
                 }
 
@@ -206,7 +206,7 @@ public class SaveTvDecrypter extends PluginForDecrypt {
     }
 
     private void addID(final String id_info) throws ParseException, DecrypterException {
-        final String telecast_id = this.getJson(id_info, "ITELECASTID");
+        final String telecast_id = getJson(id_info, "ITELECASTID");
         final String telecast_url = "https://www.save.tv/STV/M/obj/archive/VideoArchiveDetails.cfm?TelecastId=" + telecast_id;
         final DownloadLink dl = createDownloadlink(telecast_url);
         jd.plugins.hoster.SaveTv.siteParseFilenameInformation(dl, id_info);
