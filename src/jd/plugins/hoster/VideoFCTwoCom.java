@@ -157,7 +157,7 @@ public class VideoFCTwoCom extends PluginForHost {
     }
 
     private void dofree(DownloadLink downloadLink) throws Exception {
-        String error = br.getRegex("^err_code=(\\d+)$").getMatch(0);
+        String error = br.getRegex("^err_code=(\\d+)").getMatch(0);
         if (error != null) {
             switch (Integer.parseInt(error)) {
             case 503:
@@ -255,7 +255,7 @@ public class VideoFCTwoCom extends PluginForHost {
         }
 
         br.getHeaders().put("Referer", null);
-        String error = br.getRegex("^err_code=(\\d+)$").getMatch(0);
+        String error = br.getRegex("^err_code=(\\d+)").getMatch(0);
         if (br.getRegex("\\&charge_second=\\d+").matches()) {
             error = "603";
         }
