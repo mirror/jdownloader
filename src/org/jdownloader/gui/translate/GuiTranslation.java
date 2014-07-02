@@ -5119,7 +5119,7 @@ public interface GuiTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "Cannot move file to \r\n%s1\r\nbecause there is not enough free diskspace." })
     String DownloadWatchDog_move_exception_disk_full(String string);
 
-    @Default(lngs = { "en" }, values = { "Captcha?" })
+    @Default(lngs = { "en" }, values = { "Captcha required?" })
     String HasCaptchaColumn_HasCaptchaColumn_();
 
     @Default(lngs = { "en" }, values = { "You will have to enter a Captcha to download this file." })

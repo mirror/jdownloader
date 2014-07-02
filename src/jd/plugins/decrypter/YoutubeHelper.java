@@ -68,6 +68,8 @@ import org.jdownloader.plugins.config.PluginJsonConfig;
 
 public class YoutubeHelper {
 
+    public static final String    PAID_VIDEO        = "Paid Video:";
+
     protected static final String YT_CHANNEL_ID     = "YT_CHANNEL_ID";
 
     protected static final String YT_DURATION       = "YT_DURATION";
@@ -1013,8 +1015,8 @@ public class YoutubeHelper {
             String subError = br.getRegex("<div id=\"unavailable-submessage\" class=\"[^\"]*\">(.*?)</div>").getMatch(0);
             if (subError != null && !subError.matches("\\s*")) {
                 logger.warning(subError);
-                vid.error = Encoding.htmlDecode(unavailableReason.replaceAll("\\+", " ").trim());
-                return null;
+                // vid.error = Encoding.htmlDecode(unavailableReason.replaceAll("\\+", " ").trim());
+                // return null;
             }
         }
         this.extractData(vid);
@@ -1139,17 +1141,18 @@ public class YoutubeHelper {
 
     private void handleRentalVideos(YoutubeClipData vid) throws Exception {
         String rentalText = br.getRegex("\"ypc_video_rental_bar_text\"\\s*\\:\\s*\"([^\"]+)").getMatch(0);
+
         if (StringUtils.isNotEmpty(rentalText)) {
             logger.warning("Download not possible: " + rentalText);
-            throw new Exception("Rental Video: " + rentalText);
+            throw new Exception(PAID_VIDEO + rentalText);
         }
         if (br.containsHTML("<meta itemprop=\"paid\" content=\"True\">")) {
             logger.warning("Download not possible: You have to pay to watch this video");
-            throw new Exception("Paid Video: " + rentalText);
+            throw new Exception(PAID_VIDEO + " Download not possible");
         }
         if (br.containsHTML("watch-checkout-offers")) {
             logger.warning("Download not possible: You have to pay to watch this video");
-            throw new Exception("Paid Video: " + rentalText);
+            throw new Exception(PAID_VIDEO + "Download not possible");
         }
     }
 

@@ -293,7 +293,7 @@ public class TbCmV2 extends PluginForDecrypt {
                 } catch (NullPointerException npe) {
                     // e.message can be null...
                 }
-                if (emsg != null && emsg.contains("Rental Video")) {
+                if (emsg != null && emsg.contains(YoutubeHelper.PAID_VIDEO)) {
                     vid.error = emsg;
                 } else {
                     throw e;
