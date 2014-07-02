@@ -399,7 +399,6 @@ public class DepositFiles extends PluginForHost {
 
     private void doFree(final DownloadLink downloadLink) throws Exception {
         checkShowFreeDialog();
-        br.forceDebug(true);
         String passCode = downloadLink.getStringProperty("pass", null);
         String finallink = checkDirectLink(downloadLink);
         if (finallink == null) {
@@ -468,52 +467,53 @@ public class DepositFiles extends PluginForHost {
                 final String wait = br.getRegex("Please wait (\\d+) sec").getMatch(0);
                 final String id = this.br.getRegex("Recaptcha\\.create\\(\\'([^\"\\']+)\\'").getMatch(0);
                 dllink = getDllink();
-                long timeBefore = System.currentTimeMillis();
-                /*
-                 * seems something wrong with wait time parsing so we do wait each time to be sure
-                 */
-                if (fid == null || dllink == null || id == null) {
-                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                }
-                Form dlForm = new Form();
-                dlForm.setMethod(MethodType.GET);
-                dlForm.put("fid", fid);
-                PluginForHost recplug = JDUtilities.getPluginForHost("DirectHTTP");
-                jd.plugins.hoster.DirectHTTP.Recaptcha rc = ((DirectHTTP) recplug).getReCaptcha(br);
-                rc.setForm(dlForm);
-                rc.setId(id);
-                rc.load();
-                File cf = rc.downloadCaptcha(getLocalCaptchaFile());
-                String c = getCaptchaCode(cf, downloadLink);
-                int passedTime = (int) ((System.currentTimeMillis() - timeBefore) / 1000) - 1;
-                int waitThis = 62;
-                if (wait != null) {
-                    waitThis = Integer.parseInt(wait);
-                }
-                waitThis -= passedTime;
-                if (waitThis > 0) {
-                    this.sleep(waitThis * 1001l, downloadLink);
-                }
-                // Important! Setup Header
-                br.getHeaders().put("Accept-Charset", null);
-                br.getHeaders().put("Pragma", null);
-                br.getHeaders().put("Cache-Control", null);
-                br.getHeaders().put("Accept", "*/*");
-                br.getHeaders().put("Accept-Encoding", "gzip, deflate");
-                br.getHeaders().put("Accept-Language", "de");
-                br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
-                br.setFollowRedirects(true);
-                br.getPage(dllink);
-                br.getPage("/get_file.php?fid=" + fid + "&challenge=" + rc.getChallenge() + "&response=" + Encoding.urlEncode(c));
-                if (br.containsHTML("(onclick=\"check_recaptcha|load_recaptcha)")) {
-                    throw new PluginException(LinkStatus.ERROR_CAPTCHA);
-                }
-                finallink = br.getRegex("\"(https?://fileshare\\d+\\." + DOMAINS + "/auth.*?)\"").getMatch(0);
-                if (finallink == null) {
-                    finallink = br.getRegex("<form action=\"(https?://.*?)\"").getMatch(0);
-                }
-                if (finallink == null) {
-                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                if (dllink != null && fid != null && id != null) {
+                    /*
+                     * seems something wrong with wait time parsing so we do wait each time to be sure
+                     */
+                    long timeBefore = System.currentTimeMillis();
+                    Form dlForm = new Form();
+                    dlForm.setMethod(MethodType.GET);
+                    dlForm.put("fid", fid);
+                    PluginForHost recplug = JDUtilities.getPluginForHost("DirectHTTP");
+                    jd.plugins.hoster.DirectHTTP.Recaptcha rc = ((DirectHTTP) recplug).getReCaptcha(br);
+                    rc.setForm(dlForm);
+                    rc.setId(id);
+                    rc.load();
+                    File cf = rc.downloadCaptcha(getLocalCaptchaFile());
+                    String c = getCaptchaCode(cf, downloadLink);
+                    int passedTime = (int) ((System.currentTimeMillis() - timeBefore) / 1000) - 1;
+                    int waitThis = 62;
+                    if (wait != null) {
+                        waitThis = Integer.parseInt(wait);
+                    }
+                    waitThis -= passedTime;
+                    if (waitThis > 0) {
+                        this.sleep(waitThis * 1001l, downloadLink);
+                    }
+                    // Important! Setup Header
+                    br.getHeaders().put("Accept-Charset", null);
+                    br.getHeaders().put("Pragma", null);
+                    br.getHeaders().put("Cache-Control", null);
+                    br.getHeaders().put("Accept", "*/*");
+                    br.getHeaders().put("Accept-Encoding", "gzip, deflate");
+                    br.getHeaders().put("Accept-Language", "de");
+                    br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
+                    br.setFollowRedirects(true);
+                    br.getPage(dllink);
+                    br.getPage("/get_file.php?fid=" + fid + "&challenge=" + rc.getChallenge() + "&response=" + Encoding.urlEncode(c));
+                    if (br.containsHTML("(onclick=\"check_recaptcha|load_recaptcha)")) {
+                        throw new PluginException(LinkStatus.ERROR_CAPTCHA);
+                    }
+                    finallink = br.getRegex("\"(https?://fileshare\\d+\\." + DOMAINS + "/auth.*?)\"").getMatch(0);
+                    if (finallink == null) {
+                        finallink = br.getRegex("<form action=\"(https?://.*?)\"").getMatch(0);
+                    }
+                    if (finallink == null) {
+                        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                    }
+                } else if (dllink != null) {
+                    finallink = dllink;
                 }
             }
         }
