@@ -504,7 +504,7 @@ public class DepositFiles extends PluginForHost {
                 br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
                 br.setFollowRedirects(true);
                 br.getPage(dllink);
-                br.getPage(MAINPAGE.string + "/get_file.php?fid=" + fid + "&challenge=" + rc.getChallenge() + "&response=" + Encoding.urlEncode(c));
+                br.getPage("/get_file.php?fid=" + fid + "&challenge=" + rc.getChallenge() + "&response=" + Encoding.urlEncode(c));
                 if (br.containsHTML("(onclick=\"check_recaptcha|load_recaptcha)")) {
                     throw new PluginException(LinkStatus.ERROR_CAPTCHA);
                 }
