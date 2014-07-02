@@ -203,6 +203,11 @@ public class TbCmV2 extends PluginForDecrypt {
                     public ModalityType getModalityType() {
                         return ModalityType.MODELESS;
                     }
+
+                    @Override
+                    public boolean isRemoteAPIEnabled() {
+                        return true;
+                    }
                 };
                 try {
                     UIOManager.I().show(ConfirmDialogInterface.class, confirm).throwCloseExceptions();
@@ -811,7 +816,7 @@ public class TbCmV2 extends PluginForDecrypt {
 
     /**
      * Parse a playlist id and return all found video ids
-     *
+     * 
      * @param decryptedLinks
      * @param dupeCheckSet
      * @param base

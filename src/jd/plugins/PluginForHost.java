@@ -1440,6 +1440,10 @@ public abstract class PluginForHost extends Plugin {
      * @param value
      */
     public void move(DownloadLink link, String currentDirectory, String currentName, String newDirectory, String newName) throws Exception {
+        if (link.getView().getBytesLoaded() <= 0) {
+            // nothing to rename or move. there should not be any file, and if there is, it does not belong to the link
+            return;
+        }
         final ArrayList<ExceptionRunnable> revertList = new ArrayList<ExceptionRunnable>();
         if (StringUtils.isEmpty(newName)) {
             newName = currentName;
@@ -1508,6 +1512,7 @@ public abstract class PluginForHost extends Plugin {
     }
 
     private void renameOrMove(MovePluginProgress progress, final DownloadLink downloadLink, File old, File newFile) throws FileExistsException, CouldNotRenameException, IOException {
+
         // TODO: what if newFile exists?
         if (newFile.exists()) {
             throw new FileExistsException(old, newFile);

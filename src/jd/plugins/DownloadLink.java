@@ -654,7 +654,7 @@ public class DownloadLink extends Property implements Serializable, AbstractPack
      * @return
      */
     public String getName(boolean ignoreUnsafe, boolean ignoreForcedFilename) {
-        String ret = this.getForcedFileName();
+        String ret = ignoreForcedFilename ? null : this.getForcedFileName();
         if (ret != null) {
             return ret;
         }

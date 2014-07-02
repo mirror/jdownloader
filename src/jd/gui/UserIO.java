@@ -28,24 +28,31 @@ import jd.controlling.captcha.SkipException;
 import jd.controlling.captcha.SkipRequest;
 import jd.controlling.linkcollector.LinkCollector;
 import jd.controlling.linkcrawler.LinkCrawlerThread;
-import jd.gui.swing.dialog.MultiSelectionDialog;
 import jd.nutils.JDFlags;
 import jd.plugins.CaptchaException;
 import jd.plugins.PluginForDecrypt;
 
 import org.appwork.exceptions.WTFException;
 import org.appwork.storage.config.JsonConfig;
+import org.appwork.uio.ComboBoxDialogInterface;
+import org.appwork.uio.ConfirmDialogInterface;
+import org.appwork.uio.InputDialogInterface;
+import org.appwork.uio.MultiSelectionDialog;
+import org.appwork.uio.MultiSelectionDialogInterface;
 import org.appwork.uio.UIOManager;
+import org.appwork.uio.UserIODefinition;
 import org.appwork.utils.BinaryLogic;
 import org.appwork.utils.logging.Log;
 import org.appwork.utils.logging2.LogSource;
 import org.appwork.utils.swing.dialog.ComboBoxDialog;
+import org.appwork.utils.swing.dialog.ConfirmDialog;
 import org.appwork.utils.swing.dialog.Dialog;
 import org.appwork.utils.swing.dialog.DialogCanceledException;
 import org.appwork.utils.swing.dialog.DialogClosedException;
 import org.appwork.utils.swing.dialog.ExtFileChooserDialog;
 import org.appwork.utils.swing.dialog.FileChooserSelectionMode;
 import org.appwork.utils.swing.dialog.FileChooserType;
+import org.appwork.utils.swing.dialog.InputDialog;
 import org.jdownloader.captcha.blacklist.BlacklistEntry;
 import org.jdownloader.captcha.blacklist.BlockAllCrawlerCaptchasEntry;
 import org.jdownloader.captcha.blacklist.CaptchaBlackList;
@@ -369,25 +376,25 @@ public class UserIO {
      * @return
      */
     public int requestComboDialog(int flag, final String title, final String question, final Object[] options, final int defaultSelection, final ImageIcon icon, final String okText, final String cancelText, final ListCellRenderer renderer) {
-        try {
-            flag = this.convertFlagToAWDialog(flag);
 
-            ComboBoxDialog d = new ComboBoxDialog(flag, title, question, options, defaultSelection, icon, okText, cancelText, renderer) {
+        flag = this.convertFlagToAWDialog(flag);
 
-                @Override
-                protected boolean isResizable() {
-                    return true;
-                }
+        ComboBoxDialog d = new ComboBoxDialog(flag, title, question, options, defaultSelection, icon, okText, cancelText, renderer) {
 
-            };
+            @Override
+            protected boolean isResizable() {
+                return true;
+            }
 
-            return Dialog.getInstance().showDialog(d);
-        } catch (DialogClosedException e) {
-            e.printStackTrace();
-        } catch (DialogCanceledException e) {
-            e.printStackTrace();
-        }
-        return -1;
+            @Override
+            public boolean isRemoteAPIEnabled() {
+                return true;
+            }
+
+        };
+
+        return UIOManager.I().show(ComboBoxDialogInterface.class, d).getSelectedIndex();
+
     }
 
     public int requestConfirmDialog(final int flag, final String question) {
@@ -399,13 +406,53 @@ public class UserIO {
     }
 
     public int requestConfirmDialog(final int flag, final String title, final String message, final ImageIcon icon, final String okOption, final String cancelOption) {
+        return requestUIOManagerDialog(ConfirmDialogInterface.class, new ConfirmDialog(this.convertFlagToAWDialog(flag), title, message, icon, okOption, cancelOption));
+    }
+
+    <T extends UserIODefinition> int requestUIOManagerDialog(Class<T> class1, T impl) {
+        int response = 0;
         try {
-            return this.convertAWAnswer(Dialog.getInstance().showConfirmDialog(this.convertFlagToAWDialog(flag), title, message, icon, okOption, cancelOption));
+
+            T d = UIOManager.I().show(class1, impl);
+
+            switch (d.getCloseReason()) {
+            case CANCEL:
+            case CLOSE:
+            case INTERRUPT:
+                response |= UserIO.RETURN_CANCEL;
+                break;
+
+            case OK:
+                response |= UserIO.RETURN_OK;
+                break;
+            case TIMEOUT:
+                response |= UserIO.RETURN_COUNTDOWN_TIMEOUT;
+                break;
+
+            }
+            if (d.isDontShowAgainSelected()) {
+                response |= UserIO.RETURN_DONT_SHOW_AGAIN;
+            }
+            d.throwCloseExceptions();
+
         } catch (DialogClosedException e) {
-            return UserIO.RETURN_CANCEL;
+            response |= UserIO.RETURN_CANCEL;
+            if (e.isCausedByDontShowAgain()) {
+                response |= UserIO.RETURN_SKIPPED_BY_DONT_SHOW;
+            }
+            if (e.isCausedByTimeout()) {
+                response |= UserIO.RETURN_COUNTDOWN_TIMEOUT;
+            }
         } catch (DialogCanceledException e) {
-            return UserIO.RETURN_CANCEL;
+            response |= UserIO.RETURN_CANCEL;
+            if (e.isCausedByDontShowAgain()) {
+                response |= UserIO.RETURN_SKIPPED_BY_DONT_SHOW;
+            }
+            if (e.isCausedByTimeout()) {
+                response |= UserIO.RETURN_COUNTDOWN_TIMEOUT;
+            }
         }
+        return response;
     }
 
     public File[] requestFileChooser(final String id, final String title, final Integer fileSelectionMode, final FileFilter fileFilter, final Boolean multiSelection) {
@@ -486,12 +533,22 @@ public class UserIO {
     }
 
     public String requestInputDialog(final int flag, final String title, final String message, final String defaultMessage, final ImageIcon icon, final String okOption, final String cancelOption) {
+
         try {
-            return Dialog.getInstance().showInputDialog(this.convertFlagToAWDialog(flag), title, message, defaultMessage, icon, okOption, cancelOption);
+
+            InputDialogInterface d = UIOManager.I().show(InputDialogInterface.class, new InputDialog(this.convertFlagToAWDialog(flag), title, message, defaultMessage, icon, okOption, cancelOption));
+
+            switch (d.getCloseReason()) {
+            case OK:
+                return d.getText();
+            default:
+            }
+            d.throwCloseExceptions();
+
         } catch (DialogClosedException e) {
-            e.printStackTrace();
+
         } catch (DialogCanceledException e) {
-            e.printStackTrace();
+
         }
         return null;
     }
@@ -517,32 +574,20 @@ public class UserIO {
     }
 
     /**
-     * Displays a Dialog with a title, a message, and an editable Textpane. USe it to give the user a dialog to enter Multilined text
-     * 
-     * @param title
-     * @param message
-     * @param def
-     * @return
-     */
-    public String requestTextAreaDialog(final String title, final String message, final String def) {
-        try {
-            return Dialog.getInstance().showTextAreaDialog(title, message, def);
-        } catch (DialogClosedException e) {
-            e.printStackTrace();
-        } catch (DialogCanceledException e) {
-            e.printStackTrace();
-        }
-        return null;
-    }
-
-    /**
      * Shows a multi-selection dialog.
      * 
      * @return indices of selected options or null if user canceled
      */
     public int[] requestMultiSelectionDialog(final int flag, final String title, final String question, final Object[] options, final ImageIcon icon, final String okText, final String cancelText, final ListCellRenderer renderer) {
         try {
-            return Dialog.getInstance().showDialog(new MultiSelectionDialog(flag, title, question, options, icon, okText, cancelText, renderer));
+            MultiSelectionDialogInterface d = UIOManager.I().show(MultiSelectionDialogInterface.class, new MultiSelectionDialog(flag, title, question, options, icon, okText, cancelText, renderer) {
+                @Override
+                public boolean isRemoteAPIEnabled() {
+                    return true;
+                }
+            });
+            d.throwCloseExceptions();
+            return d.getSelectedIndices();
         } catch (DialogClosedException e) {
             e.printStackTrace();
         } catch (DialogCanceledException e) {
