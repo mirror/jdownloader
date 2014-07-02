@@ -108,7 +108,7 @@ public class FileMonkeyIn extends PluginForHost {
      * Corrects downloadLink.urlDownload().<br/>
      * <br/>
      * The following code respect the hoster supported protocols via plugin boolean settings and users config preference
-     * 
+     *
      * @author raztoki
      * */
     @SuppressWarnings("unused")
@@ -572,22 +572,27 @@ public class FileMonkeyIn extends PluginForHost {
                 }
                 br.setFollowRedirects(true);
                 br.getPage("https://www.filemonkey.in/login");
-                final PluginForHost recplug = JDUtilities.getPluginForHost("DirectHTTP");
-                final jd.plugins.hoster.DirectHTTP.Recaptcha rc = ((DirectHTTP) recplug).getReCaptcha(br);
-                rc.findID();
-                rc.load();
-                for (int i = 1; i <= 5; i++) {
-                    final File cf = rc.downloadCaptcha(getLocalCaptchaFile());
-                    final String c = getCaptchaCode(cf, dl);
-                    br.postPage("https://www.filemonkey.in/login", "email=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()) + "&recaptcha_challenge_field=" + rc.getChallenge() + "&recaptcha_response_field=" + Encoding.urlEncode(c));
-                    if (br.containsHTML("google\\.com/recaptcha/")) {
-                        rc.reload();
-                        continue;
-                    }
-                    break;
-                }
+                // not always present!
                 if (br.containsHTML("google\\.com/recaptcha/")) {
-                    throw new PluginException(LinkStatus.ERROR_CAPTCHA);
+                    final PluginForHost recplug = JDUtilities.getPluginForHost("DirectHTTP");
+                    final jd.plugins.hoster.DirectHTTP.Recaptcha rc = ((DirectHTTP) recplug).getReCaptcha(br);
+                    rc.findID();
+                    rc.load();
+                    for (int i = 1; i <= 5; i++) {
+                        final File cf = rc.downloadCaptcha(getLocalCaptchaFile());
+                        final String c = getCaptchaCode(cf, dl);
+                        br.postPage("https://www.filemonkey.in/login", "email=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()) + "&recaptcha_challenge_field=" + rc.getChallenge() + "&recaptcha_response_field=" + Encoding.urlEncode(c));
+                        if (i + 1 != 5 && br.containsHTML("google\\.com/recaptcha/")) {
+                            rc.reload();
+                            continue;
+                        } else if (i + 1 == 5 && br.containsHTML("google\\.com/recaptcha/")) {
+                            throw new PluginException(LinkStatus.ERROR_CAPTCHA);
+                        } else {
+                            break;
+                        }
+                    }
+                } else {
+                    br.postPage("https://www.filemonkey.in/login", "email=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()));
                 }
                 final String lang = System.getProperty("user.language");
                 if (br.getCookie(mainURL, "logincookie") == null) {
