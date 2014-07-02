@@ -297,11 +297,11 @@ public class SaveTvDecrypter extends PluginForDecrypt {
     private static String getJson(final String source, final String key) {
         String result = new Regex(source, "\"" + key + "\":(-?\\d+(\\.\\d+)?|true|false|null)").getMatch(0);
         if (result == null) {
+            result = new Regex(source, "\"" + key + "\":\"([^\"]*?)\"").getMatch(0);
+        }
+        if (result == null || result.equals("")) {
             /* Workaround - sometimes they use " plain in json even though usually this has to be encoded! */
             result = new Regex(source, "\"" + key + "\":\"([^<>]*?)\",\"").getMatch(0);
-        }
-        if (result == null) {
-            result = new Regex(source, "\"" + key + "\":\"([^\"]*?)\"").getMatch(0);
         }
         if (result != null) {
             result = result.replaceAll("\\\\/", "/");

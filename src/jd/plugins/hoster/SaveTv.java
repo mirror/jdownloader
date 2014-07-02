@@ -637,7 +637,7 @@ public class SaveTv extends PluginForHost {
                 }
 
                 final String expireDate = getJson(br.toString(), "DCURRENTARTICLEENDDATE");
-                ai.setValidUntil(TimeFormatter.getMilliSeconds(expireDate, "yyyy-mm-dd hh:mm:ss", Locale.GERMANY));
+                ai.setValidUntil(TimeFormatter.getMilliSeconds(expireDate, "yyyy-MM-dd hh:mm:ss", Locale.ENGLISH));
                 account.setProperty("acc_expire", expireDate);
                 final String package_name = getJson(br.toString(), "SCURRENTARTICLENAME");
                 if (package_name.contains("Basis")) {
@@ -842,11 +842,11 @@ public class SaveTv extends PluginForHost {
     private static String getJson(final String source, final String key) {
         String result = new Regex(source, "\"" + key + "\":(-?\\d+(\\.\\d+)?|true|false|null)").getMatch(0);
         if (result == null) {
+            result = new Regex(source, "\"" + key + "\":\"([^\"]*?)\"").getMatch(0);
+        }
+        if (result == null || result.equals("")) {
             /* Workaround - sometimes they use " plain in json even though usually this has to be encoded! */
             result = new Regex(source, "\"" + key + "\":\"([^<>]*?)\",\"").getMatch(0);
-        }
-        if (result == null) {
-            result = new Regex(source, "\"" + key + "\":\"([^\"]*?)\"").getMatch(0);
         }
         if (result != null) {
             result = result.replaceAll("\\\\/", "/");
