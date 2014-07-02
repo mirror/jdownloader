@@ -708,7 +708,7 @@ public class RapidGatorNet extends PluginForHost {
                 if (acmatch) {
                     acmatch = Encoding.urlEncode(account.getPass()).equals(account.getStringProperty("pass", Encoding.urlEncode(account.getPass())));
                 }
-                if (acmatch && ret != null && ret instanceof Map<?, ?> && !force) {
+                if (acmatch && ret != null && ret instanceof Map<?, ?>) {
                     final Map<String, String> cookies = (Map<String, String>) ret;
                     if (account.isValid()) {
                         for (final Map.Entry<String, String> cookieEntry : cookies.entrySet()) {
@@ -716,11 +716,22 @@ public class RapidGatorNet extends PluginForHost {
                             final String value = cookieEntry.getValue();
                             this.br.setCookie(RapidGatorNet.MAINPAGE, key, value);
                         }
-                        return cookies;
+                        if (force) {
+                            /* Even if login is forced, use cookies and check if they're still valid to avoid the captcha below */
+                            br.getPage("http://rapidgator.net/");
+                            if (br.containsHTML("<a href=\"/auth/logout\"")) {
+                                return cookies;
+                            }
+                        } else {
+                            return cookies;
+                        }
                     }
                 }
 
                 this.br.setFollowRedirects(true);
+
+                /* Maybe cookies were used but are expired --> Clear them */
+                br.clearCookies("https://rapidgator.net/");
 
                 for (int i = 1; i <= 3; i++) {
                     logger.info("Site login attempt " + i + " of 3");

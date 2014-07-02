@@ -323,8 +323,8 @@ public class SaveTv extends PluginForHost {
 
         final String runtime_start = new Regex(source, "\"D?STARTDATE\":\"([0-9:\\- ]+)\"").getMatch(0);
         final String runtime_end = new Regex(source, "\"D?ENDDATE\":\"([0-9:\\- ]+)\"").getMatch(0);
-        datemilliseconds = TimeFormatter.getMilliSeconds(runtime_start, "yyyy-mm-dd hh:mm:ss", Locale.GERMAN);
-        final long site_runtime_minutes = (TimeFormatter.getMilliSeconds(runtime_end, "yyyy-mm-dd hh:mm:ss", Locale.GERMAN) - datemilliseconds) / 1000 / 60;
+        datemilliseconds = TimeFormatter.getMilliSeconds(runtime_start, "yyyy-MM-dd hh:mm:ss", Locale.GERMAN);
+        final long site_runtime_minutes = (TimeFormatter.getMilliSeconds(runtime_end, "yyyy-MM-dd hh:mm:ss", Locale.GERMAN) - datemilliseconds) / 1000 / 60;
         final String tv_station = getJson(source, "STVSTATIONNAME");
 
         /* TODO: Add more/all numbers here */
