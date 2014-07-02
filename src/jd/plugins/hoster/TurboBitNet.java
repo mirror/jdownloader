@@ -545,7 +545,7 @@ public class TurboBitNet extends PluginForHost {
             SimpleDateFormat df = new SimpleDateFormat("EEE MMM dd HH:mm:ss zZ yyyy");
             Date date = new Date();
             br.setCookie(br.getHost(), "turbobit1", Encoding.urlEncode_light(df.format(date)).replace(":", "%3A"));
-            downloadUrl = br.getRegex("(?:\"|')(/download/redirect/.*?)\\1").getMatch(0);
+            downloadUrl = br.getRegex("(\"|')(/download/redirect/.*?)\\1").getMatch(1);
             if (downloadUrl == null) {
                 if (br.toString().matches("Error: \\d+")) {
                     // unknown error...
