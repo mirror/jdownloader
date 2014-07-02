@@ -226,12 +226,10 @@ public class SuperLoadCz extends PluginForHost {
         if (dllink == null) {
             showMessage(downloadLink, "Task 1: Generating Link");
             /* request Download */
-            if (pass != null) {
-                postPageSafe(account, mAPI + "/download-url", "url=" + Encoding.urlEncode(downloadLink.getDownloadURL()) + "&password=" + Encoding.urlEncode(pass) + "&token=");
-            } else {
-                postPageSafe(account, mAPI + "/download-url", "url=" + Encoding.urlEncode(downloadLink.getDownloadURL()) + "&token=");
-            }
-            if (br.containsHTML("\"error\":\"invalidLink\"")) {
+            postPageSafe(account, mAPI + "/download-url", "url=" + Encoding.urlEncode(downloadLink.getDownloadURL()) + (pass != null ? "&password=" + Encoding.urlEncode(pass) : "") + "&token=");
+            if (br.getHttpConnection() != null && br.getHttpConnection().getResponseCode() == 404) {
+                throw new PluginException(LinkStatus.ERROR_RETRY);
+            } else if (br.containsHTML("\"error\":\"invalidLink\"")) {
                 logger.info("Superload.cz says 'invalid link', disabling real host for 1 hour.");
                 tempUnavailableHoster(account, downloadLink, 60 * 60 * 1000l);
             } else if (br.containsHTML("\"error\":\"temporarilyUnsupportedServer\"")) {
@@ -315,6 +313,9 @@ public class SuperLoadCz extends PluginForHost {
     private void login(final Account acc) throws IOException, PluginException {
         synchronized (LOCK) {
             br.postPage(mAPI + "/login", "username=" + Encoding.urlEncode(acc.getUser()) + "&password=" + JDHash.getMD5(acc.getPass()));
+            if (br.getHttpConnection() != null && br.getHttpConnection().getResponseCode() == 404) {
+                throw new PluginException(LinkStatus.ERROR_RETRY);
+            }
             if (!getSuccess()) {
                 throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
             }
