@@ -16,7 +16,6 @@
 
 package jd.plugins.hoster;
 
-import java.net.URL;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -279,10 +278,11 @@ public class PremiumTo extends PluginForHost {
                 }
                 br.followConnection();
 
-                logger.severe("PremiumTo(Error): " + br.toString());
-                if (br.containsHTML("File not found")) {
-                    // probably a plugin error - we need to add a url fix (see above)
-                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, "Support defect: " + new URL(link.getDownloadURL()).getHost());
+                logger.severe("PremiumTo Error");
+                if (br.toString().matches("File not found")) {
+                    // we can not trust multi-hoster file not found returns, they could be wrong!
+                    // jiaz new handling to dump to next download candidate.
+                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE);
                 }
                 /*
                  * after x retries we disable this host and retry with normal plugin
