@@ -113,7 +113,7 @@ public class NowDownloadEu extends PluginForHost {
                 if (AVAILABLE_PRECHECK.get() == false) {
                     /*
                      * == Fix original link ==
-                     * 
+                     *
                      * For example .eu domain is blocked from some italian ISP, and .co from others, so we have to test all domains before
                      * proceed, to select one available.
                      */
@@ -138,7 +138,9 @@ public class NowDownloadEu extends PluginForHost {
         br.getHeaders().put("User-Agent", ua.string);
         br.setFollowRedirects(true);
         br.getPage(link.getDownloadURL());
-        if (br.containsHTML(">This file does not exist")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (br.containsHTML(">This file does not exist")) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
         if (br.containsHTML(TEMPUNAVAILABLE)) {
             link.setName(new Regex(link.getDownloadURL(), "([a-z0-9]+)$").getMatch(0));
             link.getLinkStatus().setStatusText(TEMPUNAVAILABLEUSERTEXT);
@@ -147,11 +149,20 @@ public class NowDownloadEu extends PluginForHost {
 
         final Regex fileInfo = br.getRegex(">Downloading</span> <br> (.*?) ([\\d+\\.]+ (B|KB|MB|GB|TB))");
         String filename = br.getRegex(domains + "/nowdownload/[a-z0-9]+/[a-z0-9]+/[^<>]+/([^<>\"]*?)\"").getMatch(1);
-        if (filename == null) filename = fileInfo.getMatch(0).replace("<br>", "");
+        if (filename == null) {
+            filename = fileInfo.getMatch(0);
+            if (filename != null) {
+                filename = filename.replace("<br>", "");
+            }
+        }
+        if (filename == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         String filesize = fileInfo.getMatch(1);
-        if (filename == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         link.setName(Encoding.htmlDecode(filename.trim()));
-        if (filesize != null) link.setDownloadSize(SizeFormatter.getSize(filesize));
+        if (filesize != null) {
+            link.setDownloadSize(SizeFormatter.getSize(filesize));
+        }
         return AvailableStatus.TRUE;
     }
 
@@ -162,9 +173,13 @@ public class NowDownloadEu extends PluginForHost {
     }
 
     private void doFree(final DownloadLink downloadLink, final Account account) throws Exception {
-        if (br.containsHTML(TEMPUNAVAILABLE)) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, TEMPUNAVAILABLEUSERTEXT, 60 * 60 * 1000l);
+        if (br.containsHTML(TEMPUNAVAILABLE)) {
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, TEMPUNAVAILABLEUSERTEXT, 60 * 60 * 1000l);
+        }
         String dllink = (checkDirectLink(downloadLink, "directlink"));
-        if (dllink == null) dllink = getDllink();
+        if (dllink == null) {
+            dllink = getDllink();
+        }
         // This handling maybe isn't needed anymore
         if (dllink == null && br.containsHTML("w,i,s,e")) {
             String result = unWise();
@@ -176,10 +191,14 @@ public class NowDownloadEu extends PluginForHost {
             if (continuePage == null) {
                 continuePage = br.getRegex("href=\"([^<>]+)\">Download your file").getMatch(0);
             }
-            if (tokenPage == null || continuePage == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            if (tokenPage == null || continuePage == null) {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
             int wait = 30;
             final String waittime = br.getRegex("\\.countdown\\(\\{until: \\+(\\d+),").getMatch(0);
-            if (waittime != null) wait = Integer.parseInt(waittime);
+            if (waittime != null) {
+                wait = Integer.parseInt(waittime);
+            }
             Browser br2 = br.cloneBrowser();
             br2.getHeaders().put("X-Requested-With", "XMLHttpRequest");
             br2.getPage(MAINPAGE.string + tokenPage);
@@ -189,19 +208,29 @@ public class NowDownloadEu extends PluginForHost {
                 try {
                     throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);
                 } catch (final Throwable e) {
-                    if (e instanceof PluginException) throw (PluginException) e;
+                    if (e instanceof PluginException) {
+                        throw (PluginException) e;
+                    }
                 }
                 throw new PluginException(LinkStatus.ERROR_FATAL, "This file can only be downloaded by premium users");
             }
-            if (br.containsHTML(">You have reached your daily download limit")) { throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, "You have reached your daily download limit", 60 * 60 * 1000l); }
+            if (br.containsHTML(">You have reached your daily download limit")) {
+                throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, "You have reached your daily download limit", 60 * 60 * 1000l);
+            }
             dllink = getDllink();
-            if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            if (dllink == null) {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
             String filename = new Regex(dllink, ".+/[^_]+_(.+)").getMatch(0);
-            if (filename != null) downloadLink.setFinalFileName(Encoding.urlDecode(filename, false));
+            if (filename != null) {
+                downloadLink.setFinalFileName(Encoding.urlDecode(filename, false));
+            }
         }
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 0);
         if (dl.getConnection().getContentType().contains("html")) {
-            if (dl.getConnection().getResponseCode() == 403) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403", 10 * 60 * 1000l);
+            if (dl.getConnection().getResponseCode() == 403) {
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403", 10 * 60 * 1000l);
+            }
             br.followConnection();
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
@@ -213,7 +242,9 @@ public class NowDownloadEu extends PluginForHost {
     private String unWise() {
         String result = null;
         String fn = br.getRegex("eval\\((function\\(.*?\'\\))\\);").getMatch(0);
-        if (fn == null) return null;
+        if (fn == null) {
+            return null;
+        }
         final ScriptEngineManager manager = jd.plugins.hoster.DummyScriptEnginePlugin.getScriptEngineManager(this);
         final ScriptEngine engine = manager.getEngineByName("javascript");
         try {
@@ -254,10 +285,11 @@ public class NowDownloadEu extends PluginForHost {
                 br.getPage("http://www.nowdownload." + domain);
                 String redirect = br.getRedirectLocation();
                 br = null;
-                if (redirect != null)
+                if (redirect != null) {
                     return new Regex(redirect, domains).getMatch(0);
-                else
+                } else {
                     return domain;
+                }
             } catch (Exception e) {
                 logger.warning("NowDownload." + domain + " seems to be offline...");
             }
@@ -309,7 +341,9 @@ public class NowDownloadEu extends PluginForHost {
                 br.setCookiesExclusive(true);
                 final Object ret = account.getProperty("cookies", null);
                 boolean acmatch = Encoding.urlEncode(account.getUser()).equals(account.getStringProperty("name", Encoding.urlEncode(account.getUser())));
-                if (acmatch) acmatch = Encoding.urlEncode(account.getPass()).equals(account.getStringProperty("pass", Encoding.urlEncode(account.getPass())));
+                if (acmatch) {
+                    acmatch = Encoding.urlEncode(account.getPass()).equals(account.getStringProperty("pass", Encoding.urlEncode(account.getPass())));
+                }
                 if (acmatch && ret != null && ret instanceof HashMap<?, ?> && !force) {
                     final HashMap<String, String> cookies = (HashMap<String, String>) ret;
                     if (account.isValid()) {
@@ -323,7 +357,9 @@ public class NowDownloadEu extends PluginForHost {
                 }
                 br.setFollowRedirects(true);
                 br.postPage(MAINPAGE.string + "/login.php", "user=" + Encoding.urlEncode(account.getUser()) + "&pass=" + Encoding.urlEncode(account.getPass()));
-                if (br.getURL().contains("login.php?e=1") || !br.getURL().contains("panel.php?logged=1")) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+                if (br.getURL().contains("login.php?e=1") || !br.getURL().contains("panel.php?logged=1")) {
+                    throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+                }
                 // free vs premium ?? unknown!
                 br.getPage("/premium.php");
                 if (br.containsHTML(expire)) {
@@ -368,7 +404,9 @@ public class NowDownloadEu extends PluginForHost {
         } else {
             String expire_time = br.getRegex(expire).getMatch(0);
             // 2014-Mar-22.
-            if (expire_time != null) ai.setValidUntil(TimeFormatter.getMilliSeconds(expire, "yyyy-MMM-d", Locale.UK));
+            if (expire_time != null) {
+                ai.setValidUntil(TimeFormatter.getMilliSeconds(expire, "yyyy-MMM-d", Locale.UK));
+            }
             ai.setStatus("Premium Account");
         }
         ai.setUnlimitedTraffic();
@@ -386,7 +424,9 @@ public class NowDownloadEu extends PluginForHost {
         br.setFollowRedirects(false);
         br.getPage(link.getDownloadURL());
         String dllink = br.getRegex("\"(http://[a-z0-9]+\\." + domains + "/dl/[^<>\"]*?)\"").getMatch(0);
-        if (dllink == null) dllink = getDllink();
+        if (dllink == null) {
+            dllink = getDllink();
+        }
         if (dllink == null) {
             logger.warning("Final downloadlink (String is \"dllink\") regex didn't match!");
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
