@@ -531,7 +531,7 @@ public class TurboBitNet extends PluginForHost {
                 }
             }
         } else {
-            String continueLink = br.getRegex("\\$\\(\\'#timeoutBox\\'\\)\\.load\\(\"(/[^<>\"]*?)\"\\);").getMatch(0);
+            String continueLink = br.getRegex("\\$\\('#timeoutBox'\\)\\.load\\(\"(/[^\"]+)\"\\);").getMatch(0);
             if (continueLink == null) {
                 continueLink = "/download/getLinkTimeout/" + id;
             }
@@ -545,26 +545,22 @@ public class TurboBitNet extends PluginForHost {
             SimpleDateFormat df = new SimpleDateFormat("EEE MMM dd HH:mm:ss zZ yyyy");
             Date date = new Date();
             br.setCookie(br.getHost(), "turbobit1", Encoding.urlEncode_light(df.format(date)).replace(":", "%3A"));
-            downloadUrl = br.getRegex("(\"|\\')(/download/redirect/[^<>\"]*?)(\"|\\')").getMatch(1);
+            downloadUrl = br.getRegex("(?:\"|')(/download/redirect/.*?)\\1").getMatch(0);
             if (downloadUrl == null) {
+                if (br.toString().matches("Error: \\d+")) {
+                    // unknown error...
+                    throw new PluginException(LinkStatus.ERROR_RETRY);
+                }
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
         }
         br.setFollowRedirects(false);
-        // Future redirects at this point, but we want to catch them not process
-        // them in order to get the MD5sum. Which provided within the
-        // URL args, within the final redirect
-        // example url structure
+        // Future redirects at this point! We want to catch them and not process in order to get the MD5sum! example url structure
         // http://s\\d{2}.turbobit.ru:\\d+/download.php?name=FILENAME.FILEEXTENTION&md5=793379e72eef01ed1fa3fec91eff5394&fid=b5w4jikojflm&uid=free&speed=59&till=1356198536&trycount=1&ip=YOURIP&sid=60193f81464cca228e7bb240a0c39130&browser=201c88fd294e46f9424f724b0d1a11ff&did=800927001&sign=7c2e5d7b344b4a205c71c18c923f96ab
         br.getPage(downloadUrl);
-        if (br.getRedirectLocation() != null) {
-            dllink = br.getRedirectLocation();
-        }
-        if (downloadUrl.matches(".+&md5=[a-z0-9]{32}.+")) {
-            String md5sum = new Regex(downloadUrl, "md5=([a-z0-9]{32})").getMatch(0);
-            if (md5sum != null) {
-                downloadLink.setMD5Hash(md5sum);
-            }
+        final String md5sum = new Regex(downloadUrl, "md5=([a-f0-9]{32})").getMatch(0);
+        if (md5sum != null) {
+            downloadLink.setMD5Hash(md5sum);
         }
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, downloadUrl, true, 1);
         if (dl.getConnection().getContentType().contains("html")) {
@@ -666,11 +662,9 @@ public class TurboBitNet extends PluginForHost {
             logger.info("Mirror: All mirrors failed -> Server error ");
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error", 30 * 60 * 1000l);
         }
-        if (dllink.matches(".+&md5=[a-z0-9]{32}.+")) {
-            String md5sum = new Regex(dllink, "md5=([a-z0-9]{32})").getMatch(0);
-            if (md5sum != null) {
-                link.setMD5Hash(md5sum);
-            }
+        final String md5sum = new Regex(dllink, "md5=([a-f0-9]{32})").getMatch(0);
+        if (md5sum != null) {
+            link.setMD5Hash(md5sum);
         }
         dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, true, 0);
         if (dl.getConnection().getContentType().contains("html")) {
