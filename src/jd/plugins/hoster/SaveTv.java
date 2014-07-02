@@ -410,8 +410,8 @@ public class SaveTv extends PluginForHost {
             checkFeatureDialogNewFixed();
         }
         final SubConfiguration cfg = SubConfiguration.getConfig("save.tv");
-        final boolean preferAdsFree = cfg.getBooleanProperty(PREFERADSFREE);
-        final String downloadWithoutAds_request_value = Boolean.toString(preferAdsFree);
+        final boolean preferAdsFree = cfg.getBooleanProperty(PREFERADSFREE, false);
+        String downloadWithoutAds_request_value = Boolean.toString(preferAdsFree);
         FORCE_LINKCHECK = true;
         requestFileInformation(downloadLink);
 
@@ -462,12 +462,14 @@ public class SaveTv extends PluginForHost {
          * change but probably won't -> If defined by user, force version with ads after a user defined amount of retries.
          */
         if (preferAdsFree && this.getPluginConfig().getBooleanProperty(DOWNLOADONLYADSFREE, false) && !this.ISADSFREEAVAILABLE) {
+            logger.info("Ad-free version is unavailable");
             final boolean preferadsfreeOverride = cfg.getBooleanProperty(PREFERADSFREE_OVERRIDE, false);
             final long maxRetries = getLongProperty(cfg, PREFERADSFREE_OVERRIDE_MAXRETRIES, defaultIgnoreOnlyAdsFreeAfterRetries_maxRetries);
             long currentTryCount = getLongProperty(downloadLink, "curren_no_ads_free_available_retries", 0);
             final boolean load_with_ads = (preferadsfreeOverride && currentTryCount >= maxRetries);
 
             if (!load_with_ads) {
+                logger.info("Ad-free version is unavailable --> Waiting");
                 /* Only increase the counter when the option is activated */
                 if (preferadsfreeOverride) {
                     currentTryCount++;
@@ -475,6 +477,9 @@ public class SaveTv extends PluginForHost {
                 }
                 final long userDefinedWaitHours = getLongProperty(cfg, DOWNLOADONLYADSFREE_RETRY_HOURS, SaveTv.defaultNoAdsFreeAvailableRetryWaitHours);
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, NOCUTAVAILABLETEXT, userDefinedWaitHours * 60 * 60 * 1000l);
+            } else {
+                logger.info("Ad-free version is unavailable --> Downloading version with ads");
+                downloadWithoutAds_request_value = "false";
             }
         }
 
@@ -491,14 +496,9 @@ public class SaveTv extends PluginForHost {
             if (br.containsHTML("Die Aufnahme liegt nicht im gewünschten Format vor")) {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, PREFERREDFORMATNOTAVAILABLETEXT, 4 * 60 * 60 * 1000l);
             }
-            /* TODO: Check if their new system still has this errormessage */
-            /* Ads-Free version not available - handle it */
-            if (br.containsHTML("\\'Leider enthält Ihre Aufnahme nur Werbung\\.\\'") && preferAdsFree) {
-                this.ISADSFREEAVAILABLE = false;
-                if (cfg.getBooleanProperty(DOWNLOADONLYADSFREE, false) && !this.ISADSFREEAVAILABLE) {
-                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, NOCUTAVAILABLETEXT, 12 * 60 * 60 * 1000l);
-                }
-                site_GetDownloadPage(downloadLink, stv_request_selected_format_value, "false");
+            /* Ads-Free version not available - handle it - usually this mes */
+            if (br.containsHTML("\"Leider enthält Ihre Aufnahme nur Werbung")) {
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, NOCUTAVAILABLETEXT, 12 * 60 * 60 * 1000l);
             }
             dllink = br.getRegex("(\\'|\")(http://[^<>\"\\']+/\\?m=dl)(\\'|\")").getMatch(1);
         }
