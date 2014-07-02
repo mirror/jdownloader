@@ -46,7 +46,7 @@ import jd.utils.locale.JDL;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
-@HostPlugin(revision = "$Revision: 18785 $", interfaceVersion = 2, names = { "dotsemper.com" }, urls = { "https?://(www\\.)?dotsemper\\.com/(embed\\-)?[a-z0-9]{12}" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "dotsemper.com" }, urls = { "https?://(www\\.)?dotsemper\\.com/(embed\\-)?[a-z0-9]{12}" }, flags = { 0 })
 public class DotSemperCom extends PluginForHost {
 
     private String               correctedBR                  = "";
@@ -113,7 +113,7 @@ public class DotSemperCom extends PluginForHost {
         br.setFollowRedirects(true);
         prepBrowser(br);
         getPage(link.getDownloadURL());
-        if (new Regex(correctedBR, "(No such file|>File Not Found<|>The file was removed by|Reason for deletion:\n)").matches()) {
+        if (new Regex(correctedBR, "(No such file|>File Not Found<|>The file was removed by|Reason for deletion:\n|The file you were looking for could not be found)").matches()) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         if (new Regex(correctedBR, MAINTENANCE).matches()) {
