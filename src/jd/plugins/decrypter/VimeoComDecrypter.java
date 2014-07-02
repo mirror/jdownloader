@@ -149,7 +149,7 @@ public class VimeoComDecrypter extends PluginForDecrypt {
                 br.getPage("http://player.vimeo.com/config/" + ID);
             }
 
-            if (br.containsHTML("Page not found|This video does not exist|>We couldn\\'t find that page")) {
+            if (br.containsHTML("Page not found|This video does not exist|>We couldn't find that page|>Sorry, there is no video here\\.<|>Either it was deleted or it never existed in the first place")) {
                 final DownloadLink link = createDownloadlink(parameter.replace("http://", "decryptedforVimeoHosterPlugin1" + "://"));
                 link.setAvailable(false);
                 link.setProperty("offline", true);
