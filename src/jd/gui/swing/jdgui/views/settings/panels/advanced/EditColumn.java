@@ -12,6 +12,8 @@ import javax.swing.ImageIcon;
 
 import org.appwork.storage.JSonStorage;
 import org.appwork.swing.components.tooltips.ExtTooltip;
+import org.appwork.swing.exttable.ExtColumn;
+import org.appwork.swing.exttable.ExtDefaultRowSorter;
 import org.appwork.swing.exttable.columns.ExtTextColumn;
 import org.appwork.utils.ImageProvider.ImageProvider;
 import org.appwork.utils.swing.EDTHelper;
@@ -38,26 +40,40 @@ public class EditColumn extends ExtTextColumn<AdvancedConfigEntry> {
 
         @Override
         public boolean isEnabled() {
-            if (value == null) return false;
-            if (value.getDescription() != null) { return true; }
-            if (value.getDefault() != null) { return true; }
-            if (value.getValidator() != null) { return true; }
+            if (value == null) {
+                return false;
+            }
+            if (value.getDescription() != null) {
+                return true;
+            }
+            if (value.getDefault() != null) {
+                return true;
+            }
+            if (value.getValidator() != null) {
+                return true;
+            }
             return false;
         }
 
         public void actionPerformed(ActionEvent e) {
-            if (!isEnabled()) return;
+            if (!isEnabled()) {
+                return;
+            }
             StringBuilder sb = new StringBuilder();
 
             if (value.getDescription() != null) {
                 sb.append(value.getDescription());
             }
             if (value.getDefault() != null) {
-                if (sb.length() > 0) sb.append("\r\n");
+                if (sb.length() > 0) {
+                    sb.append("\r\n");
+                }
                 sb.append("Defaultvalue: " + JSonStorage.toString(value.getDefault()));
             }
             if (value.getValidator() != null) {
-                if (sb.length() > 0) sb.append("\r\n\r\n");
+                if (sb.length() > 0) {
+                    sb.append("\r\n\r\n");
+                }
                 sb.append(value.getValidator());
             }
             Dialog.getInstance().showMessageDialog(Dialog.STYLE_LARGE, value.getKey(), sb.toString());
@@ -88,7 +104,9 @@ public class EditColumn extends ExtTextColumn<AdvancedConfigEntry> {
         }
 
         public void actionPerformed(ActionEvent e) {
-            if (!resetable) return;
+            if (!resetable) {
+                return;
+            }
             EditColumn.this.stopCellEditing();
             new EDTHelper<Void>() {
 
@@ -156,11 +174,49 @@ public class EditColumn extends ExtTextColumn<AdvancedConfigEntry> {
         iconEE = new MergedIcon(NewTheme.I().getIcon("help", 16), NewTheme.I().getIcon("reset", 16));
         info = new InfoAction();
         reset = new ResetAction();
+        setRowSorter(new ExtDefaultRowSorter<AdvancedConfigEntry>() {
+            @Override
+            public int compare(AdvancedConfigEntry o1, AdvancedConfigEntry o2) {
+                final Icon ic1 = getIcon(o1);
+                final Icon ic2 = getIcon(o2);
+                final int h1 = ic1 == null ? 0 : getIconID(ic1);
+                final int h2 = ic2 == null ? 0 : getIconID(ic2);
+                if (h1 == h2) {
+                    return 0;
+                }
+                if (this.getSortOrderIdentifier() == ExtColumn.SORT_ASC) {
+                    return h1 > h2 ? -1 : 1;
+                } else {
+                    return h2 > h1 ? -1 : 1;
+                }
+            }
+
+            private int getIconID(Icon ic) {
+                if (ic == iconDE) {
+                    return 1;
+                }
+                if (ic == iconEE) {
+                    return 2;
+                }
+                if (ic == iconED) {
+                    return 3;
+                }
+                if (ic == iconDD) {
+                    return 4;
+                }
+                return 0;
+            }
+        });
     }
 
     @Override
     public int getMaxWidth() {
         return getMinWidth();
+    }
+
+    @Override
+    public boolean isSortable(AdvancedConfigEntry obj) {
+        return true;
     }
 
     @Override
