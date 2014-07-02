@@ -72,9 +72,10 @@ public class XHamsterCom extends PluginForHost {
      * */
     public String getDllink() throws IOException, PluginException {
         String dllink = br.getRegex("\"(https?://\\d+\\.xhcdn\\.com/key=[^<>\"]*?)\"").getMatch(0);
-        if (dllink == null) {
-            dllink = br.getRegex("flashvars.*?file=(http%3.*?)&").getMatch(0);
-        }
+        /* Example-ID: 1815274 */
+        // if (dllink == null) {
+        // dllink = br.getRegex("flashvars.*?file=(http%3.*?)&").getMatch(0);
+        // }
         if (dllink == null) {
             final Regex secondway = br.getRegex("\\&srv=(https?[A-Za-z0-9%]+\\.xhcdn\\.com)\\&file=([^<>\"]*?)\\&");
             String server = br.getRegex("\\'srv\\': \\'(.*?)\\'").getMatch(0);

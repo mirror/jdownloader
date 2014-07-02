@@ -51,10 +51,19 @@ public class FourSexFourCom extends PluginForDecrypt {
         }
         // xvideos.com 1
         externID = br.getRegex("xvideos\\.com/embedframe/(\\d+)").getMatch(0);
-        if (externID == null) externID = br.getRegex("fucking8\\.com/includes/player/\\?video=xv(\\d+)\"").getMatch(0);
-        if (externID == null) externID = br.getRegex("\\?video=xv(\\d+)\\'").getMatch(0);
-        if (externID == null) externID = br.getRegex("value=\"id_video=(\\d+)\" /><embed src=\"http://static\\.xvideos\\.com/").getMatch(0);
-        if (externID == null) externID = br.getRegex("http://(www\\.)?xvideos\\.com/video(\\d+)").getMatch(1);
+        /* fucking8 is probably outdated here - regex below will simply grab the available directlinks */
+        if (externID == null) {
+            externID = br.getRegex("fucking8\\.com/includes/player/\\?video=xv(\\d+)\"").getMatch(0);
+        }
+        if (externID == null) {
+            externID = br.getRegex("\\?video=xv(\\d+)\\'").getMatch(0);
+        }
+        if (externID == null) {
+            externID = br.getRegex("value=\"id_video=(\\d+)\" /><embed src=\"http://static\\.xvideos\\.com/").getMatch(0);
+        }
+        if (externID == null) {
+            externID = br.getRegex("http://(www\\.)?xvideos\\.com/video(\\d+)").getMatch(1);
+        }
         if (externID != null) {
             decryptedLinks.add(createDownloadlink("http://www.xvideos.com/video" + externID));
             return decryptedLinks;
@@ -75,7 +84,9 @@ public class FourSexFourCom extends PluginForDecrypt {
             return decryptedLinks;
         }
         externID = br.getRegex("redtube\\.com/player/\"><param name=\"FlashVars\" value=\"id=(\\d+)\\&").getMatch(0);
-        if (externID == null) externID = br.getRegex("embed\\.redtube\\.com/player/\\?id=(\\d+)\\&").getMatch(0);
+        if (externID == null) {
+            externID = br.getRegex("embed\\.redtube\\.com/player/\\?id=(\\d+)\\&").getMatch(0);
+        }
         if (externID != null) {
             DownloadLink dl = createDownloadlink("http://www.redtube.com/" + externID);
             decryptedLinks.add(dl);
@@ -90,7 +101,9 @@ public class FourSexFourCom extends PluginForDecrypt {
         }
         // Filename needed for all sites below
         String filename = br.getRegex("<title>(.*?) \\- 4sex4\\.com</title>").getMatch(0);
-        if (filename == null) filename = br.getRegex("<h1>(.*?)</h1>").getMatch(0);
+        if (filename == null) {
+            filename = br.getRegex("<h1>(.*?)</h1>").getMatch(0);
+        }
         if (filename == null) {
             logger.warning("Decrypter broken for link: " + parameter);
             return null;
@@ -142,13 +155,17 @@ public class FourSexFourCom extends PluginForDecrypt {
             }
             final DownloadLink dl = createDownloadlink("directhttp://" + Encoding.htmlDecode(finallink));
             String type = br.getRegex("<meta rel=\"type\">(.*?)</meta>").getMatch(0);
-            if (type == null) type = "flv";
+            if (type == null) {
+                type = "flv";
+            }
             dl.setFinalFileName(filename + "." + type);
             decryptedLinks.add(dl);
             return decryptedLinks;
         }
         externID = br.getRegex("pornhub\\.com/embed/(\\d+)").getMatch(0);
-        if (externID == null) externID = br.getRegex("pornhub\\.com/view_video\\.php\\?viewkey=(\\d+)").getMatch(0);
+        if (externID == null) {
+            externID = br.getRegex("pornhub\\.com/view_video\\.php\\?viewkey=(\\d+)").getMatch(0);
+        }
         if (externID != null) {
             DownloadLink dl = createDownloadlink("http://www.pornhub.com/view_video.php?viewkey=" + externID);
             decryptedLinks.add(dl);
@@ -168,6 +185,13 @@ public class FourSexFourCom extends PluginForDecrypt {
                 return null;
             }
             decryptedLinks.add(createDownloadlink(externID));
+            return decryptedLinks;
+        }
+        externID = br.getRegex("file:\"(http://fucking8\\.com/video/\\d+\\.mp4)\"").getMatch(0);
+        if (externID != null) {
+            final DownloadLink dl = createDownloadlink("directhttp://" + externID);
+            dl.setFinalFileName(filename + ".mp4");
+            decryptedLinks.add(dl);
             return decryptedLinks;
         }
         // Decrypt images

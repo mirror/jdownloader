@@ -68,9 +68,9 @@ public class Spi0nCom extends PluginForDecrypt {
         }
         /* Sometimes they host videos on their own servers */
         if (finallink == null) {
-            finallink = br.getRegex("\"file\":\"(http://(www\\.)?spi0n\\.com/wp\\-content/uploads[^<>\"]*?)\"").getMatch(0);
+            finallink = br.getRegex("\"file\":\"(http://(www\\.)?spi0n\\.com//?wp\\-content/uploads[^<>\"]*?)\"").getMatch(0);
             if (finallink != null) {
-                finallink = "directhttp://" + finallink.replace("http://www.", "http://");
+                finallink = "directhttp://" + finallink.replace("spi0n.com//", "spi0n.com/");
             }
         }
         /* Maybe its a picture gallery */

@@ -466,8 +466,10 @@ public class DecrypterForRedirectServicesWithoutDirectRedirects extends PluginFo
                 if (br.containsHTML(">403 Forbidden<")) {
                     logger.info("Link offline: " + parameter);
                     return decryptedLinks;
-                }
-                if (br.getURL().equals("http://adfoc.us/")) {
+                } else if (br.containsHTML("No htmlCode read")) {
+                    logger.info("Link offline (server error): " + parameter);
+                    return decryptedLinks;
+                } else if (br.getURL().equals("http://adfoc.us/")) {
                     logger.info("Link offline: " + parameter);
                     return decryptedLinks;
                 }

@@ -16,10 +16,9 @@
 
 package jd.plugins.decrypter;
 
-import java.text.DecimalFormat;
+import java.math.BigDecimal;
 import java.text.ParseException;
 import java.util.ArrayList;
-import java.util.Locale;
 
 import javax.swing.JOptionPane;
 import javax.swing.SwingUtilities;
@@ -43,7 +42,7 @@ import jd.utils.JDUtilities;
 
 import org.appwork.utils.formatter.TimeFormatter;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "save.tv" }, urls = { "https?://(www\\.)?save\\.tv/STV/M/obj/user/usShowVideoArchive\\.cfm" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "save.tv" }, urls = { "https?://(www\\.)?save\\.tv/STV/M/obj/archive/VideoArchive\\.cfm" }, flags = { 0 })
 public class SaveTvDecrypter extends PluginForDecrypt {
 
     public SaveTvDecrypter(PluginWrapper wrapper) {
@@ -69,14 +68,14 @@ public class SaveTvDecrypter extends PluginForDecrypt {
     private boolean                crawler_DialogsDisabled           = false;
 
     /* Decrypter constants */
-    private static final int       ENTRIES_PER_REQUEST               = 800;
+    private static final int       ENTRIES_PER_REQUEST               = 1000;
 
     final ArrayList<DownloadLink>  decryptedLinks                    = new ArrayList<DownloadLink>();
     private long                   grab_last_days_num                = 0;
     private long                   tdifference_milliseconds          = 0;
 
     private int                    totalLinksNum                     = 0;
-    private int                    maxPage                           = 1;
+    private int                    requestCount                      = 1;
     private long                   time_crawl_started                = 0;
 
     /**
@@ -110,16 +109,7 @@ public class SaveTvDecrypter extends PluginForDecrypt {
         tdifference_milliseconds = grab_last_days_num * 24 * 60 * 60 * 1000;
 
         try {
-            getPageSafe("https://www.save.tv/STV/M/obj/archive/JSON/VideoArchiveApi.cfm?iEntriesPerPage=" + ENTRIES_PER_REQUEST);
-            final String[] pages = br.getRegex("PageNumber=(\\d+)\\&bLoadLast=1\"").getColumn(0);
-            if (pages != null && pages.length != 0) {
-                for (final String page : pages) {
-                    final int currentpage = Integer.parseInt(page);
-                    if (currentpage > maxPage) {
-                        maxPage = currentpage;
-                    }
-                }
-            }
+            getPageSafe("https://www.save.tv/STV/M/obj/archive/JSON/VideoArchiveApi.cfm?iEntriesPerPage=1&iCurrentPage=1");
             final String totalLinks = getJson(br.toString(), "ITOTALENTRIES");
             if (totalLinks == null) {
                 logger.warning("Decrypter broken for link: " + parameter);
@@ -128,16 +118,14 @@ public class SaveTvDecrypter extends PluginForDecrypt {
             /* Save on account to display in account information */
             aa.setProperty("acc_count_telecast_ids", totalLinks);
             totalLinksNum = Integer.parseInt(totalLinks);
-            final DecimalFormat df = new DecimalFormat("0000");
-            final DecimalFormat df2 = new DecimalFormat("0000000000000");
-
-            final ArrayList<String> ajaxLoad = new ArrayList<String>();
+            final BigDecimal bd = new BigDecimal((double) totalLinksNum / ENTRIES_PER_REQUEST);
+            requestCount = bd.setScale(0, BigDecimal.ROUND_UP).intValue();
 
             int added_entries = 0;
             boolean decryptAborted = false;
 
             try {
-                for (int i = 1; i <= maxPage; i++) {
+                for (int i = 1; i <= requestCount; i++) {
                     try {
                         if (this.isAbort()) {
                             decryptAborted = true;
@@ -150,34 +138,22 @@ public class SaveTvDecrypter extends PluginForDecrypt {
                         }
                     }
 
-                    logger.info("save.tv: Decrypting page " + i + " of " + maxPage);
+                    logger.info("save.tv: Decrypting page " + i + " of " + requestCount);
 
-                    if (i > 1) {
-                        br.getPage("https://www.save.tv/STV/M/obj/user/usShowVideoArchive.cfm?iPageNumber=" + i + "&bLoadLast=1");
-                    }
+                    getPageSafe("https://www.save.tv/STV/M/obj/archive/JSON/VideoArchiveApi.cfm?iEntriesPerPage=" + ENTRIES_PER_REQUEST + "&iCurrentPage=" + i);
+                    final String array_text = br.getRegex("\"ARRVIDEOARCHIVEENTRIES\":\\[(.*?)\\]").getMatch(0);
+                    final String[] telecast_array = array_text.split("\\},\\{");
 
-                    /* Find and save all links which we have to load later */
-                    final String[] ajxload = br.getRegex("(<tr id=\"archive\\-list\\-row\\-toogle\\-\\d+\".*?</tr>)").getColumn(0);
-                    if (ajxload != null && ajxload.length != 0) {
-                        for (final String singleaxaxload : ajxload) {
-                            ajaxLoad.add(singleaxaxload);
-                            added_entries++;
-                        }
-                    }
-
-                    final String[] directIDs = get_telecast_ids();
-                    if (directIDs != null && directIDs.length != 0) {
-                        for (final String singleid : directIDs) {
-                            addID(singleid);
-                            added_entries++;
-                        }
+                    for (final String singleid_information : telecast_array) {
+                        addID(singleid_information);
+                        added_entries++;
                     }
 
                     if (added_entries == 0) {
-                        logger.info("save.tv. Can't find entries, stopping at page: " + i + " of " + maxPage);
+                        logger.info("save.tv. Can't find entries, stopping at page: " + i + " of " + requestCount);
                         break;
                     }
-                    logger.info("Found " + added_entries + " entries on page " + i + " of " + maxPage);
+                    logger.info("Found " + added_entries + " entries on page " + i + " of " + requestCount);
                     continue;
                 }
 
@@ -229,79 +205,24 @@ public class SaveTvDecrypter extends PluginForDecrypt {
         return decryptedLinks;
     }
 
-    private String[] get_telecast_ids() {
-        return br.getRegex("(<tr name=\"archive\\-list\\-row\\-\\d+\".*?</tr>)").getColumn(0);
-    }
-
     private void addID(final String id_info) throws ParseException, DecrypterException {
-        final String telecast_id = new Regex(id_info, "name=\"lTelecastID\" value=\"(\\d+)\"").getMatch(0);
-        final String telecast_url = "https://www.save.tv/STV/M/obj/user/usShowVideoArchiveDetail.cfm?TelecastID=" + telecast_id;
-        final Regex dateRegex = new Regex(id_info, "(\\d{2}\\.\\d{2}\\.\\d{2}) \\| (\\d{2}:\\d{2})[\t\n\r ]+\\((\\d+)min\\)");
-        final String date = dateRegex.getMatch(0);
-        final String time = dateRegex.getMatch(1);
-        String tv_station = new Regex(id_info, "global/TVLogoDE/[A-Za-z0-9\\-_]+\\.gif\" width=\"\\d+\" height=\"\\d+\" alt=\"([^<>\"]*?)\"").getMatch(0);
-        String site_run_time = dateRegex.getMatch(2);
-        if (site_run_time == null) {
-            site_run_time = "0";
-        }
-        final long calculated_filesize = jd.plugins.hoster.SaveTv.calculateFilesize(site_run_time);
-        final Regex nameRegex = new Regex(id_info, "class=\"normal\">([^<>\"]*?)</a>([^<>\"]*?)</td>");
-        String name = nameRegex.getMatch(0);
-        if (name == null) {
-            name = new Regex(id_info, "class=\"child\">([^<>\"]*?)</a>").getMatch(0);
-        }
-        if (name == null || tv_station == null) {
-            throw new DecrypterException("Decrypt failed");
-        }
-        String sur_name = nameRegex.getMatch(1);
-        if (sur_name != null) {
-            sur_name = correctData(sur_name);
-        }
-        name = correctData(name);
-        tv_station = correctData(tv_station);
+        final String telecast_id = this.getJson(id_info, "ITELECASTID");
+        final String telecast_url = "https://www.save.tv/STV/M/obj/archive/VideoArchiveDetails.cfm?TelecastId=" + telecast_id;
+        final DownloadLink dl = createDownloadlink(telecast_url);
+        jd.plugins.hoster.SaveTv.siteParseFilenameInformation(dl, id_info);
+        final long calculated_filesize = jd.plugins.hoster.SaveTv.calculateFilesize(getLongProperty(dl, "site_runtime_minutes", 0));
 
-        final long datemilliseconds = TimeFormatter.getMilliSeconds(date + ":" + time, "dd.MM.yy:HH:mm", Locale.GERMAN);
+        final long datemilliseconds = getLongProperty(dl, "originaldate", 0);
         final long current_tdifference = System.currentTimeMillis() - datemilliseconds;
         if (tdifference_milliseconds == 0 || current_tdifference <= tdifference_milliseconds) {
 
             String filename;
-            final DownloadLink dl = createDownloadlink(telecast_url);
             /* Nothing to hide - Always show original links in JD */
             dl.setBrowserUrl(telecast_url);
             dl.setDownloadSize(calculated_filesize);
             if (FAST_LINKCHECK) {
                 dl.setAvailable(true);
             }
-
-            if (sur_name != null && !sur_name.equals("")) {
-                /* For series */
-                /* Correct bad names */
-                if (sur_name.startsWith("- ")) {
-                    sur_name = sur_name.substring(2, sur_name.length());
-                }
-                /* Handle episodenumber */
-                final String episode_part = new Regex(sur_name, "( \\- \\d+)$").getMatch(0);
-                if (episode_part != null) {
-                    /* Remove episode from episodename */
-                    sur_name = sur_name.replace(episode_part, "");
-                    /* Find and set episodenumber */
-                    final String episodenumber = new Regex(episode_part, "(\\d+)$").getMatch(0);
-                    dl.setProperty("episodenumber", Long.parseLong(episodenumber));
-                }
-                dl.setProperty("category", 2);
-                dl.setProperty("seriestitle", name);
-                dl.setProperty("episodename", sur_name);
-            } else {
-                /* For all others */
-                dl.setProperty("category", 1);
-            }
-
-            /* Add remaining information */
-            dl.setProperty("plain_tv_station", tv_station);
-            dl.setProperty("plainfilename", name);
-            dl.setProperty("type", ".mp4");
-            dl.setProperty("originaldate", datemilliseconds);
-
             /* Get and set filename */
             if (cfg.getBooleanProperty(USEORIGINALFILENAME)) {
                 filename = jd.plugins.hoster.SaveTv.getFakeOriginalFilename(dl);
@@ -319,10 +240,12 @@ public class SaveTvDecrypter extends PluginForDecrypt {
         }
     }
 
+    @SuppressWarnings("unused")
     private String correctData(final String input) {
         return jd.plugins.hoster.SaveTv.correctData(input);
     }
 
+    @SuppressWarnings("deprecation")
     private boolean getUserLogin(final boolean force) throws Exception {
         final PluginForHost hostPlugin = JDUtilities.getPluginForHost("save.tv");
         final Account aa = AccountController.getInstance().getValidAccount(hostPlugin);
@@ -371,10 +294,14 @@ public class SaveTvDecrypter extends PluginForDecrypt {
      * 
      * @author raztoki
      * */
-    private String getJson(final String source, final String key) {
+    private static String getJson(final String source, final String key) {
         String result = new Regex(source, "\"" + key + "\":(-?\\d+(\\.\\d+)?|true|false|null)").getMatch(0);
         if (result == null) {
-            result = new Regex(source, "\"" + key + "\":\"([^\"]+)\"").getMatch(0);
+            /* Workaround - sometimes they use " plain in json even though usually this has to be encoded! */
+            result = new Regex(source, "\"" + key + "\":\"([^<>]*?)\",\"").getMatch(0);
+        }
+        if (result == null) {
+            result = new Regex(source, "\"" + key + "\":\"([^\"]*?)\"").getMatch(0);
         }
         if (result != null) {
             result = result.replaceAll("\\\\/", "/");
