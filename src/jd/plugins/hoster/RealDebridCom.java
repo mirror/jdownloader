@@ -287,12 +287,12 @@ public class RealDebridCom extends PluginForHost {
                             }
                         } else {
                             // unhandled error msg type!
-                            logger.warning("Please report this issue to JDownloader Development Team!");
+                            logger.warning("Please report this issue to JDownloader Development Team! 'msg doesn't match regex', unknown error type...");
                             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                         }
                     } else {
                         // unhandled error!
-                        logger.warning("Please report this issue to JDownloader Development Team!");
+                        logger.warning("Please report this issue to JDownloader Development Team! 'msg == null', heeeeeeeeeeeello");
                         throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                     }
                 } else {
@@ -771,7 +771,7 @@ public class RealDebridCom extends PluginForHost {
 
     /**
      * Tries to return value of key from JSon response, from String source.
-     * 
+     *
      * @author raztoki
      * */
     private String getJson(final String source, final String key) {
@@ -787,7 +787,7 @@ public class RealDebridCom extends PluginForHost {
 
     /**
      * Tries to return value of key from JSon response, from default 'br' Browser.
-     * 
+     *
      * @author raztoki
      * */
     private String getJson(final String key) {
@@ -796,7 +796,7 @@ public class RealDebridCom extends PluginForHost {
 
     /**
      * Tries to return value of key from JSon response, from provided Browser.
-     * 
+     *
      * @author raztoki
      * */
     private String getJson(final Browser ibr, final String key) {
