@@ -77,7 +77,7 @@ public class SaveTv extends PluginForHost {
     public static final double   QUALITY_HD_MB_PER_MINUTE          = 22;
     public static final double   QUALITY_H264_NORMAL_MB_PER_MINUTE = 12.605;
     public static final double   QUALITY_H264_MOBILE_MB_PER_MINUTE = 4.64;
-    private final String         COOKIE_HOST                       = "http://save.tv";
+    private final static String  COOKIE_HOST                       = "http://save.tv";
     private static final String  NICE_HOST                         = "save.tv";
     private static final String  NICE_HOSTproperty                 = "savetv";
 
@@ -101,7 +101,7 @@ public class SaveTv extends PluginForHost {
     private static final String  CRAWLER_ACTIVATE                  = "CRAWLER_ACTIVATE";
     private static final String  CRAWLER_ENABLE_FASTER             = "CRAWLER_ENABLE_FASTER";
     private static final String  CRAWLER_DISABLE_DIALOGS           = "CRAWLER_DISABLE_DIALOGS";
-    private static final String  CRAWLER_LASTDAYS_COUNT            = "CRAWLER_LASTDAYS_COUNT";
+    private static final String  CRAWLER_LASTHOURS_COUNT           = "CRAWLER_LASTHOURS_COUNT";
     private static final String  DISABLE_LINKCHECK                 = "DISABLE_LINKCHECK";
     private static final String  DELETE_TELECAST_ID_AFTER_DOWNLOAD = "DELETE_TELECAST_ID_AFTER_DOWNLOAD";
 
@@ -617,7 +617,7 @@ public class SaveTv extends PluginForHost {
                         logger.info("Failed to get long session cookie");
                     } else {
                         logger.info("Successfully received long session cookie and saved cookies");
-                        this.saveCookies(account);
+                        saveCookies(br, account);
                     }
                 } else {
                     logger.info("Long session cookie exists");
@@ -674,81 +674,90 @@ public class SaveTv extends PluginForHost {
         return ai;
     }
 
-    @SuppressWarnings({ "unchecked" })
-    public void login(final Browser br, final Account account, final boolean force) throws Exception {
+    private void login(final Browser br, final Account account, final boolean force) throws Exception {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
-        final String lang = System.getProperty("user.language");
         if (is_API_enabled()) {
-            SESSIONID = account.getStringProperty("sessionid", null);
-            final long lastUse = getLongProperty(account, "lastuse", -1l);
-            /* Only generate new sessionID if we have none or it's older than 6 hours */
-            if (SESSIONID == null || (System.currentTimeMillis() - lastUse) > 360000) {
-                api_prepBrowser(br);
-                doSoapRequest("http://tempuri.org/ISession/CreateSession", "<apiKey>" + Encoding.Base64Decode(APIKEY) + "</apiKey>");
-                SESSIONID = br.getRegex("<a:SessionId>([^<>\"]*?)</a:SessionId>").getMatch(0);
-                if (SESSIONID == null) {
-                    if ("de".equalsIgnoreCase(lang)) {
-                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nPlugin defekt, bitte den JDownloader Support kontaktieren!", PluginException.VALUE_ID_PREMIUM_DISABLE);
-                    } else {
-                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nPlugin broken, please contact the JDownloader Support!", PluginException.VALUE_ID_PREMIUM_DISABLE);
-                    }
-                }
-                account.setProperty("lastuse", System.currentTimeMillis());
-                account.setProperty("sessionid", SESSIONID);
-            }
-            doSoapRequest("http://tempuri.org/IUser/Login", "<sessionId>" + SESSIONID + "</sessionId><username>" + account.getUser() + "</username><password>" + account.getPass() + "</password>");
-            if (!br.containsHTML("<a:HasPremiumStatus>true</a:HasPremiumStatus>")) {
-                if ("de".equalsIgnoreCase(lang)) {
-                    throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUngültiger Benutzername oder ungültiges Passwort!\r\nDu bist dir sicher, dass dein eingegebener Benutzername und Passwort stimmen? Versuche folgendes:\r\n1. Falls dein Passwort Sonderzeichen enthält, ändere es (entferne diese) und versuche es erneut!\r\n2. Gib deine Zugangsdaten per Hand (ohne kopieren/einfügen) ein.", PluginException.VALUE_ID_PREMIUM_DISABLE);
-                } else {
-                    throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nInvalid username/password!\r\nYou're sure that the username and password you entered are correct? Some hints:\r\n1. If your password contains special characters, change it (remove them) and try again!\r\n2. Type in your username/password by hand without copy & paste.", PluginException.VALUE_ID_PREMIUM_DISABLE);
-                }
-            }
+            api_login(br, account);
         } else {
-            site_prepBrowser(br);
-            synchronized (LOCK) {
-                try {
-                    /* Load cookies */
-                    br.setCookiesExclusive(true);
-                    final Object ret = account.getProperty("cookies", null);
-                    boolean acmatch = Encoding.urlEncode(account.getUser()).equals(account.getStringProperty("name", Encoding.urlEncode(account.getUser())));
-                    if (acmatch) {
-                        acmatch = Encoding.urlEncode(account.getPass()).equals(account.getStringProperty("pass", Encoding.urlEncode(account.getPass())));
-                    }
-                    if (acmatch && ret != null && ret instanceof HashMap<?, ?> && !force) {
-                        final HashMap<String, String> cookies = (HashMap<String, String>) ret;
-                        if (account.isValid()) {
-                            for (final Map.Entry<String, String> cookieEntry : cookies.entrySet()) {
-                                final String key = cookieEntry.getKey();
-                                final String value = cookieEntry.getValue();
-                                br.setCookie(COOKIE_HOST, key, value);
-                            }
-                            return;
-                        }
-                    }
-                    final String postData = "sUsername=" + Encoding.urlEncode(account.getUser()) + "&sPassword=" + Encoding.urlEncode(account.getPass()) + "&bAutoLoginActivate=1";
-                    br.postPage("https://www.save.tv/STV/M/Index.cfm?sk=PREMIUM", postData);
-                    if (br.containsHTML("No htmlCode read")) {
-                        br.getPage("https://www.save.tv/STV/M/obj/TVProgCtr/tvctShow.cfm");
-                    }
-                    if (!br.containsHTML("class=\"member\\-nav\\-li member\\-nav\\-account \"") || br.containsHTML("Bitte verifizieren Sie Ihre Logindaten")) {
-                        if ("de".equalsIgnoreCase(lang)) {
-                            throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUngültiger Benutzername oder ungültiges Passwort!\r\nDu bist dir sicher, dass dein eingegebener Benutzername und Passwort stimmen? Versuche folgendes:\r\n1. Falls dein Passwort Sonderzeichen enthält, ändere es (entferne diese) und versuche es erneut!\r\n2. Gib deine Zugangsdaten per Hand (ohne kopieren/einfügen) ein.", PluginException.VALUE_ID_PREMIUM_DISABLE);
-                        } else {
-                            throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nInvalid username/password!\r\nYou're sure that the username and password you entered are correct? Some hints:\r\n1. If your password contains special characters, change it (remove them) and try again!\r\n2. Type in your username/password by hand without copy & paste.", PluginException.VALUE_ID_PREMIUM_DISABLE);
-                        }
-                    }
-                    final String acc_count_archive_entries = br.getRegex(">(\\d+) Sendungen im Archiv<").getMatch(0);
-                    if (acc_count_archive_entries != null) {
-                        account.setProperty("acc_count_archive_entries", acc_count_archive_entries);
-                    }
-                    /* Save cookies & account data */
-                    saveCookies(account);
-                } catch (final PluginException e) {
-                    account.setProperty("cookies", Property.NULL);
-                    throw e;
+            site_login(br, account, force);
+        }
+    }
+
+    public static void site_login(final Browser br, final Account account, final boolean force) throws IOException, PluginException {
+        final String lang = System.getProperty("user.language");
+        site_prepBrowser(br);
+        synchronized (LOCK) {
+            try {
+                /* Load cookies */
+                br.setCookiesExclusive(true);
+                final Object ret = account.getProperty("cookies", null);
+                boolean acmatch = Encoding.urlEncode(account.getUser()).equals(account.getStringProperty("name", Encoding.urlEncode(account.getUser())));
+                if (acmatch) {
+                    acmatch = Encoding.urlEncode(account.getPass()).equals(account.getStringProperty("pass", Encoding.urlEncode(account.getPass())));
                 }
+                if (acmatch && ret != null && ret instanceof HashMap<?, ?> && !force) {
+                    final HashMap<String, String> cookies = (HashMap<String, String>) ret;
+                    if (account.isValid()) {
+                        for (final Map.Entry<String, String> cookieEntry : cookies.entrySet()) {
+                            final String key = cookieEntry.getKey();
+                            final String value = cookieEntry.getValue();
+                            br.setCookie(COOKIE_HOST, key, value);
+                        }
+                        return;
+                    }
+                }
+                final String postData = "sUsername=" + Encoding.urlEncode(account.getUser()) + "&sPassword=" + Encoding.urlEncode(account.getPass()) + "&bAutoLoginActivate=1";
+                br.postPage("https://www.save.tv/STV/M/Index.cfm?sk=PREMIUM", postData);
+                if (br.containsHTML("No htmlCode read")) {
+                    br.getPage("https://www.save.tv/STV/M/obj/TVProgCtr/tvctShow.cfm");
+                }
+                if (!br.containsHTML("class=\"member\\-nav\\-li member\\-nav\\-account \"") || br.containsHTML("Bitte verifizieren Sie Ihre Logindaten")) {
+                    if ("de".equalsIgnoreCase(lang)) {
+                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUngültiger Benutzername oder ungültiges Passwort!\r\nDu bist dir sicher, dass dein eingegebener Benutzername und Passwort stimmen? Versuche folgendes:\r\n1. Falls dein Passwort Sonderzeichen enthält, ändere es (entferne diese) und versuche es erneut!\r\n2. Gib deine Zugangsdaten per Hand (ohne kopieren/einfügen) ein.", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                    } else {
+                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nInvalid username/password!\r\nYou're sure that the username and password you entered are correct? Some hints:\r\n1. If your password contains special characters, change it (remove them) and try again!\r\n2. Type in your username/password by hand without copy & paste.", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                    }
+                }
+                final String acc_count_archive_entries = br.getRegex(">(\\d+) Sendungen im Archiv<").getMatch(0);
+                if (acc_count_archive_entries != null) {
+                    account.setProperty("acc_count_archive_entries", acc_count_archive_entries);
+                }
+                /* Save cookies & account data */
+                saveCookies(br, account);
+            } catch (final PluginException e) {
+                account.setProperty("cookies", Property.NULL);
+                throw e;
+            }
+        }
+
+    }
+
+    private void api_login(final Browser br, final Account account) throws IOException, PluginException {
+        final String lang = System.getProperty("user.language");
+        SESSIONID = account.getStringProperty("sessionid", null);
+        final long lastUse = getLongProperty(account, "lastuse", -1l);
+        /* Only generate new sessionID if we have none or it's older than 6 hours */
+        if (SESSIONID == null || (System.currentTimeMillis() - lastUse) > 360000) {
+            api_prepBrowser(br);
+            doSoapRequest("http://tempuri.org/ISession/CreateSession", "<apiKey>" + Encoding.Base64Decode(APIKEY) + "</apiKey>");
+            SESSIONID = br.getRegex("<a:SessionId>([^<>\"]*?)</a:SessionId>").getMatch(0);
+            if (SESSIONID == null) {
+                if ("de".equalsIgnoreCase(lang)) {
+                    throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nPlugin defekt, bitte den JDownloader Support kontaktieren!", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                } else {
+                    throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nPlugin broken, please contact the JDownloader Support!", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                }
+            }
+            account.setProperty("lastuse", System.currentTimeMillis());
+            account.setProperty("sessionid", SESSIONID);
+        }
+        doSoapRequest("http://tempuri.org/IUser/Login", "<sessionId>" + SESSIONID + "</sessionId><username>" + account.getUser() + "</username><password>" + account.getPass() + "</password>");
+        if (!br.containsHTML("<a:HasPremiumStatus>true</a:HasPremiumStatus>")) {
+            if ("de".equalsIgnoreCase(lang)) {
+                throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUngültiger Benutzername oder ungültiges Passwort!\r\nDu bist dir sicher, dass dein eingegebener Benutzername und Passwort stimmen? Versuche folgendes:\r\n1. Falls dein Passwort Sonderzeichen enthält, ändere es (entferne diese) und versuche es erneut!\r\n2. Gib deine Zugangsdaten per Hand (ohne kopieren/einfügen) ein.", PluginException.VALUE_ID_PREMIUM_DISABLE);
+            } else {
+                throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nInvalid username/password!\r\nYou're sure that the username and password you entered are correct? Some hints:\r\n1. If your password contains special characters, change it (remove them) and try again!\r\n2. Type in your username/password by hand without copy & paste.", PluginException.VALUE_ID_PREMIUM_DISABLE);
             }
         }
     }
@@ -890,7 +899,7 @@ public class SaveTv extends PluginForHost {
         doSoapRequest("http://tempuri.org/IDownload/GetStreamingUrl", "<sessionId i:type=\"d:string\">" + SESSIONID + "</sessionId><telecastId i:type=\"d:int\">" + getTelecastId(dl) + "</telecastId><telecastIdSpecified i:type=\"d:boolean\">true</telecastIdSpecified><recordingFormatId i:type=\"d:int\">" + user_selected_video_quality + "</recordingFormatId><recordingFormatIdSpecified i:type=\"d:boolean\">true</recordingFormatIdSpecified><adFree i:type=\"d:boolean\">false</adFree><adFreeSpecified i:type=\"d:boolean\">" + downloadWithoutAds + "</adFreeSpecified>");
     }
 
-    private void site_prepBrowser(final Browser br) {
+    private static void site_prepBrowser(final Browser br) {
         br.setReadTimeout(3 * 60 * 1000);
         br.setConnectTimeout(3 * 60 * 1000);
         br.getHeaders().put("User-Agent", "Mozilla/5.0 (Windows NT 6.1; WOW64; rv:27.0) Gecko/20100101 Firefox/27.0");
@@ -1022,7 +1031,7 @@ public class SaveTv extends PluginForHost {
         br.postPageRaw("http://api.save.tv/v2/Api.svc", postdata);
     }
 
-    private void saveCookies(final Account acc) {
+    private static void saveCookies(final Browser br, final Account acc) {
         /* Save cookies */
         final HashMap<String, String> cookies = new HashMap<String, String>();
         final Cookies add = br.getCookies(COOKIE_HOST);
@@ -1311,24 +1320,24 @@ public class SaveTv extends PluginForHost {
     private final static String defaultCustomSeriesFilename                     = "*serientitel* ¦ *episodennummer* ¦ *episodenname**endung*";
     private final static String defaultCustomSeperationMark                     = "+";
     private final static String defaultCustomStringForEmptyTags                 = "-";
-    private final static int    defaultCrawlLastdays                            = 0;
+    private final static int    defaultCrawlLasthours                           = 0;
     private final static int    defaultNoAdsFreeAvailableRetryWaitHours         = 12;
     private final static int    defaultIgnoreOnlyAdsFreeAfterRetries_maxRetries = 2;
 
     private void setConfigElements() {
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_LABEL, "Allgemeine Einstellungen:"));
-        final ConfigEntry useAPI = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), SaveTv.USEAPI, JDL.L("plugins.hoster.SaveTv.UseAPI", "API verwenden?\r\nINFO: Aktiviert man die API, entfallen folgende Features:\r\n-Benutzerdefinierte Dateinamen\r\n-Archiv-Crawler\r\n-Nur Aufnahmen mit angewandter Schnittliste laden\r\n-Anzeigen der Account Details in der Account-Verwaltung (Account Typ, Ablaufdatum, ...)\r\nAus technischen Gründen ist es (noch) nicht möglich, alle dann Inaktiven Einstellungen bei\r\naktivierter API auszugrauen um dem Benutzer visuelles Feedback zu geben, sorry!")).setDefaultValue(false);
+        final ConfigEntry useAPI = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), SaveTv.USEAPI, JDL.L("plugins.hoster.SaveTv.UseAPI", "API verwenden?\r\nINFO: Aktiviert man die API, entfallen folgende Features:\r\n-Benutzerdefinierte Dateinamen\r\n-Nur Aufnahmen mit angewandter Schnittliste laden\r\n-Anzeigen der Account Details in der Account-Verwaltung (Account Typ, Ablaufdatum, ...)\r\nAus technischen Gründen ist es (noch) nicht möglich, alle dann Inaktiven Einstellungen bei\r\naktivierter API auszugrauen um dem Benutzer visuelles Feedback zu geben, sorry!")).setDefaultValue(false);
         getConfig().addEntry(useAPI);
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_SEPARATOR));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), SaveTv.DISABLE_LINKCHECK, JDL.L("plugins.hoster.SaveTv.DisableLinkcheck", "Linkcheck deaktivieren?\r\nVorteile:\r\n-Links landen schneller im Linkgrabber und können auch bei Serverproblemen oder wenn die save.tv Seite komplett offline ist gesammelt werden\r\nNachteile:\r\n-Im Linkgrabber werden zunächst nur die telecast-IDs als Dateinamen angezeigt\r\n-Die endgültigen Dateinamen werden erst beim Downloadstart angezeigt")).setDefaultValue(false));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_SEPARATOR));
 
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_LABEL, "Archiv-Crawler Einstellungen:"));
-        final ConfigEntry grabArchives = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), SaveTv.CRAWLER_ACTIVATE, JDL.L("plugins.hoster.SaveTv.grabArchive", "Archiv-Crawler aktivieren?\r\nINFO: Fügt das komplette Archiv oder Teile davon beim Einfügen dieses Links ein:\r\n'http://www.save.tv/STV/M/obj/user/usShowVideoArchive.cfm'?\r\n")).setDefaultValue(false).setEnabledCondidtion(useAPI, false);
-        getConfig().addEntry(grabArchives);
-        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_SPINNER, getPluginConfig(), SaveTv.CRAWLER_LASTDAYS_COUNT, JDL.L("plugins.hoster.SaveTv.grabArchive.LastDaysCount", "Nur Aufnahmen der letzten X Tage crawlen??\r\nAnzahl der Tage, die gecrawlt werden sollen [0 = komplettes Archiv = alle Tage]:"), 0, 32, 1).setDefaultValue(defaultCrawlLastdays).setEnabledCondidtion(useAPI, false));
-        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), SaveTv.CRAWLER_ENABLE_FASTER, JDL.L("plugins.hoster.SaveTv.grabArchiveFaster", "Aktiviere schnellen Linkcheck für Archiv-Crawler?\r\nVorteil: Über den Archiv-Crawler hinzugefügte Links landen viel schneller im Linkgrabber\r\nNachteil: Es sind nicht alle Informationen (z.B. Produktionsjahr) verfügbar - erst beim Download oder späterem Linkcheck\r\n")).setDefaultValue(false).setEnabledCondidtion(grabArchives, true));
-        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), SaveTv.CRAWLER_DISABLE_DIALOGS, JDL.L("plugins.hoster.SaveTv.crawlerDisableDialogs", "Info Dialoge des Archiv-Crawlers (nach dem Crawlen oder im Fehlerfall) deaktivieren?")).setDefaultValue(false).setEnabledCondidtion(grabArchives, true));
+        final ConfigEntry activateCrawler = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), SaveTv.CRAWLER_ACTIVATE, JDL.L("plugins.hoster.SaveTv.activateCrawler", "Archiv-Crawler aktivieren?\r\nINFO: Fügt das komplette Archiv oder Teile davon beim Einfügen dieses Links ein:\r\n'https://www.save.tv/STV/M/obj/archive/VideoArchive.cfm\r\n")).setDefaultValue(false);
+        getConfig().addEntry(activateCrawler);
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_SPINNER, getPluginConfig(), SaveTv.CRAWLER_LASTHOURS_COUNT, JDL.L("plugins.hoster.SaveTv.grabArchive.lastHours", "Nur Aufnahmen der letzten X Stunden crawlen??\r\nAnzahl der Stunden, die gecrawlt werden sollen [0 = komplettes Archiv]:"), 0, 1000, 24).setDefaultValue(defaultCrawlLasthours).setEnabledCondidtion(activateCrawler, true));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), SaveTv.CRAWLER_ENABLE_FASTER, JDL.L("plugins.hoster.SaveTv.grabArchiveFaster", "Aktiviere schnellen Linkcheck für Archiv-Crawler?\r\nVorteil: Über den Archiv-Crawler hinzugefügte Links landen viel schneller im Linkgrabber\r\nNachteil: Es sind nicht alle Informationen (z.B. Kategorie) verfügbar - erst beim Download oder späterem Linkcheck\r\n")).setDefaultValue(false).setEnabledCondidtion(activateCrawler, true));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), SaveTv.CRAWLER_DISABLE_DIALOGS, JDL.L("plugins.hoster.SaveTv.crawlerDisableDialogs", "Info Dialoge des Archiv-Crawlers (nach dem Crawlen oder im Fehlerfall) deaktivieren?")).setDefaultValue(false).setEnabledCondidtion(activateCrawler, true));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_SEPARATOR));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_SEPARATOR));
 
