@@ -16,26 +16,27 @@
 
 package jd.plugins.decrypter;
 
+import java.text.DecimalFormat;
 import java.util.ArrayList;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
+import jd.parser.Regex;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "submanga.com" }, urls = { "http://(www\\.)?submanga\\.com/c/\\d+" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "submanga.com" }, urls = { "http://(www\\.)?submanga\\.com/(c/\\d+|[\\w_\\-\\[\\]]+/\\d+/\\d+)" }, flags = { 0 })
 public class SubMangaCom extends PluginForDecrypt {
-
-    public SubMangaCom(PluginWrapper wrapper) {
-        super(wrapper);
-    }
 
     /**
      * @author raztoki
      */
+    public SubMangaCom(PluginWrapper wrapper) {
+        super(wrapper);
+    }
 
     // DEV NOTES
     // other: decided to write like unixmanga.
@@ -43,7 +44,12 @@ public class SubMangaCom extends PluginForDecrypt {
     @Override
     public ArrayList<DownloadLink> decryptIt(final CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-        String parameter = param.toString().replace("www.", "");
+        final String uid = new Regex(param.toString(), "(?:/[\\w_\\-\\[\\]]+/\\d+/|/c/)(\\d+)").getMatch(0);
+        if (uid == null) {
+            logger.warning("Could not find 'uid'");
+            return null;
+        }
+        final String parameter = "http://submanga.com/c/" + uid;
         br.setFollowRedirects(false);
         br.getPage(parameter);
         if (br.getRedirectLocation() != null && br.getRedirectLocation().contains("/404")) {
@@ -51,12 +57,12 @@ public class SubMangaCom extends PluginForDecrypt {
             return null;
         }
         // We get the title
-        final String[][] title = br.getRegex("<strong>submanga\\.com</strong></a> \\&rsaquo; <a href=\"[^>]+>[^<]+</a> \\&rsaquo; <a href=\"[^>]+>([^<]+)</a> \\&rsaquo; <a href=\"[^>]+>([^<]+)</a></td><th width=\"1%\">").getMatches();
+        final String[] title = br.getRegex("<strong>submanga\\.com</strong></a> \\&rsaquo; <a href=\"[^>]+>[^<]+</a> \\&rsaquo; <a href=\"[^>]+>([^<]+)</a> \\&rsaquo; <a href=\"[^>]+>([^<]+)</a></td><th width=\"1%\">").getRow(0);
         if (title == null || title.length == 0) {
             logger.warning("Title not found! : " + parameter);
             return null;
         }
-        String useTitle = (title[0][0] + "_" + title[0][1]).replace("Â·", ".");
+        String useTitle = (title[0] + "_" + title[1]).replace("Â·", ".");
         // grab the total pages within viewer
         String totalPages = br.getRegex("(?i)<option value=\"(\\d+)\">\\d+</option></select>").getMatch(0);
         if (totalPages == null) {
@@ -64,9 +70,11 @@ public class SubMangaCom extends PluginForDecrypt {
             return null;
         }
         int numberOfPages = Integer.parseInt(totalPages);
-        String format = "%02d";
-        if (numberOfPages > 0) {
-            format = String.format("%%0%dd", (int) Math.log10(numberOfPages) + 1);
+        DecimalFormat df_page = new DecimalFormat("00");
+        if (numberOfPages > 999) {
+            df_page = new DecimalFormat("0000");
+        } else if (numberOfPages > 99) {
+            df_page = new DecimalFormat("000");
         }
 
         FilePackage fp = FilePackage.getInstance();
@@ -74,10 +82,9 @@ public class SubMangaCom extends PluginForDecrypt {
 
         // We load each page and retrieve the URL of the picture
         for (int i = 1; i <= numberOfPages; i++) {
-            String pageNumber = String.format(format, (i));
+            String pageNumber = df_page.format(i);
             // grab the image source
-            String img = br.getRegex("(?i)<img (width=\"\\d+\\%\" )?src=\"(https?://img\\d+\\.submanga\\.com/pages/\\d+/\\w+/\\d+\\.\\w{1,4})\"/>(</a></div><script)").getMatch(1);
-            if (img == null) img = br.getRegex("(?i)<img (width=\"\\d+\\%\" )?src=\"(http[^\"]+)\"/></a></div><script").getMatch(1);
+            String img = br.getRegex("https?://\\w+.submanga\\.com/pages/(\\d+/){1,}" + uid + "\\w+/\\d+\\.\\w{1,4}").getMatch(-1);
             if (img == null) {
                 logger.warning("No images found for page : " + pageNumber + " : " + parameter);
                 logger.warning("Continuing...");
