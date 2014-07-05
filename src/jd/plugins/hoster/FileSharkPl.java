@@ -60,6 +60,32 @@ public class FileSharkPl extends PluginForHost {
         return "http://www.fileshark.pl/strona/regulamin";
     }
 
+    private long checkForErrors() throws PluginException {
+        if (br.containsHTML("Osiągnięto maksymalną liczbę sciąganych jednocześnie plików.")) {
+            throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, 10 * 60 * 1000l);
+        }
+        if (br.containsHTML("Plik nie został odnaleziony w bazie danych.")) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
+
+        if (br.containsHTML("<li>Trwa pobieranie pliku. Możesz pobierać tylko jeden plik w tym samym czasie.</li>")) {
+            throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, "Other file is downloading!", 5 * 50 * 1000l);
+        }
+        if (br.containsHTML("Kolejne pobranie możliwe za") || br.containsHTML("Proszę czekać. Pobieranie będzie możliwe za")) {
+
+            String waitTime = br.getRegex("Kolejne pobranie możliwe za <span id=\"timeToDownload\">(\\d+)</span>").getMatch(0);
+            if (waitTime == null) {
+                waitTime = br.getRegex("Pobieranie będzie możliwe za <span id=\"timeToDownload\">(\\d+)</span>").getMatch(0);
+            }
+
+            if (waitTime != null) {
+                return Long.parseLong(waitTime) * 1000l;
+            }
+
+        }
+        return 0l;
+    }
+
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
         // bug at the server side:
@@ -89,35 +115,20 @@ public class FileSharkPl extends PluginForHost {
         br.setFollowRedirects(true);
         br.getPage(link.getDownloadURL());
 
-        String filename = br.getRegex("<h2[ \n\t\t\f]+class=\"name-file\">([^<>\"]*?)</h2>").getMatch(0);
-        String filesize = br.getRegex("<p class=\"size-file\">Rozmiar: <strong>(.*?)</strong></p>").getMatch(0);
+        String fileName = br.getRegex("<h2[ \n\t\t\f]+class=\"name-file\">([^<>\"]*?)</h2>").getMatch(0);
+        String fileSize = br.getRegex("<p class=\"size-file\">Rozmiar: <strong>(.*?)</strong></p>").getMatch(0);
 
-        if (filename == null || filesize == null) {
-            if (br.containsHTML("<li>Trwa pobieranie pliku. Możesz pobierać tylko jeden plik w tym samym czasie.</li>")) {
-                throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, "Other file is downloading!", 5 * 50 * 1000l);
-            } else {
-                if (br.containsHTML("Kolejne pobranie możliwe za") || br.containsHTML("Proszę czekać. Pobieranie będzie możliwe za")) {
-
-                    String waitTime = br.getRegex("Kolejne pobranie możliwe za <span id=\"timeToDownload\">(\\d+)</span>").getMatch(0);
-                    if (waitTime == null) {
-                        waitTime = br.getRegex("Pobieranie będzie możliwe za <span id=\"timeToDownload\">(\\d+)</span>").getMatch(0);
-                    }
-
-                    if (waitTime != null) {
-                        sleep(Long.parseLong(waitTime) * 1000l, link);
-                        br.getPage(link.getDownloadURL());
-                    }
-                } else {
-
-                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                }
-
+        if (fileName == null || fileSize == null) {
+            long waitTime = checkForErrors();
+            if (waitTime != 0) {
+                throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, waitTime);
             }
+
         }
 
-        link.setName(Encoding.htmlDecode(filename.trim()));
-        link.setDownloadSize(SizeFormatter.getSize(filesize));
-        link.setFinalFileName(Encoding.htmlDecode(filename.trim()));
+        link.setName(Encoding.htmlDecode(fileName.trim()));
+        link.setDownloadSize(SizeFormatter.getSize(fileSize));
+        link.setFinalFileName(Encoding.htmlDecode(fileName.trim()));
         return AvailableStatus.TRUE;
     }
 
@@ -166,24 +177,9 @@ public class FileSharkPl extends PluginForHost {
         String fileId = new Regex(downloadURL, "http://(www\\.)?fileshark.pl/pobierz/" + "(\\d+/[0-9a-zA-Z]+/?)").getMatch(1);
 
         br.getPage(MAINPAGE + "pobierz/normal/" + fileId);
-
-        if (br.containsHTML("Kolejne pobranie możliwe za") || br.containsHTML("Proszę czekać. Pobieranie będzie możliwe za")) {
-
-            String waitTime = br.getRegex("Kolejne pobranie możliwe za <span id=\"timeToDownload\">(\\d+)</span>").getMatch(0);
-            if (waitTime == null) {
-                waitTime = br.getRegex("Pobieranie będzie możliwe za <span id=\"timeToDownload\">(\\d+)</span>").getMatch(0);
-            }
-
-            if (waitTime != null) {
-                sleep(Long.parseLong(waitTime) * 1000l, downloadLink);
-                br.getPage(MAINPAGE + "pobierz/normal/" + fileId);
-            }
-        }
-        if (br.containsHTML("Osiągnięto maksymalną liczbę sciąganych jednocześnie plików.")) {
-            throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, 10 * 60 * 1000l);
-        }
-        if (br.containsHTML("Plik nie został odnaleziony w bazie danych.")) {
-            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        long waitTime = checkForErrors();
+        if (waitTime != 0) {
+            throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, waitTime);
         }
 
         Form dlForm = new Form();
@@ -206,12 +202,9 @@ public class FileSharkPl extends PluginForHost {
             if (br.containsHTML("class=\"error\">Błędny kod")) {
                 continue;
             }
-            if (br.containsHTML("Kolejne pobranie możliwe za")) {
-                String waitTime = br.getRegex("Kolejne pobranie możliwe za <span id=\"timeToDownload\">(\\d+)</span>").getMatch(0);
-                if (waitTime != null) {
-                    sleep(Long.parseLong(waitTime) * 1000l, downloadLink);
-                    br.getPage(MAINPAGE + "pobierz/normal/" + fileId);
-                }
+            waitTime = checkForErrors();
+            if (waitTime != 0) {
+                throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, waitTime);
             }
             break;
         }
