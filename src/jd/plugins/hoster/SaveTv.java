@@ -325,7 +325,12 @@ public class SaveTv extends PluginForHost {
         }
 
         final String runtime_start = getJson(source, "DSTARTDATE");
-        final String runtime_end = getJson(source, "ENDDATE");
+        /* For hosterplugin */
+        String runtime_end = getJson(source, "ENDDATE");
+        /* For decrypterplugin */
+        if (runtime_end == null) {
+            runtime_end = getJson(source, "DENDDATE");
+        }
         datemilliseconds = TimeFormatter.getMilliSeconds(runtime_start, "yyyy-MM-dd HH:mm:ss", Locale.GERMAN);
         final long site_runtime_minutes = (TimeFormatter.getMilliSeconds(runtime_end, "yyyy-MM-dd HH:mm:ss", Locale.GERMAN) - datemilliseconds) / 1000 / 60;
         final String tv_station = getJson(source, "STVSTATIONNAME");
@@ -875,7 +880,7 @@ public class SaveTv extends PluginForHost {
     }
 
     private static boolean resultIsEmpty(final String source, final String key) {
-        return source.contains("\"" + key + "\":\"\"");
+        return source.matches(".+\"" + key + "\":\"\"(,|\\}).+");
     }
 
     /**

@@ -180,6 +180,7 @@ public class SaveTvDecrypter extends PluginForDecrypt {
             handleEndDialogs();
         } catch (final Throwable e) {
             try {
+                e.printStackTrace();
                 SwingUtilities.invokeAndWait(new Runnable() {
                     @Override
                     public void run() {
