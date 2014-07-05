@@ -38,7 +38,7 @@ import jd.utils.JDUtilities;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
-/*Same script for AbelhasPt, LolaBitsEs*/
+/*Same script for AbelhasPt, LolaBitsEs, CopiapopEs, MinhatecaComBr*/
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "abelhas.pt" }, urls = { "http://(www\\.)?abelhas\\.pt/[^<>\"/]+/[^<>\"/]+/[^<>\"]+" }, flags = { 2 })
 public class AbelhasPt extends PluginForHost {
 
@@ -56,13 +56,19 @@ public class AbelhasPt extends PluginForHost {
 
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
-        if (link.getDownloadURL().contains("abelhas.pt/action/")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (link.getDownloadURL().contains("abelhas.pt/action/")) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
         this.setBrowserExclusive();
         br.getPage(link.getDownloadURL());
-        if (br.getURL().equals("http://abelhas.pt/cherokin/Prova") || !br.containsHTML("class=\"downloadFileFid\"") || br.getRequest().getHttpConnection().getResponseCode() == 404) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (br.getURL().equals("http://abelhas.pt/cherokin/Prova") || !br.containsHTML("class=\"downloadFileFid\"") || br.getRequest().getHttpConnection().getResponseCode() == 404) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
         final String filename = br.getRegex("Download: <b>([^<>\"]*?)</b>").getMatch(0);
         final String filesize = br.getRegex("class=\"fileSize\">([^<>\"]*?)</p>").getMatch(0);
-        if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (filename == null || filesize == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         link.setName(Encoding.htmlDecode(filename.trim()));
         link.setDownloadSize(SizeFormatter.getSize(filesize.replace(",", ".")));
         return AvailableStatus.TRUE;
@@ -77,7 +83,9 @@ public class AbelhasPt extends PluginForHost {
             try {
                 throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);
             } catch (final Throwable e) {
-                if (e instanceof PluginException) throw (PluginException) e;
+                if (e instanceof PluginException) {
+                    throw (PluginException) e;
+                }
             }
             throw new PluginException(LinkStatus.ERROR_FATAL, "This file can only be downloaded by registered users");
         }
@@ -103,7 +111,9 @@ public class AbelhasPt extends PluginForHost {
                 br.setCookiesExclusive(true);
                 final Object ret = account.getProperty("cookies", null);
                 boolean acmatch = Encoding.urlEncode(account.getUser()).equals(account.getStringProperty("name", Encoding.urlEncode(account.getUser())));
-                if (acmatch) acmatch = Encoding.urlEncode(account.getPass()).equals(account.getStringProperty("pass", Encoding.urlEncode(account.getPass())));
+                if (acmatch) {
+                    acmatch = Encoding.urlEncode(account.getPass()).equals(account.getStringProperty("pass", Encoding.urlEncode(account.getPass())));
+                }
                 if (acmatch && ret != null && ret instanceof HashMap<?, ?> && !force) {
                     final HashMap<String, String> cookies = (HashMap<String, String>) ret;
                     if (account.isValid()) {
@@ -166,7 +176,9 @@ public class AbelhasPt extends PluginForHost {
         br.getPage(link.getDownloadURL());
         final String fileid = br.getRegex("id=\"fileDetails_(\\d+)\"").getMatch(0);
         final String requestvtoken = br.getRegex("name=\"__RequestVerificationToken\" type=\"hidden\" value=\"([^<>\"]*?)\"").getMatch(0);
-        if (fileid == null || requestvtoken == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (fileid == null || requestvtoken == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
         br.postPage("http://abelhas.pt/action/License/Download", "fileId=" + fileid + "&__RequestVerificationToken=" + Encoding.urlEncode(requestvtoken));
         String dllink = br.getRegex("\"redirectUrl\":\"(http[^<>\"]*?)\"").getMatch(0);
@@ -174,11 +186,15 @@ public class AbelhasPt extends PluginForHost {
             br.getRequest().setHtmlCode(br.toString().replace("\\", ""));
             final String orgfile = br.getRegex("name=\"orgFile\" value=\"([^<>\"]*?)\"").getMatch(0);
             final String userSelection = br.getRegex("name=\"userSelection\" value=\"([^<>\"]*?)\"").getMatch(0);
-            if (orgfile == null || userSelection == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            if (orgfile == null || userSelection == null) {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
             br.postPage("http://abelhas.pt/action/License/acceptLargeTransfer", "fileId=" + fileid + "&orgFile=" + Encoding.urlEncode(orgfile) + "&userSelection=" + Encoding.urlEncode(userSelection) + "&__RequestVerificationToken=" + Encoding.urlEncode(requestvtoken));
             dllink = br.getRegex("\"redirectUrl\":\"(http[^<>\"]*?)\"").getMatch(0);
         }
-        if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (dllink == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         dllink = unescape(dllink);
         dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, false, 1);
         if (dl.getConnection().getContentType().contains("html")) {
@@ -192,7 +208,9 @@ public class AbelhasPt extends PluginForHost {
         /* we have to make sure the youtube plugin is loaded */
         if (pluginloaded == false) {
             final PluginForHost plugin = JDUtilities.getPluginForHost("youtube.com");
-            if (plugin == null) throw new IllegalStateException("youtube plugin not found!");
+            if (plugin == null) {
+                throw new IllegalStateException("youtube plugin not found!");
+            }
             pluginloaded = true;
         }
         return jd.plugins.hoster.Youtube.unescape(s);
@@ -204,12 +222,17 @@ public class AbelhasPt extends PluginForHost {
         String servName = null;
         String servExt = null;
         String orgNameExt = downloadLink.getFinalFileName();
-        if (orgNameExt == null) orgNameExt = downloadLink.getName();
-        if (!inValidate(orgNameExt) && orgNameExt.contains(".")) orgExt = orgNameExt.substring(orgNameExt.lastIndexOf("."));
-        if (!inValidate(orgExt))
+        if (orgNameExt == null) {
+            orgNameExt = downloadLink.getName();
+        }
+        if (!inValidate(orgNameExt) && orgNameExt.contains(".")) {
+            orgExt = orgNameExt.substring(orgNameExt.lastIndexOf("."));
+        }
+        if (!inValidate(orgExt)) {
             orgName = new Regex(orgNameExt, "(.+)" + orgExt).getMatch(0);
-        else
+        } else {
             orgName = orgNameExt;
+        }
         // if (orgName.endsWith("...")) orgName = orgName.replaceFirst("\\.\\.\\.$", "");
         String servNameExt = ".mp4";
         if (!inValidate(servNameExt) && servNameExt.contains(".")) {
@@ -217,13 +240,14 @@ public class AbelhasPt extends PluginForHost {
             servName = new Regex(servNameExt, "(.+)" + servExt).getMatch(0);
         }
         String FFN = null;
-        if (inValidate(orgExt) && !inValidate(servExt) && (servName.toLowerCase().contains(orgName.toLowerCase()) && !servName.equalsIgnoreCase(orgName)))
+        if (inValidate(orgExt) && !inValidate(servExt) && (servName.toLowerCase().contains(orgName.toLowerCase()) && !servName.equalsIgnoreCase(orgName))) {
             /* when partial match of filename exists. eg cut off by quotation mark miss match, or orgNameExt has been abbreviated by hoster */
             FFN = servNameExt;
-        else if (!inValidate(orgExt) && !inValidate(servExt) && !orgExt.equalsIgnoreCase(servExt))
+        } else if (!inValidate(orgExt) && !inValidate(servExt) && !orgExt.equalsIgnoreCase(servExt)) {
             FFN = orgName + servExt;
-        else
+        } else {
             FFN = orgNameExt;
+        }
         downloadLink.setFinalFileName(FFN);
     }
 
@@ -236,10 +260,11 @@ public class AbelhasPt extends PluginForHost {
      * @author raztoki
      * */
     private boolean inValidate(final String s) {
-        if (s == null || s != null && (s.matches("[\r\n\t ]+") || s.equals("")))
+        if (s == null || s != null && (s.matches("[\r\n\t ]+") || s.equals(""))) {
             return true;
-        else
+        } else {
             return false;
+        }
     }
 
     @Override

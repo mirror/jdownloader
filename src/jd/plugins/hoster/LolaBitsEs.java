@@ -38,7 +38,7 @@ import jd.utils.JDUtilities;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
-/*Same script for AbelhasPt, LolaBitsEs*/
+/*Same script for AbelhasPt, LolaBitsEs, CopiapopEs, MinhatecaComBr*/
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "lolabits.es" }, urls = { "http://(www\\.)?lolabits\\.es/[^<>\"/]+/[^<>\"/]+/[^<>\"]+" }, flags = { 2 })
 public class LolaBitsEs extends PluginForHost {
 
@@ -56,14 +56,22 @@ public class LolaBitsEs extends PluginForHost {
 
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
-        if (link.getDownloadURL().contains("lolabits.es/action/")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (link.getDownloadURL().contains("lolabits.es/action/")) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
         this.setBrowserExclusive();
         br.getPage(link.getDownloadURL());
-        if (br.getRequest().getHttpConnection().getResponseCode() == 404 || br.getRedirectLocation() != null && br.getRedirectLocation().endsWith("/cherokin/Prova")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        if (!br.containsHTML("id=\"fileDetails\"")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (br.getRequest().getHttpConnection().getResponseCode() == 404 || br.getRedirectLocation() != null && br.getRedirectLocation().endsWith("/cherokin/Prova")) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
+        if (!br.containsHTML("id=\"fileDetails\"")) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
         final String filename = br.getRegex("Descargar: <b>([^<>\"]*?)</b>").getMatch(0);
         final String filesize = br.getRegex("class=\"fileSize\">([^<>\"]*?)</p>").getMatch(0);
-        if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (filename == null || filesize == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         link.setName(Encoding.htmlDecode(filename.trim()));
         link.setDownloadSize(SizeFormatter.getSize(filesize.replace(",", ".")));
         return AvailableStatus.TRUE;
@@ -86,7 +94,9 @@ public class LolaBitsEs extends PluginForHost {
                 try {
                     throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);
                 } catch (final Throwable e) {
-                    if (e instanceof PluginException) throw (PluginException) e;
+                    if (e instanceof PluginException) {
+                        throw (PluginException) e;
+                    }
                 }
                 throw new PluginException(LinkStatus.ERROR_FATAL, "This file can only be downloaded by registered users");
             }
@@ -99,7 +109,9 @@ public class LolaBitsEs extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error", 30 * 60 * 1000l);
         }
         String contentDisposition = dl.getConnection().getHeaderField("Content-Disposition");
-        if (contentDisposition == null || !contentDisposition.contains("filename")) fixFilename(downloadLink);
+        if (contentDisposition == null || !contentDisposition.contains("filename")) {
+            fixFilename(downloadLink);
+        }
         dl.startDownload();
     }
 
@@ -114,7 +126,9 @@ public class LolaBitsEs extends PluginForHost {
                 br.setCookiesExclusive(true);
                 final Object ret = account.getProperty("cookies", null);
                 boolean acmatch = Encoding.urlEncode(account.getUser()).equals(account.getStringProperty("name", Encoding.urlEncode(account.getUser())));
-                if (acmatch) acmatch = Encoding.urlEncode(account.getPass()).equals(account.getStringProperty("pass", Encoding.urlEncode(account.getPass())));
+                if (acmatch) {
+                    acmatch = Encoding.urlEncode(account.getPass()).equals(account.getStringProperty("pass", Encoding.urlEncode(account.getPass())));
+                }
                 if (acmatch && ret != null && ret instanceof HashMap<?, ?> && !force) {
                     final HashMap<String, String> cookies = (HashMap<String, String>) ret;
                     if (account.isValid()) {
@@ -182,18 +196,24 @@ public class LolaBitsEs extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         String contentDisposition = dl.getConnection().getHeaderField("Content-Disposition");
-        if (contentDisposition == null || !contentDisposition.contains("filename")) fixFilename(link);
+        if (contentDisposition == null || !contentDisposition.contains("filename")) {
+            fixFilename(link);
+        }
         dl.startDownload();
     }
 
     private String get_dllink() throws IOException, PluginException {
         final String fileid = br.getRegex("id=\"fileDetails_(\\d+)\"").getMatch(0);
         final String requestvtoken = br.getRegex("name=\"__RequestVerificationToken\" type=\"hidden\" value=\"([^<>\"]*?)\"").getMatch(0);
-        if (fileid == null || requestvtoken == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (fileid == null || requestvtoken == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
         br.postPage("http://lolabits.es/action/License/Download", "fileId=" + fileid + "&__RequestVerificationToken=" + Encoding.urlEncode(requestvtoken));
         String dllink = br.getRegex("\"redirectUrl\":\"(http[^<>\"]*?)\"").getMatch(0);
-        if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (dllink == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         dllink = unescape(dllink);
         return dllink;
     }
@@ -202,7 +222,9 @@ public class LolaBitsEs extends PluginForHost {
         /* we have to make sure the youtube plugin is loaded */
         if (pluginloaded == false) {
             final PluginForHost plugin = JDUtilities.getPluginForHost("youtube.com");
-            if (plugin == null) throw new IllegalStateException("youtube plugin not found!");
+            if (plugin == null) {
+                throw new IllegalStateException("youtube plugin not found!");
+            }
             pluginloaded = true;
         }
         return jd.plugins.hoster.Youtube.unescape(s);
@@ -214,12 +236,17 @@ public class LolaBitsEs extends PluginForHost {
         String servName = null;
         String servExt = null;
         String orgNameExt = downloadLink.getFinalFileName();
-        if (orgNameExt == null) orgNameExt = downloadLink.getName();
-        if (!inValidate(orgNameExt) && orgNameExt.contains(".")) orgExt = orgNameExt.substring(orgNameExt.lastIndexOf("."));
-        if (!inValidate(orgExt))
+        if (orgNameExt == null) {
+            orgNameExt = downloadLink.getName();
+        }
+        if (!inValidate(orgNameExt) && orgNameExt.contains(".")) {
+            orgExt = orgNameExt.substring(orgNameExt.lastIndexOf("."));
+        }
+        if (!inValidate(orgExt)) {
             orgName = new Regex(orgNameExt, "(.+)" + orgExt).getMatch(0);
-        else
+        } else {
             orgName = orgNameExt;
+        }
         // if (orgName.endsWith("...")) orgName = orgName.replaceFirst("\\.\\.\\.$", "");
         String servNameExt = ".mp4";
         if (!inValidate(servNameExt) && servNameExt.contains(".")) {
@@ -227,13 +254,14 @@ public class LolaBitsEs extends PluginForHost {
             servName = new Regex(servNameExt, "(.+)" + servExt).getMatch(0);
         }
         String FFN = null;
-        if (inValidate(orgExt) && !inValidate(servExt) && (servName.toLowerCase().contains(orgName.toLowerCase()) && !servName.equalsIgnoreCase(orgName)))
+        if (inValidate(orgExt) && !inValidate(servExt) && (servName.toLowerCase().contains(orgName.toLowerCase()) && !servName.equalsIgnoreCase(orgName))) {
             /* when partial match of filename exists. eg cut off by quotation mark miss match, or orgNameExt has been abbreviated by hoster */
             FFN = servNameExt;
-        else if (!inValidate(orgExt) && !inValidate(servExt) && !orgExt.equalsIgnoreCase(servExt))
+        } else if (!inValidate(orgExt) && !inValidate(servExt) && !orgExt.equalsIgnoreCase(servExt)) {
             FFN = orgName + servExt;
-        else
+        } else {
             FFN = orgNameExt;
+        }
         downloadLink.setFinalFileName(FFN);
     }
 
@@ -246,10 +274,11 @@ public class LolaBitsEs extends PluginForHost {
      * @author raztoki
      * */
     private boolean inValidate(final String s) {
-        if (s == null || s != null && (s.matches("[\r\n\t ]+") || s.equals("")))
+        if (s == null || s != null && (s.matches("[\r\n\t ]+") || s.equals(""))) {
             return true;
-        else
+        } else {
             return false;
+        }
     }
 
     @Override

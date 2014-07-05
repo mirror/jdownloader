@@ -41,6 +41,7 @@ import jd.utils.JDUtilities;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
+/*Same script for AbelhasPt, LolaBitsEs, CopiapopEs, MinhatecaComBr*/
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "minhateca.com.br" }, urls = { "http://minhatecadecrypted\\.com\\.br/\\d+" }, flags = { 2 })
 public class MinhatecaComBr extends PluginForHost {
 

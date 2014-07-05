@@ -17,12 +17,15 @@
 package jd.plugins.hoster;
 
 import java.io.File;
+import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import jd.PluginWrapper;
+import jd.config.ConfigContainer;
+import jd.config.ConfigEntry;
 import jd.config.Property;
 import jd.controlling.AccountController;
 import jd.http.Browser;
@@ -40,6 +43,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.utils.JDUtilities;
+import jd.utils.locale.JDL;
 
 import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.formatter.TimeFormatter;
@@ -50,6 +54,7 @@ public class LuckyShareNet extends PluginForHost {
     public LuckyShareNet(PluginWrapper wrapper) {
         super(wrapper);
         this.enablePremium("http://luckyshare.net/premium");
+        this.setConfigElements();
     }
 
     @Override
@@ -57,12 +62,14 @@ public class LuckyShareNet extends PluginForHost {
         return "http://luckyshare.net/termsofservice";
     }
 
-    private final String           MAINPAGE      = "http://luckyshare.net/";
-    private static Object          LOCK          = new Object();
-    private static StringContainer AGENT         = new StringContainer(null);
-    private static AtomicBoolean   FAILED409     = new AtomicBoolean(false);
-    private final String           ONLYBETAERROR = "Downloading from luckyshare.net is only possible with the JDownloader 2 BETA";
-    private static AtomicInteger   maxPrem       = new AtomicInteger(1);
+    private final String           MAINPAGE       = "http://luckyshare.net/";
+    private static Object          LOCK           = new Object();
+    private static StringContainer AGENT          = new StringContainer(null);
+    private static AtomicBoolean   FAILED409      = new AtomicBoolean(false);
+    private final String           ONLYBETAERROR  = "Downloading from luckyshare.net is only possible with the JDownloader 2 BETA";
+    private static AtomicInteger   maxPrem        = new AtomicInteger(1);
+
+    private final String           SSL_CONNECTION = "SSL_CONNECTION";
 
     public static class StringContainer {
         public String string = null;
@@ -95,7 +102,7 @@ public class LuckyShareNet extends PluginForHost {
         br.setFollowRedirects(true);
         URLConnectionAdapter con = null;
         try {
-            con = br.openGetConnection(link.getDownloadURL());
+            con = br.openGetConnection(this.fixLinkSSL(link.getDownloadURL()));
             if (con.getResponseCode() == 409 && oldStyle()) {
                 // Hier krachts
                 link.getLinkStatus().setStatusText(ONLYBETAERROR);
@@ -109,7 +116,7 @@ public class LuckyShareNet extends PluginForHost {
             } catch (Throwable e) {
             }
         }
-        br.getPage(link.getDownloadURL());
+        getPage(this.br, link.getDownloadURL());
         if (br.containsHTML("(There is no such file available|<title>LuckyShare \\- Download</title>)")) {
             // Some links only work via account and are shown as "offline"
             // without account
@@ -178,7 +185,7 @@ public class LuckyShareNet extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
 
-        Browser ajax = br.cloneBrowser();
+        final Browser ajax = br.cloneBrowser();
         prepareHeader(ajax, dllink);
         String hash = getHash(ajax, dllink);
         sleep(getWaitTime(ajax) * 1001l, downloadLink);
@@ -202,7 +209,7 @@ public class LuckyShareNet extends PluginForHost {
             }
 
             try {
-                ajax.getPage("http://luckyshare.net/download/verify/challenge/" + rc.getChallenge() + "/response/" + c.replaceAll("\\s", "%20") + "/hash/" + hash);
+                getPage(ajax, "http://luckyshare.net/download/verify/challenge/" + rc.getChallenge() + "/response/" + c.replaceAll("\\s", "%20") + "/hash/" + hash);
             } catch (Throwable e) {
                 if (ajax.getHttpConnection().getResponseCode() == 500) {
                     continue;
@@ -291,7 +298,7 @@ public class LuckyShareNet extends PluginForHost {
     private String getHash(final Browser b, final String s) {
         try {
             b.getHeaders().put("Accept", "application/json, text/javascript, */*; q=0.01");
-            b.getPage("http://luckyshare.net/download/request/type/time/file/" + new Regex(s, "(\\d+)$").getMatch(0));
+            getPage(b, "http://luckyshare.net/download/request/type/time/file/" + new Regex(s, "(\\d+)$").getMatch(0));
         } catch (Throwable e) {
             return null;
         }
@@ -326,12 +333,12 @@ public class LuckyShareNet extends PluginForHost {
                     }
                 }
                 br.setFollowRedirects(true);
-                br.getPage("http://luckyshare.net/auth/login");
+                getPage(this.br, "http://luckyshare.net/auth/login");
                 final String token = br.getRegex("type=\"hidden\" name=\"token\" value=\"([^<>\"]*?)\"").getMatch(0);
                 if (token == null) {
                     throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
                 }
-                br.postPage("http://luckyshare.net/auth/login", "token=" + Encoding.urlEncode(token) + "&remember=&username=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()));
+                postPage(this.br, "http://luckyshare.net/auth/login", "token=" + Encoding.urlEncode(token) + "&remember=&username=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()));
                 if (!br.containsHTML(">Logout</a>")) {
                     throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
                 }
@@ -366,7 +373,7 @@ public class LuckyShareNet extends PluginForHost {
             account.setValid(false);
             return ai;
         }
-        br.getPage("http://luckyshare.net/account/");
+        getPage(this.br, "http://luckyshare.net/account/");
         final String filesNum = br.getRegex("<strong>Number of files:</strong><br /><span>(\\d+)</span>").getMatch(0);
         if (filesNum != null) {
             ai.setFilesNum(Integer.parseInt(filesNum));
@@ -413,11 +420,11 @@ public class LuckyShareNet extends PluginForHost {
         final AtomicBoolean fresh = new AtomicBoolean(false);
         HashMap<String, String> cookies = login(account, false, fresh);
         br.setFollowRedirects(false);
-        br.getPage(link.getDownloadURL());
+        getPage(this.br, link.getDownloadURL());
         if (account.getBooleanProperty("freeacc", false)) {
             if (!br.containsHTML(">Logout</a>")) {
                 refreshCookies(fresh, cookies, account);
-                br.getPage(link.getDownloadURL());
+                getPage(this.br, link.getDownloadURL());
             }
 
         } else {
@@ -473,6 +480,31 @@ public class LuckyShareNet extends PluginForHost {
     @Override
     public int getMaxSimultanPremiumDownloadNum() {
         return maxPrem.get();
+    }
+
+    private void getPage(final Browser br, final String url) throws IOException {
+        br.getPage(fixLinkSSL(url));
+    }
+
+    private void postPage(final Browser br, final String url, final String postData) throws IOException {
+        br.postPage(fixLinkSSL(url), postData);
+    }
+
+    private boolean checkSsl() {
+        return getPluginConfig().getBooleanProperty(SSL_CONNECTION, false);
+    }
+
+    private String fixLinkSSL(String link) {
+        if (checkSsl()) {
+            link = link.replace("http://", "https://");
+        } else {
+            link = link.replace("https://", "http://");
+        }
+        return link;
+    }
+
+    private void setConfigElements() {
+        this.getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, this.getPluginConfig(), SSL_CONNECTION, JDL.L("plugins.hoster.DepositFiles.com.preferSSL", "Use Secure Communication over SSL (HTTPS://)")).setDefaultValue(false));
     }
 
     @Override

@@ -32,10 +32,10 @@ import jd.plugins.PluginForDecrypt;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "minhateca.com.br" }, urls = { "http://([a-z0-9]+\\.)?minhateca\\.com\\.br/.+" }, flags = { 0 })
-public class MinhatecaComBr extends PluginForDecrypt {
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "copiapop.es" }, urls = { "http://([a-z0-9]+\\.)?copiapop\\.es/.+" }, flags = { 0 })
+public class CopiapopEsDecrypter extends PluginForDecrypt {
 
-    public MinhatecaComBr(PluginWrapper wrapper) {
+    public CopiapopEsDecrypter(PluginWrapper wrapper) {
         super(wrapper);
     }
 
@@ -45,17 +45,17 @@ public class MinhatecaComBr extends PluginForDecrypt {
         try {
             br.getPage(parameter);
         } catch (final BrowserException e) {
-            final DownloadLink dl = createDownloadlink("http://minhatecadecrypted.com.br/" + System.currentTimeMillis() + new Random().nextInt(1000000));
+            final DownloadLink dl = createDownloadlink("http://copiapop.es/" + System.currentTimeMillis() + new Random().nextInt(1000000));
             dl.setFinalFileName(parameter);
             dl.setProperty("mainlink", parameter);
             dl.setProperty("offline", true);
             decryptedLinks.add(dl);
             return decryptedLinks;
         }
-        final String server = new Regex(parameter, "(http://[a-z0-9]+\\.minhateca\\.com\\.br/)").getMatch(0);
+        final String server = new Regex(parameter, "(http://[a-z0-9]+\\.copiapop\\.es/)").getMatch(0);
         if (server != null) {
             /* Find normal links of online viewable doc links */
-            parameter = br.getRegex("\"(http://minhateca\\.com\\.br/[^<>\"]*?)\" id=\"dnLink\"").getMatch(0);
+            parameter = br.getRegex("\"(http://copiapop\\.es/[^<>\"]*?)\" id=\"dnLink\"").getMatch(0);
             if (parameter == null) {
                 logger.warning("Decrypter broken for link: " + parameter);
                 return null;
@@ -64,35 +64,36 @@ public class MinhatecaComBr extends PluginForDecrypt {
         }
 
         /* empty folder | no folder */
-        if (br.containsHTML("class=\"noFile\"") || !br.containsHTML("name=\"FolderId\"|id=\"fileDetails\"")) {
-            final DownloadLink dl = createDownloadlink("http://minhatecadecrypted.com.br/" + System.currentTimeMillis() + new Random().nextInt(1000000));
+        if (br.containsHTML("class=\"noFile\"") || !br.containsHTML("class=\"tiles_container\"|id=\"fileDetails\"")) {
+            final DownloadLink dl = createDownloadlink("http://copiapopdecrypted.es/" + System.currentTimeMillis() + new Random().nextInt(1000000));
             dl.setFinalFileName(parameter);
             dl.setProperty("mainlink", parameter);
             dl.setProperty("offline", true);
             decryptedLinks.add(dl);
             return decryptedLinks;
         }
-        /* Password protected link --> Not yet supported */
-        if (br.containsHTML(">Digite senha:</label>")) {
-            final DownloadLink dl = createDownloadlink("http://minhatecadecrypted.com.br/" + System.currentTimeMillis() + new Random().nextInt(1000000));
-            dl.setFinalFileName(parameter);
-            dl.setProperty("mainlink", parameter);
-            dl.setProperty("offline", true);
-            decryptedLinks.add(dl);
-            return decryptedLinks;
-        }
+        /* Password protected link --> Not yet supported --> And this code is not yet tested either :D */
+        // if (br.containsHTML(">Digite senha:</label>")) {
+        // final DownloadLink dl = createDownloadlink("http://copiapopdecrypted.es/" + System.currentTimeMillis() + new
+        // Random().nextInt(1000000));
+        // dl.setFinalFileName(parameter);
+        // dl.setProperty("mainlink", parameter);
+        // dl.setProperty("offline", true);
+        // decryptedLinks.add(dl);
+        // return decryptedLinks;
+        // }
 
         /* Differ between single links and folders */
         if (br.containsHTML("id=\"fileDetails\"")) {
-            String filename = br.getRegex("Baixar: <b>([^<>\"]*?)</b>").getMatch(0);
-            final String filesize = br.getRegex("class=\"fileSize\">([^<>\"]*?)</p>").getMatch(0);
-            final String fid = br.getRegex("name=\"FileId\" value=\"(\\d+)\"").getMatch(0);
+            String filename = br.getRegex("<span>Gratis:</span>([^<>\"]*?)<").getMatch(0);
+            final String filesize = br.getRegex("class=\"file_size\">([^<>\"]*?)<").getMatch(0);
+            final String fid = br.getRegex("name=\"fileId\" type=\"hidden\" value=\"(\\d+)\"").getMatch(0);
             if (filename == null || filesize == null || fid == null) {
                 logger.warning("Decrypter broken for link: " + parameter);
                 return null;
             }
             filename = Encoding.htmlDecode(filename).trim();
-            final DownloadLink dl = createDownloadlink("http://minhatecadecrypted.com.br/" + System.currentTimeMillis() + new Random().nextInt(1000000));
+            final DownloadLink dl = createDownloadlink("http://copiapopdecrypted.es/" + System.currentTimeMillis() + new Random().nextInt(1000000));
 
             dl.setProperty("plain_filename", filename);
             dl.setProperty("plain_filesize", filesize);
@@ -106,26 +107,24 @@ public class MinhatecaComBr extends PluginForDecrypt {
 
             decryptedLinks.add(dl);
         } else {
-            final String fpName = br.getRegex("class=\"T_selected\">([^<>\"]*?)<").getMatch(0);
-            final String[] linkinfo = br.getRegex("<div class=\"fileinfo tab\">(.*?)<span class=\"filedescription\"").getColumn(0);
+            final String fpName = br.getRegex("class=\"scrollTop\">([^<>\"]*?)</a></h1>").getMatch(0);
+            final String[] linkinfo = br.getRegex("(<li data\\-file\\-id=\"\\d+\">.*?</li>)").getColumn(0);
             if (linkinfo == null || linkinfo.length == 0 || fpName == null) {
                 logger.warning("Decrypter broken for link: " + parameter);
                 return null;
             }
             for (final String lnkinfo : linkinfo) {
-                final String fid = new Regex(lnkinfo, "rel=\"(\\d+)\"").getMatch(0);
-                final Regex finfo = new Regex(lnkinfo, "<span class=\"bold\">([^<>\"]*?)</span>([^<>\"]*?)</a>");
-                String filename = finfo.getMatch(0);
-                final String ext = finfo.getMatch(1);
-                String filesize = new Regex(lnkinfo, "<li><span>([^<>\"]*?)</span></li>").getMatch(0);
-                if (fid == null || filename == null || ext == null || filesize == null) {
+                final String fid = new Regex(lnkinfo, "data\\-file\\-id=\"(\\d+)\"").getMatch(0);
+                String filename = new Regex(lnkinfo, ">([^<>\"]*?)</a>").getMatch(0);
+                String filesize = new Regex(lnkinfo, "class=\"file_size\">([^<>\"]*?)<").getMatch(0);
+                if (fid == null || filename == null || filesize == null) {
                     logger.warning("Decrypter broken for link: " + parameter);
                     return null;
                 }
                 filesize = Encoding.htmlDecode(filesize).trim();
-                filename = Encoding.htmlDecode(filename).trim() + Encoding.htmlDecode(ext).trim();
+                filename = Encoding.htmlDecode(filename).trim();
 
-                final DownloadLink dl = createDownloadlink("http://minhatecadecrypted.com.br/" + System.currentTimeMillis() + new Random().nextInt(1000000));
+                final DownloadLink dl = createDownloadlink("http://copiapopdecrypted.es/" + System.currentTimeMillis() + new Random().nextInt(1000000));
 
                 dl.setProperty("plain_filename", filename);
                 dl.setProperty("plain_filesize", filesize);
