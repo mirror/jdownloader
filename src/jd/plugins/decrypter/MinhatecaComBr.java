@@ -32,7 +32,7 @@ import jd.plugins.PluginForDecrypt;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "minhateca.com.br" }, urls = { "http://(www\\.)?minhateca\\.com\\.br/.+" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "minhateca.com.br" }, urls = { "http://([a-z0-9]+\\.)?minhateca\\.com\\.br/.+" }, flags = { 0 })
 public class MinhatecaComBr extends PluginForDecrypt {
 
     public MinhatecaComBr(PluginWrapper wrapper) {
@@ -41,7 +41,7 @@ public class MinhatecaComBr extends PluginForDecrypt {
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-        final String parameter = param.toString();
+        String parameter = param.toString();
         try {
             br.getPage(parameter);
         } catch (final BrowserException e) {
@@ -51,6 +51,16 @@ public class MinhatecaComBr extends PluginForDecrypt {
             dl.setProperty("offline", true);
             decryptedLinks.add(dl);
             return decryptedLinks;
+        }
+        final String server = new Regex(parameter, "(http://([a-z0-9]+\\.)?minhateca\\.com\\.br/)").getMatch(0);
+        if (server != null) {
+            /* Find normal links of online viewable doc links */
+            parameter = br.getRegex("\"(http://minhateca.com.br/[^<>\"]*?)\" id=\"dnLink\"").getMatch(0);
+            if (parameter == null) {
+                logger.warning("Decrypter broken for link: " + parameter);
+                return null;
+            }
+            br.getPage(parameter);
         }
 
         /* empty folder | no folder */

@@ -50,7 +50,7 @@ public class ColaFileCom extends PluginForHost {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         br.getPage(link.getDownloadURL());
-        if (br.containsHTML(">当前文件不存在，请尝试其它链接。</div>")) {
+        if (br.containsHTML(">当前文件不存在，请尝试其它链接。</div>|>当前文件所有者由于违反可乐云使用条例，帐号暂时被锁定，请联系可乐云客户服务中心。<")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         String filename = br.getRegex("class=\"file_name\"><a href=\"https?://(www\\.)?colafile\\.com/file/\\d+\">([^<>\"]*?)</a>").getMatch(1);

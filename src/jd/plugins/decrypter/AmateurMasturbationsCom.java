@@ -42,6 +42,9 @@ public class AmateurMasturbationsCom extends PluginForDecrypt {
         if (externID != null && !externID.contains("amateurmasturbations.com/")) {
             decryptedLinks.add(createDownloadlink(externID));
             return decryptedLinks;
+        } else if (externID != null && externID.contains("/404.php")) {
+            logger.info("Link offline: " + parameter);
+            return decryptedLinks;
         } else if (externID != null) {
             br.getPage(externID);
         }

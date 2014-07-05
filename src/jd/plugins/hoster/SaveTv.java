@@ -240,12 +240,15 @@ public class SaveTv extends PluginForHost {
             link.setProperty("apiplainfilename", apifilename);
             filesize += " KB";
         } else {
-            getPageSafe("https://www.save.tv/STV/M/obj/archive/JSON/VideoArchiveDetailsApi.cfm?TelecastID=" + getTelecastId(link), aa);
-            if (getJson(br.toString(), "ITELECASTID") == null || !br.getURL().contains("TelecastID=")) {
+            final String telecast_ID = getTelecastId(link);
+            getPageSafe("https://www.save.tv/STV/M/obj/archive/JSON/VideoArchiveDetailsApi.cfm?TelecastID=" + telecast_ID, aa);
+            /* Find data of the telecast-ID */
+            final String data_source = br.getRegex("\"TELECASTDETAILS\":\\{(.+)").getMatch(0);
+            if (data_source == null) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
-            site_title = correctData(getJson(br.toString(), "STITLE"));
-            siteParseFilenameInformation(link, br.toString());
+            site_title = correctData(getJson(data_source, "STITLE"));
+            siteParseFilenameInformation(link, data_source);
         }
         link.setAvailable(true);
 
@@ -321,10 +324,10 @@ public class SaveTv extends PluginForHost {
             category = "1";
         }
 
-        final String runtime_start = new Regex(source, "\"D?STARTDATE\":\"([0-9:\\- ]+)\"").getMatch(0);
-        final String runtime_end = new Regex(source, "\"D?ENDDATE\":\"([0-9:\\- ]+)\"").getMatch(0);
-        datemilliseconds = TimeFormatter.getMilliSeconds(runtime_start, "yyyy-MM-dd hh:mm:ss", Locale.GERMAN);
-        final long site_runtime_minutes = (TimeFormatter.getMilliSeconds(runtime_end, "yyyy-MM-dd hh:mm:ss", Locale.GERMAN) - datemilliseconds) / 1000 / 60;
+        final String runtime_start = getJson(source, "DSTARTDATE");
+        final String runtime_end = getJson(source, "ENDDATE");
+        datemilliseconds = TimeFormatter.getMilliSeconds(runtime_start, "yyyy-MM-dd HH:mm:ss", Locale.GERMAN);
+        final long site_runtime_minutes = (TimeFormatter.getMilliSeconds(runtime_end, "yyyy-MM-dd HH:mm:ss", Locale.GERMAN) - datemilliseconds) / 1000 / 60;
         final String tv_station = getJson(source, "STVSTATIONNAME");
 
         /* TODO: Add more/all numbers here */
@@ -352,19 +355,24 @@ public class SaveTv extends PluginForHost {
             dl.setProperty("episodenumber", Long.parseLong(episodenumber));
         }
         dl.setProperty("seriestitle", seriestitle);
-        dl.setProperty("episodename", episodename);
+        if (episodename != null) {
+            dl.setProperty("episodename", correctData(episodename));
+        }
 
         /* Add other information */
         if (produceyear != null) {
-            produceyear = produceyear.replace("/", SubConfiguration.getConfig("save.tv").getStringProperty(CUSTOM_FILENAME_SEPERATION_MARK, defaultCustomSeperationMark));
-            dl.setProperty("produceyear", produceyear);
+            dl.setProperty("produceyear", correctData(produceyear));
         }
         if (genre != null) {
             dl.setProperty("genre", correctData(genre));
         }
-        dl.setProperty("producecountry", producecountry);
+        if (producecountry != null) {
+            dl.setProperty("producecountry", correctData(producecountry));
+        }
         dl.setProperty("plain_site_category", category);
-        dl.setProperty("plain_tv_station", tv_station);
+        if (tv_station != null) {
+            dl.setProperty("plain_tv_station", correctData(tv_station));
+        }
 
         /* Add remaining basic information */
         dl.setProperty("plainfilename", site_title);
@@ -850,6 +858,9 @@ public class SaveTv extends PluginForHost {
      * */
     private static String getJson(final String source, final String key) {
         String result = new Regex(source, "\"" + key + "\":(-?\\d+(\\.\\d+)?|true|false|null)").getMatch(0);
+        if (resultIsEmpty(source, key)) {
+            return null;
+        }
         if (result == null) {
             result = new Regex(source, "\"" + key + "\":\"([^\"]*?)\"").getMatch(0);
         }
@@ -861,6 +872,10 @@ public class SaveTv extends PluginForHost {
             result = result.replaceAll("\\\\/", "/");
         }
         return result;
+    }
+
+    private static boolean resultIsEmpty(final String source, final String key) {
+        return source.contains("\"" + key + "\":\"\"");
     }
 
     /**
