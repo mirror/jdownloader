@@ -56,6 +56,7 @@ LinkgrabberFilterRule_duplicate=%s1 (コピー)
 Main_run_autostart_=ダウンロードを開始中
 Main_run_autostart_msg=数秒後にダウンロードが開始されます...
 Mainstart_now=今すぐ開始!
+MovePluginProgress=ファイルを%s1へ移動中
 MyJDownloaderController_onError_account_unconfirmed="My JDownloader"のeメールをまだ確認していません。\neメールを確認して承認リンクをクリックして下さい
 MyJDownloaderController_onError_badlogins="My JDownloader"ログイン情報が無効です。\nユーザー名/eメールとパスワードを確認して下さい!
 MyJDownloaderController_onError_outdated=JDownloaderがMy JDownloaderサービスに接続できませんでした: JDownloaderを更新して下さい
@@ -156,6 +157,8 @@ jd_controlling_reconnect_Reconnector_progress_failed2=再接続の失敗が余�
 jd_controlling_reconnect_plugins_DummyRouterPlugin_getGUI2=<b><u>再接続しないを選択しました</u></b><br/><p>再接続は大多数のホストが無料ユーザーに対して課す長い待ち時間を省略する為の先進的なアプローチです。<br>ですがこの機能はプレミアムアカウントを使用しているならば不必要です。</p><p>再接続についての詳細は <a href='http://support.jdownloader.org/index.php?/Knowledgebase/Article/View/1/0/why-should-i-set-up-my-reconnect'>ここ</a> を参照して下さい。</p>
 jd_controlling_reconnect_plugins_DummyRouterPlugin_getName=再接続しない
 jd_plugins_PluginUtils_askPassword=次のパスワードを入力して下さい:\n%s1
+lit_hide=非表示
+lit_please_wait=暫くお待ち下さい...
 literally_offline=オフライン
 literally_yes=はい
 other_files_description=音楽、圧縮、動画、画像ファイルを除く全てのファイル
