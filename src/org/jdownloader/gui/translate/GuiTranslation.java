@@ -3638,7 +3638,7 @@ public interface GuiTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "The address behind the selected entry" })
     String AddLinksDialog_layoutDialogContent_downloadfrom_tt();
 
-    @Default(lngs = { "en" }, values = { "Exiting File's size:" + "" })
+    @Default(lngs = { "en" }, values = { "Existing File's size:" + "" })
     String IfFileExistsDialog_layoutDialogContent_filesize_existing();
 
     @Default(lngs = { "en" }, values = { "Enter predefined package name matcher... (Use * as Wildcard)" })
