@@ -50,7 +50,6 @@ public class SaveTvDecrypter extends PluginForDecrypt {
     }
 
     /* Settings stuff */
-    private final String           USEAPI                            = "USEAPI";
     private final String           USEORIGINALFILENAME               = "USEORIGINALFILENAME";
 
     private final String           CRAWLER_ACTIVATE                  = "CRAWLER_ACTIVATE";
@@ -89,6 +88,7 @@ public class SaveTvDecrypter extends PluginForDecrypt {
     @SuppressWarnings("deprecation")
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         final String parameter = param.toString();
+        this.br.setFollowRedirects(true);
         if (!cfg.getBooleanProperty(CRAWLER_ACTIVATE, false)) {
             logger.info("dave.tv: Decrypting save.tv archives is disabled, doing nothing...");
             return decryptedLinks;
@@ -222,7 +222,7 @@ public class SaveTvDecrypter extends PluginForDecrypt {
                 dl.setAvailable(true);
             }
             /* Get and set filename depending on user selection */
-            if (cfg.getBooleanProperty(USEORIGINALFILENAME) || cfg.getBooleanProperty(USEAPI, false)) {
+            if (cfg.getBooleanProperty(USEORIGINALFILENAME)) {
                 filename = jd.plugins.hoster.SaveTv.getFakeOriginalFilename(dl);
             } else {
                 filename = jd.plugins.hoster.SaveTv.getFormattedFilename(dl);
@@ -251,7 +251,7 @@ public class SaveTvDecrypter extends PluginForDecrypt {
             return false;
         }
         try {
-            jd.plugins.hoster.SaveTv.site_login(this.br, aa, false);
+            jd.plugins.hoster.SaveTv.site_login(this.br, aa, force);
         } catch (final PluginException e) {
 
             aa.setValid(false);
