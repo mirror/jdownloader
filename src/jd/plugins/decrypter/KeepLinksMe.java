@@ -57,9 +57,7 @@ public class KeepLinksMe extends SaveLinksNet {
             final String parameter = param.toString().replace(".me/", ".eu/");
             gsh.startUp();
             try {
-                br.setFollowRedirects(true);
                 br.getPage(parameter);
-                br.setFollowRedirects(false);
                 handleErrors(parameter);
                 /* unprotected links */
                 if (parameter.contains("/d/")) {
