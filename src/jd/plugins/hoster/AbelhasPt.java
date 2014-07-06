@@ -39,7 +39,7 @@ import jd.utils.JDUtilities;
 import org.appwork.utils.formatter.SizeFormatter;
 
 /*Same script for AbelhasPt, LolaBitsEs, CopiapopEs, MinhatecaComBr*/
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "abelhas.pt" }, urls = { "http://(www\\.)?abelhas\\.pt/[^<>\"/]+/[^<>\"/]+/[^<>\"]+" }, flags = { 2 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "abelhas.pt" }, urls = { "http://(www\\.)?abelhasdecrypted\\.pt/\\d+" }, flags = { 2 })
 public class AbelhasPt extends PluginForHost {
 
     public AbelhasPt(PluginWrapper wrapper) {
@@ -56,21 +56,22 @@ public class AbelhasPt extends PluginForHost {
 
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
-        if (link.getDownloadURL().contains("abelhas.pt/action/")) {
+        if (link.getBooleanProperty("offline", false)) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        } else if (!link.getDownloadURL().matches("http://(www\\.)?abelhasdecrypted\\.pt/\\d+")) {
+            /* Only accept new links from the decrypter */
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         this.setBrowserExclusive();
-        br.getPage(link.getDownloadURL());
-        if (br.getURL().equals("http://abelhas.pt/cherokin/Prova") || !br.containsHTML("class=\"downloadFileFid\"") || br.getRequest().getHttpConnection().getResponseCode() == 404) {
+        br.setFollowRedirects(true);
+        br.getPage(link.getStringProperty("mainlink", null));
+        if (br.containsHTML("class=\"noFile\"")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        final String filename = br.getRegex("Download: <b>([^<>\"]*?)</b>").getMatch(0);
-        final String filesize = br.getRegex("class=\"fileSize\">([^<>\"]*?)</p>").getMatch(0);
-        if (filename == null || filesize == null) {
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
-        link.setName(Encoding.htmlDecode(filename.trim()));
-        link.setDownloadSize(SizeFormatter.getSize(filesize.replace(",", ".")));
+        final String filename = link.getStringProperty("plain_filename", null);
+        final String filesize = link.getStringProperty("plain_filesize", null);
+        link.setFinalFileName(filename);
+        link.setDownloadSize(SizeFormatter.getSize(filesize));
         return AvailableStatus.TRUE;
     }
 
@@ -173,7 +174,7 @@ public class AbelhasPt extends PluginForHost {
         requestFileInformation(link);
         login(account, false);
         br.setFollowRedirects(false);
-        br.getPage(link.getDownloadURL());
+        br.getPage(link.getStringProperty("mainlink", null));
         final String fileid = br.getRegex("id=\"fileDetails_(\\d+)\"").getMatch(0);
         final String requestvtoken = br.getRegex("name=\"__RequestVerificationToken\" type=\"hidden\" value=\"([^<>\"]*?)\"").getMatch(0);
         if (fileid == null || requestvtoken == null) {

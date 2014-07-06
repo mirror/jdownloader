@@ -1254,24 +1254,50 @@ public class SaveTv extends PluginForHost {
             /* API filename = already plain filename - no need to 'fake' anything */
         } else {
             if (belongsToCategoryMovie(downloadLink) || getLongProperty(downloadLink, "category", 0l) == 0l) {
-                final String title = downloadLink.getStringProperty("plainfilename", null);
-                formattedFilename = title.replace(" ", "_") + "_";
-                formattedFilename += formattedDate + "_";
+                final String title = correctDataForFakeFilenames(downloadLink.getStringProperty("plainfilename", null));
+                if (title.contains("Quiz")) {
+                    System.out.println("");
+                }
+                formattedFilename = title + "_";
             } else {
-                final String seriestitle = downloadLink.getStringProperty("seriestitle", null);
-                final String episodename = downloadLink.getStringProperty("episodename", null);
-                final String episodenumber = getEpisodeNumber(downloadLink);
                 /* For series */
-                formattedFilename = seriestitle.replace(" ", "_") + "_";
-                formattedFilename += episodename.replace(" ", "_") + "_";
-                formattedFilename += "Folge" + episodenumber + "_" + formattedDate + "_";
+                final String seriestitle = correctDataForFakeFilenames(downloadLink.getStringProperty("seriestitle", null));
+                if (seriestitle.contains("Schwarte")) {
+                    System.out.println("");
+                }
+                String episodename = downloadLink.getStringProperty("episodename", null);
+                final String episodenumber = getEpisodeNumber(downloadLink);
+                formattedFilename = seriestitle + "_";
+                if (episodename != null) {
+                    episodename = correctDataForFakeFilenames(episodename);
+                    formattedFilename += episodename + "_";
+                }
+                /* Only add "Folge" if episodenumber is available */
+                if (episodenumber.matches("\\d+")) {
+                    formattedFilename += "Folge" + episodenumber + "_";
+                }
             }
+            formattedFilename += formattedDate + "_";
             formattedFilename += time + "_" + acc_username;
             formattedFilename += ".mp4";
             formattedFilename = encodeUnicode(formattedFilename);
         }
-
         return formattedFilename;
+    }
+
+    /* Helps to get good looking original server-filenames */
+    private static String correctDataForFakeFilenames(String parameter) {
+        parameter = parameter.replace(" ", "_");
+        parameter = parameter.replace(",", "_");
+        parameter = parameter.replace("-", "_");
+        parameter = parameter.replace("ä", "ae");
+        parameter = parameter.replace("ö", "oe");
+        parameter = parameter.replace("ü", "ue");
+        parameter = parameter.replace("ß", "ss");
+        /* Correct things, before corrected by correctData */
+        parameter = parameter.replace("+", "");
+        parameter = parameter.replace("!", "");
+        return parameter;
     }
 
     private static String getEpisodeNumber(final DownloadLink dl) {
@@ -1286,7 +1312,7 @@ public class SaveTv extends PluginForHost {
     /* Several catregories are internally handled as category movie */
     private static boolean belongsToCategoryMovie(final DownloadLink dl) {
         long cat = getLongProperty(dl, "category", 0l);
-        final boolean belongsToCategoryMovie = (cat == 0 || cat == 1 || cat == 3 || cat == 7);
+        final boolean belongsToCategoryMovie = (cat == 0 || cat == 1 || cat == 7);
         return belongsToCategoryMovie;
     }
 

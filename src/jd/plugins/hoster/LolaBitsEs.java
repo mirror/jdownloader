@@ -39,7 +39,7 @@ import jd.utils.JDUtilities;
 import org.appwork.utils.formatter.SizeFormatter;
 
 /*Same script for AbelhasPt, LolaBitsEs, CopiapopEs, MinhatecaComBr*/
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "lolabits.es" }, urls = { "http://(www\\.)?lolabits\\.es/[^<>\"/]+/[^<>\"/]+/[^<>\"]+" }, flags = { 2 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "lolabits.es" }, urls = { "http://(www\\.)?lolabitsdecrypted\\.es/\\d+" }, flags = { 2 })
 public class LolaBitsEs extends PluginForHost {
 
     public LolaBitsEs(PluginWrapper wrapper) {
@@ -54,26 +54,23 @@ public class LolaBitsEs extends PluginForHost {
 
     private static boolean pluginloaded = false;
 
-    @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
-        if (link.getDownloadURL().contains("lolabits.es/action/")) {
+        if (link.getBooleanProperty("offline", false)) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        } else if (!link.getDownloadURL().matches("http://(www\\.)?lolabitsdecrypted\\.es/\\d+")) {
+            /* Only accept new links added via decrypter */
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         this.setBrowserExclusive();
-        br.getPage(link.getDownloadURL());
-        if (br.getRequest().getHttpConnection().getResponseCode() == 404 || br.getRedirectLocation() != null && br.getRedirectLocation().endsWith("/cherokin/Prova")) {
+        br.setFollowRedirects(true);
+        br.getPage(link.getStringProperty("mainlink", null));
+        if (br.containsHTML("class=\"noFile\"")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        if (!br.containsHTML("id=\"fileDetails\"")) {
-            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        }
-        final String filename = br.getRegex("Descargar: <b>([^<>\"]*?)</b>").getMatch(0);
-        final String filesize = br.getRegex("class=\"fileSize\">([^<>\"]*?)</p>").getMatch(0);
-        if (filename == null || filesize == null) {
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
-        link.setName(Encoding.htmlDecode(filename.trim()));
-        link.setDownloadSize(SizeFormatter.getSize(filesize.replace(",", ".")));
+        final String filename = link.getStringProperty("plain_filename", null);
+        final String filesize = link.getStringProperty("plain_filesize", null);
+        link.setFinalFileName(filename);
+        link.setDownloadSize(SizeFormatter.getSize(filesize));
         return AvailableStatus.TRUE;
     }
 
@@ -188,7 +185,7 @@ public class LolaBitsEs extends PluginForHost {
         requestFileInformation(link);
         login(account, false);
         br.setFollowRedirects(false);
-        br.getPage(link.getDownloadURL());
+        br.getPage(link.getStringProperty("mainlink", null));
         final String dllink = get_dllink();
         dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, true, 0);
         if (dl.getConnection().getContentType().contains("html")) {

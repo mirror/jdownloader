@@ -106,9 +106,9 @@ public class FileHippoCom extends PluginForHost {
         if (filesize == null) {
             filesize = br.getRegex("Download This Version\\s+<span class=\"normal\">\\(([^<>]*?)\\)<").getMatch(0);
         }
-        String md5 = br.getRegex("MD5 Checksum:</b></td><td>(.*?)</td>").getMatch(0);
+        final String md5 = br.getRegex("MD5 Checksum:</span> <span class=\"field\\-value\">([^<>\"]*?)</span>").getMatch(0);
         if (md5 != null) {
-            link.setMD5Hash(md5);
+            link.setMD5Hash(md5.trim());
         }
         link.setName(filename.trim());
         if (filesize != null) {
