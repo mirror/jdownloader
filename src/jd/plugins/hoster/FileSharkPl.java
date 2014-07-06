@@ -314,7 +314,7 @@ public class FileSharkPl extends PluginForHost {
 
     @Override
     public void handlePremium(final DownloadLink downloadLink, final Account account) throws Exception {
-        login(account, true);
+        login(account, false);
         requestFileInformation(downloadLink);
         String downloadURL = downloadLink.getDownloadURL();
         br.getPage(downloadURL);
