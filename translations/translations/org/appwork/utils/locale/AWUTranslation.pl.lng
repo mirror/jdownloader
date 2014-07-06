@@ -118,6 +118,7 @@ proxy_http=%s1:%s2 (Http Proxy)
 proxy_none=Bezpośrednie
 proxy_socks4=%s1:%s2 (Socks4 Proxy)
 proxy_socks5=%s1:%s2 (Socks5 Proxy)
+proxydialog_remember=Zapamiętaj
 proxydialog_title=Brak połączenia z Internetem!
 tableheader_tooltip_locked=%s1 (zmiana szerokości zablokowana)
 tableheader_tooltip_normal=%s1
