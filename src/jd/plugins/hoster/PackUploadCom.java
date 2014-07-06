@@ -99,6 +99,9 @@ public class PackUploadCom extends PluginForHost {
             if (br.containsHTML(">You must wait befor downloading this file\\.<")) {
                 throw new PluginException(LinkStatus.ERROR_RETRY);
             }
+            if (br.containsHTML(">The requested file is impossible to find\\.<")) {
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            }
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl.startDownload();
