@@ -60,6 +60,8 @@ public class FileSharkPl extends PluginForHost {
         return "http://www.fileshark.pl/strona/regulamin";
     }
 
+    private static final String POLAND_ONLY = ">Strona jest dostępna wyłącznie dla użytkowników znajdujących się na terenie Polski<";
+
     private long checkForErrors() throws PluginException {
         if (br.containsHTML("Osiągnięto maksymalną liczbę sciąganych jednocześnie plików.")) {
             throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, 10 * 60 * 1000l);
@@ -115,6 +117,11 @@ public class FileSharkPl extends PluginForHost {
         br.setFollowRedirects(true);
         br.getPage(link.getDownloadURL());
 
+        if (br.containsHTML(POLAND_ONLY)) {
+            link.getLinkStatus().setStatusText("This service is only available in Poland");
+            return AvailableStatus.UNCHECKABLE;
+        }
+
         String fileName = br.getRegex("<h2[ \n\t\t\f]+class=\"name-file\">([^<>\"]*?)</h2>").getMatch(0);
         String fileSize = br.getRegex("<p class=\"size-file\">Rozmiar: <strong>(.*?)</strong></p>").getMatch(0);
 
@@ -137,6 +144,10 @@ public class FileSharkPl extends PluginForHost {
         requestFileInformation(downloadLink);
         br.setFollowRedirects(false);
         br.getPage(downloadLink.getDownloadURL());
+
+        if (br.containsHTML(POLAND_ONLY)) {
+            throw new PluginException(LinkStatus.ERROR_FATAL, "This service is only available in Poland");
+        }
 
         doFree(downloadLink);
     }
