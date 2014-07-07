@@ -127,12 +127,13 @@ public class SrnnksCategory extends PluginForDecrypt {
     private ArrayList<DownloadLink> confirmSelectedLinks(List<String> links) {
         final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
 
-        String linksAsSingleString = convertListOfLinksToString(links);
-        String linklist = UserIO.getInstance().requestInputDialog(UserIO.STYLE_LARGE | UserIO.NO_COUNTDOWN, JDL.L("plugins.decrypter.srnkscategory.RemoveUnwantedLinks", lng_removeUnwantedLinksMessage), linksAsSingleString);
-        if (linklist == null) return new ArrayList<DownloadLink>();
-
-        String[] urls = HTMLParser.getHttpLinks(linklist, null);
-        for (String url : urls) {
+//        String linksAsSingleString = convertListOfLinksToString(links);
+//        String linklist = UserIO.getInstance().requestInputDialog(UserIO.STYLE_LARGE | UserIO.NO_COUNTDOWN, JDL.L("plugins.decrypter.srnkscategory.RemoveUnwantedLinks", lng_removeUnwantedLinksMessage), linksAsSingleString);
+//        if (linklist == null) return new ArrayList<DownloadLink>();
+//
+//        String[] urls = HTMLParser.getHttpLinks(linklist, null);
+//        for (String url : urls) {
+        for (final String url : links) { 
             ret.add(this.createDownloadlink(url));
         }
         if (UserIO.isOK(UserIO.getInstance().requestConfirmDialog(0, String.format(JDL.L("plugins.decrypter.srnkscategory.DecryptLinks", lng_decryptLinksMessage), ret.size())))) {

@@ -90,16 +90,16 @@ public class FizyComD extends PluginForDecrypt {
 
         String[] mirrors = sb.toString().split("\r\n");
 
-        try {
-            indices = UserIO.getInstance().requestMultiSelectionDialog(0, "Please select playlist", "Please select the desired playlist.", mirrors, null, null, null, null);
-        } catch (Throwable e) {
+//        try {
+//            indices = UserIO.getInstance().requestMultiSelectionDialog(0, "Please select playlist", "Please select the desired playlist.", mirrors, null, null, null, null);
+//        } catch (Throwable e) {
             /* this function DOES NOT exist in 09581 stable */
             // TODO Get rid of this catch section once
             // MultiSelectionDialog
             // makes its way into stable
             String index = UserIO.getInstance().requestInputDialog(UserIO.STYLE_LARGE | UserIO.NO_COUNTDOWN, "Please remove unwanted playlists", sb.toString());
             indices = changeReturnTypeToIntArray(index, mirrors);
-        }
+//        }
         // Dialog wurde abgebrochen, Decrypterinstanz wird beendet.
         if (indices == null) indices = new int[] { -1 };
         return indices;
