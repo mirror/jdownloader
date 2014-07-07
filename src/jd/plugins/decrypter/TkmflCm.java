@@ -38,7 +38,6 @@ public class TkmflCm extends PluginForDecrypt {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         br.setFollowRedirects(true);
         br.getPage(parameter.getCryptedUrl());
-        // http://tmf.myegy.com/2-ar.php?id=11794
         br.getPage("http://tmf.myegy.com/2-ar.php?id=" + new Regex(parameter.getCryptedUrl(), "(\\d+)").getMatch(0));
         final String url = br.getRegex("onclick=\"NewWindow\\('(.*?)',").getMatch(0);
         if (url == null) {
