@@ -73,6 +73,7 @@ public class DropboxCom extends PluginForHost {
                     return AvailableStatus.TRUE;
                 }
                 if (!con.getContentType().contains("html")) {
+                    link.setProperty("directlink", con.getURL().toString());
                     link.setDownloadSize(con.getLongContentLength());
                     link.setFinalFileName(Encoding.htmlDecode(getFileNameFromHeader(con).trim()));
                     return AvailableStatus.TRUE;

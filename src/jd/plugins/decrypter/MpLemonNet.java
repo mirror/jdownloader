@@ -40,7 +40,9 @@ public class MpLemonNet extends PluginForDecrypt {
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String parameter = param.toString().replace("mp3lemon.org", "mp3lemon.net");
-        if (parameter.contains("download.php?idfile=")) parameter = parameter.replace("download.php?idfile=", "song/") + "/";
+        if (parameter.contains("download.php?idfile=")) {
+            parameter = parameter.replace("download.php?idfile=", "song/") + "/";
+        }
         br.setFollowRedirects(false);
         br.setCustomCharset("windows-1251");
         br.setReadTimeout(3 * 60 * 1000);
@@ -57,26 +59,21 @@ public class MpLemonNet extends PluginForDecrypt {
                 logger.info("Link offline: " + parameter);
                 return decryptedLinks;
             }
-            String[][] fileInfo = br.getRegex("\"/song/(\\d+)/([^<>\"/]*?)\"></a></td>[\t\n\r ]+<td class=\"list_tracks\"></td>[\t\n\r ]+<td class=\"list_tracks\">\\d+:\\d+</td>[\t\n\r ]+<td class=\"list_tracks\">(\\d+(\\.\\d+)? *?)</td>").getMatches();
+            String[][] fileInfo = br.getRegex("class=\"list_tracks\"><a href=\"(http://[^<>\"]*?)\".*?\"/song/(\\d+)/([^<>\"/]*?)\"></a></td>[\t\n\r ]+<td class=\"list_tracks\"></td>[\t\n\r ]+<td class=\"list_tracks\">\\d+:\\d+</td>[\t\n\r ]+<td class=\"list_tracks\">(\\d+(\\.\\d+)? *?)</td>").getMatches();
             if (fileInfo == null || fileInfo.length == 0) {
                 logger.warning("Decrypter broken for link: " + parameter);
                 return null;
             }
             for (String[] dl : fileInfo) {
-                String finallink = dl[0];
-                String filename = dl[1];
+                final String finallink = "directhttp://" + dl[0];
+                String filename = dl[2];
                 if (finallink == null || filename == null) {
                     logger.warning("Decrypter broken for link: " + parameter);
                     return null;
                 }
-                finallink = decryptSingleLink(dl[0]);
-                if (finallink == null) {
-                    logger.warning("Decrypter broken for link: " + parameter);
-                    return null;
-                }
-                DownloadLink fina = createDownloadlink(finallink);
-                fina.setFinalFileName(Encoding.htmlDecode(dl[1].trim()) + ".mp3");
-                fina.setDownloadSize(SizeFormatter.getSize(dl[2] + " MB"));
+                final DownloadLink fina = createDownloadlink(finallink);
+                fina.setFinalFileName(Encoding.htmlDecode(dl[2].trim()) + ".mp3");
+                fina.setDownloadSize(SizeFormatter.getSize(dl[3] + " MB"));
                 fina.setAvailable(true);
                 decryptedLinks.add(fina);
             }

@@ -20,6 +20,7 @@ import java.util.ArrayList;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
+import jd.parser.Regex;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
@@ -37,10 +38,13 @@ public class TkmflCm extends PluginForDecrypt {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         br.setFollowRedirects(true);
         br.getPage(parameter.getCryptedUrl());
-        String url = br.getRegex("<a href=\"(http://tmf.myegy.com/2-ar.php\\?id=.*?)\">").getMatch(0);
-        if (url != null) br.getPage(url);
-        url = br.getRegex("onclick=\"NewWindow\\('(.*?)',").getMatch(0);
-        if (url == null) return null;
+        // http://tmf.myegy.com/2-ar.php?id=11794
+        br.getPage("http://tmf.myegy.com/2-ar.php?id=" + new Regex(parameter.getCryptedUrl(), "(\\d+)").getMatch(0));
+        final String url = br.getRegex("onclick=\"NewWindow\\('(.*?)',").getMatch(0);
+        if (url == null) {
+            logger.warning("Decrypter broken for link: " + parameter.getCryptedUrl());
+            return null;
+        }
         decryptedLinks.add(this.createDownloadlink(url));
         return decryptedLinks;
     }

@@ -50,8 +50,6 @@ public class SaveTvDecrypter extends PluginForDecrypt {
     }
 
     /* Settings stuff */
-    private final String           USEORIGINALFILENAME               = "USEORIGINALFILENAME";
-
     private final String           CRAWLER_ACTIVATE                  = "CRAWLER_ACTIVATE";
     private final String           CRAWLER_ENABLE_FASTER             = "CRAWLER_ENABLE_FASTER";
     private final String           CRAWLER_DISABLE_DIALOGS           = "CRAWLER_DISABLE_DIALOGS";
@@ -213,21 +211,13 @@ public class SaveTvDecrypter extends PluginForDecrypt {
         final long datemilliseconds = getLongProperty(dl, "originaldate", 0);
         final long current_tdifference = System.currentTimeMillis() - datemilliseconds;
         if (tdifference_milliseconds == 0 || current_tdifference <= tdifference_milliseconds) {
-
-            String filename;
             /* Nothing to hide - Always show original links in JD */
             dl.setBrowserUrl(telecast_url);
             dl.setDownloadSize(calculated_filesize);
             if (FAST_LINKCHECK) {
                 dl.setAvailable(true);
             }
-            /* Get and set filename depending on user selection */
-            if (cfg.getBooleanProperty(USEORIGINALFILENAME)) {
-                filename = jd.plugins.hoster.SaveTv.getFakeOriginalFilename(dl);
-            } else {
-                filename = jd.plugins.hoster.SaveTv.getFormattedFilename(dl);
-            }
-            dl.setName(filename);
+            dl.setName(jd.plugins.hoster.SaveTv.getFilename(dl));
 
             try {
                 distribute(dl);

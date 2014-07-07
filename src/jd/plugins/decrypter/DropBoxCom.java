@@ -35,7 +35,7 @@ import jd.utils.JDUtilities;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "dropbox.com" }, urls = { "https?://(www\\.)?dropbox\\.com/(sh/[A-Za-z0-9\\-_/]+|l/[A-Za-z0-9]+)|https?://(www\\.)?db\\.tt/[A-Za-z0-9]+" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "dropbox.com" }, urls = { "https?://(www\\.)?dropbox\\.com/((sh|sc)/[A-Za-z0-9\\-_/]+|l/[A-Za-z0-9]+)|https?://(www\\.)?db\\.tt/[A-Za-z0-9]+" }, flags = { 0 })
 public class DropBoxCom extends PluginForDecrypt {
 
     private boolean pluginloaded;
@@ -44,7 +44,7 @@ public class DropBoxCom extends PluginForDecrypt {
         super(wrapper);
     }
 
-    private static final String TYPE_NORMAL   = "https?://(www\\.)?dropbox\\.com/sh/.+";
+    private static final String TYPE_NORMAL   = "https?://(www\\.)?dropbox\\.com/(sh|sc)/.+";
     private static final String TYPE_REDIRECT = "https?://(www\\.)?dropbox\\.com/l/[A-Za-z0-9]+";
     private static final String TYPE_SHORT    = "https://(www\\.)?db\\.tt/[A-Za-z0-9]+";
 
@@ -136,7 +136,8 @@ public class DropBoxCom extends PluginForDecrypt {
                 }
             }
         }
-        String sharingModel = br.getRegex("SharingModel\\.init_folder\\(.*?'(.*?)'").getMatch(0);
+        // SharingModel.init_folder(true, true, [
+        String sharingModel = br.getRegex("SharingModel\\.init_folder\\(.*?\\[(.*?)\\]").getMatch(0);
         sharingModel = unescape(sharingModel);
         if (sharingModel != null && decryptedLinks.size() == 0) {
             /* new js links */

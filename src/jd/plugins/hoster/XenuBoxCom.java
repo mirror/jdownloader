@@ -76,7 +76,7 @@ public class XenuBoxCom extends PluginForHost {
 
     // DEV NOTES
     // XfileSharingProBasic Version 2.5.6.4-raz
-    // mods:
+    // mods: A lot premiumonly errorhandling
     // non account: 1 * 1 (not tested
     // free account: same as above (not tested)
     // premium account: 20 * unlimited
@@ -497,7 +497,7 @@ public class XenuBoxCom extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error!", 10 * 60 * 1000l);
         }
         /** Error handling for only-premium links */
-        if (new Regex(correctedBR, "( can download files up to |Upgrade your account to download bigger files|>Upgrade your account to download larger files|>The file you requested reached max downloads limit for Free Users|Please Buy Premium To download this file<|This file reached max downloads limit|>This file is available for Premium and Business Users only\\.<)").matches()) {
+        if (new Regex(correctedBR, "( can download files up to |Upgrade your account to download bigger files|>Upgrade your account to download larger files|>The file you requested reached max downloads limit for Free Users|Please Buy Premium To download this file<|This file reached max downloads limit|>This file is available for Premium and Business Users only\\.<|>This file is available for Premium Users only)").matches() || br.getRedirectLocation() != null && br.getRedirectLocation().contains("/?op=login")) {
             String filesizelimit = new Regex(correctedBR, "You can download files up to(.*?)only").getMatch(0);
             if (filesizelimit != null) {
                 filesizelimit = filesizelimit.trim();

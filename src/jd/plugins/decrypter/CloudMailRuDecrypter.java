@@ -54,7 +54,7 @@ public class CloudMailRuDecrypter extends PluginForDecrypt {
 
         prepBR();
         br.getPage("https://cloud.mail.ru/api/v1/folder/recursive?storage=public&id=" + id_url_encoded + "&sort=%7B%22type%22%3A%22name%22%2C%22order%22%3A%22asc%22%7D&offset=0&limit=500&api=1&htmlencoded=false&build=" + BUILD);
-        if (br.containsHTML("\"status\":400")) {
+        if (br.containsHTML("\"status\":(400|404)")) {
             main.setAvailable(false);
             main.setProperty("offline", true);
             decryptedLinks.add(main);
