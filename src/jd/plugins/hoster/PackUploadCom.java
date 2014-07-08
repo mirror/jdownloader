@@ -21,6 +21,7 @@ import java.util.Random;
 import java.util.concurrent.atomic.AtomicReference;
 
 import jd.PluginWrapper;
+import jd.config.Property;
 import jd.nutils.encoding.Encoding;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
@@ -44,8 +45,11 @@ public class PackUploadCom extends PluginForHost {
         return "http://www.packupload.com/cgu";
     }
 
-    private static final String            INVALIDLINKS = "http://([a-z]+\\.)?packupload.com/(contact|reportFile|register|functionalities|news|about|emptyPage|connect|donate|myfiles)";
-    private static AtomicReference<String> userAgent    = new AtomicReference<String>(null);
+    private static final String            INVALIDLINKS      = "http://([a-z]+\\.)?packupload.com/(contact|reportFile|register|functionalities|news|about|emptyPage|connect|donate|myfiles)";
+    private static AtomicReference<String> userAgent         = new AtomicReference<String>(null);
+
+    private static final String            NICE_HOST         = "packupload.com";
+    private static final String            NICE_HOSTproperty = "packuploadcom";
 
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
@@ -97,7 +101,19 @@ public class PackUploadCom extends PluginForHost {
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
             if (br.containsHTML(">You must wait befor downloading this file\\.<")) {
-                throw new PluginException(LinkStatus.ERROR_RETRY);
+                logger.info(NICE_HOST + ": wait_error");
+                int timesFailed = downloadLink.getIntegerProperty(NICE_HOSTproperty + "timesfailed_wait_error", 0);
+                downloadLink.getLinkStatus().setRetryCount(0);
+                if (timesFailed <= 2) {
+                    timesFailed++;
+                    downloadLink.setProperty(NICE_HOSTproperty + "timesfailed_403dlerror", timesFailed);
+                    logger.info(NICE_HOST + ": wait_error -> Retrying");
+                    throw new PluginException(LinkStatus.ERROR_RETRY);
+                } else {
+                    downloadLink.setProperty(NICE_HOSTproperty + "timesfailed_wait_error", Property.NULL);
+                    logger.info(NICE_HOST + ": wait_error --> Server error");
+                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error", 10 * 60 * 1000l);
+                }
             }
             if (br.containsHTML(">The requested file is impossible to find\\.<")) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
