@@ -406,6 +406,7 @@ public class RealDebridCom extends PluginForHost {
                 maxChunks = 0;
             } else if ("1".equals(chunks)) {
                 resumes = false;
+                maxChunks = 1;
             } else {
                 maxChunks = -Integer.parseInt(chunks);
             }
