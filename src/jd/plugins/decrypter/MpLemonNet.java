@@ -16,13 +16,11 @@
 
 package jd.plugins.decrypter;
 
-import java.io.IOException;
 import java.util.ArrayList;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.nutils.encoding.Encoding;
-import jd.parser.Regex;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
@@ -46,21 +44,25 @@ public class MpLemonNet extends PluginForDecrypt {
         br.setFollowRedirects(false);
         br.setCustomCharset("windows-1251");
         br.setReadTimeout(3 * 60 * 1000);
+        br.getPage(parameter);
         if (parameter.contains("/song/")) {
-            String finallink = decryptSingleLink(new Regex(parameter, "mp3lemon\\.net/song/(\\d+)/").getMatch(0));
+            final String finallink = br.getRegex("mp3: \"(http://[^<>\"]*?)\"").getMatch(0);
             if (finallink == null) {
                 logger.warning("Decrypter broken for link: " + parameter);
                 return null;
             }
-            decryptedLinks.add(createDownloadlink(finallink));
+            decryptedLinks.add(createDownloadlink("directhttp://" + finallink));
         } else {
-            br.getPage(parameter);
             if (br.containsHTML(">Альбом не найден")) {
                 logger.info("Link offline: " + parameter);
                 return decryptedLinks;
             }
             String[][] fileInfo = br.getRegex("class=\"list_tracks\"><a href=\"(http://[^<>\"]*?)\".*?\"/song/(\\d+)/([^<>\"/]*?)\"></a></td>[\t\n\r ]+<td class=\"list_tracks\"></td>[\t\n\r ]+<td class=\"list_tracks\">\\d+:\\d+</td>[\t\n\r ]+<td class=\"list_tracks\">(\\d+(\\.\\d+)? *?)</td>").getMatches();
             if (fileInfo == null || fileInfo.length == 0) {
+                if (br.containsHTML("class=\"t_list\">Длительность</td>")) {
+                    logger.info("Link offline: " + parameter);
+                    return decryptedLinks;
+                }
                 logger.warning("Decrypter broken for link: " + parameter);
                 return null;
             }
@@ -79,11 +81,6 @@ public class MpLemonNet extends PluginForDecrypt {
             }
         }
         return decryptedLinks;
-    }
-
-    private String decryptSingleLink(String fID) throws IOException {
-        br.getPage("http://mp3lemon.net/download.php?idfile=" + fID);
-        return br.getRedirectLocation();
     }
 
     /* NO OVERRIDE!! */

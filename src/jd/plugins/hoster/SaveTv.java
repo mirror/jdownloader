@@ -115,9 +115,9 @@ public class SaveTv extends PluginForHost {
     private static final String  FORCE_ORIGINALFILENAME_MOVIES     = "FORCE_ORIGINALFILENAME_MOVIES";
 
     /* Variables */
-    private boolean              FORCE_ORIGINAL_FILENAME           = false;
     private boolean              FORCE_LINKCHECK                   = false;
     private boolean              ISADSFREEAVAILABLE                = false;
+
     /* If this != null, API is in use */
     private String               SESSIONID                         = null;
     private static final String  NORESUME                          = "NORESUME";
@@ -166,7 +166,7 @@ public class SaveTv extends PluginForHost {
 
     @Override
     public void correctDownloadLink(final DownloadLink link) throws Exception {
-        link.setUrlDownload(link.getDownloadURL().replaceFirst("https://", "http://").replace("free.save.tv/", "save.tv/"));
+        link.setUrlDownload(link.getDownloadURL().replaceFirst("http://", "https://"));
     }
 
     @Override

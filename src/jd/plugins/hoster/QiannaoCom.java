@@ -56,26 +56,43 @@ public class QiannaoCom extends PluginForHost {
         br.getHeaders().put("Accept-Language", "en-US,en;q=0.5");
         br.getPage(link.getDownloadURL());
 
-        // No_access|user_banned|file_deleted|strange_exception
-        if (br.containsHTML("<span> 资源已被禁止访问</span>|用户已被禁用。</span>|<span> 资源已被删除</span>|<span>java\\.io\\.FileNotFoundException")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (br.containsHTML("<div class=\"message_div\">")) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
 
         // Cookies needed to start the download
         final String vid = br.getRegex("setCookie\\(\"vid\", \"([a-z0-9]+)\"").getMatch(0);
-        if (vid != null) br.setCookie("http://qiannao.com/", "vid", vid);
+        if (vid != null) {
+            br.setCookie("http://qiannao.com/", "vid", vid);
+        }
         final String vid1 = br.getRegex("setCookie\\(\"vid1\", \"([a-z0-9]+)\"").getMatch(0);
-        if (vid1 != null) br.setCookie("http://qiannao.com/", "vid1", vid1);
+        if (vid1 != null) {
+            br.setCookie("http://qiannao.com/", "vid1", vid1);
+        }
 
         String filename = null, filesize = null;
         if (link.getDownloadURL().matches(SPACELINK)) {
-            if (br.containsHTML(">文件大小：</div><span class=\"span2\">0 B\\&nbsp;<")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            if (br.containsHTML(">文件大小：</div><span class=\"span2\">0 B\\&nbsp;<")) {
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            }
             filename = new Regex(link.getDownloadURL(), "/([^<>\"/]*)/\\.page$").getMatch(0);
             filesize = br.getRegex(">文件大小：</div><span class=\"span2\">([^<>\"]*?)\\&nbsp;</span>").getMatch(0);
         } else {
-            if (br.containsHTML("<title> \\- 千脑云电脑 我的在线电脑 \\| [^<>\"]*?</title>")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            if (br.containsHTML("<title> \\- 千脑云电脑 我的在线电脑 \\| [^<>\"]*?</title>")) {
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            }
             filename = br.getRegex("<h2 class=\"h2_title\">([^<>\"]*?)</h2>").getMatch(0);
+            if (filename == null) {
+                filename = br.getRegex("<title>([^<>\"]*?)\\- Qiannao\\.com \\-").getMatch(0);
+            }
             filesize = br.getRegex("<b>文件大小:</b>\\&nbsp;\\&nbsp;\\&nbsp;\\&nbsp;([^<>\"]*?)<br>").getMatch(0);
+            if (filesize == null) {
+                filesize = br.getRegex("<b>File Size:</b>\\&nbsp;\\&nbsp;\\&nbsp;\\&nbsp;([^<>\"]*?)<br>").getMatch(0);
+            }
         }
-        if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (filename == null || filesize == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         link.setName(Encoding.htmlDecode(filename.trim()));
         link.setDownloadSize(SizeFormatter.getSize(filesize));
         return AvailableStatus.TRUE;
@@ -87,22 +104,32 @@ public class QiannaoCom extends PluginForHost {
         String dllink = null;
         if (downloadLink.getDownloadURL().matches(SPACELINK)) {
             final String[] dllinks = br.getRegex("\"(http://[a-z0-9\\-]+\\.qiannao\\.com:\\d+/servlet/FileDownload[^<>\"]*?)\"").getColumn(0);
-            if (dllinks == null || dllinks.length == 0) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            if (dllinks == null || dllinks.length == 0) {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
             for (final String testDllink : dllinks) {
-                if (!linkOk(downloadLink, testDllink)) continue;
+                if (!linkOk(downloadLink, testDllink)) {
+                    continue;
+                }
                 dllink = testDllink;
                 break;
             }
         } else {
             final String[] dllinks = br.getRegex("\"(http://[a-z0-9\\-]+\\.qiannao\\.com/downfile/[^<>\"]*?)\"").getColumn(0);
-            if (dllinks == null || dllinks.length == 0) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            if (dllinks == null || dllinks.length == 0) {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
             for (final String testDllink : dllinks) {
-                if (!linkOk(downloadLink, testDllink)) continue;
+                if (!linkOk(downloadLink, testDllink)) {
+                    continue;
+                }
                 dllink = testDllink;
                 break;
             }
         }
-        if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (dllink == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 0);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();

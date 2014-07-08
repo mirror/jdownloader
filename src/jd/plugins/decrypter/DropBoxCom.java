@@ -35,7 +35,7 @@ import jd.utils.JDUtilities;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "dropbox.com" }, urls = { "https?://(www\\.)?dropbox\\.com/((sh|sc)/[A-Za-z0-9\\-_/]+|l/[A-Za-z0-9]+)|https?://(www\\.)?db\\.tt/[A-Za-z0-9]+" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "dropbox.com" }, urls = { "https?://(www\\.)?dropbox\\.com/((sh|sc|s)/[A-Za-z0-9\\-\\._/]+|l/[A-Za-z0-9]+)|https?://(www\\.)?db\\.tt/[A-Za-z0-9]+" }, flags = { 0 })
 public class DropBoxCom extends PluginForDecrypt {
 
     private boolean pluginloaded;
@@ -44,15 +44,25 @@ public class DropBoxCom extends PluginForDecrypt {
         super(wrapper);
     }
 
-    private static final String TYPE_NORMAL   = "https?://(www\\.)?dropbox\\.com/(sh|sc)/.+";
-    private static final String TYPE_REDIRECT = "https?://(www\\.)?dropbox\\.com/l/[A-Za-z0-9]+";
-    private static final String TYPE_SHORT    = "https://(www\\.)?db\\.tt/[A-Za-z0-9]+";
+    private static final String TYPE_NORMAL     = "https?://(www\\.)?dropbox\\.com/(sh|sc)/.+";
+    private static final String TYPE_S          = "https?://(www\\.)?dropbox\\.com/s/.+";
+    private static final String TYPE_REDIRECT   = "https?://(www\\.)?dropbox\\.com/l/[A-Za-z0-9]+";
+    private static final String TYPE_SHORT      = "https://(www\\.)?db\\.tt/[A-Za-z0-9]+";
 
-    private static final String DOWNLOAD_ZIP  = "DOWNLOAD_ZIP";
+    /* Unsupported linktypes which can occur during the decrypt process */
+    private static final String TYPE_DIRECTLINK = "https?://dl\\.dropboxusercontent.com/.+";
+    private static final String TYPE_REFERRAL   = "https?://(www\\.)?dropbox\\.com/referrals/.+";
+
+    /* Settings constants */
+    private static final String DOWNLOAD_ZIP    = "DOWNLOAD_ZIP";
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String parameter = param.toString().replace("?dl=1", "");
+        if (parameter.matches(TYPE_S)) {
+            decryptedLinks.add(generateType_s_dlink(parameter));
+            return decryptedLinks;
+        }
         br.setFollowRedirects(false);
         br.setCookie("http://dropbox.com", "locale", "en");
         URLConnectionAdapter con = null;
@@ -71,7 +81,19 @@ public class DropBoxCom extends PluginForDecrypt {
             }
             if (con.getResponseCode() == 302 && (parameter.matches(TYPE_REDIRECT) || parameter.matches(TYPE_SHORT))) {
                 parameter = br.getRedirectLocation();
-                if (!parameter.matches(TYPE_NORMAL)) {
+                if (parameter.matches(TYPE_DIRECTLINK)) {
+                    final DownloadLink direct = createDownloadlink("directhttp://" + parameter);
+                    decryptedLinks.add(direct);
+                    return decryptedLinks;
+                } else if (parameter.matches(TYPE_S)) {
+                    decryptedLinks.add(generateType_s_dlink(parameter));
+                    return decryptedLinks;
+                } else if (parameter.matches(TYPE_REFERRAL)) {
+                    final DownloadLink dl = createDownloadlink("directhttp://" + parameter);
+                    dl.setProperty("offline", true);
+                    decryptedLinks.add(dl);
+                    return decryptedLinks;
+                } else if (!parameter.matches(TYPE_NORMAL)) {
                     logger.warning("Decrypter broken or unsupported redirect-url: " + parameter);
                     return null;
                 }
@@ -167,6 +189,11 @@ public class DropBoxCom extends PluginForDecrypt {
             fp.addLinks(decryptedLinks);
         }
         return decryptedLinks;
+    }
+
+    private DownloadLink generateType_s_dlink(String parameter) {
+        parameter = parameter.replace("www.", "").replace("https://", "https://dl.");
+        return createDownloadlink("directhttp://" + parameter);
     }
 
     private synchronized String unescape(final String s) {
