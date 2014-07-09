@@ -40,6 +40,7 @@ public class FlFctrFldr extends PluginForDecrypt {
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String parameter = param.toString();
+        br.getHeaders().put("Accept-Language", "en-gb, en;q=0.8");
         br.getPage(parameter + "/?sort=filename&order=ASC&show=100&page=1");
         if (br.getRedirectLocation() != null) {
             /* to follow domain redirects */
@@ -52,7 +53,7 @@ public class FlFctrFldr extends PluginForDecrypt {
             return new ArrayList<DownloadLink>();
         }
 
-        final String fpName = br.getRegex("<h1>Files in <span>\"([^<>\"]*?)\"</span>").getMatch(0);
+        final String fpName = br.getRegex("<h1>Files in <span>(.*?)</span>").getMatch(0);
 
         int maxPagenum = 1;
         final String maxPage = br.getRegex("data\\-paginator\\-totalPages=\"(\\d+)\"").getMatch(0);
