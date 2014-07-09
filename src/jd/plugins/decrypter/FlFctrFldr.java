@@ -29,7 +29,7 @@ import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 import jd.utils.locale.JDL;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "filefactory.com" }, urls = { "http://[\\w\\.]*?filefactory\\.com/folder/[\\w]+" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "filefactory.com" }, urls = { "http://[\\w\\.]*?filefactory\\.com/(folder|f)/[\\w]+" }, flags = { 0 })
 public class FlFctrFldr extends PluginForDecrypt {
 
     public FlFctrFldr(PluginWrapper wrapper) {
@@ -56,9 +56,13 @@ public class FlFctrFldr extends PluginForDecrypt {
 
         int maxPagenum = 1;
         final String maxPage = br.getRegex("data\\-paginator\\-totalPages=\"(\\d+)\"").getMatch(0);
-        if (maxPage != null) maxPagenum = Integer.parseInt(maxPage);
+        if (maxPage != null) {
+            maxPagenum = Integer.parseInt(maxPage);
+        }
         for (int i = 1; i <= maxPagenum; i++) {
-            if (i > 1) br.getPage(parameter + "/?sort=filename&order=ASC&show=100&page=" + i);
+            if (i > 1) {
+                br.getPage(parameter + "/?sort=filename&order=ASC&show=100&page=" + i);
+            }
             add(decryptedLinks);
         }
         if (fpName != null) {
