@@ -136,8 +136,8 @@ public class SaveTvDecrypter extends PluginForDecrypt {
                     logger.info("save.tv: Decrypting request " + i + " of " + requestCount);
 
                     getPageSafe("https://www.save.tv/STV/M/obj/archive/JSON/VideoArchiveApi.cfm?iEntriesPerPage=" + ENTRIES_PER_REQUEST + "&iCurrentPage=" + i);
-                    final String array_text = br.getRegex("\"ARRVIDEOARCHIVEENTRIES\":\\[(.*?)\\]").getMatch(0);
-                    final String[] telecast_array = array_text.split("\\},\\{");
+                    final String array_text = br.getRegex("\"ARRVIDEOARCHIVEENTRIES\":\\[(\\{.*?\\})\\],\"DEFAULTSTREAMFORMATID\"").getMatch(0);
+                    final String[] telecast_array = array_text.split("TelecastId=\\d+\"\\},\\{");
 
                     for (final String singleid_information : telecast_array) {
                         addID(singleid_information);
@@ -176,6 +176,26 @@ public class SaveTvDecrypter extends PluginForDecrypt {
             }
             logger.info("save.tv: total links found: " + decryptedLinks.size() + " of " + totalLinksNum);
             handleEndDialogs();
+        } catch (final BrowserException eb) {
+            try {
+                eb.printStackTrace();
+                SwingUtilities.invokeAndWait(new Runnable() {
+                    @Override
+                    public void run() {
+                        try {
+                            String title = "Save.tv Archiv-Crawler - Archiv nicht komplett gefunden (Server Fehler)";
+                            String message = "Save.tv - leider wurden nicht alle Links des Archives gefunden!\r\n";
+                            message += "Während dem Crawlen ist es zu einem Serverfehler gekommen!\r\n";
+                            message += "Wir empfehlen, es zu einem späteren Zeitpunkt nochmals zu versuchen.\r\n";
+                            message += "Es wurden nur " + decryptedLinks.size() + " von " + totalLinksNum + " Links (telecastIDs) gefunden!";
+                            message += getDialogEnd();
+                            JOptionPane.showConfirmDialog(jd.gui.swing.jdgui.JDGui.getInstance().getMainFrame(), message, title, JOptionPane.PLAIN_MESSAGE, JOptionPane.ERROR_MESSAGE, null);
+                        } catch (Throwable e) {
+                        }
+                    }
+                });
+            } catch (Throwable ebr) {
+            }
         } catch (final Throwable e) {
             try {
                 e.printStackTrace();
@@ -183,10 +203,10 @@ public class SaveTvDecrypter extends PluginForDecrypt {
                     @Override
                     public void run() {
                         try {
-                            String title = "Save.tv Archiv-Crawler - Archiv nicht komplett gefunden (Server Fehler)";
+                            String title = "Save.tv Archiv-Crawler - Archiv nicht komplett gefunden (Unbekannter Fehler)";
                             String message = "Save.tv - leider wurden nicht alle Links des Archives gefunden!\r\n";
-                            message += "Während dem Crawlen ist es zu einem Server Fehler gekommen!\r\n";
-                            message += "Wir empfehlen, es zu einem späteren Zeitpunkt nochmals zu versuchen.\r\n";
+                            message += "Während dem Crawlen ist es zu einem unbekannten Fehler gekommen!\r\n";
+                            message += "Wir empfehlen, es zu einem späteren Zeitpunkt nochmals zu versuchen und uns den Fehler ggf. zu melden.\r\n";
                             message += "Es wurden nur " + decryptedLinks.size() + " von " + totalLinksNum + " Links (telecastIDs) gefunden!";
                             message += getDialogEnd();
                             JOptionPane.showConfirmDialog(jd.gui.swing.jdgui.JDGui.getInstance().getMainFrame(), message, title, JOptionPane.PLAIN_MESSAGE, JOptionPane.ERROR_MESSAGE, null);

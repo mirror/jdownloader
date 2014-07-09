@@ -59,19 +59,26 @@ public class Spi0nCom extends PluginForDecrypt {
             decryptedLinks.add(offline);
             return decryptedLinks;
         }
-        String finallink = br.getRegex("\"(http://(www\\.)?dailymotion\\.com/(embed/)?video/[^<>\"]*?)\"").getMatch(0);
-        if (finallink == null) {
-            finallink = br.getRegex("\"((http:)?//(www\\.)?youtube\\.com/embed/[^<>\"/]+)\"").getMatch(0);
-            if (finallink != null && !finallink.startsWith("http:")) {
-                finallink = "http:" + finallink;
+        final String[] regexes = new String[] { "\"((http:)?//(www\\.)?dailymotion\\.com/(embed/)?video/[^<>\"]*?)\"", "\"((http:)?//(www\\.)?youtube\\.com/embed/[^<>\"/]+)\"", "\"(//player\\.vimeo\\.com/video/\\d+)" };
+        for (final String regex : regexes) {
+            final String[] results = br.getRegex(regex).getColumn(0);
+            if (results != null && results.length != 0) {
+                for (String result : results) {
+                    if (!result.startsWith("http:")) {
+                        result = "http:" + result;
+                    }
+                    decryptedLinks.add(createDownloadlink(result));
+                }
             }
         }
+        if (decryptedLinks.size() > 0) {
+            return decryptedLinks;
+        }
+        String finallink = null;
         /* Sometimes they host videos on their own servers */
-        if (finallink == null) {
-            finallink = br.getRegex("\"file\":\"(http://(www\\.)?spi0n\\.com//?wp\\-content/uploads[^<>\"]*?)\"").getMatch(0);
-            if (finallink != null) {
-                finallink = "directhttp://" + finallink.replace("spi0n.com//", "spi0n.com/");
-            }
+        finallink = br.getRegex("\"file\":\"(http://(www\\.)?spi0n\\.com//?wp\\-content/uploads[^<>\"]*?)\"").getMatch(0);
+        if (finallink != null) {
+            finallink = "directhttp://" + finallink.replace("spi0n.com//", "spi0n.com/");
         }
         /* Maybe its a picture gallery */
         if (finallink == null) {

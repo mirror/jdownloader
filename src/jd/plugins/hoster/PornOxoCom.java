@@ -64,12 +64,20 @@ public class PornOxoCom extends PluginForHost {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         br.getPage(downloadLink.getDownloadURL());
-        if (br.containsHTML("(>Video was not found<|<title> at PornoXO</title>|>This video has been deleted|<title>PornoXO \\- Page Not Found</title>)")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (br.containsHTML("(>Video was not found<|<title> at PornoXO</title>|>This video has been deleted|<title>PornoXO \\- Page Not Found</title>|>Sorry, video not found)")) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
         String filename = br.getRegex("<title>([^<>\"]*?)\\- PornoXO\\.com</title>").getMatch(0);
-        if (filename == null) filename = br.getRegex("<div id=\"maincolumn2\">[\t\n\r ]+<h1>([^<>\"]*?)</h1>").getMatch(0);
+        if (filename == null) {
+            filename = br.getRegex("<div id=\"maincolumn2\">[\t\n\r ]+<h1>([^<>\"]*?)</h1>").getMatch(0);
+        }
         DLLINK = br.getRegex("\\'file\\': \"(http://.*?)\"").getMatch(0);
-        if (DLLINK == null) DLLINK = br.getRegex("\"(http://(www\\.)?vipstreamservice\\.com/key=.*?)\"").getMatch(0);
-        if (filename == null || DLLINK == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (DLLINK == null) {
+            DLLINK = br.getRegex("\"(http://(www\\.)?vipstreamservice\\.com/key=.*?)\"").getMatch(0);
+        }
+        if (filename == null || DLLINK == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         DLLINK = Encoding.htmlDecode(DLLINK);
         filename = filename.trim();
         downloadLink.setFinalFileName(Encoding.htmlDecode(filename) + ".flv");
@@ -79,10 +87,11 @@ public class PornOxoCom extends PluginForHost {
         URLConnectionAdapter con = null;
         try {
             con = br2.openGetConnection(DLLINK);
-            if (!con.getContentType().contains("html"))
+            if (!con.getContentType().contains("html")) {
                 downloadLink.setDownloadSize(con.getLongContentLength());
-            else
+            } else {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            }
             return AvailableStatus.TRUE;
         } finally {
             try {

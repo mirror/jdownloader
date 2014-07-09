@@ -20,6 +20,7 @@ import java.io.IOException;
 
 import jd.PluginWrapper;
 import jd.http.Browser;
+import jd.http.Browser.BrowserException;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
 import jd.plugins.DownloadLink;
@@ -57,14 +58,18 @@ public class PornperCom extends PluginForHost {
         // Corrupt GZIP trailer
         br.getHeaders().put("Accept-Encoding", "deflate");
         br.getPage(downloadLink.getDownloadURL());
-        if (br.getURL().contains("pornper.com/videos/?m=e")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (br.getURL().contains("pornper.com/videos/?m=e")) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
         br.setFollowRedirects(true);
         String filename = br.getRegex("<meta name=\"description\" content=\"(.*?)\"").getMatch(0);
         if (filename == null) {
             filename = br.getRegex("<title>(.*?)\\- Free Porn Videos and Sex Movies at pornper Kinky Porn Tube</title>").getMatch(0);
         }
         DLLINK = br.getRegex("\'file\': \'(.*?)\',").getMatch(0);
-        if (filename == null || DLLINK == null) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
+        if (filename == null || DLLINK == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         DLLINK = Encoding.htmlDecode(DLLINK);
         filename = filename.trim();
         String ext = DLLINK.substring(DLLINK.lastIndexOf("."));
@@ -77,7 +82,11 @@ public class PornperCom extends PluginForHost {
         br2.setFollowRedirects(true);
         URLConnectionAdapter con = null;
         try {
-            con = br2.openGetConnection(DLLINK);
+            try {
+                con = br2.openGetConnection(DLLINK);
+            } catch (final BrowserException eb) {
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            }
             if (!con.getContentType().contains("html")) {
                 downloadLink.setDownloadSize(con.getLongContentLength());
             } else {

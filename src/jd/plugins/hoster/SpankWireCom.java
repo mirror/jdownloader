@@ -56,13 +56,19 @@ public class SpankWireCom extends PluginForHost {
         br.setFollowRedirects(true);
         br.getPage(downloadLink.getDownloadURL());
         // Invalid link
-        if (br.getURL().equals("http://www.spankwire.com/") || br.containsHTML("removedCopyright\\.jpg\"")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (br.getURL().equals("http://www.spankwire.com/") || br.containsHTML("removedCopyright\\.jpg\"")) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
         // Link offline
-        if (br.containsHTML(">This article has been deleted") | br.containsHTML(">This video has been deleted") || br.containsHTML(">This video has been disabled") || br.containsHTML("id=\"disclaimer_arrow\"")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (br.containsHTML(">This article has been deleted") | br.containsHTML(">This video has been deleted") || br.containsHTML(">This video has been disabled") || br.containsHTML("id=\"disclaimer_arrow\"")) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
         String fileID = new Regex(downloadLink.getDownloadURL(), "spankwire\\.com/.*?/video(\\d+)").getMatch(0);
         if (fileID == null) {
             fileID = new Regex(downloadLink.getDownloadURL(), "EmbedPlayer\\.aspx\\?ArticleId=(\\d+)").getMatch(0);
-            if (fileID == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            if (fileID == null) {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
         }
         String filename = null;
         if (!downloadLink.getDownloadURL().contains("EmbedPlayer.aspx")) {
@@ -84,31 +90,43 @@ public class SpankWireCom extends PluginForHost {
                 filename = filename.replaceAll("\\+", " ");
             }
         }
-        if (filename == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (filename == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         downloadLink.setName(filename.trim());
         DLLINK = finddllink();
-        if (filename == null || DLLINK == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (filename == null || DLLINK == null) {
+            /* If even lowest quality is not available, it must be offline */
+            if (downloadLink.getDownloadURL().contains("EmbedPlayer.aspx") && br.containsHTML("flashvars\\.quality_180p = \"\"")) {
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            }
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         DLLINK = Encoding.htmlDecode(DLLINK);
         filename = filename.trim();
-        if (DLLINK.contains(".mp4"))
+        if (DLLINK.contains(".mp4")) {
             downloadLink.setFinalFileName(filename + ".mp4");
-        else
+        } else {
             downloadLink.setFinalFileName(filename + ".flv");
+        }
         Browser br2 = br.cloneBrowser();
         // In case the link redirects to the finallink
         br2.setFollowRedirects(true);
         URLConnectionAdapter con = br2.openGetConnection(DLLINK);
-        if (!con.getContentType().contains("html"))
+        if (!con.getContentType().contains("html")) {
             downloadLink.setDownloadSize(con.getLongContentLength());
-        else
+        } else {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
         return AvailableStatus.TRUE;
     }
 
     @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
-        if (downloadLink.getDownloadURL().contains("EmbedPlayer.aspx") && br.containsHTML("This video is temporarily unavailable")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "This video is temporarily unavailable!");
+        if (downloadLink.getDownloadURL().contains("EmbedPlayer.aspx") && br.containsHTML("This video is temporarily unavailable")) {
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "This video is temporarily unavailable!");
+        }
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, DLLINK, true, 0);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
@@ -122,7 +140,9 @@ public class SpankWireCom extends PluginForHost {
         String dllink = null;
         for (final String quality : qualities) {
             dllink = br.getRegex("flashvars\\.quality_" + quality + " = \"(http[^<>\"]*?)\"").getMatch(0);
-            if (dllink != null) break;
+            if (dllink != null) {
+                break;
+            }
         }
         return dllink;
     }

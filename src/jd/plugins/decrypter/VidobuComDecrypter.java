@@ -55,7 +55,7 @@ public class VidobuComDecrypter extends PluginForDecrypt {
             logger.info("Video is private: " + parameter);
             decryptedLinks.add(offline);
             return decryptedLinks;
-        } else if (br.getHttpConnection().getResponseCode() == 404) {
+        } else if (br.getHttpConnection().getResponseCode() == 404 || br.containsHTML("2Fassets%5C%2F404\\.mp4%22")) {
             logger.info("Video is offline: " + parameter);
             decryptedLinks.add(offline);
             return decryptedLinks;

@@ -36,9 +36,11 @@ public class RevisionThreeCom extends PluginForDecrypt {
     private static final String INVALIDLINKS  = "http://(www\\.)?revision3\\.com/(blog|api|content|category|search|shows|login|forum|episodes|host|network|hub)/.*?";
     private static final String INVALIDLINKS2 = "http://(www\\.)?revision3\\.com/[a-z0-9]+/(feed|about|subscribe|episodes).*?";
 
+    private static final String TYPE_NORMAL   = "http://(www\\.)?revision3\\.com/[a-z0-9]+/[a-z0-9\\-]+";
+
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-        br.setFollowRedirects(false);
+        br.setFollowRedirects(true);
         String parameter = param.toString();
         if (parameter.matches(INVALIDLINKS) || parameter.matches(INVALIDLINKS2)) {
             logger.info("Invalid link: " + parameter);
@@ -48,9 +50,14 @@ public class RevisionThreeCom extends PluginForDecrypt {
         if (br.containsHTML("ey there\\! You look a little lo|404: Page Not Found<")) {
             logger.info("Link offline: " + parameter);
             return decryptedLinks;
+        } else if (!br.getURL().matches(TYPE_NORMAL)) {
+            logger.info("Invalid link: " + parameter);
+            return decryptedLinks;
         }
         String fpName = br.getRegex("<title>(.*?) \\- ").getMatch(0);
-        if (fpName != null) fpName = fpName.replace("...", "");
+        if (fpName != null) {
+            fpName = fpName.replace("...", "");
+        }
         // Probably this handling is also good for more links but that's not
         // tested yet!
         if (parameter.matches("http://(www\\.)?revision3\\.com/rev3gamesoriginals/[a-z0-9\\-]+")) {
@@ -61,7 +68,9 @@ public class RevisionThreeCom extends PluginForDecrypt {
             }
             for (final String singleLink : directLinks) {
                 final DownloadLink fina = createDownloadlink("directhttp://" + singleLink);
-                if (fpName != null) fina.setFinalFileName(fpName + singleLink.substring(singleLink.length() - 4, singleLink.length()));
+                if (fpName != null) {
+                    fina.setFinalFileName(fpName + singleLink.substring(singleLink.length() - 4, singleLink.length()));
+                }
                 decryptedLinks.add(fina);
             }
         } else {
@@ -69,9 +78,8 @@ public class RevisionThreeCom extends PluginForDecrypt {
                 logger.info("Link offline: " + parameter);
                 return decryptedLinks;
             }
-            final String redirect = br.getRedirectLocation();
-            if (redirect != null && !redirect.contains("revision3.com/")) {
-                final DownloadLink fina = createDownloadlink(redirect);
+            if (!br.getURL().contains("revision3.com/")) {
+                final DownloadLink fina = createDownloadlink(br.getURL());
                 decryptedLinks.add(fina);
                 return decryptedLinks;
             }
@@ -91,7 +99,9 @@ public class RevisionThreeCom extends PluginForDecrypt {
                 final DownloadLink fina = createDownloadlink("directhttp://" + finallink);
                 if (fpName != null) {
                     String ext = finallink.substring(finallink.lastIndexOf("."));
-                    if (ext != null && ext.length() < 5) fina.setFinalFileName(fpName + ext);
+                    if (ext != null && ext.length() < 5) {
+                        fina.setFinalFileName(fpName + ext);
+                    }
                 }
                 decryptedLinks.add(fina);
             }

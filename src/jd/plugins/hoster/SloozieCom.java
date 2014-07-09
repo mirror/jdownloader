@@ -51,28 +51,40 @@ public class SloozieCom extends PluginForHost {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         br.getPage(downloadLink.getDownloadURL());
-        if (br.getURL().equals("http://www.sloozie.com/")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (br.getURL().equals("http://www.sloozie.com/")) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
         String filename = null;
         final Browser br2 = br.cloneBrowser();
         if (downloadLink.getDownloadURL().matches(PICLINK)) {
             filename = br.getRegex("<title>([^<>\"]*?)</title>").getMatch(0);
-            if (filename == null) filename = br.getRegex("").getMatch(0);
+            if (filename == null) {
+                filename = br.getRegex("").getMatch(0);
+            }
             // Try to get better quality first
             DLLINK = br.getRegex("id=\"imgMGZoom\" style=\"visibility: visible\"><a rel=\"shadowbox;options=\\{displayNav:true\\}\" href=\"(http://[^<>\"]*?)\"").getMatch(0);
             // Nothing found? Grab normal quality
-            if (DLLINK == null) DLLINK = br.getRegex("title=\"Show full size\"></div><img src=\"(http://[^<>\"]*?)\"").getMatch(0);
-            if (filename == null || DLLINK == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            if (DLLINK == null) {
+                DLLINK = br.getRegex("title=\"Show full size\"></div><img pagespeed_lazy_src=\"(http://[^<>\"]*?)\"").getMatch(0);
+            }
+            if (filename == null || DLLINK == null) {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
             DLLINK = Encoding.htmlDecode(DLLINK);
             filename = filename.trim();
             String ext = DLLINK.substring(DLLINK.lastIndexOf("."));
-            if (ext == null || ext.length() > 5) ext = ".jpg";
+            if (ext == null || ext.length() > 5) {
+                ext = ".jpg";
+            }
             filename = Encoding.htmlDecode(filename) + ext;
             // In case the link redirects to the finallink
             br2.setFollowRedirects(true);
             URLConnectionAdapter con = null;
             try {
                 con = br2.openGetConnection(DLLINK);
-                if (!con.getContentType().contains("html")) downloadLink.setDownloadSize(con.getLongContentLength());
+                if (!con.getContentType().contains("html")) {
+                    downloadLink.setDownloadSize(con.getLongContentLength());
+                }
             } finally {
                 try {
                     con.disconnect();
@@ -81,12 +93,18 @@ public class SloozieCom extends PluginForHost {
             }
         } else {
             filename = br.getRegex("id=\"txtVDCaption\">([^<>\"]*?)\\-\\-</div>").getMatch(0);
-            if (filename == null) filename = br.getRegex("<title>Sloozie\\&#039;s homemade videos \\-([^<>\"]*?)</title>").getMatch(0);
-            if (filename == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            if (filename == null) {
+                filename = br.getRegex("<title>Sloozie\\&#039;s homemade videos \\-([^<>\"]*?)</title>").getMatch(0);
+            }
+            if (filename == null) {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
             filename = Encoding.htmlDecode(filename.trim()) + ".mp4";
             String flashParameter[] = br.getRegex("V4CORE\\.put\\(\'d\',\\{\"m\":\"\\d+\",\"p\":\"\\d+\",\"v\":\"([^\"]+)\",\"q\":\"([a-z]+)\",\"fs\"").getRow(0);
             String jsCache = br.getRegex("src=\"(/js/cache/[0-9a-f]+\\.js)\">").getMatch(0);
-            if (flashParameter == null || jsCache == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            if (flashParameter == null || jsCache == null) {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
             DLLINK = "rtmp://video.sloozie.com/vod@mp4:sloozie/" + flashParameter[1] + "/" + flashParameter[0].replace("\\", "");
             // br2.getPage(jsCache);
         }
