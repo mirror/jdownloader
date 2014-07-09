@@ -93,6 +93,8 @@ public class FileBoomMe extends PluginForHost {
     }
 
     private final String freeAccConLimit = "Free account does not allow to download more than one file at the same time";
+    private final String reCaptcha       = "api\\.recaptcha\\.net|google\\.com/recaptcha/api/";
+    private final String formCaptcha     = "/file/captcha\\.html\\?v=[a-z0-9]+";
 
     public void doFree(final DownloadLink downloadLink) throws Exception, PluginException {
         checkShowFreeDialog();
@@ -140,21 +142,35 @@ public class FileBoomMe extends PluginForHost {
             }
             dllink = getDllink();
             if (dllink == null) {
-                for (int i = 1; i <= 5; i++) {
-                    final PluginForHost recplug = JDUtilities.getPluginForHost("DirectHTTP");
-                    final jd.plugins.hoster.DirectHTTP.Recaptcha rc = ((DirectHTTP) recplug).getReCaptcha(br);
-                    rc.findID();
-                    rc.load();
-                    final File cf = rc.downloadCaptcha(getLocalCaptchaFile());
-                    final String c = getCaptchaCode(cf, downloadLink);
-                    br.postPage(br.getURL(), "recaptcha_challenge_field=" + rc.getChallenge() + "&recaptcha_response_field=" + Encoding.urlEncode(c) + "&free=1&freeDownloadRequest=1&uniqueId=" + id);
-                    if (br.containsHTML("(api\\.recaptcha\\.net|google\\.com/recaptcha/api/)")) {
-                        continue;
+                final int repeat = 4;
+                for (int i = 1; i <= repeat; i++) {
+                    if (br.containsHTML(reCaptcha)) {
+                        final PluginForHost recplug = JDUtilities.getPluginForHost("DirectHTTP");
+                        final jd.plugins.hoster.DirectHTTP.Recaptcha rc = ((DirectHTTP) recplug).getReCaptcha(br);
+                        rc.findID();
+                        rc.load();
+                        final File cf = rc.downloadCaptcha(getLocalCaptchaFile());
+                        final String c = getCaptchaCode(cf, downloadLink);
+                        br.postPage(br.getURL(), "recaptcha_challenge_field=" + rc.getChallenge() + "&recaptcha_response_field=" + Encoding.urlEncode(c) + "&free=1&freeDownloadRequest=1&uniqueId=" + id);
+                        if (br.containsHTML(reCaptcha) && i + 1 != repeat) {
+                            continue;
+                        } else if (br.containsHTML(reCaptcha) && i + 1 == repeat) {
+                            throw new PluginException(LinkStatus.ERROR_CAPTCHA);
+                        } else {
+                            break;
+                        }
+                    } else if (br.containsHTML(formCaptcha)) {
+                        String captcha = br.getRegex(formCaptcha).getMatch(-1);
+                        String code = getCaptchaCode(captcha, downloadLink);
+                        br.postPage(br.getURL(), "CaptchaForm%5Bcode%5D=" + code + "&free=1&freeDownloadRequest=1&uniqueId=" + id);
+                        if (br.containsHTML(formCaptcha) && i + 1 != repeat) {
+                            continue;
+                        } else if (br.containsHTML(formCaptcha) && i + 1 == repeat) {
+                            throw new PluginException(LinkStatus.ERROR_CAPTCHA);
+                        } else {
+                            break;
+                        }
                     }
-                    break;
-                }
-                if (br.containsHTML("(api\\.recaptcha\\.net|google\\.com/recaptcha/api/)")) {
-                    throw new PluginException(LinkStatus.ERROR_CAPTCHA);
                 }
                 int wait = 30;
                 final String waittime = br.getRegex("class=\"tik\\-tak\">(\\d+)</div>").getMatch(0);
