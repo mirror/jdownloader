@@ -73,10 +73,14 @@ public class FileBoomMe extends PluginForHost {
     public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
         this.setBrowserExclusive();
         br.getPage(link.getDownloadURL());
-        if (br.getRequest().getHttpConnection().getResponseCode() == 404) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (br.getRequest().getHttpConnection().getResponseCode() == 404) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
         final String filename = br.getRegex("<i class=\"icon\\-download\"></i>([^<>\"]*?)</").getMatch(0);
         final String filesize = br.getRegex(">File size: ([^<>\"]*?)</").getMatch(0);
-        if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (filename == null || filesize == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         link.setName(Encoding.htmlDecode(filename.trim()));
         link.setDownloadSize(SizeFormatter.getSize(filesize));
         return AvailableStatus.TRUE;
@@ -95,17 +99,17 @@ public class FileBoomMe extends PluginForHost {
         String dllink = checkDirectLink(downloadLink, "directlink");
         dllink = getDllink();
         if (dllink == null) {
+            if (br.containsHTML(">\\s*This file is available<br>only for premium members\\.\\s*</div>")) {
+                freeDlLimitation();
+            }
             final String id = br.getRegex("data\\-slow\\-id=\"([a-z0-9]+)\"").getMatch(0);
-            if (id == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            if (id == null) {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
             br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
             br.postPage(br.getURL(), "slow_id=" + id);
             if (br.containsHTML("Free user can\\'t download large files")) {
-                try {
-                    throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);
-                } catch (final Throwable e) {
-                    if (e instanceof PluginException) throw (PluginException) e;
-                }
-                throw new PluginException(LinkStatus.ERROR_FATAL, "This file can only be downloaded by premium users");
+                freeDlLimitation();
             } else if (br.containsHTML(freeAccConLimit)) {
                 // could be shared network or a download hasn't timed out yet or user downloading in another program?
                 throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, "Connection limit reached", 10 * 60 * 60 * 1001);
@@ -120,9 +124,15 @@ public class FileBoomMe extends PluginForHost {
                     throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, null, 60 * 60 * 1000l);
                 } else {
                     int minutes = 0, seconds = 0, hours = 0;
-                    if (tmphrs != null) hours = Integer.parseInt(tmphrs);
-                    if (tmpmin != null) minutes = Integer.parseInt(tmpmin);
-                    if (tmpsec != null) seconds = Integer.parseInt(tmpsec);
+                    if (tmphrs != null) {
+                        hours = Integer.parseInt(tmphrs);
+                    }
+                    if (tmpmin != null) {
+                        minutes = Integer.parseInt(tmpmin);
+                    }
+                    if (tmpsec != null) {
+                        seconds = Integer.parseInt(tmpsec);
+                    }
                     int totalwaittime = ((3600 * hours) + (60 * minutes) + seconds + 1) * 1000;
                     logger.info("Detected waittime #2, waiting " + waittime + "milliseconds");
                     throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, null, totalwaittime);
@@ -138,13 +148,19 @@ public class FileBoomMe extends PluginForHost {
                     final File cf = rc.downloadCaptcha(getLocalCaptchaFile());
                     final String c = getCaptchaCode(cf, downloadLink);
                     br.postPage(br.getURL(), "recaptcha_challenge_field=" + rc.getChallenge() + "&recaptcha_response_field=" + Encoding.urlEncode(c) + "&free=1&freeDownloadRequest=1&uniqueId=" + id);
-                    if (br.containsHTML("(api\\.recaptcha\\.net|google\\.com/recaptcha/api/)")) continue;
+                    if (br.containsHTML("(api\\.recaptcha\\.net|google\\.com/recaptcha/api/)")) {
+                        continue;
+                    }
                     break;
                 }
-                if (br.containsHTML("(api\\.recaptcha\\.net|google\\.com/recaptcha/api/)")) throw new PluginException(LinkStatus.ERROR_CAPTCHA);
+                if (br.containsHTML("(api\\.recaptcha\\.net|google\\.com/recaptcha/api/)")) {
+                    throw new PluginException(LinkStatus.ERROR_CAPTCHA);
+                }
                 int wait = 30;
                 final String waittime = br.getRegex("class=\"tik\\-tak\">(\\d+)</div>").getMatch(0);
-                if (waittime != null) wait = Integer.parseInt(waittime);
+                if (waittime != null) {
+                    wait = Integer.parseInt(waittime);
+                }
                 this.sleep(wait * 1001l, downloadLink);
                 br.postPage(br.getURL(), "free=1&uniqueId=" + id);
                 if (br.containsHTML(freeAccConLimit)) {
@@ -152,17 +168,32 @@ public class FileBoomMe extends PluginForHost {
                     throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, "Connection limit reached", 10 * 60 * 60 * 1001);
                 }
                 dllink = getDllink();
-                if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                if (dllink == null) {
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                }
             }
         }
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 1);
-        if (dl.getConnection().getResponseCode() == 401) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 401", 30 * 60 * 1000l);
+        if (dl.getConnection().getResponseCode() == 401) {
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 401", 30 * 60 * 1000l);
+        }
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         downloadLink.setProperty("directlink", dllink);
         dl.startDownload();
+    }
+
+    private void freeDlLimitation() throws PluginException {
+        try {
+            throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);
+        } catch (final Throwable e) {
+            if (e instanceof PluginException) {
+                throw (PluginException) e;
+            }
+        }
+        throw new PluginException(LinkStatus.ERROR_FATAL, "This file can only be downloaded by premium users");
     }
 
     private String checkDirectLink(final DownloadLink downloadLink, final String property) {
@@ -195,7 +226,9 @@ public class FileBoomMe extends PluginForHost {
                 br.setCookiesExclusive(true);
                 final Object ret = account.getProperty("cookies", null);
                 boolean acmatch = Encoding.urlEncode(account.getUser()).equals(account.getStringProperty("name", Encoding.urlEncode(account.getUser())));
-                if (acmatch) acmatch = Encoding.urlEncode(account.getPass()).equals(account.getStringProperty("pass", Encoding.urlEncode(account.getPass())));
+                if (acmatch) {
+                    acmatch = Encoding.urlEncode(account.getPass()).equals(account.getStringProperty("pass", Encoding.urlEncode(account.getPass())));
+                }
                 if (acmatch && ret != null && ret instanceof HashMap<?, ?> && !force) {
                     final HashMap<String, String> cookies = (HashMap<String, String>) ret;
                     if (account.isValid()) {
@@ -280,7 +313,9 @@ public class FileBoomMe extends PluginForHost {
             account.setProperty("nopremium", false);
         }
         final String trafficleft = br.getRegex("Available traffic \\(today\\):[\t\n\r ]+<b><a href=\"/user/statistic\\.html\">([^<>\"]*?)</a>").getMatch(0);
-        if (trafficleft != null) ai.setTrafficLeft(SizeFormatter.getSize(trafficleft));
+        if (trafficleft != null) {
+            ai.setTrafficLeft(SizeFormatter.getSize(trafficleft));
+        }
         account.setValid(true);
         return ai;
     }
@@ -296,7 +331,9 @@ public class FileBoomMe extends PluginForHost {
         } else {
             String dllink = br.getRedirectLocation();
             /* Maybe user has direct downloads disabled */
-            if (dllink == null) dllink = getDllink();
+            if (dllink == null) {
+                dllink = getDllink();
+            }
             dl = jd.plugins.BrowserAdapter.openDownload(br, link, Encoding.htmlDecode(dllink), true, 0);
             if (dl.getConnection().getContentType().contains("html")) {
                 logger.warning("The final dllink seems not to be a file!");
@@ -366,7 +403,9 @@ public class FileBoomMe extends PluginForHost {
                         }
                         if (CrossSystem.isOpenBrowserSupported()) {
                             int result = JOptionPane.showConfirmDialog(jd.gui.swing.jdgui.JDGui.getInstance().getMainFrame(), message, title, JOptionPane.YES_NO_OPTION, JOptionPane.INFORMATION_MESSAGE, null);
-                            if (JOptionPane.OK_OPTION == result) CrossSystem.openURL(new URL("http://update3.jdownloader.org/jdserv/BuyPremiumInterface/redirect?" + domain + "&freedialog"));
+                            if (JOptionPane.OK_OPTION == result) {
+                                CrossSystem.openURL(new URL("http://update3.jdownloader.org/jdserv/BuyPremiumInterface/redirect?" + domain + "&freedialog"));
+                            }
                         }
                     } catch (Throwable e) {
                     }
@@ -382,8 +421,12 @@ public class FileBoomMe extends PluginForHost {
             dllink = "http://fboom.me" + dllink;
             br.getPage(dllink);
             dllink = br.getRegex("\"url\":\"(http[^<>\"]*?)\"").getMatch(0);
-            if (dllink == null) dllink = br.getRedirectLocation();
-            if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            if (dllink == null) {
+                dllink = br.getRedirectLocation();
+            }
+            if (dllink == null) {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
             dllink = dllink.replace("\\", "");
         }
         return dllink;
