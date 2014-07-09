@@ -1326,7 +1326,7 @@ public abstract class PluginForHost extends Plugin {
      */
     public AccountFactory getAccountFactory() {
         // this should be plugincode as soon as we can ignore 0.9 compatibility
-        if (getHost().equalsIgnoreCase("letitbit.net")) {
+        if (getHost().equalsIgnoreCase("letitbit.net") || getHost().equalsIgnoreCase("shareflare.net") || getHost().equalsIgnoreCase("vip-file.com") || getHost().equalsIgnoreCase("multivip.net")) {
             return new LetitBitAccountFactory();
         }
         return new DefaultAccountFactory();

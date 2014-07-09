@@ -630,8 +630,12 @@ public class FourSharedCom extends PluginForHost {
                     filename = br.getRegex("filename:\\'([^<>\"]*?)\\'\\}\\);").getMatch(0);
                 }
                 if (filename == null) {
+                    filename = br.getRegex("<h1 class=\"fileName light\\-blue lucida f24\">([^<>\"]*?)</h1>").getMatch(0);
+                }
+                if (filename == null) {
                     filename = br.getRegex("title\" content=\"(.*?)\"").getMatch(0);
                 }
+                // <h1 class="fileName light-blue lucida f24">4minute - For Muzik .rar</h1>
                 if (filename == null) {
                     filename = br.getRegex(Pattern.compile("id=\"fileNameTextSpan\">(.*?)</span>", Pattern.CASE_INSENSITIVE | Pattern.DOTALL)).getMatch(0);
                     if (filename == null) {
