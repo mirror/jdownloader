@@ -186,6 +186,7 @@ public class MultiVipNet extends PluginForHost {
             /* request Download */
             if (USE_API) {
                 br.getPage("http://multivip.net/api.php?apipass=" + Encoding.Base64Decode(APIKEY) + "&do=addlink&vipkey=" + Encoding.urlEncode(account.getPass()) + "&ip=&link=" + Encoding.urlEncode(link.getDownloadURL()));
+                /* Should never happen because size limit is set in fetchAccountInfo and handled via canHandle */
                 if ("204".equals(getJson(br.toString(), "error"))) {
                     account.setType(AccountType.FREE);
                     account.getAccountInfo().setStatus("Free Account");
@@ -206,6 +207,7 @@ public class MultiVipNet extends PluginForHost {
                         throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nInvalid Vip key!", PluginException.VALUE_ID_PREMIUM_DISABLE);
                     }
                 } else if (br.containsHTML("This is a FREE key and File size in")) {
+                    /* Should never happen because size limit is set in fetchAccountInfo and handled via canHandle */
                     account.setType(AccountType.FREE);
                     account.getAccountInfo().setStatus("Free Account");
                     if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
@@ -273,6 +275,7 @@ public class MultiVipNet extends PluginForHost {
         return dllink;
     }
 
+    @SuppressWarnings("deprecation")
     @Override
     public AccountInfo fetchAccountInfo(final Account account) throws Exception {
         this.br = newBrowser();

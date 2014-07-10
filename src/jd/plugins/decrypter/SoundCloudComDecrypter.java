@@ -351,6 +351,10 @@ public class SoundCloudComDecrypter extends PluginForDecrypt {
         while (true) {
 
             br.getPage("https://api.sndcdn.com/e1/users/" + userID + "/sounds?limit=" + maxPerCall + "&offset=" + offset + "&linked_partitioning=1&client_id=" + jd.plugins.hoster.SoundcloudCom.CLIENTID);
+            /*
+             * TODO: Item is item but this can contain SETs and single tracks - until now, every item is added as a track which is wrong and
+             * can result in wrong "file not found" when trying to download (for sets which have been added as tracks).
+             */
             final String[] items = br.getRegex("<stream\\-item>(.*?)</stream\\-item>").getColumn(0);
             if (items == null || items.length == 0) {
                 if (br.containsHTML("<stream\\-items type=\"array\"/>")) {

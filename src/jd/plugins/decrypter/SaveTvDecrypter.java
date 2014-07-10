@@ -50,30 +50,26 @@ public class SaveTvDecrypter extends PluginForDecrypt {
     }
 
     /* Settings stuff */
-    private final String           CRAWLER_ACTIVATE                  = "CRAWLER_ACTIVATE";
-    private final String           CRAWLER_ENABLE_FASTER             = "CRAWLER_ENABLE_FASTER";
-    private final String           CRAWLER_DISABLE_DIALOGS           = "CRAWLER_DISABLE_DIALOGS";
-    private final String           CRAWLER_LASTHOURS_COUNT           = "CRAWLER_LASTHOURS_COUNT";
+    private final String           CRAWLER_ACTIVATE         = "CRAWLER_ACTIVATE";
+    private final String           CRAWLER_ENABLE_FASTER    = "CRAWLER_ENABLE_FASTER";
+    private final String           CRAWLER_DISABLE_DIALOGS  = "CRAWLER_DISABLE_DIALOGS";
+    private final String           CRAWLER_LASTHOURS_COUNT  = "CRAWLER_LASTHOURS_COUNT";
 
-    private static final double    QUALITY_HD_MB_PER_MINUTE          = jd.plugins.hoster.SaveTv.QUALITY_HD_MB_PER_MINUTE;
-    private static final double    QUALITY_H264_NORMAL_MB_PER_MINUTE = jd.plugins.hoster.SaveTv.QUALITY_H264_NORMAL_MB_PER_MINUTE;
-    private static final double    QUALITY_H264_MOBILE_MB_PER_MINUTE = jd.plugins.hoster.SaveTv.QUALITY_H264_MOBILE_MB_PER_MINUTE;
+    private final SubConfiguration cfg                      = SubConfiguration.getConfig("save.tv");
+    private final boolean          FAST_LINKCHECK           = cfg.getBooleanProperty(CRAWLER_ENABLE_FASTER, false);
 
-    private final SubConfiguration cfg                               = SubConfiguration.getConfig("save.tv");
-    private final boolean          FAST_LINKCHECK                    = cfg.getBooleanProperty(CRAWLER_ENABLE_FASTER, false);
-
-    private boolean                crawler_DialogsDisabled           = false;
+    private boolean                crawler_DialogsDisabled  = false;
 
     /* Decrypter constants */
-    private static final int       ENTRIES_PER_REQUEST               = 1000;
+    private static final int       ENTRIES_PER_REQUEST      = 1000;
 
-    final ArrayList<DownloadLink>  decryptedLinks                    = new ArrayList<DownloadLink>();
-    private long                   grab_last_hours_num               = 0;
-    private long                   tdifference_milliseconds          = 0;
+    final ArrayList<DownloadLink>  decryptedLinks           = new ArrayList<DownloadLink>();
+    private long                   grab_last_hours_num      = 0;
+    private long                   tdifference_milliseconds = 0;
 
-    private int                    totalLinksNum                     = 0;
-    private int                    requestCount                      = 1;
-    private long                   time_crawl_started                = 0;
+    private int                    totalLinksNum            = 0;
+    private int                    requestCount             = 1;
+    private long                   time_crawl_started       = 0;
 
     /**
      * JD2 CODE: DO NOIT USE OVERRIDE FÒR COMPATIBILITY REASONS!!!!!
