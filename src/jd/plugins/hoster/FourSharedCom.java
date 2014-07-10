@@ -629,11 +629,25 @@ public class FourSharedCom extends PluginForHost {
                 if (filename == null) {
                     filename = br.getRegex("filename:\\'([^<>\"]*?)\\'\\}\\);").getMatch(0);
                 }
+                /* Get filename out of forum code - seems like the best way so far */
+                if (filename == null) {
+                    filename = br.getRegex("value=\"\\[URL=https?://(www\\.)?4shared(\\-china)?\\.com/[^<>\"]*?\\.html\\]([^<>\"]*?)\\[/URL\\]\" readonly=\"readonly\"").getMatch(2);
+                }
+                /* This one might gets you a double extension (.rar.rar) */
+                if (filename == null) {
+                    filename = br.getRegex("trinityConfigInit\\(\\'[A-Za-z0-9\\-_]+\\', \\'([^<>\"]*?)\\',").getMatch(0);
+                }
+                /* Here, extension might be missing */
+                if (filename == null) {
+                    filename = br.getRegex("class=\"greylink1 gaClick\" data\\-element=\"t1\">([^<>\"]*?)</a>").getMatch(0);
+                }
+                /* Here, extension might be missing */
+                if (filename == null) {
+                    filename = br.getRegex("property=\"og:title\" content=\"([^<>\"]*?)\"").getMatch(0);
+                }
+                /* Here, extension might be missing */
                 if (filename == null) {
                     filename = br.getRegex("<h1 class=\"fileName light\\-blue lucida f24\">([^<>\"]*?)</h1>").getMatch(0);
-                }
-                if (filename == null) {
-                    filename = br.getRegex("title\" content=\"(.*?)\"").getMatch(0);
                 }
                 if (filename == null) {
                     filename = br.getRegex(Pattern.compile("id=\"fileNameTextSpan\">(.*?)</span>", Pattern.CASE_INSENSITIVE | Pattern.DOTALL)).getMatch(0);

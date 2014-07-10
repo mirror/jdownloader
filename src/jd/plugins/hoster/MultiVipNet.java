@@ -81,6 +81,7 @@ public class MultiVipNet extends PluginForHost {
         return AvailableStatus.UNCHECKABLE;
     }
 
+    @SuppressWarnings("deprecation")
     @Override
     public boolean canHandle(DownloadLink downloadLink, Account account) {
         if (account == null) {
@@ -88,6 +89,11 @@ public class MultiVipNet extends PluginForHost {
             return false;
         }
         synchronized (hostUnavailableMap) {
+            /* First check if the file is too big */
+            final long max_downloadable_filesize = account.getLongProperty("max_downloadable_filesize", 0);
+            if (max_downloadable_filesize > 0 && downloadLink.getDownloadSize() > max_downloadable_filesize) {
+                return false;
+            }
             HashMap<String, Long> unavailableMap = hostUnavailableMap.get(account);
             if (unavailableMap != null) {
                 Long lastUnavailable = unavailableMap.get(downloadLink.getHost());
@@ -273,7 +279,7 @@ public class MultiVipNet extends PluginForHost {
         final AccountInfo ai = new AccountInfo();
         account.setMaxSimultanDownloads(20);
         maxPrem.set(20);
-        /* TODO: Implement account filesize restriction via canHandle, implement traffic left */
+        /* TODO: Implement traffic left (needs to be implemented by admin first) */
         br.getPage("http://multivip.net/api.php?apipass=" + Encoding.Base64Decode(APIKEY) + "&do=keycheck&vipkey=" + Encoding.urlEncode(account.getPass()));
         final String error = getJson(br.toString(), "error");
         if (error != null) {
@@ -285,6 +291,8 @@ public class MultiVipNet extends PluginForHost {
         }
         final String expire = getJson(br.toString(), "diedate");
         ai.setValidUntil(Long.parseLong(expire) * 1000);
+        final String max_downloadable_filesize = getJson(br.toString(), "limit");
+        account.setProperty("max_downloadable_filesize", Long.parseLong(max_downloadable_filesize) * 1024);
         br.getPage("http://multivip.net/api.php?apipass=" + Encoding.Base64Decode(APIKEY) + "&do=getlist");
         final ArrayList<String> supportedHosts = new ArrayList<String>();
         final String[] hostDomains = br.getRegex("\"allow\":\\[(.*?)\\]").getColumn(0);
