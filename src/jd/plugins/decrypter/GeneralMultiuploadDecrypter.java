@@ -38,6 +38,7 @@ urls = { "http://(www\\.)?multiupfile\\.com/f/[a-f0-9]+", "http://(www\\.)?multf
         "http://(www\\.)?nextdown\\.net/files/[0-9A-Z]{8}", "http://(www\\.)?directmirror\\.com/files/[0-9A-Z]{8}", "http://[\\w\\.]*?mirrorafile\\.com/files/[0-9A-Z]{8}", "http://[\\w\\.]*?lougyl\\.com/files/[0-9A-Z]{8}", "http://(www\\.)?neo\\-share\\.com/files/[0-9A-Z]{8}", "http://(www\\.)?qooy\\.com/files/[0-9A-Z]{8,10}", "http://[\\w\\.]*?uploader\\.ro/files/[0-9A-Z]{8}", "http://[\\w\\.]*?uploadmirrors\\.(com|org)/download/[0-9A-Z]{8}", "http://[\\w\\.]*?indirdur\\.net/files/[0-9A-Z]{8}", "http://[\\w\\.]*?megaupper\\.com/files/[0-9A-Z]{8}", "http://[\\w\\.]*?shrta\\.com/files/[0-9A-Z]{8}", "http://[\\w\\.]*?1filesharing\\.com/(mirror|download)/[0-9A-Z]{8}", "http://[\\w\\.]*?mirrorfusion\\.com/files/[0-9A-Z]{8}", "http://(www\\.)?needmirror\\.com/files/[0-9A-Z]{8}" },
 
 flags = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 })
+
 public class GeneralMultiuploadDecrypter extends PluginForDecrypt {
 
     public GeneralMultiuploadDecrypter(PluginWrapper wrapper) {
@@ -117,13 +118,14 @@ public class GeneralMultiuploadDecrypter extends PluginForDecrypt {
             br.getPage("http://go4up.com/download/gethosts/" + new Regex(parameter, "(\\w{1,15})/?$").getMatch(0));
         } else if (parameter.matches("(?i).+multiupfile\\.com/.+")) {
             // use standard page, status.php doesn't exist
+            // br.getHeaders().put("Accept-Encoding", "identity");
             getPage(br, parameter);
             final String token = br.getRegex("value=\"([a-z0-9]+)\" name=\"YII_CSRF_TOKEN\"").getMatch(0);
             if (token == null) {
                 logger.warning("Decrypter broken for link: " + param.toString());
                 return null;
             }
-            br.postPage(br.getURL(), "YII_CSRF_TOKEN=" + token + "&pssd=" + new Regex(parameter, "([a-z0-9]+)$").getMatch(0));
+            br.postPage(br.getURL(), "YII_CSRF_TOKEN=" + token + "&pssd=" + id);
         } else if (parameter.matches("(?i).+up4vn\\.com/.+")) {
             // use standard page, status.php doesn't exist
             getPage(br, parameter);
