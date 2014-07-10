@@ -290,6 +290,7 @@ public class SaveTv extends PluginForHost {
 
             link.setProperty("server_filename", api_filename.substring(0, api_filename.lastIndexOf(".")));
             filesize += " KB";
+            parseQualityTag(link, null);
         } else {
             final String telecast_ID = getTelecastId(link);
             getPageSafe("https://www.save.tv/STV/M/obj/archive/JSON/VideoArchiveDetailsApi.cfm?TelecastID=" + telecast_ID, aa);
@@ -300,7 +301,7 @@ public class SaveTv extends PluginForHost {
             }
             site_title = correctData(getJson(data_source, "STITLE"));
             siteParseFilenameInformation(link, data_source);
-            parseQualityTag(link, data_source);
+            parseQualityTag(link, br.toString());
         }
         link.setAvailable(true);
         final String availablecheck_filename = getFilename(link);
@@ -454,30 +455,38 @@ public class SaveTv extends PluginForHost {
     }
 
     public static void parseQualityTag(final DownloadLink dl, final String source) {
-        // final String availableformatstext = new Regex(source, "\"ARRALLOWDDOWNLOADFORMATS\":\\[(.*?)\\]").getMatch(0);
-        // final String[] availableformats_array = availableformatstext.split("\\},\\{");
-        // final int number_available_qualities = availableformats_array.length;
         final int selected_video_format = getConfiguredVideoFormat();
-        switch (selected_video_format) {
-        case 0:
-            dl.setProperty(QUALITY_PARAM, QUALITY_HD);
-            // if (number_available_qualities == 3) {
-            // dl.setProperty(QUALITY_PARAM, QUALITY_HD);
-            // } else {
-            // dl.setProperty(QUALITY_PARAM, QUALITY_HQ);
-            // }
-            break;
-        case 1:
-            dl.setProperty(QUALITY_PARAM, QUALITY_HQ);
-            break;
-        case 2:
-            dl.setProperty(QUALITY_PARAM, QUALITY_LQ);
-            // if (number_available_qualities == 2) {
-            // dl.setProperty(QUALITY_PARAM, QUALITY_LQ);
-            // } else {
-            // dl.setProperty(QUALITY_PARAM, QUALITY_HQ);
-            // }
-            break;
+        /*
+         * If we have no source, we can select HQ if the user chose HQ because it is always available. If the user selects any other quality
+         * we need to know whether it exists or not and then set the data.
+         */
+        if (source == null) {
+            if (selected_video_format == 1) {
+                dl.setProperty(QUALITY_PARAM, QUALITY_HQ);
+            }
+        } else {
+            final String availableformatstext = new Regex(source, "\"ARRALLOWDDOWNLOADFORMATS\":\\[(.*?)\\]").getMatch(0);
+            final String[] availableformats_array = availableformatstext.split("\\},\\{");
+            final int number_available_qualities = availableformats_array.length;
+            switch (selected_video_format) {
+            case 0:
+                if (number_available_qualities == 3) {
+                    dl.setProperty(QUALITY_PARAM, QUALITY_HD);
+                } else {
+                    dl.setProperty(QUALITY_PARAM, QUALITY_HQ);
+                }
+                break;
+            case 1:
+                dl.setProperty(QUALITY_PARAM, QUALITY_HQ);
+                break;
+            case 2:
+                if (number_available_qualities == 2) {
+                    dl.setProperty(QUALITY_PARAM, QUALITY_LQ);
+                } else {
+                    dl.setProperty(QUALITY_PARAM, QUALITY_HQ);
+                }
+                break;
+            }
         }
     }
 
@@ -1519,7 +1528,7 @@ public class SaveTv extends PluginForHost {
 
     private void setConfigElements() {
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_LABEL, "Allgemeine Einstellungen:"));
-        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), SaveTv.USEAPI, JDL.L("plugins.hoster.SaveTv.UseAPI", "API verwenden?\r\nINFO: Aktiviert man die API, entfallen folgende Features:\r\n-Option 'Nur Aufnahmen mit angewandter Schnittliste laden'\r\n-Anzeigen der Account Details in der Account-Verwaltung (Account Typ, Ablaufdatum, ...)")));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), SaveTv.USEAPI, JDL.L("plugins.hoster.SaveTv.UseAPI", "API verwenden?\r\nINFO: Aktiviert man die API, sind einige Features wie folgt betroffen:\r\n-ENTFÄLLT: Option 'Nur Aufnahmen mit angewandter Schnittliste laden'\r\n-ENTFÄLLT: Anzeigen der Account Details in der Account-Verwaltung (Account Typ, Ablaufdatum, ...)\r\n-EINGESCHRÄNKT NUTZBAR: Benutzerdefinierte Dateinamen")));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_SEPARATOR));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), SaveTv.DISABLE_LINKCHECK, JDL.L("plugins.hoster.SaveTv.DisableLinkcheck", "Linkcheck deaktivieren?\r\nVorteile:\r\n-Links landen schneller im Linkgrabber und können auch bei Serverproblemen oder wenn die save.tv Seite komplett offline ist gesammelt werden\r\nNachteile:\r\n-Im Linkgrabber werden zunächst nur die telecastIDs als Dateinamen angezeigt\r\n-Die endgültigen Dateinamen werden erst beim Downloadstart angezeigt")).setDefaultValue(false));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_SEPARATOR));

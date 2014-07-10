@@ -136,7 +136,7 @@ public class SaveTvDecrypter extends PluginForDecrypt {
                     logger.info("save.tv: Decrypting request " + i + " of " + requestCount);
 
                     getPageSafe("https://www.save.tv/STV/M/obj/archive/JSON/VideoArchiveApi.cfm?iEntriesPerPage=" + ENTRIES_PER_REQUEST + "&iCurrentPage=" + i);
-                    final String array_text = br.getRegex("\"ARRVIDEOARCHIVEENTRIES\":\\[(\\{.*?\\})\\],\"DEFAULTSTREAMFORMATID\"").getMatch(0);
+                    final String array_text = br.getRegex("\"ARRVIDEOARCHIVEENTRIES\":\\[(\\{.*?\\})\\],\"ENABLEDEFAULTFORMATSETTINGS\"").getMatch(0);
                     final String[] telecast_array = array_text.split("TelecastId=\\d+\"\\},\\{");
 
                     for (final String singleid_information : telecast_array) {
@@ -226,6 +226,7 @@ public class SaveTvDecrypter extends PluginForDecrypt {
         final String telecast_url = "https://www.save.tv/STV/M/obj/archive/VideoArchiveDetails.cfm?TelecastId=" + telecast_id;
         final DownloadLink dl = createDownloadlink(telecast_url);
         jd.plugins.hoster.SaveTv.siteParseFilenameInformation(dl, id_info);
+        jd.plugins.hoster.SaveTv.parseQualityTag(dl, null);
         final long calculated_filesize = jd.plugins.hoster.SaveTv.calculateFilesize(getLongProperty(dl, "site_runtime_minutes", 0));
 
         final long datemilliseconds = getLongProperty(dl, "originaldate", 0);
