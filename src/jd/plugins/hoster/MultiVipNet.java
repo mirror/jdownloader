@@ -273,6 +273,7 @@ public class MultiVipNet extends PluginForHost {
         final AccountInfo ai = new AccountInfo();
         account.setMaxSimultanDownloads(20);
         maxPrem.set(20);
+        /* TODO: Implement account filesize restriction via canHandle, implement traffic left */
         br.getPage("http://multivip.net/api.php?apipass=" + Encoding.Base64Decode(APIKEY) + "&do=keycheck&vipkey=" + Encoding.urlEncode(account.getPass()));
         final String error = getJson(br.toString(), "error");
         if (error != null) {

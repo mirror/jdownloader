@@ -20,6 +20,7 @@ import java.util.ArrayList;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
+import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
@@ -55,7 +56,7 @@ public class VidobuComDecrypter extends PluginForDecrypt {
             logger.info("Video is private: " + parameter);
             decryptedLinks.add(offline);
             return decryptedLinks;
-        } else if (br.getHttpConnection().getResponseCode() == 404 || br.containsHTML("2Fassets%5C%2F404\\.mp4%22")) {
+        } else if (br.getHttpConnection().getResponseCode() == 404) {
             logger.info("Video is offline: " + parameter);
             decryptedLinks.add(offline);
             return decryptedLinks;
@@ -65,11 +66,24 @@ public class VidobuComDecrypter extends PluginForDecrypt {
             final DownloadLink dl = createDownloadlink(externID);
             dl.setProperty("Referer", parameter);
             decryptedLinks.add(dl);
+            return decryptedLinks;
         }
         externID = br.getRegex("videolist: \"(http://[A-Za-z0-9\\-_]+\\.mynet\\.com/services/[^<>\"]*?)\"").getMatch(0);
         if (externID != null) {
             final DownloadLink dl = createDownloadlink(externID);
             decryptedLinks.add(dl);
+            return decryptedLinks;
+        }
+        externID = br.getRegex("var flashvars = \\{(.*?)\\};").getMatch(0);
+        if (externID != null) {
+            externID = Encoding.htmlDecode(externID).replace("\\", "");
+            externID = new Regex(externID, "\"extconfig\":\"(http://(www\\.)?mynet\\.com/[A-Za-z0-9\\-_]+/services/videoJsonEmbed\\.php\\?videoId=\\d+)").getMatch(0);
+            if (externID == null) {
+                logger.warning("Decrypter broken for link: " + parameter);
+                return null;
+            }
+            decryptedLinks.add(createDownloadlink(externID));
+            return decryptedLinks;
         }
         if (externID == null) {
             logger.warning("Decrypter broken for link: " + parameter);

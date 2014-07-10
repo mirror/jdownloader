@@ -70,12 +70,17 @@ public class VidobuCom extends PluginForHost {
 
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws Exception {
-        if (downloadLink.getBooleanProperty("offline", false)) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
+        if (downloadLink.getBooleanProperty("offline", false)) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
         downloadLink.setName(new Regex(downloadLink.getDownloadURL(), "(\\d+)$").getMatch(0));
         setBrowserExclusive();
         br.setFollowRedirects(true);
         br.getPage(downloadLink.getDownloadURL());
-        if (br.containsHTML("http://www\\.vidobu\\.com/uyari_ip\\.php") || br.getHttpConnection().getResponseCode() == 404) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
+        if (br.containsHTML("http://www\\.vidobu\\.com/uyari_ip\\.php") || br.getHttpConnection().getResponseCode() == 404) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
+        /* Handles vimeo embed links */
         final String nextUrl = br.getRegex("<iframe src=\"(http://[^<>]+)\"").getMatch(0);
         clipData = br.getPage(Encoding.htmlDecode(nextUrl));
         String title = br.getRegex("<title>(.*?)</title>").getMatch(0);
@@ -83,8 +88,13 @@ public class VidobuCom extends PluginForHost {
         final String dlURL = "/play_redirect?clip_id=" + getClipData("id") + "&sig=" + getClipData("signature") + "&time=" + getClipData("timestamp") + "&quality=" + (getClipData("hd").equals("1") ? "hd" : "sd") + "&codecs=H264,VP8,VP6&type=moogaloop&embed_location=" + Encoding.htmlDecode(getClipData("referrer"));
         br.setFollowRedirects(false);
         br.getPage(dlURL);
+        if (br.containsHTML(">This video does not exist")) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
         finalURL = br.getRedirectLocation();
-        if (finalURL == null) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
+        if (finalURL == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         title = Encoding.htmlDecode(title);
         URLConnectionAdapter con = null;
         try {

@@ -20,6 +20,7 @@ import java.io.IOException;
 
 import jd.PluginWrapper;
 import jd.http.Browser;
+import jd.http.Browser.BrowserException;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
 import jd.plugins.DownloadLink;
@@ -58,30 +59,45 @@ public class PornUpMe extends PluginForHost {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         br.getPage(downloadLink.getDownloadURL());
-        if (br.getURL().contains("pornup.me/videos/?m=e")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (br.getURL().contains("pornup.me/videos/?m=e")) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
         String filename = br.getRegex("<h1>(.*?)(<a href=\"|</h1>)").getMatch(0);
-        if (filename == null) filename = br.getRegex("<title>(.*?)\\- Free Porn Videos and Sex Movies at pornper Kinky Porn Tube</title>").getMatch(0);
+        if (filename == null) {
+            filename = br.getRegex("<title>(.*?)\\- Free Porn Videos and Sex Movies at pornper Kinky Porn Tube</title>").getMatch(0);
+        }
         DLLINK = br.getRegex("\\'file\\': \\'(http://.*?)\\'").getMatch(0);
         if (DLLINK == null) {
             DLLINK = br.getRegex("\\'(http://cdn\\.vidreactor\\.com/vid2c/d\\d+/[a-z0-9]+\\.flv\\?key=[a-z0-9]+\\&viddir=d\\d+&vkey=[a-z0-9]+)\\'").getMatch(0);
-            if (DLLINK == null) DLLINK = br.getRegex("file=(http[^<>\"]*?)\\'").getMatch(0);
+            if (DLLINK == null) {
+                DLLINK = br.getRegex("file=(http[^<>\"]*?)\\'").getMatch(0);
+            }
         }
-        if (filename == null || DLLINK == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (filename == null || DLLINK == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         DLLINK = Encoding.htmlDecode(DLLINK);
         filename = filename.trim();
         String ext = DLLINK.substring(DLLINK.lastIndexOf("."));
-        if (ext == null || ext.length() > 5) ext = ".flv";
+        if (ext == null || ext.length() > 5) {
+            ext = ".flv";
+        }
         downloadLink.setFinalFileName(Encoding.htmlDecode(filename) + ext);
         Browser br2 = br.cloneBrowser();
         // In case the link redirects to the finallink
         br2.setFollowRedirects(true);
         URLConnectionAdapter con = null;
         try {
-            con = br2.openGetConnection(DLLINK);
-            if (!con.getContentType().contains("html"))
-                downloadLink.setDownloadSize(con.getLongContentLength());
-            else
+            try {
+                con = br2.openGetConnection(DLLINK);
+            } catch (final BrowserException e) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            }
+            if (!con.getContentType().contains("html")) {
+                downloadLink.setDownloadSize(con.getLongContentLength());
+            } else {
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            }
             return AvailableStatus.TRUE;
         } finally {
             try {

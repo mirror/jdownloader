@@ -66,12 +66,16 @@ public class UstreamTv extends PluginForHost {
                 }
             }
         }
-        if (sb == null || sb.length() == 0) { return null; }
+        if (sb == null || sb.length() == 0) {
+            return null;
+        }
         return sb.toString().replaceAll("#+", "#");
     }
 
     private byte[] createAMFRequest(String url, String vid) {
-        if (vid == null) return null;
+        if (vid == null) {
+            return null;
+        }
         String rpin = "rpin" + String.valueOf(Math.random() * Math.random()).substring(1);
         String data = "0A000000010300077061676555726C0200";
         data += getHexLength(url) + JDHexUtils.getHexString(url);
@@ -103,14 +107,18 @@ public class UstreamTv extends PluginForHost {
     public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws IOException, PluginException {
         setBrowserExclusive();
         br.getPage(downloadLink.getDownloadURL());
-        if (br.containsHTML(">Sorry, the page you requested cannot be found")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (br.containsHTML(">Sorry, the page you requested cannot be found")) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
         final String pageUrl = downloadLink.getDownloadURL();
         final String videoId = new Regex(pageUrl, "recorded/(\\d+)").getMatch(0);
 
         Browser amf = new Browser();
         getAMFRequest(amf, createAMFRequest(pageUrl, videoId));
         /** Private video -> Can't watch! */
-        if (amf.containsHTML("This video was made private by the owner")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (amf.containsHTML("This video was made private by the owner")) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
         String result = beautifierString(amf);
         HashMap<String, String> values = new HashMap<String, String>();
         for (String[] s : new Regex(result == null ? "" : result, "#(title|flv|liveHttpUrl|smoothStreamingUrl)#.([^<>#]+)").getMatches()) {
@@ -128,18 +136,38 @@ public class UstreamTv extends PluginForHost {
                 }
             }
         }
-        if (filename == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (filename == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
 
         DLLINK = values.get("liveHttpUrl");
-        if (DLLINK == null) {
-            DLLINK = values.get("smoothStreamingUrl");
-            if (DLLINK == null) {
-                DLLINK = values.get("flv");
+        if (DLLINK != null && DLLINK.matches("http://tcdn\\.ustream\\.tv/video/\\d+\\?preset_id=\\d+\\&e=\\d+\\&h=[a-z0-9]+")) {
+            /* Important step or we will only get the audio and not the video - preset_id=1 = video, preset_id=2 = audio only */
+            final String e = new Regex(DLLINK, "e=(\\d+)").getMatch(0);
+            final String h = new Regex(DLLINK, "h=([a-z0-9]+)").getMatch(0);
+            br.getPage("http://tcdn.ustream.tv/video/" + videoId + "?preset_id=1&e=" + e + "&h=" + h + "&noredirect=1&ri=0&rs=0");
+            DLLINK = br.toString();
+            if (!DLLINK.startsWith("http") || DLLINK.length() > 500) {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
+            if (DLLINK.contains(".flv")) {
                 ext = ".flv";
             }
+        } else {
+            if (DLLINK == null) {
+                DLLINK = values.get("smoothStreamingUrl");
+                if (DLLINK == null) {
+                    DLLINK = values.get("flv");
+                    ext = ".flv";
+                }
+            }
         }
-        if (NOTFORSTABLE) throw new PluginException(LinkStatus.ERROR_FATAL, "JDownloader2 is needed!");
-        if (DLLINK == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (NOTFORSTABLE) {
+            throw new PluginException(LinkStatus.ERROR_FATAL, "JDownloader2 is needed!");
+        }
+        if (DLLINK == null) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
 
         downloadLink.setName(filename.trim() + ext);
 

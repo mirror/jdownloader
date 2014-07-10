@@ -78,7 +78,9 @@ public class GeneralMultiuploadDecrypter extends PluginForDecrypt {
             parameter = parameter.replaceAll("(/dl/|/mirror/|/download/)", "/files/").replace("flameupload.co/", "flameupload.com/");
         }
         // Links need a "/" at the end to be valid
-        if (!param.getCryptedUrl().matches(".+(up4vn\\.com/|exoshare\\.com/).+") && !param.getCryptedUrl().endsWith("/")) param.setCryptedUrl(param.getCryptedUrl().toString() + "/");
+        if (!param.getCryptedUrl().matches(".+(up4vn\\.com/|exoshare\\.com/).+") && !param.getCryptedUrl().endsWith("/")) {
+            param.setCryptedUrl(param.getCryptedUrl().toString() + "/");
+        }
         String protocol = new Regex(parameter, "(https?://)").getMatch(0);
         String host = new Regex(parameter, "://([^/]+)/").getMatch(0);
         String id = new Regex(parameter, "https?://.+/(\\?go=|download\\.php\\?uid=)?([0-9A-Za-z]{8,18})").getMatch(1);
@@ -94,8 +96,9 @@ public class GeneralMultiuploadDecrypter extends PluginForDecrypt {
             String url = br.getRegex("url=(http[^\"]+)").getMatch(0);
             if (url == null) {
                 logger.warning("Couldn't find url=!! Please inform the support. : " + param.toString());
-            } else
+            } else {
                 getPage(br, url);
+            }
         } else if (parameter.contains("uploadmirrors.com")) {
             getPage(br, parameter);
             String status = br.getRegex("ajaxRequest\\.open\\(\"GET\", \"(/[A-Za-z0-9]+\\.php\\?uid=" + id + "&name=[^<>\"/]*?)\"").getMatch(0);
@@ -112,7 +115,16 @@ public class GeneralMultiuploadDecrypter extends PluginForDecrypt {
             }
             // if (br.containsHTML("golink")) br.postPage(br.getURL(), "golink=Access+Links");
             br.getPage("http://go4up.com/download/gethosts/" + new Regex(parameter, "(\\w{1,15})/?$").getMatch(0));
-        } else if (parameter.matches("(?i).+(up4vn\\.com|multiupfile\\.com)/.+")) {
+        } else if (parameter.matches("(?i).+multiupfile\\.com/.+")) {
+            // use standard page, status.php doesn't exist
+            getPage(br, parameter);
+            final String token = br.getRegex("value=\"([a-z0-9]+)\" name=\"YII_CSRF_TOKEN\"").getMatch(0);
+            if (token == null) {
+                logger.warning("Decrypter broken for link: " + param.toString());
+                return null;
+            }
+            br.postPage(br.getURL(), "YII_CSRF_TOKEN=" + token + "&pssd=" + new Regex(parameter, "([a-z0-9]+)$").getMatch(0));
+        } else if (parameter.matches("(?i).+up4vn\\.com/.+")) {
             // use standard page, status.php doesn't exist
             getPage(br, parameter);
         } else {
@@ -125,7 +137,9 @@ public class GeneralMultiuploadDecrypter extends PluginForDecrypt {
         }
         br.setFollowRedirects(false);
         String[] redirectLinks = br.getRegex("(/(rd?|redirect|dl|mirror)/[0-9A-Z]+/[a-z0-9]+)").getColumn(0);
-        if (redirectLinks == null || redirectLinks.length == 0) redirectLinks = br.getRegex("><a href=(.*?)target=").getColumn(0);
+        if (redirectLinks == null || redirectLinks.length == 0) {
+            redirectLinks = br.getRegex("><a href=(.*?)target=").getColumn(0);
+        }
         if (redirectLinks == null || redirectLinks.length == 0) {
             // So far only tested for maxmirror.com, happens when all links have
             // the status "Unavailable"
@@ -141,7 +155,9 @@ public class GeneralMultiuploadDecrypter extends PluginForDecrypt {
         }
         logger.info("Found " + redirectLinks.length + " " + host.replaceAll("www\\.", "") + " links to decrypt...");
         for (String singleLink : redirectLinks) {
-            if (!dupeList.add(singleLink)) continue;
+            if (!dupeList.add(singleLink)) {
+                continue;
+            }
             singleLink = singleLink.replace("\"", "").trim();
             Browser brc = br.cloneBrowser();
             String dllink = null;
@@ -205,7 +221,9 @@ public class GeneralMultiuploadDecrypter extends PluginForDecrypt {
     }
 
     private Browser getPage(Browser ibr, String url) throws Exception {
-        if (ibr == null || url == null) return null;
+        if (ibr == null || url == null) {
+            return null;
+        }
         boolean failed = false;
         int repeat = 4;
         for (int i = 0; i <= repeat; i++) {
