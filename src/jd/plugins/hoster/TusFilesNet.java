@@ -1368,7 +1368,9 @@ public class TusFilesNet extends PluginForHost {
             servName = servNameExt;
         }
         String FFN = null;
-        if (orgName.equalsIgnoreCase(fuid.toLowerCase())) {
+        if (servNameExt.length() > orgNameExt.length()) {
+            FFN = servNameExt;
+        } else if (orgName.equalsIgnoreCase(fuid.toLowerCase())) {
             FFN = servNameExt;
         } else if (inValidate(orgExt) && !inValidate(servExt) && (servName.toLowerCase().contains(orgName.toLowerCase()) && !servName.equalsIgnoreCase(orgName))) {
             // when partial match of filename exists. eg cut off by quotation mark miss match, or orgNameExt has been abbreviated by hoster.

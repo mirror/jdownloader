@@ -50,19 +50,19 @@ public class SaveTvDecrypter extends PluginForDecrypt {
     }
 
     /* Settings stuff */
-    private final String           CRAWLER_ACTIVATE         = "CRAWLER_ACTIVATE";
+    private final SubConfiguration cfg                      = SubConfiguration.getConfig("save.tv");
     private final String           CRAWLER_ENABLE_FASTER    = "CRAWLER_ENABLE_FASTER";
+    private final boolean          FAST_LINKCHECK           = cfg.getBooleanProperty(CRAWLER_ENABLE_FASTER, false);
+    private final String           CRAWLER_ACTIVATE         = "CRAWLER_ACTIVATE";
     private final String           CRAWLER_DISABLE_DIALOGS  = "CRAWLER_DISABLE_DIALOGS";
     private final String           CRAWLER_LASTHOURS_COUNT  = "CRAWLER_LASTHOURS_COUNT";
-
-    private final SubConfiguration cfg                      = SubConfiguration.getConfig("save.tv");
-    private final boolean          FAST_LINKCHECK           = cfg.getBooleanProperty(CRAWLER_ENABLE_FASTER, false);
 
     private boolean                crawler_DialogsDisabled  = false;
 
     /* Decrypter constants */
     private static final int       ENTRIES_PER_REQUEST      = 1000;
 
+    /* Decrypter variables */
     final ArrayList<DownloadLink>  decryptedLinks           = new ArrayList<DownloadLink>();
     private long                   grab_last_hours_num      = 0;
     private long                   tdifference_milliseconds = 0;

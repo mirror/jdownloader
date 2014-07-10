@@ -508,7 +508,7 @@ public class SoundcloudCom extends PluginForHost {
         if (date != null && formattedFilename.contains("*date*")) {
             // 2011-08-10T22:50:49Z
             date = date.replace("T", ":");
-            final String userDefinedDateFormat = cfg.getStringProperty(CUSTOM_DATE, "dd.MM.yyyy_HH-mm-ss");
+            final String userDefinedDateFormat = cfg.getStringProperty(CUSTOM_DATE, defaultCustomDate);
             SimpleDateFormat formatter = new SimpleDateFormat("yyyy-MM-dd:HH:mm");
             Date dateStr = formatter.parse(date);
 
@@ -557,6 +557,7 @@ public class SoundcloudCom extends PluginForHost {
         return "JDownloader's soundcloud.com plugin helps downloading audiofiles. JDownloader provides settings for the filenames.";
     }
 
+    private final static String defaultCustomDate        = "dd.MM.yyyy";
     private final static String defaultCustomFilename    = "*songtitle*_*linkid* - *channelname**ext*";
     private final static String defaultCustomPackagename = "*channelname* - *playlistname*";
 
@@ -565,7 +566,7 @@ public class SoundcloudCom extends PluginForHost {
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), GRABORIGINALTHUMB, JDL.L("plugins.hoster.soundcloud.grab500thumb", "Grab original thumbnail (.jpg)?")).setDefaultValue(false));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_SEPARATOR));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_LABEL, "Customize the filename/packagename properties:"));
-        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_TEXTFIELD, getPluginConfig(), CUSTOM_DATE, JDL.L("plugins.hoster.soundcloud.customdate", "Define how the date should look.")).setDefaultValue("dd.MM.yyyy_HH-mm-ss"));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_TEXTFIELD, getPluginConfig(), CUSTOM_DATE, JDL.L("plugins.hoster.soundcloud.customdate", "Define how the date should look.")).setDefaultValue(defaultCustomDate));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_SEPARATOR));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_LABEL, "Customize the filenames:"));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_SEPARATOR));
@@ -588,7 +589,7 @@ public class SoundcloudCom extends PluginForHost {
         sbpack.append("*playlistname* = name of the playlist (= username for 'soundcloud.com/user' links)\r\n");
         sbpack.append("*date* = date when the linklist was created - appears in the user-defined format above\r\n");
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_LABEL, sbpack.toString()));
-        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), SETS_ADD_POSITION_TO_FILENAME, JDL.L("plugins.hoster.soundcloud.sets_add_position", "Sets: Add position to the beginning of the filename e.g. (1.myname.mp3)?")).setDefaultValue(false));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), SETS_ADD_POSITION_TO_FILENAME, JDL.L("plugins.hoster.soundcloud.sets_add_position", "Sets: Add position to the beginning of the filename e.g. (1.trackname.mp3)?")).setDefaultValue(false));
     }
 
     @Override
