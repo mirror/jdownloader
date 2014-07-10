@@ -302,10 +302,6 @@ public class MultiVipNet extends PluginForHost {
                 supportedHosts.add(realDomain);
             }
         }
-        if (supportedHosts.contains("uploaded.net")) {
-            supportedHosts.add("ul.to");
-            supportedHosts.add("uploaded.to");
-        }
         /*
          * They also got free accounts / free "Vip keys" but status is only visible whenever the max downloadable filesize limit of a (free)
          * account is reached
