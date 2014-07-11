@@ -141,7 +141,7 @@ public class ImgSrcRu extends PluginForHost {
 
         final ScriptEngineManager manager = new ScriptEngineManager();
         final ScriptEngine engine = manager.getEngineByName("javascript");
-        // wrapper fucks up, encodes u.atchar(0) to unicode int value.
+        // wrapper fucks up, returns +u.charAt(0)+ as ascii int value. http://www.asciitable.com/
         // ScriptEngineManager mgr = jd.plugins.hoster.DummyScriptEnginePlugin.getScriptEngineManager(this);
         // ScriptEngine engine = mgr.getEngineByName("javascript");
         Object result = null;
