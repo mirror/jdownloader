@@ -139,8 +139,11 @@ public class ImgSrcRu extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
 
-        ScriptEngineManager mgr = jd.plugins.hoster.DummyScriptEnginePlugin.getScriptEngineManager(this);
-        ScriptEngine engine = mgr.getEngineByName("javascript");
+        final ScriptEngineManager manager = new ScriptEngineManager();
+        final ScriptEngine engine = manager.getEngineByName("javascript");
+        // wrapper fucks up, encodes u.atchar(0) to unicode int value.
+        // ScriptEngineManager mgr = jd.plugins.hoster.DummyScriptEnginePlugin.getScriptEngineManager(this);
+        // ScriptEngine engine = mgr.getEngineByName("javascript");
         Object result = null;
         try {
             engine.eval("var document = { getElementById: function (a) { if (!this[a]) { this[a] = new Object(); function src() { return a.src; } this[a].src = src(); } return this[a]; }};");
