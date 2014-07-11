@@ -42,6 +42,9 @@ public class RmxShrCmFldr extends PluginForDecrypt {
         if (br.containsHTML(">Dieser Container \\(ID\\) existiert nicht")) {
             logger.info("Link offline: " + parameter);
             return decryptedLinks;
+        } else if (br.containsHTML(">Dieser Container ist leer")) {
+            logger.info("Link offline (folder empty): " + parameter);
+            return decryptedLinks;
         }
         final String fpName = br.getRegex("<h5><span title=\"([^<>\"]*?)\"").getMatch(0);
         final String links[] = br.getRegex("\\'(/download/[A-Za-z0-9]+)\'").getColumn(0);

@@ -30,10 +30,12 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "extremetube.com" }, urls = { "http://(www\\.)?extremetube\\.com/(video/|embed_player\\.php\\?id=)[a-z0-9\\-]+" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "extremetube.com" }, urls = { "http://(www\\.)?extremetube\\.com/(video/|embed_player\\.php\\?id=|embed/)[a-z0-9\\-]+" }, flags = { 0 })
 public class ExtremeTubeCom extends PluginForHost {
 
-    private String DLLINK = null;
+    private static final String TYPE_EMBED_1 = "http://(www\\.)?extremetube\\.com/embed_player\\.php\\?id=\\d+";
+    private static final String TYPE_EMBED_2 = "http://(www\\.)?extremetube\\.com/embed_player\\.php\\?id=\\d+";
+    private String              DLLINK       = null;
 
     public ExtremeTubeCom(PluginWrapper wrapper) {
         super(wrapper);
@@ -52,12 +54,9 @@ public class ExtremeTubeCom extends PluginForHost {
     }
 
     public void correctDownloadLink(final DownloadLink link) {
-        if (link.getDownloadURL().matches(EMBEDLINK)) {
-            link.setUrlDownload("http://www.extremetube.com/video/" + new Regex(link.getDownloadURL(), "embed_player\\.php\\?id=(.+)").getMatch(0));
-        }
+        final String vid = new Regex(link.getDownloadURL(), "([a-z0-9\\-]+)$").getMatch(0);
+        link.setUrlDownload("http://www.extremetube.com/video/" + vid);
     }
-
-    private static final String EMBEDLINK = "http://(www\\.)?extremetube\\.com/embed_player\\.php\\?id=\\d+";
 
     @Override
     public void handleFree(DownloadLink downloadLink) throws Exception {
@@ -78,11 +77,17 @@ public class ExtremeTubeCom extends PluginForHost {
         br.setCookie("http://www.extremetube.com/", "age_verified", "1");
         br.setFollowRedirects(true);
         br.getPage(downloadLink.getDownloadURL());
-        if (br.getURL().equals("http://www.extremetube.com/") || !br.containsHTML("\\.swf")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (br.getURL().equals("http://www.extremetube.com/") || !br.containsHTML("\\.swf")) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
         String filename = br.getRegex("<h1 class=\"title\\-video\\-box float\\-left\" title=\"(.*?)\"").getMatch(0);
         DLLINK = br.getRegex("flashvars\\.video_url = \\'(http.*?)\\'").getMatch(0);
-        if (DLLINK == null) DLLINK = br.getRegex("flashvars\" .+video\\_url=(.*?)\\&amp\\;").getMatch(0);
-        if (filename == null || DLLINK == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (DLLINK == null) {
+            DLLINK = br.getRegex("flashvars\" .+video\\_url=(.*?)\\&amp\\;").getMatch(0);
+        }
+        if (filename == null || DLLINK == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         DLLINK = Encoding.htmlDecode(DLLINK);
         filename = filename.trim();
         downloadLink.setFinalFileName(Encoding.htmlDecode(filename) + ".flv");
@@ -92,10 +97,11 @@ public class ExtremeTubeCom extends PluginForHost {
         URLConnectionAdapter con = null;
         try {
             con = br2.openGetConnection(DLLINK);
-            if (!con.getContentType().contains("html"))
+            if (!con.getContentType().contains("html")) {
                 downloadLink.setDownloadSize(con.getLongContentLength());
-            else
+            } else {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            }
             return AvailableStatus.TRUE;
         } finally {
             try {

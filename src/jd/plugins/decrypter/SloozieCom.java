@@ -44,6 +44,9 @@ public class SloozieCom extends PluginForDecrypt {
         if ("http://www.sloozie.com/".equals(br.getURL())) {
             logger.info("Link offline: " + parameter);
             return decryptedLinks;
+        } else if (br.containsHTML("id=\"divPRNoContent\"")) {
+            logger.info("Link offline (user has not uploaded any files): " + parameter);
+            return decryptedLinks;
         }
         String fpName = br.getRegex("<title>([^<>\"]*?)</title>").getMatch(0);
         final String memberID = br.getRegex("\"mbID\":\"(\\d+)\"").getMatch(0);

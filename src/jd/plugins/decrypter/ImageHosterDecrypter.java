@@ -247,7 +247,7 @@ public class ImageHosterDecrypter extends PluginForDecrypt {
             finallink = br.getRegex("property=\"og:image\" content=\"(http://[^<>\"]*?)\"").getMatch(0);
         } else if (parameter.contains("pic4you.ru/")) {
             br.getPage(parameter);
-            finallink = br.getRegex("id=\"d1\"><img src=\"(http://[^<>\"]*?)\"").getMatch(0);
+            finallink = br.getRegex("\"(http://s\\d+\\.pic4you\\.ru/[^<>\"]+\\-thumb\\.[A-Za-z]+)\"").getMatch(0);
             if (finallink != null) {
                 finallink = finallink.replace("-thumb", "");
             }

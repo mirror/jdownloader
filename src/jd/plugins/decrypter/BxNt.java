@@ -61,7 +61,7 @@ public class BxNt extends PluginForDecrypt {
             decryptedLinks.add(dl);
             return decryptedLinks;
         }
-        if (br.containsHTML("<title>Box \\| 404 Page Not Found</title>") || br.containsHTML("error_message_not_found") || br.containsHTML("id=\"tpl_empty_folder\"")) {
+        if (br.containsHTML("<title>Box \\| 404 Page Not Found</title>") || br.containsHTML("error_message_not_found")) {
             final DownloadLink dl = createDownloadlink(cryptedlink.replaceAll("box\\.com/shared", "boxdecrypted.com/shared"));
             dl.setAvailable(false);
             dl.setProperty("offline", true);
@@ -100,7 +100,9 @@ public class BxNt extends PluginForDecrypt {
                 final String pageCount = br.getRegex("\"page_count\":(\\d+)").getMatch(0);
                 final String linkID = new Regex(cryptedlink, "box\\.com/shared/([a-z0-9]+)").getMatch(0);
                 int pages = 1;
-                if (pageCount != null) pages = Integer.parseInt(pageCount);
+                if (pageCount != null) {
+                    pages = Integer.parseInt(pageCount);
+                }
                 for (int i = 1; i <= pages; i++) {
                     logger.info("Decrypting page " + i + " of " + pages);
                     br.getPage(basicLink + "/" + i + "/" + pathValue);
@@ -163,13 +165,19 @@ public class BxNt extends PluginForDecrypt {
         final String fileID = br.getRegex("\"typed_id\":\"f_(\\d+)\"").getMatch(0);
         final String fid = new Regex(cryptedLink, "([a-z0-9]+)$").getMatch(0);
         String fsize = br.getRegex("\"size\":\"([^<>\"]*?)\"").getMatch(0);
-        if (fsize == null) fsize = "0b";
+        if (fsize == null) {
+            fsize = "0b";
+        }
         String singleFilename = br.getRegex("id=\"filename_\\d+\" name=\"([^<>\"]*?)\"").getMatch(0);
-        if (singleFilename == null) singleFilename = fid;
+        if (singleFilename == null) {
+            singleFilename = fid;
+        }
         final DownloadLink dl = createDownloadlink("http://www.boxdecrypted.com/s/" + fid + "/1/1/1/" + new Random().nextInt(1000));
         dl.setProperty("plainfilename", singleFilename);
         dl.setProperty("plainfilesize", fsize);
-        if (fileID != null) dl.setProperty("fileid", fileID);
+        if (fileID != null) {
+            dl.setProperty("fileid", fileID);
+        }
         dl.setProperty("sharedname", fid);
         return dl;
     }
@@ -193,7 +201,9 @@ public class BxNt extends PluginForDecrypt {
      */
     private ArrayList<DownloadLink> decryptFeed(String feedUrl, final String cryptedlink) throws IOException {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-        if (br.getRedirectLocation() != null) br.getPage(br.getRedirectLocation());
+        if (br.getRedirectLocation() != null) {
+            br.getPage(br.getRedirectLocation());
+        }
         if (br.containsHTML("<title>Box \\| 404 Page Not Found</title>")) {
             final DownloadLink dl = createDownloadlink(cryptedlink.replaceAll("box\\.com/shared", "boxdecrypted.com/shared"));
             dl.setAvailable(false);
@@ -203,7 +213,9 @@ public class BxNt extends PluginForDecrypt {
         }
         String title = br.getRegex(FEED_FILETITLE_PATTERN).getMatch(0);
         String[] folder = br.getRegex(FEED_FILEINFO_PATTERN).getColumn(0);
-        if (folder == null) return null;
+        if (folder == null) {
+            return null;
+        }
         for (String fileInfo : folder) {
             String dlUrl = new Regex(fileInfo, FEED_DL_LINK_PATTERN).getMatch(0);
             if (dlUrl == null) {

@@ -20,6 +20,7 @@ import java.io.IOException;
 
 import jd.PluginWrapper;
 import jd.http.Browser;
+import jd.http.Browser.BrowserException;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
 import jd.plugins.DownloadLink;
@@ -55,15 +56,21 @@ public class Vid2CCom extends PluginForHost {
         /* hoster has broken gzip */
         br.getHeaders().put("Accept-Encoding", null);
         br.getPage(downloadLink.getDownloadURL());
-        if (br.containsHTML("<title> Most Recent Videos \\- Free Sex Adult Videos \\- Vid2C</title>") || br.getURL().equals("http://www.vid2c.com/videos/") || br.getURL().equals("http://www.vid2c.com/videos/?m=e")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (br.containsHTML("<title> Most Recent Videos \\- Free Sex Adult Videos \\- Vid2C</title>") || br.getURL().equals("http://www.vid2c.com/videos/") || br.getURL().equals("http://www.vid2c.com/videos/?m=e")) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
         String filename = br.getRegex("<div class=\"left span\\-630\">[\t\n\r ]+<h1>(.*?)</h1").getMatch(0);
-        if (filename == null) filename = br.getRegex("<title>(.*?)\\- Free Porn Videos and Sex Movies at Vid2C Porn Tube</title>").getMatch(0);
+        if (filename == null) {
+            filename = br.getRegex("<title>(.*?)\\- Free Porn Videos and Sex Movies at Vid2C Porn Tube</title>").getMatch(0);
+        }
         DLLINK = br.getRegex("file=(http.*?)(\\'|\")").getMatch(0);
         if (DLLINK == null) {
             DLLINK = br.getRegex("file\\': ?\\'(http[^\\'\"]+)").getMatch(0);
         }
         if (filename == null || DLLINK == null) {
-            if (!br.containsHTML("jwplayer\\.js\\'></script>")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            if (!br.containsHTML("jwplayer\\.js\\'></script>")) {
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            }
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         DLLINK = Encoding.htmlDecode(DLLINK);
@@ -76,11 +83,16 @@ public class Vid2CCom extends PluginForHost {
         br2.setFollowRedirects(true);
         URLConnectionAdapter con = null;
         try {
-            con = br2.openGetConnection(DLLINK);
-            if (!con.getContentType().contains("html"))
-                downloadLink.setDownloadSize(con.getLongContentLength());
-            else
+            try {
+                con = br2.openGetConnection(DLLINK);
+            } catch (final BrowserException e) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            }
+            if (!con.getContentType().contains("html")) {
+                downloadLink.setDownloadSize(con.getLongContentLength());
+            } else {
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            }
             return AvailableStatus.TRUE;
         } finally {
             try {

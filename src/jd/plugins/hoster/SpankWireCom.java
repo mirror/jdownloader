@@ -30,7 +30,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "spankwire.com" }, urls = { "http://(www\\.)?spankwire\\.com/(.*?/video\\d+|EmbedPlayer\\.aspx\\?ArticleId=\\d+)" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "spankwire.com" }, urls = { "http://(www\\.)?spankwire\\.com/(.*?/video\\d+|EmbedPlayer\\.aspx/?\\?ArticleId=\\d+)" }, flags = { 0 })
 public class SpankWireCom extends PluginForHost {
 
     public String DLLINK = null;
@@ -63,12 +63,9 @@ public class SpankWireCom extends PluginForHost {
         if (br.containsHTML(">This article has been deleted") | br.containsHTML(">This video has been deleted") || br.containsHTML(">This video has been disabled") || br.containsHTML("id=\"disclaimer_arrow\"")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        String fileID = new Regex(downloadLink.getDownloadURL(), "spankwire\\.com/.*?/video(\\d+)").getMatch(0);
+        final String fileID = new Regex(downloadLink.getDownloadURL(), "(\\d+)$").getMatch(0);
         if (fileID == null) {
-            fileID = new Regex(downloadLink.getDownloadURL(), "EmbedPlayer\\.aspx\\?ArticleId=(\\d+)").getMatch(0);
-            if (fileID == null) {
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            }
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         String filename = null;
         if (!downloadLink.getDownloadURL().contains("EmbedPlayer.aspx")) {

@@ -66,8 +66,8 @@ public class UploadManCom extends PluginForHost {
 
     /* Connection stuff */
     private static final boolean FREE_RESUME                                  = true;
-    private static final int     FREE_MAXCHUNKS                               = 1;
-    private static final int     FREE_MAXDOWNLOADS                            = 8;
+    private static final int     FREE_MAXCHUNKS                               = -4;
+    private static final int     FREE_MAXDOWNLOADS                            = 2;
 
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {

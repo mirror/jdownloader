@@ -22,6 +22,7 @@ import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
+import jd.parser.Regex;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
@@ -29,7 +30,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "mofosex.com" }, urls = { "http://(www\\.)?mofosex\\.com/videos/\\d+/[a-z0-9\\-]+\\.html" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "mofosex.com" }, urls = { "http://(www\\.)?mofosex\\.com/(videos/\\d+/[a-z0-9\\-]+\\.html|embed\\?videoid=\\d+|embed_player\\.php\\?id=\\d+)" }, flags = { 0 })
 public class MofoSexCom extends PluginForHost {
 
     private String DLLINK = null;
@@ -48,15 +49,34 @@ public class MofoSexCom extends PluginForHost {
         return -1;
     }
 
+    private static final String TYPE_EMBED = "http://(www\\.)?mofosex\\.com/(embed\\?videoid=|embed_player\\.php\\?id=)\\d+";
+
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws IOException, PluginException {
         setBrowserExclusive();
         br.setFollowRedirects(true);
-        br.getPage(downloadLink.getDownloadURL());
-        if (br.containsHTML("(<h2>The porn you are looking for has been removed|<title>Free Porn Videos, Porn Tube, Sex Videos, Sex \\&amp; Free XXX Porno Clips</title>|>Page Not Found<|This video is no longer available|video\\-removed\\-tos\\.png\")") || br.getURL().contains("/404.php")) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
-        String filename = br.getRegex("<div id=\"videotitle\">(.*?)</div>").getMatch(0);
+        if (downloadLink.getDownloadURL().matches(TYPE_EMBED)) {
+            logger.info("Handling embedded url...");
+            br.getPage("http://www.mofosex.com/embed?videoid=" + new Regex(downloadLink.getDownloadURL(), "(\\d+)$").getMatch(0));
+            if (br.containsHTML("This video is no longer available")) {
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            }
+            String real_url = br.getRegex("link_url=(http%3A%2F%2F(www\\.)?mofosex\\.com%2Fvideos%2F[^<>\"/]*?\\.html)\\&amp;").getMatch(0);
+            if (real_url == null) {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
+            real_url = Encoding.htmlDecode(real_url);
+            downloadLink.setUrlDownload(real_url);
+            br.getPage(real_url);
+        } else {
+            br.getPage(downloadLink.getDownloadURL());
+            if (br.containsHTML("(<h2>The porn you are looking for has been removed|<title>Free Porn Videos, Porn Tube, Sex Videos, Sex \\&amp; Free XXX Porno Clips</title>|>Page Not Found<|This video is no longer available|video\\-removed\\-tos\\.png\")") || br.getURL().contains("/404.php")) {
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            }
+        }
+        String filename = br.getRegex("flashvars\\.video_title = \"([^<>\"]*?)\"").getMatch(0);
         if (filename == null) {
-            filename = br.getRegex("<title>(.*?)</title>").getMatch(0);
+            filename = br.getRegex("<title>(.*?) Videos \\- Mofosex\\.com</title>").getMatch(0);
         }
         String fid = br.getRegex("\\?v=([a-z0-9_\\-]+)%2").getMatch(0);
         if (fid != null) {
@@ -66,7 +86,9 @@ public class MofoSexCom extends PluginForHost {
             fid = br.getRegex("flashvars\\.video_url = \'(.*?)\'").getMatch(0);
             DLLINK = fid != null ? fid : null;
         }
-        if (filename == null || DLLINK == null) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
+        if (filename == null || DLLINK == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         DLLINK = Encoding.htmlDecode(DLLINK);
         filename = filename.trim();
         downloadLink.setFinalFileName(Encoding.htmlDecode(filename) + ".flv");

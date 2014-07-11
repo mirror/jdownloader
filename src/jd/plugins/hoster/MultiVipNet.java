@@ -282,7 +282,10 @@ public class MultiVipNet extends PluginForHost {
         final AccountInfo ai = new AccountInfo();
         account.setMaxSimultanDownloads(20);
         maxPrem.set(20);
-        /* TODO: Implement traffic left (needs to be implemented by admin first) */
+        /*
+         * TODO: Differ between free- and premium Vip keys (e.g. admin said, premium Vip keys have no traffic limit, find out which value
+         * "limit" has if there is no limit)
+         */
         br.getPage("http://multivip.net/api.php?apipass=" + Encoding.Base64Decode(APIKEY) + "&do=keycheck&vipkey=" + Encoding.urlEncode(account.getPass()));
         final String error = getJson(br.toString(), "error");
         if (error != null) {
@@ -293,8 +296,10 @@ public class MultiVipNet extends PluginForHost {
             }
         }
         final String expire = getJson(br.toString(), "diedate");
-        ai.setValidUntil(Long.parseLong(expire) * 1000);
         final String max_downloadable_filesize = getJson(br.toString(), "limit");
+        final String traffic_left_kb = getJson(br.toString(), "points");
+        ai.setValidUntil(Long.parseLong(expire) * 1000);
+        ai.setTrafficLeft(Long.parseLong(traffic_left_kb) * 1024);
         account.setProperty("max_downloadable_filesize", Long.parseLong(max_downloadable_filesize) * 1024);
         br.getPage("http://multivip.net/api.php?apipass=" + Encoding.Base64Decode(APIKEY) + "&do=getlist");
         final ArrayList<String> supportedHosts = new ArrayList<String>();
@@ -312,7 +317,6 @@ public class MultiVipNet extends PluginForHost {
         account.setType(AccountType.PREMIUM);
         ai.setStatus("Premium Account");
         ai.setMultiHostSupport(supportedHosts);
-        ai.setUnlimitedTraffic();
         account.setValid(true);
         return ai;
     }

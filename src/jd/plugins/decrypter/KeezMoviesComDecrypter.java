@@ -61,7 +61,9 @@ public class KeezMoviesComDecrypter extends PluginForDecrypt {
             return decryptedLinks;
         }
         externID = br.getRegex("redtube\\.com/player/\"><param name=\"FlashVars\" value=\"id=(\\d+)\\&").getMatch(0);
-        if (externID == null) externID = br.getRegex("embed\\.redtube\\.com/player/\\?id=(\\d+)\\&").getMatch(0);
+        if (externID == null) {
+            externID = br.getRegex("embed\\.redtube\\.com/player/\\?id=(\\d+)\\&").getMatch(0);
+        }
         if (externID != null) {
             final DownloadLink dl = createDownloadlink("http://www.redtube.com/" + externID);
             decryptedLinks.add(dl);
@@ -100,7 +102,9 @@ public class KeezMoviesComDecrypter extends PluginForDecrypt {
             return decryptedLinks;
         }
         externID = br.getRegex("embed\\.pornrabbit\\.com/player\\.swf\\?movie_id=(\\d+)\"").getMatch(0);
-        if (externID == null) externID = br.getRegex("pornrabbit\\.com/embed/(\\d+)").getMatch(0);
+        if (externID == null) {
+            externID = br.getRegex("pornrabbit\\.com/embed/(\\d+)").getMatch(0);
+        }
         if (externID != null) {
             decryptedLinks.add(createDownloadlink("http://pornrabbit.com/video/" + externID + "/"));
             return decryptedLinks;
@@ -223,18 +227,8 @@ public class KeezMoviesComDecrypter extends PluginForDecrypt {
             decryptedLinks.add(dl);
             return decryptedLinks;
         }
-        externID = br.getRegex("(http://(www\\.)?mofosex\\.com/embed_player\\.php\\?id=\\d+)\"").getMatch(0);
+        externID = br.getRegex("(http://(www\\.)?mofosex\\.com/(embed_player\\.php\\?id=|embed\\?videoid=)\\d+)").getMatch(0);
         if (externID != null) {
-            br.getPage(externID);
-            if (br.containsHTML("No htmlCode read")) {
-                logger.info("Link offline: " + parameter);
-                return decryptedLinks;
-            }
-            externID = br.getRegex("<click_tag>(http://(www\\.)?mofosex\\.com/videos/\\d+/[^<>\"]*?)</click_tag>").getMatch(0);
-            if (externID == null) {
-                logger.warning("Decrypter broken for link: " + parameter);
-                return null;
-            }
             final DownloadLink dl = createDownloadlink(externID);
             decryptedLinks.add(dl);
             return decryptedLinks;
@@ -264,6 +258,16 @@ public class KeezMoviesComDecrypter extends PluginForDecrypt {
             return decryptedLinks;
         }
         externID = br.getRegex("\"(http://(www\\.)?bangyoulater\\.com/embed\\.php\\?id=\\d+)\"").getMatch(0);
+        if (externID != null) {
+            decryptedLinks.add(createDownloadlink(externID));
+            return decryptedLinks;
+        }
+        externID = br.getRegex("\"(http://(www\\.)?extremetube\\.com/embed/[^<>\"/]*?)\"").getMatch(0);
+        if (externID != null) {
+            decryptedLinks.add(createDownloadlink(externID));
+            return decryptedLinks;
+        }
+        externID = br.getRegex("\"(http://(www\\.)?spankwire\\.com/EmbedPlayer\\.aspx/?\\?ArticleId=\\d+)").getMatch(0);
         if (externID != null) {
             decryptedLinks.add(createDownloadlink(externID));
             return decryptedLinks;
@@ -331,7 +335,9 @@ public class KeezMoviesComDecrypter extends PluginForDecrypt {
             }
             final DownloadLink dl = createDownloadlink("directhttp://" + Encoding.htmlDecode(finallink));
             String type = br.getRegex("<meta rel=\"type\">(.*?)</meta>").getMatch(0);
-            if (type == null) type = "flv";
+            if (type == null) {
+                type = "flv";
+            }
             dl.setFinalFileName(filename + "." + type);
             decryptedLinks.add(dl);
             return decryptedLinks;
