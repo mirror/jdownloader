@@ -44,7 +44,7 @@ public class ImgurCom extends PluginForDecrypt {
         synchronized (ctrlLock) {
             if (parameter.matches(TYPE_GALLERY)) {
                 final String albumID = new Regex(parameter, "([A-Za-z0-9]+)$").getMatch(0);
-                br.getPage("https://api.imgur.com/3/album/" + albumID + "/images");
+                br.getPage("https://api.imgur.com/2/album/" + albumID + "/images");
                 if (br.containsHTML("<message>Album not found</message>")) {
                     logger.info("Link offline: " + parameter);
                     return decryptedLinks;

@@ -33,9 +33,7 @@ import jd.plugins.PluginForHost;
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "extremetube.com" }, urls = { "http://(www\\.)?extremetube\\.com/(video/|embed_player\\.php\\?id=|embed/)[a-z0-9\\-]+" }, flags = { 0 })
 public class ExtremeTubeCom extends PluginForHost {
 
-    private static final String TYPE_EMBED_1 = "http://(www\\.)?extremetube\\.com/embed_player\\.php\\?id=\\d+";
-    private static final String TYPE_EMBED_2 = "http://(www\\.)?extremetube\\.com/embed_player\\.php\\?id=\\d+";
-    private String              DLLINK       = null;
+    private String DLLINK = null;
 
     public ExtremeTubeCom(PluginWrapper wrapper) {
         super(wrapper);

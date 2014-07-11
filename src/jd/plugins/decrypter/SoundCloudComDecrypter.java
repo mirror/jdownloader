@@ -81,7 +81,10 @@ public class SoundCloudComDecrypter extends PluginForDecrypt {
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         CFG = SubConfiguration.getConfig("soundcloud.com");
-        ORIGINAL_LINK = param.toString();
+        ORIGINAL_LINK = Encoding.htmlDecode(param.toString());
+        if (ORIGINAL_LINK.contains("#")) {
+            ORIGINAL_LINK = ORIGINAL_LINK.substring(0, ORIGINAL_LINK.indexOf("#"));
+        }
         decrypt500Thumb = CFG.getBooleanProperty(GRAB500THUMB, false);
         decryptOriginalThumb = CFG.getBooleanProperty(GRABORIGINALTHUMB, false);
         // Sometimes slow servers
@@ -104,7 +107,7 @@ public class SoundCloudComDecrypter extends PluginForDecrypt {
             }
         }
 
-        parameter = param.toString().replace("http://", "https://").replaceAll("(/download|\\\\)", "").replaceFirst("://(www|m)\\.", "://");
+        parameter = ORIGINAL_LINK.replace("http://", "https://").replaceAll("(/download|\\\\)", "").replaceFirst("://(www|m)\\.", "://");
         if (parameter.matches(TYPE_INVALID)) {
             logger.info("Invalid link: " + parameter);
             return decryptedLinks;
