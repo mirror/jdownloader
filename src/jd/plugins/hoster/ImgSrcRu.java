@@ -152,7 +152,9 @@ public class ImgSrcRu extends PluginForHost {
         } catch (Throwable e) {
 
         }
-        ddlink = result.toString();
+        if (result != null) {
+            ddlink = result.toString();
+        }
     }
 
     private void getDllink() throws Exception {
