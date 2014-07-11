@@ -450,6 +450,7 @@ public class SoundcloudCom extends PluginForHost {
         }
     }
 
+    @SuppressWarnings("deprecation")
     @Override
     public AccountInfo fetchAccountInfo(final Account account) throws Exception {
         AccountInfo ai = new AccountInfo();
@@ -484,6 +485,7 @@ public class SoundcloudCom extends PluginForHost {
     }
 
     public static String getFormattedFilename(final DownloadLink downloadLink) throws ParseException {
+        final String url_username = downloadLink.getStringProperty("plain_url_username", null);
         String songTitle = downloadLink.getStringProperty("plainfilename", null);
         final SubConfiguration cfg = SubConfiguration.getConfig("soundcloud.com");
         String formattedFilename = cfg.getStringProperty(CUSTOM_FILENAME_2, defaultCustomFilename);
@@ -536,6 +538,9 @@ public class SoundcloudCom extends PluginForHost {
         if (formattedFilename.contains("*channelname*") && channelName != null) {
             formattedFilename = formattedFilename.replace("*channelname*", channelName);
         }
+        if (formattedFilename.contains("*url_username*") && url_username != null) {
+            formattedFilename = formattedFilename.replace("*url_username*", url_username);
+        }
         formattedFilename = formattedFilename.replace("*ext*", ext);
         // Insert filename at the end to prevent errors with tags
         formattedFilename = formattedFilename.replace("*songtitle*", songTitle);
@@ -574,6 +579,7 @@ public class SoundcloudCom extends PluginForHost {
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_TEXTFIELD, getPluginConfig(), CUSTOM_FILENAME_2, JDL.L("plugins.hoster.soundcloud.customfilename", "Define how the filenames should look:")).setDefaultValue(defaultCustomFilename));
         final StringBuilder sb = new StringBuilder();
         sb.append("Explanation of the available tags:\r\n");
+        sb.append("*url_username* = Username located in the soundcloud url which was added to jd\r\n");
         sb.append("*channelname* = name of the channel/uploader\r\n");
         sb.append("*date* = date when the link was posted - appears in the user-defined format above\r\n");
         sb.append("*songtitle* = name of the song without extension\r\n");
@@ -585,6 +591,7 @@ public class SoundcloudCom extends PluginForHost {
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_TEXTFIELD, getPluginConfig(), CUSTOM_PACKAGENAME, JDL.L("plugins.hoster.soundcloud.custompackagename", "Define how the packagenames should look:")).setDefaultValue(defaultCustomPackagename));
         final StringBuilder sbpack = new StringBuilder();
         sbpack.append("Explanation of the available tags:\r\n");
+        sbpack.append("*url_username* = Username located in the soundcloud url which was added to jd\r\n");
         sbpack.append("*channelname* = name of the channel/uploader\r\n");
         sbpack.append("*playlistname* = name of the playlist (= username for 'soundcloud.com/user' links)\r\n");
         sbpack.append("*date* = date when the linklist was created - appears in the user-defined format above\r\n");

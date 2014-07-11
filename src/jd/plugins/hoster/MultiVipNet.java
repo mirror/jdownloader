@@ -282,10 +282,6 @@ public class MultiVipNet extends PluginForHost {
         final AccountInfo ai = new AccountInfo();
         account.setMaxSimultanDownloads(20);
         maxPrem.set(20);
-        /*
-         * TODO: Differ between free- and premium Vip keys (e.g. admin said, premium Vip keys have no traffic limit, find out which value
-         * "limit" has if there is no limit)
-         */
         br.getPage("http://multivip.net/api.php?apipass=" + Encoding.Base64Decode(APIKEY) + "&do=keycheck&vipkey=" + Encoding.urlEncode(account.getPass()));
         final String error = getJson(br.toString(), "error");
         if (error != null) {
@@ -310,12 +306,14 @@ public class MultiVipNet extends PluginForHost {
                 supportedHosts.add(realDomain);
             }
         }
-        /*
-         * They also got free accounts / free "Vip keys" but status is only visible whenever the max downloadable filesize limit of a (free)
-         * account is reached
-         */
-        account.setType(AccountType.PREMIUM);
-        ai.setStatus("Premium Account");
+        if (max_downloadable_filesize.equals("0")) {
+            /* Premium keys have no max downloadable filesize limit */
+            account.setType(AccountType.PREMIUM);
+            ai.setStatus("Premium Vip key");
+        } else {
+            account.setType(AccountType.FREE);
+            ai.setStatus("Free Vip key");
+        }
         ai.setMultiHostSupport(supportedHosts);
         account.setValid(true);
         return ai;

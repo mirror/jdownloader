@@ -71,6 +71,7 @@ public class SoundCloudComDecrypter extends PluginForDecrypt {
     private boolean                 decryptOriginalThumb  = false;
     private String                  username              = null;
     private String                  playlistname          = null;
+    private String                  url_username          = null;
 
     /**
      * JD2 CODE: DO NOIT USE OVERRIDE FÒR COMPATIBILITY REASONS!!!!!
@@ -79,6 +80,7 @@ public class SoundCloudComDecrypter extends PluginForDecrypt {
         return false;
     }
 
+    @SuppressWarnings("deprecation")
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         CFG = SubConfiguration.getConfig("soundcloud.com");
         ORIGINAL_LINK = Encoding.htmlDecode(param.toString());
@@ -107,61 +109,10 @@ public class SoundCloudComDecrypter extends PluginForDecrypt {
             }
         }
 
-        parameter = ORIGINAL_LINK.replace("http://", "https://").replaceAll("(/download|\\\\)", "").replaceFirst("://(www|m)\\.", "://");
-        if (parameter.matches(TYPE_INVALID)) {
-            logger.info("Invalid link: " + parameter);
-            return decryptedLinks;
-        }
         try {
             /* Correct links */
-            if (parameter.matches(TYPE_SHORT)) {
-                br.setFollowRedirects(false);
-                /* Use ORIGINAL_LINK because https is not available for short links */
-                br.getPage(ORIGINAL_LINK);
-                final String newparameter = br.getRedirectLocation();
-                if (newparameter == null) {
-                    logger.warning("Decrypter failed on redirect link: " + parameter);
-                    return null;
-                }
-                parameter = newparameter;
-            } else if (parameter.matches(TYPE_API_TRACK)) {
-                String get_data = "?format=json&client_id=" + jd.plugins.hoster.SoundcloudCom.CLIENTID;
-                final String secret_token = new Regex(ORIGINAL_LINK, "secret_token=([A-Za-z0-9\\-_]+)").getMatch(0);
-                if (secret_token != null) {
-                    get_data += "&secret_token=" + secret_token;
-                }
-                br.getPage(parameter + get_data);
-                if (br.getHttpConnection().getResponseCode() == 404) {
-                    logger.info("Link offline (offline track link): " + parameter);
-                    final DownloadLink dl = createDownloadlink("https://soundclouddecrypted.com/offlinedecrypted/" + System.currentTimeMillis() + new Random().nextInt(100000));
-                    dl.setAvailable(false);
-                    dl.setProperty("offline", true);
-                    dl.setFinalFileName(new Regex(parameter, "(\\d+)$").getMatch(0));
-                    decryptedLinks.add(dl);
-                    return decryptedLinks;
-                }
-                String newparameter = br.getRegex("\"permalink_url\":\"(http://soundcloud\\.com/[a-z0-9\\-_]+/[a-z0-9\\-_]+(/[A-Za-z0-9\\-_]+)?)\"").getMatch(0);
-                /* Maybe we got XML instead of json */
-                if (newparameter == null) {
-                    newparameter = br.getRegex("<permalink\\-url>(http://soundcloud\\.com/[a-z0-9\\-_]+/[a-z0-9\\-_]+(/[A-Za-z0-9\\-_]+)?)</permalink\\-url>").getMatch(0);
-                }
-                if (newparameter == null) {
-                    logger.warning("Decrypter failed on redirect link: " + parameter);
-                    return null;
-                }
-                newparameter = newparameter.replace("http://", "https://");
-                parameter = newparameter;
-            } else if (parameter.matches(TYPE_API_PLAYLIST)) {
-                final Regex info = new Regex(parameter, "api\\.soundcloud\\.com/playlists/(\\d+)\\?secret_token=([A-Za-z0-9\\-_]+)");
-                br.getPage("https://api.sndcdn.com/playlists/" + info.getMatch(0) + "/?representation=compact&secret_token=" + info.getMatch(1) + "&client_id=" + jd.plugins.hoster.SoundcloudCom.CLIENTID + "&format=json");
-                String newparameter = br.getRegex("\"permalink_url\":\"(http://(www\\.)?soundcloud\\.com/[^<>\"/]*?/sets/[^<>\"]*?)\"").getMatch(0);
-                if (newparameter == null) {
-                    logger.warning("Decrypter failed on redirect link: " + parameter);
-                    return null;
-                }
-                newparameter = newparameter.replace("http://", "https://");
-                parameter = newparameter;
-            }
+            correctInputLinks();
+            url_username = new Regex(parameter, "soundcloud\\.com/([^<>\"/]+)/?").getMatch(0);
 
             br.setFollowRedirects(true);
 
@@ -213,7 +164,7 @@ public class SoundCloudComDecrypter extends PluginForDecrypt {
                     decryptedLinks.add(createDownloadlink(parameter.replace("soundcloud", "soundclouddecrypted")));
                 }
             }
-        } catch (final Throwable e) {
+        } catch (final DecrypterException e) {
             if (e instanceof DecrypterException && e.getMessage().equals(EXCEPTION_LINKOFFLINE)) {
                 logger.info("Link offline (empty set-link): " + parameter);
                 final DownloadLink dl = createDownloadlink("https://soundclouddecrypted.com/offlinedecrypted/" + System.currentTimeMillis() + new Random().nextInt(100000));
@@ -223,8 +174,60 @@ public class SoundCloudComDecrypter extends PluginForDecrypt {
                 decryptedLinks.add(dl);
                 return decryptedLinks;
             }
+            throw e;
         }
         return decryptedLinks;
+    }
+
+    private void correctInputLinks() throws IOException, DecrypterException {
+        parameter = ORIGINAL_LINK.replace("http://", "https://").replaceAll("(/download|\\\\)", "").replaceFirst("://(www|m)\\.", "://");
+        if (parameter.matches(TYPE_INVALID)) {
+            logger.info("Invalid link: " + parameter);
+            throw new DecrypterException(EXCEPTION_LINKOFFLINE);
+        }
+        if (parameter.matches(TYPE_SHORT)) {
+            br.setFollowRedirects(false);
+            /* Use ORIGINAL_LINK because https is not available for short links */
+            br.getPage(ORIGINAL_LINK);
+            final String newparameter = br.getRedirectLocation();
+            if (newparameter == null) {
+                logger.warning("Decrypter failed on redirect link: " + parameter);
+                throw new DecrypterException("Decrypter broken for link: " + parameter);
+            }
+            parameter = newparameter;
+        } else if (parameter.matches(TYPE_API_TRACK)) {
+            String get_data = "?format=json&client_id=" + jd.plugins.hoster.SoundcloudCom.CLIENTID;
+            final String secret_token = new Regex(ORIGINAL_LINK, "secret_token=([A-Za-z0-9\\-_]+)").getMatch(0);
+            if (secret_token != null) {
+                get_data += "&secret_token=" + secret_token;
+            }
+            br.getPage(parameter + get_data);
+            if (br.getHttpConnection().getResponseCode() == 404) {
+                logger.info("Link offline (offline track link): " + parameter);
+                throw new DecrypterException(EXCEPTION_LINKOFFLINE);
+            }
+            String newparameter = br.getRegex("\"permalink_url\":\"(http://soundcloud\\.com/[a-z0-9\\-_]+/[a-z0-9\\-_]+(/[A-Za-z0-9\\-_]+)?)\"").getMatch(0);
+            /* Maybe we got XML instead of json */
+            if (newparameter == null) {
+                newparameter = br.getRegex("<permalink\\-url>(http://soundcloud\\.com/[a-z0-9\\-_]+/[a-z0-9\\-_]+(/[A-Za-z0-9\\-_]+)?)</permalink\\-url>").getMatch(0);
+            }
+            if (newparameter == null) {
+                logger.warning("Decrypter failed on redirect link: " + parameter);
+                throw new DecrypterException("Decrypter broken for link: " + parameter);
+            }
+            newparameter = newparameter.replace("http://", "https://");
+            parameter = newparameter;
+        } else if (parameter.matches(TYPE_API_PLAYLIST)) {
+            final Regex info = new Regex(parameter, "api\\.soundcloud\\.com/playlists/(\\d+)\\?secret_token=([A-Za-z0-9\\-_]+)");
+            br.getPage("https://api.sndcdn.com/playlists/" + info.getMatch(0) + "/?representation=compact&secret_token=" + info.getMatch(1) + "&client_id=" + jd.plugins.hoster.SoundcloudCom.CLIENTID + "&format=json");
+            String newparameter = br.getRegex("\"permalink_url\":\"(http://(www\\.)?soundcloud\\.com/[^<>\"/]*?/sets/[^<>\"]*?)\"").getMatch(0);
+            if (newparameter == null) {
+                logger.warning("Decrypter failed on redirect link: " + parameter);
+                throw new DecrypterException("Decrypter broken for link: " + parameter);
+            }
+            newparameter = newparameter.replace("http://", "https://");
+            parameter = newparameter;
+        }
     }
 
     private void decryptSet() throws IOException, DecrypterException, ParseException {
@@ -258,6 +261,7 @@ public class SoundCloudComDecrypter extends PluginForDecrypt {
                 song_username = usernameOfSet;
             }
             final DownloadLink dl = createDownloadlink("https://soundclouddecrypted.com/" + song_username + "/" + permalink);
+            dl.setProperty("plain_url_username", url_username);
             dl.setProperty("setsposition", counter + ".");
             final AvailableStatus status = jd.plugins.hoster.SoundcloudCom.checkStatus(dl, item, false);
             dl.setAvailableStatus(status);
@@ -316,6 +320,7 @@ public class SoundCloudComDecrypter extends PluginForDecrypt {
                 }
                 final String song_username = new Regex(item, "<kind>user</kind>[\t\n\r ]+<permalink>([^<>\"]*?)</permalink>").getMatch(0);
                 final DownloadLink dl = createDownloadlink("https://soundclouddecrypted.com/" + song_username + "/" + permalink);
+                dl.setProperty("plain_url_username", url_username);
                 final AvailableStatus status = jd.plugins.hoster.SoundcloudCom.checkStatus(dl, item, false);
                 dl.setAvailableStatus(status);
                 decryptedLinks.add(dl);
@@ -352,12 +357,7 @@ public class SoundCloudComDecrypter extends PluginForDecrypt {
         int maxPerCall = 200;
         int offset = 0;
         while (true) {
-
             br.getPage("https://api.sndcdn.com/e1/users/" + userID + "/sounds?limit=" + maxPerCall + "&offset=" + offset + "&linked_partitioning=1&client_id=" + jd.plugins.hoster.SoundcloudCom.CLIENTID);
-            /*
-             * TODO: Item is item but this can contain SETs and single tracks - until now, every item is added as a track which is wrong and
-             * can result in wrong "file not found" when trying to download (for sets which have been added as tracks).
-             */
             final String[] items = br.getRegex("<stream\\-item>(.*?)</stream\\-item>").getColumn(0);
             if (items == null || items.length == 0) {
                 if (br.containsHTML("<stream\\-items type=\"array\"/>")) {
@@ -367,21 +367,27 @@ public class SoundCloudComDecrypter extends PluginForDecrypt {
                 throw new DecrypterException("null");
             }
             for (final String item : items) {
+                DownloadLink dl = null;
+                final String type = getXML("type", br.toString());
                 final String url = getXML("permalink", item);
-                if (url == null) {
+                if (url == null || type == null) {
                     logger.warning("Decrypter broken for link: " + parameter);
                     throw new DecrypterException("null");
                 }
-                DownloadLink dl = null;
-                if (parameter.endsWith("/")) {
-                    dl = createDownloadlink(parameter.replace("soundcloud.com/", "soundclouddecrypted.com/") + url);
+                if (type.equals("playlist")) {
+                    dl = createDownloadlink("https://soundcloud.com/" + url_username + "/sets/" + url);
                 } else {
-                    dl = createDownloadlink(parameter.replace("soundcloud.com/", "soundclouddecrypted.com/") + "/" + url);
+                    if (parameter.endsWith("/")) {
+                        dl = createDownloadlink(parameter.replace("soundcloud.com/", "soundclouddecrypted.com/") + url);
+                    } else {
+                        dl = createDownloadlink(parameter.replace("soundcloud.com/", "soundclouddecrypted.com/") + "/" + url);
+                    }
+                    dl.setProperty("plain_url_username", url_username);
+                    final AvailableStatus status = jd.plugins.hoster.SoundcloudCom.checkStatus(dl, item, false);
+                    dl.setAvailableStatus(status);
+                    get500Thumbnail(dl, item);
+                    getOriginalThumbnail(dl, item);
                 }
-                final AvailableStatus status = jd.plugins.hoster.SoundcloudCom.checkStatus(dl, item, false);
-                dl.setAvailableStatus(status);
-                get500Thumbnail(dl, item);
-                getOriginalThumbnail(dl, item);
                 decryptedLinks.add(dl);
             }
             if (items.length != maxPerCall) {
@@ -508,6 +514,9 @@ public class SoundCloudComDecrypter extends PluginForDecrypt {
             } else {
                 formattedpackagename = formattedpackagename.replace("*date*", "");
             }
+        }
+        if (formattedpackagename.contains("*url_username*")) {
+            formattedpackagename = formattedpackagename.replace("*url_username*", url_username);
         }
         if (formattedpackagename.contains("*channelname*")) {
             formattedpackagename = formattedpackagename.replace("*channelname*", channelname);

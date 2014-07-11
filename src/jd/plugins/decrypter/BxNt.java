@@ -42,6 +42,8 @@ public class BxNt extends PluginForDecrypt {
     private static final Pattern SINGLE_DOWNLOAD_LINK_PATTERN = Pattern.compile("(https?://(www|[a-z0-9\\-_]+)\\.box\\.com/index\\.php\\?rm=box_download_shared_file\\&amp;file_id=.+?\\&amp;shared_name=\\w+)");
     private static final String  ERROR                        = "(<h2>The webpage you have requested was not found\\.</h2>|<h1>404 File Not Found</h1>|Oops &mdash; this shared file or folder link has been removed\\.|RSS channel not found)";
 
+    private static final String  TYPE_APP                     = "https://app\\.box\\.com/(s|shared)/[a-z0-9]+";
+
     public BxNt(PluginWrapper wrapper) {
         super(wrapper);
     }
@@ -69,6 +71,34 @@ public class BxNt extends PluginForDecrypt {
             return decryptedLinks;
         }
         String fpName = null;
+        if (cryptedlink.matches(TYPE_APP)) {
+            fpName = br.getRegex("\"name\":\"([^<>\"]*?)\"").getMatch(0);
+            final String folderid = new Regex(cryptedlink, "([a-z0-9]+)$").getMatch(0);
+            final String json_Text = br.getRegex("\"db\":(\\{.*?\\})\\}\\}").getMatch(0);
+            final String[] filelinkinfo = json_Text.split("\"file_\\d+\"");
+            for (final String singleflinkinfo : filelinkinfo) {
+                final String fid = new Regex(singleflinkinfo, "\"typed_id\":\"f_(\\d+)\"").getMatch(0);
+                final String filename = new Regex(singleflinkinfo, "\"name\":\"([^<>\"]*?)\"").getMatch(0);
+                final String filesize = new Regex(singleflinkinfo, "\"raw_size\":(\\d+)").getMatch(0);
+                if (fid != null && filename != null && filesize != null) {
+                    final DownloadLink fina = createDownloadlink("https://app.box.com/index.php?rm=box_download_shared_file" + "&file_id=f_" + fid + "&shared_name=" + folderid);
+                    fina.setName(filename);
+                    fina.setDownloadSize(Long.parseLong(filesize));
+                    fina.setAvailable(true);
+                    decryptedLinks.add(fina);
+                }
+            }
+            if (decryptedLinks.size() == 0) {
+                logger.warning("Decrypt failed for link: " + cryptedlink);
+                return null;
+            }
+            if (fpName != null) {
+                final FilePackage fp = FilePackage.getInstance();
+                fp.setName(Encoding.htmlDecode(fpName.trim()));
+                fp.addLinks(decryptedLinks);
+            }
+            return decryptedLinks;
+        }
         if (br.containsHTML("id=\"name\" title=\"boxdocs\"")) {
             fpName = new Regex(cryptedlink, "([a-z0-9]+)$").getMatch(0);
             final String textArea = br.getRegex("<tr id=\"wrp_base\" style=\"height: 100%;\">(.*?)<tr id=\"wrp_footer\">").getMatch(0);
