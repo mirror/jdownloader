@@ -18,6 +18,9 @@ package jd.plugins.hoster;
 
 import java.util.concurrent.atomic.AtomicReference;
 
+import javax.script.ScriptEngine;
+import javax.script.ScriptEngineManager;
+
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.http.Browser;
@@ -129,62 +132,24 @@ public class ImgSrcRu extends PluginForHost {
         return AvailableStatus.TRUE;
     }
 
-    private String processJS() throws Exception {
-        // process the javascript within rhino vs doing this!!
-        // was
-        // <script type="text/javascript">
-        // var r='nca';
-        // var o='mink_blue';
-        // var n=r.charAt(2)+r.charAt(0)+r.charAt(1);
-        // document.getElementById('big_pic').src='http://b3.us.icdn.ru/'+o.charAt(0)+'/'+o+'/3/'+'37369043'+n+'.jpg';
-        // </script>
-        // String r = new Regex(js, "r='(.*?)';").getMatch(0);
-        // String o = new Regex(js, "o='(.*?)';").getMatch(0);
-        // String n = "";
-        // String notn = new Regex(js, "n=([^;]+)").getMatch(0);
-        // String[][] jn = new Regex(notn, "([a-z])\\.charAt\\((\\d+)\\)").getMatches();
-        // now
-        // <script type="text/javascript">
-        // var n='tdh';
-        // var e=n.charAt(2)+n.charAt(0)+n.charAt(1);
-        // var u='geragera';
-        // document.getElementById('big_pic').src='http://b2.eu.icdn.ru/'+u.charAt(0)+'/'+u+'/9/'+'37547279'+e+'.jpg';
-        // </script>
-        String n = new Regex(js, "n='(.*?)';").getMatch(0);
-        String u = new Regex(js, "u='(.*?)';").getMatch(0);
-        String e = "";
-        String notn = new Regex(js, "e=([^;]+)").getMatch(0);
-        String[][] jn = new Regex(notn, "([a-z])\\.charAt\\((\\d+)\\)").getMatches();
-        if (jn == null) {
+    private void processJS() throws Exception {
+        final String best = new Regex(js, "'(ori_?pic|big_?pic)'").getMatch(0);
+        if (best == null) {
+            logger.warning("determining best!");
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        for (String[] a : jn) {
-            if ("n".equals(a[0])) {
-                e = e + n.charAt(Integer.parseInt(a[1]));
-            }
+
+        ScriptEngineManager mgr = jd.plugins.hoster.DummyScriptEnginePlugin.getScriptEngineManager(this);
+        ScriptEngine engine = mgr.getEngineByName("javascript");
+        Object result = null;
+        try {
+            engine.eval("var document = { getElementById: function (a) { if (!this[a]) { this[a] = new Object(); function src() { return a.src; } this[a].src = src(); } return this[a]; }};");
+            engine.eval(js + "\r\nvar result=document.getElementById('" + best + "').src;");
+            result = engine.get("result");
+        } catch (Throwable e) {
+
         }
-        String best = null;
-        String big = new Regex(js, "big_?pic.+(http[^\r\n]+)';").getMatch(0);
-        String orginal = new Regex(js, "ori_?pic.+(http[^\n\r]+)';").getMatch(0);
-        if (orginal != null) {
-            best = orginal;
-        } else if (big != null) {
-            best = big;
-        } else {
-            logger.warning("Error in finding JS pic!");
-            return null;
-        }
-        // was
-        // document.getElementById('oripic').href='http://o8.su.imgsrc.ru/'+o.charAt(0)+'/'+o+'/9/31970729'+n+'.jpg';
-        // document.getElementById('bigpic').src='http://b0.su.imgsrc.ru/'+o.charAt(0)+'/'+o+'/8/'+'463518'+n+'.jpg';
-        // now
-        // document.getElementById('big_pic').src='http://b2.eu.icdn.ru/'+u.charAt(0)+'/'+u+'/9/'+'37547279'+e+'.jpg';
-        best = best.replace("'+u+'", u);
-        best = best.replace("'+e+'", e);
-        best = best.replace("'+u.charAt(0)+'", u.substring(0, 1));
-        best = best.replaceAll("[ \\+']", "");
-        ddlink = best;
-        return best;
+        ddlink = result.toString();
     }
 
     private void getDllink() throws Exception {
