@@ -2,6 +2,7 @@ package jd.plugins;
 
 import java.lang.ref.WeakReference;
 import java.util.HashMap;
+import java.util.regex.Pattern;
 
 import javax.swing.Icon;
 import javax.swing.ImageIcon;
@@ -55,7 +56,6 @@ public class LinkInfo {
                 fileName = abstractChildrenNode.getName();
             }
             final String fileNameExtension = Files.getExtension(fileName);
-            final ExtensionsFilterInterface extension = CompiledFiletypeFilter.getExtensionsFilterInterface(fileNameExtension);
             int num = -1;
             try {
                 String partID = new Regex(fileName, "\\.r(\\d+)$").getMatch(0);
@@ -73,6 +73,42 @@ public class LinkInfo {
                 LinkInfo ret = null;
                 WeakReference<LinkInfo> linkInfo = CACHE.get(ID);
                 if (linkInfo == null || (ret = linkInfo.get()) == null) {
+                    ExtensionsFilterInterface extension = CompiledFiletypeFilter.getExtensionsFilterInterface(fileNameExtension);
+                    if (extension == null) {
+                        extension = new ExtensionsFilterInterface() {
+
+                            @Override
+                            public Pattern compiledAllPattern() {
+                                return null;
+                            }
+
+                            @Override
+                            public String getDesc() {
+                                return fileNameExtension;
+                            }
+
+                            @Override
+                            public String getIconID() {
+                                return null;
+                            }
+
+                            @Override
+                            public Pattern getPattern() {
+                                return null;
+                            }
+
+                            @Override
+                            public String name() {
+                                return fileNameExtension;
+                            }
+
+                            @Override
+                            public boolean isSameExtensionGroup(ExtensionsFilterInterface extension) {
+                                return extension != null && extension.getPattern() == null && extension.getIconID() == null && StringUtils.equals(extension.name(), name());
+                            }
+
+                        };
+                    }
                     ret = new LinkInfo(num, extension, getIcon(fileName, extension));
                     CACHE.put(ID, new WeakReference<LinkInfo>(ret));
                 }

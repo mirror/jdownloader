@@ -198,7 +198,7 @@ public class QuickFilterTypeTable extends FilterTable {
 
                             @Override
                             public boolean isSameExtensionGroup(ExtensionsFilterInterface extension) {
-                                return false;
+                                return !(extension instanceof Enum);
                             }
 
                             @Override
@@ -236,7 +236,7 @@ public class QuickFilterTypeTable extends FilterTable {
                             @Override
                             public boolean isFiltered(CrawledLink link) {
                                 final ExtensionsFilterInterface extension = link.getLinkInfo().getExtension();
-                                return extension == null;
+                                return extension == null || other.isSameExtensionGroup(extension);
                             }
 
                             @Override
