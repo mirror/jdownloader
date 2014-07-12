@@ -17,11 +17,11 @@
 package jd.plugins.hoster;
 
 import java.io.IOException;
-import java.util.regex.Pattern;
+import java.util.Locale;
 
 import jd.PluginWrapper;
-import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
+import jd.nutils.encoding.HTMLEntities;
 import jd.plugins.Account;
 import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
@@ -30,9 +30,9 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-import jd.utils.locale.JDL;
 
 import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.formatter.TimeFormatter;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "quickshare.cz" }, urls = { "http://[\\w\\.]*?quickshare\\.cz/stahnout-soubor/\\d+:[^\\s]+" }, flags = { 2 })
 public class QuickShareCz extends PluginForHost {
@@ -52,12 +52,22 @@ public class QuickShareCz extends PluginForHost {
             account.setValid(false);
             return ai;
         }
-        br.getPage("http://www.quickshare.cz/premium");
-        String trafficleft = br.getRegex("Stav kreditu: <strong>(.*?)</strong>").getMatch(0);
+        br.getPage("/uzivatele/profil");
+        String trafficleft = br.getRegex("Kredit:\\s*<a href=\"/platby/cenik\">(.*?)</a>").getMatch(0);
         if (trafficleft != null) {
-            ai.setTrafficLeft(SizeFormatter.getSize(trafficleft));
+            ai.setTrafficLeft(SizeFormatter.getSize(trafficleft.replace(",", ".")));
         }
-        ai.setStatus("Premium User");
+        final String expire = br.getRegex("<th>Datum registrace</th>\\s*<td>(\\d{2}\\.\\d{2}\\.\\d{4})</td>").getMatch(0);
+        if (expire != null) {
+            ai.setValidUntil(TimeFormatter.getMilliSeconds(expire, "MM.dd.yyyy", Locale.ENGLISH));
+            ai.setStatus("Premium User");
+            account.setProperty("free", false);
+        } else {
+            ai.setStatus("Free User");
+            account.setProperty("free", true);
+            // not support as of yet...
+            account.setEnabled(false);
+        }
         account.setValid(true);
         return ai;
     }
@@ -80,39 +90,29 @@ public class QuickShareCz extends PluginForHost {
     @Override
     public void handleFree(DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
-        String ID1 = Encoding.formEncoding(br.getRegex("var ID1 = '(.*?)'").getMatch(0));
-        String ID2 = Encoding.formEncoding(br.getRegex("var ID2 = '(.*?)'").getMatch(0));
-        String ID3 = Encoding.formEncoding(br.getRegex("var ID3 = '(.*?)'").getMatch(0));
-        String ID4 = Encoding.formEncoding(br.getRegex("var ID4 = '(.*?)'").getMatch(0));
-        String server = br.getRegex("var server = '(.*?)'").getMatch(0);
-        if (ID1 == null || ID2 == null || ID3 == null || ID4 == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        String param = "ID1=" + ID1 + "&ID2=" + ID2 + "&ID3=" + ID3 + "&ID4=" + ID4;
+        final String wait = br.getRegex("<strong id=\"freeDown-timeout\">(\\d+)</strong>").getMatch(0);
+        if (wait != null) {
+            // doesn't seem to be required... though will help with this IP is already downloading.
+            sleep(Long.parseLong(wait) * 1001, downloadLink);
+        }
+        final String ddlink = br.getRegex("(https?:[^\"]+quickshare\\.cz[^\"]+free\\.php\\?fid=\\d+)").getMatch(0);
         br.setFollowRedirects(true);
-        // this.sleep(10000, downloadLink); // uncomment when they find a better
-        // way to force wait time
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, server + "/download.php", param);
-        URLConnectionAdapter con = dl.getConnection();
-        if (con.getContentType().contains("text")) {
-            String herror = br.getURL();
-            if (herror.contains("chyba/1")) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, JDL.L("plugins.hoster.QuickShareCz.alreadyloading", "This IP is already downloading"), 2 * 60 * 1000);
-            if (herror.contains("chyba/2")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, JDL.L("plugins.hoster.QuickShareCz.nofreeslots", "No free slots available"), 60 * 1000);
-        } else
-            dl.startDownload();
-
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, ddlink.replaceAll("\\\\/", "/"), true, 1);
+        if (dl.getConnection().getContentType().contains("text")) {
+            br.followConnection();
+            if (br.containsHTML("403 Forbidden<br><br>Z Vasi IP adresy jiz probiha stahovani. Jako free uzivatel muzete stahovat pouze jeden soubor\\.")) {
+                throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, "This IP Address is already downloading", 2 * 60 * 1000);
+            }
+        }
+        dl.startDownload();
     }
 
     public void handlePremium(DownloadLink parameter, Account account) throws Exception {
         requestFileInformation(parameter);
         login(account);
         br.getPage(parameter.getDownloadURL());
-        String server = br.getRegex("var server = '(.*?)'").getMatch(0);
-        String id1 = br.getRegex("var ID1 = '(.*?)'").getMatch(0);
-        String id2 = br.getRegex("var ID2 = '(.*?)'").getMatch(0);
-        String id4 = br.getRegex("var ID4 = '(.*?)'").getMatch(0);
-        String id5 = br.getRegex("var ID5 = '(.*?)'").getMatch(0);
-        if (server == null || id1 == null || id2 == null || id4 == null || id5 == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        String dllink = server + "/download_premium.php?ID1=" + id1 + "&ID2=" + id2 + "&ID4=" + id4 + "&ID5=" + id5;
-        dl = jd.plugins.BrowserAdapter.openDownload(br, parameter, dllink, true, 0);
+        final String ddlink = br.getRegex("(https?:[^\"]+quickshare\\.cz[^\"]+premium\\.php\\?[^\"]+)").getMatch(0);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, parameter, HTMLEntities.unhtmlentities(ddlink), true, 0);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -123,9 +123,11 @@ public class QuickShareCz extends PluginForHost {
     public void login(Account account) throws Exception {
         setBrowserExclusive();
         br.setFollowRedirects(false);
-        br.getPage("http://www.quickshare.cz/premium");
-        br.postPage("http://www.quickshare.cz/html/prihlaseni_process.php", "jmeno=" + Encoding.urlEncode(account.getUser()) + "&heslo=" + Encoding.urlEncode(account.getPass()) + "&akce=P%C5%99ihl%C3%A1sit");
-        if (br.getRedirectLocation() == null || !br.getRedirectLocation().contains("premium")) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+        br.getPage("http://www.quickshare.cz/");
+        br.postPage("http://www.quickshare.cz/?do=prihlaseni-submit", "username=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()) + "&remember=on&send=P%C5%99ihl%C3%A1sit");
+        if (br.getRedirectLocation() == null || !br.getRedirectLocation().contains("/?_fid=")) {
+            throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+        }
     }
 
     @Override
@@ -133,14 +135,21 @@ public class QuickShareCz extends PluginForHost {
         this.setBrowserExclusive();
         br.setCustomCharset("utf-8");
         br.getPage(downloadLink.getDownloadURL());
-        if (br.containsHTML("Takov. soubor neexistuje")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        String filename = Encoding.htmlDecode(br.getRegex(Pattern.compile("Název: <strong>(.*?)</strong>", Pattern.CASE_INSENSITIVE)).getMatch(0));
-        if (filename == null) filename = br.getRegex("var ID3 = '(.*?)';").getMatch(0);
-        String filesize = br.getRegex("<br>Velikost: <strong>(.*?)<br>").getMatch(0);
-        if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        filesize = filesize.replaceAll("</strong>", "");
+        if (br.containsHTML("Takov. soubor neexistuje")) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
+        String filename = br.getRegex("<title>(.*?) \\| QuickShare\\.cz</title>").getMatch(0);
+        if (filename == null) {
+            filename = br.getRegex("<div class=\"detail\">\\s*<h1>(.*?)</h1>").getMatch(0);
+        }
+        String filesize = br.getRegex("<em><i class=\"fa fa-video-camera\"></i>([\\d\\,]+ [A-Z]+)</em>").getMatch(0);
+        if (filename == null) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
         downloadLink.setName(filename.trim());
-        downloadLink.setDownloadSize(SizeFormatter.getSize(filesize.replaceAll(",", "\\.")));
+        if (filesize != null) {
+            downloadLink.setDownloadSize(SizeFormatter.getSize(filesize.replaceAll(",", ".")));
+        }
         return AvailableStatus.TRUE;
     }
 
