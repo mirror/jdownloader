@@ -53,14 +53,18 @@ public class FizyComD extends PluginForDecrypt {
     }
 
     private int[] changeReturnTypeToIntArray(String x, String[] y) {
-        if (x == null) return null;
+        if (x == null) {
+            return null;
+        }
         String[] tmp = x.split("\r\n");
         int[] indices = new int[tmp.length];
         int j = 0;
         for (int i = 0; i < y.length; i++) {
             if (tmp[j].equals(y[i])) {
                 indices[j] = i;
-                if (j >= tmp.length - 1) break;
+                if (j >= tmp.length - 1) {
+                    break;
+                }
                 j++;
             }
         }
@@ -83,25 +87,29 @@ public class FizyComD extends PluginForDecrypt {
         StringBuilder sb = new StringBuilder();
         for (String[] s : pL) {
             count = new Regex(s[0], "order").count();
-            if (count == 0) continue;
+            if (count == 0) {
+                continue;
+            }
             sb.append(Encoding.htmlDecode(decodeUnicode(s[1].trim())) + " (" + String.valueOf(count) + ")");
             sb.append("\r\n");
         }
 
         String[] mirrors = sb.toString().split("\r\n");
 
-//        try {
-//            indices = UserIO.getInstance().requestMultiSelectionDialog(0, "Please select playlist", "Please select the desired playlist.", mirrors, null, null, null, null);
-//        } catch (Throwable e) {
+        try {
+            indices = UserIO.getInstance().requestMultiSelectionDialog(0, "Please select playlist", "Please select the desired playlist.", mirrors, null, null, null, null);
+        } catch (Throwable e) {
             /* this function DOES NOT exist in 09581 stable */
             // TODO Get rid of this catch section once
             // MultiSelectionDialog
             // makes its way into stable
             String index = UserIO.getInstance().requestInputDialog(UserIO.STYLE_LARGE | UserIO.NO_COUNTDOWN, "Please remove unwanted playlists", sb.toString());
             indices = changeReturnTypeToIntArray(index, mirrors);
-//        }
+        }
         // Dialog wurde abgebrochen, Decrypterinstanz wird beendet.
-        if (indices == null) indices = new int[] { -1 };
+        if (indices == null) {
+            indices = new int[] { -1 };
+        }
         return indices;
     }
 
@@ -121,7 +129,9 @@ public class FizyComD extends PluginForDecrypt {
         if (!parameter.matches("http://(www\\.)?fizy\\.com/(#?s/)?\\w+")) {
             String user = new Regex(parameter, "http://(.*?)\\.fizy\\.com").getMatch(0);
             user = user == null ? new Regex(parameter, "fizy\\.com/#u/(\\w+)").getMatch(0) : user;
-            if (user == null) return null;
+            if (user == null) {
+                return null;
+            }
             String playLists = null;
 
             try {
@@ -142,13 +152,17 @@ public class FizyComD extends PluginForDecrypt {
 
             // alle Playlisten des Users
             String[][] playListsTmp = new Regex(playLists, "\"playlist\":\\[\\{\"title\":\"(.+?)\",\"order\":\\d\\.\\d,\"songs\":\\[(.+?)\\]\\},|\\{\"songs\":\\[(.+?)\\],\"order\":\\d+,\"title\":\"(.+?)\"\\}").getMatches();
-            if (playListsTmp == null || playListsTmp.length == 0) return null;
+            if (playListsTmp == null || playListsTmp.length == 0) {
+                return null;
+            }
 
             String[][] allPlayLists = new String[playListsTmp.length][2];
             for (int i = 0; i < playListsTmp.length; i++) {
                 int z = 0;
                 for (int j = 0; j < playListsTmp[i].length; j++) {
-                    if (playListsTmp[i][j] == null) continue;
+                    if (playListsTmp[i][j] == null) {
+                        continue;
+                    }
                     allPlayLists[i][z++] = playListsTmp[i][j];
                 }
                 // reverse Array
@@ -158,7 +172,9 @@ public class FizyComD extends PluginForDecrypt {
                     allPlayLists[i] = t.toArray(new String[0]);
                 }
             }
-            if (allPlayLists == null || allPlayLists.length == 0) return null;
+            if (allPlayLists == null || allPlayLists.length == 0) {
+                return null;
+            }
             // selektiere bestimmte Playlisten
             int[] selectedPlayListIndices = null;
             if (allPlayLists.length > 1) {
@@ -172,7 +188,9 @@ public class FizyComD extends PluginForDecrypt {
             int i = 0, j = 0;
             for (final String[] playList : allPlayLists) {
                 if (selectedPlayListIndices != null) {
-                    if (j > selectedPlayListIndices.length - 1) break;
+                    if (j > selectedPlayListIndices.length - 1) {
+                        break;
+                    }
                     if (i != selectedPlayListIndices[j]) {
                         i++;
                         continue;
@@ -201,7 +219,9 @@ public class FizyComD extends PluginForDecrypt {
                     // * 16 * 1024);
                     // } catch (final Exception e) {
                     // }
-                    if (dlLink == null) continue;
+                    if (dlLink == null) {
+                        continue;
+                    }
                     fp.add(dlLink);
                     try {
                         distribute(dlLink);
@@ -243,13 +263,17 @@ public class FizyComD extends PluginForDecrypt {
         final String providerId = getClipData("providerNumber");
         String ext = getClipData("type");
         String clipUrl = getClipData("source");
-        if (providerId == null) { return null; }
+        if (providerId == null) {
+            return null;
+        }
         int pId = providerId.matches("\\d+") ? Integer.parseInt(providerId) : -1;
 
         switch (pId) {
         case 1:
             // youtube
-            if (!YT) return null;
+            if (!YT) {
+                return null;
+            }
             if (!clipUrl.startsWith("http")) {
                 clipUrl = "http://www.youtube.com/watch?v=" + clipUrl;
             }
@@ -285,7 +309,9 @@ public class FizyComD extends PluginForDecrypt {
             logger.info("New providerId: " + providerId + " --> Link: " + clipUrl + " !");
             break;
         }
-        if (clipUrl == null || filename == null) { return null; }
+        if (clipUrl == null || filename == null) {
+            return null;
+        }
         clipUrl = clipUrl.startsWith("rtmp") ? "rtmp" + link : clipUrl;
         clipUrl = clipUrl.replace("\\", "");
         ext = ext == null ? "mp3" : ext;

@@ -96,8 +96,12 @@ public class SrnnksCategory extends PluginForDecrypt {
         Browser.setRequestIntervalLimitGlobal("serienjunkies.org", 400);
         Browser.setRequestIntervalLimitGlobal("download.serienjunkies.org", 400);
         String what = new Regex(parameter, "https?://[^/]+(.+)").getMatch(0);
-        if (what.length() >= 121) what = what.substring(0, 117) + "...";
-        if (!UserIO.isOK(UserIO.getInstance().requestConfirmDialog(UserIO.DONT_SHOW_AGAIN, JDL.L("plugins.decrypter.srnkscategory.AddCategory", lng_addCategoryMessage + "\r\n" + what)))) { return new ArrayList<DownloadLink>(); }
+        if (what.length() >= 121) {
+            what = what.substring(0, 117) + "...";
+        }
+        if (!UserIO.isOK(UserIO.getInstance().requestConfirmDialog(UserIO.DONT_SHOW_AGAIN, JDL.L("plugins.decrypter.srnkscategory.AddCategory", lng_addCategoryMessage + "\r\n" + what)))) {
+            return new ArrayList<DownloadLink>();
+        }
         br.setFollowRedirects(true);
         br.getPage(parameter.getCryptedUrl());
         if (br.containsHTML("<FRAME SRC")) {
@@ -110,15 +114,21 @@ public class SrnnksCategory extends PluginForDecrypt {
         }
 
         IdNamePair selectedCategory = letTheUserSelectCategory();
-        if (selectedCategory == null) return new ArrayList<DownloadLink>();
+        if (selectedCategory == null) {
+            return new ArrayList<DownloadLink>();
+        }
 
         String page = br.getPage("http://serienjunkies.org/" + selectedCategory.getId() + "/");
 
         Format selectedFormat = letTheUserSelectFormat(page);
-        if (selectedFormat == null) return new ArrayList<DownloadLink>();
+        if (selectedFormat == null) {
+            return new ArrayList<DownloadLink>();
+        }
 
         List<String> links = letTheUserSelectMirrors(selectedFormat);
-        if (links == null) return new ArrayList<DownloadLink>();
+        if (links == null) {
+            return new ArrayList<DownloadLink>();
+        }
 
         return confirmSelectedLinks(links);
 
@@ -127,13 +137,14 @@ public class SrnnksCategory extends PluginForDecrypt {
     private ArrayList<DownloadLink> confirmSelectedLinks(List<String> links) {
         final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
 
-//        String linksAsSingleString = convertListOfLinksToString(links);
-//        String linklist = UserIO.getInstance().requestInputDialog(UserIO.STYLE_LARGE | UserIO.NO_COUNTDOWN, JDL.L("plugins.decrypter.srnkscategory.RemoveUnwantedLinks", lng_removeUnwantedLinksMessage), linksAsSingleString);
-//        if (linklist == null) return new ArrayList<DownloadLink>();
-//
-//        String[] urls = HTMLParser.getHttpLinks(linklist, null);
-//        for (String url : urls) {
-        for (final String url : links) { 
+        String linksAsSingleString = convertListOfLinksToString(links);
+        String linklist = UserIO.getInstance().requestInputDialog(UserIO.STYLE_LARGE | UserIO.NO_COUNTDOWN, JDL.L("plugins.decrypter.srnkscategory.RemoveUnwantedLinks", lng_removeUnwantedLinksMessage), linksAsSingleString);
+        if (linklist == null) {
+            return new ArrayList<DownloadLink>();
+        }
+
+        String[] urls = HTMLParser.getHttpLinks(linklist, null);
+        for (String url : urls) {
             ret.add(this.createDownloadlink(url));
         }
         if (UserIO.isOK(UserIO.getInstance().requestConfirmDialog(0, String.format(JDL.L("plugins.decrypter.srnkscategory.DecryptLinks", lng_decryptLinksMessage), ret.size())))) {
@@ -153,10 +164,14 @@ public class SrnnksCategory extends PluginForDecrypt {
             // TODO Get rid of this catch section once MultiSelectionDialog
             // makes its way into stable
             int selectedMirror = UserIO.getInstance().requestComboDialog(0, JDL.L("plugins.decrypter.srnkscategory.SelectHostersHeadline", lng_selectHostTitle), JDL.L("plugins.decrypter.srnkscategory.SelectHosters", lng_selectHostMessage), mirrors, 0, null, null, null, null);
-            if (selectedMirror < 0) return null;
+            if (selectedMirror < 0) {
+                return null;
+            }
             selectedMirrorsIndices = new int[] { selectedMirror };
         }
-        if (selectedMirrorsIndices == null || selectedMirrorsIndices.length == 0) return null;
+        if (selectedMirrorsIndices == null || selectedMirrorsIndices.length == 0) {
+            return null;
+        }
 
         List<String> links = selectedFormat.getLinks(selectedMirrorsIndices);
         return links;
@@ -177,15 +192,21 @@ public class SrnnksCategory extends PluginForDecrypt {
             selectedFormat = formats[0];
         }
 
-        if (selectedFormat == null) return null;
+        if (selectedFormat == null) {
+            return null;
+        }
         return selectedFormat;
     }
 
     private IdNamePair letTheUserSelectCategory() {
         IdNamePair[] categories = parseCategories();
-        if (categories.length == 0) return null;
+        if (categories.length == 0) {
+            return null;
+        }
         int res = UserIO.getInstance().requestComboDialog(UserIO.NO_COUNTDOWN, JDL.L("plugins.decrypter.srnkscategory.SelectSeasonHeadline2", lng_selectSeasonTitle), JDL.L("plugins.decrypter.srnkscategory.SelectSeason", lng_selectSeasonMessage), categories, 0, null, null, null, null);
-        if (res < 0) return null;
+        if (res < 0) {
+            return null;
+        }
 
         IdNamePair selectedCategory = categories[res];
         return selectedCategory;
@@ -205,7 +226,9 @@ public class SrnnksCategory extends PluginForDecrypt {
 
         String[] names = br.getRegex("\\&nbsp\\;<a href=\"http://serienjunkies.org/(.*?)/\">(.*?)</a><br").getColumn(1);
 
-        if (ids.length != names.length) throw new IllegalStateException("Found " + ids.length + " ids and " + names.length + " names");
+        if (ids.length != names.length) {
+            throw new IllegalStateException("Found " + ids.length + " ids and " + names.length + " names");
+        }
 
         IdNamePair[] idNames = new IdNamePair[names.length];
         for (int i = 0; i < names.length; i++) {
@@ -260,7 +283,7 @@ public class SrnnksCategory extends PluginForDecrypt {
         if (!currentFormat.isEmpty()) {
             result.add(currentFormat);
         }
-        return (Format[]) result.toArray(new Format[result.size()]);
+        return result.toArray(new Format[result.size()]);
     }
 
     private static String removeHTMLTags(String line) {
