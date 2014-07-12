@@ -25,7 +25,7 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "ddlstorage.com" }, urls = { "https?://(www\\.)?ddlstorage\\.com/folder/[A-Za-z0-9]+" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "ddlstorage.com" }, urls = { "https?://(www\\.)?(ddlstorage\\.com|ddlsto\\.com)/folder/[A-Za-z0-9]+" }, flags = { 0 })
 public class DdlStorageComFolder extends PluginForDecrypt {
 
     public DdlStorageComFolder(PluginWrapper wrapper) {
@@ -34,7 +34,7 @@ public class DdlStorageComFolder extends PluginForDecrypt {
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-        String parameter = param.toString();
+        String parameter = param.toString().replace("ddlstorage.com", "ddlsto.com");
         br.getHeaders().put("Accept-Language", "en-gb, en;q=0.9, de;q=0.8");
         br.setCookie(this.getHost(), "lang", "english");
         br.getPage(parameter);
@@ -44,8 +44,8 @@ public class DdlStorageComFolder extends PluginForDecrypt {
             return decryptedLinks;
         }
 
-        final String[] links = br.getRegex("\"(http://(www\\.)?ddlstorage\\.com/[a-z0-9]{12})").getColumn(0);
-        if ((links == null || links.length == 0) && !br.containsHTML("ddlstorage\\.com/pictures/file\\.gif\"")) {
+        final String[] links = br.getRegex("\"(http://(www\\.)?(ddlstorage\\.com|ddlsto\\.com)/[a-z0-9]{12})").getColumn(0);
+        if ((links == null || links.length == 0) && !br.containsHTML("/pictures/file\\.gif\"")) {
             logger.info("Folder is empty: " + parameter);
             return decryptedLinks;
         }
