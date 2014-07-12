@@ -34,7 +34,7 @@ public class DdlStorageComFolder extends PluginForDecrypt {
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-        String parameter = param.toString().replace("ddlstorage.com", "ddlsto.com");
+        String parameter = param.toString().replace("ddlsto.com", "ddlstorage.com");
         br.getHeaders().put("Accept-Language", "en-gb, en;q=0.9, de;q=0.8");
         br.setCookie(this.getHost(), "lang", "english");
         br.getPage(parameter);

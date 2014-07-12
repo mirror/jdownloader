@@ -79,7 +79,7 @@ public class DdlStorageCom extends PluginForHost {
 
     // Site Setters
     // primary website url, take note of redirects
-    private final String               COOKIE_HOST                  = "http://ddlsto.com";
+    private final String               COOKIE_HOST                  = "http://ddlstorage.com";
     // domain names used within download links.
     private final String               DOMAINS                      = "(ddlstorage\\.com|ddlsto\\.com)";
     private final String               PASSWORDTEXT                 = "<br><b>Passwor(d|t):</b> <input";
