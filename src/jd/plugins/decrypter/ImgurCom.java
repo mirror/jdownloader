@@ -54,7 +54,7 @@ public class ImgurCom extends PluginForDecrypt {
                 // .extension), but not always! imgUid.endswith("s") is also a valid uid, so you can't strip them!
                 String[] items = br.getRegex("<item>(.*?)</item>").getColumn(0);
                 // We assume that the API is always working fine
-                if (items == null || items.length == 0 || fpName == null) {
+                if (items == null || items.length == 0) {
                     logger.info("Empty album: " + parameter);
                     return decryptedLinks;
                 }
@@ -87,9 +87,11 @@ public class ImgurCom extends PluginForDecrypt {
                     dl.setProperty("decryptedfinalfilename", filename);
                     decryptedLinks.add(dl);
                 }
-                final FilePackage fp = FilePackage.getInstance();
-                fp.setName(fpName.trim());
-                fp.addLinks(decryptedLinks);
+                if (fpName != null) {
+                    final FilePackage fp = FilePackage.getInstance();
+                    fp.setName(fpName.trim());
+                    fp.addLinks(decryptedLinks);
+                }
             } else if (parameter.matches("https?://(((www|i)\\.)?imgur\\.com/[A-Za-z0-9]{5,}|(www\\.)?imgur\\.com/(download|gallery)/[A-Za-z0-9]{5,})")) {
                 String imgUID = new Regex(parameter, "([A-Za-z0-9]{5,})$").getMatch(0);
                 final DownloadLink dl = createDownloadlink("http://imgurdecrypted.com/download/" + imgUID);

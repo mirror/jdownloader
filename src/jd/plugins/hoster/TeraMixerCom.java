@@ -68,6 +68,9 @@ public class TeraMixerCom extends PluginForHost {
             filename = br.getRegex("Filename[\t\n\r ]+</td>[\t\n\r ]+<td>([^<>\"]*?)</td>").getMatch(0);
         }
         String filesize = br.getRegex("class=\"icon\\-hdd\"></i> ([^<>\"]*?) </span>").getMatch(0);
+        if (filesize == null) {
+            filesize = br.getRegex("\\((\\d+(\\.\\d+)? [A-Za-z]{2,5})\\)</h3>").getMatch(0);
+        }
         if (filename == null || filesize == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
@@ -93,7 +96,7 @@ public class TeraMixerCom extends PluginForHost {
             }
             dllink = Encoding.Base64Decode(dllink);
         }
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, -8);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 0);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
