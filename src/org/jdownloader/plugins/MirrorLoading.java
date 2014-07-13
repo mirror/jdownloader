@@ -24,10 +24,11 @@ public class MirrorLoading implements ConditionalSkipReason, DownloadLinkConditi
     @Override
     public void finalize(DownloadLink link) {
         if (FinalLinkState.CheckFinished(getDownloadLink().getFinalLinkState())) {
+            link.setSkipReason(null);
             link.setFinalLinkState(FinalLinkState.FINISHED_MIRROR);
             link.setFinishedDate(getDownloadLink().getFinishedDate());
-            link.setName(getDownloadLink().getName());
-            long fileSize = getDownloadLink().getView().getBytesTotal();
+            link.setName(getDownloadLink().getView().getDisplayName());
+            final long fileSize = getDownloadLink().getView().getBytesTotal();
             if (fileSize >= 0) {
                 link.setDownloadSize(fileSize);
             }
