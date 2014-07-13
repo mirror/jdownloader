@@ -76,16 +76,18 @@ public class ShareRapidCz extends PluginForHost {
         br.getPage(link.getDownloadURL());
         checkOffline();
         br.setFollowRedirects(true);
-        String filename = Encoding.htmlDecode(br.getRegex("style=\"padding: 12px 0px 0px 10px; display: block\">(.*?)</ br>").getMatch(0));
+        String filename = br.getRegex("<title>(.*?) download - MegaRapid\\.cz[^\r\n]+</title>").getMatch(0);
         if (filename == null) {
-            filename = Encoding.htmlDecode(br.getRegex("<title>(.*?)\\- Share\\-Rapid</title>").getMatch(0));
+            filename = br.getRegex("<h1>(.*?)</h1>").getMatch(0);
         }
-        final String filesize = Encoding.htmlDecode(br.getRegex("Velikost:</td>.*?<td class=\"h\"><strong>.*?(.*?)</strong></td>").getMatch(0));
-        if (filename == null || filesize == null) {
+        final String filesize = br.getRegex("Velikost:</td>.*?<td class=\"h\"><strong>.*?(.*?)</strong></td>").getMatch(0);
+        if (filename == null) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        link.setName(filename.trim());
-        link.setDownloadSize(SizeFormatter.getSize(filesize));
+        link.setName(Encoding.htmlDecode(filename.trim()));
+        if (filesize != null) {
+            link.setDownloadSize(SizeFormatter.getSize(filesize.trim()));
+        }
         return AvailableStatus.TRUE;
     }
 
@@ -111,7 +113,7 @@ public class ShareRapidCz extends PluginForHost {
         String trafficleft = null;
         /**
          * Expire unlimited -> Unlimited traffic for a specified amount of time Normal expire -> Expire date + trafficleft
-         * 
+         *
          * */
         final String expireUnlimited = br.getRegex("<td>Paušální stahování aktivní\\. Vyprší </td><td><strong>([0-9]{1,2}.[0-9]{1,2}.[0-9]{2,4} - [0-9]{1,2}:[0-9]{1,2})</strong>").getMatch(0);
         if (expireUnlimited != null) {
@@ -211,7 +213,7 @@ public class ShareRapidCz extends PluginForHost {
         if (br.containsHTML("Soubor byl chybně nahrán na server")) {
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "This file isn't uploaded correctly", 60 * 60 * 1000);
         }
-        final String dllink = br.getRegex("\"(http://s[0-9]{1,2}\\.share-rapid\\.com/download.*?)\"").getMatch(0);
+        final String dllink = br.getRegex("\"(http://s[0-9]{1,2}\\.(share-rapid\\.com|megarapid\\.cz)/download.*?)\"").getMatch(0);
         if (dllink == null && br.containsHTML("Stahování je povoleno pouze pro přihlášené uživatele")) {
             try {
                 throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);
