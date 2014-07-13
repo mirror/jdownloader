@@ -61,6 +61,7 @@ public class JBbergCom extends PluginForDecrypt {
         }
         prepBr.getHeaders().put("User-Agent", agent);
         prepBr.getHeaders().put("Accept-Language", "en-gb, en;q=0.9");
+        prepBr.setCookie("http://jheberg.net/", "npqf_unique_user", "1");
         return prepBr;
     }
 
@@ -108,7 +109,23 @@ public class JBbergCom extends PluginForDecrypt {
             final Browser br2 = br.cloneBrowser();
             br2.setFollowRedirects(false);
             br2.getPage(hoster);
-            final String finallink = br2.getRedirectLocation();
+            String finallink = br2.getRedirectLocation();
+            if (finallink == null) {
+                final Regex data = new Regex(result, "redirect/([a-z0-9\\-_]+)/([a-z0-9\\-_]+)/");
+                final String slug = data.getMatch(0);
+                final String currenthoster = data.getMatch(1);
+                if (slug == null || currenthoster == null) {
+                    logger.warning("Decrypter broken for link: " + parameter);
+                    return null;
+                }
+                /* Waittime is not (yet) checked */
+                // this.sleep(5 * 1001l, param);
+                br2.getHeaders().put("X-Requested-With", "XMLHttpRequest");
+                br2.getHeaders().put("Accept", "*/*");
+                br2.getHeaders().put("Content-Type", "application/x-www-form-urlencoded; charset=UTF-8");
+                br2.postPage("http://jheberg.net/get/link/", "slug=" + slug + "&hoster=" + currenthoster);
+                finallink = br2.getRegex("\"url\": \"(http[^<>\"]*?)\"").getMatch(0);
+            }
             // not sure of best action here, but seems some are either down or require account?. Continue with the results
             if (br2.containsHTML("url\"\\s*:\\s*\"not authorized\"") || br2.containsHTML("\"url\"\\s*:\\s*\"\"") || br2.containsHTML("<title>404 Not Found</title>")) {
                 continue;

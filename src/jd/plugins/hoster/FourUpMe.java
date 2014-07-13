@@ -120,7 +120,7 @@ public class FourUpMe extends PluginForHost {
         prepBrowser(br);
         getPage(link.getDownloadURL());
         /* Workaround for broken/buggy redirection */
-        getPage("http://4upfiles.com/Ofiles.html");
+        getPage("http://4upfiles.com/Ofiles.php");
         if (new Regex(correctedBR, "(No such file|>File Not Found<|>The file was removed by|Reason for deletion:\n)").matches()) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }

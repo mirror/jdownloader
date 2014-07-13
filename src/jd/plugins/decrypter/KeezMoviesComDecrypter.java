@@ -40,6 +40,13 @@ public class KeezMoviesComDecrypter extends PluginForDecrypt {
         final String parameter = param.toString();
         final DownloadLink decryptedMainlink = createDownloadlink(parameter.replace("keezmovies.com/", "keezmoviesdecrypted.com/"));
         br.getPage(parameter);
+        if (br.getHttpConnection().getResponseCode() == 404) {
+            final DownloadLink offline = createDownloadlink("directhttp://" + parameter);
+            offline.setAvailable(false);
+            offline.setProperty("offline", true);
+            decryptedLinks.add(offline);
+            return decryptedLinks;
+        }
         String filename = br.getRegex("<span class=\"fn\" style=\"display:none\">([^<>\"]*?)</span>").getMatch(0);
         if (filename == null) {
             filename = br.getRegex("<title>(.*?) \\- KeezMovies\\.com</title>").getMatch(0);

@@ -57,7 +57,7 @@ public class TeraMixerCom extends PluginForHost {
         br.setFollowRedirects(true);
         br.getHeaders().put("User-Agent", jd.plugins.hoster.MediafireCom.stringUserAgent());
         br.getPage(link.getDownloadURL());
-        if (br.getURL().contains("/404.html")) {
+        if (br.getURL().contains("/404.html") || (!br.containsHTML("class=\"icon\\-download\"") && !br.containsHTML("class=\"fL"))) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         } else if (br.containsHTML(">You have reached the maximum concurrent downloads")) {
             link.getLinkStatus().setStatusText("Cannot get file information while limit is reached");

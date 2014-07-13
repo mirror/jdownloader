@@ -30,7 +30,7 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "pcloud.com" }, urls = { "https?://(www\\.)?(my\\.pcloud\\.com/#page=publink\\&code=|pc\\.cd/)[A-Za-z0-9]+" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "pcloud.com" }, urls = { "https?://(www\\.)?(my\\.pcloud\\.com/#page=publink\\&code=|my\\.pcloud\\.com/publink/show\\?code=|pc\\.cd/)[A-Za-z0-9]+" }, flags = { 0 })
 public class PCloudComFolder extends PluginForDecrypt {
 
     public PCloudComFolder(PluginWrapper wrapper) {
@@ -61,7 +61,9 @@ public class PCloudComFolder extends PluginForDecrypt {
         String folderName = getJson("name", br.toString());
         String linktext = br.getRegex("contents\": \\[(.*?)\\][\t\r\n ]+\\}").getMatch(0);
         /* Single file */
-        if (linktext == null) linktext = br.getRegex("metadata\": (\\{.*?\\})").getMatch(0);
+        if (linktext == null) {
+            linktext = br.getRegex("metadata\": (\\{.*?\\})").getMatch(0);
+        }
         if (linktext == null || folderName == null) {
             logger.warning("Decrypter broken for link: " + parameter);
             return null;
@@ -117,7 +119,9 @@ public class PCloudComFolder extends PluginForDecrypt {
 
     private String getJson(final String parameter, final String source) {
         String result = new Regex(source, "\"" + parameter + "\":([\t\n\r ]+)?([0-9\\.]+)").getMatch(1);
-        if (result == null) result = new Regex(source, "\"" + parameter + "\":([\t\n\r ]+)?\"([^<>\"]*?)\"").getMatch(1);
+        if (result == null) {
+            result = new Regex(source, "\"" + parameter + "\":([\t\n\r ]+)?\"([^<>\"]*?)\"").getMatch(1);
+        }
         return result;
     }
 

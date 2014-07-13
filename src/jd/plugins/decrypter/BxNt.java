@@ -42,7 +42,7 @@ public class BxNt extends PluginForDecrypt {
     private static final Pattern SINGLE_DOWNLOAD_LINK_PATTERN = Pattern.compile("(https?://(www|[a-z0-9\\-_]+)\\.box\\.com/index\\.php\\?rm=box_download_shared_file\\&amp;file_id=.+?\\&amp;shared_name=\\w+)");
     private static final String  ERROR                        = "(<h2>The webpage you have requested was not found\\.</h2>|<h1>404 File Not Found</h1>|Oops &mdash; this shared file or folder link has been removed\\.|RSS channel not found)";
 
-    private static final String  TYPE_APP                     = "https://app\\.box\\.com/(s|shared)/[a-z0-9]+";
+    private static final String  TYPE_APP                     = "https://app\\.box\\.com/(s|shared)/[a-z0-9]+(/1/\\d+)?";
 
     public BxNt(PluginWrapper wrapper) {
         super(wrapper);
@@ -57,14 +57,14 @@ public class BxNt extends PluginForDecrypt {
         br.setFollowRedirects(true);
         br.getPage(cryptedlink);
         if (br.getURL().equals("https://www.box.com/freeshare")) {
-            final DownloadLink dl = createDownloadlink(cryptedlink.replaceAll("box\\.com/shared", "boxdecrypted.com/shared"));
+            final DownloadLink dl = createDownloadlink("directhttp://" + cryptedlink);
             dl.setAvailable(false);
             dl.setProperty("offline", true);
             decryptedLinks.add(dl);
             return decryptedLinks;
         }
-        if (br.containsHTML("<title>Box \\| 404 Page Not Found</title>") || br.containsHTML("error_message_not_found")) {
-            final DownloadLink dl = createDownloadlink(cryptedlink.replaceAll("box\\.com/shared", "boxdecrypted.com/shared"));
+        if (br.containsHTML("<title>Box \\| 404 Page Not Found</title>") || br.containsHTML("error_message_not_found") || br.getHttpConnection().getResponseCode() == 404) {
+            final DownloadLink dl = createDownloadlink("directhttp://" + cryptedlink);
             dl.setAvailable(false);
             dl.setProperty("offline", true);
             decryptedLinks.add(dl);
@@ -72,20 +72,38 @@ public class BxNt extends PluginForDecrypt {
         }
         String fpName = null;
         if (cryptedlink.matches(TYPE_APP)) {
+            /* Check if folder is empty */
+            // if (br.containsHTML("class=\"center sprite_128x128_empty_folder\"")) {
+            // final DownloadLink dl = createDownloadlink("directhttp://" + cryptedlink);
+            // dl.setAvailable(false);
+            // dl.setProperty("offline", true);
+            // decryptedLinks.add(dl);
+            // return decryptedLinks;
+            // }
             fpName = br.getRegex("\"name\":\"([^<>\"]*?)\"").getMatch(0);
-            final String folderid = new Regex(cryptedlink, "([a-z0-9]+)$").getMatch(0);
+            final String main_folderid = new Regex(cryptedlink, "box\\.com/(s|shared)/([a-z0-9]+)").getMatch(1);
             final String json_Text = br.getRegex("\"db\":(\\{.*?\\})\\}\\}").getMatch(0);
-            final String[] filelinkinfo = json_Text.split("\"file_\\d+\"");
+            final String[] filelinkinfo = json_Text.split("\"unidb_formats\":");
             for (final String singleflinkinfo : filelinkinfo) {
-                final String fid = new Regex(singleflinkinfo, "\"typed_id\":\"f_(\\d+)\"").getMatch(0);
-                final String filename = new Regex(singleflinkinfo, "\"name\":\"([^<>\"]*?)\"").getMatch(0);
-                final String filesize = new Regex(singleflinkinfo, "\"raw_size\":(\\d+)").getMatch(0);
-                if (fid != null && filename != null && filesize != null) {
-                    final DownloadLink fina = createDownloadlink("https://app.box.com/index.php?rm=box_download_shared_file" + "&file_id=f_" + fid + "&shared_name=" + folderid);
-                    fina.setName(filename);
-                    fina.setDownloadSize(Long.parseLong(filesize));
-                    fina.setAvailable(true);
+                final String type = new Regex(singleflinkinfo, "\"type\":\"([^<>\"]*?)\"").getMatch(0);
+                /* Check for invalid entry */
+                if (type == null) {
+                    continue;
+                }
+                final String id = new Regex(singleflinkinfo, "\"typed_id\":\"(f|d)_(\\d+)\"").getMatch(1);
+                if (type.equals("folder")) {
+                    final DownloadLink fina = createDownloadlink("https://app.box.com/s/" + main_folderid + "/1/" + id);
                     decryptedLinks.add(fina);
+                } else {
+                    final String filename = new Regex(singleflinkinfo, "\"name\":\"([^<>\"]*?)\"").getMatch(0);
+                    final String filesize = new Regex(singleflinkinfo, "\"raw_size\":(\\d+)").getMatch(0);
+                    if (id != null && filename != null && filesize != null) {
+                        final DownloadLink fina = createDownloadlink("https://app.box.com/index.php?rm=box_download_shared_file" + "&file_id=f_" + id + "&shared_name=" + main_folderid);
+                        fina.setName(filename);
+                        fina.setDownloadSize(Long.parseLong(filesize));
+                        fina.setAvailable(true);
+                        decryptedLinks.add(fina);
+                    }
                 }
             }
             if (decryptedLinks.size() == 0) {
