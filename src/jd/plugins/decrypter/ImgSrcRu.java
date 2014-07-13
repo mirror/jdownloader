@@ -331,6 +331,10 @@ public class ImgSrcRu extends PluginForDecrypt {
                     break;
                 }
             } catch (final BrowserException e) {
+                if (br.getHttpConnection().getResponseCode() == 410) {
+                    offline = true;
+                    return false;
+                }
                 failed = true;
                 continue;
             }

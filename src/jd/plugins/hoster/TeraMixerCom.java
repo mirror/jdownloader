@@ -90,11 +90,25 @@ public class TeraMixerCom extends PluginForHost {
             if (br.containsHTML(">You have reached the maximum concurrent downloads")) {
                 throw new PluginException(LinkStatus.ERROR_IP_BLOCKED);
             }
-            dllink = br.getRegex("var filepath = \\'([A-Za-z0-9=]+)\\'").getMatch(0);
-            if (dllink == null) {
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            dllink = br.getRegex("\\'(http://(www\\.)?teramixer\\.com/[A-Za-z0-9]+\\?pt=2)\\'").getMatch(0);
+            if (dllink != null) {
+                int wait = 30;
+                final String waittime = br.getRegex("var seconds = (\\d+);").getMatch(0);
+                if (waittime != null) {
+                    wait = Integer.parseInt(waittime);
+                }
+                this.sleep((wait + 3) * 1001l, downloadLink);
+            } else {
+                final boolean broken = true;
+                if (broken) {
+                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error, downloadlink broken", 3 * 60 * 60 * 1000l);
+                }
+                dllink = br.getRegex("var filepath = \\'([A-Za-z0-9=]+)\\'").getMatch(0);
+                if (dllink == null) {
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                }
+                dllink = Encoding.Base64Decode(dllink);
             }
-            dllink = Encoding.Base64Decode(dllink);
         }
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 0);
         if (dl.getConnection().getContentType().contains("html")) {
