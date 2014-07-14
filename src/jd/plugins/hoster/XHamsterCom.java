@@ -132,7 +132,7 @@ public class XHamsterCom extends PluginForHost {
                 br.getPage(downloadLink.getDownloadURL());
             }
         }
-        if (br.containsHTML("(Video Not found|403 Forbidden|>This video was deleted<)")) {
+        if (br.containsHTML("(403 Forbidden|>This video was deleted<)")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         final String onlyfor = br.getRegex(">([^<>\"]*?)</a>\\'s friends only</div>").getMatch(0);

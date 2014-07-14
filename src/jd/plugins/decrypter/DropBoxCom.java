@@ -35,7 +35,7 @@ import jd.utils.JDUtilities;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "dropbox.com" }, urls = { "https?://(www\\.)?dropbox\\.com/((sh|sc|s)/[A-Za-z0-9\\-\\._/]+|l/[A-Za-z0-9]+)|https?://(www\\.)?db\\.tt/[A-Za-z0-9]+" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "dropbox.com" }, urls = { "https?://(www\\.)?dropbox\\.com/((sh|sc|s)/[^<>\"]+|l/[A-Za-z0-9]+)|https?://(www\\.)?db\\.tt/[A-Za-z0-9]+" }, flags = { 0 })
 public class DropBoxCom extends PluginForDecrypt {
 
     private boolean pluginloaded;

@@ -73,17 +73,23 @@ public class JumboFilesOrg extends PluginForHost {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         br.getPage(link.getDownloadURL());
-        if (br.getURL().contains("/index") || br.getURL().contains("null")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (br.getURL().contains("/index") || br.getURL().contains("null") || !br.getURL().matches("http://(www\\.)?(jumbofiles\\.org|jumbofilebox\\.com|putcker\\.com|mediafile\\.co|10shared\\.com)/(linkfile|newfile)\\?n=\\d+")) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
         String filename = null;
         if (link.getDownloadURL().matches(PREMIUMONLYLINK)) {
             filename = br.getRegex("<h2>Download File ([^<>\"]*?)</h2>").getMatch(0);
-            if (filename == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            if (filename == null) {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
             link.getLinkStatus().setStatusText("Only downloadable for premium users!");
         } else {
             final Regex fileInfo = br.getRegex("<h2>Download File ([^<>\"]*?)<span id=\"span1\">\\(([^<>\"]*?)\\)</span></h2>");
             filename = fileInfo.getMatch(0);
             final String filesize = fileInfo.getMatch(1);
-            if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            if (filename == null || filesize == null) {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
             link.setDownloadSize(SizeFormatter.getSize(filesize));
         }
         link.setName(Encoding.htmlDecode(filename.trim()));
@@ -101,21 +107,29 @@ public class JumboFilesOrg extends PluginForHost {
             try {
                 throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);
             } catch (final Throwable e) {
-                if (e instanceof PluginException) throw (PluginException) e;
+                if (e instanceof PluginException) {
+                    throw (PluginException) e;
+                }
             }
             throw new PluginException(LinkStatus.ERROR_FATAL, "This file can only be downloaded by premium users");
         }
         String dllink = checkDirectLink(downloadLink, "directlink");
         if (dllink == null) {
-            if (br.containsHTML("of free download slots for your country")) throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "No free slots available for your country", 10 * 60 * 1000l);
+            if (br.containsHTML("of free download slots for your country")) {
+                throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "No free slots available for your country", 10 * 60 * 1000l);
+            }
             final String reconnectWait = br.getRegex(">Delay between downloads must be not less than (\\d+) min").getMatch(0);
-            if (reconnectWait != null) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, Integer.parseInt(reconnectWait) * 60 * 1001l);
+            if (reconnectWait != null) {
+                throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, Integer.parseInt(reconnectWait) * 60 * 1001l);
+            }
             br.setFollowRedirects(false);
             br.postPage(br.getURL(), "next=1&method_premium0=Low+SPEED+DOWNLOAD");
             br.postPage(br.getURL(), "next=2&method_premium=Slow+DOWNLOAD");
             final long timeBefore = System.currentTimeMillis();
             final String server = br.getRegex("\"(http://[a-z0-9]+\\.(jumbofiles\\.org|jumbofilebox\\.com|putcker\\.com|mediafile\\.co|10shared\\.com)/file\\.php)\"").getMatch(0);
-            if (server == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            if (server == null) {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
             final PluginForDecrypt solveplug = JDUtilities.getPluginForDecrypt("linkcrypt.ws");
             final jd.plugins.decrypter.LnkCrptWs.SolveMedia sm = ((jd.plugins.decrypter.LnkCrptWs) solveplug).getSolveMedia(br);
             // if (i == 1) {
@@ -125,7 +139,9 @@ public class JumboFilesOrg extends PluginForHost {
             try {
                 cf = sm.downloadCaptcha(getLocalCaptchaFile());
             } catch (final Exception e) {
-                if (jd.plugins.decrypter.LnkCrptWs.SolveMedia.FAIL_CAUSE_CKEY_MISSING.equals(e.getMessage())) throw new PluginException(LinkStatus.ERROR_FATAL, "Host side solvemedia.com captcha error - please contact the " + this.getHost() + " support");
+                if (jd.plugins.decrypter.LnkCrptWs.SolveMedia.FAIL_CAUSE_CKEY_MISSING.equals(e.getMessage())) {
+                    throw new PluginException(LinkStatus.ERROR_FATAL, "Host side solvemedia.com captcha error - please contact the " + this.getHost() + " support");
+                }
                 throw e;
             }
             final String code = getCaptchaCode(cf, downloadLink);
@@ -134,10 +150,14 @@ public class JumboFilesOrg extends PluginForHost {
             try {
                 br.postPage(br.getURL(), "adcopy_response=" + Encoding.urlEncode(code) + "&adcopy_challenge=" + Encoding.urlEncode(chid) + "&server=" + Encoding.urlEncode(server) + "&n=dl&method_free=SLOW+DOWNLOAD");
             } catch (final BrowserException e) {
-                if (br.getRequest().getHttpConnection().getResponseCode() == 500) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 500", 5 * 60 * 1000l);
+                if (br.getRequest().getHttpConnection().getResponseCode() == 500) {
+                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 500", 5 * 60 * 1000l);
+                }
             }
             dllink = br.getRedirectLocation();
-            if (br.containsHTML("solvemedia\\.com/papi/") || dllink == null) throw new PluginException(LinkStatus.ERROR_CAPTCHA);
+            if (br.containsHTML("solvemedia\\.com/papi/") || dllink == null) {
+                throw new PluginException(LinkStatus.ERROR_CAPTCHA);
+            }
         }
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 0);
         if (dl.getConnection().getContentType().contains("html")) {
@@ -172,10 +192,14 @@ public class JumboFilesOrg extends PluginForHost {
         /** Ticket Time */
         int wait = 30;
         final String ttt = br.getRegex("x939=(\\d+);").getMatch(0);
-        if (ttt != null) wait = Integer.parseInt(ttt);
+        if (ttt != null) {
+            wait = Integer.parseInt(ttt);
+        }
         wait -= passedTime;
         logger.info("Waittime detected, waiting " + wait + " - " + passedTime + " seconds from now on...");
-        if (wait > 0) sleep(wait * 1000l, downloadLink);
+        if (wait > 0) {
+            sleep(wait * 1000l, downloadLink);
+        }
     }
 
     private static final String MAINPAGE = "http://jumbofiles.org";
@@ -189,7 +213,9 @@ public class JumboFilesOrg extends PluginForHost {
                 br.setCookiesExclusive(true);
                 final Object ret = account.getProperty("cookies", null);
                 boolean acmatch = Encoding.urlEncode(account.getUser()).equals(account.getStringProperty("name", Encoding.urlEncode(account.getUser())));
-                if (acmatch) acmatch = Encoding.urlEncode(account.getPass()).equals(account.getStringProperty("pass", Encoding.urlEncode(account.getPass())));
+                if (acmatch) {
+                    acmatch = Encoding.urlEncode(account.getPass()).equals(account.getStringProperty("pass", Encoding.urlEncode(account.getPass())));
+                }
                 if (acmatch && ret != null && ret instanceof HashMap<?, ?> && !force) {
                     final HashMap<String, String> cookies = (HashMap<String, String>) ret;
                     if (account.isValid()) {
@@ -291,7 +317,9 @@ public class JumboFilesOrg extends PluginForHost {
             if (dl.getConnection().getContentType().contains("html")) {
                 logger.warning("The final dllink seems not to be a file!");
                 br.followConnection();
-                if (br.containsHTML("HTTP/1\\.1 404 Not Found")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error", 10 * 60 * 1000l);
+                if (br.containsHTML("HTTP/1\\.1 404 Not Found")) {
+                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error", 10 * 60 * 1000l);
+                }
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
             dl.startDownload();

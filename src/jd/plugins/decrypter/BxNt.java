@@ -71,15 +71,15 @@ public class BxNt extends PluginForDecrypt {
             return decryptedLinks;
         }
         String fpName = null;
-        if (cryptedlink.matches(TYPE_APP)) {
+        if (br.getURL().matches(TYPE_APP)) {
             /* Check if folder is empty */
-            // if (br.containsHTML("class=\"center sprite_128x128_empty_folder\"")) {
-            // final DownloadLink dl = createDownloadlink("directhttp://" + cryptedlink);
-            // dl.setAvailable(false);
-            // dl.setProperty("offline", true);
-            // decryptedLinks.add(dl);
-            // return decryptedLinks;
-            // }
+            if (br.containsHTML("class=\"empty_folder\"")) {
+                final DownloadLink dl = createDownloadlink("directhttp://" + cryptedlink);
+                dl.setAvailable(false);
+                dl.setProperty("offline", true);
+                decryptedLinks.add(dl);
+                return decryptedLinks;
+            }
             fpName = br.getRegex("\"name\":\"([^<>\"]*?)\"").getMatch(0);
             final String main_folderid = new Regex(cryptedlink, "box\\.com/(s|shared)/([a-z0-9]+)").getMatch(1);
             final String json_Text = br.getRegex("\"db\":(\\{.*?\\})\\}\\}").getMatch(0);

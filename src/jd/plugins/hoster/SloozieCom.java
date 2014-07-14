@@ -101,7 +101,7 @@ public class SloozieCom extends PluginForHost {
             }
             filename = Encoding.htmlDecode(filename.trim()) + ".mp4";
             String flashParameter[] = br.getRegex("V4CORE\\.put\\(\'d\',\\{\"m\":\"\\d+\",\"p\":\"\\d+\",\"v\":\"([^\"]+)\",\"q\":\"([a-z]+)\",\"fs\"").getRow(0);
-            String jsCache = br.getRegex("src=\"(/js/cache/[0-9a-f]+\\.js)\">").getMatch(0);
+            String jsCache = br.getRegex("(/js/cache/[0-9a-f]+\\.js)").getMatch(0);
             if (flashParameter == null || jsCache == null) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }

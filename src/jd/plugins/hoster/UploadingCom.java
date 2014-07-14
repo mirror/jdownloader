@@ -46,7 +46,7 @@ import jd.utils.locale.JDL;
 import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.formatter.TimeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "uploading.com" }, urls = { "http://(www\\.)?uploading\\.com/\\w+/\\w+" }, flags = { 2 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "uploading.com" }, urls = { "http://(www\\.)?uploading\\.com/(files/get/[A-Za-z0-9]+|\\w+/\\w+)" }, flags = { 2 })
 public class UploadingCom extends PluginForHost {
 
     private static AtomicInteger simultanpremium = new AtomicInteger(1);
@@ -58,6 +58,8 @@ public class UploadingCom extends PluginForHost {
     private static final String  MAINPAGE        = "http://uploading.com/";
     private static final String  PASSWORDTEXT    = "Please Enter Password:<";
     private boolean              loginFail       = false;
+
+    private static final String  TYPE_GET        = "http://(www\\.)?uploading\\.com/files/get/[A-Za-z0-9]+";
 
     public UploadingCom(PluginWrapper wrapper) {
         super(wrapper);

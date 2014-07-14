@@ -197,6 +197,9 @@ public class MotherLessCom extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         } else if ("video".equals(parameter.getStringProperty("dltype", null))) {
             br.getPage(parameter.getDownloadURL());
+            if (br.getHttpConnection().getResponseCode() == 404) {
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            }
             if (br.containsHTML(notOnlineYet)) {
                 notOnlineYet(parameter, false);
                 return AvailableStatus.FALSE;

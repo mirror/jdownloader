@@ -65,28 +65,45 @@ public class KeezMoviesCom extends PluginForHost {
         if (downloadLink.getDownloadURL().contains(".com/embed_player.php")) {
             Browser br2 = br.cloneBrowser();
             br2.getPage(downloadLink.getDownloadURL());
+            if (br2.containsHTML("<share>N/A</share>")) {
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            }
             String realurl = br2.getRegex("<share>(http://[^<>\"]*?)</share>").getMatch(0);
             if (realurl != null) {
                 br2.getPage(realurl);
                 downloadLink.setUrlDownload(br2.getURL());
             } else {
                 DLLINK = br2.getRegex("<flv_url>(http://[^<>\"]*?)</flv_url>").getMatch(0);
-                if (DLLINK == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                if (DLLINK == null) {
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                }
                 filename = downloadLink.getFinalFileName();
-                if (filename == null) filename = new Regex(downloadLink.getDownloadURL(), "(\\d+)$").getMatch(0);
+                if (filename == null) {
+                    filename = new Regex(downloadLink.getDownloadURL(), "(\\d+)$").getMatch(0);
+                }
             }
         }
         if (downloadLink.getDownloadURL().matches("http://(www\\.)?keezmovies\\.com/video/[\\w\\-]+")) {
             // Set cookie so we can watch all videos ;)
             br.setCookie("http://www.keezmovies.com/", "age_verified", "1");
             br.getPage(downloadLink.getDownloadURL());
-            if (br.getRedirectLocation() != null) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
-            if (br.containsHTML(">This video has been removed<") || br.containsHTML("class=\"removed_video\"")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            if (br.getRedirectLocation() != null) {
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            }
+            if (br.containsHTML(">This video has been removed<") || br.containsHTML("class=\"removed_video\"")) {
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            }
             filename = br.getRegex("<span class=\"fn\" style=\"display:none\">([^<>\"]*?)</span>").getMatch(0);
-            if (filename == null) filename = br.getRegex("<title>(.*?) \\- KeezMovies\\.com</title>").getMatch(0);
-            if (filename == null) filename = br.getRegex("<h1 class=\"title_video_page\">([^<>\"]*?)</h1>").getMatch(0);
+            if (filename == null) {
+                filename = br.getRegex("<title>(.*?) \\- KeezMovies\\.com</title>").getMatch(0);
+            }
+            if (filename == null) {
+                filename = br.getRegex("<h1 class=\"title_video_page\">([^<>\"]*?)</h1>").getMatch(0);
+            }
             FLASHVARS = br.getRegex("<param name=\"flashvars\" value=\"(.*?)\"").getMatch(0);
-            if (FLASHVARS == null) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
+            if (FLASHVARS == null) {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
 
             FLASHVARS = Encoding.htmlDecode(FLASHVARS);
             String isEncrypted = getValue("encrypted");
@@ -99,12 +116,16 @@ public class KeezMoviesCom extends PluginForHost {
                     /* Fallback for stable version */
                     DLLINK = AESCounterModeDecrypt(decrypted, key, 256);
                 }
-                if (DLLINK != null && (DLLINK.startsWith("Error:") || !DLLINK.startsWith("http"))) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, DLLINK); }
+                if (DLLINK != null && (DLLINK.startsWith("Error:") || !DLLINK.startsWith("http"))) {
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, DLLINK);
+                }
             } else {
                 DLLINK = getValue("video_url");
             }
 
-            if (filename == null || DLLINK == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            if (filename == null || DLLINK == null) {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
         }
         downloadLink.setFinalFileName(filename.trim() + ".flv");
         DLLINK = Encoding.htmlDecode(DLLINK);
@@ -132,8 +153,12 @@ public class KeezMoviesCom extends PluginForHost {
      *      href="http://csrc.nist.gov/publications/nistpubs/800-38a/sp800-38a.pdf">"Recommendation for Block Cipher Modes of Operation - Methods and Techniques"</a>
      */
     private String AESCounterModeDecrypt(String cipherText, String key, int nBits) throws Exception {
-        if (!(nBits == 128 || nBits == 192 || nBits == 256)) { return "Error: Must be a key mode of either 128, 192, 256 bits"; }
-        if (cipherText == null || key == null) { return "Error: cipher and/or key equals null"; }
+        if (!(nBits == 128 || nBits == 192 || nBits == 256)) {
+            return "Error: Must be a key mode of either 128, 192, 256 bits";
+        }
+        if (cipherText == null || key == null) {
+            return "Error: cipher and/or key equals null";
+        }
         String res = null;
         nBits = nBits / 8;
         byte[] data = Base64.decode(cipherText.toCharArray());
@@ -174,8 +199,12 @@ public class KeezMoviesCom extends PluginForHost {
 
     private class BouncyCastleAESCounterModeDecrypt {
         private String decrypt(String cipherText, String key, int nBits) throws Exception {
-            if (!(nBits == 128 || nBits == 192 || nBits == 256)) { return "Error: Must be a key mode of either 128, 192, 256 bits"; }
-            if (cipherText == null || key == null) { return "Error: cipher and/or key equals null"; }
+            if (!(nBits == 128 || nBits == 192 || nBits == 256)) {
+                return "Error: Must be a key mode of either 128, 192, 256 bits";
+            }
+            if (cipherText == null || key == null) {
+                return "Error: cipher and/or key equals null";
+            }
             byte[] decrypted;
             nBits = nBits / 8;
             byte[] data = Base64.decode(cipherText.toCharArray());
@@ -190,7 +219,7 @@ public class KeezMoviesCom extends PluginForHost {
             byte[] nonceBytes = Arrays.copyOf(Arrays.copyOf(data, 8), nBits / 2);
             IvParameterSpec nonce = new IvParameterSpec(nonceBytes);
             /* true == encrypt; false == decrypt */
-            cipher.init(true, new org.bouncycastle.crypto.params.ParametersWithIV(new org.bouncycastle.crypto.params.KeyParameter(secretKey.getEncoded()), ((IvParameterSpec) nonce).getIV()));
+            cipher.init(true, new org.bouncycastle.crypto.params.ParametersWithIV(new org.bouncycastle.crypto.params.KeyParameter(secretKey.getEncoded()), nonce.getIV()));
             decrypted = new byte[cipher.getOutputSize(data.length - 8)];
             int decLength = cipher.processBytes(data, 8, data.length - 8, decrypted, 0);
             cipher.doFinal(decrypted, decLength);

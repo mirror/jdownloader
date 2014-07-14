@@ -87,6 +87,10 @@ public class ImgSrcRu extends PluginForDecrypt {
                 // best to get the original parameter, as the page could contain blocks due to forward or password
                 if (!getPage(parameter, param)) {
                     if (offline || exaustedPassword) {
+                        final DownloadLink offline = createDownloadlink("directhttp://" + parameter);
+                        offline.setAvailable(false);
+                        offline.setProperty("offline", true);
+                        decryptedLinks.add(offline);
                         return decryptedLinks;
                     } else {
                         return null;

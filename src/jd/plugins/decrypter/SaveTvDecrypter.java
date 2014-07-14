@@ -78,7 +78,6 @@ public class SaveTvDecrypter extends PluginForDecrypt {
         return false;
     }
 
-    // TODO: Find a better solution than "param3=string:984899" -> Maybe try to use API if it has a function to get the whole archive
     @SuppressWarnings("deprecation")
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         final String parameter = param.toString();
