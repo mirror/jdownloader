@@ -17,7 +17,10 @@
 package jd.plugins.hoster;
 
 import jd.PluginWrapper;
+import jd.http.Browser.BrowserException;
 import jd.http.URLConnectionAdapter;
+import jd.nutils.encoding.Encoding;
+import jd.parser.Regex;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
@@ -46,17 +49,21 @@ public class ImgUrCom extends PluginForHost {
 
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
-        br.setFollowRedirects(true);
+        final String imgUID = link.getStringProperty("imgUID", null);
+        String filetype = link.getStringProperty("filetype", null);
         String finalfilename = link.getStringProperty("decryptedfinalfilename", null);
         DLLINK = link.getStringProperty("directlink", null);
+
+        URLConnectionAdapter con = null;
+        br.setFollowRedirects(true);
         if (DLLINK != null) {
-            URLConnectionAdapter con = null;
             try {
                 con = br.openGetConnection(DLLINK);
-                if (!con.getContentType().contains("html"))
+                if (!con.getContentType().contains("html")) {
                     link.setDownloadSize(con.getLongContentLength());
-                else
+                } else {
                     throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+                }
             } finally {
                 try {
                     con.disconnect();
@@ -64,14 +71,71 @@ public class ImgUrCom extends PluginForHost {
                 }
             }
         } else {
-            br.getPage("http://api.imgur.com/2/image/" + link.getStringProperty("imgUID", null));
-            if (br.getRequest().getHttpConnection().getResponseCode() == 404) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-            if (br.containsHTML("<message>Image not found</message>")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-            final String filesize = br.getRegex("<size>(\\d+)</size>").getMatch(0);
-            if (finalfilename == null) finalfilename = br.getRegex("<original>https?://i\\.imgur\\.com/([^<>\"]*?)</original>").getMatch(0);
-            if (finalfilename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            boolean apilimit_reached = false;
+            br.getHeaders().put("Authorization", Encoding.Base64Decode(jd.plugins.decrypter.ImgurCom.OAUTH_AUTH));
+            try {
+                br.getPage("https://api.imgur.com/3/image/" + imgUID);
+            } catch (final BrowserException e) {
+                if (br.getHttpConnection().getResponseCode() == 429) {
+                    apilimit_reached = true;
+                } else {
+                    throw e;
+                }
+            }
+            if (!apilimit_reached) {
+                br.getRequest().setHtmlCode(br.toString().replace("\\", ""));
+                if (br.getHttpConnection().getResponseCode() == 404 || br.containsHTML("Unable to find an image with the id")) {
+                    throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+                }
+                final long filesize = Long.parseLong(getJson(br.toString(), "size"));
+                if (filesize == 0) {
+                    throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+                }
+                final String title = getJson(br.toString(), "title");
+                filetype = br.getRegex("\"type\":\"image/([^<>\"]*?)\"").getMatch(0);
+                if (filetype == null) {
+                    filetype = "jpeg";
+                }
+                if (title != null) {
+                    finalfilename = title + "." + filetype;
+                } else {
+                    finalfilename = imgUID + "." + filetype;
+                }
+                link.setDownloadSize(filesize);
+                DLLINK = getJson(br.toString(), "link");
+            } else {
+                /*
+                 * Workaround for API limit reached - second way does return 503 response in case API limit is reached:
+                 * http://imgur.com/download/ + imgUID This code should never be reached!
+                 */
+                if (imgUID == null || filetype == null) {
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                }
+                br.clearCookies("http://imgur.com/");
+                br.getHeaders().put("Referer", null);
+                br.getHeaders().put("Authorization", null);
+                try {
+                    DLLINK = "http://i.imgur.com/" + imgUID + "." + filetype;
+                    con = br.openGetConnection(DLLINK);
+                    if (!con.getContentType().contains("html")) {
+                        if (finalfilename == null) {
+                            finalfilename = Encoding.htmlDecode(getFileNameFromHeader(con));
+                        }
+                        link.setDownloadSize(con.getLongContentLength());
+                    } else {
+                        throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+                    }
+                } finally {
+                    try {
+                        con.disconnect();
+                    } catch (Throwable e) {
+                    }
+                }
+            }
+            if (finalfilename == null) {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
             link.setFinalFileName(finalfilename);
-            link.setDownloadSize(Long.parseLong(filesize));
         }
         return AvailableStatus.TRUE;
     }
@@ -80,14 +144,23 @@ public class ImgUrCom extends PluginForHost {
     public void handleFree(DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
         br.setFollowRedirects(true);
-        if (DLLINK == null) DLLINK = br.getRegex("<original>(https?://[^<>\"]*?)</original>").getMatch(0);
-        if (DLLINK == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (DLLINK == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, DLLINK, true, 0);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl.startDownload();
+    }
+
+    private String getJson(final String source, final String parameter) {
+        String result = new Regex(source, "\"" + parameter + "\":([\t\n\r ]+)?([0-9\\.]+)").getMatch(1);
+        if (result == null) {
+            result = new Regex(source, "\"" + parameter + "\":([\t\n\r ]+)?\"([^<>\"]*?)\"").getMatch(1);
+        }
+        return result;
     }
 
     @Override
