@@ -20,6 +20,7 @@ import java.io.File;
 import java.util.HashMap;
 import java.util.Locale;
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 
 import jd.PluginWrapper;
@@ -31,6 +32,7 @@ import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.parser.html.Form;
 import jd.plugins.Account;
+import jd.plugins.Account.AccountType;
 import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
@@ -49,6 +51,8 @@ public class UltraMegaBitCom extends PluginForHost {
     public UltraMegaBitCom(PluginWrapper wrapper) {
         super(wrapper);
         this.enablePremium(MAINPAGE);
+        /* Needed for premium, servers are a bit slow */
+        this.setStartIntervall(20 * 1000l);
     }
 
     @Override
@@ -62,7 +66,9 @@ public class UltraMegaBitCom extends PluginForHost {
         link.setUrlDownload("https://ultramegabit.com/file/details/" + new Regex(link.getDownloadURL(), "([A-Za-z0-9\\-_]+)$").getMatch(0));
     }
 
-    private static AtomicReference<String> agent = new AtomicReference<String>(null);
+    private static AtomicReference<String> agent   = new AtomicReference<String>(null);
+
+    private static AtomicInteger           maxPrem = new AtomicInteger(1);
 
     private Browser prepBrowser(final Browser prepBr) {
         if (agent.get() == null) {
@@ -282,9 +288,12 @@ public class UltraMegaBitCom extends PluginForHost {
         }
     }
 
+    @SuppressWarnings("deprecation")
     @Override
     public AccountInfo fetchAccountInfo(final Account account) throws Exception {
-        AccountInfo ai = new AccountInfo();
+        final AccountInfo ai = new AccountInfo();
+        /* reset maxPrem workaround on every fetchaccount info */
+        maxPrem.set(1);
         try {
             if (System.getProperty("jd.revision.jdownloaderrevision") == null && System.getProperty("java.version").matches("1\\.[7-9].+")) {
                 throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nLogin sequence will not work in this version of JDownloader. You will need to use JDownloader 2.\r\nJDownloader 2 install instructions and download link: http://board.jdownloader.org/showthread.php?t=37365", PluginException.VALUE_ID_PREMIUM_DISABLE);
@@ -318,23 +327,51 @@ public class UltraMegaBitCom extends PluginForHost {
         }
         if (expire == null && !ispremium) {
             // "Member"
+            try {
+                account.setType(AccountType.FREE);
+                maxPrem.set(1);
+                /* free accounts can still have captcha */
+                account.setMaxSimultanDownloads(maxPrem.get());
+                account.setConcurrentUsePossible(false);
+            } catch (final Throwable e) {
+                /* not available in old Stable 0.9.581 */
+            }
+            ai.setStatus("Registered (free) user");
+
             account.setProperty("free", true);
             account.setValid(true);
-            ai.setStatus("Registered (free) User");
             return ai;
         } else if (expire != null) {
             ai.setValidUntil(TimeFormatter.getMilliSeconds(expire, "h:mma dd/MM/yyyy", Locale.ENGLISH));
             if (ai.isExpired()) {
                 ai.setValidUntil(-1);
+                try {
+                    account.setType(AccountType.FREE);
+                    maxPrem.set(1);
+                    /* free accounts can still have captcha */
+                    account.setMaxSimultanDownloads(maxPrem.get());
+                    account.setConcurrentUsePossible(false);
+                } catch (final Throwable e) {
+                    /* not available in old Stable 0.9.581 */
+                }
+                ai.setStatus("Registered (free) user");
+
                 account.setProperty("free", true);
                 account.setValid(true);
-                ai.setStatus("Registered (free) User");
                 return ai;
             }
         }
         account.setProperty("free", false);
         account.setValid(true);
-        ai.setStatus("Premium");
+        try {
+            account.setType(AccountType.PREMIUM);
+            maxPrem.set(20);
+            account.setMaxSimultanDownloads(maxPrem.get());
+            account.setConcurrentUsePossible(true);
+        } catch (final Throwable e) {
+            /* not available in old Stable 0.9.581 */
+        }
+        ai.setStatus("Premium user");
         return ai;
     }
 
@@ -357,7 +394,7 @@ public class UltraMegaBitCom extends PluginForHost {
             if (finallink == null) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
-            dl = jd.plugins.BrowserAdapter.openDownload(br, link, finallink, true, -15);
+            dl = jd.plugins.BrowserAdapter.openDownload(br, link, finallink, true, 0);
             if (dl.getConnection().getContentType().contains("html")) {
                 logger.warning("The final dllink seems not to be a file!");
                 br.followConnection();
@@ -376,7 +413,8 @@ public class UltraMegaBitCom extends PluginForHost {
 
     @Override
     public int getMaxSimultanPremiumDownloadNum() {
-        return 1;
+        /* workaround for free/premium issue on stable 09581 */
+        return maxPrem.get();
     }
 
     @Override
