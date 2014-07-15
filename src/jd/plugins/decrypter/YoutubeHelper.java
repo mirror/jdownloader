@@ -709,12 +709,12 @@ public class YoutubeHelper {
 
     /**
      * *
-     * 
+     *
      * @param html5PlayerJs
      *            TODO
      * @param br
      * @param s
-     * 
+     *
      * @return
      * @throws IOException
      * @throws PluginException
@@ -739,9 +739,9 @@ public class YoutubeHelper {
 
             final ScriptEngineManager manager = jd.plugins.hoster.DummyScriptEnginePlugin.getScriptEngineManager(this);
             final ScriptEngine engine = manager.getEngineByName("javascript");
-
             String all = new Regex(jsContent, Pattern.compile("function " + Pattern.quote(descrambler) + "\\(([^)]+)\\)\\{(.+?return.*?)\\}.*?\\{.*?\\}")).getMatch(-1);
-            Object result = engine.eval(all + " " + descrambler + "(\"" + sig + "\")");
+            String test = "var eo = {\n    XG: function(a, b) {\n        var c = a[0];\n        a[0] = a[b % a.length];\n        a[b] = c;\n        return a\n    },\n    NZ: function(a) {\n        return a.reverse()\n    },\n    PL: function(a, b) {\n        return a.slice(b)\n    }\n};";
+            Object result = engine.eval(test + " \r\n " + all + " " + descrambler + "(\"" + sig + "\")");
             if (result != null) {
                 return result.toString();
             }
