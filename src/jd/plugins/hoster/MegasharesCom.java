@@ -74,7 +74,9 @@ public class MegasharesCom extends PluginForHost {
             if (br.containsHTML("class=\"order_push_box_left(_2)?\">")) {
                 renew(br, 1);
             }
-            if (br.containsHTML("Invalid link")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            if (br.containsHTML("Invalid link")) {
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            }
             if (br.containsHTML("You already have the maximum")) {
                 downloadLink.getLinkStatus().setStatusText(JDL.L("plugins.hoster.megasharescom.errors.alreadyloading", "Cannot check, because aready loading file"));
                 return AvailableStatus.UNCHECKABLE;
@@ -92,17 +94,27 @@ public class MegasharesCom extends PluginForHost {
                 return AvailableStatus.TRUE;
             }
             /* fallback regex */
-            if (dsize == null) dsize = br.getRegex("Filesize:</span></strong>(.*?)<br />").getMatch(0);
-            if (fln == null) fln = br.getRegex("download page link title.*?<h1 class=.*?>(.*?)<").getMatch(0);
-            if (dsize == null || fln == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            if (dsize == null) {
+                dsize = br.getRegex("Filesize:</span></strong>(.*?)<br />").getMatch(0);
+            }
+            if (fln == null) {
+                fln = br.getRegex("download page link title.*?<h1 class=.*?>(.*?)<").getMatch(0);
+            }
+            if (dsize == null || fln == null) {
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            }
             String betterfln = br.getRegex("download page link title.*?class=.*?style=.*?title=\"(.*?)\"").getMatch(0);
             if ((fln.endsWith("...") && betterfln != null) || (betterfln != null && betterfln.length() >= fln.length())) {
                 fln = betterfln;
             }
             return AvailableStatus.TRUE;
         } finally {
-            if (dsize != null) downloadLink.setDownloadSize(SizeFormatter.getSize(dsize));
-            if (fln != null) downloadLink.setName(fln.trim());
+            if (dsize != null) {
+                downloadLink.setDownloadSize(SizeFormatter.getSize(dsize));
+            }
+            if (fln != null) {
+                downloadLink.setName(fln.trim());
+            }
         }
     }
 
@@ -114,7 +126,9 @@ public class MegasharesCom extends PluginForHost {
             if (pass != null) {
                 form.put("passText", pass);
                 br.submitForm(form);
-                if (!br.containsHTML("This link requires a password")) { return true; }
+                if (!br.containsHTML("This link requires a password")) {
+                    return true;
+                }
             }
             int i = 0;
             while ((i++) < 5) {
@@ -167,7 +181,9 @@ public class MegasharesCom extends PluginForHost {
                 }
                 return ai;
             }
-            if (br.getURL() == null || !br.getURL().endsWith("myms.php")) br.getPage("http://d01.megashares.com/myms.php");
+            if (br.getURL() == null || !br.getURL().endsWith("myms.php")) {
+                br.getPage("http://d01.megashares.com/myms.php");
+            }
             String validUntil = br.getRegex("premium_info_box\">Period Ends:(.*?)<").getMatch(0);
             if (validUntil == null) {
                 account.setProperty("cookies", null);
@@ -191,8 +207,10 @@ public class MegasharesCom extends PluginForHost {
     }
 
     private String findDownloadUrl() {
-        String url = br.getRegex("<div>\\s*?<a href=\"(http://.*?megashares.*?)\">").getMatch(0);
-        if (url == null) url = br.getRegex("<div id=\"show_download_button(_\\d+)?\".*?>[^<]*?<a href=\"(http://.*?megashares.*?)\">").getMatch(1);
+        String url = br.getRegex("<div id=\"show_download_button(_\\d+)?\"[^>]*?>[^<>]*?<a[\t\n\r ]+href=\"(http://.*?megashares.*?)\">").getMatch(1);
+        if (url == null) {
+            url = br.getRegex("<div>\\s*?<a href=\"(http://.*?megashares.*?)\">").getMatch(0);
+        }
         return url;
     }
 
@@ -212,9 +230,13 @@ public class MegasharesCom extends PluginForHost {
     }
 
     private void handleErrors(DownloadLink link) throws PluginException {
-        if (br.containsHTML("This link is currently offline")) { throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "This link is currently offline for scheduled maintenance, please try again later", 60 * 60 * 1000l); }
+        if (br.containsHTML("This link is currently offline")) {
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "This link is currently offline for scheduled maintenance, please try again later", 60 * 60 * 1000l);
+        }
         // Sie laden gerade eine datei herunter
-        if (br.containsHTML("You already have the maximum")) { throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 60 * 1000l); }
+        if (br.containsHTML("You already have the maximum")) {
+            throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 60 * 1000l);
+        }
         String[] dat = br.getRegex("Your download passport will renew.*?in.*?(\\d+).*?:.*?(\\d+).*?:.*?(\\d+)</strong>").getRow(0);
         if (br.containsHTML("You have reached.*?maximum download limit")) {
             long wait = Long.parseLong(dat[1]) * 60000l + Long.parseLong(dat[2]) * 1000l;
@@ -235,26 +257,34 @@ public class MegasharesCom extends PluginForHost {
     public void handleFree(DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
         // Password protection
-        if (!checkPassword(downloadLink)) { return; }
+        if (!checkPassword(downloadLink)) {
+            return;
+        }
         handleErrors(downloadLink);
         // Reconnet/wartezeit check
 
         // Captchacheck
         if (br.containsHTML("Your Passport needs to be reactivated\\.")) {
             String captchaAddress = br.getRegex("then hit the \"Reactivate Passport\" button\\.</dt>.*?<dd><img src=\"(.*?)\"").getMatch(0);
-            if (captchaAddress == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            if (captchaAddress == null) {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
             HashMap<String, String> input = HTMLParser.getInputHiddenFields(br + "");
 
             String code = getCaptchaCode(captchaAddress, downloadLink);
             String geturl = downloadLink.getDownloadURL() + "&rs=check_passport_renewal&rsargs[]=" + code + "&rsargs[]=" + input.get("random_num") + "&rsargs[]=" + input.get("passport_num") + "&rsargs[]=replace_sec_pprenewal&rsrnd=" + System.currentTimeMillis();
             br.getPage(geturl);
             requestFileInformationInternal(downloadLink);
-            if (!checkPassword(downloadLink)) { return; }
+            if (!checkPassword(downloadLink)) {
+                return;
+            }
             handleErrors(downloadLink);
         }
         // Downloadlink
         String url = findDownloadUrl();
-        if (url == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (url == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         // Dateigröße holen
         br.setFollowRedirects(true);
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, url, true, 1);
@@ -263,10 +293,18 @@ public class MegasharesCom extends PluginForHost {
             /*
              * seems like megashares sends empty page when last download was some secs ago
              */
-            if (br.containsHTML("No htmlCode read")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "ServerError", 10 * 60 * 1000l);
-            if (br.getHttpConnection().getLongContentLength() == 0) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "ServerError", 10 * 60 * 1000l);
-            if (br.getHttpConnection().toString().contains("Get a link card now")) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 5 * 60 * 1000l);
-            if (br.getHttpConnection().toString().contains("Your Passport needs to")) throw new PluginException(LinkStatus.ERROR_RETRY);
+            if (br.containsHTML("No htmlCode read")) {
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "ServerError", 10 * 60 * 1000l);
+            }
+            if (br.getHttpConnection().getLongContentLength() == 0) {
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "ServerError", 10 * 60 * 1000l);
+            }
+            if (br.getHttpConnection().toString().contains("Get a link card now")) {
+                throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 5 * 60 * 1000l);
+            }
+            if (br.getHttpConnection().toString().contains("Your Passport needs to")) {
+                throw new PluginException(LinkStatus.ERROR_RETRY);
+            }
             /* maybe we have to fix link */
             correctDownloadLink(downloadLink);
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -283,8 +321,12 @@ public class MegasharesCom extends PluginForHost {
             login(account);
             // Password protection
             loadpage(downloadLink.getDownloadURL());
-            if (!checkPassword(downloadLink)) { return; }
-            if (br.containsHTML("All download slots for this link are currently filled")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, 10 * 60 * 1000l);
+            if (!checkPassword(downloadLink)) {
+                return;
+            }
+            if (br.containsHTML("All download slots for this link are currently filled")) {
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, 10 * 60 * 1000l);
+            }
             if (br.containsHTML("Your Download Passport is") || br.containsHTML("Your Passport needs to be reactivated.") || br.containsHTML("You have reached.*?maximum download limit") || br.containsHTML("You already have the maximum")) {
                 /* invalid account? try again */
                 logger.info("No Premium? try again");
@@ -293,7 +335,9 @@ public class MegasharesCom extends PluginForHost {
             }
         }
         String url = findDownloadUrl();
-        if (url == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (url == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         br.setFollowRedirects(true);
         int chunks = -10;
         if (downloadLink.getBooleanProperty(MegasharesCom.NOCHUNKS, false)) {
@@ -302,11 +346,15 @@ public class MegasharesCom extends PluginForHost {
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, url, true, chunks);
         if (!dl.getConnection().isContentDisposition()) {
             br.followConnection();
-            if (br.getHttpConnection().getLongContentLength() == 0) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "ServerError", 10 * 60 * 1000l);
+            if (br.getHttpConnection().getLongContentLength() == 0) {
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "ServerError", 10 * 60 * 1000l);
+            }
             /*
              * seems like megashares sends empty page when last download was some secs ago
              */
-            if (br.containsHTML("No htmlCode read")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "ServerError", 10 * 60 * 1000l);
+            if (br.containsHTML("No htmlCode read")) {
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "ServerError", 10 * 60 * 1000l);
+            }
             /* maybe we have to fix link */
             correctDownloadLink(downloadLink);
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -314,7 +362,9 @@ public class MegasharesCom extends PluginForHost {
         downloadLink.setFinalFileName(Encoding.htmlDecode(getFileNameFromHeader(dl.getConnection())));
         if (!this.dl.startDownload()) {
             try {
-                if (dl.externalDownloadStop()) return;
+                if (dl.externalDownloadStop()) {
+                    return;
+                }
             } catch (final Throwable e) {
             }
             if (downloadLink.getLinkStatus().getErrorMessage() != null && downloadLink.getLinkStatus().getErrorMessage().startsWith(JDL.L("download.error.message.rangeheaders", "Server does not support chunkload"))) {
@@ -384,7 +434,9 @@ public class MegasharesCom extends PluginForHost {
     }
 
     private void restoreCookies(Browser br, HashMap<String, String> ret) {
-        if (ret == null) return;
+        if (ret == null) {
+            return;
+        }
         for (final Map.Entry<String, String> cookieEntry : ret.entrySet()) {
             final String key = cookieEntry.getKey();
             final String value = cookieEntry.getValue();
@@ -396,8 +448,12 @@ public class MegasharesCom extends PluginForHost {
         Browser brc = br.cloneBrowser();
         String renew[] = br.getRegex("\"renew\\('(.*?)','(.*?)'").getRow(0);
         String post = br.getRegex("renew\\.php'.*?\\{(.*?):").getMatch(0);
-        if (post != null) post = post.trim();
-        if (renew == null || renew.length != 2) return;
+        if (post != null) {
+            post = post.trim();
+        }
+        if (renew == null || renew.length != 2) {
+            return;
+        }
         if (buttonID <= 0) {
             brc.postPage("/renew.php", post + "=" + renew[0]);
         } else {

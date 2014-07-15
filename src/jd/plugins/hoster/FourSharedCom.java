@@ -73,7 +73,8 @@ public class FourSharedCom extends PluginForHost {
     }
 
     /**
-     * TODO: Implement API: http://www.4shared.com/developer/ 19.12.12: Their support never responded so we don't know how to use the API...
+     * TODO: Implement API: http://www.4shared.com/developer/docs/rest/resources/#files 19.12.12: Their support never responded so we don't
+     * know how to use the API...
      * */
     /* IMPORTANT: When checking logs, look for these elements: class="warn", "limitErrorMsg" */
     private static final String DOWNLOADSTREAMS              = "DOWNLOADSTREAMS";
