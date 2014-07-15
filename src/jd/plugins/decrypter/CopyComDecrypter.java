@@ -22,6 +22,7 @@ import java.util.Random;
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.http.Browser.BrowserException;
+import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.plugins.CryptedLink;
@@ -56,7 +57,29 @@ public class CopyComDecrypter extends PluginForDecrypt {
         }
 
         if (!parameter.matches(VALID_URL)) {
-            br.getPage(parameter);
+            URLConnectionAdapter con = null;
+            try {
+                con = br.openGetConnection(parameter);
+                if (con.isContentDisposition()) {
+                    // ddlink!
+                    final DownloadLink dl = createDownloadlink(br.getURL().replace("copy.com", "copydecrypted.com"));
+                    if (dl.getFinalFileName() == null) {
+                        dl.setFinalFileName(getFileNameFromHeader(con));
+                    }
+                    dl.setVerifiedFileSize(con.getLongContentLength());
+                    dl.setProperty("ddlink", true);
+                    decryptedLinks.add(dl);
+                    return decryptedLinks;
+                } else {
+                    br.followConnection();
+                }
+            } finally {
+                try {
+                    /* make sure we close connection */
+                    con.disconnect();
+                } catch (final Throwable e) {
+                }
+            }
             final String newparameter = br.getRedirectLocation();
             if (newparameter == null || !newparameter.matches(VALID_URL)) {
                 decryptedLinks.add(offline);
