@@ -43,7 +43,7 @@ public class DonkPartyCom extends PluginForDecrypt {
             decryptedLinks.add(dl);
             return decryptedLinks;
         }
-        if (br.containsHTML("Media not found\\!<") || br.containsHTML("<title> free sex video \\- DonkParty</title>|>View Our Friend\\'s Videos") || br.getHttpConnection().getResponseCode() == 404) {
+        if (br.containsHTML("Media not found\\!<") || br.containsHTML("<title> free sex video \\- DonkParty</title>") || br.getHttpConnection().getResponseCode() == 404) {
             final DownloadLink offline = createDownloadlink("directhttp://" + parameter);
             offline.setAvailable(false);
             offline.setProperty("offline", true);
