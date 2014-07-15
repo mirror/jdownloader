@@ -87,6 +87,19 @@ public class BxNt extends PluginForDecrypt {
                     decryptedLinks.add(dl);
                     return decryptedLinks;
                 }
+                /* Maybe single file */
+                final String filename = br.getRegex("data\\-hover=\"tooltip\" aria\\-label=\"([^<>\"]*?)\"").getMatch(0);
+                final String filesize = br.getRegex("class=\"file_size\">\\(([^<>\"]*?)\\)</span>").getMatch(0);
+                final String fid = br.getRegex("itemTypedID: \"f_(\\d+)\"").getMatch(0);
+                if (filename != null && filesize != null && fid != null) {
+                    final DownloadLink fina = createDownloadlink("https://app.box.com/index.php?rm=box_download_shared_file" + "&file_id=f_" + fid + "&shared_name=" + main_folderid);
+                    fina.setName(Encoding.htmlDecode(filename.trim()));
+                    fina.setDownloadSize(SizeFormatter.getSize(filesize));
+                    fina.setAvailable(true);
+                    decryptedLinks.add(fina);
+                    return decryptedLinks;
+                }
+                /* Okay seems like our code failed */
                 logger.warning("Decrypt failed for link: " + cryptedlink);
                 return null;
             }
@@ -105,10 +118,12 @@ public class BxNt extends PluginForDecrypt {
                     final String filename = new Regex(singleflinkinfo, "\"name\":\"([^<>\"]*?)\"").getMatch(0);
                     final String filesize = new Regex(singleflinkinfo, "\"raw_size\":(\\d+)").getMatch(0);
                     if (id != null && filename != null && filesize != null) {
-                        final DownloadLink fina = createDownloadlink("https://app.box.com/index.php?rm=box_download_shared_file" + "&file_id=f_" + id + "&shared_name=" + main_folderid);
+                        final String finallink = "https://app.box.com/index.php?rm=box_download_shared_file" + "&file_id=f_" + id + "&shared_name=" + main_folderid;
+                        final DownloadLink fina = createDownloadlink(finallink);
                         fina.setName(filename);
                         fina.setDownloadSize(Long.parseLong(filesize));
                         fina.setAvailable(true);
+                        fina.setBrowserUrl(finallink);
                         decryptedLinks.add(fina);
                     }
                 }
