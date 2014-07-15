@@ -72,17 +72,24 @@ public class BxNt extends PluginForDecrypt {
         }
         String fpName = null;
         if (br.getURL().matches(TYPE_APP)) {
-            /* Check if folder is empty */
-            if (br.containsHTML("class=\"empty_folder\"")) {
-                final DownloadLink dl = createDownloadlink("directhttp://" + cryptedlink);
-                dl.setAvailable(false);
-                dl.setProperty("offline", true);
-                decryptedLinks.add(dl);
-                return decryptedLinks;
-            }
             fpName = br.getRegex("\"name\":\"([^<>\"]*?)\"").getMatch(0);
             final String main_folderid = new Regex(cryptedlink, "box\\.com/(s|shared)/([a-z0-9]+)").getMatch(1);
             final String json_Text = br.getRegex("\"db\":(\\{.*?\\})\\}\\}").getMatch(0);
+            if (json_Text == null) {
+                /*
+                 * Check if folder is empty - folders that contain only subfolders but no files are also "empty" so better check this in
+                 * here!
+                 */
+                if (br.containsHTML("class=\"empty_folder\"")) {
+                    final DownloadLink dl = createDownloadlink("directhttp://" + cryptedlink);
+                    dl.setAvailable(false);
+                    dl.setProperty("offline", true);
+                    decryptedLinks.add(dl);
+                    return decryptedLinks;
+                }
+                logger.warning("Decrypt failed for link: " + cryptedlink);
+                return null;
+            }
             final String[] filelinkinfo = json_Text.split("\"unidb_formats\":");
             for (final String singleflinkinfo : filelinkinfo) {
                 final String type = new Regex(singleflinkinfo, "\"type\":\"([^<>\"]*?)\"").getMatch(0);

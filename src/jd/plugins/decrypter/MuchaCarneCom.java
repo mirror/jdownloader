@@ -50,7 +50,9 @@ public class MuchaCarneCom extends PluginForDecrypt {
         }
         br.setFollowRedirects(false);
         String filename = br.getRegex("<title>([^<>\"]*?)\\- MuchaCarne\\.xxx</title>").getMatch(0);
-        if (filename == null) filename = br.getRegex("<title>([^<>\"]*?)</title>").getMatch(0);
+        if (filename == null) {
+            filename = br.getRegex("<title>([^<>\"]*?)</title>").getMatch(0);
+        }
         String externID = br.getRedirectLocation();
         if (externID != null) {
             DownloadLink dl = createDownloadlink(externID);
@@ -58,14 +60,18 @@ public class MuchaCarneCom extends PluginForDecrypt {
             return decryptedLinks;
         }
         externID = br.getRegex("\\&id=(\\d+)\\&").getMatch(0);
-        if (externID == null) externID = br.getRegex("\\&url=/videos/(\\d+)/").getMatch(0);
+        if (externID == null) {
+            externID = br.getRegex("\\&url=/videos/(\\d+)/").getMatch(0);
+        }
         if (externID != null) {
             DownloadLink dl = createDownloadlink("http://www.isharemybitch.com/videos/" + externID + "/oh-lol" + new Random().nextInt(10000) + ".html");
             decryptedLinks.add(dl);
             return decryptedLinks;
         }
         externID = br.getRegex("xvideos\\.com/(embedframe|embedcode)/(\\d+)").getMatch(1);
-        if (externID == null) externID = br.getRegex("id_video=(\\d+)\"").getMatch(0);
+        if (externID == null) {
+            externID = br.getRegex("id_video=(\\d+)\"").getMatch(0);
+        }
         if (externID != null) {
             decryptedLinks.add(createDownloadlink("http://www.xvideos.com/video" + externID));
             return decryptedLinks;
@@ -106,7 +112,9 @@ public class MuchaCarneCom extends PluginForDecrypt {
             return decryptedLinks;
         }
         externID = br.getRegex("pornhub\\.com/embed/(\\d+)").getMatch(0);
-        if (externID == null) externID = br.getRegex("pornhub\\.com/view_video\\.php\\?viewkey=(\\d+)").getMatch(0);
+        if (externID == null) {
+            externID = br.getRegex("pornhub\\.com/view_video\\.php\\?viewkey=(\\d+)").getMatch(0);
+        }
         if (externID != null) {
             DownloadLink dl = createDownloadlink("http://www.pornhub.com/view_video.php?viewkey=" + externID);
             decryptedLinks.add(dl);
@@ -129,7 +137,9 @@ public class MuchaCarneCom extends PluginForDecrypt {
             return decryptedLinks;
         }
         externID = br.getRegex("redtube\\.com/player/\"><param name=\"FlashVars\" value=\"id=(\\d+)\\&").getMatch(0);
-        if (externID == null) externID = br.getRegex("embed\\.redtube\\.com/player/\\?id=(\\d+)\\&").getMatch(0);
+        if (externID == null) {
+            externID = br.getRegex("embed\\.redtube\\.com/player/\\?id=(\\d+)\\&").getMatch(0);
+        }
         if (externID != null) {
             final DownloadLink dl = createDownloadlink("http://www.redtube.com/" + externID);
             decryptedLinks.add(dl);
@@ -157,13 +167,13 @@ public class MuchaCarneCom extends PluginForDecrypt {
             return decryptedLinks;
         }
         if (br.containsHTML("share\\-image\\.com/gallery/")) {
-            final String[] galleryLinks = br.getRegex("\"(http://pics\\.share\\-image\\.com/pictures/thumb/[^<>\"]*?)\"").getColumn(0);
+            final String[] galleryLinks = br.getRegex("\"(http://www\\.share\\-image\\.com/pictures/thumb/[^<>\"]*?)\"").getColumn(0);
             if (galleryLinks == null || galleryLinks.length == 0) {
                 logger.warning("Decrypter broken for link: " + parameter);
                 return null;
             }
             for (final String galLink : galleryLinks) {
-                decryptedLinks.add(createDownloadlink(galLink.replace("pics.share-image.com/", "pictures.share-image.com/").replace("/thumb/", "/big/")));
+                decryptedLinks.add(createDownloadlink(galLink.replace("www.share-image.com/", "pictures.share-image.com/").replace("/thumb/", "/big/")));
             }
             final FilePackage fp = FilePackage.getInstance();
             fp.setName(filename);

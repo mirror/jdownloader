@@ -50,7 +50,7 @@ public class ImgurCom extends PluginForDecrypt {
             if (parameter.matches(TYPE_GALLERY)) {
                 final String albumID = new Regex(parameter, "([A-Za-z0-9]+)$").getMatch(0);
                 try {
-                    br.getPage("https://api.imgur.com/3/album/" + albumID + "/images");
+                    br.getPage("https://api.imgur.com/3/album/" + albumID);
                 } catch (final BrowserException e) {
                     if (br.getHttpConnection().getResponseCode() == 429) {
                         logger.info("API limit reached, cannot decrypt link: " + parameter);
@@ -63,12 +63,15 @@ public class ImgurCom extends PluginForDecrypt {
                     logger.info("Link offline: " + parameter);
                     return decryptedLinks;
                 }
-                final String fpName = "imgur.com gallery " + albumID;
+                String fpName = getJson(br.toString(), "title");
+                if (fpName == null || fpName.equals("null")) {
+                    fpName = "imgur.com gallery " + albumID;
+                }
                 /*
                  * using links (i.imgur.com/imgUID(s)?.extension) seems to be problematic, it can contain 's' (imgUID + s + .extension), but
                  * not always! imgUid.endswith("s") is also a valid uid, so you can't strip them!
                  */
-                final String jsonarray = br.getRegex("\"data\":\\[(\\{.*?\\})\\]").getMatch(0);
+                final String jsonarray = br.getRegex("\"images\":\\[(\\{.*?\\})\\]").getMatch(0);
                 String[] items = jsonarray.split("\\},\\{");
                 /* We assume that the API is always working fine */
                 if (items == null || items.length == 0) {

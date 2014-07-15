@@ -62,21 +62,27 @@ public class RpprsIn extends PluginForDecrypt {
             if (parameter.matches("http://(www\\.)?rappers\\.in/track\\-\\d+")) {
                 br.getPage("http://www.rappers.in/playtrack-" + new Regex(parameter, "(\\d+)$").getMatch(0) + "-1808.xml?" + new Random().nextInt(100) + "&s=undefined");
             } else {
-                String onlyDifference = "main";
-                if (parameter.matches("http://(www\\.)?rappers\\.in/[A-Za-z0-9_\\-]+\\-tracks\\.html")) onlyDifference = "tracks";
+                String access;
+                String accessid;
+                if (parameter.matches("http://(www\\.)?rappers\\.in/[A-Za-z0-9_\\-]+\\-tracks\\.html")) {
+                    access = "tracks";
+                }
                 br.setFollowRedirects(true);
                 br.getPage(parameter);
+                final Regex accessinfo = br.getRegex("makeRIP\\(\"([A-Za-z]+)\\-(\\d+)\"\\)");
+                access = accessinfo.getMatch(0);
+
                 br.setFollowRedirects(false);
                 if (!br.containsHTML("\"rip/vote1\\.png\"")) {
                     logger.info("Link invalid/offline: " + parameter);
                     return decryptedLinks;
                 }
-                final String artistID = br.getRegex("makeRIP\\(\"artistplaylist_" + onlyDifference + "\\-(\\d+)\"\\)").getMatch(0);
-                if (artistID == null) {
+                accessid = accessinfo.getMatch(1);
+                if (access == null || accessid == null) {
                     logger.warning("Decrypter broken for link: " + parameter);
                     return null;
                 }
-                br.getPage("http://www.rappers.in/artistplaylist_" + onlyDifference + "-" + artistID + "-1808.xml?" + new Random().nextInt(100) + "&s=undefined");
+                br.getPage("http://www.rappers.in/" + access + "-" + accessid + "-1808.xml?" + new Random().nextInt(100) + "&s=undefined");
             }
             if (br.containsHTML("<playlist>[\t\n\r ]+</playlist>")) {
                 logger.info("Link offline (empty tracklist): " + parameter);

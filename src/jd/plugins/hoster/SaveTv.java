@@ -1799,7 +1799,7 @@ public class SaveTv extends PluginForHost {
                         message += "- Info-Dialoge\r\n";
                         message += "- Viele Dateiinfos trotz aktiviertem schnellen Linkcheck\r\n";
                         message += "- Eigene Dateinamen auch bei aktiviertem schnellen Linkcheck (eingeschränkt)\r\n";
-                        message += "- Die Möglichkeit, wahlweise alle oder nur Aufnahmen der letzten X Tage zu crawlen\r\n";
+                        message += "- Die Möglichkeit, wahlweise alle oder nur Aufnahmen der letzten X Stunden zu crawlen\r\n";
                         message += "\r\n";
                         message += "Die Crawler Einstellungen sind nur in der Version JDownloader 2 BETA verfügbar unter:\r\nEinstellungen -> Plugin Einstellungen -> save.tv";
                         message += getMessageEnd();
@@ -1816,8 +1816,8 @@ public class SaveTv extends PluginForHost {
         SubConfiguration config = null;
         try {
             config = getPluginConfig();
-            if (config.getBooleanProperty("featuredialog_newfixed_Shown", Boolean.FALSE) == false) {
-                if (config.getProperty("featuredialog_newfixed_Shown2") == null) {
+            if (config.getBooleanProperty("featuredialog_fullfixednew_Shown", Boolean.FALSE) == false) {
+                if (config.getProperty("featuredialog_fullfixednew_Shown2") == null) {
                     showFeatureDialogNewFixed();
                 } else {
                     config = null;
@@ -1828,8 +1828,8 @@ public class SaveTv extends PluginForHost {
         } catch (final Throwable e) {
         } finally {
             if (config != null) {
-                config.setProperty("featuredialog_newfixed_Shown", Boolean.TRUE);
-                config.setProperty("featuredialog_newfixed_Shown2", "shown");
+                config.setProperty("featuredialog_fullfixednew_Shown", Boolean.TRUE);
+                config.setProperty("featuredialog_fullfixednew_Shown2", "shown");
                 config.save();
             }
         }
@@ -1844,14 +1844,15 @@ public class SaveTv extends PluginForHost {
                     try {
                         String message = "";
                         String title = null;
-                        title = "Save.tv Plugin - 02.07.14 - Anpassung an neues Design";
+                        title = "Save.tv Plugin - 15.07.14 - Anpassung an neues Design fertig";
                         message += "Hallo lieber save.tv Nutzer/liebe save.tv NutzerIn\r\n";
-                        message += "Crawler und Plugin sind ab sofort an das neue Layout angepasst.\r\n";
-                        message += "Zwar sind laut save.tv Forum viele vom neuen Design enttäuscht - technisch gesehen hat save.tv allerdings\r\n";
-                        message += "fast alles richtig- und vor allem vieles besser als zuvor gemacht!\r\n";
-                        message += "So kann der Crawler z.B. nun innerhalb von unter 10 Sekunden 2500 Einträge holen.\r\n";
-                        message += "Alle weiteren Änderungen am Plugin findest du im JDownloader Support Forum.\r\n";
-                        message += "Mit hoher Wahrscheinlichkeit gibt es mit der neuen Version auch neue Bugs - diese bitte ggf. melden.";
+                        message += "Beide save.tv Plugins wurden komplett an das neue Design angepasst - dies bringt folgende groben Neuerungen:\r\n";
+                        message += "-Die Nutzung der API schränkt die gewählten Einstellungen nun weniger ein\r\n";
+                        message += "-Serien werden besser erkannt --> Bessere Dateinamen\r\n";
+                        message += "-Alles - vor allem der Crawler sollte schneller funktionieren\r\n";
+                        message += "-Neues Tag für eigene Dateinamen: *quality*\r\n";
+                        message += "-Neues Tag für eigene Dateinamen: *server_dateiname* - damit lassen sich die original Dateinamen nach Belieben erweitern\r\n";
+                        message += "-Viele kleinere Fehlerbehebungen";
                         message += getMessageEnd();
                         JOptionPane.showConfirmDialog(jd.gui.swing.jdgui.JDGui.getInstance().getMainFrame(), message, title, JOptionPane.PLAIN_MESSAGE, JOptionPane.INFORMATION_MESSAGE, null);
                     } catch (Throwable e) {

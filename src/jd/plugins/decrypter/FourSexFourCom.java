@@ -174,16 +174,6 @@ public class FourSexFourCom extends PluginForDecrypt {
         // pornhub handling number 2
         externID = br.getRegex("name=\"FlashVars\" value=\"options=(http://(www\\.)?pornhub\\.com/embed_player(_v\\d+)?\\.php\\?id=\\d+)\"").getMatch(0);
         if (externID != null) {
-            br.getPage(externID);
-            if (br.containsHTML("<link_url>N/A</link_url>")) {
-                logger.info("Link offline: " + parameter);
-                return decryptedLinks;
-            }
-            externID = br.getRegex("<link_url>(http://[^<>\"]*?)</link_url>").getMatch(0);
-            if (externID == null) {
-                logger.warning("Decrypter broken for link: " + parameter);
-                return null;
-            }
             decryptedLinks.add(createDownloadlink(externID));
             return decryptedLinks;
         }

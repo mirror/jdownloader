@@ -154,7 +154,7 @@ public class UploadableCh extends PluginForHost {
             /* Error-links: =http://www.uploadable.ch/l-error.php?error_code=ERRORCODE */
             /* Your download link has expired */
             if (br.containsHTML("error_code=1702")) {
-                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error ('Downloadlink has expired')", 5 * 60 * 1000l);
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 1702 ('Downloadlink has expired')", 5 * 60 * 1000l);
             }
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }

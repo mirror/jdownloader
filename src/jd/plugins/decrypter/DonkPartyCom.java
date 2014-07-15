@@ -43,12 +43,17 @@ public class DonkPartyCom extends PluginForDecrypt {
             decryptedLinks.add(dl);
             return decryptedLinks;
         }
-        if (br.containsHTML("Media not found\\!<") || br.containsHTML("<title>Donk Party</title>")) {
-            logger.info("Link offline: " + parameter);
+        if (br.containsHTML("Media not found\\!<") || br.containsHTML("<title> free sex video \\- DonkParty</title>|>View Our Friend\\'s Videos") || br.getHttpConnection().getResponseCode() == 404) {
+            final DownloadLink offline = createDownloadlink("directhttp://" + parameter);
+            offline.setAvailable(false);
+            offline.setProperty("offline", true);
+            decryptedLinks.add(offline);
             return decryptedLinks;
         }
         String filename = br.getRegex("<span style=\"font\\-weight: bold; font\\-size: 18px;\">(.*?)</span><br").getMatch(0);
-        if (filename == null) filename = br.getRegex("<title>(.*?) \\- Donk Party</title>").getMatch(0);
+        if (filename == null) {
+            filename = br.getRegex("<title>(.*?) \\- Donk Party</title>").getMatch(0);
+        }
         if (filename == null) {
             logger.warning("Decrypter broken for link: " + parameter);
             return null;
