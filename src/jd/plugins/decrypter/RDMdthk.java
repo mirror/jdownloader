@@ -39,19 +39,27 @@ import jd.utils.JDUtilities;
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "ardmediathek.de" }, urls = { "http://(www\\.)?(ardmediathek|mediathek\\.daserste)\\.de/(?!download|livestream).+" }, flags = { 32 })
 public class RDMdthk extends PluginForDecrypt {
 
-    private static final String Q_LOW          = "Q_LOW";
-    private static final String Q_MEDIUM       = "Q_MEDIUM";
-    private static final String Q_HIGH         = "Q_HIGH";
-    private static final String Q_HD           = "Q_HD";
-    private static final String Q_BEST         = "Q_BEST";
-    private static final String Q_HTTP_ONLY    = "Q_HTTP_ONLY";
-    private static final String AUDIO          = "AUDIO";
-    private static final String Q_SUBTITLES    = "Q_SUBTITLES";
-    private boolean             BEST           = false;
-    private boolean             HTTP_ONLY      = false;
-    private int                 notForStable   = 0;
+    /* Settings */
+    private static final String                 Q_LOW          = "Q_LOW";
+    private static final String                 Q_MEDIUM       = "Q_MEDIUM";
+    private static final String                 Q_HIGH         = "Q_HIGH";
+    private static final String                 Q_HD           = "Q_HD";
+    private static final String                 Q_BEST         = "Q_BEST";
+    private static final String                 Q_HTTP_ONLY    = "Q_HTTP_ONLY";
+    private static final String                 AUDIO          = "AUDIO";
+    private static final String                 Q_SUBTITLES    = "Q_SUBTITLES";
+    private boolean                             BEST           = false;
+    private boolean                             HTTP_ONLY      = false;
+    private int                                 notForStable   = 0;
 
-    private static final String AGE_RESTRICTED = "(Diese Sendung ist für Jugendliche unter \\d+ Jahren nicht geeignet\\. Der Clip ist deshalb nur von \\d+ bis \\d+ Uhr verfügbar\\.)";
+    /* Constants */
+    private static final String                 AGE_RESTRICTED = "(Diese Sendung ist für Jugendliche unter \\d+ Jahren nicht geeignet\\. Der Clip ist deshalb nur von \\d+ bis \\d+ Uhr verfügbar\\.)";
+
+    /* Variables */
+
+    private final ArrayList<DownloadLink>       newRet         = new ArrayList<DownloadLink>();
+    private final HashMap<String, DownloadLink> bestMap        = new HashMap<String, DownloadLink>();
+    private String                              subtitleLink   = null;
 
     public RDMdthk(final PluginWrapper wrapper) {
         super(wrapper);
@@ -177,6 +185,7 @@ public class RDMdthk extends PluginForDecrypt {
     }
 
     /* INFORMATION: network = akamai or limelight == RTMP */
+    @SuppressWarnings("deprecation")
     private ArrayList<DownloadLink> getDownloadLinks(SubConfiguration cfg, String... s) {
         ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
         final boolean grab_subtitle = cfg.getBooleanProperty(Q_SUBTITLES, false);
@@ -197,7 +206,7 @@ public class RDMdthk extends PluginForDecrypt {
                     return ret;
                 }
                 br.getPage("http://www.ardmediathek.de/play/media/" + original_ard_ID + "?devicetype=pc&features=flash");
-                final String subtitleLink = getJson("_subtitleUrl", br.toString());
+                subtitleLink = getJson("_subtitleUrl", br.toString());
                 String url = null, fmt = null;
                 int t = 0;
 
@@ -209,8 +218,6 @@ public class RDMdthk extends PluginForDecrypt {
                 final String array_text = br.getRegex("\"_mediaArray\":\\[(.*?)],\"_sortierArray\"").getMatch(0);
                 final String[] quality_info = array_text.split("\\},\\{");
 
-                ArrayList<DownloadLink> newRet = new ArrayList<DownloadLink>();
-                final HashMap<String, DownloadLink> bestMap = new HashMap<String, DownloadLink>();
                 String lastQualityFMT = null;
                 for (final String qual_info : quality_info) {
                     final String server = getJson("_server", qual_info);
@@ -219,11 +226,11 @@ public class RDMdthk extends PluginForDecrypt {
                     final boolean isRTMP = ("akamai".equals(network) || "limelight".equals(network));
                     // rtmp --> hds or rtmp
                     String directlink;
-                    /* Sometimes we have (HTTP) stream AND downloadlink --> Use downloadlink */
+                    /* TODO: Add all available streamlinks */
                     final String directlinktext = new Regex(qual_info, "\"_stream\":\\[(.*?)\\]").getMatch(0);
                     if (directlinktext != null) {
                         final String[] directlinks = directlinktext.split(",");
-                        directlink = directlinks[directlinks.length - 1].replace("\"", "");
+                        directlink = directlinks[0].replace("\"", "");
                     } else {
                         directlink = getJson("_stream", qual_info);
                     }
@@ -244,6 +251,7 @@ public class RDMdthk extends PluginForDecrypt {
                             continue;
                         }
                     }
+
                     // get streamtype id
                     t = Integer.valueOf(quality_number);
                     // http or hds t=0 or t=1
@@ -251,6 +259,9 @@ public class RDMdthk extends PluginForDecrypt {
                     // rtmp t=?
                     if (isRTMP) {
                         url = server + "@" + directlink.split("\\?")[0];
+                    } else {
+                        //
+                        url = fixWDRdirectlink(url);
                     }
                     fmt = "hd";
 
@@ -401,6 +412,71 @@ public class RDMdthk extends PluginForDecrypt {
             }
         }
         return ret;
+    }
+
+    // private void addQuality(final String fmt, final String network, final String title, final String extension, final boolean isRTMP,
+    // final String url, final int quality_number) {
+    // final String quality_part = fmt.toUpperCase(Locale.ENGLISH) + "-" + network;
+    // final String plain_name = title + "@" + quality_part;
+    // final String full_name = plain_name + extension;
+    //
+    // /* Skip rtmp streams if user wants http only */
+    // if (isRTMP && HTTP_ONLY) {
+    // continue;
+    // }
+    //
+    // final DownloadLink link = createDownloadlink(s[0].replace("http://", "decrypted://") + "&quality=" + fmt + "&network=" + network);
+    // /* RTMP links have no filesize anyways --> No need to check them in host plugin */
+    // if (isRTMP) {
+    // link.setAvailable(true);
+    // }
+    // link.setFinalFileName(full_name);
+    // link.setBrowserUrl(s[0]);
+    // link.setProperty("directURL", url);
+    // link.setProperty("directName", full_name);
+    // link.setProperty("plain_name", plain_name);
+    // link.setProperty("plain_quality_part", quality_part);
+    // link.setProperty("plain_name", plain_name);
+    // link.setProperty("plain_network", network);
+    // link.setProperty("directQuality", quality_number);
+    // link.setProperty("streamingType", t);
+    //
+    // /* Add subtitle link for every quality so players will automatically find it */
+    // if (grab_subtitle && subtitleLink != null && !isEmpty(subtitleLink)) {
+    // final String subtitle_filename = plain_name + ".xml";
+    // final String finallink = "http://www.ardmediathek.de" + subtitleLink + "@" + quality_part;
+    // final DownloadLink dl_subtitle = createDownloadlink(s[0].replace("http://", "decrypted://") + "&quality=subtitles" + fmt +
+    // "&network=" + network);
+    // dl_subtitle.setAvailable(true);
+    // dl_subtitle.setFinalFileName(subtitle_filename);
+    // dl_subtitle.setProperty("directURL", finallink);
+    // dl_subtitle.setProperty("directName", subtitle_filename);
+    // dl_subtitle.setProperty("streamingType", "subtitle");
+    // newRet.add(dl_subtitle);
+    // }
+    //
+    // DownloadLink best = bestMap.get(fmt);
+    // if (best == null || link.getDownloadSize() > best.getDownloadSize()) {
+    // bestMap.put(fmt, link);
+    // }
+    // newRet.add(link);
+    // }
+
+    /*
+     * Special workaround for HDS only stream, maybe also possible/recommended in the future for other links than:
+     * http://jdownloader.net:8081/pastebin/130111 IMPORTANT: The "weltweit" can also be "de" or other values but in this case, only
+     * "weltweit" works!
+     */
+    private String fixWDRdirectlink(String wdrlink) {
+        final Regex wdrwtf = new Regex(wdrlink, "http://ondemand-de.wdr.de/medstdp/(fsk\\d+)/(\\d+)/(\\d+)/([0-9_]+)\\.mp4");
+        final String fsk = wdrwtf.getMatch(0);
+        final String number = wdrwtf.getMatch(1);
+        final String main_id = wdrwtf.getMatch(2);
+        final String quality_id = wdrwtf.getMatch(3);
+        if (fsk != null && number != null && main_id != null && quality_id != null && main_id.equals("476237")) {
+            wdrlink = "http://http-ras.wdr.de/CMS2010/mdb/ondemand/weltweit/" + fsk + "/" + number + "/" + main_id + "/" + quality_id + ".mp4";
+        }
+        return wdrlink;
     }
 
     private String getTitle(Browser br) {
