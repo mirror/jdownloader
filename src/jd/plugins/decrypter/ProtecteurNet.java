@@ -29,7 +29,7 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "protecteur.net" }, urls = { "http://(www\\.)?protecteur\\.net/check\\.[a-z]+\\.html" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "protecteur.net" }, urls = { "http://(www\\.)?protecteur\\.net/(check\\.[a-z]+|[a-z]+-)\\.html" }, flags = { 0 })
 public class ProtecteurNet extends PluginForDecrypt {
 
     public ProtecteurNet(PluginWrapper wrapper) {
@@ -39,13 +39,14 @@ public class ProtecteurNet extends PluginForDecrypt {
     // All similar: IleProtectCom, ExtremeProtectCom, TopProtectNet, ProtecteurNet
     /* DecrypterScript_linkid=_linkcheck.php */
     // top-protect and top-protection uids are not transferable. Keep script independent from domain.
+    // [a-z]+-\\.html redirect to check links without the '-' before .html
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String parameter = param.toString();
         br.setFollowRedirects(true);
         br.getPage(parameter);
-        br.postPage("/linkid.php", "linkid=" + new Regex(parameter, "([a-z]+)\\.html$").getMatch(0) + "&x=" + Integer.toString(new Random().nextInt(100)) + "&y=" + Integer.toString(new Random().nextInt(100)));
+        br.postPage("/linkid.php", "linkid=" + new Regex(br.getURL(), "([a-z]+)\\.html$").getMatch(0) + "&x=" + Integer.toString(new Random().nextInt(100)) + "&y=" + Integer.toString(new Random().nextInt(100)));
         final String fpName = br.getRegex("Title:[\t\n\r ]+</td>[\t\n\r ]+<td style='border:1px'>([^<>\"/]+)</td>").getMatch(0);
         String[] links = br.getRegex("target=_blank>(https?://[^<>\"']+)").getColumn(0);
         if (links == null || links.length == 0) {
@@ -56,8 +57,11 @@ public class ProtecteurNet extends PluginForDecrypt {
             logger.warning("Decrypter broken for link: " + parameter);
             return null;
         }
-        for (String singleLink : links)
-            if (!new Regex(singleLink, "protecteur\\.net/").matches()) decryptedLinks.add(createDownloadlink(singleLink));
+        for (String singleLink : links) {
+            if (!new Regex(singleLink, "protecteur\\.net/").matches()) {
+                decryptedLinks.add(createDownloadlink(singleLink));
+            }
+        }
         if (fpName != null) {
             FilePackage fp = FilePackage.getInstance();
             fp.setName(Encoding.htmlDecode(fpName.trim()));
