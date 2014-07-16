@@ -235,7 +235,7 @@ public class SoundcloudCom extends PluginForHost {
         final String description = getXML("description", source);
         if (description != null) {
             try {
-                parameter.setComment(description);
+                parameter.setComment(Encoding.htmlDecode(description));
             } catch (Throwable e) {
             }
         }
