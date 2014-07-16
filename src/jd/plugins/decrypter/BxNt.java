@@ -88,14 +88,28 @@ public class BxNt extends PluginForDecrypt {
                     return decryptedLinks;
                 }
                 /* Maybe single file */
-                final String filename = br.getRegex("data\\-hover=\"tooltip\" aria\\-label=\"([^<>\"]*?)\"").getMatch(0);
+                String filename = br.getRegex("data\\-hover=\"tooltip\" aria\\-label=\"([^<>\"]*?)\"").getMatch(0);
+                if (filename == null) {
+                    filename = br.getRegex("var name = \\'([^<>\"]*?)\\';").getMatch(0);
+                }
                 final String filesize = br.getRegex("class=\"file_size\">\\(([^<>\"]*?)\\)</span>").getMatch(0);
-                final String fid = br.getRegex("itemTypedID: \"f_(\\d+)\"").getMatch(0);
-                if (filename != null && filesize != null && fid != null) {
+                String fid = br.getRegex("itemTypedID: \"f_(\\d+)\"").getMatch(0);
+                if (filename != null) {
+                    boolean web_doc = false;
+                    if (fid == null) {
+                        fid = Long.toString(System.currentTimeMillis());
+                        web_doc = true;
+                    }
                     final DownloadLink fina = createDownloadlink("https://app.box.com/index.php?rm=box_download_shared_file" + "&file_id=f_" + fid + "&shared_name=" + main_folderid);
                     fina.setName(Encoding.htmlDecode(filename.trim()));
-                    fina.setDownloadSize(SizeFormatter.getSize(filesize));
+                    if (filesize != null) {
+                        fina.setDownloadSize(SizeFormatter.getSize(filesize));
+                    }
                     fina.setAvailable(true);
+                    if (web_doc) {
+                        fina.setProperty("force_http_download", true);
+                    }
+                    fina.setProperty("mainlink", parameter);
                     decryptedLinks.add(fina);
                     return decryptedLinks;
                 }

@@ -116,7 +116,10 @@ public class PanBaiduCom extends PluginForDecrypt {
         if (fsid != null) {
             final DownloadLink fina = generateDownloadLink(null, parameter, null, fsid, null);
             final String filename = br.getRegex("var server_filename=\"([^<>\"]*?)\"").getMatch(0);
-            final String filesize = br.getRegex("\\\\\"size\\\\\":\\\\\"(\\d+)\\\\\"").getMatch(0);
+            String filesize = br.getRegex("\\\\\"size\\\\\":\\\\\"(\\d+)\\\\\"").getMatch(0);
+            if (filesize == null) {
+                filesize = br.getRegex("\\\\\"size\\\\\":(\\d+)").getMatch(0);
+            }
             if (filename == null || filesize == null) {
                 logger.warning("Decrypter broken for link: " + parameter);
                 return null;

@@ -247,7 +247,7 @@ public class WdrDeDecrypt extends PluginForDecrypt {
         return decryptedLinks;
     }
 
-    final String correctRegionString(final String input) {
+    public static final String correctRegionString(final String input) {
         String output;
         if (input.equals("de")) {
             output = "de";

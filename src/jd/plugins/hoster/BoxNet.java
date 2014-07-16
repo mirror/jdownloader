@@ -34,11 +34,13 @@ public class BoxNet extends PluginForHost {
     private static final String TOS_LINK               = "https://www.box.net/static/html/terms.html";
 
     private static final String OUT_OF_BANDWITH_MSG    = "out of bandwidth";
-    private static final String REDIRECT_DOWNLOAD_LINK = "https?://(www|[a-z0-9\\-_]+)\\.box\\.|com/index\\.php\\?rm=box_download_shared_file\\&file_id=f_[a-z0-9]+\\&shared_name=\\w+";
+    private static final String REDIRECT_DOWNLOAD_LINK = "https?://[a-z0-9\\-_]+\\.box\\.com/index\\.php\\?rm=box_download_shared_file\\&file_id=f_[a-z0-9]+\\&shared_name=\\w+";
     private static final String DLLINKREGEX            = "href=\"(https?://(www|[a-z0-9\\-_]+)\\.box\\.(net|com)/index\\.php\\?rm=box_download_shared_file\\&amp;file_id=[^<>\"\\']+)\"";
     private static final String SLINK                  = "https?://www\\.box\\.com/shared/[a-z0-9]+";
     private static final String DECRYPTEDFOLDERLINK    = "https?://www\\.box\\.com/s/[a-z0-9]+/\\d+/\\d+/\\d+/\\d+";
+
     private String              DLLINK                 = null;
+    private boolean             FORCE_HTTP_DOWNLOAD    = false;
 
     public BoxNet(PluginWrapper wrapper) {
         super(wrapper);
@@ -69,14 +71,22 @@ public class BoxNet extends PluginForHost {
         if (parameter.getBooleanProperty("offline", false)) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
+        FORCE_HTTP_DOWNLOAD = parameter.getBooleanProperty("force_http_download", false);
         // setup referrer and cookies for single file downloads
+        // https://app.box.com/index.php?rm=box_download_shared_file&file_id=f_1405517528790&shared_name=m0z678te9o
+        // https?://(www|[a-z0-9\\-_]+)\\.box\\.|com/index\\.php\\?rm=box_download_shared_file\\&file_id=f_[a-z0-9]+\\&shared_name=\\w+
         if (parameter.getDownloadURL().matches(REDIRECT_DOWNLOAD_LINK)) {
             br.setFollowRedirects(false);
-            br.getPage(parameter.getDownloadURL());
-            if (br.getRedirectLocation() != null) {
-                DLLINK = br.getRedirectLocation();
+            if (FORCE_HTTP_DOWNLOAD) {
+                br.getPage(parameter.getStringProperty("mainlink", null));
+                DLLINK = parameter.getStringProperty("mainlink", null);
             } else {
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                br.getPage(parameter.getDownloadURL());
+                if (br.getRedirectLocation() != null) {
+                    DLLINK = br.getRedirectLocation();
+                } else {
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                }
             }
         } else if (parameter.getDownloadURL().matches(DECRYPTEDFOLDERLINK)) {
             final String plainfilename = parameter.getStringProperty("plainfilename", null);
@@ -213,7 +223,7 @@ public class BoxNet extends PluginForHost {
         }
         DLLINK = Encoding.htmlDecode(DLLINK);
         dl = jd.plugins.BrowserAdapter.openDownload(br, link, DLLINK, true, 0);
-        if (!dl.getConnection().isContentDisposition()) {
+        if (!dl.getConnection().isContentDisposition() && !FORCE_HTTP_DOWNLOAD) {
             if (dl.getConnection().getResponseCode() == 500) {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error", 5 * 60 * 1000l);
             }
