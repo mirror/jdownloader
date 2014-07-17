@@ -16,6 +16,7 @@
 
 package jd.plugins.decrypter;
 
+import java.math.BigDecimal;
 import java.util.ArrayList;
 
 import jd.PluginWrapper;
@@ -28,7 +29,7 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "hulkshare.com" }, urls = { "http://(www\\.)?(hulkshare\\.com|hu\\.lk)/[a-z0-9]+(/[^<>\"/]+)?" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "hulkshare.com" }, urls = { "http://(www\\.)?(hulkshare\\.com|hu\\.lk)/[A-Za-z0-9_\\-]+(/[^<>\"/]+)?" }, flags = { 0 })
 public class HulkShareComFolder extends PluginForDecrypt {
 
     public HulkShareComFolder(PluginWrapper wrapper) {
@@ -100,7 +101,9 @@ public class HulkShareComFolder extends PluginForDecrypt {
         }
         if (parameter.matches(TYPE_PLAYLIST)) {
             String fpName = br.getRegex("property=\"og:title\" content=\"([^<>\"]*?)\"").getMatch(0);
-            if (fpName == null) fpName = "hulkshare.com playlist - " + new Regex(parameter, "(\\d+)$").getMatch(0);
+            if (fpName == null) {
+                fpName = "hulkshare.com playlist - " + new Regex(parameter, "(\\d+)$").getMatch(0);
+            }
             final String pllist = br.getRegex("class=\"newPlayer\" id=\"hsPlayer[A-Za-z0-9\\-_]+\" pid=\"\\d+\" rel=\"([^<>\"]*?)\"").getMatch(0);
             if (pllist == null) {
                 logger.warning("Decrypter broken for link: " + parameter);
@@ -128,16 +131,17 @@ public class HulkShareComFolder extends PluginForDecrypt {
             logger.warning("Decrypter broken for link: " + parameter);
             return null;
         }
-        final String internalFolderlink = "http://www.hulkshare.com/userPublic.php?uid=" + uid + "&fld_id=0&per_page=150&page=";
-        br.getPage(internalFolderlink + "1");
-        ArrayList<String> pages = new ArrayList<String>();
-        pages.add("1");
-        final String[] tempPages = br.getRegex("\\&page=(\\d+)\"").getColumn(0);
-        if (tempPages != null && tempPages.length != 0) {
-            for (final String tempPage : tempPages)
-                if (!pages.contains(tempPage)) pages.add(tempPage);
-        }
-        for (final String currentPage : pages) {
+        final int entries_per_page = 25;
+        final int count_tracks = Integer.parseInt(br.getRegex(">All Music <i>(\\d+)</i>").getMatch(0));
+        final BigDecimal bd = new BigDecimal((double) count_tracks / entries_per_page);
+        final int max_loads = bd.setScale(0, BigDecimal.ROUND_UP).intValue();
+        final FilePackage fp = FilePackage.getInstance();
+        fp.setName(new Regex(parameter, "hulkshare\\.com/(.+)").getMatch(0));
+
+        br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
+        br.postPage("http://www.hulkshare.com/userPublic.php", "ajax_pagination=1&uid=" + uid + "&page=1&fav=0&isvid=0&fld_id=0&per_page=" + entries_per_page + "&up=0&is_following=1&type=music&last_create_from_previous_list=2012-07-17+05%3A02%3A10");
+        br.getRequest().setHtmlCode(br.toString().replace("\\", ""));
+        for (int i = 1; i <= max_loads; i++) {
             try {
                 if (this.isAbort()) {
                     logger.info("Decryption aborted for link: " + parameter);
@@ -146,29 +150,61 @@ public class HulkShareComFolder extends PluginForDecrypt {
             } catch (final Throwable e) {
                 // Not available in old 0.9.581 Stable
             }
-            if (!currentPage.equals("1")) {
-                br.getPage(internalFolderlink + currentPage);
-                if (br.containsHTML("This user has no tracks")) break;
+            logger.info("Decrypting page " + i + " of " + max_loads);
+            if (i > 1) {
+                br.postPage("http://www.hulkshare.com/userPublic.php", "ajax_pagination=1&uid=" + uid + "&page=" + i + "&fav=0&isvid=0&fld_id=0&per_page=" + entries_per_page + "&up=0&is_following=1&type=music&last_create_from_previous_list=2012-07-17+05%3A02%3A10");
+                br.getRequest().setHtmlCode(br.toString().replace("\\", ""));
+                if (br.containsHTML("This user has no tracks")) {
+                    break;
+                }
             }
-            final String[] links = br.getRegex("<a href=\"(http://(www\\.)?hulkshare\\.com/[a-z0-9]{12})\"").getColumn(0);
-            if (links == null || links.length == 0) {
-                logger.warning("Possible Plugin Defect, please confirm in your browser. If there are files present within '" + parameter + "' please report this issue to JDownloader Development Team!");
-                // do not return null; as this could be a false positive
+            final String linktext = br.getRegex("\"html\":\"(.+)\\}$").getMatch(0);
+            final String[] linkinfo = linktext.split("class=\"nhsBrowseBlock\"");
+            if (linkinfo == null || linkinfo.length == 0) {
+                // do not return null; as this could be a false positive - probably we simply decrypted everything possible
                 break;
             }
-            for (String singleLink : links) {
-                if (getUID(singleLink).equals(fuid)) continue;
-                decryptedLinks.add(createDownloadlink(singleLink.replace("hulkshare.com/", "hulksharedecrypted.com/")));
+            int added_links_count = 0;
+            for (String slinkinfo : linkinfo) {
+                final String fcode = new Regex(slinkinfo, "id=\"filecode\\-([a-z0-9]{12})\"").getMatch(0);
+                if (fcode != null) {
+                    if (fcode.equals(fuid)) {
+                        continue;
+                    }
+                    final Regex more_info = new Regex(slinkinfo, "class=\"nhsTrackTitle nhsClear\" href=\"(http://[^<>\"]*?)\">([^<>\"]*?)</a>");
+                    final String trackname = more_info.getMatch(1);
+                    final DownloadLink fina = createDownloadlink("http://hulksharedecrypted.com/" + fcode);
+                    if (trackname != null) {
+                        fina.setName(Encoding.htmlDecode(trackname.trim()) + ".mp3");
+                        fina.setAvailable(true);
+                    }
+                    fina._setFilePackage(fp);
+                    try {
+                        distribute(fina);
+                    } catch (final Throwable e) {
+                        // Not available in old 0.9.581 Stable
+                    }
+                    decryptedLinks.add(fina);
+                    added_links_count++;
+                }
+            }
+            if (added_links_count != entries_per_page) {
+                logger.info("We got less links than entries_per_page --> Probably we're done - stopping");
+                break;
             }
         }
-        final FilePackage fp = FilePackage.getInstance();
-        fp.setName(new Regex(parameter, "hulkshare\\.com/(.+)").getMatch(0));
+        if (decryptedLinks.size() == 0) {
+            logger.warning("Possible Plugin Defect, please confirm in your browser. If there are files present within '" + parameter + "' please report this issue to JDownloader Development Team!");
+            return null;
+        }
         fp.addLinks(decryptedLinks);
         return decryptedLinks;
     }
 
     private String getUID(String s) {
-        if (s == null) return null;
+        if (s == null) {
+            return null;
+        }
         return new Regex(s, HULKSHAREDOWNLOADLINK).getMatch(2);
     }
 

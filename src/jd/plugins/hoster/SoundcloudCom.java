@@ -570,7 +570,7 @@ public class SoundcloudCom extends PluginForHost {
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), GRAB500THUMB, JDL.L("plugins.hoster.soundcloud.grab500thumb", "Grab 500x500 thumbnail (.jpg)?")).setDefaultValue(false));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), GRABORIGINALTHUMB, JDL.L("plugins.hoster.soundcloud.grab500thumb", "Grab original thumbnail (.jpg)?")).setDefaultValue(false));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_SEPARATOR));
-        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_LABEL, "Customize the filename/packagename properties:"));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_LABEL, "Customize filenames/packagenames:"));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_TEXTFIELD, getPluginConfig(), CUSTOM_DATE, JDL.L("plugins.hoster.soundcloud.customdate", "Define how the date should look.")).setDefaultValue(defaultCustomDate));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_SEPARATOR));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_LABEL, "Customize the filenames:"));
