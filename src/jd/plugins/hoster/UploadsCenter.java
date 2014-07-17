@@ -135,6 +135,7 @@ public class UploadsCenter extends PluginForHost {
     }
 
     public void doFree(final DownloadLink downloadLink, final boolean resume, final int maxchunks) throws Exception, PluginException {
+        br.setFollowRedirects(false);
         boolean captcha = false;
         if (br.getURL().contains(SIMULTANDLSLIMIT)) {
             throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, SIMULTANDLSLIMITUSERTEXT, 1 * 60 * 1000l);
@@ -167,7 +168,10 @@ public class UploadsCenter extends PluginForHost {
                 logger.info("Found waittime, waiting (seconds): " + waittime + " + " + ADDITIONAL_WAIT_SECONDS + " additional seconds");
                 sleep((Integer.parseInt(waittime) + ADDITIONAL_WAIT_SECONDS) * 1001l, downloadLink);
                 br.getPage(continue_link);
-                continue_link = br.getRegex("\"(http://uploads\\.center/[A-Za-z0-9]+\\?download_token=[^<>\"]*?)\"").getMatch(0);
+                continue_link = br.getRedirectLocation();
+                if (continue_link == null) {
+                    continue_link = br.getRegex("\"(http://uploads\\.center/[A-Za-z0-9]+\\?download_token=[^<>\"]*?)\"").getMatch(0);
+                }
                 if (continue_link == null) {
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 }

@@ -135,7 +135,9 @@ public class DiskYandexNet extends PluginForHost {
     @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
-        checkFeatureDialog();
+        if (downloadLink.getDownloadURL().matches(TYPE_DISK)) {
+            checkDiskFeatureDialog();
+        }
         doFree(downloadLink, FREE_RESUME, FREE_MAXCHUNKS, null);
     }
 
@@ -469,13 +471,13 @@ public class DiskYandexNet extends PluginForHost {
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), EMPTY_TRASH_AFTER_DOWNLOAD, JDL.L("plugins.hoster.DiskYandexNet.EmptyTrashAfterSuccessfulDownload", "3. Empty trash after successful download?\r\n[Can only be used if setting #1 is active!]")).setEnabledCondidtion(moveFilesToTrash, true).setDefaultValue(false));
     }
 
-    private void checkFeatureDialog() {
+    private void checkDiskFeatureDialog() {
         SubConfiguration config = null;
         try {
             config = getPluginConfig();
             if (config.getBooleanProperty("featuredialog_Shown", Boolean.FALSE) == false) {
                 if (config.getProperty("featuredialog_Shown2") == null) {
-                    showFeatureDialogAll();
+                    showDiskFeatureDialogAll();
                 } else {
                     config = null;
                 }
@@ -492,7 +494,7 @@ public class DiskYandexNet extends PluginForHost {
         }
     }
 
-    private static void showFeatureDialogAll() {
+    private static void showDiskFeatureDialogAll() {
         try {
             SwingUtilities.invokeAndWait(new Runnable() {
 
