@@ -735,21 +735,17 @@ public class YoutubeHelper {
         }
         final String func = "function " + Pattern.quote(descrambler) + "\\(([^)]+)\\)\\{(.+?return.*?)\\}";
         des = new Regex(jsContent, Pattern.compile(func)).getMatch(1);
+        String all = new Regex(jsContent, Pattern.compile("(var [a-z]+=\\{.+\\};)?function " + Pattern.quote(descrambler) + "\\(([^)]+)\\)\\{(.+?return.*?)\\}.*?\\{.*?\\}")).getMatch(-1);
+        Object result = null;
         try {
-
             final ScriptEngineManager manager = jd.plugins.hoster.DummyScriptEnginePlugin.getScriptEngineManager(this);
             final ScriptEngine engine = manager.getEngineByName("javascript");
-            String all = new Regex(jsContent, Pattern.compile("function " + Pattern.quote(descrambler) + "\\(([^)]+)\\)\\{(.+?return.*?)\\}.*?\\{.*?\\}")).getMatch(-1);
-            String test = "var eo = {\n    XG: function(a, b) {\n        var c = a[0];\n        a[0] = a[b % a.length];\n        a[b] = c;\n        return a\n    },\n    NZ: function(a) {\n        return a.reverse()\n    },\n    PL: function(a, b) {\n        return a.slice(b)\n    }\n};";
-            Object result = engine.eval(test + " \r\n " + all + " " + descrambler + "(\"" + sig + "\")");
+            result = engine.eval(all + " " + descrambler + "(\"" + sig + "\")");
             if (result != null) {
                 return result.toString();
             }
-
         } catch (final Throwable e) {
             logger.log(e);
-        } finally {
-
         }
         String s = sig;
         try {
