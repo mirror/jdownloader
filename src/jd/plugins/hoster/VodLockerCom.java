@@ -273,6 +273,7 @@ public class VodLockerCom extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         fileInfo[0] = fileInfo[0].replaceAll("(</?b>|\\.html)", "");
+        fileInfo[0] = fileInfo[0].replaceAll("\\.(avi\\.flv|avi|flv)", "\\.mp4");
         downloadLink.setName(fileInfo[0].trim());
         if (getAvailableStatus(downloadLink).toString().equals("UNCHECKED")) {
             downloadLink.setAvailable(true);
