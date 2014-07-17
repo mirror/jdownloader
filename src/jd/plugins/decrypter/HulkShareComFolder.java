@@ -139,8 +139,6 @@ public class HulkShareComFolder extends PluginForDecrypt {
         fp.setName(new Regex(parameter, "hulkshare\\.com/(.+)").getMatch(0));
 
         br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
-        br.postPage("http://www.hulkshare.com/userPublic.php", "ajax_pagination=1&uid=" + uid + "&page=1&fav=0&isvid=0&fld_id=0&per_page=" + entries_per_page + "&up=0&is_following=1&type=music&last_create_from_previous_list=");
-        br.getRequest().setHtmlCode(br.toString().replace("\\", ""));
         for (int i = 1; i <= max_loads; i++) {
             try {
                 if (this.isAbort()) {
@@ -151,14 +149,18 @@ public class HulkShareComFolder extends PluginForDecrypt {
                 // Not available in old 0.9.581 Stable
             }
             logger.info("Decrypting page " + i + " of " + max_loads);
-            if (i > 1) {
+            String linktext;
+            if (i == 1) {
+                linktext = br.getRegex("<ul class=\"nhsBrowseItems\">(.*?</li>)[\t\n\r ]+</ul>").getMatch(0);
+            } else {
                 br.postPage("http://www.hulkshare.com/userPublic.php", "ajax_pagination=1&uid=" + uid + "&page=" + i + "&fav=0&isvid=0&fld_id=0&per_page=" + entries_per_page + "&up=0&is_following=1&type=music&last_create_from_previous_list=");
                 br.getRequest().setHtmlCode(br.toString().replace("\\", ""));
-                if (br.containsHTML("This user has no tracks")) {
-                    break;
-                }
+                linktext = br.getRegex("\"html\":\"(.+)\\}$").getMatch(0);
             }
-            final String linktext = br.getRegex("\"html\":\"(.+)\\}$").getMatch(0);
+            if (linktext == null) {
+                // do not return null; as this could be a false positive - probably we simply decrypted everything possible
+                break;
+            }
             final String[] linkinfo = linktext.split("class=\"nhsBrowseBlock\"");
             if (linkinfo == null || linkinfo.length == 0) {
                 // do not return null; as this could be a false positive - probably we simply decrypted everything possible
@@ -179,6 +181,7 @@ public class HulkShareComFolder extends PluginForDecrypt {
                         fina.setAvailable(true);
                     }
                     fina._setFilePackage(fp);
+                    fina.setProperty("LINKDUPEID", "hulksharecom_" + fcode);
                     try {
                         distribute(fina);
                     } catch (final Throwable e) {

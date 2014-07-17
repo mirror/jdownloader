@@ -47,7 +47,7 @@ import jd.utils.locale.JDL;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "disk.yandex.net", "video.yandex.ru" }, urls = { "http://yandexdecrypted\\.net/\\d+", "http://video\\.yandex\\.ru/iframe/[A-Za-z0-9]+/[A-Za-z0-9]+\\.\\d+" }, flags = { 2, 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "disk.yandex.net", "video.yandex.ru" }, urls = { "http://yandexdecrypted\\.net/\\d+", "http://video\\.yandex\\.ru/(iframe/[A-Za-z0-9]+/[A-Za-z0-9]+\\.\\d+|users/[A-Za-z0-9]+/view/\\d+)" }, flags = { 2, 0 })
 public class DiskYandexNet extends PluginForHost {
 
     public DiskYandexNet(PluginWrapper wrapper) {
@@ -86,7 +86,8 @@ public class DiskYandexNet extends PluginForHost {
     /* Other constants */
     /* Important constant which seems to be unique for every account. It's needed for most of the requests when logged in. */
     private String              ACCOUNT_SK                         = null;
-    private static final String TYPE_VIDEO                         = "http://video\\.yandex\\.ru/iframe/[A-Za-z0-9]+/[A-Za-z0-9]+\\.\\d+";
+    private static final String TYPE_VIDEO                         = "http://video\\.yandex\\.ru/(iframe/[A-Za-z0-9]+/[A-Za-z0-9]+\\.\\d+|users/[A-Za-z0-9]+/view/\\d+)";
+    private static final String TYPE_VIDEO_USER                    = "http://video\\.yandex\\.ru/users/[A-Za-z0-9]+/view/\\d+";
     private static final String TYPE_DISK                          = "http://yandexdecrypted\\.net/\\d+";
 
     /* Make sure we always use our main domain */
@@ -103,6 +104,17 @@ public class DiskYandexNet extends PluginForHost {
         String filename;
         if (link.getDownloadURL().matches(TYPE_VIDEO)) {
             br.getPage(link.getDownloadURL());
+            if (link.getDownloadURL().matches(TYPE_VIDEO_USER)) {
+                if (br.containsHTML("<title>Ролик не найден</title>")) {
+                    throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+                }
+                final String iframe_url = br.getRegex("property=\"og:video:ifrаme\" content=\"(http://video\\.yandex\\.ru/iframe/[^<>\"]*?)\"").getMatch(0);
+                if (iframe_url == null) {
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                }
+                link.setUrlDownload(iframe_url);
+                br.getPage(iframe_url);
+            }
             if (br.containsHTML("<title>Яндекс\\.Видео</title>")) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
