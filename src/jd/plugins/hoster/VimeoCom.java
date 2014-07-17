@@ -95,6 +95,7 @@ public class VimeoCom extends PluginForHost {
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws Exception {
         setBrowserExclusive();
+        br.getHeaders().put("Accept-Language", "en-gb, en;q=0.8");
         if (downloadLink.getBooleanProperty("offline", false)) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
@@ -146,8 +147,8 @@ public class VimeoCom extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         for (String quality[] : qualities) {
-            // match refreshed qualities back with linkID to make sure we have the same format for resume! we never want to cross over!
-            if (downloadLink.getStringProperty("LINKDUPEID", null).equals(ID + "_" + downloadLink.getStringProperty("videoQuality", null))) {
+            // match refreshed qualities to stored reference, to make sure we have the same format for resume! we never want to cross over!
+            if (downloadLink.getStringProperty("videoQuality", null).equalsIgnoreCase(quality[2])) {
                 finalURL = quality[0];
                 if (finalURL != null && !finalURL.startsWith("http://")) {
                     finalURL = "http://vimeo.com" + finalURL;
@@ -315,8 +316,16 @@ public class VimeoCom extends PluginForHost {
         }
     }
 
+    public static final String containsPass = "<title>Private Video on Vimeo</title>|To watch this video, please provide the correct password";
+
     private void handlePW(DownloadLink downloadLink, Browser br, String url) throws PluginException, IOException {
-        if (br.containsHTML("This is a private video")) {
+        if (br.containsHTML(containsPass)) {
+            final String xsrft = br.getRegex("xsrft: '(.*?)'").getMatch(0);
+            if (xsrft != null) {
+                br.setCookie(br.getHost(), "xsrft", xsrft);
+            } else {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
             String passCode = downloadLink.getStringProperty("pass", null);
             if (passCode == null) {
                 passCode = Plugin.getUserInput("Password?", downloadLink);
@@ -324,8 +333,6 @@ public class VimeoCom extends PluginForHost {
             if (passCode == null) {
                 throw new PluginException(LinkStatus.ERROR_FATAL, "Password needed!");
             }
-            final String xsrft = br.getRegex("xsrft: '(.*?)'").getMatch(0);
-            br.setCookie(br.getHost(), "xsrft", xsrft);
             br.postPage(url, "password=" + Encoding.urlEncode(passCode) + "&token=" + xsrft);
             if (br.containsHTML("This is a private video")) {
                 downloadLink.setProperty("pass", null);
