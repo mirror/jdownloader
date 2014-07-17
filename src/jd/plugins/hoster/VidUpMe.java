@@ -44,7 +44,7 @@ import jd.utils.locale.JDL;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
-@HostPlugin(revision = "$Revision: 23262 $", interfaceVersion = 2, names = { "vidup.me" }, urls = { "https?://(www\\.)?vidup\\.me/((vid)?embed-)?[a-z0-9]{12}" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "vidup.me" }, urls = { "https?://(www\\.)?vidup\\.me/((vid)?embed-)?[a-z0-9]{12}" }, flags = { 0 })
 public class VidUpMe extends PluginForHost {
 
     private String               correctedBR                  = "";

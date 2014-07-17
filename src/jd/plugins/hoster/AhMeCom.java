@@ -29,7 +29,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision: 25975 $", interfaceVersion = 2, names = { "ah-me.com" }, urls = { "http://(www\\.)?ah-me\\.com/videos/\\d+" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "ah-me.com" }, urls = { "http://(www\\.)?ah-me\\.com/videos/\\d+" }, flags = { 0 })
 public class AhMeCom extends PluginForHost {
 
     private String dllink = null;
