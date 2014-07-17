@@ -75,7 +75,7 @@ public class LetitBitNet extends PluginForHost {
     private static final String  NICE_HOSTproperty                 = COOKIE_HOST.replaceAll("(https://|http://|\\.|\\-)", "");
     private static AtomicInteger maxFree                           = new AtomicInteger(1);
     private static final String  ENABLEUNLIMITEDSIMULTANMAXFREEDLS = "ENABLEUNLIMITEDSIMULTANMAXFREEDLS";
-    private static final boolean TRYTOGETRECAPTCHA                 = false;
+    private static final boolean TRYTOGETRECAPTCHA                 = true;
     /*
      * For linkcheck and premium download we're using their API: http://api.letitbit.net/reg/static/api.pdf
      */
@@ -423,11 +423,6 @@ public class LetitBitNet extends PluginForHost {
         br.getPage(downloadLink.getDownloadURL());
         br.setFollowRedirects(false);
         handleNonApiErrors(downloadLink);
-        final boolean plugin_broken = true;
-        if (plugin_broken) {
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
-        /* KAPUTT, Form mit ganz vielen "null"s wird gesendet, die korrekte Form wird weder erkannt, noch korrekt entschlüsselt */
         submitFreeForm();// born_iframe.php with encrypted form
 
         // Russians can get the downloadlink here, they don't have to enter captchas
@@ -447,6 +442,7 @@ public class LetitBitNet extends PluginForHost {
             final String ajaxmainurl = "http://" + urlPrefix + "letitbit.net";
 
             String dlFunction = getdlFunction();
+            String captcha_action = null;
             if (dlFunction == null) {
                 if (!submitFreeForm()) {
                     logger.info("letitbit.net: plain form processing --> download3.php");
@@ -459,6 +455,9 @@ public class LetitBitNet extends PluginForHost {
                         throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                     }
                 }
+            }
+            if (LetitBitNet.TRYTOGETRECAPTCHA) {
+                captcha_action = new Regex(dlFunction, "\\$\\.post\\(\"(/ajax/[^<>\"]*?)\"").getMatch(0);
             }
             int wait = 60;
             String waittime = br.getRegex("id=\"seconds\" style=\"font\\-size:18px\">(\\d+)</span>").getMatch(0);
@@ -489,75 +488,68 @@ public class LetitBitNet extends PluginForHost {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
 
-            String captcha_action = null;
-            if (br.containsHTML("vc = new videoCaptcha\\(\\$\\(\\'#captchav\\'\\)")) {
-                if (LetitBitNet.TRYTOGETRECAPTCHA) {
-                    captcha_action = new Regex(dlFunction, "\\$\\.post\\(\"(/ajax/[^<>\"]*?)\"").getMatch(0);
-                    if (captcha_action == null) {
-                        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                    }
-                    captcha_action = ajaxmainurl + captcha_action;
-                    final String rcControl = new Regex(dlFunction, "var recaptcha_control_field = \\'([^<>\"]*?)\\'").getMatch(0);
-                    String rcID = br.getRegex("challenge\\?k=([^<>\"]*?)\"").getMatch(0);
-                    if (rcID == null) {
-                        rcID = Encoding.Base64Decode("NkxjOXpkTVNBQUFBQUYtN3Myd3VRLTAzNnBMUmJNMHA4ZERhUWRBTQ==");
-                    }
-                    if (rcID == null || rcControl == null) {
-                        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                    }
-                    final PluginForHost recplug = JDUtilities.getPluginForHost("DirectHTTP");
-                    jd.plugins.hoster.DirectHTTP.Recaptcha rc = ((DirectHTTP) recplug).getReCaptcha(br);
-                    rc.setId(rcID);
-                    rc.load();
-                    for (int i = 0; i <= 5; i++) {
-                        final File cf = rc.downloadCaptcha(getLocalCaptchaFile());
-                        final String c = getCaptchaCode(cf, downloadLink);
-                        br2.postPage(captcha_action, "recaptcha_challenge_field=" + rc.getChallenge() + "&recaptcha_response_field=" + c + "&recaptcha_control_field=" + Encoding.urlEncode(rcControl));
-                        if (br2.toString().length() < 2 || br2.toString().contains("error_wrong_captcha")) {
-                            rc.reload();
-                            continue;
-                        }
-                        break;
-                    }
+            if (captcha_action != null && captcha_action.contains("recaptcha")) {
+                captcha_action = ajaxmainurl + captcha_action;
+                final String rcControl = new Regex(dlFunction, "var recaptcha_control_field = \\'([^<>\"]*?)\\'").getMatch(0);
+                String rcID = br.getRegex("challenge\\?k=([^<>\"]*?)\"").getMatch(0);
+                if (rcID == null) {
+                    rcID = Encoding.Base64Decode("NkxjOXpkTVNBQUFBQUYtN3Myd3VRLTAzNnBMUmJNMHA4ZERhUWRBTQ==");
+                }
+                if (rcID == null || rcControl == null) {
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                }
+                final PluginForHost recplug = JDUtilities.getPluginForHost("DirectHTTP");
+                jd.plugins.hoster.DirectHTTP.Recaptcha rc = ((DirectHTTP) recplug).getReCaptcha(br);
+                rc.setId(rcID);
+                rc.load();
+                for (int i = 0; i <= 5; i++) {
+                    final File cf = rc.downloadCaptcha(getLocalCaptchaFile());
+                    final String c = getCaptchaCode(cf, downloadLink);
+                    br2.postPage(captcha_action, "recaptcha_challenge_field=" + rc.getChallenge() + "&recaptcha_response_field=" + c + "&recaptcha_control_field=" + Encoding.urlEncode(rcControl));
                     if (br2.toString().length() < 2 || br2.toString().contains("error_wrong_captcha")) {
-                        throw new PluginException(LinkStatus.ERROR_CAPTCHA);
+                        rc.reload();
+                        continue;
                     }
-                } else {
-                    dlFunction = br.getRegex("function getLinkV\\(\\)(.*?)(function|</script>)").getMatch(0);
-                    if (dlFunction == null) {
+                    break;
+                }
+                if (br2.toString().length() < 2 || br2.toString().contains("error_wrong_captcha")) {
+                    throw new PluginException(LinkStatus.ERROR_CAPTCHA);
+                }
+            } else if (br.containsHTML("vc = new videoCaptcha\\(\\$\\(\\'#captchav\\'\\)")) {
+                dlFunction = br.getRegex("function getLinkV\\(\\)(.*?)(function|</script>)").getMatch(0);
+                if (dlFunction == null) {
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                }
+                captcha_action = ajaxmainurl + "/ajax/check_videocaptcha.php";
+                final String vcControl = new Regex(dlFunction, "var vcaptcha_control_field = \\'([^<>\"]*?)\\'").getMatch(0);
+                if (captcha_action == null || vcControl == null) {
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                }
+                captcha_action = ajaxmainurl + captcha_action;
+                final String r = br.getRegex("castom_verificator:getLinkV,key:\\'([a-z0-9]{32})\\'\\}").getMatch(0);
+                if (r == null) {
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                }
+                br2.getPage("http://videocaptcha.letitbit.net/stat?callback=jQuery" + System.currentTimeMillis() + "_" + System.currentTimeMillis() + "&r=%5B%22" + r + "%22%2C%5B%5B%22captchaCreated%22%2C%7B%22key%22%3A%22%22%7D%5D%5D%5D&_=" + System.currentTimeMillis());
+                if (!br2.containsHTML("\"status\":\"ok\"")) {
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                }
+                for (int i = 0; i <= 5; i++) {
+                    br2.getPage("http://videocaptcha.letitbit.net/data?callback=jQuery" + System.currentTimeMillis() + "_" + System.currentTimeMillis() + "&r=%5B%22" + r + "%22%2C%5B%5B%22get_code%22%5D%5D%5D&_=" + System.currentTimeMillis());
+                    // We have different formats here
+                    String videoURL = br2.getRegex("\"video\\\\/webm\":\"(http:[^<>\"]*?)\"").getMatch(0);
+                    if (videoURL == null) {
                         throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                     }
-                    captcha_action = ajaxmainurl + "/ajax/check_videocaptcha.php";
-                    final String vcControl = new Regex(dlFunction, "var vcaptcha_control_field = \\'([^<>\"]*?)\\'").getMatch(0);
-                    if (captcha_action == null || vcControl == null) {
-                        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                    }
-                    captcha_action = ajaxmainurl + captcha_action;
-                    final String r = br.getRegex("castom_verificator:getLinkV,key:\\'([a-z0-9]{32})\\'\\}").getMatch(0);
-                    if (r == null) {
-                        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                    }
-                    br2.getPage("http://videocaptcha.letitbit.net/stat?callback=jQuery" + System.currentTimeMillis() + "_" + System.currentTimeMillis() + "&r=%5B%22" + r + "%22%2C%5B%5B%22captchaCreated%22%2C%7B%22key%22%3A%22%22%7D%5D%5D%5D&_=" + System.currentTimeMillis());
-                    if (!br2.containsHTML("\"status\":\"ok\"")) {
-                        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                    }
-                    for (int i = 0; i <= 5; i++) {
-                        br2.getPage("http://videocaptcha.letitbit.net/data?callback=jQuery" + System.currentTimeMillis() + "_" + System.currentTimeMillis() + "&r=%5B%22" + r + "%22%2C%5B%5B%22get_code%22%5D%5D%5D&_=" + System.currentTimeMillis());
-                        // We have different formats here
-                        String videoURL = br2.getRegex("\"video\\\\/webm\":\"(http:[^<>\"]*?)\"").getMatch(0);
-                        if (videoURL == null) {
-                            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                        }
-                        videoURL = videoURL.replace("\\", "");
-                        br2.postPage(captcha_action, "videocapcha_token=&videocapcha_val=" + "RESULT_FROM_USER" + "&vcaptcha_control_field=" + Encoding.urlEncode(vcControl) + "&videocapcha_skey=");
-                        if (br2.toString().contains("error_wrong_captcha")) {
-                            continue;
-                        }
-                        break;
-                    }
+                    videoURL = videoURL.replace("\\", "");
+                    br2.postPage(captcha_action, "videocapcha_token=&videocapcha_val=" + "RESULT_FROM_USER" + "&vcaptcha_control_field=" + Encoding.urlEncode(vcControl) + "&videocapcha_skey=");
                     if (br2.toString().contains("error_wrong_captcha")) {
-                        throw new PluginException(LinkStatus.ERROR_CAPTCHA);
+                        continue;
                     }
+                    break;
+                }
+                if (br2.toString().contains("error_wrong_captcha")) {
+                    throw new PluginException(LinkStatus.ERROR_CAPTCHA);
                 }
             } else {
                 /* Normal captcha handling SEEMS NOT TO WORK ANYMORE, captchas are not accepted by the server even if typed in correctly */
@@ -621,7 +613,6 @@ public class LetitBitNet extends PluginForHost {
             if (singleform.getAction() != null) {
                 if (!"".equals(singleform.getAction())) {
                     singleform.setAction(singleform.getAction().trim());
-                    /* KAPUTT */
                     if (singleform.containsHTML("class=\"Instead_parsing_Use_API_Luke\"")) {
                         decryptingForm(singleform);
                     }
@@ -642,7 +633,8 @@ public class LetitBitNet extends PluginForHost {
     }
 
     private void decryptingForm(Form encryptedForm) {
-        final ScriptEngineManager manager = jd.plugins.hoster.DummyScriptEnginePlugin.getScriptEngineManager(this);
+        final ScriptEngineManager manager = new ScriptEngineManager();
+        // final ScriptEngineManager manager = jd.plugins.hoster.DummyScriptEnginePlugin.getScriptEngineManager(this);
         final ScriptEngine engine = manager.getEngineByName("javascript");
 
         HashMap<String, String> encValues = new HashMap<String, String>(getFormIds(encryptedForm));
