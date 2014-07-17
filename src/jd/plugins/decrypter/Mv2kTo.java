@@ -40,9 +40,9 @@ public class Mv2kTo extends PluginForDecrypt {
     private static final String INVALIDLINKS2 = "http://(www\\.)?movie4k\\.to//?tvshows\\-episode[a-z0-9\\-]+\\.html";
 
     /**
-     * Description of the regexes array: 1= nowvideo.co,streamcloud.com 2=flashx.tv,vidbux.com,xvidstage.com,vidstream.in ,hostingbulk.com
-     * ,vreer.com,uploadc.com,allmyvideos .net,firedrive.com,watchfreeinhd.com and many others 3=zalaa.com,sockshare.com 4=stream2k.com
-     * 5=flashx.tv, yesload.net
+     * Description of regex array: 1= nowvideo.co, streamcloud.com 2=flashx.tv, vidbux.com, xvidstage.com, vidstream.in, hostingbulk.com,
+     * uploadc.com, allmyvideos.net, firedrive.com, watchfreeinhd.com and many others 3=zalaa.com, sockshare.com 4=stream2k.com 5=flashx.tv,
+     * yesload.net
      */
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
@@ -63,14 +63,20 @@ public class Mv2kTo extends PluginForDecrypt {
             return decryptedLinks;
         }
         String fpName = br.getRegex("<title>Watch ([^<>\"]*?) online \\- Watch Movies Online, Full Movies, Download</title>").getMatch(0);
-        if (fpName == null) fpName = br.getRegex("<title>(.*?) online").getMatch(0);
+        if (fpName == null) {
+            fpName = br.getRegex("<title>(.*?) online").getMatch(0);
+        }
         Browser br2 = br.cloneBrowser();
 
         int mirror = 1, part = 1, m = 0;
         String mirrors[] = br.getRegex("<OPTION value=\"([^\"]+)\"").getColumn(0);
-        if (mirrors != null && mirrors.length > 1) mirror = mirrors.length;
+        if (mirrors != null && mirrors.length > 1) {
+            mirror = mirrors.length;
+        }
         String parts[] = br.getRegex("<a href=\"(movie\\.php\\?id=\\d+\\&part=\\d)\">").getColumn(0);
-        if (parts != null && parts.length > 1) part = parts.length;
+        if (parts != null && parts.length > 1) {
+            part = parts.length;
+        }
 
         for (int i = 0; i <= mirror; i++) {
             m++;
@@ -86,8 +92,12 @@ public class Mv2kTo extends PluginForDecrypt {
                         } else if (finallink.matches("http://embed\\.stream2k\\.com/[^<>\"]+")) {
                             br2.getPage(finallink);
                             finallink = br2.getRegex("file: \\'(http://[^<>\"]*?)\\',").getMatch(0);
-                            if (finallink == null) finallink = br2.getRegex("\\'(http://server\\d+\\.stream2k\\.com/dl\\d+/[^<>\"/]*?)\\'").getMatch(0);
-                            if (finallink != null) finallink = "directhttp://" + finallink;
+                            if (finallink == null) {
+                                finallink = br2.getRegex("\\'(http://server\\d+\\.stream2k\\.com/dl\\d+/[^<>\"/]*?)\\'").getMatch(0);
+                            }
+                            if (finallink != null) {
+                                finallink = "directhttp://" + finallink;
+                            }
                         } else if (finallink.matches("http://flashx\\.tv/player/embed_player\\.php\\?vid=\\d+")) {
                             br2.setFollowRedirects(true);
                             br2.getPage(finallink);
@@ -115,27 +125,39 @@ public class Mv2kTo extends PluginForDecrypt {
                 }
                 if (j > 0 && j < parts.length) {
                     String nextPart = parts[j];
-                    if (!nextPart.startsWith("/")) nextPart = "/" + nextPart;
+                    if (!nextPart.startsWith("/")) {
+                        nextPart = "/" + nextPart;
+                    }
                     br.getPage(nextPart);
                     br2 = br.cloneBrowser();
                 }
                 // No wait = stream2k links may fail
                 this.sleep(2 * 1000l, param);
             }
-            if (mirrors.length == 0) break;
+            if (mirrors.length == 0) {
+                break;
+            }
             if (i < mirrors.length) {
                 String next = mirrors[i];
-                if (initalMirror.equalsIgnoreCase(next)) i++;
+                if (initalMirror.equalsIgnoreCase(next)) {
+                    i++;
+                }
                 if (i < mirrors.length) {
                     next = mirrors[i];
                     if (!next.startsWith("http://") || !next.startsWith("https://")) {
-                        if (!next.startsWith("/")) next = "/" + next;
+                        if (!next.startsWith("/")) {
+                            next = "/" + next;
+                        }
                     }
                     br.getPage(next);
                     br2 = br.cloneBrowser();
                     String mirrorParts[] = br.getRegex("<a href=\"(movie\\.php\\?id=\\d+\\&part=\\d)\">").getColumn(0);
-                    if (mirrorParts != null && mirrorParts.length > 1) part = mirrorParts.length;
-                    if (mirrorParts != null && mirrorParts.length > 0) System.arraycopy(mirrorParts, 0, parts, 0, parts.length);
+                    if (mirrorParts != null && mirrorParts.length > 1) {
+                        part = mirrorParts.length;
+                    }
+                    if (mirrorParts != null && mirrorParts.length > 0) {
+                        System.arraycopy(mirrorParts, 0, parts, 0, parts.length);
+                    }
                 }
             }
         }
