@@ -42,6 +42,7 @@ public class LolaBitsEsDecrypter extends PluginForDecrypt {
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String parameter = param.toString();
+        br.setFollowRedirects(true);
         try {
             br.getPage(parameter);
         } catch (final BrowserException e) {
@@ -52,13 +53,18 @@ public class LolaBitsEsDecrypter extends PluginForDecrypt {
             decryptedLinks.add(dl);
             return decryptedLinks;
         }
-        final String server = new Regex(parameter, "(http://[a-z0-9]+\\.lolabits\\.es/)").getMatch(0);
+        final String server = new Regex(parameter, "(https?://[a-z0-9]+\\.lolabits\\.es/)").getMatch(0);
         if (server != null) {
             /* Find normal links of online viewable doc links */
-            parameter = br.getRegex("\"(http://lolabits\\.es/[^<>\"]*?)\" id=\"dnLink\"").getMatch(0);
+            parameter = br.getRegex("\"(https?://[\\w\\.]*lolabits\\.es/[^<>\"]*?)\" id=\"dnLink\"").getMatch(0);
             if (parameter == null) {
-                logger.warning("Decrypter broken for link: " + parameter);
-                return null;
+                parameter = br.getRegex("\"(?:https?://[\\w\\.]*lolabits\\.es)?/([^<>\"]+)\" class=\"redButtonCSS downloadAction\"").getMatch(0);
+                if (parameter != null) {
+                    parameter = server + parameter;
+                } else {
+                    logger.warning("Decrypter broken for link: " + parameter);
+                    return null;
+                }
             }
             br.getPage(parameter);
         }
