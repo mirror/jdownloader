@@ -51,9 +51,8 @@ public class RtbfBe extends PluginForHost {
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws IOException, PluginException {
         this.setBrowserExclusive();
-        // The regex only takes the short urls but these ones redirect to the
-        // real ones to if follow redirects is false the plugin doesn't work at
-        // all!
+        // The regex only takes the short urls but these ones redirect to the real ones to if follow redirects is false the plugin doesn't
+        // work at all!
         br.setFollowRedirects(true);
         br.getPage(downloadLink.getDownloadURL());
         if (br.getHttpConnection().getResponseCode() == 404) {
@@ -66,16 +65,15 @@ public class RtbfBe extends PluginForHost {
         filename = Encoding.htmlDecode(filename).trim();
         final String fid = new Regex(downloadLink.getDownloadURL(), "(\\d+)$").getMatch(0);
         br.getPage("http://www.rtbf.be/video/embed?id=" + fid + "&autoplay=1");
-        String vid_text = br.getRegex("<div class=\"js\\-player\\-embed\" data\\-video=\"(.*?)\">").getMatch(0);
+        String vid_text = br.getRegex("<div class=\"js\\-player\\-embed.*?\" data\\-video=\"(.*?)\">").getMatch(0);
         if (vid_text == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        vid_text = Encoding.htmlDecode(vid_text);
+        vid_text = Encoding.htmlDecode(vid_text).replaceAll("\\\\/", "/");
         DLLINK = new Regex(vid_text, "\"downloadUrl\":\"(http:[^<>\"]*?)\"").getMatch(0);
         if (DLLINK == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        DLLINK = DLLINK.replace("\\", "");
 
         String ext = DLLINK.substring(DLLINK.lastIndexOf("."));
         if (ext == null || ext.length() > 5) {
