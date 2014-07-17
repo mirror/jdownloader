@@ -139,7 +139,7 @@ public class HulkShareComFolder extends PluginForDecrypt {
         fp.setName(new Regex(parameter, "hulkshare\\.com/(.+)").getMatch(0));
 
         br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
-        br.postPage("http://www.hulkshare.com/userPublic.php", "ajax_pagination=1&uid=" + uid + "&page=1&fav=0&isvid=0&fld_id=0&per_page=" + entries_per_page + "&up=0&is_following=1&type=music&last_create_from_previous_list=2012-07-17+05%3A02%3A10");
+        br.postPage("http://www.hulkshare.com/userPublic.php", "ajax_pagination=1&uid=" + uid + "&page=1&fav=0&isvid=0&fld_id=0&per_page=" + entries_per_page + "&up=0&is_following=1&type=music&last_create_from_previous_list=");
         br.getRequest().setHtmlCode(br.toString().replace("\\", ""));
         for (int i = 1; i <= max_loads; i++) {
             try {
@@ -152,7 +152,7 @@ public class HulkShareComFolder extends PluginForDecrypt {
             }
             logger.info("Decrypting page " + i + " of " + max_loads);
             if (i > 1) {
-                br.postPage("http://www.hulkshare.com/userPublic.php", "ajax_pagination=1&uid=" + uid + "&page=" + i + "&fav=0&isvid=0&fld_id=0&per_page=" + entries_per_page + "&up=0&is_following=1&type=music&last_create_from_previous_list=2012-07-17+05%3A02%3A10");
+                br.postPage("http://www.hulkshare.com/userPublic.php", "ajax_pagination=1&uid=" + uid + "&page=" + i + "&fav=0&isvid=0&fld_id=0&per_page=" + entries_per_page + "&up=0&is_following=1&type=music&last_create_from_previous_list=");
                 br.getRequest().setHtmlCode(br.toString().replace("\\", ""));
                 if (br.containsHTML("This user has no tracks")) {
                     break;

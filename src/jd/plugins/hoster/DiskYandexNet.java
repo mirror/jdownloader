@@ -47,7 +47,7 @@ import jd.utils.locale.JDL;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "disk.yandex.net" }, urls = { "http://yandexdecrypted\\.net/\\d+" }, flags = { 2 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "disk.yandex.net", "video.yandex.ru" }, urls = { "http://yandexdecrypted\\.net/\\d+", "http://video\\.yandex\\.ru/iframe/[A-Za-z0-9]+/[A-Za-z0-9]+\\.\\d+" }, flags = { 2, 0 })
 public class DiskYandexNet extends PluginForHost {
 
     public DiskYandexNet(PluginWrapper wrapper) {
@@ -83,8 +83,11 @@ public class DiskYandexNet extends PluginForHost {
     private final String[]      domains                            = new String[] { "https://yandex.ru", "https://yandex.com", "https://disk.yandex.ru/", "https://disk.yandex.com/", "https://disk.yandex.net/" };
     private static Object       LOCK                               = new Object();
 
+    /* Other constants */
     /* Important constant which seems to be unique for every account. It's needed for most of the requests when logged in. */
     private String              ACCOUNT_SK                         = null;
+    private static final String TYPE_VIDEO                         = "http://video\\.yandex\\.ru/iframe/[A-Za-z0-9]+/[A-Za-z0-9]+\\.\\d+";
+    private static final String TYPE_DISK                          = "http://yandexdecrypted\\.net/\\d+";
 
     /* Make sure we always use our main domain */
     private String fixMainlink(String mainlink) {
@@ -94,18 +97,38 @@ public class DiskYandexNet extends PluginForHost {
 
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
-        if (link.getBooleanProperty("offline", false)) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        if (!link.getDownloadURL().matches("http://yandexdecrypted\\.net/\\d+")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         setBrowserExclusive();
         br.getHeaders().put("Accept-Language", "en-US,en;q=0.5");
         br.setFollowRedirects(true);
-        br.getPage(fixMainlink(link.getStringProperty("mainlink", null)));
-        if (br.containsHTML("(<title>The file you are looking for could not be found\\.|>Nothing found</span>|<title>Nothing found \\— Yandex\\.Disk</title>)")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        final String filename = link.getStringProperty("plain_filename", null);
-        final String filesize = link.getStringProperty("plain_size", null);
-
+        String filename;
+        if (link.getDownloadURL().matches(TYPE_VIDEO)) {
+            br.getPage(link.getDownloadURL());
+            if (br.containsHTML("<title>Яндекс\\.Видео</title>")) {
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            }
+            filename = br.getRegex("<title>([^<>\"]*?) — Яндекс\\.Видео</title>").getMatch(0);
+            if (filename == null) {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
+            filename = Encoding.htmlDecode(filename.trim()) + ".mp4";
+        } else {
+            if (link.getBooleanProperty("offline", false)) {
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            }
+            if (!link.getDownloadURL().matches(TYPE_DISK)) {
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            }
+            br.getPage(fixMainlink(link.getStringProperty("mainlink", null)));
+            if (br.containsHTML("(<title>The file you are looking for could not be found\\.|>Nothing found</span>|<title>Nothing found \\— Yandex\\.Disk</title>)")) {
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            }
+            filename = link.getStringProperty("plain_filename", null);
+            final String filesize = link.getStringProperty("plain_size", null);
+            if (filesize != null) {
+                link.setDownloadSize(SizeFormatter.getSize(filesize));
+            }
+        }
         link.setName(filename);
-        if (filesize != null) link.setDownloadSize(SizeFormatter.getSize(filesize));
         return AvailableStatus.TRUE;
     }
 
@@ -116,23 +139,59 @@ public class DiskYandexNet extends PluginForHost {
         doFree(downloadLink, FREE_RESUME, FREE_MAXCHUNKS, null);
     }
 
-    private void doFree(final DownloadLink downloadLink, final boolean resumable, final int maxchunks, String ckey) throws Exception, PluginException {
-        final String hash = downloadLink.getStringProperty("hash_plain", null);
-        if (ckey == null) ckey = getCkey();
-        br.getHeaders().put("Accept", "application/json, text/javascript, */*; q=0.01");
-        br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
-        br.postPage("https://disk.yandex.com/handlers.jsx", "_ckey=" + ckey + "&_name=getLinkFileDownload&hash=" + Encoding.urlEncode(hash));
-        if (br.containsHTML("\"title\":\"invalid ckey\"")) {
-            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error", 5 * 60 * 1000l);
-        } else if (br.containsHTML("\"code\":88")) { throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 88 'Decryption error'", 5 * 60 * 1000l); }
-        String dllink = parse("url", this.br);
-        if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        if (dllink.startsWith("//")) dllink = "http:" + dllink;
-        /* Don't do htmldecode because the link will be invalid then */
-        dllink = HTMLEntities.unhtmlentities(dllink);
+    private void doFree(final DownloadLink downloadLink, boolean resumable, int maxchunks, String ckey) throws Exception, PluginException {
+        String dllink;
+        if (downloadLink.getDownloadURL().matches(TYPE_VIDEO)) {
+            final String linkpart = new Regex(downloadLink.getDownloadURL(), "/iframe/(.+)").getMatch(0);
+            String file = br.getRegex("\\&quot;file\\&quot;:\\&quot;([a-z0-9]+)\\&quot;").getMatch(0);
+            if (file == null) {
+                file = "0.flv";
+                downloadLink.setFinalFileName(downloadLink.getName().replace(".mp4", ".flv"));
+            } else {
+                file += ".mp4";
+                downloadLink.setFinalFileName(downloadLink.getName().replace(".flv", ".mp4"));
+            }
+            br.getPage("http://static.video.yandex.net/get-token/" + linkpart + "?nc=0." + System.currentTimeMillis());
+            final String token = br.getRegex("<token>([^<>\"]*?)</token>").getMatch(0);
+            if (token == null) {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
+            br.getPage("http://streaming.video.yandex.ru/get-location/" + linkpart + "/" + file + "?token=" + token + "&ref=video.yandex.ru");
+            dllink = br.getRegex("<video\\-location>(http://[^<>\"]*?)</video\\-location>").getMatch(0);
+            if (dllink == null) {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
+            dllink = Encoding.htmlDecode(dllink);
+            resumable = true;
+            maxchunks = 0;
+        } else {
+            final String hash = downloadLink.getStringProperty("hash_plain", null);
+            if (ckey == null) {
+                ckey = getCkey();
+            }
+            br.getHeaders().put("Accept", "application/json, text/javascript, */*; q=0.01");
+            br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
+            br.postPage("https://disk.yandex.com/handlers.jsx", "_ckey=" + ckey + "&_name=getLinkFileDownload&hash=" + Encoding.urlEncode(hash));
+            if (br.containsHTML("\"title\":\"invalid ckey\"")) {
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error", 5 * 60 * 1000l);
+            } else if (br.containsHTML("\"code\":88")) {
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 88 'Decryption error'", 5 * 60 * 1000l);
+            }
+            dllink = parse("url", this.br);
+            if (dllink == null) {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
+            if (dllink.startsWith("//")) {
+                dllink = "http:" + dllink;
+            }
+            /* Don't do htmldecode because the link will be invalid then */
+            dllink = HTMLEntities.unhtmlentities(dllink);
+        }
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, resumable, maxchunks);
         if (dl.getConnection().getContentType().contains("html")) {
-            if (dl.getConnection().getResponseCode() == 404) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 404", 30 * 60 * 1000l);
+            if (dl.getConnection().getResponseCode() == 404) {
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 404", 30 * 60 * 1000l);
+            }
             br.followConnection();
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
@@ -141,7 +200,9 @@ public class DiskYandexNet extends PluginForHost {
 
     private String getCkey() throws PluginException {
         final String ckey = br.getRegex("\"ckey\":\"([^\"]+)\"").getMatch(0);
-        if (ckey == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (ckey == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         return ckey;
     }
 
@@ -154,7 +215,9 @@ public class DiskYandexNet extends PluginForHost {
                 prepBr();
                 final Object ret = account.getProperty("cookies", null);
                 boolean acmatch = Encoding.urlEncode(account.getUser()).equals(account.getStringProperty("name", Encoding.urlEncode(account.getUser())));
-                if (acmatch) acmatch = Encoding.urlEncode(account.getPass()).equals(account.getStringProperty("pass", Encoding.urlEncode(account.getPass())));
+                if (acmatch) {
+                    acmatch = Encoding.urlEncode(account.getPass()).equals(account.getStringProperty("pass", Encoding.urlEncode(account.getPass())));
+                }
                 if (acmatch && ret != null && ret instanceof HashMap<?, ?> && !force) {
                     final HashMap<String, String> cookies = (HashMap<String, String>) ret;
                     if (account.isValid()) {
@@ -266,7 +329,9 @@ public class DiskYandexNet extends PluginForHost {
                         file_moved = true;
                         link.setProperty("file_moved", true);
                         dllink = getLinkFromFileInAccount(link, br2);
-                        if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                        if (dllink == null) {
+                            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                        }
                     }
 
                 } catch (final PluginException e) {
@@ -285,7 +350,9 @@ public class DiskYandexNet extends PluginForHost {
                 br.setFollowRedirects(false);
                 br.getPage(dllink);
                 dllink = br.getRedirectLocation();
-                if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                if (dllink == null) {
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                }
             } else {
                 logger.info("MoveToAccount handling is inactive -> Starting free download handling");
                 doFree(link, ACCOUNT_RESUME, ACCOUNT_MAXCHUNKS, ckey);
@@ -321,7 +388,9 @@ public class DiskYandexNet extends PluginForHost {
             br2.postPage("https://beta.disk.yandex.com/models/?_m=do-get-resource-url", "_model.0=do-get-resource-url&id.0=%2Fdisk%2FDownloads%2F" + Encoding.urlEncode(dl.getName()) + "&inline.0=true&idClient=" + CLIENT_ID + "&sk=" + ACCOUNT_SK + "&version=" + VERSION);
             dllink = parse("file", br2);
             /* Fix links - cookies sit on the other domain */
-            if (dllink != null) dllink = dllink.replace("disk.yandex.ru/", "disk.yandex.com/");
+            if (dllink != null) {
+                dllink = dllink.replace("disk.yandex.ru/", "disk.yandex.com/");
+            }
         } catch (final Throwable e) {
         }
         return dllink;
@@ -370,9 +439,13 @@ public class DiskYandexNet extends PluginForHost {
     }
 
     private String parse(final String var, final Browser srcbr) {
-        if (var == null) return null;
+        if (var == null) {
+            return null;
+        }
         String result = srcbr.getRegex("<" + var + ">([^<>\"]*?)</" + var + ">").getMatch(0);
-        if (result == null) result = srcbr.getRegex("\"" + var + "\":\"([^\"]+)").getMatch(0);
+        if (result == null) {
+            result = srcbr.getRegex("\"" + var + "\":\"([^\"]+)").getMatch(0);
+        }
         return result;
     }
 
