@@ -17,6 +17,7 @@
 package jd.plugins.hoster;
 
 import java.io.File;
+import java.io.IOException;
 import java.net.URL;
 import java.util.HashMap;
 import java.util.Locale;
@@ -30,6 +31,8 @@ import javax.swing.JOptionPane;
 import javax.swing.SwingUtilities;
 
 import jd.PluginWrapper;
+import jd.config.ConfigContainer;
+import jd.config.ConfigEntry;
 import jd.config.Property;
 import jd.config.SubConfiguration;
 import jd.http.Browser;
@@ -48,6 +51,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.utils.JDUtilities;
+import jd.utils.locale.JDL;
 
 import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.formatter.TimeFormatter;
@@ -60,6 +64,7 @@ public class Keep2ShareCc extends PluginForHost {
     public Keep2ShareCc(PluginWrapper wrapper) {
         super(wrapper);
         this.enablePremium("http://k2s.cc/premium.html");
+        setConfigElements();
     }
 
     @Override
@@ -71,6 +76,8 @@ public class Keep2ShareCc extends PluginForHost {
     private final String                   MAINPAGE         = "http://k2s.cc";
     private final String                   DOMAINS_PLAIN    = "((keep2share|k2s|k2share|keep2s|keep2)\\.cc)";
     private final String                   DOMAINS_HTTP     = "(https?://(www\\.)?" + DOMAINS_PLAIN + ")";
+
+    private final String                   SSL_CONNECTION   = "SSL_CONNECTION";
 
     private static Object                  LOCK             = new Object();
 
@@ -284,7 +291,7 @@ public class Keep2ShareCc extends PluginForHost {
                 }
                 Browser br2 = br.cloneBrowser();
                 // domain not transferable!
-                br2.getPage("http://static.k2s.cc/ext/evercookie/evercookie.swf");
+                getPage2(br2, "http://static.k2s.cc/ext/evercookie/evercookie.swf");
                 // can be here also, raztoki 20130521!
                 dllink = getDllink();
                 if (dllink == null) {
@@ -313,7 +320,7 @@ public class Keep2ShareCc extends PluginForHost {
                         if (captchaLink == null) {
                             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                         }
-                        final String code = getCaptchaCode(new Regex(br.getURL(), DOMAINS_HTTP).getMatch(0) + captchaLink, downloadLink);
+                        final String code = getCaptchaCode(new Regex(this.fixLinkSSL(br.getURL()), DOMAINS_HTTP).getMatch(0) + captchaLink, downloadLink);
                         postPage(br.getURL(), "CaptchaForm%5Bcode%5D=" + code + "&free=1&freeDownloadRequest=1&uniqueId=" + uniqueID);
                         if (br.containsHTML(">The verification code is incorrect|/site/captcha.html")) {
                             throw new PluginException(LinkStatus.ERROR_CAPTCHA);
@@ -429,7 +436,7 @@ public class Keep2ShareCc extends PluginForHost {
                             this.br.setCookie(MAINPAGE, key, value);
                         }
                         if (validateCookie != null) {
-                            br.getPage(MAINPAGE + "/site/profile.html");
+                            getPage2(this.br, MAINPAGE + "/site/profile.html");
                             if (force == false || !br.getURL().contains("login.html")) {
                                 return cookies;
                             }
@@ -586,7 +593,7 @@ public class Keep2ShareCc extends PluginForHost {
             doFree(link, account);
         } else {
             br.setFollowRedirects(false);
-            br.getPage(link.getDownloadURL());
+            getPage2(this.br, link.getDownloadURL());
             handleGeneralErrors(account);
             // Set cookies for other domain if it is changed via redirect
             String currentDomain = MAINPAGE.replace("http://", "");
@@ -604,7 +611,7 @@ public class Keep2ShareCc extends PluginForHost {
             if (newDomain != null) {
                 resetCookies(account, currentDomain, newDomain);
                 if (dllink == null) {
-                    br.getPage(link.getDownloadURL().replace(currentDomain, newDomain));
+                    getPage2(this.br, link.getDownloadURL().replace(currentDomain, newDomain));
                     dllink = br.getRedirectLocation();
                     if (dllink == null) {
                         dllink = getDllinkPremium();
@@ -732,16 +739,23 @@ public class Keep2ShareCc extends PluginForHost {
         this.br = ibr;
     }
 
+    /** Gets page where "getPage()" fown below is not used - is there to make sure the SSL setting is used correctly for all browser calls */
+    public void getPage2(final Browser br, String page) throws IOException {
+        page = fixLinkSSL(page);
+        br.getPage(page);
+    }
+
     /**
      * Gets page <br />
      * - natively supports silly cloudflare anti DDoS crapola
-     *
+     * 
      * @author raztoki
      */
-    public void getPage(final String page) throws Exception {
+    public void getPage(String page) throws Exception {
         if (page == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
+        page = fixLinkSSL(page);
         if (!prepBrSet) {
             prepBrowser(br);
         }
@@ -772,6 +786,7 @@ public class Keep2ShareCc extends PluginForHost {
         if (page == null || postData == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
+        page = fixLinkSSL(page);
         if (!prepBrSet) {
             prepBrowser(br);
         }
@@ -841,7 +856,7 @@ public class Keep2ShareCc extends PluginForHost {
      * Performs Cloudflare and Incapsula requirements.<br />
      * Auto fill out the required fields and updates antiDDoSCookies session.<br />
      * Always called after Browser Request!
-     *
+     * 
      * @version 0.02
      * @author raztoki
      **/
@@ -949,7 +964,7 @@ public class Keep2ShareCc extends PluginForHost {
     }
 
     /**
-     *
+     * 
      * @author raztoki
      * */
     private boolean requestHeadersHasKeyNValueStartsWith(final String k, final String v) {
@@ -965,7 +980,7 @@ public class Keep2ShareCc extends PluginForHost {
     }
 
     /**
-     *
+     * 
      * @author raztoki
      * */
     private boolean requestHeadersHasKeyNValueContains(final String k, final String v) {
@@ -978,6 +993,23 @@ public class Keep2ShareCc extends PluginForHost {
             }
         }
         return false;
+    }
+
+    private boolean checkSsl() {
+        return getPluginConfig().getBooleanProperty(SSL_CONNECTION, false);
+    }
+
+    private String fixLinkSSL(String link) {
+        if (checkSsl()) {
+            link = link.replace("http://", "https://");
+        } else {
+            link = link.replace("https://", "http://");
+        }
+        return link;
+    }
+
+    private void setConfigElements() {
+        this.getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, this.getPluginConfig(), SSL_CONNECTION, JDL.L("plugins.hoster.Keep2ShareCc.preferSSL", "Use Secure Communication over SSL (HTTPS://)")).setDefaultValue(false));
     }
 
     private boolean isJava7nJDStable() {
