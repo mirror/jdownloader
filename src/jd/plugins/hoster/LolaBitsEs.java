@@ -215,7 +215,7 @@ public class LolaBitsEs extends PluginForHost {
         String dllink = br2.getRegex("\"redirectUrl\":\"(http[^<>\"]*?)\"").getMatch(0);
         if (dllink == null) {
             // general failover
-            dllink = br2.getRegex("(https?://\\w+\\.lolabits\\.es/File\\.aspx\\?[^\"]+)\\\\\"").getMatch(0);
+            dllink = br2.getRegex("(https?://\\w+\\.lolabits\\.es/File\\.aspx\\?[^\"]+)(\\\\\")?").getMatch(0);
             if (dllink == null) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
