@@ -151,10 +151,11 @@ public class UploadableCh extends PluginForHost {
         if (dl.getConnection().getContentType().contains("html")) {
             logger.info("Finallink does not lead to a file, continuing...");
             br.followConnection();
-            /* Error-links: =http://www.uploadable.ch/l-error.php?error_code=ERRORCODE */
+            /* Error-links: http://www.uploadable.ch/l-error.php?error_code=ERRORCODE */
             /* Your download link has expired */
             if (br.containsHTML("error_code=1702")) {
-                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 1702 ('Downloadlink has expired')", 5 * 60 * 1000l);
+                downloadLink.setProperty("uploadabledirectlink", null);
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Download link has expired", 6 * 1000l);
             }
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
