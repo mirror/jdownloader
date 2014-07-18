@@ -22,6 +22,7 @@ import java.util.Map;
 
 import jd.PluginWrapper;
 import jd.config.Property;
+import jd.http.Browser;
 import jd.http.Cookie;
 import jd.http.Cookies;
 import jd.nutils.encoding.Encoding;
@@ -200,16 +201,24 @@ public class LolaBitsEs extends PluginForHost {
     }
 
     private String get_dllink() throws IOException, PluginException {
-        final String fileid = br.getRegex("id=\"fileDetails_(\\d+)\"").getMatch(0);
+        String fileid = br.getRegex("id=\"fileDetails_(\\d+)\"").getMatch(0);
+        if (fileid == null) {
+            fileid = br.getRegex("fileIdContainer\"\\s*rel=\"(\\d+)\"").getMatch(0);
+        }
         final String requestvtoken = br.getRegex("name=\"__RequestVerificationToken\" type=\"hidden\" value=\"([^<>\"]*?)\"").getMatch(0);
         if (fileid == null || requestvtoken == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
-        br.postPage("http://lolabits.es/action/License/Download", "fileId=" + fileid + "&__RequestVerificationToken=" + Encoding.urlEncode(requestvtoken));
-        String dllink = br.getRegex("\"redirectUrl\":\"(http[^<>\"]*?)\"").getMatch(0);
+        Browser br2 = br.cloneBrowser();
+        br2.getHeaders().put("X-Requested-With", "XMLHttpRequest");
+        br2.postPage("/action/License/Download", "fileId=" + fileid + "&__RequestVerificationToken=" + Encoding.urlEncode(requestvtoken));
+        String dllink = br2.getRegex("\"redirectUrl\":\"(http[^<>\"]*?)\"").getMatch(0);
         if (dllink == null) {
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            // general failover
+            dllink = br2.getRegex("(https?://\\w+\\.lolabits\\.es/File\\.aspx\\?[^\"]+)\\\\\"").getMatch(0);
+            if (dllink == null) {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
         }
         dllink = unescape(dllink);
         return dllink;
@@ -264,7 +273,7 @@ public class LolaBitsEs extends PluginForHost {
 
     /**
      * Validates string to series of conditions, null, whitespace, or "". This saves effort factor within if/for/while statements
-     * 
+     *
      * @param s
      *            Imported String to match against.
      * @return <b>true</b> on valid rule match. <b>false</b> on invalid rule match.
