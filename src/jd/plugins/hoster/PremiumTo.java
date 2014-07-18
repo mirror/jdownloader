@@ -40,7 +40,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "premium.to" }, urls = { "https?://torrent\\.premium\\.to/(t|z)/[^<>/\"]+(/[^<>/\"]+){0,1}(/\\d+)*" }, flags = { 2 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "premium.to" }, urls = { "https?://torrent\\d*\\.premium\\.to/(t|z)/[^<>/\"]+(/[^<>/\"]+){0,1}(/\\d+)*" }, flags = { 2 })
 public class PremiumTo extends PluginForHost {
 
     private static HashMap<Account, HashMap<String, Long>> hostUnavailableMap = new HashMap<Account, HashMap<String, Long>>();
@@ -105,7 +105,7 @@ public class PremiumTo extends PluginForHost {
             tbr.getPage("http://premium.to/straffic.php");
             String[] traffic = tbr.toString().split(";");
             if (traffic != null && traffic.length == 2) {
-                // because we can no account for separate traffic allocations.
+                // because we can not account for separate traffic allocations.
                 final long nT = Long.parseLong(traffic[0]);
                 final long sT = Long.parseLong(traffic[1]);
                 ac.setTrafficLeft(nT + sT + "MiB");
