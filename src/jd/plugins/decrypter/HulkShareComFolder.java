@@ -131,8 +131,15 @@ public class HulkShareComFolder extends PluginForDecrypt {
             logger.warning("Decrypter broken for link: " + parameter);
             return null;
         }
-        final int entries_per_page = 25;
         final int count_tracks = Integer.parseInt(br.getRegex(">All Music <i>(\\d+)</i>").getMatch(0));
+        if (count_tracks == 0) {
+            final DownloadLink dl = createDownloadlink("directhttp://" + parameter);
+            dl.setProperty("offline", true);
+            dl.setAvailable(false);
+            decryptedLinks.add(dl);
+            return decryptedLinks;
+        }
+        final int entries_per_page = 25;
         final BigDecimal bd = new BigDecimal((double) count_tracks / entries_per_page);
         final int max_loads = bd.setScale(0, BigDecimal.ROUND_UP).intValue();
         final FilePackage fp = FilePackage.getInstance();

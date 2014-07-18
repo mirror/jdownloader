@@ -70,7 +70,7 @@ public class RDMdthk extends PluginForDecrypt {
     @Override
     public ArrayList<DownloadLink> decryptIt(final CryptedLink param, final ProgressController progress) throws Exception {
         final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-        final String parameter = param.toString();
+        final String parameter = Encoding.htmlDecode(param.toString());
         boolean offline = false;
         br.setFollowRedirects(true);
         try {

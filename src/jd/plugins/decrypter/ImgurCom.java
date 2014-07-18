@@ -60,7 +60,18 @@ public class ImgurCom extends PluginForDecrypt {
                 }
                 br.getRequest().setHtmlCode(br.toString().replace("\\", ""));
                 if (br.containsHTML("Unable to find an album with the id")) {
-                    logger.info("Link offline: " + parameter);
+                    final DownloadLink offline = createDownloadlink("directhttp://" + parameter);
+                    offline.setAvailable(false);
+                    offline.setProperty("offline", true);
+                    decryptedLinks.add(offline);
+                    return decryptedLinks;
+                }
+                final int imgcount = Integer.parseInt(getJson(br.toString(), "images_count"));
+                if (imgcount == 0) {
+                    final DownloadLink offline = createDownloadlink("directhttp://" + parameter);
+                    offline.setAvailable(false);
+                    offline.setProperty("offline", true);
+                    decryptedLinks.add(offline);
                     return decryptedLinks;
                 }
                 String fpName = getJson(br.toString(), "title");

@@ -110,8 +110,13 @@ public class RpdLbrr extends PluginForDecrypt {
                 }
             } else {
                 br.getPage(crptlink);
-                if (br.getRedirectLocation() != null) {
-                    br.getPage(br.getRedirectLocation());
+                final String redirect = br.getRedirectLocation();
+                if (redirect != null && !redirect.contains("rapidlibrary.biz")) {
+                    /* Probably redirects to ads but anyways, we got our final link */
+                    decryptedLinks.add(createDownloadlink(redirect));
+                    return decryptedLinks;
+                } else if (redirect != null) {
+                    br.getPage(redirect);
                 }
                 if (br.containsHTML("Error file not found")) {
                     logger.info("Link offline: " + crptlink);
