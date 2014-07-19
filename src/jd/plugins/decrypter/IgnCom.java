@@ -50,7 +50,7 @@ public class IgnCom extends PluginForDecrypt {
                 decryptedLinks.add(offline);
                 return decryptedLinks;
             }
-            fpName = br.getRegex("<title>([^<>\"]*?)\\- Trailer \\- IGN Video</title>").getMatch(0);
+            fpName = br.getRegex("<title>([^<>\"]*?) \\- IGN Video</title>").getMatch(0);
             final String finallink = br.getRegex("id=\"iPadVideoSource_0\" src=\"(http://[^<>\"]*?)\"").getMatch(0);
             if (finallink == null) {
                 logger.warning("Decrypter broken for link: " + parameter);
