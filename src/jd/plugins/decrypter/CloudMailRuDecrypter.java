@@ -81,8 +81,8 @@ public class CloudMailRuDecrypter extends PluginForDecrypt {
         }
         long totalSize = 0;
         for (final String singleinfo : links) {
-            if ("folder".equals(getJson("kind", singleinfo))) {
-                String folder_url = getJson("web", singleinfo);
+            if ("folder".equals(getJson(singleinfo, "kind"))) {
+                String folder_url = getJson(singleinfo, "web");
                 if (folder_url == null) {
                     logger.warning("Decrypter broken for link: " + parameter);
                     return null;
@@ -91,10 +91,10 @@ public class CloudMailRuDecrypter extends PluginForDecrypt {
                 decryptedLinks.add(createDownloadlink(folder_url));
             } else {
                 final DownloadLink dl = createDownloadlink("http://clouddecrypted.mail.ru/" + System.currentTimeMillis() + new Random().nextInt(100000));
-                final String filesize = getJson("size", singleinfo);
-                String filename = getJson("name", singleinfo);
-                final String directlink = getJson("get", singleinfo);
-                final String view = getJson("view", singleinfo);
+                final String filesize = getJson(singleinfo, "size");
+                String filename = getJson(singleinfo, "name");
+                final String directlink = getJson(singleinfo, "get");
+                final String view = getJson(singleinfo, "view");
                 if (filesize == null || filename == null || directlink == null || view == null) {
                     logger.warning("Decrypter broken for link: " + parameter);
                     return null;
@@ -150,7 +150,7 @@ public class CloudMailRuDecrypter extends PluginForDecrypt {
         return links;
     }
 
-    private String getJson(final String parameter, final String source) {
+    private String getJson(final String source, final String parameter) {
         String result = new Regex(source, "\"" + parameter + "\":([\t\n\r ]+)?([0-9\\.]+)").getMatch(1);
         if (result == null) {
             result = new Regex(source, "\"" + parameter + "\":([\t\n\r ]+)?\"([^<>\"]*?)\"").getMatch(1);
