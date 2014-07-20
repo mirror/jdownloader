@@ -132,7 +132,7 @@ public class SaveTvDecrypter extends PluginForDecrypt {
 
                     getPageSafe("https://www.save.tv/STV/M/obj/archive/JSON/VideoArchiveApi.cfm?iEntriesPerPage=" + ENTRIES_PER_REQUEST + "&iCurrentPage=" + i);
                     final String array_text = br.getRegex("\"ARRVIDEOARCHIVEENTRIES\":\\[(\\{.*?\\})\\],\"ENABLEDEFAULTFORMATSETTINGS\"").getMatch(0);
-                    final String[] telecast_array = array_text.split("TelecastId=\\d+\"\\},\\{");
+                    final String[] telecast_array = array_text.split("TelecastId=\\d+\"\\}\\},\\{");
 
                     for (final String singleid_information : telecast_array) {
                         addID(singleid_information);

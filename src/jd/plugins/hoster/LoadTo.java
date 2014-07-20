@@ -71,6 +71,7 @@ public class LoadTo extends PluginForHost {
 
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
+        link.setName(new Regex(link.getDownloadURL(), "/([A-Za-z0-9]+)/$").getMatch(0));
         this.setBrowserExclusive();
         if (link.getDownloadURL().matches(INVALIDLINKS)) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
