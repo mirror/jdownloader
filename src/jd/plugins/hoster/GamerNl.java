@@ -19,6 +19,8 @@ package jd.plugins.hoster;
 import java.io.IOException;
 
 import jd.PluginWrapper;
+import jd.config.ConfigContainer;
+import jd.config.ConfigEntry;
 import jd.http.Browser;
 import jd.http.Browser.BrowserException;
 import jd.http.URLConnectionAdapter;
@@ -29,15 +31,18 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.utils.locale.JDL;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "gamer.nl" }, urls = { "http://(www\\.)?gamer\\.nl/(video/|game/[a-z0-9\\-]+/[a-z0-9\\-]+/videos/)\\d+" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "gamer.nl" }, urls = { "http://(www\\.)?gamer\\.nl/(video/|game/[a-z0-9\\-]+/[a-z0-9\\-]+/videos/)\\d+" }, flags = { 2 })
 public class GamerNl extends PluginForHost {
 
     public GamerNl(PluginWrapper wrapper) {
         super(wrapper);
+        setConfigElements();
     }
 
-    private String DLLINK = null;
+    private final String DATE_IN_FILENAME = "DATE_IN_FILENAME";
+    private String       DLLINK           = null;
 
     @Override
     public String getAGBLink() {
@@ -52,8 +57,9 @@ public class GamerNl extends PluginForHost {
         if (br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
+        final String date = br.getRegex("<div class=\"sub\">[\t\n\r ]+([^<>\"/]*?) /").getMatch(0);
         final String xml = br.getRegex("\"(/video/playlist/\\d+(/(hd|sd))?\\.xml)\"").getMatch(0);
-        if (xml == null) {
+        if (xml == null || date == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         br.getPage("http://www.gamer.nl" + xml);
@@ -70,7 +76,11 @@ public class GamerNl extends PluginForHost {
         if (ext == null || ext.length() > 5) {
             ext = ".mp4";
         }
-        downloadLink.setFinalFileName(filename + ext);
+        if (this.getPluginConfig().getBooleanProperty(DATE_IN_FILENAME, false)) {
+            downloadLink.setFinalFileName(encodeUnicode(date) + "_" + filename + ext);
+        } else {
+            downloadLink.setFinalFileName(filename + ext);
+        }
         final Browser br2 = br.cloneBrowser();
         // In case the link redirects to the finallink
         br2.setFollowRedirects(true);
@@ -120,6 +130,10 @@ public class GamerNl extends PluginForHost {
         output = output.replace("!", "¡");
         output = output.replace("\"", "'");
         return output;
+    }
+
+    private void setConfigElements() {
+        this.getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, this.getPluginConfig(), DATE_IN_FILENAME, JDL.L("plugins.hoster.GamerNl.dateInFilename", "Include date in filename?")).setDefaultValue(false));
     }
 
     @Override
