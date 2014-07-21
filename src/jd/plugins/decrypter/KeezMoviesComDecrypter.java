@@ -191,7 +191,7 @@ public class KeezMoviesComDecrypter extends PluginForDecrypt {
         }
         externID = br.getRegex("<iframe src=\"http://(www\\.)?yobt\\.tv/embed/(\\d+)\\.html\"").getMatch(1);
         if (externID != null) {
-            decryptedLinks.add(createDownloadlink("http://www.yobt.tv/content/" + externID + "/" + System.currentTimeMillis() + ".html"));
+            decryptedLinks.add(createDownloadlink("http://www.yobtdecrypted.tv/content/" + externID + "/" + System.currentTimeMillis() + ".html"));
             return decryptedLinks;
         }
         externID = br.getRegex("stileproject\\.com/embed/(\\d+)").getMatch(0);

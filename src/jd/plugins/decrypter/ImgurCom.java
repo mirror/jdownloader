@@ -36,7 +36,7 @@ public class ImgurCom extends PluginForDecrypt {
         super(wrapper);
     }
 
-    private final String       TYPE_GALLERY = "https?://((www|i)\\.)?imgur\\.com(/gallery|/a)/[A-Za-z0-9]{5,}";
+    private final String       TYPE_GALLERY = "https?://((www|i)\\.)?imgur\\.com/a/[A-Za-z0-9]{5,}";
     private static Object      ctrlLock     = new Object();
 
     public static final String OAUTH_AUTH   = "Q2xpZW50LUlEIDM3NWJhOGNhZjYwNGQ0Mg==";
@@ -47,10 +47,10 @@ public class ImgurCom extends PluginForDecrypt {
         final String parameter = param.toString().replace("https://", "http://").replace("/all$", "");
         synchronized (ctrlLock) {
             br.getHeaders().put("Authorization", Encoding.Base64Decode(OAUTH_AUTH));
+            final String lid = new Regex(parameter, "([A-Za-z0-9]+)$").getMatch(0);
             if (parameter.matches(TYPE_GALLERY)) {
-                final String albumID = new Regex(parameter, "([A-Za-z0-9]+)$").getMatch(0);
                 try {
-                    br.getPage("https://api.imgur.com/3/album/" + albumID);
+                    br.getPage("https://api.imgur.com/3/album/" + lid);
                 } catch (final BrowserException e) {
                     if (br.getHttpConnection().getResponseCode() == 429) {
                         logger.info("API limit reached, cannot decrypt link: " + parameter);
@@ -59,7 +59,7 @@ public class ImgurCom extends PluginForDecrypt {
                     throw e;
                 }
                 br.getRequest().setHtmlCode(br.toString().replace("\\", ""));
-                if (br.containsHTML("Unable to find an album with the id")) {
+                if (br.containsHTML("\"status\":404")) {
                     final DownloadLink offline = createDownloadlink("directhttp://" + parameter);
                     offline.setAvailable(false);
                     offline.setProperty("offline", true);
@@ -76,7 +76,7 @@ public class ImgurCom extends PluginForDecrypt {
                 }
                 String fpName = getJson(br.toString(), "title");
                 if (fpName == null || fpName.equals("null")) {
-                    fpName = "imgur.com gallery " + albumID;
+                    fpName = "imgur.com gallery " + lid;
                 }
                 /*
                  * using links (i.imgur.com/imgUID(s)?.extension) seems to be problematic, it can contain 's' (imgUID + s + .extension), but
@@ -124,10 +124,9 @@ public class ImgurCom extends PluginForDecrypt {
                 final FilePackage fp = FilePackage.getInstance();
                 fp.setName(fpName.trim());
                 fp.addLinks(decryptedLinks);
-            } else if (parameter.matches("https?://(((www|i)\\.)?imgur\\.com/[A-Za-z0-9]{5,}|(www\\.)?imgur\\.com/(download|gallery)/[A-Za-z0-9]{5,})")) {
-                String imgUID = new Regex(parameter, "([A-Za-z0-9]{5,})$").getMatch(0);
-                final DownloadLink dl = createDownloadlink("http://imgurdecrypted.com/download/" + imgUID);
-                dl.setProperty("imgUID", imgUID);
+            } else {
+                final DownloadLink dl = createDownloadlink("http://imgurdecrypted.com/download/" + lid);
+                dl.setProperty("imgUID", lid);
                 decryptedLinks.add(dl);
             }
         }

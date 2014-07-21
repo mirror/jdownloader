@@ -112,7 +112,9 @@ public class VideoOneCom extends PluginForDecrypt {
 
         /** Or not crypted... */
         externID = br.getRegex("xvideos\\.com/embedframe/(\\d+)\"").getMatch(0);
-        if (externID == null) externID = br.getRegex("\\.html\\?video(\\d+)").getMatch(0);
+        if (externID == null) {
+            externID = br.getRegex("\\.html\\?video(\\d+)").getMatch(0);
+        }
         if (externID != null) {
             decryptedLinks.add(createDownloadlink("http://www.xvideos.com/video" + externID));
             return decryptedLinks;
@@ -130,7 +132,9 @@ public class VideoOneCom extends PluginForDecrypt {
             return decryptedLinks;
         }
         externID = br.getRegex("redtube\\.com/player/\"><param name=\"FlashVars\" value=\"id=(\\d+)\\&").getMatch(0);
-        if (externID == null) externID = br.getRegex("embed\\.redtube\\.com/player/\\?id=(\\d+)\\&").getMatch(0);
+        if (externID == null) {
+            externID = br.getRegex("embed\\.redtube\\.com/player/\\?id=(\\d+)\\&").getMatch(0);
+        }
         if (externID != null) {
             DownloadLink dl = createDownloadlink("http://www.redtube.com/" + externID);
             decryptedLinks.add(dl);
@@ -162,7 +166,9 @@ public class VideoOneCom extends PluginForDecrypt {
             return decryptedLinks;
         }
         externID = br.getRegex("embed\\.pornrabbit\\.com/player\\.swf\\?movie_id=(\\d+)\"").getMatch(0);
-        if (externID == null) externID = br.getRegex("pornrabbit\\.com/embed/(\\d+)").getMatch(0);
+        if (externID == null) {
+            externID = br.getRegex("pornrabbit\\.com/embed/(\\d+)").getMatch(0);
+        }
         if (externID != null) {
             decryptedLinks.add(createDownloadlink("http://pornrabbit.com/video/" + externID + "/"));
             return decryptedLinks;
@@ -178,7 +184,9 @@ public class VideoOneCom extends PluginForDecrypt {
             return decryptedLinks;
         }
         externID = br.getRegex("pornhub\\.com/embed/(\\d+)").getMatch(0);
-        if (externID == null) externID = br.getRegex("pornhub\\.com/view_video\\.php\\?viewkey=(\\d+)").getMatch(0);
+        if (externID == null) {
+            externID = br.getRegex("pornhub\\.com/view_video\\.php\\?viewkey=(\\d+)").getMatch(0);
+        }
         if (externID != null) {
             DownloadLink dl = createDownloadlink("http://www.pornhub.com/view_video.php?viewkey=" + externID);
             decryptedLinks.add(dl);
@@ -212,7 +220,7 @@ public class VideoOneCom extends PluginForDecrypt {
         }
         externID = br.getRegex("<iframe src=\"http://(www\\.)?yobt\\.tv/embed/(\\d+)\\.html\"").getMatch(1);
         if (externID != null) {
-            decryptedLinks.add(createDownloadlink("http://www.yobt.tv/content/" + externID + "/" + System.currentTimeMillis() + ".html"));
+            decryptedLinks.add(createDownloadlink("http://www.yobtdecrypted.tv/content/" + externID + "/" + System.currentTimeMillis() + ".html"));
             return decryptedLinks;
         }
         externID = br.getRegex("src=\"http://(www\\.)?embed\\.porntube\\.com/(\\d+)/?\"").getMatch(1);

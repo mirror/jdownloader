@@ -45,7 +45,8 @@ public class ImgUrCom extends PluginForHost {
         link.setUrlDownload(link.getDownloadURL().replace("imgurdecrypted.com/", "imgur.com/"));
     }
 
-    private String DLLINK = null;
+    private String  DLLINK                         = null;
+    private boolean DL_IMPOSSIBLE_APILIMIT_REACHED = false;
 
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
@@ -109,7 +110,8 @@ public class ImgUrCom extends PluginForHost {
                  * http://imgur.com/download/ + imgUID This code should never be reached!
                  */
                 if (imgUID == null || filetype == null) {
-                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                    DL_IMPOSSIBLE_APILIMIT_REACHED = true;
+                    return AvailableStatus.UNCHECKABLE;
                 }
                 br.clearCookies("http://imgur.com/");
                 br.getHeaders().put("Referer", null);
@@ -143,6 +145,9 @@ public class ImgUrCom extends PluginForHost {
     @Override
     public void handleFree(DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
+        if (DL_IMPOSSIBLE_APILIMIT_REACHED) {
+            throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Api limit reached", 10 * 60 * 1000l);
+        }
         br.setFollowRedirects(true);
         if (DLLINK == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);

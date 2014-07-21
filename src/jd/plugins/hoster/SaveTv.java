@@ -466,11 +466,10 @@ public class SaveTv extends PluginForHost {
             }
         } else {
             final String availableformatstext = new Regex(source, "\"ARRALLOWDDOWNLOADFORMATS\":\\[(.*?)\\]").getMatch(0);
-            final String[] availableformats_array = availableformatstext.split("\\},\\{");
-            final int number_available_qualities = availableformats_array.length;
+            // final String[] availableformats_array = availableformatstext.split("\\},\\{");
             switch (selected_video_format) {
             case 0:
-                if (number_available_qualities == 3) {
+                if (availableformatstext.contains("\"RECORDINGFORMATID\":6.0")) {
                     dl.setProperty(QUALITY_PARAM, QUALITY_HD);
                 } else {
                     dl.setProperty(QUALITY_PARAM, QUALITY_HQ);
@@ -480,7 +479,7 @@ public class SaveTv extends PluginForHost {
                 dl.setProperty(QUALITY_PARAM, QUALITY_HQ);
                 break;
             case 2:
-                if (number_available_qualities == 2) {
+                if (availableformatstext.contains("\"RECORDINGFORMATID\":4.0")) {
                     dl.setProperty(QUALITY_PARAM, QUALITY_LQ);
                 } else {
                     dl.setProperty(QUALITY_PARAM, QUALITY_HQ);
@@ -613,7 +612,7 @@ public class SaveTv extends PluginForHost {
             if (br.containsHTML("Die Aufnahme liegt nicht im gewünschten Format vor")) {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, PREFERREDFORMATNOTAVAILABLETEXT, 4 * 60 * 60 * 1000l);
             }
-            /* Ads-Free version not available - handle it - usually this mes */
+            /* Ads-Free version not available - handle it */
             if (br.containsHTML("\"Leider enthält Ihre Aufnahme nur Werbung")) {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, NOCUTAVAILABLETEXT, 12 * 60 * 60 * 1000l);
             }
@@ -1125,7 +1124,7 @@ public class SaveTv extends PluginForHost {
         return stv_request_selected_format;
     }
 
-    private static int getConfiguredVideoFormat() {
+    public static int getConfiguredVideoFormat() {
         switch (SubConfiguration.getConfig("save.tv").getIntegerProperty(selected_video_format, -1)) {
         case 0:
             return 0;
@@ -1575,7 +1574,7 @@ public class SaveTv extends PluginForHost {
         sbinfo.append("Gut zu wissen: Statt dem Bindestrich lässt sich hierfür unten auch ein anderes Zeichen bzw. Zeichenfolge definieren.\r\n");
         sbinfo.append("Außerdem: Für Filme und Serien gibt es unterschiedliche Tags.\r\n");
         sbinfo.append("Kaputtmachen kannst du mit den Einstellungen prinzipiell nichts also probiere es einfach aus ;)\r\n");
-        sbinfo.append("Tipp: Die Save.tv PluginEinstellungen lassen sich rechts oben wieder auf ihre Standardwerte zurücksetzen!\r\n");
+        sbinfo.append("Tipp: Die Save.tv Plugin Einstellungen lassen sich rechts oben wieder auf ihre Standardwerte zurücksetzen!\r\n");
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_LABEL, sbinfo.toString()).setEnabledCondidtion(origName, false));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_SEPARATOR));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_TEXTFIELD, getPluginConfig(), CUSTOM_FILENAME2, JDL.L("plugins.hoster.savetv.customfilenamemovies", "Eigener Dateiname für Filme/Shows:")).setDefaultValue(defaultCustomFilename).setEnabledCondidtion(origName, false));

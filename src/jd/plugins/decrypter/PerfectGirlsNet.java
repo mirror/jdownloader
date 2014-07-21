@@ -65,7 +65,9 @@ public class PerfectGirlsNet extends PluginForDecrypt {
             return decryptedLinks;
         }
         externID = br.getRegex("redtube\\.com/player/\"><param name=\"FlashVars\" value=\"id=(\\d+)\\&").getMatch(0);
-        if (externID == null) externID = br.getRegex("embed\\.redtube\\.com/player/\\?id=(\\d+)\\&").getMatch(0);
+        if (externID == null) {
+            externID = br.getRegex("embed\\.redtube\\.com/player/\\?id=(\\d+)\\&").getMatch(0);
+        }
         if (externID != null) {
             DownloadLink dl = createDownloadlink("http://www.redtube.com/" + externID);
             decryptedLinks.add(dl);
@@ -124,7 +126,9 @@ public class PerfectGirlsNet extends PluginForDecrypt {
             return decryptedLinks;
         }
         externID = br.getRegex("pornhub\\.com/embed/([a-z0-9]+)").getMatch(0);
-        if (externID == null) externID = br.getRegex("pornhub\\.com/view_video\\.php\\?viewkey=(\\d+)").getMatch(0);
+        if (externID == null) {
+            externID = br.getRegex("pornhub\\.com/view_video\\.php\\?viewkey=(\\d+)").getMatch(0);
+        }
         if (externID != null) {
             DownloadLink dl = createDownloadlink("http://www.pornhub.com/view_video.php?viewkey=" + externID);
             decryptedLinks.add(dl);
@@ -181,7 +185,7 @@ public class PerfectGirlsNet extends PluginForDecrypt {
         }
         externID = br.getRegex("<iframe src=\"http://(www\\.)?yobt\\.tv/embed/(\\d+)\\.html\"").getMatch(1);
         if (externID != null) {
-            decryptedLinks.add(createDownloadlink("http://www.yobt.tv/content/" + externID + "/" + System.currentTimeMillis() + ".html"));
+            decryptedLinks.add(createDownloadlink("http://www.yobtdecrypted.tv/content/" + externID + "/" + System.currentTimeMillis() + ".html"));
             return decryptedLinks;
         }
         externID = br.getRegex("embed src=\"http://www.deviantclip.com/.*?mediaid=(\\d+)").getMatch(0);

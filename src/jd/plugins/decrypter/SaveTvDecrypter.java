@@ -62,6 +62,13 @@ public class SaveTvDecrypter extends PluginForDecrypt {
     /* Decrypter constants */
     private static final int       ENTRIES_PER_REQUEST      = 1000;
 
+    /* Property / Filename constants */
+    public static final String     QUALITY_PARAM            = "quality";
+    public static final String     QUALITY_LQ               = "LQ";
+    public static final String     QUALITY_HQ               = "HQ";
+    public static final String     QUALITY_HD               = "HD";
+    public static final String     EXTENSION                = ".mp4";
+
     /* Decrypter variables */
     final ArrayList<DownloadLink>  decryptedLinks           = new ArrayList<DownloadLink>();
     private long                   grab_last_hours_num      = 0;
@@ -216,12 +223,12 @@ public class SaveTvDecrypter extends PluginForDecrypt {
         return decryptedLinks;
     }
 
-    private void addID(final String id_info) throws ParseException, DecrypterException {
-        final String telecast_id = getJson(id_info, "ITELECASTID");
+    private void addID(final String id_source) throws ParseException, DecrypterException {
+        final String telecast_id = getJson(id_source, "ITELECASTID");
         final String telecast_url = "https://www.save.tv/STV/M/obj/archive/VideoArchiveDetails.cfm?TelecastId=" + telecast_id;
         final DownloadLink dl = createDownloadlink(telecast_url);
-        jd.plugins.hoster.SaveTv.siteParseFilenameInformation(dl, id_info);
-        jd.plugins.hoster.SaveTv.parseQualityTag(dl, null);
+        jd.plugins.hoster.SaveTv.siteParseFilenameInformation(dl, id_source);
+        jd.plugins.hoster.SaveTv.parseQualityTag(dl, id_source);
         final long calculated_filesize = jd.plugins.hoster.SaveTv.calculateFilesize(getLongProperty(dl, "site_runtime_minutes", 0));
 
         final long datemilliseconds = getLongProperty(dl, "originaldate", 0);

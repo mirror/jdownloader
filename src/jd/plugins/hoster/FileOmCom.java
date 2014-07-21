@@ -1810,8 +1810,9 @@ public class FileOmCom extends PluginForHost {
      *            Account that's been used, can be null
      * @param x
      *            Integer positive or negative. Positive adds slots. Negative integer removes slots.
+     * @throws PluginException
      * */
-    private synchronized void setHashedHashKeyValue(final Account account, final Integer x) {
+    private synchronized void setHashedHashKeyValue(final Account account, final Integer x) throws PluginException {
         if (usedHost == null || x == null) {
             return;
         }
@@ -1820,8 +1821,12 @@ public class FileOmCom extends PluginForHost {
             // load hostMap within holder if not empty
             holder = hostMap.get(account);
             // remove old hashMap reference, prevents creating duplicate entry of 'account' when returning result.
-            if (holder.containsKey(account)) {
-                hostMap.remove(account);
+            try {
+                if (holder.containsKey(account)) {
+                    hostMap.remove(account);
+                }
+            } catch (final Throwable e) {
+                throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Too many simultan downloads", 5 * 60 * 1000l);
             }
         }
         String currentKey = getHashedHashedKey(account);

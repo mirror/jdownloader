@@ -69,7 +69,9 @@ public class TubeRealmCom extends PluginForDecrypt {
             return decryptedLinks;
         }
         externID = br.getRegex("redtube\\.com/player/\"><param name=\"FlashVars\" value=\"id=(\\d+)\\&").getMatch(0);
-        if (externID == null) externID = br.getRegex("embed\\.redtube\\.com/player/\\?id=(\\d+)\\&").getMatch(0);
+        if (externID == null) {
+            externID = br.getRegex("embed\\.redtube\\.com/player/\\?id=(\\d+)\\&").getMatch(0);
+        }
         if (externID != null) {
             final DownloadLink dl = createDownloadlink("http://www.redtube.com/" + externID);
             decryptedLinks.add(dl);
@@ -108,7 +110,9 @@ public class TubeRealmCom extends PluginForDecrypt {
             return decryptedLinks;
         }
         externID = br.getRegex("embed\\.pornrabbit\\.com/player\\.swf\\?movie_id=(\\d+)\"").getMatch(0);
-        if (externID == null) externID = br.getRegex("pornrabbit\\.com/embed/(\\d+)").getMatch(0);
+        if (externID == null) {
+            externID = br.getRegex("pornrabbit\\.com/embed/(\\d+)").getMatch(0);
+        }
         if (externID != null) {
             decryptedLinks.add(createDownloadlink("http://pornrabbit.com/video/" + externID + "/"));
             return decryptedLinks;
@@ -191,7 +195,7 @@ public class TubeRealmCom extends PluginForDecrypt {
         }
         externID = br.getRegex("<iframe src=\"http://(www\\.)?yobt\\.tv/embed/(\\d+)\\.html\"").getMatch(1);
         if (externID != null) {
-            decryptedLinks.add(createDownloadlink("http://www.yobt.tv/content/" + externID + "/" + System.currentTimeMillis() + ".html"));
+            decryptedLinks.add(createDownloadlink("http://www.yobtdecrypted.tv/content/" + externID + "/" + System.currentTimeMillis() + ".html"));
             return decryptedLinks;
         }
         externID = br.getRegex("stileproject\\.com/embed/(\\d+)").getMatch(0);
@@ -361,7 +365,9 @@ public class TubeRealmCom extends PluginForDecrypt {
             }
             final DownloadLink dl = createDownloadlink("directhttp://" + Encoding.htmlDecode(finallink));
             String type = br.getRegex("<meta rel=\"type\">(.*?)</meta>").getMatch(0);
-            if (type == null) type = "flv";
+            if (type == null) {
+                type = "flv";
+            }
             dl.setFinalFileName(filename + "." + type);
             decryptedLinks.add(dl);
             return decryptedLinks;
