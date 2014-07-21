@@ -110,8 +110,11 @@ public class ImgSrcRu extends PluginForDecrypt {
 
                 String fpName = br.getRegex("from '<strong>([^\r\n]+)</strong>").getMatch(0);
                 if (fpName == null) {
-                    logger.warning("Decrypter broken for link: " + parameter);
-                    return null;
+                    fpName = br.getRegex("<title>(.*?) @ iMGSRC.RU</title>").getMatch(0);
+                    if (fpName == null) {
+                        logger.warning("Decrypter broken for link: " + parameter);
+                        return null;
+                    }
                 }
 
                 uaid = new Regex(parameter, "ad=(\\d+)").getMatch(0);
