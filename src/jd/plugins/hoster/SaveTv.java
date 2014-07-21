@@ -559,6 +559,7 @@ public class SaveTv extends PluginForHost {
             }
             /* Check if ads-free version is available */
             /* TODO: Check if the numbers are still correct */
+            /* TODO: Enhance ad-free check - check if selected format is available and if it is available in ad-free */
             final String ad_Free_availability = getJson(br.toString(), "BADFREEAVAILABLE");
             if (ad_Free_availability.equals("3")) {
                 downloadLink.getLinkStatus().setStatusText(JDL.L("plugins.hoster.SaveTv.NoCutListAvailable", NOCUTAVAILABLETEXT));
@@ -614,7 +615,7 @@ public class SaveTv extends PluginForHost {
             }
             /* Ads-Free version not available - handle it */
             if (br.containsHTML("\"Leider enthält Ihre Aufnahme nur Werbung")) {
-                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, NOCUTAVAILABLETEXT, 12 * 60 * 60 * 1000l);
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Serverfehler: 'Leider enthält Ihre Aufnahme nur Werbung'", 12 * 60 * 60 * 1000l);
             }
             dllink = br.getRegex("(\\'|\")(http://[^<>\"\\']+/\\?m=dl)(\\'|\")").getMatch(1);
         }
@@ -638,7 +639,7 @@ public class SaveTv extends PluginForHost {
             logger.warning("Save.tv: Received HTML code instead of the file!");
             br.followConnection();
             if (br.containsHTML(">Die Aufnahme kann zum aktuellen Zeitpunkt nicht vollständig heruntergeladen werden")) {
-                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Die Aufnahme kann zum aktuellen Zeitpunkt nicht vollständig heruntergeladen werden");
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Serverfehler: 'Die Aufnahme kann zum aktuellen Zeitpunkt nicht vollständig heruntergeladen werden'");
             }
 
             /* Handle unknown errors */
@@ -653,11 +654,11 @@ public class SaveTv extends PluginForHost {
             } else {
                 downloadLink.setProperty(NICE_HOSTproperty + "timesfailed_unknown_dlerror", Property.NULL);
                 logger.info(NICE_HOST + ": timesfailed_unknown_dlerror - disabling current host!");
-                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Unbekannter Server-Fehler - bitte dem JDownloader Support mit Log melden!", 60 * 60 * 1000l);
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Unbekannter Serverfehler - bitte dem JDownloader Support mit Log melden!", 60 * 60 * 1000l);
             }
         } else if (dl.getConnection().getLongContentLength() <= 1048576) {
             /* Avoid downloading (too small) trash data */
-            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server-Fehler: Datei vom Server zu klein", 60 * 60 * 1000l);
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Serverfehler: Datei vom Server zu klein", 60 * 60 * 1000l);
         }
         String server_filename = getFileNameFromHeader(dl.getConnection());
         server_filename = fixCharIssues(server_filename);
@@ -702,7 +703,7 @@ public class SaveTv extends PluginForHost {
                 logger.info("ERROR_DOWNLOAD_INCOMPLETE --> Handling it");
                 if (downloadLink.getBooleanProperty(NORESUME, false)) {
                     downloadLink.setProperty(NORESUME, Boolean.valueOf(false));
-                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Unknown server error", 30 * 60 * 1000l);
+                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Unbekannter Serverfehler 2 - bitte dem JDownloader Support mit Log melden!", 30 * 60 * 1000l);
                 }
                 downloadLink.setProperty(NORESUME, Boolean.valueOf(true));
                 downloadLink.setChunksProgress(null);

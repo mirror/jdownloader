@@ -130,7 +130,7 @@ public class FileHippoCom extends PluginForHost {
         for (String page : pages) {
             if (page != null) {
                 page = MAINPAGE + page;
-                br.getPage(page);
+                br.getPage(page + "?direct");
             }
             String dllink = br.getRegex("http\\-equiv=\"Refresh\" content=\"\\d+; url=(/.*?)\"").getMatch(0);
             if (dllink == null) {
