@@ -79,4 +79,9 @@ public class Mp3TakeoutCom extends PluginForHost {
     public void resetDownloadlink(final DownloadLink link) {
     }
 
+
+/* NO OVERRIDE!! We need to stay 0.9*compatible */
+public boolean hasCaptcha(DownloadLink link, jd.plugins.Account acc) {
+return true;
+}
 }

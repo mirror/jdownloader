@@ -89,7 +89,9 @@ public class Youtube extends PluginForHost {
     }
 
     public static String unescape(String s) {
-        if (s == null) return null;
+        if (s == null) {
+            return null;
+        }
         if (true) {
             // convert any html based unicode as a pre correction
             String test = s;
@@ -167,10 +169,11 @@ public class Youtube extends PluginForHost {
 
     public String preferHTTPS(String s) {
         boolean prefers = getPluginConfig().getBooleanProperty(PREFER_HTTPS, defaultCustomPreferHTTPS);
-        if (prefers)
+        if (prefers) {
             return s.replaceFirst("http://", "https://");
-        else
+        } else {
             return s.replaceFirst("https://", "http://");
+        }
     }
 
     public Youtube(final PluginWrapper wrapper) {
@@ -299,11 +302,13 @@ public class Youtube extends PluginForHost {
                                 br.setCookie("youtube.com", key, value);
                             }
 
-                            if (refresh == false)
+                            if (refresh == false) {
                                 return;
-                            else {
+                            } else {
                                 br.getPage("http://www.youtube.com");
-                                if (!br.containsHTML("<span class=\"yt-uix-button-content\">Sign In </span></button></div>")) { return; }
+                                if (!br.containsHTML("<span class=\"yt-uix-button-content\">Sign In </span></button></div>")) {
+                                    return;
+                                }
                             }
                         }
                     }
@@ -338,7 +343,9 @@ public class Youtube extends PluginForHost {
                 form.put("asts", "");
                 br.setFollowRedirects(false);
                 final String cook = br.getCookie("http://www.google.com", "GALX");
-                if (cook == null) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
+                if (cook == null) {
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                }
                 br.submitForm(form);
                 if (br.getRedirectLocation() == null) {
                     final String page = Encoding.htmlDecode(br.toString());
@@ -352,7 +359,9 @@ public class Youtube extends PluginForHost {
                 /* second call to google */
                 br.getPage(br.getRedirectLocation());
                 if (br.containsHTML("Google will check if this")) {
-                    if (showDialog) UserIO.getInstance().requestMessageDialog(0, "Youtube Login Error", "Please logout and login again at youtube.com, account check needed!");
+                    if (showDialog) {
+                        UserIO.getInstance().requestMessageDialog(0, "Youtube Login Error", "Please logout and login again at youtube.com, account check needed!");
+                    }
                     account.setValid(false);
                     throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
                 }
@@ -448,15 +457,21 @@ public class Youtube extends PluginForHost {
     public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws Exception {
         // For streaming extension to tell her that these links can be streamed without account
         // System.out.println("Youtube: " + downloadLink);
-        if (downloadLink.getBooleanProperty("DASH", false)) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        if (downloadLink.getBooleanProperty("offline", false)) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (downloadLink.getBooleanProperty("DASH", false)) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
+        if (downloadLink.getBooleanProperty("offline", false)) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
         if (downloadLink.getBooleanProperty("subtitle", false) || downloadLink.getBooleanProperty("thumbnail", false)) {
             URLConnectionAdapter urlConnection = null;
             String ae = br.getHeaders().get("Accept-Encoding");
             try {
                 br.getHeaders().put("Accept-Encoding", "");
                 urlConnection = br.openGetConnection(downloadLink.getDownloadURL());
-                if (urlConnection.getResponseCode() == 404) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+                if (urlConnection.getResponseCode() == 404) {
+                    throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+                }
                 String size = urlConnection.getHeaderField("Content-Length");
                 if (size != null) {
                     long contentSize = Long.parseLong(size);
@@ -484,14 +499,22 @@ public class Youtube extends PluginForHost {
                 downloadLink.setFinalFileName(downloadLink.getStringProperty("name", null));
                 downloadLink.setDownloadSize((Long) downloadLink.getProperty("size", -1l));
                 final PluginForDecrypt plugin = JDUtilities.getPluginForDecrypt("youtube.com");
-                if (plugin == null) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, "cannot decrypt videolink"); }
-                if (downloadLink.getStringProperty("fmtNew", null) == null) { throw new PluginException(LinkStatus.ERROR_FATAL, "You have to add link again"); }
-                if (downloadLink.getStringProperty("videolink", null) == null) { throw new PluginException(LinkStatus.ERROR_FATAL, "You have to add link again"); }
+                if (plugin == null) {
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, "cannot decrypt videolink");
+                }
+                if (downloadLink.getStringProperty("fmtNew", null) == null) {
+                    throw new PluginException(LinkStatus.ERROR_FATAL, "You have to add link again");
+                }
+                if (downloadLink.getStringProperty("videolink", null) == null) {
+                    throw new PluginException(LinkStatus.ERROR_FATAL, "You have to add link again");
+                }
 
                 final HashMap<Integer, String[]> LinksFound = ((jd.plugins.decrypter.TbCm) plugin).getLinks(downloadLink.getStringProperty("videolink", null), this.prem, this.br, 0);
 
                 if (LinksFound == null || LinksFound.isEmpty()) {
-                    if (this.br.containsHTML("<div\\s+id=\"verify-age-actions\">")) { throw new PluginException(LinkStatus.ERROR_FATAL, "The entered account couldn't pass the age verification!"); }
+                    if (this.br.containsHTML("<div\\s+id=\"verify-age-actions\">")) {
+                        throw new PluginException(LinkStatus.ERROR_FATAL, "The entered account couldn't pass the age verification!");
+                    }
                     throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
                 }
                 if (LinksFound.get(downloadLink.getIntegerProperty("fmtNew", 0)) == null) {
@@ -593,5 +616,10 @@ public class Youtube extends PluginForHost {
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), PROXY_ACTIVE, JDL.L("plugins.hoster.youtube.proxyactive", "Use HTTP Proxy?")).setDefaultValue(false));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_TEXTFIELD, getPluginConfig(), PROXY_ADDRESS, JDL.L("plugins.hoster.youtube.proxyaddress", "Proxy Address")));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_TEXTFIELD, getPluginConfig(), PROXY_PORT, JDL.L("plugins.hoster.youtube.proxyport", "Proxy Port")));
+    }
+
+    /* NO OVERRIDE!! We need to stay 0.9*compatible */
+    public boolean hasCaptcha(DownloadLink link, jd.plugins.Account acc) {
+        return false;
     }
 }

@@ -54,16 +54,22 @@ public class AkatsukiSubsNet extends PluginForHost {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         br.getPage(link.getDownloadURL());
-        if (br.containsHTML("Kein Download mit der angegebenen ID gefunden")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (br.containsHTML("Kein Download mit der angegebenen ID gefunden")) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
         if (br.containsHTML(SERVEROVERLOADED)) {
             link.getLinkStatus().setStatusText("Server overloaded");
             return AvailableStatus.UNCHECKABLE;
         }
         final String filename = br.getRegex(">Downloade: <span class=\"highlight\">([^<>\"]*?)</span>").getMatch(0);
-        if (filename == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (filename == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         link.setName(Encoding.htmlDecode(filename.trim()));
         final String md5 = br.getRegex("MD5: <span class=\"highlight\">([a-z0-9]{32})</span>").getMatch(0);
-        if (md5 != null) link.setMD5Hash(md5);
+        if (md5 != null) {
+            link.setMD5Hash(md5);
+        }
         return AvailableStatus.TRUE;
     }
 
@@ -71,11 +77,17 @@ public class AkatsukiSubsNet extends PluginForHost {
     public void handleFree(final DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
         // Limit on single link (IP)
-        if (br.containsHTML(">Du hast das Limit an Downloads für diese Datei innerhalb von")) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 60 * 60 * 1000l);
+        if (br.containsHTML(">Du hast das Limit an Downloads für diese Datei innerhalb von")) {
+            throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 60 * 60 * 1000l);
+        }
         // Limit on all links (IP)
-        if (br.containsHTML(">Du hast das Limit an Downloads innerhalb von")) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 60 * 60 * 1000l);
+        if (br.containsHTML(">Du hast das Limit an Downloads innerhalb von")) {
+            throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 60 * 60 * 1000l);
+        }
         // Server overloaded
-        if (br.containsHTML(SERVEROVERLOADED)) throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Server overloaded", 5 * 60 * 1000l);
+        if (br.containsHTML(SERVEROVERLOADED)) {
+            throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Server overloaded", 5 * 60 * 1000l);
+        }
         br.setFollowRedirects(false);
         final PluginForHost recplug = JDUtilities.getPluginForHost("DirectHTTP");
         final jd.plugins.hoster.DirectHTTP.Recaptcha rc = ((DirectHTTP) recplug).getReCaptcha(br);
@@ -95,8 +107,12 @@ public class AkatsukiSubsNet extends PluginForHost {
             }
             break;
         }
-        if (br.containsHTML("(api\\.recaptcha\\.net|google\\.com/recaptcha/api/)")) throw new PluginException(LinkStatus.ERROR_CAPTCHA);
-        if (dl.getConnection().getContentType().contains("html")) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (br.containsHTML("(api\\.recaptcha\\.net|google\\.com/recaptcha/api/)")) {
+            throw new PluginException(LinkStatus.ERROR_CAPTCHA);
+        }
+        if (dl.getConnection().getContentType().contains("html")) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         try {
             // add a download slot
             controlFree(+1);
@@ -140,4 +156,8 @@ public class AkatsukiSubsNet extends PluginForHost {
     public void resetDownloadlink(final DownloadLink link) {
     }
 
+    /* NO OVERRIDE!! We need to stay 0.9*compatible */
+    public boolean hasCaptcha(DownloadLink link, jd.plugins.Account acc) {
+        return true;
+    }
 }
