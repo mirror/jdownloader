@@ -39,12 +39,12 @@ import jd.plugins.PluginForHost;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "otr.datenkeller.at" }, urls = { "http://(www\\.)?otr\\.datenkeller\\.at/\\?(file|getFile)=.+" }, flags = { 2 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "otr.datenkeller.at" }, urls = { "https?://(www\\.)?otr\\.datenkeller\\.(at|net)/\\?(file|getFile)=.+" }, flags = { 2 })
 public class OtrDatenkellerAt extends PluginForHost {
 
     public static String  agent             = RandomUserAgent.generate();
     private final String  DOWNLOADAVAILABLE = "onclick=\"startCount";
-    private final String  MAINPAGE          = "http://otr.datenkeller.at";
+    private final String  MAINPAGE          = "http://otr.datenkeller.net";
     private static Object LOCK              = new Object();
 
     public OtrDatenkellerAt(PluginWrapper wrapper) {
@@ -54,13 +54,14 @@ public class OtrDatenkellerAt extends PluginForHost {
         this.setStartIntervall(15 * 1000l);
     }
 
-    public void correctDownloadLink(DownloadLink link) {
+    public void correctDownloadLink(final DownloadLink link) {
+        link.setUrlDownload(link.getDownloadURL().replace("otr.datenkeller.at/", "otr.datenkeller.net/"));
         link.setUrlDownload(link.getDownloadURL().replace("getFile", "file").replaceAll("\\&referer=otrkeyfinder\\&lang=[a-z]+", ""));
     }
 
     @Override
     public String getAGBLink() {
-        return "http://otr.datenkeller.at";
+        return "http://otr.datenkeller.net";
     }
 
     @Override
@@ -69,12 +70,18 @@ public class OtrDatenkellerAt extends PluginForHost {
         br.setCustomCharset("utf-8");
         br.getHeaders().put("User-Agent", agent);
         br.getPage(link.getDownloadURL());
-        if (!br.containsHTML("id=\"reqFileImg\"") && !br.containsHTML("\\(\\'#reqFile\\'\\)\\.hide\\(\\)\\.slideDown") && !br.containsHTML("onclick=\"window\\.open\\(\\'/\\?getFile")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        String filename = new Regex(link.getDownloadURL(), "otr\\.datenkeller\\.at/\\?file=(.+)").getMatch(0);
+        if (!br.containsHTML("id=\"reqFileImg\"") && !br.containsHTML("\\(\\'#reqFile\\'\\)\\.hide\\(\\)\\.slideDown") && !br.containsHTML("onclick=\"window\\.open\\(\\'/\\?getFile")) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
+        String filename = new Regex(link.getDownloadURL(), "otr\\.datenkeller\\.net/\\?file=(.+)").getMatch(0);
         String filesize = br.getRegex("Größe: </td><td align=\\'center\\'> (.*?) </td>").getMatch(0);
-        if (filename == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (filename == null) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
         link.setName(filename.trim().replaceAll("\\&referer=.*?", ""));
-        if (filesize != null) link.setDownloadSize(SizeFormatter.getSize(filesize.replace("i", "")));
+        if (filesize != null) {
+            link.setDownloadSize(SizeFormatter.getSize(filesize.replace("i", "")));
+        }
         return AvailableStatus.TRUE;
     }
 
@@ -83,7 +90,9 @@ public class OtrDatenkellerAt extends PluginForHost {
         String firstPart = allMatches.getMatch(1);
         String secondPart = allMatches.getMatch(0);
         String thirdPart = allMatches.getMatch(2);
-        if (firstPart == null || secondPart == null || thirdPart == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (firstPart == null || secondPart == null || thirdPart == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         String dllink = "http://" + firstPart + "/" + secondPart + "/" + thirdPart;
         return dllink;
     }
@@ -112,16 +121,21 @@ public class OtrDatenkellerAt extends PluginForHost {
             for (int i = 0; i <= 410; i++) {
                 getPage(dlPage, this.br);
                 String countMe = br.getRegex("\"(otrfuncs/countMe\\.js\\?r=\\d+)\"").getMatch(0);
-                if (countMe != null)
-                    countMe = "http://otr.datenkeller.at/" + countMe;
-                else
+                if (countMe != null) {
+                    countMe = "http://otr.datenkeller.net/" + countMe;
+                } else {
                     countMe = "http://staticaws.lastverteiler.net/otrfuncs/countMe.js";
+                }
                 br2.getPage("http://staticaws.lastverteiler.net/images/style.css");
                 br2.getPage(countMe);
                 sleep(27 * 1000l, downloadLink);
                 String position = br.getRegex("document\\.title = \"(\\d+/\\d+)").getMatch(0);
-                if (position == null) position = br.getRegex("<td>Deine Position in der Warteschlange: </td><td>~(\\d+)</td></tr>").getMatch(0);
-                if (position != null) downloadLink.getLinkStatus().setStatusText("Waiting for ticket...Position in der Warteschlange: " + position);
+                if (position == null) {
+                    position = br.getRegex("<td>Deine Position in der Warteschlange: </td><td>~(\\d+)</td></tr>").getMatch(0);
+                }
+                if (position != null) {
+                    downloadLink.getLinkStatus().setStatusText("Waiting for ticket...Position in der Warteschlange: " + position);
+                }
                 if (br.containsHTML(DOWNLOADAVAILABLE)) {
                     getPage(dlPage, this.br);
                     dllink = getDllink();
@@ -129,9 +143,11 @@ public class OtrDatenkellerAt extends PluginForHost {
                 }
                 lowSpeedLink = br.getRegex("\"(\\?lowSpeed=[^<>\\'\"]+)\"").getMatch(0);
                 if (i > 400 && lowSpeedLink != null) {
-                    getPage("http://otr.datenkeller.at/" + lowSpeedLink, br2);
+                    getPage("http://otr.datenkeller.net/" + lowSpeedLink, br2);
                     dllink = br2.getRegex(">Dein Download Link:<br>[\t\n\r ]+<a href=\"(http://[^<>\\'\"]+)\"").getMatch(0);
-                    if (dllink == null) dllink = br2.getRegex("\"(http://\\d+\\.\\d+\\.\\d+\\.\\d+/low/[a-z0-9]+/[^<>\\'\"]+)\"").getMatch(0);
+                    if (dllink == null) {
+                        dllink = br2.getRegex("\"(http://\\d+\\.\\d+\\.\\d+\\.\\d+/low/[a-z0-9]+/[^<>\\'\"]+)\"").getMatch(0);
+                    }
                     if (dllink != null) {
                         logger.info("Using lowspeed link for downloadlink: " + downloadLink.getDownloadURL());
                         break;
@@ -139,11 +155,15 @@ public class OtrDatenkellerAt extends PluginForHost {
                         logger.warning("Failed to find low speed link, continuing to look for downloadticket...");
                     }
                 }
-                if (i > 403) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Didn't get a ticket");
+                if (i > 403) {
+                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Didn't get a ticket");
+                }
                 logger.info("Didn't get a ticket on try " + i + ". Retrying...Position: " + position);
             }
         }
-        if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (dllink == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 1);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
@@ -159,7 +179,9 @@ public class OtrDatenkellerAt extends PluginForHost {
             br.setCookiesExclusive(true);
             final Object ret = account.getProperty("cookies", null);
             boolean acmatch = Encoding.urlEncode(account.getUser()).equals(account.getStringProperty("name", Encoding.urlEncode(account.getUser())));
-            if (acmatch) acmatch = Encoding.urlEncode(account.getPass()).equals(account.getStringProperty("pass", Encoding.urlEncode(account.getPass())));
+            if (acmatch) {
+                acmatch = Encoding.urlEncode(account.getPass()).equals(account.getStringProperty("pass", Encoding.urlEncode(account.getPass())));
+            }
             if (acmatch && ret != null && ret instanceof HashMap<?, ?> && !force) {
                 final HashMap<String, String> cookies = (HashMap<String, String>) ret;
                 if (account.isValid()) {
@@ -174,7 +196,9 @@ public class OtrDatenkellerAt extends PluginForHost {
             br.setDebug(true);
             br.setFollowRedirects(false);
             br.postPageRaw(MAINPAGE + "/index.php", "xjxfun=spenderLogin&xjxr=" + new Date().getTime() + "&xjxargs[]=S" + Encoding.urlEncode(account.getUser()) + "&xjxargs[]=S" + Encoding.urlEncode(account.getPass()));
-            if (br.getCookie(MAINPAGE, "otrdat") == null) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+            if (br.getCookie(MAINPAGE, "otrdat") == null) {
+                throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+            }
             // Save cookies
             final HashMap<String, String> cookies = new HashMap<String, String>();
             final Cookies add = this.br.getCookies(MAINPAGE);
@@ -210,7 +234,9 @@ public class OtrDatenkellerAt extends PluginForHost {
         br.setFollowRedirects(false);
         br.getPage(getDlpage(link));
         String dllink = br.getRegex("type=\"text\" id=\"dlInp\" value=\"(http://.*?)\"").getMatch(0);
-        if (dllink == null) dllink = br.getRegex("\"(http://cluster\\.lastverteiler\\.net/[a-z0-9]+/.*?)\"").getMatch(0);
+        if (dllink == null) {
+            dllink = br.getRegex("\"(http://cluster\\.lastverteiler\\.net/[a-z0-9]+/.*?)\"").getMatch(0);
+        }
         if (dllink == null) {
             logger.warning("Final downloadlink (String is \"dllink\") regex didn't match!");
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -235,7 +261,9 @@ public class OtrDatenkellerAt extends PluginForHost {
 
     private void correctBR(final Browser br) {
         final String remove = br.getRegex("(<a href=\"#\" msgToJD=.*?href=\"#\")").getMatch(0);
-        if (remove != null) br.getRequest().setHtmlCode(br.toString().replace(remove, ""));
+        if (remove != null) {
+            br.getRequest().setHtmlCode(br.toString().replace(remove, ""));
+        }
     }
 
     @Override

@@ -37,7 +37,7 @@ public class HulkShareComFolder extends PluginForDecrypt {
     }
 
     private static final String HULKSHAREDOWNLOADLINK = "http://(www\\.)?(hulkshare\\.com|hu\\/lk)/([a-z0-9]{12})";
-    private static final String TYPE_SECONDSINGLELINK = "http://(www\\.)?(hulkshare\\.com|hu\\.lk)/[a-z0-9]+/[^<>\"/]+";
+    private static final String TYPE_SECONDSINGLELINK = "http://(www\\.)?(hulkshare\\.com|hu\\.lk)/[a-z0-9\\-_]+/[^<>\"/]+";
     private static final String TYPE_PLAYLIST         = "http://(www\\.)?(hulkshare\\.com|hu\\.lk)/playlist/\\d+(.+)?";
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {

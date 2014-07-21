@@ -29,7 +29,7 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "mirrorstack.com" }, urls = { "https?://(www\\.)?(uploadmagnet\\.com|pdownload\\.net|zlinx\\.me|filesuploader\\.com|onmirror\\.com|multiupload\\.biz|lastbox\\.net|mirrorhive\\.com|mirrorstack\\.com)/([a-z0-9]{1,2}_)?[a-z0-9]{12}" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "uploadmagnet.com" }, urls = { "https?://(www\\.)?(uploadmagnet\\.com|pdownload\\.net|zlinx\\.me|filesuploader\\.com|onmirror\\.com|multiupload\\.biz|lastbox\\.net|mirrorhive\\.com)/([a-z0-9]{1,2}_)?[a-z0-9]{12}" }, flags = { 0 })
 public class MirStkCm extends PluginForDecrypt {
 
     /*
@@ -95,15 +95,11 @@ public class MirStkCm extends PluginForDecrypt {
             singleLinks = new Regex(parameter, "(.+)").getColumn(0);
         }
         // Normal links, find all singleLinks
-        else if (parameter.matches(regexNormalLink) || parameter.matches(".*mirrorstack\\.com/[a-z]_[a-z0-9]{12}")) {
+        else if (parameter.matches(regexNormalLink)) {
             singleLinks = br.getRegex("<a href=\\'" + regexSingleLink + "\\'").getColumn(0);
             if (singleLinks == null || singleLinks.length == 0) {
                 singleLinks = br.getRegex(regexSingleLink).getColumn(0);
             }
-        }
-        if ((singleLinks == null || singleLinks.length == 0) && parameter.contains("mirrorstack.com/") && br.containsHTML("class=\"mirror_hosts\"")) {
-            logger.info("Link offline: " + parameter);
-            return decryptedLinks;
         }
         if ((singleLinks == null || singleLinks.length == 0) && parameter.contains("pdownload.net/") && br.containsHTML("</b> \\| \\(")) {
             logger.info("Link offline: " + parameter);
@@ -134,10 +130,7 @@ public class MirStkCm extends PluginForDecrypt {
                         String referer = null;
                         String add_char = "";
                         Integer wait = 0;
-                        if (parameter.matches(".+(mirrorstack\\.com)/.+")) {
-                            add_char = "?";
-                            referer = new Regex(br.getURL(), "(https?://[^/]+)/").getMatch(0) + "/" + add_char + "q=r_counter";
-                        } else if (parameter.matches(".+(multiupload\\.biz)/.+")) {
+                        if (parameter.matches(".+(multiupload\\.biz)/.+")) {
                             add_char = "?";
                             referer = new Regex(br.getURL(), "(https?://[^/]+)/").getMatch(0).replace("http://", "https://") + "/r_counter";
                             wait = 20;

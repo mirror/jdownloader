@@ -69,7 +69,7 @@ public class RpprsIn extends PluginForDecrypt {
                 }
                 br.setFollowRedirects(true);
                 br.getPage(parameter);
-                final Regex accessinfo = br.getRegex("makeRIP\\(\"([A-Za-z]+)\\-(\\d+)\"\\)");
+                final Regex accessinfo = br.getRegex("makeRIP\\(\"([A-Za-z_]+)\\-(\\d+)\"\\)");
                 access = accessinfo.getMatch(0);
 
                 br.setFollowRedirects(false);

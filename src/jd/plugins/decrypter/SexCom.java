@@ -27,46 +27,79 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "sex.com" }, urls = { "http://(www\\.)?sex\\.com/(pin/\\d+/|picture/\\d+)" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "sex.com" }, urls = { "http://(www\\.)?sex\\.com/(pin/\\d+/|picture/\\d+|video/\\d+)" }, flags = { 0 })
 public class SexCom extends PluginForDecrypt {
 
     public SexCom(PluginWrapper wrapper) {
         super(wrapper);
     }
 
+    private static final String TYPE_VIDEO = "http://(www\\.)?sex\\.com/video/\\d+";
+
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String parameter = param.toString().replace("/pin/", "/picture/");
         br.setFollowRedirects(true);
+        String externID;
+        String filename;
         br.getPage(parameter);
-        if (br.containsHTML(">Page Not Found<")) {
-            logger.info("Link offline: " + parameter);
-            return decryptedLinks;
-        }
-        String filename = br.getRegex("<title>([^<>\"]*?) \\| Sex Videos and Pictures \\| Sex\\.com</title>").getMatch(0);
-        if (filename == null || filename.length() <= 2) filename = br.getRegex("addthis:title=\"([^<>\"]*?)\"").getMatch(0);
-        if (filename == null || filename.length() <= 2) filename = br.getRegex("property=\"og:title\" content=\"([^<>]*?)\\-  Pin #\\d+ \\| Sex\\.com\"").getMatch(0);
-        if (filename == null || filename.length() <= 2) filename = br.getRegex("<div class=\"pin\\-header navbar navbar\\-static\\-top\">[\t\n\r ]+<div class=\"navbar\\-inner\">[\t\n\r ]+<h1>([^<>]*?)</h1>").getMatch(0);
-        if (filename == null || filename.length() <= 2) filename = new Regex(parameter, "(\\d+)/?$").getMatch(0);
-        filename = Encoding.htmlDecode(filename.trim());
-        filename = filename.replace("#", "");
-        String externID = br.getRegex("<div class=\"from\">From <a rel=\"nofollow\" href=\"(http://[^<>\"]*?)\"").getMatch(0);
-        if (externID != null) {
-            decryptedLinks.add(createDownloadlink(externID));
-            return decryptedLinks;
-        }
-        externID = br.getRegex("<link rel=\"image_src\" href=\"(http[^<>\"]*?)\"").getMatch(0);
-        // For .gif images
-        if (externID == null) externID = br.getRegex("<div class=\"image_frame\">[\t\n\r ]+<img alt=\"\" title=\"\" src=\"(http://[^<>\"]*?)\"").getMatch(0);
-        if (externID != null) {
-            DownloadLink dl = createDownloadlink("directhttp://" + externID);
-            dl.setFinalFileName(filename + externID.substring(externID.lastIndexOf(".")));
-            decryptedLinks.add(dl);
-            return decryptedLinks;
-        }
-        if (externID == null) {
-            logger.warning("Decrypter broken for link: " + parameter);
-            return null;
+        if (parameter.matches(TYPE_VIDEO)) {
+            filename = br.getRegex("itemprop=\"name\">([^<>\"]*?)</span>").getMatch(0);
+            final String continuelink = br.getRegex("\"(/video/embed\\?id=\\d+\\&pinId=\\d+[^<>\"]*?)\"").getMatch(0);
+            if (filename == null || continuelink == null) {
+                logger.warning("Decrypter broken for link: " + parameter);
+                return null;
+            }
+            filename = Encoding.htmlDecode(filename).trim();
+            br.getPage("http://www.sex.com" + continuelink);
+            externID = br.getRegex("file: \"(http://[^<>\"]*?)\"").getMatch(0);
+            if (externID == null) {
+                logger.warning("Decrypter broken for link: " + parameter);
+                return null;
+            }
+            final DownloadLink fina = createDownloadlink("directhttp://" + externID);
+            fina.setFinalFileName(filename + ".mp4");
+            decryptedLinks.add(fina);
+        } else {
+            if (br.containsHTML(">Page Not Found<")) {
+                logger.info("Link offline: " + parameter);
+                return decryptedLinks;
+            }
+            filename = br.getRegex("<title>([^<>\"]*?) \\| Sex Videos and Pictures \\| Sex\\.com</title>").getMatch(0);
+            if (filename == null || filename.length() <= 2) {
+                filename = br.getRegex("addthis:title=\"([^<>\"]*?)\"").getMatch(0);
+            }
+            if (filename == null || filename.length() <= 2) {
+                filename = br.getRegex("property=\"og:title\" content=\"([^<>]*?)\\-  Pin #\\d+ \\| Sex\\.com\"").getMatch(0);
+            }
+            if (filename == null || filename.length() <= 2) {
+                filename = br.getRegex("<div class=\"pin\\-header navbar navbar\\-static\\-top\">[\t\n\r ]+<div class=\"navbar\\-inner\">[\t\n\r ]+<h1>([^<>]*?)</h1>").getMatch(0);
+            }
+            if (filename == null || filename.length() <= 2) {
+                filename = new Regex(parameter, "(\\d+)/?$").getMatch(0);
+            }
+            filename = Encoding.htmlDecode(filename.trim());
+            filename = filename.replace("#", "");
+            externID = br.getRegex("<div class=\"from\">From <a rel=\"nofollow\" href=\"(http://[^<>\"]*?)\"").getMatch(0);
+            if (externID != null) {
+                decryptedLinks.add(createDownloadlink(externID));
+                return decryptedLinks;
+            }
+            externID = br.getRegex("<link rel=\"image_src\" href=\"(http[^<>\"]*?)\"").getMatch(0);
+            // For .gif images
+            if (externID == null) {
+                externID = br.getRegex("<div class=\"image_frame\">[\t\n\r ]+<img alt=\"\" title=\"\" src=\"(http://[^<>\"]*?)\"").getMatch(0);
+            }
+            if (externID != null) {
+                DownloadLink dl = createDownloadlink("directhttp://" + externID);
+                dl.setFinalFileName(filename + externID.substring(externID.lastIndexOf(".")));
+                decryptedLinks.add(dl);
+                return decryptedLinks;
+            }
+            if (externID == null) {
+                logger.warning("Decrypter broken for link: " + parameter);
+                return null;
+            }
         }
         return decryptedLinks;
     }

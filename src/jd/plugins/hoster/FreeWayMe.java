@@ -54,6 +54,7 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.utils.locale.JDL;
 
 import org.appwork.swing.exttable.ExtTableModel;
 import org.appwork.swing.exttable.columns.ExtTextColumn;
@@ -81,6 +82,8 @@ public class FreeWayMe extends PluginForHost {
 
     private static final String                            NORESUME                            = "NORESUME";
     private static final String                            PREVENTSPRITUSAGE                   = "PREVENTSPRITUSAGE";
+    private static final String                            MAX_RETRIES_UNKNOWN_ERROR           = "MAX_RETRIES_UNKNOWN_ERROR";
+    private static final long                              max_retries_unknown_error_default   = 10;
 
     public final String                                    ACC_PROPERTY_CONNECTIONS            = "parallel";
     public final String                                    ACC_PROPERTY_TRAFFIC_REDUCTION      = "ACC_TRAFFIC_REDUCTION";
@@ -136,6 +139,7 @@ public class FreeWayMe extends PluginForHost {
                                                       put("FULLSPEED_TRAFFIC_NOTIFICATION_CAPTION", "Fullspeedlimit");
                                                       put("SETTINGS_FULLSPEED_NOTIFICATION_BUBBLE", "Show bubble notification if fullspeed limit is reached");
                                                       put("SETTINGS_FULLSPEED_NOTIFICATION_DIALOG", "Show dialog notification if fullspeed limit is reached");
+                                                      put("SETTING_MAXRETRIES_UNKNOWN_ERROR", "Max retries on unknown errors");
                                                   }
                                               };
 
@@ -176,6 +180,7 @@ public class FreeWayMe extends PluginForHost {
                                                       put("FULLSPEED_TRAFFIC_NOTIFICATION_CAPTION", "Fullspeed-Limit");
                                                       put("SETTINGS_FULLSPEED_NOTIFICATION_BUBBLE", "Zeige Bubble-Benachrichtigung wenn das Fullspeedlimit ausgeschöpft ist");
                                                       put("SETTINGS_FULLSPEED_NOTIFICATION_DIALOG", "Zeige Dialog-Benachrichtigung wenn das Fullspeedlimit ausgeschöpft ist");
+                                                      put("SETTING_MAXRETRIES_UNKNOWN_ERROR", "Maximale Neuversuche bei unbekannten Fehlerfällen");
                                                   }
                                               };
 
@@ -198,11 +203,12 @@ public class FreeWayMe extends PluginForHost {
     public void setConfigElements() {
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), ALLOWRESUME, getPhrase("SETTING_RESUME")).setDefaultValue(true));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), PREVENTSPRITUSAGE, getPhrase("SETTING_SPRITUSAGE")).setDefaultValue(false));
-        // settings for notification on empty fullspeed traffic
+        /* settings for notification on empty fullspeed traffic */
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), NOTIFY_ON_FULLSPEED_LIMIT_BUBBLE, getPhrase("SETTINGS_FULLSPEED_NOTIFICATION_BUBBLE")).setDefaultValue(false));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), NOTIFY_ON_FULLSPEED_LIMIT_DIALOG, getPhrase("SETTINGS_FULLSPEED_NOTIFICATION_DIALOG")).setDefaultValue(true));
 
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), BETAUSER, getPhrase("SETTING_BETA")).setDefaultValue(false));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_SPINNER, getPluginConfig(), FreeWayMe.MAX_RETRIES_UNKNOWN_ERROR, JDL.L("plugins.hoster.FreeWayMe.maxRetriesOnUnknownErrors", getPhrase("SETTING_MAXRETRIES_UNKNOWN_ERROR")), 3, 50, 1).setDefaultValue(max_retries_unknown_error_default));
     }
 
     @Override
@@ -531,33 +537,30 @@ public class FreeWayMe extends PluginForHost {
                 String msg = "(" + (attempts + 1) + "/ 3  )";
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, getPhrase("ERROR_NO_STABLE_ACCOUNTS") + msg);
             } else if (br.containsHTML("cURL\\-Error: Couldn\\'t resolve host")) {
-                int timesFailed = link.getIntegerProperty(ACC_PROPERTY_UNKOWN_FAILS, 0);
-                if (timesFailed <= 2) {
-                    timesFailed++;
-                    link.setProperty(ACC_PROPERTY_CURL_FAIL_RESOLVE_HOST, timesFailed);
-                    logger.info("curl_resolve_host_error: " + getPhrase("ERROR_SERVER") + " -> Retrying");
-                    throw new PluginException(LinkStatus.ERROR_RETRY, getPhrase("ERROR_SERVER"));
-                } else {
-                    link.setProperty(ACC_PROPERTY_UNKOWN_FAILS, Property.NULL);
-                    logger.info("curl_resolve_host_error: " + getPhrase("ERROR_SERVER") + " -> Disabling current host");
-                    tempUnavailableHoster(acc, link, 8 * 60 * 1000l, getPhrase("ERROR_SERVER"));
-                }
+                handleErrors(acc, link, getPhrase("ERROR_SERVER"), 10);
             }
             logger.severe("{handleMultiHost} Unhandled download error on free-way.me: " + br.toString());
-            int timesFailed = link.getIntegerProperty(ACC_PROPERTY_UNKOWN_FAILS, 0);
-            if (timesFailed <= 2) {
-                timesFailed++;
-                link.setProperty(ACC_PROPERTY_UNKOWN_FAILS, timesFailed);
-                throw new PluginException(LinkStatus.ERROR_RETRY, getPhrase("ERROR_SERVER"));
-            } else {
-                link.setProperty(ACC_PROPERTY_UNKOWN_FAILS, Property.NULL);
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            }
+            handleErrors(acc, link, "unknown_dl_error", this.getPluginConfig().getLongProperty(MAX_RETRIES_UNKNOWN_ERROR, max_retries_unknown_error_default));
 
         }
         dl.startDownload();
     }
 
+    private void handleErrors(final Account acc, final DownloadLink link, final String error, final long maxretries) throws PluginException {
+        int timesFailed = link.getIntegerProperty(ACC_PROPERTY_UNKOWN_FAILS, 0);
+        if (timesFailed <= maxretries) {
+            timesFailed++;
+            link.setProperty(ACC_PROPERTY_CURL_FAIL_RESOLVE_HOST, timesFailed);
+            logger.info(error + ":  -> Retrying");
+            throw new PluginException(LinkStatus.ERROR_RETRY, error);
+        } else {
+            link.setProperty(ACC_PROPERTY_UNKOWN_FAILS, Property.NULL);
+            logger.info(error + ":  -> Disabling current host");
+            tempUnavailableHoster(acc, link, 60 * 60 * 1000l, error);
+        }
+    }
+
+    @SuppressWarnings({ "unused", "unchecked" })
     public void showAccountDetailsDialog(final Account account) {
         final AccountInfo ai = account.getAccountInfo();
         if (ai != null) {
