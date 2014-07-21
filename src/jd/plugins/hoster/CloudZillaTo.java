@@ -50,10 +50,14 @@ public class CloudZillaTo extends PluginForHost {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         br.getPage(link.getDownloadURL());
-        if (br.containsHTML("id=\"download_err_div\"")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (br.containsHTML("id=\"download_err_div\"")) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
         final String filename = br.getRegex("class=\"name\" title=\"([^<>\"]*?)\"").getMatch(0);
         final String filesize = br.getRegex("class=\"size\">\\(([^<>\"]*?)\\)</span>").getMatch(0);
-        if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (filename == null || filesize == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         link.setName(Encoding.htmlDecode(filename.trim()));
         link.setDownloadSize(SizeFormatter.getSize(filesize));
         return AvailableStatus.TRUE;
@@ -70,8 +74,12 @@ public class CloudZillaTo extends PluginForHost {
             br.postPage("http://www.cloudzilla.to/generateticket/", "key=&file_id=" + fid);
             final String server = br.getRegex("<server>([^<>\"]*?)</server>").getMatch(0);
             final String ticket_id = br.getRegex("<ticket_id>([^<>\"]*?)</ticket_id>").getMatch(0);
-            if (server == null || ticket_id == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            final String waittime = br.getRegex("<wait>(\\d+)</wait>").getMatch(0);
+            if (server == null || ticket_id == null || waittime == null) {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
             dllink = "http://" + server + "/download/" + fid + "/" + ticket_id;
+            this.sleep(Integer.parseInt(waittime) * 1001l, downloadLink);
         }
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 1);
         if (dl.getConnection().getContentType().contains("html")) {

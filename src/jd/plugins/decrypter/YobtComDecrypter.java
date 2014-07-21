@@ -40,7 +40,7 @@ public class YobtComDecrypter extends PluginForDecrypt {
         final String parameter = param.toString();
         br.setFollowRedirects(true);
         br.getPage(parameter);
-        if (!br.getURL().contains("yobt.com/content/")) {
+        if (!br.getURL().contains("yobt.com/content/") || br.getHttpConnection().getResponseCode() == 404) {
             final DownloadLink offline = createDownloadlink(parameter.replace("yobt.com/", "yobtdecrypted.com/"));
             offline.setFinalFileName(new Regex(parameter, "content(/\\d+/.*)\\.html").getMatch(0));
             offline.setAvailable(false);
@@ -60,13 +60,13 @@ public class YobtComDecrypter extends PluginForDecrypt {
             fina.setAvailable(true);
             decryptedLinks.add(fina);
         } else {
-            final String[] links = br.getRegex("\"(http://[a-z0-9]+\\.yobt.com/content[A-Za-z0-9/]+/img_thumb/\\d+_\\d+x\\d+\\.jpg)\"").getColumn(0);
+            final String[] links = br.getRegex("\"(http://[a-z0-9]+\\.yobt.com/[A-Za-z0-9/]+/img_thumb/\\d+_\\d+x\\d+\\.jpg)\"").getColumn(0);
             if (links == null || links.length == 0) {
                 logger.warning("Decrypter broken for link: " + parameter);
                 return null;
             }
             for (final String singleLink : links) {
-                final Regex lregex = new Regex(singleLink, "(http://[a-z0-9]+\\.yobt.com/content[A-Za-z0-9/]+/)img_thumb/(\\d+)_\\d+x\\d+\\.jpg");
+                final Regex lregex = new Regex(singleLink, "(http://[a-z0-9]+\\.yobt.com/[A-Za-z0-9/]+/)img_thumb/(\\d+)_\\d+x\\d+\\.jpg");
                 final String finallink = lregex.getMatch(0) + "img/" + lregex.getMatch(1) + ".jpg";
                 final DownloadLink dl = createDownloadlink("directhttp://" + finallink);
                 dl.setAvailable(true);
