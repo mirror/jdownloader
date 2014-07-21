@@ -102,13 +102,13 @@ public class ImgSrcRu extends PluginForDecrypt {
                     return decryptedLinks;
                 }
 
-                username = br.getRegex("@ ([^\">\r\n ]+)\\.iMGSRC\\.RU</title>").getMatch(0);
+                username = br.getRegex(">more photos from (.*?)</a>").getMatch(0);
                 if (username == null) {
                     logger.warning("Decrypter broken for link: " + parameter);
                     return null;
                 }
 
-                String fpName = br.getRegex("(?:, )?([^>\r\n]+) @ " + username + "\\.iMGSRC\\.RU</title>").getMatch(0);
+                String fpName = br.getRegex("from '<strong>([^\r\n]+)</strong>").getMatch(0);
                 if (fpName == null) {
                     logger.warning("Decrypter broken for link: " + parameter);
                     return null;
