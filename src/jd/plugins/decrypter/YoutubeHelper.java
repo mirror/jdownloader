@@ -403,7 +403,9 @@ public class YoutubeHelper {
                     }
                 }
                 long timestamp = link.getLongProperty(YoutubeHelper.YT_DATE, -1);
-                return timestamp > 0 ? formatter.format(timestamp) : "";
+                String ret = timestamp > 0 ? formatter.format(timestamp) : "";
+
+                return ret;
             }
 
         });
@@ -709,12 +711,12 @@ public class YoutubeHelper {
 
     /**
      * *
-     *
+     * 
      * @param html5PlayerJs
      *            TODO
      * @param br
      * @param s
-     *
+     * 
      * @return
      * @throws IOException
      * @throws PluginException
