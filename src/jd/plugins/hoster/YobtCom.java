@@ -60,7 +60,7 @@ public class YobtCom extends PluginForHost {
         // 'video' : 'http://vcdn1.yobt.com/content/db/35/88/db3588324d2da56bbf8183e749781530955734/vid/1_480x368.mp4'
         dllink = br.getRegex("\\'video\\'   : \\'(http://.*?)\\'").getMatch(0);
         if (filename == null || dllink == null) {
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         dllink = Encoding.htmlDecode(dllink);
         filename = filename.trim();
