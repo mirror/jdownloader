@@ -1519,6 +1519,18 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
                 boolean deleteFile = true;
                 ZipIOWriter zip = null;
                 FileOutputStream fos = null;
+                final int bufferSize;
+                if (linkcollectorLists.size() > 0) {
+                    final long fileLength = linkcollectorLists.get(0).length();
+                    if (fileLength > 0) {
+                        final int paddedFileLength = (((int) fileLength / 32768) + 1) * 32768;
+                        bufferSize = Math.max(32768, paddedFileLength);
+                    } else {
+                        bufferSize = 32768;
+                    }
+                } else {
+                    bufferSize = 32768;
+                }
                 if (packages != null && file != null) {
                     try {
                         if (file.exists()) {
@@ -1539,8 +1551,16 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
                         if (packages.size() >= 10) {
                             format = String.format("%%0%dd", (int) Math.log10(packages.size()) + 1);
                         }
-                        fos = new FileOutputStream(file);
-                        zip = new ZipIOWriter(new BufferedOutputStream(fos, 32767));
+                        fos = new FileOutputStream(file) {
+                            @Override
+                            public void close() throws IOException {
+                                if (getChannel().isOpen()) {
+                                    getChannel().force(true);
+                                }
+                                super.close();
+                            }
+                        };
+                        zip = new ZipIOWriter(new BufferedOutputStream(fos, bufferSize));
                         for (CrawledPackage pkg : packages) {
                             /* convert FilePackage to JSon */
                             CrawledPackageStorable storable = new CrawledPackageStorable(pkg);
@@ -1580,6 +1600,7 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
                         zip.addByteArry(JSonStorage.serializeToJson(lcs).getBytes("UTF-8"), true, "", "extraInfo");
                         /* close ZipIOWriter */
                         zip.close();
+                        fos = null;
                         deleteFile = false;
                         linkcollectorLists.add(0, file);
                         try {
@@ -1600,14 +1621,8 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
                         logger.log(e);
                     } finally {
                         try {
-                            try {
-                                if (fos != null) {
-                                    fos.getChannel().force(true);
-                                }
-                            } finally {
-                                if (fos != null) {
-                                    fos.close();
-                                }
+                            if (fos != null) {
+                                fos.close();
                             }
                         } catch (final Throwable e) {
                         }

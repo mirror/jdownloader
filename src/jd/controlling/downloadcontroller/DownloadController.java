@@ -16,6 +16,7 @@
 
 package jd.controlling.downloadcontroller;
 
+import java.io.BufferedOutputStream;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
@@ -703,6 +704,18 @@ public class DownloadController extends PackageController<FilePackage, DownloadL
                     file = Application.getResource("cfg/downloadList.zip");
                 }
             }
+            final int bufferSize;
+            if (downloadLists.size() > 0) {
+                final long fileLength = downloadLists.get(0).length();
+                if (fileLength > 0) {
+                    final int paddedFileLength = (((int) fileLength / 32768) + 1) * 32768;
+                    bufferSize = Math.max(32768, paddedFileLength);
+                } else {
+                    bufferSize = 32768;
+                }
+            } else {
+                bufferSize = 32768;
+            }
             if (packages != null && file != null) {
                 if (file.exists()) {
                     if (file.isDirectory()) {
@@ -725,8 +738,16 @@ public class DownloadController extends PackageController<FilePackage, DownloadL
                 ZipIOWriter zip = null;
                 FileOutputStream fos = null;
                 try {
-                    fos = new FileOutputStream(file);
-                    zip = new ZipIOWriter(fos);
+                    fos = new FileOutputStream(file) {
+                        @Override
+                        public void close() throws IOException {
+                            if (getChannel().isOpen()) {
+                                getChannel().force(true);
+                            }
+                            super.close();
+                        }
+                    };
+                    zip = new ZipIOWriter(new BufferedOutputStream(fos, bufferSize));
                     int index = 0;
                     for (FilePackage pkg : packages) {
                         /* convert FilePackage to JSon */
@@ -750,6 +771,7 @@ public class DownloadController extends PackageController<FilePackage, DownloadL
                     zip.addByteArry(JSonStorage.serializeToJson(dcs).getBytes("UTF-8"), true, "", "extraInfo");
                     /* close ZipIOWriter */
                     zip.close();
+                    fos = null;
                     deleteFile = false;
                     downloadLists.add(0, file);
                     try {
@@ -770,16 +792,11 @@ public class DownloadController extends PackageController<FilePackage, DownloadL
                     logger.log(e);
                 } finally {
                     try {
-                        try {
-                            if (fos != null) {
-                                fos.getChannel().force(true);
-                            }
-                        } finally {
-                            if (fos != null) {
-                                fos.close();
-                            }
+                        if (fos != null) {
+                            fos.close();
                         }
                     } catch (final Throwable e) {
+                        logger.log(e);
                     }
                     if (deleteFile && file.exists()) {
                         FileCreationManager.getInstance().delete(file, null);
