@@ -441,13 +441,13 @@ public class PremiumTo extends PluginForHost {
         // some routine to check traffic allocations: normalTraffic specialTraffic
         if (downloadLink.getHost().matches("uploaded\\.net|uploaded\\.to|ul\\.to|netload\\.in|filemonkey\\.in|oboom\\.com")) {
             // special traffic
-            if (account.getLongProperty(specialTraffic, 0) > 0) {
+            if (account != null && account.getLongProperty(specialTraffic, 0) > 0) {
                 return true;
             }
             // else { return false; }
         }
         // normal traffic, can include special traffic hosts also... (yes confusing)
-        if (account.getLongProperty(normalTraffic, 0) > 0) {
+        if (account != null && account.getLongProperty(normalTraffic, 0) > 0) {
             return true;
         } else {
             // guess we should nullify that...
