@@ -16,6 +16,8 @@ public interface DownloadsAPIV2 extends RemoteAPIInterface {
 
     void removeStopMark();
 
+    long getStopMark();
+
     int packageCount();
 
     /**

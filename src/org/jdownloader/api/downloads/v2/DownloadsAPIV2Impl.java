@@ -5,6 +5,7 @@ import java.util.HashSet;
 import java.util.List;
 
 import jd.controlling.downloadcontroller.DownloadController;
+import jd.controlling.downloadcontroller.DownloadSession.STOPMARK;
 import jd.controlling.downloadcontroller.DownloadWatchDog;
 import jd.controlling.packagecontroller.AbstractNode;
 import jd.plugins.DownloadLink;
@@ -299,6 +300,15 @@ public class DownloadsAPIV2Impl implements DownloadsAPIV2 {
         } else {
             return -1l;
         }
+    }
+
+    @Override
+    public long getStopMark() {
+        Object mark = DownloadWatchDog.getInstance().getSession().getStopMark();
+        if (mark != STOPMARK.NONE) {
+            return ((AbstractNode) mark).getUniqueID().getID();
+        }
+        return -1l;
     }
 
     /**
