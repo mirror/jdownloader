@@ -17,7 +17,6 @@
 package jd.plugins.hoster;
 
 import java.io.IOException;
-import java.util.Locale;
 
 import jd.PluginWrapper;
 import jd.nutils.encoding.Encoding;
@@ -32,7 +31,6 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
 import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.formatter.TimeFormatter;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "quickshare.cz" }, urls = { "http://[\\w\\.]*?quickshare\\.cz/stahnout-soubor/\\d+:[^\\s]+" }, flags = { 2 })
 public class QuickShareCz extends PluginForHost {
@@ -57,9 +55,7 @@ public class QuickShareCz extends PluginForHost {
         if (trafficleft != null) {
             ai.setTrafficLeft(SizeFormatter.getSize(trafficleft.replace(",", ".")));
         }
-        final String expire = br.getRegex("<th>Datum registrace</th>\\s*<td>(\\d{2}\\.\\d{2}\\.\\d{4})</td>").getMatch(0);
-        if (expire != null) {
-            ai.setValidUntil(TimeFormatter.getMilliSeconds(expire, "MM.dd.yyyy", Locale.ENGLISH));
+        if (ai.getTrafficLeft() > 0) {
             ai.setStatus("Premium User");
             account.setProperty("free", false);
         } else {
