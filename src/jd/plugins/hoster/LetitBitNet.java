@@ -633,8 +633,9 @@ public class LetitBitNet extends PluginForHost {
     }
 
     private void decryptingForm(Form encryptedForm) {
-        final ScriptEngineManager manager = new ScriptEngineManager();
-        // final ScriptEngineManager manager = jd.plugins.hoster.DummyScriptEnginePlugin.getScriptEngineManager(this);
+        // final ScriptEngineManager manager = new ScriptEngineManager();
+        final ScriptEngineManager manager = jd.plugins.hoster.DummyScriptEnginePlugin.getScriptEngineManager(this);
+
         final ScriptEngine engine = manager.getEngineByName("javascript");
 
         HashMap<String, String> encValues = new HashMap<String, String>(getFormIds(encryptedForm));
@@ -654,7 +655,7 @@ public class LetitBitNet extends PluginForHost {
             /* create decrypt method */
             StringBuilder explainJSPForm = new StringBuilder();
             explainJSPForm.append("function explainJSPForm(_19, _1a, _1b, _1c, _1d, mus) {\n");
-            explainJSPForm.append("var _1f = function (id) {return String(encValues.get(id));};\n");
+            explainJSPForm.append("var _1f = function (id) {return String(encValues[id]);};\n");
             explainJSPForm.append("var _20 = function (ids) {\n");
             explainJSPForm.append("var r = [];\n");
             explainJSPForm.append("for (var i = 0; i < ids.length; ++i) {r.push(_1f(ids[i]));}\n");
@@ -667,7 +668,7 @@ public class LetitBitNet extends PluginForHost {
             explainJSPForm.append("var v = _20(_21[1].split(\",\"));\n");
             explainJSPForm.append("k = mus(k, _1d);\n");
             explainJSPForm.append("v = mus(v, _1d);\n");
-            explainJSPForm.append("formMap.put(k,v);\n");
+            explainJSPForm.append("formMap[k]=v;\n");
             explainJSPForm.append("}};\n");
 
             /* parsing decrypt call function */
@@ -676,8 +677,10 @@ public class LetitBitNet extends PluginForHost {
                 return;
             }
 
-            engine.put("encValues", encValues);
-            engine.put("formMap", inputFieldMap);
+            engine.eval("var encValues=" + serializeToJson(encValues) + ";");
+            engine.eval("var formMap=" + serializeToJson(inputFieldMap) + ";");
+            // engine.put("encValues", encValues);
+            // engine.put("formMap", inputFieldMap);
             engine.eval(explainJSPForm.toString());
             engine.put("pass", getFormKey());
             // engine.put("br", br);
@@ -686,6 +689,8 @@ public class LetitBitNet extends PluginForHost {
 
             /* decrypting Form */
             engine.eval(callMethod);
+            inputFieldMap = deserialiseFromJson((String) engine.eval("JSON.stringify(formMap);"));
+
             /* remove encrypted Inputfields */
             final Iterator<InputField> it = encryptedForm.getInputFields().iterator();
             while (it.hasNext()) {
@@ -703,6 +708,28 @@ public class LetitBitNet extends PluginForHost {
             e.printStackTrace();
         }
         /* done :-) */
+    }
+
+    private HashMap<String, String> deserialiseFromJson(String eval) {
+        String[][] matches = new Regex(eval, "\"([^\"]+)\"\\s*\\:\\s*\"([^\"]+)\"").getMatches();
+        HashMap<String, String> ret = new HashMap<String, String>();
+        for (String[] pair : matches) {
+            ret.put(pair[0], pair[1]);
+        }
+        return ret;
+    }
+
+    private String serializeToJson(HashMap<String, String> encValues) {
+        StringBuilder sb = new StringBuilder();
+        sb.append("{");
+        for (Entry<String, String> s : encValues.entrySet()) {
+            if (sb.length() > 1) {
+                sb.append(", ");
+            }
+            sb.append("\"").append(s.getKey()).append("\" : \"").append(s.getValue()).append("\"");
+        }
+        sb.append("}");
+        return sb.toString();
     }
 
     private String FormKey = null;
@@ -802,7 +829,7 @@ public class LetitBitNet extends PluginForHost {
     /**
      * Is intended to handle out of date errors which might occur seldom by re-tring a couple of times before throwing the out of date
      * error.
-     *
+     * 
      * @param dl
      *            : The DownloadLink
      * @param error
