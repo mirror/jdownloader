@@ -16,6 +16,7 @@
 
 package jd.plugins.hoster;
 
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 
 import javax.script.ScriptEngine;
@@ -42,10 +43,11 @@ public class ImgSrcRu extends PluginForHost {
     // DEV NOTES
     // drop requests on too much traffic, I suspect at the firewall on connection.
 
-    private String                  ddlink    = null;
-    private String                  password  = null;
-    private String                  js        = null;
-    private AtomicReference<String> userAgent = new AtomicReference<String>(null);
+    private String                         ddlink    = null;
+    private String                         password  = null;
+    private String                         js        = null;
+    private static AtomicReference<String> userAgent = new AtomicReference<String>(null);
+    private static AtomicInteger           uaInt     = new AtomicInteger(0);
 
     public ImgSrcRu(PluginWrapper wrapper) {
         super(wrapper);
@@ -91,10 +93,11 @@ public class ImgSrcRu extends PluginForHost {
         prepBr.setFollowRedirects(true);
         prepBr.setReadTimeout(180000);
         prepBr.setConnectTimeout(180000);
-        if (userAgent.get() == null || neu) {
+        if (uaInt.incrementAndGet() > 25 || userAgent.get() == null || neu) {
             /* we first have to load the plugin, before we can reference it */
             JDUtilities.getPluginForHost("mediafire.com");
             userAgent.set(jd.plugins.hoster.MediafireCom.stringUserAgent());
+            uaInt.set(0);
         }
         prepBr.getHeaders().put("User-Agent", userAgent.get());
         prepBr.getHeaders().put("Accept-Language", "en-gb, en;q=0.9");
@@ -102,6 +105,13 @@ public class ImgSrcRu extends PluginForHost {
         prepBr.setCookie(this.getHost(), "lang", "en");
         prepBr.setCookie(this.getHost(), "per_page", "48");
         return prepBr;
+    }
+
+    /**
+     * because stable is lame!
+     * */
+    public void setBrowser(final Browser ibr) {
+        this.br = ibr;
     }
 
     @Override
@@ -112,53 +122,40 @@ public class ImgSrcRu extends PluginForHost {
             br.getHeaders().put("Referer", r);
         }
         getPage(downloadLink.getDownloadURL(), downloadLink);
-        js = br.getRegex("<script type=\"text/javascript\">([\r\n\t ]+var [a-z]='[a-zA-Z0-9]+';[\r\n\t ]+var [a-z]=[^<]+)</script>").getMatch(0);
-        if (js != null) {
-            getDllink();
-            if (ddlink != null) {
-                final URLConnectionAdapter con = br.openGetConnection(ddlink);
-                if (con.getContentType().contains("html")) {
-                    downloadLink.setAvailable(false);
-                    return AvailableStatus.FALSE;
-                }
-                String filename = getFileNameFromHeader(con);
-                String oldname = new Regex(downloadLink.getDownloadURL(), "(\\d+)\\.html").getMatch(0);
-                downloadLink.setFinalFileName(oldname + filename.substring(filename.lastIndexOf(".")));
-                downloadLink.setDownloadSize(con.getLongContentLength());
-                downloadLink.setAvailable(true);
+        getDllink();
+        if (ddlink != null) {
+            final URLConnectionAdapter con = br.openGetConnection(ddlink);
+            if (con.getContentType().contains("html")) {
+                downloadLink.setAvailable(false);
+                return AvailableStatus.FALSE;
             }
+            String filename = getFileNameFromHeader(con);
+            String oldname = new Regex(downloadLink.getDownloadURL(), "(\\d+)\\.html").getMatch(0);
+            downloadLink.setFinalFileName(oldname + filename.substring(filename.lastIndexOf(".")));
+            downloadLink.setDownloadSize(con.getLongContentLength());
+            downloadLink.setAvailable(true);
         }
-        // dllink = br.getRegex("").getMatch(0);
         return AvailableStatus.TRUE;
     }
 
-    private void processJS() throws Exception {
+    private void getDllink() throws Exception {
         final String best = new Regex(js, "'(ori_?pic|big_?pic)'").getMatch(0);
         if (best == null) {
             logger.warning("determining best!");
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-
-        final ScriptEngineManager manager = new ScriptEngineManager();
-        final ScriptEngine engine = manager.getEngineByName("javascript");
-        // wrapper fucks up, returns +u.charAt(0)+ as ascii int value. http://www.asciitable.com/
-        // ScriptEngineManager mgr = jd.plugins.hoster.DummyScriptEnginePlugin.getScriptEngineManager(this);
-        // ScriptEngine engine = mgr.getEngineByName("javascript");
+        final ScriptEngineManager mgr = jd.plugins.hoster.DummyScriptEnginePlugin.getScriptEngineManager(this);
+        final ScriptEngine engine = mgr.getEngineByName("javascript");
         Object result = null;
         try {
             engine.eval("var document = { getElementById: function (a) { if (!this[a]) { this[a] = new Object(); function src() { return a.src; } this[a].src = src(); } return this[a]; }};");
             engine.eval(js + "\r\nvar result=document.getElementById('" + best + "').src;");
             result = engine.get("result");
         } catch (Throwable e) {
-
         }
         if (result != null) {
             ddlink = result.toString();
         }
-    }
-
-    private void getDllink() throws Exception {
-        processJS();
         if (ddlink == null) {
             ddlink = br.getRegex("name=bb onclick='select\\(\\);' type=text style='\\{width:\\d+;\\}' value='\\[URL=[^<>\"]+\\]\\[IMG\\](http://[^<>\"]*?)\\[/IMG\\]").getMatch(0);
         }
