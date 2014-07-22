@@ -705,7 +705,19 @@ public class LetitBitNet extends PluginForHost {
         /* done :-) */
     }
 
+    private String FormKey = null;
+
     private String getFormKey() {
+        if (FormKey == null) {
+            setFormKey();
+        }
+        return FormKey;
+    }
+
+    private void setFormKey() {
+        if (FormKey != null) {
+            return;
+        }
         File image;
         String fileName = "captchas/letitbit_keyImage_" + System.currentTimeMillis() + new Random().nextInt(1000000);
         final Browser dlpic = br.cloneBrowser();
@@ -730,7 +742,7 @@ public class LetitBitNet extends PluginForHost {
         } catch (Throwable e) {
             e.printStackTrace();
         }
-        return key;
+        FormKey = key;
     }
 
     private String jsbeautifier(String s) {
@@ -790,7 +802,7 @@ public class LetitBitNet extends PluginForHost {
     /**
      * Is intended to handle out of date errors which might occur seldom by re-tring a couple of times before throwing the out of date
      * error.
-     * 
+     *
      * @param dl
      *            : The DownloadLink
      * @param error
