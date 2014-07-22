@@ -29,7 +29,7 @@ import jd.plugins.PluginForDecrypt;
 /**
  * @author typek_pb
  */
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "avaxhome.ws" }, urls = { "http://(www\\.)?(avaxhome\\.(ws|bz|cc|pro)|avaxho\\.me|avaxhm\\.com)/[A-Za-z0-9\\-_]+\\.html" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "avaxhome.ws" }, urls = { "http://(www\\.)?(avaxhome\\.(ws|bz|cc)|avaxho\\.me|avaxhm\\.com)/(ebooks|music|software|video|magazines|newspapers|games|graphics|misc|hraphile|comics)/.+|http://(www\\.)?(avaxhome\\.pro)/[A-Za-z0-9\\-_]+\\.html" }, flags = { 0 })
 public class AvxHmeW extends PluginForDecrypt {
 
     @SuppressWarnings("deprecation")
@@ -37,7 +37,7 @@ public class AvxHmeW extends PluginForDecrypt {
         super(wrapper);
     }
 
-    private final String notThis = "https?://(?!(www\\.imdb\\.com|(avaxhome\\.(ws|bz|cc|pro)|avaxho\\.me|avaxhm\\.com)))[\\S&]+";
+    private final String notThis = "https?://(?!(www\\.imdb\\.com|(avaxhome\\.(ws|bz|cc)|avaxho\\.me|avaxhm\\.com|avaxhome\\.pro)))[\\S&]+";
 
     @SuppressWarnings("deprecation")
     @Override
@@ -45,7 +45,8 @@ public class AvxHmeW extends PluginForDecrypt {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         // for when you're testing
         br.clearCookies(getHost());
-        String parameter = cryptedLink.toString().replaceAll("(avaxhome\\.(ws|bz|cc|pro)|avaxho\\.me|avaxhm\\.com)", "avaxhome.pro");
+        // two differnet sites, do not rename, avaxhome.pro doesn't belong to the following template.
+        String parameter = cryptedLink.toString().replaceAll("(avaxhome\\.(ws|bz|cc)|avaxho\\.me|avaxhm\\.com)", "avaxhm.com");
         br.setFollowRedirects(true);
         try {
             br.getPage(parameter);
@@ -53,33 +54,45 @@ public class AvxHmeW extends PluginForDecrypt {
             logger.info("Link offline (server error): " + parameter);
             return decryptedLinks;
         }
-        br.setFollowRedirects(false);
-        String[] links = br.getRegex("<h3>Download Link: <a href=\"http://(www\\.)?avaxhome\\.pro/[a-z0-9\\-_]+/(\\d+)\"").getColumn(1);
-        if (links != null && links.length != 0) {
-            for (final String id : links) {
-                br.getPage("http://www.avaxhome.pro/wp-content/plugins/download-monitor/download.php?id=" + id);
-                String redirect = br.getRedirectLocation();
-                if (redirect == null) {
-                    logger.warning("Decrypter broken for link: " + parameter);
-                    return null;
+        if (parameter.contains("avaxhm.com")) {
+            // 1.st try: <a href="LINK" target="_blank" rel="nofollow"> but ignore
+            // images/self site refs + imdb refs
+            String[] links = br.getRegex("<a href=\"(" + notThis + ")\" target=\"_blank\" rel=\"nofollow\">(?!<img)").getColumn(0);
+            if (links != null && links.length != 0) {
+                for (String link : links) {
+                    if (!link.matches(this.getSupportedLinks().pattern())) {
+                        decryptedLinks.add(createDownloadlink(link));
+                    }
                 }
-                if (!redirect.matches(this.getSupportedLinks().pattern())) {
-                    decryptedLinks.add(createDownloadlink(redirect));
+            }
+
+            // try also LINK</br>, but ignore self site refs + imdb refs
+            links = null;
+            links = br.getRegex("(" + notThis + ")<br/>").getColumn(0);
+            if (links != null && links.length != 0) {
+                for (String link : links) {
+                    if (!link.matches(this.getSupportedLinks().pattern())) {
+                        decryptedLinks.add(createDownloadlink(link));
+                    }
+                }
+            }
+        } else {
+            br.setFollowRedirects(false);
+            String[] links = br.getRegex("<h3>Download Link: <a href=\"http://(www\\.)?avaxhome\\.pro/[a-z0-9\\-_]+/(\\d+)\"").getColumn(1);
+            if (links != null && links.length != 0) {
+                for (final String id : links) {
+                    br.getPage("http://www.avaxhome.pro/wp-content/plugins/download-monitor/download.php?id=" + id);
+                    String redirect = br.getRedirectLocation();
+                    if (redirect == null) {
+                        logger.warning("Decrypter broken for link: " + parameter);
+                        return null;
+                    }
+                    if (!redirect.matches(this.getSupportedLinks().pattern())) {
+                        decryptedLinks.add(createDownloadlink(redirect));
+                    }
                 }
             }
         }
-
-        // try also LINK</br>, but ignore self site refs + imdb refs
-        links = null;
-        links = br.getRegex("(" + notThis + ")<br/>").getColumn(0);
-        if (links != null && links.length != 0) {
-            for (String link : links) {
-                if (!link.matches(this.getSupportedLinks().pattern())) {
-                    decryptedLinks.add(createDownloadlink(link));
-                }
-            }
-        }
-
         return decryptedLinks;
     }
 
