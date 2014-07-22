@@ -402,7 +402,15 @@ public class InterFileNet extends PluginForHost {
                 download1 = cleanForm(download1);
                 // end of backward compatibility
                 download1.remove("method_premium");
+                download1.remove("sms_code");
+                InputField f = download1.getInputFieldByName("method_sms");
+                if (f != null) {
+                    f.setKey("method_free");
+                }
                 sendForm(download1);
+                if (cbr.containsHTML("This file is available for Premium Users only.")) {
+                    throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);
+                }
                 checkErrors(downloadLink, account, false);
                 getDllink();
             }
