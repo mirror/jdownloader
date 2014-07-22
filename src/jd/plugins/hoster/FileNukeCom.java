@@ -43,15 +43,18 @@ import jd.utils.locale.JDL;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "filenuke.com" }, urls = { "https?://(www\\.)?filenuke\\.com/[a-z0-9]{12}" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "filenuke.com" }, urls = { "https?://(www\\.)?filenuke\\.com/([a-z0-9]{12}|f/[A-Za-z0-9]+)" }, flags = { 0 })
 public class FileNukeCom extends PluginForHost {
 
-    private String              correctedBR         = "";
-    private static final String PASSWORDTEXT        = "<br><b>Passwor(d|t):</b> <input";
-    private static final String COOKIE_HOST         = "http://filenuke.com";
-    private static final String MAINTENANCE         = ">This server is in maintenance mode";
-    private static final String MAINTENANCEUSERTEXT = "This server is under Maintenance";
-    private static final String ALLWAIT_SHORT       = "Waiting till new downloads can be started";
+    private String               correctedBR         = "";
+    private static final String  PASSWORDTEXT        = "<br><b>Passwor(d|t):</b> <input";
+    private static final String  COOKIE_HOST         = "http://filenuke.com";
+    private static final String  MAINTENANCE         = ">This server is in maintenance mode";
+    private static final String  MAINTENANCEUSERTEXT = "This server is under Maintenance";
+    private static final String  ALLWAIT_SHORT       = "Waiting till new downloads can be started";
+
+    private static final boolean TYPE_2_PREMIUMONLY  = false;
+    private static final String  TYPE_2              = "https?://(www\\.)?filenuke\\.com/f/[A-Za-z0-9]+";
 
     // DEV NOTES
     // XfileSharingProBasic Version 2.5.5.3-raz
@@ -153,6 +156,17 @@ public class FileNukeCom extends PluginForHost {
     }
 
     public void doFree(DownloadLink downloadLink, boolean resumable, int maxchunks, String directlinkproperty) throws Exception, PluginException {
+        if (downloadLink.getDownloadURL().matches(TYPE_2) && TYPE_2_PREMIUMONLY) {
+            logger.info("Only downloadable via premium");
+            try {
+                throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);
+            } catch (final Throwable e) {
+                if (e instanceof PluginException) {
+                    throw (PluginException) e;
+                }
+            }
+            throw new PluginException(LinkStatus.ERROR_FATAL, "Only downloadable via premium or registered");
+        }
         String passCode = null;
         String md5hash = new Regex(correctedBR, "<b>MD5.*?</b>.*?nowrap>(.*?)<").getMatch(0);
         if (md5hash != null) {

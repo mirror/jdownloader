@@ -72,7 +72,7 @@ import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.formatter.TimeFormatter;
 import org.appwork.utils.os.CrossSystem;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "sharesix.com" }, urls = { "https?://(www\\.)?sharesix\\.com/((vid)?embed-)?[a-z0-9]{12}" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "sharesix.com" }, urls = { "https?://(www\\.)?sharesix\\.com/([a-z0-9]{12}|f/[A-Za-z0-9]+)" }, flags = { 0 })
 @SuppressWarnings("deprecation")
 public class ShareSixCom extends PluginForHost {
 
@@ -98,6 +98,9 @@ public class ShareSixCom extends PluginForHost {
     private final boolean              waitTimeSkipableKeyCaptcha   = false;
     private final boolean              captchaSkipableSolveMedia    = false;
 
+    private static final boolean       TYPE_2_PREMIUMONLY           = false;
+    private static final String        TYPE_2                       = "https?://(www\\.)?sharesix\\.com/f/[A-Za-z0-9]+";
+
     // Connection Management
     // note: CAN NOT be negative or zero! (ie. -1 or 0) Otherwise math sections fail. .:. use [1-20]
     private static final AtomicInteger totalMaxSimultanFreeDownload = new AtomicInteger(20);
@@ -107,7 +110,7 @@ public class ShareSixCom extends PluginForHost {
     // last XfileSharingProBasic compare :: 2.6.2.1
     // captchatype: null
     // other: no redirects
-    // mods: useSpecialWay, and filename/size regexes
+    // mods: heavily modified, do NOT upgrade!
 
     private void setConstants(final Account account) {
         if (account != null && account.getBooleanProperty("free")) {
@@ -209,7 +212,7 @@ public class ShareSixCom extends PluginForHost {
     public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws Exception {
         // make sure the downloadURL protocol is of site ability and user preference
         correctDownloadLink(downloadLink);
-        fuid = new Regex(downloadLink.getDownloadURL(), "([a-z0-9]{12})$").getMatch(0);
+        fuid = new Regex(downloadLink.getDownloadURL(), "([A-Za-z0-9]+)$").getMatch(0);
         br.setFollowRedirects(true);
         prepBrowser(br);
 
@@ -370,6 +373,17 @@ public class ShareSixCom extends PluginForHost {
         } else {
             logger.info("Guest @ " + acctype + " -> Free Download");
         }
+        if (downloadLink.getDownloadURL().matches(TYPE_2) && TYPE_2_PREMIUMONLY) {
+            logger.info("Only downloadable via premium");
+            try {
+                throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);
+            } catch (final Throwable e) {
+                if (e instanceof PluginException) {
+                    throw (PluginException) e;
+                }
+            }
+            throw new PluginException(LinkStatus.ERROR_FATAL, "Only downloadable via premium or registered");
+        }
         // redirects need to be disabled for getDllink
         br.setFollowRedirects(false);
         // First, bring up saved final links
@@ -404,6 +418,9 @@ public class ShareSixCom extends PluginForHost {
         if (inValidate(dllink) && useSpecialWay) {
             postPage(br.getURL(), "method_free=Free");
             dllink = cbr.getRegex("file[\t\n\r ]+:[\t\n\r ]+\"(http://[^<>\"]*?)\"").getMatch(0);
+            if (dllink == null) {
+                getDllink();
+            }
         }
         // Fourth, continue like normal.
         if (inValidate(dllink)) {
@@ -571,6 +588,13 @@ public class ShareSixCom extends PluginForHost {
                         }
                     }
                 }
+            }
+        }
+        if (dllink == null) {
+            final String pt1 = br.getRegex("var lnk1 = \\'(http://[^<>\"]*?)\\'").getMatch(0);
+            final String pt2 = br.getRegex("var ext1 = \\'([^<>\"]*?)\\'").getMatch(0);
+            if (pt1 != null && pt2 != null) {
+                dllink = pt1 + pt2;
             }
         }
     }

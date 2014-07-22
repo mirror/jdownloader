@@ -30,7 +30,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "porntube.com" }, urls = { "http://(www\\.)?(porntube\\.com/videos/[a-z0-9\\-]+_\\d+|embed\\.porntube\\.com/\\d+)" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "porntube.com" }, urls = { "http://(www\\.)?(porntube\\.com/videos/[a-z0-9\\-]+_\\d+|embed\\.porntube\\.com/\\d+|porntube\\.com/embed/\\d+)" }, flags = { 0 })
 public class PornTubeCom extends PluginForHost {
 
     private String DLLINK = null;
@@ -49,7 +49,7 @@ public class PornTubeCom extends PluginForHost {
         return -1;
     }
 
-    private static final String TYPE_EMBED = "http://(www\\.)?embed\\.porntube\\.com/\\d+";
+    private static final String TYPE_EMBED = "http://(www\\.)?(embed\\.porntube\\.com/\\d+|porntube\\.com/embed/\\d+)";
 
     public void correctDownloadLink(final DownloadLink link) {
         if (link.getDownloadURL().matches(TYPE_EMBED)) {

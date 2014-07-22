@@ -140,7 +140,14 @@ public class VideoOneCom extends PluginForDecrypt {
             decryptedLinks.add(dl);
             return decryptedLinks;
         }
+        // drtuber.com embed v3
         externID = br.getRegex("(http://(www\\.)?drtuber\\.com/player/config_embed3\\.php\\?vkey=[a-z0-9]+)").getMatch(0);
+        if (externID != null) {
+            decryptedLinks.add(createDownloadlink(externID));
+            return decryptedLinks;
+        }
+        // drtuber.com embed v4
+        externID = br.getRegex("\"(http://(www\\.)?drtuber\\.com/embed/\\d+)\"").getMatch(0);
         if (externID != null) {
             decryptedLinks.add(createDownloadlink(externID));
             return decryptedLinks;
@@ -223,9 +230,12 @@ public class VideoOneCom extends PluginForDecrypt {
             decryptedLinks.add(createDownloadlink("http://www.yobtdecrypted.tv/content/" + externID + "/" + System.currentTimeMillis() + ".html"));
             return decryptedLinks;
         }
-        externID = br.getRegex("src=\"http://(www\\.)?embed\\.porntube\\.com/(\\d+)/?\"").getMatch(1);
+        externID = br.getRegex("\"(http://(www\\.)?embed\\.porntube\\.com/\\d+)\"").getMatch(0);
+        if (externID == null) {
+            externID = br.getRegex("\"(http://(www\\.)?porntube\\.com/embed/\\d+)\"").getMatch(0);
+        }
         if (externID != null) {
-            decryptedLinks.add(createDownloadlink("http://porntube.com/videos/x_" + externID));
+            decryptedLinks.add(createDownloadlink(externID));
             return decryptedLinks;
         }
         externID = br.getRegex("\"(http://(www\\.)?nuvid\\.com/embed/\\d+)\"").getMatch(0);
@@ -234,6 +244,16 @@ public class VideoOneCom extends PluginForDecrypt {
             return decryptedLinks;
         }
         externID = br.getRegex("(http://(www\\.)?pornsharing\\.com/videoplayer/vplaylist\\.php\\?id=[^<>\"]*?)\"").getMatch(0);
+        if (externID != null) {
+            decryptedLinks.add(createDownloadlink(externID));
+            return decryptedLinks;
+        }
+        externID = br.getRegex("\"(http://(www\\.)?playvid\\.com/embed/[^<>\"]*?)\"").getMatch(0);
+        if (externID != null) {
+            decryptedLinks.add(createDownloadlink(externID));
+            return decryptedLinks;
+        }
+        externID = br.getRegex("\"(http://(www\\.)?fux\\.com/embed/\\d+)\"").getMatch(0);
         if (externID != null) {
             decryptedLinks.add(createDownloadlink(externID));
             return decryptedLinks;

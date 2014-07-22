@@ -28,7 +28,7 @@ import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
 
 //EmbedDecrypter 0.1.3
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "keezmovies.com" }, urls = { "http://(www\\.)?keezmovies\\.com/video/[\\w\\-]+" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "keezmovies.com" }, urls = { "http://(www\\.)?keezmovies\\.com/(video|embed)/[\\w\\-]+" }, flags = { 0 })
 public class KeezMoviesComDecrypter extends PluginForDecrypt {
 
     public KeezMoviesComDecrypter(PluginWrapper wrapper) {
@@ -37,7 +37,7 @@ public class KeezMoviesComDecrypter extends PluginForDecrypt {
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-        final String parameter = param.toString();
+        final String parameter = param.toString().replace("/embed/", "/video/");
         final DownloadLink decryptedMainlink = createDownloadlink(parameter.replace("keezmovies.com/", "keezmoviesdecrypted.com/"));
         br.getPage(parameter);
         if (br.getHttpConnection().getResponseCode() == 404) {

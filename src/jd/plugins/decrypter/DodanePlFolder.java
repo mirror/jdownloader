@@ -43,44 +43,46 @@ public class DodanePlFolder extends PluginForDecrypt {
         int numberOfFiles = 0;
         br.setFollowRedirects(true);
         br.getPage(parameter);
-        final String folderId = new Regex(param, "http://dodane\\.pl/folder/([0-9]+)/.*").getMatch(0);
-        final String folderName = new Regex(param, "http://dodane\\.pl/folder/[0-9]+/(.*)").getMatch(0);
+        final String folderId = new Regex(parameter, "http://dodane\\.pl/folder/([0-9]+)/.*").getMatch(0);
+        final String folderName = new Regex(parameter, "http://dodane\\.pl/folder/[0-9]+/(.*)").getMatch(0);
 
         String folderClass = br.getRegex("<div class=\"folder-name\"[ \n\t\r]*folderid=\"" + folderId + "\">[ \n\t\r]*<a[ \n\t\r]*href=\"+" + parameter.replace(MAIN_PAGE, "") + "\"[ \n\t\r]*class=\"active\">(.*?)</a>").getMatch(0);
-        String folderInfo = new Regex(br, "(<h1 class=\"current-folder \" folderid=\"" + folderId + "\">" + folderClass + "</h1></a>.*<div class=\"folder-pos folder-spectrum\".*folderid=\"" + folderId + "\"></div>.*<div id=\"footer\">)").getMatch(0);
+        String folderInfo = new Regex(br, "<div class=\"files\\-container\">(.*?)<div style=\"width:90%;float:right;margin:20px 15px 0 0;\">").getMatch(0);
 
-        if (folderInfo.contains("<div>Foldery</div>")) {
-            String[][] folders = new Regex(folderInfo, "class=\"folder-pos \"[ \n\t\r]*folderid=\"[0-9]+\">[ \n\t\r]*<a href=\"(.*?)\">").getMatches();
-            if (folders != null && folders.length != 0) {
+        String[][] folders = new Regex(folderInfo, "class=\"folder-pos \"[ \n\t\r]*folderid=\"[0-9]+\">[ \n\t\r]*<a href=\"(.*?)\">").getMatches();
+        if (folders != null && folders.length != 0) {
 
-                for (String[] folder : folders) {
-                    DownloadLink dl = createDownloadlink(MAIN_PAGE + folder[0]);
-                    decryptedLinks.add(dl);
-                    numberOfFolders++;
-                }
+            for (String[] folder : folders) {
+                DownloadLink dl = createDownloadlink(MAIN_PAGE + folder[0]);
+                decryptedLinks.add(dl);
+                numberOfFolders++;
             }
         }
-        if (folderInfo.contains("<div>Pliki</div>")) {
-            String[][] files = new Regex(folderInfo, "<div class=\"file-pos .*?\" fileid=\"[0-9]+\" ext=\"[0-9A-Za-z]+\">[ \n\t\r]+<div class=\"name\">[ \n\t\r]+<a href=\"(.*?)\">").getMatches();
-            if (files != null && files.length != 0) {
-                FilePackage fp = FilePackage.getInstance();
-                String currentFolderId = new Regex(folderInfo, "<h1 class=\"current-folder \" folderid=\"(\\d+)\">").getMatch(0);
-                String packageName = findFoldersNames(currentFolderId, folderClass);
-                fp.setName(packageName);
-                fp.setProperty("ALLOW_MERGE", true);
+        final String[] files = new Regex(folderInfo, "<div class=\"file\\-pos (.*?)class=\"separator\"").getColumn(0);
+        if (files != null && files.length != 0) {
+            FilePackage fp = FilePackage.getInstance();
+            final String currentFolderId = br.getRegex("var currentFolderID = \"(\\d+)\";").getMatch(0);
+            String packageName = br.getRegex("var currentFolderName = \"([^<>\"]*?)\"").getMatch(0);
+            if (packageName == null) {
+                packageName = currentFolderId;
+            }
 
-                for (String[] file : files) {
-                    String link = MAIN_PAGE + file[0].replace("/file", "file");
-                    DownloadLink dl = createDownloadlink(link);
-                    try {
-                        distribute(dl);
-                    } catch (final Throwable e) {
-                        // Not available in old Stable
-                    }
-                    decryptedLinks.add(dl);
-                    fp.add(dl);
-                    numberOfFiles++;
+            fp.setName(packageName);
+            fp.setProperty("ALLOW_MERGE", true);
+
+            for (String file : files) {
+
+                String link = new Regex(file, "<a href=\"(/file/[^<>\"]*?)\"").getMatch(0);
+                link = MAIN_PAGE + link.replace("/file", "file");
+                DownloadLink dl = createDownloadlink(link);
+                try {
+                    distribute(dl);
+                } catch (final Throwable e) {
+                    // Not available in old Stable
                 }
+                decryptedLinks.add(dl);
+                fp.add(dl);
+                numberOfFiles++;
             }
         }
         return decryptedLinks;
@@ -94,7 +96,9 @@ public class DodanePlFolder extends PluginForDecrypt {
             String parentFolderId = new Regex(br, "<tr myid=\"" + crFolderId + "\"[ \n\t\r]+parentid=\"(\\d+)\">").getMatch(0);
             String parentFolderName = new Regex(br, "<div class=\"folder-name\"[ \n\t\r]+folderid=\"" + parentFolderId + "\">[ \n\t\r]+<a[ \n\t\r]+href=\"folder/" + parentFolderId + "/(.*?)\"[ \n\t\r]+>(.*?)</a>").getMatch(1);
 
-            if (parentFolderId == null) break;
+            if (parentFolderId == null) {
+                break;
+            }
             newName = parentFolderName + "+" + newName;
 
             crFolderId = parentFolderId;

@@ -33,26 +33,30 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
 //movshare by pspzockerscene
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "movshare.net", "epornik.com" }, urls = { "http://(www\\.)?movshare\\.net/video/[a-z0-9]+", "http://(www\\.)?epornik\\.com/video/[a-z0-9]+" }, flags = { 0, 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "movshare.net", "epornik.com" }, urls = { "http://(www\\.)?movshare\\.net/video/[a-z0-9]+|http://embed\\.movshare\\.net/embed\\.php\\?v=[a-z0-9]+", "http://(www\\.)?epornik\\.com/video/[a-z0-9]+" }, flags = { 0, 0 })
 public class MovShareNet extends PluginForHost {
-    
+
     private static final String HUMANTEXT = "We need you to prove you\\'re human";
     private static final String EPRON     = "epornik.com/";
-    
+
     public MovShareNet(PluginWrapper wrapper) {
         super(wrapper);
     }
-    
+
     @Override
     public String getAGBLink() {
         return "http://www.movshare.net/terms.php";
     }
-    
+
     @Override
     public int getMaxSimultanFreeDownloadNum() {
         return -1;
     }
-    
+
+    public void correctDownloadLink(final DownloadLink link) {
+        link.setUrlDownload("http://www.movshare.net/video/" + new Regex(link.getDownloadURL(), "([a-z0-9]+)$").getMatch(0));
+    }
+
     // This plugin is 99,99% copy the same as the DivxStageNet plugin, if this
     // gets broken please also check the other one!
     @Override
@@ -64,7 +68,9 @@ public class MovShareNet extends PluginForHost {
         if (!br.getURL().contains(EPRON)) {
             if (br.containsHTML(HUMANTEXT)) {
                 Form IAmAHuman = br.getForm(0);
-                if (IAmAHuman == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                if (IAmAHuman == null) {
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                }
                 /*
                  * needed for stable 09581 working, post without data did not set content length to 0
                  */
@@ -72,11 +78,19 @@ public class MovShareNet extends PluginForHost {
                 br.submitForm(IAmAHuman);
             }
         }
-        if (br.containsHTML("(The file is beeing transfered to our other servers|This file no longer exists on our servers)")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (br.containsHTML("(The file is beeing transfered to our other servers|This file no longer exists on our servers)")) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
         String filename = br.getRegex("Title: </strong>(.*?)</td>( <td>)?").getMatch(0);
-        if (filename == null) filename = br.getRegex("<title>Watch ([^<>\"]*?) online \\| MovShare</title>").getMatch(0);
-        if (br.containsHTML("<strong>Title:</strong> Untitled</p>") && filename == null) filename = new Regex(downloadLink.getDownloadURL(), "([a-z0-9]+)$").getMatch(0);
-        if (filename == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (filename == null) {
+            filename = br.getRegex("<title>Watch ([^<>\"]*?) online \\| MovShare</title>").getMatch(0);
+        }
+        if (br.containsHTML("<strong>Title:</strong> Untitled</p>") && filename == null) {
+            filename = new Regex(downloadLink.getDownloadURL(), "([a-z0-9]+)$").getMatch(0);
+        }
+        if (filename == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         filename = filename.trim();
         if (br.getURL().contains("movshare.net/")) {
             if (filename.equals("Untitled") || filename.equals("Title")) {
@@ -93,20 +107,24 @@ public class MovShareNet extends PluginForHost {
         }
         return AvailableStatus.TRUE;
     }
-    
+
     @Override
     public void handleFree(DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
         if (!br.getURL().contains(EPRON)) {
             if (br.containsHTML(HUMANTEXT)) {
                 Form IAmAHuman = br.getForm(0);
-                if (IAmAHuman == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                if (IAmAHuman == null) {
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                }
                 /*
                  * needed for stable 09581 working, post without data did not set content length to 0
                  */
                 br.submitForm(IAmAHuman);
             }
-            if (br.containsHTML("The file is beeing transfered to our other servers")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE);
+            if (br.containsHTML("The file is beeing transfered to our other servers")) {
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE);
+            }
         }
         String dllink = br.getRegex("video/divx\" src=\"(.*?)\"").getMatch(0);
         if (dllink == null) {
@@ -119,7 +137,9 @@ public class MovShareNet extends PluginForHost {
                         final String key = br.getRegex("flashvars\\.filekey=\"(.*?)\"").getMatch(0);
                         if (key != null) {
                             br.getPage("http://www.movshare.net/api/player.api.php?key=" + Encoding.urlEncode(key) + "&user=undefined&codes=undefined&pass=undefined&file=" + new Regex(downloadLink.getDownloadURL(), "movshare\\.net/video/(.+)").getMatch(0));
-                            if (br.containsHTML("error_msg=invalid token")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 'invalid token'", 30 * 60 * 1000l);
+                            if (br.containsHTML("error_msg=invalid token")) {
+                                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 'invalid token'", 30 * 60 * 1000l);
+                            }
                             dllink = br.getRegex("url=(http://.*?)\\&title=").getMatch(0);
                         }
                         if (dllink == null) {
@@ -133,20 +153,26 @@ public class MovShareNet extends PluginForHost {
                 }
             }
         }
-        if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (dllink == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 0);
         if (dl.getConnection().getContentType().contains("html")) {
-            if (dl.getConnection().getResponseCode() == 410) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error", 60 * 60 * 1000l);
+            if (dl.getConnection().getResponseCode() == 410) {
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error", 60 * 60 * 1000l);
+            }
             br.followConnection();
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl.startDownload();
     }
-    
+
     private HashMap<String, String> unWise() {
         String result = null;
         String fn = br.getRegex("eval\\((function\\(.*?\'\\))\\);").getMatch(0);
-        if (fn == null) return null;
+        if (fn == null) {
+            return null;
+        }
         HashMap<String, String> values = new HashMap<String, String>();
         final ScriptEngineManager manager = jd.plugins.hoster.DummyScriptEnginePlugin.getScriptEngineManager(this);
         final ScriptEngine engine = manager.getEngineByName("javascript");
@@ -175,17 +201,17 @@ public class MovShareNet extends PluginForHost {
         }
         return values;
     }
-    
+
     @Override
     public void reset() {
     }
-    
+
     @Override
     public void resetDownloadlink(DownloadLink link) {
     }
-    
+
     @Override
     public void resetPluginGlobals() {
     }
-    
+
 }

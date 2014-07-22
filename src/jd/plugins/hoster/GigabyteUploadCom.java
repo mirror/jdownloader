@@ -28,7 +28,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "gigabyteupload.com" }, urls = { "http://(www\\.)?gigabyteupload\\.com/(download\\-|download\\.html\\?video=)[a-z0-9]{32}" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "gigabyteupload.com" }, urls = { "http://(www\\.)?gigabyteupload\\.com/(download\\-|download\\.(html|php)\\?video=)[a-z0-9]{32}" }, flags = { 0 })
 public class GigabyteUploadCom extends PluginForHost {
 
     public GigabyteUploadCom(PluginWrapper wrapper) {
@@ -49,9 +49,13 @@ public class GigabyteUploadCom extends PluginForHost {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         br.getPage(link.getDownloadURL());
-        if (br.containsHTML(">404 Error")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (br.containsHTML(">404 Error")) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
         String filename = br.getRegex("<title>([^<>\"]*?)\\- Gigabyte Upload</title>").getMatch(0);
-        if (filename == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (filename == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         link.setFinalFileName(Encoding.htmlDecode(filename.trim()) + ".flv");
         return AvailableStatus.TRUE;
     }
@@ -61,7 +65,9 @@ public class GigabyteUploadCom extends PluginForHost {
         requestFileInformation(downloadLink);
         br.postPage(br.getURL(), "submit=download");
         final String dllink = br.getRegex("\"(http://[a-z0-9\\-\\.]+\\.gigabyteupload\\.com/files/[^<>\"]*?)\"").getMatch(0);
-        if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (dllink == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, false, 1);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();

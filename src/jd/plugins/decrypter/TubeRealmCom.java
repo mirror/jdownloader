@@ -39,9 +39,15 @@ public class TubeRealmCom extends PluginForDecrypt {
         String externID = null;
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String parameter = param.toString();
+        br.setFollowRedirects(false);
         br.getPage(parameter);
         if (br.containsHTML("Sorry, this page was deleted")) {
             logger.info("Link offline: " + parameter);
+            return decryptedLinks;
+        }
+        externID = br.getRedirectLocation();
+        if (externID != null && !externID.contains("tuberealm.com/")) {
+            decryptedLinks.add(createDownloadlink(externID));
             return decryptedLinks;
         }
         String filename = br.getRegex("<title>([^<>\"]*?)</title>").getMatch(0);

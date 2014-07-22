@@ -70,7 +70,7 @@ public class XShufuniCom extends PluginForDecrypt {
         }
         externID = br.getRegex("redtube\\.com/player/\"><param name=\"FlashVars\" value=\"id=(\\d+)\\&").getMatch(0);
         if (externID == null) {
-            externID = br.getRegex("embed\\.redtube\\.com/player/\\?id=(\\d+)\\&").getMatch(0);
+            externID = br.getRegex("embed\\.redtube\\.com(/player)?/\\?id=(\\d+)").getMatch(1);
         }
         if (externID != null) {
             final DownloadLink dl = createDownloadlink("http://www.redtube.com/" + externID);
@@ -302,6 +302,21 @@ public class XShufuniCom extends PluginForDecrypt {
             decryptedLinks.add(createDownloadlink(externID));
             return decryptedLinks;
         }
+        externID = br.getRegex("\"(http://(www\\.)?keezmovies\\.com/embed/[^<>\"]*?)\"").getMatch(0);
+        if (externID != null) {
+            decryptedLinks.add(createDownloadlink(externID));
+            return decryptedLinks;
+        }
+        externID = br.getRegex("\"(http://embeds\\.ah\\-me\\.com/embed/\\d+)\"").getMatch(0);
+        if (externID != null) {
+            decryptedLinks.add(createDownloadlink(externID));
+            return decryptedLinks;
+        }
+        externID = br.getRegex("\"(http://(www\\.)?extremetube\\.com/embed/[^<>\"/]*?)\"").getMatch(0);
+        if (externID != null) {
+            decryptedLinks.add(createDownloadlink(externID));
+            return decryptedLinks;
+        }
         // filename needed for all IDs below
         if (filename == null) {
             logger.warning("Decrypter broken for link: " + parameter);
@@ -404,26 +419,6 @@ public class XShufuniCom extends PluginForDecrypt {
             dl.setFinalFileName(filename + ".flv");
             decryptedLinks.add(dl);
             return decryptedLinks;
-        }
-        externID = br.getRegex("(https?://www\\.keezmovies\\.com/embed_player\\.php\\?v?id=\\d+)").getMatch(0);
-        if (externID != null) {
-            br.getPage(externID);
-            externID = br.getRegex("<share>(http://[^<>\"]*?)</share>").getMatch(0);
-            if (externID != null) {
-                final DownloadLink dl = createDownloadlink(externID);
-                decryptedLinks.add(dl);
-                return decryptedLinks;
-            } else {
-                externID = br.getRegex("<flv_url>(http://[^<>\"]*?)</flv_url>").getMatch(0);
-                if (externID == null) {
-                    logger.warning("Decrypter broken for link: " + parameter);
-                    return null;
-                }
-                final DownloadLink dl = createDownloadlink("directhttp://" + Encoding.htmlDecode(externID));
-                dl.setFinalFileName(filename + ".flv");
-                decryptedLinks.add(dl);
-                return decryptedLinks;
-            }
         }
         externID = br.getRegex("foxytube\\.com/embedded/(\\d+)\"").getMatch(0);
         if (externID != null) {
