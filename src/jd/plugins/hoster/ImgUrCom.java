@@ -177,7 +177,7 @@ public class ImgUrCom extends PluginForHost {
 
     public static final String getAuthorization() {
         String authorization;
-        final String clientid = SubConfiguration.getConfig("imgsrc.ru").getStringProperty(SETTING_CLIENTID, defaultClientID);
+        final String clientid = SubConfiguration.getConfig("imgur.com").getStringProperty(SETTING_CLIENTID, defaultClientID);
         if (clientid.contains("JDDEFAULT")) {
             authorization = Encoding.Base64Decode(OAUTH_CLIENTID);
         } else {
