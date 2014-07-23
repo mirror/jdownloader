@@ -177,7 +177,7 @@ public class ImgUrCom extends PluginForHost {
 
     public static final String getAuthorization() {
         String authorization;
-        final String clientid = SubConfiguration.getConfig("vkontakte.ru").getStringProperty(SETTING_CLIENTID, defaultClientID);
+        final String clientid = SubConfiguration.getConfig("imgsrc.ru").getStringProperty(SETTING_CLIENTID, defaultClientID);
         if (clientid.contains("JDDEFAULT")) {
             authorization = Encoding.Base64Decode(OAUTH_CLIENTID);
         } else {
@@ -189,7 +189,7 @@ public class ImgUrCom extends PluginForHost {
 
     @Override
     public String getDescription() {
-        return "JDownloader's Save.tv Plugin helps downloading galleries from imgur.com.";
+        return "This Plugin download galleries/albums/images from imgur.com.";
     }
 
     private final static String defaultClientID  = "JDDEFAULT";

@@ -17,6 +17,7 @@
 package jd.plugins.decrypter;
 
 import java.util.ArrayList;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
@@ -27,6 +28,7 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
+import jd.utils.JDUtilities;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "imgur.com" }, urls = { "https?://((www|i)\\.)?imgur\\.com(/gallery|/a|/download)?/[A-Za-z0-9]{5,}" }, flags = { 0 })
 public class ImgurCom extends PluginForDecrypt {
@@ -35,17 +37,23 @@ public class ImgurCom extends PluginForDecrypt {
         super(wrapper);
     }
 
-    private final String  TYPE_ALBUM   = "https?://(www\\.)?imgur\\.com/a/[A-Za-z0-9]{5,}";
-    private final String  TYPE_GALLERY = "https?://(www\\.)?imgur\\.com/gallery/[A-Za-z0-9]{5,}";
-    private static Object ctrlLock     = new Object();
+    private final String         TYPE_ALBUM   = "https?://(www\\.)?imgur\\.com/a/[A-Za-z0-9]{5,}";
+    private final String         TYPE_GALLERY = "https?://(www\\.)?imgur\\.com/gallery/[A-Za-z0-9]{5,}";
+    private static Object        ctrlLock     = new Object();
+    private static AtomicBoolean pluginLoaded = new AtomicBoolean(false);
 
     /* IMPORTANT: Make sure that we're always using the current version of their API: https://api.imgur.com/ */
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         final String parameter = param.toString().replace("https://", "http://").replace("/all$", "");
         synchronized (ctrlLock) {
+            if (!pluginLoaded.get()) {
+                // load plugin!
+                JDUtilities.getPluginForHost("imgur.com");
+                pluginLoaded.set(true);
+            }
             br.getHeaders().put("Authorization", jd.plugins.hoster.ImgUrCom.getAuthorization());
-            br.getPage("https://api.imgur.com/3/gallery/bestof2013");
+            // br.getPage("https://api.imgur.com/3/gallery/bestof2013");
             final String lid = new Regex(parameter, "([A-Za-z0-9]+)$").getMatch(0);
             if (parameter.matches(TYPE_ALBUM) || parameter.matches(TYPE_GALLERY)) {
                 try {
