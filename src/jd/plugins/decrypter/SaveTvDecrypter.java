@@ -16,6 +16,7 @@
 
 package jd.plugins.decrypter;
 
+import java.io.IOException;
 import java.math.BigDecimal;
 import java.text.ParseException;
 import java.util.ArrayList;
@@ -28,6 +29,7 @@ import jd.config.Property;
 import jd.config.SubConfiguration;
 import jd.controlling.AccountController;
 import jd.controlling.ProgressController;
+import jd.http.Browser;
 import jd.http.Browser.BrowserException;
 import jd.parser.Regex;
 import jd.plugins.Account;
@@ -104,6 +106,8 @@ public class SaveTvDecrypter extends PluginForDecrypt {
 
         grab_last_hours_num = getLongProperty(cfg, CRAWLER_LASTHOURS_COUNT, 0);
         tdifference_milliseconds = grab_last_hours_num * 60 * 60 * 1000;
+        boolean is_groups_enabled = !br.containsHTML("\"IRECORDINGFORMATID\"");
+        final boolean groups_enabled_by_user = is_groups_enabled;
 
         try {
             getPageSafe("https://www.save.tv/STV/M/obj/archive/JSON/VideoArchiveApi.cfm?iEntriesPerPage=1&iCurrentPage=1");
@@ -137,6 +141,13 @@ public class SaveTvDecrypter extends PluginForDecrypt {
 
                     logger.info("save.tv: Decrypting request " + i + " of " + requestCount);
 
+                    is_groups_enabled = !br.containsHTML("\"IRECORDINGFORMATID\"");
+                    if (is_groups_enabled) {
+                        /* Disable stupid groups setting to crawl faster and to make it work anyways */
+                        logger.info("Disabling groups setting");
+                        postPageSafe(this.br, "https://www.save.tv/STV/M/obj/user/submit/submitVideoArchiveOptions.cfm", "ShowGroupedVideoArchive=false");
+                        is_groups_enabled = false;
+                    }
                     getPageSafe("https://www.save.tv/STV/M/obj/archive/JSON/VideoArchiveApi.cfm?iEntriesPerPage=" + ENTRIES_PER_REQUEST + "&iCurrentPage=" + i);
                     final String array_text = br.getRegex("\"ARRVIDEOARCHIVEENTRIES\":\\[(\\{.*?\\})\\],\"ENABLEDEFAULTFORMATSETTINGS\"").getMatch(0);
                     final String[] telecast_array = array_text.split("TelecastId=\\d+\"\\}\\},\\{");
@@ -220,6 +231,17 @@ public class SaveTvDecrypter extends PluginForDecrypt {
             }
         }
 
+        try {
+            if (groups_enabled_by_user && !is_groups_enabled) {
+                /* Enable groups setting again because user had it enabled before */
+                logger.info("Enabling groups setting");
+                postPageSafe(this.br, "https://www.save.tv/STV/M/obj/user/submit/submitVideoArchiveOptions.cfm", "ShowGroupedVideoArchive=true");
+                logger.info("Successfully re-enabled groups setting");
+            }
+        } catch (final Throwable settingfail) {
+            logger.info("Failed to re-enable groups setting");
+        }
+
         return decryptedLinks;
     }
 
@@ -295,6 +317,26 @@ public class SaveTvDecrypter extends PluginForDecrypt {
                     break;
                 }
                 continue;
+            }
+            break;
+        }
+    }
+
+    /* Avoid 503 server errors */
+    @SuppressWarnings("unused")
+    private void postPageSafe(final Browser br, final String url, final String postData) throws IOException, PluginException, InterruptedException {
+        for (int i = 1; i <= 3; i++) {
+            try {
+                br.postPage(url, postData);
+            } catch (final BrowserException e) {
+                if (br.getRequest().getHttpConnection().getResponseCode() == 503) {
+                    final DownloadLink dummyLink = createDownloadlink("https://www.save.tv/STV/M/obj/archive/VideoArchive.cfm");
+                    logger.info("503 BrowserException occured, retry " + i + " of 3");
+                    Thread.sleep(3000);
+                    continue;
+                }
+                logger.info("Unhandled BrowserException occured...");
+                throw e;
             }
             break;
         }

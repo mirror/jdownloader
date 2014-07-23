@@ -35,7 +35,8 @@ public class ImgurCom extends PluginForDecrypt {
         super(wrapper);
     }
 
-    private final String  TYPE_GALLERY = "https?://((www|i)\\.)?imgur\\.com/a/[A-Za-z0-9]{5,}";
+    private final String  TYPE_ALBUM   = "https?://(www\\.)?imgur\\.com/a/[A-Za-z0-9]{5,}";
+    private final String  TYPE_GALLERY = "https?://(www\\.)?imgur\\.com/gallery/[A-Za-z0-9]{5,}";
     private static Object ctrlLock     = new Object();
 
     /* IMPORTANT: Make sure that we're always using the current version of their API: https://api.imgur.com/ */
@@ -44,8 +45,9 @@ public class ImgurCom extends PluginForDecrypt {
         final String parameter = param.toString().replace("https://", "http://").replace("/all$", "");
         synchronized (ctrlLock) {
             br.getHeaders().put("Authorization", jd.plugins.hoster.ImgUrCom.getAuthorization());
+            br.getPage("https://api.imgur.com/3/gallery/bestof2013");
             final String lid = new Regex(parameter, "([A-Za-z0-9]+)$").getMatch(0);
-            if (parameter.matches(TYPE_GALLERY)) {
+            if (parameter.matches(TYPE_ALBUM) || parameter.matches(TYPE_GALLERY)) {
                 try {
                     br.getPage("https://api.imgur.com/3/album/" + lid);
                 } catch (final BrowserException e) {
@@ -57,6 +59,13 @@ public class ImgurCom extends PluginForDecrypt {
                 }
                 br.getRequest().setHtmlCode(br.toString().replace("\\", ""));
                 if (br.containsHTML("\"status\":404")) {
+                    /* Well in case it's a gallery link it might be a single picture */
+                    if (parameter.matches(TYPE_GALLERY)) {
+                        final DownloadLink dl = createDownloadlink("http://imgurdecrypted.com/download/" + lid);
+                        dl.setProperty("imgUID", lid);
+                        decryptedLinks.add(dl);
+                        return decryptedLinks;
+                    }
                     final DownloadLink offline = createDownloadlink("directhttp://" + parameter);
                     offline.setAvailable(false);
                     offline.setProperty("offline", true);

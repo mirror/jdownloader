@@ -95,7 +95,7 @@ public class MirStkCm extends PluginForDecrypt {
             singleLinks = new Regex(parameter, "(.+)").getColumn(0);
         }
         // Normal links, find all singleLinks
-        else if (parameter.matches(regexNormalLink)) {
+        else {
             singleLinks = br.getRegex("<a href=\\'" + regexSingleLink + "\\'").getColumn(0);
             if (singleLinks == null || singleLinks.length == 0) {
                 singleLinks = br.getRegex(regexSingleLink).getColumn(0);

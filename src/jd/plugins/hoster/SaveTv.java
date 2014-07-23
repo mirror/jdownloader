@@ -955,14 +955,14 @@ public class SaveTv extends PluginForHost {
 
     /* Avoid 503 server errors */
     @SuppressWarnings("unused")
-    private void postPageSafe(final Browser br, final String url, final String postData) throws IOException, PluginException {
+    private void postPageSafe(final Browser br, final String url, final String postData) throws IOException, PluginException, InterruptedException {
         for (int i = 1; i <= 3; i++) {
             try {
                 br.postPage(url, postData);
             } catch (final BrowserException e) {
                 if (br.getRequest().getHttpConnection().getResponseCode() == 503) {
                     logger.info("503 BrowserException occured, retry " + i + " of 3");
-                    sleep(3000l, DLINK);
+                    Thread.sleep(3000);
                     continue;
                 }
                 logger.info("Unhandled BrowserException occured...");
