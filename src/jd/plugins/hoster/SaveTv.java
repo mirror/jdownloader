@@ -71,80 +71,81 @@ import org.jdownloader.DomainInfo;
 public class SaveTv extends PluginForHost {
 
     /* Static information */
-    private final String         APIKEY                            = "Q0FFQjZDQ0YtMDdFNC00MDQ4LTkyMDQtOUU5QjMxOEU3OUIz";
+    private final String         APIKEY                                    = "Q0FFQjZDQ0YtMDdFNC00MDQ4LTkyMDQtOUU5QjMxOEU3OUIz";
     @SuppressWarnings("unused")
-    private final String         APIPAGE                           = "http://api.save.tv/v2/Api.svc?wsdl";
-    public static final double   QUALITY_HD_MB_PER_MINUTE          = 22;
-    public static final double   QUALITY_H264_NORMAL_MB_PER_MINUTE = 12.605;
-    public static final double   QUALITY_H264_MOBILE_MB_PER_MINUTE = 4.64;
-    private final static String  COOKIE_HOST                       = "http://save.tv";
-    private static final String  NICE_HOST                         = "save.tv";
-    private static final String  NICE_HOSTproperty                 = "savetv";
+    private final String         APIPAGE                                   = "http://api.save.tv/v2/Api.svc?wsdl";
+    public static final double   QUALITY_HD_MB_PER_MINUTE                  = 22;
+    public static final double   QUALITY_H264_NORMAL_MB_PER_MINUTE         = 12.605;
+    public static final double   QUALITY_H264_MOBILE_MB_PER_MINUTE         = 4.64;
+    private final static String  COOKIE_HOST                               = "http://save.tv";
+    private static final String  NICE_HOST                                 = "save.tv";
+    private static final String  NICE_HOSTproperty                         = "savetv";
 
     /* Settings stuff */
-    private static final String  USEORIGINALFILENAME               = "USEORIGINALFILENAME";
-    private static final String  PREFERADSFREE                     = "PREFERADSFREE";
-    private static final String  PREFERADSFREE_OVERRIDE            = "PREFERADSFREE_OVERRIDE";
-    private static final String  PREFERADSFREE_OVERRIDE_MAXRETRIES = "PREFERADSFREE_OVERRIDE_MAXRETRIES";
-    private static final String  DOWNLOADONLYADSFREE               = "DOWNLOADONLYADSFREE";
-    private static final String  DOWNLOADONLYADSFREE_RETRY_HOURS   = "DOWNLOADONLYADSFREE_RETRY_HOURS";
-    private final String         ADSFREEAVAILABLETEXT              = JDL.L("plugins.hoster.SaveTv.AdsFreeAvailable", "Video ist werbefrei verfügbar");
-    private final String         ADSFREEANOTVAILABLE               = JDL.L("plugins.hoster.SaveTv.AdsFreeNotAvailable", "Video ist nicht werbefrei verfügbar");
-    private static final String  PREFERREDFORMATNOTAVAILABLETEXT   = JDL.L("plugins.hoster.SaveTv.Format_unavailable", "Das bevorzugte Format ist (noch) nicht verfügbar. Warte oder ändere die Einstellung!");
-    private final String         NOCUTAVAILABLETEXT                = JDL.L("plugins.hoster.SaveTv.noCutAvailable", "Für diese Sendung steht (noch) keine Schnittliste zur Verfügung");
-    private final static String  selected_video_format             = "selected_video_format";
+    private static final String  USEORIGINALFILENAME                       = "USEORIGINALFILENAME";
+    private static final String  PREFERADSFREE                             = "PREFERADSFREE";
+    private static final String  PREFERADSFREE_OVERRIDE                    = "PREFERADSFREE_OVERRIDE";
+    private static final String  PREFERADSFREE_OVERRIDE_MAXRETRIES         = "PREFERADSFREE_OVERRIDE_MAXRETRIES";
+    private static final String  DOWNLOADONLYADSFREE                       = "DOWNLOADONLYADSFREE";
+    private static final String  DOWNLOADONLYADSFREE_RETRY_HOURS           = "DOWNLOADONLYADSFREE_RETRY_HOURS";
+    private final String         ADSFREEAVAILABLETEXT                      = JDL.L("plugins.hoster.SaveTv.AdsFreeAvailable", "Video ist werbefrei verfügbar");
+    private final String         ADSFREEANOTVAILABLE                       = JDL.L("plugins.hoster.SaveTv.AdsFreeNotAvailable", "Video ist nicht werbefrei verfügbar");
+    private static final String  PREFERREDFORMATNOTAVAILABLETEXT           = JDL.L("plugins.hoster.SaveTv.Format_unavailable", "Das bevorzugte Format ist (noch) nicht verfügbar. Warte oder ändere die Einstellung!");
+    private final String         NOCUTAVAILABLETEXT                        = JDL.L("plugins.hoster.SaveTv.noCutAvailable", "Für diese Sendung steht (noch) keine Schnittliste zur Verfügung");
+    private final static String  selected_video_format                     = "selected_video_format";
 
     /* The list of server values displayed to the user */
-    private final String[]       formats                           = new String[] { "HD [Funktioniert (noch) nicht per API!]", "H.264 HQ", "H.264 MOBILE" };
+    private final String[]       formats                                   = new String[] { "HD [Funktioniert (noch) nicht per API!]", "H.264 HQ", "H.264 MOBILE" };
 
-    private static final String  USEAPI                            = "USEAPI";
-    private static final String  CRAWLER_ACTIVATE                  = "CRAWLER_ACTIVATE";
-    private static final String  CRAWLER_ENABLE_FASTER             = "CRAWLER_ENABLE_FASTER";
-    private static final String  CRAWLER_DISABLE_DIALOGS           = "CRAWLER_DISABLE_DIALOGS";
-    private static final String  CRAWLER_LASTHOURS_COUNT           = "CRAWLER_LASTHOURS_COUNT";
-    private static final String  DISABLE_LINKCHECK                 = "DISABLE_LINKCHECK";
-    private static final String  DELETE_TELECAST_ID_AFTER_DOWNLOAD = "DELETE_TELECAST_ID_AFTER_DOWNLOAD";
+    private static final String  USEAPI                                    = "USEAPI";
+    private static final String  CRAWLER_ACTIVATE                          = "CRAWLER_ACTIVATE";
+    private static final String  CRAWLER_ENABLE_FASTER                     = "CRAWLER_ENABLE_FASTER";
+    private static final String  CRAWLER_DISABLE_DIALOGS                   = "CRAWLER_DISABLE_DIALOGS";
+    private static final String  CRAWLER_LASTHOURS_COUNT                   = "CRAWLER_LASTHOURS_COUNT";
+    private static final String  DISABLE_LINKCHECK                         = "DISABLE_LINKCHECK";
+    private static final String  DELETE_TELECAST_ID_AFTER_DOWNLOAD         = "DELETE_TELECAST_ID_AFTER_DOWNLOAD";
+    private static final String  DELETE_TELECAST_ID_IF_FILE_ALREADY_EXISTS = "DELETE_TELECAST_ID_IF_FILE_ALREADY_EXISTS";
 
     /* Custom filename settings stuff */
-    private static final String  CUSTOM_DATE                       = "CUSTOM_DATE";
-    private static final String  CUSTOM_FILENAME2                  = "CUSTOM_FILENAME2";
-    private static final String  CUSTOM_FILENAME_SERIES2           = "CUSTOM_FILENAME_SERIES2";
-    private static final String  CUSTOM_FILENAME_SEPERATION_MARK   = "CUSTOM_FILENAME_SEPERATION_MARK";
-    private static final String  CUSTOM_FILENAME_EMPTY_TAG_STRING  = "CUSTOM_FILENAME_EMPTY_TAG_STRING";
-    private static final String  FORCE_ORIGINALFILENAME_SERIES     = "FORCE_ORIGINALFILENAME_SERIES";
-    private static final String  FORCE_ORIGINALFILENAME_MOVIES     = "FORCE_ORIGINALFILENAME_MOVIES";
+    private static final String  CUSTOM_DATE                               = "CUSTOM_DATE";
+    private static final String  CUSTOM_FILENAME2                          = "CUSTOM_FILENAME2";
+    private static final String  CUSTOM_FILENAME_SERIES2                   = "CUSTOM_FILENAME_SERIES2";
+    private static final String  CUSTOM_FILENAME_SEPERATION_MARK           = "CUSTOM_FILENAME_SEPERATION_MARK";
+    private static final String  CUSTOM_FILENAME_EMPTY_TAG_STRING          = "CUSTOM_FILENAME_EMPTY_TAG_STRING";
+    private static final String  FORCE_ORIGINALFILENAME_SERIES             = "FORCE_ORIGINALFILENAME_SERIES";
+    private static final String  FORCE_ORIGINALFILENAME_MOVIES             = "FORCE_ORIGINALFILENAME_MOVIES";
 
     /* Variables */
-    private boolean              FORCE_LINKCHECK                   = false;
-    private boolean              ISADSFREEAVAILABLE                = false;
+    private boolean              FORCE_LINKCHECK                           = false;
+    private boolean              ISADSFREEAVAILABLE                        = false;
 
     /* If this != null, API is in use */
-    private String               SESSIONID                         = null;
-    private static final String  NORESUME                          = "NORESUME";
-    private static final String  NOCHUNKS                          = "NOCHUNKS";
-    private DownloadLink         DLINK                             = null;
+    private String               SESSIONID                                 = null;
+    private static final String  NORESUME                                  = "NORESUME";
+    private static final String  NOCHUNKS                                  = "NOCHUNKS";
+    private DownloadLink         DLINK                                     = null;
 
     /* Other */
-    private static Object        LOCK                              = new Object();
-    private static final int     MAX_RETRIES_LOGIN                 = 10;
-    private static final int     MAX_RETRIES_SAFE_REQUEST          = 3;
+    private static Object        LOCK                                      = new Object();
+    private static final int     MAX_RETRIES_LOGIN                         = 10;
+    private static final int     MAX_RETRIES_SAFE_REQUEST                  = 3;
 
     /* Download connections constants */
-    private static final boolean ACCOUNT_PREMIUM_RESUME            = true;
-    private static final int     ACCOUNT_PREMIUM_MAXCHUNKS         = -2;
-    private static final int     ACCOUNT_PREMIUM_MAXDOWNLOADS      = -1;
+    private static final boolean ACCOUNT_PREMIUM_RESUME                    = true;
+    private static final int     ACCOUNT_PREMIUM_MAXCHUNKS                 = -2;
+    private static final int     ACCOUNT_PREMIUM_MAXDOWNLOADS              = -1;
 
     /* Other API/site errorhandling constants */
-    private static final String  SITE_DL_IMPOSSIBLE                = ">Diese Sendung kann leider nicht heruntergeladen werden, da die Aufnahme fehlerhaft ist";
-    private static final String  API_DL_IMPOSSIBLE                 = ">1418</ErrorCodeID>";
-    private static final String  DL_IMPOSSIBLE_USER_TEXT           = JDL.L("plugins.hoster.SaveTv.dlImpossible", "Aufnahme fehlerhaft - Download momentan nicht möglich");
+    private static final String  SITE_DL_IMPOSSIBLE                        = ">Diese Sendung kann leider nicht heruntergeladen werden, da die Aufnahme fehlerhaft ist";
+    private static final String  API_DL_IMPOSSIBLE                         = ">1418</ErrorCodeID>";
+    private static final String  DL_IMPOSSIBLE_USER_TEXT                   = JDL.L("plugins.hoster.SaveTv.dlImpossible", "Aufnahme fehlerhaft - Download momentan nicht möglich");
 
     /* Property / Filename constants */
-    public static final String   QUALITY_PARAM                     = "quality";
-    public static final String   QUALITY_LQ                        = "LQ";
-    public static final String   QUALITY_HQ                        = "HQ";
-    public static final String   QUALITY_HD                        = "HD";
-    public static final String   EXTENSION                         = ".mp4";
+    public static final String   QUALITY_PARAM                             = "quality";
+    public static final String   QUALITY_LQ                                = "LQ";
+    public static final String   QUALITY_HQ                                = "HQ";
+    public static final String   QUALITY_HD                                = "HD";
+    public static final String   EXTENSION                                 = ".mp4";
 
     @SuppressWarnings("deprecation")
     public SaveTv(PluginWrapper wrapper) {
@@ -294,6 +295,9 @@ public class SaveTv extends PluginForHost {
         } else {
             final String telecast_ID = getTelecastId(link);
             getPageSafe("https://www.save.tv/STV/M/obj/archive/JSON/VideoArchiveDetailsApi.cfm?TelecastID=" + telecast_ID, aa);
+            if (!br.getURL().contains("/JSON/")) {
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            }
             /* Find data of the current telecastID */
             final String data_source = br.getRegex("\"TELECASTDETAILS\":\\{(.+)").getMatch(0);
             if (data_source == null) {
@@ -681,21 +685,11 @@ public class SaveTv extends PluginForHost {
                     throw new PluginException(LinkStatus.ERROR_RETRY);
                 }
             } else {
-                try {
-                    if (cfg.getBooleanProperty(DELETE_TELECAST_ID_AFTER_DOWNLOAD, false)) {
-                        /* If the API is used, we need to log in via site here to be able to delete the telecastID */
-                        if (apiActive()) {
-                            site_login(this.br, account, false);
-                        }
-                        br.getPage("https://www.save.tv/STV/M/obj/cRecordOrder/croDelete.cfm?TelecastID=" + getTelecastId(downloadLink));
-                        if (br.containsHTML("\"ok\"")) {
-                            logger.info("Successfully deleted telecastID: " + getTelecastId(downloadLink));
-                        } else {
-                            logger.warning("Failed to delete telecastID: " + getTelecastId(downloadLink));
-                        }
-                    }
-                } catch (final Throwable e) {
-                    logger.info("Failed to delete telecastID: " + getTelecastId(downloadLink));
+                if (cfg.getBooleanProperty(DELETE_TELECAST_ID_AFTER_DOWNLOAD, defaultDeleteTelecastIDAfterDownload)) {
+                    logger.info("Download finished --> User wants telecastID " + getTelecastId(downloadLink) + " deleted");
+                    site_killTelecastID(account, downloadLink);
+                } else {
+                    logger.info("Download finished --> User does not want telecastID " + getTelecastId(downloadLink) + " deleted");
                 }
             }
         } catch (final PluginException e) {
@@ -707,7 +701,21 @@ public class SaveTv extends PluginForHost {
                 }
                 downloadLink.setProperty(NORESUME, Boolean.valueOf(true));
                 downloadLink.setChunksProgress(null);
-                throw new PluginException(LinkStatus.ERROR_RETRY, "ERROR_DOWNLOAD_INCOMPLETE");
+                throw new PluginException(LinkStatus.ERROR_RETRY, "ERROR_DOWNLOAD_INCOMPLETE --> Retrying");
+            }
+            try {
+                if (e.getLinkStatus() == LinkStatus.ERROR_ALREADYEXISTS) {
+                    if (cfg.getBooleanProperty(DELETE_TELECAST_ID_IF_FILE_ALREADY_EXISTS, defaultDeleteTelecastIDIfFileAlreadyExists)) {
+                        logger.info("ERROR_ALREADYEXISTS --> User wants telecastID " + getTelecastId(downloadLink) + " deleted");
+                        site_killTelecastID(account, downloadLink);
+                    } else {
+                        logger.info("ERROR_ALREADYEXISTS --> User does not want telecastID " + getTelecastId(downloadLink) + " deleted");
+                    }
+                    throw e;
+                }
+            } catch (final Throwable efail) {
+                /* Do not fail here, throw exception which happened previously */
+                throw e;
             }
             /* New V2 errorhandling */
             /* unknown error, we disable multiple chunks */
@@ -1031,6 +1039,31 @@ public class SaveTv extends PluginForHost {
      */
     private void api_postDownloadPage(final DownloadLink dl, final String user_selected_video_quality, final String downloadWithoutAds) throws IOException {
         doSoapRequest("http://tempuri.org/IDownload/GetStreamingUrl", "<sessionId i:type=\"d:string\">" + SESSIONID + "</sessionId><telecastId i:type=\"d:int\">" + getTelecastId(dl) + "</telecastId><telecastIdSpecified i:type=\"d:boolean\">true</telecastIdSpecified><recordingFormatId i:type=\"d:int\">" + user_selected_video_quality + "</recordingFormatId><recordingFormatIdSpecified i:type=\"d:boolean\">true</recordingFormatIdSpecified><adFree i:type=\"d:boolean\">false</adFree><adFreeSpecified i:type=\"d:boolean\">" + downloadWithoutAds + "</adFreeSpecified>");
+    }
+
+    /**
+     * Deletes a desired telecastID.
+     * 
+     * @param acc
+     *            Account : The users' account which might be needed to log in in case the user uses the API
+     * @param dl
+     *            DownloadLink: The DownloadLink whose telecastID will be deleted.
+     */
+    private void site_killTelecastID(final Account acc, final DownloadLink dl) throws IOException, PluginException {
+        try {
+            /* If the API is used, we need to log in via site here to be able to delete the telecastID */
+            if (apiActive()) {
+                site_login(this.br, acc, false);
+            }
+            br.getPage("https://www.save.tv/STV/M/obj/cRecordOrder/croDelete.cfm?TelecastID=" + getTelecastId(dl));
+            if (br.containsHTML("\"ok\"")) {
+                logger.info("Successfully deleted telecastID: " + getTelecastId(dl));
+            } else {
+                logger.warning("Failed to delete telecastID: " + getTelecastId(dl));
+            }
+        } catch (final Throwable e) {
+            logger.info("Failed to delete telecastID: " + getTelecastId(dl));
+        }
     }
 
     private static void site_prepBrowser(final Browser br) {
@@ -1518,13 +1551,16 @@ public class SaveTv extends PluginForHost {
         return "JDownloader's Save.tv Plugin helps downloading videoclips from Save.tv. Save.tv provides different settings for its downloads.";
     }
 
-    private final static String defaultCustomFilename                           = "*videotitel**telecastid**endung*";
-    private final static String defaultCustomSeriesFilename                     = "*serientitel* ¦ *episodennummer* ¦ *episodenname**endung*";
-    private final static String defaultCustomSeperationMark                     = "+";
-    private final static String defaultCustomStringForEmptyTags                 = "-";
-    private final static int    defaultCrawlLasthours                           = 0;
-    private final static int    defaultNoAdsFreeAvailableRetryWaitHours         = 12;
-    private final static int    defaultIgnoreOnlyAdsFreeAfterRetries_maxRetries = 2;
+    private final static String  defaultCustomFilename                           = "*videotitel**telecastid**endung*";
+    private final static String  defaultCustomSeriesFilename                     = "*serientitel* ¦ *episodennummer* ¦ *episodenname**endung*";
+    private final static String  defaultCustomSeperationMark                     = "+";
+    private final static String  defaultCustomStringForEmptyTags                 = "-";
+    private final static int     defaultCrawlLasthours                           = 0;
+    private final static int     defaultNoAdsFreeAvailableRetryWaitHours         = 12;
+    private final static int     defaultIgnoreOnlyAdsFreeAfterRetries_maxRetries = 2;
+
+    private static final boolean defaultDeleteTelecastIDAfterDownload            = false;
+    private static final boolean defaultDeleteTelecastIDIfFileAlreadyExists      = false;
 
     private void setConfigElements() {
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_LABEL, "Allgemeine Einstellungen:"));
@@ -1621,7 +1657,9 @@ public class SaveTv extends PluginForHost {
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_LABEL, "Erweiterte Einstellungen:"));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_SEPARATOR));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_SEPARATOR));
-        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), SaveTv.DELETE_TELECAST_ID_AFTER_DOWNLOAD, JDL.L("plugins.hoster.SaveTv.deleteFromArchiveAfterDownload", "Erfolgreich geladene telecastIDs aus dem save.tv Archiv löschen?\r\n Warnung: Gelöschte telecastIDs können nicht wiederhergestellt werden!\r\nFalls diese Funktion einen Fehler beinhaltet, ist Datenverlust möglich!")).setDefaultValue(false));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_LABEL, "Soll die telecastID in irgendeinem Fall aus dem save.tv Archiv gelöscht werden?\r\n<html><p style=\"color:#F62817\">Warnung: Gelöschte telecastIDs können nicht wiederhergestellt werden!\r\nFalls diese Funktionen Fehler enthalten ist Datenverlust möglich!</p></html>"));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), SaveTv.DELETE_TELECAST_ID_AFTER_DOWNLOAD, JDL.L("plugins.hoster.SaveTv.deleteFromArchiveAfterDownload", "Erfolgreich geladene telecastIDs aus dem save.tv Archiv löschen?")).setDefaultValue(defaultDeleteTelecastIDAfterDownload));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), SaveTv.DELETE_TELECAST_ID_IF_FILE_ALREADY_EXISTS, JDL.L("plugins.hoster.SaveTv.deleteFromArchiveIfFileAlreadyExists", "Falls Datei bereits auf der Festplatte existiert telecastIDs aus dem save.tv Archiv löschen?")).setDefaultValue(defaultDeleteTelecastIDIfFileAlreadyExists));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_SEPARATOR));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_TEXTFIELD, getPluginConfig(), CUSTOM_FILENAME_SEPERATION_MARK, JDL.L("plugins.hoster.savetv.customFilenameSeperationmark", "Trennzeichen als Ersatz für '/'  (da ungültig in Dateinamen):")).setDefaultValue(defaultCustomSeperationMark).setEnabledCondidtion(origName, false));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_TEXTFIELD, getPluginConfig(), CUSTOM_FILENAME_EMPTY_TAG_STRING, JDL.L("plugins.hoster.savetv.customEmptyTagsString", "Zeichen, mit dem Tags ersetzt werden sollen, deren Daten fehlen:")).setDefaultValue(defaultCustomStringForEmptyTags).setEnabledCondidtion(origName, false));
