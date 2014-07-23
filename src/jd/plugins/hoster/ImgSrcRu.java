@@ -45,7 +45,6 @@ public class ImgSrcRu extends PluginForHost {
 
     private String                         ddlink    = null;
     private String                         password  = null;
-    private String                         js        = null;
     private static AtomicReference<String> userAgent = new AtomicReference<String>(null);
     private static AtomicInteger           uaInt     = new AtomicInteger(0);
 
@@ -133,32 +132,39 @@ public class ImgSrcRu extends PluginForHost {
             String oldname = new Regex(downloadLink.getDownloadURL(), "(\\d+)\\.html").getMatch(0);
             downloadLink.setFinalFileName(oldname + filename.substring(filename.lastIndexOf(".")));
             downloadLink.setDownloadSize(con.getLongContentLength());
-            downloadLink.setAvailable(true);
+            return AvailableStatus.TRUE;
+        } else {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        return AvailableStatus.TRUE;
     }
 
     private void getDllink() throws Exception {
-        final String best = new Regex(js, "'(ori_?pic|big_?pic)'").getMatch(0);
-        if (best == null) {
-            logger.warning("determining best!");
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
-        final ScriptEngineManager mgr = jd.plugins.hoster.DummyScriptEnginePlugin.getScriptEngineManager(this);
-        final ScriptEngine engine = mgr.getEngineByName("javascript");
-        Object result = null;
-        try {
-            engine.eval("var document = { getElementById: function (a) { if (!this[a]) { this[a] = new Object(); function src() { return a.src; } this[a].src = src(); } return this[a]; }};");
-            engine.eval(js + "\r\nvar result=document.getElementById('" + best + "').src;");
-            result = engine.get("result");
-        } catch (Throwable e) {
-        }
-        if (result != null) {
-            ddlink = result.toString();
+        final String js = br.getRegex("<script type=\"text/javascript\">([\r\n\t ]+var [a-z]='[a-zA-Z0-9]+';[\r\n\t ]+var [a-z]=[^<]+)</script>").getMatch(0);
+        if (js == null) {
+            logger.warning("Could not find JS!");
+        } else {
+            final String best = new Regex(js, "'(ori_?pic|big_?pic)'").getMatch(0);
+            if (best == null) {
+                logger.warning("determining best!");
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
+            final ScriptEngineManager mgr = jd.plugins.hoster.DummyScriptEnginePlugin.getScriptEngineManager(this);
+            final ScriptEngine engine = mgr.getEngineByName("javascript");
+            Object result = null;
+            try {
+                engine.eval("var document = { getElementById: function (a) { if (!this[a]) { this[a] = new Object(); function src() { return a.src; } this[a].src = src(); } return this[a]; }};");
+                engine.eval(js + "\r\nvar result=document.getElementById('" + best + "').src;");
+                result = engine.get("result");
+            } catch (Throwable e) {
+            }
+            if (result != null) {
+                ddlink = result.toString();
+            }
         }
         if (ddlink == null) {
             ddlink = br.getRegex("name=bb onclick='select\\(\\);' type=text style='\\{width:\\d+;\\}' value='\\[URL=[^<>\"]+\\]\\[IMG\\](http://[^<>\"]*?)\\[/IMG\\]").getMatch(0);
         }
+
     }
 
     @Override
