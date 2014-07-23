@@ -57,13 +57,22 @@ public class DodanePl extends PluginForHost {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         br.getPage(link.getDownloadURL());
-        if (br.containsHTML(">Strona o podanym adresie nie istnieje")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (br.containsHTML(">Strona o podanym adresie nie istnieje")) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
         String filename = br.getRegex("var currentFileName = \"([^<>\"]*?)\"").getMatch(0);
-        if (filename == null) filename = br.getRegex("<div class=\"filetitle\"><h1>([^<>\"]*?)</h1>").getMatch(0);
-        String filesize = br.getRegex("Wielkość: <span>([^<>\"]*?)</span").getMatch(0);
-        if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        link.setName(Encoding.htmlDecode(filename.trim()));
-        link.setDownloadSize(SizeFormatter.getSize(filesize));
+        if (filename == null) {
+            filename = br.getRegex("<div class=\"filetitle\"><h1>([^<>\"]*?)</h1>").getMatch(0);
+        }
+        if (filename == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        filename = Encoding.htmlDecode(filename.trim());
+        link.setName(filename);
+        final String filesize = br.getRegex("Wielkość: <span>([^<>\"]*?)</span").getMatch(0);
+        if (filesize != null) {
+            link.setDownloadSize(SizeFormatter.getSize(filesize));
+        }
         link.setFinalFileName(Encoding.htmlDecode(filename.trim()));
         return AvailableStatus.TRUE;
     }
@@ -75,6 +84,9 @@ public class DodanePl extends PluginForHost {
     }
 
     public void doFree(final DownloadLink downloadLink) throws Exception, PluginException {
+        if (br.containsHTML("class=\"input\\-name\">Hasło dostępu</td>")) {
+            throw new PluginException(LinkStatus.ERROR_FATAL, "Password protected links are not yet supported - please contact our support!");
+        }
         final String fileid = new Regex(downloadLink.getDownloadURL(), "/file/(\\d+)").getMatch(0);
         br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
         br.getPage("http://dodane.pl/file/download/" + fileid + "/" + JDHash.getMD5(Long.toString(System.currentTimeMillis() + new Random().nextLong())));
@@ -84,7 +96,9 @@ public class DodanePl extends PluginForHost {
         final String id = br.getRegex("\"id\":(\\d+)").getMatch(0);
         final String token = br.getRegex("\"sessionToken\":\"([^<>\"]*?)\"").getMatch(0);
         final String server = br.getRegex("\"downloadServerAddr\":\"([^<>\"]*?)\"").getMatch(0);
-        if (id == null || token == null || server == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (id == null || token == null || server == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         String dllink = "http://" + server + "/download/" + fileid + "/" + id + "/" + token;
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, false, 1);
         if (dl.getConnection().getContentType().contains("html")) {
@@ -105,7 +119,9 @@ public class DodanePl extends PluginForHost {
                 br.setCookiesExclusive(true);
                 final Object ret = account.getProperty("cookies", null);
                 boolean acmatch = Encoding.urlEncode(account.getUser()).equals(account.getStringProperty("name", Encoding.urlEncode(account.getUser())));
-                if (acmatch) acmatch = Encoding.urlEncode(account.getPass()).equals(account.getStringProperty("pass", Encoding.urlEncode(account.getPass())));
+                if (acmatch) {
+                    acmatch = Encoding.urlEncode(account.getPass()).equals(account.getStringProperty("pass", Encoding.urlEncode(account.getPass())));
+                }
                 if (acmatch && ret != null && ret instanceof HashMap<?, ?> && !force) {
                     final HashMap<String, String> cookies = (HashMap<String, String>) ret;
                     if (account.isValid()) {

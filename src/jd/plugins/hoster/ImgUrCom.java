@@ -17,6 +17,9 @@
 package jd.plugins.hoster;
 
 import jd.PluginWrapper;
+import jd.config.ConfigContainer;
+import jd.config.ConfigEntry;
+import jd.config.SubConfiguration;
 import jd.http.Browser.BrowserException;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
@@ -27,12 +30,14 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.utils.locale.JDL;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "imgur.com" }, urls = { "https?://imgurdecrypted\\.com/download/[A-Za-z0-9]+" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "imgur.com" }, urls = { "https?://imgurdecrypted\\.com/download/[A-Za-z0-9]+" }, flags = { 2 })
 public class ImgUrCom extends PluginForHost {
 
     public ImgUrCom(PluginWrapper wrapper) {
         super(wrapper);
+        setConfigElements();
     }
 
     @Override
@@ -73,7 +78,7 @@ public class ImgUrCom extends PluginForHost {
             }
         } else {
             boolean apilimit_reached = false;
-            br.getHeaders().put("Authorization", Encoding.Base64Decode(jd.plugins.decrypter.ImgurCom.OAUTH_AUTH));
+            br.getHeaders().put("Authorization", getAuthorization());
             try {
                 br.getPage("https://api.imgur.com/3/image/" + imgUID);
             } catch (final BrowserException e) {
@@ -166,6 +171,32 @@ public class ImgUrCom extends PluginForHost {
             result = new Regex(source, "\"" + parameter + "\":([\t\n\r ]+)?\"([^<>\"]*?)\"").getMatch(1);
         }
         return result;
+    }
+
+    public static final String OAUTH_CLIENTID = "Mzc1YmE4Y2FmNjA0ZDQy";
+
+    public static final String getAuthorization() {
+        String authorization;
+        final String clientid = SubConfiguration.getConfig("vkontakte.ru").getStringProperty(SETTING_CLIENTID, defaultClientID);
+        if (clientid.contains("JDDEFAULT")) {
+            authorization = Encoding.Base64Decode(OAUTH_CLIENTID);
+        } else {
+            authorization = clientid;
+        }
+        authorization = "Client-ID " + authorization;
+        return authorization;
+    }
+
+    @Override
+    public String getDescription() {
+        return "JDownloader's Save.tv Plugin helps downloading galleries from imgur.com.";
+    }
+
+    private final static String defaultClientID  = "JDDEFAULT";
+    private static final String SETTING_CLIENTID = "SETTING_CLIENTID";
+
+    private void setConfigElements() {
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_TEXTFIELD, getPluginConfig(), SETTING_CLIENTID, JDL.L("plugins.hoster.ImgUrCom.oauthClientID", "Oauth Client-ID:")).setDefaultValue(defaultClientID));
     }
 
     @Override

@@ -232,18 +232,8 @@ public class XShufuniCom extends PluginForDecrypt {
             decryptedLinks.add(dl);
             return decryptedLinks;
         }
-        externID = br.getRegex("(http://(www\\.)?mofosex\\.com/embed_player\\.php\\?id=\\d+)\"").getMatch(0);
+        externID = br.getRegex("(http://(www\\.)?mofosex\\.com/(embed_player\\.php\\?id=|embed\\?videoid=)\\d+)").getMatch(0);
         if (externID != null) {
-            br.getPage(externID);
-            if (br.containsHTML("No htmlCode read")) {
-                logger.info("Link offline: " + parameter);
-                return decryptedLinks;
-            }
-            externID = br.getRegex("<click_tag>(http://(www\\.)?mofosex\\.com/videos/\\d+/[^<>\"]*?)</click_tag>").getMatch(0);
-            if (externID == null) {
-                logger.warning("Decrypter broken for link: " + parameter);
-                return null;
-            }
             final DownloadLink dl = createDownloadlink(externID);
             decryptedLinks.add(dl);
             return decryptedLinks;
@@ -313,6 +303,11 @@ public class XShufuniCom extends PluginForDecrypt {
             return decryptedLinks;
         }
         externID = br.getRegex("\"(http://(www\\.)?extremetube\\.com/embed/[^<>\"/]*?)\"").getMatch(0);
+        if (externID != null) {
+            decryptedLinks.add(createDownloadlink(externID));
+            return decryptedLinks;
+        }
+        externID = br.getRegex("\"(http://(www\\.)?proporn\\.com/embed/\\d+)\"").getMatch(0);
         if (externID != null) {
             decryptedLinks.add(createDownloadlink(externID));
             return decryptedLinks;

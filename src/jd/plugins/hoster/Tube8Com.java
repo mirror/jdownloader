@@ -68,15 +68,21 @@ public class Tube8Com extends PluginForHost {
 
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws Exception {
-        if (setEx) this.setBrowserExclusive();
+        if (setEx) {
+            this.setBrowserExclusive();
+        }
         br.setFollowRedirects(true);
         br.getPage(downloadLink.getDownloadURL());
-        if (br.containsHTML("No htmlCode read")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (br.containsHTML("No htmlCode read") || br.getHttpConnection().getResponseCode() == 404) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
         String verifyAge = br.getRegex("(<div class=\"enter\\-btn\">)").getMatch(0);
         if (verifyAge != null) {
             br.postPage(downloadLink.getDownloadURL(), "processdisclaimer=");
         }
-        if (br.containsHTML("class=\"video\\-removed\\-div\"")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (br.containsHTML("class=\"video\\-removed\\-div\"")) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
         String filename = br.getRegex("<title>(.*?) \\- ").getMatch(0);
         if (filename == null) {
             filename = br.getRegex("var videotitle=\"(.*?)\"").getMatch(0);
@@ -84,7 +90,9 @@ public class Tube8Com extends PluginForHost {
                 filename = br.getRegex("Tube8 bring you(.*?)for all").getMatch(0);
             }
         }
-        if (filename == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (filename == null) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
 
         boolean failed = true;
         boolean preferMobile = getPluginConfig().getBooleanProperty(mobile, false);
@@ -92,17 +100,31 @@ public class Tube8Com extends PluginForHost {
 
         /* streaming link */
         findStreamingLink();
-        if (dllink != null && requestVideo(downloadLink)) failed = false;
+        if (dllink != null && requestVideo(downloadLink)) {
+            failed = false;
+        }
         /* decrease HTTP requests */
-        if (failed || preferMobile) videoDownloadUrls = standardAndMobile(downloadLink);
+        if (failed || preferMobile) {
+            videoDownloadUrls = standardAndMobile(downloadLink);
+        }
         /* normal link */
-        if (failed) findNormalLink(videoDownloadUrls);
-        if (failed && dllink != null && requestVideo(downloadLink)) failed = false;
+        if (failed) {
+            findNormalLink(videoDownloadUrls);
+        }
+        if (failed && dllink != null && requestVideo(downloadLink)) {
+            failed = false;
+        }
         /* 3gp link */
-        if (failed || preferMobile) findMobileLink(videoDownloadUrls);
-        if ((failed || preferMobile) && dllink != null && requestVideo(downloadLink)) failed = false;
+        if (failed || preferMobile) {
+            findMobileLink(videoDownloadUrls);
+        }
+        if ((failed || preferMobile) && dllink != null && requestVideo(downloadLink)) {
+            failed = false;
+        }
 
-        if (dllink == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (dllink == null) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
 
         filename = filename.trim();
         if (dllink.contains(".3gp")) {
@@ -112,7 +134,9 @@ public class Tube8Com extends PluginForHost {
         } else {
             downloadLink.setFinalFileName(filename + ".flv");
         }
-        if (failed) return AvailableStatus.UNCHECKABLE;
+        if (failed) {
+            return AvailableStatus.UNCHECKABLE;
+        }
         return AvailableStatus.TRUE;
     }
 
@@ -140,7 +164,9 @@ public class Tube8Com extends PluginForHost {
 
     private String standardAndMobile(DownloadLink downloadLink) throws Exception {
         final String hash = br.getRegex("videoHash[\t\n\r ]+=[\t\n\r ]\"([a-z0-9]+)\"").getMatch(0);
-        if (hash == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (hash == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         final Browser br2 = br.cloneBrowser();
         br2.getHeaders().put("X-Requested-With", "XMLHttpRequest");
         br2.getPage("http://www.tube8.com/ajax/getVideoDownloadURL.php?hash=" + hash + "&video=" + new Regex(downloadLink.getDownloadURL(), ".*?(\\d+)$").getMatch(0) + "&download_cdn=true&_=" + System.currentTimeMillis());
@@ -150,22 +176,30 @@ public class Tube8Com extends PluginForHost {
 
     private void findMobileLink(final String correctedBR) throws Exception {
         dllink = new Regex(correctedBR, "\"mobile_url\":\"(http:.*?)\"").getMatch(0);
-        if (dllink == null) dllink = new Regex(correctedBR, "\"(http://cdn\\d+\\.mobile\\.tube8\\.com/.*?)\"").getMatch(0);
+        if (dllink == null) {
+            dllink = new Regex(correctedBR, "\"(http://cdn\\d+\\.mobile\\.tube8\\.com/.*?)\"").getMatch(0);
+        }
     }
 
     private void findNormalLink(final String correctedBR) throws Exception {
         dllink = new Regex(correctedBR, "\"standard_url\":\"(http.*?)\"").getMatch(0);
-        if (dllink == null) dllink = new Regex(correctedBR, "\"(http://cdn\\d+\\.public\\.tube8\\.com/.*?)\"").getMatch(0);
+        if (dllink == null) {
+            dllink = new Regex(correctedBR, "\"(http://cdn\\d+\\.public\\.tube8\\.com/.*?)\"").getMatch(0);
+        }
     }
 
     private void findStreamingLink() throws Exception {
         String flashVars = br.getRegex("var flashvars = \\{([^\\}]+)").getMatch(0);
-        if (flashVars == null) return;
+        if (flashVars == null) {
+            return;
+        }
         flashVars = flashVars.replaceAll("\"", "");
         Map<String, String> values = new HashMap<String, String>();
 
         for (String s : flashVars.split(",")) {
-            if (!s.matches(".+:.+")) continue;
+            if (!s.matches(".+:.+")) {
+                continue;
+            }
             values.put(s.split(":")[0], s.split(":", 2)[1]);
         }
 
@@ -180,7 +214,9 @@ public class Tube8Com extends PluginForHost {
                 /* Fallback for stable version */
                 dllink = AESCounterModeDecrypt(decrypted, key, 256);
             }
-            if (dllink != null && (dllink.startsWith("Error:") || !dllink.startsWith("http"))) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, dllink); }
+            if (dllink != null && (dllink.startsWith("Error:") || !dllink.startsWith("http"))) {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, dllink);
+            }
         }
     }
 
@@ -203,7 +239,9 @@ public class Tube8Com extends PluginForHost {
                 downloadLink.getProperties().remove("401");
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, 30 * 1000l);
             }
-            if (dl.getConnection().getResponseCode() == 404) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            if (dl.getConnection().getResponseCode() == 404) {
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            }
             br.followConnection();
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
@@ -252,7 +290,9 @@ public class Tube8Com extends PluginForHost {
         try {
             br.setFollowRedirects(true);
             br.postPage("http://www.tube8.com/ajax/login.php", "username=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()));
-            if (br.containsHTML("invalid") || br.containsHTML("0\\|")) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+            if (br.containsHTML("invalid") || br.containsHTML("0\\|")) {
+                throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+            }
         } finally {
             br.setFollowRedirects(follow);
         }
@@ -282,8 +322,12 @@ public class Tube8Com extends PluginForHost {
      *      href="http://csrc.nist.gov/publications/nistpubs/800-38a/sp800-38a.pdf">"Recommendation for Block Cipher Modes of Operation - Methods and Techniques"</a>
      */
     private String AESCounterModeDecrypt(String cipherText, String key, int nBits) throws Exception {
-        if (!(nBits == 128 || nBits == 192 || nBits == 256)) { return "Error: Must be a key mode of either 128, 192, 256 bits"; }
-        if (cipherText == null || key == null) { return "Error: cipher and/or key equals null"; }
+        if (!(nBits == 128 || nBits == 192 || nBits == 256)) {
+            return "Error: Must be a key mode of either 128, 192, 256 bits";
+        }
+        if (cipherText == null || key == null) {
+            return "Error: cipher and/or key equals null";
+        }
         String res = null;
         nBits = nBits / 8;
         byte[] data = Base64.decode(cipherText.toCharArray());
@@ -320,8 +364,12 @@ public class Tube8Com extends PluginForHost {
 
     private class BouncyCastleAESCounterModeDecrypt {
         private String decrypt(String cipherText, String key, int nBits) throws Exception {
-            if (!(nBits == 128 || nBits == 192 || nBits == 256)) { return "Error: Must be a key mode of either 128, 192, 256 bits"; }
-            if (cipherText == null || key == null) { return "Error: cipher and/or key equals null"; }
+            if (!(nBits == 128 || nBits == 192 || nBits == 256)) {
+                return "Error: Must be a key mode of either 128, 192, 256 bits";
+            }
+            if (cipherText == null || key == null) {
+                return "Error: cipher and/or key equals null";
+            }
             byte[] decrypted;
             nBits = nBits / 8;
             byte[] data = Base64.decode(cipherText.toCharArray());
@@ -334,7 +382,7 @@ public class Tube8Com extends PluginForHost {
             byte[] nonceBytes = Arrays.copyOf(Arrays.copyOf(data, 8), nBits / 2);
             IvParameterSpec nonce = new IvParameterSpec(nonceBytes);
             /* true == encrypt; false == decrypt */
-            cipher.init(true, new org.bouncycastle.crypto.params.ParametersWithIV(new org.bouncycastle.crypto.params.KeyParameter(secretKey.getEncoded()), ((IvParameterSpec) nonce).getIV()));
+            cipher.init(true, new org.bouncycastle.crypto.params.ParametersWithIV(new org.bouncycastle.crypto.params.KeyParameter(secretKey.getEncoded()), nonce.getIV()));
             decrypted = new byte[cipher.getOutputSize(data.length - 8)];
             int decLength = cipher.processBytes(data, 8, data.length - 8, decrypted, 0);
             cipher.doFinal(decrypted, decLength);

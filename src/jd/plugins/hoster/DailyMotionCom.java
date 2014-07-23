@@ -17,7 +17,13 @@
 package jd.plugins.hoster;
 
 import java.io.IOException;
+import java.text.DateFormat;
+import java.text.DecimalFormat;
+import java.text.SimpleDateFormat;
+import java.util.ArrayList;
 import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.regex.Pattern;
 
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
@@ -34,8 +40,18 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.plugins.components.YoutubeITAG;
+import jd.plugins.components.YoutubeVariant;
+import jd.plugins.components.YoutubeVariantInterface;
+import jd.plugins.decrypter.YoutubeHelper;
 import jd.plugins.download.DownloadInterface;
 import jd.utils.locale.JDL;
+
+import org.appwork.txtresource.TranslationFactory;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.logging2.LogSource;
+import org.jdownloader.gui.translate._GUI;
+import org.jdownloader.logging.LogController;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "dailymotion.com" }, urls = { "http://dailymotiondecrypted\\.com/video/\\w+" }, flags = { 2 })
 public class DailyMotionCom extends PluginForHost {
@@ -46,9 +62,15 @@ public class DailyMotionCom extends PluginForHost {
     /* Sync the following functions in hoster- and decrypterplugin */
     public static String getVideosource(final Browser br) {
         String videosource = br.getRegex("\"sequence\":\"([^<>\"]*?)\"").getMatch(0);
-        if (videosource == null) videosource = br.getRegex("%2Fsequence%2F(.*?)</object>").getMatch(0);
-        if (videosource == null) videosource = br.getRegex("name=\"flashvars\" value=\"(.*?)\"/></object>").getMatch(0);
-        if (videosource != null) videosource = Encoding.htmlDecode(videosource).replace("\\", "");
+        if (videosource == null) {
+            videosource = br.getRegex("%2Fsequence%2F(.*?)</object>").getMatch(0);
+        }
+        if (videosource == null) {
+            videosource = br.getRegex("name=\"flashvars\" value=\"(.*?)\"/></object>").getMatch(0);
+        }
+        if (videosource != null) {
+            videosource = Encoding.htmlDecode(videosource).replace("\\", "");
+        }
         return videosource;
     }
 
@@ -174,7 +196,9 @@ public class DailyMotionCom extends PluginForHost {
                     logger.warning("dllink is null...");
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 }
-                if (!checkDirectLink(downloadLink)) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+                if (!checkDirectLink(downloadLink)) {
+                    throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+                }
             }
         }
         return AvailableStatus.TRUE;
@@ -195,7 +219,9 @@ public class DailyMotionCom extends PluginForHost {
             dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, false, 1);
             // Their servers usually return a valid size - if not, it's probably a server error
             final long contentlength = dl.getConnection().getLongContentLength();
-            if (contentlength == -1) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error", 30 * 60 * 1000l);
+            if (contentlength == -1) {
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error", 30 * 60 * 1000l);
+            }
             if (dl.getConnection().getContentType().contains("html")) {
                 br.followConnection();
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -211,7 +237,9 @@ public class DailyMotionCom extends PluginForHost {
             br.getPage(dl.getStringProperty("mainlink", null));
             br.setFollowRedirects(false);
             final String videosource = getVideosource(this.br);
-            if (videosource == null) return null;
+            if (videosource == null) {
+                return null;
+            }
             LinkedHashMap<String, String[]> foundqualities = findVideoQualities(this.br, dl.getDownloadURL(), videosource);
             final String qualityvalue = dl.getStringProperty("qualityvalue", null);
             final String directlinkinfo[] = foundqualities.get(qualityvalue);
@@ -250,7 +278,9 @@ public class DailyMotionCom extends PluginForHost {
                         br.getHeaders().put("Referer", dllink);
                         con = br.openGetConnection(dllink);
                     }
-                    if (con.getResponseCode() == 410 || con.getContentType().contains("html")) return false;
+                    if (con.getResponseCode() == 410 || con.getContentType().contains("html")) {
+                        return false;
+                    }
                     downloadLink.setDownloadSize(con.getLongContentLength());
                 } finally {
                     try {
@@ -285,8 +315,12 @@ public class DailyMotionCom extends PluginForHost {
     @Override
     public void handleFree(DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
-        if (downloadLink.getBooleanProperty("countryblock", false)) { throw new PluginException(LinkStatus.ERROR_FATAL, COUNTRYBLOCKUSERTEXT); }
-        if (downloadLink.getBooleanProperty("registeredonly", false)) { throw new PluginException(LinkStatus.ERROR_FATAL, REGISTEREDONLYUSERTEXT); }
+        if (downloadLink.getBooleanProperty("countryblock", false)) {
+            throw new PluginException(LinkStatus.ERROR_FATAL, COUNTRYBLOCKUSERTEXT);
+        }
+        if (downloadLink.getBooleanProperty("registeredonly", false)) {
+            throw new PluginException(LinkStatus.ERROR_FATAL, REGISTEREDONLYUSERTEXT);
+        }
         doFree(downloadLink);
     }
 
@@ -296,7 +330,9 @@ public class DailyMotionCom extends PluginForHost {
         requestFileInformation(link);
         if (link.getBooleanProperty("ishds", false)) {
             throw new PluginException(LinkStatus.ERROR_FATAL, "HDS stream download is not supported (yet)!");
-        } else if (link.getBooleanProperty("countryblock", false)) { throw new PluginException(LinkStatus.ERROR_FATAL, COUNTRYBLOCKUSERTEXT); }
+        } else if (link.getBooleanProperty("countryblock", false)) {
+            throw new PluginException(LinkStatus.ERROR_FATAL, COUNTRYBLOCKUSERTEXT);
+        }
         doFree(link);
     }
 
@@ -306,16 +342,22 @@ public class DailyMotionCom extends PluginForHost {
         br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
         br.getHeaders().put("X-Prototype-Version", "1.6.1");
         br.postPage("http://www.dailymotion.com/pageitem/login", "form_name=dm_pageitem_login&username=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()) + "&login_submit=Login");
-        if (br.getCookie(MAINPAGE, "sid") == null || br.getCookie(MAINPAGE, "sdx") == null) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+        if (br.getCookie(MAINPAGE, "sid") == null || br.getCookie(MAINPAGE, "sdx") == null) {
+            throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+        }
     }
 
     private void getRTMPlink() throws IOException, PluginException {
         final String[] values = br.getRegex("new SWFObject\\(\"(http://player\\.grabnetworks\\.com/swf/GrabOSMFPlayer\\.swf)\\?id=\\d+\\&content=v([0-9a-f]+)\"").getRow(0);
-        if (values == null || values.length != 2) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (values == null || values.length != 2) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         final Browser rtmp = br.cloneBrowser();
         rtmp.getPage("http://content.grabnetworks.com/v/" + values[1] + "?from=" + dllink);
         dllink = rtmp.getRegex("\"url\":\"(rtmp[^\"]+)").getMatch(0);
-        if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (dllink == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         dllink = dllink + "@" + values[0];
     }
 
@@ -359,6 +401,463 @@ public class DailyMotionCom extends PluginForHost {
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), ALLOW_1080, JDL.L("plugins.hoster.dailymotioncom.check1080", "Grab [1920x1080]?")).setDefaultValue(true).setEnabledCondidtion(hq, false));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), ALLOW_OTHERS, JDL.L("plugins.hoster.dailymotioncom.checkother", "Grab other available qualities (RTMP/OTHERS)?")).setDefaultValue(true).setEnabledCondidtion(hq, false));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), ALLOW_HDS, JDL.L("plugins.hoster.dailymotioncom.checkhds", "Grab hds (not downloadable yet!)?")).setDefaultValue(false).setEnabledCondidtion(hq, false));
+    }
+
+    public static abstract class Replacer {
+
+        private String[] tags;
+
+        public String[] getTags() {
+            return tags;
+        }
+
+        abstract public String getDescription();
+
+        public Replacer(String... tags) {
+            this.tags = tags;
+        }
+
+        public String replace(String name, YoutubeHelper helper, DownloadLink link) {
+            for (String tag : tags) {
+                String mod = new Regex(name, "\\*" + tag + "\\[(.+?)\\]\\*").getMatch(0);
+                if (mod != null) {
+
+                    name = name.replaceAll("\\*" + tag + "(\\[[^\\]]+\\])\\*", getValue(link, helper, mod));
+                }
+                if (name.contains("*" + tag + "*")) {
+                    String v = getValue(link, helper, null);
+                    name = name.replace("*" + tag + "*", v == null ? "" : v);
+                }
+
+            }
+            return name;
+        }
+
+        abstract protected String getValue(DownloadLink link, YoutubeHelper helper, String mod);
+
+        public boolean isExtendedRequired() {
+            return false;
+        }
+
+        public static enum DataSource {
+            WEBSITE,
+            API_VIDEOS,
+            API_USERS
+        }
+
+        public DataSource getDataSource() {
+            return DataSource.WEBSITE;
+        }
+
+        public boolean matches(String checkName) {
+            for (String tag : tags) {
+                if (checkName.contains("*" + tag + "*")) {
+                    return true;
+                }
+                if (Pattern.compile("\\*" + tag + "\\[(.+?)\\]\\*", Pattern.CASE_INSENSITIVE).matcher(checkName).find()) {
+                    return true;
+                }
+
+            }
+            return false;
+        }
+
+    }
+
+    public static LogSource      LOGGER   = LogController.getInstance().getLogger(YoutubeHelper.class.getName());
+    public static List<Replacer> REPLACER = new ArrayList<Replacer>();
+    static {
+        REPLACER.add(new Replacer("group") {
+
+            @Override
+            protected String getValue(DownloadLink link, YoutubeHelper helper, String mod) {
+                String var = link.getStringProperty(YoutubeHelper.YT_VARIANT, "");
+                YoutubeVariantInterface variant = helper.getVariantById(var);
+                try {
+                    return variant.getGroup().getLabel();
+                } catch (Throwable e) {
+                    // old variant
+                    LOGGER.log(e);
+                    return "[INVALID LINK!]";
+                }
+            }
+
+            @Override
+            public String getDescription() {
+                return _GUI._.YoutubeHelper_getDescription_group();
+            }
+
+        });
+        REPLACER.add(new Replacer("variant") {
+
+            @Override
+            protected String getValue(DownloadLink link, YoutubeHelper helper, String mod) {
+                return link.getStringProperty(YoutubeHelper.YT_VARIANT, "");
+            }
+
+            @Override
+            public String getDescription() {
+                return _GUI._.YoutubeHelper_getDescription_variantid();
+            }
+
+        });
+        REPLACER.add(new Replacer("quality") {
+            @Override
+            public String getDescription() {
+                return _GUI._.YoutubeHelper_getDescription_quality();
+            }
+
+            @Override
+            protected String getValue(DownloadLink link, YoutubeHelper helper, String mod) {
+                String var = link.getStringProperty(YoutubeHelper.YT_VARIANT, "");
+                YoutubeVariantInterface variant = helper.getVariantById(var);
+                try {
+                    return variant.getQualityExtension();
+                } catch (Throwable e) {
+                    // old variant
+                    LOGGER.log(e);
+                    return "[INVALID LINK!]";
+                }
+            }
+
+        });
+        REPLACER.add(new Replacer("videoid", "id") {
+            @Override
+            public String getDescription() {
+                return _GUI._.YoutubeHelper_getDescription_id();
+            }
+
+            @Override
+            protected String getValue(DownloadLink link, YoutubeHelper helper, String mod) {
+                return link.getStringProperty(YoutubeHelper.YT_ID, "");
+            }
+
+        });
+        REPLACER.add(new Replacer("ext", "extension") {
+            @Override
+            public String getDescription() {
+                return _GUI._.YoutubeHelper_getDescription_extension();
+            }
+
+            @Override
+            protected String getValue(DownloadLink link, YoutubeHelper helper, String mod) {
+                return link.getStringProperty(YoutubeHelper.YT_EXT, "unknown");
+            }
+
+        });
+
+        REPLACER.add(new Replacer("agegate", "age") {
+
+            @Override
+            protected String getValue(DownloadLink link, YoutubeHelper helper, String mod) {
+                return link.getBooleanProperty(YoutubeHelper.YT_AGE_GATE, false) + "";
+            }
+
+            @Override
+            public String getDescription() {
+                return _GUI._.YoutubeHelper_getDescription_age();
+            }
+
+        });
+        REPLACER.add(new Replacer("username", "user") {
+
+            @Override
+            protected String getValue(DownloadLink link, YoutubeHelper helper, String mod) {
+                return link.getStringProperty(YoutubeHelper.YT_USER, "");
+            }
+
+            @Override
+            public String getDescription() {
+                return _GUI._.YoutubeHelper_getDescription_user();
+            }
+
+        });
+        REPLACER.add(new Replacer("channel", "channelname") {
+
+            @Override
+            protected String getValue(DownloadLink link, YoutubeHelper helper, String mod) {
+                return link.getStringProperty(YoutubeHelper.YT_CHANNEL, "");
+            }
+
+            @Override
+            public String getDescription() {
+                return _GUI._.YoutubeHelper_getDescription_channel();
+            }
+
+        });
+
+        REPLACER.add(new Replacer("videoname", "title") {
+
+            @Override
+            protected String getValue(DownloadLink link, YoutubeHelper helper, String mod) {
+                return link.getStringProperty(YoutubeHelper.YT_TITLE, "");
+            }
+
+            @Override
+            public String getDescription() {
+                return _GUI._.YoutubeHelper_getDescription_title();
+            }
+
+        });
+        REPLACER.add(new Replacer("date") {
+            @Override
+            public String getDescription() {
+                return _GUI._.YoutubeHelper_getDescription_date();
+            }
+
+            @Override
+            protected String getValue(DownloadLink link, YoutubeHelper helper, String mod) {
+                // date
+
+                DateFormat formatter = DateFormat.getDateInstance(DateFormat.LONG, TranslationFactory.getDesiredLocale());
+
+                if (StringUtils.isNotEmpty(mod)) {
+                    try {
+                        formatter = new SimpleDateFormat(mod);
+                    } catch (Throwable e) {
+                        LOGGER.log(e);
+
+                    }
+                }
+                long timestamp = link.getLongProperty(YoutubeHelper.YT_DATE, -1);
+                return timestamp > 0 ? formatter.format(timestamp) : "";
+            }
+
+        });
+        REPLACER.add(new Replacer("date_time") {
+            @Override
+            public String getDescription() {
+                return _GUI._.YoutubeHelper_getDescription_date_accurate();
+            }
+
+            public DataSource getDataSource() {
+                return DataSource.API_VIDEOS;
+            }
+
+            @Override
+            protected String getValue(DownloadLink link, YoutubeHelper helper, String mod) {
+                // date
+
+                DateFormat formatter = DateFormat.getDateTimeInstance(DateFormat.LONG, DateFormat.LONG, TranslationFactory.getDesiredLocale());
+
+                if (StringUtils.isNotEmpty(mod)) {
+                    try {
+                        formatter = new SimpleDateFormat(mod);
+                    } catch (Throwable e) {
+                        LOGGER.log(e);
+
+                    }
+                }
+                long timestamp = link.getLongProperty(YoutubeHelper.YT_DATE, -1);
+                String ret = timestamp > 0 ? formatter.format(timestamp) : "";
+
+                return ret;
+            }
+
+        });
+        // REPLACER.add(new Replacer("date_update") {
+        // @Override
+        // public String getDescription() {
+        // return _GUI._.YoutubeHelper_getDescription_date_accurate();
+        // }
+        //
+        // public DataSource getDataSource() {
+        // return DataSource.API_VIDEOS;
+        // }
+        //
+        // @Override
+        // protected String getValue(DownloadLink link, YoutubeHelper helper, String mod) {
+        // // date
+        //
+        // DateFormat formatter = DateFormat.getDateTimeInstance(DateFormat.LONG, DateFormat.LONG, TranslationFactory.getDesiredLocale());
+        //
+        // if (StringUtils.isNotEmpty(mod)) {
+        // try {
+        // formatter = new SimpleDateFormat(mod);
+        // } catch (Throwable e) {
+        // LOGGER.log(e);
+        //
+        // }
+        // }
+        // long timestamp = link.getLongProperty(YoutubeHelper.YT_DATE_UPDATE, -1);
+        // return timestamp > 0 ? formatter.format(timestamp) : "";
+        // }
+        //
+        // });
+        REPLACER.add(new Replacer("videoCodec") {
+            @Override
+            public String getDescription() {
+                return _GUI._.YoutubeHelper_getDescription_videoCodec();
+            }
+
+            public DataSource getDataSource() {
+                return DataSource.WEBSITE;
+            }
+
+            @Override
+            protected String getValue(DownloadLink link, YoutubeHelper helper, String mod) {
+                // date
+                String var = link.getStringProperty(YoutubeHelper.YT_VARIANT, "");
+                YoutubeVariantInterface variant = helper.getVariantById(var);
+
+                try {
+
+                    if (variant instanceof YoutubeVariant) {
+                        return ((YoutubeVariant) variant).getVideoCodec();
+                    }
+                    return "";
+                } catch (Throwable e) {
+                    // old variant
+                    LOGGER.log(e);
+                    return "[INVALID LINK!]";
+                }
+            }
+
+        });
+        REPLACER.add(new Replacer("resolution") {
+            @Override
+            public String getDescription() {
+                return _GUI._.YoutubeHelper_getDescription_resolution();
+            }
+
+            public DataSource getDataSource() {
+                return DataSource.WEBSITE;
+            }
+
+            @Override
+            protected String getValue(DownloadLink link, YoutubeHelper helper, String mod) {
+                // date
+                String var = link.getStringProperty(YoutubeHelper.YT_VARIANT, "");
+                YoutubeVariantInterface variant = helper.getVariantById(var);
+
+                try {
+
+                    if (variant instanceof YoutubeVariant) {
+                        return ((YoutubeVariant) variant).getResolution();
+                    }
+                    return "";
+                } catch (Throwable e) {
+                    // old variant
+                    LOGGER.log(e);
+                    return "[INVALID LINK!]";
+                }
+            }
+
+        });
+        REPLACER.add(new Replacer("bestResolution") {
+            @Override
+            public String getDescription() {
+                return _GUI._.YoutubeHelper_getDescription_resolution_best();
+            }
+
+            public DataSource getDataSource() {
+                return DataSource.WEBSITE;
+            }
+
+            @Override
+            protected String getValue(DownloadLink link, YoutubeHelper helper, String mod) {
+                // date
+                String var = link.getStringProperty(YoutubeHelper.YT_BEST_VIDEO, "");
+
+                try {
+                    return YoutubeITAG.valueOf(var).getQualityVideo();
+
+                } catch (Throwable e) {
+                    // old variant
+                    LOGGER.log(e);
+                    return "[INVALID LINK!]";
+                }
+            }
+
+        });
+        REPLACER.add(new Replacer("audioCodec") {
+            @Override
+            public String getDescription() {
+                return _GUI._.YoutubeHelper_getDescription_audioCodec();
+            }
+
+            public DataSource getDataSource() {
+                return DataSource.WEBSITE;
+            }
+
+            @Override
+            protected String getValue(DownloadLink link, YoutubeHelper helper, String mod) {
+                // date
+                String var = link.getStringProperty(YoutubeHelper.YT_VARIANT, "");
+                YoutubeVariantInterface variant = helper.getVariantById(var);
+
+                try {
+
+                    if (variant instanceof YoutubeVariant) {
+                        return ((YoutubeVariant) variant).getAudioCodec();
+                    }
+                    return "";
+                } catch (Throwable e) {
+                    // old variant
+                    LOGGER.log(e);
+                    return "[INVALID LINK!]";
+                }
+            }
+
+        });
+
+        REPLACER.add(new Replacer("audioQuality") {
+            @Override
+            public String getDescription() {
+                return _GUI._.YoutubeHelper_getDescription_audioQuality();
+            }
+
+            public DataSource getDataSource() {
+                return DataSource.WEBSITE;
+            }
+
+            @Override
+            protected String getValue(DownloadLink link, YoutubeHelper helper, String mod) {
+                // date
+                String var = link.getStringProperty(YoutubeHelper.YT_VARIANT, "");
+                YoutubeVariantInterface variant = helper.getVariantById(var);
+
+                try {
+
+                    if (variant instanceof YoutubeVariant) {
+                        return ((YoutubeVariant) variant).getAudioQuality();
+                    }
+                    return "";
+                } catch (Throwable e) {
+                    // old variant
+                    LOGGER.log(e);
+                    return "[INVALID LINK!]";
+                }
+            }
+
+        });
+
+        REPLACER.add(new Replacer("videonumber") {
+            @Override
+            public String getDescription() {
+                return _GUI._.YoutubeHelper_getDescription_videonumber();
+            }
+
+            @Override
+            protected String getValue(DownloadLink link, YoutubeHelper helper, String mod) {
+
+                // playlistnumber
+
+                if (StringUtils.isEmpty(mod)) {
+                    mod = "0000";
+                }
+                DecimalFormat df;
+                try {
+                    df = new DecimalFormat(mod);
+                } catch (Throwable e) {
+                    LOGGER.log(e);
+                    df = new DecimalFormat("0000");
+                }
+                int playlistNumber = link.getIntegerProperty(YoutubeHelper.YT_PLAYLIST_INT, -1);
+                return playlistNumber >= 0 ? df.format(playlistNumber) : "";
+            }
+
+        });
     }
 
     @Override

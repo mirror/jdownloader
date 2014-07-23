@@ -21,7 +21,6 @@ import java.util.ArrayList;
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.http.Browser.BrowserException;
-import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
@@ -36,17 +35,15 @@ public class ImgurCom extends PluginForDecrypt {
         super(wrapper);
     }
 
-    private final String       TYPE_GALLERY = "https?://((www|i)\\.)?imgur\\.com/a/[A-Za-z0-9]{5,}";
-    private static Object      ctrlLock     = new Object();
-
-    public static final String OAUTH_AUTH   = "Q2xpZW50LUlEIDM3NWJhOGNhZjYwNGQ0Mg==";
+    private final String  TYPE_GALLERY = "https?://((www|i)\\.)?imgur\\.com/a/[A-Za-z0-9]{5,}";
+    private static Object ctrlLock     = new Object();
 
     /* IMPORTANT: Make sure that we're always using the current version of their API: https://api.imgur.com/ */
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         final String parameter = param.toString().replace("https://", "http://").replace("/all$", "");
         synchronized (ctrlLock) {
-            br.getHeaders().put("Authorization", Encoding.Base64Decode(OAUTH_AUTH));
+            br.getHeaders().put("Authorization", jd.plugins.hoster.ImgUrCom.getAuthorization());
             final String lid = new Regex(parameter, "([A-Za-z0-9]+)$").getMatch(0);
             if (parameter.matches(TYPE_GALLERY)) {
                 try {

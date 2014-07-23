@@ -66,16 +66,16 @@ public class VideoOneCom extends PluginForDecrypt {
         String externID = null;
         String fuu = null;
         final String continueURL = br.getRegex("\"(http://(\\d+\\.\\d+\\.\\d+\\.\\d+|[a-z0-9\\.]+)/visions/[^<>\"]*?)\"").getMatch(0);
-        /** Maybe crypted? */
+        /** Maybe crypted/abnormal? */
         if (continueURL != null) {
             br.getPage(continueURL);
             fuu = jsString();
-            if (fuu == null) {
-                logger.warning("Decrypter broken for link: " + parameter);
-                return null;
+            if (fuu != null) {
+                externID = new Regex(fuu, "starturl = \"(http[^<>\"]*?)\"").getMatch(0);
+            } else {
+                externID = br.getRegex("(http://seabliss\\.com/evideo/720p/)").getMatch(0);
             }
             final String embedID = new Regex(continueURL, "\\.html\\?(.+)$").getMatch(0);
-            externID = new Regex(fuu, "starturl = \"(http[^<>\"]*?)\"").getMatch(0);
             if (externID != null && embedID == null) {
                 logger.info("Link offline: " + parameter);
                 return decryptedLinks;
@@ -88,7 +88,11 @@ public class VideoOneCom extends PluginForDecrypt {
                 decryptedLinks.add(createDownloadlink("http://www.hardsextube.com/video/" + embedID + "/"));
                 return decryptedLinks;
             }
-            if (externID.contains("redtube.com/")) {
+            if (externID.contains("seabliss.com/")) {
+                externID = "directhttp://" + externID + "/" + embedID + ".mp4";
+                decryptedLinks.add(createDownloadlink(externID));
+                return decryptedLinks;
+            } else if (externID.contains("redtube.com/")) {
                 externID += "?" + embedID;
             } else {
                 externID += embedID;

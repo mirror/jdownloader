@@ -277,6 +277,7 @@ public class ShareSixCom extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         fileInfo[0] = fileInfo[0].replaceAll("(</?b>|\\.html)", "");
+        fileInfo[0] = Encoding.htmlDecode(fileInfo[0]);
         downloadLink.setName(fileInfo[0].trim());
         if (getAvailableStatus(downloadLink).toString().equals("UNCHECKED")) {
             downloadLink.setAvailable(true);
@@ -316,6 +317,9 @@ public class ShareSixCom extends PluginForHost {
         }
         if (inValidate(fileInfo[0])) {
             fileInfo[0] = special.getMatch(0);
+        }
+        if (inValidate(fileInfo[0])) {
+            fileInfo[0] = cbr.getRegex("direct=1\\&fn=([^<>\"]*?)\\&").getMatch(0);
         }
         if (inValidate(fileInfo[1])) {
             fileInfo[1] = cbr.getRegex("\\(([0-9]+ bytes)\\)").getMatch(0);
