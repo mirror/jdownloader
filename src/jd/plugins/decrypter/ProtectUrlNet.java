@@ -45,7 +45,7 @@ import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 import jd.utils.JDUtilities;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "protect-url.net" }, urls = { "http://(www\\.)?protect-url\\.net/([a-z0-9]+-lnk|check\\.[a-z0-9]+)\\.html" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "protect-url.net" }, urls = { "http://(www\\.)?(protect-url\\.net|p-u.in)/([a-z0-9]+-[\\w_]+|check\\.[a-z0-9]+)\\.html" }, flags = { 0 })
 public class ProtectUrlNet extends PluginForDecrypt {
 
     public ProtectUrlNet(PluginWrapper wrapper) {
@@ -53,6 +53,7 @@ public class ProtectUrlNet extends PluginForDecrypt {
     }
 
     /* DecrypterScript_linkid=_linkcheck.php */
+    private String                         uid           = null;
     private final String                   PASSWRONG     = "window\\.location = \"linkcheck\\.php\\?linkid=[a-z0-9]+\\&message=wrong\"";
     private final String                   security      = "<font color=red>ACCÈS REFUSÉ : PROXY DÉTECTÉ</font>";
     private static AtomicReference<String> agent         = new AtomicReference<String>(null);
@@ -66,7 +67,7 @@ public class ProtectUrlNet extends PluginForDecrypt {
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-        String parameter = param.toString();
+        String parameter = param.toString().replace("p-u.in/", "protect-url.net/");
         // prevent more than one thread starting across the different versions of JD
         synchronized (ctrlLock) {
             // has to be this side of lock otherwise loading of cookies before lock will always be blank or wrong.
@@ -78,7 +79,7 @@ public class ProtectUrlNet extends PluginForDecrypt {
                 // hoodo
                 Thread.sleep(3731 + new Random().nextInt(3000));
             }
-            String uid = new Regex(parameter, "([a-z0-9]+)-lnk\\.html").getMatch(0);
+            uid = new Regex(parameter, "([a-z0-9]+)-[\\w_]+\\.html").getMatch(0);
             if (uid == null) {
                 uid = new Regex(parameter, "check\\.([a-z0-9]+)\\.html").getMatch(0);
                 if (uid == null) {
@@ -86,8 +87,11 @@ public class ProtectUrlNet extends PluginForDecrypt {
                     return null;
                 }
             }
-            String host = new Regex(parameter, "https?://[^/]+").getMatch(-1);
-            getPage(host + "/" + uid + "-lnk.html");
+            final String host = new Regex(parameter, "https?://[^/]+").getMatch(-1);
+            // check.uid.html is current default redirect path
+            parameter = host + "/check." + uid + ".html";
+            param.setCryptedUrl(parameter);
+            getPage(parameter);
             if (br.containsHTML(security)) {
                 Thread.sleep(1000);
                 // this switches to french and you no longer need referrer! haxor
@@ -102,7 +106,7 @@ public class ProtectUrlNet extends PluginForDecrypt {
             for (int i = 0; i <= 3; i++) {
                 String postData = null;
                 if (br.containsHTML(">Sécurité Anti-Robot:|id=captx name=captx") || br.getURL().contains("protect-url.net/check.")) {
-                    postData = "captx=ok&linkid=" + new Regex(parameter, "protect-url\\.net/([^<>\"]*?)-lnk\\.html").getMatch(0) + "&ref=";
+                    postData = "captx=ok&linkid=" + uid + "&ref=";
                 }
                 if (br.containsHTML(">Mot de Passe:<")) {
                     final String passCode = getUserInput("Enter password for: " + parameter, param);
@@ -114,7 +118,7 @@ public class ProtectUrlNet extends PluginForDecrypt {
                         br.setCookie(this.getHost(), freak, "oui");
                     }
                     br.setCookie(this.getHost(), "PURL_PopPub", "1");
-                    br.setCookie(this.getHost(), "PURL_NavDossier", "Ooops");
+                    // br.setCookie(this.getHost(), "PURL_NavDossier", "Ooops");
                     br.postPage("http://protect-url.net/linkid.php", postData);
                     if (br.containsHTML(PASSWRONG)) {
                         br.getPage(parameter);
@@ -133,7 +137,7 @@ public class ProtectUrlNet extends PluginForDecrypt {
                     fpName = br.getRegex("<span class=\"notranslate\">(.*?)</span>").getMatch(0);
                 }
             }
-            final String[] l = br.getRegex("monhtsec\\(('|\")(.*?)\\1\\)").getColumn(1);
+            final String[] l = getLinks();
             if (l != null && l.length != 0) {
                 for (String singleLink : l) {
                     if (!singleLink.startsWith("http")) {
@@ -175,6 +179,11 @@ public class ProtectUrlNet extends PluginForDecrypt {
         }
     }
 
+    private String[] getLinks() {
+        String[] t = br.getRegex("monhtsec\\((?:('|\")" + uid + "\\1,)?('|\")(.*?)\\2\\)").getColumn(2);
+        return t;
+    }
+
     @SuppressWarnings("unchecked")
     private Browser prepBrowser(final Browser prepBr) {
         // loading previous cookie session results in less captchas
@@ -199,7 +208,7 @@ public class ProtectUrlNet extends PluginForDecrypt {
         prepBr.getHeaders().put("User-Agent", agent.get());
 
         prepBr.getHeaders().put("Accept-Language", "en-gb, en;q=0.9");
-        prepBr.getHeaders().put("Pragma", null);
+        prepBr.getHeaders().put("Connection", "keep-alive");
         prepBr.getHeaders().put("Accept-Charset", null);
         prepBr.setRequestIntervalLimit(this.getHost(), 1500);
         prepBr.setCookie(this.getHost(), "PURL_Lang", "en");
@@ -219,7 +228,7 @@ public class ProtectUrlNet extends PluginForDecrypt {
     /**
      * This allows backward compatibility for design flaw in setHtmlCode(), It injects updated html into all browsers that share the same
      * request id. This is needed as request.cloneRequest() was never fully implemented like browser.cloneBrowser().
-     * 
+     *
      * @param ibr
      *            Import Browser
      * @param t
@@ -272,7 +281,7 @@ public class ProtectUrlNet extends PluginForDecrypt {
 
     /**
      * Removes patterns which could break the plugin due to fake/hidden HTML, or false positives caused by HTML comments.
-     * 
+     *
      * @throws Exception
      * @author raztoki
      */
