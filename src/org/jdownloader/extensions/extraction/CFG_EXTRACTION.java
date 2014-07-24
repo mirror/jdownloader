@@ -109,7 +109,7 @@ public class CFG_EXTRACTION {
     public static final BooleanKeyHandler                ASK_FOR_UNKNOWN_PASSWORDS_ENABLED                                = SH.getKeyHandler("AskForUnknownPasswordsEnabled", BooleanKeyHandler.class);
 
     /**
-     * Enabled usage of custom extractionpathes
+     * Enabled usage of custom extractionpaths
      **/
     public static final BooleanKeyHandler                CUSTOM_EXTRACTION_PATH_ENABLED                                   = SH.getKeyHandler("CustomExtractionPathEnabled", BooleanKeyHandler.class);
 

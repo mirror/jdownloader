@@ -73,10 +73,12 @@ public class R extends PluginsC {
             cls = new ArrayList<CrawledLink>();
             String fileContent[] = loadFileContent(lc.getAbsolutePath());
             // Log.L.info(fileContent.length+" links found");
-            for (String element : fileContent) {
-                // Log.L.info(i+" - "+fileContent[i]);
-                if (element != null && element.length() > 0) {
-                    cls.add(new CrawledLink(element));
+            if (fileContent != null) {
+                for (String element : fileContent) {
+                    // Log.L.info(i+" - "+fileContent[i]);
+                    if (element != null && element.length() > 0) {
+                        cls.add(new CrawledLink(element));
+                    }
                 }
             }
             if (cls.size() > 0) {
@@ -147,10 +149,15 @@ public class R extends PluginsC {
         byte[] k = null;
 
         try {
-            k = (byte[]) getClass().forName(getClass().getPackage().getName() + ".Config").getField("RSDF").get(null);
+            getClass();
+            k = (byte[]) Class.forName(getClass().getPackage().getName() + ".Config").getField("RSDF").get(null);
 
         } catch (Throwable e) {
             logger.log(e);
+            if (k == null) {
+                logger.severe("RSDF Decryption failed.");
+                return null;
+            }
         }
 
         getEKey(k);
@@ -277,7 +284,9 @@ public class R extends PluginsC {
 
         String rsdf = filterRSDF(getLocalFile(new File(filename)).trim());
 
-        if (rsdf == null) { return new String[] {}; }
+        if (rsdf == null) {
+            return new String[] {};
+        }
 
         String[] links;
         try {

@@ -127,7 +127,7 @@ public class JDUtilities {
         if (JD_HOME != null) {
             return JD_HOME;
         } else {
-            // do not use hardcoded classpathes if possible
+            // do not use hardcoded classpaths if possible
             URL ressource = Thread.currentThread().getContextClassLoader().getResource(SecondLevelLaunch.class.getName().replace(".", "/") + ".class");
 
             if (ressource != null) {

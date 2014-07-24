@@ -544,17 +544,17 @@ public class DownloadController extends PackageController<FilePackage, DownloadL
                     for (Integer position : positions) {
                         ret2.add(map.get(position));
                     }
-                    if (dcs != null && JsonConfig.create(GeneralSettings.class).isConvertRelativePathesJDRoot()) {
+                    if (dcs != null && JsonConfig.create(GeneralSettings.class).isConvertRelativePathsJDRoot()) {
                         try {
                             String oldRootPath = dcs.getRootPath();
                             if (!StringUtils.isEmpty(oldRootPath)) {
                                 String newRoot = JDUtilities.getJDHomeDirectoryFromEnvironment().getAbsolutePath();
                                 /*
-                                 * convert pathes relative to JDownloader root,only in jared version
+                                 * convert paths relative to JDownloader root,only in jared version
                                  */
                                 for (FilePackage pkg : ret2) {
                                     if (!CrossSystem.isAbsolutePath(pkg.getDownloadDirectory())) {
-                                        /* no need to convert relative pathes */
+                                        /* no need to convert relative paths */
                                         continue;
                                     }
                                     String pkgPath = LinkTreeUtils.getDownloadDirectory(pkg).getAbsolutePath();

@@ -554,7 +554,7 @@ public class LinkCollectorAPIImpl implements LinkCollectorAPI {
 
     @Override
     public List<String> getDownloadFolderHistorySelectionBase() {
-        return DownloadPathHistoryManager.getInstance().listPathes(org.appwork.storage.config.JsonConfig.create(GeneralSettings.class).getDefaultDownloadFolder());
+        return DownloadPathHistoryManager.getInstance().listPaths(org.appwork.storage.config.JsonConfig.create(GeneralSettings.class).getDefaultDownloadFolder());
     }
 
     @Override

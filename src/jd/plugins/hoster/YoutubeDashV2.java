@@ -287,6 +287,27 @@ public class YoutubeDashV2 extends PluginForHost {
 
         }
 
+        public static enum IfUrlisAPlaylistAction implements LabelInterface {
+            ASK {
+                @Override
+                public String getLabel() {
+                    return _JDT._.YoutubeDash_IfUrlisAPlaylistAction_ASK();
+                }
+            },
+            PROCESS {
+                @Override
+                public String getLabel() {
+                    return _JDT._.YoutubeDash_IfUrlisAPlaylistAction_PROCESS();
+                }
+            },
+            NOTHING {
+                @Override
+                public String getLabel() {
+                    return _JDT._.YoutubeDash_IfUrlisAPlaylistAction_NOTHING();
+                }
+            };
+        }
+
         @AboutConfig
         String[] getBlacklistedVariants();
 
@@ -302,6 +323,12 @@ public class YoutubeDashV2 extends PluginForHost {
         IfUrlisAVideoAndPlaylistAction getLinkIsVideoAndPlaylistUrlAction();
 
         void setLinkIsVideoAndPlaylistUrlAction(IfUrlisAVideoAndPlaylistAction action);
+
+        @AboutConfig
+        @DefaultEnumValue("ASK")
+        IfUrlisAPlaylistAction getLinkIsPlaylistUrlAction();
+
+        void setLinkIsPlaylistUrlAction(IfUrlisAPlaylistAction action);
 
         @DefaultBooleanValue(false)
         @AboutConfig

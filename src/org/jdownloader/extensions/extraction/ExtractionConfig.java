@@ -70,10 +70,10 @@ public interface ExtractionConfig extends ExtensionConfigInterface {
 
     @DefaultBooleanValue(true)
     @AboutConfig
-    @DescriptionForConfigEntry("Shall Extraction Extension ask you for passwords if the correct password has not been found in passwordcache?")
+    @DescriptionForConfigEntry("Shall Extraction Extension ask you for passwords if the correct password has not been found in password cache?")
     boolean isAskForUnknownPasswordsEnabled();
 
-    @DescriptionForConfigEntry("Enabled usage of custom extractionpathes")
+    @DescriptionForConfigEntry("Enabled usage of custom extraction paths")
     @DefaultBooleanValue(false)
     @AboutConfig
     boolean isCustomExtractionPathEnabled();

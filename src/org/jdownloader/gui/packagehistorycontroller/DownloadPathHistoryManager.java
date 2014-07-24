@@ -47,7 +47,7 @@ public class DownloadPathHistoryManager extends HistoryManager<DownloadPath> imp
         return new DownloadPath(name);
     }
 
-    public List<String> listPathes(String... strings) {
+    public List<String> listPaths(String... strings) {
         return listPathes(false, strings);
     }
 

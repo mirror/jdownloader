@@ -674,7 +674,7 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
                 case WINDOWS:
                 default:
                     if (file.getAbsolutePath().length() > 259) {
-                        // old windows API does not allow pathes longer than that (this api is even used in the windows 7 explorer and other
+                        // old windows API does not allow paths longer than that (this api is even used in the windows 7 explorer and other
                         // tools like ffmpeg)
                         checking = file;
                     } else {

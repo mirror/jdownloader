@@ -29,7 +29,7 @@ import org.jdownloader.translate._JDT;
 
 public class FolderChooser extends PathChooser implements SettingsComponent {
     /**
-     * 
+     *
      */
     private static final long                     serialVersionUID = 1L;
 
@@ -67,7 +67,7 @@ public class FolderChooser extends PathChooser implements SettingsComponent {
 
             @Override
             public void popupMenuWillBecomeVisible(PopupMenuEvent e) {
-                destination.setList(DownloadPathHistoryManager.getInstance().listPathes());
+                destination.setList(DownloadPathHistoryManager.getInstance().listPaths());
             }
 
             @Override

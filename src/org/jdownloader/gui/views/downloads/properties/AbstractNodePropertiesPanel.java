@@ -961,7 +961,7 @@ public abstract class AbstractNodePropertiesPanel extends MigPanel implements Ac
 
         if (destination.getDestination().getParent() != null && (newData || !destination.getDestination().hasFocus())) {
             String saveto = null;
-            List<String> pathlist = DownloadPathHistoryManager.getInstance().listPathes(saveto = loadSaveTo(), org.appwork.storage.config.JsonConfig.create(GeneralSettings.class).getDefaultDownloadFolder());
+            List<String> pathlist = DownloadPathHistoryManager.getInstance().listPaths(saveto = loadSaveTo(), org.appwork.storage.config.JsonConfig.create(GeneralSettings.class).getDefaultDownloadFolder());
 
             destination.setQuickSelectionList(pathlist);
             destination.setFile(new File(saveto));

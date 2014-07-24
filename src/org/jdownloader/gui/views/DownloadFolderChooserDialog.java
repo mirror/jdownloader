@@ -89,7 +89,9 @@ public class DownloadFolderChooserDialog extends ExtFileChooserDialog {
 
                     f = new File(path);
 
-                    if (isSambaFolder(f)) return null;
+                    if (isSambaFolder(f)) {
+                        return null;
+                    }
                 } else {
                     return null;
                 }
@@ -187,13 +189,17 @@ public class DownloadFolderChooserDialog extends ExtFileChooserDialog {
             });
         }
 
-        d.setQuickSelectionList(DownloadPathHistoryManager.getInstance().listPathes(path != null ? path.getAbsolutePath() : null));
+        d.setQuickSelectionList(DownloadPathHistoryManager.getInstance().listPaths(path != null ? path.getAbsolutePath() : null));
         d.setFileSelectionMode(FileChooserSelectionMode.DIRECTORIES_ONLY);
 
         File[] dest = Dialog.getInstance().showDialog(d);
-        if (dest == null || dest.length == 0) return null;
+        if (dest == null || dest.length == 0) {
+            return null;
+        }
         dest[0] = FolderChooser.checkPath(dest[0], null);
-        if (dest[0] == null) return null;
+        if (dest[0] == null) {
+            return null;
+        }
         DownloadPathHistoryManager.getInstance().add(dest[0].getAbsolutePath());
 
         return dest[0];

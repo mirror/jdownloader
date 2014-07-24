@@ -67,9 +67,9 @@ public class MergeToPackageAction extends CustomizableTableContextAppAction<Craw
             final SelectionInfo<CrawledPackage, CrawledLink> sel = getSelection();
             final NewPackageDialog d = new NewPackageDialog(sel);
             if (isLastPathDefault()) {
-                List<String> pathes = DownloadPathHistoryManager.getInstance().listPathes((String[]) null);
-                if (pathes != null && pathes.size() > 0) {
-                    d.setDownloadFolder(pathes.get(0));
+                List<String> paths = DownloadPathHistoryManager.getInstance().listPaths((String[]) null);
+                if (paths != null && paths.size() > 0) {
+                    d.setDownloadFolder(paths.get(0));
                 }
             }
             Dialog.getInstance().showDialog(d);

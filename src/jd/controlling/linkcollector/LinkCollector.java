@@ -1433,17 +1433,17 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
                 for (Integer position : positions) {
                     ret2.add(map.get(position));
                 }
-                if (lcs != null && JsonConfig.create(GeneralSettings.class).isConvertRelativePathesJDRoot()) {
+                if (lcs != null && JsonConfig.create(GeneralSettings.class).isConvertRelativePathsJDRoot()) {
                     try {
                         String oldRootPath = lcs.getRootPath();
                         if (!StringUtils.isEmpty(oldRootPath)) {
                             String newRoot = JDUtilities.getJDHomeDirectoryFromEnvironment().toString();
                             /*
-                             * convert pathes relative to JDownloader root,only in jared version
+                             * convert paths relative to JDownloader root,only in jared version
                              */
                             for (CrawledPackage pkg : ret2) {
                                 if (!CrossSystem.isAbsolutePath(pkg.getDownloadFolder())) {
-                                    /* no need to convert relative pathes */
+                                    /* no need to convert relative paths */
                                     continue;
                                 }
                                 String pkgPath = LinkTreeUtils.getDownloadDirectory(pkg).toString();

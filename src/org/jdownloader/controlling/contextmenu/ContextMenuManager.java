@@ -77,13 +77,17 @@ public abstract class ContextMenuManager<PackageType extends AbstractPackageNode
     }
 
     protected static ActionData setName(ActionData actionData, String name) {
-        if (StringUtils.isEmpty(name)) name = MenuItemData.EMPTY;
+        if (StringUtils.isEmpty(name)) {
+            name = MenuItemData.EMPTY;
+        }
         actionData.setName(name);
         return actionData;
     }
 
     protected static ActionData setTooltip(ActionData actionData, String tooltip) {
-        if (StringUtils.isEmpty(tooltip)) tooltip = MenuItemData.EMPTY;
+        if (StringUtils.isEmpty(tooltip)) {
+            tooltip = MenuItemData.EMPTY;
+        }
         actionData.setTooltip(tooltip);
         return actionData;
     }
@@ -186,7 +190,9 @@ public abstract class ContextMenuManager<PackageType extends AbstractPackageNode
             @Override
             public MenuContainerRoot edtRun() {
                 long t = System.currentTimeMillis();
-                if (menuData != null) return menuData;
+                if (menuData != null) {
+                    return menuData;
+                }
                 try {
                     convertOldFiles();
                     MenuContainerRoot ret = config.getMenu();
@@ -239,12 +245,12 @@ public abstract class ContextMenuManager<PackageType extends AbstractPackageNode
 
                         if (newActions.size() > 0) {
 
-                            List<List<MenuItemData>> pathes = defaultMenu.listPathes();
+                            List<List<MenuItemData>> paths = defaultMenu.listPaths();
                             // HashSet<Class<?>> actionClassesInDefaultTree = new HashSet<Class<?>>();
                             // // HashMap<MenuItemData,> actionClassesInDefaultTree = new HashSet<Class<?>>();
                             //
-                            // System.out.println(pathes);
-                            // for (List<MenuItemData> path : pathes) {
+                            // System.out.println(paths);
+                            // for (List<MenuItemData> path : paths) {
                             //
                             // MenuItemData d = path.get(path.size() - 1);
                             // if (d.getActionData() != null) {
@@ -262,7 +268,9 @@ public abstract class ContextMenuManager<PackageType extends AbstractPackageNode
                             for (MenuItemData ad : newActions) {
                                 if (ad.getItems() != null) {
                                     for (MenuItemData mid : ad.list()) {
-                                        if (mid == ad) continue;
+                                        if (mid == ad) {
+                                            continue;
+                                        }
                                         // newActions.remove(mid);
                                         itemsInSubmenuItems.add(mid._getIdentifier());
                                     }
@@ -270,8 +278,10 @@ public abstract class ContextMenuManager<PackageType extends AbstractPackageNode
 
                             }
                             for (MenuItemData ad : newActions) {
-                                if (itemsInSubmenuItems.contains(ad._getIdentifier())) continue;
-                                for (List<MenuItemData> path : pathes) {
+                                if (itemsInSubmenuItems.contains(ad._getIdentifier())) {
+                                    continue;
+                                }
+                                for (List<MenuItemData> path : paths) {
                                     if (StringUtils.equals(path.get(path.size() - 1)._getIdentifier(), ad._getIdentifier())) {
                                         try {
                                             ret.add(path);
@@ -332,7 +342,9 @@ public abstract class ContextMenuManager<PackageType extends AbstractPackageNode
         MenuContainerRoot ret = createDefaultStructure();
         for (MenuExtenderHandler exHandler : extender) {
             MenuItemData r = exHandler.updateMenuModel(this, ret);
-            if (r != null) ret.addBranch(ret, r);
+            if (r != null) {
+                ret.addBranch(ret, r);
+            }
         }
         return ret;
     }
@@ -429,7 +441,9 @@ public abstract class ContextMenuManager<PackageType extends AbstractPackageNode
     private void delayUpdate() {
 
         if (!SecondLevelLaunch.EXTENSIONS_LOADED.isReached()) {
-            if (afterInitCallback != null) return;
+            if (afterInitCallback != null) {
+                return;
+            }
             SecondLevelLaunch.EXTENSIONS_LOADED.executeWhenReached(afterInitCallback = new Runnable() {
 
                 @Override
@@ -452,8 +466,12 @@ public abstract class ContextMenuManager<PackageType extends AbstractPackageNode
         HashSet<MenuItemData> specials = new HashSet<MenuItemData>();
 
         for (MenuItemData mid : setupDefaultStructure().list()) {
-            if (mid instanceof MenuContainerRoot) continue;
-            if (StringUtils.isEmpty(mid.getName())) continue;
+            if (mid instanceof MenuContainerRoot) {
+                continue;
+            }
+            if (StringUtils.isEmpty(mid.getName())) {
+                continue;
+            }
             if (MenuContainer.class.isAssignableFrom(mid.getClass().getSuperclass())) {
                 specials.add(mid);
             } else if (mid instanceof MenuLink) {

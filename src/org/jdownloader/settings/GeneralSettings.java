@@ -260,7 +260,7 @@ public interface GeneralSettings extends ConfigInterface {
 
     boolean isClosedWithRunningDownloads();
 
-    boolean isConvertRelativePathesJDRoot();
+    boolean isConvertRelativePathsJDRoot();
 
     @AboutConfig
     boolean isDownloadSpeedLimitEnabled();
@@ -326,8 +326,8 @@ public interface GeneralSettings extends ConfigInterface {
     @DefaultBooleanValue(true)
     @AboutConfig
     @RequiresRestart("A JDownloader Restart is Required")
-    @DescriptionForConfigEntry("Correct pathes relative to JDownloader root")
-    void setConvertRelativePathesJDRoot(boolean b);
+    @DescriptionForConfigEntry("Correct paths relative to JDownloader root")
+    void setConvertRelativePathsJDRoot(boolean b);
 
     void setDefaultDownloadFolder(String ddl);
 

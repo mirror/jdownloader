@@ -20,6 +20,7 @@ import jd.plugins.decrypter.YoutubeHelper;
 import jd.plugins.decrypter.YoutubeHelper.Replacer;
 import jd.plugins.hoster.YoutubeDashV2.YoutubeConfig;
 import jd.plugins.hoster.YoutubeDashV2.YoutubeConfig.GroupLogic;
+import jd.plugins.hoster.YoutubeDashV2.YoutubeConfig.IfUrlisAPlaylistAction;
 import jd.plugins.hoster.YoutubeDashV2.YoutubeConfig.IfUrlisAVideoAndPlaylistAction;
 
 import org.appwork.storage.config.handler.BooleanKeyHandler;
@@ -80,12 +81,15 @@ public class YoutubeDashConfigPanel extends PluginConfigPanelNG {
         @Override
         protected String getLabel(int i, YoutubeVariant sc) {
             String name = sc.getName();
-            if (CFG_GUI.EXTENDED_VARIANT_NAMES_ENABLED.isEnabled()) name = sc.getExtendedName();
+            if (CFG_GUI.EXTENDED_VARIANT_NAMES_ENABLED.isEnabled()) {
+                name = sc.getExtendedName();
+            }
             if (i == 0) {
                 return _GUI._.YoutubeDashConfigPanel_MultiVariantBox_getLabel_(name) + " (" + _GUI._.YoutubeDashConfigPanel_getLabel_best() + ")";
             } else if (i == getValues().size() - 1) {
 
-            return _GUI._.YoutubeDashConfigPanel_MultiVariantBox_getLabel_(name) + " (" + _GUI._.YoutubeDashConfigPanel_getLabel_worst() + ")"; }
+                return _GUI._.YoutubeDashConfigPanel_MultiVariantBox_getLabel_(name) + " (" + _GUI._.YoutubeDashConfigPanel_getLabel_worst() + ")";
+            }
             return _GUI._.YoutubeDashConfigPanel_MultiVariantBox_getLabel_(name);
         }
 
@@ -96,7 +100,9 @@ public class YoutubeDashConfigPanel extends PluginConfigPanelNG {
 
         @Override
         protected String getLabel(List<YoutubeVariant> list) {
-            if (list.size() == 0) return super.getLabel(list);
+            if (list.size() == 0) {
+                return super.getLabel(list);
+            }
             StringBuilder sb = new StringBuilder();
             for (int i = 0; i < list.size(); i++) {
                 if (sb.length() > 0) {
@@ -135,6 +141,8 @@ public class YoutubeDashConfigPanel extends PluginConfigPanelNG {
         addStartDescription(description);
 
         addPair(_GUI._.YoutubeDashConfigPanel_YoutubeDashConfigPanel_if_link_contains_video_and_playlist(), null, null, new ComboBox<IfUrlisAVideoAndPlaylistAction>(cf._getStorageHandler().getKeyHandler("LinkIsVideoAndPlaylistUrlAction", KeyHandler.class), IfUrlisAVideoAndPlaylistAction.values(), null));
+        addPair(_GUI._.YoutubeDashConfigPanel_YoutubeDashConfigPanel_if_link_equals_playlist(), null, null, new ComboBox<IfUrlisAPlaylistAction>(cf._getStorageHandler().getKeyHandler("LinkIsPlaylistUrlAction", KeyHandler.class), IfUrlisAPlaylistAction.values(), null));
+
         // ComboBox<GroupLogic> box = new ComboBox<GroupLogic>(cf._getStorageHandler().getKeyHandler("GroupLogic", KeyHandler.class),
         // GroupLogic.values(), null) {
         // @Override
@@ -172,7 +180,9 @@ public class YoutubeDashConfigPanel extends PluginConfigPanelNG {
         }
         Collections.sort(sorted, comp);
         for (YoutubeVariant ytv : sorted) {
-            if (!dupe.add(ytv.getTypeId())) continue;
+            if (!dupe.add(ytv.getTypeId())) {
+                continue;
+            }
             switch (ytv.getGroup()) {
             case AUDIO:
                 audio.add(ytv);
@@ -247,7 +257,9 @@ public class YoutubeDashConfigPanel extends PluginConfigPanelNG {
 
             StringBuilder sb = new StringBuilder();
             for (String s : r.getTags()) {
-                if (sb.length() > 0) sb.append(", ");
+                if (sb.length() > 0) {
+                    sb.append(", ");
+                }
                 sb.append("*").append(s).append("*");
             }
             JLabel txt = new JLabel("<html>" + sb.toString().replace("\r\n", "<br>").replace("\r", "<br>").replace("\n", "<br>") + "<html>");
@@ -330,7 +342,9 @@ public class YoutubeDashConfigPanel extends PluginConfigPanelNG {
 
     @Override
     public void save() {
-        if (setting) return;
+        if (setting) {
+            return;
+        }
         HashSet<String> blacklistSet = new HashSet<String>();
         getBlacklist(blacklistSet, video3D.getComponent());
         getBlacklist(blacklistSet, audioPair.getComponent());

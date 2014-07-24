@@ -711,12 +711,12 @@ public class YoutubeHelper {
 
     /**
      * *
-     * 
+     *
      * @param html5PlayerJs
      *            TODO
      * @param br
      * @param s
-     * 
+     *
      * @return
      * @throws IOException
      * @throws PluginException
@@ -1287,7 +1287,8 @@ public class YoutubeHelper {
             br.setCookie("http://youtube.com", "PREF", "hl=en-GB");
             if (account.getProperty("cookies") != null) {
                 @SuppressWarnings("unchecked")
-                final HashMap<String, String> cookies = (HashMap<String, String>) account.getProperty("cookies");
+                HashMap<String, String> cookies = (HashMap<String, String>) account.getProperty("cookies");
+                cookies = null;
                 if (cookies != null) {
                     if (cookies.containsKey("LOGIN_INFO")) {
                         for (final Map.Entry<String, String> cookieEntry : cookies.entrySet()) {

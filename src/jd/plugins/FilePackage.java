@@ -489,7 +489,7 @@ public class FilePackage extends Property implements Serializable, AbstractPacka
         if (StringUtils.isEmpty(folder)) {
             folder = org.appwork.storage.config.JsonConfig.create(GeneralSettings.class).getDefaultDownloadFolder();
         } else if (!CrossSystem.isAbsolutePath(folder)) {
-            Log.L.severe("FilePackage: setDownloadDirectory only allows absolute pathes! Using default one!");
+            Log.L.severe("FilePackage: setDownloadDirectory only allows absolute paths! Using default one!");
             folder = org.appwork.storage.config.JsonConfig.create(GeneralSettings.class).getDefaultDownloadFolder();
         }
         String lFolder = getDownloadDirectory();

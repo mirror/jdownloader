@@ -115,7 +115,7 @@ public class LinkCrawler {
         final int keepAlive = Math.max(JsonConfig.create(LinkCrawlerConfig.class).getThreadKeepAlive(), 100);
         /**
          * PriorityBlockingQueue leaks last Item for some java versions
-         * 
+         *
          * http://bugs.java.com/bugdatabase/view_bug.do?bug_id=7161229
          */
         threadPool = new ThreadPoolExecutor(0, maxThreads, keepAlive, TimeUnit.MILLISECONDS, new PriorityBlockingQueue<Runnable>(100, new Comparator<Runnable>() {
@@ -247,10 +247,10 @@ public class LinkCrawler {
 
     /**
      * returns the generation of this LinkCrawler if thisGeneration is true.
-     * 
+     *
      * if a parent LinkCrawler does exist and thisGeneration is false, we return the older generation of the parent LinkCrawler or this
      * child
-     * 
+     *
      * @param thisGeneration
      * @return
      */
@@ -346,9 +346,9 @@ public class LinkCrawler {
         if (possibleLinks != null && possibleLinks.length > 0) {
             final java.util.List<CrawledLink> possibleCryptedLinks = new ArrayList<CrawledLink>(possibleLinks.length);
             for (String possibleLink : possibleLinks) {
-                CrawledLink link;
-                possibleCryptedLinks.add(link = crawledLinkFactorybyURL(possibleLink));
+                CrawledLink link = crawledLinkFactorybyURL(possibleLink);
                 link.setCrawlDeep(allowDeep);
+                possibleCryptedLinks.add(link);
             }
             return possibleCryptedLinks;
         }

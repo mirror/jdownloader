@@ -24,7 +24,7 @@ import org.jdownloader.gui.views.linkgrabber.contextmenu.NewPackageDialog;
 public class MergeToPackageAction extends CustomizableTableContextAppAction<FilePackage, DownloadLink> implements ActionContext {
 
     /**
-     * 
+     *
      */
     private static final long serialVersionUID = -4468197802870765463L;
 
@@ -69,9 +69,9 @@ public class MergeToPackageAction extends CustomizableTableContextAppAction<File
             final SelectionInfo<FilePackage, DownloadLink> sel = getSelection();
             final NewPackageDialog d = new NewPackageDialog(sel);
             if (isLastPathDefault()) {
-                List<String> pathes = DownloadPathHistoryManager.getInstance().listPathes((String[]) null);
-                if (pathes != null && pathes.size() > 0) {
-                    d.setDownloadFolder(pathes.get(0));
+                List<String> paths = DownloadPathHistoryManager.getInstance().listPaths((String[]) null);
+                if (paths != null && paths.size() > 0) {
+                    d.setDownloadFolder(paths.get(0));
                 }
             }
             Dialog.getInstance().showDialog(d);

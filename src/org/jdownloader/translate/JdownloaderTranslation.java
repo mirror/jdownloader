@@ -493,14 +493,23 @@ public interface JdownloaderTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "Ask me" })
     String YoutubeDash_IfUrlisAVideoAndPlaylistAction_ASK();
 
-    @Default(lngs = { "en" }, values = { "Load Video only" })
+    @Default(lngs = { "en" }, values = { "Process Video only" })
     String YoutubeDash_IfUrlisAVideoAndPlaylistAction_VIDEO_ONLY();
 
-    @Default(lngs = { "en" }, values = { "Load full playlist" })
+    @Default(lngs = { "en" }, values = { "Process full Play-List" })
     String YoutubeDash_IfUrlisAVideoAndPlaylistAction_PLAYLIST_ONLY();
 
-    @Default(lngs = { "en" }, values = { "Load nothing" })
+    @Default(lngs = { "en" }, values = { "Do nothing" })
     String YoutubeDash_IfUrlisAVideoAndPlaylistAction_NOTHING();
+
+    @Default(lngs = { "en" }, values = { "Ask me" })
+    String YoutubeDash_IfUrlisAPlaylistAction_ASK();
+
+    @Default(lngs = { "en" }, values = { "Process full Play-List/Channel-List" })
+    String YoutubeDash_IfUrlisAPlaylistAction_PROCESS();
+
+    @Default(lngs = { "en" }, values = { "Do nothing" })
+    String YoutubeDash_IfUrlisAPlaylistAction_NOTHING();
 
     @Default(lngs = { "en" }, values = { "Media Type (Video, Audio, Image, Subtitles, ..." })
     String YoutubeDash_GroupLogic_BY_MEDIA_TYPE();

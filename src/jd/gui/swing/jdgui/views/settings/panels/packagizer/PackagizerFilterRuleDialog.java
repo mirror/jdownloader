@@ -274,9 +274,9 @@ public class PackagizerFilterRuleDialog extends ConditionDialog<PackagizerRule> 
         txtNewFilename.setText(rule.getFilename());
         txtRename.setText(rule.getRename());
         txtTestUrl.setText(rule.getTestUrl());
-        fpDest.setQuickSelectionList(DownloadPathHistoryManager.getInstance().listPathes(rule.getDownloadDestination()));
+        fpDest.setQuickSelectionList(DownloadPathHistoryManager.getInstance().listPaths(rule.getDownloadDestination()));
         fpDest.setPath(rule.getDownloadDestination());
-        fpMove.setQuickSelectionList(DownloadPathHistoryManager.getInstance().listPathes(rule.getMoveto()));
+        fpMove.setQuickSelectionList(DownloadPathHistoryManager.getInstance().listPaths(rule.getMoveto()));
         fpMove.setPath(rule.getMoveto());
 
         cbExtract.setSelected(rule.isAutoExtractionEnabled() != null);
