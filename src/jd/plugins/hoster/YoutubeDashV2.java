@@ -132,7 +132,6 @@ public class YoutubeDashV2 extends PluginForHost {
 
     @Override
     public String getAGBLink() {
-        //
         return "http://youtube.com/t/terms";
     }
 
