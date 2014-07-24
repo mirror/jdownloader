@@ -53,7 +53,6 @@ public class ImgurCom extends PluginForDecrypt {
                 pluginLoaded.set(true);
             }
             br.getHeaders().put("Authorization", jd.plugins.hoster.ImgUrCom.getAuthorization());
-            // br.getPage("https://api.imgur.com/3/gallery/bestof2013");
             final String lid = new Regex(parameter, "([A-Za-z0-9]+)$").getMatch(0);
             if (parameter.matches(TYPE_ALBUM) || parameter.matches(TYPE_GALLERY)) {
                 try {
