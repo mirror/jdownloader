@@ -104,7 +104,7 @@ public class HulkLoadCom extends PluginForHost {
     // DEV NOTES
     // XfileShare Version 3.0.8.4
     // last XfileSharingProBasic compare :: 2.6.2.1
-    // captchatype: 4dignum
+    // captchatype: solvemedia
     // other: no redirects
     // mods: checkDirectLink, they don't display filesize within header.
 
@@ -308,6 +308,12 @@ public class HulkLoadCom extends PluginForHost {
                     }
                 }
             }
+        }
+        if (inValidate(fileInfo[0])) {
+            fileInfo[0] = cbr.getRegex(">Filename:</div>[\t\n\r ]+<div class=\"d_textline3\">([^<>\"]*?)</div>").getMatch(0);
+        }
+        if (inValidate(fileInfo[0])) {
+            fileInfo[0] = cbr.getRegex("\\&productname=([^<>\"]*?)\\&exeurl=").getMatch(0);
         }
         if (inValidate(fileInfo[1])) {
             fileInfo[1] = cbr.getRegex("\\(([0-9]+ bytes)\\)").getMatch(0);

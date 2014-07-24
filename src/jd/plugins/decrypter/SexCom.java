@@ -43,7 +43,21 @@ public class SexCom extends PluginForDecrypt {
         String externID;
         String filename;
         br.getPage(parameter);
+        if (br.getHttpConnection().getResponseCode() == 404) {
+            final DownloadLink offline = createDownloadlink("directhttp://" + parameter);
+            offline.setAvailable(false);
+            offline.setProperty("offline", true);
+            decryptedLinks.add(offline);
+            return decryptedLinks;
+        }
         if (parameter.matches(TYPE_VIDEO)) {
+            externID = br.getRegex("\"(http://(www\\.)?xvideos\\.com/video\\d+/)").getMatch(0);
+            if (externID != null) {
+                final DownloadLink fina = createDownloadlink(externID);
+                decryptedLinks.add(fina);
+                return decryptedLinks;
+            }
+
             filename = br.getRegex("itemprop=\"name\">([^<>\"]*?)</span>").getMatch(0);
             final String continuelink = br.getRegex("\"(/video/embed\\?id=\\d+\\&pinId=\\d+[^<>\"]*?)\"").getMatch(0);
             if (filename == null || continuelink == null) {
@@ -61,10 +75,6 @@ public class SexCom extends PluginForDecrypt {
             fina.setFinalFileName(filename + ".mp4");
             decryptedLinks.add(fina);
         } else {
-            if (br.containsHTML(">Page Not Found<")) {
-                logger.info("Link offline: " + parameter);
-                return decryptedLinks;
-            }
             filename = br.getRegex("<title>([^<>\"]*?) \\| Sex Videos and Pictures \\| Sex\\.com</title>").getMatch(0);
             if (filename == null || filename.length() <= 2) {
                 filename = br.getRegex("addthis:title=\"([^<>\"]*?)\"").getMatch(0);

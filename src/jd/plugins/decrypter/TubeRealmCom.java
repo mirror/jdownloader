@@ -42,7 +42,10 @@ public class TubeRealmCom extends PluginForDecrypt {
         br.setFollowRedirects(false);
         br.getPage(parameter);
         if (br.containsHTML("Sorry, this page was deleted")) {
-            logger.info("Link offline: " + parameter);
+            final DownloadLink offline = createDownloadlink("directhttp://" + parameter);
+            offline.setAvailable(false);
+            offline.setProperty("offline", true);
+            decryptedLinks.add(offline);
             return decryptedLinks;
         }
         externID = br.getRedirectLocation();
@@ -305,6 +308,13 @@ public class TubeRealmCom extends PluginForDecrypt {
         }
         externID = br.getRegex("\"(http://(www\\.)?embeds\\.sunporno\\.com/embed/[^<>\"]*?)\"").getMatch(0);
         if (externID != null) {
+            if (externID.equals("http://embeds.sunporno.com/embed/videos")) {
+                final DownloadLink offline = createDownloadlink("directhttp://" + externID);
+                offline.setAvailable(false);
+                offline.setProperty("offline", true);
+                decryptedLinks.add(offline);
+                return decryptedLinks;
+            }
             decryptedLinks.add(createDownloadlink(externID));
             return decryptedLinks;
         }

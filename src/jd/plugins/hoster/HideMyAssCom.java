@@ -87,8 +87,12 @@ public class HideMyAssCom extends PluginForHost {
                 throw new PluginException(LinkStatus.ERROR_CAPTCHA);
             }
             dllink = br.getRegex("<div id=\"dllink\"><a href=\"(http://[^<>\"]*?)\"").getMatch(0);
-            if (dllink == null) dllink = br.getRegex("\"(http://(www\\.)?fs\\d+\\.hidemyass\\.com/download/[^<>\"]*?)\"").getMatch(0);
-            if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            if (dllink == null) {
+                dllink = br.getRegex("\"(http://(www\\.)?fs\\d+\\.hidemyass\\.com/download/[^<>\"]*?)\"").getMatch(0);
+            }
+            if (dllink == null) {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
         }
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, false, 1);
         if (dl.getConnection().getContentType().contains("html")) {
@@ -134,11 +138,16 @@ public class HideMyAssCom extends PluginForHost {
     @Override
     public AvailableStatus requestFileInformation(DownloadLink link) throws IOException, PluginException {
         this.setBrowserExclusive();
+        br.setFollowRedirects(true);
         br.getPage(link.getDownloadURL());
-        if (br.containsHTML(">Error\\! You don\\'t have access to this file|>This could be due to one or more of the following reasons|>The uploader set advanced privacy restrictions on the file|>The uploader has removed the file")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (br.containsHTML("class=\"genericerrorbox\"")) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
         String filename = br.getRegex(">File name:</strong>([^<>\"]*?)</p>").getMatch(0);
         String filesize = br.getRegex(">File Size: ([^<>\"]*?)</strong>").getMatch(0);
-        if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (filename == null || filesize == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         link.setName(filename.trim());
         link.setDownloadSize(SizeFormatter.getSize(filesize));
         return AvailableStatus.TRUE;
