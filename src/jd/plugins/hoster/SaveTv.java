@@ -86,6 +86,8 @@ public class SaveTv extends PluginForHost {
     private static final String  PREFERADSFREE                             = "PREFERADSFREE";
     private static final String  PREFERADSFREE_OVERRIDE                    = "PREFERADSFREE_OVERRIDE";
     private static final String  PREFERADSFREE_OVERRIDE_MAXRETRIES         = "PREFERADSFREE_OVERRIDE_MAXRETRIES";
+    private static final String  FORCE_WITH_ADS_ON_ERROR_HOURS             = "FORCE_WITH_ADS_ON_ERROR_HOURS";
+    private static final String  FORCE_WITH_ADS_ON_ERROR_HOURS_MAXRETRIES  = "FORCE_WITH_ADS_ON_ERROR_HOURS_MAXRETRIES";
     private static final String  DOWNLOADONLYADSFREE                       = "DOWNLOADONLYADSFREE";
     private static final String  DOWNLOADONLYADSFREE_RETRY_HOURS           = "DOWNLOADONLYADSFREE_RETRY_HOURS";
     private final String         ADSFREEAVAILABLETEXT                      = JDL.L("plugins.hoster.SaveTv.AdsFreeAvailable", "Video ist werbefrei verfügbar");
@@ -146,6 +148,15 @@ public class SaveTv extends PluginForHost {
     public static final String   QUALITY_HQ                                = "HQ";
     public static final String   QUALITY_HD                                = "HD";
     public static final String   EXTENSION                                 = ".mp4";
+
+    /* Save.tv internal quality/format constants */
+    private static final String  API_FORMAT_HD                             = "5";
+    private static final String  API_FORMAT_HQ                             = "5";
+    private static final String  API_FORMAT_LQ                             = "4";
+
+    private static final String  SITE_FORMAT_HD                            = "2";
+    private static final String  SITE_FORMAT_HQ                            = "0";
+    private static final String  SITE_FORMAT_LQ                            = "1";
 
     @SuppressWarnings("deprecation")
     public SaveTv(PluginWrapper wrapper) {
@@ -619,7 +630,22 @@ public class SaveTv extends PluginForHost {
             }
             /* Ads-Free version not available - handle it */
             if (br.containsHTML("\"Leider enthält Ihre Aufnahme nur Werbung")) {
-                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Serverfehler: 'Leider enthält Ihre Aufnahme nur Werbung'", 12 * 60 * 60 * 1000l);
+                logger.info("Received server error 'Leider enthält Ihre Aufnahme nur Werbung'");
+                final long maxRetries = getLongProperty(cfg, FORCE_WITH_ADS_ON_ERROR_HOURS_MAXRETRIES, defaultFORCE_WITH_ADS_ON_ERROR_MAXRETRIES);
+                final long waitHours = getLongProperty(cfg, FORCE_WITH_ADS_ON_ERROR_HOURS, defaultFORCE_WITH_ADS_ON_ERROR_HOURS);
+                long currentTryCount = getLongProperty(downloadLink, "curren_no_hd_ads_free_available_retries", 0);
+                if (currentTryCount < maxRetries) {
+                    currentTryCount++;
+                    downloadLink.setProperty("curren_no_hd_ads_free_available_retries", currentTryCount);
+                    logger.info("--> Throw Exception | Try " + currentTryCount + "/" + maxRetries);
+                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Versuch " + currentTryCount + "/" + maxRetries + "Serverfehler: 'Leider enthält Ihre Aufnahme nur Werbung' (HD Format gewählt aber nicht verfügbar)", waitHours * 60 * 60 * 1000l);
+                } else {
+                    logger.info("--> Max retries reached: " + maxRetries + " --> Trying to download adsfree version");
+                    site_GetDownloadPage(downloadLink, stv_request_selected_format_value, "false");
+                    if (br.containsHTML("\"Leider enthält Ihre Aufnahme nur Werbung")) {
+                        throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Serverfehler: 'Leider enthält Ihre Aufnahme nur Werbung' (Ausweichen auf HQ Format hat nichts gebracht)", 12 * 60 * 60 * 1000l);
+                    }
+                }
             }
             dllink = br.getRegex("(\\'|\")(http://[^<>\"\\']+/\\?m=dl)(\\'|\")").getMatch(1);
         }
@@ -1128,13 +1154,13 @@ public class SaveTv extends PluginForHost {
         String stv_request_selected_format = null;
         switch (selected_video_format) {
         case 0:
-            stv_request_selected_format = "5";
+            stv_request_selected_format = API_FORMAT_HD;
             break;
         case 1:
-            stv_request_selected_format = "5";
+            stv_request_selected_format = API_FORMAT_HQ;
             break;
         case 2:
-            stv_request_selected_format = "4";
+            stv_request_selected_format = API_FORMAT_LQ;
             break;
         }
         return stv_request_selected_format;
@@ -1146,13 +1172,13 @@ public class SaveTv extends PluginForHost {
         String stv_request_selected_format = null;
         switch (selected_video_format) {
         case 0:
-            stv_request_selected_format = "2";
+            stv_request_selected_format = SITE_FORMAT_HD;
             break;
         case 1:
-            stv_request_selected_format = "0";
+            stv_request_selected_format = SITE_FORMAT_HQ;
             break;
         case 2:
-            stv_request_selected_format = "1";
+            stv_request_selected_format = SITE_FORMAT_LQ;
             break;
         }
         return stv_request_selected_format;
@@ -1558,6 +1584,8 @@ public class SaveTv extends PluginForHost {
     private final static int     defaultCrawlLasthours                           = 0;
     private final static int     defaultNoAdsFreeAvailableRetryWaitHours         = 12;
     private final static int     defaultIgnoreOnlyAdsFreeAfterRetries_maxRetries = 2;
+    private final static int     defaultFORCE_WITH_ADS_ON_ERROR_HOURS            = 12;
+    private final static int     defaultFORCE_WITH_ADS_ON_ERROR_MAXRETRIES       = 2;
 
     private static final boolean defaultDeleteTelecastIDAfterDownload            = false;
     private static final boolean defaultDeleteTelecastIDIfFileAlreadyExists      = false;
@@ -1588,6 +1616,10 @@ public class SaveTv extends PluginForHost {
         final ConfigEntry ignoreOnlyAdsFreeAfterRetries = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), SaveTv.PREFERADSFREE_OVERRIDE, JDL.L("plugins.hoster.SaveTv.forceDownloadWithzAdsAfterXretries", "Download OHNE Schnittliste erzwingen, falls nach X versuchen noch immer nicht verfügbar?\r\nINFO: Ein Versuch = Keine Schnittliste verfügbar & die oben angegebene Wartezeit wird einmal abgewartet")).setDefaultValue(false).setEnabledCondidtion(preferAdsFree, true);
         getConfig().addEntry(ignoreOnlyAdsFreeAfterRetries);
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_SPINNER, getPluginConfig(), SaveTv.PREFERADSFREE_OVERRIDE_MAXRETRIES, JDL.L("plugins.hoster.SaveTv.ignoreOnlyAdsFreeAfterRetries_maxRetries", "Max Anzahl Neuversuche bis der Download ohne Schnittliste erzwungen wird:\r\nINFO: Diese Einstellungen hat nur Auswirkungen, solange die Einstellung darüber aktiviert ist!"), 1, 100, 1).setDefaultValue(defaultIgnoreOnlyAdsFreeAfterRetries_maxRetries).setEnabledCondidtion(ignoreOnlyAdsFreeAfterRetries, true));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_SEPARATOR));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_LABEL, "Einstelungen zur Fehlerbehandlung des Fehlers 'Leider enthält Ihre Aufnahme nur Werbung'."));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_SPINNER, getPluginConfig(), SaveTv.FORCE_WITH_ADS_ON_ERROR_HOURS, JDL.L("plugins.hoster.SaveTv.forceHQHours", "Zeit [in stunden] bis zum Neuversuch für Aufnahmen, die (noch) keine Schnittliste haben.\r\nINFO: Der Standardwert beträgt 12 Stunden, um die Server nicht unnötig zu belasten.\r\n"), 1, 24, 1).setDefaultValue(defaultFORCE_WITH_ADS_ON_ERROR_HOURS));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_SPINNER, getPluginConfig(), SaveTv.FORCE_WITH_ADS_ON_ERROR_HOURS_MAXRETRIES, JDL.L("plugins.hoster.SaveTv.forceLHQMaxretries", "Max Anzahl Neuversuche bis der Download der Version ohne Schnittliste erzwungen wird:"), 1, 100, 1).setDefaultValue(defaultFORCE_WITH_ADS_ON_ERROR_MAXRETRIES));
 
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_SEPARATOR));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_SEPARATOR));
