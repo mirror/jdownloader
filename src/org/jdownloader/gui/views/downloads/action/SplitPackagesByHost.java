@@ -77,7 +77,7 @@ public class SplitPackagesByHost extends CustomizableTableContextAppAction<FileP
             protected Void run() throws RuntimeException {
                 String newName = null;
                 String newDownloadFolder = null;
-                if (isMergePackages()) {
+                if (isMergePackages() && getSelection().getPackageViews().size() > 1) {
                     if (isAskForNewDownloadFolderAndPackageName()) {
 
                         try {
