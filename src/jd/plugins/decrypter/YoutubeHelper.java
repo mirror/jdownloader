@@ -739,15 +739,33 @@ public class YoutubeHelper {
         des = new Regex(jsContent, Pattern.compile(func)).getMatch(1);
         String all = new Regex(jsContent, Pattern.compile("(var [a-z]+=\\{.+\\};)?function " + Pattern.quote(descrambler) + "\\(([^)]+)\\)\\{(.+?return.*?)\\}.*?\\{.*?\\}")).getMatch(-1);
         Object result = null;
-        try {
-            final ScriptEngineManager manager = jd.plugins.hoster.DummyScriptEnginePlugin.getScriptEngineManager(this);
-            final ScriptEngine engine = manager.getEngineByName("javascript");
-            result = engine.eval(all + " " + descrambler + "(\"" + sig + "\")");
-            if (result != null) {
-                return result.toString();
+
+        while (true) {
+            try {
+                final ScriptEngineManager manager = jd.plugins.hoster.DummyScriptEnginePlugin.getScriptEngineManager(this);
+                final ScriptEngine engine = manager.getEngineByName("javascript");
+                result = engine.eval(all + " " + descrambler + "(\"" + sig + "\")");
+                if (result != null) {
+                    return result.toString();
+                }
+            } catch (final Throwable e) {
+                logger.log(e);
+                if (e.getMessage() != null) {
+                    final String ee = new Regex(e.getMessage(), "ReferenceError: \"(\\w+)\" is not defined\\.").getMatch(0);
+                    if (ee != null) {
+                        // lets look for missing reference
+                        final String ref = new Regex(jsContent, "var\\s{1,}" + ee + "\\s*=\\s*\\{.*?\\};").getMatch(-1);
+                        if (ref != null) {
+                            all = ref + "\r\n" + all;
+                            continue;
+                        } else {
+                            logger.warning("Could not find missing var/function");
+                            break;
+                        }
+                    }
+                }
             }
-        } catch (final Throwable e) {
-            logger.log(e);
+            break;
         }
         String s = sig;
         try {
