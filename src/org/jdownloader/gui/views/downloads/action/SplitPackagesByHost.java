@@ -14,12 +14,14 @@ import jd.plugins.FilePackage;
 import org.appwork.storage.config.JsonConfig;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.event.queue.QueueAction;
+import org.appwork.utils.swing.dialog.Dialog;
 import org.jdownloader.controlling.contextmenu.ActionContext;
 import org.jdownloader.controlling.contextmenu.CustomizableTableContextAppAction;
 import org.jdownloader.controlling.contextmenu.Customizer;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.gui.views.components.LocationInList;
 import org.jdownloader.gui.views.linkgrabber.addlinksdialog.LinkgrabberSettings;
+import org.jdownloader.gui.views.linkgrabber.contextmenu.NewPackageDialog;
 import org.jdownloader.translate._JDT;
 
 public class SplitPackagesByHost extends CustomizableTableContextAppAction<FilePackage, DownloadLink> implements ActionContext {
@@ -29,13 +31,35 @@ public class SplitPackagesByHost extends CustomizableTableContextAppAction<FileP
      */
     private static final long serialVersionUID = 2636706677433058054L;
 
+    private boolean           mergePackages    = false;
+
     public SplitPackagesByHost() {
         super();
         setName(_GUI._.SplitPackagesByHost_SplitPackagesByHost_object_());
         setIconKey("split_packages");
     }
 
-    private LocationInList location = LocationInList.AFTER_SELECTION;
+    @Customizer(name = "Merge Packages before splitting?")
+    public boolean isMergePackages() {
+        return mergePackages;
+    }
+
+    public void setMergePackages(boolean mergePackages) {
+        this.mergePackages = mergePackages;
+    }
+
+    @Customizer(name = "If Merging, ask for new Downloadfolder and package name?")
+    public boolean isAskForNewDownloadFolderAndPackageName() {
+        return askForNewDownloadFolderAndPackageName;
+    }
+
+    public void setAskForNewDownloadFolderAndPackageName(boolean askForNewDownloadFolderIfMerging) {
+        this.askForNewDownloadFolderAndPackageName = askForNewDownloadFolderIfMerging;
+    }
+
+    private boolean        askForNewDownloadFolderAndPackageName = true;
+
+    private LocationInList location                              = LocationInList.AFTER_SELECTION;
 
     @Customizer(name = "Add package at")
     public LocationInList getLocation() {
@@ -51,6 +75,29 @@ public class SplitPackagesByHost extends CustomizableTableContextAppAction<FileP
 
             @Override
             protected Void run() throws RuntimeException {
+                String newName = null;
+                String newDownloadFolder = null;
+                if (isMergePackages()) {
+                    if (isAskForNewDownloadFolderAndPackageName()) {
+
+                        try {
+                            final NewPackageDialog d = new NewPackageDialog(getSelection());
+
+                            Dialog.getInstance().showDialog(d);
+
+                            newName = d.getName();
+                            newDownloadFolder = d.getDownloadFolder();
+                            if (StringUtils.isEmpty(newName)) {
+                                return null;
+                            }
+                        } catch (Throwable e) {
+                            return null;
+                        }
+                    } else {
+                        newName = "";
+                        newDownloadFolder = getSelection().getFirstPackage().getDownloadDirectory();
+                    }
+                }
                 final HashMap<FilePackage, HashMap<String, ArrayList<DownloadLink>>> splitMap = new HashMap<FilePackage, HashMap<String, ArrayList<DownloadLink>>>();
                 int insertAt = -1;
                 switch (getLocation()) {
@@ -60,7 +107,7 @@ public class SplitPackagesByHost extends CustomizableTableContextAppAction<FileP
                 for (AbstractNode child : getSelection().getChildren()) {
                     if (child instanceof DownloadLink) {
                         final DownloadLink cL = (DownloadLink) child;
-                        final FilePackage parent = cL.getParentNode();
+                        final FilePackage parent = isMergePackages() ? null : cL.getParentNode();
                         HashMap<String, ArrayList<DownloadLink>> parentMap = splitMap.get(parent);
                         if (parentMap == null) {
                             parentMap = new HashMap<String, ArrayList<DownloadLink>>();
@@ -104,21 +151,29 @@ public class SplitPackagesByHost extends CustomizableTableContextAppAction<FileP
                     while (it2.hasNext()) {
                         final Entry<String, ArrayList<DownloadLink>> next2 = it2.next();
                         final String host = next2.getKey();
-                        final String newPackageName = getNewPackageName(nameFactory, sourcePackage.getName(), host);
+                        final String newPackageName = getNewPackageName(nameFactory, sourcePackage == null ? newName : sourcePackage.getName(), host);
                         final FilePackage newPkg;
                         if (merge) {
                             FilePackage destPackage = mergedPackages.get(newPackageName);
                             if (destPackage == null) {
                                 destPackage = FilePackage.getInstance();
-
-                                sourcePackage.copyPropertiesTo(destPackage);
+                                if (sourcePackage != null) {
+                                    sourcePackage.copyPropertiesTo(destPackage);
+                                } else {
+                                    destPackage.setDownloadDirectory(newDownloadFolder);
+                                }
                                 destPackage.setName(newPackageName);
                                 mergedPackages.put(newPackageName, destPackage);
                             }
                             newPkg = destPackage;
                         } else {
                             newPkg = FilePackage.getInstance();
-                            sourcePackage.copyPropertiesTo(newPkg);
+                            if (sourcePackage != null) {
+                                sourcePackage.copyPropertiesTo(newPkg);
+                            } else {
+                                newPkg.setDownloadDirectory(newDownloadFolder);
+                            }
+
                             newPkg.setName(newPackageName);
                         }
                         DownloadController.getInstance().moveOrAddAt(newPkg, next2.getValue(), 0, insertAt);

@@ -14,6 +14,7 @@ import jd.controlling.packagecontroller.AbstractNode;
 import org.appwork.storage.config.JsonConfig;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.event.queue.QueueAction;
+import org.appwork.utils.swing.dialog.Dialog;
 import org.jdownloader.controlling.contextmenu.ActionContext;
 import org.jdownloader.controlling.contextmenu.CustomizableTableContextAppAction;
 import org.jdownloader.controlling.contextmenu.Customizer;
@@ -36,7 +37,28 @@ public class SplitPackagesByHost extends CustomizableTableContextAppAction<Crawl
         setIconKey("split_packages");
     }
 
-    private LocationInList location = LocationInList.AFTER_SELECTION;
+    private LocationInList location      = LocationInList.AFTER_SELECTION;
+    private boolean        mergePackages = false;
+
+    @Customizer(name = "Merge Packages before splitting?")
+    public boolean isMergePackages() {
+        return mergePackages;
+    }
+
+    public void setMergePackages(boolean mergePackages) {
+        this.mergePackages = mergePackages;
+    }
+
+    @Customizer(name = "If Merging, ask for new Downloadfolder and package name?")
+    public boolean isAskForNewDownloadFolderAndPackageName() {
+        return askForNewDownloadFolderAndPackageName;
+    }
+
+    public void setAskForNewDownloadFolderAndPackageName(boolean askForNewDownloadFolderIfMerging) {
+        this.askForNewDownloadFolderAndPackageName = askForNewDownloadFolderIfMerging;
+    }
+
+    private boolean askForNewDownloadFolderAndPackageName = true;
 
     @Customizer(name = "Add package at")
     public LocationInList getLocation() {
@@ -52,6 +74,28 @@ public class SplitPackagesByHost extends CustomizableTableContextAppAction<Crawl
 
             @Override
             protected Void run() throws RuntimeException {
+                String newName = null;
+                String newDownloadFolder = null;
+                if (isMergePackages()) {
+                    if (isAskForNewDownloadFolderAndPackageName()) {
+                        try {
+                            final NewPackageDialog d = new NewPackageDialog(getSelection());
+
+                            Dialog.getInstance().showDialog(d);
+
+                            newName = d.getName();
+                            newDownloadFolder = d.getDownloadFolder();
+                            if (StringUtils.isEmpty(newName)) {
+                                return null;
+                            }
+                        } catch (Throwable e) {
+                            return null;
+                        }
+                    } else {
+                        newName = "";
+                        newDownloadFolder = getSelection().getFirstPackage().getRawDownloadFolder();
+                    }
+                }
                 final HashMap<CrawledPackage, HashMap<String, ArrayList<CrawledLink>>> splitMap = new HashMap<CrawledPackage, HashMap<String, ArrayList<CrawledLink>>>();
                 int insertAt = -1;
                 switch (getLocation()) {
@@ -61,7 +105,8 @@ public class SplitPackagesByHost extends CustomizableTableContextAppAction<Crawl
                 for (AbstractNode child : getSelection().getChildren()) {
                     if (child instanceof CrawledLink) {
                         final CrawledLink cL = (CrawledLink) child;
-                        final CrawledPackage parent = cL.getParentNode();
+                        final CrawledPackage parent = isMergePackages() ? null : cL.getParentNode();
+
                         HashMap<String, ArrayList<CrawledLink>> parentMap = splitMap.get(parent);
                         if (parentMap == null) {
                             parentMap = new HashMap<String, ArrayList<CrawledLink>>();
@@ -99,20 +144,25 @@ public class SplitPackagesByHost extends CustomizableTableContextAppAction<Crawl
                 final Iterator<Entry<CrawledPackage, HashMap<String, ArrayList<CrawledLink>>>> it = splitMap.entrySet().iterator();
                 while (it.hasNext()) {
                     final Entry<CrawledPackage, HashMap<String, ArrayList<CrawledLink>>> next = it.next();
+                    // sourcePackage may be null
                     final CrawledPackage sourcePackage = next.getKey();
                     final HashMap<String, ArrayList<CrawledLink>> items = next.getValue();
                     final Iterator<Entry<String, ArrayList<CrawledLink>>> it2 = items.entrySet().iterator();
                     while (it2.hasNext()) {
                         final Entry<String, ArrayList<CrawledLink>> next2 = it2.next();
                         final String host = next2.getKey();
-                        final String newPackageName = getNewPackageName(nameFactory, sourcePackage.getName(), host);
+                        final String newPackageName = getNewPackageName(nameFactory, sourcePackage == null ? newName : sourcePackage.getName(), host);
                         final CrawledPackage newPkg;
                         if (merge) {
                             CrawledPackage destPackage = mergedPackages.get(newPackageName);
                             if (destPackage == null) {
                                 destPackage = new CrawledPackage();
                                 destPackage.setExpanded(CFG_LINKCOLLECTOR.CFG.isPackageAutoExpanded());
-                                sourcePackage.copyPropertiesTo(destPackage);
+                                if (sourcePackage != null) {
+                                    sourcePackage.copyPropertiesTo(destPackage);
+                                } else {
+                                    destPackage.setDownloadFolder(newDownloadFolder);
+                                }
                                 destPackage.setName(newPackageName);
                                 mergedPackages.put(newPackageName, destPackage);
                             }
@@ -120,7 +170,11 @@ public class SplitPackagesByHost extends CustomizableTableContextAppAction<Crawl
                         } else {
                             newPkg = new CrawledPackage();
                             newPkg.setExpanded(CFG_LINKCOLLECTOR.CFG.isPackageAutoExpanded());
-                            sourcePackage.copyPropertiesTo(newPkg);
+                            if (sourcePackage != null) {
+                                sourcePackage.copyPropertiesTo(newPkg);
+                            } else {
+                                newPkg.setDownloadFolder(newDownloadFolder);
+                            }
                             newPkg.setName(newPackageName);
                         }
                         LinkCollector.getInstance().moveOrAddAt(newPkg, next2.getValue(), 0, insertAt);
