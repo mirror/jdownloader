@@ -55,13 +55,13 @@ import jd.utils.locale.JDL;
 import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.formatter.TimeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "uptobox.com" }, urls = { "https?://(www\\.)?uptobox\\.com/[a-z0-9]{12}" }, flags = { 2 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "uptobox.com" }, urls = { "https?://(www\\.)?(uptobox|uptostream)\\.com/[a-z0-9]{12}" }, flags = { 2 })
 public class UpToBoxCom extends PluginForHost {
 
     private String               correctedBR                  = "";
     private static final String  PASSWORDTEXT                 = "<br><b>Passwor(d|t):</b> <input";
     private final String         COOKIE_HOST                  = "http://uptobox.com";
-    private static final String  DOMAINS                      = "(uptobox\\.com)";
+    private static final String  DOMAINS                      = "(uptobox\\.com|uptostream\\.com)";
     private static final String  MAINTENANCE                  = ">This server is in maintenance mode";
     private static final String  MAINTENANCEUSERTEXT          = JDL.L("hoster.xfilesharingprobasic.errors.undermaintenance", "This server is under Maintenance");
     private static final String  ALLWAIT_SHORT                = JDL.L("hoster.xfilesharingprobasic.errors.waitingfordownloads", "Waiting till new downloads can be started");
@@ -86,7 +86,7 @@ public class UpToBoxCom extends PluginForHost {
 
     @Override
     public void correctDownloadLink(DownloadLink link) {
-        link.setUrlDownload(link.getDownloadURL().replace("http://www.", "http://"));
+        link.setUrlDownload(COOKIE_HOST + "/" + new Regex(link.getDownloadURL(), "([a-z0-9]{12})$").getMatch(0));
     }
 
     @Override

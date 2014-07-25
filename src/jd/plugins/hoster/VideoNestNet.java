@@ -89,6 +89,8 @@ public class VideoNestNet extends PluginForHost {
     private final boolean              useRUA                       = false;
     private final boolean              useAltLinkCheck              = false;
     private final boolean              useVidEmbed                  = false;
+    /* NEEDED for this plugin */
+    private static final boolean       VIDEOHOSTER_2                = true;
     private final boolean              useAltEmbed                  = true;
     private final boolean              useAltExpire                 = true;
     private final long                 useLoginIndividual           = 6 * 3480000;
@@ -106,8 +108,8 @@ public class VideoNestNet extends PluginForHost {
     // last XfileSharingProBasic compare :: 2.6.2.1
     // protocol: no https
     // captchatype: null
-    // other: no redirects
-    // mods:
+    // other: no redirects, final links are very easy to build, but we still regex it at the moment
+    // mods: implemented VIDEOHOSTER_2, also it is NEEDED to get the final links
 
     private void setConstants(final Account account) {
         if (account != null && account.getBooleanProperty("free")) {
@@ -392,6 +394,13 @@ public class VideoNestNet extends PluginForHost {
                 logger.warning("Failed to find 'embed dllink', trying normal download method.");
                 br = obr;
                 cbr = obrc;
+            }
+        }
+        if (inValidate(dllink) && (useVidEmbed || (VIDEOHOSTER_2 && downloadLink.getName().matches(".+\\.(asf|avi|flv|m4u|m4v|mov|mkv|mp4|mpeg4?|mpg|ogm|vob|wmv|webm)$")))) {
+            getPage("/embed-" + fuid + ".html");
+            dllink = cbr.getRegex("\\'file\\': \\'(http://[^<>\"]*?)\\',").getMatch(0);
+            if (dllink == null) {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
         }
         // Fourth, continue like normal.

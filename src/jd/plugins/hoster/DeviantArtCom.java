@@ -44,7 +44,7 @@ import jd.utils.locale.JDL;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "deviantart.com" }, urls = { "https?://[\\w\\.\\-]*?deviantart\\.com/art/[\\w\\-]+" }, flags = { 2 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "deviantart.com" }, urls = { "https?://[\\w\\.\\-]*?deviantart\\.com/art/[\\w\\-]+|https?://[\\w\\.\\-]*?deviantartdecrypted\\.com/journal/[\\w\\-]+" }, flags = { 2 })
 public class DeviantArtCom extends PluginForHost {
 
     private String              DLLINK                       = null;
@@ -68,6 +68,9 @@ public class DeviantArtCom extends PluginForHost {
     private static final String TYPE_DOWNLOADFORBIDDEN_SWF   = "class=\"flashtime\"";
     private boolean             HTMLALLOWED                  = false;
 
+    private static final String LINKTYPE_ART                 = "https?://[\\w\\.\\-]*?deviantart\\.com/art/[^<>\"/]+";
+    private static final String LINKTYPE_JOURNAL             = "https?://[\\w\\.\\-]*?deviantart\\.com/journal/[\\w\\-]+";
+
     /**
      * @author raztoki
      */
@@ -84,7 +87,7 @@ public class DeviantArtCom extends PluginForHost {
 
     @Override
     public void correctDownloadLink(final DownloadLink link) throws Exception {
-        link.setUrlDownload(link.getDownloadURL().replace("DEVART://", ""));
+        link.setUrlDownload(link.getDownloadURL().replace("deviantartdecrypted.com/", "deviantart.com/"));
     }
 
     /**
@@ -511,7 +514,7 @@ public class DeviantArtCom extends PluginForHost {
             fastlinkchecktext = "Schnelle Linküberprüfung aktivieren? (Dateiname und -größe werden nicht korrekt angezeigt)";
             forcehtmldownloadtext = "HTML Code statt eigentlichen Inhalt (Dateien/Bilder) laden?";
             sbinfo.append("Bitte beachten: solltest Du nur Seite 1 einer Gallerie sammeln wollen, so stelle sicher, dass \"?offset=0\" am Ende der URL steht.\r\n");
-            sbinfo.append("Du kannst auch zu einer anderen Seite wechseln, auf Seite 1 klicken und dessen URL sammeln.");
+            sbinfo.append("Du kannst auch zu einer anderen Seite wechseln, auf Seite 1 klicken und deren URL einfügen.");
         } else {
             fastlinkchecktext = "Enable fast link check? (file name and size won't be shown correctly)";
             forcehtmldownloadtext = "Download html code instead of the media (files/pictures)?";
