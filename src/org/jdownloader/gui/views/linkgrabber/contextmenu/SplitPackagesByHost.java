@@ -19,6 +19,7 @@ import org.jdownloader.controlling.contextmenu.ActionContext;
 import org.jdownloader.controlling.contextmenu.CustomizableTableContextAppAction;
 import org.jdownloader.controlling.contextmenu.Customizer;
 import org.jdownloader.gui.translate._GUI;
+import org.jdownloader.gui.views.SelectionInfo;
 import org.jdownloader.gui.views.components.LocationInList;
 import org.jdownloader.gui.views.linkgrabber.addlinksdialog.LinkgrabberSettings;
 import org.jdownloader.settings.staticreferences.CFG_LINKCOLLECTOR;
@@ -70,16 +71,17 @@ public class SplitPackagesByHost extends CustomizableTableContextAppAction<Crawl
     }
 
     public void actionPerformed(ActionEvent e) {
+        final SelectionInfo<CrawledPackage, CrawledLink> finalSelecction = getSelection();
         LinkCollector.getInstance().getQueue().add(new QueueAction<Void, RuntimeException>() {
 
             @Override
             protected Void run() throws RuntimeException {
                 String newName = null;
                 String newDownloadFolder = null;
-                if (isMergePackages() && getSelection().getPackageViews().size() > 1) {
+                if (isMergePackages() && finalSelecction.getPackageViews().size() > 1) {
                     if (isAskForNewDownloadFolderAndPackageName()) {
                         try {
-                            final NewPackageDialog d = new NewPackageDialog(getSelection());
+                            final NewPackageDialog d = new NewPackageDialog(finalSelecction);
 
                             Dialog.getInstance().showDialog(d);
 
@@ -93,7 +95,7 @@ public class SplitPackagesByHost extends CustomizableTableContextAppAction<Crawl
                         }
                     } else {
                         newName = "";
-                        newDownloadFolder = getSelection().getFirstPackage().getRawDownloadFolder();
+                        newDownloadFolder = finalSelecction.getFirstPackage().getRawDownloadFolder();
                     }
                 }
                 final HashMap<CrawledPackage, HashMap<String, ArrayList<CrawledLink>>> splitMap = new HashMap<CrawledPackage, HashMap<String, ArrayList<CrawledLink>>>();
@@ -102,7 +104,7 @@ public class SplitPackagesByHost extends CustomizableTableContextAppAction<Crawl
                 case BEFORE_SELECTION:
                     insertAt = Integer.MAX_VALUE;
                 }
-                for (AbstractNode child : getSelection().getChildren()) {
+                for (AbstractNode child : finalSelecction.getChildren()) {
                     if (child instanceof CrawledLink) {
                         final CrawledLink cL = (CrawledLink) child;
                         final CrawledPackage parent = isMergePackages() ? null : cL.getParentNode();

@@ -19,6 +19,7 @@ import org.jdownloader.controlling.contextmenu.ActionContext;
 import org.jdownloader.controlling.contextmenu.CustomizableTableContextAppAction;
 import org.jdownloader.controlling.contextmenu.Customizer;
 import org.jdownloader.gui.translate._GUI;
+import org.jdownloader.gui.views.SelectionInfo;
 import org.jdownloader.gui.views.components.LocationInList;
 import org.jdownloader.gui.views.linkgrabber.addlinksdialog.LinkgrabberSettings;
 import org.jdownloader.gui.views.linkgrabber.contextmenu.NewPackageDialog;
@@ -71,17 +72,18 @@ public class SplitPackagesByHost extends CustomizableTableContextAppAction<FileP
     }
 
     public void actionPerformed(ActionEvent e) {
+        final SelectionInfo<FilePackage, DownloadLink> finalSelection = getSelection();
         DownloadController.getInstance().getQueue().add(new QueueAction<Void, RuntimeException>() {
 
             @Override
             protected Void run() throws RuntimeException {
                 String newName = null;
                 String newDownloadFolder = null;
-                if (isMergePackages() && getSelection().getPackageViews().size() > 1) {
+                if (isMergePackages() && finalSelection.getPackageViews().size() > 1) {
                     if (isAskForNewDownloadFolderAndPackageName()) {
 
                         try {
-                            final NewPackageDialog d = new NewPackageDialog(getSelection());
+                            final NewPackageDialog d = new NewPackageDialog(finalSelection);
 
                             Dialog.getInstance().showDialog(d);
 
@@ -95,7 +97,7 @@ public class SplitPackagesByHost extends CustomizableTableContextAppAction<FileP
                         }
                     } else {
                         newName = "";
-                        newDownloadFolder = getSelection().getFirstPackage().getDownloadDirectory();
+                        newDownloadFolder = finalSelection.getFirstPackage().getDownloadDirectory();
                     }
                 }
                 final HashMap<FilePackage, HashMap<String, ArrayList<DownloadLink>>> splitMap = new HashMap<FilePackage, HashMap<String, ArrayList<DownloadLink>>>();
@@ -104,7 +106,7 @@ public class SplitPackagesByHost extends CustomizableTableContextAppAction<FileP
                 case BEFORE_SELECTION:
                     insertAt = Integer.MAX_VALUE;
                 }
-                for (AbstractNode child : getSelection().getChildren()) {
+                for (AbstractNode child : finalSelection.getChildren()) {
                     if (child instanceof DownloadLink) {
                         final DownloadLink cL = (DownloadLink) child;
                         final FilePackage parent = isMergePackages() ? null : cL.getParentNode();

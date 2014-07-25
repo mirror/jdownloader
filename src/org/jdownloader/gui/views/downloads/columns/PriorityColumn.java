@@ -217,7 +217,10 @@ public class PriorityColumn extends ExtComboColumn<AbstractNode, Priority> {
             final DownloadLink link = ((DownloadLink) value);
             final Priority ret = link.getPriorityEnum();
             if (Priority.DEFAULT.equals(ret)) {
-                return link.getFilePackage().getPriorityEnum();
+                FilePackage parent = link.getFilePackage();
+                if (parent != null) {
+                    return parent.getPriorityEnum();
+                }
             }
             return ret;
         } else if (value instanceof CrawledLink) {
