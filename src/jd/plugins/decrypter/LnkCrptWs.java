@@ -1965,17 +1965,19 @@ public class LnkCrptWs extends PluginForDecrypt {
 
         // Container
         for (Entry<String, String> next : map.entrySet()) {
-            File container = JDUtilities.getResourceFile("container/" + System.currentTimeMillis() + "." + next.getKey(), true);
-            if (!container.exists()) {
-                container.createNewFile();
-            }
-            br.cloneBrowser().getDownload(container, next.getValue());
-            if (container != null) {
-                logger.info("Container found: " + container);
-                decryptedLinks.addAll(JDUtilities.getController().getContainerLinks(container));
-                container.delete();
-                if (decryptedLinks.size() == 0) {
-                    continue;
+            if (!next.getKey().equalsIgnoreCase("cnl")) {
+                File container = JDUtilities.getResourceFile("container/" + System.currentTimeMillis() + "." + next.getKey(), true);
+                if (!container.exists()) {
+                    container.createNewFile();
+                }
+                br.cloneBrowser().getDownload(container, next.getValue());
+                if (container != null) {
+                    logger.info("Container found: " + container);
+                    decryptedLinks.addAll(JDUtilities.getController().getContainerLinks(container));
+                    container.delete();
+                    if (decryptedLinks.size() == 0) {
+                        continue;
+                    }
                 }
             }
         }
@@ -2030,19 +2032,32 @@ public class LnkCrptWs extends PluginForDecrypt {
                                                 /* does not exist in 09581 */
                                             }
                                             decryptedLinks.add(dl);
-                                            try {
-                                                if (this.isAbort()) {
-                                                    return decryptedLinks;
-                                                }
-                                            } catch (Throwable e) {
-                                                /* does not exist in 09581 */
-                                            }
+
                                         }
                                     }
                                 }
                             }
                         }
                     }
+                    // 23.7.14
+                    String link = clone.getRegex("'window.location = \"([^\"]+)").getMatch(0);
+                    if (link != null) {
+                        final DownloadLink dl = createDownloadlink(link);
+                        try {
+                            distribute(dl);
+                        } catch (final Throwable e) {
+                            /* does not exist in 09581 */
+                        }
+                        decryptedLinks.add(dl);
+                    }
+                    try {
+                        if (this.isAbort()) {
+                            return decryptedLinks;
+                        }
+                    } catch (Throwable e) {
+                        /* does not exist in 09581 */
+                    }
+
                 }
             }
         }
