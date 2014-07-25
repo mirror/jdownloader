@@ -79,32 +79,47 @@ public class AllDebridCom extends PluginForHost {
             /* only platinium and premium support */
 
             if (hosts != null) {
-                String hoster[] = new Regex(hosts, "\"(.*?)\"").getColumn(0);
+
+                String hoster[] = hosts.split(",\\s*[\r\n]{1,2}\\s*");
                 if (hosts != null) {
                     /* workaround for buggy getHost call */
                     supportedHosts.add("tusfiles.net");
                     for (String host : hoster) {
-                        if (hosts == null || host.length() == 0) continue;
+
+                        if (hosts == null || host.length() == 0) {
+                            continue;
+                        }
                         host = host.trim();
+                        host = host.substring(1, host.length() - 1);
                         // hosts that returned decrypted finallinks bound to users ip session. Can not use multihosters..
-                        if (host.matches("youtube\\.com")) continue;
+                        if (host.matches("youtube\\.com")) {
+                            continue;
+                        }
                         try {
-                            if (host.equals("rapidshare.com") && accDetails.get("limite_rs") != null && Integer.parseInt(accDetails.get("limite_rs")) == 0) continue;
+                            if (host.equals("rapidshare.com") && accDetails.get("limite_rs") != null && Integer.parseInt(accDetails.get("limite_rs")) == 0) {
+                                continue;
+                            }
                         } catch (final Throwable e) {
                             logger.severe(e.toString());
                         }
                         try {
-                            if (host.equals("depositfiles.com") && accDetails.get("limite_dp") != null && Integer.parseInt(accDetails.get("limite_dp")) == 0) continue;
+                            if (host.equals("depositfiles.com") && accDetails.get("limite_dp") != null && Integer.parseInt(accDetails.get("limite_dp")) == 0) {
+                                continue;
+                            }
                         } catch (final Throwable e) {
                             logger.severe(e.toString());
                         }
                         try {
-                            if (host.equals("filefactory.com") && accDetails.get("limite_ff") != null && Integer.parseInt(accDetails.get("limite_ff")) == 0) continue;
+                            if (host.equals("filefactory.com") && accDetails.get("limite_ff") != null && Integer.parseInt(accDetails.get("limite_ff")) == 0) {
+                                continue;
+                            }
                         } catch (final Throwable e) {
                             logger.severe(e.toString());
                         }
                         try {
-                            if (host.equals("filesmonster.com") && accDetails.get("limite_fm") != null && Integer.parseInt(accDetails.get("limite_fm")) == 0) continue;
+                            if (host.equals("filesmonster.com") && accDetails.get("limite_fm") != null && Integer.parseInt(accDetails.get("limite_fm")) == 0) {
+                                continue;
+                            }
                         } catch (final Throwable e) {
                             logger.severe(e.toString());
                         }
@@ -219,7 +234,9 @@ public class AllDebridCom extends PluginForHost {
         showMessage(link, "Phase 2/2: Download begins!");
         if (!this.dl.startDownload()) {
             try {
-                if (dl.externalDownloadStop()) return;
+                if (dl.externalDownloadStop()) {
+                    return;
+                }
             } catch (final Throwable e) {
             }
             final String errormessage = link.getLinkStatus().getErrorMessage();
@@ -241,7 +258,9 @@ public class AllDebridCom extends PluginForHost {
     }
 
     private void tempUnavailableHoster(Account account, DownloadLink downloadLink, long timeout) throws PluginException {
-        if (downloadLink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, "Unable to handle this errorcode!");
+        if (downloadLink == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, "Unable to handle this errorcode!");
+        }
         synchronized (hostUnavailableMap) {
             HashMap<String, Long> unavailableMap = hostUnavailableMap.get(account);
             if (unavailableMap == null) {
@@ -264,7 +283,9 @@ public class AllDebridCom extends PluginForHost {
                     return false;
                 } else if (lastUnavailable != null) {
                     unavailableMap.remove(downloadLink.getHost());
-                    if (unavailableMap.size() == 0) hostUnavailableMap.remove(account);
+                    if (unavailableMap.size() == 0) {
+                        hostUnavailableMap.remove(account);
+                    }
                 }
             }
         }
