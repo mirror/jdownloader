@@ -18,9 +18,12 @@ package jd.plugins.decrypter;
 
 import java.io.IOException;
 import java.math.BigDecimal;
+import java.text.ParseException;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
+import java.util.Locale;
 import java.util.Random;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.regex.Pattern;
 
 import jd.PluginWrapper;
@@ -39,6 +42,8 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
 import jd.utils.JDUtilities;
+
+import org.appwork.utils.formatter.TimeFormatter;
 
 //Decrypts embedded videos from dailymotion
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "dailymotion.com" }, urls = { "https?://(www\\.)?dailymotion\\.com/((embed/)?video/[a-z0-9\\-_]+|swf(/video)?/[a-zA-Z0-9]+|user/[A-Za-z0-9]+/\\d+|playlist/[A-Za-z0-9]+_[A-Za-z0-9\\-_]+/(\\d+)?|[A-Za-z0-9]+)" }, flags = { 0 })
@@ -87,6 +92,9 @@ public class DailyMotionComDecrypter extends PluginForDecrypt {
 
     private boolean                         acc_in_use     = false;
 
+    private static AtomicBoolean            pluginLoaded   = new AtomicBoolean(false);
+    private static Object                   ctrlLock       = new Object();
+
     /**
      * JD2 CODE: DO NOIT USE OVERRIDE FÒR COMPATIBILITY REASONS!!!!!
      */
@@ -102,51 +110,53 @@ public class DailyMotionComDecrypter extends PluginForDecrypt {
             logger.info("Invalid link: " + PARAMETER);
             return decryptedLinks;
         }
-
-        /* Login if account available */
-        final PluginForHost dailymotionHosterplugin = JDUtilities.getPluginForHost("dailymotion.com");
-        Account aa = AccountController.getInstance().getValidAccount(dailymotionHosterplugin);
-        if (aa != null) {
-            try {
-                ((jd.plugins.hoster.DailyMotionCom) dailymotionHosterplugin).login(aa, this.br);
-                acc_in_use = true;
-            } catch (final PluginException e) {
-                logger.info("Account seems to be invalid -> Continuing without account!");
+        synchronized (ctrlLock) {
+            /* Login if account available */
+            final PluginForHost dailymotionHosterplugin = JDUtilities.getPluginForHost("dailymotion.com");
+            pluginLoaded.set(true);
+            Account aa = AccountController.getInstance().getValidAccount(dailymotionHosterplugin);
+            if (aa != null) {
+                try {
+                    ((jd.plugins.hoster.DailyMotionCom) dailymotionHosterplugin).login(aa, this.br);
+                    acc_in_use = true;
+                } catch (final PluginException e) {
+                    logger.info("Account seems to be invalid -> Continuing without account!");
+                }
             }
-        }
-        /* Login end... */
+            /* Login end... */
 
-        br.setCookie("http://www.dailymotion.com", "family_filter", "off");
-        br.setCookie("http://www.dailymotion.com", "ff", "off");
-        br.setCookie("http://www.dailymotion.com", "lang", "en_US");
-        try {
-            br.getPage(PARAMETER);
-        } catch (final Exception e) {
-            final DownloadLink dl = createDownloadlink(PARAMETER.replace("dailymotion.com/", "dailymotiondecrypted.com/"));
-            dl.setProperty("offline", true);
-            decryptedLinks.add(dl);
-            return decryptedLinks;
-        }
-        // 404
-        if (br.containsHTML("(<title>Dailymotion \\– 404 Not Found</title>|url\\(/images/404_background\\.jpg)")) {
-            final DownloadLink dl = createDownloadlink(PARAMETER.replace("dailymotion.com/", "dailymotiondecrypted.com/"));
-            dl.setProperty("offline", true);
-            decryptedLinks.add(dl);
-            return decryptedLinks;
-        }
-        // 403
-        if (br.containsHTML("class=\"forbidden\">Access forbidden</h3>|>You don\\'t have permission to access the requested URL")) {
-            final DownloadLink dl = createDownloadlink(PARAMETER.replace("dailymotion.com/", "dailymotiondecrypted.com/"));
-            dl.setProperty("offline", true);
-            decryptedLinks.add(dl);
-            return decryptedLinks;
-        }
-        if (PARAMETER.matches(TYPE_USER) || br.containsHTML("class=\"mrg-end-sm user-screenname-inner\"")) {
-            decryptUser();
-        } else if (PARAMETER.matches(TYPE_PLAYLIST)) {
-            decryptPlaylist();
-        } else {
-            decryptSingleVideo();
+            br.setCookie("http://www.dailymotion.com", "family_filter", "off");
+            br.setCookie("http://www.dailymotion.com", "ff", "off");
+            br.setCookie("http://www.dailymotion.com", "lang", "en_US");
+            try {
+                br.getPage(PARAMETER);
+            } catch (final Exception e) {
+                final DownloadLink dl = createDownloadlink(PARAMETER.replace("dailymotion.com/", "dailymotiondecrypted.com/"));
+                dl.setProperty("offline", true);
+                decryptedLinks.add(dl);
+                return decryptedLinks;
+            }
+            // 404
+            if (br.containsHTML("(<title>Dailymotion \\– 404 Not Found</title>|url\\(/images/404_background\\.jpg)")) {
+                final DownloadLink dl = createDownloadlink(PARAMETER.replace("dailymotion.com/", "dailymotiondecrypted.com/"));
+                dl.setProperty("offline", true);
+                decryptedLinks.add(dl);
+                return decryptedLinks;
+            }
+            // 403
+            if (br.containsHTML("class=\"forbidden\">Access forbidden</h3>|>You don\\'t have permission to access the requested URL")) {
+                final DownloadLink dl = createDownloadlink(PARAMETER.replace("dailymotion.com/", "dailymotiondecrypted.com/"));
+                dl.setProperty("offline", true);
+                decryptedLinks.add(dl);
+                return decryptedLinks;
+            }
+            if (PARAMETER.matches(TYPE_USER) || br.containsHTML("class=\"mrg-end-sm user-screenname-inner\"")) {
+                decryptUser();
+            } else if (PARAMETER.matches(TYPE_PLAYLIST)) {
+                decryptPlaylist();
+            } else {
+                decryptSingleVideo();
+            }
         }
         if (decryptedLinks == null) {
             logger.warning("Decrypter broken for link: " + PARAMETER);
@@ -341,7 +351,11 @@ public class DailyMotionComDecrypter extends PluginForDecrypt {
         fp.addLinks(decryptedLinks);
     }
 
-    private void decryptSingleVideo() throws IOException {
+    private String VIDEOID     = null;
+    private String CHANNELNAME = null;
+    private long   DATE        = 0;
+
+    private void decryptSingleVideo() throws IOException, ParseException {
         logger.info("Decrypting single video: " + PARAMETER);
         // We can't download livestreams
         if (br.containsHTML("DMSTREAMMODE=live")) {
@@ -369,12 +383,15 @@ public class DailyMotionComDecrypter extends PluginForDecrypt {
         }
         /** Decrypt external links END */
         /** Find videolinks START */
+        VIDEOID = new Regex(PARAMETER, "dailymotion\\.com/video/([a-z0-9]+)_").getMatch(0);
+        CHANNELNAME = br.getRegex("\"owner\":\"([^<>\"]*?)\"").getMatch(0);
+        String strdate = br.getRegex("property=\"video:release_date\" content=\"([^<>\"]*?)\"").getMatch(0);
         VIDEOSOURCE = getVideosource(this.br);
         FILENAME = br.getRegex("<meta itemprop=\"name\" content=\"([^<>\"]*?)\"").getMatch(0);
         if (FILENAME == null) {
             FILENAME = br.getRegex("<meta property=\"og:title\" content=\"([^<>\"]*?)\"").getMatch(0);
         }
-        if (VIDEOSOURCE == null || FILENAME == null) {
+        if (VIDEOSOURCE == null || FILENAME == null || VIDEOID == null || CHANNELNAME == null || strdate == null) {
             logger.warning("Dailymotion.com decrypter failed: " + PARAMETER);
             final DownloadLink dl = createDownloadlink("http://dailymotiondecrypted.com/video/" + System.currentTimeMillis());
             dl.setFinalFileName(new Regex(PARAMETER, "dailymotion\\.com/(.+)").getMatch(0));
@@ -383,6 +400,11 @@ public class DailyMotionComDecrypter extends PluginForDecrypt {
             decryptedLinks.add(dl);
             return;
         }
+
+        /* Fix date */
+        strdate = strdate.replace("T", "").replace("+", "GMT");
+        DATE = TimeFormatter.getMilliSeconds(strdate, "yyyy-MM-ddHH:mm:ssz", Locale.ENGLISH);
+
         FILENAME = Encoding.htmlDecode(FILENAME.trim()).replace(":", " - ").replaceAll("/|<|>", "");
         if (new Regex(VIDEOSOURCE, "(Dein Land nicht abrufbar|this content is not available for your country|This video has not been made available in your country by the owner|\"Video not available due to geo\\-restriction)").matches()) {
             final DownloadLink dl = createDownloadlink(PARAMETER.replace("dailymotion.com/", "dailymotiondecrypted.com/"));
@@ -434,13 +456,24 @@ public class DailyMotionComDecrypter extends PluginForDecrypt {
             final FilePackage fpSub = FilePackage.getInstance();
             fpSub.setName(FILENAME + "_Subtitles");
             for (final String subtitle : subtitles) {
-                final DownloadLink dl = createDownloadlink("directhttp://" + subtitle);
+                final DownloadLink dl = createDownloadlink("http://dailymotiondecrypted.com/video/" + System.currentTimeMillis() + new Random().nextInt(10000));
                 final String language = new Regex(subtitle, ".*?\\d+:subtitle_(.{1,4}).srt.*?").getMatch(0);
+                String qualityname = "subtitle";
                 if (language != null) {
-                    dl.setFinalFileName(correctFilename(FILENAME + "_subtitle_" + language + ".srt"));
-                } else {
-                    dl.setFinalFileName(correctFilename(FILENAME + "_subtitle_" + Integer.toString(new Random().nextInt(1000)) + ".srt"));
+                    qualityname += "_" + language;
                 }
+                dl.setProperty("directlink", subtitle);
+                dl.setProperty("type_subtitle", true);
+                dl.setProperty("qualityname", qualityname);
+                dl.setProperty("mainlink", PARAMETER);
+                dl.setProperty("plain_videoname", FILENAME);
+                dl.setProperty("plain_ext", ".srt");
+                dl.setProperty("plain_videoid", VIDEOID);
+                dl.setProperty("plain_channel", CHANNELNAME);
+                dl.setProperty("plain_date", Long.toString(DATE));
+                dl.setProperty("LINKDUPEID", "dailymotioncom" + VIDEOID + "_" + qualityname);
+                final String formattedFilename = jd.plugins.hoster.DailyMotionCom.getFormattedFilename(dl);
+                dl.setName(formattedFilename);
                 fpSub.add(dl);
                 decryptedLinks.add(dl);
             }
@@ -582,17 +615,6 @@ public class DailyMotionComDecrypter extends PluginForDecrypt {
         return QUALITIES;
     }
 
-    private String correctFilename(String filename) {
-        // Cut filenames if they're too long
-        if (filename.length() > 240) {
-            final String ext = filename.substring(filename.lastIndexOf("."));
-            int extLength = ext.length();
-            filename = filename.substring(0, 240 - extLength);
-            filename += ext;
-        }
-        return filename;
-    }
-
     /* Sync the following functions in hoster- and decrypterplugin */
     public static String getVideosource(final Browser br) {
         String videosource = br.getRegex("\"sequence\":\"([^<>\"]*?)\"").getMatch(0);
@@ -608,7 +630,7 @@ public class DailyMotionComDecrypter extends PluginForDecrypt {
         return videosource;
     }
 
-    private DownloadLink getVideoDownloadlink(final Browser br, final LinkedHashMap<String, String[]> foundqualities, final String qualityValue) {
+    private DownloadLink getVideoDownloadlink(final Browser br, final LinkedHashMap<String, String[]> foundqualities, final String qualityValue) throws ParseException {
         String directlinkinfo[] = foundqualities.get(qualityValue);
         if (directlinkinfo != null) {
             final String directlink = Encoding.htmlDecode(directlinkinfo[0]);
@@ -625,7 +647,14 @@ public class DailyMotionComDecrypter extends PluginForDecrypt {
             dl.setProperty("originalqualityname", originalQualityName);
             dl.setProperty("qualitynumber", qualityNumber);
             dl.setProperty("mainlink", PARAMETER);
-            dl.setFinalFileName(correctFilename(FILENAME + "_" + qualityName + ".mp4"));
+            dl.setProperty("plain_videoname", FILENAME);
+            dl.setProperty("plain_ext", ".mp4");
+            dl.setProperty("plain_videoid", VIDEOID);
+            dl.setProperty("plain_channel", CHANNELNAME);
+            dl.setProperty("plain_date", Long.toString(DATE));
+            dl.setProperty("LINKDUPEID", "dailymotioncom" + VIDEOID + "_" + qualityName);
+            final String formattedFilename = jd.plugins.hoster.DailyMotionCom.getFormattedFilename(dl);
+            dl.setName(formattedFilename);
             return dl;
         } else {
             return null;

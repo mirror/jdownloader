@@ -1306,7 +1306,7 @@ public class SaveTv extends PluginForHost {
         final long date = getLongProperty(downloadLink, "originaldate", 0l);
         String formattedDate = null;
         final String userDefinedDateFormat = cfg.getStringProperty(CUSTOM_DATE, "dd.MM.yyyy");
-        SimpleDateFormat formatter = new SimpleDateFormat("dd.MM.yyyy");
+        SimpleDateFormat formatter = null;
         Date theDate = new Date(date);
         if (userDefinedDateFormat != null) {
             try {
@@ -1314,7 +1314,7 @@ public class SaveTv extends PluginForHost {
                 formattedDate = formatter.format(theDate);
             } catch (Exception e) {
                 /* prevent user error killing plugin */
-                formattedDate = "";
+                formattedDate = defaultCustomStringForEmptyTags;
             }
         }
 

@@ -17,11 +17,15 @@
 package jd.plugins.hoster;
 
 import java.io.IOException;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
+import java.util.Date;
 import java.util.LinkedHashMap;
 
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
+import jd.config.SubConfiguration;
 import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
@@ -42,6 +46,9 @@ public class DailyMotionCom extends PluginForHost {
     private static String getQuality(final String quality, final String videosource) {
         return new Regex(videosource, "\"" + quality + "\":\"(http[^<>\"\\']+)\"").getMatch(0);
     }
+
+    private static String CUSTOM_DATE     = "CUSTOM_DATE";
+    private static String CUSTOM_FILENAME = "CUSTOM_FILENAME";
 
     /* Sync the following functions in hoster- and decrypterplugin */
     public static String getVideosource(final Browser br) {
@@ -151,7 +158,7 @@ public class DailyMotionCom extends PluginForHost {
     }
 
     @Override
-    public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws IOException, PluginException {
+    public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws IOException, PluginException, ParseException {
         br.setFollowRedirects(true);
         br.setCookie("http://www.dailymotion.com", "family_filter", "off");
         br.setCookie("http://www.dailymotion.com", "ff", "off");
@@ -168,10 +175,15 @@ public class DailyMotionCom extends PluginForHost {
         }
         if (isHDS(downloadLink)) {
             downloadLink.getLinkStatus().setStatusText("HDS stream download is not supported (yet)!");
-            downloadLink.setFinalFileName(downloadLink.getStringProperty("directname", null));
+            downloadLink.setFinalFileName(getFormattedFilename(downloadLink));
             return AvailableStatus.TRUE;
         } else if (downloadLink.getBooleanProperty("isrtmp", false)) {
             getRTMPlink();
+        } else if (isSubtitle(downloadLink)) {
+            dllink = downloadLink.getStringProperty("directlink", null);
+            if (!checkDirectLink(downloadLink) || dllink == null) {
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            }
         } else {
             dllink = downloadLink.getStringProperty("directlink", null);
             if (!checkDirectLink(downloadLink) || dllink == null) {
@@ -185,6 +197,7 @@ public class DailyMotionCom extends PluginForHost {
                 }
             }
         }
+        downloadLink.setFinalFileName(getFormattedFilename(downloadLink));
         return AvailableStatus.TRUE;
     }
 
@@ -192,16 +205,19 @@ public class DailyMotionCom extends PluginForHost {
         if (isHDS(downloadLink)) {
             throw new PluginException(LinkStatus.ERROR_FATAL, "HDS stream download is not supported (yet)!");
         } else if (dllink.startsWith("rtmp")) {
+            downloadLink.setFinalFileName(getFormattedFilename(downloadLink));
             String[] stream = dllink.split("@");
             dl = new RTMPDownload(this, downloadLink, stream[0]);
             setupRTMPConnection(stream, dl);
             ((RTMPDownload) dl).startDownload();
         } else {
-            // They do allow resume and unlimited chunks but resuming or using
-            // more
-            // than 1 chunk causes problems, the file will then b corrupted!
+            downloadLink.setFinalFileName(getFormattedFilename(downloadLink));
+            /*
+             * They do allow resume and unlimited chunks but resuming or using more than 1 chunk causes problems, the file will then be
+             * corrupted!
+             */
             dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, false, 1);
-            // Their servers usually return a valid size - if not, it's probably a server error
+            /* Their servers usually return a valid size - if not, it's probably a server error */
             final long contentlength = dl.getConnection().getLongContentLength();
             if (contentlength == -1) {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error", 30 * 60 * 1000l);
@@ -331,6 +347,10 @@ public class DailyMotionCom extends PluginForHost {
         }
     }
 
+    private boolean isSubtitle(final DownloadLink dl) {
+        return dl.getBooleanProperty("type_subtitle", false);
+    }
+
     private void getRTMPlink() throws IOException, PluginException {
         final String[] values = br.getRegex("new SWFObject\\(\"(http://player\\.grabnetworks\\.com/swf/GrabOSMFPlayer\\.swf)\\?id=\\d+\\&content=v([0-9a-f]+)\"").getRow(0);
         if (values == null || values.length != 2) {
@@ -371,7 +391,58 @@ public class DailyMotionCom extends PluginForHost {
 
     @Override
     public String getDescription() {
-        return "JDownloader's DailyMotion Plugin helps downloading Videoclips from dailymotion.com. DailyMotion provides different video formats and qualities.";
+        return "JDownloader's DailyMotion plugin helps downloading Videoclips from dailymotion.com. DailyMotion provides different video formats and qualities.";
+    }
+
+    final static String[][]     REPLACES              = { { "plain_date", "date", "Date when the video was uploaded" }, { "plain_videoid", "videoid", "ID of the video" }, { "plain_channel", "channelname", "The name of the channel/uploader" }, { "plain_ext", "ext", "Extension of the file (usually .mp4)" }, { "qualityname", "quality", "Quality of the video" }, { "plain_videoname", "videoname", "Name of the video" } };
+
+    private final static String defaultCustomFilename = "*videoname*_*quality**ext*";
+    private final static String defaultCustomDate     = "dd.MM.yyyy";
+
+    public static String getFormattedFilename(final DownloadLink downloadLink) throws ParseException {
+        final SubConfiguration cfg = SubConfiguration.getConfig("dailymotion.com");
+        String formattedFilename = cfg.getStringProperty(CUSTOM_FILENAME, defaultCustomFilename);
+        if (!formattedFilename.contains("*videoname") && !formattedFilename.contains("*ext*") && !formattedFilename.contains("*videoid*") && !formattedFilename.contains("*channelname*")) {
+            formattedFilename = defaultCustomFilename;
+        }
+        for (final String[] replaceinfo : REPLACES) {
+            final String property = replaceinfo[0];
+            final String fulltagname = "*" + replaceinfo[1] + "*";
+            String tag_data = downloadLink.getStringProperty(property, "-");
+            if (fulltagname.equals("*date*")) {
+                if (tag_data.equals("-")) {
+                    tag_data = "0";
+                }
+                final String userDefinedDateFormat = cfg.getStringProperty(CUSTOM_DATE, defaultCustomDate);
+                SimpleDateFormat formatter = null;
+
+                Date theDate = new Date(Long.parseLong(tag_data));
+
+                if (userDefinedDateFormat != null) {
+                    try {
+                        formatter = new SimpleDateFormat(userDefinedDateFormat);
+                        tag_data = formatter.format(theDate);
+                    } catch (Exception e) {
+                        // prevent user error killing plugin.
+                        tag_data = "-";
+                    }
+                }
+            }
+            formattedFilename = formattedFilename.replace(fulltagname, tag_data);
+        }
+        formattedFilename = correctFilename(formattedFilename);
+        return formattedFilename;
+    }
+
+    public static String correctFilename(String filename) {
+        // Cut filenames if they're too long
+        if (filename.length() > 240) {
+            final String ext = filename.substring(filename.lastIndexOf("."));
+            int extLength = ext.length();
+            filename = filename.substring(0, 240 - extLength);
+            filename += ext;
+        }
+        return filename;
     }
 
     private void setConfigElements() {
@@ -385,6 +456,22 @@ public class DailyMotionCom extends PluginForHost {
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), ALLOW_1080, JDL.L("plugins.hoster.dailymotioncom.check1080", "Grab [1920x1080]?")).setDefaultValue(true).setEnabledCondidtion(hq, false));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), ALLOW_OTHERS, JDL.L("plugins.hoster.dailymotioncom.checkother", "Grab other available qualities (RTMP/OTHERS)?")).setDefaultValue(true).setEnabledCondidtion(hq, false));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), ALLOW_HDS, JDL.L("plugins.hoster.dailymotioncom.checkhds", "Grab hds (not downloadable yet!)?")).setDefaultValue(false).setEnabledCondidtion(hq, false));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_SEPARATOR));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_LABEL, "Customize the filenames"));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_TEXTFIELD, getPluginConfig(), CUSTOM_DATE, JDL.L("plugins.hoster.dailymotioncom.customdate", "Define how the date should look.")).setDefaultValue(defaultCustomDate));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_SEPARATOR));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_LABEL, "Customize the filename! Example: '*channelname*_*date*_*videoname**ext*'"));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_TEXTFIELD, getPluginConfig(), CUSTOM_FILENAME, JDL.L("plugins.hoster.dailymotioncom.customfilename", "Define how the filenames should look:")).setDefaultValue(defaultCustomFilename));
+        final StringBuilder sb = new StringBuilder();
+        sb.append("<html>");
+        sb.append("Explanation of the available tags:<br>");
+        for (final String[] replaceinfo : REPLACES) {
+            final String fulltagname = "*" + replaceinfo[1] + "*";
+            final String tagdescription = replaceinfo[2];
+            sb.append(fulltagname + " = " + tagdescription + "<br>");
+        }
+        sb.append("</html>");
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_LABEL, sb.toString()));
     }
 
     @Override

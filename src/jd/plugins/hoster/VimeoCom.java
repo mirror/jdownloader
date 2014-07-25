@@ -446,7 +446,7 @@ public class VimeoCom extends PluginForHost {
 
         String formattedDate = null;
         if (date != null && formattedFilename.contains("*date*")) {
-            final String userDefinedDateFormat = cfg.getStringProperty(CUSTOM_DATE, "dd.MM.yyyy_HH-mm-ss");
+            final String userDefinedDateFormat = cfg.getStringProperty(CUSTOM_DATE, defaultCustomDate);
             final String[] dateStuff = date.split("T");
             SimpleDateFormat formatter = new SimpleDateFormat("yyyy-MM-dd:HH:mm:ss");
             Date dateStr = formatter.parse(dateStuff[0] + ":" + dateStuff[1]);
