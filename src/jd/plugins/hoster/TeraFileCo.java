@@ -147,9 +147,9 @@ public class TeraFileCo extends PluginForHost {
 
     /**
      * Defines custom browser requirements. Integrates with antiDDoS method
-     * 
+     *
      * @author raztoki
-     * 
+     *
      * */
     private Browser prepBrowser(final Browser prepBr) {
         synchronized (antiDDoSCookies) {
@@ -427,16 +427,8 @@ public class TeraFileCo extends PluginForHost {
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 } else if (dllink == null && br.containsHTML("<Form name=\"F1\" method=\"POST\" action=\"\"")) {
                     dlForm = br.getFormbyProperty("name", "F1");
-                    try {
-                        invalidateLastChallengeResponse();
-                    } catch (final Throwable e) {
-                    }
                     continue;
                 } else {
-                    try {
-                        validateLastChallengeResponse();
-                    } catch (final Throwable e) {
-                    }
                     break;
                 }
             }
@@ -474,13 +466,13 @@ public class TeraFileCo extends PluginForHost {
     /**
      * Prevents more than one free download from starting at a given time. One step prior to dl.startDownload(), it adds a slot to maxFree
      * which allows the next singleton download to start, or at least try.
-     * 
+     *
      * This is needed because xfileshare(website) only throws errors after a final dllink starts transferring or at a given step within pre
      * download sequence. But this template(XfileSharingProBasic) allows multiple slots(when available) to commence the download sequence,
      * this.setstartintival does not resolve this issue. Which results in x(20) captcha events all at once and only allows one download to
      * start. This prevents wasting peoples time and effort on captcha solving and|or wasting captcha trading credits. Users will experience
      * minimal harm to downloading as slots are freed up soon as current download begins.
-     * 
+     *
      * @param controlFree
      *            (+1|-1)
      */
@@ -610,7 +602,7 @@ public class TeraFileCo extends PluginForHost {
     /**
      * performs cloudflare and incapsula requirements. This will auto fill out the requirements and update cookies after each request if you
      * need!
-     * 
+     *
      * @author raztoki
      **/
     private void antiDDoS(final String URL) throws Exception {
@@ -659,7 +651,7 @@ public class TeraFileCo extends PluginForHost {
                     br.submitForm(cloudflare);
                     if (br.getFormbyProperty("id", "ChallengeForm") != null || br.getFormbyProperty("id", "challenge-form") != null) {
                         logger.warning("Possible plugin error within cloudflare handling");
-                        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                        throw new PluginException(LinkStatus.ERROR_CAPTCHA);
                     }
                 }
             } else if (br.getHttpConnection().getResponseCode() == 503 && cloudflare != null) {
@@ -716,7 +708,10 @@ public class TeraFileCo extends PluginForHost {
     private void waitTime(long timeBefore, final DownloadLink downloadLink) throws PluginException {
         int passedTime = (int) ((System.currentTimeMillis() - timeBefore) / 1000) - 1;
         /** Ticket Time */
-        final String ttt = new Regex(correctedBR, "id=\"countdown_str\">[^<>\"]+<span id=\"[^<>\"]+\"( class=\"[^<>\"]+\")?>([\n ]+)?(\\d+)([\n ]+)?</span>").getMatch(2);
+        String ttt = new Regex(correctedBR, "id=\"countdownContainer\">[^<>\"]+<span id=\"[^<>\"]+\"( class=\"[^<>\"]+\")?>([\n ]+)?(\\d+)([\n ]+)?</span>").getMatch(2);
+        if (ttt == null) {
+            ttt = new Regex(correctedBR, ">\\d{2}:\\d{2}:<span\\s+id=\"[a-z0-9]+\">(\\d+)</span></span>").getMatch(0);
+        }
         if (ttt != null) {
             int tt = Integer.parseInt(ttt);
             tt -= passedTime;
@@ -730,7 +725,7 @@ public class TeraFileCo extends PluginForHost {
     // TODO: remove this when v2 becomes stable. use br.getFormbyKey(String key, String value)
     /**
      * Returns the first form that has a 'key' that equals 'value'.
-     * 
+     *
      * @param key
      * @param value
      * @return
