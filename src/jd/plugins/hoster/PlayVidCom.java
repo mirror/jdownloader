@@ -41,7 +41,7 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.utils.locale.JDL;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "playvid.com" }, urls = { "http://playviddecrypted.com/\\d+" }, flags = { 2 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "playvid.com" }, urls = { "http://playviddecrypted\\.com/\\d+" }, flags = { 2 })
 public class PlayVidCom extends PluginForHost {
 
     public PlayVidCom(PluginWrapper wrapper) {
@@ -66,30 +66,41 @@ public class PlayVidCom extends PluginForHost {
 
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws IOException, PluginException {
-        if (downloadLink.getBooleanProperty("offline", false)) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (downloadLink.getBooleanProperty("offline", false)) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         // finalfilename approach is old but we need to keep it for users who still have old links in JD
         String filename = downloadLink.getFinalFileName();
-        if (filename == null) filename = downloadLink.getStringProperty("directname", null);
+        if (filename == null) {
+            filename = downloadLink.getStringProperty("directname", null);
+        }
         DLLINK = checkDirectLink(downloadLink, "directlink");
         if (DLLINK == null) {
-            if (downloadLink.getStringProperty("mainlink", null) == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            if (downloadLink.getStringProperty("mainlink", null) == null) {
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            }
             br.getPage(downloadLink.getStringProperty("mainlink", null));
             final String videosource = getVideosource(this.br);
-            if (videosource == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            if (videosource == null) {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
             DLLINK = getQuality(downloadLink.getStringProperty("qualityvalue", null), videosource);
         }
-        if (filename == null || DLLINK == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (filename == null || DLLINK == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         downloadLink.setFinalFileName(filename);
         // In case the link redirects to the finallink
         URLConnectionAdapter con = null;
         try {
             con = br.openGetConnection(DLLINK);
-            if (!con.getContentType().contains("html"))
+            if (!con.getContentType().contains("html")) {
                 downloadLink.setDownloadSize(con.getLongContentLength());
-            else
+            } else {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            }
             downloadLink.setProperty("directlink", DLLINK);
             return AvailableStatus.TRUE;
         } finally {
@@ -126,7 +137,9 @@ public class PlayVidCom extends PluginForHost {
                 br.setCookiesExclusive(true);
                 final Object ret = account.getProperty("cookies", null);
                 boolean acmatch = Encoding.urlEncode(account.getUser()).equals(account.getStringProperty("name", Encoding.urlEncode(account.getUser())));
-                if (acmatch) acmatch = Encoding.urlEncode(account.getPass()).equals(account.getStringProperty("pass", Encoding.urlEncode(account.getPass())));
+                if (acmatch) {
+                    acmatch = Encoding.urlEncode(account.getPass()).equals(account.getStringProperty("pass", Encoding.urlEncode(account.getPass())));
+                }
                 if (acmatch && ret != null && ret instanceof HashMap<?, ?> && !force) {
                     final HashMap<String, String> cookies = (HashMap<String, String>) ret;
                     if (account.isValid()) {
@@ -213,14 +226,18 @@ public class PlayVidCom extends PluginForHost {
 
     public static String getVideosource(final Browser br) {
         String videosource = br.getRegex("flashvars=\"(.*?)\"").getMatch(0);
-        if (videosource == null) return null;
+        if (videosource == null) {
+            return null;
+        }
         videosource = Encoding.htmlDecode(videosource);
         return videosource;
     }
 
     public static LinkedHashMap<String, String> getQualities(final Browser br) {
         final String videosource = getVideosource(br);
-        if (videosource == null) return null;
+        if (videosource == null) {
+            return null;
+        }
         final LinkedHashMap<String, String> foundqualities = new LinkedHashMap<String, String>();
         /** Decrypt qualities START */
         /** First, find all available qualities */

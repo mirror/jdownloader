@@ -50,14 +50,14 @@ public class BingCom extends PluginForDecrypt {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         // Prefer english language
         final String parameter = param.toString();
-        if (br.containsHTML(">The page you requested cannot be found")) {
+        br.getPage(parameter);
+        if (br.getHttpConnection().getResponseCode() == 404) {
             final DownloadLink dl = createDownloadlink("decrypted://bing.com/" + System.currentTimeMillis() + new Random().nextInt(1000000));
-            dl.setName(new Regex(parameter, "/watch/([a-z0-9\\-_]+)/").getMatch(0));
+            dl.setFinalFileName(new Regex(parameter, "bing\\.com/(.+)").getMatch(0));
             dl.setAvailable(false);
             decryptedLinks.add(dl);
             return decryptedLinks;
         }
-        br.getPage(parameter);
         String externID = br.getRegex("class=\"vxp_relatedLink vxp_tl1\" href=\"(http://(www\\.)?metacafe\\.com/watch[^<>\"]*?)\"").getMatch(0);
         if (externID != null) {
             decryptedLinks.add(createDownloadlink(externID));
