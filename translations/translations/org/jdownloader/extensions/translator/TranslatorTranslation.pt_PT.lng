@@ -1,4 +1,6 @@
 Translator=Tradutor
+TranslatorExtensionGuiToggleAction_deselected=Abrir Tradutor
+TranslatorExtensionGuiToggleAction_deselected_tt=Abrir o separador do Tradutor
 TranslatorExtensionGuiToggleAction_selected=Fechar Tradutor
 TranslatorExtensionGuiToggleAction_selected_tt=Fechar separador Tradutor
 description=Esta Extensão pode ser usada para editar traduções do JDownloader. Precisa de uma conta de programador.

@@ -1,4 +1,5 @@
 ChatExtensionGuiToggleAction_deselected=Abrir Chat
+ChatExtensionGuiToggleAction_deselected_tt=Abrir Separador Chat (conversa)
 ChatExtensionGuiToggleAction_selected=Fechar Chat
 ChatExtensionGuiToggleAction_selected_tt=Fechar separador Chat
 description=Contactar equipa de Suporte e Programação do JDownloader
