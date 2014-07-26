@@ -451,10 +451,9 @@ public class FreeWayMe extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_RETRY);
         }
         dllink = br.getRedirectLocation();
-        if (dllink == null && br.containsHTML("<p id='error'>Interner Fehler bei Findung eines stabilen Accounts<")) {
-            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE);
-        } else if (dllink == null) {
-            // unknown error
+        if (dllink == null) {
+            handleError(acc, link);
+            // if above error handling fails... ie unknown error
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
 
@@ -474,85 +473,89 @@ public class FreeWayMe extends PluginForHost {
                 throw new PluginException(LinkStatus.ERROR_RETRY);
             }
             br.followConnection();
-            String error = "";
-            try {
-                error = (new Regex(br.toString(), "<p id=\\'error\\'>([^<]*)</p>")).getMatch(0);
-            } catch (Exception e) {
-                // we handle this few lines later
-            }
-            if (error.contains("ltiger Login")) { // Ungü
-                acc.setError(AccountError.TEMP_DISABLED, getPhrase("ERROR_INVALID_LOGIN"));
-                throw new PluginException(LinkStatus.ERROR_RETRY);
-            } else if (error.contains("ltige URL")) { // Ungültige URL
-                tempUnavailableHoster(acc, link, 1 * 60 * 1000l, getPhrase("ERROR_INVALID_URL"));
-            } else if (error.contains("Sie haben nicht genug Traffic, um diesen Download durchzuf")) { // ühren
-                acc.setUpdateTime(-1);
-                tempUnavailableHoster(acc, link, 10 * 60 * 1000l, getPhrase("ERROR_TRAFFIC_LIMIT"));
-            } else if (error.contains("nnen nicht mehr parallele Downloads durchf")) { // Sie kö... ...ühren
-                int attempts = link.getIntegerProperty("CONNECTIONS_RETRY_COUNT_PARALLEL", 0);
-                // first attempt -> update acc information
-                if (attempts == 0) {
-                    acc.setUpdateTime(-1); // force update acc next try (to get new information about simultan connections)
-                }
-                link.setProperty("CONNECTIONS_RETRY_COUNT_PARALLEL", attempts + 1);
-                throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, getPhrase("ERROR_CONNECTIONS"), (12 + 20 * attempts) * 1000l);
-            } else if (error.contains("ltiger Hoster")) { // Ungü...
-                tempUnavailableHoster(acc, link, 8 * 60 * 1000l, getPhrase("ERROR_INAVLID_HOST_URL"));
-            } else if (error.equalsIgnoreCase("Dieser Hoster ist aktuell leider nicht aktiv.")) {
-                tempUnavailableHoster(acc, link, 8 * 60 * 1000l, getPhrase("ERROR_HOST_TMP_DISABLED"));
-            } else if (error.equalsIgnoreCase("Diese Datei wurde nicht gefunden.")) {
-                tempUnavailableHoster(acc, link, 1 * 60 * 1000l, "File not found");
-            } else if (error.equals("Es ist ein unbekannter Fehler aufgetreten (#1)") //
-                    || error.equalsIgnoreCase("Unbekannter Fehler #2") //
-                    || error.equalsIgnoreCase("Unbekannter Fehler #3") //
-                    || error.equalsIgnoreCase("Unbekannter Fehler #5") // internal
-                    ) {
-                /*
-                 * after x retries we disable this host and retry with normal plugin
-                 */
-                //
-                int attempts = link.getIntegerProperty("CONNECTIONS_RETRY_COUNT", 0);
-                if (attempts >= 5) {
-                    /* reset retrycounter */
-                    link.setProperty("CONNECTIONS_RETRY_COUNT", 0);
-                    tempUnavailableHoster(acc, link, 4 * 60 * 1000l, error);
-                }
-                link.setProperty("CONNECTIONS_RETRY_COUNT", attempts + 1);
-                String msg = "(" + (attempts + 1) + "/ 5)";
-                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, getPhrase("ERROR_RETRY_SECONDS") + msg, 21 * 1000l);
-            } else if (error.startsWith("Die Datei darf maximal")) {
-                logger.info("{handleMultiHost} File download limit");
-                tempUnavailableHoster(acc, link, 2 * 60 * 1000l, error);
-            } else if (error.equalsIgnoreCase("Mehrere Computer haben in letzter Zeit diesen Account genutzt")) {
-                logger.info("{handleMultiHost} free-way ip ban");
-                acc.setError(AccountError.TEMP_DISABLED, getPhrase("ERROR_BAN"));
-                throw new PluginException(LinkStatus.ERROR_RETRY, getPhrase("ERROR_BAN"), 16 * 60 * 1000l);
-            } else if (br.containsHTML(">Interner Fehler bei Findung eines stabilen Accounts<")) {
-                /*
-                 * after x retries we disable this host and retry with normal plugin --> This error means that the free-way system cannot
-                 * find any working accounts for the current host at the moment
-                 */
-                int attempts = link.getIntegerProperty("CONNECTIONS_RETRY_COUNT", 0);
-                if (attempts >= 3) {
-                    /* reset retrycounter */
-                    link.setProperty("CONNECTIONS_RETRY_COUNT", 0);
-                    logger.info(getPhrase("ERROR_NO_STABLE_ACCOUNTS") + " --> Disabling current host for 15 minutes");
-                    tempUnavailableHoster(acc, link, 5 * 60 * 1000l, getPhrase("ERROR_NO_STABLE_ACCOUNTS"));
-                }
-                link.setProperty("CONNECTIONS_RETRY_COUNT", attempts + 1);
-                String msg = "(" + (attempts + 1) + "/ 3  )";
-                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, getPhrase("ERROR_NO_STABLE_ACCOUNTS") + msg);
-            } else if (br.containsHTML("cURL\\-Error: Couldn\\'t resolve host")) {
-                handleErrors(acc, link, getPhrase("ERROR_SERVER"), 10);
-            }
+            handleError(acc, link);
             logger.severe("{handleMultiHost} Unhandled download error on free-way.me: " + br.toString());
-            handleErrors(acc, link, "unknown_dl_error", this.getPluginConfig().getLongProperty(MAX_RETRIES_UNKNOWN_ERROR, max_retries_unknown_error_default));
+            errorMagic(acc, link, "unknown_dl_error", this.getPluginConfig().getLongProperty(MAX_RETRIES_UNKNOWN_ERROR, max_retries_unknown_error_default));
 
         }
         dl.startDownload();
     }
 
-    private void handleErrors(final Account acc, final DownloadLink link, final String error, final long maxretries) throws PluginException {
+    private void handleError(final Account acc, final DownloadLink link) throws PluginException {
+        String error = "";
+        try {
+            error = (new Regex(br.toString(), "<p id='error'>([^<]*)</p>")).getMatch(0);
+        } catch (Exception e) {
+            // we handle this few lines later
+        }
+        if (error.contains("ltiger Login")) { // Ungü
+            acc.setError(AccountError.TEMP_DISABLED, getPhrase("ERROR_INVALID_LOGIN"));
+            throw new PluginException(LinkStatus.ERROR_RETRY);
+        } else if (error.contains("ltige URL")) { // Ungültige URL
+            tempUnavailableHoster(acc, link, 1 * 60 * 1000l, getPhrase("ERROR_INVALID_URL"));
+        } else if (error.contains("Sie haben nicht genug Traffic, um diesen Download durchzuf")) { // ühren
+            acc.setUpdateTime(-1);
+            tempUnavailableHoster(acc, link, 10 * 60 * 1000l, getPhrase("ERROR_TRAFFIC_LIMIT"));
+        } else if (error.contains("nnen nicht mehr parallele Downloads durchf")) { // Sie kö... ...ühren
+            int attempts = link.getIntegerProperty("CONNECTIONS_RETRY_COUNT_PARALLEL", 0);
+            // first attempt -> update acc information
+            if (attempts == 0) {
+                acc.setUpdateTime(-1); // force update acc next try (to get new information about simultan connections)
+            }
+            link.setProperty("CONNECTIONS_RETRY_COUNT_PARALLEL", attempts + 1);
+            throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, getPhrase("ERROR_CONNECTIONS"), (12 + 20 * attempts) * 1000l);
+        } else if (error.contains("ltiger Hoster")) { // Ungü...
+            tempUnavailableHoster(acc, link, 8 * 60 * 1000l, getPhrase("ERROR_INAVLID_HOST_URL"));
+        } else if (error.equalsIgnoreCase("Dieser Hoster ist aktuell leider nicht aktiv.")) {
+            tempUnavailableHoster(acc, link, 8 * 60 * 1000l, getPhrase("ERROR_HOST_TMP_DISABLED"));
+        } else if (error.equalsIgnoreCase("Diese Datei wurde nicht gefunden.")) {
+            tempUnavailableHoster(acc, link, 1 * 60 * 1000l, "File not found");
+        } else if (error.equalsIgnoreCase("Es ist ein unbekannter Fehler aufgetreten (#1)") //
+                || error.equalsIgnoreCase("Unbekannter Fehler #2") //
+                || error.equalsIgnoreCase("Unbekannter Fehler #3") //
+                || error.equalsIgnoreCase("Unbekannter Fehler #5") // internal
+                ) {
+            /*
+             * after x retries we disable this host and retry with normal plugin
+             */
+            //
+            int attempts = link.getIntegerProperty("CONNECTIONS_RETRY_COUNT", 0);
+            if (attempts >= 5) {
+                /* reset retrycounter */
+                link.setProperty("CONNECTIONS_RETRY_COUNT", 0);
+                tempUnavailableHoster(acc, link, 4 * 60 * 1000l, error);
+            }
+            link.setProperty("CONNECTIONS_RETRY_COUNT", attempts + 1);
+            String msg = "(" + (attempts + 1) + "/ 5)";
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, getPhrase("ERROR_RETRY_SECONDS") + msg, 21 * 1000l);
+        } else if (error.startsWith("Die Datei darf maximal")) {
+            logger.info("{handleMultiHost} File download limit");
+            tempUnavailableHoster(acc, link, 2 * 60 * 1000l, error);
+        } else if (error.equalsIgnoreCase("Mehrere Computer haben in letzter Zeit diesen Account genutzt")) {
+            logger.info("{handleMultiHost} free-way ip ban");
+            acc.setError(AccountError.TEMP_DISABLED, getPhrase("ERROR_BAN"));
+            throw new PluginException(LinkStatus.ERROR_RETRY, getPhrase("ERROR_BAN"), 16 * 60 * 1000l);
+        } else if (br.containsHTML(">Interner Fehler bei Findung eines stabilen Accounts<")) {
+            /*
+             * after x retries we disable this host and retry with normal plugin --> This error means that the free-way system cannot find
+             * any working accounts for the current host at the moment
+             */
+            int attempts = link.getIntegerProperty("CONNECTIONS_RETRY_COUNT", 0);
+            if (attempts >= 3) {
+                /* reset retrycounter */
+                link.setProperty("CONNECTIONS_RETRY_COUNT", 0);
+                logger.info(getPhrase("ERROR_NO_STABLE_ACCOUNTS") + " --> Disabling current host for 15 minutes");
+                tempUnavailableHoster(acc, link, 5 * 60 * 1000l, getPhrase("ERROR_NO_STABLE_ACCOUNTS"));
+            }
+            link.setProperty("CONNECTIONS_RETRY_COUNT", attempts + 1);
+            String msg = "(" + (attempts + 1) + "/ 3  )";
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, getPhrase("ERROR_NO_STABLE_ACCOUNTS") + msg);
+        } else if (br.containsHTML("cURL-Error: Couldn't resolve host")) {
+            errorMagic(acc, link, getPhrase("ERROR_SERVER"), 10);
+        }
+    }
+
+    private void errorMagic(final Account acc, final DownloadLink link, final String error, final long maxretries) throws PluginException {
         int timesFailed = link.getIntegerProperty(ACC_PROPERTY_UNKOWN_FAILS, 0);
         if (timesFailed <= maxretries) {
             timesFailed++;
