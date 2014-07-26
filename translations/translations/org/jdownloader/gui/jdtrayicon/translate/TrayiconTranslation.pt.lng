@@ -1,6 +1,7 @@
 JDGui_windowClosing_try_answer_tray=Esconder para área notificação
 JDGui_windowClosing_try_asnwer_close=Sair JDownloader
 OnCloseAction_exit=Sair Aplicação
+OnCloseAction_totray=Fechar para área de notificação
 OnMinimizeAction_ask=Perguntar-me
 OnMinimizeAction_totray=Fechar para área de notificação
 plugins_optional_JDLightTray_hideifframevisible=Esconder para área notificação se janela é visível
