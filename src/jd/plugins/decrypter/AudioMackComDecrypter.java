@@ -58,18 +58,26 @@ public class AudioMackComDecrypter extends PluginForDecrypt {
             logger.warning("Decrypter broken for link: " + parameter);
             return null;
         }
+        final String description = br.getRegex("<meta name=\"description\" content=\"(.*?)\" >").getMatch(0);
         for (final String singleinfo : links) {
             final Regex url_name = new Regex(singleinfo, "<a href=\"#\" data\\-url=\"(http://(www\\.)?audiomack\\.com/api/music/url/album/[A-Za-z0-9\\-_]+/[A-Za-z0-9\\-_]+/\\d+)\">([^<>\"]*?)<");
             final String url = url_name.getMatch(0);
-            final String name = url_name.getMatch(2);
+            String name = url_name.getMatch(2);
             final String titlenumber = new Regex(singleinfo, "<div class=\"index\">(\\d+\\.)</div>").getMatch(0);
             if (url != null && name != null && titlenumber != null) {
+                name = Encoding.htmlDecode(name).trim();
                 final DownloadLink fina = createDownloadlink(url);
                 final String finalname = titlenumber + name + ".mp3";
                 fina.setFinalFileName(finalname);
                 fina.setAvailable(true);
                 fina.setProperty("plain_filename", finalname);
                 fina.setProperty("mainlink", parameter);
+                if (description != null) {
+                    try {
+                        fina.setComment(Encoding.htmlDecode(description));
+                    } catch (Throwable e) {
+                    }
+                }
                 decryptedLinks.add(fina);
             }
         }
