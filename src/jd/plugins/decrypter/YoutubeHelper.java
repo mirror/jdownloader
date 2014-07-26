@@ -737,7 +737,7 @@ public class YoutubeHelper {
         }
         final String func = "function " + Pattern.quote(descrambler) + "\\(([^)]+)\\)\\{(.+?return.*?)\\}";
         des = new Regex(jsContent, Pattern.compile(func)).getMatch(1);
-        String all = new Regex(jsContent, Pattern.compile("(var [a-z]+=\\{.+\\};)?function " + Pattern.quote(descrambler) + "\\(([^)]+)\\)\\{(.+?return.*?)\\}.*?\\{.*?\\}")).getMatch(-1);
+        String all = new Regex(jsContent, Pattern.compile("function " + Pattern.quote(descrambler) + "\\(([^)]+)\\)\\{(.+?return.*?)\\}.*?\\{.*?\\}")).getMatch(-1);
         Object result = null;
 
         while (true) {
@@ -749,21 +749,20 @@ public class YoutubeHelper {
                     return result.toString();
                 }
             } catch (final Throwable e) {
-                logger.log(e);
                 if (e.getMessage() != null) {
                     final String ee = new Regex(e.getMessage(), "ReferenceError: \"(\\w+)\" is not defined\\.").getMatch(0);
                     if (ee != null) {
                         // lets look for missing reference
-                        final String ref = new Regex(jsContent, "var\\s{1,}" + ee + "\\s*=\\s*\\{.*?\\};").getMatch(-1);
+                        final String ref = new Regex(jsContent, "var\\s+" + ee + "\\s*=\\s*\\{.*?\\};").getMatch(-1);
                         if (ref != null) {
                             all = ref + "\r\n" + all;
                             continue;
                         } else {
                             logger.warning("Could not find missing var/function");
-                            break;
                         }
                     }
                 }
+                logger.log(e);
             }
             break;
         }
