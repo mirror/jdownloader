@@ -70,7 +70,9 @@ public class FShareVn extends PluginForHost {
 
     @Override
     public boolean checkLinks(final DownloadLink[] urls) {
-        if (urls == null || urls.length == 0) { return false; }
+        if (urls == null || urls.length == 0) {
+            return false;
+        }
         try {
             final Browser br = new Browser();
             prepBrowser();
@@ -126,12 +128,20 @@ public class FShareVn extends PluginForHost {
         this.setBrowserExclusive();
         prepBrowser();
         br.getPage(link.getDownloadURL());
-        if (br.containsHTML("(<title>Fshare \\– Dịch vụ chia sẻ số 1 Việt Nam \\– Cần là có \\- </title>|b>Liên kết bạn chọn không tồn tại trên hệ thống Fshare</|<li>Liên kết không chính xác, hãy kiểm tra lại|<li>Liên kết bị xóa bởi người sở hữu\\.<)")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (br.containsHTML("(<title>Fshare \\– Dịch vụ chia sẻ số 1 Việt Nam \\– Cần là có \\- </title>|b>Liên kết bạn chọn không tồn tại trên hệ thống Fshare</|<li>Liên kết không chính xác, hãy kiểm tra lại|<li>Liên kết bị xóa bởi người sở hữu\\.<)")) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
         String filename = br.getRegex("<p><b>Tên file:</b> (.*?)</p>").getMatch(0);
-        if (filename == null) filename = br.getRegex("<p><b>Tên tập tin:</b> (.*?)</p>").getMatch(0);
-        if (filename == null) filename = br.getRegex("<title>(.*?) \\- Fshare \\- Dịch vụ chia sẻ, lưu trữ dữ liệu miễn phí tốt nhất </title>").getMatch(0);
+        if (filename == null) {
+            filename = br.getRegex("<p><b>Tên tập tin:</b> (.*?)</p>").getMatch(0);
+        }
+        if (filename == null) {
+            filename = br.getRegex("<title>(.*?) \\- Fshare \\- Dịch vụ chia sẻ, lưu trữ dữ liệu miễn phí tốt nhất </title>").getMatch(0);
+        }
         String filesize = br.getRegex("<p><b>Dung lượng: </b>(.*?)</p>").getMatch(0);
-        if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (filename == null || filesize == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         // Server sometimes sends bad filenames
         link.setFinalFileName(Encoding.htmlDecode(filename));
         link.setDownloadSize(SizeFormatter.getSize(filesize));
@@ -139,51 +149,75 @@ public class FShareVn extends PluginForHost {
     }
 
     public void doFree(DownloadLink downloadLink) throws Exception {
-        if (br.containsHTML(IPBLOCKED)) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 2 * 60 * 60 * 1000l);
-        br.setFollowRedirects(true);
-        final String fid = br.getRegex("name=\"file_id\" value=\"(\\d+)\"").getMatch(0);
-        if (fid == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        br.postPage(downloadLink.getDownloadURL(), "special=&action=download_file&file_id=" + fid);
-        if (br.containsHTML(IPBLOCKED)) {
-            final String nextDl = br.getRegex("LÆ°á»£t táº£i xuá»‘ng káº¿ tiáº¿p lÃ : ([^<>]+)<").getMatch(0);
-            logger.info("Next download: " + nextDl);
-            throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 2 * 60 * 60 * 1000l);
-        }
-        if (br.containsHTML("(api\\.recaptcha\\.net|google\\.com/recaptcha/api/)")) {
-            PluginForHost recplug = JDUtilities.getPluginForHost("DirectHTTP");
-            jd.plugins.hoster.DirectHTTP.Recaptcha rc = ((DirectHTTP) recplug).getReCaptcha(br);
-            rc.parse();
-            rc.load();
-            File cf = rc.downloadCaptcha(getLocalCaptchaFile());
-            String c = getCaptchaCode(cf, downloadLink);
-            rc.setCode(c);
-            if (br.containsHTML("frm_download")) throw new PluginException(LinkStatus.ERROR_CAPTCHA);
-        }
-        String downloadURL = br.getRegex("window\\.location=\\'(.*?)\\'").getMatch(0);
-        if (downloadURL == null) {
-            downloadURL = br.getRegex("value=\"Download\" name=\"btn_download\" value=\"Download\"  onclick=\"window\\.location=\\'(http://.*?)\\'\"").getMatch(0);
-            if (downloadURL == null) {
-                // downloadURL =
-                // br.getRegex("\\'(http://download\\d+\\.fshare\\.vn/download/[A-Za-z0-9]+/.*?)\\'").getMatch(0);
-                downloadURL = br.getRegex("<form action=\"(http://download\\d+\\.fshare\\.vn/download/[^<>]+/.*?)\"").getMatch(0);
+        String dllink = br.getRedirectLocation();
+        if (dllink != null) {
+            dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 1);
+            if (!dl.getConnection().getContentType().contains("html")) {
+                dl.startDownload();
             }
+        } else {
+            if (br.containsHTML(IPBLOCKED)) {
+                throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 2 * 60 * 60 * 1000l);
+            }
+            br.setFollowRedirects(true);
+            final String fid = br.getRegex("name=\"file_id\" value=\"(\\d+)\"").getMatch(0);
+            if (fid == null) {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
+            br.postPage(downloadLink.getDownloadURL(), "special=&action=download_file&file_id=" + fid);
+            if (br.containsHTML(IPBLOCKED)) {
+                final String nextDl = br.getRegex("LÆ°á»£t táº£i xuá»‘ng káº¿ tiáº¿p lÃ : ([^<>]+)<").getMatch(0);
+                logger.info("Next download: " + nextDl);
+                throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 2 * 60 * 60 * 1000l);
+            }
+            if (br.containsHTML("(api\\.recaptcha\\.net|google\\.com/recaptcha/api/)")) {
+                PluginForHost recplug = JDUtilities.getPluginForHost("DirectHTTP");
+                jd.plugins.hoster.DirectHTTP.Recaptcha rc = ((DirectHTTP) recplug).getReCaptcha(br);
+                rc.parse();
+                rc.load();
+                File cf = rc.downloadCaptcha(getLocalCaptchaFile());
+                String c = getCaptchaCode(cf, downloadLink);
+                rc.setCode(c);
+                if (br.containsHTML("frm_download")) {
+                    throw new PluginException(LinkStatus.ERROR_CAPTCHA);
+                }
+            }
+            String downloadURL = br.getRegex("window\\.location=\\'(.*?)\\'").getMatch(0);
+            if (downloadURL == null) {
+                downloadURL = br.getRegex("value=\"Download\" name=\"btn_download\" value=\"Download\"  onclick=\"window\\.location=\\'(http://.*?)\\'\"").getMatch(0);
+                if (downloadURL == null) {
+                    // downloadURL =
+                    // br.getRegex("\\'(http://download\\d+\\.fshare\\.vn/download/[A-Za-z0-9]+/.*?)\\'").getMatch(0);
+                    downloadURL = br.getRegex("<form action=\"(http://download\\d+\\.fshare\\.vn/download/[^<>]+/.*?)\"").getMatch(0);
+                }
+            }
+            logger.info("downloadURL = " + downloadURL);
+            // Waittime
+            String wait = br.getRegex("var count = \"(\\d+)\";").getMatch(0);
+            if (wait == null) {
+                wait = br.getRegex("var count = (\\d+);").getMatch(0);
+            }
+            if (wait == null) {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
+            // No downloadlink shown, host is buggy
+            if (downloadURL == null && "0".equals(wait)) {
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error");
+            }
+            if (wait == null || downloadURL == null || !downloadURL.contains("fshare.vn")) {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
+            sleep(Long.parseLong(wait) * 1001l, downloadLink);
+            dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, downloadURL, false, 1);
+            if (dl.getConnection().getContentType().contains("html")) {
+                br.followConnection();
+                if (br.containsHTML(SERVERERROR)) {
+                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, JDL.L("plugins.hoster.fsharevn.Servererror", "Servererror!"), 60 * 60 * 1000l);
+                }
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
+            dl.startDownload();
         }
-        logger.info("downloadURL = " + downloadURL);
-        // Waittime
-        String wait = br.getRegex("var count = \"(\\d+)\";").getMatch(0);
-        if (wait == null) wait = br.getRegex("var count = (\\d+);").getMatch(0);
-        if (wait == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        // No downloadlink shown, host is buggy
-        if (downloadURL == null && "0".equals(wait)) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error");
-        if (wait == null || downloadURL == null || !downloadURL.contains("fshare.vn")) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        sleep(Long.parseLong(wait) * 1001l, downloadLink);
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, downloadURL, false, 1);
-        if (dl.getConnection().getContentType().contains("html")) {
-            br.followConnection();
-            if (br.containsHTML(SERVERERROR)) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, JDL.L("plugins.hoster.fsharevn.Servererror", "Servererror!"), 60 * 60 * 1000l);
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
-        dl.startDownload();
     }
 
     private void prepBrowser() {
@@ -228,13 +262,21 @@ public class FShareVn extends PluginForHost {
             doFree(link);
         } else {
             String dllink = br.getRedirectLocation();
-            if (dllink == null) dllink = br.getRegex("\"(http://[a-z0-9]+\\.fshare\\.vn/vip/[^<>\"]*?)\"").getMatch(0);
-            if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            if (dllink.contains("logout")) throw new PluginException(LinkStatus.ERROR_FATAL, "FATAL premium error");
+            if (dllink == null) {
+                dllink = br.getRegex("\"(http://[a-z0-9]+\\.fshare\\.vn/vip/[^<>\"]*?)\"").getMatch(0);
+            }
+            if (dllink == null) {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
+            if (dllink.contains("logout")) {
+                throw new PluginException(LinkStatus.ERROR_FATAL, "FATAL premium error");
+            }
             dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, true, 1);
             if (dl.getConnection().getContentType().contains("html")) {
                 br.followConnection();
-                if (br.containsHTML(SERVERERROR)) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, JDL.L("plugins.hoster.fsharevn.Servererror", "Servererror!"), 60 * 60 * 1000l);
+                if (br.containsHTML(SERVERERROR)) {
+                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, JDL.L("plugins.hoster.fsharevn.Servererror", "Servererror!"), 60 * 60 * 1000l);
+                }
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
             dl.startDownload();
@@ -260,7 +302,9 @@ public class FShareVn extends PluginForHost {
                 br.setCookiesExclusive(true);
                 final Object ret = account.getProperty("cookies", null);
                 boolean acmatch = Encoding.urlEncode(account.getUser()).equals(account.getStringProperty("name", Encoding.urlEncode(account.getUser())));
-                if (acmatch) acmatch = Encoding.urlEncode(account.getPass()).equals(account.getStringProperty("pass", Encoding.urlEncode(account.getPass())));
+                if (acmatch) {
+                    acmatch = Encoding.urlEncode(account.getPass()).equals(account.getStringProperty("pass", Encoding.urlEncode(account.getPass())));
+                }
                 if (acmatch && ret != null && ret instanceof HashMap<?, ?> && !force) {
                     final HashMap<String, String> cookies = (HashMap<String, String>) ret;
                     if (account.isValid()) {
@@ -288,7 +332,9 @@ public class FShareVn extends PluginForHost {
                 br.getHeaders().put("Content-Type", "application/x-www-form-urlencoded");
                 br.submitForm(login);
 
-                if (br.getCookie(this.getHost(), "fshare_userpass") == null) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+                if (br.getCookie(this.getHost(), "fshare_userpass") == null) {
+                    throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+                }
                 /** Save cookies */
                 final HashMap<String, String> cookies = new HashMap<String, String>();
                 final Cookies add = this.br.getCookies(this.getHost());
@@ -328,9 +374,13 @@ public class FShareVn extends PluginForHost {
             account.setValid(false);
             return ai;
         }
-        if (!br.getURL().endsWith("/index.php")) br.getPage("/index.php");
+        if (!br.getURL().endsWith("/index.php")) {
+            br.getPage("/index.php");
+        }
         String validUntil = br.getRegex(">Hạn dùng:<strong[^>]+>\\&nbsp;(\\d+\\-\\d+\\-\\d+)</strong>").getMatch(0);
-        if (validUntil == null) validUntil = br.getRegex(">Hạn dùng:<strong>\\&nbsp;([^<>\"]*?)</strong>").getMatch(0);
+        if (validUntil == null) {
+            validUntil = br.getRegex(">Hạn dùng:<strong>\\&nbsp;([^<>\"]*?)</strong>").getMatch(0);
+        }
         if (br.containsHTML("title=\"Platium\">VIP </span>")) {
             ai.setStatus("Vip User");
             account.setProperty("acctype", Property.NULL);
@@ -346,9 +396,9 @@ public class FShareVn extends PluginForHost {
             account.setProperty("acctype", Property.NULL);
         } else {
             try {
-                maxPrem.set(1);
-                account.setMaxSimultanDownloads(1);
-                account.setConcurrentUsePossible(false);
+                maxPrem.set(-1);
+                account.setMaxSimultanDownloads(-1);
+                account.setConcurrentUsePossible(true);
             } catch (final Throwable e) {
             }
             ai.setStatus("Registered (free) User");
@@ -402,7 +452,9 @@ public class FShareVn extends PluginForHost {
                         // }
                         if (CrossSystem.isOpenBrowserSupported()) {
                             int result = JOptionPane.showConfirmDialog(jd.gui.swing.jdgui.JDGui.getInstance().getMainFrame(), message, title, JOptionPane.CLOSED_OPTION, JOptionPane.CLOSED_OPTION);
-                            if (JOptionPane.OK_OPTION == result) CrossSystem.openURL(new URL("http://board.jdownloader.org/showthread.php?t=37365"));
+                            if (JOptionPane.OK_OPTION == result) {
+                                CrossSystem.openURL(new URL("http://board.jdownloader.org/showthread.php?t=37365"));
+                            }
                         }
                     } catch (Throwable e) {
                     }
