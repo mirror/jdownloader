@@ -41,7 +41,7 @@ import jd.utils.locale.JDL;
 import org.appwork.utils.Regex;
 import org.appwork.utils.formatter.TimeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "nos.nl" }, urls = { "http://nosdecrypted\\.nl/\\d+|http://nos\\.nl/audio/\\d+/" }, flags = { 2 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "nos.nl" }, urls = { "http://nosdecrypted\\.nl/\\d+|http://nos\\.nl/(audio/\\d+/|embed/\\?id=a:\\d+)" }, flags = { 2 })
 public class NosNl extends PluginForHost {
 
     public NosNl(PluginWrapper wrapper) {
@@ -57,13 +57,20 @@ public class NosNl extends PluginForHost {
     }
 
     /** Settings stuff */
-    private static final String FASTLINKCHECK   = "FASTLINKCHECK";
-    private static final String ALLOW_LQ        = "ALLOW_LQ";
-    private static final String ALLOW_HQ        = "ALLOW_HQ";
-    private static String       CUSTOM_DATE     = "CUSTOM_DATE";
-    private static String       CUSTOM_FILENAME = "CUSTOM_FILENAME";
+    private static final String FASTLINKCHECK    = "FASTLINKCHECK";
+    private static final String ALLOW_LQ         = "ALLOW_LQ";
+    private static final String ALLOW_HQ         = "ALLOW_HQ";
+    private static String       CUSTOM_DATE      = "CUSTOM_DATE";
+    private static String       CUSTOM_FILENAME  = "CUSTOM_FILENAME";
 
-    private static final String TYPE_AUDIO      = "http://nos\\.nl/audio/\\d+/";
+    private static final String TYPE_AUDIO       = "http://nos\\.nl/audio/\\d+/";
+    private static final String TYPE_AUDIO_EMBED = "http://nos\\.nl/embed/\\?id=a:\\d+";
+
+    public void correctDownloadLink(final DownloadLink link) {
+        if (link.getDownloadURL().matches(TYPE_AUDIO_EMBED)) {
+            link.setUrlDownload("http://nos.nl/audio/" + new Regex(link.getDownloadURL(), "(\\d+)$").getMatch(0) + "/");
+        }
+    }
 
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws IOException, PluginException, ParseException {

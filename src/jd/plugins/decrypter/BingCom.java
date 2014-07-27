@@ -63,6 +63,11 @@ public class BingCom extends PluginForDecrypt {
             decryptedLinks.add(createDownloadlink(externID));
             return decryptedLinks;
         }
+        externID = br.getRegex("data\\-externalUrl=\"(https?://(www\\.)?youtube\\.com/watch[^<>\"]*?)\"").getMatch(0);
+        if (externID != null) {
+            decryptedLinks.add(createDownloadlink(externID));
+            return decryptedLinks;
+        }
         final SubConfiguration cfg = SubConfiguration.getConfig("video.msn.com");
         final LinkedHashMap<String, String> foundQualities = new LinkedHashMap<String, String>();
         final ArrayList<String[]> selectedQualities = new ArrayList<String[]>();

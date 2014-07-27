@@ -26,6 +26,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import jd.PluginWrapper;
 import jd.config.SubConfiguration;
 import jd.controlling.ProgressController;
+import jd.parser.Regex;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
@@ -35,29 +36,33 @@ import jd.utils.JDUtilities;
 
 import org.appwork.utils.formatter.TimeFormatter;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "nos.nl" }, urls = { "http://(www\\.)?nos\\.nl/(video/[A-Za-z0-9\\-_]+\\.html|uitzendingen/(lq/)?\\d+)" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "nos.nl" }, urls = { "http://(www\\.)?nos\\.nl/(video/[A-Za-z0-9\\-_]+\\.html|/?embed/\\?id=v:\\d+|uitzendingen/(lq/)?\\d+)" }, flags = { 0 })
 public class NosNlDecrypter extends PluginForDecrypt {
 
     public NosNlDecrypter(PluginWrapper wrapper) {
         super(wrapper);
     }
 
-    private static final String           DOMAIN         = "nos.nl";
+    private static final String           DOMAIN           = "nos.nl";
 
-    private LinkedHashMap<String, String> FOUNDQUALITIES = new LinkedHashMap<String, String>();
-    private String                        FILENAME       = null;
-    private String                        PARAMETER      = null;
+    private LinkedHashMap<String, String> FOUNDQUALITIES   = new LinkedHashMap<String, String>();
+    private String                        FILENAME         = null;
+    private String                        PARAMETER        = null;
 
     /** Settings stuff */
-    private static final String           FASTLINKCHECK  = "FASTLINKCHECK";
-    private static final String           ALLOW_LQ       = "ALLOW_LQ";
-    private static final String           ALLOW_HQ       = "ALLOW_HQ";
+    private static final String           FASTLINKCHECK    = "FASTLINKCHECK";
+    private static final String           ALLOW_LQ         = "ALLOW_LQ";
+    private static final String           ALLOW_HQ         = "ALLOW_HQ";
 
-    private static Object                 ctrlLock       = new Object();
-    private static AtomicBoolean          pluginLoaded   = new AtomicBoolean(false);
+    private static Object                 ctrlLock         = new Object();
+    private static AtomicBoolean          pluginLoaded     = new AtomicBoolean(false);
 
-    private String                        DATE           = null;
-    private String                        VIDEOID        = null;
+    private String                        DATE             = null;
+    private String                        VIDEOID          = null;
+
+    private static final String           TYPE_VIDEO_EMBED = "http://nos\\.nl//?embed/\\?id=v:\\d+";
+    private static final String           TYPE_VIDEO_VIDEO = "http://(www\\.)?nos\\.nl/video/[A-Za-z0-9\\-_]+\\.html";
+    private static final String           TYPE_VIDEO_UITZ  = "http://(www\\.)?nos\\.nl/uitzendingen/(lq/)?\\d+";
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
@@ -68,6 +73,9 @@ public class NosNlDecrypter extends PluginForDecrypt {
                 // load plugin!
                 JDUtilities.getPluginForHost(DOMAIN);
                 pluginLoaded.set(true);
+            }
+            if (PARAMETER.matches(TYPE_VIDEO_EMBED)) {
+                PARAMETER = "http://nos.nl/video/" + new Regex(PARAMETER, "(\\d+)$").getMatch(0) + "/";
             }
             br.getPage(PARAMETER);
             if (br.getHttpConnection().getResponseCode() == 404) {
@@ -92,7 +100,11 @@ public class NosNlDecrypter extends PluginForDecrypt {
             fp.setName(FILENAME);
 
             /** Decrypt qualities START */
+            String type = "video";
             String hqlink;
+            if (PARAMETER.matches(TYPE_VIDEO_UITZ)) {
+                type = "uitzending";
+            }
             if (PARAMETER.matches("DO_NOT_USE_YET")) {
                 br.getPage("http://content.nos.nl/content/playlist/uitzending/fragment/" + VIDEOID + ".xml");
                 hqlink = br.getRegex("<location>(http://[^<>\"]*?)</location>").getMatch(0);
@@ -102,7 +114,7 @@ public class NosNlDecrypter extends PluginForDecrypt {
                 }
                 FOUNDQUALITIES.put("HQ", hqlink);
             } else {
-                br.getPage("http://nos.nl/playlist/video/mp4-web03/" + VIDEOID + ".json");
+                br.getPage("http://nos.nl/playlist/" + type + "/mp4-web03/" + VIDEOID + ".json");
                 hqlink = br.getRegex("\"videofile\":\"(http:[^<>\"]*?)\"").getMatch(0);
                 if (hqlink == null) {
                     logger.warning("Decrypter broken for link: " + PARAMETER);
