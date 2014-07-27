@@ -17,6 +17,7 @@
 package jd.plugins.hoster;
 
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
@@ -36,8 +37,6 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-
-import org.appwork.utils.formatter.SizeFormatter;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "otr.datenkeller.at" }, urls = { "https?://(www\\.)?otr\\.datenkeller\\.(at|net)/\\?(file|getFile)=.+" }, flags = { 2 })
 public class OtrDatenkellerAt extends PluginForHost {
@@ -64,25 +63,73 @@ public class OtrDatenkellerAt extends PluginForHost {
         return "http://otr.datenkeller.net";
     }
 
+    /* API was implemented AFTER rev 26273 */
+    private static final String APIVERSION = "1";
+
     @Override
-    public AvailableStatus requestFileInformation(DownloadLink link) throws IOException, PluginException {
+    public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
         this.setBrowserExclusive();
-        br.setCustomCharset("utf-8");
-        br.getHeaders().put("User-Agent", agent);
-        br.getPage(link.getDownloadURL());
-        if (!br.containsHTML("id=\"reqFileImg\"") && !br.containsHTML("\\(\\'#reqFile\\'\\)\\.hide\\(\\)\\.slideDown") && !br.containsHTML("onclick=\"window\\.open\\(\\'/\\?getFile")) {
-            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        checkLinks(new DownloadLink[] { link });
+        if (!link.isAvailabilityStatusChecked()) {
+            return AvailableStatus.UNCHECKED;
         }
-        String filename = new Regex(link.getDownloadURL(), "otr\\.datenkeller\\.net/\\?file=(.+)").getMatch(0);
-        String filesize = br.getRegex("Größe: </td><td align=\\'center\\'> (.*?) </td>").getMatch(0);
-        if (filename == null) {
+        if (link.isAvailabilityStatusChecked() && !link.isAvailable()) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        }
-        link.setName(filename.trim().replaceAll("\\&referer=.*?", ""));
-        if (filesize != null) {
-            link.setDownloadSize(SizeFormatter.getSize(filesize.replace("i", "")));
         }
         return AvailableStatus.TRUE;
+    }
+
+    @Override
+    public boolean checkLinks(final DownloadLink[] urls) {
+        if (urls == null || urls.length == 0) {
+            return false;
+        }
+        try {
+            final Browser br = new Browser();
+            prepBrowser();
+            br.setCookiesExclusive(true);
+            final StringBuilder sb = new StringBuilder();
+            final ArrayList<DownloadLink> links = new ArrayList<DownloadLink>();
+            int index = 0;
+            while (true) {
+                links.clear();
+                while (true) {
+                    /* we test 50 links at once */
+                    if (index == urls.length || links.size() > 100) {
+                        break;
+                    }
+                    links.add(urls[index]);
+                    index++;
+                }
+                sb.delete(0, sb.capacity());
+                sb.append("api_version=" + APIVERSION + "&action=validate&file=");
+                for (final DownloadLink dl : links) {
+                    sb.append(Encoding.urlEncode(getFname(dl)));
+                    sb.append("%2C");
+                }
+                br.postPage("https://otr.datenkeller.net/api.php", sb.toString());
+                final String okfiles = br.getRegex("\\{\"file_ok\":(.*?\\}\\}),").getMatch(0);
+                for (final DownloadLink dllink : links) {
+                    final String current_filename = getFname(dllink);
+                    if (!okfiles.contains(current_filename)) {
+                        dllink.setAvailable(false);
+                    } else {
+                        dllink.setAvailable(true);
+                        dllink.setName(Encoding.htmlDecode(current_filename));
+                    }
+                }
+                if (index == urls.length) {
+                    break;
+                }
+            }
+        } catch (final Exception e) {
+            return false;
+        }
+        return true;
+    }
+
+    final String getFname(final DownloadLink link) {
+        return new Regex(link.getDownloadURL(), "otr\\.datenkeller\\.net/\\?file=(.+)").getMatch(0);
     }
 
     public String getDllink() throws Exception, PluginException {
@@ -109,7 +156,9 @@ public class OtrDatenkellerAt extends PluginForHost {
     @Override
     public void handleFree(DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
-        String dlPage = getDlpage(downloadLink);
+        /* Use random UA again here because we do not use the API for free downloads */
+        br.getHeaders().put("User-Agent", agent);
+        final String dlPage = getDlpage(downloadLink);
         getPage(dlPage, this.br);
         String dllink = null;
         String lowSpeedLink;
@@ -252,6 +301,11 @@ public class OtrDatenkellerAt extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl.startDownload();
+    }
+
+    private void prepBrowser() {
+        br.getHeaders().put("User-Agent", "JDownloader");
+        br.setCustomCharset("utf-8");
     }
 
     private void getPage(final String url, final Browser br) throws IOException {
