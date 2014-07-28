@@ -606,12 +606,15 @@ public class YoutubeDashV2 extends PluginForHost {
                         for (LinkVariant v : alternatives) {
 
                             if (!checkedAlternatives.contains(v)) {
-                                setActiveVariantByLink(downloadLink, v);
+                                LinkCollector.getInstance().setActiveVariantForLink(downloadLink, v);
+
                                 continue test;
+
                             }
                         }
                     }
-                    setActiveVariantByLink(downloadLink, orgVariant);
+                    LinkCollector.getInstance().setActiveVariantForLink(downloadLink, orgVariant);
+
                     throw e;
                 }
 

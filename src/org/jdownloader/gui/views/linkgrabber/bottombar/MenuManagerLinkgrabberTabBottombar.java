@@ -86,7 +86,7 @@ public class MenuManagerLinkgrabberTabBottombar extends AbstractBottomBarMenuMan
         mr.add(new LeftRightDividerItem());
 
         mr.add(new AutoConfirmMenuLink());
-        mr.add(new ConfirmMenuItem());
+        mr.add(new ActionData(ConfirmSelectionBarAction.class).putSetup(ConfirmSelectionBarAction.SELECTION_ONLY, false));
         //
         MenuContainer all = new MenuContainer(_GUI._.ConfirmOptionsAction_actionPerformed_all(), "confirmAll");
         MenuContainer selected = new MenuContainer(_GUI._.ConfirmOptionsAction_actionPerformed_selected(), "confirmSelectedLinks");

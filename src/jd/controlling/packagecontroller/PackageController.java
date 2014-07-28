@@ -376,45 +376,51 @@ public abstract class PackageController<PackageType extends AbstractPackageNode<
 
                 @Override
                 protected Void run() throws RuntimeException {
-                    final List<ChildType> children = new ArrayList<ChildType>(removechildren);
-                    /* build map for removal of children links */
-                    boolean childrenRemoved = false;
-                    final HashMap<PackageType, List<ChildType>> removeaddMap = new HashMap<PackageType, List<ChildType>>();
-                    for (final ChildType child : children) {
-                        final PackageType parent = child.getParentNode();
-                        if (parent == null) {
-                            continue;
-                        }
-                        List<ChildType> pmap = removeaddMap.get(parent);
-                        if (pmap == null) {
-                            childrenRemoved = true;
-                            pmap = new ArrayList<ChildType>();
-                            removeaddMap.put(parent, pmap);
-                        }
-                        pmap.add(child);
-                    }
-                    final Set<Entry<PackageType, List<ChildType>>> eset = removeaddMap.entrySet();
-                    final Iterator<Entry<PackageType, List<ChildType>>> it = eset.iterator();
-                    while (it.hasNext()) {
-                        /* remove children from other packages */
-                        final Entry<PackageType, List<ChildType>> next = it.next();
-                        final PackageType cpkg = next.getKey();
-                        final PackageController<PackageType, ChildType> controller = cpkg.getControlledBy();
-                        if (controller == null) {
-                            logger.log(new Throwable("NO CONTROLLER!!!"));
-                        } else {
-                            controller.removeChildren(cpkg, next.getValue(), true);
-                        }
-                    }
-                    structureChanged.incrementAndGet();
-                    if (childrenRemoved) {
-                        childrenChanged.incrementAndGet();
-                    }
+                    internalRemoveChildren(removechildren);
                     _controllerStructureChanged(this.getQueuePrio());
+
                     return null;
                 }
             });
         }
+    }
+
+    protected void internalRemoveChildren(List<ChildType> removechildren) {
+        final List<ChildType> children = new ArrayList<ChildType>(removechildren);
+        /* build map for removal of children links */
+        boolean childrenRemoved = false;
+        final HashMap<PackageType, List<ChildType>> removeaddMap = new HashMap<PackageType, List<ChildType>>();
+        for (final ChildType child : children) {
+            final PackageType parent = child.getParentNode();
+            if (parent == null) {
+                continue;
+            }
+            List<ChildType> pmap = removeaddMap.get(parent);
+            if (pmap == null) {
+                childrenRemoved = true;
+                pmap = new ArrayList<ChildType>();
+                removeaddMap.put(parent, pmap);
+            }
+            pmap.add(child);
+        }
+        final Set<Entry<PackageType, List<ChildType>>> eset = removeaddMap.entrySet();
+        final Iterator<Entry<PackageType, List<ChildType>>> it = eset.iterator();
+        while (it.hasNext()) {
+            /* remove children from other packages */
+            final Entry<PackageType, List<ChildType>> next = it.next();
+            final PackageType cpkg = next.getKey();
+            final PackageController<PackageType, ChildType> controller = cpkg.getControlledBy();
+            if (controller == null) {
+                logger.log(new Throwable("NO CONTROLLER!!!"));
+            } else {
+                controller.removeChildren(cpkg, next.getValue(), true);
+            }
+        }
+        structureChanged.incrementAndGet();
+        if (childrenRemoved) {
+            childrenChanged.incrementAndGet();
+        }
+
     }
 
     /**

@@ -1069,6 +1069,7 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
                         String id = link.getLinkID();
                         if (!dupeCheckMap.add(id)) {
                             /* clear references */
+                            logger.info("Filtered Dupe: " + id);
                             link.setCollectingInfo(null);
                             link.setSourceJob(null);
                             link.setMatchingFilter(null);
@@ -1180,6 +1181,7 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
 
     // clean up offline and various map
     private void removeFromMap(HashMap<String, java.util.List<CrawledLink>> idListMap, CrawledLink l) {
+
         Iterator<Entry<String, java.util.List<CrawledLink>>> it = idListMap.entrySet().iterator();
         while (it.hasNext()) {
             Entry<String, java.util.List<CrawledLink>> elem = it.next();
@@ -1803,6 +1805,23 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
             DownloadWatchDog.getInstance().startDownloads();
         }
 
+    }
+
+    public void removeChildren(final List<CrawledLink> removechildren) {
+
+        if (removechildren != null && removechildren.size() > 0) {
+            QUEUE.add(new QueueAction<Void, RuntimeException>() {
+
+                @Override
+                protected Void run() throws RuntimeException {
+                    internalRemoveChildren(removechildren);
+                    cleanupMaps(removechildren);
+                    _controllerStructureChanged(this.getQueuePrio());
+
+                    return null;
+                }
+            });
+        }
     }
 
     public static void requestDeleteLinks(final List<CrawledLink> nodesToDelete, final boolean containsOnline, final String string, final boolean byPassDialog, final boolean isCancelLinkcrawlerJobs, final boolean isResetTableSorter, final boolean isClearSearchFilter, final boolean isClearFilteredLinks) {

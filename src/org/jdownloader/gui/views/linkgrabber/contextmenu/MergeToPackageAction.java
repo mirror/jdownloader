@@ -32,6 +32,16 @@ public class MergeToPackageAction extends CustomizableTableContextAppAction<Craw
         setLastPathDefault(true);
     }
 
+    private boolean askForNewFolderAndName = true;
+
+    public boolean isAskForNewFolderAndName() {
+        return askForNewFolderAndName;
+    }
+
+    public void setAskForNewFolderAndName(boolean askForNewFolderAndName) {
+        this.askForNewFolderAndName = askForNewFolderAndName;
+    }
+
     private boolean lastPathDefault = false;
 
     @Customizer(name = "Use latest selected path as default one")
