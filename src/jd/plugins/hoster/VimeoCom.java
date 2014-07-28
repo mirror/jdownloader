@@ -574,7 +574,7 @@ public class VimeoCom extends PluginForHost {
         return "JDownloader's Vimeo Plugin helps downloading videoclips from vimeo.com. Vimeo provides different video qualities.";
     }
 
-    private final static String defaultCustomFilename = "*videoname**ext*";
+    private final static String defaultCustomFilename = "*videoname*_*quality**ext*";
     private final static String defaultCustomDate     = "dd.MM.yyyy";
 
     private void setConfigElements() {
@@ -589,13 +589,14 @@ public class VimeoCom extends PluginForHost {
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_LABEL, "Customize the filenames"));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_TEXTFIELD, getPluginConfig(), CUSTOM_DATE, JDL.L("plugins.hoster.vimeocom.customdate", "Define how the date should look.")).setDefaultValue(defaultCustomDate));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_SEPARATOR));
-        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_LABEL, "Customize the filename! Example: '*channelname*_*date*_*videoname**ext*'"));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_LABEL, "Customize the filename! Example: '*channelname*_*date*_*videoname*_*quality**ext*'"));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_TEXTFIELD, getPluginConfig(), CUSTOM_FILENAME, JDL.L("plugins.hoster.vimeocom.customfilename", "Define how the filenames should look:")).setDefaultValue(defaultCustomFilename));
         final StringBuilder sb = new StringBuilder();
         sb.append("Explanation of the available tags:\r\n");
         sb.append("*channelname* = name of the channel/uploader\r\n");
         sb.append("*date* = date when the video was posted - appears in the user-defined format above\r\n");
         sb.append("*videoname* = name of the video without extension\r\n");
+        sb.append("*quality* = mobile or sd or hd\r\n");
         sb.append("*videoid* = id of the video\r\n");
         sb.append("*ext* = the extension of the file, in this case usually '.mp4'");
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_LABEL, sb.toString()));
