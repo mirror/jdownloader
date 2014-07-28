@@ -53,7 +53,7 @@ public class RainUploadCom extends PluginForHost {
 
     // For sites which use this script: http://www.yetishare.com/
     // YetiShareBasic Version 0.2.9-psp
-    // mods: handlePremium[forced login on every download]
+    // mods:
     // protocol: no https
     // captchatype: recaptcha
 
@@ -63,7 +63,7 @@ public class RainUploadCom extends PluginForHost {
     }
 
     /* Other constants */
-    private final String         MAINPAGE                                     = "http://yetishare.com";
+    private final String         MAINPAGE                                     = "http://rainupload.com";
     private final String         TYPE                                         = "php";
     private static final String  SIMULTANDLSLIMIT                             = "?e=You+have+reached+the+maximum+concurrent+downloads";
     private static final String  SIMULTANDLSLIMITUSERTEXT                     = "Max. simultan downloads limit reached, wait to start more downloads from this host";
@@ -372,7 +372,7 @@ public class RainUploadCom extends PluginForHost {
     @Override
     public void handlePremium(final DownloadLink link, final Account account) throws Exception {
         requestFileInformation(link);
-        login(account, true);
+        login(account, false);
         if (account.getBooleanProperty("free", false)) {
             br.getPage(link.getDownloadURL());
             doFree(link, ACCOUNT_FREE_RESUME, ACCOUNT_FREE_MAXCHUNKS);

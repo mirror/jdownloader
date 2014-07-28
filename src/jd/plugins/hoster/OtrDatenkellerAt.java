@@ -332,7 +332,7 @@ public class OtrDatenkellerAt extends PluginForHost {
 
     @Override
     public int getMaxSimultanPremiumDownloadNum() {
-        return -1;
+        return 1;
     }
 
     // do not add @Override here to keep 0.* compatibility
