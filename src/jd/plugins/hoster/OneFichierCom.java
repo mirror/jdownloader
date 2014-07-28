@@ -401,6 +401,11 @@ public class OneFichierCom extends PluginForHost {
     @Override
     public AccountInfo fetchAccountInfo(final Account account) throws Exception {
         AccountInfo ai = new AccountInfo();
+        if (account.getUser() == null || !account.getUser().matches(".+@.+")) {
+            ai.setStatus(":\r\nYou need to use Email as username!");
+            account.setValid(false);
+            return ai;
+        }
         /* reset maxPrem workaround on every fetchaccount info */
         maxPrem.set(1);
         // API login workaround for slow servers
