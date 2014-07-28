@@ -44,7 +44,7 @@ public class OneFichierComFolder extends PluginForDecrypt {
         parameter = "http://www.1fichier.com/en/dir/" + new Regex(parameter, "([A-Za-z0-9]+)$").getMatch(0);
         prepareBrowser(br);
         br.getPage(parameter + "?e=1");
-        if (br.toString().equals("bad")) {
+        if (br.toString().equals("bad") || br.containsHTML("No htmlCode read")) {
             final DownloadLink offline = createDownloadlink("directhttp://" + parameter);
             offline.setAvailable(false);
             offline.setProperty("offline", true);

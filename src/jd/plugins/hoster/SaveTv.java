@@ -110,8 +110,8 @@ public class SaveTv extends PluginForHost {
 
     /* Custom filename settings stuff */
     private static final String  CUSTOM_DATE                               = "CUSTOM_DATE";
-    private static final String  CUSTOM_FILENAME2                          = "CUSTOM_FILENAME2";
-    private static final String  CUSTOM_FILENAME_SERIES2                   = "CUSTOM_FILENAME_SERIES2";
+    private static final String  CUSTOM_FILENAME_MOVIES                    = "CUSTOM_FILENAME_MOVIES";
+    private static final String  CUSTOM_FILENAME_SERIES                    = "CUSTOM_FILENAME_SERIES_3";
     private static final String  CUSTOM_FILENAME_SEPERATION_MARK           = "CUSTOM_FILENAME_SEPERATION_MARK";
     private static final String  CUSTOM_FILENAME_EMPTY_TAG_STRING          = "CUSTOM_FILENAME_EMPTY_TAG_STRING";
     private static final String  FORCE_ORIGINALFILENAME_SERIES             = "FORCE_ORIGINALFILENAME_SERIES";
@@ -355,7 +355,7 @@ public class SaveTv extends PluginForHost {
         boolean force_original_movies = false;
         String formattedFilename;
         if (isSeries(dl)) {
-            formattedFilename = cfg.getStringProperty(CUSTOM_FILENAME_SERIES2, defaultCustomSeriesFilename);
+            formattedFilename = cfg.getStringProperty(CUSTOM_FILENAME_SERIES, defaultCustomSeriesFilename);
             try {
                 if (site_title.matches(cfg.getStringProperty(FORCE_ORIGINALFILENAME_SERIES, null))) {
                     force_original_series = true;
@@ -364,7 +364,7 @@ public class SaveTv extends PluginForHost {
                 System.out.println("FORCE_ORIGINALFILENAME_SERIES custom regex failed");
             }
         } else {
-            formattedFilename = cfg.getStringProperty(CUSTOM_FILENAME2, defaultCustomFilename);
+            formattedFilename = cfg.getStringProperty(CUSTOM_FILENAME_MOVIES, defaultCustomFilenameMovies);
             try {
                 if (site_title.matches(cfg.getStringProperty(FORCE_ORIGINALFILENAME_MOVIES, null))) {
                     force_original_movies = true;
@@ -1320,14 +1320,14 @@ public class SaveTv extends PluginForHost {
         String formattedFilename = null;
         if (!isSeries(downloadLink)) {
             /* For all links except series */
-            formattedFilename = cfg.getStringProperty(CUSTOM_FILENAME2, defaultCustomFilename);
+            formattedFilename = cfg.getStringProperty(CUSTOM_FILENAME_MOVIES, defaultCustomFilenameMovies);
             if (formattedFilename == null || formattedFilename.equals("")) {
-                formattedFilename = defaultCustomFilename;
+                formattedFilename = defaultCustomFilenameMovies;
             }
             formattedFilename = formattedFilename.toLowerCase();
             /* Make sure that the user entered a VALID custom filename - if not, use the default name */
             if (!formattedFilename.contains("*endung*") || (!formattedFilename.contains("*videotitel*") && !formattedFilename.contains("*zufallszahl*") && !formattedFilename.contains("*telecastid*") && !formattedFilename.contains("*sendername*") && !formattedFilename.contains("*username*") && !formattedFilename.contains("*quality*") && !formattedFilename.contains("*server_dateiname*"))) {
-                formattedFilename = defaultCustomFilename;
+                formattedFilename = defaultCustomFilenameMovies;
             }
 
             formattedFilename = formattedFilename.replace("*zufallszahl*", randomnumber);
@@ -1346,14 +1346,14 @@ public class SaveTv extends PluginForHost {
             formattedFilename = formattedFilename.replace("*videotitel*", site_title);
         } else {
             /* For series */
-            formattedFilename = cfg.getStringProperty(CUSTOM_FILENAME_SERIES2, defaultCustomSeriesFilename);
+            formattedFilename = cfg.getStringProperty(CUSTOM_FILENAME_SERIES, defaultCustomSeriesFilename);
             if (formattedFilename == null || formattedFilename.equals("")) {
-                formattedFilename = defaultCustomFilename;
+                formattedFilename = defaultCustomFilenameMovies;
             }
             formattedFilename = formattedFilename.toLowerCase();
             /* Make sure that the user entered a VALID custom filename - if not, use the default name */
             if (!formattedFilename.contains("*endung*") || (!formattedFilename.contains("*serientitel*") && !formattedFilename.contains("*episodenname*") && !formattedFilename.contains("*episodennummer*") && !formattedFilename.contains("*zufallszahl*") && !formattedFilename.contains("*telecastid*") && !formattedFilename.contains("*sendername*") && !formattedFilename.contains("*username*") && !formattedFilename.contains("*quality*") && !formattedFilename.contains("*server_dateiname*"))) {
-                formattedFilename = defaultCustomFilename;
+                formattedFilename = defaultCustomFilenameMovies;
             }
 
             formattedFilename = formattedFilename.replace("*zufallszahl*", randomnumber);
@@ -1576,8 +1576,8 @@ public class SaveTv extends PluginForHost {
         return "JDownloader's Save.tv Plugin helps downloading videoclips from Save.tv. Save.tv provides different settings for its downloads.";
     }
 
-    private final static String  defaultCustomFilename                           = "*videotitel**telecastid**endung*";
-    private final static String  defaultCustomSeriesFilename                     = "*serientitel* ¦ *episodennummer* ¦ *episodenname**endung*";
+    private final static String  defaultCustomFilenameMovies                     = "*quality* ¦ *videotitel* ¦ *produktionsjahr* ¦ *telecastid**endung*";
+    private final static String  defaultCustomSeriesFilename                     = "*serientitel* ¦ *quality* ¦ *episodennummer* ¦ *episodenname* ¦ *telecastid**endung*";
     private final static String  defaultCustomSeperationMark                     = "+";
     private final static String  defaultCustomStringForEmptyTags                 = "-";
     private final static int     defaultCrawlLasthours                           = 0;
@@ -1645,7 +1645,7 @@ public class SaveTv extends PluginForHost {
         sbinfo.append("Tipp: Die Save.tv Plugin Einstellungen lassen sich rechts oben wieder auf ihre Standardwerte zurücksetzen!\r\n");
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_LABEL, sbinfo.toString()).setEnabledCondidtion(origName, false));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_SEPARATOR));
-        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_TEXTFIELD, getPluginConfig(), CUSTOM_FILENAME2, JDL.L("plugins.hoster.savetv.customfilenamemovies", "Eigener Dateiname für Filme/Shows:")).setDefaultValue(defaultCustomFilename).setEnabledCondidtion(origName, false));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_TEXTFIELD, getPluginConfig(), CUSTOM_FILENAME_MOVIES, JDL.L("plugins.hoster.savetv.customfilenamemovies", "Eigener Dateiname für Filme/Shows:")).setDefaultValue(defaultCustomFilenameMovies).setEnabledCondidtion(origName, false));
         final StringBuilder sb = new StringBuilder();
         sb.append("Erklärung der verfügbaren Tags:\r\n");
         sb.append("*server_dateiname* = Original Dateiname (ohne Dateiendung)\r\n");
@@ -1663,7 +1663,7 @@ public class SaveTv extends PluginForHost {
         sb.append("*endung* = Die Dateiendung, in diesem Fall immer '.mp4'");
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_LABEL, sb.toString()).setEnabledCondidtion(origName, false));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_SEPARATOR));
-        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_TEXTFIELD, getPluginConfig(), CUSTOM_FILENAME_SERIES2, JDL.L("plugins.hoster.savetv.customseriesfilename", "Eigener Dateiname für Serien:")).setDefaultValue(defaultCustomSeriesFilename).setEnabledCondidtion(origName, false));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_TEXTFIELD, getPluginConfig(), CUSTOM_FILENAME_SERIES, JDL.L("plugins.hoster.savetv.customseriesfilename", "Eigener Dateiname für Serien:")).setDefaultValue(defaultCustomSeriesFilename).setEnabledCondidtion(origName, false));
         final StringBuilder sbseries = new StringBuilder();
         sbseries.append("Erklärung der verfügbaren Tags:\r\n");
         sbseries.append("*server_dateiname* = Original Dateiname (ohne Dateiendung)\r\n");

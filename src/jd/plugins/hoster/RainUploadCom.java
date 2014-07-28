@@ -18,11 +18,20 @@ package jd.plugins.hoster;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.HashMap;
+import java.util.Locale;
+import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import jd.PluginWrapper;
+import jd.config.Property;
+import jd.http.Cookie;
+import jd.http.Cookies;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
+import jd.plugins.Account;
+import jd.plugins.Account.AccountType;
+import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
@@ -32,20 +41,19 @@ import jd.plugins.PluginForHost;
 import jd.utils.JDUtilities;
 
 import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.formatter.TimeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "rainupload.com" }, urls = { "http://(www\\.)?rainupload\\.com/[a-z0-9]+" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "rainupload.com" }, urls = { "http://(www\\.)?rainupload\\.com/[A-Za-z0-9]+" }, flags = { 2 })
 public class RainUploadCom extends PluginForHost {
 
     public RainUploadCom(PluginWrapper wrapper) {
         super(wrapper);
+        this.enablePremium("http://rainupload.com/upgrade.php");
     }
 
     // For sites which use this script: http://www.yetishare.com/
-    // YetiShareBasic Version 0.2.7-psp
-    // mods:
-    // non account: chunks * maxdls
-    // free account: chunks * maxdls
-    // premium account: chunks * maxdls
+    // YetiShareBasic Version 0.2.9-psp
+    // mods: handlePremium[forced login on every download]
     // protocol: no https
     // captchatype: recaptcha
 
@@ -55,8 +63,8 @@ public class RainUploadCom extends PluginForHost {
     }
 
     /* Other constants */
-    private final String         MAINPAGE                                     = "http://rainupload.com";
-    private final String         TYPE                                         = "html";
+    private final String         MAINPAGE                                     = "http://yetishare.com";
+    private final String         TYPE                                         = "php";
     private static final String  SIMULTANDLSLIMIT                             = "?e=You+have+reached+the+maximum+concurrent+downloads";
     private static final String  SIMULTANDLSLIMITUSERTEXT                     = "Max. simultan downloads limit reached, wait to start more downloads from this host";
     private static final String  SERVERERROR                                  = "e=Error%3A+Could+not+open+file+for+reading.";
@@ -73,8 +81,8 @@ public class RainUploadCom extends PluginForHost {
     private static final int     FREE_MAXCHUNKS                               = 1;
     private static final int     FREE_MAXDOWNLOADS                            = 1;
     private static final boolean ACCOUNT_FREE_RESUME                          = true;
-    private static final int     ACCOUNT_FREE_MAXCHUNKS                       = 0;
-    private static final int     ACCOUNT_FREE_MAXDOWNLOADS                    = 20;
+    private static final int     ACCOUNT_FREE_MAXCHUNKS                       = 1;
+    private static final int     ACCOUNT_FREE_MAXDOWNLOADS                    = 1;
     private static final boolean ACCOUNT_PREMIUM_RESUME                       = true;
     private static final int     ACCOUNT_PREMIUM_MAXCHUNKS                    = 0;
     private static final int     ACCOUNT_PREMIUM_MAXDOWNLOADS                 = 20;
@@ -113,12 +121,21 @@ public class RainUploadCom extends PluginForHost {
                 link.getLinkStatus().setStatusText(SERVERERRORUSERTEXT);
                 return AvailableStatus.TRUE;
             }
-            if (br.getURL().contains("/error." + TYPE) || br.getURL().contains("/index." + TYPE) || !br.containsHTML("class=\"downloadPageTable(V2)?\"")) {
+            if (br.getURL().contains("/error." + TYPE) || br.getURL().contains("/index." + TYPE) || (!br.containsHTML("class=\"downloadPageTable(V2)?\"") && !br.containsHTML("class=\"download\\-timer\""))) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
             final Regex fInfo = br.getRegex("<strong>([^<>\"]*?) \\((\\d+(,\\d+)?(\\.\\d+)? (KB|MB|GB))\\)<");
             filename = fInfo.getMatch(0);
             filesize = fInfo.getMatch(1);
+            if (filename == null || filesize == null) {
+                /* Get piece of the page which usually contains filename- and size */
+                final String page_piece = br.getRegex("(<div class=\"contentPageWrapper\">.*?class=\"link btn\\-free\")").getMatch(0);
+                if (page_piece != null) {
+                    final String endings = jd.plugins.hoster.DirectHTTP.ENDINGS;
+                    filename = new Regex(page_piece, "([^<>/\r\n\t:\\?\"]+" + endings + "[^<>/\r\n\t:\\?\"]*)").getMatch(0);
+                    filesize = new Regex(page_piece, "(\\d+(,\\d+)?(\\.\\d+)? (KB|MB|GB))").getMatch(0);
+                }
+            }
         }
         if (filename == null || filesize == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -240,6 +257,142 @@ public class RainUploadCom extends PluginForHost {
         return FREE_MAXDOWNLOADS;
     }
 
+    private static final Object LOCK = new Object();
+
+    @SuppressWarnings("unchecked")
+    private void login(final Account account, boolean force) throws Exception {
+        synchronized (LOCK) {
+            try {
+                // Load cookies
+                br.setCookiesExclusive(true);
+                final Object ret = account.getProperty("cookies", null);
+                boolean acmatch = Encoding.urlEncode(account.getUser()).equals(account.getStringProperty("name", Encoding.urlEncode(account.getUser())));
+                if (acmatch) {
+                    acmatch = Encoding.urlEncode(account.getPass()).equals(account.getStringProperty("pass", Encoding.urlEncode(account.getPass())));
+                }
+                if (acmatch && ret != null && ret instanceof HashMap<?, ?> && !force) {
+                    final HashMap<String, String> cookies = (HashMap<String, String>) ret;
+                    if (account.isValid()) {
+                        for (final Map.Entry<String, String> cookieEntry : cookies.entrySet()) {
+                            final String key = cookieEntry.getKey();
+                            final String value = cookieEntry.getValue();
+                            this.br.setCookie(MAINPAGE, key, value);
+                        }
+                        return;
+                    }
+                }
+                br.setFollowRedirects(true);
+                br.postPage("http://" + this.getHost() + "/login." + TYPE, "submit=Login&submitme=1&loginUsername=" + Encoding.urlEncode(account.getUser()) + "&loginPassword=" + Encoding.urlEncode(account.getPass()));
+                final String lang = System.getProperty("user.language");
+                if (!br.containsHTML("/logout\\." + TYPE + "\">logout")) {
+                    if ("de".equalsIgnoreCase(lang)) {
+                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUngültiger Benutzername oder ungültiges Passwort!\r\nDu bist dir sicher, dass dein eingegebener Benutzername und Passwort stimmen? Versuche folgendes:\r\n1. Falls dein Passwort Sonderzeichen enthält, ändere es (entferne diese) und versuche es erneut!\r\n2. Gib deine Zugangsdaten per Hand (ohne kopieren/einfügen) ein.", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                    } else {
+                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nInvalid username/password!\r\nYou're sure that the username and password you entered are correct? Some hints:\r\n1. If your password contains special characters, change it (remove them) and try again!\r\n2. Type in your username/password by hand without copy & paste.", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                    }
+                }
+                if (br.containsHTML("/upgrade\\." + TYPE + "\">upgrade account</a>") || !br.containsHTML("/upgrade\\." + TYPE + "\">extend account</a>")) {
+                    account.setProperty("free", true);
+                } else {
+                    account.setProperty("free", false);
+                }
+                // Save cookies
+                final HashMap<String, String> cookies = new HashMap<String, String>();
+                final Cookies add = this.br.getCookies(MAINPAGE);
+                for (final Cookie c : add.getCookies()) {
+                    cookies.put(c.getKey(), c.getValue());
+                }
+                account.setProperty("name", Encoding.urlEncode(account.getUser()));
+                account.setProperty("pass", Encoding.urlEncode(account.getPass()));
+                account.setProperty("cookies", cookies);
+            } catch (final PluginException e) {
+                account.setProperty("cookies", Property.NULL);
+                throw e;
+            }
+        }
+    }
+
+    @Override
+    public AccountInfo fetchAccountInfo(final Account account) throws Exception {
+        final AccountInfo ai = new AccountInfo();
+        /* reset maxPrem workaround on every fetchaccount info */
+        maxPrem.set(1);
+        try {
+            login(account, true);
+        } catch (final PluginException e) {
+            account.setValid(false);
+            throw e;
+        }
+        if (account.getBooleanProperty("free", false)) {
+            try {
+                account.setType(AccountType.FREE);
+                account.setMaxSimultanDownloads(ACCOUNT_FREE_MAXDOWNLOADS);
+            } catch (final Throwable e) {
+                /* Not available in old 0.9.581 Stable */
+            }
+            maxPrem.set(ACCOUNT_FREE_MAXDOWNLOADS);
+            ai.setStatus("Registered (free) user");
+        } else {
+            br.getPage("http://" + this.getHost() + "/upgrade." + TYPE);
+            /* If the premium account is expired we'll simply accept it as a free account. */
+            final String expire = br.getRegex("Reverts To Free Account:[\t\n\r ]+</td>[\t\n\r ]+<td>[\t\n\r ]+(\\d{2}/\\d{2}/\\d{4} \\d{2}:\\d{2}:\\d{2})").getMatch(0);
+            if (expire == null) {
+                account.setValid(false);
+                return ai;
+            }
+            long expire_milliseconds = 0;
+            expire_milliseconds = TimeFormatter.getMilliSeconds(expire, "MM/dd/yyyy hh:mm:ss", Locale.ENGLISH);
+            if ((expire_milliseconds - System.currentTimeMillis()) <= 0) {
+                account.setProperty("free", true);
+                try {
+                    account.setType(AccountType.FREE);
+                    account.setMaxSimultanDownloads(ACCOUNT_FREE_MAXDOWNLOADS);
+                } catch (final Throwable e) {
+                    /* Not available in old 0.9.581 Stable */
+                }
+                maxPrem.set(ACCOUNT_FREE_MAXDOWNLOADS);
+                ai.setStatus("Registered (free) user");
+            } else {
+                ai.setValidUntil(expire_milliseconds);
+                try {
+                    account.setType(AccountType.PREMIUM);
+                    account.setMaxSimultanDownloads(ACCOUNT_PREMIUM_MAXDOWNLOADS);
+                } catch (final Throwable e) {
+                    /* Not available in old 0.9.581 Stable */
+                }
+                maxPrem.set(ACCOUNT_PREMIUM_MAXDOWNLOADS);
+                ai.setStatus("Premium User");
+            }
+        }
+        account.setValid(true);
+        ai.setUnlimitedTraffic();
+        return ai;
+    }
+
+    @Override
+    public void handlePremium(final DownloadLink link, final Account account) throws Exception {
+        requestFileInformation(link);
+        login(account, true);
+        if (account.getBooleanProperty("free", false)) {
+            br.getPage(link.getDownloadURL());
+            doFree(link, ACCOUNT_FREE_RESUME, ACCOUNT_FREE_MAXCHUNKS);
+        } else {
+            dl = jd.plugins.BrowserAdapter.openDownload(br, link, link.getDownloadURL(), ACCOUNT_PREMIUM_RESUME, ACCOUNT_PREMIUM_MAXCHUNKS);
+            if (!dl.getConnection().isContentDisposition()) {
+                logger.warning("The final dllink seems not to be a file!");
+                br.followConnection();
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
+            dl.startDownload();
+        }
+    }
+
+    @Override
+    public int getMaxSimultanPremiumDownloadNum() {
+        /* workaround for free/premium issue on stable 09581 */
+        return maxPrem.get();
+    }
+
     @Override
     public void reset() {
     }
@@ -248,9 +401,4 @@ public class RainUploadCom extends PluginForHost {
     public void resetDownloadlink(DownloadLink link) {
     }
 
-
-/* NO OVERRIDE!! We need to stay 0.9*compatible */
-public boolean hasCaptcha(DownloadLink link, jd.plugins.Account acc) {
-return true;
-}
 }

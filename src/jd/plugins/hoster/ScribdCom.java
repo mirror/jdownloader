@@ -42,15 +42,17 @@ import jd.utils.locale.JDL;
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "scribd.com" }, urls = { "http://(www\\.)?((de|ru|es)\\.)?scribd\\.com/doc/\\d+" }, flags = { 2 })
 public class ScribdCom extends PluginForHost {
 
-    private final String   formats     = "formats";
+    private final String        formats     = "formats";
 
     /** The list of server values displayed to the user */
-    private final String[] allFormats  = new String[] { "PDF", "TXT", "DOCX" };
+    private final String[]      allFormats  = new String[] { "PDF", "TXT", "DOCX" };
 
-    private final String   NODOWNLOAD  = JDL.L("plugins.hoster.ScribdCom.NoDownloadAvailable", "Download is disabled for this file!");
-    private final String   PREMIUMONLY = JDL.L("plugins.hoster.ScribdCom.premonly", "Download requires a scribd.com account!");
-    private String         XTOKEN      = null;
-    private String         ORIGURL     = null;
+    private static final String FORMAT_PPS  = "class=\"format_ext\">\\.PPS</span>";
+
+    private final String        NODOWNLOAD  = JDL.L("plugins.hoster.ScribdCom.NoDownloadAvailable", "Download is disabled for this file!");
+    private final String        PREMIUMONLY = JDL.L("plugins.hoster.ScribdCom.premonly", "Download requires a scribd.com account!");
+    private String              XTOKEN      = null;
+    private String              ORIGURL     = null;
 
     public ScribdCom(PluginWrapper wrapper) {
         super(wrapper);
@@ -76,7 +78,9 @@ public class ScribdCom extends PluginForHost {
         for (int i = 0; i <= 3; i++) {
             String newurl = br.getRedirectLocation();
             if (newurl != null) {
-                if (newurl.contains("/removal/")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+                if (newurl.contains("/removal/")) {
+                    throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+                }
                 downloadLink.setUrlDownload(newurl);
                 br.getPage(downloadLink.getDownloadURL());
             } else {
@@ -97,9 +101,11 @@ public class ScribdCom extends PluginForHost {
                 }
             }
         }
-        if (filename == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (filename == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
 
-        downloadLink.setName(Encoding.htmlDecode(filename.trim()));
+        downloadLink.setName(Encoding.htmlDecode(filename.trim()) + "." + getExtension());
         return AvailableStatus.TRUE;
     }
 
@@ -123,7 +129,11 @@ public class ScribdCom extends PluginForHost {
         return "http://support.scribd.com/forums/33939/entries/25459";
     }
 
-    private String getConfiguredServer() {
+    private String getExtension() {
+        /* Special case */
+        if (br.containsHTML(FORMAT_PPS)) {
+            return "pps";
+        }
         switch (getPluginConfig().getIntegerProperty(formats, -1)) {
         case 0:
             logger.fine("PDF format is configured");
@@ -140,17 +150,17 @@ public class ScribdCom extends PluginForHost {
         }
     }
 
-    private String getConfiguredReplacedServer(final String oldText) {
-        String newText = null;
-        if (oldText.equals("pdf")) {
-            newText = "\"pdf_download\":1";
-        } else if (oldText.equals("txt")) {
-            newText = "\"text_download\":1";
-        } else if (oldText.equals("docx")) {
-            newText = "\"word_download\":1";
-        }
-        return newText;
-    }
+    // private String getConfiguredReplacedServer(final String oldText) {
+    // String newText = null;
+    // if (oldText.equals("pdf")) {
+    // newText = "\"pdf_download\":1";
+    // } else if (oldText.equals("txt")) {
+    // newText = "\"text_download\":1";
+    // } else if (oldText.equals("docx")) {
+    // newText = "\"word_download\":1";
+    // }
+    // return newText;
+    // }
 
     @Override
     public int getMaxSimultanFreeDownloadNum() {
@@ -170,14 +180,18 @@ public class ScribdCom extends PluginForHost {
         try {
             throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);
         } catch (final Throwable e) {
-            if (e instanceof PluginException) throw (PluginException) e;
+            if (e instanceof PluginException) {
+                throw (PluginException) e;
+            }
         }
         throw new PluginException(LinkStatus.ERROR_FATAL, NODOWNLOAD);
     }
 
     public void handlePremium(final DownloadLink parameter, final Account account) throws Exception {
         requestFileInformation(parameter);
-        if (br.containsHTML("class=\"download_disabled_button\"")) throw new PluginException(LinkStatus.ERROR_FATAL, NODOWNLOAD);
+        if (br.containsHTML("class=\"download_disabled_button\"")) {
+            throw new PluginException(LinkStatus.ERROR_FATAL, NODOWNLOAD);
+        }
         login(account);
         final String[] downloadInfo = getDllink(parameter);
         dl = jd.plugins.BrowserAdapter.openDownload(br, parameter, downloadInfo[0], true, 0);
@@ -185,7 +199,7 @@ public class ScribdCom extends PluginForHost {
             br.followConnection();
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        parameter.setFinalFileName(parameter.getName() + "." + downloadInfo[1]);
+        parameter.setFinalFileName(Encoding.htmlDecode(getFileNameFromHeader(dl.getConnection())));
         dl.startDownload();
     }
 
@@ -202,15 +216,19 @@ public class ScribdCom extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
         }
         br.postPage("https://www.scribd.com/login", "authenticity_token=" + XTOKEN + "&login_params%5Bnext_url%5D=&login_params%5Bcontext%5D=join2&form_name=login_lb_form_login_lb&login_or_email=" + Encoding.urlEncode(account.getUser()) + "&login_password=" + Encoding.urlEncode(account.getPass()));
-        if (br.containsHTML("Invalid username or password") || !br.containsHTML("\"login\":true")) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+        if (br.containsHTML("Invalid username or password") || !br.containsHTML("\"login\":true")) {
+            throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+        }
     }
 
     private String[] getDllink(final DownloadLink parameter) throws PluginException, IOException {
         br.getPage(ORIGURL);
         String[] dlinfo = new String[2];
-        dlinfo[1] = getConfiguredServer();
+        dlinfo[1] = getExtension();
         final String fileId = new Regex(parameter.getDownloadURL(), "scribd\\.com/doc/(\\d+)").getMatch(0);
-        if (fileId == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (fileId == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         final Browser xmlbrowser = br.cloneBrowser();
         xmlbrowser.setFollowRedirects(false);
         xmlbrowser.getHeaders().put("X-Requested-With", "XMLHttpRequest");
@@ -223,7 +241,9 @@ public class ScribdCom extends PluginForHost {
             try {
                 throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);
             } catch (final Throwable e) {
-                if (e instanceof PluginException) throw (PluginException) e;
+                if (e instanceof PluginException) {
+                    throw (PluginException) e;
+                }
             }
             throw new PluginException(LinkStatus.ERROR_FATAL, "Download is only available for premium users!");
         }
@@ -242,21 +262,26 @@ public class ScribdCom extends PluginForHost {
         xmlbrowser.clearCookies("http://scribd.com/");
         xmlbrowser.setCookie("http://scribd.com/", "_scribd_session", check);
         xmlbrowser.getPage(dlinfo[0]);
-        if (br.containsHTML("Sorry, downloading this document in the requested format has been disallowed")) throw new PluginException(LinkStatus.ERROR_FATAL, dlinfo[1] + " format is not available for this file!");
+        if (br.containsHTML("Sorry, downloading this document in the requested format has been disallowed")) {
+            throw new PluginException(LinkStatus.ERROR_FATAL, dlinfo[1] + " format is not available for this file!");
+        }
         if (br.containsHTML("You do not have access to download this document") || br.containsHTML("Invalid document format")) {
             try {
                 throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);
             } catch (final Throwable e) {
-                if (e instanceof PluginException) throw (PluginException) e;
+                if (e instanceof PluginException) {
+                    throw (PluginException) e;
+                }
             }
             throw new PluginException(LinkStatus.ERROR_FATAL, "This file can only be downloaded by premium users");
         }
         dlinfo[0] = xmlbrowser.getRedirectLocation();
-        if (dlinfo[0] == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (dlinfo[0] == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         return dlinfo;
     }
 
-    @SuppressWarnings("unchecked")
     private String getSessionCookie(final Browser brc) {
         ArrayList<String> sessionids = new ArrayList<String>();
         final HashMap<String, String> cookies = new HashMap<String, String>();
@@ -268,7 +293,9 @@ public class ScribdCom extends PluginForHost {
             for (final Map.Entry<String, String> cookieEntry : cookies.entrySet()) {
                 final String key = cookieEntry.getKey();
                 final String value = cookieEntry.getValue();
-                if (key.equals("_scribd_session")) sessionids.add(value);
+                if (key.equals("_scribd_session")) {
+                    sessionids.add(value);
+                }
             }
         }
         final String finalID = sessionids.get(sessionids.size() - 1);

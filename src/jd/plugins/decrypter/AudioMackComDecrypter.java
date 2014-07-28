@@ -40,7 +40,7 @@ public class AudioMackComDecrypter extends PluginForDecrypt {
         final String parameter = param.toString();
         br.getPage(parameter);
         /* Offline or not yet released */
-        if (br.getHttpConnection().getResponseCode() == 404 || br.containsHTML("class=\"countdown\\-clock\"")) {
+        if (br.getHttpConnection().getResponseCode() == 404 || br.containsHTML("class=\"countdown\\-clock\"|This song has been removed due to a DMCA Complaint")) {
             final DownloadLink offline = createDownloadlink("directhttp://" + parameter);
             offline.setFinalFileName(new Regex(parameter, "https?://[^<>\"/]+/(.+)").getMatch(0));
             offline.setAvailable(false);

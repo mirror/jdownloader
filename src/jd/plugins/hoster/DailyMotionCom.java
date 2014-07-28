@@ -211,6 +211,8 @@ public class DailyMotionCom extends PluginForHost {
             setupRTMPConnection(stream, dl);
             ((RTMPDownload) dl).startDownload();
         } else {
+            /* Workaround for old downloadcore bug that can lead to incomplete files */
+            br.getHeaders().put("Accept-Encoding", "identity");
             downloadLink.setFinalFileName(getFormattedFilename(downloadLink));
             /*
              * They do allow resume and unlimited chunks but resuming or using more than 1 chunk causes problems, the file will then be
