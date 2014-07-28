@@ -193,7 +193,7 @@ public class UltraMegaBitCom extends PluginForHost {
                 throw new PluginException(LinkStatus.ERROR_FATAL, "This file can only be downloaded by premium users");
             } else if (br.containsHTML("<h3 id=\"download_delay\">Please wait\\.\\.\\.</h3>")) {
                 throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, waitSum());
-            } else if (br.containsHTML("(api\\.recaptcha\\.net|google\\.com/recaptcha/api/)")) {
+            } else if (br.containsHTML("(api\\.recaptcha\\.net|google\\.com/recaptcha/api/|>The ReCAPTCHA field is required)")) {
                 try {
                     invalidateLastChallengeResponse();
                 } catch (final Throwable e) {
