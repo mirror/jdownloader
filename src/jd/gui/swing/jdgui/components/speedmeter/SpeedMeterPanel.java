@@ -16,10 +16,6 @@
 
 package jd.gui.swing.jdgui.components.speedmeter;
 
-import java.awt.Color;
-
-import javax.swing.JLabel;
-
 import jd.controlling.downloadcontroller.DownloadWatchDog;
 
 import org.appwork.storage.config.JsonConfig;
@@ -51,9 +47,8 @@ public class SpeedMeterPanel extends Graph {
         setCurrentColorTop(LAFOptions.getInstance().getColorForSpeedmeterCurrentTop());
         setCurrentColorBottom(LAFOptions.getInstance().getColorForSpeedmeterCurrentBottom());
         setAverageColor(LAFOptions.getInstance().getColorForSpeedMeterAverage());
-        Color col = new JLabel().getForeground();
-        setAverageTextColor(col);
-        setTextColor(col);
+        setAverageTextColor(LAFOptions.getInstance().getColorForSpeedMeterAverageText());
+        setTextColor(LAFOptions.getInstance().getColorForSpeedMeterText());
         setOpaque(false);
 
         speedLimiter = new Limiter(LAFOptions.getInstance().getColorForSpeedmeterLimiterTop(), LAFOptions.getInstance().getColorForSpeedmeterLimiterBottom());

@@ -45,7 +45,9 @@ public class LAFOptions {
     }
 
     public synchronized static void init(String laf) {
-        if (INSTANCE != null) return;
+        if (INSTANCE != null) {
+            return;
+        }
         INSTANCE = new LAFOptions(laf);
 
     }
@@ -54,8 +56,9 @@ public class LAFOptions {
 
     private static String hex(int alpha) {
         String ret = Integer.toHexString(alpha);
-        while (ret.length() < 2)
+        while (ret.length() < 2) {
             ret = "0" + ret;
+        }
         return ret;
     }
 
@@ -72,14 +75,24 @@ public class LAFOptions {
         // no synch required. in worth case we create the color twice
         synchronized (CACHE) {
             Color ret = CACHE.get(str);
-            if (ret != null) return ret;
+            if (ret != null) {
+                return ret;
+            }
             try {
 
-                if (str == null) return null;
+                if (str == null) {
+                    return null;
+                }
                 str = str.toLowerCase(Locale.ENGLISH);
-                if (str.startsWith("0x")) str = str.substring(2);
-                if (str.startsWith("#")) str = str.substring(1);
-                if (str.length() < 6) return null;
+                if (str.startsWith("0x")) {
+                    str = str.substring(2);
+                }
+                if (str.startsWith("#")) {
+                    str = str.substring(1);
+                }
+                if (str.length() < 6) {
+                    return null;
+                }
                 // add alpha channel
                 while (str.length() < 8) {
                     str = "F" + str;
@@ -222,6 +235,14 @@ public class LAFOptions {
 
     public Color getColorForSpeedMeterAverage() {
         return createColor(cfg.getColorForSpeedMeterAverage());
+    }
+
+    public Color getColorForSpeedMeterText() {
+        return createColor(cfg.getColorForSpeedMeterText());
+    }
+
+    public Color getColorForSpeedMeterAverageText() {
+        return createColor(cfg.getColorForSpeedMeterAverageText());
     }
 
     public Color getColorForSpeedmeterCurrentBottom() {

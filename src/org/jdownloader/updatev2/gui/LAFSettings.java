@@ -118,6 +118,24 @@ public interface LAFSettings extends ConfigInterface {
     @AboutConfig
     @RequiresRestart("A JDownloader Restart is Required")
     @HexColorString
+    @DefaultStringValue("FF222222")
+    public String getColorForSpeedMeterAverageText();
+
+    void setColorForSpeedMeterAverageText(String colorHex);
+
+    @DescriptionForConfigEntry("Customized Color in aRGB Format (Pure red: #ffFF0000)")
+    @AboutConfig
+    @RequiresRestart("A JDownloader Restart is Required")
+    @HexColorString
+    @DefaultStringValue("FF222222")
+    public String getColorForSpeedMeterText();
+
+    void setColorForSpeedMeterText(String colorHex);
+
+    @DescriptionForConfigEntry("Customized Color in aRGB Format (Pure red: #ffFF0000)")
+    @AboutConfig
+    @RequiresRestart("A JDownloader Restart is Required")
+    @HexColorString
     @DefaultStringValue("CC3DC83D")
     public String getColorForSpeedmeterCurrentBottom();
 
