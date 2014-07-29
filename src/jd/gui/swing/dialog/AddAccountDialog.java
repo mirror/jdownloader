@@ -339,6 +339,7 @@ public class AddAccountDialog extends AbstractDialog<Integer> {
                 hoster.requestFocus();
             }
         });
+        updatePanel();
         return content;
     }
 
