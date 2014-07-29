@@ -383,7 +383,7 @@ public class DailyMotionComDecrypter extends PluginForDecrypt {
         }
         /** Decrypt external links END */
         /** Find videolinks START */
-        VIDEOID = new Regex(PARAMETER, "dailymotion\\.com/video/([a-z0-9]+)_").getMatch(0);
+        VIDEOID = new Regex(PARAMETER, "dailymotion\\.com/video/([a-z0-9]+)").getMatch(0);
         CHANNELNAME = br.getRegex("\"owner\":\"([^<>\"]*?)\"").getMatch(0);
         String strdate = br.getRegex("property=\"video:release_date\" content=\"([^<>\"]*?)\"").getMatch(0);
         VIDEOSOURCE = getVideosource(this.br);

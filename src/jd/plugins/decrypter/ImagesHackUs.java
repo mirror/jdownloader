@@ -42,6 +42,8 @@ public class ImagesHackUs extends PluginForDecrypt {
     private static final String TYPE_PHOTO = ".*?imageshack\\.(us|com)/photo/.+";
     private static final String TYPE_USER  = "https?://(www\\.)?imageshack\\.(com|us)/user/[A-Za-z0-9\\-_]+";
 
+    private static final String TYPE_ALL   = "https?://(www\\.)?(img[0-9]{1,4}\\.imageshack\\.us/(g/|my\\.php\\?image=[a-z0-9]+|i/[a-z0-9]+)\\.[a-zA-Z0-9]{2,4}|imageshack\\.us/photo/[^<>\"\\'/]+/\\d+/[^<>\"\\'/]+|imageshack\\.(com|us)/user/[A-Za-z0-9\\-_]+)";
+
     @SuppressWarnings("unused")
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
@@ -50,20 +52,41 @@ public class ImagesHackUs extends PluginForDecrypt {
         try {
             br.getPage(parameter);
         } catch (final BrowserException e) {
-            logger.info("Link offline (server error): " + parameter);
+            final DownloadLink offline = createDownloadlink("directhttp://" + parameter);
+            offline.setAvailable(false);
+            offline.setProperty("offline", true);
+            decryptedLinks.add(offline);
             return decryptedLinks;
         } catch (final UnknownHostException e) {
-            logger.info("Link offline (server error): " + parameter);
+            final DownloadLink offline = createDownloadlink("directhttp://" + parameter);
+            offline.setAvailable(false);
+            offline.setProperty("offline", true);
+            decryptedLinks.add(offline);
             return decryptedLinks;
         } catch (final SocketTimeoutException e) {
-            logger.info("Link offline (timeout): " + parameter);
+            final DownloadLink offline = createDownloadlink("directhttp://" + parameter);
+            offline.setAvailable(false);
+            offline.setProperty("offline", true);
+            decryptedLinks.add(offline);
             return decryptedLinks;
         }
         if (br.getURL().equals("https://imageshack.com/")) {
-            logger.info("Link offline: " + parameter);
+            final DownloadLink offline = createDownloadlink("directhttp://" + parameter);
+            offline.setAvailable(false);
+            offline.setProperty("offline", true);
+            decryptedLinks.add(offline);
             return decryptedLinks;
         }
-        if (br.getURL() != parameter) parameter = br.getURL();
+        if (br.getURL() != parameter) {
+            parameter = br.getURL();
+        }
+        if (!br.getURL().matches(TYPE_ALL)) {
+            final DownloadLink offline = createDownloadlink("directhttp://" + parameter);
+            offline.setAvailable(false);
+            offline.setProperty("offline", true);
+            decryptedLinks.add(offline);
+            return decryptedLinks;
+        }
         if (br.getURL().matches(TYPE_PHOTO)) {
             if (br.containsHTML("Looks like the image is no longer here")) {
                 logger.info("Link offline: " + parameter);
@@ -119,15 +142,26 @@ public class ImagesHackUs extends PluginForDecrypt {
             fp.addLinks(decryptedLinks);
         } else {
             /* Error handling */
-            if (br.containsHTML(">Can not find album")) throw new DecrypterException(JDL.L("plugins.decrypt.errormsg.unavailable", "Perhaps wrong URL or the download is not available anymore."));
+            if (br.containsHTML(">Can not find album")) {
+                throw new DecrypterException(JDL.L("plugins.decrypt.errormsg.unavailable", "Perhaps wrong URL or the download is not available anymore."));
+            }
             String fpName = br.getRegex("<div style=\"float:left\">(.*?)</div>").getMatch(0);
-            if (fpName == null || fpName.trim().equals("My Album")) fpName = new Regex(parameter, "img(\\d+)\\.imageshack\\.us").getMatch(0);
+            if (fpName == null || fpName.trim().equals("My Album")) {
+                fpName = new Regex(parameter, "img(\\d+)\\.imageshack\\.us").getMatch(0);
+            }
             String allPics[] = br.getRegex("<div onclick=\"window\\.location\\.href=\\'(http://.*?)\\'\"").getColumn(0);
-            if (allPics == null || allPics.length == 0) allPics = br.getRegex("<input type=\"text\" value=\"(http://.*?)\"").getColumn(0);
-            if (allPics == null || allPics.length == 0) allPics = br.getRegex("'\\[URL=(http://.*?)\\]").getColumn(0);
-            if (allPics == null || allPics.length == 0) return null;
-            for (String aPic : allPics)
+            if (allPics == null || allPics.length == 0) {
+                allPics = br.getRegex("<input type=\"text\" value=\"(http://.*?)\"").getColumn(0);
+            }
+            if (allPics == null || allPics.length == 0) {
+                allPics = br.getRegex("'\\[URL=(http://.*?)\\]").getColumn(0);
+            }
+            if (allPics == null || allPics.length == 0) {
+                return null;
+            }
+            for (String aPic : allPics) {
                 decryptedLinks.add(createDownloadlink(aPic));
+            }
             // The String "fpName" should never be null at this point
             FilePackage fp = FilePackage.getInstance();
             fp.setName(fpName.trim());

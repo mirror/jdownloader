@@ -33,6 +33,8 @@ import javax.swing.JOptionPane;
 import javax.swing.SwingUtilities;
 
 import jd.PluginWrapper;
+import jd.config.ConfigContainer;
+import jd.config.ConfigEntry;
 import jd.config.Property;
 import jd.config.SubConfiguration;
 import jd.http.Browser;
@@ -77,7 +79,7 @@ public class TeraFileCo extends PluginForHost {
     private static final String  PREMIUMONLY1                 = JDL.L("hoster.xfilesharingprobasic.errors.premiumonly1", "Max downloadable filesize for free users:");
     private static final String  PREMIUMONLY2                 = JDL.L("hoster.xfilesharingprobasic.errors.premiumonly2", "Only downloadable via premium or registered");
     private static final boolean VIDEOHOSTER                  = false;
-    private static final boolean SUPPORTSHTTPS                = false;
+    private static final boolean SUPPORTSHTTPS                = true;
     // Connection stuff
     private static final boolean FREE_RESUME                  = false;
     private static final int     FREE_MAXCHUNKS               = 1;
@@ -95,9 +97,11 @@ public class TeraFileCo extends PluginForHost {
     private static AtomicInteger maxPrem                      = new AtomicInteger(1);
     private static Object        LOCK                         = new Object();
 
+    private final String         SSL_CONNECTION               = "SSL_CONNECTION";
+
     // DEV NOTES
     // XfileSharingProBasic Version 2.6.2.8
-    // mods: antiddos
+    // mods: antiddos, SSL setting
     // limit-info:
     // protocol: no https
     // captchatype: null
@@ -125,6 +129,7 @@ public class TeraFileCo extends PluginForHost {
     public TeraFileCo(PluginWrapper wrapper) {
         super(wrapper);
         this.enablePremium(COOKIE_HOST + "/premium.html");
+        this.setConfigElements();
     }
 
     // do not add @Override here to keep 0.* compatibility
@@ -147,9 +152,9 @@ public class TeraFileCo extends PluginForHost {
 
     /**
      * Defines custom browser requirements. Integrates with antiDDoS method
-     *
+     * 
      * @author raztoki
-     *
+     * 
      * */
     private Browser prepBrowser(final Browser prepBr) {
         synchronized (antiDDoSCookies) {
@@ -272,7 +277,7 @@ public class TeraFileCo extends PluginForHost {
             try {
                 logger.info("Trying to get link via vidembed");
                 final Browser brv = br.cloneBrowser();
-                brv.getPage("/vidembed-" + new Regex(downloadLink.getDownloadURL(), "([a-z0-9]+)$").getMatch(0));
+                brv.getPage(this.fixLinkSSL(COOKIE_HOST + "/vidembed-" + new Regex(downloadLink.getDownloadURL(), "([a-z0-9]+)$").getMatch(0)));
                 dllink = brv.getRedirectLocation();
                 if (dllink == null) {
                     logger.info("Failed to get link via vidembed");
@@ -466,13 +471,13 @@ public class TeraFileCo extends PluginForHost {
     /**
      * Prevents more than one free download from starting at a given time. One step prior to dl.startDownload(), it adds a slot to maxFree
      * which allows the next singleton download to start, or at least try.
-     *
+     * 
      * This is needed because xfileshare(website) only throws errors after a final dllink starts transferring or at a given step within pre
      * download sequence. But this template(XfileSharingProBasic) allows multiple slots(when available) to commence the download sequence,
      * this.setstartintival does not resolve this issue. Which results in x(20) captcha events all at once and only allows one download to
      * start. This prevents wasting peoples time and effort on captcha solving and|or wasting captcha trading credits. Users will experience
      * minimal harm to downloading as slots are freed up soon as current download begins.
-     *
+     * 
      * @param controlFree
      *            (+1|-1)
      */
@@ -577,14 +582,16 @@ public class TeraFileCo extends PluginForHost {
         return dllink;
     }
 
-    private void getPage(final String page) throws Exception {
+    private void getPage(String page) throws Exception {
+        page = fixLinkSSL(page);
         br.getPage(page);
         antiDDoS(page);
         correctBR();
     }
 
     @SuppressWarnings("unused")
-    private void postPage(final String page, final String postdata) throws Exception {
+    private void postPage(String page, final String postdata) throws Exception {
+        page = fixLinkSSL(page);
         br.postPage(page, postdata);
         antiDDoS(page);
         correctBR();
@@ -602,7 +609,7 @@ public class TeraFileCo extends PluginForHost {
     /**
      * performs cloudflare and incapsula requirements. This will auto fill out the requirements and update cookies after each request if you
      * need!
-     *
+     * 
      * @author raztoki
      **/
     private void antiDDoS(final String URL) throws Exception {
@@ -725,7 +732,7 @@ public class TeraFileCo extends PluginForHost {
     // TODO: remove this when v2 becomes stable. use br.getFormbyKey(String key, String value)
     /**
      * Returns the first form that has a 'key' that equals 'value'.
-     *
+     * 
      * @param key
      * @param value
      * @return
@@ -1090,6 +1097,23 @@ public class TeraFileCo extends PluginForHost {
             downloadLink.setProperty("premlink", dllink);
             dl.startDownload();
         }
+    }
+
+    private boolean checkSsl() {
+        return getPluginConfig().getBooleanProperty(SSL_CONNECTION, false);
+    }
+
+    private String fixLinkSSL(String link) {
+        if (checkSsl()) {
+            link = link.replace("http://", "https://");
+        } else {
+            link = link.replace("https://", "http://");
+        }
+        return link;
+    }
+
+    private void setConfigElements() {
+        this.getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, this.getPluginConfig(), SSL_CONNECTION, JDL.L("plugins.hoster.TeraFileCo.preferSSL", "Use Secure Communication over SSL (HTTPS://)")).setDefaultValue(false));
     }
 
     protected void showFreeDialog(final String domain) {

@@ -312,8 +312,29 @@ public class UpDownBz extends PluginForHost {
         String dl_host = null;
         if (dl_host == null) {
             requestFileInformation(link);
-            prepBR_API();
-            br.postPageRaw(HTTP_PROTOCOL + API_HOST, "{\"m\":\"pub\",\"a\":\"dl\",\"d\":{\"i\":\"" + fuid + "\"}}");
+            for (int i = 1; i <= 3; i++) {
+                prepBR_API();
+                br.postPageRaw(HTTP_PROTOCOL + API_HOST, "{\"m\":\"captcha\",\"a\":\"request\"}");
+                final String ci = br.getRegex("\"i\":\"([^<>\"]*?)\"").getMatch(0);
+                String captchalink = br.getRegex("\"u\":\"(http[^<>\"]*?)\"").getMatch(0);
+                if (ci == null || captchalink == null) {
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, "Can not find ci");
+                }
+                captchalink = captchalink.replace("\\", "");
+                final String code = getCaptchaCode(captchalink, link);
+                prepBR_API();
+                br.postPageRaw(HTTP_PROTOCOL + API_HOST, "{\"m\":\"pub\",\"a\":\"dl\",\"d\":{\"i\":\"" + fuid + "\",\"ci\":\"" + ci + "\",\"cr\":\"" + code + "\"}}");
+                if (br.containsHTML("\"c\":\\-")) {
+                    throw new PluginException(LinkStatus.ERROR_IP_BLOCKED);
+                } else if (br.containsHTML("\"d\":\\{")) {
+                    break;
+                }
+            }
+            if (br.containsHTML("\"c\":\\-")) {
+                throw new PluginException(LinkStatus.ERROR_IP_BLOCKED);
+            } else if (!br.containsHTML("\"d\":\\{")) {
+                throw new PluginException(LinkStatus.ERROR_CAPTCHA);
+            }
 
             // try to parse api response
             JSonObject json_response = (JSonObject) new JSonFactory(br.toString()).parse();

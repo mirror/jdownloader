@@ -566,7 +566,7 @@ public class FourSharedCom extends PluginForHost {
             br2.getHeaders().put("X-Requested-With", null);
         }
         br.getPage("/web/account/settings/overview");
-        final String expire = br.getRegex(">Expires in:</div>[\t\n\r ]+<div class=\"[^<>\"]+\">[\t\n\r ]+<span>(\\d+) days</span>").getMatch(0);
+        final String expire = br.getRegex(">Expires in:.*?(\\d+) days<span><br>after last log in</span>").getMatch(0);
         String accType = br.getRegex(">Account type:</div>[\t\n\r ]+<div[^>]+>(.*?)</div").getMatch(0);
         if (accType == null) {
             accType = br.getRegex("accountType : \"AccType = (\\w+)\"").getMatch(0);

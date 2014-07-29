@@ -66,6 +66,7 @@ public class DeviantArtCom extends PluginForHost {
     private static final String TYPE_DOWNLOADALLOWED_HTML    = "class=\"text\">HTML download</span>";
     private static final String TYPE_DOWNLOADFORBIDDEN_HTML  = "<div class=\"grf\\-indent\"";
     private static final String TYPE_DOWNLOADFORBIDDEN_SWF   = "class=\"flashtime\"";
+    private static final String TYPE_ACCOUNTNEEDED           = "has limited the viewing of this artwork<";
     private boolean             HTMLALLOWED                  = false;
 
     private static final String LINKTYPE_ART                 = "https?://[\\w\\.\\-]*?deviantart\\.com/art/[^<>\"/]+";
@@ -131,7 +132,7 @@ public class DeviantArtCom extends PluginForHost {
         filename = Encoding.htmlDecode(filename.trim());
         String ext = null;
         String filesize = null;
-        if (this.getPluginConfig().getBooleanProperty(FORCEHTMLDOWNLOAD, false)) {
+        if (this.getPluginConfig().getBooleanProperty(FORCEHTMLDOWNLOAD, false) || link.getDownloadURL().matches(LINKTYPE_JOURNAL)) {
             HTMLALLOWED = true;
             DLLINK = br.getURL();
             filename = findServerFilename(filename);
@@ -203,6 +204,11 @@ public class DeviantArtCom extends PluginForHost {
                 }
                 return AvailableStatus.TRUE;
             }
+        } else if (br.containsHTML(TYPE_ACCOUNTNEEDED)) {
+            /* Account needed to view/download */
+            filename = findServerFilename(filename);
+            filesize = getfileSize();
+            ext = "html";
         } else {
             filesize = getImageSize();
             // Maybe its a video
@@ -313,7 +319,16 @@ public class DeviantArtCom extends PluginForHost {
     @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
-        if (br.containsHTML(MATURECONTENTFILTER)) {
+        if (br.containsHTML(TYPE_ACCOUNTNEEDED)) {
+            try {
+                throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);
+            } catch (final Throwable e) {
+                if (e instanceof PluginException) {
+                    throw (PluginException) e;
+                }
+            }
+            throw new PluginException(LinkStatus.ERROR_FATAL, "This content can only be downloaded via account");
+        } else if (br.containsHTML(MATURECONTENTFILTER)) {
             try {
                 throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);
             } catch (final Throwable e) {
