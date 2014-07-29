@@ -71,8 +71,12 @@ public class MxCloudCom extends PluginForDecrypt {
         }
 
         String theName = br.getRegex("class=\"cloudcast\\-name\" itemprop=\"name\">(.*?)</h1>").getMatch(0);
-        if (theName == null) theName = br.getRegex("data-resourcelinktext=\"(.*?)\"").getMatch(0);
-        if (theName == null) theName = br.getRegex("property=\"og:title\" content=\"([^<>\"]*?)\"").getMatch(0);
+        if (theName == null) {
+            theName = br.getRegex("data-resourcelinktext=\"(.*?)\"").getMatch(0);
+        }
+        if (theName == null) {
+            theName = br.getRegex("property=\"og:title\" content=\"([^<>\"]*?)\"").getMatch(0);
+        }
         if (theName == null) {
             logger.warning("Decrypter broken for link: " + parameter);
             return null;
@@ -83,7 +87,7 @@ public class MxCloudCom extends PluginForDecrypt {
             logger.warning("Decrypter broken for link: " + parameter);
             return null;
         }
-        final String previewLink = br.getRegex("\"(http://stream\\d+\\.mixcloud\\.com/previews/[^<>\"]*?\\.mp3)\"").getMatch(0);
+        final String previewLink = br.getRegex("\"(https?://stream\\d+\\.mixcloud\\.com/previews/[^<>\"]*?\\.mp3)\"").getMatch(0);
         if (previewLink != null) {
             final String mp3link = previewLink.replace("/previews/", "/c/originals/");
             tempLinks.add(mp3link);
@@ -158,7 +162,9 @@ public class MxCloudCom extends PluginForDecrypt {
         int i = 0;
         int j = 0;
         while (i < count) {
-            if (j > key.length - 1) j = 0;
+            if (j > key.length - 1) {
+                j = 0;
+            }
             plain[i] = (byte) (0xff & (enc[i] ^ key[j]));
             i++;
             j++;

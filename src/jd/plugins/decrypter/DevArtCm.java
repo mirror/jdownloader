@@ -74,8 +74,10 @@ public class DevArtCm extends PluginForDecrypt {
     final ArrayList<DownloadLink> decryptedLinks   = new ArrayList<DownloadLink>();
 
     private String                PARAMETER        = null;
+    private boolean               FASTLINKCHECK    = false;
 
     public ArrayList<DownloadLink> decryptIt(final CryptedLink param, ProgressController progress) throws Exception {
+        FASTLINKCHECK = SubConfiguration.getConfig("deviantart.com").getBooleanProperty(FASTLINKCHECK_2, false);
         synchronized (LOCK) {
             // checkFeatureDialog();
             checkFeatureDialog();
@@ -83,6 +85,10 @@ public class DevArtCm extends PluginForDecrypt {
         PARAMETER = param.toString();
         if (PARAMETER.matches(LINKTYPE_JOURNAL)) {
             final DownloadLink journal = createDownloadlink(PARAMETER.replace("deviantart.com/", "deviantartdecrypted.com/"));
+            journal.setName("deviantart\\.com/journal/([\\w\\-]+)");
+            if (FASTLINKCHECK) {
+                journal.setAvailable(true);
+            }
             decryptedLinks.add(journal);
             return decryptedLinks;
         }
@@ -115,7 +121,6 @@ public class DevArtCm extends PluginForDecrypt {
     }
 
     private void decryptJournals() throws DecrypterException, IOException {
-        final boolean fastcheck = SubConfiguration.getConfig("deviantart.com").getBooleanProperty(FASTLINKCHECK_2, false);
         final String username = getUsername();
         String paramdecrypt;
         if (PARAMETER.contains("catpath=/")) {
@@ -153,18 +158,19 @@ public class DevArtCm extends PluginForDecrypt {
                 }
                 br.getPage(paramdecrypt + next);
             }
-            final String jinfo[][] = br.getRegex("<a href=\"(http://[\\w\\.\\-]*?\\.deviantart\\.com/journal/[\\w\\-]+)\">([^<>\"/]*?)</a>").getMatches();
+            final String jinfo[] = br.getRegex("<a href=\"(http://[\\w\\.\\-]*?\\.deviantart\\.com/journal/[\\w\\-]+)\"").getColumn(0);
             if (jinfo == null || jinfo.length == 0) {
                 throw new DecrypterException("Decrypter broken for link: " + PARAMETER);
             }
-            for (final String[] singlejinfo : jinfo) {
-                final String link = singlejinfo[0];
-                final String title = Encoding.htmlDecode(singlejinfo[1]).trim();
+            for (final String link : jinfo) {
+                final String urltitle = new Regex(link, "deviantart\\.com/journal/([\\w\\-]+)").getMatch(0);
                 final DownloadLink dl = createDownloadlink(link.replace("deviantart.com/", "deviantartdecrypted.com/"));
-                if (fastcheck) {
+                if (FASTLINKCHECK) {
                     dl.setAvailable(true);
                 }
-                dl.setName(title + ".html");
+                /* No reason to hide their single links */
+                dl.setBrowserUrl(link);
+                dl.setName(urltitle + ".html");
                 dl._setFilePackage(fp);
                 try {
                     distribute(dl);
@@ -287,11 +293,13 @@ public class DevArtCm extends PluginForDecrypt {
                 break;
             }
             if (artlinks != null && artlinks.length != 0) {
-                for (final String al : artlinks) {
-                    final DownloadLink fina = createDownloadlink(al);
+                for (final String artlink : artlinks) {
+                    final DownloadLink fina = createDownloadlink(artlink);
                     if (fastcheck) {
                         fina.setAvailable(true);
                     }
+                    /* No reason to hide their single links */
+                    fina.setBrowserUrl(artlink);
                     if (fp != null) {
                         fp.add(fina);
                     }
