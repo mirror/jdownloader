@@ -5131,4 +5131,10 @@ public interface GuiTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "No Captcha input required to download this file." })
     String HasCaptchaColumn_getTooltipText_no();
 
+    @Default(lngs = { "en" }, values = { "Comment" })
+    String PackagizerFilterRuleDialog_layoutDialogContent_comment();
+
+    @Default(lngs = { "en" }, values = { "Enter any comment..." })
+    String PackagizerFilterRuleDialog_layoutDialogContent_comment_help_();
+
 }

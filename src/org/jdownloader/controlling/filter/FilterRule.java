@@ -11,8 +11,9 @@ import org.appwork.storage.Storable;
 import org.appwork.utils.Files;
 import org.appwork.utils.formatter.SizeFormatter;
 import org.jdownloader.gui.translate._GUI;
+import org.jdownloader.myjdownloader.client.json.AbstractJsonData;
 
-public abstract class FilterRule implements Storable {
+public abstract class FilterRule extends AbstractJsonData implements Storable {
 
     private FilesizeFilter     filesizeFilter;
     private RegexFilter        hosterURLFilter;
@@ -21,7 +22,9 @@ public abstract class FilterRule implements Storable {
     private OriginFilter       originFilter;
 
     public OriginFilter getOriginFilter() {
-        if (originFilter == null) originFilter = new OriginFilter();
+        if (originFilter == null) {
+            originFilter = new OriginFilter();
+        }
         return originFilter;
     }
 
@@ -87,7 +90,9 @@ public abstract class FilterRule implements Storable {
     }
 
     public BooleanFilter getMatchAlwaysFilter() {
-        if (matchesAlwaysFilter == null) matchesAlwaysFilter = new BooleanFilter(false);
+        if (matchesAlwaysFilter == null) {
+            matchesAlwaysFilter = new BooleanFilter(false);
+        }
         return matchesAlwaysFilter;
     }
 
@@ -96,7 +101,9 @@ public abstract class FilterRule implements Storable {
     }
 
     public FilesizeFilter getFilesizeFilter() {
-        if (filesizeFilter == null) filesizeFilter = new FilesizeFilter();
+        if (filesizeFilter == null) {
+            filesizeFilter = new FilesizeFilter();
+        }
         return filesizeFilter;
     }
 
@@ -197,7 +204,9 @@ public abstract class FilterRule implements Storable {
     }
 
     public RegexFilter getHosterURLFilter() {
-        if (hosterURLFilter == null) hosterURLFilter = new RegexFilter();
+        if (hosterURLFilter == null) {
+            hosterURLFilter = new RegexFilter();
+        }
         return hosterURLFilter;
     }
 
@@ -206,7 +215,9 @@ public abstract class FilterRule implements Storable {
     }
 
     public RegexFilter getSourceURLFilter() {
-        if (sourceURLFilter == null) sourceURLFilter = new RegexFilter();
+        if (sourceURLFilter == null) {
+            sourceURLFilter = new RegexFilter();
+        }
         return sourceURLFilter;
     }
 
@@ -215,7 +226,9 @@ public abstract class FilterRule implements Storable {
     }
 
     public FiletypeFilter getFiletypeFilter() {
-        if (filetypeFilter == null) filetypeFilter = new FiletypeFilter();
+        if (filetypeFilter == null) {
+            filetypeFilter = new FiletypeFilter();
+        }
         return filetypeFilter;
     }
 
@@ -228,7 +241,9 @@ public abstract class FilterRule implements Storable {
     }
 
     public OnlineStatusFilter getOnlineStatusFilter() {
-        if (onlineStatusFilter == null) onlineStatusFilter = new OnlineStatusFilter();
+        if (onlineStatusFilter == null) {
+            onlineStatusFilter = new OnlineStatusFilter();
+        }
         return onlineStatusFilter;
     }
 
@@ -237,12 +252,16 @@ public abstract class FilterRule implements Storable {
     }
 
     public PluginStatusFilter getPluginStatusFilter() {
-        if (pluginStatusFilter == null) pluginStatusFilter = new PluginStatusFilter();
+        if (pluginStatusFilter == null) {
+            pluginStatusFilter = new PluginStatusFilter();
+        }
         return pluginStatusFilter;
     }
 
     public RegexFilter getFilenameFilter() {
-        if (filenameFilter == null) filenameFilter = new RegexFilter();
+        if (filenameFilter == null) {
+            filenameFilter = new RegexFilter();
+        }
         return filenameFilter;
     }
 
@@ -255,7 +274,9 @@ public abstract class FilterRule implements Storable {
     private RegexFilter    packagenameFilter;
 
     public RegexFilter getPackagenameFilter() {
-        if (packagenameFilter == null) packagenameFilter = new RegexFilter();
+        if (packagenameFilter == null) {
+            packagenameFilter = new RegexFilter();
+        }
         return packagenameFilter;
     }
 

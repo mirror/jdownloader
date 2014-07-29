@@ -21,9 +21,6 @@ import org.appwork.shutdown.ShutdownEvent;
 import org.appwork.shutdown.ShutdownRequest;
 import org.appwork.storage.JSonStorage;
 import org.appwork.storage.config.JsonConfig;
-import org.appwork.storage.config.ValidationException;
-import org.appwork.storage.config.events.GenericConfigEventListener;
-import org.appwork.storage.config.handler.KeyHandler;
 import org.appwork.utils.IO;
 import org.appwork.utils.Regex;
 import org.appwork.utils.StringUtils;
@@ -41,8 +38,6 @@ import org.jdownloader.extensions.extraction.BooleanStatus;
 import org.jdownloader.extensions.extraction.ExtractionController;
 import org.jdownloader.extensions.extraction.bindings.downloadlink.DownloadLinkArchive;
 import org.jdownloader.extensions.extraction.bindings.downloadlink.DownloadLinkArchiveFile;
-import org.jdownloader.gui.views.DownloadFolderChooserDialog;
-import org.jdownloader.settings.staticreferences.CFG_GENERAL;
 
 public class PackagizerController implements PackagizerInterface, FileCreationListener {
     private PackagizerSettings                    config;
@@ -158,7 +153,6 @@ public class PackagizerController implements PackagizerInterface, FileCreationLi
 
             FileCreationManager.getInstance().getEventSender().addListener(this);
 
-      
         }
         addReplacer(new PackagizerReplacer() {
 
@@ -595,6 +589,10 @@ public class PackagizerController implements PackagizerInterface, FileCreationLi
             /* customize filename */
             link.setName(replaceVariables(lgr.getRule().getFilename(), link, lgr));
         }
+        if (!StringUtils.isEmpty(lgr.getRule().getComment())) {
+            /* customize filename */
+            link.setComment(replaceVariables(lgr.getRule().getComment(), link, lgr));
+        }
         Boolean b = null;
         if ((b = lgr.getRule().isAutoExtractionEnabled()) != null) {
             /* customize auto extract */
@@ -749,8 +747,5 @@ public class PackagizerController implements PackagizerInterface, FileCreationLi
             }
         }
     }
-
-   
-
 
 }

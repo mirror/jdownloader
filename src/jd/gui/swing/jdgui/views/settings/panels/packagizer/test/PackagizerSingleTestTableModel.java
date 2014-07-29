@@ -347,6 +347,22 @@ public class PackagizerSingleTestTableModel extends ExtTableModel<CrawledLink> {
                 // return rule.getFilenameFilter().getRegex()
             }
         });
+        addColumn(new ExtTextColumn<CrawledLink>(_GUI._.PackagizerFilterRuleDialog_layoutDialogContent_comment()) {
+            /**
+             * 
+             */
+            private static final long serialVersionUID = 5325984890669861167L;
+
+            public boolean isVisible(boolean savedValue) {
+                return rule.getRule().getComment() != null;
+            }
+
+            @Override
+            public String getStringValue(CrawledLink value) {
+                return PackagizerController.getInstance().replaceVariables(rule.getRule().getComment(), value, new PackagizerRuleWrapper(rule.getRule())) + "(" + rule.getRule().getComment() + ")";
+                // return rule.getFilenameFilter().getRegex()
+            }
+        });
 
     }
 }

@@ -131,6 +131,16 @@ public class PackagizerRule extends FilterRule implements Storable {
     private Boolean autoStartEnabled;
     private int     chunks;
     private String  filename;
+    private String  comment;
+
+    public String getComment() {
+        return comment;
+    }
+
+    public void setComment(String comment) {
+        this.comment = comment;
+    }
+
     private int     order = 0;
     private Boolean autoForcedStartEnabled;
 
