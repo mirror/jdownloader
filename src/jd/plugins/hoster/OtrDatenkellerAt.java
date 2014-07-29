@@ -44,7 +44,7 @@ public class OtrDatenkellerAt extends PluginForHost {
     public OtrDatenkellerAt(PluginWrapper wrapper) {
         super(wrapper);
         this.enablePremium();
-        // this.setStartIntervall(15 * 1000l);
+        this.setStartIntervall(60 * 1000l);
     }
 
     public void correctDownloadLink(final DownloadLink link) {
@@ -138,7 +138,7 @@ public class OtrDatenkellerAt extends PluginForHost {
 
     @Override
     public int getMaxSimultanFreeDownloadNum() {
-        return 1;
+        return -1;
     }
 
     @Override
@@ -332,7 +332,8 @@ public class OtrDatenkellerAt extends PluginForHost {
 
     @Override
     public int getMaxSimultanPremiumDownloadNum() {
-        return 1;
+        /* Admin told us limit = 12 but when we checked it, only 7 with a large waittime in between were possible */
+        return 7;
     }
 
     // do not add @Override here to keep 0.* compatibility

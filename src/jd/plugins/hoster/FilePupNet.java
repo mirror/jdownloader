@@ -19,6 +19,7 @@ package jd.plugins.hoster;
 import java.io.IOException;
 
 import jd.PluginWrapper;
+import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
@@ -42,36 +43,41 @@ public class FilePupNet extends PluginForHost {
     }
 
     private static final String MAINPAGE = "http://www.filepup.net";
+    private static final String APIKEY   = "vwUhhGH6lPH3auk6SM144PBg3PRQg";
 
-    // Using FreakshareScript 1.2.1
-    @Override
-    public AvailableStatus requestFileInformation(DownloadLink link) throws IOException, PluginException {
+    // Using FlexshareScript 1.1.2 API Version
+    public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
         this.setBrowserExclusive();
-        br.setFollowRedirects(true);
-        br.getPage(link.getDownloadURL());
-        br.setFollowRedirects(false);
-        if (br.containsHTML(">The file you have requested does not exist|>This file has been deleted")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        // style=\"text\\-align:(center|left|right);\">([^\"<>]+) \\(([0-9\\.]+
-        // [A-Za-z]+)(\\))?(,[^<>\"/]+)?</h1>
-        Regex fileInfo = br.getRegex("class=\"filetitle\"\\-\\-> ([^<>\"]*?) </strong><br /> \\(([^<>\"]*?)\\)<\\!");
-        String filename = fileInfo.getMatch(0);
-        String filesize = fileInfo.getMatch(1);
-        if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        // Use API with JDownloader API Key
+        br.getPage("http://www." + this.getHost() + "/api/info.php?api_key=" + APIKEY + "&file_id=" + new Regex(link.getDownloadURL(), "/files/([A-Za-z0-9]+)\\.html").getMatch(0));
+        if (br.containsHTML("file does not exist")) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
+        String filename = br.getRegex("\\[file_name\\] => (.*?)\n").getMatch(0);
+        String filesize = br.getRegex("\\[file_size\\] => (\\d+)\n").getMatch(0);
+        if (filename == null || filesize == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         // Set final filename here because hoster taggs files
-        link.setFinalFileName(filename.trim());
+        link.setFinalFileName(Encoding.htmlDecode(filename.trim()));
         link.setDownloadSize(SizeFormatter.getSize(filesize));
         return AvailableStatus.TRUE;
     }
 
     @Override
-    public void handleFree(DownloadLink downloadLink) throws Exception, PluginException {
+    public void handleFree(final DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
+        br.getPage(downloadLink.getDownloadURL());
         String getLink = getLink();
-        if (getLink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (getLink == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         // waittime
         final String ttt = br.getRegex("var time = (\\d+);").getMatch(0);
         int tt = 30;
-        if (ttt != null) tt = Integer.parseInt(ttt);
+        if (ttt != null) {
+            tt = Integer.parseInt(ttt);
+        }
         if (tt > 240) {
             // 10 Minutes reconnect-waittime is not enough, let's wait one
             // hour
@@ -80,11 +86,17 @@ public class FilePupNet extends PluginForHost {
         sleep(tt * 1001l, downloadLink);
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, getLink, "task=download", false, 1);
         if (dl.getConnection().getContentType().contains("html")) {
-            if (dl.getConnection().getResponseCode() == 405) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error", 30 * 60 * 1000l);
+            if (dl.getConnection().getResponseCode() == 405) {
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error", 30 * 60 * 1000l);
+            }
             br.followConnection();
-            if (br.containsHTML(">You have reached the limit of")) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 60 * 60 * 1001l);
+            if (br.containsHTML(">You have reached the limit of")) {
+                throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 60 * 60 * 1001l);
+            }
             final String unknownError = br.getRegex("class=\"error\">(.*?)\"").getMatch(0);
-            if (unknownError != null) logger.warning("Unknown error occured: " + unknownError);
+            if (unknownError != null) {
+                logger.warning("Unknown error occured: " + unknownError);
+            }
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl.startDownload();
@@ -97,7 +109,9 @@ public class FilePupNet extends PluginForHost {
 
     private String getLink() {
         String getLink = br.getRegex("disabled=\"disabled\" onclick=\"document\\.location=\\'(.*?)\\';\"").getMatch(0);
-        if (getLink == null) getLink = br.getRegex("(\\'|\")(" + "http://(www\\.)?([a-z0-9]+\\.)?" + MAINPAGE.replaceAll("(http://|www\\.)", "") + "/get/[A-Za-z0-9]+/\\d+/[^<>\"/]+)(\\'|\")").getMatch(1);
+        if (getLink == null) {
+            getLink = br.getRegex("(\\'|\")(" + "http://(www\\.)?([a-z0-9]+\\.)?" + MAINPAGE.replaceAll("(http://|www\\.)", "") + "/get/[A-Za-z0-9]+/\\d+/[^<>\"/]+)(\\'|\")").getMatch(1);
+        }
         return getLink;
     }
 
