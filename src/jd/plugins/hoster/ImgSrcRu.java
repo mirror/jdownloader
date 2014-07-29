@@ -37,6 +37,8 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.utils.JDUtilities;
 
+import org.mozilla.javascript.ConsString;
+
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "imgsrc.ru" }, urls = { "https?://decryptedimgsrc\\.ru/[^/]+/\\d+\\.html(\\?pwd=[a-z0-9]{32})?" }, flags = { 0 })
 public class ImgSrcRu extends PluginForHost {
 
@@ -139,25 +141,36 @@ public class ImgSrcRu extends PluginForHost {
     }
 
     private void getDllink() throws Exception {
-        final String js = br.getRegex("<script type=\"text/javascript\">([\r\n\t ]+var [a-z]='[a-zA-Z0-9]+';[\r\n\t ]+var [a-z]=[^<]+)</script>").getMatch(0);
+        String js = br.getRegex("<script type=\"text/javascript\">([\r\n\t ]+var [a-z]='[a-zA-Z0-9]+';[\r\n\t ]+var [a-z]=[^<]+)</script>").getMatch(0);
         if (js == null) {
             logger.warning("Could not find JS!");
         } else {
-            final String best = new Regex(js, "'(ori_?pic|big_?pic)'").getMatch(0);
+            String best = new Regex(js, "'(ori_?pic)'").getMatch(0);
             if (best == null) {
-                logger.warning("determining best!");
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                best = new Regex(js, "'(big_?pic)'").getMatch(0);
+                if (best == null) {
+                    logger.warning("determining best!");
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                }
+            }
+            String x = new Regex(js, "document\\.getElementById\\('" + best + "'\\).(\\w+)").getMatch(0);
+            if (x == null) {
+                if (best.contains("ori")) {
+                    x = "href";
+                } else {
+                    x = "src";
+                }
             }
             final ScriptEngineManager mgr = jd.plugins.hoster.DummyScriptEnginePlugin.getScriptEngineManager(this);
             final ScriptEngine engine = mgr.getEngineByName("javascript");
             Object result = null;
             try {
                 engine.eval("var document = { getElementById: function (a) { if (!this[a]) { this[a] = new Object(); function src() { return a.src; } this[a].src = src(); } return this[a]; }};");
-                engine.eval(js + "\r\nvar result=document.getElementById('" + best + "').src;");
+                engine.eval(js + "\r\nvar result=document.getElementById('" + best + "')." + x + ";");
                 result = engine.get("result");
             } catch (Throwable e) {
             }
-            if (result != null) {
+            if (result != null && result instanceof ConsString) {
                 ddlink = result.toString();
             }
         }
