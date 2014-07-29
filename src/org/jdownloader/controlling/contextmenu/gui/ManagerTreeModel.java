@@ -35,7 +35,7 @@ public class ManagerTreeModel extends DefaultTreeModel implements TreeModel {
 
     @Override
     public Object getChild(Object parent, int index) {
-        return ((MenuItemData) ((MenuItemData) parent).getItems().get(index));
+        return (((MenuItemData) parent).getItems().get(index));
     }
 
     @Override
@@ -146,8 +146,10 @@ public class ManagerTreeModel extends DefaultTreeModel implements TreeModel {
 
             super.fireTreeStructureChanged(source, path, childIndices, children);
 
-            if (paths != null) tree.setSelectionPaths(paths);
-            tree.expandAll();
+            if (paths != null) {
+                tree.setSelectionPaths(paths);
+                // tree.expandAll();
+            }
         }
     }
 
