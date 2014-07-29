@@ -11,6 +11,7 @@ import jd.gui.swing.jdgui.views.settings.panels.advanced.AdvancedConfigTableMode
 import jd.gui.swing.jdgui.views.settings.panels.advanced.AdvancedTable;
 
 import org.appwork.storage.config.annotations.AboutConfig;
+import org.appwork.storage.config.annotations.DevConfig;
 import org.appwork.storage.config.handler.KeyHandler;
 import org.appwork.utils.Application;
 import org.appwork.utils.IO;
@@ -33,9 +34,11 @@ public class FolderWatchConfigPanel extends ExtensionConfigPanel<FolderWatchExte
 
         for (KeyHandler m : getExtension().getSettings()._getStorageHandler().getMap().values()) {
 
-            if (map.containsKey(m)) continue;
+            if (map.containsKey(m)) {
+                continue;
+            }
 
-            if (m.getAnnotation(AboutConfig.class) != null) {
+            if (m.getAnnotation(AboutConfig.class) != null && (m.getAnnotation(DevConfig.class) == null || Application.isJared(null))) {
                 if (m.getSetter() == null) {
                     throw new RuntimeException("Setter for " + m.getGetter().getMethod() + " missing");
                 } else if (m.getGetter() == null) {

@@ -66,6 +66,7 @@ import org.jdownloader.images.AbstractIcon;
 import org.jdownloader.logging.LogController;
 import org.jdownloader.plugins.controller.host.HostPluginController;
 import org.jdownloader.plugins.controller.host.LazyHostPlugin;
+import org.jdownloader.settings.AccountSettings;
 import org.jdownloader.settings.GraphicalUserInterfaceSettings;
 import org.jdownloader.settings.GraphicalUserInterfaceSettings.PremiumStatusBarDisplay;
 import org.jdownloader.settings.staticreferences.CFG_GUI;
@@ -161,13 +162,15 @@ public class ServicePanel extends JPanel implements MouseListener, AccountToolti
                         scheduler.scheduleWithFixedDelay(new Runnable() {
 
                             public void run() {
-                                /*
-                                 * this scheduleritem checks all enabled accounts every 5 mins
-                                 */
-                                try {
-                                    refreshAccountStats();
-                                } catch (Throwable e) {
-                                    Log.exception(e);
+                                if (JsonConfig.create(AccountSettings.class).isAutoAccountRefreshEnabled()) {
+                                    /*
+                                     * this scheduleritem checks all enabled accounts every 5 mins
+                                     */
+                                    try {
+                                        refreshAccountStats();
+                                    } catch (Throwable e) {
+                                        Log.exception(e);
+                                    }
                                 }
                             }
 

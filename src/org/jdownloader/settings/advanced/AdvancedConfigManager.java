@@ -11,8 +11,10 @@ import jd.controlling.linkcrawler.LinkCrawlerConfig;
 import org.appwork.storage.config.ConfigInterface;
 import org.appwork.storage.config.JsonConfig;
 import org.appwork.storage.config.annotations.AboutConfig;
+import org.appwork.storage.config.annotations.DevConfig;
 import org.appwork.storage.config.handler.KeyHandler;
 import org.appwork.swing.synthetica.SyntheticaSettings;
+import org.appwork.utils.Application;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.logging2.LogConfig;
 import org.appwork.utils.logging2.LogSource;
@@ -109,7 +111,7 @@ public class AdvancedConfigManager {
                 continue;
             }
 
-            if (m.getAnnotation(AboutConfig.class) != null) {
+            if (m.getAnnotation(AboutConfig.class) != null && (m.getAnnotation(DevConfig.class) == null || Application.isJared(null))) {
                 if (m.getSetter() == null) {
                     throw new RuntimeException("Setter for " + m.getGetter().getMethod() + " missing");
                 } else if (m.getGetter() == null) {
@@ -141,7 +143,7 @@ public class AdvancedConfigManager {
                         if (map.containsKey(m)) {
                             continue;
                         }
-                        if (m.getAnnotation(AboutConfig.class) != null) {
+                        if (m.getAnnotation(AboutConfig.class) != null && (m.getAnnotation(DevConfig.class) == null || Application.isJared(null))) {
                             if (m.getSetter() == null) {
                                 throw new RuntimeException("Setter for " + m.getGetter().getMethod() + " missing");
                             } else if (m.getGetter() == null) {

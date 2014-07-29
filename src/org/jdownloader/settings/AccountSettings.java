@@ -7,8 +7,10 @@ import org.appwork.storage.config.ConfigInterface;
 import org.appwork.storage.config.annotations.AboutConfig;
 import org.appwork.storage.config.annotations.AllowStorage;
 import org.appwork.storage.config.annotations.CryptedStorage;
+import org.appwork.storage.config.annotations.DefaultBooleanValue;
 import org.appwork.storage.config.annotations.DefaultIntValue;
 import org.appwork.storage.config.annotations.DescriptionForConfigEntry;
+import org.appwork.storage.config.annotations.DevConfig;
 import org.appwork.storage.config.annotations.SpinnerValidator;
 
 public interface AccountSettings extends ConfigInterface {
@@ -27,5 +29,12 @@ public interface AccountSettings extends ConfigInterface {
     int getTempDisableOnErrorTimeout();
 
     void setTempDisableOnErrorTimeout(int j);
+
+    @AboutConfig
+    @DefaultBooleanValue(true)
+    @DevConfig
+    boolean isAutoAccountRefreshEnabled();
+
+    void setAutoAccountRefreshEnabled(boolean b);
 
 }
