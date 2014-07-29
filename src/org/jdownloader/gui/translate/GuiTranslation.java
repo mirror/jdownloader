@@ -5137,4 +5137,7 @@ public interface GuiTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "Enter any comment..." })
     String PackagizerFilterRuleDialog_layoutDialogContent_comment_help_();
 
+    @Default(lngs = { "en" }, values = { "Unskip all skipped Links" })
+    String UnskipAllSkippedLinksAction();
+
 }
