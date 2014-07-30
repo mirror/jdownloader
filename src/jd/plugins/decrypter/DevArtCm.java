@@ -158,7 +158,7 @@ public class DevArtCm extends PluginForDecrypt {
                 }
                 br.getPage(paramdecrypt + next);
             }
-            final String jinfo[] = br.getRegex("<a href=\"(http://[\\w\\.\\-]*?\\.deviantart\\.com/journal/[\\w\\-]+)\"").getColumn(0);
+            final String jinfo[] = br.getRegex("data\\-deviationid=\"\\d+\" href=\"(http://[\\w\\.\\-]*?\\.deviantart\\.com/journal/[\\w\\-]+)\"").getColumn(0);
             if (jinfo == null || jinfo.length == 0) {
                 throw new DecrypterException("Decrypter broken for link: " + PARAMETER);
             }

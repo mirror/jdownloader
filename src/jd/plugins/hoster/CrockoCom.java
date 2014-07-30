@@ -78,7 +78,9 @@ public class CrockoCom extends PluginForHost {
         try {
             br.setCookie(MAINPAGE, "language", "en");
             con = br.openGetConnection(downloadLink.getDownloadURL());
-            if (con.getResponseCode() == 503) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            if (con.getResponseCode() == 503) {
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            }
             br.followConnection();
         } finally {
             try {
@@ -87,11 +89,17 @@ public class CrockoCom extends PluginForHost {
             }
         }
         // Offline links
-        if (br.containsHTML("<title>Crocko\\.com 404</title>|>Requested file is deleted|>Searching for file")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (br.containsHTML("<title>Crocko\\.com 404</title>|>Requested file is deleted|>Searching for file")) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
         // Invalid links
-        if (br.containsHTML(">you have no permission")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (br.containsHTML(">you have no permission")) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
         String filename = br.getRegex(">Download: +<strong>(.*?)</strong>").getMatch(0);
-        if (filename == null) filename = br.getRegex(">Download:</span> <br />[\t\n\r ]+<strong>(.*?)</strong>").getMatch(0);
+        if (filename == null) {
+            filename = br.getRegex(">Download:</span> <br />[\t\n\r ]+<strong>(.*?)</strong>").getMatch(0);
+        }
         final String filesize = br.getRegex("<span class=\"tip1\"><span class=\"inner\">(.*?)</span></span>").getMatch(0);
         if (filename == null || filesize == null) {
             if (br.containsHTML("<h1>Software error:</h1>")) {
@@ -127,18 +135,28 @@ public class CrockoCom extends PluginForHost {
     }
 
     private void doFree(final DownloadLink downloadLink) throws Exception {
-        if (br.containsHTML(FILENOTFOUND)) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        if (br.containsHTML("There is another download in progress from your IP")) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 15 * 60 * 1000l);
-        if (br.containsHTML(ONLY4PREMIUM)) throw new PluginException(LinkStatus.ERROR_FATAL, JDL.L("plugins.host.errormsg.only4premium", "Only downloadable for premium users!"));
+        if (br.containsHTML(FILENOTFOUND)) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
+        if (br.containsHTML("There is another download in progress from your IP")) {
+            throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 15 * 60 * 1000l);
+        }
+        if (br.containsHTML(ONLY4PREMIUM)) {
+            throw new PluginException(LinkStatus.ERROR_FATAL, JDL.L("plugins.host.errormsg.only4premium", "Only downloadable for premium users!"));
+        }
         String wait = br.getRegex("w=\\'(\\d+)\\'").getMatch(0);
         int waittime = 0;
-        if (wait != null) waittime = Integer.parseInt(wait.trim());
+        if (wait != null) {
+            waittime = Integer.parseInt(wait.trim());
+        }
         if (waittime > 180 && longwait.get()) {
             /* first time >90 secs, it can be we are country with long waittime */
             longwait.set(true);
             sleep(waittime * 1000l, downloadLink);
         } else {
-            if (longwait == null) longwait.set(false);
+            if (longwait == null) {
+                longwait.set(false);
+            }
             if (waittime > 90 && longwait.get() == false) {
                 /*
                  * only request reconnect if we dont have to wait long on every download
@@ -152,10 +170,16 @@ public class CrockoCom extends PluginForHost {
         }
 
         String id = br.getRegex("Recaptcha\\.create\\(\"(.*?)\"").getMatch(0);
-        if (br.containsHTML("Please wait or buy a Premium membership")) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 60 * 60 * 1000l);
+        if (br.containsHTML("Please wait or buy a Premium membership")) {
+            throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 60 * 60 * 1000l);
+        }
 
-        if (id == null) br.getPage(downloadLink.getDownloadURL());
-        if (br.containsHTML("There is another download in progress from your IP")) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 15 * 60 * 1000l);
+        if (id == null) {
+            br.getPage(downloadLink.getDownloadURL());
+        }
+        if (br.containsHTML("There is another download in progress from your IP")) {
+            throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 15 * 60 * 1000l);
+        }
         // br = br;
         int tries = 0;
         while (true) {
@@ -200,12 +224,17 @@ public class CrockoCom extends PluginForHost {
             String code = getCaptchaCode("recaptcha", cf, downloadLink);
             form.put("recaptcha_challenge_field", challenge);
             form.put("recaptcha_response_field", Encoding.urlEncode(code));
+            form.remove(null);
             br.setFollowRedirects(true);
             dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, form, true, 1);
             if (!dl.getConnection().isContentDisposition()) {
                 br.followConnection();
-                if (br.containsHTML("There are no more download slots available right now.")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "There are no more download slots available right now.", 10 * 60 * 1000l);
-                if (br.containsHTML("There is another download in progress from your IP")) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 15 * 60 * 1000l);
+                if (br.containsHTML("There are no more download slots available right now.")) {
+                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "There are no more download slots available right now.", 10 * 60 * 1000l);
+                }
+                if (br.containsHTML("There is another download in progress from your IP")) {
+                    throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 15 * 60 * 1000l);
+                }
                 if (br.containsHTML("Entered code is invalid")) {
                     if (tries <= 5) {
                         continue;
@@ -231,9 +260,13 @@ public class CrockoCom extends PluginForHost {
         if (account.getBooleanProperty("free", false)) {
             doFree(downloadLink);
         } else {
-            if (br.containsHTML(FILENOTFOUND)) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            if (br.containsHTML(FILENOTFOUND)) {
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            }
             String url = br.getRedirectLocation();
-            if (url == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            if (url == null) {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
             /* limited easyshare to max 5 chunks cause too much can create issues */
             dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, url, true, -5);
             if (!dl.getConnection().isContentDisposition()) {
@@ -262,7 +295,9 @@ public class CrockoCom extends PluginForHost {
                 prepBrowser();
                 final Object ret = account.getProperty("cookies", null);
                 boolean acmatch = Encoding.urlEncode(account.getUser()).equals(account.getStringProperty("name", Encoding.urlEncode(account.getUser())));
-                if (acmatch) acmatch = Encoding.urlEncode(account.getPass()).equals(account.getStringProperty("pass", Encoding.urlEncode(account.getPass())));
+                if (acmatch) {
+                    acmatch = Encoding.urlEncode(account.getPass()).equals(account.getStringProperty("pass", Encoding.urlEncode(account.getPass())));
+                }
                 if (acmatch && ret != null && ret instanceof HashMap<?, ?> && !force) {
                     final HashMap<String, String> cookies = (HashMap<String, String>) ret;
                     if (account.isValid()) {
@@ -281,7 +316,9 @@ public class CrockoCom extends PluginForHost {
                 br.postPage("https://www.crocko.com/accounts/login", "remember=1&success_llocation=&login=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()));
                 final String acc = br.getCookie(MAINPAGE, "logacc");
                 final String prem = br.getCookie(MAINPAGE, "PREMIUM");
-                if (acc == null) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+                if (acc == null) {
+                    throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+                }
                 if (prem == null) {
                     account.setProperty("free", true);
                 } else {
@@ -329,10 +366,18 @@ public class CrockoCom extends PluginForHost {
         } else {
             String ends = br.getRegex("Ends:</span>.*?<span>(.*?)<").getMatch(0);
             /* there are 2 different versions of account info pages */
-            if (ends == null) ends = br.getRegex("End time:(.*?)<").getMatch(0);
-            if (ends == null) ends = br.getRegex("Starts:.*?Ends: (.*?)<").getMatch(0);
-            if (ends == null) ends = br.getRegex("Duration:(.*?)<").getMatch(0);
-            if (ends != null) ends = ends.trim();
+            if (ends == null) {
+                ends = br.getRegex("End time:(.*?)<").getMatch(0);
+            }
+            if (ends == null) {
+                ends = br.getRegex("Starts:.*?Ends: (.*?)<").getMatch(0);
+            }
+            if (ends == null) {
+                ends = br.getRegex("Duration:(.*?)<").getMatch(0);
+            }
+            if (ends != null) {
+                ends = ends.trim();
+            }
             if (ends == null) {
                 account.setValid(false);
                 return ai;

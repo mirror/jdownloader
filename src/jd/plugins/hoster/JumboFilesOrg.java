@@ -88,6 +88,9 @@ public class JumboFilesOrg extends PluginForHost {
             filename = fileInfo.getMatch(0);
             final String filesize = fileInfo.getMatch(1);
             if (filename == null || filesize == null) {
+                if (br.containsHTML("<HTML xmlns:v=\"urn:schemas\\-microsoft\\-com:vml\"")) {
+                    throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+                }
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
             link.setDownloadSize(SizeFormatter.getSize(filesize));
