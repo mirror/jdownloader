@@ -308,6 +308,9 @@ public class TusFilesNet extends PluginForHost {
                                     fileInfo[0] = cbr.getRegex("<input[^\r\n]+value='\\[[^\\]]+\\]([^\r\n]+) - [\\d\\.]+ (KB|MB|GB)\\[/URL\\]").getMatch(0);
                                     if (inValidate(fileInfo[0])) {
                                         fileInfo[0] = cbr.getRegex("<textarea[^\r\n]+>[^\r\n]+\\]([^\r\n]+) - [\\d\\.]+ (KB|MB|GB)\\[/URL\\]").getMatch(0);
+                                        if (inValidate(fileInfo[0])) {
+                                            fileInfo[0] = cbr.getRegex("btn-lg\">([^>]+)</button>").getMatch(0);
+                                        }
                                     }
                                 }
                             }
@@ -330,6 +333,9 @@ public class TusFilesNet extends PluginForHost {
         }
         if (inValidate(fileInfo[1])) {
             fileInfo[1] = cbr.getRegex("(\\d+(\\.\\d+)? ?(KB|MB|GB))").getMatch(0);
+        }
+        if (inValidate(fileInfo[1])) {
+            fileInfo[1] = cbr.getRegex("Size:</th>\\s+?<[^<>]+>(\\d+(\\.\\d+)? ?(B|KB|MB|GB))").getMatch(0);
         }
         if (inValidate(fileInfo[1])) {
             try {
