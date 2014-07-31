@@ -276,11 +276,11 @@ public class Zippysharecom extends PluginForHost {
             }
         }
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, DLLINK, false, 1);
-        downloadLink.setFinalFileName(Encoding.htmlDecode(getFileNameFromHeader(dl.getConnection())));
         if (!dl.getConnection().isContentDisposition()) {
             br.followConnection();
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
+        downloadLink.setFinalFileName(Encoding.htmlDecode(getFileNameFromHeader(dl.getConnection())));
         try {
             dl.startDownload();
         } catch (final PluginException e) {
