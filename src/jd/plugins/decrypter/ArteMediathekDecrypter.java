@@ -215,12 +215,14 @@ public class ArteMediathekDecrypter extends PluginForDecrypt {
                     if (url == null) {
                         url = streamValue.get("VUR");
                     }
-
-                    if (url != null && !url.matches("https?://.+") && !streamType.matches("HTTP_REACH_EQ_\\d|SQ|EQ|HQ")) {
+                    // this assumes that all non protocol urls belong to rtmp.
+                    if (url != null && !url.matches("(https?|rtmp)://.+")) {
                         if (!url.startsWith("mp4:")) {
                             url = "mp4:" + url;
                         }
-                        url = (streamValue.get("streamer") != null ? streamValue.get("streamer") + url : url);
+                        if (streamValue.get("streamer") != null) {
+                            url = streamValue.get("streamer") + url;
+                        }
                     }
                     String fmt = streamValue.get("quality");
                     if (fmt == null) {
