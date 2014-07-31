@@ -48,7 +48,6 @@ public class ArteMediathekDecrypter extends PluginForDecrypt {
     private static final String Q_HD        = "Q_HD";
     private static final String HBBTV       = "HBBTV";
     private static final String THUMBNAIL   = "THUMBNAIL";
-    private boolean             BEST        = false;
 
     public ArteMediathekDecrypter(final PluginWrapper wrapper) {
         super(wrapper);
@@ -84,9 +83,7 @@ public class ArteMediathekDecrypter extends PluginForDecrypt {
             return decryptedLinks;
         }
 
-        final SubConfiguration cfg = SubConfiguration.getConfig("arte.tv");
-        BEST = cfg.getBooleanProperty(Q_BEST, false);
-        decryptedLinks.addAll(getDownloadLinks(parameter, cfg));
+        decryptedLinks.addAll(getDownloadLinks(parameter, br));
 
         if (decryptedLinks == null || decryptedLinks.size() == 0) {
             logger.warning("Decrypter out of date for link: " + parameter);
@@ -109,7 +106,13 @@ public class ArteMediathekDecrypter extends PluginForDecrypt {
         return false;
     }
 
-    private ArrayList<DownloadLink> getDownloadLinks(final String data, final SubConfiguration cfg) {
+    private ArrayList<DownloadLink> getDownloadLinks(final String data, final Browser ibr) {
+        // this allows drop to frame, and prevents subsequent NPE!
+        br = ibr.cloneBrowser();
+
+        final SubConfiguration cfg = SubConfiguration.getConfig("arte.tv");
+        final boolean BEST = cfg.getBooleanProperty(Q_BEST, false);
+
         ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
 
         try {
@@ -213,11 +216,11 @@ public class ArteMediathekDecrypter extends PluginForDecrypt {
                         url = streamValue.get("VUR");
                     }
 
-                    if (!streamType.matches("HTTP_REACH_EQ_\\d|SQ|EQ|HQ")) {
+                    if (url != null && !url.matches("https?://.+") && !streamType.matches("HTTP_REACH_EQ_\\d|SQ|EQ|HQ")) {
                         if (!url.startsWith("mp4:")) {
                             url = "mp4:" + url;
                         }
-                        url = streamValue.get("streamer") + url;
+                        url = (streamValue.get("streamer") != null ? streamValue.get("streamer") + url : url);
                     }
                     String fmt = streamValue.get("quality");
                     if (fmt == null) {
@@ -410,6 +413,7 @@ public class ArteMediathekDecrypter extends PluginForDecrypt {
 
     private String getTitle(Browser br) {
         String title = br.getRegex("<title>(.*?) \\| ARTE</title>").getMatch(0);
+        // what is ut?
         String titleUT = br.getRegex("<span class=\"BoxHeadlineUT\">([^<]+)</").getMatch(0);
         if (title == null) {
             title = br.getRegex("<h1 itemprop=\"name\" class=\"span\\d+\">([^<]+)</h1>").getMatch(0);
