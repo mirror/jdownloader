@@ -21,31 +21,45 @@ import java.util.ArrayList;
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.parser.Regex;
+import jd.parser.html.Form;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "tusfiles.net" }, urls = { "https?://(www\\.)?(tusfiles\\.net/go/[a-z0-9]{12}/|j\\-b\\.tusfil\\.es/[A-Z0-9]+)" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "tusfiles.net" }, urls = { "https?://(www\\.)?(tusfiles\\.net/go/[a-z0-9]{12}/|j\\-b\\.tusfil\\.es/[A-Z0-9]+|tusfil(es\\.(net|co\\.nz)|\\.es)/d/[0-9A-Z]+)" }, flags = { 0 })
 public class TusFilesNet extends PluginForDecrypt {
 
     public TusFilesNet(PluginWrapper wrapper) {
         super(wrapper);
     }
 
-    private static final String TYPE_SHORT = "https?://(www\\.)?j\\-b\\.tusfil\\.es/[A-Z0-9]+";
+    private final String TYPE_SHORT1 = "https?://(www\\.)?j\\-b\\.tusfil\\.es/[A-Z0-9]+";
+    private final String TYPE_SHORT2 = "https?://(www\\.)?tusfil(es\\.(net|co\\.nz)|\\.es)/d/[0-9A-Z]+";
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         final String parameter = param.toString();
         br.getPage(parameter);
-        if (parameter.matches(TYPE_SHORT)) {
+        if (parameter.matches(TYPE_SHORT1)) {
             final String finallink = br.getRegex("class=\"bttn button\"><a href=\"(http[^<>\"]*?)\"").getMatch(0);
-            if (finallink == null || finallink.matches(TYPE_SHORT)) {
+            if (finallink == null || finallink.matches(TYPE_SHORT1)) {
                 logger.warning("Decrypter broken for link: " + parameter);
                 return null;
             }
             decryptedLinks.add(createDownloadlink(finallink));
+        }
+        if (parameter.matches(TYPE_SHORT2)) {
+            for (final Form f : br.getForms()) {
+                if (f.containsHTML("<input type=\"hidden\" name=\"op\" value=\"download1\">")) {
+                    String uid = new Regex(f.getHtmlCode(), "<input type=\"hidden\" name=\"id\" value=\"([a-z0-9]+)\">").getMatch(0);
+                    if (uid != null) {
+                        String host = f.getAction();
+                        host = new Regex((host == null || !host.matches("https?://.+") ? br.getURL() : host), "https?://[^/]+").getMatch(-1);
+                        decryptedLinks.add(createDownloadlink(host + "/" + uid));
+                    }
+                }
+            }
         } else {
             if (br.containsHTML(">No such folder<")) {
                 logger.info("Link offline: " + parameter);
@@ -56,7 +70,9 @@ public class TusFilesNet extends PluginForDecrypt {
             final String[] pages = br.getRegex("href=\"/go/" + folderid + "/(\\d+)/\">\\d+</a>").getColumn(0);
             if (pages != null && pages.length != 0) {
                 for (final String pagenum : pages) {
-                    if (Integer.parseInt(pagenum) > maxPage) maxPage = Integer.parseInt(pagenum);
+                    if (Integer.parseInt(pagenum) > maxPage) {
+                        maxPage = Integer.parseInt(pagenum);
+                    }
                 }
             }
             for (int i = 1; i <= maxPage; i++) {
@@ -83,12 +99,14 @@ public class TusFilesNet extends PluginForDecrypt {
                     return null;
                 }
                 if (links != null && links.length != 0) {
-                    for (final String singleLink : links)
+                    for (final String singleLink : links) {
                         decryptedLinks.add(createDownloadlink(singleLink));
+                    }
                 }
                 if (folders != null && folders.length != 0) {
-                    for (final String folder : folders)
+                    for (final String folder : folders) {
                         decryptedLinks.add(createDownloadlink(folder));
+                    }
                 }
             }
         }
