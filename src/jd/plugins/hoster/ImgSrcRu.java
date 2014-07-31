@@ -92,8 +92,9 @@ public class ImgSrcRu extends PluginForHost {
             prepBr.getHeaders().put("Referer", refer);
         }
         prepBr.setFollowRedirects(true);
-        prepBr.setReadTimeout(180000);
-        prepBr.setConnectTimeout(180000);
+        // prepBr.getHeaders().put("Connection", "keep-alive");
+        // prepBr.setReadTimeout(180000);
+        // prepBr.setConnectTimeout(180000);
         if (uaInt.incrementAndGet() > 25 || userAgent.get() == null || neu) {
             /* we first have to load the plugin, before we can reference it */
             JDUtilities.getPluginForHost("mediafire.com");
@@ -253,7 +254,7 @@ public class ImgSrcRu extends PluginForHost {
 
     @Override
     public int getMaxSimultanFreeDownloadNum() {
-        return 3;
+        return 10;
     }
 
     @Override
