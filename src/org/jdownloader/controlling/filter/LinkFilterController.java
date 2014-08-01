@@ -1,6 +1,7 @@
 package org.jdownloader.controlling.filter;
 
 import java.util.ArrayList;
+import java.util.HashSet;
 
 import jd.controlling.TaskQueue;
 import jd.controlling.linkcrawler.CrawledLink;
@@ -11,6 +12,8 @@ import org.appwork.exceptions.WTFException;
 import org.appwork.shutdown.ShutdownController;
 import org.appwork.shutdown.ShutdownEvent;
 import org.appwork.shutdown.ShutdownRequest;
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.TypeRef;
 import org.appwork.storage.config.JsonConfig;
 import org.appwork.utils.event.predefined.changeevent.ChangeEvent;
 import org.appwork.utils.event.predefined.changeevent.ChangeEventSender;
@@ -52,7 +55,8 @@ public class LinkFilterController implements LinkCrawlerFilter {
     private boolean                                      testInstance = false;
 
     /**
-     * Create a new instance of LinkFilterController. This is a singleton class. Access the only existing instance by using {@link #getInstance()}.
+     * Create a new instance of LinkFilterController. This is a singleton class. Access the only existing instance by using
+     * {@link #getInstance()}.
      */
     public LinkFilterController(boolean testInstance) {
         eventSender = new ChangeEventSender();
@@ -60,17 +64,28 @@ public class LinkFilterController implements LinkCrawlerFilter {
         if (isTestInstance() == false) {
             config = JsonConfig.create(LinkFilterSettings.class);
             filter = config.getFilterList();
-            if (filter == null) filter = new ArrayList<LinkgrabberFilterRule>();
+            if (filter == null) {
+                filter = new ArrayList<LinkgrabberFilterRule>();
+            }
 
             ArrayList<LinkgrabberFilterRule> newList = new ArrayList<LinkgrabberFilterRule>();
 
             boolean offlineRule = false;
             boolean directHttpView = false;
-            for (LinkgrabberFilterRule rule : filter) {
+            HashSet<String> dupefinder = new HashSet<String>();
 
+            for (LinkgrabberFilterRule rule : filter) {
+                LinkgrabberFilterRule clone = JSonStorage.restoreFromString(JSonStorage.serializeToJson(rule), new TypeRef<LinkgrabberFilterRule>() {
+                });
+                clone.setCreated(-1);
+                if (!dupefinder.add(JSonStorage.serializeToJson(clone))) {
+                    //
+                    continue;
+                }
                 if (OfflineView.ID.equals(rule.getId())) {
                     OfflineView r;
                     newList.add(r = new OfflineView());
+                    r.init();
                     r.setEnabled(rule.isEnabled());
                     offlineRule = true;
                     continue;
@@ -79,6 +94,7 @@ public class LinkFilterController implements LinkCrawlerFilter {
                 if (DirectHTTPView.ID.equals(rule.getId())) {
                     DirectHTTPView r;
                     newList.add(r = new DirectHTTPView());
+                    r.init();
                     r.setEnabled(rule.isEnabled());
                     directHttpView = true;
                     continue;
@@ -87,10 +103,10 @@ public class LinkFilterController implements LinkCrawlerFilter {
                 newList.add(rule);
             }
             if (!directHttpView) {
-                newList.add(new DirectHTTPView());
+                newList.add(new DirectHTTPView().init());
             }
             if (!offlineRule) {
-                newList.add(new OfflineView());
+                newList.add(new OfflineView().init());
             }
 
             filter = newList;
@@ -100,7 +116,9 @@ public class LinkFilterController implements LinkCrawlerFilter {
                 @Override
                 public void onShutdown(final ShutdownRequest shutdownRequest) {
                     synchronized (LinkFilterController.this) {
-                        if (config != null) config.setFilterList(filter);
+                        if (config != null) {
+                            config.setFilterList(filter);
+                        }
                     }
                 }
 
@@ -196,28 +214,40 @@ public class LinkFilterController implements LinkCrawlerFilter {
     }
 
     public void addAll(java.util.List<LinkgrabberFilterRule> all) {
-        if (all == null) return;
+        if (all == null) {
+            return;
+        }
         synchronized (this) {
             filter.addAll(all);
-            if (config != null) config.setFilterList(filter);
+            if (config != null) {
+                config.setFilterList(filter);
+            }
             update();
         }
     }
 
     public void add(LinkgrabberFilterRule linkFilter) {
-        if (linkFilter == null) return;
+        if (linkFilter == null) {
+            return;
+        }
         synchronized (this) {
             filter.add(linkFilter);
-            if (config != null) config.setFilterList(filter);
+            if (config != null) {
+                config.setFilterList(filter);
+            }
         }
         update();
     }
 
     public void remove(LinkgrabberFilterRule lf) {
-        if (lf == null) return;
+        if (lf == null) {
+            return;
+        }
         synchronized (this) {
             filter.remove(lf);
-            if (config != null) config.setFilterList(filter);
+            if (config != null) {
+                config.setFilterList(filter);
+            }
         }
         update();
     }
@@ -230,7 +260,9 @@ public class LinkFilterController implements LinkCrawlerFilter {
             return false;
         }
 
-        if (isTestInstance() == false && !org.jdownloader.settings.staticreferences.CFG_LINKFILTER.LINK_FILTER_ENABLED.getValue()) return false;
+        if (isTestInstance() == false && !org.jdownloader.settings.staticreferences.CFG_LINKFILTER.LINK_FILTER_ENABLED.getValue()) {
+            return false;
+        }
         boolean matches = false;
         LinkgrabberFilterRule matchingFilter = null;
         final java.util.List<LinkgrabberFilterRuleWrapper> localdenyUrlFilter = denyUrlFilter;
@@ -240,17 +272,25 @@ public class LinkFilterController implements LinkCrawlerFilter {
 
             for (LinkgrabberFilterRuleWrapper lgr : localdenyUrlFilter) {
                 try {
-                    if (!lgr.checkHoster(link)) continue;
+                    if (!lgr.checkHoster(link)) {
+                        continue;
+                    }
                 } catch (NoDownloadLinkException e) {
                     continue;
                 }
                 try {
-                    if (!lgr.checkPluginStatus(link)) continue;
+                    if (!lgr.checkPluginStatus(link)) {
+                        continue;
+                    }
                 } catch (NoDownloadLinkException e) {
                     continue;
                 }
-                if (!isTestInstance() && !lgr.checkOrigin(link)) continue;
-                if (!lgr.checkSource(link)) continue;
+                if (!isTestInstance() && !lgr.checkOrigin(link)) {
+                    continue;
+                }
+                if (!lgr.checkSource(link)) {
+                    continue;
+                }
                 matches = true;
                 matchingFilter = lgr.getRule();
                 break;
@@ -311,9 +351,13 @@ public class LinkFilterController implements LinkCrawlerFilter {
              */
             return false;
         }
-        if (isTestInstance() == false && !org.jdownloader.settings.staticreferences.CFG_LINKFILTER.LINK_FILTER_ENABLED.getValue()) return false;
+        if (isTestInstance() == false && !org.jdownloader.settings.staticreferences.CFG_LINKFILTER.LINK_FILTER_ENABLED.getValue()) {
+            return false;
+        }
         DownloadLink dlink = link.getDownloadLink();
-        if (dlink == null) { throw new WTFException(); }
+        if (dlink == null) {
+            throw new WTFException();
+        }
         boolean matches = false;
         LinkgrabberFilterRule matchedFilter = null;
         final java.util.List<LinkgrabberFilterRuleWrapper> localdenyUrlFilter = denyUrlFilter;
@@ -325,23 +369,41 @@ public class LinkFilterController implements LinkCrawlerFilter {
             for (LinkgrabberFilterRuleWrapper lgr : localdenyFileFilter) {
 
                 try {
-                    if (!lgr.checkHoster(link)) continue;
+                    if (!lgr.checkHoster(link)) {
+                        continue;
+                    }
                 } catch (NoDownloadLinkException e) {
                     throw new WTFException();
                 }
                 try {
-                    if (!lgr.checkPluginStatus(link)) continue;
+                    if (!lgr.checkPluginStatus(link)) {
+                        continue;
+                    }
                 } catch (NoDownloadLinkException e) {
                     throw new WTFException();
                 }
-                if (!isTestInstance() && !lgr.checkOrigin(link)) continue;
-                if (!lgr.checkSource(link)) continue;
-                if (!lgr.checkOnlineStatus(link)) continue;
+                if (!isTestInstance() && !lgr.checkOrigin(link)) {
+                    continue;
+                }
+                if (!lgr.checkSource(link)) {
+                    continue;
+                }
+                if (!lgr.checkOnlineStatus(link)) {
+                    continue;
+                }
 
-                if (!lgr.checkFileName(link)) continue;
-                if (!lgr.checkPackageName(link)) continue;
-                if (!lgr.checkFileSize(link)) continue;
-                if (!lgr.checkFileType(link)) continue;
+                if (!lgr.checkFileName(link)) {
+                    continue;
+                }
+                if (!lgr.checkPackageName(link)) {
+                    continue;
+                }
+                if (!lgr.checkFileSize(link)) {
+                    continue;
+                }
+                if (!lgr.checkFileType(link)) {
+                    continue;
+                }
 
                 matches = true;
                 matchedFilter = lgr.getRule();
@@ -350,24 +412,32 @@ public class LinkFilterController implements LinkCrawlerFilter {
             if (!matches) {
                 for (LinkgrabberFilterRuleWrapper lgr : localdenyUrlFilter) {
                     try {
-                        if (!lgr.checkHoster(link)) continue;
+                        if (!lgr.checkHoster(link)) {
+                            continue;
+                        }
                     } catch (NoDownloadLinkException e) {
                         throw new WTFException();
 
                     }
                     try {
-                        if (!lgr.checkPluginStatus(link)) continue;
+                        if (!lgr.checkPluginStatus(link)) {
+                            continue;
+                        }
                     } catch (NoDownloadLinkException e) {
                         throw new WTFException();
                     }
-                    if (!lgr.checkSource(link)) continue;
+                    if (!lgr.checkSource(link)) {
+                        continue;
+                    }
                     matches = true;
                     matchedFilter = lgr.getRule();
                     break;
                 }
             }
         }
-        if (!matches) return false;
+        if (!matches) {
+            return false;
+        }
 
         // // now check if we have an accept filter for this link.
         // for (LinkgrabberFilterRuleWrapper lgr : localacceptUrlFilter) {
@@ -420,7 +490,9 @@ public class LinkFilterController implements LinkCrawlerFilter {
             java.util.List<LinkgrabberFilterRule> lst = filter;
             java.util.List<LinkgrabberFilterRule> ret = new ArrayList<LinkgrabberFilterRule>();
             for (LinkgrabberFilterRule l : lst) {
-                if (!l.isAccept()) ret.add(l);
+                if (!l.isAccept()) {
+                    ret.add(l);
+                }
             }
             return ret;
         }
@@ -431,7 +503,9 @@ public class LinkFilterController implements LinkCrawlerFilter {
             java.util.List<LinkgrabberFilterRule> lst = filter;
             java.util.List<LinkgrabberFilterRule> ret = new ArrayList<LinkgrabberFilterRule>();
             for (LinkgrabberFilterRule l : lst) {
-                if (l.isAccept()) ret.add(l);
+                if (l.isAccept()) {
+                    ret.add(l);
+                }
             }
             return ret;
         }

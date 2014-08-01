@@ -9,6 +9,10 @@ public class SubFolderByPackageRule extends PackagizerRule {
 
     public SubFolderByPackageRule() {
         super();
+
+    }
+
+    public void init() {
         setMatchAlwaysFilter(new BooleanFilter(true));
         setDownloadDestination("<jd:packagename>");
         setIconKey("folder");

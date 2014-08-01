@@ -12,6 +12,9 @@ public class DirectHTTPView extends LinkgrabberFilterRule {
 
     public DirectHTTPView() {
 
+    }
+
+    public LinkgrabberFilterRule init() {
         setPluginStatusFilter(new PluginStatusFilter(PluginStatusMatchtype.ISNOT, true, PluginStatus.NO_DIRECT_HTTP));
         setName(_JDT._.LinkFilterSettings_DefaultFilterList_directhttp());
         setIconKey(IconKey.ICON_DOWNLOAD);
@@ -19,5 +22,6 @@ public class DirectHTTPView extends LinkgrabberFilterRule {
         setEnabled(false);
         setId(ID);
         setStaticRule(true);
+        return this;
     }
 }

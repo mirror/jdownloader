@@ -20,6 +20,7 @@ import org.appwork.shutdown.ShutdownController;
 import org.appwork.shutdown.ShutdownEvent;
 import org.appwork.shutdown.ShutdownRequest;
 import org.appwork.storage.JSonStorage;
+import org.appwork.storage.TypeRef;
 import org.appwork.storage.config.JsonConfig;
 import org.appwork.utils.IO;
 import org.appwork.utils.Regex;
@@ -93,13 +94,20 @@ public class PackagizerController implements PackagizerInterface, FileCreationLi
             boolean revFileRule = false;
 
             for (PackagizerRule rule : list) {
-
+                PackagizerRule clone = JSonStorage.restoreFromString(JSonStorage.serializeToJson(rule), new TypeRef<PackagizerRule>() {
+                });
+                clone.setCreated(-1);
+                if (!dupefinder.add(JSonStorage.serializeToJson(clone))) {
+                    //
+                    continue;
+                }
                 if (SubFolderByPackageRule.ID.equals(rule.getId())) {
                     SubFolderByPackageRule r;
                     if (!dupefinder.add(rule.getId())) {
                         continue;
                     }
                     newList.add(r = new SubFolderByPackageRule());
+                    r.init();
                     r.setEnabled(rule.isEnabled());
                     subFolderByPackgeRule = r;
                     continue;
@@ -111,23 +119,24 @@ public class PackagizerController implements PackagizerInterface, FileCreationLi
                         continue;
                     }
                     newList.add(r = new DisableRevFilesPackageRule());
+                    r.init();
                     r.setEnabled(rule.isEnabled());
                     revFileRule = true;
                     continue;
 
                 }
-                if (!dupefinder.add(JSonStorage.serializeToJson(rule))) {
-                    //
-                    continue;
-                }
+
                 newList.add(rule);
             }
             if (subFolderByPackgeRule == null) {
                 newList.add(subFolderByPackgeRule = new SubFolderByPackageRule());
+                subFolderByPackgeRule.init();
 
             }
             if (!revFileRule) {
-                newList.add(new DisableRevFilesPackageRule());
+                DisableRevFilesPackageRule dis;
+                newList.add(dis = new DisableRevFilesPackageRule());
+                dis.init();
             }
             list = newList;
         }
@@ -140,6 +149,7 @@ public class PackagizerController implements PackagizerInterface, FileCreationLi
                 public void onShutdown(final ShutdownRequest shutdownRequest) {
                     synchronized (PackagizerController.this) {
                         if (config != null) {
+                            // System.out.println(JSonStorage.serializeToJson(list));
                             config.setRuleList(list);
                         }
                     }

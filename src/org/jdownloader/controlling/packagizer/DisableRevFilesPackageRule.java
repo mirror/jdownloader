@@ -15,6 +15,10 @@ public class DisableRevFilesPackageRule extends PackagizerRule {
     public DisableRevFilesPackageRule() {
         super();
         // setFilenameFilter(new RegexFilter(true, MatchType.EQUALS, "*.rev", false));
+
+    }
+
+    public void init() {
         setFiletypeFilter(new FiletypeFilter(TypeMatchType.IS, true, false, false, false, false, "rev", false));
         setOnlineStatusFilter(new OnlineStatusFilter(OnlineStatusMatchtype.IS, true, OnlineStatus.ONLINE));
         setIconKey(org.jdownloader.gui.IconKey.ICON_COMPRESS);

@@ -11,6 +11,9 @@ public class OfflineView extends LinkgrabberFilterRule {
 
     public OfflineView() {
 
+    }
+
+    public LinkgrabberFilterRule init() {
         setOnlineStatusFilter(new OnlineStatusFilter(OnlineStatusMatchtype.IS, true, OnlineStatus.OFFLINE));
         setName(_JDT._.LinkFilterSettings_DefaultFilterList_getDefaultValue_());
         setIconKey("error");
@@ -18,5 +21,6 @@ public class OfflineView extends LinkgrabberFilterRule {
         setEnabled(true);
         setId(ID);
         setStaticRule(true);
+        return this;
     }
 }
