@@ -33,8 +33,11 @@ import jd.plugins.PluginForHost;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "inclouddrive.com" }, urls = { "https?://(www\\.)?inclouddrive\\.com/link_download/\\?token=[A-Za-z0-9=]+" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "inclouddrive.com" }, urls = { "https?://(www\\.)?inclouddrive\\.com/(link_download/\\?token=[A-Za-z0-9=_]+|(#/)?(file_download|file|link)/[0-9a-zA-Z=_]+)" }, flags = { 0 })
 public class InCloudDriveCom extends PluginForHost {
+
+    // DEV NOTE:
+    // links are not correctable to a standard url format
 
     public InCloudDriveCom(PluginWrapper wrapper) {
         super(wrapper);
@@ -45,22 +48,35 @@ public class InCloudDriveCom extends PluginForHost {
         return "https://www.inclouddrive.com/#/terms_condition";
     }
 
+    private int    link_type;
+    private String fuid;
+
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
+        setFUID(link);
         br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
-        br.postPage("https://www.inclouddrive.com/index.php/link", "user_id=&user_loged_in=no&link_value=" + Encoding.urlEncode(getFUID(link)));
+        if (link_type == 1) {
+            br.postPage("https://www.inclouddrive.com/index.php/link", "user_id=&user_loged_in=no&link_value=" + Encoding.urlEncode(fuid));
+        } else if (link_type == 2) {
+            br.postPage("https://www.inclouddrive.com/index.php/file_download/" + fuid, "user_id=");
+        } else {
+            // unsupported type
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         if (br.containsHTML(">A Database Error Occurred<")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        final String filename = br.getRegex("class=\"propreties\\-file\\-count\">[\t\n\r ]+<b>([^<>\"]*?)</b>").getMatch(0);
-        final String filesize = br.getRegex(">Total size:</span><span class=\"propreties\\-dark\\-txt\">([^<>\"]*?)</span>").getMatch(0);
-        if (filename == null || filesize == null) {
+        final String filename = br.getRegex("class=\"propreties-file-count\">[\t\n\r ]+<b>([^<>\"]+)</b>").getMatch(0);
+        final String filesize = br.getRegex(">Total size:</span><span class=\"propreties-dark-txt\">([^<>\"]+)</span>").getMatch(0);
+        if (filename == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         link.setName(encodeUnicode(Encoding.htmlDecode(filename.trim())));
-        link.setDownloadSize(SizeFormatter.getSize(filesize));
+        if (filesize != null) {
+            link.setDownloadSize(SizeFormatter.getSize(filesize));
+        }
         return AvailableStatus.TRUE;
     }
 
@@ -102,8 +118,24 @@ public class InCloudDriveCom extends PluginForHost {
         dl.startDownload();
     }
 
-    private String getFUID(final DownloadLink dl) {
-        return new Regex(dl.getDownloadURL(), "ink_download/\\?token=([A-Za-z0-9=]+)").getMatch(0);
+    private String setFUID(final DownloadLink dl) {
+        fuid = new Regex(dl.getDownloadURL(), "/link_download/\\?token=([A-Za-z0-9=_]+)").getMatch(0);
+        if (fuid != null) {
+            link_type = 1;
+        }
+        if (fuid == null) {
+            fuid = new Regex(dl.getDownloadURL(), "/(?:#/)?(?:file_download|file|link)/([0-9a-zA-Z=_]+)").getMatch(0);
+            if (fuid != null) {
+                link_type = 2;
+            }
+        }
+        if (fuid != null) {
+            try {
+                dl.setLinkID(fuid);
+            } catch (final Throwable e) {
+            }
+        }
+        return fuid;
     }
 
     private String checkDirectLink(final DownloadLink downloadLink, final String property) {
