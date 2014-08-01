@@ -173,7 +173,13 @@ public class Tb7Pl extends PluginForHost {
         }
         // wait, workaround
         sleep(1 * 1000l, link);
-        dl = jd.plugins.BrowserAdapter.openDownload(br, link, generatedLink, true, 0);
+        int chunks = 0;
+
+        // generated fileshark link allows only 1 chunk
+        if (link.getBrowserUrl().contains("fileshark.pl")) {
+            chunks = 1;
+        }
+        dl = jd.plugins.BrowserAdapter.openDownload(br, link, generatedLink, true, chunks);
         if (dl.getConnection().getContentType().equalsIgnoreCase("text/html")) // unknown
         // error
         {
