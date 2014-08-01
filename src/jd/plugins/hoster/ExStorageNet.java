@@ -49,11 +49,15 @@ public class ExStorageNet extends PluginForHost {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         br.getPage(link.getDownloadURL());
-        if (br.toString().trim().equals("error")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (br.toString().trim().equals("error") | br.containsHTML("error\">このファイルは、権利者による著作権侵害の申し立てにより削除されました。<")) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
         final Regex finfo = br.getRegex("class=\"box_heading\" style=\"text\\-align:center;font\\-size:18px;\">([^<>\"]*?) \\(([A-Za-z0-9\\.,]+)\\)</h1>");
         final String filename = finfo.getMatch(0);
         final String filesize = finfo.getMatch(1);
-        if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (filename == null || filesize == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         link.setName(Encoding.htmlDecode(filename.trim()));
         link.setDownloadSize(SizeFormatter.getSize(filesize));
         return AvailableStatus.TRUE;
@@ -78,16 +82,22 @@ public class ExStorageNet extends PluginForHost {
             final String c = getCaptchaCode(cf, downloadLink);
             br.postPage(br.getURL(), "recaptcha_challenge_field=" + rc.getChallenge() + "&recaptcha_response_field=" + Encoding.urlEncode(c));
             final String blockedminutes = br.getRegex(">次のダウンロードが可能まで、残り(\\d+)分です。</p>").getMatch(0);
-            if (blockedminutes != null) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, Integer.parseInt(blockedminutes) * 60 * 1001l);
+            if (blockedminutes != null) {
+                throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, Integer.parseInt(blockedminutes) * 60 * 1001l);
+            }
             if (br.containsHTML("(api\\.recaptcha\\.net|google\\.com/recaptcha/api/)")) {
                 rc.reload();
                 continue;
             }
             break;
         }
-        if (br.containsHTML("(api\\.recaptcha\\.net|google\\.com/recaptcha/api/)")) throw new PluginException(LinkStatus.ERROR_CAPTCHA);
+        if (br.containsHTML("(api\\.recaptcha\\.net|google\\.com/recaptcha/api/)")) {
+            throw new PluginException(LinkStatus.ERROR_CAPTCHA);
+        }
         final String dllink = br.getRedirectLocation();
-        if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (dllink == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 1);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
@@ -109,9 +119,8 @@ public class ExStorageNet extends PluginForHost {
     public void resetDownloadlink(final DownloadLink link) {
     }
 
-
-/* NO OVERRIDE!! We need to stay 0.9*compatible */
-public boolean hasCaptcha(DownloadLink link, jd.plugins.Account acc) {
-return true;
-}
+    /* NO OVERRIDE!! We need to stay 0.9*compatible */
+    public boolean hasCaptcha(DownloadLink link, jd.plugins.Account acc) {
+        return true;
+    }
 }
