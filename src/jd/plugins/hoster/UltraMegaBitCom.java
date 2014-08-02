@@ -45,7 +45,7 @@ import jd.utils.JDUtilities;
 import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.formatter.TimeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "ultramegabit.com" }, urls = { "https?://(www\\.)?ultramegabit\\.com/file/details/[A-Za-z0-9\\-_]+" }, flags = { 2 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "ultramegabit.com" }, urls = { "https?://(www\\.)?(ultramegabit\\.com|uploadto\\.us)/file/details/[A-Za-z0-9\\-_]+" }, flags = { 2 })
 public class UltraMegaBitCom extends PluginForHost {
 
     public UltraMegaBitCom(PluginWrapper wrapper) {
@@ -57,13 +57,13 @@ public class UltraMegaBitCom extends PluginForHost {
 
     @Override
     public String getAGBLink() {
-        return "http://ultramegabit.com/terms";
+        return "http://uploadto.us/terms";
     }
 
     @Override
     public void correctDownloadLink(final DownloadLink link) throws Exception {
         /* remove www., force https */
-        link.setUrlDownload("https://ultramegabit.com/file/details/" + new Regex(link.getDownloadURL(), "([A-Za-z0-9\\-_]+)$").getMatch(0));
+        link.setUrlDownload("https://uploadto.us/file/details/" + new Regex(link.getDownloadURL(), "([A-Za-z0-9\\-_]+)$").getMatch(0));
     }
 
     private static AtomicReference<String> agent   = new AtomicReference<String>(null);
@@ -90,7 +90,7 @@ public class UltraMegaBitCom extends PluginForHost {
         prepBrowser(br);
         br.setFollowRedirects(true);
         br.getPage(link.getDownloadURL());
-        if (br.getURL().contains("ultramegabit.com/folder/add/")) {
+        if (br.getURL().contains("uploadto.us/folder/add/")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         if (br.containsHTML(">File not found<|>File restricted<|>File not available")) {
@@ -100,7 +100,7 @@ public class UltraMegaBitCom extends PluginForHost {
         if (br.containsHTML(">File has been deleted|>We\\'re sorry\\. This file has been deleted due to inactivity\\.<")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        String filename = br.getRegex("<title>ULTRAMEGABIT\\.COM \\- ([^<>\"]*?)</title>").getMatch(0);
+        String filename = br.getRegex("<title>uploadto\\.us \\- ([^<>\"]*?)</title>").getMatch(0);
         if (filename == null) {
             filename = br.getRegex("<h4>(<img[^>]+>)?(.*?) \\(([^\\)]+)\\)</h4>").getMatch(1);
         }
@@ -147,7 +147,7 @@ public class UltraMegaBitCom extends PluginForHost {
         final String rcid = br.getRegex("\\?k=([^<>\"]*?)\"").getMatch(0);
         Form dlform = null;
         for (final Form form : br.getForms()) {
-            if (form.containsHTML("ultramegabit\\.com/file/download")) {
+            if (form.containsHTML("uploadto\\.us/file/download")) {
                 dlform = form;
             }
         }
@@ -227,7 +227,7 @@ public class UltraMegaBitCom extends PluginForHost {
         }
     }
 
-    private static final String MAINPAGE = "http://ultramegabit.com";
+    private static final String MAINPAGE = "http://uploadto.us";
     private static Object       LOCK     = new Object();
 
     @SuppressWarnings("unchecked")
@@ -254,7 +254,7 @@ public class UltraMegaBitCom extends PluginForHost {
                     }
                 }
                 br.setFollowRedirects(true);
-                br.getPage("https://ultramegabit.com/login");
+                br.getPage("https://uploadto.us/login");
                 final String token = br.getRegex("name=\"csrf_token\" value=\"([^<>\"]*?)\"").getMatch(0);
                 final String lang = System.getProperty("user.language");
                 if (token == null) {
@@ -264,8 +264,8 @@ public class UltraMegaBitCom extends PluginForHost {
                         throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nPlugin broken, please contact the JDownloader Support!", PluginException.VALUE_ID_PREMIUM_DISABLE);
                     }
                 }
-                br.postPage("https://ultramegabit.com/login", "csrf_token=" + token + "&username=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()));
-                if (br.containsHTML(">Form validation errors found<|>Invalid username or password<") || br.getURL().contains("ultramegabit.com/login")) {
+                br.postPage("https://uploadto.us/login", "csrf_token=" + token + "&username=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()));
+                if (br.containsHTML(">Form validation errors found<|>Invalid username or password<") || br.getURL().contains("uploadto.us/login")) {
                     if ("de".equalsIgnoreCase(lang)) {
                         throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUngültiger Benutzername oder ungültiges Passwort!\r\nSchnellhilfe: \r\nDu bist dir sicher, dass dein eingegebener Benutzername und Passwort stimmen?\r\nFalls dein Passwort Sonderzeichen enthält, ändere es und versuche es erneut!", PluginException.VALUE_ID_PREMIUM_DISABLE);
                     } else {
@@ -389,7 +389,7 @@ public class UltraMegaBitCom extends PluginForHost {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
             br.setFollowRedirects(false);
-            br.postPage("https://ultramegabit.com/file/download", "csrf_token=" + token + "&encode=" + new Regex(link.getDownloadURL(), "([A-Za-z0-9\\-_]+)$").getMatch(0));
+            br.postPage("https://uploadto.us/file/download", "csrf_token=" + token + "&encode=" + new Regex(link.getDownloadURL(), "([A-Za-z0-9\\-_]+)$").getMatch(0));
             final String finallink = br.getRedirectLocation();
             if (finallink == null) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
