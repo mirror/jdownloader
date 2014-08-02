@@ -33,7 +33,7 @@ import jd.plugins.PluginForHost;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "inclouddrive.com" }, urls = { "https?://(www\\.)?inclouddrive\\.com/(link_download/\\?token=[A-Za-z0-9=_]+|(#/)?(file_download|file|link)/[0-9a-zA-Z=_]+)" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "inclouddrive.com" }, urls = { "https?://(www\\.)?inclouddrive\\.com/(link_download/\\?token=[A-Za-z0-9=_]+|(#/)?(file_download|file|link)/[0-9a-zA-Z=_-]+)" }, flags = { 0 })
 public class InCloudDriveCom extends PluginForHost {
 
     // DEV NOTE:
@@ -118,13 +118,13 @@ public class InCloudDriveCom extends PluginForHost {
         dl.startDownload();
     }
 
-    private String setFUID(final DownloadLink dl) {
+    private void setFUID(final DownloadLink dl) {
         fuid = new Regex(dl.getDownloadURL(), "/link_download/\\?token=([A-Za-z0-9=_]+)").getMatch(0);
         if (fuid != null) {
             link_type = 1;
         }
         if (fuid == null) {
-            fuid = new Regex(dl.getDownloadURL(), "/(?:#/)?(?:file_download|file|link)/([0-9a-zA-Z=_]+)").getMatch(0);
+            fuid = new Regex(dl.getDownloadURL(), "/(?:#/)?(?:file_download|file|link)/([0-9a-zA-Z_-]+)").getMatch(0);
             if (fuid != null) {
                 link_type = 2;
             }
@@ -135,7 +135,6 @@ public class InCloudDriveCom extends PluginForHost {
             } catch (final Throwable e) {
             }
         }
-        return fuid;
     }
 
     private String checkDirectLink(final DownloadLink downloadLink, final String property) {
