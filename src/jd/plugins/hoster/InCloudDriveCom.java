@@ -60,12 +60,14 @@ public class InCloudDriveCom extends PluginForHost {
         if (link_type == 1) {
             br.postPage("https://www.inclouddrive.com/index.php/link", "user_id=&user_loged_in=no&link_value=" + Encoding.urlEncode(fuid));
         } else if (link_type == 2) {
-            br.postPage("https://www.inclouddrive.com/index.php/file_download/" + fuid, "user_id=");
+            // br.postPage("https://www.inclouddrive.com/index.php/file_download/" + fuid, "user_id=");
+            // https://www.inclouddrive.com/#/link/MTM0QEBAQEBAQEAzNA - doesn't wprk with above way
+            br.postPage("https://www.inclouddrive.com/index.php/link", "user_id=&user_loged_in=no&link_value=" + Encoding.urlEncode(fuid));
         } else {
             // unsupported type
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        if (br.containsHTML(">A Database Error Occurred<")) {
+        if (br.containsHTML(">A Database Error Occurred<|This link has been removed from system.")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         final String filename = br.getRegex("class=\"propreties-file-count\">[\t\n\r ]+<b>([^<>\"]+)</b>").getMatch(0);
