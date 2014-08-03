@@ -36,7 +36,7 @@ import jd.utils.locale.JDL;
 
 import org.jdownloader.logging.LogController;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "adf.ly" }, urls = { "https?://(www\\.)?(adf\\.ly|j\\.gs|q\\.gs|adclicks\\.pw|ay\\.gy|(dl|david)\\.nhachot\\.info|chathu\\.apkmania\\.co|alien\\.apkmania\\.co|n\\.shareme\\.in|proxy\\.doujin\\.us|free\\.singlem4a\\.com)/[^<>\r\n\t]+" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "adf.ly" }, urls = { "https?://(www\\.)?(adf\\.ly|j\\.gs|q\\.gs|adclicks\\.pw|ay\\.gy|(dl|david)\\.nhachot\\.info|chathu\\.apkmania\\.co|alien\\.apkmania\\.co|n\\.shareme\\.in|proxy\\.doujin\\.us|free\\.singlem4a\\.com|adf\\.acb\\.im)/[^<>\r\n\t]+" }, flags = { 0 })
 @SuppressWarnings("deprecation")
 public class AdfLy extends PluginForDecrypt {
 
@@ -52,7 +52,7 @@ public class AdfLy extends PluginForDecrypt {
     // belongs to adfly group
     private static final String adfDomains   = "adf\\.ly|j\\.gs|q\\.gs|adclicks\\.pw|ay\\.gy";
     // belongs to other people who use subdomains and use adf.ly service
-    private static final String subDomains   = "dl\\.nhachot\\.info|chathu\\.apkmania\\.co|alien\\.apkmania\\.co|n\\.shareme\\.in|proxy\\.doujin\\.us|free\\.singlem4a\\.com";
+    private static final String subDomains   = "dl\\.nhachot\\.info|chathu\\.apkmania\\.co|alien\\.apkmania\\.co|n\\.shareme\\.in|proxy\\.doujin\\.us|free\\.singlem4a\\.com|adf\\.acb\\.im";
     // builds final String for method calling (no need to edit).
     private static final String HOSTS        = adfPre + "(" + adfDomains + "|" + subDomains + ")";
     private static final String INVALIDLINKS = "/(link-deleted\\.php|index|login|static).+";
@@ -283,7 +283,7 @@ public class AdfLy extends PluginForDecrypt {
          * Save users preference in memory for given session. Each Start = new session<br/>
          * <br/>
          * Decrypter Template: Default Request Protocol.
-         * 
+         *
          * @return default request protocol
          * @author raztoki
          * */
@@ -342,7 +342,7 @@ public class AdfLy extends PluginForDecrypt {
 
         /**
          * returns true when current this.protocol value is https
-         * 
+         *
          */
         private boolean isProtocolHTTPS() {
             if ("https://".equalsIgnoreCase(this.protocol)) {
