@@ -81,7 +81,7 @@ public class LolaBitsEs extends PluginForHost {
         String dllink = null;
         int maxChunks = 0;
         try {
-            dllink = get_dllink();
+            dllink = get_dllink(downloadLink);
         } catch (final Throwable e) {
             logger.info("Failed to get downloadlink without account");
         }
@@ -187,7 +187,7 @@ public class LolaBitsEs extends PluginForHost {
         login(account, false);
         br.setFollowRedirects(false);
         br.getPage(link.getStringProperty("mainlink", null));
-        final String dllink = get_dllink();
+        final String dllink = get_dllink(link);
         dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, true, 0);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
@@ -200,8 +200,12 @@ public class LolaBitsEs extends PluginForHost {
         dl.startDownload();
     }
 
-    private String get_dllink() throws IOException, PluginException {
-        String fileid = br.getRegex("id=\"fileDetails_(\\d+)\"").getMatch(0);
+    private String get_dllink(final DownloadLink dl) throws IOException, PluginException {
+        /* First check if the id was set in the decrypter */
+        String fileid = dl.getStringProperty("plain_fid", null);
+        if (fileid == null) {
+            fileid = br.getRegex("id=\"fileDetails_(\\d+)\"").getMatch(0);
+        }
         if (fileid == null) {
             fileid = br.getRegex("fileIdContainer\"\\s*rel=\"(\\d+)\"").getMatch(0);
         }
@@ -273,7 +277,7 @@ public class LolaBitsEs extends PluginForHost {
 
     /**
      * Validates string to series of conditions, null, whitespace, or "". This saves effort factor within if/for/while statements
-     *
+     * 
      * @param s
      *            Imported String to match against.
      * @return <b>true</b> on valid rule match. <b>false</b> on invalid rule match.

@@ -23,7 +23,7 @@ import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
 import jd.utils.JDUtilities;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "crunchyroll.com" }, urls = { "http://(www\\.)?crunchyroll\\.com/(?!forumtopic)[\\w\\_\\-]+/[\\w\\_\\-]+\\-[0-9]+" }, flags = { 2 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "crunchyroll.com" }, urls = { "http://(www\\.)?crunchyroll\\.com(\\.br)?/(?!forumtopic)[\\w\\_\\-]+/[\\w\\_\\-]+\\-[0-9]+" }, flags = { 2 })
 public class CrhyRllCom extends PluginForDecrypt {
 
     // Define the video quality codes used for RTMP
@@ -110,6 +110,7 @@ public class CrhyRllCom extends PluginForDecrypt {
             this.br.setCustomCharset("utf-8");
             // Load the linked page
             this.br.setFollowRedirects(true);
+            cryptedLink.setCryptedUrl(cryptedLink.getCryptedUrl().replace("crunchyroll.com.br/", "crunchyroll.com/"));
             this.br.getPage(cryptedLink.getCryptedUrl());
             if (br.getURL().equals("http://www.crunchyroll.com/") || br.containsHTML("Sorry, this video is not available in your region due to licensing restrictions")) {
                 logger.info("Link offline: " + cryptedLink.getCryptedUrl());

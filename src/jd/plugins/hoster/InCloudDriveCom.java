@@ -16,12 +16,22 @@
 
 package jd.plugins.hoster;
 
+import java.util.HashMap;
+import java.util.Locale;
+import java.util.Map;
+import java.util.concurrent.atomic.AtomicInteger;
+
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.http.Browser;
+import jd.http.Cookie;
+import jd.http.Cookies;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
+import jd.plugins.Account;
+import jd.plugins.Account.AccountType;
+import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
@@ -30,8 +40,9 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
 import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.formatter.TimeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "inclouddrive.com" }, urls = { "https?://(www\\.)?inclouddrive\\.com/(link_download/\\?token=[A-Za-z0-9=_]+|(#/)?(file_download|file|link)/[0-9a-zA-Z=_-]+)" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "inclouddrive.com" }, urls = { "https?://(www\\.)?inclouddrive\\.com/(link_download/\\?token=[A-Za-z0-9=_]+|(#/)?(file_download|file|link)/[0-9a-zA-Z=_-]+)" }, flags = { 2 })
 public class InCloudDriveCom extends PluginForHost {
 
     // DEV NOTE:
@@ -39,6 +50,7 @@ public class InCloudDriveCom extends PluginForHost {
 
     public InCloudDriveCom(PluginWrapper wrapper) {
         super(wrapper);
+        this.enablePremium("https://www.inclouddrive.com/");
     }
 
     @Override
@@ -46,12 +58,27 @@ public class InCloudDriveCom extends PluginForHost {
         return "https://www.inclouddrive.com/#/terms_condition";
     }
 
-    private String[] hashTag;
-    private Browser  ajax = null;
+    private String[]             hashTag;
+    private Browser              ajax                         = null;
+
+    /* Connection stuff */
+    private static final boolean FREE_RESUME                  = false;
+    private static final int     FREE_MAXCHUNKS               = 1;
+    private static final int     FREE_MAXDOWNLOADS            = 1;
+    private static final boolean ACCOUNT_FREE_RESUME          = false;
+    private static final int     ACCOUNT_FREE_MAXCHUNKS       = 1;
+    private static final int     ACCOUNT_FREE_MAXDOWNLOADS    = 1;
+    private static final boolean ACCOUNT_PREMIUM_RESUME       = true;
+    private static final int     ACCOUNT_PREMIUM_MAXCHUNKS    = 0;
+    private static final int     ACCOUNT_PREMIUM_MAXDOWNLOADS = 20;
+
+    /* note: CAN NOT be negative or zero! (ie. -1 or 0) Otherwise math sections fail. .:. use [1-20] */
+    private static AtomicInteger totalMaxSimultanFreeDownload = new AtomicInteger(FREE_MAXDOWNLOADS);
+    /* don't touch the following! */
+    private static AtomicInteger maxPrem                      = new AtomicInteger(1);
 
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
-        this.setBrowserExclusive();
         br.setFollowRedirects(true);
         try {
             br.setAllowedResponseCodes(400, 500);
@@ -82,7 +109,11 @@ public class InCloudDriveCom extends PluginForHost {
     @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
-        String dllink = checkDirectLink(downloadLink, "directlink");
+        doFree(downloadLink, FREE_RESUME, FREE_MAXCHUNKS, "free_directlink");
+    }
+
+    public void doFree(final DownloadLink downloadLink, final boolean resume, final int maxchunks, final String directlinkparam) throws Exception, PluginException {
+        String dllink = checkDirectLink(downloadLink, directlinkparam);
         if (dllink == null) {
             final String uplid = ajax.getRegex("uploader_id=\"(\\d+)\"").getMatch(0);
             final String fileid = ajax.getRegex("file_id=\"(\\d+)\"").getMatch(0);
@@ -114,7 +145,7 @@ public class InCloudDriveCom extends PluginForHost {
             br.followConnection();
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        downloadLink.setProperty("directlink", dllink);
+        downloadLink.setProperty(directlinkparam, dllink);
         dl.startDownload();
     }
 
@@ -161,6 +192,173 @@ public class InCloudDriveCom extends PluginForHost {
         return dllink;
     }
 
+    private static final String MAINPAGE = "http://inclouddrive.com";
+    private static Object       LOCK     = new Object();
+
+    @SuppressWarnings("unchecked")
+    private void login(final Account account, final boolean force) throws Exception {
+        synchronized (LOCK) {
+            try {
+                // Load cookies
+                br.setCookiesExclusive(true);
+                final Object ret = account.getProperty("cookies", null);
+                boolean acmatch = Encoding.urlEncode(account.getUser()).equals(account.getStringProperty("name", Encoding.urlEncode(account.getUser())));
+                if (acmatch) {
+                    acmatch = Encoding.urlEncode(account.getPass()).equals(account.getStringProperty("pass", Encoding.urlEncode(account.getPass())));
+                }
+                if (acmatch && ret != null && ret instanceof HashMap<?, ?> && !force) {
+                    final HashMap<String, String> cookies = (HashMap<String, String>) ret;
+                    if (account.isValid()) {
+                        for (final Map.Entry<String, String> cookieEntry : cookies.entrySet()) {
+                            final String key = cookieEntry.getKey();
+                            final String value = cookieEntry.getValue();
+                            br.setCookie(MAINPAGE, key, value);
+                        }
+                        return;
+                    }
+                }
+                br.setFollowRedirects(false);
+                ajaxPostPage("https://www.inclouddrive.com/index.php/user/login_post", "remember_me=1&email_id=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()));
+                if (!ajax.toString().equals("1")) {
+                    if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
+                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUngültiger Benutzername oder ungültiges Passwort!\r\nSchnellhilfe: \r\nDu bist dir sicher, dass dein eingegebener Benutzername und Passwort stimmen?\r\nFalls dein Passwort Sonderzeichen enthält, ändere es und versuche es erneut!", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                    } else {
+                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nInvalid username/password!\r\nQuick help:\r\nYou're sure that the username and password you entered are correct?\r\nIf your password contains special characters, change it (remove them) and try again!", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                    }
+                }
+                // Save cookies
+                final HashMap<String, String> cookies = new HashMap<String, String>();
+                final Cookies add = br.getCookies(MAINPAGE);
+                for (final Cookie c : add.getCookies()) {
+                    cookies.put(c.getKey(), c.getValue());
+                }
+                account.setProperty("name", Encoding.urlEncode(account.getUser()));
+                account.setProperty("pass", Encoding.urlEncode(account.getPass()));
+                account.setProperty("cookies", cookies);
+            } catch (final PluginException e) {
+                account.setProperty("cookies", Property.NULL);
+                throw e;
+            }
+        }
+    }
+
+    @SuppressWarnings("deprecation")
+    @Override
+    public AccountInfo fetchAccountInfo(final Account account) throws Exception {
+        final String lang = System.getProperty("user.language");
+        final AccountInfo ai = new AccountInfo();
+        /* reset maxPrem workaround on every fetchaccount info */
+        maxPrem.set(1);
+        try {
+            login(account, true);
+        } catch (PluginException e) {
+            account.setValid(false);
+            throw e;
+        }
+        br.setFollowRedirects(true);
+        br.postPage("https://www.inclouddrive.com/index.php/user/after_login_html", "");
+        final String user_id = br.getRegex("var user_id = \\'(\\d+)\\';").getMatch(0);
+        if (user_id == null) {
+            if ("de".equalsIgnoreCase(lang)) {
+                throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nPlugin defekt, bitte den JDownloader Support kontaktieren!", PluginException.VALUE_ID_PREMIUM_DISABLE);
+            } else {
+                throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nPlugin broken, please contact the JDownloader Support!", PluginException.VALUE_ID_PREMIUM_DISABLE);
+            }
+        }
+        ajaxPostPage("https://www.inclouddrive.com/index.php/my_account/overview", "user_id=" + user_id);
+        final String space = ajax.getRegex("class=\"leftusage active\">([^<>\"]*?)</span>").getMatch(0);
+        if (space != null) {
+            ai.setUsedSpace(space.trim());
+        }
+
+        String used_traffic = ajax.getRegex("<span class=\"leftusage\">([^<>\"]*?)</span>").getMatch(0);
+        String max_traffic = ajax.getRegex("<span class=\"rightusage\">([^<>\"]*?)</span>").getMatch(0);
+        used_traffic = used_traffic.replace("BT", "b");
+        max_traffic = max_traffic.replace("BT", "b");
+        final long trafficmax = SizeFormatter.getSize(max_traffic);
+        ai.setTrafficMax(trafficmax);
+        final long trafficLeft = trafficmax - SizeFormatter.getSize(used_traffic);
+        ai.setTrafficLeft(trafficLeft);
+
+        if (ajax.containsHTML("class=\"memberplandetails leftbox\">[\t\n\r ]+<h5>Free</h5>")) {
+            try {
+                account.setType(AccountType.FREE);
+                maxPrem.set(ACCOUNT_FREE_MAXDOWNLOADS);
+                /* free accounts can still have captcha */
+                totalMaxSimultanFreeDownload.set(maxPrem.get());
+                account.setMaxSimultanDownloads(maxPrem.get());
+                account.setConcurrentUsePossible(false);
+            } catch (final Throwable e) {
+                /* not available in old Stable 0.9.581 */
+            }
+            account.setProperty("free", true);
+            ai.setStatus("Registered (free) user");
+        } else {
+            final String expire = ajax.getRegex("Expiry date: (\\d+\\-\\d{2}\\-\\d{4})").getMatch(0);
+            if (expire == null) {
+                if ("de".equalsIgnoreCase(lang)) {
+                    throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nPlugin defekt, bitte den JDownloader Support kontaktieren!", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                } else {
+                    throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nPlugin broken, please contact the JDownloader Support!", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                }
+            } else {
+                ai.setValidUntil(TimeFormatter.getMilliSeconds(expire, "dd-MM-yyyy", Locale.ENGLISH));
+            }
+            try {
+                account.setType(AccountType.PREMIUM);
+                maxPrem.set(ACCOUNT_PREMIUM_MAXDOWNLOADS);
+                account.setMaxSimultanDownloads(maxPrem.get());
+                account.setConcurrentUsePossible(true);
+            } catch (final Throwable e) {
+                /* not available in old Stable 0.9.581 */
+            }
+            account.setProperty("free", false);
+            ai.setStatus("Premium User");
+        }
+        account.setValid(true);
+        return ai;
+    }
+
+    @Override
+    public void handlePremium(final DownloadLink link, final Account account) throws Exception {
+        requestFileInformation(link);
+        login(account, false);
+        br.setFollowRedirects(false);
+        requestFileInformation(link);
+        if (account.getBooleanProperty("free", false)) {
+            doFree(link, ACCOUNT_FREE_RESUME, ACCOUNT_FREE_MAXCHUNKS, "account_free_directlink");
+        } else {
+            String dllink = this.checkDirectLink(link, "premium_directlink");
+            if (dllink == null) {
+                final String uplid = ajax.getRegex("uploader_id=\"(\\d+)\"").getMatch(0);
+                final String fileid = ajax.getRegex("file_id=\"(\\d+)\"").getMatch(0);
+                if (uplid == null || fileid == null) {
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                }
+                ajaxPostPage("https://www.inclouddrive.com/index.php/download_page_captcha", "type=yes");
+                ajaxPostPage("https://www.inclouddrive.com/index.php/get_download_server/download_page_link", "contact_id=" + uplid + "&table_id=" + fileid);
+                dllink = ajax.toString();
+                if (dllink == null || !dllink.startsWith("http")) {
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                }
+            }
+            dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, ACCOUNT_PREMIUM_RESUME, ACCOUNT_PREMIUM_MAXCHUNKS);
+            if (dl.getConnection().getContentType().contains("html")) {
+                logger.warning("The final dllink seems not to be a file!");
+                br.followConnection();
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
+            link.setProperty("premium_directlink", dllink);
+            dl.startDownload();
+        }
+    }
+
+    @Override
+    public int getMaxSimultanPremiumDownloadNum() {
+        /* workaround for free/premium issue on stable 09581 */
+        return maxPrem.get();
+    }
+
     /* Avoid chars which are not allowed in filenames under certain OS' */
     private static String encodeUnicode(final String input) {
         String output = input;
@@ -183,7 +381,7 @@ public class InCloudDriveCom extends PluginForHost {
 
     @Override
     public int getMaxSimultanFreeDownloadNum() {
-        return 1;
+        return FREE_MAXDOWNLOADS;
     }
 
     @Override
