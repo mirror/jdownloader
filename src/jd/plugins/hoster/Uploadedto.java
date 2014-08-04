@@ -24,6 +24,8 @@ import java.security.MessageDigest;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
@@ -42,6 +44,8 @@ import jd.config.Property;
 import jd.config.SubConfiguration;
 import jd.crypt.Base64;
 import jd.http.Browser;
+import jd.http.Cookie;
+import jd.http.Cookies;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.parser.html.Form;
@@ -94,6 +98,8 @@ public class Uploadedto extends PluginForHost {
     private static final String    DOWNLOAD_ABUSED              = "DOWNLOAD_ABUSED";
     private boolean                PREFERSSL                    = true;
     private boolean                avoidHTTPS                   = false;
+
+    private static final String    CURRENT_DOMAIN               = "http://uploaded.net/";
 
     private String getProtocol() {
         if (avoidHTTPS) {
@@ -434,13 +440,13 @@ public class Uploadedto extends PluginForHost {
         usePremiumDownloadAPI = this.getPluginConfig().getBooleanProperty(PREFER_PREMIUM_DOWNLOAD_API, default_ppda);
         if (usePremiumAPI.get() && usePremiumDownloadAPI) {
             // This password won't work: FLR&Y$9i,?+yk=Kx08}:PhkmÖ]nmYAr#n6O=xHiZzm,NI&k)Qü
-            return fetchAccountInfo_API(account);
+            return api_Fetch_accountinfo(account);
         } else {
-            return fetchAccountInfo_Website(account);
+            return site_Fetch_accountinfo(account);
         }
     }
 
-    public AccountInfo fetchAccountInfo_API(final Account account) throws Exception {
+    public AccountInfo api_Fetch_accountinfo(final Account account) throws Exception {
         AccountInfo ai = new AccountInfo();
         /* reset maxPrem workaround on every fetchaccount info */
         try {
@@ -496,11 +502,12 @@ public class Uploadedto extends PluginForHost {
         return ai;
     }
 
-    public AccountInfo fetchAccountInfo_Website(final Account account) throws Exception {
+    public AccountInfo site_Fetch_accountinfo(final Account account) throws Exception {
         AccountInfo ai = new AccountInfo();
         /* reset maxPrem workaround on every fetchaccount info */
         maxPrem.set(1);
         prepBrowser();
+        site_login(account, true);
         postPage(br, getProtocol() + "uploaded.net/status", "uid=" + Encoding.urlEncode(account.getUser()) + "&upw=" + Encoding.urlEncode(account.getPass()));
         if (br.containsHTML("blocked")) {
             ai.setStatus("Too many failed logins! Wait 15 mins");
@@ -1092,12 +1099,12 @@ public class Uploadedto extends PluginForHost {
     public void handlePremium(DownloadLink downloadLink, Account account) throws Exception {
         usePremiumDownloadAPI = this.getPluginConfig().getBooleanProperty(PREFER_PREMIUM_DOWNLOAD_API, default_ppda);
         if (usePremiumAPI.get() && usePremiumDownloadAPI && !downloadLink.getBooleanProperty("preDlPass", false)) {
-            handlePremium_API(downloadLink, account);
+            api_handle_Premium(downloadLink, account);
             return;
         } else {
             String baseURL = getProtocol() + "uploaded.net/";
             requestFileInformation(downloadLink);
-            login(account);
+            site_login(account, false);
             if (account.getBooleanProperty("free")) {
                 doFree(downloadLink, account);
             } else {
@@ -1253,12 +1260,12 @@ public class Uploadedto extends PluginForHost {
         }
     }
 
-    public void handlePremium_API(DownloadLink downloadLink, Account account) throws Exception {
+    public void api_handle_Premium(final DownloadLink downloadLink, final Account account) throws Exception {
         correctDownloadLink(downloadLink);
         String token = api_getAccessToken(account, false);
         String tokenType = api_getTokenType(account, token, false);
         if (!"premium".equals(tokenType)) {
-            login(account);
+            site_login(account, false);
             doFree(downloadLink, account);
             return;
         }
@@ -1409,7 +1416,8 @@ public class Uploadedto extends PluginForHost {
         }
     }
 
-    private void login(Account account) throws Exception {
+    @SuppressWarnings("unchecked")
+    private void site_login(final Account account, final boolean force) throws Exception {
         this.setBrowserExclusive();
         workAroundTimeOut(br);
         br.setDebug(true);
@@ -1417,6 +1425,22 @@ public class Uploadedto extends PluginForHost {
         prepBrowser();
         synchronized (account) {
             try {
+                final Object ret = account.getProperty("cookies", null);
+                boolean acmatch = Encoding.urlEncode(account.getUser()).equals(account.getStringProperty("name", Encoding.urlEncode(account.getUser())));
+                if (acmatch) {
+                    acmatch = Encoding.urlEncode(account.getPass()).equals(account.getStringProperty("pass", Encoding.urlEncode(account.getPass())));
+                }
+                if (acmatch && ret != null && ret instanceof HashMap<?, ?> && !force) {
+                    final HashMap<String, String> cookies = (HashMap<String, String>) ret;
+                    if (account.isValid()) {
+                        for (final Map.Entry<String, String> cookieEntry : cookies.entrySet()) {
+                            final String key = cookieEntry.getKey();
+                            final String value = cookieEntry.getValue();
+                            this.br.setCookie(CURRENT_DOMAIN, key, value);
+                        }
+                        return;
+                    }
+                }
                 br.getHeaders().put("X-Prototype-Version", "1.6.1");
                 br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
                 br.getHeaders().put("Content-Type", "application/x-www-form-urlencoded; charset=UTF-8");
@@ -1436,9 +1460,19 @@ public class Uploadedto extends PluginForHost {
                     throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
                 }
                 changeToEnglish(br);
+                /* Save cookies */
+                final HashMap<String, String> cookies = new HashMap<String, String>();
+                final Cookies add = this.br.getCookies(CURRENT_DOMAIN);
+                for (final Cookie c : add.getCookies()) {
+                    cookies.put(c.getKey(), c.getValue());
+                }
+                account.setProperty("name", Encoding.urlEncode(account.getUser()));
+                account.setProperty("pass", Encoding.urlEncode(account.getPass()));
+                account.setProperty("cookies", cookies);
             } catch (PluginException e) {
-                account.setProperty("token", null);
-                account.setProperty("tokenType", null);
+                account.setProperty("token", Property.NULL);
+                account.setProperty("tokenType", Property.NULL);
+                account.setProperty("cookies", Property.NULL);
                 throw e;
             } finally {
                 br.getHeaders().put("Content-Type", null);
