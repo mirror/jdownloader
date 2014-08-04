@@ -49,28 +49,46 @@ public class TempShareCom extends PluginForHost {
         return mainPage + "/company/terms";
     }
 
+    private static final String MAINTENANCE = ">UNDER CONSTRUCTION<";
+
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
         this.setBrowserExclusive();
         prepBrowser(br);
         br.getPage(link.getDownloadURL());
 
-        if (br.containsHTML(">Time has expired for this file.<")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (br.containsHTML(MAINTENANCE)) {
+            link.getLinkStatus().setStatusText("Site is under maintenance");
+            return AvailableStatus.UNCHECKABLE;
+        }
+
+        if (br.containsHTML(">Time has expired for this file\\.<")) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
 
         String filter = "<h1>([^<]+)</h1><div></div><h2>(\\d+(\\.\\d+)? (B|KB|MB|GB)) </h2>";
         String filename = br.getRegex(filter).getMatch(0);
-        if (filename == null) br.getRegex("<title>Temp Share : (.*?) \\|").getMatch(0);
+        if (filename == null) {
+            br.getRegex("<title>Temp Share : (.*?) \\|").getMatch(0);
+        }
         String filesize = br.getRegex(filter).getMatch(1);
 
-        if (filename == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (filename == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         link.setName(filename.trim());
-        if (filesize != null && !filesize.equals("")) link.setDownloadSize(SizeFormatter.getSize(filesize));
+        if (filesize != null && !filesize.equals("")) {
+            link.setDownloadSize(SizeFormatter.getSize(filesize));
+        }
         return AvailableStatus.TRUE;
     }
 
     @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
+        if (br.containsHTML(MAINTENANCE)) {
+            throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Site is under maintenance", 3 * 60 * 1000l);
+        }
         String dllink = br.getRegex("<a href=\\'(/download/[a-z0-9]+)").getMatch(0);
         if (dllink == null) {
             logger.warning("Could not find 'dllink', please report this issue to the JDownloader Development Team");

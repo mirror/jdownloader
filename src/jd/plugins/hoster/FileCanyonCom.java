@@ -42,17 +42,27 @@ public class FileCanyonCom extends PluginForHost {
         return "http://filecanyon.com/page/tos";
     }
 
+    private static final boolean UNDER_MAINTENANCE = true;
+
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
         this.setBrowserExclusive();
+        if (UNDER_MAINTENANCE) {
+            link.getLinkStatus().setStatusText("Site is  under maintenance");
+            return AvailableStatus.UNCHECKABLE;
+        }
         br.setFollowRedirects(true);
         br.setCookie("http://filecanyon.com", "locale", "en_US");
         br.getPage(link.getDownloadURL());
-        if (br.containsHTML(">This file does not exist or deleted|<p><strong>ERROR!</strong></p>")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (br.containsHTML(">This file does not exist or deleted|<p><strong>ERROR!</strong></p>")) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
         final Regex fileInfo = br.getRegex("<p title=\"Downloaded: \\d+ times\\.\\.\\.\">([^<>\"]*?), <strong>([^<>\"]*?)</strong>");
         final String filename = fileInfo.getMatch(0);
         final String filesize = fileInfo.getMatch(1);
-        if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (filename == null || filesize == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         link.setName(Encoding.htmlDecode(filename.trim()));
         link.setDownloadSize(SizeFormatter.getSize(filesize));
         return AvailableStatus.TRUE;
@@ -61,7 +71,9 @@ public class FileCanyonCom extends PluginForHost {
     @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception, PluginException {
         final String fid = new Regex(downloadLink.getDownloadURL(), "([a-z0-9]+)$").getMatch(0);
-
+        if (UNDER_MAINTENANCE) {
+            throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Site is  under maintenance", 3 * 60 * 60 * 1000l);
+        }
         requestFileInformation(downloadLink);
         br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
         br.postPage("http://filecanyon.com/dll.php", "action=getLink&vfid=" + fid + "&token=undefined");

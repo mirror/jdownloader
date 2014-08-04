@@ -20,6 +20,7 @@ import java.io.IOException;
 
 import jd.PluginWrapper;
 import jd.http.Browser;
+import jd.http.Browser.BrowserException;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
@@ -30,10 +31,10 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "soundclick.com" }, urls = { "http://(www\\.)?soundclick\\.com/bands/page_songInfo\\.cfm\\?bandID=\\d+\\&songID=\\d+" }, flags = { 0 })
-public class SoundClickCom extends PluginForHost {
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "adultsforsex.com" }, urls = { "http://(www\\.)?adultsforsex\\.com/\\d+" }, flags = { 0 })
+public class AdultsForSexCom extends PluginForHost {
 
-    public SoundClickCom(PluginWrapper wrapper) {
+    public AdultsForSexCom(PluginWrapper wrapper) {
         super(wrapper);
     }
 
@@ -41,49 +42,43 @@ public class SoundClickCom extends PluginForHost {
 
     @Override
     public String getAGBLink() {
-        return "http://www.soundclick.com/docs/legal.cfm";
+        return "http://adultsforsex.com/static/terms/";
     }
 
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws IOException, PluginException {
-        /* Offline links should also have nice filenames */
-        downloadLink.setName(new Regex(downloadLink.getDownloadURL(), "(\\d+)$").getMatch(0) + ".mp3");
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         br.getPage(downloadLink.getDownloadURL());
-        if (br.getHttpConnection().getResponseCode() == 404 || br.getURL().contains("&content=music")) {
+        if (br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        String songName = br.getRegex("\"name\":\"([^<>\"]*?)\"").getMatch(0);
-        if (songName == null) {
-            songName = br.getRegex("<div style=\"padding-bottom:10px; font-size:14px; font-weight:bold;\">([^<>\"]*?)</div>").getMatch(0);
+        String filename = br.getRegex("<title>([^<>\"]*?) \\- AdultsForSex</title>").getMatch(0);
+        if (filename == null) {
+            filename = new Regex(br.getURL(), "adultsforsex\\.com/\\d+/([A-Za-z0-9\\-]+)/").getMatch(0);
         }
-        final String artist = br.getRegex("<a href=\"/bands/default\\.cfm\\?bandID=\\d+\">([^<>\"]*?)</a>").getMatch(0);
-        if (songName == null || artist == null) {
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
-        br.getPage("http://www.soundclick.com/util/passkey.cfm?flash=true");
-        final String controlID = br.getRegex("<controlID>([^<>\"]*?)</controlID>").getMatch(0);
-        if (controlID == null) {
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
-        br.getPage("http://www.soundclick.com/util/xmlsong.cfm?songid=" + getid(downloadLink) + "&passkey=" + controlID + "&q=hi&ext=0");
-        DLLINK = br.getRegex("<cdnFilename>(http[^<>\"]*?)</cdnFilename>").getMatch(0);
-        if (DLLINK == null) {
+        br.getPage("http://adultsforsex.com/modules/video/player/nuevo/config.php?id=" + new Regex(downloadLink.getDownloadURL(), "(\\d+)$").getMatch(0));
+        DLLINK = br.getRegex("<file><\\!\\[CDATA\\[(https?://[^<>\"]*?)\\]\\]></file>").getMatch(0);
+        if (filename == null || DLLINK == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         DLLINK = Encoding.htmlDecode(DLLINK);
+        filename = filename.trim();
         String ext = DLLINK.substring(DLLINK.lastIndexOf("."));
         if (ext == null || ext.length() > 5) {
-            ext = ".mp3";
+            ext = ".mp4";
         }
-        downloadLink.setFinalFileName(Encoding.htmlDecode(artist.trim()) + " - " + Encoding.htmlDecode(songName.trim()).replace(".mp3", "") + ext);
+        downloadLink.setFinalFileName(Encoding.htmlDecode(filename) + ext);
         final Browser br2 = br.cloneBrowser();
         // In case the link redirects to the finallink
         br2.setFollowRedirects(true);
         URLConnectionAdapter con = null;
         try {
-            con = br2.openGetConnection(DLLINK);
+            try {
+                con = br2.openGetConnection(DLLINK);
+            } catch (final BrowserException e) {
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            }
             if (!con.getContentType().contains("html")) {
                 downloadLink.setDownloadSize(con.getLongContentLength());
             } else {
@@ -93,7 +88,7 @@ public class SoundClickCom extends PluginForHost {
         } finally {
             try {
                 con.disconnect();
-            } catch (Throwable e) {
+            } catch (final Throwable e) {
             }
         }
     }
@@ -107,10 +102,6 @@ public class SoundClickCom extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl.startDownload();
-    }
-
-    private String getid(final DownloadLink dl) {
-        return new Regex(dl.getDownloadURL(), "(\\d+)$").getMatch(0);
     }
 
     @Override

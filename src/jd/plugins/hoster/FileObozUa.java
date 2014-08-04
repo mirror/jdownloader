@@ -45,11 +45,20 @@ public class FileObozUa extends PluginForHost {
     public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
+        try {
+            br.setLoadLimit(br.getLoadLimit() * 4);
+        } catch (final Throwable e) {
+
+        }
         br.getPage(link.getDownloadURL());
-        if (!br.containsHTML("Название")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (!br.containsHTML("Название|>Закачка файла с сервера")) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
         String filename = br.getRegex("\">Описание:</div></td>[\t\n\r ]+<td bgcolor=\"#FFFFFF\" width=\"300\"><div style=\"margin:10px; font: 10pt Arial\">([^<>\"]*?)</div>").getMatch(0);
         DLLINK = br.getRegex("\"(http://(www\\.)?file\\.oboz\\.ua/files/[^<>\"]*?)\"").getMatch(0);
-        if (filename == null || DLLINK == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (filename == null || DLLINK == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         DLLINK = Encoding.htmlDecode(DLLINK);
         link.setName(Encoding.htmlDecode(filename.trim()) + DLLINK.substring(DLLINK.lastIndexOf(".")));
         return AvailableStatus.TRUE;
