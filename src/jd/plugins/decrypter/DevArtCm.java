@@ -202,7 +202,6 @@ public class DevArtCm extends PluginForDecrypt {
 
     private void decryptStandard() throws DecrypterException, IOException {
         /* Correct input links */
-        // http://a-cup-club.deviantart.com/gallery/?27979676
         if (PARAMETER.matches("http://[^<>\"/]+\\.deviantart\\.com/gallery/\\?\\d+")) {
             final Regex paramregex = new Regex(PARAMETER, "(http://[^<>\"/]+\\.deviantart\\.com/gallery/\\?)(\\d+)");
             PARAMETER = paramregex.getMatch(0) + "set=" + paramregex.getMatch(1);

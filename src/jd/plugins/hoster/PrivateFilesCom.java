@@ -70,8 +70,8 @@ public class PrivateFilesCom extends PluginForHost {
     private static AtomicReference<String> agent                        = new AtomicReference<String>(null);
     /* Connection stuff */
     private static final boolean           FREE_RESUME                  = true;
-    private static final int               FREE_MAXCHUNKS               = 0;
-    private static final int               FREE_MAXDOWNLOADS            = 20;
+    private static final int               FREE_MAXCHUNKS               = -4;
+    private static final int               FREE_MAXDOWNLOADS            = 1;
     private static final boolean           ACCOUNT_FREE_RESUME          = true;
     private static final int               ACCOUNT_FREE_MAXCHUNKS       = 0;
     private static final int               ACCOUNT_FREE_MAXDOWNLOADS    = 20;
