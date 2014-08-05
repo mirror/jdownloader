@@ -332,8 +332,11 @@ public class OtrDatenkellerAt extends PluginForHost {
 
     @Override
     public int getMaxSimultanPremiumDownloadNum() {
-        /* Admin told us limit = 12 but when we checked it, only 7 with a large waittime in between were possible */
-        return 7;
+        /*
+         * Admin told us limit = 12 but when we checked it, only 7 with a large waittime in between were possible - anyways, works best with
+         * only one
+         */
+        return 1;
     }
 
     // do not add @Override here to keep 0.* compatibility

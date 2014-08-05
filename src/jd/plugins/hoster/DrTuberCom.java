@@ -44,6 +44,7 @@ public class DrTuberCom extends PluginForHost {
         super(wrapper);
     }
 
+    /* Similar sites: drtuber.com, proporn.com, viptube.com */
     @Override
     public String getAGBLink() {
         return "http://www.drtuber.com/static/terms";
