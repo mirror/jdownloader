@@ -58,15 +58,23 @@ public class UploadMbCom extends PluginForHost {
         this.setBrowserExclusive();
         br.getHeaders().put("User-Agent", RandomUserAgent.generate());
         br.getPage(link.getDownloadURL());
-        if (br.containsHTML("(>The file you are requesting to download is not available<br>|Reasons for this \\(Invalid link, Violation of <a|The file you are requesting to download is not available)")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        Regex name2AndSize = br.getRegex("\\&#100;\\&#58;</font></b> (.*?)\\((.*?)\\)<br>");
+        if (br.containsHTML("(>The file you are requesting to download is not available<br>|Reasons for this \\(Invalid link, Violation of <a|The file you are requesting to download is not available)")) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
+        Regex name2AndSize = br.getRegex("\\&#100;\\&#58;</font></b> (.*?)\\(([\\d\\.]+ [a-zA-Z]+)\\)<br>");
         String filename = br.getRegex("addthis_title  = \\'(.*?)\\';").getMatch(0);
-        if (filename == null) filename = name2AndSize.getMatch(0);
+        if (filename == null) {
+            filename = name2AndSize.getMatch(0);
+        }
         String filesize = name2AndSize.getMatch(1);
-        if (filename == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (filename == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         // Because server often gives back wrong names
         link.setFinalFileName(filename.trim());
-        if (filesize != null) link.setDownloadSize(SizeFormatter.getSize(filesize));
+        if (filesize != null) {
+            link.setDownloadSize(SizeFormatter.getSize(filesize));
+        }
         return AvailableStatus.TRUE;
     }
 
@@ -74,16 +82,24 @@ public class UploadMbCom extends PluginForHost {
     public void handleFree(final DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
         String specialStuff = br.getRegex("value=\"(\\d+)\" name=\"turingno\"").getMatch(0);
-        if (specialStuff == null) specialStuff = "5";
+        if (specialStuff == null) {
+            specialStuff = "5";
+        }
         br.postPage(downloadLink.getDownloadURL(), "turingno=" + specialStuff + "&id=" + new Regex(downloadLink.getDownloadURL(), "dw\\.php\\?id=(\\d+)").getMatch(0) + "&DownloadNow=Download+File&PHPSESSID=" + br.getCookie("http://uploadmb.com/", "PHPSESSID"));
         String dllink = br.getRegex("or <a href=\\'(/.*?)\\'").getMatch(0);
-        if (dllink == null) dllink = br.getRegex("(\\'|\")(/file\\.php\\?id=\\d+\\&/.*?)(\\'|\")").getMatch(1);
-        if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (dllink == null) {
+            dllink = br.getRegex("(\\'|\")(/file\\.php\\?id=\\d+\\&/.*?)(\\'|\")").getMatch(1);
+        }
+        if (dllink == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         dllink = "http://www.uploadmb.com" + dllink;
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, false, 1);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
-            if (br.containsHTML("Too many loads")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error");
+            if (br.containsHTML("Too many loads")) {
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error");
+            }
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl.startDownload();
