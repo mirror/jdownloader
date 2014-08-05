@@ -68,8 +68,8 @@ public class InCloudDriveCom extends PluginForHost {
     private static final boolean ACCOUNT_FREE_RESUME          = false;
     private static final int     ACCOUNT_FREE_MAXCHUNKS       = 1;
     private static final int     ACCOUNT_FREE_MAXDOWNLOADS    = 1;
-    private static final boolean ACCOUNT_PREMIUM_RESUME       = true;
-    private static final int     ACCOUNT_PREMIUM_MAXCHUNKS    = 0;
+    private static final boolean ACCOUNT_PREMIUM_RESUME       = false;
+    private static final int     ACCOUNT_PREMIUM_MAXCHUNKS    = 1;
     private static final int     ACCOUNT_PREMIUM_MAXDOWNLOADS = 20;
 
     /* note: CAN NOT be negative or zero! (ie. -1 or 0) Otherwise math sections fail. .:. use [1-20] */
@@ -321,15 +321,15 @@ public class InCloudDriveCom extends PluginForHost {
 
     @Override
     public void handlePremium(final DownloadLink link, final Account account) throws Exception {
-        requestFileInformation(link);
-        login(account, false);
-        br.setFollowRedirects(false);
-        requestFileInformation(link);
         if (account.getBooleanProperty("free", false)) {
+            login(account, false);
+            requestFileInformation(link);
             doFree(link, ACCOUNT_FREE_RESUME, ACCOUNT_FREE_MAXCHUNKS, "account_free_directlink");
         } else {
-            String dllink = this.checkDirectLink(link, "premium_directlink");
+            login(account, false);
+            String dllink = checkDirectLink(link, "premium_directlink");
             if (dllink == null) {
+                requestFileInformation(link);
                 final String uplid = ajax.getRegex("uploader_id=\"(\\d+)\"").getMatch(0);
                 final String fileid = ajax.getRegex("file_id=\"(\\d+)\"").getMatch(0);
                 if (uplid == null || fileid == null) {
