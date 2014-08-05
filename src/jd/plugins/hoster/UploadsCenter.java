@@ -66,7 +66,7 @@ public class UploadsCenter extends PluginForHost {
 
     /* Connection stuff */
     private static final boolean FREE_RESUME                                  = true;
-    private static final int     FREE_MAXCHUNKS                               = -10;
+    private static final int     FREE_MAXCHUNKS                               = 1;
     private static final int     FREE_MAXDOWNLOADS                            = 1;
 
     @Override
@@ -254,9 +254,8 @@ public class UploadsCenter extends PluginForHost {
     public void resetDownloadlink(DownloadLink link) {
     }
 
-
-/* NO OVERRIDE!! We need to stay 0.9*compatible */
-public boolean hasCaptcha(DownloadLink link, jd.plugins.Account acc) {
-return true;
-}
+    /* NO OVERRIDE!! We need to stay 0.9*compatible */
+    public boolean hasCaptcha(DownloadLink link, jd.plugins.Account acc) {
+        return true;
+    }
 }

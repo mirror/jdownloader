@@ -201,6 +201,12 @@ public class DevArtCm extends PluginForDecrypt {
     }
 
     private void decryptStandard() throws DecrypterException, IOException {
+        /* Correct input links */
+        // http://a-cup-club.deviantart.com/gallery/?27979676
+        if (PARAMETER.matches("http://[^<>\"/]+\\.deviantart\\.com/gallery/\\?\\d+")) {
+            final Regex paramregex = new Regex(PARAMETER, "(http://[^<>\"/]+\\.deviantart\\.com/gallery/\\?)(\\d+)");
+            PARAMETER = paramregex.getMatch(0) + "set=" + paramregex.getMatch(1);
+        }
         /* only non /art/ requires packagename */
         // find and set username
         final String username = getUsername();
@@ -279,7 +285,11 @@ public class DevArtCm extends PluginForDecrypt {
                     maxOffset = Integer.parseInt(nextOffset);
                 }
             } else if (counter > 1) {
-                br.getPage(PARAMETER + "?offset=" + currentOffset);
+                if (PARAMETER.contains("?")) {
+                    br.getPage(PARAMETER + "&offset=" + currentOffset);
+                } else {
+                    br.getPage(PARAMETER + "?offset=" + currentOffset);
+                }
             }
             final boolean fastcheck = SubConfiguration.getConfig("deviantart.com").getBooleanProperty(FASTLINKCHECK_2, false);
             final String grab = br.getRegex("<smoothie q=(.*?)(class=\"folderview-bottom\"></div>|div id=\"gallery_pager\")").getMatch(0);
