@@ -94,8 +94,7 @@ public class RapidGatorNet extends PluginForHost {
     private final Pattern          IPREGEX              = Pattern.compile("(([1-2])?([0-9])?([0-9])\\.([1-2])?([0-9])?([0-9])\\.([1-2])?([0-9])?([0-9])\\.([1-2])?([0-9])?([0-9]))", Pattern.CASE_INSENSITIVE);
     private final String           EXPERIMENTALHANDLING = "EXPERIMENTALHANDLING";
     private final String           DISABLE_API_PREMIUM  = "DISABLE_API_PREMIUM";
-    // Used to switch to web if there are problems with the API - has no effect since the setting to prefer web method has been added
-    private static AtomicBoolean   useAPI               = new AtomicBoolean(true);
+
     private final String           apiURL               = "https://rapidgator.net/api/";
 
     private final String[]         IPCHECK              = new String[] { "http://ipcheck0.jdownloader.org", "http://ipcheck1.jdownloader.org", "http://ipcheck2.jdownloader.org", "http://ipcheck3.jdownloader.org" };
@@ -599,6 +598,7 @@ public class RapidGatorNet extends PluginForHost {
                         ai.setTrafficLeft(Long.parseLong(traffic_left));
                         if (!ai.isExpired()) {
                             account.setProperty("session_type", "premium");
+                            account.setProperty("free", false);
                             /* account still valid */
                             if (reset_in != null) {
                                 ai.setStatus("Traffic exceeded " + reset_in);
@@ -613,13 +613,12 @@ public class RapidGatorNet extends PluginForHost {
                             } catch (final Throwable e) {
                                 // not available in old Stable 0.9.581
                             }
-                            account.setProperty("free", false);
                             return ai;
                         }
                     }
-                    account.setProperty("free", true);
                     ai.setStatus("Free account");
-                    account.setProperty("session_type", Property.NULL);
+                    account.setProperty("session_type", "free");
+                    account.setProperty("free", true);
                     try {
                         RapidGatorNet.maxPrem.set(1);
                         account.setMaxSimultanDownloads(1);
@@ -629,12 +628,15 @@ public class RapidGatorNet extends PluginForHost {
                     }
                     return ai;
                 }
-                account.setValid(false);
+                account.setProperty("free", Property.NULL);
                 account.setProperty("session_type", Property.NULL);
+                account.setProperty("session_id", Property.NULL);
+                account.setValid(false);
                 return ai;
             } catch (final PluginException e) {
                 account.setProperty("free", Property.NULL);
                 account.setProperty("session_type", Property.NULL);
+                account.setProperty("session_id", Property.NULL);
                 account.setValid(false);
                 throw e;
             }
@@ -833,11 +835,12 @@ public class RapidGatorNet extends PluginForHost {
                             ai.setValidUntil(Long.parseLong(expire_date) * 1000 + 24 * 60 * 60 * 1000l);
                             isPremium = !ai.isExpired();
                         }
-                    }
-                    if (isPremium) {
-                        account.setProperty("session_type", "premium");
-                    } else {
-                        account.setProperty("session_type", Property.NULL);
+                        if (isPremium) {
+                            account.setProperty("session_type", "premium");
+                        } else {
+                            account.setProperty("session_type", "free");
+                        }
+                        account.setProperty("session_id", session_id);
                     }
                     return session_id;
                 }
@@ -847,8 +850,6 @@ public class RapidGatorNet extends PluginForHost {
                     con.disconnect();
                 } catch (final Throwable ignore) {
                 }
-                account.setProperty("session_type", Property.NULL);
-                account.setProperty("session_id", session_id);
             }
         }
     }
@@ -972,7 +973,7 @@ public class RapidGatorNet extends PluginForHost {
                     throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Service Temporarily Unavailable", 5 * 60 * 1000l);
                 }
                 if (link != null) {
-                    RapidGatorNet.useAPI.set(false);
+                    // disable api?
                 }
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
@@ -1008,7 +1009,7 @@ public class RapidGatorNet extends PluginForHost {
             return;
         }
         if (session_id == null) {
-            RapidGatorNet.useAPI.set(false);
+            // disable api?
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         URLConnectionAdapter con = null;
@@ -1045,11 +1046,7 @@ public class RapidGatorNet extends PluginForHost {
                 }
             }
         }
-        if (fileName == null) {
-            RapidGatorNet.useAPI.set(false);
-            return;
-            // throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
+
         String url = null;
         try {
             con = this.br.openGetConnection(this.apiURL + "file/download?sid=" + session_id + "&url=" + Encoding.urlEncode(link.getDownloadURL()));
@@ -1068,7 +1065,7 @@ public class RapidGatorNet extends PluginForHost {
             }
         }
         if (url == null) {
-            RapidGatorNet.useAPI.set(false);
+            // disable api?
             throw new PluginException(LinkStatus.ERROR_RETRY);
         }
         this.dl = jd.plugins.BrowserAdapter.openDownload(this.br, link, url, true, 0);
