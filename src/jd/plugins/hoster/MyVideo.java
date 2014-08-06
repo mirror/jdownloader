@@ -22,6 +22,7 @@ import java.util.Map.Entry;
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
+import jd.nutils.JDHash;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.plugins.DownloadLink;
@@ -34,7 +35,7 @@ import jd.plugins.download.DownloadInterface;
 import jd.utils.JDHexUtils;
 import jd.utils.JDUtilities;
 
-// Altes Decrypterplugin bis Revision 14394 
+// Altes Decrypterplugin bis Revision 14394
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "myvideo.de" }, urls = { "fromDecrypter://(www\\.)?myvideo\\.(de|at)/watch/\\d+(/\\w+)?" }, flags = { 32 })
 public class MyVideo extends PluginForHost {
 
@@ -60,8 +61,12 @@ public class MyVideo extends PluginForHost {
         br.getPage(downloadLink.getDownloadURL());
         final String redirect = br.getRedirectLocation();
         if (redirect != null) {
-            if (redirect.equals("http://www.myvideo.de/")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-            if (redirect.matches("http://(www\\.)?myvideo\\.de/channel/.+")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            if (redirect.equals("http://www.myvideo.de/")) {
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            }
+            if (redirect.matches("http://(www\\.)?myvideo\\.de/channel/.+")) {
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            }
             br.getPage(redirect);
         }
         br.setFollowRedirects(true);
@@ -76,10 +81,14 @@ public class MyVideo extends PluginForHost {
         }
 
         String filename = br.getRegex("name=\\'subject_title\\' value=\\'([^\\'<]+)").getMatch(0);
-        if (filename == null) filename = br.getRegex("name=\\'title\\' content=\\'(.*?)(Video)? \\-? (Film|Musik|TV Serie|MyVideo)").getMatch(0);
+        if (filename == null) {
+            filename = br.getRegex("name=\\'title\\' content=\\'(.*?)(Video)? \\-? (Film|Musik|TV Serie|MyVideo)").getMatch(0);
+        }
         if (filename == null) {
             filename = br.getURL();
-            if (filename != null) filename = filename.substring(filename.lastIndexOf("/") + 1);
+            if (filename != null) {
+                filename = filename.substring(filename.lastIndexOf("/") + 1);
+            }
         }
         /* get encUrl */
         HashMap<String, String> p = new HashMap<String, String>();
@@ -90,7 +99,9 @@ public class MyVideo extends PluginForHost {
             }
             p.put(tmp[0], tmp[1]);
         }
-        if (p.isEmpty() || !p.containsKey("_encxml") || !p.containsKey("ID")) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
+        if (p.isEmpty() || !p.containsKey("_encxml") || !p.containsKey("ID")) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
         String next = Encoding.htmlDecode(p.get("_encxml")) + "?";
         p.remove("_encxml");
         for (Entry<String, String> valuePair : p.entrySet()) {
@@ -103,10 +114,11 @@ public class MyVideo extends PluginForHost {
         SWFURL = SWFURL == null ? "http://is4.myvideo.de/de/player/mingR11q/ming.swf" : SWFURL;
         br.getPage(next + "&domain=www.myvideo.de");
         String input = br.getRegex("_encxml=(\\w+)").getMatch(0);
-        if (input == null) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
+        if (input == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         input = input.replaceAll("%0D%0A", "").trim();
         String result;
-        JDUtilities.getPluginForDecrypt("linkcrypt.ws");
         try {
             result = decrypt(input, p.get("ID"));
         } catch (Throwable e) {
@@ -118,7 +130,9 @@ public class MyVideo extends PluginForHost {
         if (CLIPURL.equals("") || CLIPPATH == null) {
             CLIPURL = new Regex(result, "path=\'(.*?)\'").getMatch(0);
         }
-        if (CLIPURL == null || CLIPPATH.equals("")) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
+        if (CLIPURL == null || CLIPPATH.equals("")) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
         String ext = new Regex(CLIPPATH, "(\\.\\w{3})$").getMatch(0);
         if (!CLIPPATH.matches("(\\w+):(\\w+)/(\\w+)/(\\d+)") && ext != null && !CLIPURL.startsWith("http")) {
             CLIPPATH = CLIPPATH.replace(ext, "");
@@ -129,7 +143,9 @@ public class MyVideo extends PluginForHost {
             }
         }
         ext = ext == null ? ".mp4" : ext;
-        if (filename == null) filename = "unknown_myvideo_title__ID(" + p.get("ID") + ")_" + System.currentTimeMillis();
+        if (filename == null) {
+            filename = "unknown_myvideo_title__ID(" + p.get("ID") + ")_" + System.currentTimeMillis();
+        }
         filename = filename.replaceAll("\t", "").trim() + ext;
         downloadLink.setFinalFileName(Encoding.htmlDecode(filename));
         /* filesize */
@@ -154,8 +170,10 @@ public class MyVideo extends PluginForHost {
     }
 
     private String decrypt(String cipher, String id) {
-        String key = org.appwork.utils.Hash.getMD5(Encoding.Base64Decode(KEY) + org.appwork.utils.Hash.getMD5(id));
+        String key = JDHash.getMD5(Encoding.Base64Decode(KEY) + JDHash.getMD5(id));
         byte[] ciphertext = JDHexUtils.getByteArray(cipher);
+        // plugin should be loaded first,
+        JDUtilities.getPluginForDecrypt("linkcrypt.ws");
         jd.plugins.decrypter.LnkCrptWs.KeyCaptchaShowDialogTwo arkfour = new jd.plugins.decrypter.LnkCrptWs.KeyCaptchaShowDialogTwo();
         /* CHECK: we should always use getBytes("UTF-8") or with wanted charset, never system charset! */
         byte[] plain = arkfour.D(key.getBytes(), ciphertext);
@@ -223,9 +241,8 @@ public class MyVideo extends PluginForHost {
         rtmp.setResume(true);
     }
 
-
-/* NO OVERRIDE!! We need to stay 0.9*compatible */
-public boolean hasCaptcha(DownloadLink link, jd.plugins.Account acc) {
-return true;
-}
+    /* NO OVERRIDE!! We need to stay 0.9*compatible */
+    public boolean hasCaptcha(DownloadLink link, jd.plugins.Account acc) {
+        return true;
+    }
 }
