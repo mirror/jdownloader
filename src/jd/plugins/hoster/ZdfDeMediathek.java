@@ -311,7 +311,7 @@ public class ZdfDeMediathek extends PluginForHost {
     private void setConfigElements() {
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), Q_SUBTITLES, JDL.L("plugins.hoster.zdf.subtitles", "Download subtitle whenever possible")).setDefaultValue(false));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_SEPARATOR));
-        final ConfigEntry bestonly = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), Q_BEST, JDL.L("plugins.hoster.zdf.best", "Load Best Version ONLY")).setDefaultValue(false);
+        final ConfigEntry bestonly = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), Q_BEST, JDL.L("plugins.hoster.zdf.best", "Load best version ONLY")).setDefaultValue(false);
         getConfig().addEntry(bestonly);
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_SEPARATOR));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), Q_LOW, JDL.L("plugins.hoster.zdf.loadlow", "Load low version")).setDefaultValue(true).setEnabledCondidtion(bestonly, false));

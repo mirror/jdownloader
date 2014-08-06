@@ -601,6 +601,7 @@ public class SaveTv extends PluginForHost {
                 logger.info("Ad-free version is unavailable --> Waiting");
                 currentTryCount++;
                 downloadLink.setProperty("curren_no_ads_free_available_retries", currentTryCount);
+                logger.info("--> Throw Exception_no_ads_free_1 | Try " + currentTryCount + "/" + maxRetries);
                 final long userDefinedWaitHours = getLongProperty(cfg, ADS_FREE_UNAVAILABLE_HOURS, SaveTv.defaultADS_FREE_UNAVAILABLE_HOURS);
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, NOCUTAVAILABLETEXT, userDefinedWaitHours * 60 * 60 * 1000l);
             } else {
@@ -632,7 +633,7 @@ public class SaveTv extends PluginForHost {
                 if (!load_with_ads) {
                     currentTryCount++;
                     downloadLink.setProperty("curren_no_hd_ads_free_available_retries", currentTryCount);
-                    logger.info("--> Throw Exception | Try " + currentTryCount + "/" + maxRetries);
+                    logger.info("--> Throw Exception_no_ads_free_2 | Try " + currentTryCount + "/" + maxRetries);
                     throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Versuch " + currentTryCount + "/" + maxRetries + "Serverfehler: 'Leider enthält Ihre Aufnahme nur Werbung' (HD Format gewählt aber nicht verfügbar)", waitHours * 60 * 60 * 1000l);
                 } else {
                     logger.info("--> Max retries reached: " + maxRetries + " --> Trying to download adsfree version");

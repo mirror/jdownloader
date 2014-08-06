@@ -544,10 +544,8 @@ public class FilesMonsterCom extends PluginForHost {
             ai.setTrafficLeft(dataLeft);
             ai.setTrafficMax(maxQuota);
         } else {
-            // br.containsHTML("Today you have not downloaded anything")
-            // resorted to setting static default
-            ai.setTrafficLeft(SizeFormatter.getSize("12 GiB"));
-            ai.setTrafficMax(SizeFormatter.getSize("12 GiB"));
+            /* Traffic left = unknown */
+            ai.setUnlimitedTraffic();
         }
         // not sure if this is needed, but can't hurt either way.
         if (importedAi == null) {
