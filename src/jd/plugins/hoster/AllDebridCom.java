@@ -85,16 +85,12 @@ public class AllDebridCom extends PluginForHost {
                     /* workaround for buggy getHost call */
                     supportedHosts.add("tusfiles.net");
                     for (String host : hoster) {
-
                         if (hosts == null || host.length() == 0) {
                             continue;
                         }
                         host = host.trim();
                         host = host.substring(1, host.length() - 1);
                         // hosts that returned decrypted finallinks bound to users ip session. Can not use multihosters..
-                        if (host.matches("youtube\\.com")) {
-                            continue;
-                        }
                         try {
                             if (host.equals("rapidshare.com") && accDetails.get("limite_rs") != null && Integer.parseInt(accDetails.get("limite_rs")) == 0) {
                                 continue;
@@ -126,7 +122,6 @@ public class AllDebridCom extends PluginForHost {
                         supportedHosts.add(host.trim());
                     }
                 }
-
             }
             String daysLeft = accDetails.get("date");
             if (daysLeft != null) {
@@ -241,12 +236,10 @@ public class AllDebridCom extends PluginForHost {
             }
             final String errormessage = link.getLinkStatus().getErrorMessage();
             if (errormessage != null && (errormessage.startsWith(JDL.L("download.error.message.rangeheaders", "Server does not support chunkload")) || errormessage.equals("Unerwarteter Mehrfachverbindungsfehlernull"))) {
-                {
-                    /* unknown error, we disable multiple chunks */
-                    if (link.getBooleanProperty(AllDebridCom.NOCHUNKS, false) == false) {
-                        link.setProperty(AllDebridCom.NOCHUNKS, Boolean.valueOf(true));
-                        throw new PluginException(LinkStatus.ERROR_RETRY);
-                    }
+                /* unknown error, we disable multiple chunks */
+                if (link.getBooleanProperty(AllDebridCom.NOCHUNKS, false) == false) {
+                    link.setProperty(AllDebridCom.NOCHUNKS, Boolean.valueOf(true));
+                    throw new PluginException(LinkStatus.ERROR_RETRY);
                 }
             }
         }
