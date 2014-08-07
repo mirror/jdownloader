@@ -67,17 +67,25 @@ public class OneFichierCom extends PluginForHost {
         setConfigElements();
     }
 
+    private boolean preferHTTPS() {
+        return getPluginConfig().getBooleanProperty(SSL_CONNECTION, default_ssl_connection);
+    }
+
+    private String correctProtocol(final String input) {
+        return input.replaceFirst("https?://", (preferHTTPS() ? "https://" : "http://"));
+    }
+
     public void correctDownloadLink(final DownloadLink link) {
+        // link + protocol correction
+        String url = correctProtocol(link.getDownloadURL());
         // Remove everything after the domain
-        if (!link.getDownloadURL().endsWith("/")) {
-            Regex idhostandName = new Regex(link.getDownloadURL(), "https?://(.*?)\\.(.*?)(/|$)");
-            link.setUrlDownload("http://" + idhostandName.getMatch(0) + "." + idhostandName.getMatch(1));
-        } else {
-            String addedLink = link.getDownloadURL().replace("https://", "http://");
-            if (addedLink.endsWith("/")) {
-                addedLink = addedLink.substring(0, addedLink.length() - 1);
+        String[] idhostandName = new Regex(url, "(https?://)(.*?\\.)(.*?)(/|$)").getRow(0);
+        if (idhostandName != null) {
+            link.setUrlDownload(idhostandName[0] + idhostandName[1] + idhostandName[2]);
+            try {
+                link.setLinkID(idhostandName[1]);
+            } catch (final Throwable t) {
             }
-            link.setUrlDownload(addedLink);
         }
     }
 
@@ -107,25 +115,28 @@ public class OneFichierCom extends PluginForHost {
                 }
                 sb.delete(0, sb.capacity());
                 for (final DownloadLink dl : links) {
-                    correctDownloadLink(dl);
                     sb.append("links[]=");
-                    sb.append(Encoding.urlEncode(dl.getDownloadURL()));
+                    // protocol https will automatically fail linkcheck 'bad link'
+                    sb.append(Encoding.urlEncode(dl.getDownloadURL().replaceFirst("https?://", "http://")));
                     sb.append("&");
                 }
-                br.postPageRaw("http://1fichier.com/check_links.pl", sb.toString());
+                // remove last &
+                sb.deleteCharAt(sb.length() - 1);
+                br.postPageRaw(correctProtocol("http://1fichier.com/check_links.pl"), sb.toString());
                 for (final DownloadLink dllink : links) {
                     final String addedLink = dllink.getDownloadURL();
-                    if (br.containsHTML(addedLink + ";;;NOT FOUND")) {
+                    if (br.containsHTML(addedLink + ";;;(NOT FOUND|BAD LINK)")) {
                         dllink.setAvailable(false);
                     } else {
-                        final String[][] linkInfo = br.getRegex(dllink.getDownloadURL() + ";([^;]+);(\\d+)").getMatches();
-                        if (linkInfo.length != 1) {
+                        // protocol https will automatically fail linkcheck 'bad link'
+                        final String[] linkInfo = br.getRegex(dllink.getDownloadURL().replaceFirst("https?://", "http://") + ";([^;]+);(\\d+)").getRow(0);
+                        if (linkInfo.length != 2) {
                             logger.warning("Linkchecker for 1fichier.com is broken!");
                             return false;
                         }
                         dllink.setAvailable(true);
-                        dllink.setFinalFileName(Encoding.htmlDecode(linkInfo[0][0]));
-                        dllink.setDownloadSize(SizeFormatter.getSize(linkInfo[0][1]));
+                        dllink.setFinalFileName(Encoding.htmlDecode(linkInfo[0]));
+                        dllink.setDownloadSize(SizeFormatter.getSize(linkInfo[1]));
                     }
                 }
                 if (index == urls.length) {
@@ -140,12 +151,14 @@ public class OneFichierCom extends PluginForHost {
 
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
+        correctDownloadLink(link);
         pwProtected = false;
         this.setBrowserExclusive();
         prepareBrowser(br);
         br.setFollowRedirects(false);
         br.setCustomCharset("utf-8");
-        br.postPage("http://1fichier.com/check_links.pl", "links[]=" + Encoding.urlEncode(link.getDownloadURL()));
+        // protocol https will automatically fail linkcheck 'bad link'
+        br.postPage(correctProtocol("http://1fichier.com/check_links.pl"), "links[]=" + Encoding.urlEncode(link.getDownloadURL().replaceFirst("https?://", "http://")));
         if (br.containsHTML(";;;NOT FOUND|;;;BAD LINK")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
@@ -172,16 +185,16 @@ public class OneFichierCom extends PluginForHost {
             link.getLinkStatus().setStatusText(JDL.L("plugins.hoster.onefichiercom.passwordprotected", "This link is password protected"));
             return AvailableStatus.UNCHECKABLE;
         }
-        final String[][] linkInfo = br.getRegex("http://[^;]+;([^;]+);(\\d+)").getMatches();
+        final String[] linkInfo = br.getRegex("https?://[^;]+;([^;]+);(\\d+)").getRow(0);
         if (linkInfo == null || linkInfo.length == 0) {
             logger.warning("Available Status broken for link: " + link.getDownloadURL());
             return null;
         }
-        String filename = linkInfo[0][0];
+        String filename = linkInfo[0];
         if (filename == null) {
             filename = br.getRegex(">File name :</th><td>([^<>\"]*?)</td>").getMatch(0);
         }
-        String filesize = linkInfo[0][1];
+        String filesize = linkInfo[1];
         if (filesize == null) {
             filesize = br.getRegex(">File size :</th><td>([^<>\"]*?)</td></tr>").getMatch(0);
         }
@@ -577,7 +590,7 @@ public class OneFichierCom extends PluginForHost {
         requestFileInformation(link);
         String passCode = null;
         String dllink = link.getStringProperty(PREMLINK, null);
-        boolean useSSL = getPluginConfig().getBooleanProperty(SSL_CONNECTION, true);
+        boolean useSSL = preferHTTPS();
         if (oldStyle() == true) {
             useSSL = false;
         }
@@ -685,9 +698,12 @@ public class OneFichierCom extends PluginForHost {
         return false;
     }
 
+    private boolean default_ssl_connection   = true;
+    private boolean default_prefer_reconnect = false;
+
     private void setConfigElements() {
-        this.getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, this.getPluginConfig(), SSL_CONNECTION, JDL.L("plugins.hoster.onefichiercom.com.ssl2", "Use Secure Communication over SSL")).setDefaultValue(true));
-        this.getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, this.getPluginConfig(), PREFER_RECONNECT, JDL.L("plugins.hoster.onefichiercom.com.preferreconnect", "Reconnect, even if the wait time is only short (1-6 minutes)")).setDefaultValue(false));
+        this.getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, this.getPluginConfig(), SSL_CONNECTION, JDL.L("plugins.hoster.onefichiercom.com.ssl2", "Use Secure Communication over SSL")).setDefaultValue(default_ssl_connection));
+        this.getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, this.getPluginConfig(), PREFER_RECONNECT, JDL.L("plugins.hoster.onefichiercom.com.preferreconnect", "Reconnect, even if the wait time is only short (1-6 minutes)")).setDefaultValue(default_prefer_reconnect));
     }
 
     private void prepareBrowser(final Browser br) {
