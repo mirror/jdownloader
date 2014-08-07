@@ -116,8 +116,7 @@ public class OneFichierCom extends PluginForHost {
                 sb.delete(0, sb.capacity());
                 for (final DownloadLink dl : links) {
                     sb.append("links[]=");
-                    // protocol https will automatically fail linkcheck 'bad link'
-                    sb.append(Encoding.urlEncode(dl.getDownloadURL().replaceFirst("https?://", "http://")));
+                    sb.append(Encoding.urlEncode(dl.getDownloadURL()));
                     sb.append("&");
                 }
                 // remove last &
@@ -128,8 +127,7 @@ public class OneFichierCom extends PluginForHost {
                     if (br.containsHTML(addedLink + ";;;(NOT FOUND|BAD LINK)")) {
                         dllink.setAvailable(false);
                     } else {
-                        // protocol https will automatically fail linkcheck 'bad link'
-                        final String[] linkInfo = br.getRegex(dllink.getDownloadURL().replaceFirst("https?://", "http://") + ";([^;]+);(\\d+)").getRow(0);
+                        final String[] linkInfo = br.getRegex(dllink.getDownloadURL() + ";([^;]+);(\\d+)").getRow(0);
                         if (linkInfo.length != 2) {
                             logger.warning("Linkchecker for 1fichier.com is broken!");
                             return false;
@@ -157,8 +155,7 @@ public class OneFichierCom extends PluginForHost {
         prepareBrowser(br);
         br.setFollowRedirects(false);
         br.setCustomCharset("utf-8");
-        // protocol https will automatically fail linkcheck 'bad link'
-        br.postPage(correctProtocol("http://1fichier.com/check_links.pl"), "links[]=" + Encoding.urlEncode(link.getDownloadURL().replaceFirst("https?://", "http://")));
+        br.postPage(correctProtocol("http://1fichier.com/check_links.pl"), "links[]=" + Encoding.urlEncode(link.getDownloadURL()));
         if (br.containsHTML(";;;NOT FOUND|;;;BAD LINK")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
