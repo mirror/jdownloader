@@ -69,9 +69,20 @@ public class NCryptIn extends PluginForDecrypt {
         }
         if (parameter.contains("ncrypt.in/link")) {
             final String finallink = decryptSingle(parameter);
-            if (finallink == null) { return null; }
+            if (finallink == null) {
+                return null;
+            }
             if (finallink.contains("error=crypted_id_invalid")) {
-                logger.info("Link offline: " + parameter);
+                logger.info("This link might be offline: " + parameter);
+                final String additional = br.getRegex("<h2>\r?\n?(.*?)<").getMatch(0);
+                if (additional != null) {
+                    logger.info(additional);
+                }
+                final DownloadLink offline = createDownloadlink("directhttp://" + parameter);
+                offline.setAvailable(false);
+                offline.setProperty("offline", true);
+                offline.setFinalFileName(new Regex(parameter, "ncrypt\\.in/link(.+)").getMatch(0));
+                decryptedLinks.add(offline);
                 return decryptedLinks;
             }
             decryptedLinks.add(createDownloadlink(finallink));
@@ -80,7 +91,15 @@ public class NCryptIn extends PluginForDecrypt {
             br.getPage(parameter);
             haveFun();
             if (br.getURL().contains("error=crypted_id_invalid")) {
-                logger.info("Link offline: " + parameter);
+                logger.info("This link might be offline: " + parameter);
+                final String additional = br.getRegex("<h2>\r?\n?(.*?)<").getMatch(0);
+                if (additional != null) {
+                    logger.info(additional);
+                }
+                final DownloadLink offline = createDownloadlink("directhttp://" + parameter);
+                offline.setAvailable(false);
+                offline.setProperty("offline", true);
+                decryptedLinks.add(offline);
                 return decryptedLinks;
             }
             // Handle Captcha and/or password
@@ -127,13 +146,19 @@ public class NCryptIn extends PluginForDecrypt {
                         }
                         break;
                     }
-                    if (password && new Regex(aBrowser, PASSWORDFAILED).matches()) { throw new DecrypterException(DecrypterException.PASSWORD); }
-                    if (captcha && new Regex(aBrowser, RECAPTCHA).matches()) { throw new DecrypterException(DecrypterException.CAPTCHA); }
+                    if (password && new Regex(aBrowser, PASSWORDFAILED).matches()) {
+                        throw new DecrypterException(DecrypterException.PASSWORD);
+                    }
+                    if (captcha && new Regex(aBrowser, RECAPTCHA).matches()) {
+                        throw new DecrypterException(DecrypterException.CAPTCHA);
+                    }
                 } else if (allForm.containsHTML(ANICAPTCHA) && !allForm.containsHTML("recaptcha_challenge")) {
                     captcha = true;
                     for (int i = 0; i <= 3; i++) {
                         final String captchaLink = new Regex(aBrowser, ANICAPTCHA).getMatch(-1);
-                        if (captchaLink == null) { return null; }
+                        if (captchaLink == null) {
+                            return null;
+                        }
                         String code = null;
                         final File captchaFile = this.getLocalCaptchaFile(".gif");
                         try {
@@ -169,8 +194,12 @@ public class NCryptIn extends PluginForDecrypt {
                         }
                         break;
                     }
-                    if (password && new Regex(aBrowser, PASSWORDFAILED).matches()) { throw new DecrypterException(DecrypterException.PASSWORD); }
-                    if (captcha && new Regex(aBrowser, ANICAPTCHA).matches()) { throw new DecrypterException(DecrypterException.CAPTCHA); }
+                    if (password && new Regex(aBrowser, PASSWORDFAILED).matches()) {
+                        throw new DecrypterException(DecrypterException.PASSWORD);
+                    }
+                    if (captcha && new Regex(aBrowser, ANICAPTCHA).matches()) {
+                        throw new DecrypterException(DecrypterException.CAPTCHA);
+                    }
                 } else if (allForm.containsHTML(CIRCLECAPTCHA) && !allForm.containsHTML("recaptcha_challenge")) {
                     captcha = true;
                     for (int i = 0; i <= 3; i++) {
@@ -179,7 +208,9 @@ public class NCryptIn extends PluginForDecrypt {
                         try {
                             Browser.download(captchaFile, br.cloneBrowser().openGetConnection("http://ncrypt.in/classes/captcha/circlecaptcha.php"));
                             p = UserIO.getInstance().requestClickPositionDialog(captchaFile, "Click on the open circle", null);
-                            if (p == null) { throw new DecrypterException(DecrypterException.CAPTCHA); }
+                            if (p == null) {
+                                throw new DecrypterException(DecrypterException.CAPTCHA);
+                            }
                         } finally {
                             captchaFile.delete();
                         }
@@ -205,9 +236,15 @@ public class NCryptIn extends PluginForDecrypt {
                         }
                         break;
                     }
-                    if (password && new Regex(aBrowser, PASSWORDFAILED).matches()) { throw new DecrypterException(DecrypterException.PASSWORD); }
-                    if (captcha && new Regex(aBrowser, ANICAPTCHA).matches()) { throw new DecrypterException(DecrypterException.CAPTCHA); }
-                    if (captcha && new Regex(aBrowser, CIRCLECAPTCHA).matches()) { throw new DecrypterException(DecrypterException.CAPTCHA); }
+                    if (password && new Regex(aBrowser, PASSWORDFAILED).matches()) {
+                        throw new DecrypterException(DecrypterException.PASSWORD);
+                    }
+                    if (captcha && new Regex(aBrowser, ANICAPTCHA).matches()) {
+                        throw new DecrypterException(DecrypterException.CAPTCHA);
+                    }
+                    if (captcha && new Regex(aBrowser, CIRCLECAPTCHA).matches()) {
+                        throw new DecrypterException(DecrypterException.CAPTCHA);
+                    }
                 } else if (allForm.containsHTML(PASSWORDTEXT)) {
                     password = true;
                     for (int i = 0; i <= 3; i++) {
@@ -219,12 +256,18 @@ public class NCryptIn extends PluginForDecrypt {
                         }
                         break;
                     }
-                    if (new Regex(aBrowser, PASSWORDFAILED).matches()) { throw new DecrypterException(DecrypterException.PASSWORD); }
+                    if (new Regex(aBrowser, PASSWORDFAILED).matches()) {
+                        throw new DecrypterException(DecrypterException.PASSWORD);
+                    }
                 }
             }
             String fpName = br.getRegex("<h1>(.*?)<img").getMatch(0);
-            if (fpName == null) fpName = br.getRegex("title>nCrypt\\.in - (.*?)</tit").getMatch(0);
-            if (fpName == null) fpName = br.getRegex("name=\"cnl2_output\"></iframe>[\t\n\r ]+<h2><span class=\"arrow\">(.*?)<img src=\"").getMatch(0);
+            if (fpName == null) {
+                fpName = br.getRegex("title>nCrypt\\.in - (.*?)</tit").getMatch(0);
+            }
+            if (fpName == null) {
+                fpName = br.getRegex("name=\"cnl2_output\"></iframe>[\t\n\r ]+<h2><span class=\"arrow\">(.*?)<img src=\"").getMatch(0);
+            }
 
             // Container handling
             final String[] containerIDs = br.getRegex("(/container/(dlc|rsdf|ccf)/([a-z0-9]+)\\.(dlc|rsdf|ccf))").getColumn(0);
@@ -322,7 +365,9 @@ public class NCryptIn extends PluginForDecrypt {
             con = brc.openGetConnection(theLink);
             if (con.getResponseCode() == 200) {
                 file = JDUtilities.getResourceFile("tmp/ncryptin/" + theID);
-                if (file == null) { return null; }
+                if (file == null) {
+                    return null;
+                }
                 file.getParentFile().mkdirs();
                 file.deleteOnExit();
                 brc.downloadConnection(file, con);
@@ -336,9 +381,13 @@ public class NCryptIn extends PluginForDecrypt {
                 con.disconnect();
             } catch (final Throwable e) {
             }
-            if (file.exists()) file.delete();
+            if (file.exists()) {
+                file.delete();
+            }
         }
-        if (decryptedLinks != null && decryptedLinks.size() > 0) { return decryptedLinks; }
+        if (decryptedLinks != null && decryptedLinks.size() > 0) {
+            return decryptedLinks;
+        }
         return null;
     }
 

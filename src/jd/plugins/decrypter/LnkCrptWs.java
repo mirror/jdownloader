@@ -341,7 +341,7 @@ public class LnkCrptWs extends PluginForDecrypt {
             p = new JPanel(new MigLayout("ins 0,wrap 1", "[grow,fill]", "[][grow,fill]"));
             picture = new JPanel() {
                 /**
-                 * 
+                 *
                  */
                 private static final long serialVersionUID = 1L;
 
@@ -1756,6 +1756,11 @@ public class LnkCrptWs extends PluginForDecrypt {
             if (additional != null) {
                 logger.info(additional);
             }
+            final DownloadLink offline = createDownloadlink("directhttp://" + parameter);
+            offline.setAvailable(false);
+            offline.setProperty("offline", true);
+            offline.setFinalFileName(new Regex(parameter, "([\\w]+)$").getMatch(0));
+            decryptedLinks.add(offline);
             return decryptedLinks;
         }
 
@@ -1872,7 +1877,7 @@ public class LnkCrptWs extends PluginForDecrypt {
         for (String c : containers) {
             decryptedJS = JavaScriptUnpacker.decode(c);
             String[] row = new Regex(decryptedJS, "href=\"(http.*?)\".*?(dlc|ccf|rsdf)").getRow(0);// all
-                                                                                                   // container
+            // container
             if (row == null) {
                 row = new Regex(decryptedJS, "href=\"([^\"]+)\"[^>]*>.*?<img.*?image/(.*?)\\.").getRow(0); // cnl
             }

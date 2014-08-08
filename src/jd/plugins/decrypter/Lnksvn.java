@@ -84,11 +84,29 @@ public class Lnksvn extends PluginForDecrypt {
         br.setFollowRedirects(true);
         br.getPage(param.getCryptedUrl());
         if (br.containsHTML(">Error 404 \\- Ordner nicht gefunden") || br.containsHTML("<title>404 \\- Not Found</title>") || br.containsHTML("/fopen\\.html")) {
-            logger.info("Link offline: " + parameter);
+            logger.info("This link might be offline: " + parameter);
+            final String additional = br.getRegex("<h2>\r?\n?(.*?)<").getMatch(0);
+            if (additional != null) {
+                logger.info(additional);
+            }
+            final DownloadLink offline = createDownloadlink("directhttp://" + parameter);
+            offline.setAvailable(false);
+            offline.setProperty("offline", true);
+            offline.setFinalFileName(new Regex(parameter, "([\\w]+)$").getMatch(0));
+            decryptedLinks.add(offline);
             return decryptedLinks;
         }
         if (br.getURL().matches(INVALIDLINKS)) {
-            logger.info("Invalid link: " + parameter);
+            logger.info("This link might be offline: " + parameter);
+            final String additional = br.getRegex("<h2>\r?\n?(.*?)<").getMatch(0);
+            if (additional != null) {
+                logger.info(additional);
+            }
+            final DownloadLink offline = createDownloadlink("directhttp://" + parameter);
+            offline.setAvailable(false);
+            offline.setProperty("offline", true);
+            offline.setFinalFileName(new Regex(parameter, "([\\w]+)$").getMatch(0));
+            decryptedLinks.add(offline);
             return decryptedLinks;
         }
         br.setFollowRedirects(false);
