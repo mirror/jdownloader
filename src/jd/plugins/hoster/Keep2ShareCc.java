@@ -748,7 +748,7 @@ public class Keep2ShareCc extends PluginForHost {
     /**
      * Gets page <br />
      * - natively supports silly cloudflare anti DDoS crapola
-     * 
+     *
      * @author raztoki
      */
     public void getPage(String page) throws Exception {
@@ -856,7 +856,7 @@ public class Keep2ShareCc extends PluginForHost {
      * Performs Cloudflare and Incapsula requirements.<br />
      * Auto fill out the required fields and updates antiDDoSCookies session.<br />
      * Always called after Browser Request!
-     * 
+     *
      * @version 0.02
      * @author raztoki
      **/
@@ -964,7 +964,7 @@ public class Keep2ShareCc extends PluginForHost {
     }
 
     /**
-     * 
+     *
      * @author raztoki
      * */
     private boolean requestHeadersHasKeyNValueStartsWith(final String k, final String v) {
@@ -980,7 +980,7 @@ public class Keep2ShareCc extends PluginForHost {
     }
 
     /**
-     * 
+     *
      * @author raztoki
      * */
     private boolean requestHeadersHasKeyNValueContains(final String k, final String v) {

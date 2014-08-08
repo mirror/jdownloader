@@ -25,9 +25,11 @@ import jd.http.Browser.BrowserException;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.plugins.CryptedLink;
+import jd.plugins.DecrypterException;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
+import jd.plugins.Plugin;
 import jd.plugins.PluginForDecrypt;
 
 import org.appwork.utils.formatter.SizeFormatter;
@@ -40,8 +42,10 @@ public class MinhatecaComBr extends PluginForDecrypt {
     }
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
+        String passCode = null;
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String parameter = param.toString();
+        br.setFollowRedirects(true);
         try {
             br.getPage(parameter);
         } catch (final BrowserException e) {
@@ -51,6 +55,29 @@ public class MinhatecaComBr extends PluginForDecrypt {
             dl.setProperty("offline", true);
             decryptedLinks.add(dl);
             return decryptedLinks;
+        }
+        if (br.containsHTML("class=\"LoginToFolderForm\"")) {
+            final String reqtoken = br.getRegex("name=\"__RequestVerificationToken\" type=\"hidden\" value=\"([^<>\"]*?)\"").getMatch(0);
+            final String chomikid = br.getRegex("type=\"hidden\" name=\"ChomikId\" value=\"(\\d+)\"").getMatch(0);
+            final String folderid = br.getRegex("name=\"FolderId\" type=\"hidden\" value=\"(\\d+)\"").getMatch(0);
+            final String foldername = br.getRegex("id=\"FolderName\" name=\"FolderName\" type=\"hidden\" value=\"([^<>\"]*?)\"").getMatch(0);
+            if (reqtoken == null || chomikid == null || folderid == null || foldername == null) {
+                logger.warning("Decrypter broken for link: " + parameter);
+                return null;
+            }
+            for (int i = 1; i <= 3; i++) {
+                passCode = Plugin.getUserInput("Password?", param);
+                br.postPageRaw("http://minhateca.com.br/action/Files/LoginToFolder", "Remember=true&Remember=false&ChomikId=" + chomikid + "&FolderId=" + folderid + "&FolderName=" + Encoding.urlEncode(foldername) + "&Password=" + Encoding.urlEncode(passCode) + "&__RequestVerificationToken=" + Encoding.urlEncode(reqtoken));
+                if (br.containsHTML("\"IsSuccess\":false")) {
+                    continue;
+                }
+                break;
+            }
+            if (br.containsHTML("\"IsSuccess\":false")) {
+                throw new DecrypterException(DecrypterException.PASSWORD);
+            }
+            /* We don't want to work with the encoded json bla html response */
+            br.getPage(parameter);
         }
         final String server = new Regex(parameter, "(http://[a-z0-9]+\\.minhateca\\.com\\.br/)").getMatch(0);
         if (server != null) {
@@ -98,6 +125,7 @@ public class MinhatecaComBr extends PluginForDecrypt {
             dl.setProperty("plain_filesize", filesize);
             dl.setProperty("plain_fid", fid);
             dl.setProperty("mainlink", parameter);
+            dl.setProperty("pass", passCode);
             dl.setProperty("LINKDUPEID", fid + filename);
 
             dl.setName(filename);
@@ -131,6 +159,7 @@ public class MinhatecaComBr extends PluginForDecrypt {
                 dl.setProperty("plain_filesize", filesize);
                 dl.setProperty("plain_fid", fid);
                 dl.setProperty("mainlink", parameter);
+                dl.setProperty("pass", passCode);
                 dl.setProperty("LINKDUPEID", fid + filename);
 
                 dl.setName(filename);
