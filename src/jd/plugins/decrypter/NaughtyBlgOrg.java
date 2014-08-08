@@ -1,3 +1,19 @@
+//    jDownloader - Downloadmanager
+//    Copyright (C) 2014  JD-Team support@jdownloader.org
+//
+//    This program is free software: you can redistribute it and/or modify
+//    it under the terms of the GNU General Public License as published by
+//    the Free Software Foundation, either version 3 of the License, or
+//    (at your option) any later version.
+//
+//    This program is distributed in the hope that it will be useful,
+//    but WITHOUT ANY WARRANTY; without even the implied warranty of
+//    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+//    GNU General Public License for more details.
+//
+//    You should have received a copy of the GNU General Public License
+//    along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
 package jd.plugins.decrypter;
 
 import java.util.ArrayList;
@@ -50,7 +66,9 @@ public class NaughtyBlgOrg extends PluginForDecrypt {
         }
 
         String contentReleaseName = br.getRegex("<h2 class=\"post\\-title\">(.*?)</h2>").getMatch(0);
-        if (contentReleaseName == null) contentReleaseName = br.getRegex("<h1 class=\"post\\-title\">([^<>\"]*?)</h1>").getMatch(0);
+        if (contentReleaseName == null) {
+            contentReleaseName = br.getRegex("<h1 class=\"post\\-title\">([^<>\"]*?)</h1>").getMatch(0);
+        }
         if (contentReleaseName == null) {
             logger.warning("Decrypter broken for link: " + parameter);
             return null;
@@ -95,12 +113,18 @@ public class NaughtyBlgOrg extends PluginForDecrypt {
         if (CATEGORY != Category.SITERIP) {
             contentReleaseLinks = br.getRegex(">Download:?</(.*?)</div>").getMatch(0);
             // Nothing found? Get all links from title till comment field
-            if (contentReleaseLinks == null) contentReleaseLinks = br.getRegex("<h(1|2) class=\"post\\-title\">(.*?)function validatecomment\\(form\\)\\{").getMatch(1);
-            if (contentReleaseLinks == null) contentReleaseLinks = br.getRegex("<h(1|2) class=\"post\\-title\">(.*?)class=\"comments\">Comments are closed").getMatch(1);
+            if (contentReleaseLinks == null) {
+                contentReleaseLinks = br.getRegex("<h(1|2) class=\"post\\-title\">(.*?)function validatecomment\\(form\\)\\{").getMatch(1);
+            }
+            if (contentReleaseLinks == null) {
+                contentReleaseLinks = br.getRegex("<h(1|2) class=\"post\\-title\">(.*?)class=\"comments\">Comments are closed").getMatch(1);
+            }
         } else {
             // Get all links from title till comment field
             contentReleaseLinks = br.getRegex("<h2 class=\"post\\-title\">(.*?)function validatecomment\\(form\\)\\{").getMatch(0);
-            if (contentReleaseLinks == null) contentReleaseLinks = br.getRegex("<h\\d+ class=\"post\\-title\">(.*?)class=\"comments\">").getMatch(0);
+            if (contentReleaseLinks == null) {
+                contentReleaseLinks = br.getRegex("<h\\d+ class=\"post\\-title\">(.*?)class=\"comments\">").getMatch(0);
+            }
         }
         if (contentReleaseLinks == null) {
             logger.warning("contentReleaseLinks == null");
@@ -148,7 +172,9 @@ public class NaughtyBlgOrg extends PluginForDecrypt {
             filePackageName += " - Movie";
             break;
         case SITERIP:
-            if (!filePackageName.toLowerCase().contains("siterip")) filePackageName += " - SiteRip";
+            if (!filePackageName.toLowerCase().contains("siterip")) {
+                filePackageName += " - SiteRip";
+            }
             break;
         default:
             break;
