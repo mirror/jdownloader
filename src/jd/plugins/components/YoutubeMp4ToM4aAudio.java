@@ -86,7 +86,7 @@ public class YoutubeMp4ToM4aAudio implements YoutubeConverter {
             }
 
             File finalFile = downloadLink.getDownloadLinkController().getFileOutput(false, true);
-            if (!ffmpeg.demuxMp4(set, finalFile.getAbsolutePath(), file.getAbsolutePath())) {
+            if (!ffmpeg.demuxM4a(set, finalFile.getAbsolutePath(), file.getAbsolutePath())) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, _GUI._.YoutubeDash_handleFree_error_());
             }
 

@@ -111,7 +111,7 @@ public class AdvancedConfigManager {
                 continue;
             }
 
-            if (m.getAnnotation(AboutConfig.class) != null && (m.getAnnotation(DevConfig.class) == null || Application.isJared(null))) {
+            if (m.getAnnotation(AboutConfig.class) != null && (m.getAnnotation(DevConfig.class) == null || !Application.isJared(null))) {
                 if (m.getSetter() == null) {
                     throw new RuntimeException("Setter for " + m.getGetter().getMethod() + " missing");
                 } else if (m.getGetter() == null) {
@@ -143,7 +143,7 @@ public class AdvancedConfigManager {
                         if (map.containsKey(m)) {
                             continue;
                         }
-                        if (m.getAnnotation(AboutConfig.class) != null && (m.getAnnotation(DevConfig.class) == null || Application.isJared(null))) {
+                        if (m.getAnnotation(AboutConfig.class) != null && (m.getAnnotation(DevConfig.class) == null || !Application.isJared(null))) {
                             if (m.getSetter() == null) {
                                 throw new RuntimeException("Setter for " + m.getGetter().getMethod() + " missing");
                             } else if (m.getGetter() == null) {

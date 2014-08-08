@@ -134,7 +134,7 @@ public class MtLnk extends PluginForDecrypt {
                 DownloadLink downloadLink = createDownloadlink(text.toString().trim());
                 try {
                     /* needed to avoid rename by plugin */
-                    downloadLink.forceFileName(dLink.getFinalFileName());
+                    downloadLink.setForcedFileName(dLink.getFinalFileName());
                 } catch (Throwable e) {
                     /* forceFileName not available in 0.957 public */
                 }

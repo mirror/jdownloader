@@ -3167,8 +3167,8 @@ public interface GuiTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "Overview" })
     String AccountManager_AccountManager_accounts_();
 
-    @Default(lngs = { "en" }, values = { "Account Usage Rules" })
-    String AccountManager_AccountManager_hosterorder_();
+    @Default(lngs = { "en" }, values = { "Usage Rules" })
+    String AccountManager_AccountManager_hosterorder();
 
     @Default(lngs = { "en" }, values = { "Account Group" })
     String FileColumn_getStringValue_accountgroup_();
@@ -3925,8 +3925,8 @@ public interface GuiTranslation extends TranslateInterface {
     // @Default(lngs = { "en" }, values = { "FFmpeg™ is missing" })
     // String YoutubeDash_handleFree_ffmpegmissing();
 
-    @Default(lngs = { "en" }, values = { "Merging Streams..." })
-    String FFMpegProgress_getMessage_merging_();
+    @Default(lngs = { "en" }, values = { "Converting/Demuxing..." })
+    String FFMpegProgress_getMessage_merging();
 
     @Default(lngs = { "en" }, values = { "Merging Failed." })
     String YoutubeDash_handleFree_error_();
@@ -5139,5 +5139,11 @@ public interface GuiTranslation extends TranslateInterface {
 
     @Default(lngs = { "en" }, values = { "Unskip all skipped Links" })
     String UnskipAllSkippedLinksAction();
+
+    @Default(lngs = { "en" }, values = { "Convert to..." })
+    String PluginForHost_extendLinkgrabberContextMenu_generic_convert();
+
+    @Default(lngs = { "en" }, values = { "Add additional 'Convert to' variant..." })
+    String PluginForHost_extendLinkgrabberContextMenu_generic_convert_add();
 
 }

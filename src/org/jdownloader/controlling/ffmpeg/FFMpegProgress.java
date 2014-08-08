@@ -35,7 +35,7 @@ public class FFMpegProgress extends PluginProgress {
     public String getMessage(Object requestor) {
         if (requestor instanceof ETAColumn) return null;
         if (requestor instanceof ProgressColumn) return null;
-        return _GUI._.FFMpegProgress_getMessage_merging_();
+        return _GUI._.FFMpegProgress_getMessage_merging();
     }
 
 }

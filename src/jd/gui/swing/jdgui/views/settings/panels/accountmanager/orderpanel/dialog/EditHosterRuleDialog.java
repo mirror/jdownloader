@@ -1,6 +1,8 @@
 package jd.gui.swing.jdgui.views.settings.panels.accountmanager.orderpanel.dialog;
 
 import java.awt.Dimension;
+import java.awt.event.FocusEvent;
+import java.awt.event.FocusListener;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -86,7 +88,17 @@ public class EditHosterRuleDialog extends AbstractDialog<Integer> {
         ExtButton refreshButton;
         tb.add(refreshButton = new ExtButton(new RefreshAction()), "sg 2,height 26!");
         tb.add(new ExtButton(new AddGroupAction(model)), "sg 2,height 26!");
+        refreshButton.addFocusListener(new FocusListener() {
 
+            @Override
+            public void focusLost(FocusEvent e) {
+            }
+
+            @Override
+            public void focusGained(FocusEvent e) {
+                new Exception().printStackTrace();
+            }
+        });
         ret.add(tb);
         return ret;
     }

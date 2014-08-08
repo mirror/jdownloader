@@ -2,14 +2,11 @@ package org.jdownloader.controlling.ffmpeg;
 
 import java.io.File;
 
-import jd.gui.swing.jdgui.JDGui;
-
 import org.appwork.storage.config.JsonConfig;
 import org.appwork.uio.CloseReason;
 import org.appwork.uio.ConfirmDialogInterface;
 import org.appwork.uio.UIOManager;
 import org.appwork.utils.Application;
-import org.appwork.utils.StringUtils;
 import org.appwork.utils.os.CrossSystem;
 import org.jdownloader.updatev2.UpdateController;
 
@@ -48,9 +45,15 @@ public class InstallThread extends Thread {
     @Override
     public void run() {
 
-        File path = scan();
-
-        if (path == null) {
+        File ffmpeg = getFFmpegPath("ffmpeg");
+        if (ffmpeg != null && !ffmpeg.exists()) {
+            ffmpeg = null;
+        }
+        File ffprobe = getFFmpegPath("ffprobe");
+        if (ffprobe != null && !ffprobe.exists()) {
+            ffprobe = null;
+        }
+        if (ffmpeg == null || ffprobe == null) {
             ConfirmDialogInterface res = UIOManager.I().show(ConfirmDialogInterface.class, new FFMpegInstallTypeChooserDialog(task));
             if (res.getCloseReason() == CloseReason.OK) {
                 UpdateController.getInstance().setGuiVisible(true);
@@ -63,17 +66,53 @@ public class InstallThread extends Thread {
                 }
             }
         }
-        path = scan();
-        if (path != null) {
-            FFmpeg ff = new FFmpeg();
-            ff.setPath(path.getAbsolutePath());
-            if (ff.validateBinary()) {
-                JsonConfig.create(FFmpegSetup.class).setBinaryPath(path.getAbsolutePath());
-                success = true;
+        ffmpeg = getFFmpegPath("ffmpeg");
+        if (ffmpeg.exists()) {
+            JsonConfig.create(FFmpegSetup.class).setBinaryPath(ffmpeg.toString());
+        }
+        ffprobe = getFFmpegPath("ffprobe");
+        if (ffprobe.exists()) {
+            JsonConfig.create(FFmpegSetup.class).setBinaryPathProbe(ffprobe.toString());
+        }
+        if (ffprobe.exists() && ffmpeg.exists()) {
+            success = true;
+        }
+        synchronized (this.fFmpegProvider) {
+            this.fFmpegProvider.installThread = null;
+        }
+
+    }
+
+    private File getFFmpegPath(String name) {
+
+        if (CrossSystem.isWindows()) {
+            if (CrossSystem.is64BitOperatingSystem()) {
+                File x64Path = Application.getResource("tools/Windows/ffmpeg/x64/" + name + ".exe");
+                if (!x64Path.exists()) {
+                    File x32Path = Application.getResource("tools/Windows/ffmpeg/i386/" + name + ".exe");
+                    if (x32Path.exists()) {
+                        return x32Path;
+                    }
+                }
+                return x64Path;
+            } else {
+                return Application.getResource("tools/Windows/ffmpeg/i386/" + name + ".exe");
             }
-            synchronized (this.fFmpegProvider) {
-                this.fFmpegProvider.installThread = null;
+        } else if (CrossSystem.isMac()) {
+            // different ffmpeg version for 10.6-
+            if (CrossSystem.getMacOSVersion() < 10600000) {
+                return Application.getResource("tools/mac/ffmpeg_10.5.x-/" + name + "");
+            } else {
+                return Application.getResource("tools/mac/ffmpeg_10.6+/" + name + "");
             }
+
+        } else {
+            if (CrossSystem.is64BitOperatingSystem()) {
+                return Application.getResource("tools/linux/ffmpeg/x64/" + name + "");
+            } else {
+                return Application.getResource("tools/linux/ffmpeg/i386/" + name + "");
+            }
+
         }
 
     }
@@ -94,48 +133,4 @@ public class InstallThread extends Thread {
 
     }
 
-    protected File scan() {
-        File path = null;
-        if (CrossSystem.isWindows()) {
-            path = FFMpegInstallTypeChooserDialog.searchFileIn(Application.getResource("tools/Windows/ffmpeg"), JDGui.getInstance() == null ? null : JDGui.getInstance().getMainFrame(), true);
-            if (path == null) {
-                path = FFMpegInstallTypeChooserDialog.searchFileIn(Application.getResource("ffmpeg.exe"), JDGui.getInstance() == null ? null : JDGui.getInstance().getMainFrame(), true);
-            }
-            if (path == null) {
-
-                String systemroot = System.getenv("SYSTEMROOT");
-                if (StringUtils.isNotEmpty(systemroot)) {
-                    path = FFMpegInstallTypeChooserDialog.searchFileIn(new File(systemroot, "System32/ffmpeg.exe"), JDGui.getInstance() == null ? null : JDGui.getInstance().getMainFrame(), true);
-                    if (path == null && CrossSystem.is64BitOperatingSystem()) {
-                        path = FFMpegInstallTypeChooserDialog.searchFileIn(new File(systemroot, "Syswow64/ffmpeg.exe"), JDGui.getInstance() == null ? null : JDGui.getInstance().getMainFrame(), true);
-
-                    }
-                }
-
-            }
-            if (path == null) {
-                String systemroot = System.getenv("WINDIR");
-                if (StringUtils.isNotEmpty(systemroot)) {
-                    path = FFMpegInstallTypeChooserDialog.searchFileIn(new File(systemroot, "System32/ffmpeg.exe"), JDGui.getInstance() == null ? null : JDGui.getInstance().getMainFrame(), true);
-                    if (path == null && CrossSystem.is64BitOperatingSystem()) {
-                        path = FFMpegInstallTypeChooserDialog.searchFileIn(new File(systemroot, "Syswow64/ffmpeg.exe"), JDGui.getInstance() == null ? null : JDGui.getInstance().getMainFrame(), true);
-
-                    }
-                }
-
-            }
-
-        } else if (CrossSystem.isMac()) {
-            // different ffmpeg version for 10.6-
-            if (CrossSystem.getMacOSVersion() < 10600000) {
-                path = FFMpegInstallTypeChooserDialog.searchFileIn(Application.getResource("tools/mac/ffmpeg_10.5.x-/"), JDGui.getInstance() == null ? null : JDGui.getInstance().getMainFrame(), true);
-            } else {
-                path = FFMpegInstallTypeChooserDialog.searchFileIn(Application.getResource("tools/mac/ffmpeg_10.6+/"), JDGui.getInstance() == null ? null : JDGui.getInstance().getMainFrame(), true);
-            }
-
-        } else {
-            path = FFMpegInstallTypeChooserDialog.searchFileIn(Application.getResource("tools/linux/ffmpeg/"), JDGui.getInstance() == null ? null : JDGui.getInstance().getMainFrame(), true);
-        }
-        return path;
-    }
 }

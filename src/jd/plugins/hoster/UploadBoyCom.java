@@ -110,6 +110,7 @@ public class UploadBoyCom extends PluginForHost {
         try {
             link.setLinkID(id);
         } catch (Throwable e) {
+            link.setProperty("LINKDUPEID", id);
         }
         link.setUrlDownload(link.getDownloadURL().replaceAll(importedHost, desiredHost));
 

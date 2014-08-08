@@ -68,11 +68,14 @@ public class HosterOrderPanel extends SwitchPanel implements ActionListener, Acc
         table.getSelectionModel().addListSelectionListener(new MinimumSelectionObserver(table, ra, 1));
 
         tb.add(new ExtButton(new BuyAction((PremiumAccountTable) null)), "sg 2,height 26!");
+
         tb.add(new ExtButton(new RefreshAction()), "sg 2,height 26!");
+
         add(txt, "gaptop 0,spanx,growx,pushx,gapbottom 5,wmin 10");
         add(new JScrollPane(table));
 
         add(tb);
+
     }
 
     @Override

@@ -176,7 +176,7 @@ public class DailyMotionCom extends PluginForHost {
         if (isHDS(downloadLink)) {
             downloadLink.getLinkStatus().setStatusText("HDS stream download is not supported (yet)!");
             downloadLink.setFinalFileName(getFormattedFilename(downloadLink));
-            return AvailableStatus.TRUE;
+            return AvailableStatus.FALSE;
         } else if (downloadLink.getBooleanProperty("isrtmp", false)) {
             getRTMPlink();
         } else if (isSubtitle(downloadLink)) {
@@ -211,25 +211,32 @@ public class DailyMotionCom extends PluginForHost {
             setupRTMPConnection(stream, dl);
             ((RTMPDownload) dl).startDownload();
         } else {
-            /* Workaround for old downloadcore bug that can lead to incomplete files */
-            br.getHeaders().put("Accept-Encoding", "identity");
-            downloadLink.setFinalFileName(getFormattedFilename(downloadLink));
-            /*
-             * They do allow resume and unlimited chunks but resuming or using more than 1 chunk causes problems, the file will then be
-             * corrupted!
-             */
-            dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, false, 1);
-            /* Their servers usually return a valid size - if not, it's probably a server error */
-            final long contentlength = dl.getConnection().getLongContentLength();
-            if (contentlength == -1) {
-                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error", 30 * 60 * 1000l);
-            }
-            if (dl.getConnection().getContentType().contains("html")) {
-                br.followConnection();
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            }
-            dl.startDownload();
+            downloadDirect(downloadLink);
+
         }
+        dl.startDownload();
+    }
+
+    protected void downloadDirect(DownloadLink downloadLink) throws Exception {
+
+        /* Workaround for old downloadcore bug that can lead to incomplete files */
+        br.getHeaders().put("Accept-Encoding", "identity");
+        downloadLink.setFinalFileName(getFormattedFilename(downloadLink));
+        /*
+         * They do allow resume and unlimited chunks but resuming or using more than 1 chunk causes problems, the file will then be
+         * corrupted!
+         */
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, false, 1);
+        /* Their servers usually return a valid size - if not, it's probably a server error */
+        final long contentlength = dl.getConnection().getLongContentLength();
+        if (contentlength == -1) {
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error", 30 * 60 * 1000l);
+        }
+        if (dl.getConnection().getContentType().contains("html")) {
+            br.followConnection();
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        dl.startDownload();
     }
 
     private String findFreshDirectlink(final DownloadLink dl) throws IOException {
@@ -246,11 +253,15 @@ public class DailyMotionCom extends PluginForHost {
             final String qualityvalue = dl.getStringProperty("qualityvalue", null);
             final String directlinkinfo[] = foundqualities.get(qualityvalue);
             dllink = Encoding.htmlDecode(directlinkinfo[0]);
+            onNewDirectLink(dl, dllink);
         } catch (final Throwable e) {
             dllink = null;
             return null;
         }
         return dllink;
+    }
+
+    protected void onNewDirectLink(DownloadLink dl, String dllink2) {
     }
 
     @Override
@@ -267,7 +278,7 @@ public class DailyMotionCom extends PluginForHost {
         return ai;
     }
 
-    private boolean checkDirectLink(final DownloadLink downloadLink) {
+    protected boolean checkDirectLink(final DownloadLink downloadLink) {
         if (dllink != null) {
             br.setFollowRedirects(false);
             try {
@@ -448,8 +459,7 @@ public class DailyMotionCom extends PluginForHost {
     }
 
     private void setConfigElements() {
-        final ConfigEntry hq = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), ALLOW_BEST, JDL.L("plugins.hoster.dailymotioncom.checkbest", "Only grab the best available resolution")).setDefaultValue(false);
-        getConfig().addEntry(hq);
+        final ConfigEntry hq = addConfigElementBestOnly();
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_SEPARATOR));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), ALLOW_LQ, JDL.L("plugins.hoster.dailymotioncom.checkLQ", "Grab LQ/LD [320x240]?")).setDefaultValue(true).setEnabledCondidtion(hq, false));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), ALLOW_SD, JDL.L("plugins.hoster.dailymotioncom.checkSD", "Grab SD/HQ [512x384]?")).setDefaultValue(true).setEnabledCondidtion(hq, false));
@@ -457,7 +467,7 @@ public class DailyMotionCom extends PluginForHost {
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), ALLOW_720, JDL.L("plugins.hoster.dailymotioncom.check720", "Grab [1280x720]?")).setDefaultValue(true).setEnabledCondidtion(hq, false));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), ALLOW_1080, JDL.L("plugins.hoster.dailymotioncom.check1080", "Grab [1920x1080]?")).setDefaultValue(true).setEnabledCondidtion(hq, false));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), ALLOW_OTHERS, JDL.L("plugins.hoster.dailymotioncom.checkother", "Grab other available qualities (RTMP/OTHERS)?")).setDefaultValue(true).setEnabledCondidtion(hq, false));
-        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), ALLOW_HDS, JDL.L("plugins.hoster.dailymotioncom.checkhds", "Grab hds (not downloadable yet!)?")).setDefaultValue(false).setEnabledCondidtion(hq, false));
+        addConfigElementHDS(hq);
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_SEPARATOR));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_LABEL, "Customize the filenames"));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_TEXTFIELD, getPluginConfig(), CUSTOM_DATE, JDL.L("plugins.hoster.dailymotioncom.customdate", "Define how the date should look.")).setDefaultValue(defaultCustomDate));
@@ -474,6 +484,16 @@ public class DailyMotionCom extends PluginForHost {
         }
         sb.append("</html>");
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_LABEL, sb.toString()));
+    }
+
+    public void addConfigElementHDS(final ConfigEntry hq) {
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), ALLOW_HDS, JDL.L("plugins.hoster.dailymotioncom.checkhds", "Grab hds (not downloadable yet!)?")).setDefaultValue(false).setEnabledCondidtion(hq, false));
+    }
+
+    public ConfigEntry addConfigElementBestOnly() {
+        final ConfigEntry hq = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), ALLOW_BEST, JDL.L("plugins.hoster.dailymotioncom.checkbest", "Only grab the best available resolution")).setDefaultValue(false);
+        getConfig().addEntry(hq);
+        return hq;
     }
 
     @Override

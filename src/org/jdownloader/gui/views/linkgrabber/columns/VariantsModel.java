@@ -8,7 +8,7 @@ import org.jdownloader.controlling.linkcrawler.LinkVariant;
 
 public class VariantsModel extends DefaultComboBoxModel<LinkVariant> {
 
-    public VariantsModel(List<LinkVariant> variants) {
+    public VariantsModel(List<? extends LinkVariant> variants) {
         super(variants.toArray(new LinkVariant[] {}));
     }
 

@@ -359,7 +359,9 @@ public class ConfigEntry implements Serializable {
     }
 
     public boolean isConditionalEnabled(ConfigEntry source, Object newData) {
-        if (conditionEntry == null) return true;
+        if (conditionEntry == null) {
+            return true;
+        }
         if (source == null) {
 
             //
@@ -395,6 +397,9 @@ public class ConfigEntry implements Serializable {
     }
 
     public ConfigEntry setEnabledCondidtion(final ConfigEntry conditionEntry, final boolean compareValue) {
+        if (conditionEntry == null) {
+            return this;
+        }
         this.conditionEntry = conditionEntry;
         this.compareValue = compareValue;
         conditionEntry.addListener(this);
@@ -429,7 +434,9 @@ public class ConfigEntry implements Serializable {
     }
 
     public void valueChanged(final Object newValue) {
-        if (!notifyChanges) return;
+        if (!notifyChanges) {
+            return;
+        }
         for (final ConfigEntry next : listener) {
             final GuiConfigListener nextGuiListener = next.getGuiListener();
             if (nextGuiListener != null) {

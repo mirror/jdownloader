@@ -3644,12 +3644,13 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
                                 }
                             }
                             // we can do this, because the localFilecheck always runs BEFORE the download
+                            // except for org.jdownloader.controlling.linkcrawler.GenericVariants.DEMUX_GENERIC_AUDIO
                             controller.setSessionDownloadFilename(newName);
-                            downloadLink.forceFileName(newName);
+                            downloadLink.setForcedFileName(newName);
                             downloadLink.setChunksProgress(null);
                         } catch (Throwable e) {
                             LogSource.exception(controller.getLogger(), e);
-                            downloadLink.forceFileName(null);
+                            downloadLink.setForcedFileName(null);
                             throw new PluginException(LinkStatus.ERROR_ALREADYEXISTS);
                         }
                         break;
@@ -3940,7 +3941,7 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
     public void renameLink(final DownloadLink downloadLink, final String value) {
 
         if (!StringUtils.equals(downloadLink.getForcedFileName(), value)) {
-            logger.log(new Exception("Rename"));
+            // logger.log(new Exception("Rename"));
             logger.info("Requested Rename of " + downloadLink + " to " + value);
             enqueueJob(new DownloadWatchDogJob() {
                 @Override
@@ -3948,11 +3949,11 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
                     if (!StringUtils.equals(downloadLink.getForcedFileName(), value)) {
                         if (downloadLink.getDownloadLinkController() != null) {
                             logger.info("Requested Rename of " + downloadLink + " to " + value + " DELAYED");
-                            downloadLink.forceFileName(value);
+                            downloadLink.setForcedFileName(value);
                         } else if (downloadLink.getDefaultPlugin() != null) {
                             logger.info("Requested Rename of " + downloadLink + " to " + value + " NOW");
                             move(downloadLink, downloadLink.getParentNode().getDownloadDirectory(), downloadLink.getName(), downloadLink.getParentNode().getDownloadDirectory(), value);
-                            downloadLink.forceFileName(value);
+                            downloadLink.setForcedFileName(value);
                         }
                     }
                 }

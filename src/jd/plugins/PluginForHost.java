@@ -17,12 +17,18 @@
 package jd.plugins;
 
 import java.awt.Component;
+import java.awt.Toolkit;
+import java.awt.event.ActionEvent;
 import java.io.File;
 import java.io.IOException;
 import java.net.URISyntaxException;
 import java.net.URL;
 import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.Comparator;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -30,6 +36,8 @@ import java.util.regex.Pattern;
 
 import javax.swing.JComponent;
 import javax.swing.JLabel;
+import javax.swing.JMenu;
+import javax.swing.JMenuItem;
 import javax.swing.JPanel;
 import javax.swing.SwingConstants;
 
@@ -40,9 +48,13 @@ import jd.controlling.accountchecker.AccountCheckerThread;
 import jd.controlling.captcha.CaptchaSettings;
 import jd.controlling.captcha.SkipException;
 import jd.controlling.captcha.SkipRequest;
+import jd.controlling.downloadcontroller.DownloadWatchDog;
 import jd.controlling.downloadcontroller.ExceptionRunnable;
 import jd.controlling.downloadcontroller.SingleDownloadController;
 import jd.controlling.downloadcontroller.SingleDownloadController.WaitingQueueItem;
+import jd.controlling.linkchecker.LinkChecker;
+import jd.controlling.linkcollector.LinkCollector;
+import jd.controlling.linkcrawler.CheckableLink;
 import jd.controlling.linkcrawler.CrawledLink;
 import jd.http.Browser;
 import jd.nutils.Formatter;
@@ -55,8 +67,10 @@ import jd.plugins.download.Downloadable;
 import org.appwork.storage.JSonStorage;
 import org.appwork.storage.config.JsonConfig;
 import org.appwork.swing.MigPanel;
+import org.appwork.swing.action.BasicAction;
 import org.appwork.uio.UIOManager;
 import org.appwork.utils.Application;
+import org.appwork.utils.Files;
 import org.appwork.utils.IO;
 import org.appwork.utils.IO.SYNC;
 import org.appwork.utils.ProgressFeedback;
@@ -65,6 +79,7 @@ import org.appwork.utils.StringUtils;
 import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.logging2.LogSource;
 import org.appwork.utils.os.CrossSystem;
+import org.appwork.utils.swing.EDTRunner;
 import org.appwork.utils.swing.SwingUtils;
 import org.appwork.utils.swing.dialog.AbstractDialog;
 import org.appwork.utils.swing.dialog.Dialog;
@@ -88,6 +103,14 @@ import org.jdownloader.captcha.v2.ChallengeSolver;
 import org.jdownloader.captcha.v2.challenge.stringcaptcha.BasicCaptchaChallenge;
 import org.jdownloader.captcha.v2.solverjob.ResponseList;
 import org.jdownloader.controlling.FileCreationManager;
+import org.jdownloader.controlling.ffmpeg.FFMpegInstallProgress;
+import org.jdownloader.controlling.ffmpeg.FFmpeg;
+import org.jdownloader.controlling.ffmpeg.FFmpegProvider;
+import org.jdownloader.controlling.ffmpeg.FFmpegSetup;
+import org.jdownloader.controlling.ffmpeg.FFprobe;
+import org.jdownloader.controlling.filter.CompiledFiletypeFilter.ExtensionsFilterInterface;
+import org.jdownloader.controlling.filter.CompiledFiletypeFilter.VideoExtensions;
+import org.jdownloader.controlling.linkcrawler.GenericVariants;
 import org.jdownloader.controlling.linkcrawler.LinkVariant;
 import org.jdownloader.gui.IconKey;
 import org.jdownloader.gui.dialog.AskToUsePremiumDialog;
@@ -96,16 +119,20 @@ import org.jdownloader.gui.helpdialogs.HelpDialog;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.gui.views.SelectionInfo.PluginView;
 import org.jdownloader.images.AbstractIcon;
+import org.jdownloader.images.BadgeIcon;
 import org.jdownloader.images.NewTheme;
 import org.jdownloader.logging.LogController;
 import org.jdownloader.plugins.CaptchaStepProgress;
 import org.jdownloader.plugins.PluginTaskID;
+import org.jdownloader.plugins.SkipReason;
+import org.jdownloader.plugins.SkipReasonException;
 import org.jdownloader.plugins.SleepPluginProgress;
 import org.jdownloader.plugins.accounts.AccountFactory;
 import org.jdownloader.plugins.controller.host.LazyHostPlugin;
 import org.jdownloader.settings.staticreferences.CFG_GENERAL;
 import org.jdownloader.settings.staticreferences.CFG_GUI;
 import org.jdownloader.translate._JDT;
+import org.jdownloader.updatev2.UpdateController;
 
 /**
  * Dies ist die Oberklasse fuer alle Plugins, die von einem Anbieter Dateien herunterladen koennen
@@ -406,10 +433,6 @@ public abstract class PluginForHost extends Plugin {
         this.customizedDownloadFactory = customizedDownloadFactory;
     }
 
-    public boolean checkLinks(final DownloadLink[] urls) {
-        return false;
-    }
-
     @Override
     public String getHost() {
         return lazyP.getDisplayName();
@@ -692,8 +715,92 @@ public abstract class PluginForHost extends Plugin {
         return true;
     }
 
+    public void checkFFmpeg(DownloadLink downloadLink, String reason) throws SkipReasonException, InterruptedException {
+        FFmpeg ffmpeg = new FFmpeg();
+        synchronized (DownloadWatchDog.getInstance()) {
+
+            if (!ffmpeg.isAvailable()) {
+                if (UpdateController.getInstance().getHandler() == null) {
+                    getLogger().warning("Please set FFMPEG: BinaryPath in advanced options");
+                    throw new SkipReasonException(SkipReason.FFMPEG_MISSING);
+                }
+                final FFMpegInstallProgress progress = new FFMpegInstallProgress();
+                progress.setProgressSource(this);
+                try {
+                    downloadLink.addPluginProgress(progress);
+                    FFmpegProvider.getInstance().install(progress, reason);
+                } finally {
+                    downloadLink.removePluginProgress(progress);
+                }
+                ffmpeg.setPath(JsonConfig.create(FFmpegSetup.class).getBinaryPath());
+                if (!ffmpeg.isAvailable()) {
+                    //
+
+                    List<String> requestedInstalls = UpdateController.getInstance().getHandler().getRequestedInstalls();
+                    if (requestedInstalls != null && requestedInstalls.contains(org.jdownloader.controlling.ffmpeg.InstallThread.getFFmpegExtensionName())) {
+                        throw new SkipReasonException(SkipReason.UPDATE_RESTART_REQUIRED);
+
+                    } else {
+                        throw new SkipReasonException(SkipReason.FFMPEG_MISSING);
+                    }
+
+                    // throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE,
+                    // _GUI._.YoutubeDash_handleFree_ffmpegmissing());
+                }
+            }
+        }
+    }
+
+    public void checkFFProbe(DownloadLink downloadLink, String reason) throws SkipReasonException, InterruptedException {
+        FFprobe ffprobe = new FFprobe();
+        synchronized (DownloadWatchDog.getInstance()) {
+
+            if (!ffprobe.isAvailable()) {
+                String filename = new File(JsonConfig.create(FFmpegSetup.class).getBinaryPath()).getName().replace("ffmpeg", "ffprobe");
+                File ffprobeFile = new File(new File(JsonConfig.create(FFmpegSetup.class).getBinaryPath()).getParentFile(), filename);
+                if (ffprobeFile.exists()) {
+                    JsonConfig.create(FFmpegSetup.class).setBinaryPathProbe(ffprobeFile.getPath());
+                    ffprobe = new FFprobe();
+                    if (ffprobe.isAvailable()) {
+                        return;
+                    }
+                }
+                if (UpdateController.getInstance().getHandler() == null) {
+                    getLogger().warning("Please set FFProbe: BinaryPath in advanced options");
+                    throw new SkipReasonException(SkipReason.FFPROBE_MISSING);
+                }
+                final FFMpegInstallProgress progress = new FFMpegInstallProgress();
+                progress.setProgressSource(this);
+                try {
+                    downloadLink.addPluginProgress(progress);
+                    FFmpegProvider.getInstance().install(progress, reason);
+                } finally {
+                    downloadLink.removePluginProgress(progress);
+                }
+                ffprobe.setPath(JsonConfig.create(FFmpegSetup.class).getBinaryPathProbe());
+                if (!ffprobe.isAvailable()) {
+                    //
+
+                    List<String> requestedInstalls = UpdateController.getInstance().getHandler().getRequestedInstalls();
+                    if (requestedInstalls != null && requestedInstalls.contains(org.jdownloader.controlling.ffmpeg.InstallThread.getFFmpegExtensionName())) {
+                        throw new SkipReasonException(SkipReason.UPDATE_RESTART_REQUIRED);
+
+                    } else {
+                        throw new SkipReasonException(SkipReason.FFPROBE_MISSING);
+                    }
+
+                    // throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE,
+                    // _GUI._.YoutubeDash_handleFree_ffmpegmissing());
+                }
+            }
+        }
+    }
+
     public void handle(final DownloadLink downloadLink, final Account account) throws Exception {
         try {
+
+            preHandle(downloadLink, account);
+
             waitForNextStartAllowed(downloadLink, account);
             if (account != null) {
                 /* with account */
@@ -706,11 +813,34 @@ public abstract class PluginForHost extends Plugin {
                 /* without account */
                 handleFree(downloadLink);
             }
+            handlePost(downloadLink, account);
         } finally {
             try {
                 downloadLink.getDownloadLinkController().getConnectionHandler().removeConnectionHandler(dl.getManagedConnetionHandler());
             } catch (final Throwable e) {
             }
+
+        }
+    }
+
+    private void handlePost(DownloadLink downloadLink, Account account) throws Exception {
+        if (downloadLink.getBooleanProperty("GENERIC_VARIANTS", false) && downloadLink.hasVariantSupport()) {
+
+            GenericVariants var = downloadLink.getVariant(GenericVariants.class);
+
+            var.runPostDownload(this, downloadLink, account);
+
+        }
+
+    }
+
+    public void preHandle(final DownloadLink downloadLink, Account account) throws Exception {
+        if (downloadLink.getBooleanProperty("GENERIC_VARIANTS", false) && downloadLink.hasVariantSupport()) {
+
+            GenericVariants var = downloadLink.getVariant(GenericVariants.class);
+
+            var.runPreDownload(this, downloadLink, account);
+
         }
     }
 
@@ -1335,16 +1465,54 @@ public abstract class PluginForHost extends Plugin {
     public void resumeDownloadlink(DownloadLink downloadLink) {
     }
 
+    public boolean checkLinks(final DownloadLink[] urls) {
+        return false;
+    }
+
+    public boolean checkLinkList(Collection<DownloadLink> massLinkCheck) {
+        try {
+            return checkLinks(massLinkCheck.toArray(new DownloadLink[massLinkCheck.size()]));
+        } finally {
+
+        }
+
+    }
+
+    //
+    public AvailableStatus checkLink(DownloadLink downloadLink) throws Exception {
+        try {
+            return requestFileInformation(downloadLink);
+        } finally {
+
+        }
+    }
+
     public void setActiveVariantByLink(DownloadLink downloadLink, LinkVariant variant) {
+        GenericVariants v = (GenericVariants) variant;
+        downloadLink.setVariant(variant);
+        switch (v) {
+        case ORIGINAL:
+
+            downloadLink.setCustomExtension(null);
+            break;
+        default:
+
+            downloadLink.setCustomExtension(v.getExtension());
+            break;
+
+        }
+        // modifiyNameByVariant(downloadLink);
 
     }
 
     public LinkVariant getActiveVariantByLink(DownloadLink downloadLink) {
-        return null;
+        return downloadLink.getVariant(GenericVariants.class);
+
     }
 
-    public List<LinkVariant> getVariantsByLink(DownloadLink downloadLink) {
-        return null;
+    public List<? extends LinkVariant> getVariantsByLink(DownloadLink downloadLink) {
+
+        return downloadLink.getVariants(GenericVariants.class);
     }
 
     public JComponent getVariantPopupComponent(DownloadLink downloadLink) {
@@ -1352,10 +1520,139 @@ public abstract class PluginForHost extends Plugin {
     }
 
     public boolean hasVariantToChooseFrom(DownloadLink downloadLink) {
-        return false;
+        List<? extends LinkVariant> variants = getVariantsByLink(downloadLink);
+        return variants != null && variants.size() > 0;
     }
 
-    public void extendLinkgrabberContextMenu(JComponent parent, PluginView<CrawledLink> pv) {
+    public void extendLinkgrabberContextMenu(JComponent parent, final PluginView<CrawledLink> pv) {
+
+        final JMenu setVariants = new JMenu(_GUI._.PluginForHost_extendLinkgrabberContextMenu_generic_convert());
+        setVariants.setIcon(DomainInfo.getInstance(getHost()).getFavIcon());
+        setVariants.setEnabled(false);
+
+        final JMenu addVariants = new JMenu("Add converted variant...");
+
+        addVariants.setIcon(new BadgeIcon(DomainInfo.getInstance(getHost()).getFavIcon(), new AbstractIcon(IconKey.ICON_ADD, 16), 4, 4));
+        addVariants.setEnabled(false);
+
+        // setVariants.setVisible(false);
+        // addVariants.setVisible(false);
+        new Thread("Collect Variants") {
+            public void run() {
+                try {
+                    Thread.sleep(2000);
+                } catch (InterruptedException e1) {
+                    e1.printStackTrace();
+                }
+                HashSet<GenericVariants> map = new HashSet<GenericVariants>();
+                final ArrayList<GenericVariants> list = new ArrayList<GenericVariants>();
+                for (CrawledLink cl : pv.getChildren()) {
+
+                    if (cl.getDownloadLink() == null || !cl.getDownloadLink().getBooleanProperty("GENERIC_VARIANTS", false) || !cl.getDownloadLink().hasVariantSupport()) {
+                        continue;
+                    }
+
+                    List<GenericVariants> v = cl.getDownloadLink().getVariants(GenericVariants.class);
+                    if (v != null) {
+                        for (LinkVariant lv : v) {
+                            if (lv instanceof GenericVariants) {
+                                if (map.add((GenericVariants) lv)) {
+                                    list.add((GenericVariants) lv);
+                                }
+                            }
+                        }
+                    }
+                }
+                if (list.size() == 0) {
+                    return;
+                }
+                Collections.sort(list, new Comparator<GenericVariants>() {
+
+                    @Override
+                    public int compare(GenericVariants o1, GenericVariants o2) {
+                        return o1.name().compareTo(o2.name());
+                    }
+                });
+
+                new EDTRunner() {
+
+                    @Override
+                    protected void runInEDT() {
+                        setVariants.setEnabled(true);
+                        addVariants.setEnabled(true);
+                        setVariants.setVisible(true);
+                        addVariants.setVisible(true);
+
+                        for (final GenericVariants gv : list) {
+
+                            setVariants.add(new JMenuItem(new BasicAction() {
+                                {
+                                    setName(CFG_GUI.EXTENDED_VARIANT_NAMES_ENABLED.isEnabled() ? gv.getExtendedName() : gv.getName());
+                                }
+
+                                @Override
+                                public void actionPerformed(ActionEvent e) {
+                                    java.util.List<CheckableLink> checkableLinks = new ArrayList<CheckableLink>(1);
+
+                                    for (CrawledLink cl : pv.getChildren()) {
+                                        // List<GenericVariants> variants = new ArrayList<GenericVariants>();
+                                        for (LinkVariant v : getVariantsByLink(cl.getDownloadLink())) {
+                                            if (v.equals(gv)) {
+                                                LinkCollector.getInstance().setActiveVariantForLink(cl, gv);
+                                                checkableLinks.add(cl);
+                                                break;
+                                            }
+                                        }
+
+                                    }
+
+                                    LinkChecker<CheckableLink> linkChecker = new LinkChecker<CheckableLink>(true);
+                                    linkChecker.check(checkableLinks);
+                                }
+
+                            }));
+
+                            addVariants.add(new JMenuItem(new BasicAction() {
+                                {
+                                    setName(CFG_GUI.EXTENDED_VARIANT_NAMES_ENABLED.isEnabled() ? gv.getExtendedName() : gv.getName());
+                                }
+
+                                @Override
+                                public void actionPerformed(ActionEvent e) {
+                                    java.util.List<CheckableLink> checkableLinks = new ArrayList<CheckableLink>(1);
+
+                                    for (CrawledLink cl : pv.getChildren()) {
+                                        List<GenericVariants> variants = new ArrayList<GenericVariants>();
+                                        for (LinkVariant v : getVariantsByLink(cl.getDownloadLink())) {
+                                            if (v.equals(gv)) {
+                                                CrawledLink newLink = LinkCollector.getInstance().addAdditional(cl, gv);
+
+                                                if (newLink != null) {
+                                                    checkableLinks.add(newLink);
+                                                } else {
+                                                    Toolkit.getDefaultToolkit().beep();
+                                                }
+                                                break;
+                                            }
+                                        }
+
+                                    }
+
+                                    LinkChecker<CheckableLink> linkChecker = new LinkChecker<CheckableLink>(true);
+                                    linkChecker.check(checkableLinks);
+                                }
+
+                            }));
+                        }
+                    }
+
+                };
+
+            };
+        }.start();
+
+        parent.add(setVariants);
+        parent.add(addVariants);
     }
 
     public void extendDownloadsTableContextMenu(JComponent parent, PluginView<DownloadLink> pv) {
@@ -1690,6 +1987,56 @@ public abstract class PluginForHost extends Plugin {
      */
 
     public String getMirrorID(DownloadLink link) {
+        return null;
+    }
+
+    public void resetLink(DownloadLink downloadLink) {
+        resetDownloadlink(downloadLink);
+
+    }
+
+    public List<GenericVariants> getGenericVariants(DownloadLink downloadLink) {
+        List<String> converts = getConvertToList(downloadLink);
+        if (converts != null && converts.size() > 0) {
+            List<GenericVariants> variants = new ArrayList<GenericVariants>();
+            variants.add(GenericVariants.ORIGINAL);
+            for (String v : converts) {
+                try {
+                    variants.add(GenericVariants.valueOf(v));
+                } catch (Throwable e) {
+                    e.printStackTrace();
+                }
+
+            }
+            if (variants.size() > 1) {
+                return variants;
+            }
+        } else {
+            String name = downloadLink.getName();
+            String exten = Files.getExtension(name);
+            if (exten != null) {
+                boolean isVideo = false;
+                for (final ExtensionsFilterInterface extension : VideoExtensions.values()) {
+                    if (extension.getPattern().matcher(exten).matches()) {
+                        isVideo = true;
+                        break;
+                    }
+                }
+                if (isVideo) {
+                    List<GenericVariants> variants = new ArrayList<GenericVariants>();
+
+                    variants.add(GenericVariants.DEMUX_GENERIC_AUDIO);
+
+                    return variants;
+                }
+
+            }
+        }
+        return null;
+    }
+
+    public List<String> getConvertToList(DownloadLink downloadLink) {
+
         return null;
     }
 

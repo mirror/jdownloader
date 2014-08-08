@@ -43,6 +43,8 @@ import jd.plugins.DownloadLinkDatabindingInterface.Key;
 import jd.plugins.download.DownloadInterface;
 
 import org.appwork.exceptions.WTFException;
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.TypeRef;
 import org.appwork.utils.Application;
 import org.appwork.utils.NullsafeAtomicReference;
 import org.appwork.utils.Regex;
@@ -54,6 +56,7 @@ import org.jdownloader.controlling.DefaultDownloadLinkViewImpl;
 import org.jdownloader.controlling.DownloadLinkView;
 import org.jdownloader.controlling.Priority;
 import org.jdownloader.controlling.UniqueAlltimeID;
+import org.jdownloader.controlling.linkcrawler.LinkVariant;
 import org.jdownloader.extensions.extraction.ExtractionStatus;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.logging.LogController;
@@ -188,6 +191,7 @@ public class DownloadLink extends Property implements Serializable, AbstractPack
     private transient volatile long                             lastAvailableStatusChange           = -1;
 
     private transient volatile FilePackage                      lastValidFilePackage                = null;
+    private transient volatile String[]                         cachedName                          = null;
 
     public FilePackage getLastValidFilePackage() {
         return lastValidFilePackage;
@@ -561,6 +565,7 @@ public class DownloadLink extends Property implements Serializable, AbstractPack
             fileName = CrossSystem.alleviatePathParts(fileName);
             this.setProperty(PROPERTY_CUSTOM_LOCALFILENAME, fileName);
         }
+        cachedName = null;
     }
 
     /**
@@ -575,6 +580,7 @@ public class DownloadLink extends Property implements Serializable, AbstractPack
             fileName = CrossSystem.alleviatePathParts(fileName);
             this.setProperty(PROPERTY_CUSTOM_LOCALFILENAMEAPPEND, fileName);
         }
+        cachedName = null;
     }
 
     /**
@@ -654,31 +660,74 @@ public class DownloadLink extends Property implements Serializable, AbstractPack
      * @return
      */
     public String getName(boolean ignoreUnsafe, boolean ignoreForcedFilename) {
-        String ret = ignoreForcedFilename ? null : this.getForcedFileName();
+        String ret = getCachedName(ignoreUnsafe, ignoreForcedFilename);
         if (ret != null) {
+            return ret;
+        }
+        ret = ignoreForcedFilename ? null : this.getForcedFileName();
+        if (ret != null) {
+            // ret = replaceCustomExtension(ret);
+            setCachedName(ignoreUnsafe, ignoreForcedFilename, ret);
             return ret;
         }
         ret = this.getFinalFileName();
         if (ret != null) {
+            ret = replaceCustomExtension(ret);
+            setCachedName(ignoreUnsafe, ignoreForcedFilename, ret);
             return ret;
         }
         if (ignoreUnsafe) {
+            setCachedName(ignoreUnsafe, ignoreForcedFilename, null);
             return null;
         }
         try {
             if (name != null) {
-                return name;
+                ret = replaceCustomExtension(name);
+                setCachedName(ignoreUnsafe, ignoreForcedFilename, ret);
+                return ret;
             }
             if (this.getDownloadURL() != null) {
                 String urlName = new File(new URL(this.getDownloadURL()).toURI()).getName();
                 if (urlName != null) {
-                    return urlName;
+                    ret = replaceCustomExtension(urlName);
+                    setCachedName(ignoreUnsafe, ignoreForcedFilename, ret);
+                    return ret;
                 }
             }
             return UNKNOWN_FILE_NAME;
         } catch (Exception e) {
             return UNKNOWN_FILE_NAME;
         }
+    }
+
+    public String replaceCustomExtension(String name) {
+        if (name == null) {
+            return null;
+        }
+        String cust = getCustomExtension();
+        if (cust != null) {
+            final int index = name.lastIndexOf(".");
+            if (index < 0) {
+                return name + "." + cust;
+            }
+            return name.substring(0, index + 1) + cust;
+
+        }
+        return name;
+    }
+
+    private void setCachedName(boolean ignoreUnsafe, boolean ignoreForcedFilename, String ret) {
+        if (cachedName == null) {
+            cachedName = new String[] { null, null, null, null };
+        }
+        cachedName[(ignoreUnsafe ? 1 : 0) * 2 + (ignoreForcedFilename ? 1 : 0)] = ret;
+    }
+
+    private String getCachedName(boolean ignoreUnsafe, boolean ignoreForcedFilename) {
+        if (cachedName == null) {
+            return null;
+        }
+        return cachedName[(ignoreUnsafe ? 1 : 0) * 2 + (ignoreForcedFilename ? 1 : 0)];
     }
 
     public LinkInfo getLinkInfo() {
@@ -762,7 +811,10 @@ public class DownloadLink extends Property implements Serializable, AbstractPack
     }
 
     public String getLinkID() {
-        final String ret = this.getStringProperty(PROPERTY_LINKDUPEID, null);
+        String ret = this.getStringProperty(PROPERTY_LINKDUPEID, null);
+        if (ret == null) {
+            return getDownloadURL();
+        }
         return ret;
     }
 
@@ -889,7 +941,7 @@ public class DownloadLink extends Property implements Serializable, AbstractPack
         if (resetPlugins != null) {
             for (PluginForHost resetPlugin : resetPlugins) {
                 try {
-                    resetPlugin.resetDownloadlink(this);
+                    resetPlugin.resetLink(this);
                 } catch (final Throwable e) {
                     LogController.CL().log(e);
                 }
@@ -1140,7 +1192,9 @@ public class DownloadLink extends Property implements Serializable, AbstractPack
         if (StringUtils.isEmpty(name)) {
             name = UNKNOWN_FILE_NAME;
         }
+
         this.name = name;
+        cachedName = null;
         setLinkInfo(null);
         final String newName = getName();
         if (!StringUtils.equals(oldName, newName) && hasNotificationListener()) {
@@ -1149,18 +1203,34 @@ public class DownloadLink extends Property implements Serializable, AbstractPack
     }
 
     /**
+     * 
      * use this function to force a name, it has highest priority
      */
-    public void forceFileName(String name) {
-        String oldName = getName();
+    public void setForcedFileName(String name) {
+        String curForced = getStringProperty(PROPERTY_FORCEDFILENAME);
+        if (StringUtils.equals(name, curForced)) {
+            return;
+        }
+        String oldName = getName(false, true);
         if (StringUtils.isEmpty(name)) {
             this.setProperty(PROPERTY_FORCEDFILENAME, Property.NULL);
             oldName = getName();
         } else {
-            name = CrossSystem.alleviatePathParts(name);
-            this.setProperty(PROPERTY_FORCEDFILENAME, name);
+            if (StringUtils.equals(oldName, name)) {
+                if (curForced == null) {
+                    // name equals normal name
+                    return;
+                } else {
+                    this.setProperty(PROPERTY_FORCEDFILENAME, Property.NULL);
+                    oldName = getName();
+                }
+            } else {
+                name = CrossSystem.alleviatePathParts(name);
+                this.setProperty(PROPERTY_FORCEDFILENAME, name);
+            }
         }
         setLinkInfo(null);
+        cachedName = null;
         final String newName = getName();
         if (!StringUtils.equals(oldName, newName) && hasNotificationListener()) {
             notifyChanges(AbstractNodeNotifier.NOTIFY.PROPERTY_CHANCE, new DownloadLinkProperty(this, DownloadLinkProperty.Property.NAME, newName));
@@ -1197,7 +1267,9 @@ public class DownloadLink extends Property implements Serializable, AbstractPack
      */
     public void setFinalFileName(String newfinalFileName) {
         final String oldName = getName();
+
         finalFileName = null;
+
         if (!StringUtils.isEmpty(newfinalFileName)) {
             if (new Regex(newfinalFileName, Pattern.compile("r..\\.htm.?$", Pattern.CASE_INSENSITIVE)).matches()) {
                 System.out.println("Use Workaround for stupid >>rar.html<< uploaders!");
@@ -1209,6 +1281,7 @@ public class DownloadLink extends Property implements Serializable, AbstractPack
             this.setProperty(PROPERTY_FINALFILENAME, Property.NULL);
         }
         setLinkInfo(null);
+        cachedName = null;
         final String newName = getName();
         if (!StringUtils.equals(oldName, newName) && hasNotificationListener()) {
             notifyChanges(AbstractNodeNotifier.NOTIFY.PROPERTY_CHANCE, new DownloadLinkProperty(this, DownloadLinkProperty.Property.NAME, newName));
@@ -1231,6 +1304,7 @@ public class DownloadLink extends Property implements Serializable, AbstractPack
         } else {
             this.urlDownload = null;
         }
+        cachedName = null;
         if (previousURLDownload != null && !previousURLDownload.equals(urlDownload)) {
             if (getLinkID() == null) {
                 /* downloadURL changed, so set original one as linkID, so all dupemaps still work */
@@ -1751,6 +1825,116 @@ public class DownloadLink extends Property implements Serializable, AbstractPack
 
     public void firePropertyChange(DownloadLinkProperty downloadLinkProperty) {
         notifyChanges(AbstractNodeNotifier.NOTIFY.PROPERTY_CHANCE, downloadLinkProperty);
+    }
+
+    public void setVariants(List<? extends LinkVariant> list) {
+        this.setProperty("VARIANTS", JSonStorage.serializeToJson(list));
+        getTempProperties().setProperty("VARIANTS", null);
+    }
+
+    public void setVariant(LinkVariant variant) {
+        String orgLinkID = getStringProperty("ORG_LINKID");
+        if (orgLinkID == null) {
+            String linkID = getLinkID();
+            if (StringUtils.isEmpty(linkID)) {
+                linkID = getDownloadURL();
+            }
+            setProperty("ORG_LINKID", linkID);
+        }
+        this.setProperty("VARIANT", variant.getUniqueId());
+        setVariantSupport(true);
+        LinkVariant tmp = (LinkVariant) getTempProperties().getProperty("VARIANT");
+        if (tmp != null && !variant.getUniqueId().equals(tmp.getUniqueId())) {
+            getTempProperties().setProperty("VARIANT", null);
+        }
+        setLinkID(getStringProperty("ORG_LINKID") + "_" + variant.getUniqueId());
+
+    }
+
+    public <T extends LinkVariant> T getVariant(Class<T> type) {
+
+        try {
+            T cache = (T) getTempProperties().getProperty("VARIANT");
+            if (cache != null) {
+                return cache;
+            }
+        } catch (Throwable e) {
+
+        }
+        String var = getStringProperty("VARIANT");
+        if (var != null) {
+            try {
+                for (T v : getVariants(type)) {
+                    if (v.getUniqueId().equals(var)) {
+                        getTempProperties().setProperty("VARIANT", v);
+                        return v;
+                    }
+                }
+
+            } catch (Throwable e) {
+                e.printStackTrace();
+            }
+        }
+        return null;
+
+    }
+
+    public <T extends LinkVariant> List<T> getVariants(final Class<T> type) {
+        try {
+            List<T> cache = (List<T>) getTempProperties().getProperty("VARIANTS");
+
+            if (cache != null && false) {
+                T castTest = cache.get(0);
+                return cache;
+            }
+        } catch (Throwable e) {
+            e.printStackTrace();
+        }
+        String var = getStringProperty("VARIANTS");
+        if (var != null) {
+            try {
+                ArrayList<T> ret = new ArrayList<T>();
+                // TypeRef<ArrayList<T>> tref = new TypeRef<ArrayList<T>>() {
+                // };
+                //
+                // ParameterizedType t = (ParameterizedType) tref.getType();
+                // Type actual = t.getActualTypeArguments()[0];
+
+                ArrayList<Object> basic = JSonStorage.restoreFromString(var, new TypeRef<ArrayList<Object>>() {
+                });
+                for (Object o : basic) {
+
+                    T restored = JSonStorage.convert(o, new TypeRef<T>() {
+                        @Override
+                        public Type getType() {
+                            return type;
+                        }
+                    });
+                    ret.add(restored);
+                }
+                // ret.addAll();
+
+                getTempProperties().setProperty("VARIANTS", ret);
+                return ret;
+            } catch (Throwable e) {
+
+            }
+        }
+        return null;
+    }
+
+    public void setCustomExtension(String extension) {
+        String old = getCustomExtension();
+        setProperty("EXTENSION", extension);
+        cachedName = null;
+        if (!StringUtils.equals(old, extension) && hasNotificationListener()) {
+            notifyChanges(AbstractNodeNotifier.NOTIFY.PROPERTY_CHANCE, new DownloadLinkProperty(this, DownloadLinkProperty.Property.NAME, extension));
+        }
+
+    }
+
+    public String getCustomExtension() {
+        return getStringProperty("EXTENSION");
     }
 
 }

@@ -17,6 +17,7 @@
 package jd.gui.swing.jdgui.views.settings.panels.accountmanager.orderpanel;
 
 import javax.swing.Icon;
+import javax.swing.JComponent;
 
 import jd.gui.UserIO;
 
@@ -36,6 +37,12 @@ public class ChooseHosterDialog extends SearchComboBoxDialog<DomainInfo> {
     @Override
     protected Icon getIconByValue(DomainInfo value) {
         return value.getFavIcon();
+    }
+
+    @Override
+    public JComponent layoutDialogContent() {
+
+        return super.layoutDialogContent();
     }
 
     @Override

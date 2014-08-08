@@ -54,11 +54,14 @@ public class RemixShareCom extends PluginForHost {
         // clean links so prevent dupes and has less side effects with multihosters...
         final String fuid = getFileID(link);
         final String pnd = new Regex(link.getDownloadURL(), "https?://[\\w\\.]*?remixshare\\.com/").getMatch(-1);
-        if (fuid == null || pnd == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (fuid == null || pnd == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         link.setUrlDownload(pnd + "download/" + fuid);
         try {
             link.setLinkID(fuid);
-        } catch (final Throwable e) {
+        } catch (Throwable e) {
+            link.setProperty("LINKDUPEID", fuid);
         }
     }
 
@@ -72,16 +75,24 @@ public class RemixShareCom extends PluginForHost {
         br.setCookie("http://remixshare.com", "lang_en", "english");
         br.setFollowRedirects(true);
         br.getPage(downloadLink.getDownloadURL());
-        if (br.containsHTML(BLOCKED)) return AvailableStatus.UNCHECKABLE;
+        if (br.containsHTML(BLOCKED)) {
+            return AvailableStatus.UNCHECKABLE;
+        }
         br.setFollowRedirects(false);
         /*
          * 400 = File deleted, maybe abused 500 = Wrong link or maybe deleted some time ago
          */
-        if (br.containsHTML("Error Code: (400|500)\\.") || br.containsHTML("Please check the downloadlink")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (br.containsHTML("Error Code: (400|500)\\.") || br.containsHTML("Please check the downloadlink")) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
         String filename = Encoding.htmlDecode(br.getRegex(Pattern.compile("<span title=\\'([0-9]{10}_)?(.*?)\\'>", Pattern.CASE_INSENSITIVE)).getMatch(1));
-        if (filename == null) filename = Encoding.htmlDecode(br.getRegex(Pattern.compile("<title>(.*?)Download at remiXshare Filehosting", Pattern.CASE_INSENSITIVE)).getMatch(0));
+        if (filename == null) {
+            filename = Encoding.htmlDecode(br.getRegex(Pattern.compile("<title>(.*?)Download at remiXshare Filehosting", Pattern.CASE_INSENSITIVE)).getMatch(0));
+        }
         String filesize = br.getRegex("(>|\\.\\.\\.)\\&nbsp;\\((.*?)\\)<").getMatch(1);
-        if (filename == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (filename == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         downloadLink.setName(filename.trim());
         if (filesize != null) {
             filesize = Encoding.htmlDecode(filesize);
@@ -102,15 +113,21 @@ public class RemixShareCom extends PluginForHost {
         if (fun == null) {
             String[] allJs = br.getRegex("<script type=\"text/javascript\">(.*?)</script>").getColumn(0);
             for (String s : allJs) {
-                if (!s.contains("downloadfinal")) continue;
+                if (!s.contains("downloadfinal")) {
+                    continue;
+                }
                 fun = s;
                 break;
             }
         }
-        if (fun == null) return null;
+        if (fun == null) {
+            return null;
+        }
         fun = "var game = \"\";" + fun;
         String ah = new Regex(fun, "(document\\.getElementById\\((.*?)\\)\\.(innerHTML|href))").getMatch(0);
-        if (ah != null) fun = fun.replace(ah, "game");
+        if (ah != null) {
+            fun = fun.replace(ah, "game");
+        }
         Object result = new Object();
         final ScriptEngineManager manager = jd.plugins.hoster.DummyScriptEnginePlugin.getScriptEngineManager(this);
         final ScriptEngine engine = manager.getEngineByName("javascript");
@@ -120,7 +137,9 @@ public class RemixShareCom extends PluginForHost {
             logger.log(Level.SEVERE, e.getMessage(), e);
             return null;
         }
-        if (result == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (result == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         return result.toString();
     }
 
@@ -135,11 +154,15 @@ public class RemixShareCom extends PluginForHost {
     public void handleFree(DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
         br.setFollowRedirects(false);
-        if (br.containsHTML(BLOCKED)) throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, 10 * 1000l);
+        if (br.containsHTML(BLOCKED)) {
+            throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, 10 * 1000l);
+        }
         if (br.containsHTML("Download password")) {
             Form pw = br.getFormbyProperty("name", "pass");
             String pass = downloadLink.getStringProperty("pass", null);
-            if (pass == null) pass = Plugin.getUserInput("Password?", downloadLink);
+            if (pass == null) {
+                pass = Plugin.getUserInput("Password?", downloadLink);
+            }
             pw.put("passwd", pass);
             br.submitForm(pw);
             br.getPage(br.getRedirectLocation());
@@ -151,14 +174,22 @@ public class RemixShareCom extends PluginForHost {
             }
         }
         String lnk = execJS();
-        if (lnk == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        if (!lnk.startsWith("http://")) lnk = new Regex(lnk, "<a href=\"(http://.*?)\"").getMatch(0);
+        if (lnk == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        if (!lnk.startsWith("http://")) {
+            lnk = new Regex(lnk, "<a href=\"(http://.*?)\"").getMatch(0);
+        }
         br.getPage(lnk);
         String dllink = br.getRedirectLocation();
-        if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (dllink == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         br.setFollowRedirects(true);
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, false, 1);
-        if (dl.getConnection().getLongContentLength() == 0) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error", 2 * 60 * 60 * 1000l);
+        if (dl.getConnection().getLongContentLength() == 0) {
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error", 2 * 60 * 60 * 1000l);
+        }
         if (!(dl.getConnection().isContentDisposition())) {
             br.followConnection();
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);

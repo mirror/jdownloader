@@ -62,7 +62,8 @@ public class OBoomCom extends PluginForHost {
         link.setUrlDownload(link.getDownloadURL().replaceAll("\\.com/#/", "\\.com/#"));
         try {
             link.setLinkID(getFileID(link));
-        } catch (final Throwable e) {
+        } catch (Throwable e) {
+            link.setProperty("LINKDUPEID", getFileID(link));
         }
     }
 
@@ -215,7 +216,7 @@ public class OBoomCom extends PluginForHost {
     private String getValue(String response, String key) {
         String ret = new Regex(response, "\"" + key + "\":\\s*?\"(.*?)\"").getMatch(0);
         if (ret == null) {
-            ret = new Regex(response, "\"" + key + "\":\\s*?(\\d+)").getMatch(0);
+            ret = new Regex(response, "\"" + key + "\":\\s*?([\\d\\-]+)").getMatch(0);
         }
         return ret;
     }

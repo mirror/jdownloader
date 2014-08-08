@@ -451,7 +451,7 @@ public class ExternInterfaceImpl implements Cnl2APIBasics, Cnl2APIFlash {
                                 dl.setComment(desc[index2]);
                             }
                             if (index2 < fnames.length) {
-                                dl.forceFileName(fnames[index2]);
+                                dl.setForcedFileName(fnames[index2]);
                             }
                         }
                     });

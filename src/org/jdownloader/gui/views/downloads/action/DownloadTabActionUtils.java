@@ -23,6 +23,7 @@ import org.jdownloader.utils.JDFileUtils;
 public class DownloadTabActionUtils {
 
     public static void deleteLinksRequest(final SelectionInfo<FilePackage, DownloadLink> si, final String msg, final DeleteFileOptions mode, final boolean byPassDialog) {
+
         final DownloadLinkAggregator agg = new DownloadLinkAggregator();
         agg.setMirrorHandlingEnabled(false);
         agg.setLocalFileUsageEnabled(true);

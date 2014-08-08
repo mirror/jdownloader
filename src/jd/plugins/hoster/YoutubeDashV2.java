@@ -24,7 +24,6 @@ import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.Property;
 import jd.config.SubConfiguration;
-import jd.controlling.downloadcontroller.DownloadWatchDog;
 import jd.controlling.downloadcontroller.ExceptionRunnable;
 import jd.controlling.downloadcontroller.FileIsLockedException;
 import jd.controlling.downloadcontroller.SingleDownloadController;
@@ -91,11 +90,8 @@ import org.appwork.utils.swing.EDTRunner;
 import org.jdownloader.DomainInfo;
 import org.jdownloader.controlling.DefaultDownloadLinkViewImpl;
 import org.jdownloader.controlling.DownloadLinkView;
-import org.jdownloader.controlling.ffmpeg.FFMpegInstallProgress;
 import org.jdownloader.controlling.ffmpeg.FFMpegProgress;
 import org.jdownloader.controlling.ffmpeg.FFmpeg;
-import org.jdownloader.controlling.ffmpeg.FFmpegProvider;
-import org.jdownloader.controlling.ffmpeg.FFmpegSetup;
 import org.jdownloader.controlling.linkcrawler.LinkVariant;
 import org.jdownloader.gui.IconKey;
 import org.jdownloader.gui.translate._GUI;
@@ -103,13 +99,10 @@ import org.jdownloader.gui.views.SelectionInfo.PluginView;
 import org.jdownloader.images.AbstractIcon;
 import org.jdownloader.images.BadgeIcon;
 import org.jdownloader.plugins.DownloadPluginProgress;
-import org.jdownloader.plugins.SkipReason;
-import org.jdownloader.plugins.SkipReasonException;
 import org.jdownloader.plugins.config.PluginJsonConfig;
 import org.jdownloader.settings.GeneralSettings;
 import org.jdownloader.settings.staticreferences.CFG_GUI;
 import org.jdownloader.translate._JDT;
-import org.jdownloader.updatev2.UpdateController;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "youtube.com" }, urls = { "youtubev2://.+" }, flags = { 2 })
 public class YoutubeDashV2 extends PluginForHost {
@@ -1512,42 +1505,6 @@ public class YoutubeDashV2 extends PluginForHost {
 
     }
 
-    private void checkFFmpeg(DownloadLink downloadLink, String reason) throws SkipReasonException, InterruptedException {
-        FFmpeg ffmpeg = new FFmpeg();
-        synchronized (DownloadWatchDog.getInstance()) {
-
-            if (!ffmpeg.isAvailable()) {
-                if (UpdateController.getInstance().getHandler() == null) {
-                    getLogger().warning("Please set FFMPEG: BinaryPath in advanced options");
-                    throw new SkipReasonException(SkipReason.FFMPEG_MISSING);
-                }
-                final FFMpegInstallProgress progress = new FFMpegInstallProgress();
-                progress.setProgressSource(this);
-                try {
-                    downloadLink.addPluginProgress(progress);
-                    FFmpegProvider.getInstance().install(progress, reason);
-                } finally {
-                    downloadLink.removePluginProgress(progress);
-                }
-                ffmpeg.setPath(JsonConfig.create(FFmpegSetup.class).getBinaryPath());
-                if (!ffmpeg.isAvailable()) {
-                    //
-
-                    List<String> requestedInstalls = UpdateController.getInstance().getHandler().getRequestedInstalls();
-                    if (requestedInstalls != null && requestedInstalls.contains(org.jdownloader.controlling.ffmpeg.InstallThread.getFFmpegExtensionName())) {
-                        throw new SkipReasonException(SkipReason.UPDATE_RESTART_REQUIRED);
-
-                    } else {
-                        throw new SkipReasonException(SkipReason.FFMPEG_MISSING);
-                    }
-
-                    // throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE,
-                    // _GUI._.YoutubeDash_handleFree_ffmpegmissing());
-                }
-            }
-        }
-    }
-
     @Override
     public boolean isProxyRotationEnabledForLinkChecker() {
         return super.isProxyRotationEnabledForLinkChecker();
@@ -1880,6 +1837,7 @@ public class YoutubeDashV2 extends PluginForHost {
             downloadLink.setFinalFileName(filename = getCachedHelper().createFilename(downloadLink));
             downloadLink.setUrlDownload("youtubev2://" + YoutubeVariant.SUBTITLES + "/" + downloadLink.getStringProperty(YoutubeHelper.YT_ID) + "/");
             try {
+
                 downloadLink.setLinkID("youtubev2://" + YoutubeVariant.SUBTITLES + "/" + downloadLink.getStringProperty(YoutubeHelper.YT_ID) + "/" + URLEncode.encodeRFC2396(filename));
             } catch (UnsupportedEncodingException e) {
                 downloadLink.setLinkID("youtubev2://" + YoutubeVariant.SUBTITLES + "/" + downloadLink.getStringProperty(YoutubeHelper.YT_ID) + "/" + filename);

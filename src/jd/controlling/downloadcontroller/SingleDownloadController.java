@@ -296,7 +296,7 @@ public class SingleDownloadController extends BrowserSettingsThread implements D
                     if (lastAvailableStatusChange + availableStatusChangeTimeout < System.currentTimeMillis()) {
                         try {
                             processingPlugin.set(defaultPlugin);
-                            availableStatus = defaultPlugin.requestFileInformation(downloadLink);
+                            availableStatus = defaultPlugin.checkLink(downloadLink);
                             if (AvailableStatus.FALSE == availableStatus) {
                                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
                             }

@@ -96,9 +96,9 @@ public class AccountManager extends SwitchPanel implements SettingsComponent {
         hosterOrderPanel = new HosterOrderPanel(this);
         accountListPanel = new AccountListPanel(this);
         tab.addTab(_GUI._.AccountManager_AccountManager_accounts_(), accountListPanel);
-        tab.addTab(_GUI._.AccountManager_AccountManager_hosterorder_(), hosterOrderPanel);
+        tab.addTab(_GUI._.AccountManager_AccountManager_hosterorder(), hosterOrderPanel);
         tab.setTabComponentAt(0, createHeader(_GUI._.AccountManager_AccountManager_accounts_tt(), _GUI._.AccountManager_AccountManager_accounts_(), NewTheme.I().getIcon("list", 16)));
-        tab.setTabComponentAt(1, createHeader(_GUI._.AccountManager_AccountManager_hosterorder_tt(), _GUI._.AccountManager_AccountManager_hosterorder_(), NewTheme.I().getIcon("order", 16)));
+        tab.setTabComponentAt(1, createHeader(_GUI._.AccountManager_AccountManager_hosterorder_tt(), _GUI._.AccountManager_AccountManager_hosterorder(), NewTheme.I().getIcon("order", 16)));
         //
         tab.addChangeListener(new ChangeListener() {
 

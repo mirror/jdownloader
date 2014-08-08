@@ -74,6 +74,7 @@ import org.appwork.utils.zip.ZipIOWriter;
 import org.jdownloader.controlling.FileCreationManager;
 import org.jdownloader.controlling.UniqueAlltimeID;
 import org.jdownloader.controlling.filter.LinkFilterController;
+import org.jdownloader.controlling.linkcrawler.GenericVariants;
 import org.jdownloader.controlling.linkcrawler.LinkVariant;
 import org.jdownloader.controlling.packagizer.PackagizerController;
 import org.jdownloader.extensions.extraction.ExtractionExtension;
@@ -197,7 +198,31 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
     /**
      * NOTE: only access these fields inside the IOEQ
      */
-    private HashSet<String>                                            dupeCheckMap       = new HashSet<String>();
+    private HashSet<String>                                            dupeCheckMap       = new HashSet<String>() {
+                                                                                              public boolean add(String e) {
+                                                                                                  // if (LinkCollector.this.size() == 0 &&
+                                                                                                  // this.size() > 0) {
+                                                                                                  // System.out.println("MisMatch!");
+                                                                                                  // }
+                                                                                                  try {
+                                                                                                      return super.add(e);
+                                                                                                  } finally {
+                                                                                                      System.out.println("Added " + e + " = " + this);
+                                                                                                  }
+                                                                                              };
+
+                                                                                              public boolean remove(Object o) {
+                                                                                                  try {
+                                                                                                      return super.remove(o);
+                                                                                                  } finally {
+                                                                                                      System.out.println("removed " + o + " = " + this);
+                                                                                                      // if (LinkCollector.this.size() == 0
+                                                                                                      // && this.size() > 0) {
+                                                                                                      // System.out.println("MisMatch!");
+                                                                                                      // }
+                                                                                                  }
+                                                                                              };
+                                                                                          };
     private HashMap<String, CrawledPackage>                            packageMap         = new HashMap<String, CrawledPackage>();
 
     /* sync on filteredStuff itself when accessing it */
@@ -491,7 +516,7 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
                                 /*
                                  * we do not force a filename if newName equals to name set by plugin!
                                  */
-                                link.getDownloadLink().forceFileName(newName);
+                                link.getDownloadLink().setForcedFileName(newName);
                             }
                         }
                     }
@@ -905,11 +930,13 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
             return;
         }
         for (CrawledLink l : links) {
-            dupeCheckMap.remove(l.getLinkID());
+            String lid = l.getLinkID();
+            dupeCheckMap.remove(lid);
             removeFromMap(variousMap, l);
             removeFromMap(offlineMap, l);
             removeFromMap(hosterMap, l);
         }
+        System.out.println("Cleaned up " + dupeCheckMap);
     }
 
     public void clearFilteredLinks() {
@@ -993,7 +1020,7 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
                  * change filename if it is different than original downloadlink
                  */
                 if (link.isNameSet()) {
-                    dl.forceFileName(link.getName());
+                    dl.setForcedFileName(link.getName());
                 }
                 /* set correct enabled/disabled state */
                 dl.setEnabled(link.isEnabled());
@@ -1135,8 +1162,72 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
                 /* run packagizer on checked link */
                 pc.runByFile(link);
             }
+
+            if (!addGenericVariant(link.getDownloadLink())) {
+                return;
+            }
+
+            // if (additionalLinks != null) {
+            // for (DownloadLink dl : additionalLinks) {
+            // CrawledLink cl = new CrawledLink(dl);
+            //
+            // cl.setSourceLink(link.getSourceLink());
+            // cl.setOrigin(link.getOrigin());
+            // cl.setSourceUrls(link.getSourceUrls());
+            // cl.setMatchingFilter(link.getMatchingFilter());
+            //
+            // cl.setCustomCrawledLinkModifier(link.getCustomCrawledLinkModifier());
+            //
+            // cl.setDesiredPackageInfo(link.getDesiredPackageInfo());
+            // cl.setArchiveInfo(link.getArchiveInfo());
+            //
+            // handleFinalLink(cl);
+            // }
+            // }
             addCrawledLink(link);
         }
+    }
+
+    private boolean addGenericVariant(final DownloadLink downloadLink) {
+
+        if (downloadLink.hasVariantSupport()) {
+            return true;
+        }
+        // String name = downloadLink.getName();
+        List<GenericVariants> converts = downloadLink.getDefaultPlugin().getGenericVariants(downloadLink);
+        if (converts != null && converts.size() > 0) {
+            final List<LinkVariant> variants = new ArrayList<LinkVariant>();
+            variants.add(GenericVariants.ORIGINAL);
+            variants.addAll(converts);
+
+            if (variants.size() > 1) {
+
+                return Boolean.TRUE == getQueue().addWait(new QueueAction<Boolean, RuntimeException>() {
+
+                    @Override
+                    protected Boolean run() throws RuntimeException {
+                        downloadLink.setProperty("GENERIC_VARIANTS", true);
+                        downloadLink.setVariants(variants);
+                        // setActiveVariantForLink(downloadLink, GenericVariants.ORIGINAL);
+                        String oldLinkID = downloadLink.getLinkID();
+                        downloadLink.setVariant(GenericVariants.ORIGINAL);
+                        if (!dupeCheckMap.add(downloadLink.getLinkID())) {
+                            System.out.println("Variant Dupe");
+                            return Boolean.FALSE;
+                        }
+                        dupeCheckMap.remove(oldLinkID);
+
+                        downloadLink.setVariantSupport(true);
+
+                        return Boolean.TRUE;
+                    }
+
+                });
+
+            }
+        }
+
+        return true;
     }
 
     public java.util.List<FilePackage> convert(final List<CrawledLink> links, final boolean removeLinks) {
@@ -1954,6 +2045,8 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
                     /* link does not support variants */
                     return null;
                 }
+                // reset any custom names.
+                crawledLink.setName(null);
                 setActiveVariantForLink(crawledLink.getDownloadLink(), linkVariant);
                 java.util.List<CheckableLink> checkableLinks = new ArrayList<CheckableLink>(1);
                 checkableLinks.add(crawledLink);
@@ -1967,28 +2060,6 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
 
     }
 
-    public boolean canSetActiveVariantForLink(final DownloadLink link, final LinkVariant variant) {
-
-        return Boolean.TRUE.equals(getQueue().addWait(new QueueAction<Boolean, RuntimeException>() {
-
-            @Override
-            protected Boolean run() throws RuntimeException {
-
-                LinkVariant oldVariant = link.getDefaultPlugin().getActiveVariantByLink(link);
-                try {
-                    link.getDefaultPlugin().setActiveVariantByLink(link, variant);
-
-                    return dupeCheckMap.contains(link.getLinkID());
-
-                } finally {
-                    link.getDefaultPlugin().setActiveVariantByLink(link, oldVariant);
-                }
-
-            }
-
-        }));
-    }
-
     public void setActiveVariantForLink(final DownloadLink link, final LinkVariant variant) {
 
         getQueue().add(new QueueAction<Void, RuntimeException>() {
@@ -1999,7 +2070,10 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
                 String old = link.getLinkID();
                 LinkVariant oldVariant = link.getDefaultPlugin().getActiveVariantByLink(link);
                 link.getDefaultPlugin().setActiveVariantByLink(link, variant);
-                if (dupeCheckMap.contains(link.getLinkID())) {
+                HashSet<String> ch = dupeCheckMap;
+                String newLinkID = link.getLinkID();
+                if (dupeCheckMap.contains(newLinkID)) {
+                    logger.info("Dupecheck Filtered Variant");
                     // variant available
                     link.getDefaultPlugin().setActiveVariantByLink(link, oldVariant);
                     return null;
@@ -2018,8 +2092,8 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
 
             @Override
             protected Boolean run() throws RuntimeException {
-
-                return dupeCheckMap.contains(linkID);
+                HashSet<String> dc = dupeCheckMap;
+                return dc.contains(linkID);
 
             }
 
@@ -2053,4 +2127,5 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
         });
 
     }
+
 }

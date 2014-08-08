@@ -1,9 +1,7 @@
 package org.jdownloader.controlling.ffmpeg;
 
 import java.awt.Dialog.ModalityType;
-import java.awt.Window;
 import java.io.File;
-import java.util.HashSet;
 
 import javax.swing.BorderFactory;
 import javax.swing.JComponent;
@@ -11,9 +9,6 @@ import javax.swing.JLabel;
 
 import org.appwork.swing.MigPanel;
 import org.appwork.uio.ConfirmDialogInterface;
-import org.appwork.utils.Files;
-import org.appwork.utils.Files.Handler;
-import org.appwork.utils.os.CrossSystem;
 import org.appwork.utils.swing.SwingUtils;
 import org.appwork.utils.swing.dialog.AbstractDialog;
 import org.jdownloader.gui.translate._GUI;
@@ -51,60 +46,6 @@ public class FFMpegInstallTypeChooserDialog extends AbstractDialog<Object> imple
             file = f;
         }
 
-    }
-
-    public static File searchFileIn(final File file, final Window owner, final boolean modeless) {
-
-        try {
-            if (file.isFile() && file.canExecute()) {
-                if (new FFmpeg(file.getAbsolutePath()).validateBinary()) {
-                    return file;
-                }
-            }
-            Files.walkThroughStructure(new Handler<FoundException>() {
-                private HashSet<File> dupe;
-
-                {
-                    dupe = new HashSet<File>();
-                }
-
-                @Override
-                public void intro(File f) throws FoundException {
-                }
-
-                @Override
-                public void onFile(File f) throws FoundException {
-                    if (!dupe.add(f)) {
-                        return;
-                    }
-                    if (Thread.interrupted()) {
-                        throw new FoundException(null);
-                    }
-
-                    switch (CrossSystem.getOSFamily()) {
-                    case WINDOWS:
-                        if (f.getName().equalsIgnoreCase("ffmpeg.exe") && f.isFile()) {
-                            throw new FoundException(f);
-                        }
-                        break;
-                    case LINUX:
-                    case MAC:
-                        if (f.getName().equalsIgnoreCase("ffmpeg") && f.isFile() && f.canExecute()) {
-                            throw new FoundException(f);
-                        }
-                        break;
-                    }
-                }
-
-                @Override
-                public void outro(File f) throws FoundException {
-                }
-            }, file);
-
-        } catch (FoundException e) {
-            return e.getFile();
-        }
-        return null;
     }
 
     private JComponent header(String text) {

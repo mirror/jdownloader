@@ -11,6 +11,11 @@ public interface FFmpegSetup extends ConfigInterface {
     void setBinaryPath(String path);
 
     @AboutConfig
+    String getBinaryPathProbe();
+
+    void setBinaryPathProbe(String path);
+
+    @AboutConfig
     @DefaultStringArrayValue({ "-i", "%video", "-i", "%audio", "-map", "0:0", "-c:v", "copy", "-map", "1:0", "-c:a", "copy", "-f", "mp4", "%out", "-y" })
     String[] getMuxToMp4Command();
 
@@ -45,5 +50,17 @@ public interface FFmpegSetup extends ConfigInterface {
     String[] getDemux2Mp3Command();
 
     void setDemux2Mp3Command(String[] command);
+
+    @AboutConfig
+    @DefaultStringArrayValue({ "-i", "%audio", "-vn", "-f", "ogg", "-acodec", "libvorbis", "-aq", "4", "%out", "-y" })
+    String[] getDemuxAndConvert2Ogg();
+
+    void setDemuxAndConvert2Ogg(String[] command);
+
+    @AboutConfig
+    @DefaultStringArrayValue({ "-i", "%audio", "%map", "-acodec", "copy", "-vn", "%out", "-y" })
+    String[] getDemuxGenericCommand();
+
+    void setDemuxGenericCommand(String[] command);
 
 }

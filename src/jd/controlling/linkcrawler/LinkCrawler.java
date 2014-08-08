@@ -115,7 +115,7 @@ public class LinkCrawler {
         final int keepAlive = Math.max(JsonConfig.create(LinkCrawlerConfig.class).getThreadKeepAlive(), 100);
         /**
          * PriorityBlockingQueue leaks last Item for some java versions
-         *
+         * 
          * http://bugs.java.com/bugdatabase/view_bug.do?bug_id=7161229
          */
         threadPool = new ThreadPoolExecutor(0, maxThreads, keepAlive, TimeUnit.MILLISECONDS, new PriorityBlockingQueue<Runnable>(100, new Comparator<Runnable>() {
@@ -247,10 +247,10 @@ public class LinkCrawler {
 
     /**
      * returns the generation of this LinkCrawler if thisGeneration is true.
-     *
+     * 
      * if a parent LinkCrawler does exist and thisGeneration is false, we return the older generation of the parent LinkCrawler or this
      * child
-     *
+     * 
      * @param thisGeneration
      * @return
      */
@@ -1010,6 +1010,7 @@ public class LinkCrawler {
                         java.util.List<DownloadLink> hosterLinks = null;
                         try {
                             hosterLinks = wplg.getDownloadLinks(url, sourcePackage);
+
                             /* in case the function returned without exceptions, we can clear log */
                             logger.clear();
                         } finally {
@@ -1183,7 +1184,7 @@ public class LinkCrawler {
             }
             dl.setComment(source.getComment());
             dl.setName(source.getView().getDisplayName());
-            dl.forceFileName(source.getForcedFileName());
+            dl.setForcedFileName(source.getForcedFileName());
             dl.setFinalFileName(source.getFinalFileName());
             if (source.gotBrowserUrl()) {
                 dl.setBrowserUrl(source.getBrowserUrl());

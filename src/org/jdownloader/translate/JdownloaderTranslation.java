@@ -588,4 +588,34 @@ public interface JdownloaderTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "Please wait..." })
     String lit_please_wait();
 
+    @Default(lngs = { "en" }, values = { "Skipped - FFprobe™ missing" })
+    String DownloadLink_setSkipped_statusmessage_ffprobe();
+
+    @Default(lngs = { "en" }, values = { "Original FLV Video" })
+    String GenericVariants_ORIGINAL_();
+
+    @Default(lngs = { "en" }, values = { "Extract Mp3 Audio" })
+    String GenericVariants_FLV_TO_MP3_();
+
+    @Default(lngs = { "en" }, values = { "Convert to Ogg Vorbis Audio" })
+    String GenericVariants_TO_OGG();
+
+    @Default(lngs = { "en" }, values = { "to obtain video stream details, and to split audio from a video stream" })
+    String plugin_for_host_reason_for_ffmpeg_demux();
+
+    @Default(lngs = { "en" }, values = { "to obtain video stream details, split audio from a video stream and convert it to the %s1 audio format" })
+    String plugin_for_host_reason_for_ffmpeg_demux_and_convert(String type);
+
+    @Default(lngs = { "en" }, values = { "FFmpeg™ failed" })
+    String PluginForHost_handle_ffmpeg_conversion_failed();
+
+    @Default(lngs = { "en" }, values = { "Extract AAC Audio" })
+    String GenericVariants_DEMUX_AAC();
+
+    @Default(lngs = { "en" }, values = { "Extract M4A Audio" })
+    String GenericVariants_DEMUX_M4A();
+
+    @Default(lngs = { "en" }, values = { "Extract Audio Stream" })
+    String GenericVariants_DEMUX_GENERIC_AUDIO();
+
 }

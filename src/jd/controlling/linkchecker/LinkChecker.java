@@ -426,7 +426,7 @@ public class LinkChecker<E extends CheckableLink> {
             logger.clear();
             plgToUse.reset();
             logger.info("Check FileInformation: " + link.getDownloadURL());
-            availableStatus = plgToUse.requestFileInformation(link);
+            availableStatus = plgToUse.checkLink(link);
         } catch (PluginException e) {
             logger.log(e);
             switch (e.getLinkStatus()) {

@@ -66,7 +66,9 @@ public class VariantColumn extends ExtComboColumn<AbstractNode, LinkVariant> {
                 ret = ((DownloadLink) object).getDefaultPlugin().getVariantPopupComponent(((DownloadLink) object));
             }
         }
-        if (ret != null) return ret;
+        if (ret != null) {
+            return ret;
+        }
         return super.getPopupElement(object, selected);
     }
 
@@ -106,6 +108,7 @@ public class VariantColumn extends ExtComboColumn<AbstractNode, LinkVariant> {
                     {
                         final DownloadLink dllink = new DownloadLink(link.getDownloadLink().getDefaultPlugin(), link.getDownloadLink().getView().getDisplayName(), link.getDownloadLink().getHost(), link.getDownloadLink().getDownloadURL(), true);
                         dllink.setProperties(link.getDownloadLink().getProperties());
+                        dllink.setProperty("DUMMY", true);
                         cl = new CrawledLink(dllink);
                         setSmallIcon(o.getIcon());
                         setName(CFG_GUI.EXTENDED_VARIANT_NAMES_ENABLED.isEnabled() ? o.getExtendedName() : o.getName());
@@ -177,7 +180,9 @@ public class VariantColumn extends ExtComboColumn<AbstractNode, LinkVariant> {
 
     @Override
     protected String modelItemToString(LinkVariant selectedItem) {
-        if (selectedItem == null) { return null; }
+        if (selectedItem == null) {
+            return null;
+        }
         return CFG_GUI.EXTENDED_VARIANT_NAMES_ENABLED.isEnabled() ? selectedItem.getExtendedName() : selectedItem.getName();
     }
 
@@ -187,28 +192,38 @@ public class VariantColumn extends ExtComboColumn<AbstractNode, LinkVariant> {
     }
 
     protected Icon modelItemToIcon(LinkVariant selectedItem) {
-        if (selectedItem == null) { return null; }
+        if (selectedItem == null) {
+            return null;
+        }
         return selectedItem.getIcon();
     }
 
     @Override
     public boolean isEditable(final AbstractNode object) {
         if (object instanceof CrawledLink) {
-            if (((CrawledLink) object).hasVariantSupport()) { return ((CrawledLink) object).gethPlugin().hasVariantToChooseFrom(((CrawledLink) object).getDownloadLink()); }
+            if (((CrawledLink) object).hasVariantSupport()) {
+                return ((CrawledLink) object).gethPlugin().hasVariantToChooseFrom(((CrawledLink) object).getDownloadLink());
+            }
         } else if (false && object instanceof DownloadLink) {
             /* DownloadTable does not have VariantSupport yet */
-            if (((DownloadLink) object).hasVariantSupport()) { return ((DownloadLink) object).getDefaultPlugin().hasVariantToChooseFrom(((DownloadLink) object)); }
+            if (((DownloadLink) object).hasVariantSupport()) {
+                return ((DownloadLink) object).getDefaultPlugin().hasVariantToChooseFrom(((DownloadLink) object));
+            }
         }
         return false;
     }
 
     protected LinkVariant getSelectedItem(AbstractNode object) {
         if (object instanceof CrawledLink) {
-            if (!((CrawledLink) object).hasVariantSupport()) return null;
+            if (!((CrawledLink) object).hasVariantSupport()) {
+                return null;
+            }
             return ((CrawledLink) object).gethPlugin().getActiveVariantByLink(((CrawledLink) object).getDownloadLink());
         } else if (false && object instanceof DownloadLink) {
             /* DownloadTable does not have VariantSupport yet */
-            if (!((DownloadLink) object).hasVariantSupport()) return null;
+            if (!((DownloadLink) object).hasVariantSupport()) {
+                return null;
+            }
             return ((DownloadLink) object).getDefaultPlugin().getActiveVariantByLink(((DownloadLink) object));
         }
         return null;
@@ -225,13 +240,17 @@ public class VariantColumn extends ExtComboColumn<AbstractNode, LinkVariant> {
 
     @Override
     public ComboBoxModel<LinkVariant> updateModel(ComboBoxModel<LinkVariant> dataModel, AbstractNode object) {
-        List<LinkVariant> variants;
+        List<? extends LinkVariant> variants;
         if (object instanceof CrawledLink) {
-            if (!((CrawledLink) object).hasVariantSupport()) return null;
+            if (!((CrawledLink) object).hasVariantSupport()) {
+                return null;
+            }
             variants = ((CrawledLink) object).gethPlugin().getVariantsByLink(((CrawledLink) object).getDownloadLink());
             return new VariantsModel(variants);
         } else if (object instanceof DownloadLink) {
-            if (!((DownloadLink) object).hasVariantSupport()) return null;
+            if (!((DownloadLink) object).hasVariantSupport()) {
+                return null;
+            }
             variants = ((DownloadLink) object).getDefaultPlugin().getVariantsByLink(((DownloadLink) object));
             return new VariantsModel(variants);
         }

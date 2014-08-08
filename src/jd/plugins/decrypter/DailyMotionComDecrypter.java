@@ -155,7 +155,7 @@ public class DailyMotionComDecrypter extends PluginForDecrypt {
             } else if (PARAMETER.matches(TYPE_PLAYLIST)) {
                 decryptPlaylist();
             } else {
-                decryptSingleVideo();
+                decryptSingleVideo(decryptedLinks);
             }
         }
         if (decryptedLinks == null) {
@@ -355,7 +355,7 @@ public class DailyMotionComDecrypter extends PluginForDecrypt {
     private String CHANNELNAME = null;
     private long   DATE        = 0;
 
-    private void decryptSingleVideo() throws IOException, ParseException {
+    protected void decryptSingleVideo(ArrayList<DownloadLink> decryptedLinks) throws IOException, ParseException {
         logger.info("Decrypting single video: " + PARAMETER);
         // We can't download livestreams
         if (br.containsHTML("DMSTREAMMODE=live")) {

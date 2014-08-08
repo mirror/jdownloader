@@ -78,7 +78,9 @@ public class TbCm extends PluginForDecrypt {
     };
 
     private void canHandle() {
-        if (PLUGIN_CHECKED.get()) return;
+        if (PLUGIN_CHECKED.get()) {
+            return;
+        }
         String installerSource = null;
         try {
             installerSource = JDIO.readFileToString(JDUtilities.getResourceFile("src.dat"));
@@ -186,7 +188,9 @@ public class TbCm extends PluginForDecrypt {
 
         public static ITAG get(int itag) {
             for (ITAG tag : values()) {
-                if (tag.getITAG() == itag) return tag;
+                if (tag.getITAG() == itag) {
+                    return tag;
+                }
             }
             return null;
         }
@@ -208,7 +212,9 @@ public class TbCm extends PluginForDecrypt {
 
         public Info getInfoForITAG(ITAG itag) {
             for (Info info : this) {
-                if (info.itag == itag) return info;
+                if (info.itag == itag) {
+                    return info;
+                }
             }
             return null;
         }
@@ -216,7 +222,9 @@ public class TbCm extends PluginForDecrypt {
         public Info getInfoForFirstITAGMatch(ITAG... itags) {
             for (ITAG itag : itags) {
                 for (Info info : this) {
-                    if (info.itag == itag) return info;
+                    if (info.itag == itag) {
+                        return info;
+                    }
                 }
             }
             return null;
@@ -412,9 +420,15 @@ public class TbCm extends PluginForDecrypt {
 
         // Millisecond
         millisecond = String.valueOf(time - itime).split("\\.")[1];
-        if (millisecond.length() == 1) millisecond = millisecond + "00";
-        if (millisecond.length() == 2) millisecond = millisecond + "0";
-        if (millisecond.length() > 2) millisecond = millisecond.substring(0, 3);
+        if (millisecond.length() == 1) {
+            millisecond = millisecond + "00";
+        }
+        if (millisecond.length() == 2) {
+            millisecond = millisecond + "0";
+        }
+        if (millisecond.length() > 2) {
+            millisecond = millisecond.substring(0, 3);
+        }
 
         // Result
         String result = hour + ":" + minute + ":" + second + "," + millisecond;
@@ -427,7 +441,9 @@ public class TbCm extends PluginForDecrypt {
         if (cfg != null && cfg.getBooleanProperty("PROXY_ACTIVE")) {
             String PROXY_ADDRESS = cfg.getStringProperty("PROXY_ADDRESS");
             int PROXY_PORT = cfg.getIntegerProperty("PROXY_PORT");
-            if (isEmpty(PROXY_ADDRESS) || PROXY_PORT < 0) return;
+            if (isEmpty(PROXY_ADDRESS) || PROXY_PORT < 0) {
+                return;
+            }
             PROXY_ADDRESS = new Regex(PROXY_ADDRESS, "^[0-9a-zA-Z]+://").matches() ? PROXY_ADDRESS : "http://" + PROXY_ADDRESS;
             org.appwork.utils.net.httpconnection.HTTPProxy proxy = org.appwork.utils.net.httpconnection.HTTPProxy.parseHTTPProxy(PROXY_ADDRESS + ":" + PROXY_PORT);
             if (b && proxy != null && proxy.getHost() != null) {
@@ -459,7 +475,9 @@ public class TbCm extends PluginForDecrypt {
 
     public boolean canHandle(final String data) {
         canHandle();
-        if (PLUGIN_DISABLED.get() == true) return false;
+        if (PLUGIN_DISABLED.get() == true) {
+            return false;
+        }
         return super.canHandle(data);
     }
 
@@ -492,9 +510,13 @@ public class TbCm extends PluginForDecrypt {
         // these are /user/ also but we want the id/tag?
         list = new Regex(parameter, userGridGCRegex).getMatch(1);
         // /user/
-        if (list == null) list = new Regex(parameter, "/user/([A-Za-z0-9\\-_]+)").getMatch(0);
+        if (list == null) {
+            list = new Regex(parameter, "/user/([A-Za-z0-9\\-_]+)").getMatch(0);
+        }
         // play && course
-        if (list == null) list = new Regex(x, "list=([A-Za-z0-9\\-_]+)").getMatch(0);
+        if (list == null) {
+            list = new Regex(x, "list=([A-Za-z0-9\\-_]+)").getMatch(0);
+        }
         return list;
     }
 
@@ -522,7 +544,9 @@ public class TbCm extends PluginForDecrypt {
         final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         canHandle();
         this.possibleconverts = new HashMap<DestinationFormat, InfoList>();
-        if (PLUGIN_DISABLED.get() == true) return decryptedLinks;
+        if (PLUGIN_DISABLED.get() == true) {
+            return decryptedLinks;
+        }
         long startTime = System.currentTimeMillis();
         br.setFollowRedirects(true);
         br.setCookiesExclusive(true);
@@ -532,7 +556,9 @@ public class TbCm extends PluginForDecrypt {
         // load hoster plugin
         if (pluginloaded == false) {
             final PluginForHost plugin = JDUtilities.getPluginForHost("youtube.com");
-            if (plugin == null) throw new IllegalStateException("youtube plugin not found!");
+            if (plugin == null) {
+                throw new IllegalStateException("youtube plugin not found!");
+            }
             pluginloaded = true;
         }
 
@@ -577,9 +603,13 @@ public class TbCm extends PluginForDecrypt {
             if (choice == 2) {
                 int ret = UserIO.getInstance().requestConfirmDialog(0, parameter, JDL.L("plugins.host.youtube.isvideoandplaylist.question.message", "The Youtube link contains a video and a playlist. What do you want do download?"), null, JDL.L("plugins.host.youtube.isvideoandplaylist.question.onlyvideo", "Only video"), JDL.L("plugins.host.youtube.isvideoandplaylist.question.playlist", "Complete playlist"));
                 // Video selected
-                if (ret == 2) choice = 0;
+                if (ret == 2) {
+                    choice = 0;
+                }
                 // Playlist selected
-                if (ret == 4) choice = 1;
+                if (ret == 4) {
+                    choice = 1;
+                }
             }
 
             if (choice == 0) {
@@ -608,10 +638,9 @@ public class TbCm extends PluginForDecrypt {
                 } catch (final Throwable e) {
                 }
                 // first link, make it into playlist link
-                if (next == null)
+                if (next == null) {
                     page = host + "/playlist?list=" + luid;
-                // secondary page results will start with /, thats ok.
-                else {
+                } else {
                     page = Encoding.htmlDecode(next);
                     // little sleep per page to prevent ddos
                     Thread.sleep(1000);
@@ -619,10 +648,14 @@ public class TbCm extends PluginForDecrypt {
                 br.getPage(page);
                 String[] videos = br.getRegex("href=\"(/watch\\?v=[A-Za-z0-9\\-_]+)\\&amp;list=[A-Z0-9]+").getColumn(0);
                 // the (g/c/|grid/user/) doesn't return the same luid within url so will fail.
-                if (videos == null || videos.length == 0 && new Regex(parameter, userGridGCRegex).matches()) videos = br.getRegex("href=\"(/watch\\?v=[A-Za-z0-9\\-_]+)\\&amp;list=[A-Z0-9]+").getColumn(0);
+                if (videos == null || videos.length == 0 && new Regex(parameter, userGridGCRegex).matches()) {
+                    videos = br.getRegex("href=\"(/watch\\?v=[A-Za-z0-9\\-_]+)\\&amp;list=[A-Z0-9]+").getColumn(0);
+                }
                 for (String video : videos) {
                     video = Encoding.htmlDecode(video);
-                    if (!dupeList.add(getVideoID(video))) continue;
+                    if (!dupeList.add(getVideoID(video))) {
+                        continue;
+                    }
                     video = host + video;
                     final String[] finalInformation = new String[2];
                     finalInformation[0] = video;
@@ -671,7 +704,9 @@ public class TbCm extends PluginForDecrypt {
 
                 for (String url : links) {
                     String video = Encoding.htmlDecode(url);
-                    if (!dupeList.add(getVideoID(url))) continue;
+                    if (!dupeList.add(getVideoID(url))) {
+                        continue;
+                    }
                     video = host + video;
                     final String[] finalInformation = new String[2];
                     finalInformation[0] = video;
@@ -697,7 +732,9 @@ public class TbCm extends PluginForDecrypt {
             linkstodecrypt.add(finalInformation);
             multiple_videos = false;
         }
-        if (containsList(parameter)) logger.info("Found a total number of " + (videoNumberCounter - 1) + " videos for link: " + parameter);
+        if (containsList(parameter)) {
+            logger.info("Found a total number of " + (videoNumberCounter - 1) + " videos for link: " + parameter);
+        }
 
         final SubConfiguration cfg = SubConfiguration.getConfig("youtube.com");
         boolean fast = cfg.getBooleanProperty("FAST_CHECK2", false);
@@ -788,27 +825,39 @@ public class TbCm extends PluginForDecrypt {
                         }
                     }
                     if (q240p) {
-                        if (dashSupported) this.put(ITAG.DASH_VIDEO_240P_H264, new Object[] { DestinationFormat.VIDEO_DASH_MP4, "H.264", "AAC", "Stereo", "240p" });
+                        if (dashSupported) {
+                            this.put(ITAG.DASH_VIDEO_240P_H264, new Object[] { DestinationFormat.VIDEO_DASH_MP4, "H.264", "AAC", "Stereo", "240p" });
+                        }
                     }
                     if (q360p) {
                         // 270p / 360p
-                        if (dashSupported) this.put(ITAG.DASH_VIDEO_360P_H264, new Object[] { DestinationFormat.VIDEO_DASH_MP4, "H.264", "AAC", "Stereo", "360p" });
+                        if (dashSupported) {
+                            this.put(ITAG.DASH_VIDEO_360P_H264, new Object[] { DestinationFormat.VIDEO_DASH_MP4, "H.264", "AAC", "Stereo", "360p" });
+                        }
                         this.put(ITAG.MP4_VIDEO_360P_H264_AUDIO_AAC, new Object[] { DestinationFormat.VIDEO_MP4, "H.264", "AAC", "Stereo", "360p" });
                     }
                     if (q480p) {
-                        if (dashSupported) this.put(ITAG.DASH_VIDEO_480P_H264, new Object[] { DestinationFormat.VIDEO_DASH_MP4, "H.264", "AAC", "Stereo", "480p" });
+                        if (dashSupported) {
+                            this.put(ITAG.DASH_VIDEO_480P_H264, new Object[] { DestinationFormat.VIDEO_DASH_MP4, "H.264", "AAC", "Stereo", "480p" });
+                        }
                     }
                     if (q720p) {
-                        if (dashSupported) this.put(ITAG.DASH_VIDEO_720P_H264, new Object[] { DestinationFormat.VIDEO_DASH_MP4, "H.264", "AAC", "Stereo", "720p" });
+                        if (dashSupported) {
+                            this.put(ITAG.DASH_VIDEO_720P_H264, new Object[] { DestinationFormat.VIDEO_DASH_MP4, "H.264", "AAC", "Stereo", "720p" });
+                        }
                         this.put(ITAG.MP4_VIDEO_720P_H264_AUDIO_AAC, new Object[] { DestinationFormat.VIDEO_MP4, "H.264", "AAC", "Stereo", "720p" });
                     }
                     if (q1080p) {
-                        if (dashSupported) this.put(ITAG.DASH_VIDEO_1080P_H264, new Object[] { DestinationFormat.VIDEO_DASH_MP4, "H.264", "AAC", "Stereo", "1080p" });
+                        if (dashSupported) {
+                            this.put(ITAG.DASH_VIDEO_1080P_H264, new Object[] { DestinationFormat.VIDEO_DASH_MP4, "H.264", "AAC", "Stereo", "1080p" });
+                        }
                         this.put(ITAG.MP4_VIDEO_1080P_H264_AUDIO_AAC, new Object[] { DestinationFormat.VIDEO_MP4, "H.264", "AAC", "Stereo", "1080p" });
                     }
                     // maybe this varies?? wiki says 3072p but I've seen less. eg :: 38 2048x1536 9 0 115,
                     if (original) {
-                        if (dashSupported) this.put(ITAG.DASH_VIDEO_ORIGINAL_H264, new Object[] { DestinationFormat.VIDEO_DASH_MP4, "H.264", "AAC", "Stereo", "Original" });
+                        if (dashSupported) {
+                            this.put(ITAG.DASH_VIDEO_ORIGINAL_H264, new Object[] { DestinationFormat.VIDEO_DASH_MP4, "H.264", "AAC", "Stereo", "Original" });
+                        }
                         this.put(ITAG.MP4_VIDEO_AUDIO_ORIGINAL, new Object[] { DestinationFormat.VIDEO_MP4, "H.264", "AAC", "Stereo", "Original" });
                     }
                 }
@@ -877,7 +926,9 @@ public class TbCm extends PluginForDecrypt {
         };
 
         // Force fast linkcheck if there are more then 20 videos in queue.
-        if (linkstodecrypt.size() > 20) fast = true;
+        if (linkstodecrypt.size() > 20) {
+            fast = true;
+        }
 
         for (String urlInformation[] : linkstodecrypt) {
             // Make an little sleep to prevent DDoS
@@ -912,18 +963,26 @@ public class TbCm extends PluginForDecrypt {
                 String error = br.getRegex("<div id=\"unavailable\\-message\" class=\"\">[\t\n\r ]+<span class=\"yt\\-alert\\-vertical\\-trick\"></span>[\t\n\r ]+<div class=\"yt\\-alert\\-message\">([^<>\"]*?)</div>").getMatch(0);
                 // Removed due wrong offline detection
                 // if (error == null) error = br.getRegex("<div class=\"yt\\-alert\\-message\">(.*?)</div>").getMatch(0);
-                if (error == null) error = br.getRegex("reason=([^<>\"/]*?)(\\&|$)").getMatch(0);
-                if (br.containsHTML(UNSUPPORTEDRTMP)) error = "RTMP video download isn't supported yet!";
+                if (error == null) {
+                    error = br.getRegex("reason=([^<>\"/]*?)(\\&|$)").getMatch(0);
+                }
+                if (br.containsHTML(UNSUPPORTEDRTMP)) {
+                    error = "RTMP video download isn't supported yet!";
+                }
                 if ((foundLinks == null || foundLinks.isEmpty()) && error != null) {
                     error = Encoding.urlDecode(error, false);
                     logger.info("Video unavailable: " + currentVideoUrl);
-                    if (error != null) logger.info("Reason: " + error.trim());
+                    if (error != null) {
+                        logger.info("Reason: " + error.trim());
+                    }
                     continue;
                 }
                 final String videoid = getVideoID(currentVideoUrl);
                 if (foundLinks == null || foundLinks.isEmpty()) {
                     if (linkstodecrypt.size() == 1) {
-                        if (verifyAge || this.br.getURL().toLowerCase().indexOf("youtube.com/get_video_info?") != -1 && !prem) { throw new DecrypterException(DecrypterException.ACCOUNT); }
+                        if (verifyAge || this.br.getURL().toLowerCase().indexOf("youtube.com/get_video_info?") != -1 && !prem) {
+                            throw new DecrypterException(DecrypterException.ACCOUNT);
+                        }
                         final DownloadLink offline = getOfflineLink();
                         offline.setName(videoid);
                         decryptedLinks.add(offline);
@@ -945,7 +1004,9 @@ public class TbCm extends PluginForDecrypt {
                 while (it.hasNext()) {
                     Entry<Integer, String[]> nextEntry = it.next();
                     ITAG tag = ITAG.get(nextEntry.getKey());
-                    if (tag != null) availableItags.put(tag, nextEntry.getValue());
+                    if (tag != null) {
+                        availableItags.put(tag, nextEntry.getValue());
+                    }
                 }
                 // replacing default Locate to be compatible with page language
                 Locale locale = Locale.ENGLISH;
@@ -960,10 +1021,16 @@ public class TbCm extends PluginForDecrypt {
                 final String userName = br.getRegex("temprop=\"url\" href=\"http://(www\\.)?youtube\\.com/user/([^<>\"]*?)\"").getMatch(1);
                 final int playlistNumberInt = Integer.parseInt(currentPlaylistVideoNumber);
                 String formattedFilename = cfg.getStringProperty(CUSTOM_FILENAME, jd.plugins.hoster.Youtube.defaultCustomFilename);
-                if ((!formattedFilename.contains("*videoname*") && !formattedFilename.contains("*videoid*")) || !formattedFilename.contains("*ext*")) formattedFilename = jd.plugins.hoster.Youtube.defaultCustomFilename;
-                if (formattedFilename == null || formattedFilename.equals("")) formattedFilename = "*videoname**quality**ext*";
+                if ((!formattedFilename.contains("*videoname*") && !formattedFilename.contains("*videoid*")) || !formattedFilename.contains("*ext*")) {
+                    formattedFilename = jd.plugins.hoster.Youtube.defaultCustomFilename;
+                }
+                if (formattedFilename == null || formattedFilename.equals("")) {
+                    formattedFilename = "*videoname**quality**ext*";
+                }
                 String partnumberformat = cfg.getStringProperty(VIDEONUMBERFORMAT);
-                if (partnumberformat == null || partnumberformat.equals("")) partnumberformat = "0000";
+                if (partnumberformat == null || partnumberformat.equals("")) {
+                    partnumberformat = "0000";
+                }
 
                 final DecimalFormat df = new DecimalFormat(partnumberformat);
 
@@ -1021,18 +1088,30 @@ public class TbCm extends PluginForDecrypt {
                     bestQualityTags.add(new ITAG[] { ITAG.THREEGP_VIDEO_144P_H264_AUDIO_AAC, ITAG.DASH_VIDEO_144P_H264 });
                     for (ITAG[] tags : bestQualityTags) {
                         for (ITAG tag : tags) {
-                            if (availableItags.containsKey(tag) && allowedItags.containsKey(tag) && bestFound.isEmpty()) bestFound.put(tag, availableItags.get(tag));
+                            if (availableItags.containsKey(tag) && allowedItags.containsKey(tag) && bestFound.isEmpty()) {
+                                bestFound.put(tag, availableItags.get(tag));
+                            }
                         }
                     }
                     if (bestFound.isEmpty()) {
                         logger.warning("You do not have Resolution or Format selected within range! : " + currentVideoUrl);
                         break;
                     } else {
-                        if (bestFound.containsKey(ITAG.MP4_VIDEO_AUDIO_ORIGINAL)) bestFound.remove(ITAG.DASH_VIDEO_ORIGINAL_H264);
-                        if (bestFound.containsKey(ITAG.MP4_VIDEO_1080P_H264_AUDIO_AAC)) bestFound.remove(ITAG.DASH_VIDEO_1080P_H264);
-                        if (bestFound.containsKey(ITAG.MP4_VIDEO_720P_H264_AUDIO_AAC)) bestFound.remove(ITAG.DASH_VIDEO_720P_H264);
-                        if (bestFound.containsKey(ITAG.FLV_VIDEO_480P_H264_AUDIO_AAC)) bestFound.remove(ITAG.DASH_VIDEO_480P_H264);
-                        if (bestFound.containsKey(ITAG.MP4_VIDEO_360P_H264_AUDIO_AAC)) bestFound.remove(ITAG.DASH_VIDEO_360P_H264);
+                        if (bestFound.containsKey(ITAG.MP4_VIDEO_AUDIO_ORIGINAL)) {
+                            bestFound.remove(ITAG.DASH_VIDEO_ORIGINAL_H264);
+                        }
+                        if (bestFound.containsKey(ITAG.MP4_VIDEO_1080P_H264_AUDIO_AAC)) {
+                            bestFound.remove(ITAG.DASH_VIDEO_1080P_H264);
+                        }
+                        if (bestFound.containsKey(ITAG.MP4_VIDEO_720P_H264_AUDIO_AAC)) {
+                            bestFound.remove(ITAG.DASH_VIDEO_720P_H264);
+                        }
+                        if (bestFound.containsKey(ITAG.FLV_VIDEO_480P_H264_AUDIO_AAC)) {
+                            bestFound.remove(ITAG.DASH_VIDEO_480P_H264);
+                        }
+                        if (bestFound.containsKey(ITAG.MP4_VIDEO_360P_H264_AUDIO_AAC)) {
+                            bestFound.remove(ITAG.DASH_VIDEO_360P_H264);
+                        }
                         if (bestFound.containsKey(ITAG.DASH_VIDEO_ORIGINAL_H264) || bestFound.containsKey(ITAG.DASH_VIDEO_1080P_H264) || bestFound.containsKey(ITAG.DASH_VIDEO_720P_H264) || bestFound.containsKey(ITAG.DASH_VIDEO_480P_H264) || bestFound.containsKey(ITAG.DASH_VIDEO_360P_H264)) {
                             ITAG[] dashAudioTags = new ITAG[] { ITAG.DASH_AUDIO_256K_AAC, ITAG.DASH_AUDIO_128K_AAC, ITAG.DASH_AUDIO_48K_AAC, ITAG.DASH_AUDIO_192K_WEBM, ITAG.DASH_AUDIO_128K_WEBM };
                             for (ITAG dashAudio : dashAudioTags) {
@@ -1049,15 +1128,27 @@ public class TbCm extends PluginForDecrypt {
                     Iterator<Entry<ITAG, String[]>> it2 = useTags.entrySet().iterator();
                     while (it2.hasNext()) {
                         Entry<ITAG, String[]> next2 = it2.next();
-                        if (!allowedItags.containsKey(next2.getKey())) it2.remove();
+                        if (!allowedItags.containsKey(next2.getKey())) {
+                            it2.remove();
+                        }
                     }
                 }
                 /* filter out dash/xy duplicates */
-                if (useTags.containsKey(ITAG.MP4_VIDEO_AUDIO_ORIGINAL)) useTags.remove(ITAG.DASH_VIDEO_ORIGINAL_H264);
-                if (useTags.containsKey(ITAG.MP4_VIDEO_1080P_H264_AUDIO_AAC)) useTags.remove(ITAG.DASH_VIDEO_1080P_H264);
-                if (useTags.containsKey(ITAG.MP4_VIDEO_720P_H264_AUDIO_AAC)) useTags.remove(ITAG.DASH_VIDEO_720P_H264);
-                if (useTags.containsKey(ITAG.FLV_VIDEO_480P_H264_AUDIO_AAC)) useTags.remove(ITAG.DASH_VIDEO_480P_H264);
-                if (useTags.containsKey(ITAG.MP4_VIDEO_360P_H264_AUDIO_AAC)) useTags.remove(ITAG.DASH_VIDEO_360P_H264);
+                if (useTags.containsKey(ITAG.MP4_VIDEO_AUDIO_ORIGINAL)) {
+                    useTags.remove(ITAG.DASH_VIDEO_ORIGINAL_H264);
+                }
+                if (useTags.containsKey(ITAG.MP4_VIDEO_1080P_H264_AUDIO_AAC)) {
+                    useTags.remove(ITAG.DASH_VIDEO_1080P_H264);
+                }
+                if (useTags.containsKey(ITAG.MP4_VIDEO_720P_H264_AUDIO_AAC)) {
+                    useTags.remove(ITAG.DASH_VIDEO_720P_H264);
+                }
+                if (useTags.containsKey(ITAG.FLV_VIDEO_480P_H264_AUDIO_AAC)) {
+                    useTags.remove(ITAG.DASH_VIDEO_480P_H264);
+                }
+                if (useTags.containsKey(ITAG.MP4_VIDEO_360P_H264_AUDIO_AAC)) {
+                    useTags.remove(ITAG.DASH_VIDEO_360P_H264);
+                }
                 final boolean allowVariants = isJDownloader2() && cfg.getBooleanProperty("ENABLE_VARIANTS", false);
                 String TTSURL = br.getRegex("\"ttsurl\": \"(http.*?)\"").getMatch(0);
                 for (final Entry<ITAG, String[]> entry : useTags.entrySet()) {
@@ -1135,11 +1226,12 @@ public class TbCm extends PluginForDecrypt {
                     if (filePackage == null) {
                         filePackage = FilePackage.getInstance();
                         filePackage.setProperty("ALLOW_MERGE", true);
-                        if (multiple_videos || cfg.getBooleanProperty("GROUP_FORMAT", false))
+                        if (multiple_videos || cfg.getBooleanProperty("GROUP_FORMAT", false)) {
                             filePackage.setName("YouTube " + convertTo.getText());
-                        else
+                        } else {
                             // package name should not reference convertTo when user doesn't want to group by type!
                             filePackage.setName(YT_FILENAME);
+                        }
                         filepackages.put(convertTo.getText(), filePackage);
                     }
                     if (allowVariants) {
@@ -1194,7 +1286,9 @@ public class TbCm extends PluginForDecrypt {
                             case AUDIO_DASH_AAC:
                                 if (bestHit != null) {
                                     for (ITAG itag : itags) {
-                                        if (availableItags.containsKey(itag) && itag.getVariantID() != null) variants.add(itag.getVariantID());
+                                        if (availableItags.containsKey(itag) && itag.getVariantID() != null) {
+                                            variants.add(itag.getVariantID());
+                                        }
                                     }
                                 }
                                 break;
@@ -1221,13 +1315,16 @@ public class TbCm extends PluginForDecrypt {
                             if (infoLink != null) {
                                 if (variants.size() > 1) {
                                     if (bestHit != null) {
+
                                         infoLink.setProperty("VARIANT", bestHit.itag.getVariantID());
                                         infoLink.setProperty("VARIANTS", variants);
                                         setVariantsSupport(infoLink, true);
                                     }
                                 }
                                 infoLink.setProperty("LINKDUPEID", "ytID" + ytID + "." + convertTo.name());
-                                if (filePackage != null) filePackage.add(infoLink);
+                                if (filePackage != null) {
+                                    filePackage.add(infoLink);
+                                }
                                 decryptedLinks.add(infoLink);
                             } else {
                                 logger.info("createDownloadLink failed for " + convertTo.name());
@@ -1238,7 +1335,9 @@ public class TbCm extends PluginForDecrypt {
                             final DownloadLink infoLink = this.createDownloadlink(formattedFilename, currentVideoUrl, ytID, YT_FILENAME, convertTo, formatInName, info, bestDashAudio);
                             if (infoLink != null) {
                                 infoLink.setProperty("LINKDUPEID", "ytID" + ytID + "." + info.itag.getITAG());
-                                if (filePackage != null) filePackage.add(infoLink);
+                                if (filePackage != null) {
+                                    filePackage.add(infoLink);
+                                }
                                 decryptedLinks.add(infoLink);
                             } else {
                                 logger.info("createDownloadLink failed for " + convertTo.name());
@@ -1255,12 +1354,13 @@ public class TbCm extends PluginForDecrypt {
                         filePackage = FilePackage.getInstance();
                         filePackage.setProperty("ALLOW_MERGE", true);
                         String subtitles = "(Subtitles)";
-                        if (multiple_videos)
+                        if (multiple_videos) {
                             filePackage.setName("Youtube " + subtitles);
-                        else if (!cfg.getBooleanProperty("GROUP_FORMAT", false))
+                        } else if (!cfg.getBooleanProperty("GROUP_FORMAT", false)) {
                             filePackage.setName(YT_FILENAME);
-                        else
+                        } else {
                             filePackage.setName(YT_FILENAME + " " + subtitles);
+                        }
                         filepackages.put(NAME_SUBTITLES, filePackage);
                     }
                     /* new tts */
@@ -1281,9 +1381,15 @@ public class TbCm extends PluginForDecrypt {
                         String name = br.getRegex("<track id=\"" + trackID + "\".*?name=\"(.*?)\".*?/>").getMatch(0);
                         String kind = br.getRegex("<track id=\"" + trackID + "\".*?kind=\"(.*?)\".*?/>").getMatch(0);
                         String langOrg = br.getRegex("<track id=\"" + trackID + "\".*?lang_original=\"(.*?)\".*?/>").getMatch(0);
-                        if (name == null) name = "";
-                        if (kind == null) kind = "";
-                        if (duplicate.add(lang) == false) continue;
+                        if (name == null) {
+                            name = "";
+                        }
+                        if (kind == null) {
+                            kind = "";
+                        }
+                        if (duplicate.add(lang) == false) {
+                            continue;
+                        }
                         String link = null;
                         if (TTSURL == null) {
                             link = preferHTTPS("http://www.youtube.com/api/timedtext?type=track&name=" + URLEncoder.encode(name, "UTF-8") + "&lang=" + URLEncoder.encode(lang, "UTF-8") + "&v=" + URLEncoder.encode(VIDEOID, "UTF-8"));
@@ -1318,12 +1424,13 @@ public class TbCm extends PluginForDecrypt {
                     filePackage = FilePackage.getInstance();
                     filePackage.setProperty("ALLOW_MERGE", true);
                     String thumbnails = "(Thumbnails)";
-                    if (multiple_videos)
+                    if (multiple_videos) {
                         filePackage.setName("Youtube " + thumbnails);
-                    else if (!cfg.getBooleanProperty("GROUP_FORMAT", false))
+                    } else if (!cfg.getBooleanProperty("GROUP_FORMAT", false)) {
                         filePackage.setName(YT_FILENAME);
-                    else
+                    } else {
                         filePackage.setName(YT_FILENAME + " " + thumbnails);
+                    }
                     filepackages.put(NAME_THUMBNAILS, filePackage);
                 }
 
@@ -1351,13 +1458,17 @@ public class TbCm extends PluginForDecrypt {
 
         // No links found -> Link is probably offline
         if (decryptedLinks == null || decryptedLinks.isEmpty()) {
-            if (verifyAge || this.br.getURL().toLowerCase().indexOf("youtube.com/get_video_info?") != -1 && !prem) { throw new DecrypterException(DecrypterException.ACCOUNT); }
+            if (verifyAge || this.br.getURL().toLowerCase().indexOf("youtube.com/get_video_info?") != -1 && !prem) {
+                throw new DecrypterException(DecrypterException.ACCOUNT);
+            }
             final DownloadLink offline = getOfflineLink();
             offline.setName(getVideoID(parameter));
             decryptedLinks.add(offline);
         }
 
-        if (!dupeList.isEmpty()) logger.info("Time to decrypt : " + ((System.currentTimeMillis() - startTime) / 1000) + " seconds. Returning " + dupeList.size() + " Videos from List for " + parameter);
+        if (!dupeList.isEmpty()) {
+            logger.info("Time to decrypt : " + ((System.currentTimeMillis() - startTime) / 1000) + " seconds. Returning " + dupeList.size() + " Videos from List for " + parameter);
+        }
 
         return decryptedLinks;
     }
@@ -1403,7 +1514,9 @@ public class TbCm extends PluginForDecrypt {
         }
         if (DestinationFormat.AUDIO_DASH_AAC.equals(convertTo)) {
             audioInfo = videoInfo;
-            if (audioInfo == null) return null;
+            if (audioInfo == null) {
+                return null;
+            }
             /* special AUDIO-DASH handling */
             thislink.setFinalFileName(currentFilename);
             thislink.setProperty("name", currentFilename);
@@ -1416,7 +1529,9 @@ public class TbCm extends PluginForDecrypt {
             thislink.setProperty("DASH_AUDIO", audioInfo.itag.getITAG());
             thislink.setProperty("DASH_AUDIO_SIZE", audioInfo.size);
         } else if (DestinationFormat.VIDEO_DASH_MP4.equals(convertTo)) {
-            if (audioInfo == null) return null;
+            if (audioInfo == null) {
+                return null;
+            }
             /* special VIDEO-DASH handling */
             thislink.setFinalFileName(currentFilename);
             thislink.setProperty("name", currentFilename);
@@ -1481,16 +1596,24 @@ public class TbCm extends PluginForDecrypt {
     private HashMap<Integer, String[]> parseLinks(Browser br, String html5_fmt_map, boolean allowVideoOnly) throws IOException, PluginException {
         final HashMap<Integer, String[]> links = new HashMap<Integer, String[]>();
         if (html5_fmt_map != null) {
-            if (html5_fmt_map.contains(UNSUPPORTEDRTMP)) { return links; }
+            if (html5_fmt_map.contains(UNSUPPORTEDRTMP)) {
+                return links;
+            }
             String[] html5_hits = new Regex(html5_fmt_map, "(.*?)(,|$)").getColumn(0);
             if (html5_hits != null) {
                 for (String hit : html5_hits) {
                     hit = unescape(hit);
                     String hitUrl = new Regex(hit, "url=(http.*?)(\\&|$)").getMatch(0);
                     String sig = new Regex(hit, "url=http.*?(\\&|$)(sig|signature)=(.*?)(\\&|$)").getMatch(2);
-                    if (sig == null) sig = new Regex(hit, "(sig|signature)=(.*?)(\\&|$)").getMatch(1);
-                    if (sig == null) sig = new Regex(hit, "(sig|signature)%3D(.*?)%26").getMatch(1);
-                    if (sig == null) sig = descrambleSignature(new Regex(hit, "s=(.*?)(\\&|$)").getMatch(0), br);
+                    if (sig == null) {
+                        sig = new Regex(hit, "(sig|signature)=(.*?)(\\&|$)").getMatch(1);
+                    }
+                    if (sig == null) {
+                        sig = new Regex(hit, "(sig|signature)%3D(.*?)%26").getMatch(1);
+                    }
+                    if (sig == null) {
+                        sig = descrambleSignature(new Regex(hit, "s=(.*?)(\\&|$)").getMatch(0), br);
+                    }
                     String hitFmt = new Regex(hit, "itag=(\\d+)").getMatch(0);
                     String hitQ = new Regex(hit, "quality=(.*?)(\\&|$)").getMatch(0);
                     if (hitQ == null && allowVideoOnly) {
@@ -1526,7 +1649,9 @@ public class TbCm extends PluginForDecrypt {
                                 break;
                             }
                         }
-                        if (hitQ == null) hitQ = "unknown";
+                        if (hitQ == null) {
+                            hitQ = "unknown";
+                        }
                     }
                     if (hitUrl != null && hitFmt != null && hitQ != null) {
                         hitUrl = unescape(hitUrl.replaceAll("\\\\/", "/"));
@@ -1584,7 +1709,9 @@ public class TbCm extends PluginForDecrypt {
             }
             if (html5_fmt_map != null) {
                 HashMap<Integer, String[]> ret = parseLinks(br, html5_fmt_map, false);
-                if (ret.size() == 0) return links;
+                if (ret.size() == 0) {
+                    return links;
+                }
                 links.putAll(ret);
                 if (isJDownloader2()) {
                     /* not playable by vlc */
@@ -1594,7 +1721,9 @@ public class TbCm extends PluginForDecrypt {
                     links.putAll(ret);
                 }
             } else {
-                if (br.containsHTML("reason=Unfortunately")) return null;
+                if (br.containsHTML("reason=Unfortunately")) {
+                    return null;
+                }
                 if (tryGetDetails == true) {
                     br.getPage("http://www.youtube.com/get_video_info?el=detailpage&video_id=" + getVideoID(videoURL));
                     return parseLinks(br, videoURL, YT_FILENAME, ythack, false);
@@ -1684,7 +1813,9 @@ public class TbCm extends PluginForDecrypt {
         br.setCookie("youtube.com", "PREF", "f2=40100000&hl=en-GB");
         br.getHeaders().put("User-Agent", "Wget/1.12");
         br.getPage(video);
-        if (br.containsHTML("id=\"unavailable-submessage\" class=\"watch-unavailable-submessage\"")) { return null; }
+        if (br.containsHTML("id=\"unavailable-submessage\" class=\"watch-unavailable-submessage\"")) {
+            return null;
+        }
         final String VIDEOID = new Regex(video, "watch\\?v=([\\w_\\-]+)").getMatch(0);
         boolean fileNameFound = false;
         String YT_FILENAME = VIDEOID;
@@ -1710,7 +1841,9 @@ public class TbCm extends PluginForDecrypt {
                 form.put("action_confirm", "Confirm+Birth+Date");
                 form.put("session_token", Encoding.urlEncode(session_token));
                 br.submitForm(form);
-                if (br.getCookie("http://www.youtube.com", "is_adult") == null) { return null; }
+                if (br.getCookie("http://www.youtube.com", "is_adult") == null) {
+                    return null;
+                }
             } else if (url.toLowerCase(Locale.ENGLISH).indexOf("youtube.com/index?ytsession=") != -1 || url.toLowerCase(Locale.ENGLISH).indexOf("youtube.com/verify_age?next_url=") != -1 && !prem) {
                 ythack = true;
                 br.getPage("http://www.youtube.com/get_video_info?video_id=" + VIDEOID);
@@ -1763,7 +1896,9 @@ public class TbCm extends PluginForDecrypt {
      * @throws PluginException
      */
     private String descrambleSignature(String sig, Browser br) throws IOException, PluginException {
-        if (sig == null) return null;
+        if (sig == null) {
+            return null;
+        }
         String jsUrl = br.getMatch("\"js\"\\: \"(.+?)\"");
         jsUrl = jsUrl.replace("\\/", "/");
         jsUrl = "http:" + jsUrl;
@@ -1841,8 +1976,12 @@ public class TbCm extends PluginForDecrypt {
 
         }
 
-        if (new Regex(line, "\\.split\\(\"\"\\)").matches()) { return s; }
-        if (new Regex(line, "\\.join\\(\"\"\\)").matches()) { return s; }
+        if (new Regex(line, "\\.split\\(\"\"\\)").matches()) {
+            return s;
+        }
+        if (new Regex(line, "\\.join\\(\"\"\\)").matches()) {
+            return s;
+        }
         throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, "Unknown Signature Rule: " + line);
 
     }
@@ -1868,7 +2007,9 @@ public class TbCm extends PluginForDecrypt {
         /* we have to make sure the youtube plugin is loaded */
         if (pluginloaded == false) {
             final PluginForHost plugin = JDUtilities.getPluginForHost("youtube.com");
-            if (plugin == null) throw new IllegalStateException("youtube plugin not found!");
+            if (plugin == null) {
+                throw new IllegalStateException("youtube plugin not found!");
+            }
             pluginloaded = true;
         }
         return jd.plugins.hoster.Youtube.unescape(s);
@@ -1877,14 +2018,17 @@ public class TbCm extends PluginForDecrypt {
     private String preferHTTPS(final String s) {
         if (pluginloaded == false) {
             final PluginForHost plugin = JDUtilities.getPluginForHost("youtube.com");
-            if (plugin == null) throw new IllegalStateException("youtube plugin not found!");
+            if (plugin == null) {
+                throw new IllegalStateException("youtube plugin not found!");
+            }
             pluginloaded = true;
         }
         boolean prefers = getPluginConfig().getBooleanProperty("PREFER_HTTPS", jd.plugins.hoster.Youtube.defaultCustomPreferHTTPS);
-        if (prefers)
+        if (prefers) {
             return s.replaceFirst("http://", "https://");
-        else
+        } else {
             return s.replaceFirst("https://", "http://");
+        }
     }
 
     @Override

@@ -57,8 +57,14 @@ public class GamMapCm extends PluginForHost {
         // get id
         fuid = getFUID(link);
         // set unique id
-        if (fuid == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, "Error could not determine fuid");
-        link.setLinkID(fuid);
+        if (fuid == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, "Error could not determine fuid");
+        }
+        try {// JD2 Only Code!
+            link.setLinkID(fuid);
+        } catch (Throwable e) {
+            link.setProperty("LINKDUPEID", fuid);
+        }
         // get host
         final String host = new Regex(link.getDownloadURL(), "https?://[^/]+").getMatch(-1);
         // set formatted host, details has the only page with full filename
@@ -90,12 +96,18 @@ public class GamMapCm extends PluginForHost {
         prepBrowser(br);
         correctDownloadLink(downloadLink);
         br.getPage(downloadLink.getDownloadURL());
-        if (br.containsHTML("(404 Not Found|This file could not be found on our system)")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (br.containsHTML("(404 Not Found|This file could not be found on our system)")) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
         String filename = br.getRegex(">File: <span class=\"content\">(.*?)</span>").getMatch(0);
         String filesize = br.getRegex(">Size: <span class=\"content\">(.*?)</span>").getMatch(0);
-        if (filename == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (filename == null) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
         downloadLink.setName(filename.trim());
-        if (filesize != null) downloadLink.setDownloadSize(SizeFormatter.getSize(filesize));
+        if (filesize != null) {
+            downloadLink.setDownloadSize(SizeFormatter.getSize(filesize));
+        }
         return AvailableStatus.TRUE;
     }
 
@@ -135,7 +147,9 @@ public class GamMapCm extends PluginForHost {
                 // preference link first,
                 String prefs = prefsLocation();
                 // when null, we will make it return the first entry
-                if (prefs == null) prefs = "";
+                if (prefs == null) {
+                    prefs = "";
+                }
                 for (String k : d.keySet()) {
                     if (k.contains(prefs)) {
                         ddlink = d.get(k);
@@ -154,7 +168,9 @@ public class GamMapCm extends PluginForHost {
             }
             br.getPage(ddlink);
             ddlink = br.getRegex("<meta http-equiv=\"refresh\"[^\r\n]+url=([^\"]+)").getMatch(0);
-            if (ddlink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            if (ddlink == null) {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
         }
         dl = jd.plugins.BrowserAdapter.openDownload(br, link, ddlink, true, -10);
         link.setFinalFileName(Encoding.htmlDecode(getFileNameFromHeader(dl.getConnection())));

@@ -38,7 +38,7 @@ public class FolderWatchConfigPanel extends ExtensionConfigPanel<FolderWatchExte
                 continue;
             }
 
-            if (m.getAnnotation(AboutConfig.class) != null && (m.getAnnotation(DevConfig.class) == null || Application.isJared(null))) {
+            if (m.getAnnotation(AboutConfig.class) != null && (m.getAnnotation(DevConfig.class) == null || !Application.isJared(null))) {
                 if (m.getSetter() == null) {
                     throw new RuntimeException("Setter for " + m.getGetter().getMethod() + " missing");
                 } else if (m.getGetter() == null) {
