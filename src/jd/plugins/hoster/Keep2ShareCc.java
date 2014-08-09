@@ -77,6 +77,7 @@ public class Keep2ShareCc extends PluginForHost {
     private final String                   DOMAINS_PLAIN    = "((keep2share|k2s|k2share|keep2s|keep2)\\.cc)";
     private final String                   DOMAINS_HTTP     = "(https?://(www\\.)?" + DOMAINS_PLAIN + ")";
 
+    private static final String            USE_API          = "USE_API";
     private final String                   SSL_CONNECTION   = "SSL_CONNECTION";
 
     private static Object                  LOCK             = new Object();
@@ -415,8 +416,25 @@ public class Keep2ShareCc extends PluginForHost {
         return dllink;
     }
 
+    private void api_login(final Account acc, final boolean force) throws IOException, PluginException {
+        String authtoken = api_getAuthToken(acc);
+        if (authtoken == null || force) {
+            br.postPageRaw("http://keep2share.cc/api/v1/login", "{\"username\":\"" + Encoding.urlEncode(acc.getUser()) + "\",\"password\":\"" + acc.getPass() + "\"}");
+            authtoken = br.getRegex("\"auth_token\":\"([^<>\"]*?)\"").getMatch(0);
+            if (authtoken == null) {
+                if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
+                    throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUngültiger Benutzername oder ungültiges Passwort!\r\nDu bist dir sicher, dass dein eingegebener Benutzername und Passwort stimmen? Versuche folgendes:\r\n1. Falls dein Passwort Sonderzeichen enthält, ändere es (entferne diese) und versuche es erneut!\r\n2. Gib deine Zugangsdaten per Hand (ohne kopieren/einfügen) ein.", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                } else {
+                    throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nInvalid username/password!\r\nYou're sure that the username and password you entered are correct? Some hints:\r\n1. If your password contains special characters, change it (remove them) and try again!\r\n2. Type in your username/password by hand without copy & paste.", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                }
+            }
+            acc.setProperty("authtoken", authtoken);
+        }
+        br.postPageRaw("http://keep2share.cc/api/v1/accountinfo", "");
+    }
+
     @SuppressWarnings("unchecked")
-    private HashMap<String, String> login(final Account account, final boolean force, AtomicBoolean validateCookie) throws Exception {
+    private HashMap<String, String> site_login(final Account account, final boolean force, AtomicBoolean validateCookie) throws Exception {
         synchronized (LOCK) {
             try {
                 // Load cookies
@@ -475,19 +493,39 @@ public class Keep2ShareCc extends PluginForHost {
                 }
                 postPage(MAINPAGE + "/login.html", postData);
                 if (br.containsHTML("Incorrect username or password")) {
-                    throw new PluginException(LinkStatus.ERROR_PREMIUM, "Incorrect username or password", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                    if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
+                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUngültiger Benutzername oder ungültiges Passwort!\r\nDu bist dir sicher, dass dein eingegebener Benutzername und Passwort stimmen? Versuche folgendes:\r\n1. Falls dein Passwort Sonderzeichen enthält, ändere es (entferne diese) und versuche es erneut!\r\n2. Gib deine Zugangsdaten per Hand (ohne kopieren/einfügen) ein.", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                    } else {
+                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nInvalid username/password!\r\nYou're sure that the username and password you entered are correct? Some hints:\r\n1. If your password contains special characters, change it (remove them) and try again!\r\n2. Type in your username/password by hand without copy & paste.", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                    }
                 }
                 if (br.containsHTML("The verification code is incorrect.")) {
-                    throw new PluginException(LinkStatus.ERROR_PREMIUM, "LoginCaptcha invalid", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                    if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
+                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "Login Captcha ungültig!", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                    } else {
+                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "Invalid login captcha!", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                    }
                 }
                 if (br.containsHTML(">We have a suspicion that your account was stolen, this is why we")) {
-                    throw new PluginException(LinkStatus.ERROR_PREMIUM, "Account temporarily blocked", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                    if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
+                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "Account temporär gesperrt!", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                    } else {
+                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "Account temporarily blocked!", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                    }
                 }
                 if (br.containsHTML(">Please fill in the form with your login credentials")) {
-                    throw new PluginException(LinkStatus.ERROR_PREMIUM, "Account invalid", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                    if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
+                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUngültiger Benutzername oder ungültiges Passwort!\r\nDu bist dir sicher, dass dein eingegebener Benutzername und Passwort stimmen? Versuche folgendes:\r\n1. Falls dein Passwort Sonderzeichen enthält, ändere es (entferne diese) und versuche es erneut!\r\n2. Gib deine Zugangsdaten per Hand (ohne kopieren/einfügen) ein.", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                    } else {
+                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nInvalid username/password!\r\nYou're sure that the username and password you entered are correct? Some hints:\r\n1. If your password contains special characters, change it (remove them) and try again!\r\n2. Type in your username/password by hand without copy & paste.", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                    }
                 }
                 if (br.containsHTML(">Password cannot be blank.<")) {
-                    throw new PluginException(LinkStatus.ERROR_PREMIUM, "Password cannot be blank.", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                    if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
+                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "Passwortfeld darf nicht leer sein!", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                    } else {
+                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "Password field cannot be empty!", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                    }
                 }
                 br.getHeaders().put("X-Requested-With", null);
                 String url = br.getRegex("url\":\"(.*?)\"").getMatch(0);
@@ -519,49 +557,79 @@ public class Keep2ShareCc extends PluginForHost {
             ai.setStatus("Please use E-Mail as login/name!");
             return ai;
         }
-        AtomicBoolean validateCookie = new AtomicBoolean(true);
-        try {
-            login(account, true, validateCookie);
-        } catch (final PluginException e) {
-            account.setValid(false);
-            throw e;
-        }
-        if (validateCookie.get() == false) {
-            getPage(MAINPAGE + "/site/profile.html");
-        }
-        account.setValid(true);
-        if (br.containsHTML("class=\"free\">Free</a>")) {
-            account.setProperty("free", true);
-            ai.setStatus("Registered Free User");
+        if (this.apiEnabled()) {
+            api_login(account, true);
         } else {
-            account.setProperty("free", false);
-            String availableTraffic = br.getRegex("Available traffic(.*?\\(today\\))?:.*?<a href=\"/user/statistic\\.html\">(.*?)</a>").getMatch(1);
-            if (availableTraffic != null) {
-                ai.setTrafficLeft(SizeFormatter.getSize(availableTraffic));
+            ai = site_fetchAccountInfo(account);
+        }
+        return ai;
+    }
+
+    /* TODO: Implement */
+    private AccountInfo api_fetchAccountInfo(final Account account) throws Exception {
+        final AccountInfo ai = new AccountInfo();
+        account.setProperty("free", false);
+        String availableTraffic = br.getRegex("").getMatch(1);
+        if (availableTraffic != null) {
+            ai.setTrafficLeft(SizeFormatter.getSize(availableTraffic));
+        } else {
+            ai.setUnlimitedTraffic();
+        }
+        String expire = br.getRegex("").getMatch(0);
+        if (expire == null) {
+            expire = br.getRegex("").getMatch(0);
+        }
+        if (expire == null && br.containsHTML("xx")) {
+            ai.setStatus("Premium Lifetime User");
+            ai.setValidUntil(-1);
+        } else if (expire == null) {
+            ai.setStatus("Premium User");
+            ai.setValidUntil(-1);
+        } else {
+            ai.setStatus("Premium User");
+            // Expired but actually we still got one day ('today')
+            if (br.containsHTML("\\(1 day\\)")) {
+                ai.setValidUntil(TimeFormatter.getMilliSeconds(expire, "yyyy.MM.dd", Locale.ENGLISH) + 24 * 60 * 60 * 1000l);
             } else {
-                ai.setUnlimitedTraffic();
+                ai.setValidUntil(TimeFormatter.getMilliSeconds(expire, "yyyy.MM.dd", Locale.ENGLISH));
             }
-            String expire = br.getRegex("class=\"premium\">Premium:[\t\n\r ]+(\\d{4}\\.\\d{2}\\.\\d{2})").getMatch(0);
-            if (expire == null) {
-                expire = br.getRegex("Premium expires:\\s*?<b>(\\d{4}\\.\\d{2}\\.\\d{2})").getMatch(0);
-            }
-            if (expire == null && br.containsHTML(">Premium:[\t\n\r ]+LifeTime")) {
-                ai.setStatus("Premium Lifetime User");
-                ai.setValidUntil(-1);
-            } else if (expire == null) {
-                ai.setStatus("Premium User");
-                ai.setValidUntil(-1);
+        }
+        return null;
+    }
+
+    private AccountInfo site_fetchAccountInfo(final Account account) throws Exception {
+        final AccountInfo ai = new AccountInfo();
+        account.setProperty("free", false);
+        String availableTraffic = br.getRegex("Available traffic(.*?\\(today\\))?:.*?<a href=\"/user/statistic\\.html\">(.*?)</a>").getMatch(1);
+        if (availableTraffic != null) {
+            ai.setTrafficLeft(SizeFormatter.getSize(availableTraffic));
+        } else {
+            ai.setUnlimitedTraffic();
+        }
+        String expire = br.getRegex("class=\"premium\">Premium:[\t\n\r ]+(\\d{4}\\.\\d{2}\\.\\d{2})").getMatch(0);
+        if (expire == null) {
+            expire = br.getRegex("Premium expires:\\s*?<b>(\\d{4}\\.\\d{2}\\.\\d{2})").getMatch(0);
+        }
+        if (expire == null && br.containsHTML(">Premium:[\t\n\r ]+LifeTime")) {
+            ai.setStatus("Premium Lifetime User");
+            ai.setValidUntil(-1);
+        } else if (expire == null) {
+            ai.setStatus("Premium User");
+            ai.setValidUntil(-1);
+        } else {
+            ai.setStatus("Premium User");
+            // Expired but actually we still got one day ('today')
+            if (br.containsHTML("\\(1 day\\)")) {
+                ai.setValidUntil(TimeFormatter.getMilliSeconds(expire, "yyyy.MM.dd", Locale.ENGLISH) + 24 * 60 * 60 * 1000l);
             } else {
-                ai.setStatus("Premium User");
-                // Expired but actually we still got one day ('today')
-                if (br.containsHTML("\\(1 day\\)")) {
-                    ai.setValidUntil(TimeFormatter.getMilliSeconds(expire, "yyyy.MM.dd", Locale.ENGLISH) + 24 * 60 * 60 * 1000l);
-                } else {
-                    ai.setValidUntil(TimeFormatter.getMilliSeconds(expire, "yyyy.MM.dd", Locale.ENGLISH));
-                }
+                ai.setValidUntil(TimeFormatter.getMilliSeconds(expire, "yyyy.MM.dd", Locale.ENGLISH));
             }
         }
         return ai;
+    }
+
+    private String api_getAuthToken(final Account acc) {
+        return acc.getStringProperty("authtoken");
     }
 
     @Override
@@ -571,7 +639,7 @@ public class Keep2ShareCc extends PluginForHost {
         Object after = null;
         synchronized (LOCK) {
             Object before = account.getProperty("cookies", null);
-            after = login(account, false, null);
+            after = site_login(account, false, null);
             fresh = before != after;
         }
         getPage(MAINPAGE + "/site/profile.html");
@@ -1008,7 +1076,13 @@ public class Keep2ShareCc extends PluginForHost {
         return link;
     }
 
+    private boolean apiEnabled() {
+        return this.getPluginConfig().getBooleanProperty(USE_API, false);
+    }
+
     private void setConfigElements() {
+        // this.getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, this.getPluginConfig(), USE_API,
+        // JDL.L("plugins.hoster.Keep2ShareCc.useAPI", "Use API")).setDefaultValue(false));
         this.getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, this.getPluginConfig(), SSL_CONNECTION, JDL.L("plugins.hoster.Keep2ShareCc.preferSSL", "Use Secure Communication over SSL (HTTPS://)")).setDefaultValue(false));
     }
 

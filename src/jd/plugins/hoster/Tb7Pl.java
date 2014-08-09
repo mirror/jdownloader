@@ -92,8 +92,7 @@ public class Tb7Pl extends PluginForHost {
 
         // unfortunatelly there is no list with supported hosts anywhere on the page
         // only PNG image at the main page
-        final ArrayList<String> supportedHosts = new ArrayList<String>(Arrays.asList("turbobit.net", "catshare.net", "rapidu.net", "rapidgator.net", "rg.to", "uploaded.to", "uploaded.net", "ul.to", "oboom.com", "fileparadox.in", "netload.in",
-                "bitshare.com", "freakshare.net", "freakshare.com", "filesaur.com", "filemonkey.in", "uploadable.ch", "lunaticfiles.com", "fileshark.pl"));
+        final ArrayList<String> supportedHosts = new ArrayList<String>(Arrays.asList("turbobit.net", "catshare.net", "rapidu.net", "rapidgator.net", "rg.to", "uploaded.to", "uploaded.net", "ul.to", "oboom.com", "fileparadox.in", "netload.in", "bitshare.com", "freakshare.net", "freakshare.com", "filemonkey.in", "uploadable.ch", "lunaticfiles.com", "fileshark.pl"));
         if (expired) {
             ai.setExpired(true);
             ai.setStatus("Account expired");
@@ -181,7 +180,7 @@ public class Tb7Pl extends PluginForHost {
         }
         dl = jd.plugins.BrowserAdapter.openDownload(br, link, generatedLink, true, chunks);
         if (dl.getConnection().getContentType().equalsIgnoreCase("text/html")) // unknown
-        // error
+            // error
         {
             br.followConnection();
             if (br.getBaseURL().contains("notransfer")) {

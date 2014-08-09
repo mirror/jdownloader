@@ -26,7 +26,7 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "revision3.com" }, urls = { "http://(www\\.)?revision3\\.com/[a-z0-9]+/[a-z0-9\\-]+" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "revision3.com" }, urls = { "http://(www\\.)?revision3\\.com/[a-z0-9]+/[a-z0-9\\-_]+" }, flags = { 0 })
 public class RevisionThreeCom extends PluginForDecrypt {
 
     public RevisionThreeCom(PluginWrapper wrapper) {
@@ -36,7 +36,7 @@ public class RevisionThreeCom extends PluginForDecrypt {
     private static final String INVALIDLINKS  = "http://(www\\.)?revision3\\.com/(blog|api|content|category|search|shows|login|forum|episodes|host|network|hub)/.*?";
     private static final String INVALIDLINKS2 = "http://(www\\.)?revision3\\.com/[a-z0-9]+/(feed|about|subscribe|episodes).*?";
 
-    private static final String TYPE_NORMAL   = "http://(www\\.)?revision3\\.com/[a-z0-9]+/[a-z0-9\\-]+";
+    private static final String TYPE_NORMAL   = "http://(www\\.)?revision3\\.com/[a-z0-9]+/[a-z0-9\\-_]+";
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
@@ -54,7 +54,7 @@ public class RevisionThreeCom extends PluginForDecrypt {
             logger.info("Invalid link: " + parameter);
             return decryptedLinks;
         }
-        String fpName = br.getRegex("<title>(.*?) \\- ").getMatch(0);
+        String fpName = br.getRegex("<meta property=\"og:title\" content=\"([^<>\"]*?)\"").getMatch(0);
         if (fpName != null) {
             fpName = fpName.replace("...", "");
         }
