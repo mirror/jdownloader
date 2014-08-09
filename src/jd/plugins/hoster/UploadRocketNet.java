@@ -485,7 +485,7 @@ public class UploadRocketNet extends PluginForHost {
 
         // generic cleanup
         regexStuff.add("<\\!(\\-\\-.*?\\-\\-)>");
-        regexStuff.add("(<(\\w+)[^>]*(\"|')\\s*(visibility\\s*:\\s*hidden|display\\s*:\\s*none);?\\s*\\3[^>]*(>.*?<\\s*/\\2[^>]*>|/\\s*>))");
+        regexStuff.add("(<\\s*(\\w+)[^>]*(\"|')\\s*(visibility\\s*:\\s*hidden|display\\s*:\\s*none);?\\s*\\3[^>]*(>.*?<\\s*/\\2[^>]*>|/\\s*>))");
 
         for (String aRegex : regexStuff) {
             String results[] = new Regex(correctedBR, aRegex).getColumn(0);
