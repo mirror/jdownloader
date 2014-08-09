@@ -58,15 +58,21 @@ public class UpleaCom extends PluginForHost {
         this.setBrowserExclusive();
         prepBr();
         br.getPage(link.getDownloadURL());
-        if (br.containsHTML(">You followed an invalid or expired link")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (br.containsHTML(">You followed an invalid or expired link")) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
         final String filename = br.getRegex("class=\"agmd size18\">([^<>\"]*?)<").getMatch(0);
         String filesize = br.getRegex("class=\"label label\\-info agmd size14\">([^<>\"]*?)</span>").getMatch(0);
-        if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (filename == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         filesize = filesize.replace("ko", "KB");
         filesize = filesize.replace("Mo", "MB");
         filesize = filesize.replace("Go", "GB");
         link.setName(Encoding.htmlDecode(filename.trim()));
-        link.setDownloadSize(SizeFormatter.getSize(filesize));
+        if (filesize != null) {
+            link.setDownloadSize(SizeFormatter.getSize(filesize));
+        }
         return AvailableStatus.TRUE;
     }
 
@@ -88,12 +94,16 @@ public class UpleaCom extends PluginForHost {
         br.getPage(free_link);
         if (br.containsHTML("class=\"premium_title_exceed\"")) {
             final String wait_seconds = br.getRegex("timeText:(\\d+)").getMatch(0);
-            if (wait_seconds != null) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, Long.parseLong(wait_seconds) * 1001l);
+            if (wait_seconds != null) {
+                throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, Long.parseLong(wait_seconds) * 1001l);
+            }
             throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 60 * 60 * 1000l);
         }
         br.setFollowRedirects(false);
         final String dllink = br.getRegex("\"(https?://[a-z0-9]+\\.uplea.com/anonym/[^<>\"]*?)\"").getMatch(0);
-        if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (dllink == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
 
         try {
             brad.cloneBrowser().getPage("http://uplea.com/socials/" + fid);
@@ -104,7 +114,9 @@ public class UpleaCom extends PluginForHost {
 
         final String wait = br.getRegex("ulCounter\\(\\{\\'timer\\':(\\d+)\\}\\)").getMatch(0);
         int waitt = 10;
-        if (wait != null) waitt = Integer.parseInt(wait);
+        if (wait != null) {
+            waitt = Integer.parseInt(wait);
+        }
         this.sleep(waitt * 1001l, downloadLink);
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, false, 1);
         if (dl.getConnection().getContentType().contains("html")) {
@@ -124,7 +136,9 @@ public class UpleaCom extends PluginForHost {
     }
 
     private void handleServerErrors() throws PluginException {
-        if (br.containsHTML("Invalid Link")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error ('invalid link')");
+        if (br.containsHTML("Invalid Link")) {
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error ('invalid link')");
+        }
     }
 
     private static final String MAINPAGE = "http://uplea.com";
@@ -136,10 +150,11 @@ public class UpleaCom extends PluginForHost {
             try {
                 // Load cookies
                 br.setCookiesExclusive(true);
-                prepBr();
                 final Object ret = account.getProperty("cookies", null);
                 boolean acmatch = Encoding.urlEncode(account.getUser()).equals(account.getStringProperty("name", Encoding.urlEncode(account.getUser())));
-                if (acmatch) acmatch = Encoding.urlEncode(account.getPass()).equals(account.getStringProperty("pass", Encoding.urlEncode(account.getPass())));
+                if (acmatch) {
+                    acmatch = Encoding.urlEncode(account.getPass()).equals(account.getStringProperty("pass", Encoding.urlEncode(account.getPass())));
+                }
                 if (acmatch && ret != null && ret instanceof HashMap<?, ?> && !force) {
                     final HashMap<String, String> cookies = (HashMap<String, String>) ret;
                     if (account.isValid()) {
@@ -151,6 +166,7 @@ public class UpleaCom extends PluginForHost {
                         return;
                     }
                 }
+                prepBr();
                 br.setFollowRedirects(false);
                 br.postPage("http://uplea.com/?lang=en", "remember=1&login-form=&login=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()));
                 if (br.getCookie(MAINPAGE, "uplea") == null) {
@@ -185,7 +201,7 @@ public class UpleaCom extends PluginForHost {
             account.setValid(false);
             throw e;
         }
-        br.getPage("http://uplea.com/account");
+        br.getPage("/account");
         ai.setUnlimitedTraffic();
         final String expire = br.getRegex("premium member until <span class=\"cyan\">([^<>\"]*?) \\(\\d+ day").getMatch(0);
         if (expire == null) {
@@ -195,10 +211,10 @@ public class UpleaCom extends PluginForHost {
             } else {
                 throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nInvalid username/password or unsupported account type!\r\nQuick help:\r\nYou're sure that the username and password you entered are correct?\r\nIf your password contains special characters, change it (remove them) and try again!", PluginException.VALUE_ID_PREMIUM_DISABLE);
             }
-        } else {
-            ai.setValidUntil(TimeFormatter.getMilliSeconds(expire, "dd/MM/yyyy", Locale.ENGLISH));
         }
+        ai.setValidUntil(TimeFormatter.getMilliSeconds(expire, "dd/MM/yyyy", Locale.ENGLISH));
         account.setValid(true);
+        account.setProperty("free", false);
         ai.setStatus("Premium User");
         return ai;
     }
