@@ -53,12 +53,13 @@ public class FileNukeCom extends PluginForHost {
     private static final String  MAINTENANCEUSERTEXT = "This server is under Maintenance";
     private static final String  ALLWAIT_SHORT       = "Waiting till new downloads can be started";
 
+    private final boolean        useSpecialWay       = true;
     private static final boolean TYPE_2_PREMIUMONLY  = false;
     private static final String  TYPE_2              = "https?://(www\\.)?filenuke\\.com/f/[A-Za-z0-9]+";
 
     // DEV NOTES
     // XfileSharingProBasic Version 2.5.5.3-raz
-    // mods:
+    // mods: heavily modified, do NOT upgrade!
     // non account: 2 * unlimited?
     // free account:
     // premium account:
@@ -156,7 +157,27 @@ public class FileNukeCom extends PluginForHost {
     }
 
     public void doFree(DownloadLink downloadLink, boolean resumable, int maxchunks, String directlinkproperty) throws Exception, PluginException {
-        if (downloadLink.getDownloadURL().matches(TYPE_2) && TYPE_2_PREMIUMONLY) {
+        String passCode = null;
+        String md5hash = new Regex(correctedBR, "<b>MD5.*?</b>.*?nowrap>(.*?)<").getMatch(0);
+        if (md5hash != null) {
+            md5hash = md5hash.trim();
+            logger.info("Found md5hash: " + md5hash);
+            downloadLink.setMD5Hash(md5hash);
+        }
+
+        String dllink = checkDirectLink(downloadLink, directlinkproperty);
+        boolean force_premiumonly = false;
+        if (dllink == null && useSpecialWay) {
+            postPage(br.getURL(), "method_free=Free");
+            dllink = br.getRegex("file[\t\n\r ]+:[\t\n\r ]+\"(http://[^<>\"]*?)\"").getMatch(0);
+            if (dllink == null) {
+                getDllink();
+            }
+            if (dllink == null) {
+                force_premiumonly = true;
+            }
+        }
+        if (TYPE_2_PREMIUMONLY || force_premiumonly) {
             logger.info("Only downloadable via premium");
             try {
                 throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);
@@ -167,15 +188,6 @@ public class FileNukeCom extends PluginForHost {
             }
             throw new PluginException(LinkStatus.ERROR_FATAL, "Only downloadable via premium or registered");
         }
-        String passCode = null;
-        String md5hash = new Regex(correctedBR, "<b>MD5.*?</b>.*?nowrap>(.*?)<").getMatch(0);
-        if (md5hash != null) {
-            md5hash = md5hash.trim();
-            logger.info("Found md5hash: " + md5hash);
-            downloadLink.setMD5Hash(md5hash);
-        }
-
-        String dllink = checkDirectLink(downloadLink, directlinkproperty);
         /**
          * Video links can already be found here, if a link is found here we can skip wait times and captchas
          */
@@ -365,9 +377,8 @@ public class FileNukeCom extends PluginForHost {
         }
         if (dllink == null) {
             final String lnk1 = new Regex(correctedBR, "var lnk1 = \\'(https?://[^<>\"]*?)\\'").getMatch(0);
-            final String ext1 = new Regex(correctedBR, "var ext1 = \\'(/.*?)\\'").getMatch(0);
-            if (lnk1 != null && ext1 != null) {
-                dllink = lnk1 + ext1;
+            if (lnk1 != null) {
+                dllink = lnk1;
             }
         }
         return dllink;
@@ -401,6 +412,9 @@ public class FileNukeCom extends PluginForHost {
             if (correctedBR.contains("\">Skipped countdown<")) {
                 throw new PluginException(LinkStatus.ERROR_FATAL, "Fatal countdown error (countdown skipped)");
             }
+        }
+        if (new Regex(correctedBR, ">Video is processing now").matches()) {
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Video is still processing now", 1 * 60 * 60 * 1000l);
         }
         /** Wait time reconnect handling */
         if (new Regex(correctedBR, "(You have reached the download\\-limit|You have to wait)").matches()) {
