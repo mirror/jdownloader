@@ -86,7 +86,8 @@ public class UpToBoxCom extends PluginForHost {
 
     @Override
     public void correctDownloadLink(DownloadLink link) {
-        link.setUrlDownload(COOKIE_HOST + "/" + new Regex(link.getDownloadURL(), "([a-z0-9]{12})$").getMatch(0));
+        // link.setUrlDownload(COOKIE_HOST + "/" + new Regex(link.getDownloadURL(), "([a-z0-9]{12})$").getMatch(0));
+        link.setUrlDownload(link.getDownloadURL().replace("uptostream", "uptobox")); // Ensure https support
     }
 
     @Override
