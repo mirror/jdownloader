@@ -529,8 +529,7 @@ public class FileOmCom extends PluginForHost {
             }
         }
         regexStuff.add("<!(--.*?--)>");
-        regexStuff.add("(<div[^>]+display: ?none;[^>]+>.*?</div>)");
-        regexStuff.add("(visibility:hidden>.*?<)");
+        regexStuff.add("(<\\s*(\\w+)[^>]+\\s*style\\s*=\\s*(\"|')[\\w:;\\s]*(visibility\\s*:\\s*hidden|display\\s*:\\s*none)[\\w:;\\s]*\\3[^>]*(>.*?<\\s*/\\2[^>]*>|/\\s*>))");
 
         for (String aRegex : regexStuff) {
             String results[] = new Regex(toClean, aRegex).getColumn(0);
