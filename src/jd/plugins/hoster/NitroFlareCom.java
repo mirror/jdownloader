@@ -240,7 +240,7 @@ public class NitroFlareCom extends PluginForHost {
                 br.followConnection();
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
-            downloadLink.setProperty("directlink", dllink);
+            downloadLink.setProperty(directlinkproperty, dllink);
             dl.startDownload();
         }
     }
@@ -357,6 +357,7 @@ public class NitroFlareCom extends PluginForHost {
             br.followConnection();
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
+        downloadLink.setProperty(directlinkproperty, dllink);
         dl.startDownload();
     }
 
