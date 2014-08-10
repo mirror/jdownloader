@@ -97,6 +97,10 @@ public class InCloudDriveCom extends PluginForHost {
         final String filename = ajax.getRegex("class=\"propreties-file-count\">[\t\n\r ]+<b>([^<>\"]+)</b>").getMatch(0);
         final String filesize = ajax.getRegex(">Total size:</span><span class=\"propreties-dark-txt\">([^<>\"]+)</span>").getMatch(0);
         if (filename == null) {
+            if (ajax.containsHTML("<button[^>]*file_type=\"folder\"[^>]*>Download</button>")) {
+                // folder, not supported as of yet...
+                return AvailableStatus.FALSE;
+            }
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         link.setName(encodeUnicode(Encoding.htmlDecode(filename.trim())));
