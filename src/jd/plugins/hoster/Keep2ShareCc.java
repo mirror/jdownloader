@@ -72,18 +72,29 @@ public class Keep2ShareCc extends PluginForHost {
         return "http://k2s.cc/page/terms.html";
     }
 
-    private final String                   DOWNLOADPOSSIBLE = ">To download this file with slow speed, use";
-    private final String                   MAINPAGE         = "http://k2s.cc";
-    private final String                   DOMAINS_PLAIN    = "((keep2share|k2s|k2share|keep2s|keep2)\\.cc)";
-    private final String                   DOMAINS_HTTP     = "(https?://(www\\.)?" + DOMAINS_PLAIN + ")";
+    private final String                   DOWNLOADPOSSIBLE             = ">To download this file with slow speed, use";
+    private final String                   MAINPAGE                     = "http://k2s.cc";
+    private final String                   DOMAINS_PLAIN                = "((keep2share|k2s|k2share|keep2s|keep2)\\.cc)";
+    private final String                   DOMAINS_HTTP                 = "(https?://(www\\.)?" + DOMAINS_PLAIN + ")";
 
-    private static final String            USE_API          = "USE_API";
-    private final String                   SSL_CONNECTION   = "SSL_CONNECTION";
+    private static final String            USE_API                      = "USE_API";
+    private final static String            SSL_CONNECTION               = "SSL_CONNECTION";
 
-    private static Object                  LOCK             = new Object();
+    private static Object                  LOCK                         = new Object();
 
-    private static AtomicReference<String> agent            = new AtomicReference<String>(null);
-    private boolean                        prepBrSet        = false;
+    private static AtomicReference<String> agent                        = new AtomicReference<String>(null);
+    private boolean                        prepBrSet                    = false;
+
+    /* Connection stuff */
+    private static final boolean           FREE_RESUME                  = true;
+    private static final int               FREE_MAXCHUNKS               = 1;
+    private static final int               FREE_MAXDOWNLOADS            = 1;
+    private static final boolean           ACCOUNT_FREE_RESUME          = true;
+    private static final int               ACCOUNT_FREE_MAXCHUNKS       = 1;
+    private static final int               ACCOUNT_FREE_MAXDOWNLOADS    = 1;
+    private static final boolean           ACCOUNT_PREMIUM_RESUME       = true;
+    private static final int               ACCOUNT_PREMIUM_MAXCHUNKS    = 0;
+    private static final int               ACCOUNT_PREMIUM_MAXDOWNLOADS = 20;
 
     @Override
     public void correctDownloadLink(final DownloadLink link) {
@@ -254,11 +265,37 @@ public class Keep2ShareCc extends PluginForHost {
     @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
-        doFree(downloadLink, null);
+        doFree(downloadLink, null, FREE_RESUME, FREE_MAXCHUNKS);
     }
 
-    private void doFree(final DownloadLink downloadLink, final Account account) throws Exception {
+    private void doFree(final DownloadLink downloadLink, final Account account, final boolean resume, final int maxchunks) throws Exception {
         checkShowFreeDialog();
+        String dllink;
+        if (this.apiEnabled()) {
+            dllink = api_doFree(downloadLink, account);
+        } else {
+            dllink = site_doFree(downloadLink, account);
+        }
+        dllink = fixLinkSSL(dllink);
+        logger.info("dllink = " + dllink);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, resume, maxchunks);
+        if (dl.getConnection().getContentType().contains("html")) {
+            br.followConnection();
+            logger.info(br.toString());
+            dllink = br.getRegex("\"url\":\"(http:[^<>\"]*?)\"").getMatch(0);
+            if (dllink == null) {
+                handleGeneralServerErrors(account);
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
+            dllink = dllink.replace("\\", "");
+            // Try again...
+            dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, resume, maxchunks);
+        }
+        downloadLink.setProperty("directlink", dllink);
+        dl.startDownload();
+    }
+
+    private String site_doFree(final DownloadLink downloadLink, final Account account) throws Exception {
         handleGeneralErrors(account);
         br.setFollowRedirects(false);
         if (br.containsHTML("File size to large\\!<") || br.containsHTML("Only <b>Premium</b> access<br>") || br.containsHTML("only for premium members")) {
@@ -345,22 +382,7 @@ public class Keep2ShareCc extends PluginForHost {
                 }
             }
         }
-        logger.warning("dllink = " + dllink);
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 1);
-        if (dl.getConnection().getContentType().contains("html")) {
-            br.followConnection();
-            logger.info(br.toString());
-            dllink = br.getRegex("\"url\":\"(http:[^<>\"]*?)\"").getMatch(0);
-            if (dllink == null) {
-                handleGeneralServerErrors(account);
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            }
-            dllink = dllink.replace("\\", "");
-            // Try again...
-            dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 1);
-        }
-        downloadLink.setProperty("directlink", dllink);
-        dl.startDownload();
+        return dllink;
     }
 
     private void handleFreeErrors() throws PluginException {
@@ -396,6 +418,14 @@ public class Keep2ShareCc extends PluginForHost {
         return dllink;
     }
 
+    private String getJson(final String source, final String parameter) {
+        String result = new Regex(source, "\"" + parameter + "\":([\t\n\r ]+)?([0-9\\.]+|null|true|false)").getMatch(1);
+        if (result == null) {
+            result = new Regex(source, "\"" + parameter + "\":([\t\n\r ]+)?\"([^<>\"]*?)\"").getMatch(1);
+        }
+        return result;
+    }
+
     private String checkDirectLink(final DownloadLink downloadLink, final String property) {
         String dllink = downloadLink.getStringProperty(property);
         if (dllink != null) {
@@ -414,23 +444,6 @@ public class Keep2ShareCc extends PluginForHost {
             }
         }
         return dllink;
-    }
-
-    private void api_login(final Account acc, final boolean force) throws IOException, PluginException {
-        String authtoken = api_getAuthToken(acc);
-        if (authtoken == null || force) {
-            br.postPageRaw("http://keep2share.cc/api/v1/login", "{\"username\":\"" + Encoding.urlEncode(acc.getUser()) + "\",\"password\":\"" + acc.getPass() + "\"}");
-            authtoken = br.getRegex("\"auth_token\":\"([^<>\"]*?)\"").getMatch(0);
-            if (authtoken == null) {
-                if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
-                    throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUngültiger Benutzername oder ungültiges Passwort!\r\nDu bist dir sicher, dass dein eingegebener Benutzername und Passwort stimmen? Versuche folgendes:\r\n1. Falls dein Passwort Sonderzeichen enthält, ändere es (entferne diese) und versuche es erneut!\r\n2. Gib deine Zugangsdaten per Hand (ohne kopieren/einfügen) ein.", PluginException.VALUE_ID_PREMIUM_DISABLE);
-                } else {
-                    throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nInvalid username/password!\r\nYou're sure that the username and password you entered are correct? Some hints:\r\n1. If your password contains special characters, change it (remove them) and try again!\r\n2. Type in your username/password by hand without copy & paste.", PluginException.VALUE_ID_PREMIUM_DISABLE);
-                }
-            }
-            acc.setProperty("authtoken", authtoken);
-        }
-        br.postPageRaw("http://keep2share.cc/api/v1/accountinfo", "");
     }
 
     @SuppressWarnings("unchecked")
@@ -558,43 +571,12 @@ public class Keep2ShareCc extends PluginForHost {
             return ai;
         }
         if (this.apiEnabled()) {
-            api_login(account, true);
+            ai = api_fetchAccountInfo(account);
         } else {
             ai = site_fetchAccountInfo(account);
         }
+        account.setValid(true);
         return ai;
-    }
-
-    /* TODO: Implement */
-    private AccountInfo api_fetchAccountInfo(final Account account) throws Exception {
-        final AccountInfo ai = new AccountInfo();
-        account.setProperty("free", false);
-        String availableTraffic = br.getRegex("").getMatch(1);
-        if (availableTraffic != null) {
-            ai.setTrafficLeft(SizeFormatter.getSize(availableTraffic));
-        } else {
-            ai.setUnlimitedTraffic();
-        }
-        String expire = br.getRegex("").getMatch(0);
-        if (expire == null) {
-            expire = br.getRegex("").getMatch(0);
-        }
-        if (expire == null && br.containsHTML("xx")) {
-            ai.setStatus("Premium Lifetime User");
-            ai.setValidUntil(-1);
-        } else if (expire == null) {
-            ai.setStatus("Premium User");
-            ai.setValidUntil(-1);
-        } else {
-            ai.setStatus("Premium User");
-            // Expired but actually we still got one day ('today')
-            if (br.containsHTML("\\(1 day\\)")) {
-                ai.setValidUntil(TimeFormatter.getMilliSeconds(expire, "yyyy.MM.dd", Locale.ENGLISH) + 24 * 60 * 60 * 1000l);
-            } else {
-                ai.setValidUntil(TimeFormatter.getMilliSeconds(expire, "yyyy.MM.dd", Locale.ENGLISH));
-            }
-        }
-        return null;
     }
 
     private AccountInfo site_fetchAccountInfo(final Account account) throws Exception {
@@ -658,7 +640,7 @@ public class Keep2ShareCc extends PluginForHost {
         }
         if (br.containsHTML("class=\"free\">Free</a>")) {
             getPage(link.getDownloadURL());
-            doFree(link, account);
+            doFree(link, account, ACCOUNT_FREE_RESUME, ACCOUNT_FREE_MAXCHUNKS);
         } else {
             br.setFollowRedirects(false);
             getPage2(this.br, link.getDownloadURL());
@@ -769,6 +751,60 @@ public class Keep2ShareCc extends PluginForHost {
         return true;
     }
 
+    private String api_doFree(final DownloadLink downloadLink, final Account account) throws Exception {
+        final String fid = new Regex(downloadLink.getDownloadURL(), "([a-z0-9]+)$").getMatch(0);
+        postPageRaw(this.br, "http://keep2share.cc/api/v1/requestcaptcha", "");
+        final String challenge = getJson(br.toString(), "challenge");
+        final String captcha_url = getJson(br.toString(), "captcha_url").replace("\\", "");
+        final String code = getCaptchaCode(captcha_url, downloadLink);
+        postPageRaw(this.br, "http://keep2share.cc/api/v1/geturl", "{\"file_id\":\"" + fid + "\",\"free_download_key\":null,\"captcha_challenge\":\"" + challenge + "\",\"captcha_response\":\"" + code + "\"}");
+        if (!"success".equals(getJson(br.toString(), "status"))) {
+            throw new PluginException(LinkStatus.ERROR_CAPTCHA);
+        }
+        final String free_download_key = getJson(br.toString(), "free_download_key");
+        final int wait = Integer.parseInt(getJson(br.toString(), "time_wait"));
+        this.sleep(wait * 1001l, downloadLink);
+        // postPageRaw(this.br, "http://keep2share.cc/api/v1/geturl", "{\"file_id\":\"" + fid + "\",\"free_download_key\":\"" +
+        // free_download_key + "\",\"captcha_challenge\":null,\"captcha_response\":null}");
+        final String dllink = "http://keep2share.cc/file/url.html?file=" + free_download_key;
+        return dllink;
+    }
+
+    /* TODO: Implement */
+    private AccountInfo api_fetchAccountInfo(final Account account) throws Exception {
+        final AccountInfo ai = new AccountInfo();
+        api_login(account, true);
+        postPageRaw(this.br, "http://keep2share.cc/api/v1/accountinfo", "{\"auth_token\":\"" + api_getAuthToken(account) + "\"}");
+        final String available_traffic = getJson(br.toString(), "available_traffic");
+        final String account_expires = getJson(br.toString(), "account_expires");
+        if (account_expires.equals("false")) {
+            account.setProperty("free", true);
+            ai.setStatus("Free User");
+        } else {
+            account.setProperty("free", false);
+            ai.setValidUntil(Long.parseLong(account_expires) * 1000l);
+            ai.setStatus("Premium User");
+        }
+        ai.setTrafficLeft(Long.parseLong(available_traffic));
+        return ai;
+    }
+
+    private void api_login(final Account acc, final boolean force) throws IOException, PluginException {
+        String authtoken = api_getAuthToken(acc);
+        if (authtoken == null || force) {
+            postPageRaw(this.br, "http://keep2share.cc/api/v1/login", "{\"username\":\"" + acc.getUser() + "\",\"password\":\"" + acc.getPass() + "\"}");
+            authtoken = br.getRegex("\"auth_token\":\"([^<>\"]*?)\"").getMatch(0);
+            if (authtoken == null) {
+                if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
+                    throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUngültiger Benutzername oder ungültiges Passwort!\r\nDu bist dir sicher, dass dein eingegebener Benutzername und Passwort stimmen? Versuche folgendes:\r\n1. Falls dein Passwort Sonderzeichen enthält, ändere es (entferne diese) und versuche es erneut!\r\n2. Gib deine Zugangsdaten per Hand (ohne kopieren/einfügen) ein.", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                } else {
+                    throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nInvalid username/password!\r\nYou're sure that the username and password you entered are correct? Some hints:\r\n1. If your password contains special characters, change it (remove them) and try again!\r\n2. Type in your username/password by hand without copy & paste.", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                }
+            }
+            acc.setProperty("authtoken", authtoken);
+        }
+    }
+
     @Override
     public int getMaxSimultanPremiumDownloadNum() {
         return -1;
@@ -869,6 +905,15 @@ public class Keep2ShareCc extends PluginForHost {
         } finally {
             br.getHeaders().put("Content-Type", null);
         }
+    }
+
+    public static void postPageRaw(final Browser br, String page, final String postData) throws IOException {
+        page = fixLinkSSL(page);
+        // stable sucks
+        if (isJava7nJDStable() && page.startsWith("https")) {
+            page = page.replaceFirst("https://", "http://");
+        }
+        br.postPageRaw(page, postData);
     }
 
     public void sendForm(final Form form) throws Exception {
@@ -1063,11 +1108,11 @@ public class Keep2ShareCc extends PluginForHost {
         return false;
     }
 
-    private boolean checkSsl() {
-        return getPluginConfig().getBooleanProperty(SSL_CONNECTION, false);
+    private static boolean checkSsl() {
+        return SubConfiguration.getConfig("keep2share.cc").getBooleanProperty(SSL_CONNECTION, false);
     }
 
-    private String fixLinkSSL(String link) {
+    private static String fixLinkSSL(String link) {
         if (checkSsl()) {
             link = link.replace("http://", "https://");
         } else {
@@ -1086,7 +1131,7 @@ public class Keep2ShareCc extends PluginForHost {
         this.getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, this.getPluginConfig(), SSL_CONNECTION, JDL.L("plugins.hoster.Keep2ShareCc.preferSSL", "Use Secure Communication over SSL (HTTPS://)")).setDefaultValue(false));
     }
 
-    private boolean isJava7nJDStable() {
+    private static boolean isJava7nJDStable() {
         if (System.getProperty("jd.revision.jdownloaderrevision") == null && System.getProperty("java.version").matches("1\\.[7-9].+")) {
             return true;
         } else {
