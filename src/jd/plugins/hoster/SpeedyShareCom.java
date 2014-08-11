@@ -358,15 +358,18 @@ public class SpeedyShareCom extends PluginForHost {
                 logger.warning("Final downloadlink (String is \"dllink\") regex didn't match!");
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
-            doMagic();
-            sleep(1000, link);
+            if (finallink.matches("/" + fuid + "/[a-f0-9]+/download/.+")) {
+                br.getPage(finallink);
+                finallink = br.getRedirectLocation();
+                doMagic();
+                sleep(3000, link);
+            }
         }
         dl = jd.plugins.BrowserAdapter.openDownload(br, link, Encoding.htmlDecode(finallink), true, 0);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        sleep(1000, link);
         dl.startDownload();
     }
 
