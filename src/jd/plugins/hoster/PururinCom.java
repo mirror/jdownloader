@@ -22,6 +22,7 @@ import java.text.DecimalFormat;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
@@ -187,7 +188,7 @@ public class PururinCom extends PluginForHost {
                     throw (PluginException) e;
                 }
                 // should only be picked up now if not JD2
-                if (br.getHttpConnection() != null && br.getHttpConnection().getResponseCode() == 503 && br.getHttpConnection().getHeaderFields("server").contains("cloudflare-nginx")) {
+                if (br.getHttpConnection() != null && br.getHttpConnection().getResponseCode() == 503 && br.getHttpConnection().getHeaderField("server") != null && br.getHttpConnection().getHeaderField("server").toLowerCase(Locale.ENGLISH).contains("cloudflare-nginx")) {
                     logger.warning("Cloudflare anti DDoS measures enabled, your version of JD can not support this. In order to go any further you will need to upgrade to JDownloader 2");
                     throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Cloudflare anti DDoS measures enabled");
                 } else {
@@ -283,7 +284,7 @@ public class PururinCom extends PluginForHost {
         if (br.getHttpConnection() != null) {
             final String URL = br.getURL();
             final int responseCode = br.getHttpConnection().getResponseCode();
-            if (br.getHttpConnection().getHeaderFields("server").contains("cloudflare-nginx")) {
+            if (br.getHttpConnection().getHeaderField("server") != null && br.getHttpConnection().getHeaderField("server").toLowerCase(Locale.ENGLISH).contains("cloudflare-nginx")) {
                 Form cloudflare = br.getFormbyProperty("id", "ChallengeForm");
                 if (cloudflare == null) {
                     cloudflare = br.getFormbyProperty("id", "challenge-form");
@@ -489,8 +490,8 @@ public class PururinCom extends PluginForHost {
     public void resetPluginGlobals() {
     }
 
-/* NO OVERRIDE!! We need to stay 0.9*compatible */
-public boolean hasCaptcha(DownloadLink link, jd.plugins.Account acc) {
-return true;
-}
+    /* NO OVERRIDE!! We need to stay 0.9*compatible */
+    public boolean hasCaptcha(DownloadLink link, jd.plugins.Account acc) {
+        return true;
+    }
 }

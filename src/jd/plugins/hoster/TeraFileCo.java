@@ -617,7 +617,7 @@ public class TeraFileCo extends PluginForHost {
             return;
         }
         final HashMap<String, String> cookies = new HashMap<String, String>();
-        if (br.getHttpConnection() != null && br.getHttpConnection().getHeaderFields("server").contains("cloudflare-nginx")) {
+        if (br.getHttpConnection() != null && br.getHttpConnection().getHeaderField("server") !=null && br.getHttpConnection().getHeaderField("server").toLowerCase(Locale.ENGLISH).contains("cloudflare-nginx")) {
             Form cloudflare = br.getFormbyProperty("id", "ChallengeForm");
             if (cloudflare == null) {
                 cloudflare = br.getFormbyProperty("id", "challenge-form");
