@@ -56,7 +56,11 @@ public class ImgSrcRu extends PluginForHost {
 
     @Override
     public void init() {
-        Browser.setRequestIntervalLimitGlobal(this.getHost(), 500);
+        if (System.getProperty("jd.revision.jdownloaderrevision") != null) {
+            Browser.setRequestIntervalLimitGlobal(this.getHost(), 125);
+        } else {
+            Browser.setRequestIntervalLimitGlobal(this.getHost(), 250);
+        }
     }
 
     @Override
@@ -92,9 +96,9 @@ public class ImgSrcRu extends PluginForHost {
             prepBr.getHeaders().put("Referer", refer);
         }
         prepBr.setFollowRedirects(true);
-        // prepBr.getHeaders().put("Connection", "keep-alive");
-        // prepBr.setReadTimeout(180000);
-        // prepBr.setConnectTimeout(180000);
+        if (System.getProperty("jd.revision.jdownloaderrevision") != null) {
+            prepBr.getHeaders().put("Connection", "keep-alive");
+        }
         if (uaInt.incrementAndGet() > 25 || userAgent.get() == null || neu) {
             /* we first have to load the plugin, before we can reference it */
             JDUtilities.getPluginForHost("mediafire.com");
@@ -126,16 +130,21 @@ public class ImgSrcRu extends PluginForHost {
         getPage(downloadLink.getDownloadURL(), downloadLink);
         getDllink();
         if (ddlink != null) {
-            final URLConnectionAdapter con = br.openGetConnection(ddlink);
-            if (con.getContentType().contains("html")) {
-                downloadLink.setAvailable(false);
-                return AvailableStatus.FALSE;
+            URLConnectionAdapter con = null;
+            try {
+                con = br.openGetConnection(ddlink);
+                if (con.getContentType().contains("html")) {
+                    downloadLink.setAvailable(false);
+                    return AvailableStatus.FALSE;
+                }
+                String filename = getFileNameFromHeader(con);
+                String oldname = new Regex(downloadLink.getDownloadURL(), "(\\d+)\\.html").getMatch(0);
+                downloadLink.setFinalFileName(oldname + filename.substring(filename.lastIndexOf(".")));
+                downloadLink.setDownloadSize(con.getLongContentLength());
+                return AvailableStatus.TRUE;
+            } finally {
+                con.disconnect();
             }
-            String filename = getFileNameFromHeader(con);
-            String oldname = new Regex(downloadLink.getDownloadURL(), "(\\d+)\\.html").getMatch(0);
-            downloadLink.setFinalFileName(oldname + filename.substring(filename.lastIndexOf(".")));
-            downloadLink.setDownloadSize(con.getLongContentLength());
-            return AvailableStatus.TRUE;
         } else {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
@@ -254,7 +263,7 @@ public class ImgSrcRu extends PluginForHost {
 
     @Override
     public int getMaxSimultanFreeDownloadNum() {
-        return 10;
+        return -1;
     }
 
     @Override
