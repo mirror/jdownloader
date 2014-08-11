@@ -377,19 +377,30 @@ public class FlickrCom extends PluginForHost {
         return a;
     }
 
-    private String getFinalLink(final String id) {
+    private String getFinalLink(final String id) throws IOException {
+        final String[] sizes = { "o", "k", "h", "l", "c", "z", "m", "n", "s", "t", "q", "sq" };
+        String picSource;
+        final boolean json_active = true;
+        if (json_active) {
+            picSource = br.getRegex("(\"id\":\"" + id + "\".*?\"safetyLevel\")").getMatch(0);
+        } else {
+            /* If ever used, access this site first: flickr.com/photos/xxx/\\d+/sizes/l */
+            picSource = br.getRegex("<ol class=\"sizes\\-list\">(.*?)<div id=\"allsizes\\-photo\">").getMatch(0);
+        }
         // Make sure we get the correct downloadlinks
-        final String picInfo = br.getRegex("photo\\.init\\((\\{\"id\":\"" + id + "\".*?\"is_public\":\\d+\\})").getMatch(0);
-        if (picInfo == null) {
+        if (picSource == null) {
             return null;
         }
-        final String[] sizes = { "o", "k", "h", "l", "c", "z", "m", "n", "s", "t", "q", "sq" };
         String finallink = null;
         for (final String size : sizes) {
-            // Maybe remove old regex with next update
-            finallink = new Regex(picInfo, "\"id\":\"" + id + "\"[^\t\n\r]+" + size + "\":\\{\"label\":\"[^\t\n\r]+\",\"file\":\"[^\t\n\r]+\",\"url\":\"(http[^<>\"]*?)\"").getMatch(0);
-            if (finallink == null) {
-                finallink = new Regex(picInfo, "\"" + size + "\":\\{\"label\":\"[A-Za-z0-9% \\-_\\.]+\",\"file\":\"" + id + "[A-Za-z0-9\\.\\-_]+\",\"url\":\"(http[^<>\"]*?)\"").getMatch(0);
+            if (json_active) {
+                finallink = new Regex(picSource, "\"" + size + "\":\\{\"displayUrl\":\"([^<>\"]+)\",\"width\":\\d+,\"height\":\\d+,\"url\":\"([^<>\"]*?)\"").getMatch(0);
+            } else {
+                finallink = new Regex(picSource, "\"(/photos/[A-Za-z0-9\\-_]+/\\d+/sizes/" + size + "/)\"").getMatch(0);
+                if (finallink != null) {
+                    br.getPage("https://www.flickr.com" + finallink);
+                    finallink = br.getRegex("id=\"allsizes\\-photo\">[\t\n\r ]+<img src=\"(http[^<>\"]*?)\"").getMatch(0);
+                }
             }
             if (finallink != null) {
                 break;
@@ -397,6 +408,7 @@ public class FlickrCom extends PluginForHost {
         }
         if (finallink != null) {
             finallink = finallink.replace("\\", "");
+            finallink = "https:" + finallink;
         }
         return finallink;
     }
@@ -432,23 +444,23 @@ public class FlickrCom extends PluginForHost {
     public void resetDownloadlink(DownloadLink link) {
     }
 
-/* NO OVERRIDE!! We need to stay 0.9*compatible */
-public boolean hasCaptcha(DownloadLink link, jd.plugins.Account acc) {
-if (acc == null) {
-/* no account, yes we can expect captcha */
-return true;
-}
- if (Boolean.TRUE.equals(acc.getBooleanProperty("free"))) {
-/* free accounts also have captchas */
-return true;
-}
- if (Boolean.TRUE.equals(acc.getBooleanProperty("nopremium"))) {
-/* free accounts also have captchas */
-return true;
-}
- if (acc.getStringProperty("session_type")!=null&&!"premium".equalsIgnoreCase(acc.getStringProperty("session_type"))) {
-return true;
-}
-return false;
-}
+    /* NO OVERRIDE!! We need to stay 0.9*compatible */
+    public boolean hasCaptcha(DownloadLink link, jd.plugins.Account acc) {
+        if (acc == null) {
+            /* no account, yes we can expect captcha */
+            return true;
+        }
+        if (Boolean.TRUE.equals(acc.getBooleanProperty("free"))) {
+            /* free accounts also have captchas */
+            return true;
+        }
+        if (Boolean.TRUE.equals(acc.getBooleanProperty("nopremium"))) {
+            /* free accounts also have captchas */
+            return true;
+        }
+        if (acc.getStringProperty("session_type") != null && !"premium".equalsIgnoreCase(acc.getStringProperty("session_type"))) {
+            return true;
+        }
+        return false;
+    }
 }

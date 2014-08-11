@@ -56,7 +56,9 @@ public class EcoStreamTv extends PluginForHost {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         br.getPage(downloadLink.getDownloadURL());
-        if (br.containsHTML(">File not found")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (br.containsHTML(">File not found")) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
         downloadLink.setFinalFileName(getfid(downloadLink) + ".mp4");
         return AvailableStatus.TRUE;
     }
@@ -66,19 +68,24 @@ public class EcoStreamTv extends PluginForHost {
         requestFileInformation(downloadLink);
         final String tmp = br.getRegex("var [A-Za-z0-9]+=\\'([^<>\"]*?)\\';([\t\n\r ]+)?</script>[\t\n\r ]+<script src=\"/js/spin\\.js\"").getMatch(0);
         String noSenseForThat = br.getRegex("var superslots=\\'([^<>\"]*?)\\';").getMatch(0);
-        if (tmp == null || noSenseForThat == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (tmp == null || noSenseForThat == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         String postpage = null;
         try {
             final Browser tmpbr = br.cloneBrowser();
-            tmpbr.getPage("/js/ecos.js");
+            tmpbr.getPage("http://www.ecostream.tv/js/eco.js");
             final String post_urls[] = tmpbr.getRegex("\\$\\.post\\(\\'(/[^<>\"]*?)\\'").getColumn(0);
-            if (post_urls != null && post_urls.length > 0) postpage = post_urls[post_urls.length - 2];
+            if (post_urls != null && post_urls.length > 0) {
+                postpage = post_urls[post_urls.length - 2];
+            }
         } catch (final Throwable e) {
         }
-        if (postpage != null) {
+        final boolean use_js_String = false;
+        if (postpage != null && use_js_String) {
             postpage = "http://www.ecostream.tv" + postpage;
         } else {
-            postpage = "http://www.ecostream.tv/xhr/video/vidurl";
+            postpage = "http://www.ecostream.tv/xhr/videos/w0Iri0";
         }
         br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
         br.getHeaders().put("Accept", "application/json, text/javascript, */*; q=0.01");
@@ -87,11 +94,17 @@ public class EcoStreamTv extends PluginForHost {
 
         br.postPage(postpage, "id=" + getfid(downloadLink) + "&tpm=" + tmp + noSenseForThat);
         String finallink = br.getRegex("\"url\":\"(/[^<>\"]*?)\"").getMatch(0);
-        if (finallink == null && br.getHttpConnection().getResponseCode() == 404) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 404", 15 * 60 * 1000l);
-        if (finallink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (finallink == null && br.getHttpConnection().getResponseCode() == 404) {
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 404", 15 * 60 * 1000l);
+        }
+        if (finallink == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         finallink = "http://www.ecostream.tv" + finallink;
         int maxChunks = 0;
-        if (downloadLink.getBooleanProperty(EcoStreamTv.NOCHUNKS, false)) maxChunks = 1;
+        if (downloadLink.getBooleanProperty(EcoStreamTv.NOCHUNKS, false)) {
+            maxChunks = 1;
+        }
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, finallink, true, maxChunks);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
@@ -100,7 +113,9 @@ public class EcoStreamTv extends PluginForHost {
         try {
             if (!this.dl.startDownload()) {
                 try {
-                    if (dl.externalDownloadStop()) return;
+                    if (dl.externalDownloadStop()) {
+                        return;
+                    }
                 } catch (final Throwable e) {
                 }
                 /* unknown error, we disable multiple chunks */
