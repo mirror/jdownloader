@@ -41,7 +41,7 @@ import org.jdownloader.plugins.SkipReasonException;
 
 public class DownloadLinkDownloadable implements Downloadable {
     /**
-     * 
+     *
      */
 
     private final DownloadLink downloadLink;
@@ -254,7 +254,7 @@ public class DownloadLinkDownloadable implements Downloadable {
                 boolean readL = filePackage.getModifyLock().readLock();
                 try {
                     for (DownloadLink dl : filePackage.getChildren()) {
-                        if (getFileOutput().toLowerCase().endsWith(".sfv") && FinalLinkState.CheckFinished(dl.getFinalLinkState())) {
+                        if (dl != downloadLink && FinalLinkState.CheckFinished(dl.getFinalLinkState()) && dl.getFileOutput().toLowerCase().endsWith(".sfv")) {
                             SFVs.add(dl);
                         }
                     }
