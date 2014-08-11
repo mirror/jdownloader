@@ -25,6 +25,7 @@ import java.util.Map;
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.controlling.AccountController;
+import jd.http.Browser;
 import jd.http.Cookie;
 import jd.http.Cookies;
 import jd.http.URLConnectionAdapter;
@@ -78,9 +79,10 @@ public class SpeedyShareCom extends PluginForHost {
 
     public void prepBrowser() {
         // define custom browser headers and language settings.
-        br.getHeaders().put("Accept-Language", "en-us;q=0.7,en;q=0.3");
+        br.getHeaders().put("Accept-Language", "en");
         br.getHeaders().put("Accept", "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8");
         br.getHeaders().put("User-Agent", "Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/36.0.1985.125 Safari/537.36");
+        br.getHeaders().put("Accept-Charset", null);
         // br.getHeaders().put("Connection", "keep-alive");
     }
 
@@ -146,7 +148,6 @@ public class SpeedyShareCom extends PluginForHost {
             if (br.containsHTML(PREMIUMONLY)) {
                 downloadLink.getLinkStatus().setStatusText(JDL.L("plugins.hoster.speedysharecom.errors.only4premium", PREMIUMONLYTEXT));
             }
-            br.setFollowRedirects(false);
         }
         return AvailableStatus.TRUE;
     }
@@ -155,6 +156,7 @@ public class SpeedyShareCom extends PluginForHost {
     public void handleFree(final DownloadLink downloadLink) throws Exception {
         /* Nochmals das File überprüfen */
         requestFileInformation(downloadLink);
+        br.setFollowRedirects(false);
         if (downloadLink.getDownloadURL().matches(REMOTELINK)) {
             try {
                 throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);
@@ -337,14 +339,17 @@ public class SpeedyShareCom extends PluginForHost {
 
     @Override
     public void handlePremium(final DownloadLink link, final Account account) throws Exception {
+        br = new Browser();
         requestFileInformation(link);
+        // there are redirects on the main url going to mainurl + "/filename.exe".login can ruin current br.getURL() if used further down
+        final String currentBrURL = br.getURL();
         login(account, false);
         String finallink = null;
         if (link.getDownloadURL().matches(REMOTELINK)) {
             finallink = link.getDownloadURL();
         } else {
             br.setFollowRedirects(false);
-            br.getPage(link.getDownloadURL());
+            br.getPage(currentBrURL);
             finallink = br.getRedirectLocation();
             if (finallink == null) {
                 finallink = getFinalLink();
@@ -353,49 +358,38 @@ public class SpeedyShareCom extends PluginForHost {
                 logger.warning("Final downloadlink (String is \"dllink\") regex didn't match!");
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
-        }
-        dl = jd.plugins.BrowserAdapter.openDownload(br, link, Encoding.htmlDecode(finallink), true, 0);
-        if (dl.getConnection().getContentType().contains("html") && !link.getDownloadURL().matches(REMOTELINK)) {
-            br.followConnection();
-            finallink = getFinalLink();
-            if (finallink == null) {
-                logger.warning("The final dllink seems not to be a file!");
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            } else {
-                br.getPage(finallink);
-                finallink = br.getRedirectLocation();
-                if (System.getProperty("jd.revision.jdownloaderrevision") != null) {
-                    br.getCookies(MAINPAGE).remove("Max-Age");
-                    br.getCookies(MAINPAGE).remove("spl");
-                } else {
-                    // stable is lame
-                    final HashMap<String, String> cookies = new HashMap<String, String>();
-                    for (final Cookie c : br.getCookies(MAINPAGE).getCookies()) {
-                        cookies.put(c.getKey(), c.getValue());
-                    }
-                    br.clearCookies(MAINPAGE);
-                    // load cookies we want..
-                    for (final Map.Entry<String, String> cookieEntry : cookies.entrySet()) {
-                        final String key = cookieEntry.getKey();
-                        final String value = cookieEntry.getValue();
-                        if (key != null && !key.matches("Max-Age|spl")) {
-                            this.br.setCookie(MAINPAGE, key, value);
-                        }
-                    }
-                }
-            }
-        } else if (dl.getConnection().getContentType().contains("html") && link.getDownloadURL().matches(REMOTELINK)) {
-            logger.warning("The final dllink seems not to be a file!");
-            br.followConnection();
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            doMagic();
+            sleep(1000, link);
         }
         dl = jd.plugins.BrowserAdapter.openDownload(br, link, Encoding.htmlDecode(finallink), true, 0);
         if (dl.getConnection().getContentType().contains("html")) {
-            logger.warning("The final dllink seems not to be a file!");
             br.followConnection();
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
+        sleep(1000, link);
         dl.startDownload();
+    }
+
+    private void doMagic() {
+        if (System.getProperty("jd.revision.jdownloaderrevision") != null) {
+            br.getCookies(MAINPAGE).remove("Max-Age");
+            br.getCookies(MAINPAGE).remove("spl");
+        } else {
+            // stable is lame
+            final HashMap<String, String> cookies = new HashMap<String, String>();
+            for (final Cookie c : br.getCookies(MAINPAGE).getCookies()) {
+                cookies.put(c.getKey(), c.getValue());
+            }
+            br.clearCookies(MAINPAGE);
+            // load cookies we want..
+            for (final Map.Entry<String, String> cookieEntry : cookies.entrySet()) {
+                final String key = cookieEntry.getKey();
+                final String value = cookieEntry.getValue();
+                if (key != null && !key.matches("Max-Age|spl")) {
+                    this.br.setCookie(MAINPAGE, key, value);
+                }
+            }
+        }
     }
 
     private String getFinalLink() {
