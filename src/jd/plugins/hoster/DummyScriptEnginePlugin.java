@@ -1122,7 +1122,7 @@ public class DummyScriptEnginePlugin extends PluginForHost {
     public static class CustomizedScriptEngineManager extends ScriptEngineManager {
         @Override
         public ScriptEngine getEngineByName(String shortName) {
-            ScriptEngine ret = super.getEngineByName(shortName);
+            final ScriptEngine ret = super.getEngineByName(shortName);
             if (ret instanceof RhinoScriptEngine) {
                 return ret;
             }
@@ -1130,8 +1130,9 @@ public class DummyScriptEnginePlugin extends PluginForHost {
         }
 
         public CustomizedScriptEngineManager() {
-            this.registerEngineName("javascript", new CustomRhinoScriptEngineFactory());
-            this.registerEngineName("js", new CustomRhinoScriptEngineFactory());
+            final CustomRhinoScriptEngineFactory factory = new CustomRhinoScriptEngineFactory();
+            this.registerEngineName("javascript", factory);
+            this.registerEngineName("js", factory);
 
         }
     }
@@ -1209,10 +1210,8 @@ public class DummyScriptEnginePlugin extends PluginForHost {
         }.start();
     }
 
-    private static ScriptEngineManager SCRIPT_ENGINE_MANAGER = new CustomizedScriptEngineManager();
-
     public static ScriptEngineManager getScriptEngineManager(Object requestor) {
-        return SCRIPT_ENGINE_MANAGER;
+        return new CustomizedScriptEngineManager();
     }
 
     @Override
