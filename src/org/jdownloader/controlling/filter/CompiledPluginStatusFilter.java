@@ -8,9 +8,9 @@ import jd.gui.swing.jdgui.views.settings.panels.linkgrabberfilter.editdialog.Plu
 import jd.plugins.Account;
 import jd.plugins.Account.AccountType;
 
-public class CompiledPluginStatusFiler extends PluginStatusFilter {
+public class CompiledPluginStatusFilter extends PluginStatusFilter {
 
-    public CompiledPluginStatusFiler(PluginStatusFilter pluginStatusFilter) {
+    public CompiledPluginStatusFilter(PluginStatusFilter pluginStatusFilter) {
         super(pluginStatusFilter.getMatchType(), pluginStatusFilter.isEnabled(), pluginStatusFilter.getPluginStatus());
 
     }

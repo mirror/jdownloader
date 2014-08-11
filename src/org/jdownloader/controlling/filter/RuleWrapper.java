@@ -13,12 +13,12 @@ public class RuleWrapper<T extends FilterRule> {
 
     protected CompiledRegexFilter     fileNameRule;
     protected boolean                 requiresLinkcheck = false;
-    private CompiledPluginStatusFiler pluginStatusFilter;
+    private CompiledPluginStatusFilter pluginStatusFilter;
     private BooleanFilter             alwaysFilter;
     private CompiledOriginFilter      originFilter;
     private CompiledRegexFilter       packageNameRule;
 
-    public CompiledPluginStatusFiler getPluginStatusFilter() {
+    public CompiledPluginStatusFilter getPluginStatusFilter() {
         return pluginStatusFilter;
     }
 
@@ -26,7 +26,7 @@ public class RuleWrapper<T extends FilterRule> {
         this.rule = rule2;
 
         if (rule.getPluginStatusFilter().isEnabled()) {
-            pluginStatusFilter = new CompiledPluginStatusFiler(rule.getPluginStatusFilter());
+            pluginStatusFilter = new CompiledPluginStatusFilter(rule.getPluginStatusFilter());
             requiresHoster = true;
         }
 
