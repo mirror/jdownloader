@@ -264,9 +264,7 @@ public class CrawledLink implements AbstractPackageChildrenNode<CrawledPackage>,
         if (link != null && link instanceof DownloadLink) {
             if (StringUtils.equals(name, ((DownloadLink) link).getName())) {
                 name = null;
-
             }
-
         }
         if (name != null) {
             name = CrossSystem.alleviatePathParts(name);

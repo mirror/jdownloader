@@ -171,9 +171,15 @@ public abstract class PackageControllerTableModel<PackageType extends AbstractPa
                 new EDTRunner() {
                     @Override
                     protected void runInEDT() {
-                        /* we just want to repaint */
+                        /**
+                         * we just want to repaint
+                         */
                         try {
                             getTable().repaint();
+                            /**
+                             * throw event to notify about changed data
+                             */
+                            fireTableDataChanged();
                         } finally {
                             repaintFired.set(false);
                         }
