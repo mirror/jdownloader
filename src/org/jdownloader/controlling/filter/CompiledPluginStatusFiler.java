@@ -1,11 +1,12 @@
 package org.jdownloader.controlling.filter;
 
-import java.util.ArrayList;
+import java.util.List;
 
 import jd.controlling.AccountController;
 import jd.controlling.linkcrawler.CrawledLink;
 import jd.gui.swing.jdgui.views.settings.panels.linkgrabberfilter.editdialog.PluginStatusFilter;
 import jd.plugins.Account;
+import jd.plugins.Account.AccountType;
 
 public class CompiledPluginStatusFiler extends PluginStatusFilter {
 
@@ -48,23 +49,32 @@ public class CompiledPluginStatusFiler extends PluginStatusFilter {
      * @return true if a premium account is associated, false otherwise.
      */
     private boolean VerifyPremium(CrawledLink link) {
-        boolean bPremium = false;
-        Boolean bAccount = AccountController.getInstance().hasAccounts(link.getHost());
-        Boolean bMultiHost = AccountController.getInstance().hasMultiHostAccounts(link.getHost());
-        if (bAccount || bMultiHost) {
-            // There is at least one account, verify if there is at least one premium account valid
-            ArrayList<Account> alAccount = AccountController.getInstance().getValidAccounts(link.getHost());
-            if (alAccount.size() > 0) {
-                // There is some valid account, verify if they are valid premium
-                for (Account AccountToVerify : alAccount) {
-                    long lgValidUntil = AccountToVerify.getAccountInfo().getValidUntil();
-                    if (lgValidUntil > 0) {
-                        bPremium = true;
-                        break;
+        if (AccountController.getInstance().hasAccounts(link.getHost())) {
+            final List<Account> accounts = AccountController.getInstance().getValidAccounts(link.getHost());
+            if (accounts != null) {
+                for (final Account accountToVerify : accounts) {
+                    if (AccountType.PREMIUM.equals(accountToVerify.getType())) {
+                        long lgValidUntil = accountToVerify.getValidPremiumUntil();
+                        if (lgValidUntil < 0 || lgValidUntil > System.currentTimeMillis()) {
+                            return true;
+                        }
                     }
                 }
             }
         }
-        return bPremium;
+        if (AccountController.getInstance().hasMultiHostAccounts(link.getHost())) {
+            final List<Account> accounts = AccountController.getInstance().getMultiHostAccounts(link.getHost());
+            if (accounts != null) {
+                for (final Account accountToVerify : accounts) {
+                    if (AccountType.PREMIUM.equals(accountToVerify.getType())) {
+                        long lgValidUntil = accountToVerify.getValidPremiumUntil();
+                        if (lgValidUntil < 0 || lgValidUntil > System.currentTimeMillis()) {
+                            return true;
+                        }
+                    }
+                }
+            }
+        }
+        return false;
     }
 }
