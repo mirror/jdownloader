@@ -29,6 +29,7 @@ import jd.http.Cookie;
 import jd.http.Cookies;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
+import jd.parser.Regex;
 import jd.plugins.Account;
 import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
@@ -51,6 +52,7 @@ public class SpeedyShareCom extends PluginForHost {
     private static final String                            CAPTCHATEXT        = "/captcha\\.php\\?";
     private static Object                                  LOCK               = new Object();
     private final String                                   REMOTELINK         = "http://(www\\.)?speedyshare\\.com/remote/[A-Za-z0-9]+";
+    private String                                         fuid               = null;
     private static HashMap<Account, HashMap<String, Long>> hostUnavailableMap = new HashMap<Account, HashMap<String, Long>>();
 
     public SpeedyShareCom(PluginWrapper wrapper) {
@@ -78,7 +80,8 @@ public class SpeedyShareCom extends PluginForHost {
         // define custom browser headers and language settings.
         br.getHeaders().put("Accept-Language", "en-us;q=0.7,en;q=0.3");
         br.getHeaders().put("Accept", "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8");
-        br.getHeaders().put("User-Agent", "Mozilla/5.0 (Windows NT 6.1; WOW64; rv:25.0) Gecko/20100101 Firefox/25.0");
+        br.getHeaders().put("User-Agent", "Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/36.0.1985.125 Safari/537.36");
+        // br.getHeaders().put("Connection", "keep-alive");
     }
 
     /**
@@ -93,6 +96,7 @@ public class SpeedyShareCom extends PluginForHost {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         prepBrowser();
+        setFUID(downloadLink);
         if (downloadLink.getDownloadURL().matches(REMOTELINK)) {
             final Account aa = AccountController.getInstance().getValidAccount(this);
             if (aa == null) {
@@ -343,31 +347,47 @@ public class SpeedyShareCom extends PluginForHost {
             br.getPage(link.getDownloadURL());
             finallink = br.getRedirectLocation();
             if (finallink == null) {
-                finallink = br.getRegex("class=downloadfilename href=\\'((file/)?[^<>\"]*?)\\'").getMatch(0);
+                finallink = getFinalLink();
             }
             if (finallink == null) {
                 logger.warning("Final downloadlink (String is \"dllink\") regex didn't match!");
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
-            if (!finallink.startsWith("http")) {
-                finallink = "http://www.speedyshare.com" + finallink;
-            }
         }
         dl = jd.plugins.BrowserAdapter.openDownload(br, link, Encoding.htmlDecode(finallink), true, 0);
         if (dl.getConnection().getContentType().contains("html") && !link.getDownloadURL().matches(REMOTELINK)) {
             br.followConnection();
-            finallink = br.getRegex("class=downloadfilename href=\\'(/(file/)?[^<>\"]*?)\\'").getMatch(0);
+            finallink = getFinalLink();
             if (finallink == null) {
                 logger.warning("The final dllink seems not to be a file!");
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            } else {
+                br.getPage(finallink);
+                finallink = br.getRedirectLocation();
+                if (System.getProperty("jd.revision.jdownloaderrevision") != null) {
+                    br.getCookies(MAINPAGE).remove("Max-Age");
+                    br.getCookies(MAINPAGE).remove("spl");
+                } else {
+                    // stable is lame
+                    final HashMap<String, String> cookies = new HashMap<String, String>();
+                    for (final Cookie c : br.getCookies(MAINPAGE).getCookies()) {
+                        cookies.put(c.getKey(), c.getValue());
+                    }
+                    br.clearCookies(MAINPAGE);
+                    // load cookies we want..
+                    for (final Map.Entry<String, String> cookieEntry : cookies.entrySet()) {
+                        final String key = cookieEntry.getKey();
+                        final String value = cookieEntry.getValue();
+                        if (key != null && !key.matches("Max-Age|spl")) {
+                            this.br.setCookie(MAINPAGE, key, value);
+                        }
+                    }
+                }
             }
         } else if (dl.getConnection().getContentType().contains("html") && link.getDownloadURL().matches(REMOTELINK)) {
             logger.warning("The final dllink seems not to be a file!");
             br.followConnection();
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
-        if (!finallink.startsWith("http")) {
-            finallink = "http://www.speedyshare.com" + finallink;
         }
         dl = jd.plugins.BrowserAdapter.openDownload(br, link, Encoding.htmlDecode(finallink), true, 0);
         if (dl.getConnection().getContentType().contains("html")) {
@@ -376,6 +396,26 @@ public class SpeedyShareCom extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl.startDownload();
+    }
+
+    private String getFinalLink() {
+        String finallink = br.getRegex("class=downloadfilename href=('|\")(/(file/)?[^<>\"]*?)\\1").getMatch(1);
+        if (finallink == null) {
+            // premium
+            finallink = br.getRegex("<a href=('|\")(/" + fuid + "/[a-f0-9]+/download/.*?)\\1><img alt=('|\")Fast Download\\3").getMatch(1);
+        }
+        return finallink;
+    }
+
+    private void setFUID(final DownloadLink downloadLink) {
+        // not sure of remote link formats....
+        fuid = new Regex(downloadLink.getDownloadURL(), "speedyshare\\.com/(?:(?!remote)|files/)?([A-Z0-9]+)").getMatch(0);
+        if (fuid != null) {
+            try {
+                downloadLink.setLinkID(fuid);
+            } catch (final Throwable e) {
+            }
+        }
     }
 
     /** no override to keep plugin compatible to old stable */
