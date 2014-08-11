@@ -41,6 +41,7 @@ import org.appwork.utils.Application;
 import org.appwork.utils.Files;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.logging2.LogSource;
+import org.appwork.utils.net.PublicSuffixList;
 import org.jdownloader.controlling.FileCreationManager;
 import org.jdownloader.images.NewTheme;
 import org.jdownloader.logging.LogController;
@@ -130,7 +131,9 @@ public class FavIcons {
     }
 
     public static ImageIcon getFavIcon(String host, FavIconRequestor requestor) {
-        if (host == null) return null;
+        if (host == null) {
+            return null;
+        }
         ImageIcon image = null;
         synchronized (LOCK) {
             /* check if we already have a favicon? */
@@ -158,7 +161,9 @@ public class FavIcons {
             ret = DEFAULT_ICONS.get(host);
             if (ret == null) {
                 ret = new ImageIcon(createDefaultFavIcon(host));
-                if (clearAfterGet == false) DEFAULT_ICONS.put(host, ret);
+                if (clearAfterGet == false) {
+                    DEFAULT_ICONS.put(host, ret);
+                }
             } else if (clearAfterGet) {
                 DEFAULT_ICONS.remove(host);
             }
@@ -189,12 +194,14 @@ public class FavIcons {
                 enqueueFavIcon = true;
             }
             /* add to queue */
-            if (requestor != null) ret.add(requestor);
+            if (requestor != null) {
+                ret.add(requestor);
+            }
             if (enqueueFavIcon) {
                 THREAD_POOL.execute(new Runnable() {
 
                     public void run() {
-                        LazyHostPlugin existingHostPlugin = HostPluginController.getInstance().get(host);
+                        final LazyHostPlugin existingHostPlugin = HostPluginController.getInstance().get(host);
                         if (existingHostPlugin != null && "jd.plugins.hoster.Offline".equals(existingHostPlugin.getClassname())) {
                             synchronized (LOCK) {
                                 QUEUE.remove(host);
@@ -206,35 +213,37 @@ public class FavIcons {
                             }
                             return;
                         }
-
-                        String tryHost = host;
-                        ArrayList<String> tryHosts = new ArrayList<String>();
-                        int index = 0;
-                        /* this loop adds every subdomain and the tld to tryHosts and we try to fetch a favIcon in same order */
-                        while (true) {
-                            tryHosts.add(tryHost);
-                            if (tryHost.matches("\\d+\\.\\d+\\.\\d+\\.\\d+")) {
-                                /* direct ip */
-                                break;
+                        final ArrayList<String> tryHosts = new ArrayList<String>();
+                        tryHosts.add(host);
+                        if (!host.matches("\\d+\\.\\d+\\.\\d+\\.\\d+")) {
+                            String domain = null;
+                            if (PublicSuffixList.getInstance() != null) {
+                                domain = PublicSuffixList.getInstance().getDomain(host);
                             }
-                            if ((index = tryHost.indexOf(".")) >= 0 && tryHost.length() >= index + 1) {
-                                tryHost = tryHost.substring(index + 1);
-                                if (tryHost.indexOf(".") >= 0) {
-                                    continue;
+                            String tryHost = host;
+                            int index = 0;
+                            /* this loop adds every subdomain and the tld to tryHosts and we try to fetch a favIcon in same order */
+                            while (true) {
+                                if ((index = tryHost.indexOf(".")) >= 0 && tryHost.length() >= index + 1) {
+                                    tryHost = tryHost.substring(index + 1);
+                                    if (domain != null && !tryHost.contains(domain) || tryHost.indexOf('.') == -1) {
+                                        break;
+                                    }
+                                    tryHosts.add(tryHost);
                                 } else {
                                     break;
                                 }
-                            } else {
-                                break;
                             }
                         }
                         BufferedImage favicon = null;
                         for (String tryHost2 : tryHosts) {
                             favicon = downloadFavIcon(tryHost2);
-                            if (favicon != null) break;
+                            if (favicon != null) {
+                                break;
+                            }
                         }
                         synchronized (LOCK) {
-                            java.util.List<FavIconRequestor> requestors = QUEUE.remove(host);
+                            final java.util.List<FavIconRequestor> requestors = QUEUE.remove(host);
                             if (favicon == null) {
                                 ImageIcon failedIcon = FAILED_ICONS.get(host);
                                 if (failedIcon == null) {
@@ -261,7 +270,9 @@ public class FavIcons {
                                     LogController.getInstance().getLogger("FavIcons").log(e);
                                 } finally {
                                     try {
-                                        fos.close();
+                                        if (fos != null) {
+                                            fos.close();
+                                        }
                                     } catch (final Throwable e) {
                                     }
                                 }
@@ -299,7 +310,9 @@ public class FavIcons {
         final BufferedImage image = new BufferedImage(w, h, Transparency.TRANSLUCENT);
         final Graphics2D g = image.createGraphics();
         String tld = Files.getExtension(host);
-        if (tld != null) tld = tld.toLowerCase(Locale.ENGLISH);
+        if (tld != null) {
+            tld = tld.toLowerCase(Locale.ENGLISH);
+        }
         String dummy = host.toUpperCase();
 
         // remove tld
@@ -316,7 +329,9 @@ public class FavIcons {
             dummy = "" + dummy.charAt(0) + dummy.charAt(dummy.length() / 2);
         } catch (Throwable t) {
         }
-        if (dummy.length() <= 0 || dummy.length() > 2) dummy = host.substring(0, Math.min(host.length(), 2));
+        if (dummy.length() <= 0 || dummy.length() > 2) {
+            dummy = host.substring(0, Math.min(host.length(), 2));
+        }
         // paint
         // Graphics2D g = image.createGraphics();
         g.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
@@ -332,7 +347,7 @@ public class FavIcons {
         if (tld != null) {
             g.setFont(new Font("Arial", 0, 6));
             bounds = g.getFontMetrics().getStringBounds("." + tld, g);
-            g.drawString("." + tld, (int) (w - bounds.getWidth()) - 2, (int) (h) - 2);
+            g.drawString("." + tld, (int) (w - bounds.getWidth()) - 2, (h) - 2);
         }
         g.dispose();
         return image;
@@ -359,14 +374,18 @@ public class FavIcons {
                     /* try first with iconloader */
                     List<BufferedImage> ret = ICODecoder.read(inputStream);
                     BufferedImage img = returnBestImage(ret);
-                    if (img != null) { return img; }
+                    if (img != null) {
+                        return img;
+                    }
                     throw new Throwable("Try again with other ImageLoader");
                 } catch (Throwable e) {
                     /* retry with normal image download */
                     inputStream.reset();
                     /* maybe redirect to different icon format? */
                     BufferedImage img = downloadImage(inputStream);
-                    if (img != null && img.getHeight() > 1 && img.getWidth() > 1) { return img; }
+                    if (img != null && img.getHeight() > 1 && img.getWidth() > 1) {
+                        return img;
+                    }
                 }
             }
             return null;
@@ -404,14 +423,18 @@ public class FavIcons {
                 /*
                  * loop through all available images to find best resolution
                  */
-                if (img2 == null) continue;
+                if (img2 == null) {
+                    continue;
+                }
                 if (img == null || (img2.getHeight() * img2.getWidth()) > size || countColors(img2) > colors) {
                     img = img2;
                     size = img.getHeight() * img.getWidth();
                     colors = countColors(img);
                 }
             }
-            if (img != null && img.getHeight() > 1 && img.getWidth() > 1) return img;
+            if (img != null && img.getHeight() > 1 && img.getWidth() > 1) {
+                return img;
+            }
         }
         return null;
     }
@@ -427,15 +450,21 @@ public class FavIcons {
             favBr.setFollowRedirects(true);
             favBr.getPage("http://" + host);
             String url = favBr.getRegex("rel=('|\")(SHORTCUT )?ICON('|\")[^>]*?href=('|\")([^>'\"]*?)('|\")").getMatch(4);
-            if (StringUtils.isEmpty(url)) url = favBr.getRegex("href=('|\")([^>'\"]*?)('|\")[^>]*?rel=('|\")(SHORTCUT )?ICON('|\")").getMatch(1);
+            if (StringUtils.isEmpty(url)) {
+                url = favBr.getRegex("href=('|\")([^>'\"]*?)('|\")[^>]*?rel=('|\")(SHORTCUT )?ICON('|\")").getMatch(1);
+            }
             if (StringUtils.isEmpty(url)) {
                 /*
                  * workaround for hoster with not complete url, eg rapidshare.com
                  */
                 url = favBr.getRegex("rel=('|\")(SHORTCUT )?ICON('|\")[^>]*?href=[^>]*?//([^>'\"]*?)('|\")").getMatch(3);
-                if (!StringUtils.isEmpty(url) && !url.equalsIgnoreCase(host)) url = "http://" + url;
+                if (!StringUtils.isEmpty(url) && !url.equalsIgnoreCase(host)) {
+                    url = "http://" + url;
+                }
             }
-            if (url != null && url.equalsIgnoreCase(host)) url = null;
+            if (url != null && url.equalsIgnoreCase(host)) {
+                url = null;
+            }
             if (url == null && "rapidshare.com".equalsIgnoreCase(host)) {
                 /*
                  * hardcoded workaround for rapidshare, they use js to build the favicon path
@@ -455,14 +484,18 @@ public class FavIcons {
                         /* try first with iconloader */
                         List<BufferedImage> ret = ICODecoder.read(inputStream);
                         BufferedImage img = returnBestImage(ret);
-                        if (img != null) { return img; }
+                        if (img != null) {
+                            return img;
+                        }
                         throw new Throwable("Try again with other ImageLoader");
                     } catch (Throwable e) {
                         /* retry with normal image download */
                         inputStream.reset();
                         /* maybe redirect to different icon format? */
                         BufferedImage img = downloadImage(inputStream);
-                        if (img != null && img.getHeight() > 1 && img.getWidth() > 1) { return img; }
+                        if (img != null && img.getHeight() > 1 && img.getWidth() > 1) {
+                            return img;
+                        }
                     }
                 }
             }
@@ -518,7 +551,9 @@ public class FavIcons {
                 GifDecoder d = new GifDecoder();
                 /* reset bufferedinputstream to begin from start */
                 is.reset();
-                if (d.read(is) == 0) ret = d.getImage();
+                if (d.read(is) == 0) {
+                    ret = d.getImage();
+                }
             }
             return ret;
         } catch (Throwable e) {
