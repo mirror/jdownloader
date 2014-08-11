@@ -152,42 +152,40 @@ public class DownloadLinkCandidateSelector {
         int maxConcurrentHost = session.getMaxConcurrentDownloadsPerHost();
 
         for (final SingleDownloadController singleDownloadController : session.getControllers()) {
-            if (singleDownloadController.isActive()) {
-                if (singleDownloadController.getDownloadLink().getDomainInfo().getTld().equals(candidateLinkHost)) {
-                    /**
-                     * use DomainInfo here because we want to count concurrent downloads from same domain and not same plugin
-                     */
-                    maxConcurrentHost--;
-                }
-                final Account account = singleDownloadController.getAccount();
-                if (account != null) {
-                    if (candidateAccount != null) {
-                        final boolean sameAccountHost = account.getHoster().equals(candidateAccount.getHoster());
-                        if (sameAccountHost && account != candidateAccount && candidateAccount.isConcurrentUsePossible() == false) {
-                            return DownloadLinkCandidatePermission.CONCURRENCY_FORBIDDEN;
-                        }
-                    } else {
-                        final boolean sameAccountHost = account.getHoster().equals(candidatePluginHost);
-                        if (sameAccountHost && account.isConcurrentUsePossible() == false) {
-                            return DownloadLinkCandidatePermission.CONCURRENCY_FORBIDDEN;
-                        }
+            if (singleDownloadController.getDownloadLink().getDomainInfo().getTld().equals(candidateLinkHost)) {
+                /**
+                 * use DomainInfo here because we want to count concurrent downloads from same domain and not same plugin
+                 */
+                maxConcurrentHost--;
+            }
+            final Account account = singleDownloadController.getAccount();
+            if (account != null) {
+                if (candidateAccount != null) {
+                    final boolean sameAccountHost = account.getHoster().equals(candidateAccount.getHoster());
+                    if (sameAccountHost && account != candidateAccount && candidateAccount.isConcurrentUsePossible() == false) {
+                        return DownloadLinkCandidatePermission.CONCURRENCY_FORBIDDEN;
                     }
-                } else if (candidateAccount != null) {
-                    final boolean sameAccountHost = candidateAccount.getHoster().equals(singleDownloadController.getDownloadLink().getHost());
-                    if (sameAccountHost && candidateAccount.isConcurrentUsePossible() == false) {
+                } else {
+                    final boolean sameAccountHost = account.getHoster().equals(candidatePluginHost);
+                    if (sameAccountHost && account.isConcurrentUsePossible() == false) {
                         return DownloadLinkCandidatePermission.CONCURRENCY_FORBIDDEN;
                     }
                 }
-                if (candidatePluginHost.equals(singleDownloadController.getDownloadLinkCandidate().getCachedAccount().getPlugin().getHost())) {
-                    /**
-                     * same plugin is in use
-                     */
-                    if (singleDownloadController.getProxySelector() == candidate.getProxySelector()) {
-                        if (account == candidateAccount) {
-                            maxPluginConcurrentAccount--;
-                            if (candidateLink.getHost().equals(singleDownloadController.getDownloadLink().getHost())) {
-                                maxPluginConcurrentHost--;
-                            }
+            } else if (candidateAccount != null) {
+                final boolean sameAccountHost = candidateAccount.getHoster().equals(singleDownloadController.getDownloadLink().getHost());
+                if (sameAccountHost && candidateAccount.isConcurrentUsePossible() == false) {
+                    return DownloadLinkCandidatePermission.CONCURRENCY_FORBIDDEN;
+                }
+            }
+            if (candidatePluginHost.equals(singleDownloadController.getDownloadLinkCandidate().getCachedAccount().getPlugin().getHost())) {
+                /**
+                 * same plugin is in use
+                 */
+                if (singleDownloadController.getProxySelector() == candidate.getProxySelector()) {
+                    if (account == candidateAccount) {
+                        maxPluginConcurrentAccount--;
+                        if (candidateLink.getHost().equals(singleDownloadController.getDownloadLink().getHost())) {
+                            maxPluginConcurrentHost--;
                         }
                     }
                 }

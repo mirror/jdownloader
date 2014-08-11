@@ -32,7 +32,7 @@ public class DownloadLinkCandidateLoadBalancer implements Comparator<AbstractPro
         int count = 0;
         if (proxy != null) {
             for (final SingleDownloadController controller : proxy.getSingleDownloadControllers()) {
-                if (controller.isActive() && pluginHost.equals(controller.getDownloadLinkCandidate().getCachedAccount().getPlugin().getHost())) {
+                if (pluginHost.equals(controller.getDownloadLinkCandidate().getCachedAccount().getPlugin().getHost())) {
                     if (!specialHandling || domainInfo == controller.getDownloadLink().getDomainInfo()) {
                         count++;
                     }
