@@ -957,6 +957,8 @@ public class DirectHTTP extends PluginForHost {
                 br.getHeaders().put("Referer", link);
             } else if (link.contains("photobucket.com")) {
                 br.getHeaders().put("Referer", link);
+            } else if (link.contains("imagezilla.net")) {
+                br.getHeaders().put("Referer", link);
             }
         }
     }
