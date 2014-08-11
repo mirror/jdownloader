@@ -299,7 +299,6 @@ public class NitroFlareCom extends PluginForHost {
     private void handleDownload_API(final DownloadLink downloadLink, final Account account) throws Exception {
         setConstants(account);
         checkLinks(new DownloadLink[] { downloadLink });
-        requestFileInformation(downloadLink);
         dllink = checkDirectLink(downloadLink, directlinkproperty);
         if (inValidate(dllink)) {
             // links that require premium...
@@ -307,44 +306,47 @@ public class NitroFlareCom extends PluginForHost {
                 throwPremiumRequiredException();
             }
             final String req = apiURL + "/getDownloadLink?file=" + getFUID(downloadLink) + (account != null ? "&premiumKey=" + account.getPass() : "");
+            // needed for when dropping to frame, the cookie session seems to carry over current position in download sequence and you get
+            // recaptcha error codes at first step.
+            br = new Browser();
             br.getPage(req);
             // error handling here.
-            String type = getJson("type");
-            if ("error".equalsIgnoreCase(type) && "5".equalsIgnoreCase(getJson("code"))) {
+            if ("error".equalsIgnoreCase(getJson("type")) && "5".equalsIgnoreCase(getJson("code"))) {
                 final String msg = getJson("message");
                 final String time = new Regex(msg, "You have to wait (\\d+) minutes").getMatch(0);
                 final long t = (!inValidate(time) ? Long.parseLong(time) * 60 * 1000 : 1 * 60 * 60 * 1000);
                 throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, msg, t);
-            } else if ("error".equalsIgnoreCase(type) && "7".equalsIgnoreCase(getJson("code"))) {
+            } else if ("error".equalsIgnoreCase(getJson("type")) && "7".equalsIgnoreCase(getJson("code"))) {
                 // shouldn't happen as its hard limited.
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            } else if ("free".equalsIgnoreCase(type)) {
+            } else if ("free".equalsIgnoreCase(getJson("linkType"))) {
                 // wait
+                String delay = getJson("delay");
                 long startTime = System.currentTimeMillis();
                 String recap = getJson("recaptchaPublic");
-                if (inValidate(recap)) {
+                if (!inValidate(recap)) {
                     logger.info("Detected captcha method \"Re Captcha\"");
                     final Browser captcha = br.cloneBrowser();
                     final PluginForHost recplug = JDUtilities.getPluginForHost("DirectHTTP");
                     final jd.plugins.hoster.DirectHTTP.Recaptcha rc = ((DirectHTTP) recplug).getReCaptcha(captcha);
                     int repeat = 5;
                     for (int i = 1; i != repeat; i++) {
+                        rc.setId(recap);
                         rc.load();
                         final File cf = rc.downloadCaptcha(getLocalCaptchaFile());
                         final String c = getCaptchaCode(cf, downloadLink);
+                        if (!inValidate(delay) && i == 1) {
+                            sleep((Long.parseLong(delay) * 1000) - (System.currentTimeMillis() - startTime), downloadLink);
+                        }
                         br.getPage(req + "&recaptcha_challenge_field=" + rc.getChallenge() + "&recaptcha_response_field=" + Encoding.urlEncode(c));
-                        if ("error".equalsIgnoreCase(type) && "6".equalsIgnoreCase(getJson("code")) && i + 1 != repeat) {
+                        if ("error".equalsIgnoreCase(getJson("type")) && "6".equalsIgnoreCase(getJson("code")) && i + 1 != repeat) {
                             continue;
-                        } else if ("error".equalsIgnoreCase(type) && "6".equalsIgnoreCase(getJson("code")) && i + 1 == repeat) {
+                        } else if ("error".equalsIgnoreCase(getJson("type")) && "6".equalsIgnoreCase(getJson("code")) && i + 1 == repeat) {
                             throw new PluginException(LinkStatus.ERROR_CAPTCHA);
                         } else {
                             break;
                         }
                     }
-                }
-                String delay = getJson("delay");
-                if (inValidate(delay)) {
-                    downloadLink.wait((Long.parseLong(delay) * 1000) - (System.currentTimeMillis() - startTime));
                 }
             }
             dllink = getJson("url");
