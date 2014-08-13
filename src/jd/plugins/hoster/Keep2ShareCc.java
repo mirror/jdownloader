@@ -44,6 +44,7 @@ import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.parser.html.Form;
 import jd.plugins.Account;
+import jd.plugins.Account.AccountError;
 import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
@@ -279,11 +280,6 @@ public class Keep2ShareCc extends PluginForHost {
                 dllink = site_doFree(downloadLink, account);
             }
         }
-        download_free(downloadLink, account, dllink);
-    }
-
-    private void download_free(final DownloadLink downloadLink, final Account account, String dllink) throws Exception {
-        dllink = fixLinkSSL(dllink);
         logger.info("dllink = " + dllink);
         boolean resume = FREE_RESUME;
         int maxchunks = FREE_MAXDOWNLOADS;
@@ -339,7 +335,7 @@ public class Keep2ShareCc extends PluginForHost {
             if (br.containsHTML("Free user can't download large files")) {
                 throw new PluginException(LinkStatus.ERROR_FATAL, "This file is only available to premium members");
             }
-            Browser br2 = br.cloneBrowser();
+            final Browser br2 = br.cloneBrowser();
             // domain not transferable!
             getPage2(br2, "http://static.k2s.cc/ext/evercookie/evercookie.swf");
             // can be here also, raztoki 20130521!
@@ -370,7 +366,7 @@ public class Keep2ShareCc extends PluginForHost {
                     if (captchaLink == null) {
                         throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                     }
-                    final String code = getCaptchaCode(new Regex(this.fixLinkSSL(br.getURL()), DOMAINS_HTTP).getMatch(0) + captchaLink, downloadLink);
+                    final String code = getCaptchaCode(new Regex(fixLinkSSL(br.getURL()), DOMAINS_HTTP).getMatch(0) + captchaLink, downloadLink);
                     postPage(br.getURL(), "CaptchaForm%5Bcode%5D=" + code + "&free=1&freeDownloadRequest=1&uniqueId=" + uniqueID);
                     if (br.containsHTML(">The verification code is incorrect|/site/captcha.html")) {
                         throw new PluginException(LinkStatus.ERROR_CAPTCHA);
@@ -573,6 +569,7 @@ public class Keep2ShareCc extends PluginForHost {
         }
     }
 
+    @SuppressWarnings("deprecation")
     @Override
     public AccountInfo fetchAccountInfo(final Account account) throws Exception {
         AccountInfo ai = new AccountInfo();
@@ -691,6 +688,8 @@ public class Keep2ShareCc extends PluginForHost {
 
             if (dllink == null) {
                 if (br.containsHTML("Traffic limit exceed\\!<")) {
+                    logger.info("Traffic limit reached | Not enough traffic left to download this file");
+                    account.setError(AccountError.TEMP_DISABLED, "Traffic limit reached");
                     throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
                 }
                 synchronized (LOCK) {
@@ -780,14 +779,32 @@ public class Keep2ShareCc extends PluginForHost {
         final String challenge = getJson(br.toString(), "challenge");
         final String captcha_url = getJson(br.toString(), "captcha_url").replace("\\", "");
         final String code = getCaptchaCode(captcha_url, downloadLink);
-        postPageRaw(this.br, "http://keep2share.cc/api/v1/geturl", "{\"file_id\":\"" + fid + "\",\"free_download_key\":null,\"captcha_challenge\":\"" + challenge + "\",\"captcha_response\":\"" + code + "\"}");
+        try {
+            postPageRaw(this.br, "http://keep2share.cc/api/v1/geturl", "{\"file_id\":\"" + fid + "\",\"free_download_key\":null,\"captcha_challenge\":\"" + challenge + "\",\"captcha_response\":\"" + Encoding.urlEncode(code) + "\"}");
+        } catch (final BrowserException e) {
+            if (br.getHttpConnection().getResponseCode() == 406) {
+                logger.info("406: Captcha failed");
+                throw new PluginException(LinkStatus.ERROR_CAPTCHA);
+            }
+            logger.warning("Unknown BrowserException occured, throwing...");
+            throw e;
+        }
         if (!"success".equals(getJson(br.toString(), "status"))) {
+            logger.info("no 'success' --> Captcha failed");
             throw new PluginException(LinkStatus.ERROR_CAPTCHA);
         }
         final String free_download_key = getJson(br.toString(), "free_download_key");
         final int wait = Integer.parseInt(getJson(br.toString(), "time_wait"));
         this.sleep(wait * 1001l, downloadLink);
-        postPageRaw(this.br, "http://keep2share.cc/api/v1/geturl", "{\"file_id\":\"" + fid + "\",\"free_download_key\":\"" + free_download_key + "\",\"captcha_challenge\":null,\"captcha_response\":null}");
+        try {
+            postPageRaw(this.br, "http://keep2share.cc/api/v1/geturl", "{\"file_id\":\"" + fid + "\",\"free_download_key\":\"" + free_download_key + "\",\"captcha_challenge\":null,\"captcha_response\":null}");
+        } catch (final BrowserException e) {
+            if (br.getHttpConnection().getResponseCode() == 406) {
+                throw new PluginException(LinkStatus.ERROR_IP_BLOCKED);
+            }
+            logger.warning("Unknown BrowserException occured, throwing...");
+            throw e;
+        }
         String dllink = getJson(br.toString(), "url");
         if (dllink == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -796,10 +813,12 @@ public class Keep2ShareCc extends PluginForHost {
         return dllink;
     }
 
-    /* TODO: Implement */
+    /*
+     * TODO: Add premium lifetime support - at the moment probably free and premium lifetime accounts have simply no expire date --> No way
+     * to differ between these two account types via API (yet)
+     */
     private AccountInfo api_fetchAccountInfo(final Account account) throws Exception {
         final AccountInfo ai = new AccountInfo();
-        // postPageRaw(this.br, "http://keep2share.cc/api/v1/GetFilesInfo", "{\"ids\"=[\"02cb9384ecf26\"]}");
         api_login(account, true);
         postPageRaw(this.br, "http://keep2share.cc/api/v1/accountinfo", "{\"auth_token\":\"" + api_getAuthToken(account) + "\"}");
         final String available_traffic = getJson(br.toString(), "available_traffic");
@@ -843,7 +862,17 @@ public class Keep2ShareCc extends PluginForHost {
 
     private void api_handlePremium(final DownloadLink link, final Account account) throws Exception {
         this.api_login(account, false);
-        postPageRaw(this.br, "http://keep2share.cc/api/v1/geturl", "{\"auth_token\":\"" + api_getAuthToken(account) + "\",\"file_id\":\"" + getFID(link) + "\",\"free_download_key\":null,\"captcha_challenge\":null,\"captcha_response\":null}");
+        try {
+            postPageRaw(this.br, "http://keep2share.cc/api/v1/geturl", "{\"auth_token\":\"" + api_getAuthToken(account) + "\",\"file_id\":\"" + getFID(link) + "\",\"free_download_key\":null,\"captcha_challenge\":null,\"captcha_response\":null}");
+        } catch (final BrowserException e) {
+            if (br.getHttpConnection().getResponseCode() == 406) {
+                logger.info("Traffic limit reached | Not enough traffic left to download this file");
+                account.setError(AccountError.TEMP_DISABLED, "Traffic limit reached");
+                throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
+            }
+            logger.info("Unhandled BrowserException occured, throwing...");
+            throw e;
+        }
         String dllink = getJson(br.toString(), "url");
         if (dllink == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -1186,7 +1215,8 @@ public class Keep2ShareCc extends PluginForHost {
 
     private void setConfigElements() {
         // this.getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, this.getPluginConfig(), USE_API,
-        // JDL.L("plugins.hoster.Keep2ShareCc.useAPI", "Use API (recommended!)")).setDefaultValue(false));
+        // JDL.L("plugins.hoster.Keep2ShareCc.useAPI",
+        // "Use API (recommended!)\r\nIMPORTANT: Free accounts will still be accepted in API mode but they can not be used!")).setDefaultValue(false));
         this.getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, this.getPluginConfig(), SSL_CONNECTION, JDL.L("plugins.hoster.Keep2ShareCc.preferSSL", "Use Secure Communication over SSL (HTTPS://)")).setDefaultValue(false));
     }
 
