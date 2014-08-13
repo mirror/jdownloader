@@ -94,11 +94,17 @@ public abstract class PackageControllerTable<ParentType extends AbstractPackageN
     private NullsafeAtomicReference<SelectionInfoCache>           selectionInfoCache  = new NullsafeAtomicReference<SelectionInfoCache>(null);
     private AtomicLong                                            selectionVersion    = new AtomicLong(0);
     private final DelayedRunnable                                 selectionDelayedUpdate;
+    private final boolean                                         wrapAroundEnabled;
 
     public ExtColumn<AbstractNode> getMouseOverColumn() {
         Point mp = MouseInfo.getPointerInfo().getLocation();
         SwingUtilities.convertPointFromScreen(mp, this);
         return getExtColumnAtPoint(mp);
+    }
+
+    @Override
+    protected boolean isWrapAroundEnabled() {
+        return wrapAroundEnabled;
     }
 
     @Override
@@ -121,7 +127,6 @@ public abstract class PackageControllerTable<ParentType extends AbstractPackageN
 
             });
         }
-
     }
 
     public PackageControllerTable(PackageControllerTableModel<ParentType, ChildrenType> pctm) {
@@ -133,6 +138,7 @@ public abstract class PackageControllerTable<ParentType extends AbstractPackageN
 
         sortNotifyColor = CFG_GUI.SORT_COLUMN_HIGHLIGHT_ENABLED.getValue() ? (LAFOptions.getInstance().getColorForTableSortedColumnView()) : null;
         filterNotifyColor = CFG_GUI.CFG.isFilterHighlightEnabled() ? (LAFOptions.getInstance().getColorForTableFilteredView()) : null;
+        wrapAroundEnabled = CFG_GUI.CFG.isTableWrapAroundEnabled();
         initAppActions();
 
         selectionDelayedUpdate = new DelayedRunnable(500, 5000) {

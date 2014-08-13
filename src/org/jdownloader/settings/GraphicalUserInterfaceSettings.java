@@ -1067,4 +1067,11 @@ public interface GraphicalUserInterfaceSettings extends ConfigInterface {
     boolean isStatusBarAddPremiumButtonVisible();
 
     void setStatusBarAddPremiumButtonVisible(boolean b);
+
+    @AboutConfig
+    @RequiresRestart("Restart is Required")
+    @DefaultBooleanValue(true)
+    boolean isTableWrapAroundEnabled();
+
+    void setTableWrapAroundEnabled(boolean b);
 }
