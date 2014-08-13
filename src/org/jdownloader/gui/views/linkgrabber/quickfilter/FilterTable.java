@@ -19,11 +19,12 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import javax.swing.JPopupMenu;
 import javax.swing.KeyStroke;
 import javax.swing.ListSelectionModel;
-import javax.swing.event.TableModelEvent;
-import javax.swing.event.TableModelListener;
 
 import jd.SecondLevelLaunch;
 import jd.controlling.linkcollector.LinkCollector;
+import jd.controlling.linkcollector.LinkCollectorCrawler;
+import jd.controlling.linkcollector.LinkCollectorEvent;
+import jd.controlling.linkcollector.LinkCollectorListener;
 import jd.controlling.linkcrawler.CrawledLink;
 import jd.controlling.linkcrawler.CrawledPackage;
 import jd.controlling.packagecontroller.AbstractNode;
@@ -152,11 +153,58 @@ public abstract class FilterTable extends BasicJDTable<Filter> implements Packag
 
                                                                                  };
 
-    private static TableModelListener                      TABLELISTENER         = new TableModelListener() {
+    private static LinkCollectorListener                   LISTENER              = new LinkCollectorListener() {
 
                                                                                      @Override
-                                                                                     public void tableChanged(TableModelEvent e) {
+                                                                                     public void onLinkCollectorAbort(LinkCollectorEvent event) {
+                                                                                     }
+
+                                                                                     @Override
+                                                                                     public void onLinkCollectorFilteredLinksAvailable(LinkCollectorEvent event) {
+                                                                                     }
+
+                                                                                     @Override
+                                                                                     public void onLinkCollectorFilteredLinksEmpty(LinkCollectorEvent event) {
+                                                                                     }
+
+                                                                                     @Override
+                                                                                     public void onLinkCollectorDataRefresh(LinkCollectorEvent event) {
                                                                                          updateAllFiltersInstant();
+                                                                                     }
+
+                                                                                     @Override
+                                                                                     public void onLinkCollectorStructureRefresh(LinkCollectorEvent event) {
+                                                                                         updateAllFiltersInstant();
+                                                                                     }
+
+                                                                                     @Override
+                                                                                     public void onLinkCollectorContentRemoved(LinkCollectorEvent event) {
+                                                                                         updateAllFiltersInstant();
+                                                                                     }
+
+                                                                                     @Override
+                                                                                     public void onLinkCollectorContentAdded(LinkCollectorEvent event) {
+                                                                                         updateAllFiltersInstant();
+                                                                                     }
+
+                                                                                     @Override
+                                                                                     public void onLinkCollectorLinkAdded(LinkCollectorEvent event, CrawledLink parameter) {
+                                                                                     }
+
+                                                                                     @Override
+                                                                                     public void onLinkCollectorDupeAdded(LinkCollectorEvent event, CrawledLink parameter) {
+                                                                                     }
+
+                                                                                     @Override
+                                                                                     public void onLinkCrawlerAdded(LinkCollectorCrawler parameter) {
+                                                                                     }
+
+                                                                                     @Override
+                                                                                     public void onLinkCrawlerStarted(LinkCollectorCrawler parameter) {
+                                                                                     }
+
+                                                                                     @Override
+                                                                                     public void onLinkCrawlerStopped(LinkCollectorCrawler parameter) {
                                                                                      }
 
                                                                                  };
@@ -303,14 +351,14 @@ public abstract class FilterTable extends BasicJDTable<Filter> implements Packag
                     FILTERTABLES.add(filterTableUpdater);
                     linkgrabberTable.getModel().addFilter(FilterTable.this);
                     if (addListener) {
-                        linkgrabberTable.getModel().addTableModelListener(TABLELISTENER);
+                        ((LinkCollector) linkgrabberTable.getController()).getEventsender().addListener(LISTENER);
                     }
                     FilterTable.super.setVisible(true);
                 } else {
                     FILTERTABLES.remove(filterTableUpdater);
                     linkgrabberTable.getModel().removeFilter(FilterTable.this);
                     if (FILTERTABLES.size() == 0) {
-                        FilterTable.this.linkgrabberTable.getModel().removeTableModelListener(TABLELISTENER);
+                        ((LinkCollector) linkgrabberTable.getController()).getEventsender().removeListener(LISTENER);
                     }
                     FilterTable.super.setVisible(false);
                 }

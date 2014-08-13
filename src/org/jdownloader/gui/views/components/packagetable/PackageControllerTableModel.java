@@ -176,10 +176,6 @@ public abstract class PackageControllerTableModel<PackageType extends AbstractPa
                          */
                         try {
                             getTable().repaint();
-                            /**
-                             * throw event to notify about changed data
-                             */
-                            fireTableDataChanged();
                         } finally {
                             repaintFired.set(false);
                         }
