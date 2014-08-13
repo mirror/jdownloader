@@ -48,6 +48,9 @@ public class CompiledPluginStatusFilter extends PluginStatusFilter {
      * @return true if a premium account is associated, false otherwise.
      */
     private boolean VerifyPremium(CrawledLink link) {
+        if (link.isDirectHTTP() || link.isFTP()) {
+            return true;
+        }
         if (AccountController.getInstance().hasAccounts(link.getHost())) {
             final List<Account> accounts = AccountController.getInstance().getValidAccounts(link.getHost());
             if (accounts != null) {
