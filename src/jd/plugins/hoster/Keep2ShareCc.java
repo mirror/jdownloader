@@ -266,19 +266,31 @@ public class Keep2ShareCc extends PluginForHost {
     @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
-        doFree(downloadLink, null, FREE_RESUME, FREE_MAXCHUNKS);
+        handle_Free(downloadLink, null);
     }
 
-    private void doFree(final DownloadLink downloadLink, final Account account, final boolean resume, final int maxchunks) throws Exception {
+    private void handle_Free(final DownloadLink downloadLink, final Account account) throws Exception {
         checkShowFreeDialog();
-        String dllink;
-        if (this.apiEnabled()) {
-            dllink = api_doFree(downloadLink, account);
-        } else {
-            dllink = site_doFree(downloadLink, account);
+        String dllink = checkDirectLink(downloadLink, "k2sfreedirectlink");
+        if (dllink == null) {
+            if (this.apiEnabled()) {
+                dllink = api_HandleFree(downloadLink, account);
+            } else {
+                dllink = site_doFree(downloadLink, account);
+            }
         }
+        download_free(downloadLink, account, dllink);
+    }
+
+    private void download_free(final DownloadLink downloadLink, final Account account, String dllink) throws Exception {
         dllink = fixLinkSSL(dllink);
         logger.info("dllink = " + dllink);
+        boolean resume = FREE_RESUME;
+        int maxchunks = FREE_MAXDOWNLOADS;
+        if (account != null) {
+            resume = ACCOUNT_FREE_RESUME;
+            maxchunks = ACCOUNT_FREE_MAXCHUNKS;
+        }
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, resume, maxchunks);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
@@ -292,7 +304,7 @@ public class Keep2ShareCc extends PluginForHost {
             // Try again...
             dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, resume, maxchunks);
         }
-        downloadLink.setProperty("directlink", dllink);
+        downloadLink.setProperty("k2sfreedirectlink", dllink);
         dl.startDownload();
     }
 
@@ -309,77 +321,75 @@ public class Keep2ShareCc extends PluginForHost {
             }
             throw new PluginException(LinkStatus.ERROR_FATAL, "This file is only available to premium members");
         }
-        String dllink = checkDirectLink(downloadLink, "directlink");
-        if (dllink == null) {
-            if (br.containsHTML(DOWNLOADPOSSIBLE)) {
-                dllink = getDllink();
-                if (dllink == null) {
-                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        String dllink;
+        if (br.containsHTML(DOWNLOADPOSSIBLE)) {
+            dllink = getDllink();
+            if (dllink == null) {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
+        } else {
+            if (br.containsHTML("Traffic limit exceed\\!<br>|Download count files exceed!<br>")) {
+                throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 30 * 60 * 1000l);
+            }
+            final String uniqueID = br.getRegex("name=\"slow_id\" value=\"([^<>\"]*?)\"").getMatch(0);
+            if (uniqueID == null) {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
+            postPage(br.getURL(), "yt0=&slow_id=" + uniqueID);
+            if (br.containsHTML("Free user can't download large files")) {
+                throw new PluginException(LinkStatus.ERROR_FATAL, "This file is only available to premium members");
+            }
+            Browser br2 = br.cloneBrowser();
+            // domain not transferable!
+            getPage2(br2, "http://static.k2s.cc/ext/evercookie/evercookie.swf");
+            // can be here also, raztoki 20130521!
+            dllink = getDllink();
+            if (dllink == null) {
+                handleFreeErrors();
+                if (br.containsHTML("Free account does not allow to download more than one file at the same time")) {
+                    throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 5 * 60 * 1000l);
                 }
-            } else {
-                if (br.containsHTML("Traffic limit exceed\\!<br>|Download count files exceed!<br>")) {
-                    throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 30 * 60 * 1000l);
-                }
-                final String uniqueID = br.getRegex("name=\"slow_id\" value=\"([^<>\"]*?)\"").getMatch(0);
-                if (uniqueID == null) {
-                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                }
-                postPage(br.getURL(), "yt0=&slow_id=" + uniqueID);
-                if (br.containsHTML("Free user can't download large files")) {
-                    throw new PluginException(LinkStatus.ERROR_FATAL, "This file is only available to premium members");
-                }
-                Browser br2 = br.cloneBrowser();
-                // domain not transferable!
-                getPage2(br2, "http://static.k2s.cc/ext/evercookie/evercookie.swf");
-                // can be here also, raztoki 20130521!
-                dllink = getDllink();
-                if (dllink == null) {
-                    handleFreeErrors();
-                    if (br.containsHTML("Free account does not allow to download more than one file at the same time")) {
-                        throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 5 * 60 * 1000l);
-                    }
-                    if (br.containsHTML("(api\\.recaptcha\\.net|google\\.com/recaptcha/api/)")) {
-                        logger.info("Detected captcha method \"Re Captcha\" for this host");
-                        final PluginForHost recplug = JDUtilities.getPluginForHost("DirectHTTP");
-                        final jd.plugins.hoster.DirectHTTP.Recaptcha rc = ((DirectHTTP) recplug).getReCaptcha(br);
-                        final String id = br.getRegex("\\?k=([A-Za-z0-9%_\\+\\- ]+)\"").getMatch(0);
-                        if (id == null) {
-                            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                        }
-                        rc.setId(id);
-                        rc.load();
-                        final File cf = rc.downloadCaptcha(getLocalCaptchaFile());
-                        final String c = getCaptchaCode(cf, downloadLink);
-                        postPage(br.getURL(), "CaptchaForm%5Bcode%5D=&recaptcha_challenge_field=" + rc.getChallenge() + "&recaptcha_response_field=" + Encoding.urlEncode(c) + "&free=1&freeDownloadRequest=1&yt0=&uniqueId=" + uniqueID);
-                        if (br.containsHTML("(api\\.recaptcha\\.net|google\\.com/recaptcha/api/)")) {
-                            throw new PluginException(LinkStatus.ERROR_CAPTCHA);
-                        }
-                    } else {
-                        final String captchaLink = br.getRegex("\"(/file/captcha\\.html\\?[^\"]+)\"").getMatch(0);
-                        if (captchaLink == null) {
-                            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                        }
-                        final String code = getCaptchaCode(new Regex(this.fixLinkSSL(br.getURL()), DOMAINS_HTTP).getMatch(0) + captchaLink, downloadLink);
-                        postPage(br.getURL(), "CaptchaForm%5Bcode%5D=" + code + "&free=1&freeDownloadRequest=1&uniqueId=" + uniqueID);
-                        if (br.containsHTML(">The verification code is incorrect|/site/captcha.html")) {
-                            throw new PluginException(LinkStatus.ERROR_CAPTCHA);
-                        }
-                    }
-                    /** Skippable */
-                    int wait = 30;
-                    final String waittime = br.getRegex("<div id=\"download\\-wait\\-timer\">[\t\n\r ]+(\\d+)[\t\n\r ]+</div>").getMatch(0);
-                    if (waittime != null) {
-                        wait = Integer.parseInt(waittime);
-                    }
-                    sleep(wait * 1001l, downloadLink);
-                    br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
-                    postPage(br.getURL(), "free=1&uniqueId=" + uniqueID);
-                    handleFreeErrors();
-                    br.getHeaders().put("X-Requested-With", null);
-                    dllink = getDllink();
-                    if (dllink == null) {
+                if (br.containsHTML("(api\\.recaptcha\\.net|google\\.com/recaptcha/api/)")) {
+                    logger.info("Detected captcha method \"Re Captcha\" for this host");
+                    final PluginForHost recplug = JDUtilities.getPluginForHost("DirectHTTP");
+                    final jd.plugins.hoster.DirectHTTP.Recaptcha rc = ((DirectHTTP) recplug).getReCaptcha(br);
+                    final String id = br.getRegex("\\?k=([A-Za-z0-9%_\\+\\- ]+)\"").getMatch(0);
+                    if (id == null) {
                         throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                     }
+                    rc.setId(id);
+                    rc.load();
+                    final File cf = rc.downloadCaptcha(getLocalCaptchaFile());
+                    final String c = getCaptchaCode(cf, downloadLink);
+                    postPage(br.getURL(), "CaptchaForm%5Bcode%5D=&recaptcha_challenge_field=" + rc.getChallenge() + "&recaptcha_response_field=" + Encoding.urlEncode(c) + "&free=1&freeDownloadRequest=1&yt0=&uniqueId=" + uniqueID);
+                    if (br.containsHTML("(api\\.recaptcha\\.net|google\\.com/recaptcha/api/)")) {
+                        throw new PluginException(LinkStatus.ERROR_CAPTCHA);
+                    }
+                } else {
+                    final String captchaLink = br.getRegex("\"(/file/captcha\\.html\\?[^\"]+)\"").getMatch(0);
+                    if (captchaLink == null) {
+                        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                    }
+                    final String code = getCaptchaCode(new Regex(this.fixLinkSSL(br.getURL()), DOMAINS_HTTP).getMatch(0) + captchaLink, downloadLink);
+                    postPage(br.getURL(), "CaptchaForm%5Bcode%5D=" + code + "&free=1&freeDownloadRequest=1&uniqueId=" + uniqueID);
+                    if (br.containsHTML(">The verification code is incorrect|/site/captcha.html")) {
+                        throw new PluginException(LinkStatus.ERROR_CAPTCHA);
+                    }
+                }
+                /** Skippable */
+                int wait = 30;
+                final String waittime = br.getRegex("<div id=\"download\\-wait\\-timer\">[\t\n\r ]+(\\d+)[\t\n\r ]+</div>").getMatch(0);
+                if (waittime != null) {
+                    wait = Integer.parseInt(waittime);
+                }
+                sleep(wait * 1001l, downloadLink);
+                br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
+                postPage(br.getURL(), "free=1&uniqueId=" + uniqueID);
+                handleFreeErrors();
+                br.getHeaders().put("X-Requested-With", null);
+                dllink = getDllink();
+                if (dllink == null) {
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 }
             }
         }
@@ -618,6 +628,14 @@ public class Keep2ShareCc extends PluginForHost {
     @Override
     public void handlePremium(final DownloadLink link, final Account account) throws Exception {
         requestFileInformation(link);
+        if (this.apiEnabled()) {
+            api_handleAccountDownload(link, account);
+        } else {
+            site_handleAccountDownload(link, account);
+        }
+    }
+
+    private void site_handleAccountDownload(final DownloadLink link, final Account account) throws Exception {
         boolean fresh = false;
         Object after = null;
         synchronized (LOCK) {
@@ -641,7 +659,7 @@ public class Keep2ShareCc extends PluginForHost {
         }
         if (br.containsHTML("class=\"free\">Free</a>")) {
             getPage(link.getDownloadURL());
-            doFree(link, account, ACCOUNT_FREE_RESUME, ACCOUNT_FREE_MAXCHUNKS);
+            handle_Free(link, account);
         } else {
             br.setFollowRedirects(false);
             getPage2(this.br, link.getDownloadURL());
@@ -690,16 +708,20 @@ public class Keep2ShareCc extends PluginForHost {
             if (!dllink.startsWith("http")) {
                 dllink = "http://" + currentDomain + dllink;
             }
-            logger.info("dllink = " + dllink);
-            dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, true, 0);
-            if (dl.getConnection().getContentType().contains("html")) {
-                logger.warning("The final dllink seems not to be a file!");
-                br.followConnection();
-                handleGeneralServerErrors(account);
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            }
-            dl.startDownload();
+            download_premium(link, account, dllink);
         }
+    }
+
+    private void download_premium(final DownloadLink link, final Account account, final String dllink) throws Exception {
+        logger.info("dllink = " + dllink);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, ACCOUNT_PREMIUM_RESUME, ACCOUNT_PREMIUM_MAXCHUNKS);
+        if (dl.getConnection().getContentType().contains("html")) {
+            logger.warning("The final dllink seems not to be a file!");
+            br.followConnection();
+            handleGeneralServerErrors(account);
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        dl.startDownload();
     }
 
     private void handleGeneralErrors(final Account account) throws PluginException {
@@ -752,8 +774,8 @@ public class Keep2ShareCc extends PluginForHost {
         return true;
     }
 
-    private String api_doFree(final DownloadLink downloadLink, final Account account) throws Exception {
-        final String fid = new Regex(downloadLink.getDownloadURL(), "([a-z0-9]+)$").getMatch(0);
+    private String api_HandleFree(final DownloadLink downloadLink, final Account account) throws Exception {
+        final String fid = getFID(downloadLink);
         postPageRaw(this.br, "http://keep2share.cc/api/v1/requestcaptcha", "");
         final String challenge = getJson(br.toString(), "challenge");
         final String captcha_url = getJson(br.toString(), "captcha_url").replace("\\", "");
@@ -765,15 +787,19 @@ public class Keep2ShareCc extends PluginForHost {
         final String free_download_key = getJson(br.toString(), "free_download_key");
         final int wait = Integer.parseInt(getJson(br.toString(), "time_wait"));
         this.sleep(wait * 1001l, downloadLink);
-        // postPageRaw(this.br, "http://keep2share.cc/api/v1/geturl", "{\"file_id\":\"" + fid + "\",\"free_download_key\":\"" +
-        // free_download_key + "\",\"captcha_challenge\":null,\"captcha_response\":null}");
-        final String dllink = "http://keep2share.cc/file/url.html?file=" + free_download_key;
+        postPageRaw(this.br, "http://keep2share.cc/api/v1/geturl", "{\"file_id\":\"" + fid + "\",\"free_download_key\":\"" + free_download_key + "\",\"captcha_challenge\":null,\"captcha_response\":null}");
+        String dllink = getJson(br.toString(), "url");
+        if (dllink == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        dllink = dllink.replace("\\", "");
         return dllink;
     }
 
     /* TODO: Implement */
     private AccountInfo api_fetchAccountInfo(final Account account) throws Exception {
         final AccountInfo ai = new AccountInfo();
+        // postPageRaw(this.br, "http://keep2share.cc/api/v1/GetFilesInfo", "{\"ids\"=[\"02cb9384ecf26\"]}");
         api_login(account, true);
         postPageRaw(this.br, "http://keep2share.cc/api/v1/accountinfo", "{\"auth_token\":\"" + api_getAuthToken(account) + "\"}");
         final String available_traffic = getJson(br.toString(), "available_traffic");
@@ -813,6 +839,29 @@ public class Keep2ShareCc extends PluginForHost {
             }
             acc.setProperty("authtoken", authtoken);
         }
+    }
+
+    private void api_handlePremium(final DownloadLink link, final Account account) throws Exception {
+        this.api_login(account, false);
+        postPageRaw(this.br, "http://keep2share.cc/api/v1/geturl", "{\"auth_token\":\"" + api_getAuthToken(account) + "\",\"file_id\":\"" + getFID(link) + "\",\"free_download_key\":null,\"captcha_challenge\":null,\"captcha_response\":null}");
+        String dllink = getJson(br.toString(), "url");
+        if (dllink == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        dllink = dllink.replace("\\", "");
+        download_premium(link, account, dllink);
+    }
+
+    private void api_handleAccountDownload(final DownloadLink link, final Account account) throws Exception {
+        if (account.getBooleanProperty("free", false)) {
+            api_HandleFree(link, account);
+        } else {
+            api_handlePremium(link, account);
+        }
+    }
+
+    private String getFID(final DownloadLink dl) {
+        return new Regex(dl.getDownloadURL(), "([a-z0-9]+)$").getMatch(0);
     }
 
     @Override
