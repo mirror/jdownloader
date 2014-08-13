@@ -596,7 +596,14 @@ public class DirectHTTP extends PluginForHost {
         if (downloadLink.getStringProperty("post", null) != null) {
             urlConnection = br.openPostConnection(downloadLink.getDownloadURL(), downloadLink.getStringProperty("post", null));
         } else {
-            urlConnection = br.openGetConnection(downloadLink.getDownloadURL());
+            try {
+                urlConnection = br.openHeadConnection(downloadLink.getDownloadURL());
+            } catch (final Throwable e) {
+                if (urlConnection != null) {
+                    urlConnection.disconnect();
+                }
+                urlConnection = br.openGetConnection(downloadLink.getDownloadURL());
+            }
         }
         return urlConnection;
     }
@@ -858,7 +865,7 @@ public class DirectHTTP extends PluginForHost {
 
     /**
      * update this map to your needs
-     *
+     * 
      * @param mimeType
      * @return
      */

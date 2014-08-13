@@ -96,9 +96,6 @@ public class ImgSrcRu extends PluginForHost {
             prepBr.getHeaders().put("Referer", refer);
         }
         prepBr.setFollowRedirects(true);
-        if (System.getProperty("jd.revision.jdownloaderrevision") != null) {
-            prepBr.getHeaders().put("Connection", "keep-alive");
-        }
         if (uaInt.incrementAndGet() > 25 || userAgent.get() == null || neu) {
             /* we first have to load the plugin, before we can reference it */
             JDUtilities.getPluginForHost("mediafire.com");
@@ -140,7 +137,7 @@ public class ImgSrcRu extends PluginForHost {
                 String filename = getFileNameFromHeader(con);
                 String oldname = new Regex(downloadLink.getDownloadURL(), "(\\d+)\\.html").getMatch(0);
                 downloadLink.setFinalFileName(oldname + filename.substring(filename.lastIndexOf(".")));
-                downloadLink.setDownloadSize(con.getLongContentLength());
+                downloadLink.setDownloadSize(con.getContentLength());
                 return AvailableStatus.TRUE;
             } finally {
                 con.disconnect();

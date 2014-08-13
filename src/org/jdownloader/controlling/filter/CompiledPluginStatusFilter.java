@@ -16,7 +16,6 @@ public class CompiledPluginStatusFilter extends PluginStatusFilter {
     }
 
     public boolean matches(CrawledLink link) {
-        /* TODO: do we want to check all accounts for hasCaptcha!? */
         switch (getMatchType()) {
         case IS:
             switch (getPluginStatus()) {
