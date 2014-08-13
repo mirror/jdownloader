@@ -36,6 +36,7 @@ import jd.config.ConfigEntry;
 import jd.config.Property;
 import jd.config.SubConfiguration;
 import jd.http.Browser;
+import jd.http.Browser.BrowserException;
 import jd.http.Cookie;
 import jd.http.Cookies;
 import jd.http.URLConnectionAdapter;
@@ -792,9 +793,18 @@ public class Keep2ShareCc extends PluginForHost {
     private void api_login(final Account acc, final boolean force) throws IOException, PluginException {
         String authtoken = api_getAuthToken(acc);
         if (authtoken == null || force) {
-            postPageRaw(this.br, "http://keep2share.cc/api/v1/login", "{\"username\":\"" + acc.getUser() + "\",\"password\":\"" + acc.getPass() + "\"}");
-            authtoken = br.getRegex("\"auth_token\":\"([^<>\"]*?)\"").getMatch(0);
-            if (authtoken == null) {
+            boolean failed = false;
+            try {
+                postPageRaw(this.br, "http://keep2share.cc/api/v1/login", "{\"username\":\"" + acc.getUser() + "\",\"password\":\"" + acc.getPass() + "\"}");
+            } catch (final BrowserException e) {
+                if (br.getHttpConnection().getResponseCode() == 406) {
+                    failed = true;
+                } else {
+                    throw e;
+                }
+            }
+            authtoken = getJson(br.toString(), "auth_token");
+            if (authtoken == null || failed) {
                 if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
                     throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUngültiger Benutzername oder ungültiges Passwort!\r\nDu bist dir sicher, dass dein eingegebener Benutzername und Passwort stimmen? Versuche folgendes:\r\n1. Falls dein Passwort Sonderzeichen enthält, ändere es (entferne diese) und versuche es erneut!\r\n2. Gib deine Zugangsdaten per Hand (ohne kopieren/einfügen) ein.", PluginException.VALUE_ID_PREMIUM_DISABLE);
                 } else {
@@ -873,7 +883,7 @@ public class Keep2ShareCc extends PluginForHost {
                     throw (PluginException) e;
                 }
                 // should only be picked up now if not JD2
-                if (br.getHttpConnection() != null && br.getHttpConnection().getResponseCode() == 503 && br.getHttpConnection().getHeaderField("server") !=null && br.getHttpConnection().getHeaderField("server").toLowerCase(Locale.ENGLISH).contains("cloudflare-nginx")) {
+                if (br.getHttpConnection() != null && br.getHttpConnection().getResponseCode() == 503 && br.getHttpConnection().getHeaderField("server") != null && br.getHttpConnection().getHeaderField("server").toLowerCase(Locale.ENGLISH).contains("cloudflare-nginx")) {
                     logger.warning("Cloudflare anti DDoS measures enabled, your version of JD can not support this. In order to go any further you will need to upgrade to JDownloader 2");
                     throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Cloudflare anti DDoS measures enabled");
                 } else {
@@ -1127,7 +1137,7 @@ public class Keep2ShareCc extends PluginForHost {
 
     private void setConfigElements() {
         // this.getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, this.getPluginConfig(), USE_API,
-        // JDL.L("plugins.hoster.Keep2ShareCc.useAPI", "Use API")).setDefaultValue(false));
+        // JDL.L("plugins.hoster.Keep2ShareCc.useAPI", "Use API (recommended!)")).setDefaultValue(false));
         this.getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, this.getPluginConfig(), SSL_CONNECTION, JDL.L("plugins.hoster.Keep2ShareCc.preferSSL", "Use Secure Communication over SSL (HTTPS://)")).setDefaultValue(false));
     }
 

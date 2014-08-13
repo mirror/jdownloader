@@ -50,8 +50,11 @@ public class ImgUrCom extends PluginForHost {
         link.setUrlDownload(link.getDownloadURL().replace("imgurdecrypted.com/", "imgur.com/"));
     }
 
-    private String  DLLINK                         = null;
-    private boolean DL_IMPOSSIBLE_APILIMIT_REACHED = false;
+    private static final String SETTING_CLIENTID               = "SETTING_CLIENTID";
+    private static final String SETTING_USE_API                = "SETTING_USE_API";
+
+    private String              DLLINK                         = null;
+    private boolean             DL_IMPOSSIBLE_APILIMIT_REACHED = false;
 
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
@@ -77,18 +80,22 @@ public class ImgUrCom extends PluginForHost {
                 }
             }
         } else {
-            boolean apilimit_reached = false;
-            br.getHeaders().put("Authorization", getAuthorization());
-            try {
-                br.getPage("https://api.imgur.com/3/image/" + imgUID);
-            } catch (final BrowserException e) {
-                if (br.getHttpConnection().getResponseCode() == 429) {
-                    apilimit_reached = true;
-                } else {
-                    throw e;
+            boolean api_failed = false;
+            if (this.getPluginConfig().getBooleanProperty(SETTING_USE_API, false)) {
+                api_failed = true;
+            } else {
+                br.getHeaders().put("Authorization", getAuthorization());
+                try {
+                    br.getPage("https://api.imgur.com/3/image/" + imgUID);
+                } catch (final BrowserException e) {
+                    if (br.getHttpConnection().getResponseCode() == 429) {
+                        api_failed = true;
+                    } else {
+                        throw e;
+                    }
                 }
             }
-            if (!apilimit_reached) {
+            if (!api_failed) {
                 br.getRequest().setHtmlCode(br.toString().replace("\\", ""));
                 if (br.getHttpConnection().getResponseCode() == 404 || br.containsHTML("Unable to find an image with the id")) {
                     throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
@@ -111,8 +118,8 @@ public class ImgUrCom extends PluginForHost {
                 DLLINK = getJson(br.toString(), "link");
             } else {
                 /*
-                 * Workaround for API limit reached - second way does return 503 response in case API limit is reached:
-                 * http://imgur.com/download/ + imgUID This code should never be reached!
+                 * Workaround for API limit reached or in case user disabled API - second way does return 503 response in case API limit is
+                 * reached: http://imgur.com/download/ + imgUID This code should never be reached!
                  */
                 if (imgUID == null || filetype == null) {
                     DL_IMPOSSIBLE_APILIMIT_REACHED = true;
@@ -192,11 +199,12 @@ public class ImgUrCom extends PluginForHost {
         return "This Plugin download galleries/albums/images from imgur.com.";
     }
 
-    private final static String defaultClientID  = "JDDEFAULT";
-    private static final String SETTING_CLIENTID = "SETTING_CLIENTID";
+    private final static String defaultClientID = "JDDEFAULT";
 
     private void setConfigElements() {
-        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_TEXTFIELD, getPluginConfig(), SETTING_CLIENTID, JDL.L("plugins.hoster.ImgUrCom.oauthClientID", "Oauth Client-ID:")).setDefaultValue(defaultClientID));
+        final ConfigEntry cfg = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, this.getPluginConfig(), SETTING_USE_API, JDL.L("plugins.hoster.ImgUrCom.useAPI", "Use API (recommended!)")).setDefaultValue(true);
+        getConfig().addEntry(cfg);
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_TEXTFIELD, getPluginConfig(), SETTING_CLIENTID, JDL.L("plugins.hoster.ImgUrCom.oauthClientID", "Oauth Client-ID:")).setDefaultValue(defaultClientID).setEnabledCondidtion(cfg, true));
     }
 
     @Override

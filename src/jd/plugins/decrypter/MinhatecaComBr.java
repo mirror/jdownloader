@@ -56,10 +56,10 @@ public class MinhatecaComBr extends PluginForDecrypt {
             decryptedLinks.add(dl);
             return decryptedLinks;
         }
+        final String chomikid = br.getRegex("type=\"hidden\" name=\"ChomikId\" value=\"(\\d+)\"").getMatch(0);
+        final String folderid = br.getRegex("name=\"FolderId\" type=\"hidden\" value=\"(\\d+)\"").getMatch(0);
+        final String reqtoken = br.getRegex("name=\"__RequestVerificationToken\" type=\"hidden\" value=\"([^<>\"]*?)\"").getMatch(0);
         if (br.containsHTML("class=\"LoginToFolderForm\"")) {
-            final String reqtoken = br.getRegex("name=\"__RequestVerificationToken\" type=\"hidden\" value=\"([^<>\"]*?)\"").getMatch(0);
-            final String chomikid = br.getRegex("type=\"hidden\" name=\"ChomikId\" value=\"(\\d+)\"").getMatch(0);
-            final String folderid = br.getRegex("name=\"FolderId\" type=\"hidden\" value=\"(\\d+)\"").getMatch(0);
             final String foldername = br.getRegex("id=\"FolderName\" name=\"FolderName\" type=\"hidden\" value=\"([^<>\"]*?)\"").getMatch(0);
             if (reqtoken == null || chomikid == null || folderid == null || foldername == null) {
                 logger.warning("Decrypter broken for link: " + parameter);
@@ -135,38 +135,64 @@ public class MinhatecaComBr extends PluginForDecrypt {
             decryptedLinks.add(dl);
         } else {
             final String fpName = br.getRegex("class=\"T_selected\">([^<>\"]*?)<").getMatch(0);
-            final String[] linkinfo = br.getRegex("<div class=\"fileinfo tab\">(.*?)<span class=\"filedescription\"").getColumn(0);
-            if (linkinfo == null || linkinfo.length == 0 || fpName == null) {
-                logger.warning("Decrypter broken for link: " + parameter);
-                return null;
+            int startnumber = 1;
+            int lastpage = 1;
+            /* First check if maybe user wants only a specific page */
+            String maxpage = new Regex(parameter, ",(\\d+)$").getMatch(0);
+            if (maxpage != null) {
+                startnumber = Integer.parseInt(maxpage);
+            } else {
+                maxpage = br.getRegex("title=\"\\d+\">(\\d+)</a></li></ul><div").getMatch(0);
             }
-            for (final String lnkinfo : linkinfo) {
-                final String fid = new Regex(lnkinfo, "rel=\"(\\d+)\"").getMatch(0);
-                final Regex finfo = new Regex(lnkinfo, "<span class=\"bold\">([^<>\"]*?)</span>([^<>\"]*?)</a>");
-                String filename = finfo.getMatch(0);
-                final String ext = finfo.getMatch(1);
-                String filesize = new Regex(lnkinfo, "<li><span>([^<>\"]*?)</span></li>").getMatch(0);
-                if (fid == null || filename == null || ext == null || filesize == null) {
+            if (maxpage != null) {
+                lastpage = Integer.parseInt(maxpage);
+            }
+            for (int i = startnumber; i <= lastpage; i++) {
+                try {
+                    if (this.isAbort()) {
+                        logger.info("Decryption aborted by user: " + parameter);
+                        return decryptedLinks;
+                    }
+                } catch (final Throwable e) {
+                    // Not available in old 0.9.581 Stable
+                }
+                logger.info("Decrypting page " + i + " of " + lastpage);
+                if (i > 1) {
+                    br.postPage("http://minhateca.com.br/action/Files/FilesList", "chomikId=" + chomikid + "&folderId=" + folderid + "&fileListSortType=Date&fileListAscending=False&gallerySortType=Name&galleryAscending=False&pageNr=" + i + "&isGallery=False&requestedFolderMode=&folderChanged=false&__RequestVerificationToken=" + Encoding.urlEncode(reqtoken));
+                }
+                final String[] linkinfo = br.getRegex("<div class=\"fileinfo tab\">(.*?)<span class=\"filedescription\"").getColumn(0);
+                if (linkinfo == null || linkinfo.length == 0 || fpName == null) {
                     logger.warning("Decrypter broken for link: " + parameter);
                     return null;
                 }
-                filesize = Encoding.htmlDecode(filesize).trim();
-                filename = Encoding.htmlDecode(filename).trim() + Encoding.htmlDecode(ext).trim();
+                for (final String lnkinfo : linkinfo) {
+                    final String fid = new Regex(lnkinfo, "rel=\"(\\d+)\"").getMatch(0);
+                    final Regex finfo = new Regex(lnkinfo, "<span class=\"bold\">([^<>\"]*?)</span>([^<>\"]*?)</a>");
+                    String filename = finfo.getMatch(0);
+                    final String ext = finfo.getMatch(1);
+                    String filesize = new Regex(lnkinfo, "<li><span>([^<>\"]*?)</span></li>").getMatch(0);
+                    if (fid == null || filename == null || ext == null || filesize == null) {
+                        logger.warning("Decrypter broken for link: " + parameter);
+                        return null;
+                    }
+                    filesize = Encoding.htmlDecode(filesize).trim();
+                    filename = Encoding.htmlDecode(filename).trim() + Encoding.htmlDecode(ext).trim();
 
-                final DownloadLink dl = createDownloadlink("http://minhatecadecrypted.com.br/" + System.currentTimeMillis() + new Random().nextInt(1000000));
+                    final DownloadLink dl = createDownloadlink("http://minhatecadecrypted.com.br/" + System.currentTimeMillis() + new Random().nextInt(1000000));
 
-                dl.setProperty("plain_filename", filename);
-                dl.setProperty("plain_filesize", filesize);
-                dl.setProperty("plain_fid", fid);
-                dl.setProperty("mainlink", parameter);
-                dl.setProperty("pass", passCode);
-                dl.setProperty("LINKDUPEID", fid + filename);
+                    dl.setProperty("plain_filename", filename);
+                    dl.setProperty("plain_filesize", filesize);
+                    dl.setProperty("plain_fid", fid);
+                    dl.setProperty("mainlink", parameter);
+                    dl.setProperty("pass", passCode);
+                    dl.setProperty("LINKDUPEID", fid + filename);
 
-                dl.setName(filename);
-                dl.setDownloadSize(SizeFormatter.getSize(filesize));
-                dl.setAvailable(true);
+                    dl.setName(filename);
+                    dl.setDownloadSize(SizeFormatter.getSize(filesize));
+                    dl.setAvailable(true);
 
-                decryptedLinks.add(dl);
+                    decryptedLinks.add(dl);
+                }
             }
 
             final FilePackage fp = FilePackage.getInstance();
