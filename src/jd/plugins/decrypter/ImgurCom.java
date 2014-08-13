@@ -54,7 +54,7 @@ public class ImgurCom extends PluginForDecrypt {
 
     /* IMPORTANT: Make sure that we're always using the current version of their API: https://api.imgur.com/ */
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
-        PARAMETER = param.toString().replace("https://", "http://").replace("/all$", "");
+        PARAMETER = param.toString().replace("https://", "http://").replaceFirst("/all$", "");
         synchronized (ctrlLock) {
             if (!pluginLoaded.get()) {
                 // load plugin!
