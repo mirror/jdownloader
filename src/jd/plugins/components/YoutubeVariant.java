@@ -15,7 +15,7 @@ import org.jdownloader.settings.staticreferences.CFG_GUI;
 public enum YoutubeVariant implements YoutubeVariantInterface {
     AAC_128(null, YoutubeVariantInterface.VariantGroup.AUDIO, YoutubeVariantInterface.DownloadType.DASH_AUDIO, "aac", null, YoutubeITAG.DASH_AUDIO_128K_AAC, null, null, null) {
         @Override
-        public String getName() {
+        public String _getName() {
             return _GUI._.YoutubeVariant_name_AAC_128();
         }
 
@@ -27,7 +27,7 @@ public enum YoutubeVariant implements YoutubeVariantInterface {
 
     AAC_256(null, YoutubeVariantInterface.VariantGroup.AUDIO, YoutubeVariantInterface.DownloadType.DASH_AUDIO, "aac", null, YoutubeITAG.DASH_AUDIO_256K_AAC, null, null, null) {
         @Override
-        public String getName() {
+        public String _getName() {
             return _GUI._.YoutubeVariant_name_AAC_256();
         }
 
@@ -38,7 +38,7 @@ public enum YoutubeVariant implements YoutubeVariantInterface {
     },
     AAC_48(null, YoutubeVariantInterface.VariantGroup.AUDIO, YoutubeVariantInterface.DownloadType.DASH_AUDIO, "aac", null, YoutubeITAG.DASH_AUDIO_48K_AAC, null, null, null) {
         @Override
-        public String getName() {
+        public String _getName() {
             return _GUI._.YoutubeVariant_name_AAC_48();
         }
 
@@ -49,7 +49,7 @@ public enum YoutubeVariant implements YoutubeVariantInterface {
     },
     DEMUX_AAC_128_360P_3D_V4("AAC_128", YoutubeVariantInterface.VariantGroup.AUDIO, YoutubeVariantInterface.DownloadType.VIDEO, "aac", YoutubeITAG.MP4_VIDEO_360P_H264_AUDIO_AAC_3D, null, null, null, YoutubeMp4ToAACAudio.getInstance()) {
         @Override
-        public String getName() {
+        public String _getName() {
             return _GUI._.YoutubeVariant_name_AAC_128();
         }
 
@@ -65,7 +65,7 @@ public enum YoutubeVariant implements YoutubeVariantInterface {
     },
     DEMUX_AAC_128_360P_V4("AAC_128", YoutubeVariantInterface.VariantGroup.AUDIO, YoutubeVariantInterface.DownloadType.VIDEO, "aac", YoutubeITAG.MP4_VIDEO_360P_H264_AUDIO_AAC, null, null, null, YoutubeMp4ToAACAudio.getInstance()) {
         @Override
-        public String getName() {
+        public String _getName() {
             return _GUI._.YoutubeVariant_name_AAC_128();
         }
 
@@ -81,7 +81,7 @@ public enum YoutubeVariant implements YoutubeVariantInterface {
     },
     DEMUX_AAC_128_720P_3D_V1("AAC_128", YoutubeVariantInterface.VariantGroup.AUDIO, YoutubeVariantInterface.DownloadType.VIDEO, "aac", YoutubeITAG.MP4_VIDEO_720P_H264_AUDIO_AAC_V1, null, null, null, YoutubeMp4ToAACAudio.getInstance()) {
         @Override
-        public String getName() {
+        public String _getName() {
             return _GUI._.YoutubeVariant_name_AAC_128();
         }
 
@@ -99,7 +99,7 @@ public enum YoutubeVariant implements YoutubeVariantInterface {
 
     DEMUX_AAC_128_720P_V1("AAC_128", YoutubeVariantInterface.VariantGroup.AUDIO, YoutubeVariantInterface.DownloadType.VIDEO, "aac", YoutubeITAG.MP4_VIDEO_720P_H264_AUDIO_AAC_V1, null, null, null, YoutubeMp4ToAACAudio.getInstance()) {
         @Override
-        public String getName() {
+        public String _getName() {
             return _GUI._.YoutubeVariant_name_AAC_128();
         }
 
@@ -116,7 +116,7 @@ public enum YoutubeVariant implements YoutubeVariantInterface {
     },
     DEMUX_AAC_152_720P_3D_V3("AAC_152", YoutubeVariantInterface.VariantGroup.AUDIO, YoutubeVariantInterface.DownloadType.VIDEO, "aac", YoutubeITAG.MP4_VIDEO_720P_H264_AUDIO_AAC_3D_V3, null, null, null, YoutubeMp4ToAACAudio.getInstance()) {
         @Override
-        public String getName() {
+        public String _getName() {
             return _GUI._.YoutubeVariant_name_AAC_152();
         }
 
@@ -133,7 +133,7 @@ public enum YoutubeVariant implements YoutubeVariantInterface {
 
     DEMUX_AAC_152_720P_V3("AAC_152", YoutubeVariantInterface.VariantGroup.AUDIO, YoutubeVariantInterface.DownloadType.VIDEO, "aac", YoutubeITAG.MP4_VIDEO_720P_H264_AUDIO_AAC_V3, null, null, null, YoutubeMp4ToAACAudio.getInstance()) {
         @Override
-        public String getName() {
+        public String _getName() {
             return _GUI._.YoutubeVariant_name_AAC_152();
         }
 
@@ -150,7 +150,7 @@ public enum YoutubeVariant implements YoutubeVariantInterface {
 
     DEMUX_AAC_192_720P_3D_V4("AAC_192", YoutubeVariantInterface.VariantGroup.AUDIO, YoutubeVariantInterface.DownloadType.VIDEO, "aac", YoutubeITAG.MP4_VIDEO_720P_H264_AUDIO_AAC_3D, null, null, null, YoutubeMp4ToAACAudio.getInstance()) {
         @Override
-        public String getName() {
+        public String _getName() {
             return _GUI._.YoutubeVariant_name_AAC_192();
         }
 
@@ -166,7 +166,7 @@ public enum YoutubeVariant implements YoutubeVariantInterface {
     },
     DEMUX_AAC_192_720P_V4("AAC_192", YoutubeVariantInterface.VariantGroup.AUDIO, YoutubeVariantInterface.DownloadType.VIDEO, "aac", YoutubeITAG.MP4_VIDEO_720P_H264_AUDIO_AAC, null, null, null, YoutubeMp4ToAACAudio.getInstance()) {
         @Override
-        public String getName() {
+        public String _getName() {
             return _GUI._.YoutubeVariant_name_AAC_192();
         }
 
@@ -183,7 +183,7 @@ public enum YoutubeVariant implements YoutubeVariantInterface {
 
     DEMUX_AAC_96_360P_3D_V1("AAC_96", YoutubeVariantInterface.VariantGroup.AUDIO, YoutubeVariantInterface.DownloadType.VIDEO, "aac", YoutubeITAG.MP4_VIDEO_360P_H264_AUDIO_AAC_3D_V1, null, null, null, YoutubeMp4ToAACAudio.getInstance()) {
         @Override
-        public String getName() {
+        public String _getName() {
             return _GUI._.YoutubeVariant_name_AAC_96();
         }
 
@@ -199,7 +199,7 @@ public enum YoutubeVariant implements YoutubeVariantInterface {
     },
     DEMUX_AAC_96_360P_V1("AAC_96", YoutubeVariantInterface.VariantGroup.AUDIO, YoutubeVariantInterface.DownloadType.VIDEO, "aac", YoutubeITAG.MP4_VIDEO_360P_H264_AUDIO_AAC_V1, null, null, null, YoutubeMp4ToAACAudio.getInstance()) {
         @Override
-        public String getName() {
+        public String _getName() {
             return _GUI._.YoutubeVariant_name_AAC_96();
         }
 
@@ -215,7 +215,7 @@ public enum YoutubeVariant implements YoutubeVariantInterface {
     },
     DEMUX_M4A_128_360P_3D_V4("M4A_128", YoutubeVariantInterface.VariantGroup.AUDIO, YoutubeVariantInterface.DownloadType.VIDEO, "m4a", YoutubeITAG.MP4_VIDEO_360P_H264_AUDIO_AAC_3D, null, null, null, YoutubeMp4ToM4aAudio.getInstance()) {
         @Override
-        public String getName() {
+        public String _getName() {
             return _GUI._.YoutubeVariant_name_M4A_128();
         }
 
@@ -231,7 +231,7 @@ public enum YoutubeVariant implements YoutubeVariantInterface {
     },
     DEMUX_M4A_128_360P_V4("M4A_128", YoutubeVariantInterface.VariantGroup.AUDIO, YoutubeVariantInterface.DownloadType.VIDEO, "m4a", YoutubeITAG.MP4_VIDEO_360P_H264_AUDIO_AAC, null, null, null, YoutubeMp4ToM4aAudio.getInstance()) {
         @Override
-        public String getName() {
+        public String _getName() {
             return _GUI._.YoutubeVariant_name_M4A_128();
         }
 
@@ -248,7 +248,7 @@ public enum YoutubeVariant implements YoutubeVariantInterface {
 
     DEMUX_M4A_128_720P_3D_V1("M4A_128", YoutubeVariantInterface.VariantGroup.AUDIO, YoutubeVariantInterface.DownloadType.VIDEO, "m4a", YoutubeITAG.MP4_VIDEO_720P_H264_AUDIO_AAC_3D_V1, null, null, null, YoutubeMp4ToM4aAudio.getInstance()) {
         @Override
-        public String getName() {
+        public String _getName() {
             return _GUI._.YoutubeVariant_name_M4A_128();
         }
 
@@ -265,7 +265,7 @@ public enum YoutubeVariant implements YoutubeVariantInterface {
     },
     DEMUX_M4A_128_720P_V1("M4A_128", YoutubeVariantInterface.VariantGroup.AUDIO, YoutubeVariantInterface.DownloadType.VIDEO, "m4a", YoutubeITAG.MP4_VIDEO_720P_H264_AUDIO_AAC_V1, null, null, null, YoutubeMp4ToM4aAudio.getInstance()) {
         @Override
-        public String getName() {
+        public String _getName() {
             return _GUI._.YoutubeVariant_name_M4A_128();
         }
 
@@ -282,7 +282,7 @@ public enum YoutubeVariant implements YoutubeVariantInterface {
     },
     DEMUX_M4A_152_720P_3D_V3("M4A_152", YoutubeVariantInterface.VariantGroup.AUDIO, YoutubeVariantInterface.DownloadType.VIDEO, "m4a", YoutubeITAG.MP4_VIDEO_720P_H264_AUDIO_AAC_3D_V3, null, null, null, YoutubeMp4ToM4aAudio.getInstance()) {
         @Override
-        public String getName() {
+        public String _getName() {
             return _GUI._.YoutubeVariant_name_M4A_152();
         }
 
@@ -299,7 +299,7 @@ public enum YoutubeVariant implements YoutubeVariantInterface {
 
     DEMUX_M4A_152_720P_V3("M4A_152", YoutubeVariantInterface.VariantGroup.AUDIO, YoutubeVariantInterface.DownloadType.VIDEO, "m4a", YoutubeITAG.MP4_VIDEO_720P_H264_AUDIO_AAC_V3, null, null, null, YoutubeMp4ToM4aAudio.getInstance()) {
         @Override
-        public String getName() {
+        public String _getName() {
             return _GUI._.YoutubeVariant_name_M4A_152();
         }
 
@@ -315,7 +315,7 @@ public enum YoutubeVariant implements YoutubeVariantInterface {
     },
     DEMUX_M4A_192_720P_3D_V4("M4A_192", YoutubeVariantInterface.VariantGroup.AUDIO, YoutubeVariantInterface.DownloadType.VIDEO, "m4a", YoutubeITAG.MP4_VIDEO_720P_H264_AUDIO_AAC_3D, null, null, null, YoutubeMp4ToM4aAudio.getInstance()) {
         @Override
-        public String getName() {
+        public String _getName() {
             return _GUI._.YoutubeVariant_name_M4A_192();
         }
 
@@ -331,7 +331,7 @@ public enum YoutubeVariant implements YoutubeVariantInterface {
     },
     DEMUX_M4A_192_720P_V4("M4A_192", YoutubeVariantInterface.VariantGroup.AUDIO, YoutubeVariantInterface.DownloadType.VIDEO, "m4a", YoutubeITAG.MP4_VIDEO_720P_H264_AUDIO_AAC, null, null, null, YoutubeMp4ToM4aAudio.getInstance()) {
         @Override
-        public String getName() {
+        public String _getName() {
             return _GUI._.YoutubeVariant_name_M4A_192();
         }
 
@@ -348,7 +348,7 @@ public enum YoutubeVariant implements YoutubeVariantInterface {
 
     DEMUX_M4A_96_360P_V1("M4A_96", YoutubeVariantInterface.VariantGroup.AUDIO, YoutubeVariantInterface.DownloadType.VIDEO, "m4a", YoutubeITAG.MP4_VIDEO_360P_H264_AUDIO_AAC_V1, null, null, null, YoutubeMp4ToM4aAudio.getInstance()) {
         @Override
-        public String getName() {
+        public String _getName() {
             return _GUI._.YoutubeVariant_name_M4A_96();
         }
 
@@ -364,7 +364,7 @@ public enum YoutubeVariant implements YoutubeVariantInterface {
     },
     DEMUX_M4A_96_360P_3D_V1("M4A_96", YoutubeVariantInterface.VariantGroup.AUDIO, YoutubeVariantInterface.DownloadType.VIDEO, "m4a", YoutubeITAG.MP4_VIDEO_360P_H264_AUDIO_AAC_3D_V1, null, null, null, YoutubeMp4ToM4aAudio.getInstance()) {
         @Override
-        public String getName() {
+        public String _getName() {
             return _GUI._.YoutubeVariant_name_M4A_96();
         }
 
@@ -380,7 +380,7 @@ public enum YoutubeVariant implements YoutubeVariantInterface {
     },
     FLV_270_HIGH(null, YoutubeVariantInterface.VariantGroup.VIDEO, YoutubeVariantInterface.DownloadType.VIDEO, "flv", YoutubeITAG.FLV_VIDEO_HIGH_270P_H263_AUDIO_MP3, null, null, null, null) {
         @Override
-        public String getName() {
+        public String _getName() {
             return _GUI._.YoutubeVariant_name_FLV_270_HIGH();
         }
 
@@ -391,7 +391,7 @@ public enum YoutubeVariant implements YoutubeVariantInterface {
     },
     FLV_240_LOW(null, YoutubeVariantInterface.VariantGroup.VIDEO, YoutubeVariantInterface.DownloadType.VIDEO, "flv", YoutubeITAG.FLV_VIDEO_LOW_240P_H263_AUDIO_MP3, null, null, null, null) {
         @Override
-        public String getName() {
+        public String _getName() {
             return _GUI._.YoutubeVariant_name_FLV_240_LOW();
         }
 
@@ -403,7 +403,7 @@ public enum YoutubeVariant implements YoutubeVariantInterface {
 
     FLV_360(null, YoutubeVariantInterface.VariantGroup.VIDEO, YoutubeVariantInterface.DownloadType.VIDEO, "flv", YoutubeITAG.FLV_VIDEO_360P_H264_AUDIO_AAC, null, null, null, null) {
         @Override
-        public String getName() {
+        public String _getName() {
             return _GUI._.YoutubeVariant_name_FLV_360();
         }
 
@@ -414,7 +414,7 @@ public enum YoutubeVariant implements YoutubeVariantInterface {
     },
     FLV_480(null, YoutubeVariantInterface.VariantGroup.VIDEO, YoutubeVariantInterface.DownloadType.VIDEO, "flv", YoutubeITAG.FLV_VIDEO_480P_H264_AUDIO_AAC, null, null, null, null) {
         @Override
-        public String getName() {
+        public String _getName() {
             return _GUI._.YoutubeVariant_name_FLV_480();
         }
 
@@ -425,7 +425,7 @@ public enum YoutubeVariant implements YoutubeVariantInterface {
     },
     IMAGE_HQ(null, YoutubeVariantInterface.VariantGroup.IMAGE, YoutubeVariantInterface.DownloadType.IMAGE, "jpg", null, null, YoutubeITAG.IMAGE_HQ, null, null) {
         @Override
-        public String getName() {
+        public String _getName() {
             return _GUI._.YoutubeVariant_name_IMAGE_HQ();
         }
 
@@ -437,7 +437,7 @@ public enum YoutubeVariant implements YoutubeVariantInterface {
 
     IMAGE_LQ(null, YoutubeVariantInterface.VariantGroup.IMAGE, YoutubeVariantInterface.DownloadType.IMAGE, "jpg", null, null, YoutubeITAG.IMAGE_LQ, null, null) {
         @Override
-        public String getName() {
+        public String _getName() {
             return _GUI._.YoutubeVariant_name_IMAGE_LQ();
         }
 
@@ -449,7 +449,7 @@ public enum YoutubeVariant implements YoutubeVariantInterface {
 
     IMAGE_MAX(null, YoutubeVariantInterface.VariantGroup.IMAGE, YoutubeVariantInterface.DownloadType.IMAGE, "jpg", null, null, YoutubeITAG.IMAGE_MAX, null, null) {
         @Override
-        public String getName() {
+        public String _getName() {
             return _GUI._.YoutubeVariant_name_IMAGE_MAX();
         }
 
@@ -460,7 +460,7 @@ public enum YoutubeVariant implements YoutubeVariantInterface {
     },
     IMAGE_MQ(null, YoutubeVariantInterface.VariantGroup.IMAGE, YoutubeVariantInterface.DownloadType.IMAGE, "jpg", null, null, YoutubeITAG.IMAGE_MQ, null, null) {
         @Override
-        public String getName() {
+        public String _getName() {
             return _GUI._.YoutubeVariant_name_IMAGE_MQ();
         }
 
@@ -471,7 +471,7 @@ public enum YoutubeVariant implements YoutubeVariantInterface {
     },
     M4A_128(null, YoutubeVariantInterface.VariantGroup.AUDIO, YoutubeVariantInterface.DownloadType.DASH_AUDIO, "m4a", null, YoutubeITAG.DASH_AUDIO_128K_AAC, null, null, null) {
         @Override
-        public String getName() {
+        public String _getName() {
             return _GUI._.YoutubeVariant_name_M4A_128();
         }
 
@@ -487,7 +487,7 @@ public enum YoutubeVariant implements YoutubeVariantInterface {
     },
     M4A_256(null, YoutubeVariantInterface.VariantGroup.AUDIO, YoutubeVariantInterface.DownloadType.DASH_AUDIO, "m4a", null, YoutubeITAG.DASH_AUDIO_256K_AAC, null, null, null) {
         @Override
-        public String getName() {
+        public String _getName() {
             return _GUI._.YoutubeVariant_name_M4A_256();
         }
 
@@ -503,7 +503,7 @@ public enum YoutubeVariant implements YoutubeVariantInterface {
     },
     M4A_48(null, YoutubeVariantInterface.VariantGroup.AUDIO, YoutubeVariantInterface.DownloadType.DASH_AUDIO, "m4a", null, YoutubeITAG.DASH_AUDIO_48K_AAC, null, null, null) {
         @Override
-        public String getName() {
+        public String _getName() {
             return _GUI._.YoutubeVariant_name_M4A_48();
         }
 
@@ -520,7 +520,7 @@ public enum YoutubeVariant implements YoutubeVariantInterface {
 
     MP3_1("MP3_64KBit", YoutubeVariantInterface.VariantGroup.AUDIO, YoutubeVariantInterface.DownloadType.VIDEO, "mp3", YoutubeITAG.FLV_VIDEO_LOW_240P_H263_AUDIO_MP3, null, null, null, jd.plugins.components.YoutubeFlvToMp3Audio.getInstance()) {
         @Override
-        public String getName() {
+        public String _getName() {
             return _GUI._.YoutubeVariant_name_MP3_1();
         }
 
@@ -550,7 +550,7 @@ public enum YoutubeVariant implements YoutubeVariantInterface {
 
     MP3_2("MP3_64KBit", YoutubeVariantInterface.VariantGroup.AUDIO, YoutubeVariantInterface.DownloadType.VIDEO, "mp3", YoutubeITAG.FLV_VIDEO_HIGH_270P_H263_AUDIO_MP3, null, null, null, jd.plugins.components.YoutubeFlvToMp3Audio.getInstance()) {
         @Override
-        public String getName() {
+        public String _getName() {
             return _GUI._.YoutubeVariant_name_MP3_2();
         }
 
@@ -579,7 +579,7 @@ public enum YoutubeVariant implements YoutubeVariantInterface {
     },
     MP4_1080("MP4_1080", YoutubeVariantInterface.VariantGroup.VIDEO, YoutubeVariantInterface.DownloadType.VIDEO, "mp4", YoutubeITAG.MP4_VIDEO_1080P_H264_AUDIO_AAC, null, null, null, null) {
         @Override
-        public String getName() {
+        public String _getName() {
             return _GUI._.YoutubeVariant_name_MP4_1080();
         }
 
@@ -590,7 +590,7 @@ public enum YoutubeVariant implements YoutubeVariantInterface {
     },
     MP4_360("MP4_360", YoutubeVariantInterface.VariantGroup.VIDEO, YoutubeVariantInterface.DownloadType.VIDEO, "mp4", YoutubeITAG.MP4_VIDEO_360P_H264_AUDIO_AAC, null, null, null, null) {
         @Override
-        public String getName() {
+        public String _getName() {
             return _GUI._.YoutubeVariant_name_MP4_360();
         }
 
@@ -601,7 +601,7 @@ public enum YoutubeVariant implements YoutubeVariantInterface {
     },
     MP4_360_AAC96("MP4_360", YoutubeVariantInterface.VariantGroup.VIDEO, YoutubeVariantInterface.DownloadType.VIDEO, "mp4", YoutubeITAG.MP4_VIDEO_360P_H264_AUDIO_AAC_V1, null, null, null, null) {
         @Override
-        public String getName() {
+        public String _getName() {
             return _GUI._.YoutubeVariant_name_MP4_360();
         }
 
@@ -612,7 +612,7 @@ public enum YoutubeVariant implements YoutubeVariantInterface {
     },
     MP4_3D_240(null, YoutubeVariantInterface.VariantGroup.VIDEO_3D, YoutubeVariantInterface.DownloadType.VIDEO, "mp4", YoutubeITAG.MP4_VIDEO_240P_H264_AUDIO_AAC_3D, null, null, null, null) {
         @Override
-        public String getName() {
+        public String _getName() {
             return _GUI._.YoutubeVariant_name_MP4_3D_240();
         }
 
@@ -624,7 +624,7 @@ public enum YoutubeVariant implements YoutubeVariantInterface {
 
     MP4_3D_360(null, YoutubeVariantInterface.VariantGroup.VIDEO_3D, YoutubeVariantInterface.DownloadType.VIDEO, "mp4", YoutubeITAG.MP4_VIDEO_360P_H264_AUDIO_AAC_3D, null, null, null, null) {
         @Override
-        public String getName() {
+        public String _getName() {
             return _GUI._.YoutubeVariant_name_MP4_3D_360();
         }
 
@@ -635,7 +635,7 @@ public enum YoutubeVariant implements YoutubeVariantInterface {
     },
     MP4_3D_1080(null, YoutubeVariantInterface.VariantGroup.VIDEO_3D, YoutubeVariantInterface.DownloadType.VIDEO, "mp4", YoutubeITAG.MP4_VIDEO_180P_H264_AUDIO_AAC_3D, null, null, null, null) {
         @Override
-        public String getName() {
+        public String _getName() {
             return _GUI._.YoutubeVariant_name_MP4_3D_1080();
         }
 
@@ -646,7 +646,7 @@ public enum YoutubeVariant implements YoutubeVariantInterface {
     },
     MP4_3D_720(null, YoutubeVariantInterface.VariantGroup.VIDEO_3D, YoutubeVariantInterface.DownloadType.VIDEO, "mp4", YoutubeITAG.MP4_VIDEO_720P_H264_AUDIO_AAC_3D, null, null, null, null) {
         @Override
-        public String getName() {
+        public String _getName() {
             return _GUI._.YoutubeVariant_name_MP4_3D_720();
         }
 
@@ -658,7 +658,7 @@ public enum YoutubeVariant implements YoutubeVariantInterface {
 
     MP4_720("MP4_720", YoutubeVariantInterface.VariantGroup.VIDEO, YoutubeVariantInterface.DownloadType.VIDEO, "mp4", YoutubeITAG.MP4_VIDEO_720P_H264_AUDIO_AAC, null, null, null, null) {
         @Override
-        public String getName() {
+        public String _getName() {
             return _GUI._.YoutubeVariant_name_MP4_720();
         }
 
@@ -669,7 +669,7 @@ public enum YoutubeVariant implements YoutubeVariantInterface {
     },
     MP4_720_128AAC("MP4_720", YoutubeVariantInterface.VariantGroup.VIDEO, YoutubeVariantInterface.DownloadType.VIDEO, "mp4", YoutubeITAG.MP4_VIDEO_720P_H264_AUDIO_AAC_V1, null, null, null, null) {
         @Override
-        public String getName() {
+        public String _getName() {
             return _GUI._.YoutubeVariant_name_MP4_720();
         }
 
@@ -680,7 +680,7 @@ public enum YoutubeVariant implements YoutubeVariantInterface {
     },
     MP4_720_152AAC("MP4_720", YoutubeVariantInterface.VariantGroup.VIDEO, YoutubeVariantInterface.DownloadType.VIDEO, "mp4", YoutubeITAG.MP4_VIDEO_720P_H264_AUDIO_AAC_V3, null, null, null, null) {
         @Override
-        public String getName() {
+        public String _getName() {
             return _GUI._.YoutubeVariant_name_MP4_720();
         }
 
@@ -691,7 +691,7 @@ public enum YoutubeVariant implements YoutubeVariantInterface {
     },
     MP4_DASH_1080_AAC128("MP4_1080", YoutubeVariantInterface.VariantGroup.VIDEO, YoutubeVariantInterface.DownloadType.DASH_VIDEO, "mp4", YoutubeITAG.DASH_VIDEO_1080P_H264, YoutubeITAG.DASH_AUDIO_128K_AAC, null, null, null) {
         @Override
-        public String getName() {
+        public String _getName() {
             return _GUI._.YoutubeVariant_name_MP4_DASH_1080_AAC128();
         }
 
@@ -703,7 +703,7 @@ public enum YoutubeVariant implements YoutubeVariantInterface {
 
     MP4_DASH_1080_AAC256("MP4_1080", YoutubeVariantInterface.VariantGroup.VIDEO, YoutubeVariantInterface.DownloadType.DASH_VIDEO, "mp4", YoutubeITAG.DASH_VIDEO_1080P_H264, YoutubeITAG.DASH_AUDIO_256K_AAC, null, null, null) {
         @Override
-        public String getName() {
+        public String _getName() {
             return _GUI._.YoutubeVariant_name_MP4_DASH_1080_AAC256();
         }
 
@@ -714,7 +714,7 @@ public enum YoutubeVariant implements YoutubeVariantInterface {
     },
     MP4_DASH_1080_AAC48("MP4_1080", YoutubeVariantInterface.VariantGroup.VIDEO, YoutubeVariantInterface.DownloadType.DASH_VIDEO, "mp4", YoutubeITAG.DASH_VIDEO_1080P_H264, YoutubeITAG.DASH_AUDIO_48K_AAC, null, null, null) {
         @Override
-        public String getName() {
+        public String _getName() {
             return _GUI._.YoutubeVariant_name_MP4_DASH_1080_AAC48();
         }
 
@@ -726,7 +726,7 @@ public enum YoutubeVariant implements YoutubeVariantInterface {
 
     MP4_DASH_144_AAC128("MP4_144", YoutubeVariantInterface.VariantGroup.VIDEO, YoutubeVariantInterface.DownloadType.DASH_VIDEO, "mp4", YoutubeITAG.DASH_VIDEO_144P_H264, YoutubeITAG.DASH_AUDIO_128K_AAC, null, null, null) {
         @Override
-        public String getName() {
+        public String _getName() {
             return _GUI._.YoutubeVariant_name_MP4_DASH_144_AAC128();
         }
 
@@ -737,7 +737,7 @@ public enum YoutubeVariant implements YoutubeVariantInterface {
     },
     MP4_DASH_144_AAC256("MP4_144", YoutubeVariantInterface.VariantGroup.VIDEO, YoutubeVariantInterface.DownloadType.DASH_VIDEO, "mp4", YoutubeITAG.DASH_VIDEO_144P_H264, YoutubeITAG.DASH_AUDIO_256K_AAC, null, null, null) {
         @Override
-        public String getName() {
+        public String _getName() {
             return _GUI._.YoutubeVariant_name_MP4_DASH_144_AAC256();
         }
 
@@ -748,7 +748,7 @@ public enum YoutubeVariant implements YoutubeVariantInterface {
     },
     MP4_DASH_144_AAC48("MP4_144", YoutubeVariantInterface.VariantGroup.VIDEO, YoutubeVariantInterface.DownloadType.DASH_VIDEO, "mp4", YoutubeITAG.DASH_VIDEO_144P_H264, YoutubeITAG.DASH_AUDIO_48K_AAC, null, null, null) {
         @Override
-        public String getName() {
+        public String _getName() {
             return _GUI._.YoutubeVariant_name_MP4_DASH_144_AAC48();
         }
 
@@ -759,7 +759,7 @@ public enum YoutubeVariant implements YoutubeVariantInterface {
     },
     MP4_DASH_1440_AAC128("MP4_1440", YoutubeVariantInterface.VariantGroup.VIDEO, YoutubeVariantInterface.DownloadType.DASH_VIDEO, "mp4", YoutubeITAG.DASH_VIDEO_1440P_H264, YoutubeITAG.DASH_AUDIO_128K_AAC, null, null, null) {
         @Override
-        public String getName() {
+        public String _getName() {
             return _GUI._.YoutubeVariant_name_MP4_DASH_1440_AAC128();
         }
 
@@ -770,7 +770,7 @@ public enum YoutubeVariant implements YoutubeVariantInterface {
     },
     MP4_DASH_1440_AAC256("MP4_1440", YoutubeVariantInterface.VariantGroup.VIDEO, YoutubeVariantInterface.DownloadType.DASH_VIDEO, "mp4", YoutubeITAG.DASH_VIDEO_1440P_H264, YoutubeITAG.DASH_AUDIO_256K_AAC, null, null, null) {
         @Override
-        public String getName() {
+        public String _getName() {
             return _GUI._.YoutubeVariant_name_MP4_DASH_1440_AAC256();
         }
 
@@ -781,7 +781,7 @@ public enum YoutubeVariant implements YoutubeVariantInterface {
     },
     MP4_DASH_1440_AAC48("MP4_1440", YoutubeVariantInterface.VariantGroup.VIDEO, YoutubeVariantInterface.DownloadType.DASH_VIDEO, "mp4", YoutubeITAG.DASH_VIDEO_1440P_H264, YoutubeITAG.DASH_AUDIO_48K_AAC, null, null, null) {
         @Override
-        public String getName() {
+        public String _getName() {
             return _GUI._.YoutubeVariant_name_MP4_DASH_1440_AAC48();
         }
 
@@ -792,7 +792,7 @@ public enum YoutubeVariant implements YoutubeVariantInterface {
     },
     MP4_DASH_240_AAC128("MP4_240", YoutubeVariantInterface.VariantGroup.VIDEO, YoutubeVariantInterface.DownloadType.DASH_VIDEO, "mp4", YoutubeITAG.DASH_VIDEO_240P_H264, YoutubeITAG.DASH_AUDIO_128K_AAC, null, null, null) {
         @Override
-        public String getName() {
+        public String _getName() {
             return _GUI._.YoutubeVariant_name_MP4_DASH_240_AAC128();
         }
 
@@ -803,7 +803,7 @@ public enum YoutubeVariant implements YoutubeVariantInterface {
     },
     MP4_DASH_240_AAC256("MP4_240", YoutubeVariantInterface.VariantGroup.VIDEO, YoutubeVariantInterface.DownloadType.DASH_VIDEO, "mp4", YoutubeITAG.DASH_VIDEO_240P_H264, YoutubeITAG.DASH_AUDIO_256K_AAC, null, null, null) {
         @Override
-        public String getName() {
+        public String _getName() {
             return _GUI._.YoutubeVariant_name_MP4_DASH_240_AAC256();
         }
 
@@ -815,7 +815,7 @@ public enum YoutubeVariant implements YoutubeVariantInterface {
 
     MP4_DASH_240_AAC48("MP4_240", YoutubeVariantInterface.VariantGroup.VIDEO, YoutubeVariantInterface.DownloadType.DASH_VIDEO, "mp4", YoutubeITAG.DASH_VIDEO_240P_H264, YoutubeITAG.DASH_AUDIO_48K_AAC, null, null, null) {
         @Override
-        public String getName() {
+        public String _getName() {
             return _GUI._.YoutubeVariant_name_MP4_DASH_240_AAC48();
         }
 
@@ -826,7 +826,7 @@ public enum YoutubeVariant implements YoutubeVariantInterface {
     },
     MP4_DASH_360_AAC128("MP4_360", YoutubeVariantInterface.VariantGroup.VIDEO, YoutubeVariantInterface.DownloadType.DASH_VIDEO, "mp4", YoutubeITAG.DASH_VIDEO_360P_H264, YoutubeITAG.DASH_AUDIO_128K_AAC, null, null, null) {
         @Override
-        public String getName() {
+        public String _getName() {
             return _GUI._.YoutubeVariant_name_MP4_DASH_360_AAC128();
         }
 
@@ -837,7 +837,7 @@ public enum YoutubeVariant implements YoutubeVariantInterface {
     },
     MP4_DASH_360_AAC256("MP4_360", YoutubeVariantInterface.VariantGroup.VIDEO, YoutubeVariantInterface.DownloadType.DASH_VIDEO, "mp4", YoutubeITAG.DASH_VIDEO_360P_H264, YoutubeITAG.DASH_AUDIO_256K_AAC, null, null, null) {
         @Override
-        public String getName() {
+        public String _getName() {
             return _GUI._.YoutubeVariant_name_MP4_DASH_360_AAC256();
         }
 
@@ -848,7 +848,7 @@ public enum YoutubeVariant implements YoutubeVariantInterface {
     },
     MP4_DASH_360_AAC48("MP4_360", YoutubeVariantInterface.VariantGroup.VIDEO, YoutubeVariantInterface.DownloadType.DASH_VIDEO, "mp4", YoutubeITAG.DASH_VIDEO_360P_H264, YoutubeITAG.DASH_AUDIO_48K_AAC, null, null, null) {
         @Override
-        public String getName() {
+        public String _getName() {
             return _GUI._.YoutubeVariant_name_MP4_DASH_360_AAC48();
         }
 
@@ -859,7 +859,7 @@ public enum YoutubeVariant implements YoutubeVariantInterface {
     },
     MP4_DASH_480_AAC128("MP4_480", YoutubeVariantInterface.VariantGroup.VIDEO, YoutubeVariantInterface.DownloadType.DASH_VIDEO, "mp4", YoutubeITAG.DASH_VIDEO_480P_H264, YoutubeITAG.DASH_AUDIO_128K_AAC, null, null, null) {
         @Override
-        public String getName() {
+        public String _getName() {
             return _GUI._.YoutubeVariant_name_MP4_DASH_480_AAC128();
         }
 
@@ -870,7 +870,7 @@ public enum YoutubeVariant implements YoutubeVariantInterface {
     },
     MP4_DASH_480_AAC256("MP4_480", YoutubeVariantInterface.VariantGroup.VIDEO, YoutubeVariantInterface.DownloadType.DASH_VIDEO, "mp4", YoutubeITAG.DASH_VIDEO_480P_H264, YoutubeITAG.DASH_AUDIO_256K_AAC, null, null, null) {
         @Override
-        public String getName() {
+        public String _getName() {
             return _GUI._.YoutubeVariant_name_MP4_DASH_480_AAC256();
         }
 
@@ -881,7 +881,7 @@ public enum YoutubeVariant implements YoutubeVariantInterface {
     },
     MP4_DASH_480_AAC48("MP4_480", YoutubeVariantInterface.VariantGroup.VIDEO, YoutubeVariantInterface.DownloadType.DASH_VIDEO, "mp4", YoutubeITAG.DASH_VIDEO_480P_H264, YoutubeITAG.DASH_AUDIO_48K_AAC, null, null, null) {
         @Override
-        public String getName() {
+        public String _getName() {
             return _GUI._.YoutubeVariant_name_MP4_DASH_480_AAC48();
         }
 
@@ -892,7 +892,7 @@ public enum YoutubeVariant implements YoutubeVariantInterface {
     },
     MP4_DASH_720_AAC128("MP4_720", YoutubeVariantInterface.VariantGroup.VIDEO, YoutubeVariantInterface.DownloadType.DASH_VIDEO, "mp4", YoutubeITAG.DASH_VIDEO_720P_H264, YoutubeITAG.DASH_AUDIO_128K_AAC, null, null, null) {
         @Override
-        public String getName() {
+        public String _getName() {
             return _GUI._.YoutubeVariant_name_MP4_DASH_720_AAC128();
         }
 
@@ -904,7 +904,7 @@ public enum YoutubeVariant implements YoutubeVariantInterface {
 
     MP4_DASH_720_AAC256("MP4_720", YoutubeVariantInterface.VariantGroup.VIDEO, YoutubeVariantInterface.DownloadType.DASH_VIDEO, "mp4", YoutubeITAG.DASH_VIDEO_720P_H264, YoutubeITAG.DASH_AUDIO_256K_AAC, null, null, null) {
         @Override
-        public String getName() {
+        public String _getName() {
             return _GUI._.YoutubeVariant_name_MP4_DASH_720_AAC256();
         }
 
@@ -915,7 +915,7 @@ public enum YoutubeVariant implements YoutubeVariantInterface {
     },
     MP4_DASH_720_AAC48("MP4_720", YoutubeVariantInterface.VariantGroup.VIDEO, YoutubeVariantInterface.DownloadType.DASH_VIDEO, "mp4", YoutubeITAG.DASH_VIDEO_720P_H264, YoutubeITAG.DASH_AUDIO_48K_AAC, null, null, null) {
         @Override
-        public String getName() {
+        public String _getName() {
             return _GUI._.YoutubeVariant_name_MP4_DASH_720_AAC48();
         }
 
@@ -926,7 +926,7 @@ public enum YoutubeVariant implements YoutubeVariantInterface {
     },
     MP4_DASH_ORIGINAL_AAC128("MP4_ORIGINAL", YoutubeVariantInterface.VariantGroup.VIDEO, YoutubeVariantInterface.DownloadType.DASH_VIDEO, "mp4", YoutubeITAG.DASH_VIDEO_ORIGINAL_H264, YoutubeITAG.DASH_AUDIO_128K_AAC, null, null, null) {
         @Override
-        public String getName() {
+        public String _getName() {
             return _GUI._.YoutubeVariant_name_MP4_DASH_ORIGINAL_AAC128();
         }
 
@@ -937,7 +937,7 @@ public enum YoutubeVariant implements YoutubeVariantInterface {
     },
     MP4_DASH_ORIGINAL_AAC256("MP4_ORIGINAL", YoutubeVariantInterface.VariantGroup.VIDEO, YoutubeVariantInterface.DownloadType.DASH_VIDEO, "mp4", YoutubeITAG.DASH_VIDEO_ORIGINAL_H264, YoutubeITAG.DASH_AUDIO_256K_AAC, null, null, null) {
         @Override
-        public String getName() {
+        public String _getName() {
             return _GUI._.YoutubeVariant_name_MP4_DASH_ORIGINAL_AAC256();
         }
 
@@ -948,7 +948,7 @@ public enum YoutubeVariant implements YoutubeVariantInterface {
     },
     MP4_DASH_ORIGINAL_AAC48("MP4_ORIGINAL", YoutubeVariantInterface.VariantGroup.VIDEO, YoutubeVariantInterface.DownloadType.DASH_VIDEO, "mp4", YoutubeITAG.DASH_VIDEO_ORIGINAL_H264, YoutubeITAG.DASH_AUDIO_48K_AAC, null, null, null) {
         @Override
-        public String getName() {
+        public String _getName() {
             return _GUI._.YoutubeVariant_name_MP4_DASH_ORIGINAL_AAC48();
         }
 
@@ -959,7 +959,7 @@ public enum YoutubeVariant implements YoutubeVariantInterface {
     },
     MP4_ORIGINAL("MP4_ORIGINAL", YoutubeVariantInterface.VariantGroup.VIDEO, YoutubeVariantInterface.DownloadType.VIDEO, "mp4", YoutubeITAG.MP4_VIDEO_AUDIO_ORIGINAL, null, null, null, null) {
         @Override
-        public String getName() {
+        public String _getName() {
             return _GUI._.YoutubeVariant_name_MP4_ORIGINAL();
         }
 
@@ -970,7 +970,7 @@ public enum YoutubeVariant implements YoutubeVariantInterface {
     },
     SUBTITLES(null, YoutubeVariantInterface.VariantGroup.SUBTITLES, YoutubeVariantInterface.DownloadType.SUBTITLES, "srt", null, null, YoutubeITAG.SUBTITLE, YoutubeSubtitleNamer.getInstance(), YoutubeSRTConverter.getInstance()) {
         @Override
-        public String getName() {
+        public String _getName() {
             return _GUI._.YoutubeVariant_name_SUBTITLES();
         }
 
@@ -982,7 +982,7 @@ public enum YoutubeVariant implements YoutubeVariantInterface {
     },
     THREEGP_144(null, YoutubeVariantInterface.VariantGroup.VIDEO, YoutubeVariantInterface.DownloadType.VIDEO, "3gp", YoutubeITAG.THREEGP_VIDEO_144P_H264_AUDIO_AAC, null, null, null, null) {
         @Override
-        public String getName() {
+        public String _getName() {
             return _GUI._.YoutubeVariant_name_THREEGP_144();
         }
 
@@ -993,7 +993,7 @@ public enum YoutubeVariant implements YoutubeVariantInterface {
     },
     THREEGP_240_HIGH(null, YoutubeVariantInterface.VariantGroup.VIDEO, YoutubeVariantInterface.DownloadType.VIDEO, "3gp", YoutubeITAG.THREEGP_VIDEO_240P_H264_AUDIO_AAC, null, null, null, null) {
         @Override
-        public String getName() {
+        public String _getName() {
             return _GUI._.YoutubeVariant_name_THREEGP_240_HIGH();
         }
 
@@ -1005,7 +1005,7 @@ public enum YoutubeVariant implements YoutubeVariantInterface {
 
     THREEGP_240_LOW(null, YoutubeVariantInterface.VariantGroup.VIDEO, YoutubeVariantInterface.DownloadType.VIDEO, "3gp", YoutubeITAG.THREEGP_VIDEO_240P_H263_AUDIO_AAC, null, null, null, null) {
         @Override
-        public String getName() {
+        public String _getName() {
             return _GUI._.YoutubeVariant_name_THREEGP_240_LOW();
         }
 
@@ -1017,7 +1017,7 @@ public enum YoutubeVariant implements YoutubeVariantInterface {
 
     WEBM_1080(null, YoutubeVariantInterface.VariantGroup.VIDEO, YoutubeVariantInterface.DownloadType.VIDEO, "webm", YoutubeITAG.WEBM_VIDEO_1080P_VP8_AUDIO_VORBIS, null, null, null, null) {
         @Override
-        public String getName() {
+        public String _getName() {
             return _GUI._.YoutubeVariant_name_WEBM_1080();
         }
 
@@ -1029,7 +1029,7 @@ public enum YoutubeVariant implements YoutubeVariantInterface {
 
     WEBM_1440(null, YoutubeVariantInterface.VariantGroup.VIDEO, YoutubeVariantInterface.DownloadType.VIDEO, "webm", YoutubeITAG.WEBM_VIDEO_1440P_VP9_AUDIO_VORBIS, null, null, null, null) {
         @Override
-        public String getName() {
+        public String _getName() {
             return "1440p WebM-Video";
         }
 
@@ -1040,7 +1040,7 @@ public enum YoutubeVariant implements YoutubeVariantInterface {
     },
     WEBM_2160(null, YoutubeVariantInterface.VariantGroup.VIDEO, YoutubeVariantInterface.DownloadType.VIDEO, "webm", YoutubeITAG.WEBM_VIDEO_2160P_VP9_AUDIO_VORBIS, null, null, null, null) {
         @Override
-        public String getName() {
+        public String _getName() {
             return "2160p WebM-Video";
         }
 
@@ -1051,7 +1051,7 @@ public enum YoutubeVariant implements YoutubeVariantInterface {
     },
     WEBM_360(null, YoutubeVariantInterface.VariantGroup.VIDEO, YoutubeVariantInterface.DownloadType.VIDEO, "webm", YoutubeITAG.WEBM_VIDEO_360P_VP8_AUDIO_VORBIS, null, null, null, null) {
         @Override
-        public String getName() {
+        public String _getName() {
             return _GUI._.YoutubeVariant_name_WEBM_360();
         }
 
@@ -1062,7 +1062,7 @@ public enum YoutubeVariant implements YoutubeVariantInterface {
     },
     WEBM_3D_360_128(null, YoutubeVariantInterface.VariantGroup.VIDEO_3D, YoutubeVariantInterface.DownloadType.VIDEO, "webm", YoutubeITAG.WEBM_VIDEO_360P_VP8_AUDIO_128K_VORBIS_3D, null, null, null, null) {
         @Override
-        public String getName() {
+        public String _getName() {
             return _GUI._.YoutubeVariant_name_WEBM_3D_360_128();
         }
 
@@ -1073,7 +1073,7 @@ public enum YoutubeVariant implements YoutubeVariantInterface {
     },
     WEBM_3D_360_192(null, YoutubeVariantInterface.VariantGroup.VIDEO_3D, YoutubeVariantInterface.DownloadType.VIDEO, "webm", YoutubeITAG.WEBM_VIDEO_360P_VP8_AUDIO_192K_VORBIS_3D, null, null, null, null) {
         @Override
-        public String getName() {
+        public String _getName() {
             return _GUI._.YoutubeVariant_name_WEBM_3D_360_192();
         }
 
@@ -1085,7 +1085,7 @@ public enum YoutubeVariant implements YoutubeVariantInterface {
 
     WEBM_3D_720(null, YoutubeVariantInterface.VariantGroup.VIDEO_3D, YoutubeVariantInterface.DownloadType.VIDEO, "webm", YoutubeITAG.WEBM_VIDEO_720P_VP8_AUDIO_192K_VORBIS_3D, null, null, null, null) {
         @Override
-        public String getName() {
+        public String _getName() {
             return _GUI._.YoutubeVariant_name_WEBM_3D_720();
         }
 
@@ -1096,7 +1096,7 @@ public enum YoutubeVariant implements YoutubeVariantInterface {
     },
     WEBM_480(null, YoutubeVariantInterface.VariantGroup.VIDEO, YoutubeVariantInterface.DownloadType.VIDEO, "webm", YoutubeITAG.WEBM_VIDEO_480P_VP8_AUDIO_VORBIS, null, null, null, null) {
         @Override
-        public String getName() {
+        public String _getName() {
             return _GUI._.YoutubeVariant_name_WEBM_480();
         }
 
@@ -1108,7 +1108,7 @@ public enum YoutubeVariant implements YoutubeVariantInterface {
 
     WEBM_720(null, YoutubeVariantInterface.VariantGroup.VIDEO, YoutubeVariantInterface.DownloadType.VIDEO, "webm", YoutubeITAG.WEBM_VIDEO_720P_VP8_AUDIO_VORBIS, null, null, null, null) {
         @Override
-        public String getName() {
+        public String _getName() {
             return _GUI._.YoutubeVariant_name_WEBM_720();
         }
 
@@ -1190,7 +1190,7 @@ public enum YoutubeVariant implements YoutubeVariantInterface {
     }
 
     @Override
-    public String getExtendedName() {
+    public String _getExtendedName() {
         switch (getGroup()) {
         case AUDIO:
             if (getiTagVideo() != null) {
@@ -1204,7 +1204,7 @@ public enum YoutubeVariant implements YoutubeVariantInterface {
         case IMAGE:
             return getFileExtension().toUpperCase(Locale.ENGLISH) + "-" + _GUI._.lit_image() + " [" + getResolution() + "]";
         case SUBTITLES:
-            return getName();
+            return _getName();
         case VIDEO:
             return getFileExtension().toUpperCase(Locale.ENGLISH) + "-" + _GUI._.lit_video() + "[" + getResolution() + "-" + getVideoCodec() + "_" + getAudioQuality() + "-" + getAudioCodec() + "]";
 
@@ -1223,7 +1223,7 @@ public enum YoutubeVariant implements YoutubeVariantInterface {
         return this.group;
     }
 
-    public Icon getIcon() {
+    public Icon _getIcon() {
         return null;
     }
 
@@ -1243,7 +1243,7 @@ public enum YoutubeVariant implements YoutubeVariantInterface {
         return getGroup().name();
     }
 
-    public abstract String getName();
+    public abstract String _getName();
 
     public abstract String getQualityExtension();
 
@@ -1265,7 +1265,7 @@ public enum YoutubeVariant implements YoutubeVariantInterface {
         return this.id;
     }
 
-    public String getUniqueId() {
+    public String _getUniqueId() {
         return name();
     }
 

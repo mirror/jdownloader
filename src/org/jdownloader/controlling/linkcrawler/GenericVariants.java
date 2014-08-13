@@ -25,7 +25,7 @@ public enum GenericVariants implements LinkVariant {
     ORIGINAL(null, new AbstractIcon(IconKey.ICON_VIDEO, 16)) {
 
         @Override
-        public String getName() {
+        public String _getName() {
             return _JDT._.GenericVariants_ORIGINAL_();
         }
 
@@ -40,7 +40,7 @@ public enum GenericVariants implements LinkVariant {
     },
     DEMUX_MP3("mp3", new AbstractIcon(IconKey.ICON_AUDIO, 16)) {
         @Override
-        public String getName() {
+        public String _getName() {
             return _JDT._.GenericVariants_FLV_TO_MP3_();
         }
 
@@ -57,7 +57,7 @@ public enum GenericVariants implements LinkVariant {
 
     DEMUX_AAC("acc", new AbstractIcon(IconKey.ICON_AUDIO, 16)) {
         @Override
-        public String getName() {
+        public String _getName() {
             return _JDT._.GenericVariants_DEMUX_AAC();
         }
 
@@ -73,7 +73,7 @@ public enum GenericVariants implements LinkVariant {
     },
     DEMUX_M4A("m4a", new AbstractIcon(IconKey.ICON_AUDIO, 16)) {
         @Override
-        public String getName() {
+        public String _getName() {
             return _JDT._.GenericVariants_DEMUX_M4A();
         }
 
@@ -89,7 +89,7 @@ public enum GenericVariants implements LinkVariant {
     },
     DEMUX_GENERIC_AUDIO("audio", new AbstractIcon(IconKey.ICON_AUDIO, 16)) {
         @Override
-        public String getName() {
+        public String _getName() {
             return _JDT._.GenericVariants_DEMUX_GENERIC_AUDIO();
         }
 
@@ -168,21 +168,21 @@ public enum GenericVariants implements LinkVariant {
     }
 
     @Override
-    public String getUniqueId() {
+    public String _getUniqueId() {
         return name();
     }
 
     @Override
-    public abstract String getName();
+    public abstract String _getName();
 
     @Override
-    public Icon getIcon() {
+    public Icon _getIcon() {
         return icon;
     }
 
     @Override
-    public String getExtendedName() {
-        return getName() + " [" + getUniqueId() + "]";
+    public String _getExtendedName() {
+        return _getName() + " [" + _getUniqueId() + "]";
     }
 
     public String getExtension() {

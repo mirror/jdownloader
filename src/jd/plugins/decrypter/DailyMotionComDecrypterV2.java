@@ -141,22 +141,22 @@ public class DailyMotionComDecrypterV2 extends DailyMotionComDecrypter {
         }
 
         @Override
-        public String getUniqueId() {
+        public String _getUniqueId() {
             return convertTo == null ? orgQName : (orgQName + "->" + convertTo);
         }
 
         @Override
-        public String getName() {
+        public String _getName() {
             return getDisplayName();
         }
 
         @Override
-        public Icon getIcon() {
+        public Icon _getIcon() {
             return null;
         }
 
         @Override
-        public String getExtendedName() {
+        public String _getExtendedName() {
             return getDisplayName() + "[" + orgQName + "-" + qrate + "]";
         }
 

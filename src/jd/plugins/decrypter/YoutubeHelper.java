@@ -703,7 +703,7 @@ public class YoutubeHelper {
         }
         // create map
         for (YoutubeVariantInterface v : variants) {
-            variantsMap.put(v.getUniqueId(), v);
+            variantsMap.put(v._getUniqueId(), v);
         }
         this.variants = Collections.unmodifiableList(variants);
         this.variantsMap = Collections.unmodifiableMap(variantsMap);

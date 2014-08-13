@@ -31,8 +31,12 @@ public class YoutubeCustomConvertVariant implements YoutubeVariantInterface {
         double qr = storable.getQualityRating();
         if (qr <= 0) {
             qr = 0.001d;
-            if (audio != null) qr += audio.getQualityRating();
-            if (video != null) qr += video.getQualityRating();
+            if (audio != null) {
+                qr += audio.getQualityRating();
+            }
+            if (video != null) {
+                qr += video.getQualityRating();
+            }
         }
         return new YoutubeCustomConvertVariant(storable.getUniqueID(), storable.getTypeID(), DownloadType.valueOf(storable.getDownloadType()), VariantGroup.valueOf(storable.getGroup()), qr, storable.getName(), storable.getNameTag(), storable.getExtension(), audio, video, null, new YoutubeExternConverter(storable.getBinary(), storable.getParameters()));
     }
@@ -54,13 +58,15 @@ public class YoutubeCustomConvertVariant implements YoutubeVariantInterface {
 
     @Override
     public boolean equals(Object obj) {
-        if (obj == null || !(obj instanceof YoutubeCustomConvertVariant)) return false;
+        if (obj == null || !(obj instanceof YoutubeCustomConvertVariant)) {
+            return false;
+        }
         return uniqueID.equals(((YoutubeCustomConvertVariant) obj).uniqueID);
     }
 
     @Override
     public int hashCode() {
-        return getUniqueId().hashCode();
+        return _getUniqueId().hashCode();
     }
 
     @Override
@@ -74,12 +80,12 @@ public class YoutubeCustomConvertVariant implements YoutubeVariantInterface {
     }
 
     @Override
-    public String getName() {
+    public String _getName() {
         return name;
     }
 
     @Override
-    public Icon getIcon() {
+    public Icon _getIcon() {
         return null;
     }
 
@@ -89,7 +95,7 @@ public class YoutubeCustomConvertVariant implements YoutubeVariantInterface {
     }
 
     @Override
-    public String getUniqueId() {
+    public String _getUniqueId() {
         return uniqueID;
     }
 
@@ -135,7 +141,9 @@ public class YoutubeCustomConvertVariant implements YoutubeVariantInterface {
 
     @Override
     public void convert(DownloadLink downloadLink) throws Exception {
-        if (converter != null) converter.run(downloadLink);
+        if (converter != null) {
+            converter.run(downloadLink);
+        }
     }
 
     @Override
@@ -145,7 +153,9 @@ public class YoutubeCustomConvertVariant implements YoutubeVariantInterface {
 
     @Override
     public String modifyFileName(String formattedFilename, DownloadLink link) {
-        if (nameModifier != null) return nameModifier.run(formattedFilename, link);
+        if (nameModifier != null) {
+            return nameModifier.run(formattedFilename, link);
+        }
         return formattedFilename;
     }
 
@@ -156,7 +166,7 @@ public class YoutubeCustomConvertVariant implements YoutubeVariantInterface {
     }
 
     @Override
-    public String getExtendedName() {
+    public String _getExtendedName() {
         return name;
     }
 

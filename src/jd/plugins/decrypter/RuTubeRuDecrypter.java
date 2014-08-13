@@ -16,18 +16,33 @@
 
 package jd.plugins.decrypter;
 
+import java.io.ByteArrayInputStream;
 import java.util.ArrayList;
+
+import javax.swing.Icon;
+import javax.xml.parsers.DocumentBuilder;
+import javax.xml.parsers.DocumentBuilderFactory;
+import javax.xml.xpath.XPath;
+import javax.xml.xpath.XPathConstants;
+import javax.xml.xpath.XPathFactory;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
-import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "rutube.ru" }, urls = { "http://(www\\.)?rutube\\.ru/(tracks/\\d+\\.html|video/[a-f0-9]{32})" }, flags = { 0 })
+import org.appwork.storage.Storable;
+import org.jdownloader.controlling.linkcrawler.LinkVariant;
+import org.jdownloader.gui.IconKey;
+import org.jdownloader.images.AbstractIcon;
+import org.w3c.dom.Document;
+import org.w3c.dom.Node;
+import org.w3c.dom.NodeList;
+
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "rutube.ru" }, urls = { "http://(www\\.)?rutube\\.ru/(tracks/\\d+\\.html|video/[a-f0-9]{32})" }, flags = { 0 })
 public class RuTubeRuDecrypter extends PluginForDecrypt {
 
     public RuTubeRuDecrypter(PluginWrapper wrapper) {
@@ -35,6 +50,7 @@ public class RuTubeRuDecrypter extends PluginForDecrypt {
     }
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
+
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         final String parameter = param.toString();
 
@@ -46,17 +62,169 @@ public class RuTubeRuDecrypter extends PluginForDecrypt {
 
             uid = br.getRegex("<id>([a-fA-F0-9]{32})</id>").getMatch(0);
             if (uid == null) {
-                final String nextUrl = br.getRegex("src=\"([^\"]+)").getMatch(0);
-                if (nextUrl != null) {
-                    decryptedLinks.add(createDownloadlink(Encoding.htmlDecode(nextUrl)));
-                }
+                throw new Exception("Unknown LinkType");
             }
+
         }
         if (uid != null && decryptedLinks.isEmpty()) {
-            decryptedLinks.add(createDownloadlink("http://video.rutube.ru/" + uid));
+            DownloadLink link = createDownloadlink(uid);
+            if (link != null) {
+                decryptedLinks.add(link);
+            }
         }
 
         return decryptedLinks;
+    }
+
+    public static class RuTubeVariant implements LinkVariant, Storable {
+        @Override
+        public boolean equals(Object obj) {
+            if (obj == null || !(obj instanceof RuTubeVariant)) {
+                return false;
+            }
+            return _getUniqueId().equals(((RuTubeVariant) obj)._getUniqueId());
+        }
+
+        private String width;
+
+        public String getWidth() {
+            return width;
+        }
+
+        public void setWidth(String width) {
+            this.width = width;
+        }
+
+        public String getBitrate() {
+            return bitrate;
+        }
+
+        public void setBitrate(String bitrate) {
+            this.bitrate = bitrate;
+        }
+
+        public String getHeight() {
+            return height;
+        }
+
+        public void setHeight(String height) {
+            this.height = height;
+        }
+
+        public String getStreamID() {
+            return streamID;
+        }
+
+        public void setStreamID(String streamID) {
+            this.streamID = streamID;
+        }
+
+        private String       bitrate;
+        private String       height;
+        private String       streamID;
+        private AbstractIcon icon;
+
+        public RuTubeVariant(/* storable */) {
+
+        }
+
+        public RuTubeVariant(String width, String height, String bitrate, String streamID) {
+            this.width = width;
+            this.height = height;
+            this.bitrate = bitrate;
+            this.streamID = streamID;
+            icon = new AbstractIcon(IconKey.ICON_VIDEO, 16);
+        }
+
+        @Override
+        public String _getUniqueId() {
+            return width + "x" + height + "_bitrate_" + streamID;
+        }
+
+        @Override
+        public String _getName() {
+            return height + "p";
+        }
+
+        @Override
+        public Icon _getIcon() {
+            return icon;
+        }
+
+        @Override
+        public String _getExtendedName() {
+            return height + "p (" + bitrate + "bps)";
+        }
+
+    }
+
+    @Override
+    protected DownloadLink createDownloadlink(String id) {
+        DownloadLink ret = super.createDownloadlink("http://video.rutube.ru/" + id);
+
+        try {
+            br.getPage("http://rutube.ru/api/video/" + id);
+
+            String vID = br.getRegex("/embed/(\\d+)").getMatch(0);
+            br.getPage("http://rutube.ru/play/embed/" + vID + "?wmode=opaque&autoStart=true");
+
+            String videoBalancer = br.getRegex("(http\\:\\/\\/bl\\.rutube\\.ru[^\"]+)").getMatch(0);
+
+            if (videoBalancer != null) {
+                final DocumentBuilder parser = DocumentBuilderFactory.newInstance().newDocumentBuilder();
+                final XPath xPath = XPathFactory.newInstance().newXPath();
+
+                br.getPage(videoBalancer);
+
+                Document d = parser.parse(new ByteArrayInputStream(br.toString().getBytes("UTF-8")));
+                String baseUrl = xPath.evaluate("/manifest/baseURL", d).trim();
+
+                NodeList f4mUrls = (NodeList) xPath.evaluate("/manifest/media", d, XPathConstants.NODESET);
+                Node best = f4mUrls.item(f4mUrls.getLength() - 1);
+                ArrayList<RuTubeVariant> variantsVideo = new ArrayList<RuTubeRuDecrypter.RuTubeVariant>();
+                RuTubeVariant bestVariant = null;
+                for (int i = 0; i < f4mUrls.getLength(); i++) {
+                    best = f4mUrls.item(i);
+                    String width = best.getAttributes().getNamedItem("width").getTextContent().trim();
+                    String height = best.getAttributes().getNamedItem("height").getTextContent().trim();
+                    String bitrate = best.getAttributes().getNamedItem("bitrate").getTextContent().trim();
+                    String f4murl = best.getAttributes().getNamedItem("href").getTextContent().trim();
+
+                    br.getPage(baseUrl + f4murl);
+
+                    d = parser.parse(new ByteArrayInputStream(br.toString().getBytes("UTF-8")));
+                    // baseUrl = xPath.evaluate("/manifest/baseURL", d).trim();
+                    double duration = Double.parseDouble(xPath.evaluate("/manifest/duration", d));
+
+                    NodeList mediaUrls = (NodeList) xPath.evaluate("/manifest/media", d, XPathConstants.NODESET);
+                    Node media;
+                    for (int j = 0; j < mediaUrls.getLength(); j++) {
+                        media = mediaUrls.item(j);
+                        // System.out.println(new String(Base64.decode(xPath.evaluate("/manifest/media[" + (j + 1) + "]/metadata",
+                        // d).trim())));
+
+                        RuTubeVariant var = new RuTubeVariant(width, height, bitrate, media.getAttributes().getNamedItem("streamId").getTextContent());
+                        variantsVideo.add(var);
+                        bestVariant = var;
+
+                    }
+
+                }
+                if (variantsVideo.size() > 0) {
+                    ret.setVariants(variantsVideo);
+                    ret.setVariant(bestVariant);
+                }
+
+                return ret;
+            } else {
+                logger.warning("Video not available in your country: " + "http://rutube.ru/api/video/" + id);
+                return null;
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return null;
+
     }
 
     /* NO OVERRIDE!! */

@@ -16,6 +16,7 @@
 
 package jd.plugins.hoster;
 
+import java.io.ByteArrayInputStream;
 import java.io.InputStream;
 import java.io.UnsupportedEncodingException;
 import java.net.URL;
@@ -24,6 +25,7 @@ import java.util.zip.CRC32;
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.xpath.XPath;
+import javax.xml.xpath.XPathConstants;
 import javax.xml.xpath.XPathFactory;
 
 import jd.PluginWrapper;
@@ -41,9 +43,12 @@ import jd.plugins.PluginForHost;
 import jd.plugins.download.DownloadInterface;
 import jd.utils.locale.JDL;
 
+import org.jdownloader.downloader.hds.HDSDownloader;
 import org.w3c.dom.Document;
+import org.w3c.dom.Node;
+import org.w3c.dom.NodeList;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "rtlnow.rtl.de", "voxnow.de", "superrtlnow.de", "rtl2now.rtl2.de" }, urls = { "http://(www\\.)?rtl\\-now\\.rtl\\.de/([\\w-]+/)?[\\w-]+\\.php\\?(container_id|player|film_id)=.+", "http://(www\\.)?voxnow\\.de/([\\w-]+/)?[\\w-]+\\.php\\?(container_id|player|film_id)=.+", "http://(www\\.)?superrtlnow\\.de/([\\w-]+/)?[\\w-]+\\.php\\?(container_id|player|film_id)=.+", "http://(www\\.)?rtl2now\\.rtl2\\.de/([\\w-]+/)?[\\w-]+\\.php\\?(container_id|player|film_id)=.+" }, flags = { 32, 32, 32, 32 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "rtlnow.rtl.de", "voxnow.de", "superrtlnow.de", "rtl2now.rtl2.de" }, urls = { "http://(www\\.)?rtl\\-now\\.rtl\\.de/([\\w-]+/)?[\\w-]+\\.php\\?(container_id|player|film_id)=.+", "http://(www\\.)?voxnow\\.de//?([\\w-]+/)?[\\w-]+\\.php\\?(container_id|player|film_id)=.+", "http://(www\\.)?superrtlnow\\.de/([\\w-]+/)?[\\w-]+\\.php\\?(container_id|player|film_id)=.+", "http://(www\\.)?rtl2now\\.rtl2\\.de/([\\w-]+/)?[\\w-]+\\.php\\?(container_id|player|film_id)=.+" }, flags = { 32, 32, 32, 32 })
 public class RTLnowDe extends PluginForHost {
 
     private Document doc;
@@ -66,15 +71,19 @@ public class RTLnowDe extends PluginForHost {
     }
 
     private void download(final DownloadLink downloadLink) throws Exception {
-        requestFileInformation(downloadLink);
+
         String contentUrl = br.getRegex("data:\'(.*?)\'").getMatch(0);
         final String ivw = br.getRegex("ivw:\'(.*?)\',").getMatch(0);
         final String client = br.getRegex("id:\'(.*?)\'").getMatch(0);
         final String swfurl = br.getRegex("swfobject.embedSWF\\(\"(.*?)\",").getMatch(0);
-        if (contentUrl == null || ivw == null || client == null || swfurl == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (contentUrl == null || ivw == null || client == null || swfurl == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
 
         contentUrl = Encoding.urlDecode(downloadLink.getHost() + contentUrl, true);
-        if (contentUrl == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (contentUrl == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         contentUrl = "http://" + contentUrl;
 
         final XPath xPath = xmlParser(contentUrl + "&ts=" + System.currentTimeMillis() / 1000);
@@ -85,7 +94,9 @@ public class RTLnowDe extends PluginForHost {
         final String timetp = xPath.evaluate("/data/timetype", doc);
         final String season = xPath.evaluate("/data/season", doc);
 
-        if (dllink == null) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
+        if (dllink == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         if (dllink.startsWith("rtmp")) {
             dl = new RTMPDownload(this, downloadLink, dllink);
 
@@ -100,7 +111,9 @@ public class RTLnowDe extends PluginForHost {
                 app = "ondemand?ovpfv=1.1&" + new Regex(playpath, "(auth=.*?)$").getMatch(0);
                 playpath = new Regex(dllink, "(rtlnow|voxnow|superrtlnow|rtl2now)/(.*?)$").getMatch(-1);
             }
-            if (host.endsWith("de/")) host = host.replace("de/", "de:1935/");
+            if (host.endsWith("de/")) {
+                host = host.replace("de/", "de:1935/");
+            }
             String play = playpath.substring(0, playpath.lastIndexOf("."));
             if (dllink.endsWith(".f4v")) {
                 play = "mp4:" + playpath;
@@ -122,14 +135,49 @@ public class RTLnowDe extends PluginForHost {
             ((RTMPDownload) dl).startDownload();
 
         } else {
-            br.setFollowRedirects(true);
-            dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, contentUrl, true, 0);
-            if (dl.getConnection().getContentType().contains("html")) {
-                br.followConnection();
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            }
+            br.getPage(dllink);
+            String hds = parseManifest();
+
+            dl = new HDSDownloader(downloadLink, br, hds);
             dl.startDownload();
+
         }
+    }
+
+    private String parseManifest() {
+        try {
+
+            final DocumentBuilder parser = DocumentBuilderFactory.newInstance().newDocumentBuilder();
+            final XPath xPath = XPathFactory.newInstance().newXPath();
+
+            Document d = parser.parse(new ByteArrayInputStream(br.toString().getBytes("UTF-8")));
+            NodeList nl = (NodeList) xPath.evaluate("/manifest/media", d, XPathConstants.NODESET);
+
+            for (int i = 0; i < nl.getLength(); i++) {
+                Node n = nl.item(i);
+                String streamId = n.getAttributes().getNamedItem("streamId").getTextContent();
+                String url = n.getAttributes().getNamedItem("url").getTextContent();
+
+                String bootstrapInfoId = n.getAttributes().getNamedItem("bootstrapInfoId").getTextContent();
+                String drmAdditionalHeaderId = n.getAttributes().getNamedItem("drmAdditionalHeaderId").getTextContent();
+                String base = br.getBaseURL();
+                return base + url;
+                // System.out.println(n);
+                // String tc = n.getTextContent();
+                // String media = xPath.evaluate("metadata", n).trim();
+                // byte[] mediaB = Base64.decode(media);
+                // media = new String(mediaB, "UTF-8");
+                // System.out.println(media);
+
+            }
+            System.out.println(1);
+        } catch (Throwable e) {
+            e.printStackTrace();
+        } finally {
+
+            System.out.println(1);
+        }
+        return null;
     }
 
     @Override
@@ -145,9 +193,13 @@ public class RTLnowDe extends PluginForHost {
     @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
-        if (br.containsHTML("<\\!\\-\\- Payment\\-Teaser \\-\\->")) { throw new PluginException(LinkStatus.ERROR_FATAL, "Download nicht möglich (muss gekauft werden)"); }
+        if (br.containsHTML("<\\!\\-\\- Payment\\-Teaser \\-\\->")) {
+            throw new PluginException(LinkStatus.ERROR_FATAL, "Download nicht möglich (muss gekauft werden)");
+        }
         final String ageCheck = br.getRegex("(Aus Jugendschutzgründen nur zwischen \\d+ und \\d+ Uhr abrufbar\\!)").getMatch(0);
-        if (ageCheck != null) { throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, ageCheck, 10 * 60 * 60 * 1000l); }
+        if (ageCheck != null) {
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, ageCheck, 10 * 60 * 60 * 1000l);
+        }
         download(downloadLink);
     }
 
@@ -161,7 +213,9 @@ public class RTLnowDe extends PluginForHost {
             return AvailableStatus.TRUE;
         }
         String filename = br.getRegex("<meta property=\"og:title\" content=\"(.*?)\">").getMatch(0);
-        if (filename == null) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
+        if (filename == null) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
         String folge = br.getRegex("Folge: '(.*?)'").getMatch(0);
         if (folge != null && filename.contains(folge)) {
             filename = filename.substring(0, filename.lastIndexOf("-")).trim();
@@ -172,7 +226,9 @@ public class RTLnowDe extends PluginForHost {
         }
         filename = filename.trim();
 
-        if (folge == null) return AvailableStatus.FALSE;
+        if (folge == null) {
+            return AvailableStatus.FALSE;
+        }
         folge = folge.trim();
         if (folge.endsWith(".")) {
             folge = folge.substring(0, folge.length() - 1);
@@ -212,7 +268,9 @@ public class RTLnowDe extends PluginForHost {
         rtmp.setUrl(DLCONTENT.split("@")[0] + DLCONTENT.split("@")[1]);
         rtmp.setResume(true);
         rtmp.setRealTime();
-        if (!getPluginConfig().getBooleanProperty("DEFAULTTIMEOUT", false)) rtmp.setTimeOut(-1);
+        if (!getPluginConfig().getBooleanProperty("DEFAULTTIMEOUT", false)) {
+            rtmp.setTimeOut(-1);
+        }
     }
 
     private XPath xmlParser(final String linkurl) throws Exception {

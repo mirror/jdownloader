@@ -110,8 +110,8 @@ public class VariantColumn extends ExtComboColumn<AbstractNode, LinkVariant> {
                         dllink.setProperties(link.getDownloadLink().getProperties());
                         dllink.setProperty("DUMMY", true);
                         cl = new CrawledLink(dllink);
-                        setSmallIcon(o.getIcon());
-                        setName(CFG_GUI.EXTENDED_VARIANT_NAMES_ENABLED.isEnabled() ? o.getExtendedName() : o.getName());
+                        setSmallIcon(o._getIcon());
+                        setName(CFG_GUI.EXTENDED_VARIANT_NAMES_ENABLED.isEnabled() ? o._getExtendedName() : o._getName());
 
                         cl.getDownloadLink().getDefaultPlugin().setActiveVariantByLink(cl.getDownloadLink(), o);
 
@@ -183,7 +183,7 @@ public class VariantColumn extends ExtComboColumn<AbstractNode, LinkVariant> {
         if (selectedItem == null) {
             return null;
         }
-        return CFG_GUI.EXTENDED_VARIANT_NAMES_ENABLED.isEnabled() ? selectedItem.getExtendedName() : selectedItem.getName();
+        return CFG_GUI.EXTENDED_VARIANT_NAMES_ENABLED.isEnabled() ? selectedItem._getExtendedName() : selectedItem._getName();
     }
 
     @Override
@@ -195,7 +195,7 @@ public class VariantColumn extends ExtComboColumn<AbstractNode, LinkVariant> {
         if (selectedItem == null) {
             return null;
         }
-        return selectedItem.getIcon();
+        return selectedItem._getIcon();
     }
 
     @Override

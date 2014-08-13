@@ -1298,6 +1298,7 @@ public class DownloadLink extends Property implements Serializable, AbstractPack
      */
     public void setUrlDownload(String urlDownload) {
         String previousURLDownload = this.urlDownload;
+        String linkID = getLinkID();
         if (urlDownload != null) {
             if (previousURLDownload != null && previousURLDownload.equals(urlDownload)) {
                 return;
@@ -1308,7 +1309,7 @@ public class DownloadLink extends Property implements Serializable, AbstractPack
         }
         cachedName = null;
         if (previousURLDownload != null && !previousURLDownload.equals(urlDownload)) {
-            if (getLinkID() == null) {
+            if (linkID == null || previousURLDownload.equals(linkID)) {
                 /* downloadURL changed, so set original one as linkID, so all dupemaps still work */
                 setLinkID(previousURLDownload);
             }
@@ -1843,13 +1844,13 @@ public class DownloadLink extends Property implements Serializable, AbstractPack
             }
             setProperty("ORG_LINKID", linkID);
         }
-        this.setProperty("VARIANT", variant.getUniqueId());
+        this.setProperty("VARIANT", variant._getUniqueId());
         setVariantSupport(true);
         LinkVariant tmp = (LinkVariant) getTempProperties().getProperty("VARIANT");
-        if (tmp != null && !variant.getUniqueId().equals(tmp.getUniqueId())) {
+        if (tmp != null && !variant._getUniqueId().equals(tmp._getUniqueId())) {
             getTempProperties().setProperty("VARIANT", null);
         }
-        setLinkID(getStringProperty("ORG_LINKID") + "_" + variant.getUniqueId());
+        setLinkID(getStringProperty("ORG_LINKID") + "_" + variant._getUniqueId());
 
     }
 
@@ -1867,7 +1868,7 @@ public class DownloadLink extends Property implements Serializable, AbstractPack
         if (var != null) {
             try {
                 for (T v : getVariants(type)) {
-                    if (v.getUniqueId().equals(var)) {
+                    if (v._getUniqueId().equals(var)) {
                         getTempProperties().setProperty("VARIANT", v);
                         return v;
                     }
@@ -1904,18 +1905,20 @@ public class DownloadLink extends Property implements Serializable, AbstractPack
                 final ArrayList<Object> basic = JSonStorage.restoreFromString(var, new TypeRef<ArrayList<Object>>() {
                 });
                 for (Object o : basic) {
-                    final T restored = JSonStorage.convert(o, new TypeRef<T>() {
+
+                    T restored = JSonStorage.convert(o, new TypeRef<T>() {
                         @Override
                         public Type getType() {
                             return type;
                         }
                     });
                     ret.add(restored);
+
                 }
                 getTempProperties().setProperty("VARIANTS", ret);
                 return ret;
             } catch (Throwable e) {
-
+                e.printStackTrace();
             }
         }
         return null;

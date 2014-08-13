@@ -3,13 +3,13 @@ package org.jdownloader.controlling.linkcrawler;
 import javax.swing.Icon;
 
 public interface LinkVariant {
-    //
-    String getUniqueId();
+    // _ because often LinkVariants will be storables. and we do not want to store these getters
+    String _getUniqueId();
 
-    String getName();
+    String _getName();
 
-    Icon getIcon();
+    Icon _getIcon();
 
-    String getExtendedName();
+    String _getExtendedName();
 
 }

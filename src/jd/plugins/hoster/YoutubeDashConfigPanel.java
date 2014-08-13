@@ -80,9 +80,9 @@ public class YoutubeDashConfigPanel extends PluginConfigPanelNG {
         //
         @Override
         protected String getLabel(int i, YoutubeVariant sc) {
-            String name = sc.getName();
+            String name = sc._getName();
             if (CFG_GUI.EXTENDED_VARIANT_NAMES_ENABLED.isEnabled()) {
-                name = sc.getExtendedName();
+                name = sc._getExtendedName();
             }
             if (i == 0) {
                 return _GUI._.YoutubeDashConfigPanel_MultiVariantBox_getLabel_(name) + " (" + _GUI._.YoutubeDashConfigPanel_getLabel_best() + ")";
@@ -95,7 +95,7 @@ public class YoutubeDashConfigPanel extends PluginConfigPanelNG {
 
         @Override
         protected String getLabel(YoutubeVariant sc) {
-            return sc.getName();
+            return sc._getName();
         }
 
         @Override

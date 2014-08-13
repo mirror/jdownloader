@@ -133,7 +133,7 @@ public class TbCmV2 extends PluginForDecrypt {
         }
 
         public String getIdentifier() {
-            return variant.getUniqueId();
+            return variant._getUniqueId();
         }
 
         public VariantInfo(YoutubeVariantInterface v, YoutubeStreamData audio, YoutubeStreamData video, YoutubeStreamData data) {
@@ -392,7 +392,7 @@ public class TbCmV2 extends PluginForDecrypt {
 
                 if (valid) {
                     VariantInfo vi = new VariantInfo(v, audio, video, data);
-                    if ((blacklistedStrings.contains(v.getTypeId()) || blacklistedStrings.contains(v.getUniqueId())) && !extraStrings.contains(v.getTypeId()) && !extraStrings.contains(v.getUniqueId())) {
+                    if ((blacklistedStrings.contains(v.getTypeId()) || blacklistedStrings.contains(v._getUniqueId())) && !extraStrings.contains(v.getTypeId()) && !extraStrings.contains(v._getUniqueId())) {
                         logger.info("Variant blacklisted:" + v);
                         List<VariantInfo> list = groupsExcluded.get(groupID);
                         if (list == null) {
@@ -486,7 +486,7 @@ public class TbCmV2 extends PluginForDecrypt {
 
                             @Override
                             public int compareTo(VariantInfo o) {
-                                return this.variant.getName().compareToIgnoreCase(o.variant.getName());
+                                return this.variant._getName().compareToIgnoreCase(o.variant._getName());
 
                             }
                         };
@@ -707,7 +707,7 @@ public class TbCmV2 extends PluginForDecrypt {
             groupID = v.getFileExtension();
             break;
         case NO_GROUP:
-            groupID = v.getUniqueId();
+            groupID = v._getUniqueId();
             break;
         case BY_MEDIA_TYPE:
             groupID = v.getMediaTypeID();
@@ -798,7 +798,7 @@ public class TbCmV2 extends PluginForDecrypt {
 
                 for (VariantInfo vi : alternatives) {
                     // if (vi.variant != variantInfo.variant) {
-                    variants.add(vi.variant.getUniqueId());
+                    variants.add(vi.variant._getUniqueId());
                     if (variantInfo.getIdentifier().equals(vi.getIdentifier())) {
                         has = true;
                     }
@@ -806,13 +806,13 @@ public class TbCmV2 extends PluginForDecrypt {
                 }
 
                 if (!has) {
-                    variants.add(0, variantInfo.variant.getUniqueId());
+                    variants.add(0, variantInfo.variant._getUniqueId());
                 }
             }
 
             thislink.setVariantSupport(variants.size() > 1);
             thislink.setProperty(YoutubeHelper.YT_VARIANTS, JSonStorage.serializeToJson(variants));
-            thislink.setProperty(YoutubeHelper.YT_VARIANT, variantInfo.variant.getUniqueId());
+            thislink.setProperty(YoutubeHelper.YT_VARIANT, variantInfo.variant._getUniqueId());
             variantInfo.fillExtraProperties(thislink, alternatives);
             String filename;
             thislink.setFinalFileName(filename = getCachedHelper().createFilename(thislink));

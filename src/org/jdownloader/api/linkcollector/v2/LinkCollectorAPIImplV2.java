@@ -525,7 +525,7 @@ public class LinkCollectorAPIImplV2 implements LinkCollectorAPIV2 {
         ArrayList<LinkVariantStorableV2> ret = new ArrayList<LinkVariantStorableV2>();
         CrawledLink cl = getLinkById(linkid);
         for (LinkVariant lv : cl.getDownloadLink().getDefaultPlugin().getVariantsByLink(cl.getDownloadLink())) {
-            ret.add(new LinkVariantStorableV2(lv.getUniqueId(), CFG_GUI.EXTENDED_VARIANT_NAMES_ENABLED.isEnabled() ? lv.getExtendedName() : lv.getName()));
+            ret.add(new LinkVariantStorableV2(lv._getUniqueId(), CFG_GUI.EXTENDED_VARIANT_NAMES_ENABLED.isEnabled() ? lv._getExtendedName() : lv._getName()));
         }
         return ret;
     }
@@ -535,7 +535,7 @@ public class LinkCollectorAPIImplV2 implements LinkCollectorAPIV2 {
         CrawledLink cl = getLinkById(linkid);
 
         for (LinkVariant lv : cl.getDownloadLink().getDefaultPlugin().getVariantsByLink(cl.getDownloadLink())) {
-            if (lv.getUniqueId().equals(variantID)) {
+            if (lv._getUniqueId().equals(variantID)) {
                 LinkCollector.getInstance().setActiveVariantForLink(cl, lv);
 
                 return;
@@ -558,7 +558,7 @@ public class LinkCollectorAPIImplV2 implements LinkCollectorAPIV2 {
                 // search variant by id
                 LinkVariant v = null;
                 for (LinkVariant lv : link.getDownloadLink().getDefaultPlugin().getVariantsByLink(link.getDownloadLink())) {
-                    if (lv.getUniqueId().equals(variantID)) {
+                    if (lv._getUniqueId().equals(variantID)) {
                         v = lv;
                         break;
                     }

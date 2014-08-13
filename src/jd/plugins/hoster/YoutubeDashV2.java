@@ -1692,11 +1692,11 @@ public class YoutubeDashV2 extends PluginForHost {
             return code.hashCode();
         }
 
-        public String getName() {
+        public String _getName() {
             return _GUI._.YoutubeDash_getName_subtitles_(locale.getDisplayName());
         }
 
-        public Icon getIcon() {
+        public Icon _getIcon() {
             return null;
         }
 
@@ -1706,7 +1706,7 @@ public class YoutubeDashV2 extends PluginForHost {
         }
 
         @Override
-        public String getUniqueId() {
+        public String _getUniqueId() {
             return code;
         }
 
@@ -1775,7 +1775,7 @@ public class YoutubeDashV2 extends PluginForHost {
         }
 
         @Override
-        public String getExtendedName() {
+        public String _getExtendedName() {
             return _GUI._.YoutubeDash_getName_subtitles_(locale.getDisplayName());
         }
 
@@ -1851,15 +1851,15 @@ public class YoutubeDashV2 extends PluginForHost {
             downloadLink.setDownloadSize(-1);
             downloadLink.setVerifiedFileSize(-1);
             downloadLink.getTempProperties().setProperty(YoutubeHelper.YT_VARIANT, Property.NULL);
-            downloadLink.setProperty(YoutubeHelper.YT_VARIANT, v.getUniqueId());
+            downloadLink.setProperty(YoutubeHelper.YT_VARIANT, v._getUniqueId());
             downloadLink.setProperty(YoutubeHelper.YT_EXT, v.getFileExtension());
             String filename;
             downloadLink.setFinalFileName(filename = getCachedHelper().createFilename(downloadLink));
-            downloadLink.setUrlDownload("youtubev2://" + v.getUniqueId() + "/" + downloadLink.getStringProperty(YoutubeHelper.YT_ID) + "/");
+            downloadLink.setUrlDownload("youtubev2://" + v._getUniqueId() + "/" + downloadLink.getStringProperty(YoutubeHelper.YT_ID) + "/");
             try {
-                downloadLink.setLinkID("youtubev2://" + v.getUniqueId() + "/" + downloadLink.getStringProperty(YoutubeHelper.YT_ID) + "/" + URLEncode.encodeRFC2396(filename));
+                downloadLink.setLinkID("youtubev2://" + v._getUniqueId() + "/" + downloadLink.getStringProperty(YoutubeHelper.YT_ID) + "/" + URLEncode.encodeRFC2396(filename));
             } catch (UnsupportedEncodingException e) {
-                downloadLink.setLinkID("youtubev2://" + v.getUniqueId() + "/" + downloadLink.getStringProperty(YoutubeHelper.YT_ID) + "/" + filename);
+                downloadLink.setLinkID("youtubev2://" + v._getUniqueId() + "/" + downloadLink.getStringProperty(YoutubeHelper.YT_ID) + "/" + filename);
             }
 
         }
@@ -1904,7 +1904,7 @@ public class YoutubeDashV2 extends PluginForHost {
 
                 @Override
                 public int compare(LinkVariant o1, LinkVariant o2) {
-                    return o1.getName().compareToIgnoreCase(o2.getName());
+                    return o1._getName().compareToIgnoreCase(o2._getName());
 
                 }
 
@@ -2044,7 +2044,7 @@ public class YoutubeDashV2 extends PluginForHost {
                             groupMenu.add(new JMenuItem(new BasicAction() {
                                 {
 
-                                    setName(CFG_GUI.EXTENDED_VARIANT_NAMES_ENABLED.isEnabled() ? v.getExtendedName() : v.getName());
+                                    setName(CFG_GUI.EXTENDED_VARIANT_NAMES_ENABLED.isEnabled() ? v._getExtendedName() : v._getName());
 
                                 }
 
@@ -2162,7 +2162,7 @@ public class YoutubeDashV2 extends PluginForHost {
                         for (final YoutubeVariantInterface v : list) {
                             groupMenu.add(new JMenuItem(new BasicAction() {
                                 {
-                                    setName(CFG_GUI.EXTENDED_VARIANT_NAMES_ENABLED.isEnabled() ? v.getExtendedName() : v.getName());
+                                    setName(CFG_GUI.EXTENDED_VARIANT_NAMES_ENABLED.isEnabled() ? v._getExtendedName() : v._getName());
                                 }
 
                                 @Override
