@@ -5,7 +5,6 @@ import java.awt.Point;
 import java.lang.reflect.Field;
 import java.util.ArrayList;
 
-import javax.swing.Box;
 import javax.swing.ImageIcon;
 import javax.swing.JComponent;
 import javax.swing.JLabel;
@@ -35,9 +34,9 @@ import org.jdownloader.updatev2.SmartRlyExitRequest;
 
 public abstract class AbstractConfigPanel extends SwitchPanel implements DirectFeedbackInterface {
 
-    private static final String     PAIR_CONDITION   = "PAIR_CONDITION";
-    private static final long       serialVersionUID = -8483438886830392777L;
-    private java.util.List<Pair<?>> pairs;
+    private static final String       PAIR_CONDITION   = "PAIR_CONDITION";
+    private static final long         serialVersionUID = -8483438886830392777L;
+    protected java.util.List<Pair<?>> pairs;
 
     public AbstractConfigPanel() {
         this(15);
@@ -149,14 +148,18 @@ public abstract class AbstractConfigPanel extends SwitchPanel implements DirectF
 
     private String getFieldNameOf(Object input) {
         if (input instanceof Component) {
-            if (((Component) input).getName() != null) return ((Component) input).getName();
+            if (((Component) input).getName() != null) {
+                return ((Component) input).getName();
+            }
         }
         for (Field f : getClass().getDeclaredFields()) {
             try {
 
                 if (f.getType() == input.getClass()) {
                     f.setAccessible(true);
-                    if (f.get(this) == input) { return f.getName(); }
+                    if (f.get(this) == input) {
+                        return f.getName();
+                    }
 
                 }
             } catch (Exception e) {
@@ -221,25 +224,21 @@ public abstract class AbstractConfigPanel extends SwitchPanel implements DirectF
     public abstract String getTitle();
 
     public <T extends SettingsComponent> Pair<T> addPair(String name, BooleanKeyHandler enabled, T comp) {
-        String lblConstraints = (enabled == null ? "" : "split 3,") + "gapleft" + getLeftGap() + ",aligny " + (comp.isMultiline() ? "top" : "center");
-
+        String lblConstraints = "gapleft" + getLeftGap() + ",aligny " + (comp.isMultiline() ? "top" : "center");
         return addPair(name, lblConstraints, enabled, comp);
-
     }
 
     public <T extends SettingsComponent> Pair<T> addPair(String name, String lblConstraints, BooleanKeyHandler enabled, T comp) {
-        JLabel lbl;
-        add(lbl = createLabel(name), lblConstraints);
+        JLabel lbl = createLabel(name);
+        add(lbl, lblConstraints);
         ExtCheckBox cb = null;
+        String con = "pushx,growy";
         if (enabled != null) {
             cb = new ExtCheckBox(enabled, lbl, (JComponent) comp);
-
             SwingUtils.setOpaque(cb, false);
-            add(Box.createHorizontalGlue(), "pushx,growx");
-            add(cb, "width " + cb.getPreferredSize().width + "!,aligny " + (comp.isMultiline() ? "top" : "center"));
+            add(cb, "width " + cb.getPreferredSize().width + "!, aligny " + (comp.isMultiline() ? "top" : "center"));
             cb.setToolTipText(_GUI._.AbstractConfigPanel_addPair_enabled());
         }
-        String con = "pushx,growy";
         if (comp.getConstraints() != null) {
             con += "," + comp.getConstraints();
         }
