@@ -108,9 +108,11 @@ public class XdDiskCom extends PluginForDecrypt {
                     dl.setFinalFileName(Encoding.htmlDecode(filename.trim()));
                     dl.setAvailable(true);
                 }
+                final String linkID = getHost() + "://" + fuid;
                 try {
                     dl.setLinkID(fuid);
                 } catch (Throwable e) {
+                    dl.setProperty("LINKDUPEID", linkID);
                 }
                 list.add(link);
                 ret.add(dl);

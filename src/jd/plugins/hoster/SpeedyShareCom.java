@@ -408,9 +408,11 @@ public class SpeedyShareCom extends PluginForHost {
         // not sure of remote link formats....
         fuid = new Regex(downloadLink.getDownloadURL(), "speedyshare\\.com/(?:(?!remote)|files/)?([A-Z0-9]+)").getMatch(0);
         if (fuid != null) {
+            final String linkID = getHost() + "://" + fuid;
             try {
-                downloadLink.setLinkID(fuid);
+                downloadLink.setLinkID(linkID);
             } catch (final Throwable e) {
+                downloadLink.setProperty("LINKDUPEID", linkID);
             }
         }
     }

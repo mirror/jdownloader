@@ -60,10 +60,11 @@ public class GamMapCm extends PluginForHost {
         if (fuid == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, "Error could not determine fuid");
         }
+        final String linkID = getHost() + "://" + fuid;
         try {// JD2 Only Code!
-            link.setLinkID(fuid);
+            link.setLinkID(linkID);
         } catch (Throwable e) {
-            link.setProperty("LINKDUPEID", fuid);
+            link.setProperty("LINKDUPEID", linkID);
         }
         // get host
         final String host = new Regex(link.getDownloadURL(), "https?://[^/]+").getMatch(-1);

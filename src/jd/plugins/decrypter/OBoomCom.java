@@ -29,15 +29,21 @@ public class OBoomCom extends PluginForDecrypt {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         br.getPage(wwwURL + "guestsession?source=" + APPID);
         String guestSession = br.getRegex("200,.*?\"(.*?)\"").getMatch(0);
-        if (guestSession == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (guestSession == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         String UID = new Regex(parameter.toString(), "#(share|folder)/([A-Z0-9\\-]+)").getMatch(1);
-        if (UID == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (UID == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         String name = null;
         if (parameter.toString().contains("#share")) {
             br.getPage(wwwURL + guestSession + "/share?share=" + UID);
             String files = br.getRegex("\"files\":\\[(.*?)\\]").getMatch(0);
             name = br.getRegex("\"name\":\"(.*?)\"").getMatch(0);
-            if (name != null && "undefined".equals(name)) name = null;
+            if (name != null && "undefined".equals(name)) {
+                name = null;
+            }
             if (files != null) {
                 String fileIDs[] = new Regex(files, "\"(.*?)\"").getColumn(0);
                 for (String fileID : fileIDs) {
@@ -57,16 +63,22 @@ public class OBoomCom extends PluginForDecrypt {
                     final String state = getJson(f, "state");
                     if (fuid != null && "file".equalsIgnoreCase(type)) {
                         DownloadLink dl = createDownloadlink("https://www.oboom.com/#" + fuid);
-                        if ("online".equalsIgnoreCase(state))
+                        if ("online".equalsIgnoreCase(state)) {
                             dl.setAvailable(true);
-                        else
+                        } else {
                             dl.setAvailable(false);
-                        if (fname != null) dl.setName(fname);
-                        if (fsize != null) dl.setDownloadSize(Long.parseLong(fsize));
+                        }
+                        if (fname != null) {
+                            dl.setName(fname);
+                        }
+                        if (fsize != null) {
+                            dl.setDownloadSize(Long.parseLong(fsize));
+                        }
+                        final String linkID = getHost() + "://" + fuid;
                         try {
-                            dl.setLinkID(fuid);
+                            dl.setLinkID(linkID);
                         } catch (final Throwable e) {
-                            // not in JD2
+                            dl.setProperty("LINKDUPEID", linkID);
                         }
                         decryptedLinks.add(dl);
                     }
@@ -86,9 +98,13 @@ public class OBoomCom extends PluginForDecrypt {
     }
 
     private String getJson(final String source, final String key) {
-        if (source == null) return null;
+        if (source == null) {
+            return null;
+        }
         String result = new Regex(source, "\"" + key + "\":\"([^\"]+)").getMatch(0);
-        if (result == null) result = new Regex(source, "\"" + key + "\":(\\d+|true|false)").getMatch(0);
+        if (result == null) {
+            result = new Regex(source, "\"" + key + "\":(\\d+|true|false)").getMatch(0);
+        }
         return result;
     }
 }

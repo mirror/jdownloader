@@ -82,9 +82,11 @@ public class OneFichierCom extends PluginForHost {
         String[] idhostandName = new Regex(url, "(https?://)(.*?\\.)(.*?)(/|$)").getRow(0);
         if (idhostandName != null) {
             link.setUrlDownload(idhostandName[0] + idhostandName[1] + idhostandName[2]);
+            final String linkID = getHost() + "://" + idhostandName[1];
             try {
-                link.setLinkID(idhostandName[1]);
+                link.setLinkID(linkID);
             } catch (final Throwable t) {
+                link.setProperty("LINKDUPEID", linkID);
             }
         }
     }

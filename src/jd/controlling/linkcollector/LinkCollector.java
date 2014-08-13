@@ -6,6 +6,7 @@ import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.lang.ref.WeakReference;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -198,31 +199,7 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
     /**
      * NOTE: only access these fields inside the IOEQ
      */
-    private HashSet<String>                                            dupeCheckMap       = new HashSet<String>() {
-                                                                                              public boolean add(String e) {
-                                                                                                  // if (LinkCollector.this.size() == 0 &&
-                                                                                                  // this.size() > 0) {
-                                                                                                  // System.out.println("MisMatch!");
-                                                                                                  // }
-                                                                                                  try {
-                                                                                                      return super.add(e);
-                                                                                                  } finally {
-                                                                                                      System.out.println("Added " + e + " = " + this);
-                                                                                                  }
-                                                                                              };
-
-                                                                                              public boolean remove(Object o) {
-                                                                                                  try {
-                                                                                                      return super.remove(o);
-                                                                                                  } finally {
-                                                                                                      System.out.println("removed " + o + " = " + this);
-                                                                                                      // if (LinkCollector.this.size() == 0
-                                                                                                      // && this.size() > 0) {
-                                                                                                      // System.out.println("MisMatch!");
-                                                                                                      // }
-                                                                                                  }
-                                                                                              };
-                                                                                          };
+    private final HashMap<String, WeakReference<CrawledLink>>          dupeCheckMap       = new HashMap<String, WeakReference<CrawledLink>>();
     private HashMap<String, CrawledPackage>                            packageMap         = new HashMap<String, CrawledPackage>();
 
     /* sync on filteredStuff itself when accessing it */
@@ -532,7 +509,7 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
             @Override
             protected Void run() throws RuntimeException {
                 for (CrawledLink l : movechildren) {
-                    dupeCheckMap.add(l.getLinkID());
+                    putCrawledLinkByLinkID(l.getLinkID(), l);
                 }
                 return null;
             }
@@ -573,7 +550,7 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
                 try {
                     final LinkCollectingInformation info = link.getCollectingInfo();
                     if (info == null || info.getCollectingID() == getCollectingID()) {
-                        dupeCheckMap.add(link.getLinkID());
+                        putCrawledLinkByLinkID(link.getLinkID(), link);
                         LinkCollectingJob job = link.getSourceJob();
                         if (job != null) {
                             try {
@@ -747,7 +724,7 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
                     }
                     return null;
                 } catch (Throwable e) {
-                    dupeCheckMap.remove(link.getLinkID());
+                    removeCrawledLinkByLinkID(link);
                     logger.log(e);
                     if (e instanceof RuntimeException) {
                         throw (RuntimeException) e;
@@ -905,7 +882,7 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
                 @Override
                 protected Void run() throws RuntimeException {
                     try {
-                        if (checkDupe && !dupeCheckMap.add(filtered.getLinkID())) {
+                        if (checkDupe && getCrawledLinkByLinkID(filtered.getLinkID()) != null) {
                             /* clear references */
                             filtered.setSourceJob(null);
                             filtered.setMatchingFilter(null);
@@ -930,13 +907,11 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
             return;
         }
         for (CrawledLink l : links) {
-            String lid = l.getLinkID();
-            dupeCheckMap.remove(lid);
+            removeCrawledLinkByLinkID(l);
             removeFromMap(variousMap, l);
             removeFromMap(offlineMap, l);
             removeFromMap(hosterMap, l);
         }
-        System.out.println("Cleaned up " + dupeCheckMap);
     }
 
     public void clearFilteredLinks() {
@@ -1093,8 +1068,8 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
 
                         /* avoid additional linkCheck when linkID already exists */
                         /* update dupeCheck map */
-                        String id = link.getLinkID();
-                        if (!dupeCheckMap.add(id)) {
+                        final String id = link.getLinkID();
+                        if (getCrawledLinkByLinkID(id) != null) {
                             /* clear references */
                             logger.info("Filtered Dupe: " + id);
                             link.setCollectingInfo(null);
@@ -1118,8 +1093,8 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
                     @Override
                     protected Void run() throws RuntimeException {
                         /* update dupeCheck map */
-                        String id = link.getLinkID();
-                        if (!dupeCheckMap.add(id)) {
+                        final String id = link.getLinkID();
+                        if (getCrawledLinkByLinkID(id) != null) {
                             /* clear references */
                             link.setCollectingInfo(null);
                             link.setSourceJob(null);
@@ -1211,14 +1186,11 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
                         // setActiveVariantForLink(downloadLink, GenericVariants.ORIGINAL);
                         String oldLinkID = downloadLink.getLinkID();
                         downloadLink.setVariant(GenericVariants.ORIGINAL);
-                        if (!dupeCheckMap.add(downloadLink.getLinkID())) {
+                        if (getCrawledLinkByLinkID(downloadLink.getLinkID()) != null) {
                             System.out.println("Variant Dupe");
                             return Boolean.FALSE;
                         }
-                        dupeCheckMap.remove(oldLinkID);
-
                         downloadLink.setVariantSupport(true);
-
                         return Boolean.TRUE;
                     }
 
@@ -1272,12 +1244,11 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
 
     // clean up offline and various map
     private void removeFromMap(HashMap<String, java.util.List<CrawledLink>> idListMap, CrawledLink l) {
-
-        Iterator<Entry<String, java.util.List<CrawledLink>>> it = idListMap.entrySet().iterator();
+        final Iterator<Entry<String, java.util.List<CrawledLink>>> it = idListMap.entrySet().iterator();
         while (it.hasNext()) {
-            Entry<String, java.util.List<CrawledLink>> elem = it.next();
-            String identifier = elem.getKey();
-            java.util.List<CrawledLink> mapElems = elem.getValue();
+            final Entry<String, java.util.List<CrawledLink>> elem = it.next();
+            final String identifier = elem.getKey();
+            final java.util.List<CrawledLink> mapElems = elem.getValue();
             if (mapElems != null && mapElems.remove(l)) {
                 if (mapElems.size() == 0) {
                     idListMap.remove(identifier);
@@ -1288,11 +1259,11 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
     }
 
     private String getIDFromMap(HashMap<String, java.util.List<CrawledLink>> idListMap, CrawledLink l) {
-        Iterator<Entry<String, java.util.List<CrawledLink>>> it = idListMap.entrySet().iterator();
+        final Iterator<Entry<String, java.util.List<CrawledLink>>> it = idListMap.entrySet().iterator();
         while (it.hasNext()) {
-            Entry<String, java.util.List<CrawledLink>> elem = it.next();
-            String identifier = elem.getKey();
-            java.util.List<CrawledLink> mapElems = elem.getValue();
+            final Entry<String, java.util.List<CrawledLink>> elem = it.next();
+            final String identifier = elem.getKey();
+            final java.util.List<CrawledLink> mapElems = elem.getValue();
             if (mapElems != null && mapElems.contains(l)) {
                 return identifier;
             }
@@ -1373,7 +1344,7 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
                                         link.getDownloadLink().setNodeChangeListener(link);
                                     }
                                     /* keep maps up2date */
-                                    dupeCheckMap.add(link.getLinkID());
+                                    putCrawledLinkByLinkID(link.getLinkID(), link);
                                     java.util.List<CrawledLink> list = getIdentifiedMap(link.getHost(), hosterMap);
                                     list.add(link);
                                 }
@@ -2070,21 +2041,72 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
                 String old = link.getLinkID();
                 LinkVariant oldVariant = link.getDefaultPlugin().getActiveVariantByLink(link);
                 link.getDefaultPlugin().setActiveVariantByLink(link, variant);
-                HashSet<String> ch = dupeCheckMap;
-                String newLinkID = link.getLinkID();
-                if (dupeCheckMap.contains(newLinkID)) {
+                final String newLinkID = link.getLinkID();
+                if (getCrawledLinkByLinkID(newLinkID) != null) {
                     logger.info("Dupecheck Filtered Variant");
                     // variant available
                     link.getDefaultPlugin().setActiveVariantByLink(link, oldVariant);
                     return null;
                 }
-                dupeCheckMap.remove(old);
-                dupeCheckMap.add(link.getLinkID());
-
                 return null;
             }
 
         });
+    }
+
+    private CrawledLink getCrawledLinkByLinkID(final String linkID) {
+        final WeakReference<CrawledLink> item = dupeCheckMap.get(linkID);
+        if (item != null) {
+            final CrawledLink itemLink = item.get();
+            if (itemLink == null || itemLink.getParentNode() == null || itemLink.getParentNode().getControlledBy() == null) {
+                dupeCheckMap.remove(linkID);
+                return itemLink;
+            } else if (StringUtils.equals(itemLink.getLinkID(), linkID)) {
+                return itemLink;
+            } else {
+                logger.warning("DupeCheckMap pollution detected: " + linkID);
+                dupeCheckMap.remove(linkID);
+                if (putCrawledLinkByLinkID(itemLink.getLinkID(), itemLink) == null) {
+                    return getCrawledLinkByLinkID(linkID);
+                } else {
+                    logger.warning("Failed to clean DupeCheckMap pollution: " + itemLink.getLinkID());
+                }
+            }
+        }
+        return null;
+    }
+
+    private boolean removeCrawledLinkByLinkID(final CrawledLink link) {
+        final String linkID = link.getLinkID();
+        final CrawledLink itemLink = getCrawledLinkByLinkID(linkID);
+        if (itemLink == link) {
+            dupeCheckMap.remove(linkID);
+        } else if (itemLink != null) {
+            logger.warning("Failed to remove item from DupeCheckMap: " + linkID);
+            return false;
+        }
+        return true;
+    }
+
+    private CrawledLink putCrawledLinkByLinkID(final String linkID, final CrawledLink link) {
+        final WeakReference<CrawledLink> item = dupeCheckMap.put(linkID, new WeakReference<CrawledLink>(link));
+        if (item != null) {
+            final CrawledLink itemLink = item.get();
+            if (itemLink != null) {
+                final String itemLinkID = itemLink.getLinkID();
+                if (itemLink == link) {
+                    return null;
+                } else if (StringUtils.equals(itemLinkID, linkID)) {
+                    return itemLink;
+                } else {
+                    logger.warning("DupeCheckMap pollution detected: " + linkID);
+                    if (putCrawledLinkByLinkID(itemLinkID, itemLink) != null) {
+                        logger.warning("Failed to clean DupeCheckMap pollution: " + itemLinkID);
+                    }
+                }
+            }
+        }
+        return null;
     }
 
     public boolean containsLinkId(final String linkID) {
@@ -2092,9 +2114,7 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
 
             @Override
             protected Boolean run() throws RuntimeException {
-                HashSet<String> dc = dupeCheckMap;
-                return dc.contains(linkID);
-
+                return getCrawledLinkByLinkID(linkID) != null;
             }
 
         }));

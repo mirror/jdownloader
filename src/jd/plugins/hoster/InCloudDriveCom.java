@@ -162,9 +162,11 @@ public class InCloudDriveCom extends PluginForHost {
             logger.warning("Can not determin hashTag");
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         } else if (hashTag[1] != null) {
+            final String linkID = getHost() + "://" + hashTag[1];
             try {
-                dl.setLinkID(hashTag[1]);
+                dl.setLinkID(linkID);
             } catch (final Throwable e) {
+                dl.setProperty("LINKDUPEID", linkID);
             }
         }
     }

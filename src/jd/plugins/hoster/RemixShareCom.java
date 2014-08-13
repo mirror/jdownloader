@@ -58,10 +58,11 @@ public class RemixShareCom extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         link.setUrlDownload(pnd + "download/" + fuid);
+        final String linkID = getHost() + "://" + fuid;
         try {
-            link.setLinkID(fuid);
+            link.setLinkID(linkID);
         } catch (Throwable e) {
-            link.setProperty("LINKDUPEID", fuid);
+            link.setProperty("LINKDUPEID", linkID);
         }
     }
 

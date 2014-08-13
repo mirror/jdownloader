@@ -60,10 +60,11 @@ public class OBoomCom extends PluginForHost {
         // website redirects to domain/#fuid
         link.setUrlDownload(link.getDownloadURL().replaceAll("\\.com/#id=", "\\.com/#"));
         link.setUrlDownload(link.getDownloadURL().replaceAll("\\.com/#/", "\\.com/#"));
+        final String linkID = getHost() + "://" + getFileID(link);
         try {
-            link.setLinkID(getFileID(link));
+            link.setLinkID(linkID);
         } catch (Throwable e) {
-            link.setProperty("LINKDUPEID", getFileID(link));
+            link.setProperty("LINKDUPEID", linkID);
         }
     }
 

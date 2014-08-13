@@ -811,12 +811,16 @@ public class DownloadLink extends Property implements Serializable, AbstractPack
         return this.getStringProperty(PROPERTY_FORCEDFILENAME, null);
     }
 
+    public String getSetLinkID() {
+        return this.getStringProperty(PROPERTY_LINKDUPEID, null);
+    }
+
     public String getLinkID() {
-        String ret = this.getStringProperty(PROPERTY_LINKDUPEID, null);
-        if (ret == null) {
+        final String linkID = getSetLinkID();
+        if (StringUtils.isEmpty(linkID)) {
             return getDownloadURL();
         }
-        return ret;
+        return linkID;
     }
 
     /**
@@ -939,7 +943,6 @@ public class DownloadLink extends Property implements Serializable, AbstractPack
         setEnabled(true);
         setLinkInfo(null);
         setExtractionStatus(null);
-
         if (resetPlugins != null) {
             for (PluginForHost resetPlugin : resetPlugins) {
                 try {
@@ -1297,8 +1300,8 @@ public class DownloadLink extends Property implements Serializable, AbstractPack
      *            Die URL von der heruntergeladen werden soll
      */
     public void setUrlDownload(String urlDownload) {
-        String previousURLDownload = this.urlDownload;
-        String linkID = getLinkID();
+        final String previousURLDownload = getDownloadURL();
+        final String previousLinkID = getLinkID();
         if (urlDownload != null) {
             if (previousURLDownload != null && previousURLDownload.equals(urlDownload)) {
                 return;
@@ -1308,11 +1311,9 @@ public class DownloadLink extends Property implements Serializable, AbstractPack
             this.urlDownload = null;
         }
         cachedName = null;
-        if (previousURLDownload != null && !previousURLDownload.equals(urlDownload)) {
-            if (linkID == null || previousURLDownload.equals(linkID)) {
-                /* downloadURL changed, so set original one as linkID, so all dupemaps still work */
-                setLinkID(previousURLDownload);
-            }
+        if (previousLinkID == null && previousURLDownload != null && !previousURLDownload.equals(urlDownload)) {
+            /* downloadURL changed, so set original one as linkID, so all dupemaps still work */
+            setLinkID(previousURLDownload);
         }
     }
 
@@ -1839,9 +1840,6 @@ public class DownloadLink extends Property implements Serializable, AbstractPack
         String orgLinkID = getStringProperty("ORG_LINKID");
         if (orgLinkID == null) {
             String linkID = getLinkID();
-            if (StringUtils.isEmpty(linkID)) {
-                linkID = getDownloadURL();
-            }
             setProperty("ORG_LINKID", linkID);
         }
         this.setProperty("VARIANT", variant._getUniqueId());
@@ -1851,7 +1849,6 @@ public class DownloadLink extends Property implements Serializable, AbstractPack
             getTempProperties().setProperty("VARIANT", null);
         }
         setLinkID(getStringProperty("ORG_LINKID") + "_" + variant._getUniqueId());
-
     }
 
     public <T extends LinkVariant> T getVariant(Class<T> type) {

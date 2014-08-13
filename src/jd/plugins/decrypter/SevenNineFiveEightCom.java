@@ -97,20 +97,26 @@ public class SevenNineFiveEightCom extends PluginForDecrypt {
         for (String filter : filted) {
             String link = new Regex(filter, "(" + profile + "/down_\\d+\\.html)").getMatch(0);
             String folder = new Regex(filter, "(" + profile + "/folder\\-\\d+)").getMatch(0);
-            if (link == null && folder == null) break;
+            if (link == null && folder == null) {
+                break;
+            }
             String fuid = new Regex(link, "(\\d+)\\.html").getMatch(0);
             if (link != null && !list.contains(link)) {
                 final DownloadLink dl = createDownloadlink(link);
                 String filename = new Regex(filter, "<td class=\"cb\"><a href=\"" + link + "\"[^>]+>(.*?)</a></td>").getMatch(0);
                 String filesize = new Regex(filter, ">(\\d+(\\.\\d+)? ?(KB|MB|GB))</td>").getMatch(0);
-                if (filesize != null) dl.setDownloadSize(SizeFormatter.getSize(filesize));
+                if (filesize != null) {
+                    dl.setDownloadSize(SizeFormatter.getSize(filesize));
+                }
                 if (filename != null) {
                     dl.setFinalFileName(filename);
                     dl.setAvailable(true);
                 }
+                final String linkID = getHost() + "://" + fuid;
                 try {
-                    dl.setLinkID(fuid);
+                    dl.setLinkID(linkID);
                 } catch (Throwable e) {
+                    dl.setProperty("LINKDUPEID", linkID);
                 }
                 list.add(link);
                 ret.add(dl);

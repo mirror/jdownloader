@@ -107,10 +107,11 @@ public class UploadBoyCom extends PluginForHost {
             ref = "http://www.facebook.com/groups/" + (long) Math.abs(Math.pow(id.hashCode(), 2)) + "/";
         }
         link.setProperty("REF", ref);
+        final String linkID = getHost() + "://" + id;
         try {
-            link.setLinkID(id);
+            link.setLinkID(linkID);
         } catch (Throwable e) {
-            link.setProperty("LINKDUPEID", id);
+            link.setProperty("LINKDUPEID", linkID);
         }
         link.setUrlDownload(link.getDownloadURL().replaceAll(importedHost, desiredHost));
 
