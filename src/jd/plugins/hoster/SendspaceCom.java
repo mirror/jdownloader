@@ -17,13 +17,15 @@
 package jd.plugins.hoster;
 
 import java.io.File;
-import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicLong;
 
 import jd.PluginWrapper;
+import jd.config.ConfigContainer;
+import jd.config.ConfigEntry;
 import jd.config.Property;
+import jd.config.SubConfiguration;
 import jd.http.Browser;
 import jd.http.Cookie;
 import jd.http.Cookies;
@@ -51,18 +53,21 @@ public class SendspaceCom extends PluginForHost {
     public SendspaceCom(PluginWrapper wrapper) {
         super(wrapper);
         enablePremium("http://www.sendspace.com/joinpro_pay.html");
+        setConfigElements();
         setStartIntervall(5000l);
     }
 
-    private final String      JDOWNLOADERAPIKEY = "T1U5ODVNT1FDTQ==";
+    private final static String SSL_CONNECTION    = "SSL_CONNECTION";
+
+    private final String        JDOWNLOADERAPIKEY = "T1U5ODVNT1FDTQ==";
     // private static final String JDUSERNAME = "cHNwem9ja2Vyc2NlbmVqZA==";
-    private String            CURRENTERRORCODE;
-    private String            SESSIONTOKEN;
-    private String            SESSIONKEY;
-    private static Object     LOCK              = new Object();
-    private static Object     ctrlLock          = new Object();
-    private static AtomicLong ctrlLast          = new AtomicLong(0);
-    private String            COOKIE_HOST       = "http://sendspace.com";
+    private String              CURRENTERRORCODE;
+    private String              SESSIONTOKEN;
+    private String              SESSIONKEY;
+    private static Object       LOCK              = new Object();
+    private static Object       ctrlLock          = new Object();
+    private static AtomicLong   ctrlLast          = new AtomicLong(0);
+    private String              COOKIE_HOST       = "http://sendspace.com";
 
     // TODO: Add handling for password protected files for handle premium,
     // actually it only works for handle free
@@ -92,7 +97,7 @@ public class SendspaceCom extends PluginForHost {
     }
 
     @Override
-    public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws IOException, InterruptedException, PluginException {
+    public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws Exception {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         prepBrowser();
@@ -127,7 +132,7 @@ public class SendspaceCom extends PluginForHost {
 
     }
 
-    private AvailableStatus handleOldAvailableStatus(final DownloadLink downloadLink) throws IOException, InterruptedException, PluginException {
+    private AvailableStatus handleOldAvailableStatus(final DownloadLink downloadLink) throws Exception {
         // one thread at a time, with delay!
         synchronized (ctrlLock) {
             try {
@@ -140,7 +145,7 @@ public class SendspaceCom extends PluginForHost {
                 }
                 String url = downloadLink.getDownloadURL();
                 if (!url.contains("/pro/dl/")) {
-                    br.getPage(url);
+                    getPage(this.br, url);
                     if (br.containsHTML("The page you are looking for is  not available\\. It has either been moved") && url.contains("X")) {
                         url = url.replaceAll("X", "x");
                         downloadLink.setUrlDownload(url);
@@ -269,7 +274,7 @@ public class SendspaceCom extends PluginForHost {
             // reconnects
             String linkurl = checkDirectLink(downloadLink, "savedlink");
             if (linkurl == null) {
-                br.getPage(downloadLink.getDownloadURL());
+                getPage(this.br, downloadLink.getDownloadURL());
                 if (br.containsHTML("You have reached your daily download limit")) {
                     int minutes = 0, hours = 0;
                     String tmphrs = br.getRegex("again in.*?(\\d+)h:.*?m or").getMatch(0);
@@ -437,7 +442,7 @@ public class SendspaceCom extends PluginForHost {
         Browser.setRequestIntervalLimitGlobal(this.getHost(), 750);
     }
 
-    public void login(final Account account, final boolean force) throws IOException, PluginException {
+    public void login(final Account account, final boolean force) throws Exception {
         synchronized (LOCK) {
             try {
                 /** Load cookies */
@@ -545,7 +550,7 @@ public class SendspaceCom extends PluginForHost {
         logger.warning("API failure: " + parameter + " is null");
     }
 
-    private void createSessToken() throws IOException, PluginException {
+    private void createSessToken() throws Exception {
         apiRequest("http://api.sendspace.com/rest/", "?method=auth.createtoken&api_key=" + Encoding.Base64Decode(JDOWNLOADERAPIKEY) + "&api_version=1.0&response_format=xml&app_version=0.1");
         SESSIONTOKEN = get("token");
         if (SESSIONTOKEN == null) {
@@ -568,12 +573,12 @@ public class SendspaceCom extends PluginForHost {
         }
     }
 
-    private void apiRequest(final String parameter, final String data) throws IOException, PluginException {
-        br.getPage(parameter + data);
+    private void apiRequest(final String parameter, final String data) throws Exception {
+        getPage(this.br, parameter + data);
         handleAPIErrors();
     }
 
-    private void apiLogin(final String username, final String password) throws IOException, PluginException {
+    private void apiLogin(final String username, final String password) throws Exception {
         apiRequest("http://api.sendspace.com/rest/", "?method=auth.login&token=" + SESSIONTOKEN + "&user_name=" + username + "&tokened_password=" + JDHash.getMD5(SESSIONTOKEN + JDHash.getMD5(password).toLowerCase()));
         SESSIONKEY = get("session_key");
         if (SESSIONKEY == null) {
@@ -627,6 +632,28 @@ public class SendspaceCom extends PluginForHost {
             }
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
+    }
+
+    private void getPage(final Browser br, String page) throws Exception {
+        page = fixLinkSSL(page);
+        br.getPage(page);
+    }
+
+    private static String fixLinkSSL(String link) {
+        if (checkSsl()) {
+            link = link.replace("http://", "https://");
+        } else {
+            link = link.replace("https://", "http://");
+        }
+        return link;
+    }
+
+    private static boolean checkSsl() {
+        return SubConfiguration.getConfig("sendspace.com").getBooleanProperty(SSL_CONNECTION, false);
+    }
+
+    private void setConfigElements() {
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, this.getPluginConfig(), SSL_CONNECTION, JDL.L("plugins.hoster.SendspaceCom.preferSSL", "Use Secure Communication over SSL (HTTPS://)")).setDefaultValue(false));
     }
 
     @Override

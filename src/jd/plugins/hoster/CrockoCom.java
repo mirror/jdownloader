@@ -24,7 +24,10 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import jd.PluginWrapper;
+import jd.config.ConfigContainer;
+import jd.config.ConfigEntry;
 import jd.config.Property;
+import jd.config.SubConfiguration;
 import jd.http.Browser;
 import jd.http.Cookie;
 import jd.http.Cookies;
@@ -49,16 +52,18 @@ import org.appwork.utils.formatter.TimeFormatter;
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "easy-share.com", "crocko.com" }, urls = { "sgru3465979hg354uigUNUSED_REGEX879t24uj", "https?://(www\\.)?(easy\\-share|crocko)\\.com/(?!us|en|pt|accounts|billing|f/|mc)([A-Z0-9]+/?|\\d+)" }, flags = { 0, 2 })
 public class CrockoCom extends PluginForHost {
 
-    private static AtomicBoolean longwait     = new AtomicBoolean(false);
-    private static final String  MAINPAGE     = "http://www.crocko.com/";
-    private static final String  FILENOTFOUND = "Requested file is deleted";
-    private static final String  ONLY4PREMIUM = ">You need Premium membership to download this file";
-    private static Object        LOCK         = new Object();
-    private static AtomicInteger maxPrem      = new AtomicInteger(1);
+    private final static String  SSL_CONNECTION = "SSL_CONNECTION";
+    private static AtomicBoolean longwait       = new AtomicBoolean(false);
+    private static final String  MAINPAGE       = "http://www.crocko.com/";
+    private static final String  FILENOTFOUND   = "Requested file is deleted";
+    private static final String  ONLY4PREMIUM   = ">You need Premium membership to download this file";
+    private static Object        LOCK           = new Object();
+    private static AtomicInteger maxPrem        = new AtomicInteger(1);
 
     public CrockoCom(PluginWrapper wrapper) {
         super(wrapper);
         this.enablePremium("http://www.crocko.com/billing");
+        setConfigElements();
     }
 
     public void correctDownloadLink(final DownloadLink link) {
@@ -175,7 +180,7 @@ public class CrockoCom extends PluginForHost {
         }
 
         if (id == null) {
-            br.getPage(downloadLink.getDownloadURL());
+            getPage(this.br, downloadLink.getDownloadURL());
         }
         if (br.containsHTML("There is another download in progress from your IP")) {
             throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 15 * 60 * 1000l);
@@ -192,7 +197,7 @@ public class CrockoCom extends PluginForHost {
             final Browser rcBr = br.cloneBrowser();
             /* follow redirect needed as google redirects to another domain */
             rcBr.setFollowRedirects(true);
-            rcBr.getPage("http://api.recaptcha.net/challenge?k=" + id);
+            getPage(rcBr, "http://api.recaptcha.net/challenge?k=" + id);
             String challenge = rcBr.getRegex("challenge.*?:.*?'(.*?)',").getMatch(0);
             String server = rcBr.getRegex("server.*?:.*?'(.*?)',").getMatch(0);
             if (challenge == null || server == null) {
@@ -256,7 +261,7 @@ public class CrockoCom extends PluginForHost {
         requestFileInformation(downloadLink);
         login(account, false);
         br.setFollowRedirects(false);
-        br.getPage(downloadLink.getDownloadURL());
+        getPage(this.br, downloadLink.getDownloadURL());
         if (account.getBooleanProperty("free", false)) {
             doFree(downloadLink);
         } else {
@@ -313,7 +318,7 @@ public class CrockoCom extends PluginForHost {
                 br.setCookie(MAINPAGE, "language", "en");
                 // br.getPage(MAINPAGE);
                 br.getHeaders().put("Content-Type", "application/x-www-form-urlencoded");
-                br.postPage("https://www.crocko.com/accounts/login", "remember=1&success_llocation=&login=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()));
+                postPage(this.br, "https://www.crocko.com/accounts/login", "remember=1&success_llocation=&login=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()));
                 final String acc = br.getCookie(MAINPAGE, "logacc");
                 final String prem = br.getCookie(MAINPAGE, "PREMIUM");
                 if (acc == null) {
@@ -351,7 +356,7 @@ public class CrockoCom extends PluginForHost {
             account.setValid(false);
             return ai;
         }
-        br.getPage("/accounts");
+        getPage(this.br, "/accounts");
         if (account.getBooleanProperty("free", false) || br.containsHTML(">expired")) {
             try {
                 maxPrem.set(1);
@@ -410,6 +415,33 @@ public class CrockoCom extends PluginForHost {
 
     private void prepBrowser() {
         br.setCookie(MAINPAGE, "language", "en");
+    }
+
+    private void postPage(final Browser br, String page, final String postData) throws Exception {
+        page = fixLinkSSL(page);
+        br.postPage(page, postData);
+    }
+
+    private void getPage(final Browser br, String page) throws Exception {
+        page = fixLinkSSL(page);
+        br.getPage(page);
+    }
+
+    private static String fixLinkSSL(String link) {
+        if (checkSsl()) {
+            link = link.replace("http://", "https://");
+        } else {
+            link = link.replace("https://", "http://");
+        }
+        return link;
+    }
+
+    private static boolean checkSsl() {
+        return SubConfiguration.getConfig("crocko.com").getBooleanProperty(SSL_CONNECTION, false);
+    }
+
+    private void setConfigElements() {
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, this.getPluginConfig(), SSL_CONNECTION, JDL.L("plugins.hoster.CrockoCom.preferSSL", "Use Secure Communication over SSL (HTTPS://)")).setDefaultValue(false));
     }
 
     @Override

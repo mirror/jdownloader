@@ -441,17 +441,6 @@ public class SecureUploadEu extends PluginForHost {
         return dllink;
     }
 
-    private void getPage(String page) throws Exception {
-        page = fixLinkSSL(page);
-        br.getPage(page);
-        correctBR();
-    }
-
-    private void sendForm(final Form form) throws Exception {
-        br.submitForm(form);
-        correctBR();
-    }
-
     private void waitTime(long timeBefore, DownloadLink downloadLink) throws PluginException {
         int passedTime = (int) ((System.currentTimeMillis() - timeBefore) / 1000) - 1;
         /** Ticket Time */
@@ -795,6 +784,17 @@ public class SecureUploadEu extends PluginForHost {
             downloadLink.setProperty("premlink", dllink);
             dl.startDownload();
         }
+    }
+
+    private void sendForm(final Form form) throws Exception {
+        br.submitForm(form);
+        correctBR();
+    }
+
+    private void getPage(String page) throws Exception {
+        page = fixLinkSSL(page);
+        br.getPage(page);
+        correctBR();
     }
 
     private static String fixLinkSSL(String link) {

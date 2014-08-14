@@ -28,8 +28,6 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-import org.appwork.utils.formatter.SizeFormatter;
-
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "anonfiles.com" }, urls = { "https://(www\\.)?anonfiles\\.com/file/[a-z0-9]{32}" }, flags = { 0 })
 public class AnonFilesCom extends PluginForHost {
 
@@ -64,24 +62,37 @@ public class AnonFilesCom extends PluginForHost {
     public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
-        br.getPage(link.getDownloadURL());
-        if (br.containsHTML(">File does not exist|File Not Found<")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        final Regex fInfo = br.getRegex("<legend( class=\"[a-z0-9]+\")?><b>([^<>\"]*?)</b> \\(([^<>\"]*?)\\)</legend>");
-        final String filename = fInfo.getMatch(1);
-        final String filesize = fInfo.getMatch(2);
-        if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        br.getPage("https://anonfiles.com/api/v1/info/" + new Regex(link.getDownloadURL(), "([a-z0-9]{32})$").getMatch(0));
+        if (br.containsHTML("\"status\":1")) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
+        final String filename = br.getRegex("\"file_name\":\"([^<>\"]*?)\"").getMatch(0);
+        final String filesize = br.getRegex("\"file_size\":(\\d+)").getMatch(0);
+        if (filename == null || filesize == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         link.setName(Encoding.htmlDecode(filename.trim()));
-        link.setDownloadSize(SizeFormatter.getSize(filesize));
+        link.setDownloadSize(Long.parseLong(filesize));
         return AvailableStatus.TRUE;
     }
 
     @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
+        br.getPage(downloadLink.getDownloadURL());
+        /* Check this, maybe API fails sometimes */
+        if (br.containsHTML(">File does not exist|File Not Found<")) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
         final String dllink = br.getRegex("\"(https://cdn\\.anonfiles\\.com/[^<>\"]*?)\"").getMatch(0);
-        if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (dllink == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 0);
         if (dl.getConnection().getContentType().contains("html")) {
+            if (dl.getConnection().getResponseCode() == 404) {
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 404", 30 * 60 * 1000l);
+            }
             br.followConnection();
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
@@ -91,7 +102,9 @@ public class AnonFilesCom extends PluginForHost {
 
     private void fixFilename(final DownloadLink downloadLink) {
         String oldName = downloadLink.getFinalFileName();
-        if (oldName == null) oldName = downloadLink.getName();
+        if (oldName == null) {
+            oldName = downloadLink.getName();
+        }
         final String serverFilename = Encoding.htmlDecode(getFileNameFromHeader(dl.getConnection()));
         String newExtension = null;
         // some streaming sites do not provide proper file.extension within headers (Content-Disposition or the fail over getURL()).
@@ -102,11 +115,14 @@ public class AnonFilesCom extends PluginForHost {
         }
         if (newExtension != null && !oldName.endsWith(newExtension)) {
             String oldExtension = null;
-            if (oldName.contains(".")) oldExtension = oldName.substring(oldName.lastIndexOf("."));
-            if (oldExtension != null && oldExtension.length() <= 5)
+            if (oldName.contains(".")) {
+                oldExtension = oldName.substring(oldName.lastIndexOf("."));
+            }
+            if (oldExtension != null && oldExtension.length() <= 5) {
                 downloadLink.setFinalFileName(oldName.replace(oldExtension, newExtension));
-            else
+            } else {
                 downloadLink.setFinalFileName(oldName + newExtension);
+            }
         }
     }
 

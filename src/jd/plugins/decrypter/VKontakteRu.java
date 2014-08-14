@@ -1468,7 +1468,6 @@ public class VKontakteRu extends PluginForDecrypt {
         try {
             ((jd.plugins.hoster.VKontakteRuHoster) hostPlugin).login(this.br, aa, force);
         } catch (final PluginException e) {
-
             aa.setValid(false);
             return false;
         }

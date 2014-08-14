@@ -30,7 +30,10 @@ import java.util.concurrent.atomic.AtomicReference;
 import java.util.regex.Pattern;
 
 import jd.PluginWrapper;
+import jd.config.ConfigContainer;
+import jd.config.ConfigEntry;
 import jd.config.Property;
+import jd.config.SubConfiguration;
 import jd.http.Browser;
 import jd.http.Cookie;
 import jd.http.Cookies;
@@ -57,6 +60,8 @@ import org.appwork.utils.formatter.TimeFormatter;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "uptobox.com" }, urls = { "https?://(www\\.)?(uptobox|uptostream)\\.com/[a-z0-9]{12}" }, flags = { 2 })
 public class UpToBoxCom extends PluginForHost {
+
+    private final static String  SSL_CONNECTION               = "SSL_CONNECTION";
 
     private String               correctedBR                  = "";
     private static final String  PASSWORDTEXT                 = "<br><b>Passwor(d|t):</b> <input";
@@ -98,6 +103,7 @@ public class UpToBoxCom extends PluginForHost {
     public UpToBoxCom(PluginWrapper wrapper) {
         super(wrapper);
         this.enablePremium(COOKIE_HOST + "/premium.html");
+        this.setConfigElements();
     }
 
     // do not add @Override here to keep 0.* compatibility
@@ -366,13 +372,13 @@ public class UpToBoxCom extends PluginForHost {
     /**
      * Prevents more than one free download from starting at a given time. One step prior to dl.startDownload(), it adds a slot to maxFree
      * which allows the next singleton download to start, or at least try.
-     * 
+     *
      * This is needed because xfileshare(website) only throws errors after a final dllink starts transferring or at a given step within pre
      * download sequence. But this template(XfileSharingProBasic) allows multiple slots(when available) to commence the download sequence,
      * this.setstartintival does not resolve this issue. Which results in x(20) captcha events all at once and only allows one download to
      * start. This prevents wasting peoples time and effort on captcha solving and|or wasting captcha trading credits. Users will experience
      * minimal harm to downloading as slots are freed up soon as current download begins.
-     * 
+     *
      * @param controlFree
      *            (+1|-1)
      */
@@ -424,6 +430,7 @@ public class UpToBoxCom extends PluginForHost {
     }
 
     private void getPage(String page) throws Exception {
+        page = fixLinkSSL(page);
         for (int i = 1; i <= 3; i++) {
             br.getPage(page);
             if (br.containsHTML("No htmlCode read")) {
@@ -438,6 +445,7 @@ public class UpToBoxCom extends PluginForHost {
     }
 
     private void postPage(String page, String postdata) throws Exception {
+        page = fixLinkSSL(page);
         br.postPage(page, postdata);
         if (correctedBR.contains("No htmlCode read")) {
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error", 5 * 60 * 1000l);
@@ -823,6 +831,23 @@ public class UpToBoxCom extends PluginForHost {
         if (wait > 0) {
             sleep(wait * 1000l, downloadLink);
         }
+    }
+
+    private static String fixLinkSSL(String link) {
+        if (checkSsl()) {
+            link = link.replace("http://", "https://");
+        } else {
+            link = link.replace("https://", "http://");
+        }
+        return link;
+    }
+
+    private static boolean checkSsl() {
+        return SubConfiguration.getConfig("uptobox.com").getBooleanProperty(SSL_CONNECTION, false);
+    }
+
+    private void setConfigElements() {
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, this.getPluginConfig(), SSL_CONNECTION, JDL.L("plugins.hoster.UpToBox.preferSSL", "Use Secure Communication over SSL (HTTPS://)")).setDefaultValue(false));
     }
 
 }
