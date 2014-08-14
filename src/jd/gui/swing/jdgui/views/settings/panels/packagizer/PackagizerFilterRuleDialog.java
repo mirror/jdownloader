@@ -823,14 +823,14 @@ public class PackagizerFilterRuleDialog extends ConditionDialog<PackagizerRule> 
         rule.setOriginFilter(getOriginFilter());
         rule.setFiletypeFilter(getFiletypeFilter());
         rule.setMatchAlwaysFilter(getMatchAlwaysFilter());
-        rule.setDownloadDestination(cbDest.isSelected() ? fpDest.getPath() : null);
+        rule.setDownloadDestination(cbDest.isSelected() ? fpDest.getTxt().getText() : null);
 
         if (cbDest.isSelected()) {
-            DownloadPathHistoryManager.getInstance().add(fpDest.getPath());
+            DownloadPathHistoryManager.getInstance().add(fpDest.getTxt().getText());
 
         }
         if (cbMove.isSelected()) {
-            DownloadPathHistoryManager.getInstance().add(fpMove.getPath());
+            DownloadPathHistoryManager.getInstance().add(fpDest.getTxt().getText());
 
         }
         rule.setMoveto(cbMove.isSelected() ? fpMove.getPath() : null);
