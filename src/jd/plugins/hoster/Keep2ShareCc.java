@@ -79,13 +79,9 @@ public class Keep2ShareCc extends PluginForHost {
     private final String                   DOMAINS_PLAIN                = "((keep2share|k2s|k2share|keep2s|keep2)\\.cc)";
     private final String                   DOMAINS_HTTP                 = "(https?://(www\\.)?" + DOMAINS_PLAIN + ")";
 
+    /* User settings */
     private static final String            USE_API                      = "USE_API";
     private final static String            SSL_CONNECTION               = "SSL_CONNECTION";
-
-    private static Object                  LOCK                         = new Object();
-
-    private static AtomicReference<String> agent                        = new AtomicReference<String>(null);
-    private boolean                        prepBrSet                    = false;
 
     /* Connection stuff */
     private static final boolean           FREE_RESUME                  = true;
@@ -97,6 +93,12 @@ public class Keep2ShareCc extends PluginForHost {
     private static final boolean           ACCOUNT_PREMIUM_RESUME       = true;
     private static final int               ACCOUNT_PREMIUM_MAXCHUNKS    = 0;
     private static final int               ACCOUNT_PREMIUM_MAXDOWNLOADS = 20;
+
+    private static Object                  LOCK                         = new Object();
+
+    private static AtomicReference<String> agent                        = new AtomicReference<String>(null);
+    private boolean                        prepBrSet                    = false;
+    private boolean                        is_premiumonly               = false;
 
     @Override
     public void correctDownloadLink(final DownloadLink link) {
@@ -210,6 +212,7 @@ public class Keep2ShareCc extends PluginForHost {
             link.getLinkStatus().setStatusText("Cannot check status - unknown error state");
             return AvailableStatus.UNCHECKABLE;
         }
+        is_premiumonly = this.isPremiumOnly();
         final String filename = getFileName();
         final String filesize = getFileSize();
 
@@ -229,6 +232,9 @@ public class Keep2ShareCc extends PluginForHost {
         }
         if (filename == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        if (is_premiumonly) {
+            link.getLinkStatus().setStatusText("Only downloadable for premium users");
         }
         return AvailableStatus.TRUE;
     }
@@ -273,6 +279,7 @@ public class Keep2ShareCc extends PluginForHost {
     private void handle_Free(final DownloadLink downloadLink, final Account account) throws Exception {
         checkShowFreeDialog();
         String dllink = checkDirectLink(downloadLink, "k2sfreedirectlink");
+        ;
         if (dllink == null) {
             if (this.apiEnabled()) {
                 dllink = api_HandleFree(downloadLink, account);
@@ -282,7 +289,7 @@ public class Keep2ShareCc extends PluginForHost {
         }
         logger.info("dllink = " + dllink);
         boolean resume = FREE_RESUME;
-        int maxchunks = FREE_MAXDOWNLOADS;
+        int maxchunks = FREE_MAXCHUNKS;
         if (account != null) {
             resume = ACCOUNT_FREE_RESUME;
             maxchunks = ACCOUNT_FREE_MAXCHUNKS;
@@ -304,10 +311,14 @@ public class Keep2ShareCc extends PluginForHost {
         dl.startDownload();
     }
 
+    private boolean isPremiumOnly() {
+        return br.containsHTML("File size to large\\!<") || br.containsHTML("Only <b>Premium</b> access<br>") || br.containsHTML("only for premium members");
+    }
+
     private String site_doFree(final DownloadLink downloadLink, final Account account) throws Exception {
         handleGeneralErrors(account);
         br.setFollowRedirects(false);
-        if (br.containsHTML("File size to large\\!<") || br.containsHTML("Only <b>Premium</b> access<br>") || br.containsHTML("only for premium members")) {
+        if (isPremiumOnly()) {
             try {
                 throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);
             } catch (final Throwable e) {
@@ -775,6 +786,18 @@ public class Keep2ShareCc extends PluginForHost {
 
     private String api_HandleFree(final DownloadLink downloadLink, final Account account) throws Exception {
         final String fid = getFID(downloadLink);
+        // Disabled at the moment, is skippable via API
+        // /* API does not return information about this but we know it because we access the link via site before */
+        // if (is_premiumonly) {
+        // try {
+        // throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);
+        // } catch (final Throwable e) {
+        // if (e instanceof PluginException) {
+        // throw (PluginException) e;
+        // }
+        // }
+        // throw new PluginException(LinkStatus.ERROR_FATAL, "This file is only available to premium members");
+        // }
         postPageRaw(this.br, "http://keep2share.cc/api/v1/requestcaptcha", "");
         final String challenge = getJson(br.toString(), "challenge");
         final String captcha_url = getJson(br.toString(), "captcha_url").replace("\\", "");

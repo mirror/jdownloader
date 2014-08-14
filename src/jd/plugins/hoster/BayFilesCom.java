@@ -17,11 +17,13 @@
 package jd.plugins.hoster;
 
 import java.io.File;
-import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
 
 import jd.PluginWrapper;
+import jd.config.ConfigContainer;
+import jd.config.ConfigEntry;
+import jd.config.SubConfiguration;
 import jd.http.Browser;
 import jd.http.Browser.BrowserException;
 import jd.http.Cookie;
@@ -39,19 +41,23 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.utils.JDUtilities;
+import jd.utils.locale.JDL;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "bayfiles.net", "bayfiles.com" }, urls = { "http://(www\\.)?bayfiles\\.(com|net)/file/[A-Z0-9]+/[A-Za-z0-9]+/.+", "ri9hj59hzjkmv0zkDELETE_MEhgt85hjz09ckmv5ohzj049rghj4" }, flags = { 2, 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "bayfiles.net", "bayfiles.com" }, urls = { "https?://(www\\.)?bayfiles\\.(com|net)/file/[A-Z0-9]+/[A-Za-z0-9]+/.+", "ri9hj59hzjkmv0zkDELETE_MEhgt85hjz09ckmv5ohzj049rghj4" }, flags = { 2, 0 })
 public class BayFilesCom extends PluginForHost {
 
-    private static final String CAPTCHAFAILED = "\"Invalid captcha\"";
-    private static final String MAINPAGE      = "http://bayfiles.net";
-    private static Object       LOCK          = new Object();
+    private static final String CAPTCHAFAILED  = "\"Invalid captcha\"";
+    private static final String MAINPAGE       = "http://bayfiles.net";
+    private static Object       LOCK           = new Object();
+
+    private final static String SSL_CONNECTION = "SSL_CONNECTION";
 
     public BayFilesCom(PluginWrapper wrapper) {
         super(wrapper);
         this.enablePremium();
+        setConfigElements();
     }
 
     @Override
@@ -79,7 +85,7 @@ public class BayFilesCom extends PluginForHost {
     }
 
     @Override
-    public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
+    public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
         this.setBrowserExclusive();
         // Correct previously added links
         correctDownloadLink(link);
@@ -88,15 +94,19 @@ public class BayFilesCom extends PluginForHost {
         br.getHeaders().put("Accept", "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8");
         br.getHeaders().put("Accept-Language", "en-US,en;q=0.5");
         try {
-            br.getPage(link.getDownloadURL());
+            getPage(this.br, link.getDownloadURL());
         } catch (final BrowserException e) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        if (br.containsHTML("(Please check your link\\.<|>Invalid security token\\.|>The link is incorrect<|>The file you requested has been deleted<|>We have messed something up<)")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (br.containsHTML("(Please check your link\\.<|>Invalid security token\\.|>The link is incorrect<|>The file you requested has been deleted<|>We have messed something up<)")) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
         Regex fileInfo = br.getRegex("<h2>File:</h2>([\t\n\r ]+)?<p title=\"([^\"\\']+)\">[^\"\\']+, <strong>(.*?)</strong>");
         final String filename = fileInfo.getMatch(1);
         final String filesize = fileInfo.getMatch(2);
-        if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (filename == null || filesize == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         link.setName(Encoding.htmlDecode(filename.trim()));
         link.setDownloadSize(SizeFormatter.getSize(filesize));
         return AvailableStatus.TRUE;
@@ -109,35 +119,47 @@ public class BayFilesCom extends PluginForHost {
         // unlimited chunks)
         int chunks = 0;
         String dllink = br.getRegex("<div style=\"text\\-align: center;\">[\t\n\r ]+<a class=\"highlighted\\-btn\" href=\"(http://[^<>\"]*?)\"").getMatch(0);
-        if (dllink == null) dllink = getExactDllink();
+        if (dllink == null) {
+            dllink = getExactDllink();
+        }
         if (dllink == null) {
             chunks = 1;
             if (br.containsHTML("(has recently downloaded a file\\.|Upgrade to premium or wait)")) {
                 String reconnectWait = br.getRegex("Upgrade to premium or wait (\\d+)").getMatch(0);
                 int reconWait = 60;
-                if (reconnectWait != null) reconWait = Integer.parseInt(reconnectWait);
+                if (reconnectWait != null) {
+                    reconWait = Integer.parseInt(reconnectWait);
+                }
                 throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, reconWait * 60 * 1001l);
             }
             br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
             br.getHeaders().put("Referer", downloadLink.getDownloadURL());
             final String vFid = br.getRegex("var vfid = (\\d+);").getMatch(0);
-            if (vFid == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            if (vFid == null) {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
             // Can be skipped at the moment
             String waittime = br.getRegex("id=\"countDown\">(\\d+)</").getMatch(0);
             int wait = 10;
-            if (waittime != null) wait = Integer.parseInt(waittime);
+            if (waittime != null) {
+                wait = Integer.parseInt(waittime);
+            }
             Browser brc = br.cloneBrowser();
-            brc.getPage("http://bayfiles.net/js/bayfiles.js");
-            br.getPage("http://bayfiles.net/ajax_download?_=" + System.currentTimeMillis() + "&action=startTimer&vfid=" + vFid);
+            getPage(brc, "http://bayfiles.net/js/bayfiles.js");
+            getPage(this.br, "http://bayfiles.net/ajax_download?_=" + System.currentTimeMillis() + "&action=startTimer&vfid=" + vFid);
             String token = br.getRegex("\"token\":\"(.*?)\"").getMatch(0);
-            if (token == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            if (token == null) {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
 
             String captcha = brc.getRegex("(/\\*[ \t\r\n]*?captcha.create)").getMatch(0);
             if (captcha == null) {
                 /* captchas currently disabled, see bayfiles.js */
-                br.postPage("http://bayfiles.net/ajax_captcha", "action=getCaptcha");
+                postPage(this.br, "http://bayfiles.net/ajax_captcha", "action=getCaptcha");
                 final String reCaptchaID = br.getRegex("Recaptcha\\.create\\(\"(.*?)\"").getMatch(0);
-                if (reCaptchaID == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                if (reCaptchaID == null) {
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                }
                 PluginForHost recplug = JDUtilities.getPluginForHost("DirectHTTP");
                 jd.plugins.hoster.DirectHTTP.Recaptcha rc = ((DirectHTTP) recplug).getReCaptcha(br);
                 Form dlForm = new Form();
@@ -165,17 +187,25 @@ public class BayFilesCom extends PluginForHost {
                     }
                     break;
                 }
-                if (br.containsHTML(CAPTCHAFAILED)) throw new PluginException(LinkStatus.ERROR_CAPTCHA);
+                if (br.containsHTML(CAPTCHAFAILED)) {
+                    throw new PluginException(LinkStatus.ERROR_CAPTCHA);
+                }
                 token = br.getRegex("\"token\":\"(.*?)\"").getMatch(0);
-                if (token == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                if (token == null) {
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                }
             } else {
                 sleep(wait * 1001l, downloadLink);
             }
 
-            br.postPage("http://bayfiles.net/ajax_download", "action=getLink&vfid=" + vFid + "&token=" + token);
+            postPage(this.br, "http://bayfiles.net/ajax_download", "action=getLink&vfid=" + vFid + "&token=" + token);
             dllink = br.getRegex("onclick=\"javascript:window\\.location\\.href = \\'(http://.*?)\\'").getMatch(0);
-            if (dllink == null) dllink = getExactDllink();
-            if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            if (dllink == null) {
+                dllink = getExactDllink();
+            }
+            if (dllink == null) {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
         }
         br.setReadTimeout(3 * 60 * 1000);
         br.setConnectTimeout(3 * 60 * 1000);
@@ -186,7 +216,9 @@ public class BayFilesCom extends PluginForHost {
         }
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
-            if (br.containsHTML("(<div id=\"ol\\-limited\">|class=\"page\\-download|>404 Not Found<)")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error", 2 * 60 * 60 * 1000l);
+            if (br.containsHTML("(<div id=\"ol\\-limited\">|class=\"page\\-download|>404 Not Found<)")) {
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error", 2 * 60 * 60 * 1000l);
+            }
             logger.warning("Unhandled error happened \n" + br.toString());
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
@@ -201,7 +233,9 @@ public class BayFilesCom extends PluginForHost {
                 br.setCookiesExclusive(true);
                 final Object ret = account.getProperty("cookies", null);
                 boolean acmatch = Encoding.urlEncode(account.getUser()).equals(account.getStringProperty("name", Encoding.urlEncode(account.getUser())));
-                if (acmatch) acmatch = Encoding.urlEncode(account.getPass()).equals(account.getStringProperty("pass", Encoding.urlEncode(account.getPass())));
+                if (acmatch) {
+                    acmatch = Encoding.urlEncode(account.getPass()).equals(account.getStringProperty("pass", Encoding.urlEncode(account.getPass())));
+                }
                 if (acmatch && ret != null && ret instanceof HashMap<?, ?> && !force) {
                     final HashMap<String, String> cookies = (HashMap<String, String>) ret;
                     if (account.isValid()) {
@@ -214,8 +248,10 @@ public class BayFilesCom extends PluginForHost {
                     }
                 }
                 br.setFollowRedirects(false);
-                br.getPage("http://api.bayfiles.net/v1/account/login/" + Encoding.urlEncode(account.getUser()) + "/" + Encoding.urlEncode(account.getPass()));
-                if (br.getCookie(MAINPAGE, "SESSID") == null || br.containsHTML("\"error\":\"invalid username or password\"")) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+                getPage(this.br, "http://api.bayfiles.net/v1/account/login/" + Encoding.urlEncode(account.getUser()) + "/" + Encoding.urlEncode(account.getPass()));
+                if (br.getCookie(MAINPAGE, "SESSID") == null || br.containsHTML("\"error\":\"invalid username or password\"")) {
+                    throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+                }
                 // Save cookies
                 final HashMap<String, String> cookies = new HashMap<String, String>();
                 final Cookies add = this.br.getCookies(MAINPAGE);
@@ -241,7 +277,7 @@ public class BayFilesCom extends PluginForHost {
             account.setValid(false);
             return ai;
         }
-        br.getPage("http://api.bayfiles.net/v1/account/info");
+        getPage(this.br, "http://api.bayfiles.net/v1/account/info");
         if (!br.containsHTML("\"premium\":1")) {
             ai.setStatus("Free accounts are not supported!");
             account.setValid(false);
@@ -249,9 +285,13 @@ public class BayFilesCom extends PluginForHost {
         }
         final Regex infoRegex = br.getRegex("\"files\":(\\d+),\"storage\":(\\d+),\"premium\":1,\"expires\":(\\d+)");
         String filesNum = infoRegex.getMatch(0);
-        if (filesNum != null) ai.setFilesNum(Integer.parseInt(filesNum));
+        if (filesNum != null) {
+            ai.setFilesNum(Integer.parseInt(filesNum));
+        }
         String space = infoRegex.getMatch(1);
-        if (space != null) ai.setUsedSpace(space.trim());
+        if (space != null) {
+            ai.setUsedSpace(space.trim());
+        }
         ai.setUnlimitedTraffic();
         String expire = infoRegex.getMatch(2);
         if (expire == null) {
@@ -270,9 +310,11 @@ public class BayFilesCom extends PluginForHost {
         requestFileInformation(link);
         login(account, false);
         br.setFollowRedirects(false);
-        br.getPage(link.getDownloadURL());
+        getPage(this.br, link.getDownloadURL());
         String dllink = br.getRegex("\"(http://s\\d+\\.baycdn\\.net/dl/[a-z0-9]+/[a-z0-9]+/[^<>\"\\']+)\"").getMatch(0);
-        if (dllink == null) dllink = br.getRegex("<a class=\"highlighted\\-btn\" href=\"(http://[^<>\"\\']+)\"").getMatch(0);
+        if (dllink == null) {
+            dllink = br.getRegex("<a class=\"highlighted\\-btn\" href=\"(http://[^<>\"\\']+)\"").getMatch(0);
+        }
         if (dllink == null) {
             logger.warning("Final downloadlink (String is \"dllink\") regex didn't match!");
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -288,6 +330,39 @@ public class BayFilesCom extends PluginForHost {
 
     private String getExactDllink() {
         return br.getRegex("(\\'|\")(http://s\\d+\\.baycdn\\.net/dl/[^<>\"]*?)(\\'|\")").getMatch(1);
+    }
+
+    public void getPage(final Browser br, String page) throws Exception {
+        if (page == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        page = fixLinkSSL(page);
+        br.getPage(page);
+    }
+
+    public void postPage(final Browser br, String page, final String postData) throws Exception {
+        if (page == null || postData == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        page = fixLinkSSL(page);
+        br.postPage(page, postData);
+    }
+
+    private static String fixLinkSSL(String link) {
+        if (checkSsl()) {
+            link = link.replace("http://", "https://");
+        } else {
+            link = link.replace("https://", "http://");
+        }
+        return link;
+    }
+
+    private static boolean checkSsl() {
+        return SubConfiguration.getConfig("bayfiles.net").getBooleanProperty(SSL_CONNECTION, false);
+    }
+
+    private void setConfigElements() {
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, this.getPluginConfig(), SSL_CONNECTION, JDL.L("plugins.hoster.BayFilesCom.preferSSL", "Use Secure Communication over SSL (HTTPS://)")).setDefaultValue(false));
     }
 
     @Override

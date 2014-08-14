@@ -17,7 +17,6 @@
 package jd.plugins.hoster;
 
 import java.io.File;
-import java.io.IOException;
 import java.net.URL;
 import java.util.HashMap;
 import java.util.Locale;
@@ -27,6 +26,8 @@ import javax.swing.JOptionPane;
 import javax.swing.SwingUtilities;
 
 import jd.PluginWrapper;
+import jd.config.ConfigContainer;
+import jd.config.ConfigEntry;
 import jd.config.Property;
 import jd.config.SubConfiguration;
 import jd.http.Browser;
@@ -44,17 +45,19 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.utils.JDUtilities;
+import jd.utils.locale.JDL;
 
 import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.formatter.TimeFormatter;
 import org.appwork.utils.os.CrossSystem;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "dizzcloud.com" }, urls = { "http://(www\\.)?dizzcloud\\.com/dl/(?!robots)[a-z0-9]+" }, flags = { 2 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "dizzcloud.com" }, urls = { "https?://(www\\.)?dizzcloud\\.com/dl/(?!robots)[a-z0-9]+" }, flags = { 2 })
 public class DizzCloudCom extends PluginForHost {
 
     public DizzCloudCom(PluginWrapper wrapper) {
         super(wrapper);
         this.enablePremium("http://dizzcloud.com/upgrade");
+        setConfigElements();
     }
 
     @Override
@@ -62,24 +65,42 @@ public class DizzCloudCom extends PluginForHost {
         return "http://dizzcloud.com/tos";
     }
 
+    private final static String SSL_CONNECTION = "SSL_CONNECTION";
+
     private final String        PREMIUMONLY    = ">Only premium users can download this file|disabled the ability to free download a file larger than  \\d+ Mb\\.<|>File owner has disabled<";
     private static final String DYNAMICIPERROR = "Dynamic IP error";
 
     @Override
-    public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
+    public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
-        br.getPage(link.getDownloadURL());
-        if (br.containsHTML(">File not found<|File not found or deleted")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        getPage(this.br, link.getDownloadURL());
+        if (br.containsHTML(">File not found<|File not found or deleted")) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
         String filename = br.getRegex("<span>File: </span>([^<>\"]*?)</div>").getMatch(0);
-        if (filename == null) filename = br.getRegex("file-name\">([^<>\"]*?)\\[").getMatch(0);
-        if (filename == null) filename = br.getRegex(">File: </div>([^<>\"]*?) <span").getMatch(0);
-        if (filename == null) filename = br.getRegex("class=\"name\">([^<>\"]*?)</div>").getMatch(0);
+        if (filename == null) {
+            filename = br.getRegex("file-name\">([^<>\"]*?)\\[").getMatch(0);
+        }
+        if (filename == null) {
+            filename = br.getRegex(">File: </div>([^<>\"]*?) <span").getMatch(0);
+        }
+        if (filename == null) {
+            filename = br.getRegex("class=\"name\">([^<>\"]*?)</div>").getMatch(0);
+        }
         String filesize = br.getRegex("id=\"file\\-size\"><span>Size: </span>([^<>\"]*?)</div>").getMatch(0);
-        if (filesize == null) filesize = br.getRegex("file-name\">[^<>\"]*?\\[([^<>\"]*?)\\]").getMatch(0);
-        if (filesize == null) filesize = br.getRegex("line-height: 26px;\">\\[([^<>\"]*?)\\]").getMatch(0);
-        if (filesize == null) filesize = br.getRegex("id=\"file-size\">([^<>\"]*?)</div>").getMatch(0);
-        if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (filesize == null) {
+            filesize = br.getRegex("file-name\">[^<>\"]*?\\[([^<>\"]*?)\\]").getMatch(0);
+        }
+        if (filesize == null) {
+            filesize = br.getRegex("line-height: 26px;\">\\[([^<>\"]*?)\\]").getMatch(0);
+        }
+        if (filesize == null) {
+            filesize = br.getRegex("id=\"file-size\">([^<>\"]*?)</div>").getMatch(0);
+        }
+        if (filename == null || filesize == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         link.setName(Encoding.htmlDecode(filename.trim()));
         link.setDownloadSize(SizeFormatter.getSize(filesize));
         return AvailableStatus.TRUE;
@@ -140,7 +161,9 @@ public class DizzCloudCom extends PluginForHost {
                         }
                         if (CrossSystem.isOpenBrowserSupported()) {
                             int result = JOptionPane.showConfirmDialog(jd.gui.swing.jdgui.JDGui.getInstance().getMainFrame(), message, title, JOptionPane.YES_NO_OPTION, JOptionPane.INFORMATION_MESSAGE, null);
-                            if (JOptionPane.OK_OPTION == result) CrossSystem.openURL(new URL("http://update3.jdownloader.org/jdserv/BuyPremiumInterface/redirect?" + domain + "&freedialog"));
+                            if (JOptionPane.OK_OPTION == result) {
+                                CrossSystem.openURL(new URL("http://update3.jdownloader.org/jdserv/BuyPremiumInterface/redirect?" + domain + "&freedialog"));
+                            }
                         }
                     } catch (Throwable e) {
                     }
@@ -164,7 +187,9 @@ public class DizzCloudCom extends PluginForHost {
                 try {
                     throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);
                 } catch (final Throwable e) {
-                    if (e instanceof PluginException) throw (PluginException) e;
+                    if (e instanceof PluginException) {
+                        throw (PluginException) e;
+                    }
                 }
                 throw new PluginException(LinkStatus.ERROR_FATAL, "This file can only be downloaded by premium users");
             }
@@ -173,15 +198,21 @@ public class DizzCloudCom extends PluginForHost {
             final PluginForHost recplug = JDUtilities.getPluginForHost("DirectHTTP");
             final jd.plugins.hoster.DirectHTTP.Recaptcha rc = ((DirectHTTP) recplug).getReCaptcha(br);
             final String id = br.getRegex("\\?k=([A-Za-z0-9%_\\+\\- ]+)\"").getMatch(0);
-            if (id == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            if (id == null) {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
             rc.setId(id);
             rc.load();
             final File cf = rc.downloadCaptcha(getLocalCaptchaFile());
             final String c = getCaptchaCode(cf, downloadLink);
-            br.getPage("http://dizzcloud.com/dl/" + new Regex(downloadLink.getDownloadURL(), "([a-z0-9]+)$").getMatch(0) + "?type=recaptcha&challenge=" + rc.getChallenge() + "&capture=" + Encoding.urlEncode(c));
-            if (br.containsHTML("\"Entered digits are incorrect")) throw new PluginException(LinkStatus.ERROR_CAPTCHA);
+            getPage(this.br, "http://dizzcloud.com/dl/" + new Regex(downloadLink.getDownloadURL(), "([a-z0-9]+)$").getMatch(0) + "?type=recaptcha&challenge=" + rc.getChallenge() + "&capture=" + Encoding.urlEncode(c));
+            if (br.containsHTML("\"Entered digits are incorrect")) {
+                throw new PluginException(LinkStatus.ERROR_CAPTCHA);
+            }
             dllink = br.getRegex("\"href\":\"(http:[^<>\"]*?)\"").getMatch(0);
-            if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            if (dllink == null) {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
             dllink = dllink.replace("\\", "");
         }
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, false, 1);
@@ -237,7 +268,9 @@ public class DizzCloudCom extends PluginForHost {
                 br.setCookiesExclusive(true);
                 final Object ret = account.getProperty("cookies", null);
                 boolean acmatch = Encoding.urlEncode(account.getUser()).equals(account.getStringProperty("name", Encoding.urlEncode(account.getUser())));
-                if (acmatch) acmatch = Encoding.urlEncode(account.getPass()).equals(account.getStringProperty("pass", Encoding.urlEncode(account.getPass())));
+                if (acmatch) {
+                    acmatch = Encoding.urlEncode(account.getPass()).equals(account.getStringProperty("pass", Encoding.urlEncode(account.getPass())));
+                }
                 if (acmatch && ret != null && ret instanceof HashMap<?, ?> && !force) {
                     final HashMap<String, String> cookies = (HashMap<String, String>) ret;
                     if (account.isValid()) {
@@ -253,8 +286,10 @@ public class DizzCloudCom extends PluginForHost {
                     }
                 }
                 br.setFollowRedirects(false);
-                br.postPage("http://dizzcloud.com/login", "email=" + Encoding.urlEncode(account.getUser()) + "&pass=" + Encoding.urlEncode(account.getPass()));
-                if (br.getCookie(MAINPAGE, "auth_hash") == null) throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nInvalid username/password!\r\nUngültiger Benutzername oder ungültiges Passwort!", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                postPage(this.br, "http://dizzcloud.com/login", "email=" + Encoding.urlEncode(account.getUser()) + "&pass=" + Encoding.urlEncode(account.getPass()));
+                if (br.getCookie(MAINPAGE, "auth_hash") == null) {
+                    throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nInvalid username/password!\r\nUngültiger Benutzername oder ungültiges Passwort!", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                }
                 // Save cookies
                 final HashMap<String, String> cookies = new HashMap<String, String>();
                 final Cookies add = br.getCookies(MAINPAGE);
@@ -284,7 +319,7 @@ public class DizzCloudCom extends PluginForHost {
             account.setValid(false);
             throw e;
         }
-        br.getPage("http://dizzcloud.com/");
+        getPage(this.br, "http://dizzcloud.com/");
         ai.setUnlimitedTraffic();
         final String expire = br.getRegex(">Premium till.*?(\\d+\\.\\d+\\.\\d+).*?\\&nbsp;\\&nbsp;</span>").getMatch(0);
         if (expire == null) {
@@ -316,14 +351,16 @@ public class DizzCloudCom extends PluginForHost {
             newLogins = before != now;
         }
         if (account.getBooleanProperty("free")) {
-            br.getPage(downloadLink.getDownloadURL());
+            getPage(this.br, downloadLink.getDownloadURL());
             // if the cached cookie expired, relogin.
             if (br.getCookie(MAINPAGE, "auth_hash") == null) {
                 synchronized (LOCK) {
                     if (now == account.getProperty("cookies", null)) {
                         account.setProperty("cookies", Property.NULL);
                     }
-                    if (newLogins) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                    if (newLogins) {
+                        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                    }
                     throw new PluginException(LinkStatus.ERROR_RETRY);
                 }
             }
@@ -335,7 +372,7 @@ public class DizzCloudCom extends PluginForHost {
             doFree(downloadLink, now, newLogins, account);
         } else {
             br.setFollowRedirects(false);
-            br.getPage(downloadLink.getDownloadURL());
+            getPage(this.br, downloadLink.getDownloadURL());
             if (br.containsHTML("class=\"daydllimit\"")) {
                 logger.info("daily limit reached, temp disabling premium");
                 throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
@@ -347,12 +384,18 @@ public class DizzCloudCom extends PluginForHost {
             }
             handleErrors();
             String dllink = br.getRedirectLocation();
-            if (dllink == null) dllink = br.getRegex("\"(http://[a-z0-9\\-]+\\.cloudstoreservice\\.net/[^<>\"]*?)\"").getMatch(0);
-            if (dllink == null) dllink = br.getRegex("\"(http://[^<>\"]*?)\" class=\"orange\\-btn\">DOWNLOAD</a>").getMatch(0);
             if (dllink == null) {
-                br.postPage(downloadLink.getDownloadURL(), "getlnk=1");
+                dllink = br.getRegex("\"(http://[a-z0-9\\-]+\\.cloudstoreservice\\.net/[^<>\"]*?)\"").getMatch(0);
+            }
+            if (dllink == null) {
+                dllink = br.getRegex("\"(http://[^<>\"]*?)\" class=\"orange\\-btn\">DOWNLOAD</a>").getMatch(0);
+            }
+            if (dllink == null) {
+                postPage(this.br, downloadLink.getDownloadURL(), "getlnk=1");
                 dllink = br.getRegex("msg\":\"(http.*?)\"").getMatch(0);
-                if (dllink != null) dllink = dllink.replace("\\", "");
+                if (dllink != null) {
+                    dllink = dllink.replace("\\", "");
+                }
             }
             if (dllink == null) {
                 if (br.containsHTML(">Premium users get many benefits like instant download on maximum")) {
@@ -381,7 +424,9 @@ public class DizzCloudCom extends PluginForHost {
                 }
                 // Premium traffic is gone or expired -> Reverts to free account
                 // -> Disable it
-                if (br.containsHTML(PREMIUMONLY)) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+                if (br.containsHTML(PREMIUMONLY)) {
+                    throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+                }
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
             dl.startDownload();
@@ -390,12 +435,47 @@ public class DizzCloudCom extends PluginForHost {
 
     private void handleErrors() throws NumberFormatException, PluginException {
         final String waittime = br.getRegex(">Next free download from your ip will be available in <b>(\\d+) minutes</p>").getMatch(0);
-        if (waittime != null) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, Integer.parseInt(waittime) * 60 * 1001l);
+        if (waittime != null) {
+            throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, Integer.parseInt(waittime) * 60 * 1001l);
+        }
     }
 
     @Override
     public int getMaxSimultanPremiumDownloadNum() {
         return -1;
+    }
+
+    public void getPage(final Browser br, String page) throws Exception {
+        if (page == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        page = fixLinkSSL(page);
+        br.getPage(page);
+    }
+
+    public void postPage(final Browser br, String page, final String postData) throws Exception {
+        if (page == null || postData == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        page = fixLinkSSL(page);
+        br.postPage(page, postData);
+    }
+
+    private static String fixLinkSSL(String link) {
+        if (checkSsl()) {
+            link = link.replace("http://", "https://");
+        } else {
+            link = link.replace("https://", "http://");
+        }
+        return link;
+    }
+
+    private static boolean checkSsl() {
+        return SubConfiguration.getConfig("dizzcloud.com").getBooleanProperty(SSL_CONNECTION, false);
+    }
+
+    private void setConfigElements() {
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, this.getPluginConfig(), SSL_CONNECTION, JDL.L("plugins.hoster.DizzCloudCom.preferSSL", "Use Secure Communication over SSL (HTTPS://)")).setDefaultValue(false));
     }
 
     @Override
@@ -411,24 +491,23 @@ public class DizzCloudCom extends PluginForHost {
     public void resetDownloadlink(final DownloadLink link) {
     }
 
-
-/* NO OVERRIDE!! We need to stay 0.9*compatible */
-public boolean hasCaptcha(DownloadLink link, jd.plugins.Account acc) {
-if (acc == null) {
-/* no account, yes we can expect captcha */
-return true;
-}
- if (Boolean.TRUE.equals(acc.getBooleanProperty("free"))) {
-/* free accounts also have captchas */
-return true;
-}
- if (Boolean.TRUE.equals(acc.getBooleanProperty("nopremium"))) {
-/* free accounts also have captchas */
-return true;
-}
- if (acc.getStringProperty("session_type")!=null&&!"premium".equalsIgnoreCase(acc.getStringProperty("session_type"))) {
-return true;
-}
-return false;
-}
+    /* NO OVERRIDE!! We need to stay 0.9*compatible */
+    public boolean hasCaptcha(DownloadLink link, jd.plugins.Account acc) {
+        if (acc == null) {
+            /* no account, yes we can expect captcha */
+            return true;
+        }
+        if (Boolean.TRUE.equals(acc.getBooleanProperty("free"))) {
+            /* free accounts also have captchas */
+            return true;
+        }
+        if (Boolean.TRUE.equals(acc.getBooleanProperty("nopremium"))) {
+            /* free accounts also have captchas */
+            return true;
+        }
+        if (acc.getStringProperty("session_type") != null && !"premium".equalsIgnoreCase(acc.getStringProperty("session_type"))) {
+            return true;
+        }
+        return false;
+    }
 }

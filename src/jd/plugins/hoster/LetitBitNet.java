@@ -66,7 +66,7 @@ import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.formatter.TimeFormatter;
 import org.appwork.utils.os.CrossSystem;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "letitbit.net" }, urls = { "http://(www\\.|u\\d+\\.)?letitbit\\.net/d?download/.*?\\.html" }, flags = { 2 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "letitbit.net" }, urls = { "https?://(www\\.|u\\d+\\.)?letitbit\\.net/d?download/.*?\\.html" }, flags = { 2 })
 public class LetitBitNet extends PluginForHost {
 
     private static Object        LOCK                              = new Object();
@@ -74,17 +74,22 @@ public class LetitBitNet extends PluginForHost {
     private static final String  NICE_HOST                         = COOKIE_HOST.replaceAll("(https://|http://)", "");
     private static final String  NICE_HOSTproperty                 = COOKIE_HOST.replaceAll("(https://|http://|\\.|\\-)", "");
     private static AtomicInteger maxFree                           = new AtomicInteger(1);
+
+    /* Settings */
+    private final static String  SSL_CONNECTION                    = "SSL_CONNECTION";
     private static final String  ENABLEUNLIMITEDSIMULTANMAXFREEDLS = "ENABLEUNLIMITEDSIMULTANMAXFREEDLS";
-    private static final boolean TRYTOGETRECAPTCHA                 = true;
+
     /*
      * For linkcheck and premium download we're using their API: http://api.letitbit.net/reg/static/api.pdf
      */
     public final String          APIKEY                            = "VjR1U3JGUkNx";
-    public final String          APIPAGE                           = "http://api.letitbit.net/";
+    public final String          APIPAGE                           = "https://api.letitbit.net/";
     private final String         TEMPDISABLED                      = "(>File not found<|id=\"videocaptcha_)";
     private String               agent                             = null;
-    private static final boolean PLUGIN_BROKEN                     = false;
     private static Object        PREMIUMLOCK                       = new Object();
+    /* Internal settings */
+    private static final boolean PLUGIN_BROKEN                     = false;
+    private static final boolean TRYTOGETRECAPTCHA                 = true;
     private static final int     MAXSIMULTAN_FREE                  = 1;
     /* Max 10 requests per minute limited by API */
     private static final int     MAXSIMULTAN_PREMIUM               = 20;
@@ -269,7 +274,7 @@ public class LetitBitNet extends PluginForHost {
                 sb.append("]");
                 br.setReadTimeout(2 * 60 * 60);
                 br.setConnectTimeout(2 * 60 * 60);
-                br.postPage(APIPAGE, sb.toString());
+                postPage(br, APIPAGE, sb.toString());
                 for (final DownloadLink dllink : links) {
                     final String fid = getFID(dllink);
                     final Regex fInfo = br.getRegex("\"name\":\"([^<>\"]*?)\",\"size\":(\")?(\\d+)(\")?,\"uid\":\"" + fid + "\",\"project\":\"(letitbit\\.net|shareflare\\.net|vip\\-file\\.com)\",\"md5\":\"([a-z0-9]{32}|0)\"");
@@ -374,7 +379,7 @@ public class LetitBitNet extends PluginForHost {
         return maxFree.get();
     }
 
-    private String getLinkViaSkymonkDownloadMethod(String s) throws IOException {
+    private String getLinkViaSkymonkDownloadMethod(String s) throws Exception {
         if (!getPluginConfig().getBooleanProperty("STATUS", true)) {
             return null;
         }
@@ -390,7 +395,7 @@ public class LetitBitNet extends PluginForHost {
         skymonk.getHeaders().put("Referer", null);
         skymonk.getHeaders().put("Content-Type", "application/x-www-form-urlencoded");
 
-        skymonk.postPage("http://api.letitbit.net/internal/index4.php", "action=LINK_GET_DIRECT&link=" + s + "&free_link=1&appid=" + JDHash.getMD5(String.valueOf(Math.random())) + "&version=2.1");
+        postPage(skymonk, "http://api.letitbit.net/internal/index4.php", "action=LINK_GET_DIRECT&link=" + s + "&free_link=1&appid=" + JDHash.getMD5(String.valueOf(Math.random())) + "&version=2.1");
         String[] result = skymonk.getRegex("([^\r\n]+)").getColumn(0);
         if (result == null || result.length == 0) {
             return null;
@@ -420,7 +425,7 @@ public class LetitBitNet extends PluginForHost {
         String url = null;
         prepBrowser(br);
         br.setFollowRedirects(true);
-        br.getPage(downloadLink.getDownloadURL());
+        getPage(this.br, downloadLink.getDownloadURL());
         br.setFollowRedirects(false);
         handleNonApiErrors(downloadLink);
         submitFreeForm();// born_iframe.php with encrypted form
@@ -477,7 +482,7 @@ public class LetitBitNet extends PluginForHost {
              * this causes issues in 09580 stable, no workaround known, please update to latest jd version
              */
             br2.getHeaders().put("Content-Length", "0");
-            br2.postPage(ajaxmainurl + "/ajax/download3.php", "");
+            postPage(br2, ajaxmainurl + "/ajax/download3.php", "");
             br2.getHeaders().remove("Content-Length");
             /* we need to remove the newline in old browser */
             final String resp = br2.toString().replaceAll("%0D%0A", "").trim();
@@ -505,7 +510,7 @@ public class LetitBitNet extends PluginForHost {
                 for (int i = 0; i <= 5; i++) {
                     final File cf = rc.downloadCaptcha(getLocalCaptchaFile());
                     final String c = getCaptchaCode(cf, downloadLink);
-                    br2.postPage(captcha_action, "recaptcha_challenge_field=" + rc.getChallenge() + "&recaptcha_response_field=" + c + "&recaptcha_control_field=" + Encoding.urlEncode(rcControl));
+                    postPage(br2, captcha_action, "recaptcha_challenge_field=" + rc.getChallenge() + "&recaptcha_response_field=" + c + "&recaptcha_control_field=" + Encoding.urlEncode(rcControl));
                     if (br2.toString().length() < 2 || br2.toString().contains("error_wrong_captcha")) {
                         rc.reload();
                         continue;
@@ -530,19 +535,19 @@ public class LetitBitNet extends PluginForHost {
                 if (r == null) {
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 }
-                br2.getPage("http://videocaptcha.letitbit.net/stat?callback=jQuery" + System.currentTimeMillis() + "_" + System.currentTimeMillis() + "&r=%5B%22" + r + "%22%2C%5B%5B%22captchaCreated%22%2C%7B%22key%22%3A%22%22%7D%5D%5D%5D&_=" + System.currentTimeMillis());
+                getPage(br2, "http://videocaptcha.letitbit.net/stat?callback=jQuery" + System.currentTimeMillis() + "_" + System.currentTimeMillis() + "&r=%5B%22" + r + "%22%2C%5B%5B%22captchaCreated%22%2C%7B%22key%22%3A%22%22%7D%5D%5D%5D&_=" + System.currentTimeMillis());
                 if (!br2.containsHTML("\"status\":\"ok\"")) {
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 }
                 for (int i = 0; i <= 5; i++) {
-                    br2.getPage("http://videocaptcha.letitbit.net/data?callback=jQuery" + System.currentTimeMillis() + "_" + System.currentTimeMillis() + "&r=%5B%22" + r + "%22%2C%5B%5B%22get_code%22%5D%5D%5D&_=" + System.currentTimeMillis());
+                    getPage(br2, "http://videocaptcha.letitbit.net/data?callback=jQuery" + System.currentTimeMillis() + "_" + System.currentTimeMillis() + "&r=%5B%22" + r + "%22%2C%5B%5B%22get_code%22%5D%5D%5D&_=" + System.currentTimeMillis());
                     // We have different formats here
                     String videoURL = br2.getRegex("\"video\\\\/webm\":\"(http:[^<>\"]*?)\"").getMatch(0);
                     if (videoURL == null) {
                         throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                     }
                     videoURL = videoURL.replace("\\", "");
-                    br2.postPage(captcha_action, "videocapcha_token=&videocapcha_val=" + "RESULT_FROM_USER" + "&vcaptcha_control_field=" + Encoding.urlEncode(vcControl) + "&videocapcha_skey=");
+                    postPage(br2, captcha_action, "videocapcha_token=&videocapcha_val=" + "RESULT_FROM_USER" + "&vcaptcha_control_field=" + Encoding.urlEncode(vcControl) + "&videocapcha_skey=");
                     if (br2.toString().contains("error_wrong_captcha")) {
                         continue;
                     }
@@ -558,7 +563,7 @@ public class LetitBitNet extends PluginForHost {
                 for (int i = 0; i <= 5; i++) {
                     final String code = getCaptchaCode("letitbitnew", ajaxmainurl + "/captcha_new.php?rand=" + df.format(new Random().nextInt(1000)), downloadLink);
                     sleep(2000, downloadLink);
-                    br2.postPage(captcha_action, "code=" + Encoding.urlEncode(code));
+                    postPage(br2, captcha_action, "code=" + Encoding.urlEncode(code));
                     if (br2.toString().contains("error_wrong_captcha")) {
                         continue;
                     }
@@ -829,7 +834,7 @@ public class LetitBitNet extends PluginForHost {
     /**
      * Is intended to handle out of date errors which might occur seldom by re-tring a couple of times before throwing the out of date
      * error.
-     * 
+     *
      * @param dl
      *            : The DownloadLink
      * @param error
@@ -877,7 +882,7 @@ public class LetitBitNet extends PluginForHost {
                 /*
                  * we must save the cookies, because letitbit only allows 100 logins per 24hours
                  */
-                br.postPage("http://letitbit.net/", "login=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()) + "&act=login");
+                postPage(this.br, "http://letitbit.net/", "login=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()) + "&act=login");
                 String check = br.getCookie(COOKIE_HOST, "log");
                 if (check == null) {
                     check = br.getCookie(COOKIE_HOST, "pas");
@@ -919,7 +924,7 @@ public class LetitBitNet extends PluginForHost {
             return ai;
         }
         br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
-        br.postPage("http://letitbit.net/ajax/get_attached_passwords.php", "act=get_attached_passwords");
+        postPage(this.br, "http://letitbit.net/ajax/get_attached_passwords.php", "act=get_attached_passwords");
         final String[] data = br.getRegex("<td>([^<>\"]*?)</td>").getColumn(0);
         if (data != null && data.length >= 3) {
             // 1 point = 1 GB
@@ -938,7 +943,7 @@ public class LetitBitNet extends PluginForHost {
         requestFileInformation(downloadLink);
         br.setDebug(true);
         if (account.getUser() == null || account.getUser().trim().length() == 0) {
-            br.postPage(APIPAGE, "r=[\"" + Encoding.Base64Decode(APIKEY) + "\",[\"download/direct_links\",{\"link\":\"" + downloadLink.getDownloadURL() + "\",\"pass\":\"" + account.getPass() + "\"}]]");
+            postPage(this.br, APIPAGE, "r=[\"" + Encoding.Base64Decode(APIKEY) + "\",[\"download/direct_links\",{\"link\":\"" + downloadLink.getDownloadURL() + "\",\"pass\":\"" + account.getPass() + "\"}]]");
             if (br.containsHTML("data\":\"bad password\"")) {
                 logger.info("Wrong password, disabling the account!");
                 throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
@@ -966,7 +971,7 @@ public class LetitBitNet extends PluginForHost {
                     freshLogin = currentCookies != latestCookies;
                 }
                 br.setFollowRedirects(true);
-                br.getPage(downloadLink.getDownloadURL());
+                getPage(this.br, downloadLink.getDownloadURL());
                 if (br.containsHTML(">Please wait, there is a file search")) {
                     throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Download not possible at the moment", 2 * 60 * 60 * 1000l);
                 }
@@ -1001,7 +1006,7 @@ public class LetitBitNet extends PluginForHost {
         /* because there can be another link to a downlodmanager first */
         if (dlUrl == null) {
             if (br.getRedirectLocation() != null) {
-                br.getPage(br.getRedirectLocation());
+                getPage(this.br, this.br.getRedirectLocation());
             }
             logger.severe(br.toString());
             if (br.containsHTML("callback_file_unavailable")) {
@@ -1036,11 +1041,11 @@ public class LetitBitNet extends PluginForHost {
     // NOTE: Old, tested 15.11.12, works!
     private String handleOldPremiumPassWay(final Account account, final DownloadLink downloadLink) throws Exception {
         br.setFollowRedirects(true);
-        br.getPage(downloadLink.getDownloadURL());
+        getPage(this.br, downloadLink.getDownloadURL());
         br.setFollowRedirects(false);
         handleNonApiErrors(downloadLink);
         // Get to the premium zone
-        br.postPage(br.getURL(), "way_selection=1&submit_way_selection1=HIGH+Speed+Download");
+        postPage(this.br, this.br.getURL(), "way_selection=1&submit_way_selection1=HIGH+Speed+Download");
         /* normal account with only a password */
         logger.info("Premium with pw only");
         Form premiumform = null;
@@ -1062,13 +1067,13 @@ public class LetitBitNet extends PluginForHost {
         String iFrame = br.getRegex("\"(/sms/check2_iframe\\.php\\?ids=[0-9_]+\\&ids_emerg=\\&emergency_mode=)\"").getMatch(0);
         if (iFrame != null) {
             logger.info("Found iframe(old one), accessing it...");
-            br.getPage("http://letitbit.net" + iFrame);
+            getPage(this.br, "http://letitbit.net" + iFrame);
         }
         if (iFrame == null) {
             iFrame = br.getRegex("(/sms/check2_iframe\\.php\\?.*?uid=.*?)\"").getMatch(0);
             if (iFrame != null) {
                 logger.info("Found iframe(new one), accessing it...");
-                br.getPage("http://letitbit.net" + iFrame);
+                getPage(this.br, "http://letitbit.net" + iFrame);
             }
         }
         return getUrl(account);
@@ -1108,9 +1113,9 @@ public class LetitBitNet extends PluginForHost {
         return url;
     }
 
-    private void handleNonApiErrors(final DownloadLink dl) throws IOException, PluginException {
+    private void handleNonApiErrors(final DownloadLink dl) throws Exception {
         if (br.containsHTML(TEMPDISABLED)) {
-            br.postPage(APIPAGE, "r=" + Encoding.urlEncode("[\"" + Encoding.Base64Decode(APIKEY) + "\",[\"download/check_link\",{\"link\":\"" + dl.getDownloadURL() + "\"}]]"));
+            postPage(this.br, APIPAGE, "r=" + Encoding.urlEncode("[\"" + Encoding.Base64Decode(APIKEY) + "\",[\"download/check_link\",{\"link\":\"" + dl.getDownloadURL() + "\"}]]"));
             final String availableMirrors = br.getRegex("\"data\":\\[(\\d+)\\]").getMatch(0);
             if (availableMirrors != null) {
                 if (availableMirrors.equals("0")) {
@@ -1158,6 +1163,35 @@ public class LetitBitNet extends PluginForHost {
         return prepBr;
     }
 
+    public void getPage(final Browser br, String page) throws Exception {
+        if (page == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        page = fixLinkSSL(page);
+        br.getPage(page);
+    }
+
+    public void postPage(final Browser br, String page, final String postData) throws Exception {
+        if (page == null || postData == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        page = fixLinkSSL(page);
+        br.postPage(page, postData);
+    }
+
+    private static String fixLinkSSL(String link) {
+        if (checkSsl()) {
+            link = link.replace("http://", "https://");
+        } else {
+            link = link.replace("https://", "http://");
+        }
+        return link;
+    }
+
+    private static boolean checkSsl() {
+        return SubConfiguration.getConfig("letitbit.net").getBooleanProperty(SSL_CONNECTION, false);
+    }
+
     @Override
     public int getMaxSimultanPremiumDownloadNum() {
         return MAXSIMULTAN_PREMIUM;
@@ -1176,6 +1210,8 @@ public class LetitBitNet extends PluginForHost {
     }
 
     private void setConfigElements() {
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, this.getPluginConfig(), SSL_CONNECTION, JDL.L("plugins.hoster.LetitBitNet.preferSSL", "Use Secure Communication over SSL (HTTPS://)")).setDefaultValue(false));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_SEPARATOR));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), "STATUS", JDL.L("plugins.hoster.letitbit.status", "Use SkyMonk (also enables max 20 simultaneous downloads)?")).setDefaultValue(true));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_SEPARATOR));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), LetitBitNet.ENABLEUNLIMITEDSIMULTANMAXFREEDLS, JDL.L("plugins.hoster.letitbitnet.enableunlimitedsimultanfreedls", "Enable unlimited (20) max simultanious free downloads for non-skymonk mode (can cause problems, use at your own risc)")).setDefaultValue(false));

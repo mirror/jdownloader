@@ -114,24 +114,34 @@ public class BandCampCom extends PluginForHost {
             con.disconnect();
         } catch (Throwable e) {
         }
-        if (br.containsHTML("(>Sorry, that something isn\\'t here|>start at the beginning</a> and you\\'ll certainly find what)")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (br.containsHTML("(>Sorry, that something isn\\'t here|>start at the beginning</a> and you\\'ll certainly find what)")) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
         DLLINK = br.getRegex("\"file\":.*?\"(http:.*?)\"").getMatch(0);
         logger.info("DLLINK = " + DLLINK);
-        if (DLLINK == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (DLLINK == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         DLLINK = Encoding.htmlDecode(DLLINK).replace("\\", "");
         if (!downloadLink.getBooleanProperty("fromdecrypter", false)) {
             String tracknumber = br.getRegex("\"track_number\":(\\d+)").getMatch(0);
-            if (tracknumber == null) tracknumber = "1";
+            if (tracknumber == null) {
+                tracknumber = "1";
+            }
             final int trackNum = Integer.parseInt(tracknumber);
             DecimalFormat df = new DecimalFormat("00");
-            if (trackNum > 999)
+            if (trackNum > 999) {
                 df = new DecimalFormat("0000");
-            else if (trackNum > 99) df = new DecimalFormat("000");
+            } else if (trackNum > 99) {
+                df = new DecimalFormat("000");
+            }
             final String filename = br.getRegex("\"title\":\"([^<>\"]*?)\"").getMatch(0);
             String date = br.getRegex("<meta itemprop=\"datePublished\" content=\"(\\d+)\"/>").getMatch(0);
             if (date == null) {
                 date = br.getRegex("\"publish_date\":\"([^<>\"]*?)\"").getMatch(0);
-                if (date != null) date = Long.toString(TimeFormatter.getMilliSeconds(date, "dd MMM yyyy hh:mm:ss Z", Locale.ENGLISH));
+                if (date != null) {
+                    date = Long.toString(TimeFormatter.getMilliSeconds(date, "dd MMM yyyy hh:mm:ss Z", Locale.ENGLISH));
+                }
             }
             final Regex inforegex = br.getRegex("<title>(.*?) \\| (.*?)</title>");
             final String artist = inforegex.getMatch(1);
@@ -145,14 +155,16 @@ public class BandCampCom extends PluginForHost {
             downloadLink.setProperty("directtracknumber", df.format(trackNum));
         }
         final String filename = getFormattedFilename(downloadLink);
+        downloadLink.setFinalFileName(filename);
         // In case the link redirects to the finallink
         br2.setFollowRedirects(true);
         try {
             con = br2.openGetConnection(DLLINK);
-            if (!con.getContentType().contains("html"))
+            if (!con.getContentType().contains("html")) {
                 downloadLink.setDownloadSize(con.getLongContentLength());
-            else
+            } else {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            }
             return AvailableStatus.TRUE;
         } finally {
             try {
@@ -170,13 +182,18 @@ public class BandCampCom extends PluginForHost {
         final String date = downloadLink.getStringProperty("directdate", null);
         final SubConfiguration cfg = SubConfiguration.getConfig("bandcamp.com");
         String formattedFilename = cfg.getStringProperty(CUSTOM_FILENAME, defaultCustomFilename);
-        if (formattedFilename == null || formattedFilename.equals("")) formattedFilename = defaultCustomFilename;
-        if (!formattedFilename.contains("*songtitle*") || !formattedFilename.contains("*ext*")) formattedFilename = defaultCustomFilename;
+        if (formattedFilename == null || formattedFilename.equals("")) {
+            formattedFilename = defaultCustomFilename;
+        }
+        if (!formattedFilename.contains("*songtitle*") || !formattedFilename.contains("*ext*")) {
+            formattedFilename = defaultCustomFilename;
+        }
         String ext = downloadLink.getStringProperty("type", null);
-        if (ext != null)
+        if (ext != null) {
             ext = "." + ext;
-        else
+        } else {
             ext = ".mp3";
+        }
 
         String formattedDate = null;
         if (date != null && formattedFilename.contains("*date*")) {
@@ -196,10 +213,11 @@ public class BandCampCom extends PluginForHost {
                     formattedDate = "";
                 }
             }
-            if (formattedDate != null)
+            if (formattedDate != null) {
                 formattedFilename = formattedFilename.replace("*date*", formattedDate);
-            else
+            } else {
                 formattedFilename = formattedFilename.replace("*date*", "");
+            }
         }
         if (formattedFilename.contains("*tracknumber*") && tracknumber != null) {
             formattedFilename = formattedFilename.replace("*tracknumber*", tracknumber);
@@ -220,8 +238,12 @@ public class BandCampCom extends PluginForHost {
         // Insert filename at the end to prevent errors with tags
         formattedFilename = formattedFilename.replace("*songtitle*", songTitle);
 
-        if (cfg.getBooleanProperty(jd.plugins.hoster.BandCampCom.FILENAMELOWERCASE, false)) formattedFilename = formattedFilename.toLowerCase();
-        if (cfg.getBooleanProperty(jd.plugins.hoster.BandCampCom.FILENAMESPACE, false)) formattedFilename = formattedFilename.replace(" ", "_");
+        if (cfg.getBooleanProperty(jd.plugins.hoster.BandCampCom.FILENAMELOWERCASE, false)) {
+            formattedFilename = formattedFilename.toLowerCase();
+        }
+        if (cfg.getBooleanProperty(jd.plugins.hoster.BandCampCom.FILENAMESPACE, false)) {
+            formattedFilename = formattedFilename.replace(" ", "_");
+        }
 
         return formattedFilename;
     }
