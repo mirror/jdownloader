@@ -47,7 +47,7 @@ import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 import org.xml.sax.SAXException;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "rutube.ru" }, urls = { "http://(www\\.)?video\\.rutube\\.ru/[0-9a-f]{32}/?" }, flags = { 32 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "rutube.ru" }, urls = { "http://(www\\.)?video\\.decryptedrutube\\.ru/[0-9a-f]{32}" }, flags = { 0 })
 public class RuTubeRu extends PluginForHost {
 
     public RuTubeRu(final PluginWrapper wrapper) {
@@ -58,6 +58,18 @@ public class RuTubeRu extends PluginForHost {
     @Override
     public String getAGBLink() {
         return "http://rutube.ru/agreement.html";
+    }
+
+    /**
+     * Corrects downloadLink.urlDownload().<br/>
+     * <br/>
+     * The following code respect the hoster supported protocols via plugin boolean settings and users config preference
+     *
+     * @author raztoki
+     * */
+    @Override
+    public void correctDownloadLink(final DownloadLink downloadLink) {
+        downloadLink.setUrlDownload(downloadLink.getDownloadURL().replaceFirst("decryptedrutube\\.ru", "rutube\\.ru"));
     }
 
     @Override
@@ -104,8 +116,7 @@ public class RuTubeRu extends PluginForHost {
         String nextId = new Regex(dllink, regId).getMatch(0);
         br.setCustomCharset("utf-8");
         br.getPage("http://rutube.ru/api/video/" + nextId);
-
-        if (br.containsHTML("<title>Видео удалено администрацией как нарушающее условия Пользовательского соглашения</title>")) {
+        if (br.containsHTML("<root><detail>Not found</detail></root>")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         final Document doc = DocumentBuilderFactory.newInstance().newDocumentBuilder().parse(new ByteArrayInputStream(br.toString().getBytes("UTF-8")));
@@ -144,10 +155,10 @@ public class RuTubeRu extends PluginForHost {
             String f4murl = null;
             for (int i = 0; i < f4mUrls.getLength(); i++) {
                 best = f4mUrls.item(i);
-                width = best.getAttributes().getNamedItem("width").getTextContent().trim();
-                height = best.getAttributes().getNamedItem("height").getTextContent().trim();
-                bitrate = best.getAttributes().getNamedItem("bitrate").getTextContent().trim();
-                f4murl = best.getAttributes().getNamedItem("href").getTextContent().trim();
+                width = getAttByNamedItem(best, "width");
+                height = getAttByNamedItem(best, "height");
+                bitrate = getAttByNamedItem(best, "bitrate");
+                f4murl = getAttByNamedItem(best, "href");
 
                 br.getPage(baseUrl + f4murl);
 
@@ -159,15 +170,15 @@ public class RuTubeRu extends PluginForHost {
                 Node media;
                 for (int j = 0; j < mediaUrls.getLength(); j++) {
                     media = mediaUrls.item(j);
-                    if (StringUtils.equals(media.getAttributes().getNamedItem("streamId").getTextContent(), var.getStreamID())) {
+                    if (StringUtils.equals(getAttByNamedItem(media, "streamId"), var.getStreamID())) {
                         // found
-                        bestUrl = media.getAttributes().getNamedItem("url").getTextContent();
+                        bestUrl = getAttByNamedItem(media, "url");
                         if (var != null) {
                             if (StringUtils.equals(var.getWidth(), width)) {
                                 if (StringUtils.equals(var.getHeight(), height)) {
                                     if (StringUtils.equals(var.getBitrate(), bitrate)) {
                                         downloadLink.setDownloadSize(bestSizeEstimation);
-                                        downloadLink.setProperty("f4vUrl", media.getAttributes().getNamedItem("url").getTextContent());
+                                        downloadLink.setProperty("f4vUrl", getAttByNamedItem(media, "url"));
 
                                         downloadLink.setFinalFileName(Encoding.htmlDecode(filename.trim()) + "_" + height + "p" + ".mp4");
                                         return AvailableStatus.TRUE;
@@ -197,7 +208,20 @@ public class RuTubeRu extends PluginForHost {
 
     private String getText(Document doc, XPath xPath, String string) throws XPathExpressionException {
         Node n = (Node) xPath.evaluate(string, doc, XPathConstants.NODE);
-        return n.getFirstChild().getTextContent().trim();
+        return (n != null ? n.getFirstChild().getTextContent().trim() : null);
+    }
+
+    /**
+     * lets try and prevent possible NPE from killing progress.
+     *
+     * @author raztoki
+     * @param n
+     * @param item
+     * @return
+     */
+    private String getAttByNamedItem(final Node n, final String item) {
+        final String t = n.getAttributes().getNamedItem(item).getTextContent();
+        return (t != null ? t.trim() : null);
     }
 
     @Override

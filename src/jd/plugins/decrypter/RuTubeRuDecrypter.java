@@ -42,25 +42,35 @@ import org.w3c.dom.Document;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "rutube.ru" }, urls = { "http://(www\\.)?rutube\\.ru/(tracks/\\d+\\.html|video/[a-f0-9]{32})" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "rutube.ru" }, urls = { "http://((www\\.)?rutube\\.ru/(tracks/\\d+\\.html|(play/|video/)?embed/\\d+|video/[a-f0-9]{32})|video\\.rutube.ru/[a-f0-9]{32})" }, flags = { 0 })
 public class RuTubeRuDecrypter extends PluginForDecrypt {
 
     public RuTubeRuDecrypter(PluginWrapper wrapper) {
         super(wrapper);
     }
 
+    private String uid = null;
+    private String vid = null;
+
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
 
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         final String parameter = param.toString();
 
-        String uid = new Regex(parameter, "/([a-fA-F0-9]{32})").getMatch(0);
+        uid = new Regex(parameter, "/([a-f0-9]{32})").getMatch(0);
+        vid = new Regex(parameter, "rutube\\.ru/(?:play/|video/)?embed/(\\d+)").getMatch(0);
         if (uid == null) {
             br.setFollowRedirects(true);
-            br.getPage(parameter);
-            br.getPage(br.getURL().replace("/video/", "/api/video/") + "?format=xml");
-
-            uid = br.getRegex("<id>([a-fA-F0-9]{32})</id>").getMatch(0);
+            if (vid != null) {
+                // embed link, grab info since we are already on this page
+                br.getPage("http://rutube.ru/play/embed/" + vid + "?wmode=opaque&autoStart=true");
+                uid = br.getRegex("\"id\"\\s*:\\s*\"([a-f0-9]{32})\"").getMatch(0);
+            } else {
+                // tracks link
+                br.getPage(parameter);
+                br.getPage(br.getURL().replace("/video/", "/api/video/") + "?format=xml");
+                uid = br.getRegex("<id>([a-f0-9]{32})</id>").getMatch(0);
+            }
             if (uid == null) {
                 throw new Exception("Unknown LinkType");
             }
@@ -160,13 +170,18 @@ public class RuTubeRuDecrypter extends PluginForDecrypt {
 
     @Override
     protected DownloadLink createDownloadlink(String id) {
-        DownloadLink ret = super.createDownloadlink("http://video.rutube.ru/" + id);
+        DownloadLink ret = super.createDownloadlink("http://video.decryptedrutube.ru/" + id);
 
         try {
-            br.getPage("http://rutube.ru/api/video/" + id);
-
-            String vID = br.getRegex("/embed/(\\d+)").getMatch(0);
-            br.getPage("http://rutube.ru/play/embed/" + vID + "?wmode=opaque&autoStart=true");
+            if (vid == null) {
+                // since we know the embed url for player/embed link types no need todo this step
+                br.getPage("http://rutube.ru/api/video/" + id);
+                if (br.containsHTML("<root><detail>Not found</detail></root>")) {
+                    return createOfflinelink(this.getCurrentLink().getURL());
+                }
+                vid = br.getRegex("/embed/(\\d+)").getMatch(0);
+            }
+            br.getPage("http://rutube.ru/play/embed/" + vid + "?wmode=opaque&autoStart=true");
 
             String videoBalancer = br.getRegex("(http\\:\\/\\/bl\\.rutube\\.ru[^\"]+)").getMatch(0);
 
@@ -185,10 +200,10 @@ public class RuTubeRuDecrypter extends PluginForDecrypt {
                 RuTubeVariant bestVariant = null;
                 for (int i = 0; i < f4mUrls.getLength(); i++) {
                     best = f4mUrls.item(i);
-                    String width = best.getAttributes().getNamedItem("width").getTextContent().trim();
-                    String height = best.getAttributes().getNamedItem("height").getTextContent().trim();
-                    String bitrate = best.getAttributes().getNamedItem("bitrate").getTextContent().trim();
-                    String f4murl = best.getAttributes().getNamedItem("href").getTextContent().trim();
+                    String width = getAttByNamedItem(best, "width");
+                    String height = getAttByNamedItem(best, "height");
+                    String bitrate = getAttByNamedItem(best, "bitrate");
+                    String f4murl = getAttByNamedItem(best, "href");
 
                     br.getPage(baseUrl + f4murl);
 
@@ -203,7 +218,7 @@ public class RuTubeRuDecrypter extends PluginForDecrypt {
                         // System.out.println(new String(Base64.decode(xPath.evaluate("/manifest/media[" + (j + 1) + "]/metadata",
                         // d).trim())));
 
-                        RuTubeVariant var = new RuTubeVariant(width, height, bitrate, media.getAttributes().getNamedItem("streamId").getTextContent());
+                        RuTubeVariant var = new RuTubeVariant(width, height, bitrate, getAttByNamedItem(media, "streamId"));
                         variantsVideo.add(var);
                         bestVariant = var;
 
@@ -217,7 +232,7 @@ public class RuTubeRuDecrypter extends PluginForDecrypt {
 
                 return ret;
             } else {
-                logger.warning("Video not available in your country: " + "http://rutube.ru/api/video/" + id);
+                logger.warning("Video not available in your country: " + "http://rutube.ru/api/video/" + vid);
                 return null;
             }
         } catch (Exception e) {
@@ -225,6 +240,19 @@ public class RuTubeRuDecrypter extends PluginForDecrypt {
         }
         return null;
 
+    }
+
+    /**
+     * lets try and prevent possible NPE from killing the progress.
+     *
+     * @author raztoki
+     * @param n
+     * @param item
+     * @return
+     */
+    private String getAttByNamedItem(final Node n, final String item) {
+        final String t = n.getAttributes().getNamedItem(item).getTextContent();
+        return (t != null ? t.trim() : null);
     }
 
     /* NO OVERRIDE!! */
