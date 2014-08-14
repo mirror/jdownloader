@@ -85,7 +85,7 @@ public class FileOmCom extends PluginForHost {
     private final String               MAINTENANCE                  = ">This server is in maintenance mode";
     private final String               dllinkRegex                  = "https?://(\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}|([\\w\\-]+\\.)?" + DOMAINS + ")(:\\d{1,5})?/(files(/(dl|download))?|d|cgi-bin/dl\\.cgi)/(\\d+/)?([a-z0-9]+/){1,4}[^/<>\r\n\t]+";
     private final String[]             loginCookies                 = { "xfss", "login" };
-    private final boolean              supportsHTTPS                = false;
+    private final boolean              supportsHTTPS                = true;
     private final boolean              enforcesHTTPS                = false;
     private final boolean              useRUA                       = true;
     private final boolean              useAltLinkCheck              = false;
@@ -210,8 +210,8 @@ public class FileOmCom extends PluginForHost {
         // make sure the downloadURL protocol is of site ability and user preference
         correctDownloadLink(downloadLink);
         fuid = new Regex(downloadLink.getDownloadURL(), "([a-z0-9]{12})$").getMatch(0);
-        br.setFollowRedirects(true);
         prepBrowser(br);
+        br.setFollowRedirects(true);
 
         String[] fileInfo = new String[2];
 
@@ -478,7 +478,7 @@ public class FileOmCom extends PluginForHost {
             }
         }
         if (dl.getConnection().getContentType().contains("html")) {
-            if (dl.getConnection().getResponseCode() == 503 && br.getHttpConnection().getHeaderField("server") !=null && br.getHttpConnection().getHeaderField("server").toLowerCase(Locale.ENGLISH).contains("nginx")) {
+            if (dl.getConnection().getResponseCode() == 503 && br.getHttpConnection().getHeaderField("server") != null && br.getHttpConnection().getHeaderField("server").toLowerCase(Locale.ENGLISH).contains("nginx")) {
                 controlSimHost(account);
                 controlHost(account, downloadLink, false);
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Service unavailable. Try again later.", 15 * 60 * 1000l);
@@ -760,19 +760,24 @@ public class FileOmCom extends PluginForHost {
             if (ai == null) {
                 ai = new AccountInfo();
             }
-            // used in finally to restore browser redirect status, before possible login changes.
+            // used in finally to restore browser redirect status.
             final boolean frd = br.isFollowingRedirects();
             try {
                 /** Load cookies */
                 prepBrowser(br);
                 final Object ret = account.getProperty("cookies", null);
-                final boolean acmatch = (Encoding.urlEncode(account.getUser()).equals(account.getStringProperty("name", Encoding.urlEncode(account.getUser()))) && Encoding.urlEncode(account.getPass()).equals(account.getStringProperty("pass", Encoding.urlEncode(account.getPass()))) && ret != null && ret instanceof HashMap<?, ?> && account.isValid() && !loginFull ? true : false);
+                boolean acmatch = (Encoding.urlEncode(account.getUser()).equals(account.getStringProperty("name", Encoding.urlEncode(account.getUser()))) && Encoding.urlEncode(account.getPass()).equals(account.getStringProperty("pass", Encoding.urlEncode(account.getPass()))) && ret != null && ret instanceof HashMap<?, ?> && account.isValid() && !loginFull ? true : false);
                 if (acmatch) {
                     final HashMap<String, String> cookies = (HashMap<String, String>) ret;
-                    for (final Map.Entry<String, String> cookieEntry : cookies.entrySet()) {
-                        final String key = cookieEntry.getKey();
-                        final String value = cookieEntry.getValue();
-                        br.setCookie(COOKIE_HOST, key, value);
+                    // hashmap could theoretically be empty.
+                    if (!cookies.isEmpty()) {
+                        for (final Map.Entry<String, String> cookieEntry : cookies.entrySet()) {
+                            final String key = cookieEntry.getKey();
+                            final String value = cookieEntry.getValue();
+                            br.setCookie(COOKIE_HOST, key, value);
+                        }
+                    } else {
+                        acmatch = false;
                     }
                 }
                 if (!acmatch || loginFull) {
@@ -992,7 +997,7 @@ public class FileOmCom extends PluginForHost {
                 }
             }
             if (dl.getConnection().getContentType().contains("html")) {
-                if (dl.getConnection().getResponseCode() == 503 && br.getHttpConnection().getHeaderField("server") !=null && br.getHttpConnection().getHeaderField("server").toLowerCase(Locale.ENGLISH).contains("nginx")) {
+                if (dl.getConnection().getResponseCode() == 503 && br.getHttpConnection().getHeaderField("server") != null && br.getHttpConnection().getHeaderField("server").toLowerCase(Locale.ENGLISH).contains("nginx")) {
                     controlSimHost(account);
                     controlHost(account, downloadLink, false);
 
@@ -1247,7 +1252,7 @@ public class FileOmCom extends PluginForHost {
                 throw (PluginException) e;
             }
             // should only be picked up now if not JD2
-            if (br.getHttpConnection().getResponseCode() == 503 && br.getHttpConnection().getHeaderField("server") !=null && br.getHttpConnection().getHeaderField("server").toLowerCase(Locale.ENGLISH).contains("cloudflare-nginx")) {
+            if (br.getHttpConnection().getResponseCode() == 503 && br.getHttpConnection().getHeaderField("server") != null && br.getHttpConnection().getHeaderField("server").toLowerCase(Locale.ENGLISH).contains("cloudflare-nginx")) {
                 logger.warning("Cloudflare anti DDoS measures enabled, your version of JD can not support this. In order to go any further you will need to upgrade to JDownloader 2");
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Cloudflare anti DDoS measures enabled");
             } else {
@@ -1255,7 +1260,7 @@ public class FileOmCom extends PluginForHost {
             }
         }
         // prevention is better than cure
-        if (br.getHttpConnection().getResponseCode() == 503 && br.getHttpConnection().getHeaderField("server") !=null && br.getHttpConnection().getHeaderField("server").toLowerCase(Locale.ENGLISH).contains("cloudflare-nginx")) {
+        if (br.getHttpConnection().getResponseCode() == 503 && br.getHttpConnection().getHeaderField("server") != null && br.getHttpConnection().getHeaderField("server").toLowerCase(Locale.ENGLISH).contains("cloudflare-nginx")) {
             String host = new Regex(page, "https?://([^/]+)(:\\d+)?/").getMatch(0);
             Form cloudflare = br.getFormbyProperty("id", "ChallengeForm");
             if (cloudflare == null) {

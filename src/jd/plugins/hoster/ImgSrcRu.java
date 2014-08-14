@@ -140,7 +140,10 @@ public class ImgSrcRu extends PluginForHost {
                 downloadLink.setDownloadSize(con.getContentLength());
                 return AvailableStatus.TRUE;
             } finally {
-                con.disconnect();
+                try {
+                    con.disconnect();
+                } catch (Throwable e) {
+                }
             }
         } else {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
