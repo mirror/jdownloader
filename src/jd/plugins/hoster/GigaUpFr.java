@@ -30,7 +30,7 @@ import jd.utils.JDUtilities;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "gigaup.fr" }, urls = { "http://(www\\.)?gigaup\\.fr/(\\?d=[A-Z0-9]+|get_file/[A-Z0-9]+/.+\\.html)" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "gigaup.fr" }, urls = { "http://(www\\.)?gigaup\\.fr/(\\?(d|g)=[A-Z0-9]+|get_file/[A-Z0-9]+/.+\\.html)" }, flags = { 0 })
 public class GigaUpFr extends PluginForHost {
 
     public GigaUpFr(PluginWrapper wrapper) {
@@ -55,38 +55,61 @@ public class GigaUpFr extends PluginForHost {
         /** Servers are sometimes very slow */
         br.setReadTimeout(3 * 60 * 1000);
         br.getPage(link.getDownloadURL());
-        if (br.containsHTML("(Le fichier que vous tentez.*?harger.*?existe pas|>Le code de vérification entré est incorrect|Fichier supprimé car non utilisé sur une période trop longue|Le fichier a.*?sign.*?ill.*?gal|Vous ne pouvez télécharger ce fichier car il est \"Supprimé automatiquement\")")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        String filename = br.getRegex("<title>(.*?) \\| GigaUP\\.fr</title>").getMatch(0);
-        if (filename == null) filename = br.getRegex("<div class=\"text_t\">(.*?)</div>").getMatch(0);
+        if (br.containsHTML("(Le fichier que vous tentez.*?harger.*?existe pas|>Le code de vérification entré est incorrect|Fichier supprimé car non utilisé sur une période trop longue|Le fichier a.*?sign.*?ill.*?gal|Vous ne pouvez télécharger ce fichier car il est \"Supprimé automatiquement\")")) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
+        String filename = br.getRegex("a2a_config\\.linkname = \"GigaUP\\.fr \\| ([^<>\"]*?)\";").getMatch(0);
+        if (filename == null) {
+            filename = br.getRegex("<title>(.*?) \\| GigaUP\\.fr</title>").getMatch(0);
+        }
+        if (filename == null) {
+            filename = br.getRegex("<div class=\"text_t\">(.*?)</div>").getMatch(0);
+        }
         String filesize = br.getRegex("<br />Taille de (.*?)<br").getMatch(0);
-        if (filename == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (filename == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         link.setName(filename);
         if (filesize != null) {
             filesize = filesize.replace("Mo", "Mb");
             link.setDownloadSize(SizeFormatter.getSize(filesize));
         }
         String md5 = br.getRegex("Md5Sum : ([a-z0-9]+)").getMatch(0);
-        if (md5 != null) link.setMD5Hash(md5);
+        if (md5 != null) {
+            link.setMD5Hash(md5);
+        }
         return AvailableStatus.TRUE;
     }
 
     @Override
     public void handleFree(DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
-        if (br.containsHTML(">Vous ne pouvez télécharger ce fichier car il est \"En travail\"\\.<")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error", 60 * 60 * 1000l);
+        if (br.containsHTML(">Vous ne pouvez télécharger ce fichier car il est \"En travail\"\\.<")) {
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error", 60 * 60 * 1000l);
+        }
         String captchaid = (br.getRegex("<img src=\".*?uid=(.*?)\" style=\"margi").getMatch(0));
         Form captchaForm = br.getFormbyKey("bot_sucker");
-        if (captchaForm == null || captchaid == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (captchaForm == null || captchaid == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         String captchaurl = "http://www.gigaup.fr/constru/img/bot_sucker/bot_sucker.php?uid=" + captchaid;
         String code = getCaptchaCode(captchaurl, downloadLink);
         captchaForm.remove("dl_file_SSL");
         captchaForm.put("bot_sucker", code);
         br.submitForm(captchaForm);
-        if (br.containsHTML(">Serveurs surchargés")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server overloaded (no free slots?)", 10 * 60 * 1000l);
-        if (br.containsHTML("Le code de vérification entré est incorrecte")) { throw new PluginException(LinkStatus.ERROR_CAPTCHA); }
+        if (br.containsHTML(">Serveurs surchargés")) {
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server overloaded (no free slots?)", 10 * 60 * 1000l);
+        }
+        if (br.containsHTML("Le code de vérification entré est incorrecte")) {
+            throw new PluginException(LinkStatus.ERROR_CAPTCHA);
+        }
         String dllink = br.getRegex("padding:0px;\"><a href=\"(.*?)\"").getMatch(0);
-        if (dllink == null) dllink = br.getRegex("\"(ftp://gigaup.*?:.*?)\"").getMatch(0);
-        if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (dllink == null) {
+            dllink = br.getRegex("\"(ftp://gigaup.*?:.*?)\"").getMatch(0);
+        }
+        if (dllink == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         try {
             ((Ftp) JDUtilities.getNewPluginForHostInstance("ftp")).download(Encoding.urlDecode(dllink, true), downloadLink, false);
         } catch (InterruptedIOException e) {
@@ -94,8 +117,9 @@ public class GigaUpFr extends PluginForHost {
         } catch (IOException e) {
             if (e.toString().contains("maximum number of clients")) {
                 throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 10 * 60 * 1000l);
-            } else
+            } else {
                 throw e;
+            }
         }
     }
 

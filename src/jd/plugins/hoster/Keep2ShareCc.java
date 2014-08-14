@@ -311,14 +311,10 @@ public class Keep2ShareCc extends PluginForHost {
         dl.startDownload();
     }
 
-    private boolean isPremiumOnly() {
-        return br.containsHTML("File size to large\\!<") || br.containsHTML("Only <b>Premium</b> access<br>") || br.containsHTML("only for premium members");
-    }
-
     private String site_doFree(final DownloadLink downloadLink, final Account account) throws Exception {
         handleGeneralErrors(account);
         br.setFollowRedirects(false);
-        if (isPremiumOnly()) {
+        if (is_premiumonly) {
             try {
                 throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);
             } catch (final Throwable e) {
@@ -426,6 +422,10 @@ public class Keep2ShareCc extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_IP_BLOCKED);
 
         }
+    }
+
+    private boolean isPremiumOnly() {
+        return br.containsHTML("File size to large\\!<") || br.containsHTML("Only <b>Premium</b> access<br>") || br.containsHTML("only for premium members");
     }
 
     private String getDllink() throws PluginException {
