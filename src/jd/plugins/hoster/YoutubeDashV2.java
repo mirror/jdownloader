@@ -1928,7 +1928,7 @@ public class YoutubeDashV2 extends PluginForHost {
     }
 
     @Override
-    public void extendLinkgrabberContextMenu(final JComponent parent, final PluginView<CrawledLink> pv) {
+    public void extendLinkgrabberContextMenu(final JComponent parent, final PluginView<CrawledLink> pv, List<PluginView<CrawledLink>> allPvs) {
         final JMenu setVariants = new JMenu(_GUI._.YoutubeDashV2_extendLinkgrabberContextMenu_context_menu());
         setVariants.setIcon(DomainInfo.getInstance(getHost()).getFavIcon());
         setVariants.setEnabled(false);

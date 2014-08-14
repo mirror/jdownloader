@@ -147,7 +147,7 @@ public class AbstractFFmpegBinary {
         return getFullPath() != null;
     }
 
-    protected String getFullPath() {
+    public String getFullPath() {
         try {
 
             if (StringUtils.isEmpty(path)) {

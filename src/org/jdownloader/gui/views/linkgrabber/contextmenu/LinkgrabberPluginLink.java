@@ -1,6 +1,7 @@
 package org.jdownloader.gui.views.linkgrabber.contextmenu;
 
 import java.lang.reflect.InvocationTargetException;
+import java.util.List;
 
 import javax.swing.JComponent;
 
@@ -28,8 +29,9 @@ public class LinkgrabberPluginLink extends MenuItemData implements MenuLink {
 
     @Override
     public JComponent addTo(JComponent root) throws InstantiationException, IllegalAccessException, IllegalArgumentException, InvocationTargetException, ClassNotFoundException, NoSuchMethodException, SecurityException, ExtensionNotLoadedException {
-        for (PluginView<CrawledLink> pv : LinkGrabberTable.getInstance().getSelectionInfo().getPluginViews()) {
-            pv.getPlugin().extendLinkgrabberContextMenu(root, pv);
+        List<PluginView<CrawledLink>> views = LinkGrabberTable.getInstance().getSelectionInfo().getPluginViews();
+        for (PluginView<CrawledLink> pv : views) {
+            pv.getPlugin().extendLinkgrabberContextMenu(root, pv, views);
         }
         return null;
     }
