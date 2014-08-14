@@ -62,10 +62,6 @@ public class UpDownBz extends PluginForHost {
     private static final String API_HOST                 = "api.updown.bz";
     private static final String WEB_HOST                 = "updown.bz";
 
-    /*
-     * Hoster is online -> https://updown.bz
-     */
-
     public UpDownBz(PluginWrapper wrapper) throws IOException {
         super(wrapper);
         setConfigElements();
@@ -84,7 +80,7 @@ public class UpDownBz extends PluginForHost {
 
     @Override
     public int getMaxSimultanPremiumDownloadNum() {
-        return 5;
+        return 10;
     }
 
     @Override
@@ -236,7 +232,7 @@ public class UpDownBz extends PluginForHost {
         String url = createStorageUrl(downloadLink, sessionid, prvdl_data.getHost(), share_password);
 
         // try to open a download connection and check first chunks response
-        dl = jd.plugins.BrowserAdapter.openDownload(this.br, downloadLink, url, true, (-1) * 2);
+        dl = jd.plugins.BrowserAdapter.openDownload(this.br, downloadLink, url, true, (-1) * 5);
 
         // pass off to a shared error handling method
         handleErrors(downloadLink, account);
