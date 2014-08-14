@@ -369,6 +369,12 @@ public class FileColumn extends ExtTextColumn<AbstractNode> implements GenericCo
 
         String txt = editorField.getText();
         int point = txt.lastIndexOf(".");
+
+        int pointPart = txt.lastIndexOf(".part");
+        if (pointPart > 0) {
+            point = pointPart;
+        }
+
         /* select filename only, try to keep the extension/filetype */
         if (point > 0 && selectAll == false) {
             editorField.select(0, point);
