@@ -182,10 +182,10 @@ public class VideoBoxCom extends PluginForHost {
         br.getPage("https://www.videobox.com/billing/account");
         ai.setUnlimitedTraffic();
         final String expire = br.getRegex(">next statement</div>[\t\n\r ]+<div class=\"value\">([^<>\"]*?)</div>").getMatch(0);
-        if (expire == null) {
+        if (expire == null && !br.containsHTML("<strong>Account status:</strong>[\t\n\r ]+ACTIVE")) {
             account.setValid(false);
             return ai;
-        } else {
+        } else if (expire != null) {
             ai.setValidUntil(TimeFormatter.getMilliSeconds(expire.trim(), "MM/dd/yyyy", Locale.ENGLISH));
         }
         account.setValid(true);
