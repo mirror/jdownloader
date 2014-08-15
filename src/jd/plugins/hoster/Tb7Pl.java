@@ -92,7 +92,8 @@ public class Tb7Pl extends PluginForHost {
 
         // unfortunatelly there is no list with supported hosts anywhere on the page
         // only PNG image at the main page
-        final ArrayList<String> supportedHosts = new ArrayList<String>(Arrays.asList("turbobit.net", "catshare.net", "rapidu.net", "rapidgator.net", "rg.to", "uploaded.to", "uploaded.net", "ul.to", "oboom.com", "fileparadox.in", "netload.in", "bitshare.com", "freakshare.net", "freakshare.com", "filemonkey.in", "uploadable.ch", "lunaticfiles.com", "fileshark.pl"));
+        final ArrayList<String> supportedHosts = new ArrayList<String>(Arrays.asList("turbobit.net", "catshare.net", "rapidu.net", "rapidgator.net", "rg.to", "uploaded.to", "uploaded.net", "ul.to", "oboom.com", "fileparadox.in", "netload.in",
+                "bitshare.com", "freakshare.net", "freakshare.com", "filemonkey.in", "uploadable.ch", "lunaticfiles.com", "fileshark.pl"));
         if (expired) {
             ai.setExpired(true);
             ai.setStatus("Account expired");
@@ -150,7 +151,15 @@ public class Tb7Pl extends PluginForHost {
         postData = "step=2" + "&0=on";
         br.postPage(MAINPAGE + "mojekonto/sciagaj", postData);
 
+        // New Regex, but not tested if it works for all files (not video)
+        // String generatedLink =
+        // br.getRegex("<div class=\"download\">(<a target=\"_blank\" href=\"mojekonto/ogladaj/[0-9A-Za-z]*?\">Oglądaj online</a> / )*?<a href=\"([^\"<>]+)\" target=\"_blank\">Pobierz</a>").getMatch(1);
+        // Old Regex
         String generatedLink = br.getRegex("<div class=\"download\"><a href=\"([^\"<>]+)\" target=\"_blank\">Pobierz</a>").getMatch(0);
+        if (generatedLink == null) {
+            // New Regex (works with video files)
+            generatedLink = br.getRegex("<div class=\"download\">(<a target=\"_blank\" href=\"mojekonto/ogladaj/[0-9A-Za-z]*?\">Oglądaj online</a> / )<a href=\"([^\"<>]+)\" target=\"_blank\">Pobierz</a>").getMatch(1);
+        }
         if (generatedLink == null) {
             logger.severe("Tb7.pl(Error): " + generatedLink);
             /*
@@ -180,7 +189,7 @@ public class Tb7Pl extends PluginForHost {
         }
         dl = jd.plugins.BrowserAdapter.openDownload(br, link, generatedLink, true, chunks);
         if (dl.getConnection().getContentType().equalsIgnoreCase("text/html")) // unknown
-            // error
+        // error
         {
             br.followConnection();
             if (br.getBaseURL().contains("notransfer")) {
