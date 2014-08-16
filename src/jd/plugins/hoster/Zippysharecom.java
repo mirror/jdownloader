@@ -36,6 +36,7 @@ import jd.plugins.PluginForHost;
 import jd.utils.JDUtilities;
 
 import org.appwork.utils.formatter.SizeFormatter;
+import org.mozilla.javascript.ConsString;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "zippyshare.com" }, urls = { "http://www\\d{0,}\\.zippyshare\\.com/(d/\\d+/\\d+/.|v/\\d+/[^<>\"/]*?\\.html?|.*?key=\\d+|downloadMusic\\?key=\\d+|swf/player_local\\.swf\\?file=\\d+)" }, flags = { 0 })
 public class Zippysharecom extends PluginForHost {
@@ -119,34 +120,52 @@ public class Zippysharecom extends PluginForHost {
 
     private String execJS(String fun, final boolean fromFlash) throws Exception {
         Object result = new Object();
-        final ScriptEngineManager manager = jd.plugins.hoster.DummyScriptEnginePlugin.getScriptEngineManager(this);
-        final ScriptEngine engine = manager.getEngineByName("javascript");
         try {
             if (!fromFlash) {
-                // validate function name?
-                String v = new Regex(fun, "var ([a-z0-9]+) = function").getMatch(0);
-                if (v == null) {
-                    // prevent null value or static value been used against us.
-                    final Random r = new Random();
-                    final String soup = "abcdefghijklmnopqrstuvwxyz";
-                    v = "";
-                    for (int i = 0; i < 12; i++) {
-                        v = v + soup.charAt(r.nextInt(soup.length()));
+                // validate function name?, we need html/js parser (which knows open and closing statement of js/html!
+                String[] functions = new Regex(fun, "var ([a-z0-9]+) = function\\(\\)").getColumn(0);
+                if (functions != null) {
+                    for (String f : functions) {
+                        try {
+                            result = processJS(f, fun);
+                        } catch (final Throwable e) {
+                        }
+                        if (result != null && result instanceof ConsString) {
+                            return result.toString();
+                        }
                     }
                 }
-                // document.getElementById('id').href
-                engine.eval("var document = { getElementById: function (a) { if (!this[a]) { this[a] = new Object(); function href() { return a.href; } this[a].href = href(); } return this[a]; }};");
-                engine.eval(fun + "if(typeof " + v + "=='function'){" + v + "();}\r\nvar result=document.getElementById('dlbutton').href;");
-                result = engine.get("result");
-
+                if (functions == null) {
+                    String v = new Regex(fun, "var ([a-z0-9]+) = function").getMatch(0);
+                    if (v == null) {
+                        // prevent null value or static value been used against us.
+                        final Random r = new Random();
+                        final String soup = "abcdefghijklmnopqrstuvwxyz";
+                        v = "";
+                        for (int i = 0; i < 12; i++) {
+                            v = v + soup.charAt(r.nextInt(soup.length()));
+                        }
+                    }
+                    // document.getElementById('id').href
+                    processJS(v, fun);
+                }
             } else {
+                final ScriptEngineManager manager = jd.plugins.hoster.DummyScriptEnginePlugin.getScriptEngineManager(this);
+                final ScriptEngine engine = manager.getEngineByName("javascript");
                 result = ((Double) engine.eval(fun)).intValue();
             }
         } catch (final Throwable e) {
             throw new Exception("JS Problem in Rev" + getVersion(), e);
-
         }
         return result == null ? null : result.toString();
+    }
+
+    private Object processJS(final String v, final String fun) throws Exception {
+        final ScriptEngineManager manager = jd.plugins.hoster.DummyScriptEnginePlugin.getScriptEngineManager(this);
+        final ScriptEngine engine = manager.getEngineByName("javascript");
+        engine.eval("var document = { getElementById: function (a) { if (!this[a]) { this[a] = new Object(); function href() { return a.href; } this[a].href = href(); } return this[a]; }};");
+        engine.eval(fun + "if(typeof " + v + "=='function'){" + v + "();}\r\nvar result=document.getElementById('dlbutton').href;");
+        return engine.get("result");
     }
 
     @Override
@@ -258,8 +277,8 @@ public class Zippysharecom extends PluginForHost {
                     DLLINK = DLLINK.replace("'+" + var + "+'", data);
                 }
             } else {
-                DLLINK = br.getRegex("(document\\.getElementById\\(\\'dlbutton\\'\\)\\.href\\s*= \"/.*?\";)").getMatch(0);
-                String math = br.getRegex(".*<script type=\"text/javascript\">(.*?" + Pattern.quote(DLLINK) + ".*?\\}\\s*)</script>\r?\n").getMatch(0);
+                DLLINK = br.getRegex("(document\\.getElementById\\(\\'dlbutton\\'\\)\\.href\\s*= \"/((?!\\s*)|.*?)\";)").getMatch(0);
+                String math = br.getRegex("<script type=\"text/javascript\">([^>]+var\\s+\\w+\\s*=\\s*function\\(\\)\\s*\\{.*?" + Pattern.quote(DLLINK) + ".*?\\}[^<]*)</script>").getMatch(0);
                 if (DLLINK != null && math != null) {
                     math = math.replace(DLLINK, "var result = " + DLLINK);
                     String data = execJS(math, false);
