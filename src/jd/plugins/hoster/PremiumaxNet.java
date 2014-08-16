@@ -48,9 +48,9 @@ public class PremiumaxNet extends PluginForHost {
     private static final String                            MAINPAGE           = "http://premiumax.net";
     private static final String                            NICE_HOST          = "premiumax.net";
     private static final String                            NICE_HOSTproperty  = "premiumaxnet";
-    private static final String[][]                        HOSTS              = { { "oboom", "oboom.com" }, { "share-online", "share-online.biz" }, { "fileparadox", "fileparadox.in" }, { "4shared", "4shared.com" }, { "asfile", "asfile.com" }, { "bitshare", "bitshare.com" }, { "datafile", "datafile.com," }, { "ddlstorage", "ddlstorage.com" }, { "depfile", "depfile.com" }, { "depositfiles", "depositfiles.com" }, { "dizzcloud", "dizzcloud.com" }, { "easybytez", "easybytez.com" }, { "extmatrix", "extmatrix.com" }, { "fayloobmennik", "fayloobmennik.net" }, { "filecloud", "filecloud.io" }, { "filefactory", "filefactory.com" }, { "filemonkey", "filemonkey.in" }, { "fileom", "fileom.com" }, { "filepost", "filepost.com" }, { "filesflash", "filesflash.com" }, { "filesmonster", "filesmonster.com" }, { "firedrive", "firedrive.com" }, { "freakshare", "freakshare.com" },
-            { "hugefiles", "hugefiles.net" }, { "hulkfile", "hulkfile.eu" }, { "k2share", "keep2share.cc" }, { "kingfiles", "kingfiles.net" }, { "letitbit", "letitbit.net" }, { "luckyshare", "luckyshare.net" }, { "lumfile", "lumfile.com" }, { "mediafire", "mediafire.com" }, { "megairon", "megairon.net" }, { "megashares", "megashares.com" }, { "mightyupload", "mightyupload.com" }, { "netload", "netload.in" }, { "novafile", "novafile.com" }, { "putlocker", "putlocker.com" }, { "rapidgator", "rapidgator.net" }, { "rapidshare", "rapidshare.com" }, { "ryushare", "ryushare.com" }, { "sendspace", "sendspace.com" }, { "shareflare", "shareflare.net" }, { "terafile", "terafile.co" }, { "turbobit", "turbobit.net" }, { "ultramegabit", "ultramegabit.com" }, { "uploadable", "uploadable.ch" }, { "uploaded", "uploaded.net" }, { "uppit", "uppit.com" }, { "videomega", "videomega.tv" },
-            { "zippyshare", "zippyshare.com" }                               };
+    private static final String[][]                        HOSTS              = { { "fileboom", "fileboom.me" }, { "oboom", "oboom.com" }, { "share-online", "share-online.biz" }, { "fileparadox", "fileparadox.in" }, { "4shared", "4shared.com" }, { "asfile", "asfile.com" }, { "bitshare", "bitshare.com" }, { "datafile", "datafile.com," }, { "ddlstorage", "ddlstorage.com" }, { "depfile", "depfile.com" }, { "depositfiles", "depositfiles.com" }, { "dizzcloud", "dizzcloud.com" }, { "easybytez", "easybytez.com" }, { "extmatrix", "extmatrix.com" }, { "fayloobmennik", "fayloobmennik.net" }, { "filecloud", "filecloud.io" }, { "filefactory", "filefactory.com" }, { "filemonkey", "filemonkey.in" }, { "fileom", "fileom.com" }, { "filepost", "filepost.com" }, { "filesflash", "filesflash.com" }, { "filesmonster", "filesmonster.com" }, { "firedrive", "firedrive.com" },
+        { "freakshare", "freakshare.com" }, { "hugefiles", "hugefiles.net" }, { "hulkfile", "hulkfile.eu" }, { "k2share", "keep2share.cc" }, { "kingfiles", "kingfiles.net" }, { "letitbit", "letitbit.net" }, { "luckyshare", "luckyshare.net" }, { "lumfile", "lumfile.com" }, { "mediafire", "mediafire.com" }, { "megairon", "megairon.net" }, { "megashares", "megashares.com" }, { "mightyupload", "mightyupload.com" }, { "netload", "netload.in" }, { "novafile", "novafile.com" }, { "putlocker", "putlocker.com" }, { "rapidgator", "rapidgator.net" }, { "rapidshare", "rapidshare.com" }, { "ryushare", "ryushare.com" }, { "sendspace", "sendspace.com" }, { "shareflare", "shareflare.net" }, { "terafile", "terafile.co" }, { "turbobit", "turbobit.net" }, { "ultramegabit", "ultramegabit.com" }, { "uploadable", "uploadable.ch" }, { "uploaded", "uploaded.net" }, { "uppit", "uppit.com" },
+        { "videomega", "videomega.tv" }, { "zippyshare", "zippyshare.com" } };
 
     public PremiumaxNet(PluginWrapper wrapper) {
         super(wrapper);
@@ -350,24 +350,23 @@ public class PremiumaxNet extends PluginForHost {
     public void resetDownloadlink(DownloadLink link) {
     }
 
-
-/* NO OVERRIDE!! We need to stay 0.9*compatible */
-public boolean hasCaptcha(DownloadLink link, jd.plugins.Account acc) {
-if (acc == null) {
-/* no account, yes we can expect captcha */
-return true;
-}
- if (Boolean.TRUE.equals(acc.getBooleanProperty("free"))) {
-/* free accounts also have captchas */
-return true;
-}
- if (Boolean.TRUE.equals(acc.getBooleanProperty("nopremium"))) {
-/* free accounts also have captchas */
-return true;
-}
- if (acc.getStringProperty("session_type")!=null&&!"premium".equalsIgnoreCase(acc.getStringProperty("session_type"))) {
-return true;
-}
-return false;
-}
+    /* NO OVERRIDE!! We need to stay 0.9*compatible */
+    public boolean hasCaptcha(DownloadLink link, jd.plugins.Account acc) {
+        if (acc == null) {
+            /* no account, yes we can expect captcha */
+            return true;
+        }
+        if (Boolean.TRUE.equals(acc.getBooleanProperty("free"))) {
+            /* free accounts also have captchas */
+            return true;
+        }
+        if (Boolean.TRUE.equals(acc.getBooleanProperty("nopremium"))) {
+            /* free accounts also have captchas */
+            return true;
+        }
+        if (acc.getStringProperty("session_type") != null && !"premium".equalsIgnoreCase(acc.getStringProperty("session_type"))) {
+            return true;
+        }
+        return false;
+    }
 }
