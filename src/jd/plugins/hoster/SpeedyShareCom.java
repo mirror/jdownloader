@@ -195,7 +195,10 @@ public class SpeedyShareCom extends PluginForHost {
         if (!br.containsHTML(CAPTCHATEXT)) {
             finallink = br.getRegex("class=downloadfilename href=\\'(.*?)\\'").getMatch(0);
             if (finallink == null) {
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                finallink = br.getRegex("<a href=('|\")([^>]+)\\1><img[^>]+(src=/gf/slowdownload\\.png|alt='Slow Download'|class=dlimg2)").getMatch(1);
+                if (finallink == null) {
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                }
             }
         }
         if (finallink == null) {
@@ -221,6 +224,12 @@ public class SpeedyShareCom extends PluginForHost {
         }
         if (finallink == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        if (finallink.matches("/" + fuid + "/download/.+")) {
+            br.getPage(finallink);
+            finallink = br.getRedirectLocation();
+            doMagic();
+            sleep(3000, downloadLink);
         }
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, finallink, true, 1);
         if (dl.getConnection().getContentType().contains("html")) {
@@ -309,7 +318,16 @@ public class SpeedyShareCom extends PluginForHost {
             ai.setProperty("multiHostSupport", Property.NULL);
             throw e;
         }
-        final String expire = br.getRegex("<td>Next payment:</td><td>([^<>\"]*?)</td>").getMatch(0);
+        // typical expire time.
+        // <td>Account type:</td><td><b style='color: green'>Premium</b> (expires on 2014-08-17)</td></tr>
+        String expire = br.getRegex("\\(expires on (\\d{4}-\\d{2}-\\d{2})\\)").getMatch(0);
+        if (expire == null) {
+            // Perpetual roll over, expire time taken on the assumption of next payment.
+            // <td>Account type:</td><td><b style='color: green'>Premium</b></td></tr><tr><td>Automatic payments:&nbsp;
+            // &nbsp;</td><td>Active (<a href=/faq.php style='color: blue;'>cancel</a>)</td></tr><tr><td>Last
+            // payment:</td><td>2014-07-25</td></tr><tr><td>Next payment:</td><td>2014-08-24</td></tr>
+            expire = br.getRegex("<td>Next payment:</td><td>(\\d{4}-\\d{2}-\\d{2})</td>").getMatch(0);
+        }
         if (expire != null) {
             ai.setValidUntil(TimeFormatter.getMilliSeconds(expire, "yyyy-MM-dd", Locale.ENGLISH));
         }
