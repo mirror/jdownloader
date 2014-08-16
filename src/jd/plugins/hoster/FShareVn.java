@@ -186,9 +186,7 @@ public class FShareVn extends PluginForHost {
             if (downloadURL == null) {
                 downloadURL = br.getRegex("value=\"Download\" name=\"btn_download\" value=\"Download\"  onclick=\"window\\.location=\\'(http://.*?)\\'\"").getMatch(0);
                 if (downloadURL == null) {
-                    // downloadURL =
-                    // br.getRegex("\\'(http://download\\d+\\.fshare\\.vn/download/[A-Za-z0-9]+/.*?)\\'").getMatch(0);
-                    downloadURL = br.getRegex("<form action=\"(http://download\\d+\\.fshare\\.vn/download/[^<>]+/.*?)\"").getMatch(0);
+                    downloadURL = br.getRegex("<form action=\"(http://download[^\\.]+\\.fshare\\.vn/download/[^<>]+/.*?)\"").getMatch(0);
                 }
             }
             logger.info("downloadURL = " + downloadURL);
