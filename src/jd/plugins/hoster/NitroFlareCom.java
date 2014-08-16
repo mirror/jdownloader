@@ -48,7 +48,6 @@ public class NitroFlareCom extends PluginForHost {
     private static final String  baseURL  = "https://nitroflare.com";
     private static final String  apiURL   = "https://www.nitroflare.com/api";
     private static AtomicBoolean useAPI   = new AtomicBoolean(true);
-    private static Object        ACCLOCK  = new Object();
 
     public NitroFlareCom(PluginWrapper wrapper) {
         super(wrapper);
@@ -89,6 +88,10 @@ public class NitroFlareCom extends PluginForHost {
             directlinkproperty = "freelink";
             logger.finer("setConstants = Guest Download :: isFree = " + isFree + ", upperChunks = " + chunks + ", Resumes = " + resumes);
         }
+    }
+
+    public boolean canHandle(DownloadLink downloadLink, Account account) {
+        return true;
     }
 
     public boolean checkLinks(final DownloadLink[] urls) {
@@ -268,7 +271,7 @@ public class NitroFlareCom extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         if (!inValidate(expire) && !"0".equalsIgnoreCase(expire)) {
-            ai.setValidPremiumUntil(TimeFormatter.getMilliSeconds(expire, "yyyy-MM-dd hh:mm:ss", Locale.ENGLISH));
+            ai.setValidUntil(TimeFormatter.getMilliSeconds(expire, "yyyy-MM-dd HH:mm:ss", Locale.ENGLISH));
         }
         if ("banned".equalsIgnoreCase(status)) {
             if ("de".equalsIgnoreCase(language)) {
@@ -279,11 +282,12 @@ public class NitroFlareCom extends PluginForHost {
         } else if ("expired".equalsIgnoreCase(status) || ai.isExpired()) {
             // expired(free)? account
             account.setProperty("free", true);
+            // dont support free account?
             ai.setExpired(true);
         } else if ("active".equalsIgnoreCase(status)) {
             // premium account
             account.setProperty("free", false);
-            ai.setExpired(false);
+            account.setValid(true);
         }
         if (!inValidate(storage)) {
             ai.setUsedSpace(Long.parseLong(storage));
@@ -404,7 +408,7 @@ public class NitroFlareCom extends PluginForHost {
 
     @Override
     public int getMaxSimultanPremiumDownloadNum() {
-        return 0;
+        return -1;
     }
 
     @Override
