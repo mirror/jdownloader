@@ -152,6 +152,7 @@ public class SoundCloudComDecrypter extends PluginForDecrypt {
                         final DownloadLink dl = createDownloadlink(parameter.replace("soundcloud", "soundclouddecrypted"));
                         final AvailableStatus status = jd.plugins.hoster.SoundcloudCom.checkStatus(dl, this.br.toString(), false);
                         dl.setAvailableStatus(status);
+                        dl.setProperty("plain_url_username", url_username);
                         decryptedLinks.add(dl);
 
                         get500Thumbnail(dl, this.br.toString());
@@ -161,7 +162,9 @@ public class SoundCloudComDecrypter extends PluginForDecrypt {
                         decryptedLinks.add(createDownloadlink(parameter.replace("soundcloud", "soundclouddecrypted")));
                     }
                 } else {
-                    decryptedLinks.add(createDownloadlink(parameter.replace("soundcloud", "soundclouddecrypted")));
+                    final DownloadLink dl = createDownloadlink(parameter.replace("soundcloud", "soundclouddecrypted"));
+                    dl.setProperty("plain_url_username", url_username);
+                    decryptedLinks.add(dl);
                 }
             }
         } catch (final DecrypterException e) {

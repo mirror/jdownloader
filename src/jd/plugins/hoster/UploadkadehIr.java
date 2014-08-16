@@ -200,7 +200,7 @@ public class UploadkadehIr extends PluginForHost {
     }
 
     @SuppressWarnings("unused")
-    public void doFree(final DownloadLink downloadLink, final boolean resumable, final int maxchunks, final String directlinkproperty) throws Exception, PluginException {
+    public void doFree(final DownloadLink downloadLink, boolean resumable, int maxchunks, final String directlinkproperty) throws Exception, PluginException {
         br.setFollowRedirects(false);
         passCode = downloadLink.getStringProperty("pass");
         /* First, bring up saved final links */
@@ -409,6 +409,10 @@ public class UploadkadehIr extends PluginForHost {
             }
         }
         logger.info("Final downloadlink = " + dllink + " starting the download...");
+        if (downloadLink.getName().endsWith(".mkv")) {
+            resumable = false;
+            maxchunks = 1;
+        }
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, resumable, maxchunks);
         if (dl.getConnection().getContentType().contains("html")) {
             if (dl.getConnection().getResponseCode() == 503) {
