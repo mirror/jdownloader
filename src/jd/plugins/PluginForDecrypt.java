@@ -55,7 +55,7 @@ import org.jdownloader.plugins.controller.crawler.LazyCrawlerPlugin;
 
 /**
  * Dies ist die Oberklasse für alle Plugins, die Links entschlüsseln können
- * 
+ *
  * @author astaldo
  */
 public abstract class PluginForDecrypt extends Plugin {
@@ -138,7 +138,7 @@ public abstract class PluginForDecrypt extends Plugin {
 
     /**
      * return how many Instances of this PluginForDecrypt may crawl concurrently
-     * 
+     *
      * @return
      */
     public int getMaxConcurrentProcessingInstances() {
@@ -147,13 +147,12 @@ public abstract class PluginForDecrypt extends Plugin {
 
     /**
      * Diese Methode entschlüsselt Links.
-     * 
+     *
      * @param cryptedLinks
      *            Ein Vector, mit jeweils einem verschlüsseltem Link. Die einzelnen verschlüsselten Links werden aufgrund des Patterns
      *            {@link jd.plugins.Plugin#getSupportedLinks() getSupportedLinks()} herausgefiltert
      * @return Ein Vector mit Klartext-links
      */
-
     protected DownloadLink createDownloadlink(String link) {
         return new DownloadLink(null, null, getHost(), Encoding.urlDecode(link, true), true);
     }
@@ -161,26 +160,43 @@ public abstract class PluginForDecrypt extends Plugin {
     /**
      * creates a offline link.
      * 
-     * @parameter link
-     * 
+     * @param link
+     * @return
      * @since JD2
      * @author raztoki
-     * */
+     */
     protected DownloadLink createOfflinelink(final String link) {
-        return createOfflinelink(link, null);
+        return createOfflinelink(link, null, null);
     }
 
     /**
      * creates a offline link, with logger and comment message.
-     * 
-     * @parameter link
-     * 
+     *
+     * @param link
+     * @param message
+     * @return
+     * @since JD2
+     * @author raztoki
+     */
+    protected DownloadLink createOfflinelink(final String link, final String message) {
+        return createOfflinelink(link, null, message);
+    }
+
+    /**
+     * creates a offline link, with filename, with logger and comment message.
+     *
+     * @param link
+     * @param filename
+     * @param message
      * @since JD2
      * @author raztoki
      * */
-    protected DownloadLink createOfflinelink(final String link, final String message) {
+    protected DownloadLink createOfflinelink(final String link, final String filename, final String message) {
         final DownloadLink dl = new DownloadLink(null, null, getHost(), "directhttp://" + Encoding.urlDecode(link, true), false);
         dl.setProperty("OFFLINE", true);
+        if (filename != null) {
+            dl.setName(filename.trim());
+        }
         if (message != null) {
             dl.setComment(message);
             logger.info("Offline Link: " + link + " :: " + message);
@@ -215,10 +231,10 @@ public abstract class PluginForDecrypt extends Plugin {
     /**
      * Die Methode entschlüsselt einen einzelnen Link. Alle steps werden durchlaufen. Der letzte step muss als parameter einen
      * Vector<String> mit den decoded Links setzen
-     * 
+     *
      * @param cryptedLink
      *            Ein einzelner verschlüsselter Link
-     * 
+     *
      * @return Ein Vector mit Klartext-links
      */
     public ArrayList<DownloadLink> decryptLink(CrawledLink source) {
@@ -317,9 +333,9 @@ public abstract class PluginForDecrypt extends Plugin {
 
     /**
      * use this to process decrypted links while the decrypter itself is still running
-     * 
+     *
      * NOTE: if you use this, please put it in try{}catch(Throwable) as this function is ONLY available in>09581
-     * 
+     *
      * @param links
      */
     protected void distribute(DownloadLink... links) {
@@ -422,7 +438,7 @@ public abstract class PluginForDecrypt extends Plugin {
     }
 
     /**
-     * 
+     *
      * @param method
      *            Method name (name of the captcha method)
      * @param file
@@ -547,7 +563,7 @@ public abstract class PluginForDecrypt extends Plugin {
 
     /**
      * Can be overridden to show the current status for example in captcha dialog
-     * 
+     *
      * @return
      */
     public String getCrawlerStatusString() {
@@ -560,7 +576,7 @@ public abstract class PluginForDecrypt extends Plugin {
 
     /**
      * DO not use in Plugins for old 09581 Stable or try/catch
-     * 
+     *
      * @return
      */
     public boolean isAbort() {

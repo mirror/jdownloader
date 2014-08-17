@@ -1030,7 +1030,7 @@ public class YoutubeHelper {
             String subError = br.getRegex("<div id=\"unavailable-submessage\" class=\"[^\"]*\">(.*?)</div>").getMatch(0);
             if (subError != null && !subError.matches("\\s*")) {
                 logger.warning(subError);
-                // vid.error = Encoding.htmlDecode(unavailableReason.replaceAll("\\+", " ").trim());
+                vid.error = Encoding.htmlDecode(unavailableReason.replaceAll("\\+", " ").trim());
                 // return null;
             }
         }

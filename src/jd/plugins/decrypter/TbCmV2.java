@@ -325,20 +325,14 @@ public class TbCmV2 extends PluginForDecrypt {
                 } catch (NullPointerException npe) {
                     // e.message can be null...
                 }
-                if (emsg != null && emsg.contains(YoutubeHelper.PAID_VIDEO)) {
+                if (emsg != null && (emsg.contains(YoutubeHelper.PAID_VIDEO))) {
                     vid.error = emsg;
                 } else {
                     throw e;
                 }
             }
             if (vc == null || StringUtils.isNotEmpty(vid.error)) {
-                getLogger().info("Error: " + vid.videoID + " (" + vid.title + "): " + vid.error);
-                // create a dumbie link so we know how many links are found and returned in tests!
-                DownloadLink e = createDownloadlink("youtubev2://offline/" + vid.videoID + "/");
-                e.setAvailable(false);
-                // as you can not set getLinkStatus().setStatusText within decrypter best bet is to add filename as error??
-                e.setName("Error " + vid.videoID + " - " + vid.error);
-                decryptedLinks.add(e);
+                decryptedLinks.add(createOfflinelink("http://youtube.com/watch?v=" + vid.videoID, "Error: " + vid.videoID + (vid.title != null ? " [" + vid.title + "]:" : "") + " " + vid.error, vid.error));
                 if (vc == null) {
                     continue;
                 }
@@ -363,7 +357,7 @@ public class TbCmV2 extends PluginForDecrypt {
 
                     continue;
                 }
-                System.out.println("test for " + v);
+                // System.out.println("test for " + v);
                 String groupID = getGroupID(v);
 
                 YoutubeStreamData audio = null;
@@ -433,12 +427,12 @@ public class TbCmV2 extends PluginForDecrypt {
 
                         list.add(vi);
                     }
-                    System.out.println("Variant found " + v);
+                    // System.out.println("Variant found " + v);
 
                     allVariants.put(v, vi);
                 } else {
 
-                    System.out.println("Variant NOT found " + v);
+                    // System.out.println("Variant NOT found " + v);
                 }
 
             }
