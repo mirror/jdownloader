@@ -28,8 +28,6 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.utils.locale.JDL;
 
-import org.appwork.utils.formatter.SizeFormatter;
-
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "adrive.com" }, urls = { "http://adrivedecrypted\\.com/\\d+" }, flags = { 0 })
 public class AdriveCom extends PluginForHost {
 
@@ -69,8 +67,7 @@ public class AdriveCom extends PluginForHost {
         if (br.containsHTML("The file you are trying to access is no longer available publicly\\.|The public file you are trying to download is associated with a non\\-valid ADrive") || br.getURL().equals("https://www.adrive.com/login")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        downloadLink.setFinalFileName(downloadLink.getStringProperty("plain_name", null));
-        downloadLink.setDownloadSize(SizeFormatter.getSize(downloadLink.getStringProperty("plain_size", null)));
+        // filename and size are set already by decrypter! resetting to some stored property serves what point?
         return AvailableStatus.TRUE;
     }
 

@@ -21,6 +21,7 @@ import java.util.Random;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
+import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.plugins.CryptedLink;
@@ -43,16 +44,42 @@ public class AdriveComDecrypter extends PluginForDecrypt {
         final String parameter = Encoding.htmlDecode(param.toString());
         final String fid = new Regex(parameter, "adrive\\.com/public/(.+)").getMatch(0);
         br.getPage(parameter);
-        final String continuelink = br.getRegex("\"(https?://www\\d+\\.adrive.com/public/[A-Za-z0-9]+\\.html)\"").getMatch(0);
-        final DownloadLink offline = createDownloadlink("http://adrivedecrypted.com/" + System.currentTimeMillis() + new Random().nextInt(100000));
-        offline.setAvailable(false);
-        offline.setProperty("offline", true);
-        offline.setName(new Regex(parameter, "adrive\\.com/public/(.+)").getMatch(0));
+        final String continuelink = br.getRegex("\"(https?://\\w+\\.adrive.com/public/(?:view/)?[A-Za-z0-9]+\\.html)\"").getMatch(0);
         if (br.containsHTML("The file you are trying to access is no longer available publicly\\.|The public file you are trying to download is associated with a non\\-valid ADrive") || br.getURL().equals("https://www.adrive.com/login") || continuelink == null) {
+            final DownloadLink offline = createDownloadlink("http://adrivedecrypted.com/" + System.currentTimeMillis() + new Random().nextInt(100000));
+            offline.setAvailable(false);
+            offline.setProperty("offline", true);
+            offline.setName(new Regex(parameter, "adrive\\.com/public/(.+)").getMatch(0));
             decryptedLinks.add(offline);
             return decryptedLinks;
         }
-        br.getPage(continuelink);
+        // continue links can be direct download links
+        URLConnectionAdapter con = null;
+        try {
+            con = br.openGetConnection(continuelink);
+            if (con.getContentType().contains("html")) {
+                br.followConnection();
+            } else {
+                String filename = getFileNameFromHeader(con);
+                long filesize = con.getContentLength();
+                if (filename != null && filesize > 0) {
+                    final DownloadLink dl = createDownloadlink("http://adrivedecrypted.com/" + System.currentTimeMillis() + new Random().nextInt(100000));
+                    dl.setDownloadSize(filesize);
+                    dl.setFinalFileName(filename);
+                    dl.setProperty("LINKDUPEID", "adrivecom" + fid + "_" + filename);
+                    dl.setProperty("mainlink", parameter);
+                    dl.setProperty("directlink", br.getURL());
+                    dl.setAvailable(true);
+                    decryptedLinks.add(dl);
+                    return decryptedLinks;
+                }
+            }
+        } finally {
+            try {
+                con.disconnect();
+            } catch (Throwable e) {
+            }
+        }
 
         final String linktext = br.getRegex("<table>(.*?)</table>").getMatch(0);
         if (linktext == null) {
@@ -83,9 +110,7 @@ public class AdriveComDecrypter extends PluginForDecrypt {
             }
             dl.setDownloadSize(SizeFormatter.getSize(filesize));
             dl.setFinalFileName(filename);
-            dl.setProperty("plain_name", filename);
             dl.setProperty("LINKDUPEID", "adrivecom" + fid + "_" + filename);
-            dl.setProperty("plain_size", filesize);
             dl.setProperty("mainlink", parameter);
             dl.setProperty("directlink", directlink);
             dl.setAvailable(true);
