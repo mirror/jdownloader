@@ -37,7 +37,7 @@ import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 import jd.utils.JDUtilities;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "www.arte.tv" }, urls = { "http://(videos|www).arte\\.tv/(guide/[a-z]{2}/[0-9\\-]+|[a-z]{2}/videos)/.+" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "www.arte.tv" }, urls = { "http://((videos|www)\\.)?arte\\.tv/(guide/[a-z]{2}/[0-9\\-]+|[a-z]{2}/videos)/.+" }, flags = { 0 })
 public class ArteMediathekDecrypter extends PluginForDecrypt {
 
     private static final String Q_SUBTITLES = "Q_SUBTITLES";
@@ -57,6 +57,9 @@ public class ArteMediathekDecrypter extends PluginForDecrypt {
     public ArrayList<DownloadLink> decryptIt(final CryptedLink param, final ProgressController progress) throws Exception {
         final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String parameter = param.toString();
+        if (!parameter.matches("http://((videos|www)\\.)arte\\.tv/(guide/[a-z]{2}/[0-9\\-]+|[a-z]{2}/videos)/.+")) {
+            parameter = parameter.replace("http://", "http://www.");
+        }
 
         setBrowserExclusive();
         br.setFollowRedirects(false);
