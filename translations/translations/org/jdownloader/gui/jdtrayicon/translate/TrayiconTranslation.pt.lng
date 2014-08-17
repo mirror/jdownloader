@@ -1,8 +1,11 @@
+JDGui_windowClosing_try_answer_totaskbar=Minimizar para barra de tarefas
 JDGui_windowClosing_try_answer_tray=Esconder para área notificação
 JDGui_windowClosing_try_asnwer_close=Sair JDownloader
 OnCloseAction_exit=Sair Aplicação
+OnCloseAction_totaskbar=Minimizar para barra de tarefas
 OnCloseAction_totray=Fechar para área de notificação
 OnMinimizeAction_ask=Perguntar-me
+OnMinimizeAction_totaskbar=Minimizar para barra de tarefas
 OnMinimizeAction_totray=Fechar para área de notificação
 plugins_optional_JDLightTray_hideifframevisible=Esconder para área notificação se janela é visível
 plugins_optional_JDLightTray_startMinimized=Iniciar minimizado
