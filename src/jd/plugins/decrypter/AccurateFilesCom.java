@@ -33,6 +33,7 @@ public class AccurateFilesCom extends PluginForDecrypt {
 
     public AccurateFilesCom(PluginWrapper wrapper) {
         super(wrapper);
+        //
     }
 
     private static final String currenthost = "accuratefiles.com";
