@@ -1253,7 +1253,7 @@ public class Keep2ShareCc extends PluginForHost {
         }
 
         private String getFUID(final DownloadLink downloadLink) {
-            return new Regex(downloadLink.getDownloadURL(), "([a-z0-9]+)$").getMatch(0);
+            return new Regex(downloadLink.getDownloadURL(), "([a-z0-9]+)/?$").getMatch(0);
         }
 
         private Browser prepBrowser(final Browser prepBr) {
