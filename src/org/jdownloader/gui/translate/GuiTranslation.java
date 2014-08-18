@@ -5146,4 +5146,7 @@ public interface GuiTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "Add additional 'Convert to' variant..." })
     String PluginForHost_extendLinkgrabberContextMenu_generic_convert_add();
 
+    @Default(lngs = { "en" }, values = { "Rename %s1 link(s)" })
+    String RenameDialog_RenameDialog(int size);
+
 }
