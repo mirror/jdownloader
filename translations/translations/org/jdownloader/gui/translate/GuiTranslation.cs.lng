@@ -914,6 +914,7 @@ RemoveIncompleteArchives_run_=Chcete odebrat všechny odkazy archivu %s1 ze Sbě
 RemoveSelectionAction_actionPerformed_=Chcete odstranit všechny vybrané odkazy na stažení? Pozor - Jakmile to potvrdíte, nelze to vzít zpět!
 RenameAction_RenameAction=Přejmenovat
 RenameAction_RenameAction_tt=Přejmenovat aktuálně vybraný odkaz nebo balíček
+RenameDialog_RenameDialog=Přejmenovat %s1 odkazů
 Renderer_getTreeCellRendererComponent_seperator=----------------------------
 ReportADownloadErrorAction_ReportADownloadErrorAction_label=Nahlásit problém se stahováním
 ReportADownloadErrorAction_ReportADownloadErrorAction_tooltip=Nahlásit problém se stahováním
