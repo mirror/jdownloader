@@ -90,12 +90,11 @@ public class NinekwService implements CESService {
     public CESGenericConfigPanel createPanel() {
         CESGenericConfigPanel ret = new CESGenericConfigPanel(this) {
             /**
-             * 
+             *
              */
             private static final long serialVersionUID = -1805335184795063609L;
             private TextInput         apiKey;
             private TextInput         hosteroptions;
-            private TextInput         useragent;
             private TextInput         blacklist;
             private TextInput         whitelist;
             private TextInput         blacklistprio;
@@ -114,7 +113,7 @@ public class NinekwService implements CESService {
 
                 add(new SettingsButton(new AppAction() {
                     /**
-                     * 
+                     *
                      */
                     private static final long serialVersionUID = 8804949739472915394L;
 
@@ -134,7 +133,7 @@ public class NinekwService implements CESService {
                 MigPanel toolbar2 = new MigPanel("ins 0", "[][][][]", "[]");
                 btnRegister = new ExtButton(new AppAction() {
                     /**
-                     * 
+                     *
                      */
                     private static final long serialVersionUID = 7195034001951861669L;
 
@@ -151,7 +150,7 @@ public class NinekwService implements CESService {
                 });
                 btnApi = new ExtButton(new AppAction() {
                     /**
-                     * 
+                     *
                      */
                     private static final long serialVersionUID = 7443478587786398670L;
 
@@ -168,7 +167,7 @@ public class NinekwService implements CESService {
                 });
                 btnPlugins = new ExtButton(new AppAction() {
                     /**
-                     * 
+                     *
                      */
                     private static final long serialVersionUID = 535406846478413287L;
 
@@ -185,7 +184,7 @@ public class NinekwService implements CESService {
                 });
                 btnFAQ = new ExtButton(new AppAction() {
                     /**
-                     * 
+                     *
                      */
                     private static final long serialVersionUID = -93146391722269060L;
 
@@ -202,7 +201,7 @@ public class NinekwService implements CESService {
                 });
                 btnHelp = new ExtButton(new AppAction() {
                     /**
-                     * 
+                     *
                      */
                     private static final long serialVersionUID = -8623650782355847927L;
 
@@ -219,7 +218,7 @@ public class NinekwService implements CESService {
                 });
                 btnSupport = new ExtButton(new AppAction() {
                     /**
-                     * 
+                     *
                      */
                     private static final long serialVersionUID = 36350110842819194L;
 
@@ -236,7 +235,7 @@ public class NinekwService implements CESService {
                 });
                 btnUserhistory = new ExtButton(new AppAction() {
                     /**
-                     * 
+                     *
                      */
                     private static final long serialVersionUID = 8334258034515555683L;
 
@@ -280,9 +279,6 @@ public class NinekwService implements CESService {
 
                 hosteroptions = new TextInput(CFG_9KWCAPTCHA.HOSTEROPTIONS);
                 hosteroptions.setToolTipText(_GUI._.NinekwService_createPanel_hosteroptions_tooltiptext());
-
-                useragent = new TextInput(CFG_9KWCAPTCHA.USERAGENT);
-                useragent.setToolTipText(_GUI._.NinekwService_createPanel_useragent_tooltiptext());
 
                 blacklist = new TextInput(CFG_9KWCAPTCHA.BLACKLIST);
                 blacklist.setToolTipText(_GUI._.NinekwService_createPanel_blacklist_tooltiptext());
@@ -339,7 +335,7 @@ public class NinekwService implements CESService {
 
                 btnUserCheck = new ExtButton(new AppAction() {
                     /**
-                     * 
+                     *
                      */
                     private static final long serialVersionUID = -103695205004891917L;
 
@@ -378,7 +374,7 @@ public class NinekwService implements CESService {
                 toolbar4.add(btnUserCheck);
                 btnUserBuy = new ExtButton(new AppAction() {
                     /**
-                     * 
+                     *
                      */
                     private static final long serialVersionUID = 8334258034515555683L;
                     {
@@ -546,7 +542,7 @@ public class NinekwService implements CESService {
 
                 btnUserDebug1 = new ExtButton(new AppAction() {
                     /**
-                     * 
+                     *
                      */
                     private static final long serialVersionUID = 1700532687116057633L;
 
@@ -574,7 +570,7 @@ public class NinekwService implements CESService {
 
                 btnUserDebug1clipboard = new ExtButton(new AppAction() {
                     /**
-                     * 
+                     *
                      */
                     private static final long serialVersionUID = 1700532687116057633L;
 
@@ -652,7 +648,7 @@ public class NinekwService implements CESService {
 
                 btnUserDebug2 = new ExtButton(new AppAction() {
                     /**
-                     * 
+                     *
                      */
                     private static final long serialVersionUID = -4020410143121908004L;
 
@@ -673,7 +669,7 @@ public class NinekwService implements CESService {
                 MigPanel toolbardebug1ex = new MigPanel("ins 0", "[][][][]", "[]");
                 btnUserDebug3 = new ExtButton(new AppAction() {
                     /**
-                     * 
+                     *
                      */
                     private static final long serialVersionUID = -622574297401313782L;
 
@@ -701,7 +697,7 @@ public class NinekwService implements CESService {
 
                 btnUserDebug3hoster = new ExtButton(new AppAction() {
                     /**
-                     * 
+                     *
                      */
                     private static final long serialVersionUID = 1700532687116057633L;
 
@@ -731,7 +727,7 @@ public class NinekwService implements CESService {
 
                 btnUserDebug3crawler = new ExtButton(new AppAction() {
                     /**
-                     * 
+                     *
                      */
                     private static final long serialVersionUID = 1300532687116057633L;
 

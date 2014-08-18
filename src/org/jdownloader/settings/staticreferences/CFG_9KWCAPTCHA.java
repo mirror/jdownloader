@@ -175,11 +175,6 @@ public class CFG_9KWCAPTCHA {
     public static final StringKeyHandler                   HOSTEROPTIONS         = SH.getKeyHandler("hosteroptions", StringKeyHandler.class);
 
     /**
-     * Captcha useragent for hoster with 9kw
-     **/
-    public static final StringKeyHandler                   USERAGENT             = SH.getKeyHandler("useragent", StringKeyHandler.class);
-
-    /**
      * Confirm option for mouse captchas (Cost +6)
      **/
     public static final BooleanKeyHandler                  MOUSECONFIRM          = SH.getKeyHandler("mouseconfirm", BooleanKeyHandler.class);

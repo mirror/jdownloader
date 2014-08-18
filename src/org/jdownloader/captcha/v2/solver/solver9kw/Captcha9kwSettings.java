@@ -60,13 +60,6 @@ public interface Captcha9kwSettings extends ConfigInterface {
     void sethosteroptions(String jser);
 
     @AboutConfig
-    @DefaultStringValue("")
-    @DescriptionForConfigEntry("Useragent for 9kw.eu")
-    String getuseragent();
-
-    void setuseragent(String jser);
-
-    @AboutConfig
     @DefaultBooleanValue(false)
     @DescriptionForConfigEntry("Confirm option for captchas (Cost +6)")
     boolean isconfirm();
