@@ -914,6 +914,7 @@ RemoveIncompleteArchives_run_=Bağlantı Yakalayıcıdan %s1 Arşivinin tüm Ba�
 RemoveSelectionAction_actionPerformed_=Tüm seçilen İndirme Bağlantılarını silmek istiyor musunuz? İyi düşünün - Bir defa onaylandı mı, bu geri alınamaz!
 RenameAction_RenameAction=Yeniden Adlandır
 RenameAction_RenameAction_tt=Şu anda seçili Bağlantı ya da Paketi yeniden adlandır
+RenameDialog_RenameDialog=%s1 bağlantıyı yeniden adlandır
 Renderer_getTreeCellRendererComponent_seperator=----------------------------
 ReportADownloadErrorAction_ReportADownloadErrorAction_label=Bir İndirme Sorunu Bildirin
 ReportADownloadErrorAction_ReportADownloadErrorAction_tooltip=Bir İndirme Sorunu Bildirin
