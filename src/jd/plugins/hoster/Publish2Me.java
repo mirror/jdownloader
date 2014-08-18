@@ -53,12 +53,12 @@ import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.formatter.TimeFormatter;
 import org.appwork.utils.os.CrossSystem;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "fileboom.me" }, urls = { "http://(www\\.)?(fboom|fileboom)\\.me/file/[a-z0-9]{13,}" }, flags = { 2 })
-public class FileBoomMe extends PluginForHost {
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "publish2.me" }, urls = { "http://(www\\.)?publish2\\.me/file/[a-z0-9]{13,}/" }, flags = { 2 })
+public class Publish2Me extends PluginForHost {
 
-    public FileBoomMe(PluginWrapper wrapper) {
+    public Publish2Me(PluginWrapper wrapper) {
         super(wrapper);
-        this.enablePremium("http://fboom.me/premium.html");
+        this.enablePremium("http://publish2.me/#premium");
         setConfigElements();
     }
 
@@ -67,15 +67,11 @@ public class FileBoomMe extends PluginForHost {
         return "http://" + host + "/page/terms.html";
     }
 
-    public void correctDownloadLink(final DownloadLink link) {
-        link.setUrlDownload(link.getDownloadURL().replace("fileboom.me/", "fboom.me/"));
-    }
-
     private static AtomicInteger maxPrem        = new AtomicInteger(1);
     /* User settings */
     private static final String  USE_API        = "USE_API";
     private final static String  SSL_CONNECTION = "SSL_CONNECTION";
-    private static final String  host           = "fileboom.me";
+    private static final String  host           = "publish2.me";
 
     /* api stuff */
     private PluginForHost        k2sPlugin      = null;
@@ -128,9 +124,9 @@ public class FileBoomMe extends PluginForHost {
 
     private void setConfigElements() {
         // this.getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, this.getPluginConfig(), USE_API,
-        // JDL.L("plugins.hoster.FileBoomMe.useAPI",
+        // JDL.L("plugins.hoster.Publish2Me.useAPI",
         // "Use API (recommended!)\r\nIMPORTANT: Free accounts will still be accepted in API mode but they can not be used!")).setDefaultValue(true));
-        this.getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, this.getPluginConfig(), SSL_CONNECTION, JDL.L("plugins.hoster.FileBoomMe.preferSSL", "Use Secure Communication over SSL (HTTPS://)")).setDefaultValue(false));
+        this.getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, this.getPluginConfig(), SSL_CONNECTION, JDL.L("plugins.hoster.Publish2Me.preferSSL", "Use Secure Communication over SSL (HTTPS://)")).setDefaultValue(false));
     }
 
     public boolean checkLinks(final DownloadLink[] urls) {
@@ -154,7 +150,7 @@ public class FileBoomMe extends PluginForHost {
         if (br.getRequest().getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        final String filename = br.getRegex("<i class=\"icon\\-download\"></i>([^<>\"]*?)</").getMatch(0);
+        final String filename = br.getRegex("class=\"icon\\-download\\-alt\" style=\"\"></i>([^<>\"]*?)</div>").getMatch(0);
         final String filesize = br.getRegex(">File size: ([^<>\"]*?)</").getMatch(0);
         if (filename == null || filesize == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -320,7 +316,7 @@ public class FileBoomMe extends PluginForHost {
         return dllink;
     }
 
-    private static final String MAINPAGE = "http://fboom.me";
+    private static final String MAINPAGE = "http://publish2.me";
     private static Object       LOCK     = new Object();
 
     @SuppressWarnings("unchecked")
@@ -346,17 +342,17 @@ public class FileBoomMe extends PluginForHost {
                     }
                 }
                 br.setFollowRedirects(false);
-                br.getPage("http://fboom.me/login.html");
+                br.getPage("http://" + host + "/login.html");
                 String logincaptcha = br.getRegex("\"(/auth/captcha\\.html[^<>\"]*?)\"").getMatch(0);
                 String postData = "LoginForm%5BrememberMe%5D=0&LoginForm%5BrememberMe%5D=1&LoginForm%5Busername%5D=" + Encoding.urlEncode(account.getUser()) + "&LoginForm%5Bpassword%5D=" + Encoding.urlEncode(account.getPass());
                 if (logincaptcha != null) {
-                    logincaptcha = "http://fboom.me" + logincaptcha;
+                    logincaptcha = "http://" + host + logincaptcha;
                     final DownloadLink dummyLink = new DownloadLink(this, "Account", host, "http://" + host, true);
                     final String c = getCaptchaCode(logincaptcha, dummyLink);
                     postData += "&LoginForm%5BverifyCode%5D=" + Encoding.urlEncode(c);
                 }
                 br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
-                br.postPage("http://fboom.me/login.html", postData);
+                br.postPage("http://" + host + "/login.html", postData);
                 if (!br.containsHTML("\"url\":\"")) {
                     if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
                         throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUngültiger Benutzername, ungültiges Passwort oder ungültiges Login Captcha!\r\nSchnellhilfe: \r\nDu bist dir sicher, dass dein eingegebener Benutzername und Passwort stimmen?\r\nFalls dein Passwort Sonderzeichen enthält, ändere es und versuche es erneut!", PluginException.VALUE_ID_PREMIUM_DISABLE);
@@ -400,7 +396,7 @@ public class FileBoomMe extends PluginForHost {
                 account.setValid(false);
                 throw e;
             }
-            br.getPage("http://fboom.me/site/profile.html");
+            br.getPage("http://" + host + "/site/profile.html");
             ai.setUnlimitedTraffic();
             final String expire = br.getRegex("Premium expires:[\t\n\r ]+<b>([^<>\"]*?)</b>").getMatch(0);
             if (expire == null) {
@@ -493,7 +489,7 @@ public class FileBoomMe extends PluginForHost {
             config = getPluginConfig();
             if (config.getBooleanProperty("premAdShown", Boolean.FALSE) == false) {
                 if (config.getProperty("premAdShown2") == null) {
-                    File checkFile = JDUtilities.getResourceFile("tmp/fboom");
+                    File checkFile = JDUtilities.getResourceFile("tmp/publish2me");
                     if (!checkFile.exists()) {
                         checkFile.mkdirs();
                         showFreeDialog(host);
@@ -557,7 +553,7 @@ public class FileBoomMe extends PluginForHost {
     private String getDllink() throws IOException, PluginException {
         String dllink = br.getRegex("(\"|\\')(/file/url\\.html\\?file=[a-z0-9]+)(\"|\\')").getMatch(1);
         if (dllink != null) {
-            dllink = "http://fboom.me" + dllink;
+            dllink = "http://" + host + dllink;
             br.getPage(dllink);
             dllink = br.getRegex("\"url\":\"(http[^<>\"]*?)\"").getMatch(0);
             if (dllink == null) {
