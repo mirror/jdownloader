@@ -608,7 +608,7 @@ public class Keep2ShareCc extends PluginForHost {
         AccountInfo ai = new AccountInfo();
         if (account.getUser() == null || !account.getUser().contains("@")) {
             account.setValid(false);
-            ai.setStatus("Please use E-Mail as login/name!");
+            ai.setStatus("Please use E-Mail as login/name!\r\nBitte E-Mail Adresse als Benutzername benutzen!");
             return ai;
         }
         if (this.apiEnabled()) {

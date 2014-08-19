@@ -227,6 +227,8 @@ public class Publish2Me extends PluginForHost {
             }
             dllink = getDllink();
             if (dllink == null) {
+                final Browser cbr = br.cloneBrowser();
+                String captcha = null;
                 final int repeat = 4;
                 for (int i = 1; i <= repeat; i++) {
                     if (br.containsHTML(reCaptcha)) {
@@ -245,10 +247,20 @@ public class Publish2Me extends PluginForHost {
                             break;
                         }
                     } else if (br.containsHTML(formCaptcha)) {
-                        String captcha = br.getRegex(formCaptcha).getMatch(-1);
+                        if (captcha == null) {
+                            captcha = br.getRegex(formCaptcha).getMatch(-1);
+                            if (captcha == null) {
+                                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                            }
+                        }
                         String code = getCaptchaCode(captcha, downloadLink);
                         br.postPage(br.getURL(), "CaptchaForm%5Bcode%5D=" + code + "&free=1&freeDownloadRequest=1&uniqueId=" + id);
                         if (br.containsHTML(formCaptcha) && i + 1 != repeat) {
+                            cbr.getPage("http://" + host + "/file/captcha.html?refresh=1&_=" + System.currentTimeMillis());
+                            captcha = cbr.getRegex("\"url\":\"([^<>\"]*?)\"").getMatch(0);
+                            if (captcha != null) {
+                                captcha = "http://" + host + captcha.replace("\\", "");
+                            }
                             continue;
                         } else if (br.containsHTML(formCaptcha) && i + 1 == repeat) {
                             throw new PluginException(LinkStatus.ERROR_CAPTCHA);
@@ -258,7 +270,7 @@ public class Publish2Me extends PluginForHost {
                     }
                 }
                 int wait = 30;
-                final String waittime = br.getRegex("class=\"tik\\-tak\">(\\d+)</div>").getMatch(0);
+                final String waittime = br.getRegex("class=\"tik\\-tak\"[\t\r\n ]{0,}>(\\d+)</div>").getMatch(0);
                 if (waittime != null) {
                     wait = Integer.parseInt(waittime);
                 }
@@ -381,7 +393,7 @@ public class Publish2Me extends PluginForHost {
         AccountInfo ai = new AccountInfo();
         if (account.getUser() == null || !account.getUser().contains("@")) {
             account.setValid(false);
-            ai.setStatus("Please use E-Mail as login/name!");
+            ai.setStatus("Please use E-Mail as login/name!\r\nBitte E-Mail Adresse als Benutzername benutzen!");
             return ai;
         }
         if (this.apiEnabled()) {
