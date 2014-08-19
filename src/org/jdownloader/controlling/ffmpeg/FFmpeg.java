@@ -186,22 +186,23 @@ public class FFmpeg extends AbstractFFmpegBinary {
         return false;
     }
 
-    public boolean demuxAndConvertToOgg(FFMpegProgress progress, String out, String audioIn) throws IOException, InterruptedException, FFMpegException {
-        long lastModifiedAudio = new File(audioIn).lastModified();
-
-        ArrayList<String> commandLine = fillCommand(out, null, audioIn, null, config.getDemuxAndConvert2Ogg());
-        if (runCommand(progress, commandLine) != null) {
-            try {
-                if (JsonConfig.create(GeneralSettings.class).isUseOriginalLastModified()) {
-                    new File(out).setLastModified(lastModifiedAudio);
-                }
-            } catch (final Throwable e) {
-                LogSource.exception(logger, e);
-            }
-            return true;
-        }
-        return false;
-    }
+    // public boolean demuxAndConvertToOgg(FFMpegProgress progress, String out, String audioIn) throws IOException, InterruptedException,
+    // FFMpegException {
+    // long lastModifiedAudio = new File(audioIn).lastModified();
+    //
+    // ArrayList<String> commandLine = fillCommand(out, null, audioIn, null, config.getDemuxAndConvert2Ogg());
+    // if (runCommand(progress, commandLine) != null) {
+    // try {
+    // if (JsonConfig.create(GeneralSettings.class).isUseOriginalLastModified()) {
+    // new File(out).setLastModified(lastModifiedAudio);
+    // }
+    // } catch (final Throwable e) {
+    // LogSource.exception(logger, e);
+    // }
+    // return true;
+    // }
+    // return false;
+    // }
 
     public List<File> demuxAudio(FFMpegProgress progress, String out, String audioIn) throws IOException, InterruptedException, FFMpegException {
         long lastModifiedAudio = new File(audioIn).lastModified();
@@ -216,7 +217,7 @@ public class FFmpeg extends AbstractFFmpegBinary {
             int i = 0;
             ret = new ArrayList<File>();
             for (String[] audioStream : audioStreams) {
-
+                //
                 i++;
                 HashMap<String, String[]> map = new HashMap<String, String[]>();
                 map.put("%map", new String[] { "-map", "0:" + audioStream[0] });
