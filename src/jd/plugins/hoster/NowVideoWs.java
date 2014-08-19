@@ -50,9 +50,13 @@ public class NowVideoWs extends PluginForHost {
         setBrowserExclusive();
         br.setFollowRedirects(true);
         br.getPage(downloadLink.getDownloadURL());
-        if (br.containsHTML(">This file does not exist on our website")) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
+        if (br.containsHTML(">This file does not exist on our website")) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
         String filename = br.getRegex("<h1>([^<>]*?)</h1>").getMatch(0);
-        if (filename == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (filename == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         filename = filename.trim();
         downloadLink.setFinalFileName(filename.replace(filename.substring(filename.length() - 4, filename.length()), "") + ".mp4");
 
@@ -64,7 +68,9 @@ public class NowVideoWs extends PluginForHost {
         requestFileInformation(link);
         br.postPage(br.getURL(), "continue=yes");
         final String dllink = getVideoLink();
-        if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (dllink == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, true, 0);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
@@ -74,7 +80,7 @@ public class NowVideoWs extends PluginForHost {
     }
 
     private String getVideoLink() throws PluginException, IOException {
-        return br.getRegex("file: \"(http://[^<>\"]*?)\"").getMatch(0);
+        return br.getRegex("\"(http://[^<>\"/]+/streams(\\d+)?/[^<>\"]*?)\"").getMatch(0);
     }
 
     @Override

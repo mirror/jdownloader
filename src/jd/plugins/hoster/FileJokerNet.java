@@ -95,6 +95,8 @@ public class FileJokerNet extends PluginForHost {
     private static Object                  LOCK                         = new Object();
     private String                         fuid                         = null;
 
+    private static final String            INVALIDLINKS                 = "https?://(www\\.)?filejoker\\.net/registration";
+
     /* DEV NOTES */
     // XfileSharingProBasic Version 2.6.5.7
     // mods: errorhandling, filename regex, workaround for f1 form handling, waitTime [New RegEx], heavily modified, DO NOT UPGRADE!
@@ -121,6 +123,9 @@ public class FileJokerNet extends PluginForHost {
 
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
+        if (link.getDownloadURL().matches(INVALIDLINKS)) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
         br.setFollowRedirects(true);
         prepBrowser(br);
         setFUID(link);

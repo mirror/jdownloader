@@ -48,6 +48,9 @@ public class VoyeurHitCom extends PluginForHost {
         return -1;
     }
 
+    /* Extension which will be used if no correct extension is found */
+    private static final String default_Extension = ".mp4";
+
     @Override
     public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws IOException, PluginException {
         this.setBrowserExclusive();
@@ -65,8 +68,9 @@ public class VoyeurHitCom extends PluginForHost {
         dllink = Encoding.htmlDecode(dllink);
         filename = filename.trim();
         String ext = dllink.substring(dllink.lastIndexOf("."));
-        if (ext == null || ext.length() > 5) {
-            ext = ".flv";
+        /* Make sure that we get a correct extension */
+        if (ext == null || !ext.matches("\\.[A-Za-z0-9]{3,5}")) {
+            ext = default_Extension;
         }
         downloadLink.setFinalFileName(Encoding.htmlDecode(filename) + ext);
         Browser br2 = br.cloneBrowser();
