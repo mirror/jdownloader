@@ -914,6 +914,7 @@ RemoveIncompleteArchives_run_=リンクグラバーから圧縮ファイル %s1 
 RemoveSelectionAction_actionPerformed_=選択したダウンロードリンクを全て削除しますか?\nこの処理は元に戻せない事に注意して下さい!
 RenameAction_RenameAction=リネーム
 RenameAction_RenameAction_tt=選択中のリンクやパッケージをリネームします
+RenameDialog_RenameDialog=リネーム: %s1リンク
 Renderer_getTreeCellRendererComponent_seperator=----------------------------
 ReportADownloadErrorAction_ReportADownloadErrorAction_label=ダウンロードの問題を報告
 ReportADownloadErrorAction_ReportADownloadErrorAction_tooltip=ダウンロードの問題を報告
