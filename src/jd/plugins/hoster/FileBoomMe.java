@@ -58,7 +58,7 @@ public class FileBoomMe extends PluginForHost {
 
     public FileBoomMe(PluginWrapper wrapper) {
         super(wrapper);
-        this.enablePremium("http://fboom.me/premium.html");
+        this.enablePremium("http://" + host_2 + "/premium.html");
         setConfigElements();
     }
 
@@ -76,6 +76,7 @@ public class FileBoomMe extends PluginForHost {
     private static final String  USE_API        = "USE_API";
     private final static String  SSL_CONNECTION = "SSL_CONNECTION";
     private static final String  host           = "fileboom.me";
+    private static final String  host_2         = "fboom.me";
 
     /* api stuff */
     private PluginForHost        k2sPlugin      = null;
@@ -231,6 +232,8 @@ public class FileBoomMe extends PluginForHost {
             }
             dllink = getDllink();
             if (dllink == null) {
+                final Browser cbr = br.cloneBrowser();
+                String captcha = null;
                 final int repeat = 4;
                 for (int i = 1; i <= repeat; i++) {
                     if (br.containsHTML(reCaptcha)) {
@@ -249,10 +252,20 @@ public class FileBoomMe extends PluginForHost {
                             break;
                         }
                     } else if (br.containsHTML(formCaptcha)) {
-                        String captcha = br.getRegex(formCaptcha).getMatch(-1);
+                        if (captcha == null) {
+                            captcha = br.getRegex(formCaptcha).getMatch(-1);
+                            if (captcha == null) {
+                                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                            }
+                        }
                         String code = getCaptchaCode(captcha, downloadLink);
                         br.postPage(br.getURL(), "CaptchaForm%5Bcode%5D=" + code + "&free=1&freeDownloadRequest=1&uniqueId=" + id);
                         if (br.containsHTML(formCaptcha) && i + 1 != repeat) {
+                            cbr.getPage("http://" + host_2 + "/file/captcha.html?refresh=1&_=" + System.currentTimeMillis());
+                            captcha = cbr.getRegex("\"url\":\"([^<>\"]*?)\"").getMatch(0);
+                            if (captcha != null) {
+                                captcha = "http://" + host_2 + captcha.replace("\\", "");
+                            }
                             continue;
                         } else if (br.containsHTML(formCaptcha) && i + 1 == repeat) {
                             throw new PluginException(LinkStatus.ERROR_CAPTCHA);
@@ -262,7 +275,7 @@ public class FileBoomMe extends PluginForHost {
                     }
                 }
                 int wait = 30;
-                final String waittime = br.getRegex("class=\"tik\\-tak\">(\\d+)</div>").getMatch(0);
+                final String waittime = br.getRegex("class=\"tik\\-tak\"[\t\r\n ]{0,}>(\\d+)</div>").getMatch(0);
                 if (waittime != null) {
                     wait = Integer.parseInt(waittime);
                 }
@@ -346,17 +359,17 @@ public class FileBoomMe extends PluginForHost {
                     }
                 }
                 br.setFollowRedirects(false);
-                br.getPage("http://fboom.me/login.html");
+                br.getPage("http://" + host_2 + "/login.html");
                 String logincaptcha = br.getRegex("\"(/auth/captcha\\.html[^<>\"]*?)\"").getMatch(0);
                 String postData = "LoginForm%5BrememberMe%5D=0&LoginForm%5BrememberMe%5D=1&LoginForm%5Busername%5D=" + Encoding.urlEncode(account.getUser()) + "&LoginForm%5Bpassword%5D=" + Encoding.urlEncode(account.getPass());
                 if (logincaptcha != null) {
-                    logincaptcha = "http://fboom.me" + logincaptcha;
+                    logincaptcha = "http://" + host_2 + logincaptcha;
                     final DownloadLink dummyLink = new DownloadLink(this, "Account", host, "http://" + host, true);
                     final String c = getCaptchaCode(logincaptcha, dummyLink);
                     postData += "&LoginForm%5BverifyCode%5D=" + Encoding.urlEncode(c);
                 }
                 br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
-                br.postPage("http://fboom.me/login.html", postData);
+                br.postPage("http://" + host_2 + "/login.html", postData);
                 if (!br.containsHTML("\"url\":\"")) {
                     if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
                         throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUngültiger Benutzername, ungültiges Passwort oder ungültiges Login Captcha!\r\nSchnellhilfe: \r\nDu bist dir sicher, dass dein eingegebener Benutzername und Passwort stimmen?\r\nFalls dein Passwort Sonderzeichen enthält, ändere es und versuche es erneut!", PluginException.VALUE_ID_PREMIUM_DISABLE);
@@ -385,7 +398,7 @@ public class FileBoomMe extends PluginForHost {
         AccountInfo ai = new AccountInfo();
         if (account.getUser() == null || !account.getUser().contains("@")) {
             account.setValid(false);
-            ai.setStatus("Please use E-Mail as login/name!");
+            ai.setStatus("Please use E-Mail as login/name!\r\nBitte E-Mail Adresse als Benutzername benutzen!");
             return ai;
         }
         if (this.apiEnabled()) {
@@ -400,7 +413,7 @@ public class FileBoomMe extends PluginForHost {
                 account.setValid(false);
                 throw e;
             }
-            br.getPage("http://fboom.me/site/profile.html");
+            br.getPage("http://" + host_2 + "/site/profile.html");
             ai.setUnlimitedTraffic();
             final String expire = br.getRegex("Premium expires:[\t\n\r ]+<b>([^<>\"]*?)</b>").getMatch(0);
             if (expire == null) {
@@ -557,7 +570,7 @@ public class FileBoomMe extends PluginForHost {
     private String getDllink() throws IOException, PluginException {
         String dllink = br.getRegex("(\"|\\')(/file/url\\.html\\?file=[a-z0-9]+)(\"|\\')").getMatch(1);
         if (dllink != null) {
-            dllink = "http://fboom.me" + dllink;
+            dllink = "http://" + host_2 + dllink;
             br.getPage(dllink);
             dllink = br.getRegex("\"url\":\"(http[^<>\"]*?)\"").getMatch(0);
             if (dllink == null) {
