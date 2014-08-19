@@ -53,14 +53,20 @@ public class InstaGramCom extends PluginForHost {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         br.getPage(downloadLink.getDownloadURL());
-        if (br.containsHTML("Oops, an error occurred") || br.getRequest().getHttpConnection().getResponseCode() == 404) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (br.containsHTML("Oops, an error occurred") || br.getRequest().getHttpConnection().getResponseCode() == 404) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
         DLLINK = br.getRegex("\"video_url\":\"(http[^<>\"]*?)\"").getMatch(0);
         // Maybe we have a picture
-        if (DLLINK == null) DLLINK = br.getRegex("property=\"og:image\" content=\"(http[^<>\"]*?)\"").getMatch(0);
-        if (DLLINK == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (DLLINK == null) {
+            DLLINK = br.getRegex("property=\"og:image\" content=\"(http[^<>\"]*?)\"").getMatch(0);
+        }
+        if (DLLINK == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         DLLINK = Encoding.htmlDecode(DLLINK.replace("\\", ""));
         final String username = br.getRegex("\"owner\".*?\"username\":\"([^<>\"]*?)\"").getMatch(0);
-        final String linkid = new Regex(downloadLink.getDownloadURL(), "([A-Za-z0-9]+)$").getMatch(0);
+        final String linkid = new Regex(downloadLink.getDownloadURL(), "([A-Za-z0-9_-]+)$").getMatch(0);
         String filename = null;
         if (username != null) {
             filename = username + " - " + linkid;
@@ -69,7 +75,9 @@ public class InstaGramCom extends PluginForHost {
         }
         filename = filename.trim();
         String ext = DLLINK.substring(DLLINK.lastIndexOf("."));
-        if (ext == null || ext.length() > 5) ext = ".mp4";
+        if (ext == null || ext.length() > 5) {
+            ext = ".mp4";
+        }
         downloadLink.setFinalFileName(Encoding.htmlDecode(filename) + ext);
         final Browser br2 = br.cloneBrowser();
         // In case the link redirects to the finallink
@@ -77,10 +85,11 @@ public class InstaGramCom extends PluginForHost {
         URLConnectionAdapter con = null;
         try {
             con = br2.openGetConnection(DLLINK);
-            if (!con.getContentType().contains("html"))
+            if (!con.getContentType().contains("html")) {
                 downloadLink.setDownloadSize(con.getLongContentLength());
-            else
+            } else {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            }
             return AvailableStatus.TRUE;
         } finally {
             try {
