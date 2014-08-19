@@ -225,7 +225,7 @@ public class FFmpeg extends AbstractFFmpegBinary {
                 String tempout = out + "." + i + "." + audioStream[1];
                 ArrayList<String> commandLine = fillCommand(tempout, null, audioIn, map, config.getDemuxGenericCommand());
                 String command = runCommand(progress, commandLine);
-
+                //
                 if (command != null) {
 
                     if (i > 1) {
