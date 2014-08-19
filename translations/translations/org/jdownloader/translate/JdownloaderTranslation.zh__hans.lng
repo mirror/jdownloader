@@ -40,6 +40,7 @@ LinkgrabberFilterRule_duplicate=%s1 (复制)
 Main_run_autostart_=正在开始下载
 Main_run_autostart_msg=下载将会在几秒后开始...
 Mainstart_now=立即开始!
+MovePluginProgress=正在移动文件到 %s1
 OptionalContainer_OptionalContainer=更多动作...
 PackagizerSettings_folderbypackage_rule_name=按包名创建子文件夹
 RemoveAction_actionPerformed_rly_msg=真的要删除全部选择的规则??
@@ -126,6 +127,7 @@ jd_controlling_reconnect_Reconnector_progress_failed2=重新连接失败太频�
 jd_controlling_reconnect_plugins_DummyRouterPlugin_getGUI2=<b><u>未选择重新连接</u></b><br/><p>重新连接是跳过某些强制免费用户长时间等待的高级方式。<br>在使用付费账户时这个没什么用途。</p><p>在<a href='http://support.jdownloader.org/index.php?_m=knowledgebase&_a=viewarticle&kbarticleid=1'>这里</a>阅读更多关于重新连接的信息</p>
 jd_controlling_reconnect_plugins_DummyRouterPlugin_getName=无重新连接
 jd_plugins_PluginUtils_askPassword=请输入 %s1 的密码
+lit_please_wait=请稍等....
 literally_offline=离线
 literally_yes=是
 pluginforhost_infogenerator_title=账户 %s1@%s2
