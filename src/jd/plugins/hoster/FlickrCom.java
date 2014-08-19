@@ -57,6 +57,7 @@ public class FlickrCom extends PluginForHost {
     private static final String MAINPAGE  = "http://flickr.com";
     private static final String intl      = "us";
     private static final String lang_post = "en-US";
+    private static final String api_key   = "44044129d5965db8c39819e54274917b";
 
     public void correctDownloadLink(DownloadLink link) {
         link.setUrlDownload("https://www.flickr.com/" + new Regex(link.getDownloadURL(), "\\.com/(.+)").getMatch(0));
@@ -92,34 +93,39 @@ public class FlickrCom extends PluginForHost {
             return AvailableStatus.UNCHECKABLE;
         }
         String filename = getFilename();
+        final String lid = new Regex(downloadLink.getDownloadURL(), "(\\d+)$").getMatch(0);
         if (filename == null) {
             downloadLink.getLinkStatus().setStatusText("Only downloadable for registered users [Add a flickt account to download such links!]");
             logger.warning("Filename not found, plugin must be broken...");
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        if (br.containsHTML("(photo\\-div video\\-div|class=\"video\\-wrapper\"|<meta name=\"medium\" content=\"video\")")) {
+        if (br.containsHTML("class=\"videoplayer main\\-photo\"")) {
+            /* Last build with old handling: 26451 */
+            /*
+             * TODO: Add correct API csrf cookie handling so we can use this while being logged in to download videos and do not have to
+             * remove the cookies here - that's just a workaround!
+             */
+            br.clearCookies("htto://flickr.com");
+            final String secret = br.getRegex("\"secret\":\"([^<>\"]*)\"").getMatch(0);
+            br.getPage("https://api.flickr.com/services/rest?photo_id=" + lid + "&secret=" + secret + "&method=flickr.video.getStreamInfo&csrf=&api_key=" + api_key + "&format=json&hermes=1&hermesClient=1&reqId=&nojsoncallback=1");
             final String lq = createGuid();
-            final String secret = br.getRegex("photo_secret=(.*?)\\&").getMatch(0);
             final String nodeID = br.getRegex("data\\-comment\\-id=\"(\\d+\\-\\d+)\\-").getMatch(0);
-            if (secret == null || nodeID == null || filename == null) {
+            if (secret == null || filename == null) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
-            br.getPage("http://www.flickr.com/video_playlist.gne?node_id=" + nodeID + "&tech=flash&mode=playlist&lq=" + lq + "&bitrate=700&secret=" + secret + "&rd=video.yahoo.com&noad=1");
-            final Regex parts = br.getRegex("<STREAM APP=\"(http://.*?)\" FULLPATH=\"(/.*?)\"");
-            final String part1 = parts.getMatch(0);
-            final String part2 = parts.getMatch(1);
-            if (part1 == null || part2 == null) {
+            DLLINK = br.getRegex("\"type\":\"orig\", \"_content\":\"(https[^<>\"]*?)\"").getMatch(0);
+            if (DLLINK == null) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
-            DLLINK = part1 + part2.replace("&amp;", "&");
-            if (DLLINK.contains(".mp4")) {
+            DLLINK = DLLINK.replace("\\", "");
+            if (DLLINK.contains("mp4")) {
                 filename += ".mp4";
             } else {
                 filename += ".flv";
             }
         } else {
             br.getPage(downloadLink.getDownloadURL() + "/in/photostream");
-            DLLINK = getFinalLink(new Regex(downloadLink.getDownloadURL(), "(\\d+)$").getMatch(0));
+            DLLINK = getFinalLink(lid);
             if (DLLINK == null) {
                 DLLINK = br.getRegex("\"(https?://farm\\d+\\.(static\\.flickr|staticflickr)\\.com/\\d+/.*?)\"").getMatch(0);
             }

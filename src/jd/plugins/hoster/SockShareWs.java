@@ -70,8 +70,12 @@ public class SockShareWs extends PluginForHost {
         }
         // this.sleep(5000l, downloadLink);
         br.postPage(br.getURL(), "hash=" + hash + "&agreeButton=Continue+as+Free+User");
-        final String dllink = br.getRegex("\"(http://fs\\d+\\.sockshare\\.ws(:\\d+)?/[^<>\"]*?)\"").getMatch(0);
+        final String dllink = br.getRegex("\"(http://[^<>\"/]+/streams(\\d+)?/[^<>\"]*?)\"").getMatch(0);
         if (dllink == null) {
+            /* TODO: Add support for such links: http://www.vodu.ch/file/dc/xxxxx/ */
+            if (br.containsHTML("vodu\\.ch/file/dc/")) {
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Stream type not yet supported!", 3 * 60 * 1000l);
+            }
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 0);

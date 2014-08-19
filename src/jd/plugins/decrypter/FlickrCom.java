@@ -50,7 +50,7 @@ public class FlickrCom extends PluginForDecrypt {
 
     private static final String INVALIDLINKS = "https?://(www\\.)?flickr\\.com/(photos/(me|upload|tags)|groups/[a-z0-9\\-_]+/(rules))";
 
-    private static final String APIKEY       = "93f196b4f9d5cadbc83ae9d395cfe0cd";
+    private static final String api_key      = "44044129d5965db8c39819e54274917b";
 
     // private boolean USE_API = false;
 
@@ -65,8 +65,8 @@ public class FlickrCom extends PluginForDecrypt {
         String parameter = Encoding.htmlDecode(param.toString()).replace("http://", "https://");
         int lastPage = 1;
         /* Check if link is for hosterplugin */
-        if (parameter.matches("http://(www\\.)?flickr\\.com/photos/[^<>\"/]+/\\d+")) {
-            final DownloadLink dl = createDownloadlink(parameter.replace("flickr.com/", "flickrdecrypted.com/"));
+        if (parameter.matches("https?://(www\\.)?flickr\\.com/photos/[^<>\"/]+/\\d+")) {
+            final DownloadLink dl = createDownloadlink(parameter.replace("flickr.com/", "flickrdecrypted.com/").replace("https://", "http://"));
             decryptedLinks.add(dl);
             return decryptedLinks;
         }
@@ -117,14 +117,14 @@ public class FlickrCom extends PluginForDecrypt {
             /* TODO: 1. Get correct csrf values 2. Implement support for single photo links */
             final String csrf = "1405808633%3Ai01dgnb1q25wxw29%3Ac82715e60f008b97cb7e8fa3529ce156";
             br.getHeaders().put("Accept", "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8");
-            getPage("https://api.flickr.com/services/rest?per_page=" + "5" + "&page=1&get_user_info=1&path_alias=" + username + "&method=flickr.people.getPhotos&csrf=" + csrf + "&api_key=" + APIKEY + "&format=json&hermes=1&hermesClient=1&reqId=19et3hbx&nojsoncallback=1");
+            getPage("https://api.flickr.com/services/rest?per_page=" + "5" + "&page=1&get_user_info=1&path_alias=" + username + "&method=flickr.people.getPhotos&csrf=" + csrf + "&api_key=" + api_key + "&format=json&hermes=1&hermesClient=1&reqId=19et3hbx&nojsoncallback=1");
             final int totalimgs = Integer.parseInt(getJson(br.toString(), "total"));
             final int totalpages = Integer.parseInt(getJson(br.toString(), "pages"));
             fpName = "flickr.com images of user " + username;
             for (int i = 1; i <= totalpages; i++) {
                 logger.info("Progress: Page " + i + " of " + totalpages + " || Images: " + decryptedLinks.size() + " of " + totalimgs);
                 if (i > 1) {
-                    getPage("https://api.flickr.com/services/rest?per_page=" + maxEntriesPerPage + "&page=" + i + "&extras=can_addmeta%2Ccan_comment%2Ccan_download%2Ccan_share%2Ccontact%2Ccount_comments%2Ccount_faves%2Ccount_notes%2Ccount_views%2Cdate_taken%2Cdate_upload%2Cdescription%2Cicon_urls_deep%2Cisfavorite%2Cispro%2Clicense%2Cmedia%2Cneeds_interstitial%2Cowner_name%2Cowner_datecreate%2Cpath_alias%2Crealname%2Csafety_level%2Csecret_k%2Csecret_h%2Curl_c%2Curl_h%2Curl_k%2Curl_l%2Curl_m%2Curl_n%2Curl_o%2Curl_q%2Curl_s%2Curl_sq%2Curl_t%2Curl_z%2Cvisibility&get_user_info=1&path_alias=" + username + "&method=flickr.people.getPhotos&csrf=" + csrf + "&api_key=" + APIKEY + "&format=json&hermes=1&hermesClient=1&reqId=19et3hbx&nojsoncallback=1");
+                    getPage("https://api.flickr.com/services/rest?per_page=" + maxEntriesPerPage + "&page=" + i + "&extras=can_addmeta%2Ccan_comment%2Ccan_download%2Ccan_share%2Ccontact%2Ccount_comments%2Ccount_faves%2Ccount_notes%2Ccount_views%2Cdate_taken%2Cdate_upload%2Cdescription%2Cicon_urls_deep%2Cisfavorite%2Cispro%2Clicense%2Cmedia%2Cneeds_interstitial%2Cowner_name%2Cowner_datecreate%2Cpath_alias%2Crealname%2Csafety_level%2Csecret_k%2Csecret_h%2Curl_c%2Curl_h%2Curl_k%2Curl_l%2Curl_m%2Curl_n%2Curl_o%2Curl_q%2Curl_s%2Curl_sq%2Curl_t%2Curl_z%2Cvisibility&get_user_info=1&path_alias=" + username + "&method=flickr.people.getPhotos&csrf=" + csrf + "&api_key=" + api_key + "&format=json&hermes=1&hermesClient=1&reqId=19et3hbx&nojsoncallback=1");
                 }
                 final String jsontext = br.getRegex("\"photo\":\\[(\\{.*?\\})\\]").getMatch(0);
                 final String[] jsonarray = jsontext.split("\\},\\{");

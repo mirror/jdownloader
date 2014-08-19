@@ -53,14 +53,19 @@ public class WatchFreeInHdCom extends PluginForHost {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         br.postPage(link.getDownloadURL(), "agree=Yes%2C+let+me+watchf");
-        if (br.containsHTML("<strong>Error:</strong>")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (br.containsHTML("<strong>Error:</strong>")) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
         String filesize = br.getRegex("<b>Video size:</b>([^<>\"]*?)</div>").getMatch(0);
-        if (filesize != null)
+        if (filesize != null) {
             link.setDownloadSize(SizeFormatter.getSize(filesize));
-        else
+        } else {
             POSTAGAIN = true;
+        }
         String filename = br.getRegex("title=\"Watch ([^<>\"]*?) online free\" id=\"PlayHdLogo\"").getMatch(0);
-        if (filename == null || filename.equals("")) filename = new Regex(link.getDownloadURL(), "([A-Za-z0-9]+)$").getMatch(0);
+        if (filename == null || filename.equals("")) {
+            filename = new Regex(link.getDownloadURL(), "([A-Za-z0-9]+)$").getMatch(0);
+        }
         filename = Encoding.htmlDecode(filename.trim());
         link.setFinalFileName(filename + ".mp4");
         return AvailableStatus.TRUE;
@@ -69,10 +74,16 @@ public class WatchFreeInHdCom extends PluginForHost {
     @Override
     public void handleFree(DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
-        if (POSTAGAIN) br.postPage(downloadLink.getDownloadURL(), "agree=Yes%2C+let+me+watchf");
-        String dllink = br.getRegex("\"(http://cdn\\.watchfreeinhd\\.com:\\d+/flv/[^<>\"]*?)\"").getMatch(0);
-        if (dllink == null) dllink = br.getRegex("<div id=\"playerHolder\">[\t\n\r ]+<a href=\"(http://[^<>\"]*?)\"").getMatch(0);
-        if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (POSTAGAIN) {
+            br.postPage(downloadLink.getDownloadURL(), "agree=Yes%2C+let+me+watchf");
+        }
+        final String dllink = br.getRegex("\"(http://[^<>\"/]+/streams(\\d+)?/[^<>\"]*?)\"").getMatch(0);
+        if (dllink == null) {
+            if (br.containsHTML("var fileName  = \"/\\?key")) {
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            }
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 0);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();

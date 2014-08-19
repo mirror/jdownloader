@@ -97,7 +97,7 @@ public class XerverCo extends PluginForHost {
 
     /* DEV NOTES */
     // XfileSharingProBasic Version 2.6.6.1
-    // mods:scanInfo[Added one filename RegEx, removed filesize because it's not given]
+    // mods:scanInfo[Added one filename RegEx, removed filesize because it's not given], waitTime[Changed RegEx]
     // limit-info:
     // protocol: no https
     // captchatype: solvemedia
@@ -601,7 +601,7 @@ public class XerverCo extends PluginForHost {
     private void waitTime(long timeBefore, final DownloadLink downloadLink) throws PluginException {
         int passedTime = (int) ((System.currentTimeMillis() - timeBefore) / 1000) - 1;
         /** Ticket Time */
-        final String ttt = new Regex(correctedBR, "id=\"countdown_str\">[^<>\"]+<span id=\"[^<>\"]+\"( class=\"[^<>\"]+\")?>([\n ]+)?(\\d+)([\n ]+)?</span>").getMatch(2);
+        final String ttt = new Regex(correctedBR, ">Please Wait <span id=\"[A-Za-z0-9]+\">(\\d+)</span> seconds").getMatch(0);
         if (ttt != null) {
             int wait = Integer.parseInt(ttt);
             wait -= passedTime;
