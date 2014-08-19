@@ -35,7 +35,7 @@ public class AbstractFFmpegBinary {
         final Thread reader1 = new Thread("ffmpegReader") {
             public void run() {
                 try {
-                    readInputStreamToString(inputStream, process.getInputStream());
+                    readInputStreamToString(inputStream, process.getInputStream(), true);
                 } catch (Throwable e) {
                     logger.log(e);
                 }
@@ -45,7 +45,7 @@ public class AbstractFFmpegBinary {
         final Thread reader2 = new Thread("ffmpegReader") {
             public void run() {
                 try {
-                    readInputStreamToString(errorStream, process.getErrorStream());
+                    readInputStreamToString(errorStream, process.getErrorStream(), false);
                 } catch (Throwable e) {
                     logger.log(e);
                 }
@@ -93,7 +93,7 @@ public class AbstractFFmpegBinary {
 
     }
 
-    private String readInputStreamToString(StringBuilder ret, final InputStream fis) throws IOException {
+    private String readInputStreamToString(StringBuilder ret, final InputStream fis, boolean b) throws IOException {
         BufferedReader f = null;
         try {
             f = new BufferedReader(new InputStreamReader(fis, "UTF8"));
@@ -111,7 +111,9 @@ public class AbstractFFmpegBinary {
                              */
                             line = line.substring(1);
                         }
+
                         ret.append(line);
+                        parseLine(b, ret, line);
                     }
                 }
             }
@@ -130,6 +132,9 @@ public class AbstractFFmpegBinary {
             }
             throw new RuntimeException(e);
         }
+    }
+
+    protected void parseLine(boolean stdStream, StringBuilder ret, String line) {
     }
 
     protected LogSource logger;
@@ -217,7 +222,7 @@ public class AbstractFFmpegBinary {
             final Thread reader1 = new Thread("ffmpegReader") {
                 public void run() {
                     try {
-                        readInputStreamToString(sdtStream, process.getInputStream());
+                        readInputStreamToString(sdtStream, process.getInputStream(), true);
                     } catch (Throwable e) {
                         logger.log(e);
                     }
@@ -227,7 +232,7 @@ public class AbstractFFmpegBinary {
             final Thread reader2 = new Thread("ffmpegReader") {
                 public void run() {
                     try {
-                        readInputStreamToString(errorStream, process.getErrorStream());
+                        readInputStreamToString(errorStream, process.getErrorStream(), false);
                     } catch (Throwable e) {
                         logger.log(e);
                     }
@@ -246,7 +251,9 @@ public class AbstractFFmpegBinary {
                 synchronized (errorStream) {
                     string = errorStream.toString();
                 }
+                parse(errorStream, sdtStream);
                 String duration = new Regex(string, "Duration\\: (.*?).?\\d*?\\, start").getMatch(0);
+
                 if (duration != null) {
                     long ms = formatStringToMilliseconds(duration);
                     String[] times = new Regex(string, "time=(.*?).?\\d*? ").getColumn(0);
@@ -291,6 +298,9 @@ public class AbstractFFmpegBinary {
                 process.destroy();
             }
         }
+    }
+
+    protected void parse(StringBuilder errorStream, StringBuilder sdtStream) {
     }
 
     public static long formatStringToMilliseconds(final String text) {

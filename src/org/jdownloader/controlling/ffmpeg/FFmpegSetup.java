@@ -1,5 +1,7 @@
 package org.jdownloader.controlling.ffmpeg;
 
+import java.util.HashMap;
+
 import org.appwork.storage.config.ConfigInterface;
 import org.appwork.storage.config.annotations.AboutConfig;
 import org.appwork.storage.config.annotations.DefaultStringArrayValue;
@@ -63,4 +65,8 @@ public interface FFmpegSetup extends ConfigInterface {
 
     void setDemuxGenericCommand(String[] command);
 
+    @AboutConfig
+    HashMap<String, String> getExtensionToFormatMap();
+
+    void setExtensionToFormatMap(HashMap<String, String> map);
 }
