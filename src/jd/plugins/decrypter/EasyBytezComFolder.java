@@ -43,7 +43,7 @@ public class EasyBytezComFolder extends PluginForDecrypt {
         br.setCookie("http://easybytez.com", "", "");
         br.getPage(parameter);
         if (br.containsHTML(">\\s*Guest access not possible!\\s*<")) {
-            /* Login is not always needed but we force it to get all pictures */
+            // we only login when required!
             final boolean logged_in = getLogin();
             if (!logged_in) {
                 logger.info("Guest access not possible!");
