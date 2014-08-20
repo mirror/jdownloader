@@ -591,8 +591,8 @@ public interface JdownloaderTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "Skipped - FFprobe™ missing" })
     String DownloadLink_setSkipped_statusmessage_ffprobe();
 
-    @Default(lngs = { "en" }, values = { "Original FLV Video" })
-    String GenericVariants_ORIGINAL_();
+    @Default(lngs = { "en" }, values = { "Original Video" })
+    String GenericVariants_ORIGINAL();
 
     @Default(lngs = { "en" }, values = { "Extract Mp3 Audio" })
     String GenericVariants_FLV_TO_MP3_();

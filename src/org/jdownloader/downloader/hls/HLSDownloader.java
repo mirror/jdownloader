@@ -1,10 +1,8 @@
 package org.jdownloader.downloader.hls;
 
 import java.awt.Color;
-import java.io.BufferedOutputStream;
 import java.io.BufferedReader;
 import java.io.File;
-import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.OutputStream;
@@ -24,6 +22,7 @@ import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
+import jd.plugins.PluginForHost;
 import jd.plugins.download.DownloadInterface;
 import jd.plugins.download.DownloadLinkDownloadable;
 import jd.plugins.download.Downloadable;
@@ -36,6 +35,7 @@ import org.appwork.utils.Application;
 import org.appwork.utils.Files;
 import org.appwork.utils.Regex;
 import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.logging2.LogSource;
 import org.appwork.utils.net.HTTPHeader;
 import org.appwork.utils.net.httpserver.HttpServer;
@@ -50,11 +50,14 @@ import org.jdownloader.controlling.ffmpeg.FFMpegException;
 import org.jdownloader.controlling.ffmpeg.FFMpegProgress;
 import org.jdownloader.controlling.ffmpeg.FFmpeg;
 import org.jdownloader.controlling.ffmpeg.FFmpegSetup;
+import org.jdownloader.controlling.ffmpeg.FFprobe;
+import org.jdownloader.controlling.ffmpeg.json.StreamInfo;
 import org.jdownloader.plugins.DownloadPluginProgress;
 import org.jdownloader.plugins.SkipReason;
 import org.jdownloader.plugins.SkipReasonException;
 import org.jdownloader.translate._JDT;
 
+//http://tools.ietf.org/html/draft-pantos-http-live-streaming-13
 public class HLSDownloader extends DownloadInterface {
 
     private long                              bytesWritten = 0l;
@@ -67,7 +70,7 @@ public class HLSDownloader extends DownloadInterface {
     private File                              outputCompleteFile;
     private File                              outputFinalCompleteFile;
     private File                              outputPartFile;
-    private OutputStream                      outStream;
+
     private PluginException                   caughtPluginException;
     private String                            m3uUrl;
     private HttpServer                        server;
@@ -76,37 +79,19 @@ public class HLSDownloader extends DownloadInterface {
     protected long                            duration;
     protected int                             bitrate      = 0;
     private long                              processID;
+    protected MeteredThrottledInputStream     meteredThrottledInputStream;
 
     public HLSDownloader(final DownloadLink link, Browser br2, String m3uUrl) {
 
         this.m3uUrl = m3uUrl;
         this.br = br2;
         this.link = link;
-
-        connectionHandler = new ManagedThrottledConnectionHandler();
-        downloadable = new DownloadLinkDownloadable(link) {
-            @Override
-            public boolean isResumable() {
-                return link.getBooleanProperty("RESUME", true);
-            }
-
-            @Override
-            public void setResumeable(boolean value) {
-                link.setProperty("RESUME", value);
-                super.setResumeable(value);
-            }
-        };
-        downloadable.setDownloadInterface(this);
-        logger = (LogSource) downloadable.getLogger();
-
-        String fileOutput = downloadable.getFileOutput();
-        String finalFileOutput = downloadable.getFinalFileOutput();
-        outputCompleteFile = new File(fileOutput);
-        outputFinalCompleteFile = outputCompleteFile;
-        if (!fileOutput.equals(finalFileOutput)) {
-            outputFinalCompleteFile = new File(finalFileOutput);
+        PluginForHost plg = link.getLivePlugin();
+        if (plg == null) {
+            plg = link.getDefaultPlugin();
         }
-        outputPartFile = new File(downloadable.getFileOutputPart());
+        logger = plg.getLogger();
+
     }
 
     protected void terminate() {
@@ -114,6 +99,19 @@ public class HLSDownloader extends DownloadInterface {
             if (!externalDownloadStop()) {
                 logger.severe("A critical Downloaderror occured. Terminate...");
             }
+        }
+    }
+
+    public StreamInfo getProbe() throws IOException {
+        initPipe();
+        try {
+            FFprobe ffmpeg = new FFprobe();
+            this.processID = new UniqueAlltimeID().getID();
+            return ffmpeg.getStreamInfo("http://127.0.0.1:" + port + "/m3u8?id=" + processID + "&url=" + Encoding.urlEncode(m3uUrl));
+
+        } finally {
+
+            server.stop();
         }
     }
 
@@ -132,7 +130,11 @@ public class HLSDownloader extends DownloadInterface {
             if (map == null) {
                 map = new HashMap<String, String>();
             }
-            String extension = Files.getExtension(outputCompleteFile.getName());
+            String cust = link.getCustomExtension();
+            link.setCustomExtension(null);
+            String name = link.getName();
+            link.setCustomExtension(cust);
+            String extension = Files.getExtension(name);
             String format = map.get(extension.toLowerCase(Locale.ENGLISH));
 
             FFmpeg ffmpeg = new FFmpeg() {
@@ -147,6 +149,17 @@ public class HLSDownloader extends DownloadInterface {
                         }
                     } else if (line.trim().startsWith("Output #0")) {
                         link.setDownloadSize(((duration / 1000) * bitrate * 1024) / 8);
+
+                    } else if (line.trim().startsWith("frame=")) {
+                        String size = new Regex(line, "size=\\s*(\\S+)\\s+").getMatch(0);
+                        bytesWritten = SizeFormatter.getSize(size);
+
+                        String time = new Regex(line, "time=\\s*(\\S+)\\s+").getMatch(0);
+                        String bitrate = new Regex(line, "bitrate=\\s*([\\d\\.]+)").getMatch(0);
+                        if (time != null) {
+                            long rate = bytesWritten / (formatStringToMilliseconds(time) / 1000);
+                            link.setDownloadSize(((duration / 1000) * rate));
+                        }
 
                     }
 
@@ -212,6 +225,9 @@ public class HLSDownloader extends DownloadInterface {
         } catch (Throwable e) {
             e.printStackTrace();
         } finally {
+            if (connectionHandler != null && meteredThrottledInputStream != null) {
+                connectionHandler.removeThrottledConnection(meteredThrottledInputStream);
+            }
             // link.removePluginProgress(set);
             server.stop();
         }
@@ -276,7 +292,11 @@ public class HLSDownloader extends DownloadInterface {
             @Override
             public boolean onGetRequest(GetRequest request, HttpResponse response) {
                 try {
-
+                    String id = request.getParameterbyKey("id");
+                    if (id == null) {
+                        System.out.println(1);
+                        return false;
+                    }
                     if (processID != Long.parseLong(request.getParameterbyKey("id"))) {
                         return false;
                     }
@@ -288,6 +308,7 @@ public class HLSDownloader extends DownloadInterface {
                         }
                         if (StringUtils.equals(m3uUrl, url)) {
                             br.getPage(m3uUrl);
+
                             response.setResponseCode(HTTPConstants.ResponseCode.get(br.getRequest().getHttpConnection().getResponseCode()));
                             String playlist = br.toString();
                             StringBuilder sb = new StringBuilder();
@@ -297,6 +318,8 @@ public class HLSDownloader extends DownloadInterface {
                                 }
                                 if (s.startsWith("http://")) {
                                     sb.append("http://127.0.0.1:" + HLSDownloader.this.port + "/download?id=" + processID + "&url=" + Encoding.urlEncode(s));
+                                } else if (!s.trim().startsWith("#")) {
+                                    sb.append("http://127.0.0.1:" + HLSDownloader.this.port + "/download?id=" + processID + "&url=" + Encoding.urlEncode(br.getBaseURL() + s));
                                 } else {
                                     sb.append(s);
                                 }
@@ -315,11 +338,10 @@ public class HLSDownloader extends DownloadInterface {
                         if (url == null) {
                             return false;
                         }
-                        System.out.println("Start Segment " + url);
+
                         URLConnectionAdapter connection = br.openGetConnection(url);
                         try {
-                            // response.getResponseHeaders().add(new HTTPHeader("Server", "AkamaiGHost"));
-                            // response.getResponseHeaders().add(new HTTPHeader("Mime-Version", "1.0"));
+
                             long length = connection.getCompleteContentLength();
                             if (length > 0) {
                                 response.getResponseHeaders().add(new HTTPHeader(HTTPConstants.HEADER_REQUEST_CONTENT_LENGTH, length + ""));
@@ -328,30 +350,38 @@ public class HLSDownloader extends DownloadInterface {
 
                             OutputStream out = response.getOutputStream(true);
 
-                            MeteredThrottledInputStream input = new MeteredThrottledInputStream(connection.getInputStream(), new AverageSpeedMeter(10));
-                            connectionHandler.addThrottledConnection(input);
+                            if (meteredThrottledInputStream == null) {
+                                meteredThrottledInputStream = new MeteredThrottledInputStream(connection.getInputStream(), new AverageSpeedMeter(10));
+                                if (connectionHandler != null) {
+                                    connectionHandler.addThrottledConnection(meteredThrottledInputStream);
+                                }
+
+                            } else {
+                                meteredThrottledInputStream.setInputStream(connection.getInputStream());
+                            }
+
                             try {
 
                                 byte[] buffer = new byte[32 * 1024];
 
                                 int len;
-                                int done = 0;
-                                while ((len = input.read(buffer)) != -1) {
+
+                                while ((len = meteredThrottledInputStream.read(buffer)) != -1) {
                                     if (len > 0) {
-                                        done += len;
+
                                         out.write(buffer, 0, len);
-                                        bytesWritten += len;
+
                                     }
                                 }
                             } finally {
-                                connectionHandler.removeThrottledConnection(input);
+
                             }
                             out.flush();
                             out.close();
                             return true;
                         } finally {
                             connection.disconnect();
-                            System.out.println("End Segment " + url);
+
                         }
 
                     }
@@ -387,6 +417,31 @@ public class HLSDownloader extends DownloadInterface {
     @Override
     public boolean startDownload() throws Exception {
         try {
+
+            connectionHandler = new ManagedThrottledConnectionHandler();
+            downloadable = new DownloadLinkDownloadable(link) {
+                @Override
+                public boolean isResumable() {
+                    return link.getBooleanProperty("RESUME", true);
+                }
+
+                @Override
+                public void setResumeable(boolean value) {
+                    link.setProperty("RESUME", value);
+                    super.setResumeable(value);
+                }
+            };
+            downloadable.setDownloadInterface(this);
+
+            String fileOutput = downloadable.getFileOutput();
+            String finalFileOutput = downloadable.getFinalFileOutput();
+            outputCompleteFile = new File(fileOutput);
+            outputFinalCompleteFile = outputCompleteFile;
+            if (!fileOutput.equals(finalFileOutput)) {
+                outputFinalCompleteFile = new File(finalFileOutput);
+            }
+            outputPartFile = new File(downloadable.getFileOutputPart());
+
             DownloadPluginProgress downloadPluginProgress = null;
             downloadable.setConnectionHandler(this.getManagedConnetionHandler());
             final DiskSpaceReservation reservation = downloadable.createDiskSpaceReservation();
@@ -482,15 +537,11 @@ public class HLSDownloader extends DownloadInterface {
 
     private void closeOutputChannel() {
         try {
-            OutputStream loutputPartFileRaf = outStream;
-            if (loutputPartFileRaf != null) {
-                logger.info("Close File. Let AV programs run");
-                loutputPartFileRaf.close();
-            }
+
         } catch (Throwable e) {
             LogSource.exception(logger, e);
         } finally {
-            outStream = null;
+
         }
     }
 
@@ -519,19 +570,7 @@ public class HLSDownloader extends DownloadInterface {
                 outputFinalCompleteFile = new File(finalFileOutput);
             }
             outputPartFile = new File(downloadable.getFileOutputPart());
-            outStream = new BufferedOutputStream(new FileOutputStream(outputPartFile)) {
-                public synchronized void write(byte[] b, int off, int len) throws IOException {
-                    super.write(b, off, len);
 
-                    bytesWritten += len;
-                    if (bytesWritten > link.getDownloadSize()) {
-                        link.setDownloadSize(bytesWritten);
-                    }
-                    // byte[] bytes = new byte[len];
-                    // System.arraycopy(b, off, bytes, 0, len);
-                    // System.out.println(HexFormatter.byteArrayToHex(bytes));
-                };
-            };
         } catch (Exception e) {
             LogSource.exception(logger, e);
             throw new SkipReasonException(SkipReason.INVALID_DESTINATION, e);
