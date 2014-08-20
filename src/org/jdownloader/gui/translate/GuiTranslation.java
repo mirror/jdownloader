@@ -5149,4 +5149,22 @@ public interface GuiTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "Rename %s1 link(s)" })
     String RenameDialog_RenameDialog(int size);
 
+    @Default(lngs = { "en" }, values = { "Search for" })
+    String RenameDialog_layoutDialogContent_search();
+
+    @Default(lngs = { "en" }, values = { "Replace by" })
+    String RenameDialog_layoutDialogContent_replace();
+
+    @Default(lngs = { "en" }, values = { "Use Regular Expressions" })
+    String RenameDialog_layoutDialogContent_regex();
+
+    @Default(lngs = { "en" }, values = { "Preview" })
+    String lit_preview();
+
+    @Default(lngs = { "en" }, values = { "Old Name" })
+    String ResultTableModel_initColumns_oldname();
+
+    @Default(lngs = { "en" }, values = { "New Name" })
+    String ResultTableModel_initColumns_newname();
+
 }

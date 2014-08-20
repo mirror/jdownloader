@@ -23,69 +23,71 @@ import jd.http.URLConnectionAdapter;
 import jd.plugins.download.raf.FileBytesMap.FileBytesMapView;
 
 abstract public class DownloadInterface {
-    
+
     @Deprecated
     public class Chunk {
         @Deprecated
         public Chunk(long startByte, long endByte, URLConnectionAdapter connection, DownloadInterface dl) {
-            
+
         }
-        
+
         @Deprecated
         public long getStartByte() {
             return -1;
         }
-        
+
         @Deprecated
         public long getEndByte() {
             return -1;
         }
-        
+
     }
-    
+
     protected boolean fixWrongContentDispositionHeader = false;
     protected boolean allowFilenameFromURL             = false;
-    
+
     protected Request initialRequest                   = null;
-    
+
     public void setFilenameFix(boolean b) {
         this.fixWrongContentDispositionHeader = b;
     }
-    
+
     public void setAllowFilenameFromURL(boolean b) {
         this.allowFilenameFromURL = b;
     }
-    
+
     /* do not use in old JD 09581 plugins */
     public abstract ManagedThrottledConnectionHandler getManagedConnetionHandler();
-    
+
     public void setInitialRequest(Request initialRequest) {
-        if (initialRequest == null) throw new IllegalArgumentException("initialRequest is null!");
+        if (initialRequest == null) {
+            throw new IllegalArgumentException("initialRequest is null!");
+        }
         this.initialRequest = initialRequest;
     };
-    
+
     public abstract URLConnectionAdapter connect(Browser br) throws Exception;
-    
+
     public abstract long getTotalLinkBytesLoadedLive();
-    
+
     public FileBytesMapView getCacheMapView() {
         return null;
     };
-    
+
     public abstract boolean startDownload() throws Exception;
-    
+
     public abstract URLConnectionAdapter getConnection();
-    
+
     public abstract void stopDownload();
-    
+
     public abstract boolean externalDownloadStop();
-    
+
     public abstract long getStartTimeStamp();
-    
+
     public abstract void close();
-    
+
     public abstract Downloadable getDownloadable();
-    
+
     /* do not use in old JD 09581 plugins */
     /**
      * returns of the download has been resumed
@@ -93,5 +95,5 @@ abstract public class DownloadInterface {
      * @return
      */
     public abstract boolean isResumedDownload();
-    
+
 }
