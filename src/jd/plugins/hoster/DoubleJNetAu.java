@@ -167,6 +167,7 @@ public class DoubleJNetAu extends PluginForHost {
         String url2 = m3u.getRegex("https?://[^\r\n\t]+").getMatch(-1);
         //
         url2 = url2 + "";
+        //
         downloadLink.setProperty("m3uUrl", url2);
         return AvailableStatus.TRUE;
     }
