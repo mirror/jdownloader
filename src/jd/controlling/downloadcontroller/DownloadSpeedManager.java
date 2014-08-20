@@ -60,7 +60,7 @@ public class DownloadSpeedManager {
     protected final AtomicInteger                                         limit              = new AtomicInteger(0);
 
     public void addConnectionHandler(ManagedThrottledConnectionHandler handler) {
-        if (connectionHandlers.addIfAbsent(handler)) {
+        if (handler != null && connectionHandlers.addIfAbsent(handler)) {
             handler.setManagedBy(this);
             /*
              * we set very low limit here because we want the real speed to get assigned on next speed-assign-loop
@@ -70,7 +70,7 @@ public class DownloadSpeedManager {
     }
 
     public void removeConnectionHandler(ManagedThrottledConnectionHandler handler) {
-        if (connectionHandlers.remove(handler)) {
+        if (handler != null && connectionHandlers.remove(handler)) {
             handler.setManagedBy(null);
             removedHandlers.add(handler);
         }
@@ -79,7 +79,9 @@ public class DownloadSpeedManager {
     private void startWatchDog() {
         synchronized (watchDogThread) {
             Thread thread = watchDogThread.get();
-            if (thread != null && thread.isAlive()) return;
+            if (thread != null && thread.isAlive()) {
+                return;
+            }
             /* we have to start a new watchDog */
             thread = new Thread() {
                 @Override
@@ -125,7 +127,9 @@ public class DownloadSpeedManager {
                                     long latestTraffic = managerHelper.lastTraffic.getAndSet(manager.getTraffic());
                                     trafficDifference = Math.max(0, managerHelper.lastTraffic.get() - latestTraffic);
                                     long timeDifference = Math.max(0, managerHelper.lastTimeStamp.get() - latestTimeStamp);
-                                    if (timeDifference > 0) bandWidth = (int) (trafficDifference * 1000 / timeDifference);
+                                    if (timeDifference > 0) {
+                                        bandWidth = (int) (trafficDifference * 1000 / timeDifference);
+                                    }
                                 } else {
                                     trafficDifference = manager.getTraffic();
                                     bandWidth = trafficDifference * 1000 / sleepTime;
@@ -148,7 +152,9 @@ public class DownloadSpeedManager {
                                     long latestTraffic = managerHelper.lastTraffic.getAndSet(manager.getTraffic());
                                     long trafficDifference = Math.max(0, managerHelper.lastTraffic.get() - latestTraffic);
                                     long timeDifference = Math.max(0, managerHelper.lastTimeStamp.get() - latestTimeStamp);
-                                    if (timeDifference > 0) newBandwidth += (int) (trafficDifference * 1000 / timeDifference);
+                                    if (timeDifference > 0) {
+                                        newBandwidth += (int) (trafficDifference * 1000 / timeDifference);
+                                    }
                                     traffic.addAndGet(trafficDifference);
                                 }
                                 /* connection handling */
