@@ -26,7 +26,7 @@ public enum GenericVariants implements LinkVariant {
 
         @Override
         public String _getName() {
-            return _JDT._.GenericVariants_ORIGINAL_();
+            return _JDT._.GenericVariants_ORIGINAL();
         }
 
         public void runPostDownload(PluginForHost pluginForHost, DownloadLink downloadLink, Account account) throws Exception {
