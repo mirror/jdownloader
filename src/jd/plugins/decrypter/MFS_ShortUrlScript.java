@@ -47,7 +47,7 @@ public class MFS_ShortUrlScript extends PluginForDecrypt {
 
     /**
      * use to define hasCaptcha, and supportsHTTPS, only required when site doesn't match default setters
-     * 
+     *
      * @param link
      * @throws PluginException
      */
@@ -60,7 +60,6 @@ public class MFS_ShortUrlScript extends PluginForDecrypt {
             supportsHTTPS = false;
             hasCaptcha = false;
         }
-
     }
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
@@ -72,7 +71,6 @@ public class MFS_ShortUrlScript extends PluginForDecrypt {
         if (frame == null) {
             logger.warning("Plugin Defect " + parameter);
             return null;
-
         }
         br.getPage(frame);
         String link = br.getRegex("<a href=\"(.*?)\" class=[^>]+>skip advert\\s*></a>").getMatch(0);
