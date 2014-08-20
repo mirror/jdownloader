@@ -816,7 +816,9 @@ public abstract class PluginForHost extends Plugin {
             handlePost(downloadLink, account);
         } finally {
             try {
-                downloadLink.getDownloadLinkController().getConnectionHandler().removeConnectionHandler(dl.getManagedConnetionHandler());
+                if (dl != null) {
+                    downloadLink.getDownloadLinkController().getConnectionHandler().removeConnectionHandler(dl.getManagedConnetionHandler());
+                }
             } catch (final Throwable e) {
                 e.printStackTrace();
             }
