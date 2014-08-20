@@ -542,6 +542,7 @@ public class HDSDownloader extends DownloadInterface {
                     super.write(b, off, len);
 
                     bytesWritten += len;
+                    downloadable.setDownloadBytesLoaded(bytesWritten);
                     // byte[] bytes = new byte[len];
                     // System.arraycopy(b, off, bytes, 0, len);
                     // System.out.println(HexFormatter.byteArrayToHex(bytes));

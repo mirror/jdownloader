@@ -152,8 +152,13 @@ public class HLSDownloader extends DownloadInterface {
 
                     } else if (line.trim().startsWith("frame=")) {
                         String size = new Regex(line, "size=\\s*(\\S+)\\s+").getMatch(0);
-                        bytesWritten = SizeFormatter.getSize(size);
-
+                        long newSize = SizeFormatter.getSize(size);
+                        ;
+                        if (newSize < bytesWritten) {
+                            System.out.println(1);
+                        }
+                        bytesWritten = newSize;
+                        downloadable.setDownloadBytesLoaded(bytesWritten);
                         String time = new Regex(line, "time=\\s*(\\S+)\\s+").getMatch(0);
                         String bitrate = new Regex(line, "bitrate=\\s*([\\d\\.]+)").getMatch(0);
                         if (time != null) {
@@ -173,6 +178,7 @@ public class HLSDownloader extends DownloadInterface {
                     l.add(dummy.getAbsolutePath());
                     l.add("-y");
                     ffmpeg.runCommand(null, l);
+
                 } catch (FFMpegException e) {
                     String res = e.getError();
                     format = new Regex(res, "Output \\#0\\, ([^\\,]+)").getMatch(0);

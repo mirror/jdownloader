@@ -1074,4 +1074,10 @@ public interface GraphicalUserInterfaceSettings extends ConfigInterface {
     boolean isTableWrapAroundEnabled();
 
     void setTableWrapAroundEnabled(boolean b);
+
+    @AboutConfig
+    @DefaultBooleanValue(false)
+    boolean isRenameActionRegexEnabled();
+
+    void setRenameActionRegexEnabled(boolean b);
 }
