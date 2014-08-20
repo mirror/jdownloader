@@ -341,7 +341,7 @@ public class HLSDownloader extends DownloadInterface {
 
                         URLConnectionAdapter connection = br.openGetConnection(url);
                         try {
-
+                            response.setResponseCode(HTTPConstants.ResponseCode.get(br.getRequest().getHttpConnection().getResponseCode()));
                             long length = connection.getCompleteContentLength();
                             if (length > 0) {
                                 response.getResponseHeaders().add(new HTTPHeader(HTTPConstants.HEADER_REQUEST_CONTENT_LENGTH, length + ""));
