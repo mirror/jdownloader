@@ -102,9 +102,12 @@ public class VeeHdCom extends PluginForHost {
         }
         String dllink = null;
         String way_download = br.getRegex("\"(/vpi\\?[^<>\"/]*?\\&do=d[^<>\"]*?)\"").getMatch(0);
-        way_download = null;
         if (way_download != null) {
             br.getPage("http://veehd.com" + way_download);
+            // final String iframe = br.getRegex("<iframe id=\"iframe\" src=\"(/va/[^<>\"]*?)\"").getMatch(0);
+            // if (iframe != null) {
+            // br.getPage(iframe);
+            // }
             dllink = getDirectlink();
         } else {
             final String frame = br.getRegex("\"(/vpi\\?h=[^<>\"]*?)\"").getMatch(0);

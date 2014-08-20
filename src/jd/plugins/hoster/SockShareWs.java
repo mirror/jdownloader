@@ -72,7 +72,7 @@ public class SockShareWs extends PluginForHost {
         br.postPage(br.getURL(), "hash=" + hash + "&agreeButton=Continue+as+Free+User");
         final String dllink = br.getRegex("\"(http://[^<>\"/]+/streams(\\d+)?/[^<>\"]*?)\"").getMatch(0);
         if (dllink == null) {
-            /* TODO: Add support for such links: http://www.vodu.ch/file/dc/xxxxx/ */
+            /* TODO: Add support for such links: http://www.vodu.ch/file/dc/xxxxx/ - hard to do said some coder!! */
             if (br.containsHTML("vodu\\.ch/file/dc/")) {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Stream type not yet supported!", 3 * 60 * 1000l);
             }
