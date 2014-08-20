@@ -17,9 +17,11 @@
 package jd.plugins.hoster;
 
 import java.io.File;
+import java.net.URL;
 
 import jd.PluginWrapper;
 import jd.http.Browser;
+import jd.plugins.Account;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
@@ -34,11 +36,27 @@ import org.jdownloader.downloader.hls.HLSDownloader;
 @HostPlugin(revision = "$Revision: 24748 $", interfaceVersion = 3, names = { "M3u8" }, urls = { "m3u8s?://.+?\\.m3u8" }, flags = { 0 })
 public class GenericM3u8 extends PluginForHost {
 
+    private String customFavIconHost = null;
+
     /**
      * @author raztoki
      */
     public GenericM3u8(PluginWrapper wrapper) {
         super(wrapper);
+    }
+
+    @Override
+    public String getCustomFavIconURL(final DownloadLink link) {
+        if (link != null) {
+            final String domain = Browser.getHost(link.getDownloadURL(), true);
+            if (domain != null) {
+                return domain;
+            }
+        }
+        if (this.customFavIconHost != null) {
+            return this.customFavIconHost;
+        }
+        return null;
     }
 
     @Override
@@ -130,6 +148,20 @@ public class GenericM3u8 extends PluginForHost {
         dl = new HLSDownloader(downloadLink, br, master);
         dl.startDownload();
 
+    }
+
+    @Override
+    public void setDownloadLink(final DownloadLink link) {
+        try {
+            super.setDownloadLink(link);
+            this.customFavIconHost = Browser.getHost(new URL(link.getDownloadURL()));
+        } catch (final Throwable e) {
+        }
+    }
+
+    @Override
+    public boolean hasCaptcha(DownloadLink link, Account acc) {
+        return false;
     }
 
     @Override

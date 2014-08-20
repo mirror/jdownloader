@@ -166,6 +166,11 @@ public class AbstractFFmpegBinary {
             if (!file.exists()) {
                 return null;
             }
+            if (Application.getJavaVersion() >= Application.JAVA16) {
+                if (!file.canExecute()) {
+                    file.setExecutable(true);
+                }
+            }
             return file.getCanonicalPath();
         } catch (Exception e) {
             logger.log(e);
