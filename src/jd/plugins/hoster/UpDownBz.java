@@ -19,19 +19,12 @@ package jd.plugins.hoster;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.security.MessageDigest;
-import java.security.NoSuchAlgorithmException;
-import java.security.spec.InvalidKeySpecException;
-import java.security.spec.KeySpec;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-
-import javax.crypto.SecretKey;
-import javax.crypto.SecretKeyFactory;
-import javax.crypto.spec.PBEKeySpec;
 
 import jd.PluginWrapper;
 import jd.parser.Regex;
@@ -520,42 +513,6 @@ public class UpDownBz extends PluginForHost {
         return data;
     }
 
-    private String computePassword(final String username, final String password) {
-        if (username == null || password == null) {
-            return null;
-        }
-        String result = null;
-        try {
-            MessageDigest digest = MessageDigest.getInstance("MD5");
-            digest.reset();
-            digest.update((username + password).getBytes("UTF-8"));
-            final byte[] salt = digest.digest();
-
-            final int iterations = 120;
-            final int bits = 512;
-
-            byte[] bpass = password.getBytes("UTF-8");
-            char[] cpass = new char[bpass.length];
-            for (int i = 0; i < cpass.length; i++) {
-                cpass[i] = (char) (bpass[i] & 0xFF);
-            }
-
-            final SecretKeyFactory secretKeyFactory = SecretKeyFactory.getInstance("PBKDF2WithHmacSHA1");
-            final KeySpec keySpec = new PBEKeySpec(cpass, salt, iterations, bits);
-            final SecretKey secretKey = secretKeyFactory.generateSecret(keySpec);
-            final byte[] key = secretKey.getEncoded();
-
-            result = Base64.encodeToString(key, false);
-        } catch (UnsupportedEncodingException e) {
-            e.printStackTrace();
-        } catch (NoSuchAlgorithmException e) {
-            e.printStackTrace();
-        } catch (InvalidKeySpecException e) {
-            e.printStackTrace();
-        }
-        return result;
-    }
-
     private PrivateDownloadData api_privatedownload(Account account) {
         if (account == null) {
             return null;
@@ -632,14 +589,17 @@ public class UpDownBz extends PluginForHost {
         String sessionid = null;
         Long expires_at = null;
 
-        // compute password hash
-        String computed_password = computePassword(account.getUser(), account.getPass());
-        if (computed_password == null) {
+        // compute user secret
+        String secret;
+        try {
+            secret = Base64.encodeToString((account.getUser() + ":" + account.getPass()).getBytes("UTF-8"), false);
+        } catch (UnsupportedEncodingException e) {
+            e.printStackTrace();
             return null;
         }
 
         // build json api query
-        String query = "{\"i\":\"" + generateRandomId() + "\",\"m\":\"auth\",\"a\":\"getsid\",\"d\":{\"u\":\"" + account.getUser() + "\",\"p\":\"" + computed_password + "\"}}";
+        String query = "{\"i\":\"" + generateRandomId() + "\",\"m\":\"auth\",\"a\":\"getsid\",\"d\":{\"u\":\"" + account.getUser() + "\",\"s\":\"" + secret + "\"}}";
 
         try {
             // do the actual api call
