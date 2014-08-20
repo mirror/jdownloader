@@ -249,6 +249,7 @@
 			<fileset dir="${cls}">
 				<include name="**/*.class" />
 				<include name="**/*.txt" />
+			    <include name="**/*.dat" />
 
 				<exclude name="jd/controlling/reconnect/plugins/*/**/*" />
 				<exclude name="jd/captcha/**" />
