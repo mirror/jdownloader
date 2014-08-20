@@ -79,7 +79,7 @@ public class EasyBytezCom extends PluginForHost {
 
     // Site Setters
     // primary website url, take note of redirects
-    private final String               COOKIE_HOST                  = "http://easybytez.com";
+    public final String                COOKIE_HOST                  = "http://easybytez.com";
     // domain names used within download links.
     private final String               DOMAINS                      = "(easybytez\\.com|easybytez\\.to|zingload\\.com|easyload\\.to)";
     private final String               PASSWORDTEXT                 = "<br><b>Passwor(d|t):</b> <input";
@@ -776,7 +776,7 @@ public class EasyBytezCom extends PluginForHost {
         return ai;
     }
 
-    private void updateAccountInfo(Account account, AccountInfo ai, Browser cbr) {
+    public void updateAccountInfo(Account account, AccountInfo ai, Browser cbr) {
         if (ai == null) {
             ai = account.getAccountInfo();
         }
@@ -836,7 +836,7 @@ public class EasyBytezCom extends PluginForHost {
     }
 
     @SuppressWarnings("unchecked")
-    private HashMap<String, String> login(final Account account, final boolean force) throws Exception {
+    public HashMap<String, String> login(final Account account, final boolean force) throws Exception {
         synchronized (ACCLOCK) {
             try {
                 /** Load cookies */
@@ -1101,7 +1101,7 @@ public class EasyBytezCom extends PluginForHost {
     private static HashMap<String, String>                    cloudflareCookies      = new HashMap<String, String>();
     private static HashMap<Account, HashMap<String, Integer>> hostMap                = new HashMap<Account, HashMap<String, Integer>>();
 
-    private static Object                                     ACCLOCK                = new Object();
+    public static Object                                      ACCLOCK                = new Object();
     private static Object                                     CTRLLOCK               = new Object();
 
     /**
@@ -1161,7 +1161,7 @@ public class EasyBytezCom extends PluginForHost {
     }
 
     @SuppressWarnings("unused")
-    private String getProtocol() {
+    public String getProtocol() {
         if ((supportsHTTPS && enforcesHTTPS) || (supportsHTTPS && getPluginConfig().getBooleanProperty(preferHTTPS, false))) {
             return "https://";
         } else {
@@ -1218,7 +1218,7 @@ public class EasyBytezCom extends PluginForHost {
      *
      * @author raztoki
      */
-    private void getPage(final String page) throws Exception {
+    public void getPage(final String page) throws Exception {
         if (page == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
@@ -2171,6 +2171,13 @@ public class EasyBytezCom extends PluginForHost {
             });
         } catch (Throwable e) {
         }
+    }
+
+    /**
+     * because stable is lame!
+     * */
+    public void setBrowser(final Browser ibr) {
+        this.br = ibr;
     }
 
 }
