@@ -2,8 +2,6 @@ package org.jdownloader.controlling.ffmpeg.json;
 
 import org.appwork.storage.Storable;
 import org.appwork.utils.logging2.LogSource;
-import org.jdownloader.extensions.streaming.mediaarchive.prepare.AudioStream;
-import org.jdownloader.extensions.streaming.mediaarchive.prepare.VideoStream;
 import org.jdownloader.logging.LogController;
 
 public class Stream implements Storable {
@@ -204,7 +202,9 @@ public class Stream implements Storable {
 
     public int parseDuration() {
         try {
-            if (duration == null) return -1;
+            if (duration == null) {
+                return -1;
+            }
             return (int) Double.parseDouble(getDuration());
         } catch (Throwable e) {
             LOGGER.info(getDuration());
@@ -215,8 +215,10 @@ public class Stream implements Storable {
 
     public int parseBitrate() {
         try {
-            if (bit_rate == null) return -1;
-            return (int) Integer.parseInt(getBit_rate());
+            if (bit_rate == null) {
+                return -1;
+            }
+            return Integer.parseInt(getBit_rate());
         } catch (Throwable e) {
             LOGGER.info(getBit_rate());
             LOGGER.log(e);
@@ -226,8 +228,10 @@ public class Stream implements Storable {
 
     public int parseSamplingRate() {
         try {
-            if (sample_rate == null) return -1;
-            return (int) Integer.parseInt(getSample_rate());
+            if (sample_rate == null) {
+                return -1;
+            }
+            return Integer.parseInt(getSample_rate());
         } catch (Throwable e) {
             LOGGER.info(getSample_rate());
             LOGGER.log(e);
@@ -239,7 +243,9 @@ public class Stream implements Storable {
     public int[] parseFrameRate() {
 
         try {
-            if (avg_frame_rate == null) return null;
+            if (avg_frame_rate == null) {
+                return null;
+            }
             String[] sp = avg_frame_rate.split("/");
             if (sp.length == 2) {
                 return new int[] { Integer.parseInt(sp[0]), Integer.parseInt(sp[1]) };
@@ -256,7 +262,9 @@ public class Stream implements Storable {
     public int[] parsePixelAspectRatio() {
 
         try {
-            if (sample_aspect_ratio == null) return null;
+            if (sample_aspect_ratio == null) {
+                return null;
+            }
             String[] sp = sample_aspect_ratio.split(":");
             if (sp.length == 2) {
                 return new int[] { Integer.parseInt(sp[0]), Integer.parseInt(sp[1]) };
@@ -268,45 +276,6 @@ public class Stream implements Storable {
             LOGGER.log(e);
             return null;
         }
-    }
-
-    public AudioStream toAudioStream() {
-        if ("audio".equalsIgnoreCase(getCodec_type())) {
-            AudioStream as = new AudioStream();
-            as.setCodec(getCodec_name());
-            as.setCodecDescription(getCodec_long_name());
-            as.setCodecTag(getCodec_tag_string());
-            as.setBitrate(parseBitrate());
-            as.setSamplingRate(parseSamplingRate());
-            as.setDuration(parseDuration());
-            as.setChannels(getChannels());
-            as.setIndex(getIndex());
-            return as;
-        } else {
-            return null;
-        }
-    }
-
-    public VideoStream toVideoStream() {
-        if ("video".equalsIgnoreCase(getCodec_type())) {
-            VideoStream as = new VideoStream();
-            as.setCodec(getCodec_name());
-            as.setBitrate(parseBitrate());
-            as.setCodecDescription(getCodec_long_name());
-            as.setCodecTag(getCodec_tag_string());
-            as.setFrameRate(parseFrameRate());
-            as.setProfileTags(getProfile());
-            as.setPixelAspectRatio(parsePixelAspectRatio());
-            as.setDuration(parseDuration());
-            as.setIndex(getIndex());
-            as.setWidth(getWidth());
-            as.setIndex(getIndex());
-            as.setHeight(getHeight());
-            return as;
-        } else {
-            return null;
-        }
-
     }
 
 }
