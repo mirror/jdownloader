@@ -17,6 +17,7 @@
 
 package org.jdownloader.startup;
 
+import java.awt.Dialog.ModalityType;
 import java.io.File;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
@@ -29,17 +30,21 @@ import java.util.logging.Logger;
 import jd.gui.swing.jdgui.menu.actions.sendlogs.LogAction;
 import jd.gui.swing.laf.LookAndFeelController;
 
+import org.appwork.shutdown.ShutdownController;
 import org.appwork.storage.JSonStorage;
 import org.appwork.storage.JsonSerializer;
 import org.appwork.storage.TypeRef;
 import org.appwork.storage.config.JsonConfig;
 import org.appwork.storage.jackson.JacksonMapper;
 import org.appwork.txtresource.TranslationFactory;
+import org.appwork.uio.UIOManager;
 import org.appwork.utils.Application;
 import org.appwork.utils.IO;
 import org.appwork.utils.IOErrorHandler;
+import org.appwork.utils.Regex;
 import org.appwork.utils.os.CrossSystem;
 import org.appwork.utils.processes.ProcessBuilderFactory;
+import org.appwork.utils.swing.dialog.ConfirmDialog;
 import org.appwork.utils.swing.dialog.Dialog;
 import org.jdownloader.controlling.FileCreationManager;
 import org.jdownloader.extensions.ExtensionController;
@@ -284,7 +289,67 @@ public class Main {
                     IO.copyFile(svnJar, jdjar);
 
                 }
-                ProcessBuilderFactory.create(CrossSystem.getJavaBinary(), "-jar", jdjar.getName(), "-forceupdate", "guiless", "-exitafterupdate").directory(jdjar.getParentFile()).start();
+
+                final ProcessBuilder processBuilder = ProcessBuilderFactory.create(CrossSystem.getJavaBinary(), "-jar", jdjar.getName(), "-forceupdate", "guiless", "-exitafterupdate").directory(jdjar.getParentFile());
+                new Thread("Updater") {
+                    public void run() {
+
+                        try {
+                            final Process process = processBuilder.start();
+                            final StringBuilder sbe = new StringBuilder();
+                            final StringBuilder sbs = new StringBuilder();
+                            final Thread reader1 = new Thread("ffmpegReader") {
+                                public void run() {
+                                    try {
+                                        sbs.append(IO.readInputStreamToString(process.getInputStream()));
+                                    } catch (Throwable e) {
+                                        e.printStackTrace();
+                                    }
+                                }
+                            };
+
+                            final Thread reader2 = new Thread("ffmpegReader") {
+                                public void run() {
+                                    try {
+                                        sbe.append(IO.readInputStreamToString(process.getErrorStream()));
+                                    } catch (Throwable e) {
+                                        e.printStackTrace();
+                                    }
+                                }
+                            };
+                            reader1.start();
+                            reader2.start();
+                            while (true) {
+                                try {
+                                    process.exitValue();
+                                    reader1.join();
+                                    reader2.join();
+                                    if (sbe.toString().contains("Write Revision:")) {
+                                        ConfirmDialog d = new ConfirmDialog(UIOManager.LOGIC_COUNTDOWN, "Update Installed to Revision " + new Regex(sbe.toString(), "Write Revision:\\s*(\\d+)").getMatch(0), "Update Installed. Please restart to access new resources like images, translations, ... ", null, "Exit JDownloader", null) {
+                                            public java.awt.Dialog.ModalityType getModalityType() {
+                                                return ModalityType.MODELESS;
+                                            };
+                                        };
+                                        d.setTimeout(5000);
+                                        UIOManager.I().show(null, d);
+                                        d.throwCloseExceptions();
+
+                                        System.out.println("Updates Installed to .jd_home");
+                                        ShutdownController.getInstance().requestShutdown();
+                                    }
+                                    System.out.println("Done");
+                                    return;
+                                } catch (IllegalThreadStateException e) {
+
+                                }
+                                Thread.sleep(500);
+                            }
+                        } catch (Exception e1) {
+                            e1.printStackTrace();
+
+                        }
+                    }
+                }.start();
 
             }
         } catch (Exception e) {
