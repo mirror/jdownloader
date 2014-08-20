@@ -6,7 +6,7 @@ import org.jdownloader.logging.LogController;
 
 public class Stream implements Storable {
     public Stream(/* Storable */) {
-
+        //
     }
 
     private static final LogSource LOGGER = LogController.getInstance().getLogger(Stream.class.getName());
