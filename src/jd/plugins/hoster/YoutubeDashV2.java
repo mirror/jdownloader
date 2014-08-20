@@ -2049,6 +2049,7 @@ public class YoutubeDashV2 extends PluginForHost {
 
                                 }
 
+                                //
                                 @Override
                                 public void actionPerformed(ActionEvent e) {
                                     java.util.List<CheckableLink> checkableLinks = new ArrayList<CheckableLink>(1);
