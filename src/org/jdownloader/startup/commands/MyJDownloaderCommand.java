@@ -20,6 +20,7 @@ public class MyJDownloaderCommand extends AbstractStartupCommand {
 
         try {
             BufferedReader br = new BufferedReader(new InputStreamReader(System.in));
+            String pw = CFG_MYJD.PASSWORD.getValue();
             while (!MyJDownloaderController.validateLogins(CFG_MYJD.EMAIL.getValue(), CFG_MYJD.PASSWORD.getValue())) {
 
                 System.out.println("Please Enter the MYJDownloader Email Adress");
