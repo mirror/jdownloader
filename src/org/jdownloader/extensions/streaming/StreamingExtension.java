@@ -55,6 +55,11 @@ public class StreamingExtension extends AbstractExtension<StreamingConfig, Strea
         Profile.init();
     }
 
+    @Override
+    public boolean isHeadlessRunnable() {
+        return false;
+    }
+
     public StreamingExtension() {
 
     }
@@ -79,7 +84,9 @@ public class StreamingExtension extends AbstractExtension<StreamingConfig, Strea
         try {
             streamProvider = null;
 
-            if (mediaServer != null) mediaServer.shutdown();
+            if (mediaServer != null) {
+                mediaServer.shutdown();
+            }
 
             if (streamServerHandler != null) {
 
@@ -126,12 +133,18 @@ public class StreamingExtension extends AbstractExtension<StreamingConfig, Strea
 
     private String findVLCBinary() {
         String ret = getSettings().getVLCCommand();
-        if (!StringUtils.isEmpty(ret)) return ret;
+        if (!StringUtils.isEmpty(ret)) {
+            return ret;
+        }
         if (CrossSystem.isWindows()) {
             return getVLCBinaryFromWindowsRegistry();
         } else if (CrossSystem.isMac()) {
-            if (new File("/Applications/VLC.app/Contents/MacOS/VLC").exists()) { return "/Applications/VLC.app/Contents/MacOS/VLC"; }
-        } else if (CrossSystem.isLinux()) { return "vlc"; }
+            if (new File("/Applications/VLC.app/Contents/MacOS/VLC").exists()) {
+                return "/Applications/VLC.app/Contents/MacOS/VLC";
+            }
+        } else if (CrossSystem.isLinux()) {
+            return "vlc";
+        }
         return null;
 
     }
@@ -142,12 +155,16 @@ public class StreamingExtension extends AbstractExtension<StreamingConfig, Strea
             String path = System.getenv("ProgramFiles");
             if (path86 != null) {
                 File file = new File(new File(path86), "Windows Media Player/wmplayer.exe");
-                if (file.exists()) return file.getAbsolutePath();
+                if (file.exists()) {
+                    return file.getAbsolutePath();
+                }
             }
 
             if (path != null) {
                 File file = new File(new File(path), "Windows Media Player/wmplayer.exe");
-                if (file.exists()) return file.getAbsolutePath();
+                if (file.exists()) {
+                    return file.getAbsolutePath();
+                }
             }
 
         }
@@ -186,9 +203,13 @@ public class StreamingExtension extends AbstractExtension<StreamingConfig, Strea
 
     @Override
     public ExtensionConfigPanel<?> getConfigPanel() {
-        if (configPanel != null) return configPanel;
+        if (configPanel != null) {
+            return configPanel;
+        }
         synchronized (this) {
-            if (configPanel != null) return configPanel;
+            if (configPanel != null) {
+                return configPanel;
+            }
             configPanel = new StreamingConfigPanel(this, getSettings());
         }
         return configPanel;
@@ -392,7 +413,9 @@ public class StreamingExtension extends AbstractExtension<StreamingConfig, Strea
             return null;
         } finally {
             try {
-                if (hKey != -1) closeKey.invoke(Preferences.userRoot(), hKey);
+                if (hKey != -1) {
+                    closeKey.invoke(Preferences.userRoot(), hKey);
+                }
             } catch (final Throwable e) {
             }
         }
@@ -423,7 +446,9 @@ public class StreamingExtension extends AbstractExtension<StreamingConfig, Strea
                 deviceID = "UnknownDevice";
             }
             String ret = "http://" + getHost() + ":" + getSettings().getStreamServerPort() + "/stream/" + encode(deviceID) + "/" + encode(id) + "/" + encode(format);
-            if (!StringUtils.isEmpty(subpath)) ret += "/" + encode(subpath);
+            if (!StringUtils.isEmpty(subpath)) {
+                ret += "/" + encode(subpath);
+            }
             return ret;
         } catch (Throwable e) {
             logger.log(e);
@@ -433,7 +458,9 @@ public class StreamingExtension extends AbstractExtension<StreamingConfig, Strea
     }
 
     private String encode(String string) {
-        if (StringUtils.isEmpty(string)) return null;
+        if (StringUtils.isEmpty(string)) {
+            return null;
+        }
         try {
             return URLEncoder.encode(string, "UTF-8");
         } catch (UnsupportedEncodingException e) {
@@ -464,18 +491,24 @@ public class StreamingExtension extends AbstractExtension<StreamingConfig, Strea
     public DownloadLink getLinkById(String id) {
 
         MediaItem mi = getItemById(id);
-        if (mi != null) { return mi.getDownloadLink(); }
+        if (mi != null) {
+            return mi.getDownloadLink();
+        }
         return null;
     }
 
     public MediaItem getItemById(String id) {
 
         MediaItem mi = linkIdMap.get(id);
-        if (mi != null) return mi;
+        if (mi != null) {
+            return mi;
+        }
 
         try {
             mi = ((MediaItem) mediaArchive.getItemById(id));
-            if (mi != null) return mi;
+            if (mi != null) {
+                return mi;
+            }
         } catch (Throwable e) {
 
         }

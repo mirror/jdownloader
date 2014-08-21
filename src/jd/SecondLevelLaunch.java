@@ -18,6 +18,7 @@
 package jd;
 
 import java.awt.AWTEvent;
+import java.awt.GraphicsEnvironment;
 import java.awt.Toolkit;
 import java.awt.Window;
 import java.io.File;
@@ -59,6 +60,7 @@ import jd.plugins.DownloadLink;
 import jd.utils.JDUtilities;
 
 import org.appwork.controlling.SingleReachableState;
+import org.appwork.resources.AWUTheme;
 import org.appwork.shutdown.ShutdownController;
 import org.appwork.shutdown.ShutdownEvent;
 import org.appwork.shutdown.ShutdownRequest;
@@ -122,6 +124,7 @@ import org.jdownloader.statistics.StatsManager;
 import org.jdownloader.translate._JDT;
 import org.jdownloader.updatev2.InternetConnectionSettings;
 import org.jdownloader.updatev2.RestartController;
+import org.jdownloader.updatev2.gui.LAFOptions;
 
 public class SecondLevelLaunch {
     static {
@@ -524,7 +527,8 @@ public class SecondLevelLaunch {
                     public void run() {
                         String txt = "It seems that JDownloader did not exit properly on " + error + "\r\nThis might result in losing settings or your downloadlist!\r\n\r\nPlease make sure to close JDownloader using Menu->File->Exit or Window->Close [X]";
                         LOG.warning("BAD EXIT Detected!: " + txt);
-                        Dialog.getInstance().showErrorDialog(UIOManager.BUTTONS_HIDE_CANCEL | Dialog.STYLE_SHOW_DO_NOT_DISPLAY_AGAIN | Dialog.LOGIC_DONOTSHOW_BASED_ON_TITLE_ONLY, "Warning - Bad Exit!", txt);
+
+                        UIOManager.I().showConfirmDialog(UIOManager.BUTTONS_HIDE_CANCEL | Dialog.STYLE_SHOW_DO_NOT_DISPLAY_AGAIN | Dialog.LOGIC_DONOTSHOW_BASED_ON_TITLE_ONLY, "Warning - Bad Exit!", txt, AWUTheme.I().getIcon(Dialog.ICON_ERROR, 32), null, null);
 
                     };
                 }.start();
@@ -687,6 +691,7 @@ public class SecondLevelLaunch {
             }
         };
         thread.start();
+
         final EDTHelper<Void> lafInit = new EDTHelper<Void>() {
             @Override
             public Void edtRun() {
@@ -715,7 +720,11 @@ public class SecondLevelLaunch {
                 return null;
             }
         };
-        lafInit.start();
+        if (!GraphicsEnvironment.isHeadless()) {
+            lafInit.start();
+        } else {
+            LAFOptions.init("org.jdownloader.gui.laf.jddefault.JDDefaultLookAndFeel");
+        }
         Locale.setDefault(TranslationFactory.getDesiredLocale());
         // Disable silentmode on each session start
         if (CFG_SILENTMODE.AUTO_RESET_ON_STARTUP_ENABLED.isEnabled()) {
@@ -899,69 +908,74 @@ public class SecondLevelLaunch {
                 }.start();
             }
         });
-        new EDTHelper<Void>() {
+
+        if (CFG_GUI.CFG.getRlyWarnLevel() == RlyWarnLevel.HIGH) {
+            ShutdownController.getInstance().addShutdownVetoListener(RestartController.getInstance());
+        }
+        CFG_GUI.RLY_WARN_LEVEL.getEventSender().addListener(new GenericConfigEventListener<Enum>() {
+
             @Override
-            public Void edtRun() {
-                /* init gui here */
-                try {
-                    if (CFG_GUI.CFG.getRlyWarnLevel() == RlyWarnLevel.HIGH) {
-                        ShutdownController.getInstance().addShutdownVetoListener(RestartController.getInstance());
-                    }
-                    CFG_GUI.RLY_WARN_LEVEL.getEventSender().addListener(new GenericConfigEventListener<Enum>() {
-
-                        @Override
-                        public void onConfigValueModified(KeyHandler<Enum> keyHandler, Enum newValue) {
-                            if (CFG_GUI.CFG.getRlyWarnLevel() == RlyWarnLevel.HIGH) {
-                                ShutdownController.getInstance().addShutdownVetoListener(RestartController.getInstance());
-                            } else {
-                                ShutdownController.getInstance().removeShutdownVetoListener(RestartController.getInstance());
-                            }
-
-                        }
-
-                        @Override
-                        public void onConfigValidatorError(KeyHandler<Enum> keyHandler, Enum invalidValue, ValidationException validateException) {
-                        }
-                    });
-                    lafInit.waitForEDT();
-                    SecondLevelLaunch.LOG.info("InitGUI->" + (System.currentTimeMillis() - SecondLevelLaunch.startup));
-                    JDGui.init();
-                    // init Archivecontroller.init has to be done AFTER downloadcontroller and linkcollector
-                    ArchiveController.getInstance();
-                    Toolkit.getDefaultToolkit().addAWTEventListener(new CustomCopyPasteSupport(), AWTEvent.MOUSE_EVENT_MASK);
-
-                    SecondLevelLaunch.LOG.info("GUIDONE->" + (System.currentTimeMillis() - SecondLevelLaunch.startup));
-                } catch (Throwable e) {
-                    SecondLevelLaunch.LOG.log(e);
-                    Dialog.getInstance().showExceptionDialog("Exception occured", "An unexpected error occured.\r\nJDownloader will try to fix this. If this happens again, please contact our support.", e);
-
-                    // org.jdownloader.controlling.JDRestartController.getInstance().restartViaUpdater(false);
+            public void onConfigValueModified(KeyHandler<Enum> keyHandler, Enum newValue) {
+                if (CFG_GUI.CFG.getRlyWarnLevel() == RlyWarnLevel.HIGH) {
+                    ShutdownController.getInstance().addShutdownVetoListener(RestartController.getInstance());
+                } else {
+                    ShutdownController.getInstance().removeShutdownVetoListener(RestartController.getInstance());
                 }
-                return null;
+
             }
-        }.waitForEDT();
+
+            @Override
+            public void onConfigValidatorError(KeyHandler<Enum> keyHandler, Enum invalidValue, ValidationException validateException) {
+            }
+        });
+        if (!GraphicsEnvironment.isHeadless()) {
+            new EDTHelper<Void>() {
+                @Override
+                public Void edtRun() {
+                    /* init gui here */
+                    try {
+
+                        lafInit.waitForEDT();
+                        SecondLevelLaunch.LOG.info("InitGUI->" + (System.currentTimeMillis() - SecondLevelLaunch.startup));
+                        JDGui.init();
+                        // init Archivecontroller.init has to be done AFTER downloadcontroller and linkcollector
+                        ArchiveController.getInstance();
+                        Toolkit.getDefaultToolkit().addAWTEventListener(new CustomCopyPasteSupport(), AWTEvent.MOUSE_EVENT_MASK);
+
+                        SecondLevelLaunch.LOG.info("GUIDONE->" + (System.currentTimeMillis() - SecondLevelLaunch.startup));
+                    } catch (Throwable e) {
+                        SecondLevelLaunch.LOG.log(e);
+                        Dialog.getInstance().showExceptionDialog("Exception occured", "An unexpected error occured.\r\nJDownloader will try to fix this. If this happens again, please contact our support.", e);
+
+                        // org.jdownloader.controlling.JDRestartController.getInstance().restartViaUpdater(false);
+                    }
+                    return null;
+                }
+            }.waitForEDT();
+        }
 
         try {
             /* thread should be finished here */
             thread.join(10000);
         } catch (InterruptedException e) {
         }
-        while (true) {
-            Thread initThread = JDGui.getInstance().getInitThread();
-            if (initThread == null || initThread.isAlive() == false) {
-                break;
+        if (!GraphicsEnvironment.isHeadless()) {
+            while (true) {
+                Thread initThread = JDGui.getInstance().getInitThread();
+                if (initThread == null || initThread.isAlive() == false) {
+                    break;
+                }
+                try {
+                    initThread.join(100);
+                } catch (InterruptedException e1) {
+                    SecondLevelLaunch.LOG.log(e1);
+                    break;
+                }
             }
-            try {
-                initThread.join(100);
-            } catch (InterruptedException e1) {
-                SecondLevelLaunch.LOG.log(e1);
-                break;
-            }
+            JDGui.getInstance().badLaunchCheck();
+
         }
-        JDGui.getInstance().badLaunchCheck();
-
         SecondLevelLaunch.GUI_COMPLETE.setReached();
-
         SecondLevelLaunch.LOG.info("Initialisation finished");
         SecondLevelLaunch.INIT_COMPLETE.setReached();
 

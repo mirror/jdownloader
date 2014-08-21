@@ -50,6 +50,11 @@ public class GrowlExtension extends AbstractExtension<GrowlConfig, GrowlTranslat
     }
 
     @Override
+    public boolean isHeadlessRunnable() {
+        return false;
+    }
+
+    @Override
     protected void start() throws StartException {
         File tmp = Application.getTempResource(TMP_GROWL_NOTIFICATION_SCPT);
         FileCreationManager.getInstance().delete(tmp, null);
@@ -132,7 +137,9 @@ public class GrowlExtension extends AbstractExtension<GrowlConfig, GrowlTranslat
 
     public void onStateChange(StateEvent event) {
         if (DownloadWatchDog.IDLE_STATE == event.getNewState() || DownloadWatchDog.STOPPED_STATE == event.getNewState()) {
-            if (DownloadWatchDog.getInstance().getSession().getDownloadsStarted() > 0) growlNotification(T._.jd_plugins_optional_JDGrowlNotification_allfinished(), "", "All downloads finished");
+            if (DownloadWatchDog.getInstance().getSession().getDownloadsStarted() > 0) {
+                growlNotification(T._.jd_plugins_optional_JDGrowlNotification_allfinished(), "", "All downloads finished");
+            }
         }
     }
 

@@ -107,8 +107,15 @@ public class AntiStandbyExtension extends AbstractExtension<AntiStandbyConfig, A
 
     public Mode getMode() {
         Mode ret = getSettings().getMode();
-        if (ret == null) ret = Mode.DOWNLOADING;
+        if (ret == null) {
+            ret = Mode.DOWNLOADING;
+        }
         return ret;
+    }
+
+    @Override
+    public boolean isHeadlessRunnable() {
+        return true;
     }
 
 }

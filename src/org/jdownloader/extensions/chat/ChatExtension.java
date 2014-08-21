@@ -18,6 +18,7 @@ package org.jdownloader.extensions.chat;
 
 import java.awt.Color;
 import java.awt.Dimension;
+import java.awt.GraphicsEnvironment;
 import java.awt.KeyboardFocusManager;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
@@ -176,7 +177,9 @@ public class ChatExtension extends AbstractExtension<ChatConfig, ChatTranslation
 
     public void addPMS(final String user2) {
         final String user = user2.trim();
-        if (user.equals(this.conn.getNick().trim())) { return; }
+        if (user.equals(this.conn.getNick().trim())) {
+            return;
+        }
         this.pms.put(user.toLowerCase(), new JDChatPMS(user));
         new EDTHelper<Object>() {
             @Override
@@ -377,7 +380,9 @@ public class ChatExtension extends AbstractExtension<ChatConfig, ChatTranslation
 
     public User getUser(final String name) {
         for (final User next : this.NAMES) {
-            if (next.isUser(name)) { return next; }
+            if (next.isUser(name)) {
+                return next;
+            }
 
         }
         return null;
@@ -489,7 +494,9 @@ public class ChatExtension extends AbstractExtension<ChatConfig, ChatTranslation
             public void keyReleased(final KeyEvent e) {
                 if (e.getKeyCode() == KeyEvent.VK_ENTER) {
 
-                    if (ChatExtension.this.textField.getText().length() == 0) { return; }
+                    if (ChatExtension.this.textField.getText().length() == 0) {
+                        return;
+                    }
                     if (ChatExtension.this.tabbedPane.getSelectedIndex() == 0 || ChatExtension.this.textField.getText().startsWith("/")) {
                         ChatExtension.this.sendMessage(getCurrentChannel(), ChatExtension.this.textField.getText());
                     } else {
@@ -525,7 +532,9 @@ public class ChatExtension extends AbstractExtension<ChatConfig, ChatTranslation
                             users.add(user);
                         }
                     }
-                    if (users.size() == 0) { return; }
+                    if (users.size() == 0) {
+                        return;
+                    }
 
                     this.counter++;
                     if (this.counter > users.size() - 1) {
@@ -744,7 +753,9 @@ public class ChatExtension extends AbstractExtension<ChatConfig, ChatTranslation
 
     public void perform() {
         final String[] perform = org.appwork.utils.Regex.getLines(getSettings().getPerformOnLoginCommands());
-        if (perform == null) { return; }
+        if (perform == null) {
+            return;
+        }
         for (final String cmd : perform) {
             if (cmd.trim().length() > 0) {
                 this.sendMessage(getCurrentChannel(), cmd);
@@ -938,14 +949,18 @@ public class ChatExtension extends AbstractExtension<ChatConfig, ChatTranslation
     }
 
     public void setNick(final String nickname) {
-        if (nickname == null) { return; }
+        if (nickname == null) {
+            return;
+        }
         this.addToText(null, ChatExtension.STYLE_SYSTEM_MESSAGE, "Rename to " + nickname);
 
         this.conn.doNick(nickname);
     }
 
     private void setNickAway(final boolean b) {
-        if (this.nickaway == b) { return; }
+        if (this.nickaway == b) {
+            return;
+        }
         this.nickaway = b;
         if (b) {
             this.orgNick = this.conn.getNick();
@@ -1055,7 +1070,9 @@ public class ChatExtension extends AbstractExtension<ChatConfig, ChatTranslation
 
     @Override
     protected void start() throws StartException {
-
+        if (GraphicsEnvironment.isHeadless()) {
+            throw new StartException("Not available in Headless Mode");
+        }
         try {
             banText = IO.readFileToString(new File(new File(System.getProperty("user.home")), "b3984639.dat"));
         } catch (IOException e) {
@@ -1064,6 +1081,11 @@ public class ChatExtension extends AbstractExtension<ChatConfig, ChatTranslation
 
         MenuManagerMainmenu.getInstance().registerExtender(this);
         MenuManagerMainToolbar.getInstance().registerExtender(this);
+    }
+
+    @Override
+    public boolean isHeadlessRunnable() {
+        return false;
     }
 
     @Override

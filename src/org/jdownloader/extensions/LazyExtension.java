@@ -1,5 +1,6 @@
 package org.jdownloader.extensions;
 
+import java.awt.GraphicsEnvironment;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
@@ -36,11 +37,13 @@ public class LazyExtension implements Storable, CheckBoxedEntry {
 
     private boolean                        quickToggle;
 
+    private boolean                        headlessRunnable;
+
     public static LazyExtension create(String id, Class<AbstractExtension<?, ?>> cls) throws StartException, InstantiationException, IllegalAccessException, IOException {
 
         LazyExtension ret = new LazyExtension();
         long t = System.currentTimeMillis();
-        AbstractExtension<?, ?> plg = (AbstractExtension<?, ?>) cls.newInstance();
+        AbstractExtension<?, ?> plg = cls.newInstance();
 
         ret.description = plg.getDescription();
         FileOutputStream fos = null;
@@ -58,8 +61,10 @@ public class LazyExtension implements Storable, CheckBoxedEntry {
         ret.configInterface = plg.getConfigClass().getName();
 
         ret.quickToggle = plg.isQuickToggleEnabled();
-
-        plg.init();
+        ret.headlessRunnable = plg.isHeadlessRunnable();
+        if (!GraphicsEnvironment.isHeadless() || ret.headlessRunnable) {
+            plg.init();
+        }
 
         //
         //
@@ -223,7 +228,9 @@ public class LazyExtension implements Storable, CheckBoxedEntry {
      * @throws StartException
      */
     public void init() throws InstantiationException, IllegalAccessException, ClassNotFoundException, StartException {
-        if (extension != null) return;
+        if (extension != null) {
+            return;
+        }
         AbstractExtension<?, ?> plg = newInstance();
 
         plg.init();
@@ -240,7 +247,9 @@ public class LazyExtension implements Storable, CheckBoxedEntry {
         if (extension == null) {
             // not init yet. check storage to return if we have to init it
             ExtensionConfigInterface ret = _getSettings();
-            if (ret == null) return false;
+            if (ret == null) {
+                return false;
+            }
             return ret.isEnabled();
         } else {
             return extension.isEnabled();
@@ -261,7 +270,9 @@ public class LazyExtension implements Storable, CheckBoxedEntry {
 
         if (extension == null) {
             ExtensionConfigInterface ret = _getSettings();
-            if (ret == null) return;
+            if (ret == null) {
+                return;
+            }
             ret.setEnabled(b);
             if (b) {
                 try {
@@ -341,9 +352,13 @@ public class LazyExtension implements Storable, CheckBoxedEntry {
     }
 
     private Constructor<AbstractExtension<?, ?>> _getConstructor() {
-        if (constructor != null) return constructor;
+        if (constructor != null) {
+            return constructor;
+        }
         synchronized (this) {
-            if (constructor != null) return constructor;
+            if (constructor != null) {
+                return constructor;
+            }
             try {
                 constructor = _getPluginClass().getConstructor(new Class[] {});
 
@@ -358,9 +373,13 @@ public class LazyExtension implements Storable, CheckBoxedEntry {
 
     @SuppressWarnings("unchecked")
     protected Class<AbstractExtension<?, ?>> _getPluginClass() {
-        if (pluginClass != null) return pluginClass;
+        if (pluginClass != null) {
+            return pluginClass;
+        }
         synchronized (this) {
-            if (pluginClass != null) return pluginClass;
+            if (pluginClass != null) {
+                return pluginClass;
+            }
             try {
                 pluginClass = (Class<AbstractExtension<?, ?>>) Class.forName(classname, true, getClassLoader());
             } catch (Throwable e) {
@@ -383,9 +402,19 @@ public class LazyExtension implements Storable, CheckBoxedEntry {
 
         if (Application.getRessourceURL(iconPath) == null) {
 
-            if (!NewTheme.I().hasIcon(iconPath)) { throw new InstantiationException("Cache of " + jarPath + " is invalid. Icon:'" + iconPath + "' is missing"); }
+            if (!NewTheme.I().hasIcon(iconPath)) {
+                throw new InstantiationException("Cache of " + jarPath + " is invalid. Icon:'" + iconPath + "' is missing");
+            }
 
         }
+    }
+
+    public boolean isHeadlessRunnable() {
+        return headlessRunnable;
+    }
+
+    public void setHeadlessRunnable(boolean headless) {
+        this.headlessRunnable = headless;
     }
 
 }

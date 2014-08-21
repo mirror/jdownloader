@@ -1,6 +1,7 @@
 package org.jdownloader.updatev2;
 
 import java.awt.Color;
+import java.awt.GraphicsEnvironment;
 import java.awt.Window;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
@@ -93,8 +94,9 @@ public class UpdateController implements UpdateCallbackInterface {
         this.handler = handler;
         LogSource newLogger = handler.getLogger();
         if (newLogger != null) {
-            if (logger != null)
+            if (logger != null) {
                 logger.close();
+            }
             logger = newLogger;
         }
 
@@ -118,21 +120,24 @@ public class UpdateController implements UpdateCallbackInterface {
         // cleanup
         for (Iterator<Thread> it = confirmedThreads.iterator(); it.hasNext();) {
             Thread th = it.next();
-            if (!th.isAlive())
+            if (!th.isAlive()) {
                 it.remove();
+            }
         }
 
     }
 
     @Override
     public void updateGuiIcon(ImageIcon icon) {
-        this.statusIcon = (Icon) icon;
+        this.statusIcon = icon;
         eventSender.fireEvent(new UpdateStatusUpdateEvent(this, statusLabel, statusIcon, statusProgress));
     }
 
     @Override
     public void updateGuiText(String text) {
-        lazyGetIcon().setTitle(text);
+        if (!GraphicsEnvironment.isHeadless()) {
+            lazyGetIcon().setTitle(text);
+        }
         this.statusLabel = text;
         eventSender.fireEvent(new UpdateStatusUpdateEvent(this, statusLabel, statusIcon, statusProgress));
     }
@@ -140,8 +145,10 @@ public class UpdateController implements UpdateCallbackInterface {
     @Override
     public void updateGuiProgress(double progress) {
         this.statusProgress = progress;
-        lazyGetIcon().setIndeterminate(progress < 0);
-        lazyGetIcon().setValue((int) progress);
+        if (!GraphicsEnvironment.isHeadless()) {
+            lazyGetIcon().setIndeterminate(progress < 0);
+            lazyGetIcon().setValue((int) progress);
+        }
         eventSender.fireEvent(new UpdateStatusUpdateEvent(this, statusLabel, statusIcon, statusProgress));
     }
 
@@ -164,39 +171,43 @@ public class UpdateController implements UpdateCallbackInterface {
     @Override
     public void setRunning(boolean b) {
         this.running = b;
-        new EDTRunner() {
+        if (!GraphicsEnvironment.isHeadless()) {
+            new EDTRunner() {
 
-            @Override
-            protected void runInEDT() {
-                if (running) {
-                    if (icon != null && lazyGetIcon().getParent() != null) {
-                        //
-                        return;
+                @Override
+                protected void runInEDT() {
+                    if (running) {
+                        if (icon != null && lazyGetIcon().getParent() != null) {
+                            //
+                            return;
+                        }
+                        lazyGetIcon().setIndeterminate(true);
+                        lazyGetIcon().setTitle(_GUI._.JDUpdater_JDUpdater_object_icon());
+                        lazyGetIcon().setDescription(null);
+                        JDGui.getInstance().getStatusBar().addProcessIndicator(icon);
+
+                    } else {
+                        lazyGetIcon().setIndeterminate(false);
+                        JDGui.getInstance().getStatusBar().removeProcessIndicator(icon);
                     }
-                    lazyGetIcon().setIndeterminate(true);
-                    lazyGetIcon().setTitle(_GUI._.JDUpdater_JDUpdater_object_icon());
-                    lazyGetIcon().setDescription(null);
-                    JDGui.getInstance().getStatusBar().addProcessIndicator(icon);
-
-                } else {
-                    lazyGetIcon().setIndeterminate(false);
-                    JDGui.getInstance().getStatusBar().removeProcessIndicator(icon);
                 }
-            }
-        };
+            };
+        }
 
     }
 
     protected IconedProcessIndicator lazyGetIcon() {
-        if (icon != null)
+        if (icon != null) {
             return icon;
+        }
 
         icon = new EDTHelper<UpdateProgress>() {
 
             @Override
             public UpdateProgress edtRun() {
-                if (icon != null)
+                if (icon != null) {
                     return icon;
+                }
                 UpdateProgress icon = new UpdateProgress();
                 ((org.appwork.swing.components.circlebar.ImagePainter) icon.getValueClipPainter()).setBackground(Color.LIGHT_GRAY);
                 ((org.appwork.swing.components.circlebar.ImagePainter) icon.getValueClipPainter()).setForeground(Color.GREEN);
@@ -239,8 +250,9 @@ public class UpdateController implements UpdateCallbackInterface {
 
     public void setGuiVisible(boolean b) {
         UpdateHandler lhandler = handler;
-        if (lhandler != null)
+        if (lhandler != null) {
             lhandler.setGuiVisible(b, true);
+        }
     }
 
     @Override
@@ -297,10 +309,12 @@ public class UpdateController implements UpdateCallbackInterface {
     @Override
     public boolean doContinueUpdateAvailable(boolean app, boolean updater, long appDownloadSize, long updaterDownloadSize, int appRevision, int updaterRevision, int appDestRevision, int updaterDestRevision) {
 
-        if (!settings.isDoAskBeforeDownloadingAnUpdate())
+        if (!settings.isDoAskBeforeDownloadingAnUpdate()) {
             return true;
-        if (isThreadConfirmed())
+        }
+        if (isThreadConfirmed()) {
             return true;
+        }
         try {
             if (app && appDownloadSize < 0 || updater && updaterDownloadSize < 0) {
                 confirm(0, _UPDATE._.confirmdialog_new_update_available_frametitle(), _UPDATE._.confirmdialog_new_update_available_message(), _UPDATE._.confirmdialog_new_update_available_answer_now(), _UPDATE._.confirmdialog_new_update_available_answer_later());
@@ -350,8 +364,9 @@ public class UpdateController implements UpdateCallbackInterface {
             if (handler.hasPendingSelfupdate()) {
                 fireUpdatesAvailable(false, handler.createAWFInstallLog());
                 if (!isThreadConfirmed()) {
-                    if (!handler.isGuiVisible() && settings.isDoNotAskJustInstallOnNextStartupEnabled())
+                    if (!handler.isGuiVisible() && settings.isDoNotAskJustInstallOnNextStartupEnabled()) {
                         return;
+                    }
                     logger.info("ASK for installing selfupdate");
 
                     confirm(UIOManager.LOGIC_COUNTDOWN, _UPDATE._.confirmdialog_new_update_available_frametitle(), _UPDATE._.confirmdialog_new_update_available_for_install_message(), _UPDATE._.confirmdialog_new_update_available_answer_now_install(), _UPDATE._.confirmdialog_new_update_available_answer_later_install());
@@ -371,8 +386,9 @@ public class UpdateController implements UpdateCallbackInterface {
                 logger.info("Nothing to install");
                 // Thread.sleep(1000);
                 handler.setGuiFinished(null);
-                if (settings.isAutohideGuiIfThereAreNoUpdatesEnabled())
+                if (settings.isAutohideGuiIfThereAreNoUpdatesEnabled()) {
                     handler.setGuiVisible(false, false);
+                }
                 fireUpdatesAvailable(false, null);
                 return;
             }
@@ -381,8 +397,9 @@ public class UpdateController implements UpdateCallbackInterface {
                 logger.info("Nothing to install2");
                 UpdateController.getInstance().installUpdates(awfoverview);
                 handler.setGuiFinished(null);
-                if (settings.isAutohideGuiIfThereAreNoUpdatesEnabled())
+                if (settings.isAutohideGuiIfThereAreNoUpdatesEnabled()) {
                     handler.setGuiVisible(false, false);
+                }
                 fireUpdatesAvailable(false, null);
                 return;
             }
@@ -408,8 +425,9 @@ public class UpdateController implements UpdateCallbackInterface {
                 logger.info("set gui finished");
                 handler.setGuiFinished(_UPDATE._.updatedplugins());
 
-                if (settings.isAutohideGuiIfSilentUpdatesWereInstalledEnabled())
+                if (settings.isAutohideGuiIfSilentUpdatesWereInstalledEnabled()) {
                     handler.setGuiVisible(false, false);
+                }
                 fireUpdatesAvailable(false, null);
                 return;
 
@@ -421,8 +439,9 @@ public class UpdateController implements UpdateCallbackInterface {
                 fireUpdatesAvailable(false, null);
             } else {
 
-                if (!handler.isGuiVisible() && settings.isDoNotAskJustInstallOnNextStartupEnabled())
+                if (!handler.isGuiVisible() && settings.isDoNotAskJustInstallOnNextStartupEnabled()) {
                     return;
+                }
                 List<String> rInstalls = handler.getRequestedInstalls();
                 List<String> ruInstalls = handler.getRequestedUnInstalls();
                 if (rInstalls.size() > 0 || ruInstalls.size() > 0) {
@@ -465,8 +484,9 @@ public class UpdateController implements UpdateCallbackInterface {
 
             @Override
             protected Window getDesiredRootFrame() {
-                if (handler == null)
+                if (handler == null) {
                     return null;
+                }
                 return handler.getGuiFrame();
             }
 
@@ -481,8 +501,9 @@ public class UpdateController implements UpdateCallbackInterface {
     }
 
     public boolean hasPendingUpdates() {
-        if (handler == null)
+        if (handler == null) {
             return false;
+        }
         return handler.hasPendingUpdates();
     }
 

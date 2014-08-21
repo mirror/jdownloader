@@ -73,6 +73,11 @@ public class ShutdownExtension extends AbstractExtension<ShutdownConfig, Shutdow
         return configPanel;
     }
 
+    @Override
+    public boolean isHeadlessRunnable() {
+        return false;
+    }
+
     public boolean hasConfigPanel() {
         return true;
     }
@@ -336,7 +341,9 @@ public class ShutdownExtension extends AbstractExtension<ShutdownConfig, Shutdow
     private class ShutDown extends Thread {
         @Override
         public void run() {
-            if (getSettings().isShutdownActive() == false) return;
+            if (getSettings().isShutdownActive() == false) {
+                return;
+            }
             try {
                 Thread.sleep(1000);
             } catch (InterruptedException e1) {
@@ -501,7 +508,9 @@ public class ShutdownExtension extends AbstractExtension<ShutdownConfig, Shutdow
 
     public void onStateChange(StateEvent event) {
         final StateMachine sm = DownloadWatchDog.getInstance().getStateMachine();
-        if (!getSettings().isShutdownActive()) return;
+        if (!getSettings().isShutdownActive()) {
+            return;
+        }
         State state = sm.getState();
 
         if (event.getNewState() == DownloadWatchDog.STOPPED_STATE) {
@@ -576,7 +585,9 @@ public class ShutdownExtension extends AbstractExtension<ShutdownConfig, Shutdow
             switch (newValue) {
             case HIBERNATE:
 
-                if (isHibernateActivated()) return;
+                if (isHibernateActivated()) {
+                    return;
+                }
 
                 Dialog.getInstance().showMessageDialog(T._.show_admin());
                 String path = CrossSystem.is64BitOperatingSystem() ? Application.getResource("tools\\Windows\\elevate\\Elevate64.exe").getAbsolutePath() : Application.getResource("tools\\Windows\\elevate\\Elevate32.exe").getAbsolutePath();
@@ -588,7 +599,9 @@ public class ShutdownExtension extends AbstractExtension<ShutdownConfig, Shutdow
                 }
                 break;
             case STANDBY:
-                if (!isHibernateActivated()) return;
+                if (!isHibernateActivated()) {
+                    return;
+                }
 
                 Dialog.getInstance().showMessageDialog(T._.show_admin());
                 path = CrossSystem.is64BitOperatingSystem() ? Application.getResource("tools\\Windows\\elevate\\Elevate64.exe").getAbsolutePath() : Application.getResource("tools\\Windows\\elevate\\Elevate32.exe").getAbsolutePath();
@@ -616,9 +629,15 @@ public class ShutdownExtension extends AbstractExtension<ShutdownConfig, Shutdow
         LogController.CL().info(status.toString());
         // we should add the return for other languages
         if (status.getStd() != null) {
-            if (status.getStd().contains("Ruhezustand wurde nicht aktiviert")) return false;
-            if (status.getStd().contains("Hibernation has not been enabled")) return false;
-            if (status.getStd().contains("Hibernation")) return false;
+            if (status.getStd().contains("Ruhezustand wurde nicht aktiviert")) {
+                return false;
+            }
+            if (status.getStd().contains("Hibernation has not been enabled")) {
+                return false;
+            }
+            if (status.getStd().contains("Hibernation")) {
+                return false;
+            }
         }
 
         return true;
@@ -634,7 +653,9 @@ public class ShutdownExtension extends AbstractExtension<ShutdownConfig, Shutdow
             // try to search a toggle action and queue it after it.
             for (int i = mr.getItems().size() - 1; i >= 0; i--) {
                 MenuItemData mid = mr.getItems().get(i);
-                if (mid.getActionData() == null) continue;
+                if (mid.getActionData() == null) {
+                    continue;
+                }
                 boolean val = mid._isValidated();
                 try {
                     mid._setValidated(true);

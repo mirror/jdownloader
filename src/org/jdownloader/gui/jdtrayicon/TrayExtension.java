@@ -80,6 +80,10 @@ import org.jdownloader.updatev2.RestartController;
 import org.jdownloader.updatev2.SmartRlyExitRequest;
 
 public class TrayExtension extends AbstractExtension<TrayConfig, TrayiconTranslation> implements MouseListener, MouseMotionListener, WindowStateListener, ActionListener, MainFrameClosingHandler, CheckBoxedEntry {
+    @Override
+    public boolean isHeadlessRunnable() {
+        return false;
+    }
 
     @Override
     protected void stop() throws StopException {
@@ -111,7 +115,9 @@ public class TrayExtension extends AbstractExtension<TrayConfig, TrayiconTransla
         }
         if (!SystemTray.isSupported()) {
             LogController.CL(TrayExtension.class).severe("Error initializing SystemTray: Tray isn't supported jet");
-            if (CrossSystem.isLinux()) LogController.CL().severe("Make sure your Notification Area is enabled!");
+            if (CrossSystem.isLinux()) {
+                LogController.CL().severe("Make sure your Notification Area is enabled!");
+            }
             throw new StartException("Tray isn't supported!");
         }
 
@@ -365,8 +371,8 @@ public class TrayExtension extends AbstractExtension<TrayConfig, TrayiconTransla
 
                         } catch (Throwable e) {
                             /*
-                             * on Gnome3, Unity, this can happen because icon might be blacklisted, see here http://www.webupd8.org/2011/04/how-to-re-enable
-                             * -notification-area.html
+                             * on Gnome3, Unity, this can happen because icon might be blacklisted, see here
+                             * http://www.webupd8.org/2011/04/how-to-re-enable -notification-area.html
                              * 
                              * dconf-editor", then navigate to desktop > unity > panel and whitelist JDownloader
                              * 
@@ -411,7 +417,9 @@ public class TrayExtension extends AbstractExtension<TrayConfig, TrayiconTransla
                         trayIconPopup.dispose();
                         trayIconPopup = null;
                     } else if (SwingUtilities.isRightMouseButton(e)) {
-                        if (!checkPassword()) return;
+                        if (!checkPassword()) {
+                            return;
+                        }
                         trayIconPopup = new TrayIconPopup(this);
                         calcLocation(trayIconPopup, e.getPoint());
                         WindowManager.getInstance().setVisible(trayIconPopup, true, FrameState.OS_DEFAULT);
@@ -426,7 +434,9 @@ public class TrayExtension extends AbstractExtension<TrayConfig, TrayiconTransla
                         trayIconPopup.dispose();
                         trayIconPopup = null;
                     } else if (SwingUtilities.isLeftMouseButton(e)) {
-                        if (!checkPassword()) return;
+                        if (!checkPassword()) {
+                            return;
+                        }
                         trayIconPopup = new TrayIconPopup(this);
                         Point pointOnScreen = e.getLocationOnScreen();
                         // if (e.getX() > 0) pointOnScreen.x -= e.getPoint().x;
@@ -441,11 +451,17 @@ public class TrayExtension extends AbstractExtension<TrayConfig, TrayiconTransla
 
     private boolean checkPassword() {
         boolean visible = JDGui.getInstance().getMainFrame().isVisible();
-        if (visible) return true;
+        if (visible) {
+            return true;
+        }
         boolean pwEnabled = CFG_GUI.PASSWORD_PROTECTION_ENABLED.isEnabled();
-        if (!pwEnabled) return true;
+        if (!pwEnabled) {
+            return true;
+        }
         boolean pwEmpty = StringUtils.isEmpty(CFG_GUI.PASSWORD.getValue());
-        if (pwEmpty) return true;
+        if (pwEmpty) {
+            return true;
+        }
 
         String password;
         try {
@@ -512,8 +528,12 @@ public class TrayExtension extends AbstractExtension<TrayConfig, TrayiconTransla
      */
     public void mouseStay(MouseEvent e) {
 
-        if (!getSettings().isToolTipEnabled()) return;
-        if (trayIconPopup != null && trayIconPopup.isVisible()) return;
+        if (!getSettings().isToolTipEnabled()) {
+            return;
+        }
+        if (trayIconPopup != null && trayIconPopup.isVisible()) {
+            return;
+        }
         trayIconTooltip.showTooltip(((TrayMouseAdapter) e.getSource()).getEstimatedTopLeft());
     }
 
@@ -536,7 +556,9 @@ public class TrayExtension extends AbstractExtension<TrayConfig, TrayiconTransla
 
     public void windowDeactivated(WindowEvent e) {
         /* workaround for : toFront() */
-        if (guiFrame != null) guiFrame.setAlwaysOnTop(false);
+        if (guiFrame != null) {
+            guiFrame.setAlwaysOnTop(false);
+        }
     }
 
     public void windowOpened(WindowEvent e) {
@@ -545,7 +567,9 @@ public class TrayExtension extends AbstractExtension<TrayConfig, TrayiconTransla
     public void windowStateChanged(WindowEvent evt) {
         int oldState = evt.getOldState();
         int newState = evt.getNewState();
-        if (System.currentTimeMillis() - lastCloseRequest < 1000 || asking) return;
+        if (System.currentTimeMillis() - lastCloseRequest < 1000 || asking) {
+            return;
+        }
         if ((oldState & JFrame.ICONIFIED) == 0 && (newState & JFrame.ICONIFIED) != 0) {
 
             switch (getSettings().getOnMinimizeAction()) {
@@ -576,7 +600,9 @@ public class TrayExtension extends AbstractExtension<TrayConfig, TrayiconTransla
     }
 
     private OnCloseAction windowClosedTray(final WindowEvent e) {
-        if (CrossSystem.isMac()) { return windowClosedTrayForMac(e); }
+        if (CrossSystem.isMac()) {
+            return windowClosedTrayForMac(e);
+        }
         final OnCloseAction[] ret = new OnCloseAction[1];
         ret[0] = null;
         final ConfirmDialog d = new ConfirmDialog(Dialog.STYLE_SHOW_DO_NOT_DISPLAY_AGAIN | UIOManager.LOGIC_DONT_SHOW_AGAIN_IGNORES_CANCEL | UIOManager.LOGIC_DONT_SHOW_AGAIN_IGNORES_OK, _.JDGui_windowClosing_try_title(), _.JDGui_windowClosing_try_msg_2(), NewTheme.I().getIcon("exit", 32), _.JDGui_windowClosing_try_asnwer_close(), null);
@@ -609,7 +635,9 @@ public class TrayExtension extends AbstractExtension<TrayConfig, TrayiconTransla
             });
             Dialog.I().showDialog(d);
             // to tray
-            if (ret[0] == null) ret[0] = OnCloseAction.EXIT;
+            if (ret[0] == null) {
+                ret[0] = OnCloseAction.EXIT;
+            }
 
         } catch (DialogNoAnswerException e1) {
             // set source to null in order to avoid further actions in - for example the Tray extension listsners
@@ -657,7 +685,9 @@ public class TrayExtension extends AbstractExtension<TrayConfig, TrayiconTransla
             });
             Dialog.I().showDialog(d);
             // to tray
-            if (ret[0] == null) ret[0] = OnCloseAction.EXIT;
+            if (ret[0] == null) {
+                ret[0] = OnCloseAction.EXIT;
+            }
 
         } catch (DialogNoAnswerException e1) {
             // set source to null in order to avoid further actions in - for example the Tray extension listsners
