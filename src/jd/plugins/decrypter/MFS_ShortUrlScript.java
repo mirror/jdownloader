@@ -75,8 +75,8 @@ public class MFS_ShortUrlScript extends PluginForDecrypt {
         br.getPage(frame);
         String link = br.getRegex("<a href=\"(.*?)\" class=[^>]+>skip advert\\s*></a>").getMatch(0);
         if (link == null) {
-            logger.warning("Possible Plugin Defect: " + parameter);
-            return null;
+            logger.warning("Possible Plugin Defect, confirm in browser: " + parameter);
+            return decryptedLinks;
         }
         decryptedLinks.add(createDownloadlink(HTMLEntities.unhtmlentities(link)));
         return decryptedLinks;
