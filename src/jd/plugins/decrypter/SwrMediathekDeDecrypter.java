@@ -49,6 +49,7 @@ public class SwrMediathekDeDecrypter extends PluginForDecrypt {
 
     /** Settings stuff */
     private static final String           FASTLINKCHECK  = "FASTLINKCHECK";
+    private static final String           Q_SUBTITLES    = "Q_SUBTITLES";
     private static final String           Q_BEST         = "Q_BEST";
     private static final String           ALLOW_720p     = "ALLOW_720p";
     private static final String           ALLOW_544p     = "ALLOW_544p";
@@ -58,9 +59,13 @@ public class SwrMediathekDeDecrypter extends PluginForDecrypt {
     private static AtomicBoolean          pluginLoaded   = new AtomicBoolean(false);
 
     private String                        VIDEOID        = null;
+    private String                        SUBTITLE_URL   = null;
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
+        final SubConfiguration cfg = SubConfiguration.getConfig(DOMAIN);
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
+        final ArrayList<String> selectedQualities = new ArrayList<String>();
+        final boolean grabsubtitles = cfg.getBooleanProperty(Q_SUBTITLES, false);
         PARAMETER = param.toString().replace("/lq/", "/");
         VIDEOID = new Regex(PARAMETER, "([a-z0-9\\-]+)$").getMatch(0);
         br.setFollowRedirects(true);
@@ -79,9 +84,10 @@ public class SwrMediathekDeDecrypter extends PluginForDecrypt {
                 return decryptedLinks;
             }
             /* Decrypt start */
+            final String ekey = br.getRegex("ekey: \"([^<>\"]*?)\"").getMatch(0);
             final String title = br.getRegex("<p class=\"dachzeile\">([^<>\"]*?)</p>").getMatch(0);
             final String subtitle = br.getRegex("</p>[\t\n\r ]+<h4 class=\"headline\">([^<>\"]*?)<").getMatch(0);
-            if (title == null || subtitle == null) {
+            if (title == null || subtitle == null || ekey == null) {
                 logger.warning("Decrypter broken for link: " + PARAMETER);
                 return null;
             }
@@ -90,11 +96,13 @@ public class SwrMediathekDeDecrypter extends PluginForDecrypt {
             final FilePackage fp = FilePackage.getInstance();
             fp.setName(FILENAME);
 
-            /** Decrypt qualities START */
+            /* Decrypt qualities START */
             /*
              * Example of a link which does not seem to be available via http:
              * http://swrmediathek.de/player.htm?show=3229e410-166d-11e4-9894-0026b975f2e6
              */
+            br.getPage("http://swrmediathek.de/AjaxEntry?ekey=" + ekey);
+            SUBTITLE_URL = br.getRegex("\"entry_capuri\":\"(https?://[^<>\"]*?)\"").getMatch(0);
             br.getPage("http://swrmediathek.de/rtmpQuals/" + VIDEOID + "/clips.smil");
             final String[] qualities = br.getRegex("src=\"([^<>\"]*?\\.mp4)\"").getColumn(0);
             for (String directquality : qualities) {
@@ -112,10 +120,8 @@ public class SwrMediathekDeDecrypter extends PluginForDecrypt {
                 logger.warning("Decrypter broken for link: " + PARAMETER);
                 return null;
             }
-            /** Decrypt qualities END */
-            /** Decrypt qualities, selected by the user */
-            final ArrayList<String> selectedQualities = new ArrayList<String>();
-            final SubConfiguration cfg = SubConfiguration.getConfig(DOMAIN);
+            /* Decrypt qualities END */
+            /* Decrypt qualities, selected by the user */
             if (cfg.getBooleanProperty(Q_BEST, false)) {
                 final String[] quals = { "720p", "544p", "288p" };
                 for (final String qualvalue : quals) {
@@ -147,6 +153,11 @@ public class SwrMediathekDeDecrypter extends PluginForDecrypt {
             for (final String selectedQualityValue : selectedQualities) {
                 final DownloadLink dl = getVideoDownloadlink(selectedQualityValue);
                 if (dl != null) {
+                    if (grabsubtitles && SUBTITLE_URL != null) {
+                        final DownloadLink subtitlelink = getSubtitleDownloadlink(dl);
+                        fp.add(subtitlelink);
+                        decryptedLinks.add(subtitlelink);
+                    }
                     fp.add(dl);
                     decryptedLinks.add(dl);
                 }
@@ -159,18 +170,20 @@ public class SwrMediathekDeDecrypter extends PluginForDecrypt {
         return decryptedLinks;
     }
 
-    private DownloadLink getVideoDownloadlink(final String qualityValue) throws ParseException {
-        final String directlink = FOUNDQUALITIES.get(qualityValue);
+    private DownloadLink getVideoDownloadlink(final String plain_qualityname) throws ParseException {
+        final String directlink = FOUNDQUALITIES.get(plain_qualityname);
         if (directlink != null) {
+            final String ext = directlink.substring(directlink.lastIndexOf("."));
+            final String ftitle = FILENAME + "_" + plain_qualityname + ext;
             final DownloadLink dl = createDownloadlink("http://swrmediathekdecrypted.de/" + System.currentTimeMillis() + new Random().nextInt(10000));
             dl.setProperty("directlink", directlink);
-            dl.setProperty("plain_qualityname", qualityValue);
+            dl.setProperty("plain_qualityname", plain_qualityname);
             dl.setProperty("mainlink", PARAMETER);
-            dl.setProperty("plain_filename", FILENAME + "_" + qualityValue + ".mp4");
+            dl.setProperty("plain_filename", ftitle);
             dl.setProperty("plain_linkid", VIDEOID);
-            dl.setProperty("plain_ext", directlink.substring(directlink.lastIndexOf(".")));
-            dl.setProperty("LINKDUPEID", DOMAIN + "_" + FILENAME + "_" + qualityValue);
-            dl.setName("");
+            dl.setProperty("plain_ext", ext);
+            dl.setProperty("LINKDUPEID", DOMAIN + "_" + ftitle);
+            dl.setName(ftitle);
             if (SubConfiguration.getConfig(DOMAIN).getBooleanProperty(FASTLINKCHECK, false)) {
                 dl.setAvailable(true);
             }
@@ -178,6 +191,24 @@ public class SwrMediathekDeDecrypter extends PluginForDecrypt {
         } else {
             return null;
         }
+    }
+
+    private DownloadLink getSubtitleDownloadlink(final DownloadLink vidlink) throws ParseException {
+        final String plain_qualityname = vidlink.getStringProperty("plain_qualityname", null);
+        final String ext = ".xml";
+        final String ftitle = FILENAME + "_" + plain_qualityname + ext;
+        final DownloadLink dl = createDownloadlink("http://swrmediathekdecrypted.de/" + System.currentTimeMillis() + new Random().nextInt(10000));
+        dl.setProperty("directlink", SUBTITLE_URL);
+        dl.setProperty("plain_qualityname", plain_qualityname);
+        dl.setProperty("streamingType", "subtitle");
+        dl.setProperty("mainlink", PARAMETER);
+        dl.setProperty("plain_filename", ftitle);
+        dl.setProperty("plain_linkid", VIDEOID);
+        dl.setProperty("plain_ext", ".srt");
+        dl.setProperty("LINKDUPEID", DOMAIN + "_" + ftitle);
+        dl.setName(ftitle);
+        dl.setAvailable(true);
+        return dl;
     }
 
     /* Avoid chars which are not allowed in filenames under certain OS' */
