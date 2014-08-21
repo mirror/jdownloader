@@ -69,14 +69,14 @@ public class MFS_ShortUrlScript extends PluginForDecrypt {
         br.getPage(parameter);
         String frame = br.getRegex("<frame src=\"(interstitualAdTop\\.php\\?url=\\d+)\"").getMatch(0);
         if (frame == null) {
-            logger.warning("Plugin Defect " + parameter);
-            return null;
+            logger.warning("Possible Plugin Defect, confirm in browser: " + parameter);
+            return decryptedLinks;
         }
         br.getPage(frame);
         String link = br.getRegex("<a href=\"(.*?)\" class=[^>]+>skip advert\\s*></a>").getMatch(0);
         if (link == null) {
             logger.warning("Possible Plugin Defect, confirm in browser: " + parameter);
-            return decryptedLinks;
+            return null;
         }
         decryptedLinks.add(createDownloadlink(HTMLEntities.unhtmlentities(link)));
         return decryptedLinks;
