@@ -47,13 +47,16 @@ public class ClipHunterCom extends PluginForHost {
         setConfigElements();
     }
 
-    private static final String    ALLOW_BEST    = "ALLOW_BEST";
-    private static final String    ALLOW_360P    = "ALLOW_360P";
-    private static final String    ALLOW_360PFLV = "ALLOW_360PFLV";
-    private static final String    ALLOW_480P    = "ALLOW_480P";
-    private static final String    ALLOW_540P    = "ALLOW_540P";
-    private static final String    FASTLINKCHECK = "FASTLINKCHECK";
-    final public static String[][] qualities     = jd.plugins.decrypter.ClipHunterComDecrypt.qualities;
+    private static final String ALLOW_BEST    = "ALLOW_BEST";
+    private static final String ALLOW_360P    = "ALLOW_360P";
+    private static final String ALLOW_360PFLV = "ALLOW_360PFLV";
+    private static final String ALLOW_480P    = "ALLOW_480P";
+    private static final String ALLOW_540P    = "ALLOW_540P";
+    private static final String FASTLINKCHECK = "FASTLINKCHECK";
+    /**
+     * sync with decrypter
+     */
+    private final String[][]    qualities     = { { "_h.flv", "540p.flv" }, { "_p.mp4", "_p480.mp4", "480p.mp4" }, { "_l.flv", "_p360.mp4", "360pflv.flv" }, { "_i.mp4", "360p.mp4" } };
 
     @Override
     public String getAGBLink() {
