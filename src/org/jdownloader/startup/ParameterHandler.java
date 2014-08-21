@@ -24,6 +24,7 @@ import org.jdownloader.startup.commands.GuiFocusCommand;
 import org.jdownloader.startup.commands.GuiMinimizeCommand;
 import org.jdownloader.startup.commands.HelpCommand;
 import org.jdownloader.startup.commands.JACShowCommand;
+import org.jdownloader.startup.commands.MyJDownloaderCommand;
 import org.jdownloader.startup.commands.ReScanPluginsCommand;
 import org.jdownloader.startup.commands.ReconnectCommand;
 import org.jdownloader.updatev2.RestartController;
@@ -49,7 +50,7 @@ public class ParameterHandler implements InstanceMessageListener, CommandSwitchL
         addCommand(new FileCommand());
         addCommand(new BRDebugCommand());
         addCommand(new ReScanPluginsCommand());
-
+        addCommand(new MyJDownloaderCommand());
         addCommand(new AbstractStartupCommand("n") {
 
             @Override
@@ -80,7 +81,9 @@ public class ParameterHandler implements InstanceMessageListener, CommandSwitchL
 
     private void addCommand(StartupCommand helpCommand) {
         for (String s : helpCommand.getCommandSwitches()) {
-            if (commandMap.containsKey(s)) throw new IllegalStateException("COmmand " + s + " already is used");
+            if (commandMap.containsKey(s)) {
+                throw new IllegalStateException("COmmand " + s + " already is used");
+            }
             commandMap.put(s, helpCommand);
         }
         commands.add(helpCommand);

@@ -7,11 +7,11 @@ import org.appwork.shutdown.ShutdownVetoListener;
 import org.appwork.storage.config.ValidationException;
 import org.appwork.storage.config.events.GenericConfigEventListener;
 import org.appwork.storage.config.handler.KeyHandler;
+import org.appwork.uio.UIOManager;
 import org.appwork.utils.NullsafeAtomicReference;
 import org.appwork.utils.Regex;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.logging2.LogSource;
-import org.appwork.utils.swing.dialog.Dialog;
 import org.jdownloader.api.myjdownloader.MyJDownloaderSettings.MyJDownloaderError;
 import org.jdownloader.api.myjdownloader.event.MyJDownloaderEvent;
 import org.jdownloader.api.myjdownloader.event.MyJDownloaderEventSender;
@@ -87,7 +87,9 @@ public class MyJDownloaderController implements ShutdownVetoListener, GenericCon
         stop();
         String email;
         String password;
-        if (!validateLogins(email = CFG_MYJD.CFG.getEmail(), password = CFG_MYJD.CFG.getPassword())) return;
+        if (!validateLogins(email = CFG_MYJD.CFG.getEmail(), password = CFG_MYJD.CFG.getPassword())) {
+            return;
+        }
 
         MyJDownloaderConnectThread lthread = new MyJDownloaderConnectThread(this);
 
@@ -101,23 +103,35 @@ public class MyJDownloaderController implements ShutdownVetoListener, GenericCon
     }
 
     public String getCurrentDeviceName() {
-        if (!isConnected()) return null;
+        if (!isConnected()) {
+            return null;
+        }
         MyJDownloaderConnectThread th = thread.get();
-        if (th == null) return null;
+        if (th == null) {
+            return null;
+        }
         return th.getDeviceName();
     }
 
     public String getCurrentEmail() {
-        if (!isConnected()) return null;
+        if (!isConnected()) {
+            return null;
+        }
         MyJDownloaderConnectThread th = thread.get();
-        if (th == null) return null;
+        if (th == null) {
+            return null;
+        }
         return th.getEmail();
     }
 
     public String getCurrentPassword() {
-        if (!isConnected()) return null;
+        if (!isConnected()) {
+            return null;
+        }
         MyJDownloaderConnectThread th = thread.get();
-        if (th == null) return null;
+        if (th == null) {
+            return null;
+        }
         return th.getPassword();
     }
 
@@ -168,19 +182,20 @@ public class MyJDownloaderController implements ShutdownVetoListener, GenericCon
             break;
         case ACCOUNT_UNCONFIRMED:
             stop();
-            Dialog.getInstance().showMessageDialog(0, "MyJDownloader", _JDT._.MyJDownloaderController_onError_account_unconfirmed());
+
+            UIOManager.I().showConfirmDialog(UIOManager.BUTTONS_HIDE_CANCEL, "MyJDownloader", _JDT._.MyJDownloaderController_onError_account_unconfirmed());
             break;
         case OUTDATED:
             stop();
-            Dialog.getInstance().showMessageDialog(0, "MyJDownloader", _JDT._.MyJDownloaderController_onError_outdated());
+            UIOManager.I().showConfirmDialog(UIOManager.BUTTONS_HIDE_CANCEL, "MyJDownloader", _JDT._.MyJDownloaderController_onError_outdated());
             break;
         case BAD_LOGINS:
             stop();
-            Dialog.getInstance().showMessageDialog(0, "MyJDownloader", _JDT._.MyJDownloaderController_onError_badlogins());
+            UIOManager.I().showConfirmDialog(UIOManager.BUTTONS_HIDE_CANCEL, "MyJDownloader", _JDT._.MyJDownloaderController_onError_badlogins());
             break;
         case EMAIL_INVALID:
             stop();
-            Dialog.getInstance().showMessageDialog(0, "MyJDownloader", _JDT._.MyJDownloaderController_onError_badlogins());
+            UIOManager.I().showConfirmDialog(UIOManager.BUTTONS_HIDE_CANCEL, "MyJDownloader", _JDT._.MyJDownloaderController_onError_badlogins());
             break;
         case IO:
             break;
@@ -189,7 +204,7 @@ public class MyJDownloaderController implements ShutdownVetoListener, GenericCon
         case UNKNOWN:
             break;
         default:
-            Dialog.getInstance().showMessageDialog(0, "MyJDownloader", _JDT._.MyJDownloaderController_onError_unknown(error.toString()));
+            UIOManager.I().showConfirmDialog(UIOManager.BUTTONS_HIDE_CANCEL, "MyJDownloader", _JDT._.MyJDownloaderController_onError_unknown(error.toString()));
         }
 
     }
@@ -215,8 +230,12 @@ public class MyJDownloaderController implements ShutdownVetoListener, GenericCon
     }
 
     public static boolean validateLogins(String email, String password) {
-        if (!new Regex(email, "..*?@.*?\\..+").matches()) return false;
-        if (StringUtils.isEmpty(password)) return false;
+        if (!new Regex(email, "..*?@.*?\\..+").matches()) {
+            return false;
+        }
+        if (StringUtils.isEmpty(password)) {
+            return false;
+        }
         return true;
     }
 
@@ -226,16 +245,22 @@ public class MyJDownloaderController implements ShutdownVetoListener, GenericCon
      * @param captchasPending
      */
     public void pushCaptchaFlag(boolean captchasPending) {
-        if (!isConnected()) return;
+        if (!isConnected()) {
+            return;
+        }
         MyJDownloaderConnectThread th = thread.get();
-        if (th == null) return;
+        if (th == null) {
+            return;
+        }
         th.pushCaptchaNotification(captchasPending);
     }
 
     public MyCaptchaSolution pushChallenge(MyCaptchaChallenge ch) throws MyJDownloaderException {
 
         MyJDownloaderConnectThread th = thread.get();
-        if (th == null) throw new UnconnectedException();
+        if (th == null) {
+            throw new UnconnectedException();
+        }
         if (th.isAlive()) {
             switch (th.getConnectionStatus()) {
             case CONNECTED:
@@ -250,7 +275,9 @@ public class MyJDownloaderController implements ShutdownVetoListener, GenericCon
     public MyCaptchaSolution getChallengeResponse(String id) throws MyJDownloaderException {
 
         MyJDownloaderConnectThread th = thread.get();
-        if (th == null) throw new UnconnectedException();
+        if (th == null) {
+            throw new UnconnectedException();
+        }
         if (th.isAlive()) {
             switch (th.getConnectionStatus()) {
             case CONNECTED:
@@ -265,7 +292,9 @@ public class MyJDownloaderController implements ShutdownVetoListener, GenericCon
     public boolean sendChallengeFeedback(String id, RESULT correct) throws MyJDownloaderException {
 
         MyJDownloaderConnectThread th = thread.get();
-        if (th == null) throw new UnconnectedException();
+        if (th == null) {
+            throw new UnconnectedException();
+        }
         if (th.isAlive()) {
             switch (th.getConnectionStatus()) {
             case CONNECTED:
