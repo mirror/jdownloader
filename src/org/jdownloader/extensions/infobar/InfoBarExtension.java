@@ -1,5 +1,7 @@
 package org.jdownloader.extensions.infobar;
 
+import java.awt.GraphicsEnvironment;
+
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
 import jd.config.ConfigGroup;
@@ -64,7 +66,9 @@ public class InfoBarExtension extends AbstractExtension<InfoBarConfig, InfobarTr
     }
 
     private void updateOpacity(Object value) {
-        if (infoDialog == null) return;
+        if (infoDialog == null) {
+            return;
+        }
         final int newValue;
         if (value == null) {
             newValue = subConfig.getIntegerProperty(PROPERTY_OPACITY, 100);
@@ -92,11 +96,15 @@ public class InfoBarExtension extends AbstractExtension<InfoBarConfig, InfobarTr
                 infoDialog = new InfoDialog(this);
                 infoDialog.setEnableDropLocation(subConfig.getBooleanProperty(PROPERTY_DROPLOCATION, true));
                 infoDialog.setEnableDocking(subConfig.getBooleanProperty(PROPERTY_DOCKING, true));
-                if (Application.getJavaVersion() >= Application.JAVA16) updateOpacity(null);
+                if (Application.getJavaVersion() >= Application.JAVA16) {
+                    updateOpacity(null);
+                }
             }
             infoDialog.showDialog();
         } else {
-            if (infoDialog != null) infoDialog.hideDialog();
+            if (infoDialog != null) {
+                infoDialog.hideDialog();
+            }
         }
         getSettings().setGuiEnabled(b);
     }
@@ -108,13 +116,23 @@ public class InfoBarExtension extends AbstractExtension<InfoBarConfig, InfobarTr
 
     @Override
     protected void stop() throws StopException {
-        if (infoDialog != null) infoDialog.hideDialog();
+        if (infoDialog != null) {
+            infoDialog.hideDialog();
+        }
         MenuManagerMainmenu.getInstance().unregisterExtender(this);
         MenuManagerMainToolbar.getInstance().unregisterExtender(this);
     }
 
     @Override
+    public boolean isHeadlessRunnable() {
+        return false;
+    }
+
+    @Override
     protected void start() throws StartException {
+        if (GraphicsEnvironment.isHeadless()) {
+            throw new StartException("Not available in Headless Mode");
+        }
         LogController.CL().info("InfoBar: OK");
         MenuManagerMainmenu.getInstance().registerExtender(this);
         MenuManagerMainToolbar.getInstance().registerExtender(this);
@@ -170,7 +188,9 @@ public class InfoBarExtension extends AbstractExtension<InfoBarConfig, InfobarTr
 
             @Override
             public void valueChanged(Object newValue) {
-                if (infoDialog != null) infoDialog.setEnableDropLocation((Boolean) newValue);
+                if (infoDialog != null) {
+                    infoDialog.setEnableDropLocation((Boolean) newValue);
+                }
                 super.valueChanged(newValue);
             }
         }.setDefaultValue(true));
@@ -180,7 +200,9 @@ public class InfoBarExtension extends AbstractExtension<InfoBarConfig, InfobarTr
 
             @Override
             public void valueChanged(Object newValue) {
-                if (infoDialog != null) infoDialog.setEnableDocking((Boolean) newValue);
+                if (infoDialog != null) {
+                    infoDialog.setEnableDocking((Boolean) newValue);
+                }
                 super.valueChanged(newValue);
             }
         }.setDefaultValue(true));

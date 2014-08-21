@@ -74,6 +74,11 @@ public class FolderWatchExtension extends AbstractExtension<FolderWatchConfig, F
     private ScheduledExecutorService scheduler;
     private Object                   lock = new Object();
 
+    @Override
+    public boolean isHeadlessRunnable() {
+        return true;
+    }
+
     public FolderWatchConfigPanel getConfigPanel() {
         return configPanel;
     }

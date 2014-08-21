@@ -71,7 +71,9 @@ public abstract class AbstractExtension<ConfigType extends ExtensionConfigInterf
      * @throws StopException
      */
     public synchronized void setEnabled(boolean enabled) throws StartException, StopException {
-        if (enabled == this.enabled) return;
+        if (enabled == this.enabled) {
+            return;
+        }
         this.enabled = enabled;
         if (enabled) {
             store.setEnabled(true);
@@ -135,7 +137,8 @@ public abstract class AbstractExtension<ConfigType extends ExtensionConfigInterf
     }
 
     /**
-     * Returns the internal storage. Most of the configvalues are for internal use only. This config only contains values which are valid for all extensions
+     * Returns the internal storage. Most of the configvalues are for internal use only. This config only contains values which are valid
+     * for all extensions
      * 
      * @return
      */
@@ -185,7 +188,8 @@ public abstract class AbstractExtension<ConfigType extends ExtensionConfigInterf
      * 
      * @param translationInterface
      * @param contentType
-     *            name of this plugin. Until JD 2.* we should use null here to use the old defaultname. we used to sue this localized name as config key.
+     *            name of this plugin. Until JD 2.* we should use null here to use the old defaultname. we used to sue this localized name
+     *            as config key.
      * @throws
      * @throws StartException
      */
@@ -202,7 +206,9 @@ public abstract class AbstractExtension<ConfigType extends ExtensionConfigInterf
         Type type = getClass().getGenericSuperclass();
         if (type instanceof ParameterizedTypeImpl) {
             Class<TranslationType> cl = (Class<TranslationType>) ((ParameterizedTypeImpl) type).getActualTypeArguments()[1];
-            if (cl == TranslateInterface.class) return;
+            if (cl == TranslateInterface.class) {
+                return;
+            }
             _ = TranslationFactory.create(cl);
         }
     }
@@ -259,7 +265,9 @@ public abstract class AbstractExtension<ConfigType extends ExtensionConfigInterf
 
         try {
             URL url = class1.getResource("version.dat");
-            if (url == null) return -1;
+            if (url == null) {
+                return -1;
+            }
             return Integer.parseInt(IO.readURLToString(url).trim());
         } catch (Throwable e) {
             return -1;
@@ -326,5 +334,7 @@ public abstract class AbstractExtension<ConfigType extends ExtensionConfigInterf
     public boolean isGuiOptional() {
         return true;
     }
+
+    public abstract boolean isHeadlessRunnable();
 
 }

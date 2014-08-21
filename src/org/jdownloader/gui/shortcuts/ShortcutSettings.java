@@ -1,5 +1,6 @@
 package org.jdownloader.gui.shortcuts;
 
+import java.awt.GraphicsEnvironment;
 import java.awt.Toolkit;
 import java.awt.event.KeyEvent;
 
@@ -19,7 +20,7 @@ public interface ShortcutSettings extends ConfigInterface {
 
         @Override
         public String getDefaultValue() {
-            return KeyStroke.getKeyStroke(KeyEvent.VK_C, Toolkit.getDefaultToolkit().getMenuShortcutKeyMask()).toString();
+            return GraphicsEnvironment.isHeadless() ? null : KeyStroke.getKeyStroke(KeyEvent.VK_C, Toolkit.getDefaultToolkit().getMenuShortcutKeyMask()).toString();
         }
     }
 
@@ -27,7 +28,7 @@ public interface ShortcutSettings extends ConfigInterface {
 
         @Override
         public String getDefaultValue() {
-            return KeyStroke.getKeyStroke(KeyEvent.VK_X, Toolkit.getDefaultToolkit().getMenuShortcutKeyMask()).toString();
+            return GraphicsEnvironment.isHeadless() ? null : KeyStroke.getKeyStroke(KeyEvent.VK_X, Toolkit.getDefaultToolkit().getMenuShortcutKeyMask()).toString();
         }
     }
 
@@ -35,7 +36,7 @@ public interface ShortcutSettings extends ConfigInterface {
 
         @Override
         public String getDefaultValue() {
-            return KeyStroke.getKeyStroke(KeyEvent.VK_DELETE, 0).toString();
+            return GraphicsEnvironment.isHeadless() ? null : KeyStroke.getKeyStroke(KeyEvent.VK_DELETE, 0).toString();
         }
     }
 
@@ -43,7 +44,7 @@ public interface ShortcutSettings extends ConfigInterface {
 
         @Override
         public String getDefaultValue() {
-            return KeyStroke.getKeyStroke(KeyEvent.VK_V, Toolkit.getDefaultToolkit().getMenuShortcutKeyMask()).toString();
+            return GraphicsEnvironment.isHeadless() ? null : KeyStroke.getKeyStroke(KeyEvent.VK_V, Toolkit.getDefaultToolkit().getMenuShortcutKeyMask()).toString();
         }
     }
 
@@ -51,7 +52,7 @@ public interface ShortcutSettings extends ConfigInterface {
 
         @Override
         public String getDefaultValue() {
-            return KeyStroke.getKeyStroke(KeyEvent.VK_A, Toolkit.getDefaultToolkit().getMenuShortcutKeyMask()).toString();
+            return GraphicsEnvironment.isHeadless() ? null : KeyStroke.getKeyStroke(KeyEvent.VK_A, Toolkit.getDefaultToolkit().getMenuShortcutKeyMask()).toString();
         }
     }
 
@@ -59,7 +60,9 @@ public interface ShortcutSettings extends ConfigInterface {
 
         @Override
         public void validate(String keystroke) throws ValidationException {
-            if (KeyStroke.getKeyStroke(keystroke) == null) { throw new ValidationException("Invalid KeyStroke: " + keystroke); }
+            if (KeyStroke.getKeyStroke(keystroke) == null) {
+                throw new ValidationException("Invalid KeyStroke: " + keystroke);
+            }
         }
 
     }

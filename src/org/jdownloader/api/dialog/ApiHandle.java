@@ -46,7 +46,9 @@ public class ApiHandle {
     public void waitFor() throws InterruptedException {
         while (true) {
             synchronized (this) {
-                if (disposed || answer != null) return;
+                if (disposed || answer != null) {
+                    return;
+                }
                 wait();
             }
         }
@@ -64,6 +66,10 @@ public class ApiHandle {
             this.answer = ret;
             dispose();
         }
+    }
+
+    public boolean isDisposed() {
+        return disposed;
     }
 
 }

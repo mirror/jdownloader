@@ -1,5 +1,6 @@
 package org.jdownloader.extensions;
 
+import java.awt.GraphicsEnvironment;
 import java.io.File;
 import java.io.FileFilter;
 import java.io.FileInputStream;
@@ -33,6 +34,7 @@ import org.appwork.uio.CloseReason;
 import org.appwork.uio.ConfirmDialogInterface;
 import org.appwork.uio.UIOManager;
 import org.appwork.utils.Application;
+import org.appwork.utils.Exceptions;
 import org.appwork.utils.logging.Log;
 import org.appwork.utils.logging2.LogSource;
 import org.appwork.utils.swing.dialog.ConfirmDialog;
@@ -152,8 +154,10 @@ public class ExtensionController implements MenuExtenderHandler {
             } catch (final Throwable e) {
                 Log.exception(e);
             }
-            MenuManagerMainmenu.getInstance().registerExtender(this);
-            MenuManagerMainToolbar.getInstance().registerExtender(this);
+            if (!GraphicsEnvironment.isHeadless()) {
+                MenuManagerMainmenu.getInstance().registerExtender(this);
+                MenuManagerMainToolbar.getInstance().registerExtender(this);
+            }
             list = Collections.unmodifiableList(ret);
             SecondLevelLaunch.GUI_COMPLETE.executeWhenReached(new Runnable() {
 
@@ -179,7 +183,9 @@ public class ExtensionController implements MenuExtenderHandler {
         for (Iterator<LazyExtension> it = lst.iterator(); it.hasNext();) {
 
             LazyExtension l = it.next();
-            if (l.getJarPath() == null || !new File(l.getJarPath()).exists()) { throw new InstantiationException("Jar Path " + l.getJarPath() + " is invalid"); }
+            if (l.getJarPath() == null || !new File(l.getJarPath()).exists()) {
+                throw new InstantiationException("Jar Path " + l.getJarPath() + " is invalid");
+            }
             l.validateCache();
             if (l._isEnabled()) {
                 // if exception occures here, we do a complete rescan. cache
@@ -398,7 +404,11 @@ public class ExtensionController implements MenuExtenderHandler {
                             logger.warning("Did not init Extension " + module + " : " + e.getMessage());
                         } catch (Throwable e) {
                             Log.exception(e);
-                            Dialog.getInstance().showExceptionDialog("Error", e.getMessage(), e);
+                            UIOManager.I().showConfirmDialog(0, e.getMessage(), Exceptions.getStackTrace(e));
+                            // UIOManager.I().show(ExceptionDialogInterface.class, new
+                            // ExceptionDialog(UIOManager.LOGIC_DONT_SHOW_AGAIN_DELETE_ON_EXIT | UIOManager.BUTTONS_HIDE_CANCEL, "Error",
+                            // e.getMessage(), e, null, null));
+
                         }
                     }
                     if (!loaded) {
@@ -412,12 +422,17 @@ public class ExtensionController implements MenuExtenderHandler {
 
     private java.util.List<LazyExtension> initModule(Class<AbstractExtension<?, ?>> cls, java.util.List<LazyExtension> list, File jarFile) throws InstantiationException, IllegalAccessException, StartException, IOException, ClassNotFoundException {
         long t = System.currentTimeMillis();
-        if (list == null) list = new ArrayList<LazyExtension>();
+        if (list == null) {
+            list = new ArrayList<LazyExtension>();
+        }
         String id = cls.getName().substring(27);
 
         logger.fine("Load Extension: " + id);
         LazyExtension extension = LazyExtension.create(id, cls);
-
+        if (!extension.isHeadlessRunnable() && GraphicsEnvironment.isHeadless()) {
+            logger.info("Ignored Extension (Headless): " + id + " Load Duration:" + (System.currentTimeMillis() - t) + "ms");
+            return list;
+        }
         extension.setJarPath(jarFile.getAbsolutePath());
         extension._setPluginClass(cls);
 
@@ -433,7 +448,9 @@ public class ExtensionController implements MenuExtenderHandler {
         List<LazyExtension> llist = list;
         for (LazyExtension l : llist) {
             if (class1.getName().equals(l.getClassname())) {
-                if (l._getExtension() != null && l._getExtension().isEnabled()) return true;
+                if (l._getExtension() != null && l._getExtension().isEnabled()) {
+                    return true;
+                }
             }
         }
         return false;
@@ -452,7 +469,9 @@ public class ExtensionController implements MenuExtenderHandler {
         java.util.List<AbstractExtension<?, ?>> ret = new ArrayList<AbstractExtension<?, ?>>();
         List<LazyExtension> llist = list;
         for (LazyExtension aew : llist) {
-            if (aew._getExtension() != null && aew._getExtension().isEnabled()) ret.add(aew._getExtension());
+            if (aew._getExtension() != null && aew._getExtension().isEnabled()) {
+                ret.add(aew._getExtension());
+            }
         }
         return ret;
     }
@@ -460,7 +479,9 @@ public class ExtensionController implements MenuExtenderHandler {
     public <T extends AbstractExtension<?, ?>> LazyExtension getExtension(Class<T> class1) {
         List<LazyExtension> llist = list;
         for (LazyExtension l : llist) {
-            if (class1.getName().equals(l.getClassname())) { return l; }
+            if (class1.getName().equals(l.getClassname())) {
+                return l;
+            }
         }
         return null;
     }
@@ -468,7 +489,9 @@ public class ExtensionController implements MenuExtenderHandler {
     public <T extends AbstractExtension<?, ?>> LazyExtension getExtension(String classname) {
         List<LazyExtension> llist = list;
         for (LazyExtension l : llist) {
-            if (classname.equals(l.getClassname())) { return l; }
+            if (classname.equals(l.getClassname())) {
+                return l;
+            }
         }
         return null;
     }
@@ -498,7 +521,9 @@ public class ExtensionController implements MenuExtenderHandler {
             }
 
         }
-        if (exc != null) throw exc;
+        if (exc != null) {
+            throw exc;
+        }
         for (LazyExtension le : getExtensions()) {
             if (className.startsWith(le.getClass().getPackage().getName())) {
                 //
@@ -521,7 +546,9 @@ public class ExtensionController implements MenuExtenderHandler {
         });
         if (manager instanceof MenuManagerMainToolbar) {
             return updateMainToolbar(pluginsOptional, mr);
-        } else if (manager instanceof MenuManagerMainmenu) { return updateMainMenu(pluginsOptional, mr); }
+        } else if (manager instanceof MenuManagerMainmenu) {
+            return updateMainMenu(pluginsOptional, mr);
+        }
         return null;
     }
 
@@ -581,27 +608,27 @@ public class ExtensionController implements MenuExtenderHandler {
             try {
                 object._setEnabled(true);
                 if (object instanceof LazyExtension) {
-                    if (((LazyExtension) object)._getExtension().getGUI() != null && ((LazyExtension) object)._getExtension().isGuiOptional()) {
+                    if (object._getExtension().getGUI() != null && object._getExtension().isGuiOptional()) {
                         if (JDGui.bugme(WarnLevel.NORMAL)) {
                             ConfirmDialogInterface io = new ConfirmDialog(UIOManager.LOGIC_COUNTDOWN | Dialog.STYLE_SHOW_DO_NOT_DISPLAY_AGAIN, object.getName(), _JDT._.gui_settings_extensions_show_now(object.getName())).show();
                             if (io.getCloseReason() == CloseReason.OK) {
                                 // activate panel
-                                ((LazyExtension) object)._getExtension().getGUI().setActive(true);
+                                object._getExtension().getGUI().setActive(true);
                                 // bring panel to front
-                                ((LazyExtension) object)._getExtension().getGUI().toFront();
+                                object._getExtension().getGUI().toFront();
 
                             }
                         } else {
                             // activate panel
-                            ((LazyExtension) object)._getExtension().getGUI().setActive(true);
+                            object._getExtension().getGUI().setActive(true);
                             // bring panel to front
-                            ((LazyExtension) object)._getExtension().getGUI().toFront();
+                            object._getExtension().getGUI().toFront();
                         }
-                    } else if (!((LazyExtension) object)._getExtension().isGuiOptional()) {
+                    } else if (!object._getExtension().isGuiOptional()) {
                         // activate panel
-                        ((LazyExtension) object)._getExtension().getGUI().setActive(true);
+                        object._getExtension().getGUI().setActive(true);
                         // bring panel to front
-                        ((LazyExtension) object)._getExtension().getGUI().toFront();
+                        object._getExtension().getGUI().toFront();
                     }
                 }
             } catch (StartException e1) {

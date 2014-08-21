@@ -1,5 +1,6 @@
 package org.jdownloader.settings.advanced;
 
+import java.awt.GraphicsEnvironment;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Set;
@@ -89,11 +90,13 @@ public class AdvancedConfigManager {
         register(CFG_BUBBLE.CFG);
         register(CFG_CAPTCHA.CFG);
         register(CFG_SILENTMODE.CFG);
-        try {
-            register(LAFOptions.getInstance().getCfg());
-        } catch (Exception e) {
-            // we need to take care that LookAndFeelController has been initialized before we init the advancedconfigManager!
-            logger.log(e);
+        if (!GraphicsEnvironment.isHeadless()) {
+            try {
+                register(LAFOptions.getInstance().getCfg());
+            } catch (Exception e) {
+                // we need to take care that LookAndFeelController has been initialized before we init the advancedconfigManager!
+                logger.log(e);
+            }
         }
     }
 

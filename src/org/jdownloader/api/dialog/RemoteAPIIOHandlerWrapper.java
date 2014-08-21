@@ -1,6 +1,7 @@
 package org.jdownloader.api.dialog;
 
 import java.awt.Dialog.ModalityType;
+import java.awt.GraphicsEnvironment;
 import java.awt.event.WindowEvent;
 import java.awt.event.WindowListener;
 
@@ -83,9 +84,10 @@ public class RemoteAPIIOHandlerWrapper implements UserIOHandlerInterface {
                     // in this case, we should continue normal
                     logger.log(e);
                 }
-                boolean silentModeActive = JDGui.getInstance().isSilentModeActive();
 
-                if (silentModeActive) {
+                boolean silentModeActive = GraphicsEnvironment.isHeadless() ? true : JDGui.getInstance().isSilentModeActive();
+
+                if (silentModeActive && !GraphicsEnvironment.isHeadless()) {
 
                     if (CFG_SILENTMODE.ON_DIALOG_DURING_SILENT_MODE_ACTION.getValue() == DialogDuringSilentModeAction.CANCEL_DIALOG) {
                         // Cancel dialog
@@ -113,9 +115,12 @@ public class RemoteAPIIOHandlerWrapper implements UserIOHandlerInterface {
                             countdown = System.currentTimeMillis() + CFG_SILENTMODE.ON_DIALOG_DURING_SILENT_MODE_ACTION_TIMEOUT.getValue();
 
                         }
-                        JDGui.getInstance().flashTaskbar();
-                        while (JDGui.getInstance().isSilentModeActive()) {
+                        if (!GraphicsEnvironment.isHeadless()) {
+                            JDGui.getInstance().flashTaskbar();
+                        }
+                        while (!handle.isDisposed() && (GraphicsEnvironment.isHeadless() || JDGui.getInstance().isSilentModeActive())) {
                             if (countdown > 0) {
+
                                 Thread.sleep(Math.min(Math.max(1, countdown - System.currentTimeMillis()), 250));
                                 if (System.currentTimeMillis() > countdown) {
                                     dialog.onTimeout();
@@ -131,7 +136,9 @@ public class RemoteAPIIOHandlerWrapper implements UserIOHandlerInterface {
                         }
                     }
                 }
-
+                if (handle.isDisposed()) {
+                    return (T) (handle.getAnswer() != null ? handle.getAnswer() : impl);
+                }
                 dialog.resetDummyInit();
 
                 new EDTRunner() {
@@ -264,8 +271,11 @@ public class RemoteAPIIOHandlerWrapper implements UserIOHandlerInterface {
                     // if (!Application.isJared(RemoteAPIIOHandlerWrapper.class)) {
                     // ((AbstractDialog<?>) impl).setTitle(((AbstractDialog<?>) impl).getTitle() + " DialogID: " + handle.getId());
                     // }
-
-                    Dialog.getInstance().showDialog((AbstractDialog<?>) impl);
+                    if (GraphicsEnvironment.isHeadless()) {
+                        handle.waitFor();
+                    } else {
+                        Dialog.getInstance().showDialog((AbstractDialog<?>) impl);
+                    }
                 } else {
                     throw new WTFException("Not Supported Dialog Type!: " + impl);
                 }
@@ -298,7 +308,7 @@ public class RemoteAPIIOHandlerWrapper implements UserIOHandlerInterface {
     }
 
     public void onHandlerDone(final ApiHandle ret) {
-        if (ret.getImpl() instanceof AbstractDialog) {
+        if (ret.getImpl() instanceof AbstractDialog && !GraphicsEnvironment.isHeadless()) {
             new EDTRunner() {
                 @Override
                 protected void runInEDT() {

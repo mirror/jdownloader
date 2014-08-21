@@ -153,17 +153,16 @@ public class HLSDownloader extends DownloadInterface {
                     } else if (line.trim().startsWith("frame=")) {
                         String size = new Regex(line, "size=\\s*(\\S+)\\s+").getMatch(0);
                         long newSize = SizeFormatter.getSize(size);
-                        ;
-                        if (newSize < bytesWritten) {
-                            System.out.println(1);
-                        }
+
                         bytesWritten = newSize;
                         downloadable.setDownloadBytesLoaded(bytesWritten);
                         String time = new Regex(line, "time=\\s*(\\S+)\\s+").getMatch(0);
                         String bitrate = new Regex(line, "bitrate=\\s*([\\d\\.]+)").getMatch(0);
-                        if (time != null) {
+                        if (time != null && duration > 0) {
                             long rate = bytesWritten / (formatStringToMilliseconds(time) / 1000);
                             link.setDownloadSize(((duration / 1000) * rate));
+                        } else {
+                            link.setDownloadSize(bytesWritten);
                         }
 
                     }

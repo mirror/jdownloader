@@ -1,5 +1,6 @@
 package org.jdownloader.extensions.translator;
 
+import java.awt.GraphicsEnvironment;
 import java.io.File;
 import java.io.IOException;
 import java.lang.reflect.Method;
@@ -166,12 +167,19 @@ public class TranslatorExtension extends AbstractExtension<TranslatorConfig, Tra
         }
     }
 
+    @Override
+    public boolean isHeadlessRunnable() {
+        return false;
+    }
+
     /**
      * Actions "onStart". is called each time the user enables the extension
      */
     @Override
     protected void start() throws StartException {
-
+        if (GraphicsEnvironment.isHeadless()) {
+            throw new StartException("Not available in Headless Mode");
+        }
         MenuManagerMainmenu.getInstance().registerExtender(this);
         MenuManagerMainToolbar.getInstance().registerExtender(this);
         // get all LanguageIDs
@@ -299,12 +307,16 @@ public class TranslatorExtension extends AbstractExtension<TranslatorConfig, Tra
      */
     @Override
     public TranslatorGui getGUI() {
-        if (gui != null) return gui;
+        if (gui != null) {
+            return gui;
+        }
         return new EDTHelper<TranslatorGui>() {
 
             @Override
             public TranslatorGui edtRun() {
-                if (gui != null) return gui;
+                if (gui != null) {
+                    return gui;
+                }
                 gui = new TranslatorGui(TranslatorExtension.this);
                 return gui;
             }
@@ -325,7 +337,9 @@ public class TranslatorExtension extends AbstractExtension<TranslatorConfig, Tra
      */
     public void load(TLocale locale, boolean doRevisionCheck, boolean updateSVN) throws InterruptedException, SVNException, IOException {
         synchronized (this) {
-            if (locale == null) return;
+            if (locale == null) {
+                return;
+            }
             TLocale oldLoaded = loaded;
             loaded = locale;
 
@@ -375,7 +389,9 @@ public class TranslatorExtension extends AbstractExtension<TranslatorConfig, Tra
                 try {
                     le.init();
 
-                    if (le._getExtension().getTranslation() == null) continue;
+                    if (le._getExtension().getTranslation() == null) {
+                        continue;
+                    }
                     load(tmp, locale, (Class<? extends TranslateInterface>) le._getExtension().getTranslation().getClass().getInterfaces()[0]);
                 } catch (Throwable e) {
                     e.printStackTrace();
@@ -398,7 +414,9 @@ public class TranslatorExtension extends AbstractExtension<TranslatorConfig, Tra
             if (fontname.equalsIgnoreCase("default")) {
 
                 fontname = SyntheticaHelper.getDefaultFont();
-                if (fontname == null) fontname = "Tahoma";
+                if (fontname == null) {
+                    fontname = "Tahoma";
+                }
 
             }
             load(tmp, locale, TrayiconTranslation.class);
@@ -462,9 +480,13 @@ public class TranslatorExtension extends AbstractExtension<TranslatorConfig, Tra
     }
 
     public void doLogin() throws InterruptedException {
-        if (isLoggedIn()) return;
+        if (isLoggedIn()) {
+            return;
+        }
         if (getSettings().isRememberLoginsEnabled()) {
-            if (validateSvnLogin(getSettings().getSVNUser(), getSettings().getSVNPassword())) { return; }
+            if (validateSvnLogin(getSettings().getSVNUser(), getSettings().getSVNPassword())) {
+                return;
+            }
         }
         requestSvnLogin();
     }
@@ -535,9 +557,13 @@ public class TranslatorExtension extends AbstractExtension<TranslatorConfig, Tra
     }
 
     public TLocale getTLocaleByID(String lastLoaded) {
-        if (lastLoaded == null) return null;
+        if (lastLoaded == null) {
+            return null;
+        }
         for (TLocale t : getTranslations()) {
-            if (t.getId().equals(lastLoaded)) { return t; }
+            if (t.getId().equals(lastLoaded)) {
+                return t;
+            }
         }
         return null;
     }
@@ -645,7 +671,9 @@ public class TranslatorExtension extends AbstractExtension<TranslatorConfig, Tra
     public boolean hasChanges() {
         synchronized (this) {
 
-            if (loaded == null || getTranslationEntries() == null || getTranslationEntries().size() == 0) return false;
+            if (loaded == null || getTranslationEntries() == null || getTranslationEntries().size() == 0) {
+                return false;
+            }
             TLocale localLoaded = loaded;
             HashSet<TranslationHandler> set = new HashSet<TranslationHandler>();
             HashMap<Method, TranslateEntry> map = new HashMap<Method, TranslateEntry>();
@@ -657,7 +685,9 @@ public class TranslatorExtension extends AbstractExtension<TranslatorConfig, Tra
             for (TranslationHandler h : set) {
                 for (Method m : h.getMethods()) {
                     TranslateEntry te = map.get(m);
-                    if (te != null && te.isTranslationSet()) return true;
+                    if (te != null && te.isTranslationSet()) {
+                        return true;
+                    }
                 }
 
             }
@@ -668,7 +698,9 @@ public class TranslatorExtension extends AbstractExtension<TranslatorConfig, Tra
     public void write() throws IOException, InterruptedException {
         synchronized (this) {
             getGUI().stopEditing(false);
-            if (loaded == null || getTranslationEntries() == null || getTranslationEntries().size() == 0) return;
+            if (loaded == null || getTranslationEntries() == null || getTranslationEntries().size() == 0) {
+                return;
+            }
             TLocale localLoaded = loaded;
             TranslationInfo info = JSonStorage.restoreFromFile(Application.getResource("translations/custom/" + localLoaded.getId() + ".json"), new TranslationInfo());
 
