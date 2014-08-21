@@ -37,6 +37,7 @@ public class MyJDownloaderCommand extends AbstractStartupCommand {
             MyJDownloaderController.getInstance().connect();
             MyJDownloaderConnectThread th = MyJDownloaderController.getInstance().getConnectThread();
             if (th == null || th.getConnectionStatus() == MyJDownloaderConnectionStatus.UNCONNECTED) {
+                CFG_MYJD.PASSWORD.setValue(null);
                 System.err.println("Invalid Logins");
                 System.err.println("Error Details:" + CFG_MYJD.CFG.getLatestError());
                 System.exit(1);
