@@ -53,7 +53,7 @@ public class WatchFreeInHdCom extends PluginForHost {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         br.postPage(link.getDownloadURL(), "agree=Yes%2C+let+me+watchf");
-        if (br.containsHTML("<strong>Error:</strong>")) {
+        if (br.containsHTML("<strong>Error:</strong>") || br.containsHTML("id=\"uplMsg\"")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         String filesize = br.getRegex("<b>Video size:</b>([^<>\"]*?)</div>").getMatch(0);

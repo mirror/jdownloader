@@ -63,7 +63,7 @@ public class PornSharingCom extends PluginForHost {
         br.setFollowRedirects(true);
         br.getPage(downloadLink.getDownloadURL());
         final String lid = new Regex(downloadLink.getDownloadURL(), "v(\\d+)").getMatch(0);
-        if (br.getHttpConnection().getResponseCode() == 404 || lid == null) {
+        if (br.getHttpConnection().getResponseCode() == 404 || br.containsHTML(">Movie has been deleted<") || lid == null) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         String filename = br.getRegex("<title>([^<>\"]*?)</title>").getMatch(0);

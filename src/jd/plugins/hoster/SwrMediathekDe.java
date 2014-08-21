@@ -16,13 +16,21 @@
 
 package jd.plugins.hoster;
 
+import java.io.BufferedWriter;
+import java.io.File;
+import java.io.FileReader;
+import java.io.FileWriter;
 import java.io.IOException;
+import java.text.DecimalFormat;
 import java.text.ParseException;
+import java.util.HashMap;
+import java.util.Scanner;
 
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
 import jd.http.URLConnectionAdapter;
+import jd.parser.Regex;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
@@ -92,12 +100,111 @@ public class SwrMediathekDe extends PluginForHost {
 
     private void doFree(final DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
+        /* Workaround for old downloadcore bug that can lead to incomplete files */
+        if ("subtitle".equals(downloadLink.getStringProperty("streamingType", null))) {
+            br.getHeaders().put("Accept-Encoding", "identity");
+        }
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, DLLINK, true, 0);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        dl.startDownload();
+        if (this.dl.startDownload()) {
+            this.postprocess(downloadLink);
+        }
+    }
+
+    private void postprocess(final DownloadLink downloadLink) {
+        if ("subtitle".equals(downloadLink.getStringProperty("streamingType", null))) {
+            if (!convertSubtitle(downloadLink)) {
+                logger.severe("Subtitle conversion failed!");
+            } else {
+                downloadLink.setFinalFileName(downloadLink.getStringProperty("plain_filename", null).replace(".xml", ".srt"));
+            }
+        }
+    }
+
+    /**
+     * Converts the BR Closed Captions subtitles to SRT subtitles. It runs after the completed download.
+     *
+     * @return The success of the conversion.
+     */
+    public boolean convertSubtitle(final DownloadLink downloadlink) {
+        final File source = new File(downloadlink.getFileOutput());
+
+        BufferedWriter dest;
+        try {
+            dest = new BufferedWriter(new FileWriter(new File(source.getAbsolutePath().replace(".xml", ".srt"))));
+        } catch (IOException e1) {
+            return false;
+        }
+
+        final StringBuilder xml = new StringBuilder();
+        int counter = 1;
+        final String lineseparator = System.getProperty("line.separator");
+
+        Scanner in = null;
+        try {
+            in = new Scanner(new FileReader(source));
+            while (in.hasNext()) {
+                xml.append(in.nextLine() + lineseparator);
+            }
+        } catch (Exception e) {
+            return false;
+        } finally {
+            in.close();
+        }
+        final String xmlContent = xml.toString();
+        try {
+            /* Find hex color text --> code assignments */
+            final HashMap<String, String> color_codes = new HashMap<String, String>();
+            final String[][] found_color_codes = new Regex(xmlContent, "xml:id=\"([A-Za-z]+)\" tts:color=\"(#[A-Z0-9]+)\"").getMatches();
+            if (found_color_codes != null && found_color_codes.length != 0) {
+                for (final String[] color_info : found_color_codes) {
+                    color_codes.put(color_info[0], color_info[1]);
+                }
+            }
+            final DecimalFormat df = new DecimalFormat("00");
+            final int offset_minus_hours = 0;
+            final String[] matches = new Regex(xmlContent, "(<tt:p xml:id=\"subtitle\\d+\".*?</tt:p>)").getColumn(0);
+            for (final String info : matches) {
+                dest.write(counter++ + lineseparator);
+                final Regex startInfo = new Regex(info, "begin=\"(\\d{2})(:\\d{2}:\\d{2})\\.(\\d{3})\"");
+                final Regex endInfo = new Regex(info, "end=\"(\\d{2})(:\\d{2}:\\d{2})\\.(\\d{3})\"");
+                final String start_hours_corrected = df.format(Integer.parseInt(startInfo.getMatch(0)) - offset_minus_hours);
+                final String end_hours_corrected = df.format(Integer.parseInt(endInfo.getMatch(0)) - offset_minus_hours);
+                final String start = start_hours_corrected + startInfo.getMatch(1) + "," + startInfo.getMatch(2);
+                final String end = end_hours_corrected + endInfo.getMatch(1) + "," + endInfo.getMatch(2);
+                dest.write(start + " --> " + end + lineseparator);
+
+                final String[][] texts = new Regex(info, "<tt:span style=\"([A-Za-z0-9]+)\">([^<>\"]*?)</tt:span>").getMatches();
+                String text = "";
+                int line_counter = 1;
+                for (final String[] textinfo : texts) {
+                    final String color = textinfo[0];
+                    final String colorcode = color_codes.get(color);
+                    String line = textinfo[1];
+                    text += "<font color=" + colorcode + ">" + line + "</font>";
+                    /* Add linebreak as long as we're not at the last line of this statement */
+                    if (line_counter != texts.length) {
+                        text += lineseparator;
+                    }
+                    line_counter++;
+                }
+                dest.write(text + lineseparator + lineseparator);
+            }
+        } catch (Exception e) {
+            return false;
+        } finally {
+            try {
+                dest.close();
+            } catch (IOException e) {
+            }
+        }
+
+        source.delete();
+
+        return true;
     }
 
     @Override
@@ -106,9 +213,9 @@ public class SwrMediathekDe extends PluginForHost {
     }
 
     private void setConfigElements() {
-        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), FASTLINKCHECK, JDL.L("plugins.hoster.NosNl.fastLinkcheck", "Fast linkcheck (filesize won't be shown in linkgrabber)?")).setDefaultValue(false));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), FASTLINKCHECK, JDL.L("plugins.hoster.SwrMediathekDe.fastLinkcheck", "Fast linkcheck (filesize won't be shown in linkgrabber)?")).setDefaultValue(false));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_SEPARATOR));
-        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), Q_SUBTITLES, JDL.L("plugins.hoster.SwrMediathekDe.subtitles", "Download subtitle whenever possible")).setDefaultValue(false).setEnabled(false));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), Q_SUBTITLES, JDL.L("plugins.hoster.SwrMediathekDe.subtitles", "Download subtitle whenever possible")).setDefaultValue(false));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_SEPARATOR));
         final ConfigEntry bestonly = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), Q_BEST, JDL.L("plugins.hoster.SwrMediathekDe.best", "Load best version ONLY")).setDefaultValue(true);
         getConfig().addEntry(bestonly);
