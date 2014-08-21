@@ -87,6 +87,7 @@ extdatecolumn_dateandtimeformat=dd.MM.rr HH:mm
 extpasswordeditorcolumn_tooltip=Vaše heslo
 extttable_disable_all=Zakázať všetko
 extttable_enabled_all=Povoliť všetko
+fileditcontroller_geteditor_for=Vybrať editor pre typ súboru '%s1'
 fileeditcontroller_exechooser_description=%s1-Editor (Aplikácia)
 inactive=Zakázané
 lit_continue=Pokračovať
