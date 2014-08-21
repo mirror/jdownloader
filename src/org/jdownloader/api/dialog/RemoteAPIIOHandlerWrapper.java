@@ -136,7 +136,7 @@ public class RemoteAPIIOHandlerWrapper implements UserIOHandlerInterface {
                         }
                     }
                 }
-                if (handle.isDisposed()) {
+                if (handle != null && handle.isDisposed()) {
                     return (T) (handle.getAnswer() != null ? handle.getAnswer() : impl);
                 }
                 dialog.resetDummyInit();
