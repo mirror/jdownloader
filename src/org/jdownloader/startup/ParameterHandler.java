@@ -19,6 +19,7 @@ import org.jdownloader.startup.commands.AddContainerCommand;
 import org.jdownloader.startup.commands.AddExtractionPasswordsCommand;
 import org.jdownloader.startup.commands.AddLinkCommand;
 import org.jdownloader.startup.commands.BRDebugCommand;
+import org.jdownloader.startup.commands.DisableSysErr;
 import org.jdownloader.startup.commands.FileCommand;
 import org.jdownloader.startup.commands.GuiFocusCommand;
 import org.jdownloader.startup.commands.GuiMinimizeCommand;
@@ -51,6 +52,7 @@ public class ParameterHandler implements InstanceMessageListener, CommandSwitchL
         addCommand(new BRDebugCommand());
         addCommand(new ReScanPluginsCommand());
         addCommand(new MyJDownloaderCommand());
+        addCommand(new DisableSysErr());
         addCommand(new AbstractStartupCommand("n") {
 
             @Override
