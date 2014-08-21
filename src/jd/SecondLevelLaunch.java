@@ -296,11 +296,13 @@ public class SecondLevelLaunch {
         } else if (CrossSystem.isLinux()) {
             // set WM Class explicitly
             try {
-                // patch by Vampire
-                Toolkit toolkit = Toolkit.getDefaultToolkit();
-                final Field awtAppClassName = Toolkit.getDefaultToolkit().getClass().getDeclaredField("awtAppClassName");
-                awtAppClassName.setAccessible(true);
-                awtAppClassName.set(toolkit, "JDownloader");
+                if (!GraphicsEnvironment.isHeadless()) {
+                    // patch by Vampire
+                    Toolkit toolkit = Toolkit.getDefaultToolkit();
+                    final Field awtAppClassName = Toolkit.getDefaultToolkit().getClass().getDeclaredField("awtAppClassName");
+                    awtAppClassName.setAccessible(true);
+                    awtAppClassName.set(toolkit, "JDownloader");
+                }
             } catch (final Throwable e) {
                 e.printStackTrace();
             }

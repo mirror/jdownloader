@@ -595,15 +595,16 @@ public class ExtractionExtension extends AbstractExtension<ExtractionConfig, Ext
         // addListener(new ExtractionListenerFile());
         eventSender.addListener(new ExtractionListenerList());
 
-        Iterator<IExtraction> it = extractors.iterator();
+        final Iterator<IExtraction> it = extractors.iterator();
+        final List<IExtraction> remove = new ArrayList<IExtraction>();
         while (it.hasNext()) {
             IExtraction extractor = it.next();
             if (!extractor.checkCommand()) {
                 logger.severe("Extractor " + extractor.getClass().getName() + " plugin could not be initialized");
-                it.remove();
+                remove.add(extractor);
             }
         }
-
+        extractors.removeAll(remove);
     }
 
     void fireEvent(ExtractionEvent event) {

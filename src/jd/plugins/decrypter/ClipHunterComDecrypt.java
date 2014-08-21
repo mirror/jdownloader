@@ -46,7 +46,10 @@ public class ClipHunterComDecrypt extends PluginForDecrypt {
     }
 
     // [0] =
-    final public static String[][] qualities = { { "_h.flv", "540p.flv" }, { "_p.mp4", "_p480.mp4", "480p.mp4" }, { "_l.flv", "_p360.mp4", "360pflv.flv" }, { "_i.mp4", "360p.mp4" } };
+    /**
+     * sync with hoster
+     */
+    private final String[][] qualities = { { "_h.flv", "540p.flv" }, { "_p.mp4", "_p480.mp4", "480p.mp4" }, { "_l.flv", "_p360.mp4", "360pflv.flv" }, { "_i.mp4", "360p.mp4" } };
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();

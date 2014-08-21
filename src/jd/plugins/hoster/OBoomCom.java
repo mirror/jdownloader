@@ -32,7 +32,6 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.utils.JDUtilities;
 
-import org.appwork.utils.StringUtils;
 import org.appwork.utils.formatter.HexFormatter;
 import org.appwork.utils.logging2.LogSource;
 import org.appwork.utils.os.CrossSystem;
@@ -79,7 +78,7 @@ public class OBoomCom extends PluginForHost {
             final SubConfiguration pluginConfig = getPluginConfig();
             if (pluginConfig != null) {
                 refID = pluginConfig.getStringProperty(REF_TOKEN, null);
-                if (StringUtils.isEmpty(refID)) {
+                if (refID == null || refID.trim().length() == 0) {
                     refID = "";
                 }
             }
