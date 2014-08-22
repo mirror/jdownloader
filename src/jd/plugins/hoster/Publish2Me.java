@@ -18,24 +18,18 @@ package jd.plugins.hoster;
 
 import java.io.File;
 import java.io.IOException;
-import java.net.URL;
 import java.util.HashMap;
 import java.util.Locale;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import javax.swing.JOptionPane;
-import javax.swing.SwingUtilities;
-
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
 import jd.config.Property;
-import jd.config.SubConfiguration;
 import jd.http.Browser;
 import jd.http.Cookie;
 import jd.http.Cookies;
-import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.plugins.Account;
@@ -51,46 +45,42 @@ import jd.utils.locale.JDL;
 
 import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.formatter.TimeFormatter;
-import org.appwork.utils.os.CrossSystem;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "publish2.me" }, urls = { "http://(www\\.)?publish2\\.me/file/[a-z0-9]{13,}/" }, flags = { 2 })
-public class Publish2Me extends PluginForHost {
+public class Publish2Me extends K2SApi {
 
     public Publish2Me(PluginWrapper wrapper) {
         super(wrapper);
-        this.enablePremium("http://publish2.me/#premium");
+        this.enablePremium(MAINPAGE + "/#premium");
         setConfigElements();
     }
 
     @Override
     public String getAGBLink() {
-        return "http://" + host + "/page/terms.html";
+        return MAINPAGE + "/page/terms.html";
     }
 
-    private static AtomicInteger maxPrem        = new AtomicInteger(1);
-    /* User settings */
-    private static final String  USE_API        = "USE_API";
-    private final static String  SSL_CONNECTION = "SSL_CONNECTION";
-    private static final String  host           = "publish2.me";
+    private static AtomicInteger maxPrem = new AtomicInteger(1);
 
     /* api stuff */
-    private PluginForHost        k2sPlugin      = null;
-
-    private void pluginLoaded() throws PluginException {
-        if (k2sPlugin == null) {
-            k2sPlugin = JDUtilities.getPluginForHost("keep2share.cc");
-            if (k2sPlugin == null) {
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            }
-        }
+    /**
+     * sets domain the API will use!
+     */
+    @Override
+    protected String getDomain() {
+        return "publish2.me";
     }
 
-    /* dl stuff */
-    private boolean isFree;
-    private boolean resumes;
-    private String  directlinkproperty;
-    private int     chunks;
+    @Override
+    protected String getFUID(final DownloadLink downloadLink) {
+        return new Regex(downloadLink.getDownloadURL(), "/([a-z0-9]+)/$").getMatch(0);
+    }
 
+    /**
+     * easiest way to set variables, without the need for multiple declared references
+     *
+     * @param account
+     */
     private void setConstants(final Account account) {
         if (account != null) {
             if (account.getBooleanProperty("free", false)) {
@@ -118,29 +108,19 @@ public class Publish2Me extends PluginForHost {
     }
 
     private boolean apiEnabled() {
-        return false;
-        // this.getPluginConfig().getBooleanProperty(USE_API, false);
+        return true;
+        // this.getPluginConfig().getBooleanProperty(USE_API, default_SSL_CONNECTION);
     }
+
+    /* User settings */
+    private final String  USE_API                = "USE_API";
+    private final String  SSL_CONNECTION         = "SSL_CONNECTION";
+    private final boolean default_USE_API        = true;
+    private final boolean default_SSL_CONNECTION = false;
 
     private void setConfigElements() {
-        // this.getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, this.getPluginConfig(), USE_API,
-        // JDL.L("plugins.hoster.Publish2Me.useAPI",
-        // "Use API (recommended!)\r\nIMPORTANT: Free accounts will still be accepted in API mode but they can not be used!")).setDefaultValue(true));
-        this.getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, this.getPluginConfig(), SSL_CONNECTION, JDL.L("plugins.hoster.Publish2Me.preferSSL", "Use Secure Communication over SSL (HTTPS://)")).setDefaultValue(false));
-    }
-
-    public boolean checkLinks(final DownloadLink[] urls) {
-        try {
-            if (this.apiEnabled()) {
-                pluginLoaded();
-                final jd.plugins.hoster.Keep2ShareCc.kfpAPI api = ((jd.plugins.hoster.Keep2ShareCc) k2sPlugin).kfpAPI(host);
-                return api.checkLinks(urls);
-            } else {
-                return false;
-            }
-        } catch (final Exception e) {
-            return false;
-        }
+//        this.getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, this.getPluginConfig(), USE_API, JDL.L("plugins.hoster.Publish2Me.useAPI", "Use API (recommended!)\r\nIMPORTANT: Free accounts will still be accepted in API mode but they can not be used!")).setDefaultValue(default_USE_API));
+        this.getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, this.getPluginConfig(), SSL_CONNECTION, JDL.L("plugins.hoster.Publish2Me.preferSSL", "Use Secure Communication over SSL (HTTPS://)")).setDefaultValue(default_SSL_CONNECTION));
     }
 
     @Override
@@ -150,7 +130,7 @@ public class Publish2Me extends PluginForHost {
         if (br.getRequest().getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        final String filename = br.getRegex("class=\"icon\\-download\\-alt\" style=\"\"></i>([^<>\"]*?)</div>").getMatch(0);
+        final String filename = br.getRegex("class=\"icon-download-alt\" style=\"\"></i>([^<>\"]*?)</div>").getMatch(0);
         final String filesize = br.getRegex(">File size: ([^<>\"]*?)</").getMatch(0);
         if (filename == null || filesize == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -163,15 +143,9 @@ public class Publish2Me extends PluginForHost {
     @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception, PluginException {
         setConstants(null);
-        checkShowFreeDialog();
+        checkShowFreeDialog(Browser.getHost(MAINPAGE));
         if (this.apiEnabled()) {
-            pluginLoaded();
-            final jd.plugins.hoster.Keep2ShareCc.kfpAPI api = ((jd.plugins.hoster.Keep2ShareCc) k2sPlugin).kfpAPI(host);
-            api.setChunks(chunks);
-            api.setResumes(resumes);
-            api.setDirectlinkproperty(directlinkproperty);
-            api.setDl(dl);
-            api.handleDownload(downloadLink, null);
+            super.handleDownload(downloadLink, null);
         } else {
             requestFileInformation(downloadLink);
             doFree(downloadLink, null);
@@ -183,20 +157,20 @@ public class Publish2Me extends PluginForHost {
     private final String formCaptcha     = "/file/captcha\\.html\\?v=[a-z0-9]+";
 
     public void doFree(final DownloadLink downloadLink, final Account account) throws Exception, PluginException {
-        String dllink = checkDirectLink(downloadLink, "directlink");
+        String dllink = checkDirectLink(downloadLink, directlinkproperty);
         dllink = getDllink();
         if (dllink == null) {
             if (br.containsHTML(">\\s*This file is available<br>only for premium members\\.\\s*</div>")) {
-                freeDlLimitation();
+                premiumDownloadRestriction("This file can only be downloaded by premium users");
             }
-            final String id = br.getRegex("data\\-slow\\-id=\"([a-z0-9]+)\"").getMatch(0);
+            final String id = br.getRegex("data-slow-id=\"([a-z0-9]+)\"").getMatch(0);
             if (id == null) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
             br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
             br.postPage(br.getURL(), "slow_id=" + id);
-            if (br.containsHTML("Free user can\\'t download large files")) {
-                freeDlLimitation();
+            if (br.containsHTML("Free user can't download large files")) {
+                premiumDownloadRestriction("This file can only be downloaded by premium users");
             } else if (br.containsHTML(freeAccConLimit)) {
                 // could be shared network or a download hasn't timed out yet or user downloading in another program?
                 throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, "Connection limit reached", 10 * 60 * 60 * 1001);
@@ -256,10 +230,10 @@ public class Publish2Me extends PluginForHost {
                         String code = getCaptchaCode(captcha, downloadLink);
                         br.postPage(br.getURL(), "CaptchaForm%5Bcode%5D=" + code + "&free=1&freeDownloadRequest=1&uniqueId=" + id);
                         if (br.containsHTML(formCaptcha) && i + 1 != repeat) {
-                            cbr.getPage("http://" + host + "/file/captcha.html?refresh=1&_=" + System.currentTimeMillis());
+                            cbr.getPage("/file/captcha.html?refresh=1&_=" + System.currentTimeMillis());
                             captcha = cbr.getRegex("\"url\":\"([^<>\"]*?)\"").getMatch(0);
                             if (captcha != null) {
-                                captcha = "http://" + host + captcha.replace("\\", "");
+                                captcha = captcha.replace("\\", "");
                             }
                             continue;
                         } else if (br.containsHTML(formCaptcha) && i + 1 == repeat) {
@@ -270,7 +244,7 @@ public class Publish2Me extends PluginForHost {
                     }
                 }
                 int wait = 30;
-                final String waittime = br.getRegex("class=\"tik\\-tak\"[\t\r\n ]{0,}>(\\d+)</div>").getMatch(0);
+                final String waittime = br.getRegex("class=\"tik-tak\"[\t\r\n ]{0,}>(\\d+)</div>").getMatch(0);
                 if (waittime != null) {
                     wait = Integer.parseInt(waittime);
                 }
@@ -286,50 +260,26 @@ public class Publish2Me extends PluginForHost {
                 }
             }
         }
+        logger.info("dllink = " + dllink);
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, resumes, chunks);
-        if (dl.getConnection().getResponseCode() == 401) {
-            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 401", 30 * 60 * 1000l);
-        }
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
+            handleGeneralServerErrors(account);
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         downloadLink.setProperty("directlink", dllink);
         dl.startDownload();
     }
 
-    private void freeDlLimitation() throws PluginException {
-        try {
-            throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);
-        } catch (final Throwable e) {
-            if (e instanceof PluginException) {
-                throw (PluginException) e;
-            }
+    @Override
+    protected void handleGeneralServerErrors(final Account account) throws PluginException {
+        if (dl.getConnection().getResponseCode() == 401) {
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 401", 30 * 60 * 1000l);
         }
-        throw new PluginException(LinkStatus.ERROR_FATAL, "This file can only be downloaded by premium users");
     }
 
-    private String checkDirectLink(final DownloadLink downloadLink, final String property) {
-        String dllink = downloadLink.getStringProperty(property);
-        if (dllink != null) {
-            try {
-                final Browser br2 = br.cloneBrowser();
-                URLConnectionAdapter con = br2.openGetConnection(dllink);
-                if (con.getContentType().contains("html") || con.getLongContentLength() == -1) {
-                    downloadLink.setProperty(property, Property.NULL);
-                    dllink = null;
-                }
-                con.disconnect();
-            } catch (final Exception e) {
-                downloadLink.setProperty(property, Property.NULL);
-                dllink = null;
-            }
-        }
-        return dllink;
-    }
-
-    private static final String MAINPAGE = "http://publish2.me";
-    private static Object       LOCK     = new Object();
+    private final String  MAINPAGE = "http://publish2.me";
+    private static Object LOCK     = new Object();
 
     @SuppressWarnings("unchecked")
     private void login(final Account account, final boolean force) throws Exception {
@@ -354,17 +304,16 @@ public class Publish2Me extends PluginForHost {
                     }
                 }
                 br.setFollowRedirects(false);
-                br.getPage("http://" + host + "/login.html");
+                br.getPage(MAINPAGE + "/login.html");
                 String logincaptcha = br.getRegex("\"(/auth/captcha\\.html[^<>\"]*?)\"").getMatch(0);
                 String postData = "LoginForm%5BrememberMe%5D=0&LoginForm%5BrememberMe%5D=1&LoginForm%5Busername%5D=" + Encoding.urlEncode(account.getUser()) + "&LoginForm%5Bpassword%5D=" + Encoding.urlEncode(account.getPass());
                 if (logincaptcha != null) {
-                    logincaptcha = "http://" + host + logincaptcha;
-                    final DownloadLink dummyLink = new DownloadLink(this, "Account", host, "http://" + host, true);
+                    final DownloadLink dummyLink = new DownloadLink(this, "Account", Browser.getHost(MAINPAGE), MAINPAGE, true);
                     final String c = getCaptchaCode(logincaptcha, dummyLink);
                     postData += "&LoginForm%5BverifyCode%5D=" + Encoding.urlEncode(c);
                 }
                 br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
-                br.postPage("http://" + host + "/login.html", postData);
+                br.postPage("/login.html", postData);
                 if (!br.containsHTML("\"url\":\"")) {
                     if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
                         throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUngültiger Benutzername, ungültiges Passwort oder ungültiges Login Captcha!\r\nSchnellhilfe: \r\nDu bist dir sicher, dass dein eingegebener Benutzername und Passwort stimmen?\r\nFalls dein Passwort Sonderzeichen enthält, ändere es und versuche es erneut!", PluginException.VALUE_ID_PREMIUM_DISABLE);
@@ -397,9 +346,7 @@ public class Publish2Me extends PluginForHost {
             return ai;
         }
         if (this.apiEnabled()) {
-            pluginLoaded();
-            final jd.plugins.hoster.Keep2ShareCc.kfpAPI api = ((jd.plugins.hoster.Keep2ShareCc) k2sPlugin).kfpAPI(host);
-            ai = api.fetchAccountInfo(account);
+            ai = super.fetchAccountInfo(account);
         } else {
             /* reset maxPrem workaround on every fetchaccount info */
             try {
@@ -408,50 +355,46 @@ public class Publish2Me extends PluginForHost {
                 account.setValid(false);
                 throw e;
             }
-            br.getPage("http://" + host + "/site/profile.html");
+            br.getPage("/site/profile.html");
             ai.setUnlimitedTraffic();
             final String expire = br.getRegex("Premium expires:[\t\n\r ]+<b>([^<>\"]*?)</b>").getMatch(0);
             if (expire == null) {
                 ai.setStatus("Free Account");
-                account.setProperty("nopremium", true);
+                account.setProperty("free", true);
             } else {
                 ai.setValidUntil(TimeFormatter.getMilliSeconds(expire, "yyyy.MM.dd", Locale.ENGLISH));
                 ai.setStatus("Premium Account");
-                account.setProperty("nopremium", false);
+                account.setProperty("free", false);
             }
             final String trafficleft = br.getRegex("Available traffic \\(today\\):[\t\n\r ]+<b><a href=\"/user/statistic\\.html\">([^<>\"]*?)</a>").getMatch(0);
             if (trafficleft != null) {
                 ai.setTrafficLeft(SizeFormatter.getSize(trafficleft));
             }
+            setAccountLimits(account);
+            account.setValid(true);
         }
-        // api can't set these!
-        if (account.getBooleanProperty("free", false)) {
-            setFreeAccount(account);
-        } else {
-            setPremiumAccount(account);
-        }
-        account.setValid(true);
         return ai;
     }
 
-    private void setFreeAccount(Account account) {
-        try {
-            maxPrem.set(1);
-            /* free accounts can still have captcha */
-            account.setMaxSimultanDownloads(maxPrem.get());
-            account.setConcurrentUsePossible(false);
-        } catch (final Throwable e) {
-            /* not available in old Stable 0.9.581 */
-        }
-    }
-
-    private void setPremiumAccount(Account account) {
-        try {
-            maxPrem.set(20);
-            account.setMaxSimultanDownloads(maxPrem.get());
-            account.setConcurrentUsePossible(true);
-        } catch (final Throwable e) {
-            /* not available in old Stable 0.9.581 */
+    @Override
+    protected void setAccountLimits(Account account) {
+        if (account != null && account.getBooleanProperty("free", false)) {
+            try {
+                maxPrem.set(1);
+                /* free accounts can still have captcha */
+                account.setMaxSimultanDownloads(maxPrem.get());
+                account.setConcurrentUsePossible(false);
+            } catch (final Throwable e) {
+                /* not available in old Stable 0.9.581 */
+            }
+        } else if (account != null && !account.getBooleanProperty("free", false)) {
+            try {
+                maxPrem.set(20);
+                account.setMaxSimultanDownloads(maxPrem.get());
+                account.setConcurrentUsePossible(true);
+            } catch (final Throwable e) {
+                /* not available in old Stable 0.9.581 */
+            }
         }
     }
 
@@ -459,20 +402,14 @@ public class Publish2Me extends PluginForHost {
     public void handlePremium(final DownloadLink link, final Account account) throws Exception {
         setConstants(account);
         if (this.apiEnabled()) {
-            pluginLoaded();
-            final jd.plugins.hoster.Keep2ShareCc.kfpAPI api = ((jd.plugins.hoster.Keep2ShareCc) k2sPlugin).kfpAPI(host);
-            api.setChunks(chunks);
-            api.setResumes(resumes);
-            api.setDirectlinkproperty(directlinkproperty);
-            api.setDl(dl);
-            api.handleDownload(link, account);
+            super.handleDownload(link, account);
         } else {
             requestFileInformation(link);
             login(account, false);
             br.setFollowRedirects(false);
             br.getPage(link.getDownloadURL());
-            if (account.getBooleanProperty("nopremium", false)) {
-                checkShowFreeDialog();
+            if (account.getBooleanProperty("free", false)) {
+                checkShowFreeDialog(Browser.getHost(MAINPAGE));
                 doFree(link, account);
             } else {
                 String dllink = br.getRedirectLocation();
@@ -484,6 +421,7 @@ public class Publish2Me extends PluginForHost {
                 if (dl.getConnection().getContentType().contains("html")) {
                     logger.warning("The final dllink seems not to be a file!");
                     br.followConnection();
+                    handleGeneralServerErrors(account);
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 }
                 dl.startDownload();
@@ -491,81 +429,9 @@ public class Publish2Me extends PluginForHost {
         }
     }
 
-    // private String getFID(final DownloadLink dl) {
-    // return new Regex(dl.getDownloadURL(), "([a-z0-9]+)$").getMatch(0);
-    // }
-
-    private void checkShowFreeDialog() {
-        SubConfiguration config = null;
-        try {
-            config = getPluginConfig();
-            if (config.getBooleanProperty("premAdShown", Boolean.FALSE) == false) {
-                if (config.getProperty("premAdShown2") == null) {
-                    File checkFile = JDUtilities.getResourceFile("tmp/publish2me");
-                    if (!checkFile.exists()) {
-                        checkFile.mkdirs();
-                        showFreeDialog(host);
-                    }
-                } else {
-                    config = null;
-                }
-            } else {
-                config = null;
-            }
-        } catch (final Throwable e) {
-        } finally {
-            if (config != null) {
-                config.setProperty("premAdShown", Boolean.TRUE);
-                config.setProperty("premAdShown2", "shown");
-                config.save();
-            }
-        }
-    }
-
-    protected void showFreeDialog(final String domain) {
-        if (System.getProperty("org.jdownloader.revision") != null) { /* JD2 ONLY! */
-            super.showFreeDialog(domain);
-            return;
-        }
-        try {
-            SwingUtilities.invokeAndWait(new Runnable() {
-
-                @Override
-                public void run() {
-                    try {
-                        String lng = System.getProperty("user.language");
-                        String message = null;
-                        String title = null;
-                        String tab = "                        ";
-                        if ("de".equalsIgnoreCase(lng)) {
-                            title = domain + " Free Download";
-                            message = "Du lädst im kostenlosen Modus von " + domain + ".\r\n";
-                            message += "Wie bei allen anderen Hostern holt JDownloader auch hier das Beste für dich heraus!\r\n\r\n";
-                            message += tab + "  Falls du allerdings mehrere Dateien\r\n" + "          - und das möglichst mit Fullspeed und ohne Unterbrechungen - \r\n" + "             laden willst, solltest du dir den Premium Modus anschauen.\r\n\r\nUnserer Erfahrung nach lohnt sich das - Aber entscheide am besten selbst. Jetzt ausprobieren?  ";
-                        } else {
-                            title = domain + " Free Download";
-                            message = "You are using the " + domain + " Free Mode.\r\n";
-                            message += "JDownloader always tries to get the best out of each hoster's free mode!\r\n\r\n";
-                            message += tab + "   However, if you want to download multiple files\r\n" + tab + "- possibly at fullspeed and without any wait times - \r\n" + tab + "you really should have a look at the Premium Mode.\r\n\r\nIn our experience, Premium is well worth the money. Decide for yourself, though. Let's give it a try?   ";
-                        }
-                        if (CrossSystem.isOpenBrowserSupported()) {
-                            int result = JOptionPane.showConfirmDialog(jd.gui.swing.jdgui.JDGui.getInstance().getMainFrame(), message, title, JOptionPane.YES_NO_OPTION, JOptionPane.INFORMATION_MESSAGE, null);
-                            if (JOptionPane.OK_OPTION == result) {
-                                CrossSystem.openURL(new URL("http://update3.jdownloader.org/jdserv/BuyPremiumInterface/redirect?" + domain + "&freedialog"));
-                            }
-                        }
-                    } catch (Throwable e) {
-                    }
-                }
-            });
-        } catch (Throwable e) {
-        }
-    }
-
     private String getDllink() throws IOException, PluginException {
-        String dllink = br.getRegex("(\"|\\')(/file/url\\.html\\?file=[a-z0-9]+)(\"|\\')").getMatch(1);
+        String dllink = br.getRegex("(\"|')(/file/url\\.html\\?file=[a-z0-9]+)\\1").getMatch(1);
         if (dllink != null) {
-            dllink = "http://" + host + dllink;
             br.getPage(dllink);
             dllink = br.getRegex("\"url\":\"(http[^<>\"]*?)\"").getMatch(0);
             if (dllink == null) {
@@ -607,13 +473,10 @@ public class Publish2Me extends PluginForHost {
             /* free accounts also have captchas */
             return true;
         }
-        if (Boolean.TRUE.equals(acc.getBooleanProperty("nopremium"))) {
-            /* free accounts also have captchas */
-            return true;
-        }
         if (acc.getStringProperty("session_type") != null && !"premium".equalsIgnoreCase(acc.getStringProperty("session_type"))) {
             return true;
         }
         return false;
     }
+
 }
