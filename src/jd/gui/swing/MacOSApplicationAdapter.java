@@ -194,9 +194,13 @@ public class MacOSApplicationAdapter implements QuitHandler, AboutHandler, Prefe
 
     private static void startDockUpdater() {
         synchronized (LOCK) {
-            if (JsonConfig.create(GraphicalUserInterfaceSettings.class).getMacDockProgressDisplay() != MacDockProgressDisplay.TOTAL_PROGRESS) return;
+            if (JsonConfig.create(GraphicalUserInterfaceSettings.class).getMacDockProgressDisplay() != MacDockProgressDisplay.TOTAL_PROGRESS) {
+                return;
+            }
             Thread ldockUpdater = dockUpdater;
-            if (ldockUpdater != null && ldockUpdater.isAlive()) return;
+            if (ldockUpdater != null && ldockUpdater.isAlive()) {
+                return;
+            }
             ldockUpdater = new Thread("MacDOCKUpdater") {
                 @Override
                 public void run() {
@@ -216,7 +220,9 @@ public class MacOSApplicationAdapter implements QuitHandler, AboutHandler, Prefe
                                     percent = (int) ((aggn.getLoadedBytes() * 100) / aggn.getTotalBytes());
                                 }
                                 final int finalpercent = percent;
-                                if (lastPercent == finalpercent) continue;
+                                if (lastPercent == finalpercent) {
+                                    continue;
+                                }
                                 lastPercent = finalpercent;
                                 Image image = imageCache.get(finalpercent);
                                 if (image == null) {
@@ -270,10 +276,14 @@ public class MacOSApplicationAdapter implements QuitHandler, AboutHandler, Prefe
 
     private static void stopDockUpdater() {
         synchronized (LOCK) {
-            if (dockUpdater == null) return;
+            if (dockUpdater == null) {
+                return;
+            }
             Thread ldockUpdater = dockUpdater;
             dockUpdater = null;
-            if (ldockUpdater != null && ldockUpdater.isDaemon()) ldockUpdater.interrupt();
+            if (ldockUpdater != null && ldockUpdater.isDaemon()) {
+                ldockUpdater.interrupt();
+            }
         }
     }
 
@@ -290,7 +300,9 @@ public class MacOSApplicationAdapter implements QuitHandler, AboutHandler, Prefe
                         /*
                          * own thread because else it will block, performQuit calls exit again
                          */
-                        if (quitResponse != null) quitResponse.performQuit();
+                        if (quitResponse != null) {
+                            quitResponse.performQuit();
+                        }
                     };
                 }.start();
             }
@@ -318,7 +330,9 @@ public class MacOSApplicationAdapter implements QuitHandler, AboutHandler, Prefe
 
     public void appReOpened(AppReOpenedEvent e) {
         final JDGui swingGui = JDGui.getInstance();
-        if (swingGui == null || swingGui.getMainFrame() == null) return;
+        if (swingGui == null || swingGui.getMainFrame() == null) {
+            return;
+        }
         final JFrame mainFrame = swingGui.getMainFrame();
         if (!mainFrame.isVisible()) {
             WindowManager.getInstance().setVisible(mainFrame, true, FrameState.OS_DEFAULT);
