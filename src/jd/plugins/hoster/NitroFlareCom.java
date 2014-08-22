@@ -138,8 +138,13 @@ public class NitroFlareCom extends PluginForHost {
                         dl.setName(name);
                     }
                     if (size != null) {
-                        dl.setDownloadSize(Long.parseLong(size));
-                    }
+                        try {
+                            dl.setVerifiedFileSize(Long.parseLong(size));
+                        } catch (final Throwable e) {
+                            /* not available in old 09581 stable */
+                            dl.setDownloadSize(Long.parseLong(size));
+                        }
+                   }
                     if (md5 != null) {
                         dl.setMD5Hash(md5);
                     }
@@ -260,7 +265,7 @@ public class NitroFlareCom extends PluginForHost {
     @Override
     public AccountInfo fetchAccountInfo(final Account account) throws Exception {
         AccountInfo ai = new AccountInfo();
-        br.getPage(apiURL + "/getKeyInfo?premiumKey=" + account.getPass());
+        br.getPage(apiURL + "/getKeyInfo?" + (account.getUser() != null ? "user=" + Encoding.urlEncode(account.getUser()) : "user=") + "&premiumKey=" + Encoding.urlEncode(account.getPass()));
         final String expire = getJson("expiryDate");
         final String status = getJson("status");
         final String storage = getJson("storeageUsed");
@@ -309,7 +314,7 @@ public class NitroFlareCom extends PluginForHost {
             if (downloadLink.getBooleanProperty("premiumRequired", false) && account == null) {
                 throwPremiumRequiredException();
             }
-            final String req = apiURL + "/getDownloadLink?file=" + getFUID(downloadLink) + (account != null ? "&premiumKey=" + account.getPass() : "");
+            final String req = apiURL + "/getDownloadLink?file=" + getFUID(downloadLink) + (account.getUser() != null ? "&user=" + Encoding.urlEncode(account.getUser()) : "&user=") + (account != null ? "&premiumKey=" + Encoding.urlEncode(account.getPass()) : "");
             // needed for when dropping to frame, the cookie session seems to carry over current position in download sequence and you get
             // recaptcha error codes at first step.
             br = new Browser();
