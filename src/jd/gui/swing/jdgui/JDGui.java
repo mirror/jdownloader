@@ -22,6 +22,7 @@ import java.awt.Dimension;
 import java.awt.Frame;
 import java.awt.GraphicsDevice;
 import java.awt.GraphicsEnvironment;
+import java.awt.HeadlessException;
 import java.awt.Image;
 import java.awt.Insets;
 import java.awt.KeyEventPostProcessor;
@@ -143,6 +144,11 @@ import org.jdownloader.updatev2.UpdateController;
 import org.jdownloader.updatev2.UpdaterListener;
 
 public class JDGui implements UpdaterListener, OwnerFinder {
+    static {
+        if (Application.isHeadless()) {
+            throw new HeadlessException();
+        }
+    }
 
     /**
      * An Abstract panelrepresentation used in requestPanel(Panels.*,Parameter

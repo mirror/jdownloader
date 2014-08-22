@@ -3,6 +3,7 @@ package org.jdownloader.extensions.translator.gui;
 import java.awt.Component;
 import java.awt.Dimension;
 import java.awt.Font;
+import java.awt.HeadlessException;
 import java.awt.Point;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
@@ -45,6 +46,7 @@ import org.appwork.swing.components.ExtTextField;
 import org.appwork.swing.components.TextComponentInterface;
 import org.appwork.txtresource.TranslationFactory;
 import org.appwork.uio.UIOManager;
+import org.appwork.utils.Application;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.logging.Log;
 import org.appwork.utils.logging2.LogSource;
@@ -81,30 +83,34 @@ import org.tmatesoft.svn.core.wc.SVNCommitPacket;
  * 
  */
 public class TranslatorGui extends AddonPanel<TranslatorExtension> implements ListSelectionListener, TranslatorExtensionListener, ShutdownVetoListener {
+    static {
+        if (Application.isHeadless()) {
+            throw new HeadlessException();
+        }
+    }
+    private static final String   ID = "TRANSLATORGUI";
+    private TranslateTableModel   tableModel;
+    private TranslateTable        table;
 
-    private static final String ID = "TRANSLATORGUI";
-    private TranslateTableModel tableModel;
-    private TranslateTable      table;
+    private SwitchPanel           panel;
 
-    private SwitchPanel         panel;
-
-    private MigPanel            menuPanel;
-    private JLabel              lbl;
-    private Timer               ti;
-    private ExtButton           logout;
-    private ExtButton           load;
-    private ExtButton           save;
-    private ExtButton           wizard;
-    private ExtButton           revert;
-    private ExtButton           restart;
-    private JScrollPane         sp;
-    private ExtButton           upload;
-    private volatile boolean    stopEditing;
-    private volatile boolean    isWizard;
-    private MigPanel            menuPanel2;
-    private QuickEdit           qe;
-    private TranslatorSearchField         search;
-    private LogSource           logger;
+    private MigPanel              menuPanel;
+    private JLabel                lbl;
+    private Timer                 ti;
+    private ExtButton             logout;
+    private ExtButton             load;
+    private ExtButton             save;
+    private ExtButton             wizard;
+    private ExtButton             revert;
+    private ExtButton             restart;
+    private JScrollPane           sp;
+    private ExtButton             upload;
+    private volatile boolean      stopEditing;
+    private volatile boolean      isWizard;
+    private MigPanel              menuPanel2;
+    private QuickEdit             qe;
+    private TranslatorSearchField search;
+    private LogSource             logger;
 
     public TranslatorGui(TranslatorExtension plg) {
         super(plg);
@@ -152,13 +158,17 @@ public class TranslatorGui extends AddonPanel<TranslatorExtension> implements Li
 
     protected void initTable() {
         tableModel = new TranslateTableModel(getExtension());
-        if (table != null) table.getSelectionModel().removeListSelectionListener(this);
+        if (table != null) {
+            table.getSelectionModel().removeListSelectionListener(this);
+        }
         table = new TranslateTable(getExtension(), tableModel) {
 
             @Override
             public boolean editCellAt(int row, int column) {
                 if (stopEditing) {
-                    if (isEditing() && table.getCellEditor() != null) getCellEditor().stopCellEditing();
+                    if (isEditing() && table.getCellEditor() != null) {
+                        getCellEditor().stopCellEditing();
+                    }
                     return false;
                 }
                 if (super.editCellAt(row, column)) {
@@ -176,7 +186,9 @@ public class TranslatorGui extends AddonPanel<TranslatorExtension> implements Li
             public boolean editCellAt(int row, int column, EventObject e) {
 
                 if (stopEditing) {
-                    if (isEditing() && table.getCellEditor() != null) getCellEditor().stopCellEditing();
+                    if (isEditing() && table.getCellEditor() != null) {
+                        getCellEditor().stopCellEditing();
+                    }
                     return false;
                 }
                 if (super.editCellAt(row, column, e)) {
@@ -194,9 +206,13 @@ public class TranslatorGui extends AddonPanel<TranslatorExtension> implements Li
 
         table.getSelectionModel().addListSelectionListener(this);
 
-        if (qe != null) qe.setTable(table);
+        if (qe != null) {
+            qe.setTable(table);
+        }
 
-        if (search != null) search.setTable(table);
+        if (search != null) {
+            search.setTable(table);
+        }
     }
 
     protected void layoutMenu() {
@@ -386,15 +402,21 @@ public class TranslatorGui extends AddonPanel<TranslatorExtension> implements Li
                         try {
                             stopEditing(true);
                             SVNCommitPacket commit = getExtension().save();
-                            if (commit == null) return;
+                            if (commit == null) {
+                                return;
+                            }
                             if (commit.getCommitItems().length == 0) {
                                 Dialog.getInstance().showMessageDialog("Nothing has Changed");
                                 return;
                             }
                             StringBuilder sb = new StringBuilder();
                             for (SVNCommitItem ci : commit.getCommitItems()) {
-                                if (commit.isCommitItemSkipped(ci)) continue;
-                                if (sb.length() > 0) sb.append("\r\n");
+                                if (commit.isCommitItemSkipped(ci)) {
+                                    continue;
+                                }
+                                if (sb.length() > 0) {
+                                    sb.append("\r\n");
+                                }
                                 sb.append(ci.getFile());
                             }
                             Dialog.getInstance().showMessageDialog("Save Succesful\r\n" + sb.toString());
@@ -626,7 +648,9 @@ public class TranslatorGui extends AddonPanel<TranslatorExtension> implements Li
                                             }
                                         }
                                         currentValue.setTranslation(newTranslation);
-                                        if (currentValue.isOK() || currentValue.isDefault()) break;
+                                        if (currentValue.isOK() || currentValue.isDefault()) {
+                                            break;
+                                        }
                                         logger.info("next");
 
                                     }
@@ -843,7 +867,9 @@ public class TranslatorGui extends AddonPanel<TranslatorExtension> implements Li
         ShutdownController.getInstance().addShutdownVetoListener(this);
 
         Log.L.finer("Shown " + getClass().getSimpleName());
-        if (getExtension().isLoggedIn()) return;
+        if (getExtension().isLoggedIn()) {
+            return;
+        }
         ProgressGetter pg = new ProgressDialog.ProgressGetter() {
 
             @Override
@@ -976,7 +1002,7 @@ public class TranslatorGui extends AddonPanel<TranslatorExtension> implements Li
                 try {
                     if (desiredFont != null && !desiredFont.equals(de.javasoft.plaf.synthetica.SyntheticaLookAndFeel.getFontName())) {
                         // switch fontname. create ne table to use the new font
-                        Font newFont = (Font) (new FontUIResource(desiredFont, 0, de.javasoft.plaf.synthetica.SyntheticaLookAndFeel.getFontSize()));
+                        Font newFont = (new FontUIResource(desiredFont, 0, de.javasoft.plaf.synthetica.SyntheticaLookAndFeel.getFontSize()));
                         de.javasoft.plaf.synthetica.SyntheticaLookAndFeel.setFont(newFont, false);
                         initTable();
                         sp.getViewport().setView(table);
@@ -1088,7 +1114,9 @@ public class TranslatorGui extends AddonPanel<TranslatorExtension> implements Li
 
     @Override
     public void onShutdownVetoRequest(ShutdownRequest request) throws ShutdownVetoException {
-        if (request.isSilent()) { throw new ShutdownVetoException("TranslatorGui is Active", this); }
+        if (request.isSilent()) {
+            throw new ShutdownVetoException("TranslatorGui is Active", this);
+        }
 
     }
 
