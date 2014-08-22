@@ -139,32 +139,37 @@ public class HLSDownloader extends DownloadInterface {
 
             FFmpeg ffmpeg = new FFmpeg() {
                 protected void parseLine(boolean stdStream, StringBuilder ret, String line) {
-                    if (line.trim().startsWith("Duration:")) {
-                        String duration = new Regex(line, "Duration\\: (.*?).?\\d*?\\, start").getMatch(0);
-                        HLSDownloader.this.duration = formatStringToMilliseconds(duration);
-                    } else if (line.trim().startsWith("Stream #")) {
-                        String bitrate = new Regex(line, "(\\d+) kb\\/s").getMatch(0);
-                        if (bitrate != null) {
-                            HLSDownloader.this.bitrate += Integer.parseInt(bitrate);
+                    System.out.println(line);
+                    try {
+                        if (line.trim().startsWith("Duration:")) {
+                            String duration = new Regex(line, "Duration\\: (.*?).?\\d*?\\, start").getMatch(0);
+                            HLSDownloader.this.duration = formatStringToMilliseconds(duration);
+                        } else if (line.trim().startsWith("Stream #")) {
+                            String bitrate = new Regex(line, "(\\d+) kb\\/s").getMatch(0);
+                            if (bitrate != null) {
+                                HLSDownloader.this.bitrate += Integer.parseInt(bitrate);
+                            }
+                        } else if (line.trim().startsWith("Output #0")) {
+                            link.setDownloadSize(((duration / 1000) * bitrate * 1024) / 8);
+
+                        } else if (line.trim().startsWith("frame=")) {
+                            String size = new Regex(line, "size=\\s*(\\S+)\\s+").getMatch(0);
+                            long newSize = SizeFormatter.getSize(size);
+
+                            bytesWritten = newSize;
+                            downloadable.setDownloadBytesLoaded(bytesWritten);
+                            String time = new Regex(line, "time=\\s*(\\S+)\\s+").getMatch(0);
+                            String bitrate = new Regex(line, "bitrate=\\s*([\\d\\.]+)").getMatch(0);
+                            if (time != null && duration > 0) {
+                                long rate = bytesWritten / (formatStringToMilliseconds(time) / 1000);
+                                link.setDownloadSize(((duration / 1000) * rate));
+                            } else {
+                                link.setDownloadSize(bytesWritten);
+                            }
+
                         }
-                    } else if (line.trim().startsWith("Output #0")) {
-                        link.setDownloadSize(((duration / 1000) * bitrate * 1024) / 8);
-
-                    } else if (line.trim().startsWith("frame=")) {
-                        String size = new Regex(line, "size=\\s*(\\S+)\\s+").getMatch(0);
-                        long newSize = SizeFormatter.getSize(size);
-
-                        bytesWritten = newSize;
-                        downloadable.setDownloadBytesLoaded(bytesWritten);
-                        String time = new Regex(line, "time=\\s*(\\S+)\\s+").getMatch(0);
-                        String bitrate = new Regex(line, "bitrate=\\s*([\\d\\.]+)").getMatch(0);
-                        if (time != null && duration > 0) {
-                            long rate = bytesWritten / (formatStringToMilliseconds(time) / 1000);
-                            link.setDownloadSize(((duration / 1000) * rate));
-                        } else {
-                            link.setDownloadSize(bytesWritten);
-                        }
-
+                    } catch (Throwable e) {
+                        logger.log(e);
                     }
 
                 };
