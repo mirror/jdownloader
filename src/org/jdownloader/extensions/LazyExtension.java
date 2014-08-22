@@ -62,7 +62,7 @@ public class LazyExtension implements Storable, CheckBoxedEntry {
 
         ret.quickToggle = plg.isQuickToggleEnabled();
         ret.headlessRunnable = plg.isHeadlessRunnable();
-        if (!GraphicsEnvironment.isHeadless() || ret.headlessRunnable) {
+        if (!org.appwork.utils.Application.isHeadless() || ret.headlessRunnable) {
             plg.init();
         }
 

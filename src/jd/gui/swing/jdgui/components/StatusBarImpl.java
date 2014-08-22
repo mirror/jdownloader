@@ -17,6 +17,7 @@
 package jd.gui.swing.jdgui.components;
 
 import java.awt.Component;
+import java.awt.HeadlessException;
 import java.awt.event.ActionEvent;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
@@ -56,6 +57,7 @@ import net.miginfocom.swing.MigLayout;
 import org.appwork.exceptions.WTFException;
 import org.appwork.scheduler.DelayedRunnable;
 import org.appwork.swing.components.tooltips.ToolTipController;
+import org.appwork.utils.Application;
 import org.appwork.utils.swing.EDTHelper;
 import org.appwork.utils.swing.EDTRunner;
 import org.jdownloader.actions.AppAction;
@@ -64,7 +66,11 @@ import org.jdownloader.images.NewTheme;
 import org.jdownloader.updatev2.gui.LAFOptions;
 
 public class StatusBarImpl extends JPanel implements DownloadWatchdogListener {
-
+    static {
+        if (Application.isHeadless()) {
+            throw new HeadlessException();
+        }
+    }
     private static final long      serialVersionUID = 3676496738341246846L;
     private ReconnectProgress      reconnectIndicator;
     private IconedProcessIndicator linkGrabberIndicator;

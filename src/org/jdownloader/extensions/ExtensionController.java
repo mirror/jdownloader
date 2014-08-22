@@ -154,7 +154,7 @@ public class ExtensionController implements MenuExtenderHandler {
             } catch (final Throwable e) {
                 Log.exception(e);
             }
-            if (!GraphicsEnvironment.isHeadless()) {
+            if (!org.appwork.utils.Application.isHeadless()) {
                 MenuManagerMainmenu.getInstance().registerExtender(this);
                 MenuManagerMainToolbar.getInstance().registerExtender(this);
             }
@@ -429,7 +429,7 @@ public class ExtensionController implements MenuExtenderHandler {
 
         logger.fine("Load Extension: " + id);
         LazyExtension extension = LazyExtension.create(id, cls);
-        if (!extension.isHeadlessRunnable() && GraphicsEnvironment.isHeadless()) {
+        if (!extension.isHeadlessRunnable() && org.appwork.utils.Application.isHeadless()) {
             logger.info("Ignored Extension (Headless): " + id + " Load Duration:" + (System.currentTimeMillis() - t) + "ms");
             return list;
         }

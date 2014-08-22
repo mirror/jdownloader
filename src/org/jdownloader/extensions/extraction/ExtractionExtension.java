@@ -480,7 +480,7 @@ public class ExtractionExtension extends AbstractExtension<ExtractionConfig, Ext
     @Override
     protected void start() throws StartException {
         lazyInitOnceOnStart();
-        if (!GraphicsEnvironment.isHeadless()) {
+        if (!org.appwork.utils.Application.isHeadless()) {
             MenuManagerDownloadTableContext.getInstance().registerExtender(this);
             MenuManagerLinkgrabberTableContext.getInstance().registerExtender(this);
             MenuManagerMainmenu.getInstance().registerExtender(this);
@@ -490,7 +490,7 @@ public class ExtractionExtension extends AbstractExtension<ExtractionConfig, Ext
         DownloadController.getInstance().addVetoListener(this);
 
         FileCreationManager.getInstance().getEventSender().addListener(this);
-        if (!GraphicsEnvironment.isHeadless()) {
+        if (!org.appwork.utils.Application.isHeadless()) {
             SecondLevelLaunch.GUI_COMPLETE.executeWhenReached(new Runnable() {
                 public void run() {
                     new EDTRunner() {

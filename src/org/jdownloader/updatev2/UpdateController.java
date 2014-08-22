@@ -135,7 +135,7 @@ public class UpdateController implements UpdateCallbackInterface {
 
     @Override
     public void updateGuiText(String text) {
-        if (!GraphicsEnvironment.isHeadless()) {
+        if (!org.appwork.utils.Application.isHeadless()) {
             lazyGetIcon().setTitle(text);
         }
         this.statusLabel = text;
@@ -145,7 +145,7 @@ public class UpdateController implements UpdateCallbackInterface {
     @Override
     public void updateGuiProgress(double progress) {
         this.statusProgress = progress;
-        if (!GraphicsEnvironment.isHeadless()) {
+        if (!org.appwork.utils.Application.isHeadless()) {
             lazyGetIcon().setIndeterminate(progress < 0);
             lazyGetIcon().setValue((int) progress);
         }
@@ -171,7 +171,7 @@ public class UpdateController implements UpdateCallbackInterface {
     @Override
     public void setRunning(boolean b) {
         this.running = b;
-        if (!GraphicsEnvironment.isHeadless()) {
+        if (!org.appwork.utils.Application.isHeadless()) {
             new EDTRunner() {
 
                 @Override

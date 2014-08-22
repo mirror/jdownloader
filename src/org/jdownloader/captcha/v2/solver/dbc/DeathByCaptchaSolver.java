@@ -18,6 +18,7 @@ import org.appwork.storage.config.ValidationException;
 import org.appwork.storage.config.events.GenericConfigEventListener;
 import org.appwork.storage.config.handler.KeyHandler;
 import org.appwork.swing.components.tooltips.ExtTooltip;
+import org.appwork.utils.Application;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.logging2.LogSource;
 import org.jdownloader.DomainInfo;
@@ -63,7 +64,9 @@ public class DeathByCaptchaSolver extends CESChallengeSolver<String> implements 
         logger = LogController.getInstance().getLogger(DeathByCaptchaSolver.class.getName());
         AdvancedConfigManager.getInstance().register(config);
         threadPool.allowCoreThreadTimeOut(true);
-        initServicePanel();
+        if (!Application.isHeadless()) {
+            initServicePanel();
+        }
 
     }
 
@@ -98,6 +101,7 @@ public class DeathByCaptchaSolver extends CESChallengeSolver<String> implements 
                         ServicePanel.getInstance().requestUpdate(true);
                     }
                 });
+
                 CFG_DBC.ENABLED.getEventSender().addListener(new GenericConfigEventListener<Boolean>() {
 
                     @Override
@@ -109,7 +113,6 @@ public class DeathByCaptchaSolver extends CESChallengeSolver<String> implements 
                         ServicePanel.getInstance().requestUpdate(true);
                     }
                 });
-
             }
 
         });
@@ -190,7 +193,9 @@ public class DeathByCaptchaSolver extends CESChallengeSolver<String> implements 
     }
 
     private synchronized Client getClient() {
-        if (client != null) return client;
+        if (client != null) {
+            return client;
+        }
         client = new SocketClient(config.getUserName(), config.getPassword());
         client.isVerbose = true;
 
@@ -199,9 +204,15 @@ public class DeathByCaptchaSolver extends CESChallengeSolver<String> implements 
     }
 
     protected boolean validateLogins() {
-        if (!CFG_DBC.ENABLED.isEnabled()) return false;
-        if (StringUtils.isEmpty(CFG_DBC.USER_NAME.getValue())) return false;
-        if (StringUtils.isEmpty(CFG_DBC.PASSWORD.getValue())) return false;
+        if (!CFG_DBC.ENABLED.isEnabled()) {
+            return false;
+        }
+        if (StringUtils.isEmpty(CFG_DBC.USER_NAME.getValue())) {
+            return false;
+        }
+        if (StringUtils.isEmpty(CFG_DBC.PASSWORD.getValue())) {
+            return false;
+        }
 
         return true;
     }
@@ -225,11 +236,13 @@ public class DeathByCaptchaSolver extends CESChallengeSolver<String> implements 
                         // abuser.
                         Client client = getClient();
                         Challenge<?> challenge = response.getChallenge();
-                        if (challenge instanceof BasicCaptchaChallenge) if (client.report(captcha)) {
-                            logger.info("CAPTCHA " + challenge + " reported as incorrectly solved");
-                        } else {
-                            logger.info("Failed reporting incorrectly solved CAPTCHA. Disabled Feedback");
-                            config.setFeedBackSendingEnabled(false);
+                        if (challenge instanceof BasicCaptchaChallenge) {
+                            if (client.report(captcha)) {
+                                logger.info("CAPTCHA " + challenge + " reported as incorrectly solved");
+                            } else {
+                                logger.info("Failed reporting incorrectly solved CAPTCHA. Disabled Feedback");
+                                config.setFeedBackSendingEnabled(false);
+                            }
                         }
 
                     } catch (final Throwable e) {
