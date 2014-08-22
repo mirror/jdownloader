@@ -218,8 +218,10 @@ public class FlashxTv extends PluginForHost {
         }
     }
 
+    private static final String MAINTENANCE = ">maintenance,|>maintenance \\-|We are currently performing maintenance on this server";
+
     private void checkErrors() throws PluginException {
-        if (br.containsHTML(">maintenance,|We are currently performing maintenance on this server")) {
+        if (br.containsHTML(MAINTENANCE)) {
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "This server is under maintenance", 30 * 60 * 1000l);
         }
     }
@@ -249,7 +251,7 @@ public class FlashxTv extends PluginForHost {
         br.getHeaders().put("User-Agent", AGENT);
 
         br.getPage(link.getDownloadURL());
-        if (br.containsHTML(">maintenance,|We are currently performing maintenance on this server")) {
+        if (br.containsHTML(MAINTENANCE)) {
             link.getLinkStatus().setStatusText("Host is in maintenance mode");
             return AvailableStatus.TRUE;
         }

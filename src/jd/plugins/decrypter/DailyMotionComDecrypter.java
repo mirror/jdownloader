@@ -46,7 +46,7 @@ import jd.utils.JDUtilities;
 import org.appwork.utils.formatter.TimeFormatter;
 
 //Decrypts embedded videos from dailymotion
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "dailymotion.com" }, urls = { "https?://(www\\.)?dailymotion\\.com/((embed/)?video/[a-z0-9\\-_]+|swf(/video)?/[a-zA-Z0-9]+|user/[A-Za-z0-9]+/\\d+|playlist/[A-Za-z0-9]+_[A-Za-z0-9\\-_]+/(\\d+)?|[A-Za-z0-9]+)" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "dailymotion.com" }, urls = { "https?://(www\\.)?dailymotion\\.com/((embed/)?video/[a-z0-9\\-_]+|swf(/video)?/[a-zA-Z0-9]+|user/[A-Za-z0-9_\\-]+/\\d+|playlist/[A-Za-z0-9]+_[A-Za-z0-9\\-_]+/(\\d+)?|[A-Za-z0-9_\\-]+)" }, flags = { 0 })
 public class DailyMotionComDecrypter extends PluginForDecrypt {
 
     public DailyMotionComDecrypter(PluginWrapper wrapper) {
@@ -56,19 +56,19 @@ public class DailyMotionComDecrypter extends PluginForDecrypt {
     private String                          VIDEOSOURCE    = null;
     /**
      * @ 1hd1080URL or stream_h264_hd1080_url [1920x1080]
-     * 
+     *
      * @ 2 hd720URL or stream_h264_hd_url [1280x720]
-     * 
+     *
      * @ 3 hqURL or stream_h264_hq_url [848x480]
-     * 
+     *
      * @ 4 sdURL or stream_h264_url [512x384]
-     * 
+     *
      * @ 5 ldURL or video_url or stream_h264_ld_url [320x240]
-     * 
+     *
      * @ 6 video_url or rtmp
-     * 
+     *
      * @ 7 hds
-     * 
+     *
      * @String[] = {"Direct download url", "filename, if available before quality selection"}
      */
     private LinkedHashMap<String, String[]> FOUNDQUALITIES = new LinkedHashMap<String, String[]>();
@@ -83,7 +83,7 @@ public class DailyMotionComDecrypter extends PluginForDecrypt {
     private static final String             ALLOW_OTHERS   = "ALLOW_OTHERS";
     private static final String             ALLOW_HDS      = "ALLOW_HDS";
 
-    private static final String             TYPE_USER      = "https?://(www\\.)?dailymotion\\.com/user/[A-Za-z0-9]+/\\d+";
+    private static final String             TYPE_USER      = "https?://(www\\.)?dailymotion\\.com/user/[A-Za-z0-9_\\-]+/\\d+";
     private static final String             TYPE_PLAYLIST  = "https?://(www\\.)?dailymotion\\.com/playlist/[A-Za-z0-9]+_[A-Za-z0-9\\-_]+/(\\d+)?";
     private static final String             TYPE_VIDEO     = "https?://(www\\.)?dailymotion\\.com/((embed/)?video/[a-z0-9\\-_]+|swf(/video)?/[a-zA-Z0-9]+)";
     private static final String             TYPE_INVALID   = "https?://(www\\.)?dailymotion\\.com/playlist";
@@ -169,7 +169,7 @@ public class DailyMotionComDecrypter extends PluginForDecrypt {
         logger.info("Decrypting user: " + PARAMETER);
         String username = new Regex(PARAMETER, "dailymotion\\.com/user/([A-Za-z0-9]+)").getMatch(0);
         if (username == null) {
-            username = new Regex(PARAMETER, "dailymotion\\.com/([A-Za-z0-9]+)").getMatch(0);
+            username = new Regex(PARAMETER, "dailymotion\\.com/([A-Za-z0-9_\\-]+)").getMatch(0);
         }
         br.getPage("http://www.dailymotion.com/" + username);
         if (br.containsHTML("class=\"dmco_text nothing_to_see\"")) {

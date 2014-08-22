@@ -103,11 +103,19 @@ public class VeeHdCom extends PluginForHost {
         String dllink = null;
         String way_download = br.getRegex("\"(/vpi\\?[^<>\"/]*?\\&do=d[^<>\"]*?)\"").getMatch(0);
         if (way_download != null) {
-            br.getPage("http://veehd.com" + way_download);
-            // final String iframe = br.getRegex("<iframe id=\"iframe\" src=\"(/va/[^<>\"]*?)\"").getMatch(0);
-            // if (iframe != null) {
-            // br.getPage(iframe);
-            // }
+            synchronized (LOCK) {
+                br.getPage("http://veehd.com" + way_download);
+                final String iframe = br.getRegex("<iframe id=\"iframe\" src=\"(/va/[^<>\"]*?)\"").getMatch(0);
+                if (iframe != null) {
+                    /*
+                     * Seems to be some kind of ad-stuff - heppens one time every time a user has a NEW ip and logs into his account for the
+                     * first time
+                     */
+                    br.getPage(iframe);
+                    /* Access downloadlink again - final link should now be in the HTML code */
+                    br.getPage("http://veehd.com" + way_download);
+                }
+            }
             dllink = getDirectlink();
         } else {
             final String frame = br.getRegex("\"(/vpi\\?h=[^<>\"]*?)\"").getMatch(0);
