@@ -160,8 +160,9 @@ public class HLSDownloader extends DownloadInterface {
                             downloadable.setDownloadBytesLoaded(bytesWritten);
                             String time = new Regex(line, "time=\\s*(\\S+)\\s+").getMatch(0);
                             String bitrate = new Regex(line, "bitrate=\\s*([\\d\\.]+)").getMatch(0);
-                            if (time != null && duration > 0) {
-                                long rate = bytesWritten / (formatStringToMilliseconds(time) / 1000);
+                            long timeInSeconds = (formatStringToMilliseconds(time) / 1000);
+                            if (timeInSeconds > 0 && duration > 0) {
+                                long rate = bytesWritten / timeInSeconds;
                                 link.setDownloadSize(((duration / 1000) * rate));
                             } else {
                                 link.setDownloadSize(bytesWritten);
@@ -263,7 +264,7 @@ public class HLSDownloader extends DownloadInterface {
             @Override
             public boolean onPostRequest(PostRequest request, HttpResponse response) {
                 try {
-
+                    logger.info(request.toString());
                     if (processID != Long.parseLong(request.getParameterbyKey("id"))) {
                         return false;
                     }
@@ -302,6 +303,8 @@ public class HLSDownloader extends DownloadInterface {
             @Override
             public boolean onGetRequest(GetRequest request, HttpResponse response) {
                 try {
+                    logger.info("START " + request.getRequestedURL());
+                    logger.info(request.toString());
                     String id = request.getParameterbyKey("id");
                     if (id == null) {
                         System.out.println(1);
@@ -397,6 +400,8 @@ public class HLSDownloader extends DownloadInterface {
                     }
                 } catch (IOException e) {
                     e.printStackTrace();
+                } finally {
+                    logger.info("END " + request.getRequestedURL());
                 }
 
                 return true;
