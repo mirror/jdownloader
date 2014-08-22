@@ -119,14 +119,13 @@ public class MyJDownloaderController implements ShutdownVetoListener, GenericCon
                             ShutdownController.getInstance().requestShutdown();
                         }
 
-                        return;
                     } finally {
                         cd.end();
                     }
 
                 }
             }
-            return;
+
         }
 
         MyJDownloaderConnectThread lthread = new MyJDownloaderConnectThread(this);
