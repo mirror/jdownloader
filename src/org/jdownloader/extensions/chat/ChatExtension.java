@@ -1070,7 +1070,7 @@ public class ChatExtension extends AbstractExtension<ChatConfig, ChatTranslation
 
     @Override
     protected void start() throws StartException {
-        if (GraphicsEnvironment.isHeadless()) {
+        if (org.appwork.utils.Application.isHeadless()) {
             throw new StartException("Not available in Headless Mode");
         }
         try {

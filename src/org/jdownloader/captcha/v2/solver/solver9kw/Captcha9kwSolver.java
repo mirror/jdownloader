@@ -22,6 +22,7 @@ import org.appwork.storage.config.ValidationException;
 import org.appwork.storage.config.events.GenericConfigEventListener;
 import org.appwork.storage.config.handler.KeyHandler;
 import org.appwork.swing.components.tooltips.ExtTooltip;
+import org.appwork.utils.Application;
 import org.appwork.utils.IO;
 import org.appwork.utils.Regex;
 import org.appwork.utils.StringUtils;
@@ -70,49 +71,49 @@ public class Captcha9kwSolver extends CESChallengeSolver<String> implements Chal
         config = JsonConfig.create(Captcha9kwSettings.class);
         AdvancedConfigManager.getInstance().register(config);
         threadPool.allowCoreThreadTimeOut(true);
+        if (!Application.isHeadless()) {
+            SecondLevelLaunch.GUI_COMPLETE.executeWhenReached(new Runnable() {
 
-        SecondLevelLaunch.GUI_COMPLETE.executeWhenReached(new Runnable() {
+                public void run() {
+                    ServicePanel.getInstance().addExtender(Captcha9kwSolver.this);
+                    CFG_9KWCAPTCHA.API_KEY.getEventSender().addListener(new GenericConfigEventListener<String>() {
 
-            public void run() {
-                ServicePanel.getInstance().addExtender(Captcha9kwSolver.this);
-                CFG_9KWCAPTCHA.API_KEY.getEventSender().addListener(new GenericConfigEventListener<String>() {
+                        @Override
+                        public void onConfigValueModified(KeyHandler<String> keyHandler, String newValue) {
+                            ServicePanel.getInstance().requestUpdate(true);
+                        }
 
-                    @Override
-                    public void onConfigValueModified(KeyHandler<String> keyHandler, String newValue) {
-                        ServicePanel.getInstance().requestUpdate(true);
-                    }
+                        @Override
+                        public void onConfigValidatorError(KeyHandler<String> keyHandler, String invalidValue, ValidationException validateException) {
+                        }
+                    });
 
-                    @Override
-                    public void onConfigValidatorError(KeyHandler<String> keyHandler, String invalidValue, ValidationException validateException) {
-                    }
-                });
+                    CFG_9KWCAPTCHA.ENABLED.getEventSender().addListener(new GenericConfigEventListener<Boolean>() {
 
-                CFG_9KWCAPTCHA.ENABLED.getEventSender().addListener(new GenericConfigEventListener<Boolean>() {
+                        @Override
+                        public void onConfigValidatorError(KeyHandler<Boolean> keyHandler, Boolean invalidValue, ValidationException validateException) {
+                        }
 
-                    @Override
-                    public void onConfigValidatorError(KeyHandler<Boolean> keyHandler, Boolean invalidValue, ValidationException validateException) {
-                    }
+                        @Override
+                        public void onConfigValueModified(KeyHandler<Boolean> keyHandler, Boolean newValue) {
+                            ServicePanel.getInstance().requestUpdate(true);
+                        }
+                    });
+                    CFG_9KWCAPTCHA.MOUSE.getEventSender().addListener(new GenericConfigEventListener<Boolean>() {
 
-                    @Override
-                    public void onConfigValueModified(KeyHandler<Boolean> keyHandler, Boolean newValue) {
-                        ServicePanel.getInstance().requestUpdate(true);
-                    }
-                });
-                CFG_9KWCAPTCHA.MOUSE.getEventSender().addListener(new GenericConfigEventListener<Boolean>() {
+                        @Override
+                        public void onConfigValidatorError(KeyHandler<Boolean> keyHandler, Boolean invalidValue, ValidationException validateException) {
+                        }
 
-                    @Override
-                    public void onConfigValidatorError(KeyHandler<Boolean> keyHandler, Boolean invalidValue, ValidationException validateException) {
-                    }
+                        @Override
+                        public void onConfigValueModified(KeyHandler<Boolean> keyHandler, Boolean newValue) {
+                            ServicePanel.getInstance().requestUpdate(true);
+                        }
+                    });
+                }
 
-                    @Override
-                    public void onConfigValueModified(KeyHandler<Boolean> keyHandler, Boolean newValue) {
-                        ServicePanel.getInstance().requestUpdate(true);
-                    }
-                });
-            }
-
-        });
-
+            });
+        }
     }
 
     @Override

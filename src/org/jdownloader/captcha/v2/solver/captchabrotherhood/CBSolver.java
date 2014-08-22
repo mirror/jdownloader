@@ -19,6 +19,7 @@ import jd.nutils.encoding.Encoding;
 
 import org.appwork.storage.config.JsonConfig;
 import org.appwork.swing.components.tooltips.ExtTooltip;
+import org.appwork.utils.Application;
 import org.appwork.utils.IO;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.net.BasicHTTP.BasicHTTP;
@@ -57,7 +58,9 @@ public class CBSolver extends CESChallengeSolver<String> implements ChallengeRes
         super(1);
         config = JsonConfig.create(CaptchaBrotherHoodSettings.class);
         AdvancedConfigManager.getInstance().register(config);
-        initServicePanel(CFG_CBH.USER, CFG_CBH.PASS, CFG_CBH.ENABLED);
+        if (!Application.isHeadless()) {
+            initServicePanel(CFG_CBH.USER, CFG_CBH.PASS, CFG_CBH.ENABLED);
+        }
     }
 
     @Override
@@ -76,9 +79,15 @@ public class CBSolver extends CESChallengeSolver<String> implements ChallengeRes
     }
 
     protected boolean validateLogins() {
-        if (!CFG_CBH.ENABLED.isEnabled()) return false;
-        if (StringUtils.isEmpty(CFG_CBH.USER.getValue())) return false;
-        if (StringUtils.isEmpty(CFG_CBH.PASS.getValue())) return false;
+        if (!CFG_CBH.ENABLED.isEnabled()) {
+            return false;
+        }
+        if (StringUtils.isEmpty(CFG_CBH.USER.getValue())) {
+            return false;
+        }
+        if (StringUtils.isEmpty(CFG_CBH.PASS.getValue())) {
+            return false;
+        }
 
         return true;
     }
@@ -167,7 +176,9 @@ public class CBSolver extends CESChallengeSolver<String> implements ChallengeRes
             job.setStatus(_GUI._.DeathByCaptchaSolver_solveBasicCaptchaChallenge_solving(), NewTheme.I().getIcon(IconKey.ICON_UPLOAD, 20));
 
             job.getLogger().info("Send Captcha. Answer: " + ret);
-            if (!ret.startsWith("OK-")) throw new SolverException(ret);
+            if (!ret.startsWith("OK-")) {
+                throw new SolverException(ret);
+            }
             // Error-No Credits
             String captchaID = ret.substring(3);
             data = null;

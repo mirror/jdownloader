@@ -177,7 +177,7 @@ public class TranslatorExtension extends AbstractExtension<TranslatorConfig, Tra
      */
     @Override
     protected void start() throws StartException {
-        if (GraphicsEnvironment.isHeadless()) {
+        if (org.appwork.utils.Application.isHeadless()) {
             throw new StartException("Not available in Headless Mode");
         }
         MenuManagerMainmenu.getInstance().registerExtender(this);

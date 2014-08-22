@@ -1,5 +1,7 @@
 package org.jdownloader.api.myjdownloader;
 
+import org.appwork.console.AbstractConsole;
+import org.appwork.console.ConsoleDialog;
 import org.appwork.shutdown.ShutdownController;
 import org.appwork.shutdown.ShutdownRequest;
 import org.appwork.shutdown.ShutdownVetoException;
@@ -8,10 +10,12 @@ import org.appwork.storage.config.ValidationException;
 import org.appwork.storage.config.events.GenericConfigEventListener;
 import org.appwork.storage.config.handler.KeyHandler;
 import org.appwork.uio.UIOManager;
+import org.appwork.utils.Application;
 import org.appwork.utils.NullsafeAtomicReference;
 import org.appwork.utils.Regex;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.logging2.LogSource;
+import org.appwork.utils.swing.dialog.DialogNoAnswerException;
 import org.jdownloader.api.myjdownloader.MyJDownloaderSettings.MyJDownloaderError;
 import org.jdownloader.api.myjdownloader.event.MyJDownloaderEvent;
 import org.jdownloader.api.myjdownloader.event.MyJDownloaderEventSender;
@@ -88,6 +92,40 @@ public class MyJDownloaderController implements ShutdownVetoListener, GenericCon
         String email;
         String password;
         if (!validateLogins(email = CFG_MYJD.CFG.getEmail(), password = CFG_MYJD.CFG.getPassword())) {
+            if (Application.isHeadless()) {
+                synchronized (AbstractConsole.LOCK) {
+
+                    ConsoleDialog cd = new ConsoleDialog("MyJDownloader Setup");
+                    cd.start();
+                    try {
+
+                        cd.printLines(_JDT._.MyJDownloaderController_onError_badlogins());
+
+                        try {
+                            while (true) {
+                                cd.waitYesOrNo(0, "Enter Logins", "Exit JDownloader");
+
+                                email = cd.ask("Please Enter your MyJDownloader Email:");
+                                password = cd.ask("Please Enter your MyJDownloader Password:");
+                                if (validateLogins(email, password)) {
+                                    CFG_MYJD.EMAIL.setValue(email);
+                                    CFG_MYJD.PASSWORD.setValue(password);
+                                    break;
+                                } else {
+                                    cd.println("Invalid Logins");
+                                }
+                            }
+                        } catch (DialogNoAnswerException e) {
+                            ShutdownController.getInstance().requestShutdown();
+                        }
+
+                        return;
+                    } finally {
+                        cd.end();
+                    }
+
+                }
+            }
             return;
         }
 
@@ -182,19 +220,136 @@ public class MyJDownloaderController implements ShutdownVetoListener, GenericCon
             break;
         case ACCOUNT_UNCONFIRMED:
             stop();
+            if (Application.isHeadless()) {
+                synchronized (AbstractConsole.LOCK) {
+
+                    ConsoleDialog cd = new ConsoleDialog("MyJDownloader");
+                    cd.start();
+                    try {
+
+                        cd.printLines(_JDT._.MyJDownloaderController_onError_account_unconfirmed());
+
+                        cd.waitToContinue();
+                        ShutdownController.getInstance().requestShutdown();
+                        return;
+                    } finally {
+                        cd.end();
+                    }
+
+                }
+            }
 
             UIOManager.I().showConfirmDialog(UIOManager.BUTTONS_HIDE_CANCEL, "MyJDownloader", _JDT._.MyJDownloaderController_onError_account_unconfirmed());
             break;
         case OUTDATED:
             stop();
+
+            if (Application.isHeadless()) {
+                synchronized (AbstractConsole.LOCK) {
+
+                    ConsoleDialog cd = new ConsoleDialog("MyJDownloader");
+                    cd.start();
+                    try {
+
+                        cd.printLines(_JDT._.MyJDownloaderController_onError_outdated());
+
+                        cd.waitToContinue();
+                        ShutdownController.getInstance().requestShutdown();
+                        return;
+                    } finally {
+                        cd.end();
+                    }
+
+                }
+            }
             UIOManager.I().showConfirmDialog(UIOManager.BUTTONS_HIDE_CANCEL, "MyJDownloader", _JDT._.MyJDownloaderController_onError_outdated());
             break;
         case BAD_LOGINS:
             stop();
+            if (Application.isHeadless()) {
+                synchronized (AbstractConsole.LOCK) {
+
+                    ConsoleDialog cd = new ConsoleDialog("MyJDownloader");
+                    cd.start();
+                    try {
+
+                        cd.printLines(_JDT._.MyJDownloaderController_onError_badlogins());
+
+                        try {
+                            while (true) {
+                                cd.waitYesOrNo(0, "Enter Logins", "Exit JDownloader");
+
+                                String email = cd.ask("Please Enter your MyJDownloader Email:");
+                                String password = cd.ask("Please Enter your MyJDownloader Password:");
+                                if (validateLogins(email, password)) {
+                                    CFG_MYJD.EMAIL.setValue(email);
+                                    CFG_MYJD.PASSWORD.setValue(password);
+                                    new Thread() {
+                                        public void run() {
+                                            connect();
+                                        }
+                                    }.start();
+                                    return;
+
+                                } else {
+                                    cd.println("Invalid Logins");
+                                }
+                            }
+                        } catch (DialogNoAnswerException e) {
+                            ShutdownController.getInstance().requestShutdown();
+                        }
+
+                        return;
+                    } finally {
+                        cd.end();
+                    }
+
+                }
+            }
             UIOManager.I().showConfirmDialog(UIOManager.BUTTONS_HIDE_CANCEL, "MyJDownloader", _JDT._.MyJDownloaderController_onError_badlogins());
             break;
         case EMAIL_INVALID:
             stop();
+            if (Application.isHeadless()) {
+                synchronized (AbstractConsole.LOCK) {
+
+                    ConsoleDialog cd = new ConsoleDialog("MyJDownloader");
+                    cd.start();
+                    try {
+
+                        cd.printLines(_JDT._.MyJDownloaderController_onError_badlogins());
+
+                        try {
+                            while (true) {
+                                cd.waitYesOrNo(0, "Enter Logins", "Exit JDownloader");
+
+                                String email = cd.ask("Please Enter your MyJDownloader Email:");
+                                String password = cd.ask("Please Enter your MyJDownloader Password:");
+                                if (validateLogins(email, password)) {
+                                    CFG_MYJD.EMAIL.setValue(email);
+                                    CFG_MYJD.PASSWORD.setValue(password);
+                                    new Thread() {
+                                        public void run() {
+                                            connect();
+                                        }
+                                    }.start();
+                                    return;
+
+                                } else {
+                                    cd.println("Invalid Logins");
+                                }
+                            }
+                        } catch (DialogNoAnswerException e) {
+                            ShutdownController.getInstance().requestShutdown();
+                        }
+
+                        return;
+                    } finally {
+                        cd.end();
+                    }
+
+                }
+            }
             UIOManager.I().showConfirmDialog(UIOManager.BUTTONS_HIDE_CANCEL, "MyJDownloader", _JDT._.MyJDownloaderController_onError_badlogins());
             break;
         case IO:
@@ -204,6 +359,24 @@ public class MyJDownloaderController implements ShutdownVetoListener, GenericCon
         case UNKNOWN:
             break;
         default:
+            if (Application.isHeadless()) {
+                synchronized (AbstractConsole.LOCK) {
+
+                    ConsoleDialog cd = new ConsoleDialog("MyJDownloader");
+                    cd.start();
+                    try {
+
+                        cd.printLines(_JDT._.MyJDownloaderController_onError_unknown(error.toString()));
+
+                        cd.waitToContinue();
+                        ShutdownController.getInstance().requestShutdown();
+                        return;
+                    } finally {
+                        cd.end();
+                    }
+
+                }
+            }
             UIOManager.I().showConfirmDialog(UIOManager.BUTTONS_HIDE_CANCEL, "MyJDownloader", _JDT._.MyJDownloaderController_onError_unknown(error.toString()));
         }
 

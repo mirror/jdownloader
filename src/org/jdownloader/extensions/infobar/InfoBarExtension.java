@@ -130,7 +130,7 @@ public class InfoBarExtension extends AbstractExtension<InfoBarConfig, InfobarTr
 
     @Override
     protected void start() throws StartException {
-        if (GraphicsEnvironment.isHeadless()) {
+        if (org.appwork.utils.Application.isHeadless()) {
             throw new StartException("Not available in Headless Mode");
         }
         LogController.CL().info("InfoBar: OK");

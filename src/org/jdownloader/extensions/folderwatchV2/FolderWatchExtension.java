@@ -169,7 +169,9 @@ public class FolderWatchExtension extends AbstractExtension<FolderWatchConfig, F
     protected void initExtension() throws StartException {
         // ConfigContainer cc = new ConfigContainer(getName());
         // initSettings(cc);
-        configPanel = new FolderWatchConfigPanel(this);
+        if (!Application.isHeadless()) {
+            configPanel = new FolderWatchConfigPanel(this);
+        }
     }
 
     @Override

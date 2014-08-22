@@ -64,14 +64,18 @@ public class CaptchaMyJDSolver extends CESChallengeSolver<String> implements Cha
         SecondLevelLaunch.GUI_COMPLETE.executeWhenReached(new Runnable() {
 
             public void run() {
-                ServicePanel.getInstance().addExtender(CaptchaMyJDSolver.this);
+                if (!Application.isHeadless()) {
+                    ServicePanel.getInstance().addExtender(CaptchaMyJDSolver.this);
+                }
 
                 MyJDownloaderController.getInstance().getEventSender().addListener(CaptchaMyJDSolver.this);
 
             }
 
         });
-        ServicePanel.getInstance().requestUpdate(true);
+        if (!Application.isHeadless()) {
+            ServicePanel.getInstance().requestUpdate(true);
+        }
     }
 
     @Override
@@ -294,7 +298,9 @@ public class CaptchaMyJDSolver extends CESChallengeSolver<String> implements Cha
 
     @Override
     public void onMyJDownloaderConnectionStatusChanged(MyJDownloaderConnectionStatus status, int connections) {
-        ServicePanel.getInstance().requestUpdate(true);
+        if (!Application.isHeadless()) {
+            ServicePanel.getInstance().requestUpdate(true);
+        }
     }
 
     public MyJDCESInfo loadInfo() {

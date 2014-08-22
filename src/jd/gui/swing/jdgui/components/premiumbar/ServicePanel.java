@@ -16,6 +16,7 @@
 
 package jd.gui.swing.jdgui.components.premiumbar;
 
+import java.awt.HeadlessException;
 import java.awt.event.ActionEvent;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
@@ -55,6 +56,7 @@ import org.appwork.storage.config.ValidationException;
 import org.appwork.storage.config.events.GenericConfigEventListener;
 import org.appwork.storage.config.handler.KeyHandler;
 import org.appwork.swing.components.ExtButton;
+import org.appwork.utils.Application;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.logging.Log;
 import org.appwork.utils.swing.EDTHelper;
@@ -79,13 +81,22 @@ public class ServicePanel extends JPanel implements MouseListener, AccountToolti
 
     private ArrayList<ServicePanelExtender> extender;
     private static ServicePanel             INSTANCE         = new ServicePanel();
+    static {
+        if (Application.isHeadless()) {
+            throw new HeadlessException();
+        }
+    }
     private AtomicBoolean                   redrawing        = new AtomicBoolean(false);
 
     public static ServicePanel getInstance() {
+
         return INSTANCE;
     }
 
     public void addExtender(ServicePanelExtender ex) {
+        if (Application.isHeadless()) {
+            return;
+        }
         synchronized (extender) {
             extender.remove(ex);
             extender.add(ex);
@@ -95,6 +106,7 @@ public class ServicePanel extends JPanel implements MouseListener, AccountToolti
     }
 
     public void requestUpdate(boolean immediately) {
+
         if (immediately) {
             redrawTimer.delayedrun();
         } else {

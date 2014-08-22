@@ -85,9 +85,9 @@ public class RemoteAPIIOHandlerWrapper implements UserIOHandlerInterface {
                     logger.log(e);
                 }
 
-                boolean silentModeActive = GraphicsEnvironment.isHeadless() ? true : JDGui.getInstance().isSilentModeActive();
+                boolean silentModeActive = org.appwork.utils.Application.isHeadless() ? true : JDGui.getInstance().isSilentModeActive();
 
-                if (silentModeActive && !GraphicsEnvironment.isHeadless()) {
+                if (silentModeActive && !org.appwork.utils.Application.isHeadless()) {
 
                     if (CFG_SILENTMODE.ON_DIALOG_DURING_SILENT_MODE_ACTION.getValue() == DialogDuringSilentModeAction.CANCEL_DIALOG) {
                         // Cancel dialog
@@ -115,10 +115,10 @@ public class RemoteAPIIOHandlerWrapper implements UserIOHandlerInterface {
                             countdown = System.currentTimeMillis() + CFG_SILENTMODE.ON_DIALOG_DURING_SILENT_MODE_ACTION_TIMEOUT.getValue();
 
                         }
-                        if (!GraphicsEnvironment.isHeadless()) {
+                        if (!org.appwork.utils.Application.isHeadless()) {
                             JDGui.getInstance().flashTaskbar();
                         }
-                        while (!handle.isDisposed() && (GraphicsEnvironment.isHeadless() || JDGui.getInstance().isSilentModeActive())) {
+                        while (!handle.isDisposed() && (org.appwork.utils.Application.isHeadless() || JDGui.getInstance().isSilentModeActive())) {
                             if (countdown > 0) {
 
                                 Thread.sleep(Math.min(Math.max(1, countdown - System.currentTimeMillis()), 250));
@@ -271,7 +271,7 @@ public class RemoteAPIIOHandlerWrapper implements UserIOHandlerInterface {
                     // if (!Application.isJared(RemoteAPIIOHandlerWrapper.class)) {
                     // ((AbstractDialog<?>) impl).setTitle(((AbstractDialog<?>) impl).getTitle() + " DialogID: " + handle.getId());
                     // }
-                    if (GraphicsEnvironment.isHeadless()) {
+                    if (org.appwork.utils.Application.isHeadless()) {
                         handle.waitFor();
                     } else {
                         Dialog.getInstance().showDialog((AbstractDialog<?>) impl);
@@ -308,7 +308,7 @@ public class RemoteAPIIOHandlerWrapper implements UserIOHandlerInterface {
     }
 
     public void onHandlerDone(final ApiHandle ret) {
-        if (ret.getImpl() instanceof AbstractDialog && !GraphicsEnvironment.isHeadless()) {
+        if (ret.getImpl() instanceof AbstractDialog && !org.appwork.utils.Application.isHeadless()) {
             new EDTRunner() {
                 @Override
                 protected void runInEDT() {

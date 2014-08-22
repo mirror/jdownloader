@@ -18,7 +18,6 @@
 package jd;
 
 import java.awt.AWTEvent;
-import java.awt.GraphicsEnvironment;
 import java.awt.Toolkit;
 import java.awt.Window;
 import java.io.File;
@@ -296,7 +295,7 @@ public class SecondLevelLaunch {
         } else if (CrossSystem.isLinux()) {
             // set WM Class explicitly
             try {
-                if (!GraphicsEnvironment.isHeadless()) {
+                if (!org.appwork.utils.Application.isHeadless()) {
                     // patch by Vampire
                     Toolkit toolkit = Toolkit.getDefaultToolkit();
                     final Field awtAppClassName = Toolkit.getDefaultToolkit().getClass().getDeclaredField("awtAppClassName");
@@ -722,7 +721,7 @@ public class SecondLevelLaunch {
                 return null;
             }
         };
-        if (!GraphicsEnvironment.isHeadless()) {
+        if (!org.appwork.utils.Application.isHeadless()) {
             lafInit.start();
         } else {
             LAFOptions.init("org.jdownloader.gui.laf.jddefault.JDDefaultLookAndFeel");
@@ -740,15 +739,17 @@ public class SecondLevelLaunch {
                     public void run() {
                         try {
                             final boolean jared = Application.isJared(SecondLevelLaunch.class);
-                            new EDTHelper<Void>() {
+                            if (!Application.isHeadless()) {
+                                new EDTHelper<Void>() {
 
-                                @Override
-                                public Void edtRun() {
-                                    ToolTipController.getInstance().setDelay(JsonConfig.create(GraphicalUserInterfaceSettings.class).getTooltipDelay());
-                                    return null;
-                                }
+                                    @Override
+                                    public Void edtRun() {
+                                        ToolTipController.getInstance().setDelay(JsonConfig.create(GraphicalUserInterfaceSettings.class).getTooltipDelay());
+                                        return null;
+                                    }
 
-                            }.start(true);
+                                }.start(true);
+                            }
                             Thread.currentThread().setName("ExecuteWhenGuiReachedThread: Init Host Plugins");
 
                             HostPluginController.getInstance().ensureLoaded();
@@ -930,7 +931,7 @@ public class SecondLevelLaunch {
             public void onConfigValidatorError(KeyHandler<Enum> keyHandler, Enum invalidValue, ValidationException validateException) {
             }
         });
-        if (!GraphicsEnvironment.isHeadless()) {
+        if (!org.appwork.utils.Application.isHeadless()) {
             new EDTHelper<Void>() {
                 @Override
                 public Void edtRun() {
@@ -961,7 +962,7 @@ public class SecondLevelLaunch {
             thread.join(10000);
         } catch (InterruptedException e) {
         }
-        if (!GraphicsEnvironment.isHeadless()) {
+        if (!org.appwork.utils.Application.isHeadless()) {
             while (true) {
                 Thread initThread = JDGui.getInstance().getInitThread();
                 if (initThread == null || initThread.isAlive() == false) {

@@ -90,7 +90,7 @@ public class AdvancedConfigManager {
         register(CFG_BUBBLE.CFG);
         register(CFG_CAPTCHA.CFG);
         register(CFG_SILENTMODE.CFG);
-        if (!GraphicsEnvironment.isHeadless()) {
+        if (!org.appwork.utils.Application.isHeadless()) {
             try {
                 register(LAFOptions.getInstance().getCfg());
             } catch (Exception e) {

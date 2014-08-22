@@ -20,7 +20,7 @@ public interface ShortcutSettings extends ConfigInterface {
 
         @Override
         public String getDefaultValue() {
-            return GraphicsEnvironment.isHeadless() ? null : KeyStroke.getKeyStroke(KeyEvent.VK_C, Toolkit.getDefaultToolkit().getMenuShortcutKeyMask()).toString();
+            return org.appwork.utils.Application.isHeadless() ? null : KeyStroke.getKeyStroke(KeyEvent.VK_C, Toolkit.getDefaultToolkit().getMenuShortcutKeyMask()).toString();
         }
     }
 
@@ -28,7 +28,7 @@ public interface ShortcutSettings extends ConfigInterface {
 
         @Override
         public String getDefaultValue() {
-            return GraphicsEnvironment.isHeadless() ? null : KeyStroke.getKeyStroke(KeyEvent.VK_X, Toolkit.getDefaultToolkit().getMenuShortcutKeyMask()).toString();
+            return org.appwork.utils.Application.isHeadless() ? null : KeyStroke.getKeyStroke(KeyEvent.VK_X, Toolkit.getDefaultToolkit().getMenuShortcutKeyMask()).toString();
         }
     }
 
@@ -36,7 +36,7 @@ public interface ShortcutSettings extends ConfigInterface {
 
         @Override
         public String getDefaultValue() {
-            return GraphicsEnvironment.isHeadless() ? null : KeyStroke.getKeyStroke(KeyEvent.VK_DELETE, 0).toString();
+            return org.appwork.utils.Application.isHeadless() ? null : KeyStroke.getKeyStroke(KeyEvent.VK_DELETE, 0).toString();
         }
     }
 
@@ -44,7 +44,7 @@ public interface ShortcutSettings extends ConfigInterface {
 
         @Override
         public String getDefaultValue() {
-            return GraphicsEnvironment.isHeadless() ? null : KeyStroke.getKeyStroke(KeyEvent.VK_V, Toolkit.getDefaultToolkit().getMenuShortcutKeyMask()).toString();
+            return org.appwork.utils.Application.isHeadless() ? null : KeyStroke.getKeyStroke(KeyEvent.VK_V, Toolkit.getDefaultToolkit().getMenuShortcutKeyMask()).toString();
         }
     }
 
@@ -52,7 +52,7 @@ public interface ShortcutSettings extends ConfigInterface {
 
         @Override
         public String getDefaultValue() {
-            return GraphicsEnvironment.isHeadless() ? null : KeyStroke.getKeyStroke(KeyEvent.VK_A, Toolkit.getDefaultToolkit().getMenuShortcutKeyMask()).toString();
+            return org.appwork.utils.Application.isHeadless() ? null : KeyStroke.getKeyStroke(KeyEvent.VK_A, Toolkit.getDefaultToolkit().getMenuShortcutKeyMask()).toString();
         }
     }
 
