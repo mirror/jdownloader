@@ -639,7 +639,7 @@ public class SecondLevelLaunch {
         }
         LogSource edtLogger = LogController.getInstance().getLogger("BlockingEDT");
         edtLogger.setInstantFlush(true);
-        if (Application.isJared(SecondLevelLaunch.class)) {
+        if (!Application.isHeadless() && Application.isJared(SecondLevelLaunch.class)) {
             new SlowEDTDetector(10000l, edtLogger);
         }
         /* these can be initiated without a gui */
