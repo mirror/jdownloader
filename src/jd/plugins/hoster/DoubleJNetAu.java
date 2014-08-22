@@ -32,7 +32,7 @@ import org.appwork.storage.Storable;
 import org.appwork.storage.TypeRef;
 import org.jdownloader.downloader.hls.HLSDownloader;
 
-@HostPlugin(revision = "$Revision: 24748 $", interfaceVersion = 3, names = { "doublej.net.au" }, urls = { "http://(www\\.)?doublej\\.net\\.au/programs/[a-z0-9\\-]+/.+" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "doublej.net.au" }, urls = { "http://(www\\.)?doublej\\.net\\.au/programs/[a-z0-9\\-]+/.+" }, flags = { 0 })
 public class DoubleJNetAu extends PluginForHost {
 
     // raztoki embed video player template.
@@ -143,7 +143,7 @@ public class DoubleJNetAu extends PluginForHost {
         // we want to grab the uid, for json requests. (case sensitive, need to grab the one in bracket!
         final String fuid = br.getRegex("-\\s*On-demand\\s*\\(([A-Za-z0-9]+)\\)</a></h2></div>").getMatch(0);
         if (fuid == null) {
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         // get associated json crapola
         getAjax("http://program.abcradio.net.au/api/v1/on_demand/" + fuid + ".json");

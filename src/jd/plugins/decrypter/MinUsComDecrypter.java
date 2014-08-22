@@ -57,11 +57,11 @@ public class MinUsComDecrypter extends PluginForDecrypt {
             return decryptedLinks;
         }
         // some link types end up been caught, like directlinks or alternative links, lets correct these to be all the same.
-        String[] fuid = new Regex(parameter, "(minus\\.com|min\\.us)/([A-Za-z0-9]{13,14})").getRow(0);
-        if (fuid != null && fuid.length == 2) {
-            fuid[1] = fuid[1].replaceFirst("[a-z]", "");
-            parameter = "http://" + fuid[0] + "/l" + fuid[1];
-        }
+        // String[] fuid = new Regex(parameter, "(minus\\.com|min\\.us)/([A-Za-z0-9]{13,14})").getRow(0);
+        // if (fuid != null && fuid.length == 2) {
+        // fuid[1] = fuid[1].replaceFirst("[a-z]", "");
+        // parameter = "http://" + fuid[0] + "/l" + fuid[1];
+        // }
 
         br.setFollowRedirects(false);
         try {
@@ -92,7 +92,9 @@ public class MinUsComDecrypter extends PluginForDecrypt {
         }
         // Get album name for package name
         String fpName = br.getRegex("<title>(.*?) \\- Minus</title>").getMatch(0);
-        if (fpName == null) fpName = br.getRegex("var gallerydata = \\{.+ \"name\": \"([^\"]+)").getMatch(0);
+        if (fpName == null) {
+            fpName = br.getRegex("var gallerydata = \\{.+ \"name\": \"([^\"]+)").getMatch(0);
+        }
         if (fpName == null) {
             logger.warning("Decrypter broken for link: " + parameter);
             return null;
@@ -102,7 +104,9 @@ public class MinUsComDecrypter extends PluginForDecrypt {
         String[] items = br.getRegex("\\{([^}{]*?\"name\": \"[^\"]+?\"[^}{]*?)\\}").getColumn(0);
         // fail over for single items ?. Either that or they changed website yet
         // again and do not display the full gallery array.
-        if (items == null || items.length == 0) items = br.getRegex("var gallerydata = \\{(.*?)\\};").getColumn(0);
+        if (items == null || items.length == 0) {
+            items = br.getRegex("var gallerydata = \\{(.*?)\\};").getColumn(0);
+        }
         if (items != null && items.length != 0) {
             for (String singleitems : items) {
                 String filename = new Regex(singleitems, "\"name\": ?\"([^<>\"]*?)\"").getMatch(0);
@@ -114,7 +118,9 @@ public class MinUsComDecrypter extends PluginForDecrypt {
                     return null;
                 }
                 filename = decodeUnicode(Encoding.htmlDecode(filename.trim()));
-                if (!filename.startsWith("/")) filename = "/" + filename;
+                if (!filename.startsWith("/")) {
+                    filename = "/" + filename;
+                }
                 final String filelink = "http://minusdecrypted.com/l" + linkid;
                 final DownloadLink dl = createDownloadlink(filelink);
                 dl.setFinalFileName(filename);
@@ -126,7 +132,9 @@ public class MinUsComDecrypter extends PluginForDecrypt {
             // Only one link available, add it!
             final String filesize = br.getRegex("<div class=\"item-actions-right\">[\t\n\r ]+<a title=\"([^<>\"]*?)\"").getMatch(0);
             final DownloadLink dl = createDownloadlink(parameter.replace("minus.com/", "minusdecrypted.com/"));
-            if (filesize != null) dl.setDownloadSize(SizeFormatter.getSize(filesize));
+            if (filesize != null) {
+                dl.setDownloadSize(SizeFormatter.getSize(filesize));
+            }
             decryptedLinks.add(dl);
         }
         if (fpName != null) {

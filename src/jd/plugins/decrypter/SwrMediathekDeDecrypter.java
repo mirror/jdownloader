@@ -76,7 +76,8 @@ public class SwrMediathekDeDecrypter extends PluginForDecrypt {
                 pluginLoaded.set(true);
             }
             br.getPage(PARAMETER);
-            if (!br.getURL().contains("show=")) {
+            final String ekey = new Regex(PARAMETER, "show=(.+)").getMatch(0);
+            if (ekey == null || !ekey.contains("-")) {
                 final DownloadLink dl = createDownloadlink("directhttp://" + PARAMETER);
                 dl.setProperty("offline", true);
                 dl.setFinalFileName(VIDEOID);
@@ -84,10 +85,9 @@ public class SwrMediathekDeDecrypter extends PluginForDecrypt {
                 return decryptedLinks;
             }
             /* Decrypt start */
-            final String ekey = br.getRegex("ekey: \"([^<>\"]*?)\"").getMatch(0);
             final String title = br.getRegex("<p class=\"dachzeile\">([^<>\"]*?)</p>").getMatch(0);
             final String subtitle = br.getRegex("</p>[\t\n\r ]+<h4 class=\"headline\">([^<>\"]*?)<").getMatch(0);
-            if (title == null || subtitle == null || ekey == null) {
+            if (title == null || subtitle == null) {
                 logger.warning("Decrypter broken for link: " + PARAMETER);
                 return null;
             }

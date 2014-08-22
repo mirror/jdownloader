@@ -68,6 +68,13 @@ public class RuTubeRuDecrypter extends PluginForDecrypt {
             } else {
                 // tracks link
                 br.getPage(parameter);
+                if (br.getHttpConnection().getResponseCode() == 404) {
+                    final DownloadLink offline = createDownloadlink("directhttp://" + parameter);
+                    offline.setAvailable(false);
+                    offline.setProperty("offline", true);
+                    decryptedLinks.add(offline);
+                    return decryptedLinks;
+                }
                 br.getPage(br.getURL().replace("/video/", "/api/video/") + "?format=xml");
                 uid = br.getRegex("<id>([a-f0-9]{32})</id>").getMatch(0);
             }
