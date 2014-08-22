@@ -1,5 +1,6 @@
 package jd.controlling;
 
+import java.awt.GraphicsEnvironment;
 import java.awt.Toolkit;
 import java.awt.datatransfer.Clipboard;
 import java.awt.datatransfer.ClipboardOwner;
@@ -95,15 +96,15 @@ public class ClipboardMonitoring {
         }
     }
 
-    private static ClipboardMonitoring  INSTANCE            = new ClipboardMonitoring();
-    private static DataFlavor           URLFLAVOR           = null;
-    private static DataFlavor           URILISTFLAVOR       = null;
-    private volatile Thread             monitoringThread    = null;
-    private Clipboard                   clipboard           = null;
-    private volatile boolean            skipChangeDetection = false;
-    private static WindowsClipboardHack CLIPBOARDHACK       = null;
-    private static boolean              FIRSTROUNDDONE      = true;
-    private static volatile boolean     HTMLFLAVORALLOWED   = true;
+    private static ClipboardMonitoring   INSTANCE            = new ClipboardMonitoring();
+    private static DataFlavor            URLFLAVOR           = null;
+    private static DataFlavor            URILISTFLAVOR       = null;
+    private volatile Thread              monitoringThread    = null;
+    protected final Clipboard            clipboard;
+    private volatile boolean             skipChangeDetection = false;
+    protected final WindowsClipboardHack CLIPBOARDHACK;
+    private static boolean               FIRSTROUNDDONE      = true;
+    private static volatile boolean      HTMLFLAVORALLOWED   = true;
 
     public static boolean isHtmlFlavorAllowed() {
         return HTMLFLAVORALLOWED;
@@ -118,7 +119,9 @@ public class ClipboardMonitoring {
     }
 
     private boolean ignoreTransferable(Transferable transferable) {
-        if (transferable == null) return true;
+        if (transferable == null) {
+            return true;
+        }
         if (transferable.isDataFlavorSupported(PackageControllerTableTransferable.FLAVOR)) {
             /* we have Package/Children in clipboard, skip them */
             return true;
@@ -128,7 +131,9 @@ public class ClipboardMonitoring {
                 Field isLocal = transferable.getClass().getDeclaredField("isLocal");
                 if (isLocal != null) {
                     isLocal.setAccessible(true);
-                    if (Boolean.TRUE.equals(isLocal.getBoolean(transferable))) return true;
+                    if (Boolean.TRUE.equals(isLocal.getBoolean(transferable))) {
+                        return true;
+                    }
                 }
             }
         } catch (final Throwable e) {
@@ -138,233 +143,265 @@ public class ClipboardMonitoring {
     }
 
     public synchronized void startMonitoring() {
-        if (isMonitoring()) return;
-        monitoringThread = new Thread() {
-            private String oldStringContent = null;
-            private String oldHTMLContent   = null;
-            private String oldListContent   = null;
-            private String lastBrowserUrl   = null;
+        if (clipboard != null) {
+            if (isMonitoring()) {
+                return;
+            }
+            monitoringThread = new Thread() {
+                private String oldStringContent = null;
+                private String oldHTMLContent   = null;
+                private String oldListContent   = null;
+                private String lastBrowserUrl   = null;
 
-            @Override
-            public void run() {
-                final int minWaitTimeout = 200;
-                final int maxWaitTimeout = 1000;
-                int waitTimeout = minWaitTimeout;
-                while (Thread.currentThread() == monitoringThread) {
-                    try {
-                        synchronized (this) {
-                            this.wait(waitTimeout);
-                        }
-                        if (Thread.currentThread() != monitoringThread) return;
-                    } catch (InterruptedException e) {
-                        LogController.CL().finer("Interrupted ClipBoard Monitoring Thread");
-                        return;
-                    }
-                    waitTimeout = Math.min(waitTimeout + 200, maxWaitTimeout);
-                    if (skipChangeDetection) {
-                        waitTimeout = maxWaitTimeout;
-                        continue;
-                    }
-                    try {
-                        lastBrowserUrl = null;
-                        Transferable currentContent = clipboard.getContents(null);
-                        if (ignoreTransferable(currentContent)) continue;
-
-                        final boolean htmlFlavorAllowed = isHtmlFlavorAllowed();
-                        String handleThisRound = null;
-                        boolean macOSWorkaroundNeeded = false;
+                @Override
+                public void run() {
+                    final int minWaitTimeout = 200;
+                    final int maxWaitTimeout = 1000;
+                    int waitTimeout = minWaitTimeout;
+                    while (Thread.currentThread() == monitoringThread) {
                         try {
-                            /* change detection for List/URI content */
-                            String newListContent = getListTransferData(currentContent);
-                            try {
-                                if (changeDetector(oldListContent, newListContent)) {
-                                    handleThisRound = newListContent;
-                                } else if (noChangeDetector(oldListContent, newListContent)) {
-                                    continue;
-                                }
-                            } finally {
-                                if (!StringUtils.isEmpty(newListContent)) {
-                                    oldListContent = newListContent;
-                                } else {
-                                    oldListContent = null;
-                                }
+                            synchronized (this) {
+                                this.wait(waitTimeout);
                             }
-                        } catch (final Throwable e) {
-                            if (CrossSystem.isMac() && e instanceof IOException) {
-                                /**
-                                 * Couldn't get a file system path for a URL: file:///.file/id=6571367.1715588 2014-02-28 09:52:10.362
-                                 * java[1637:507] Looked for URLs on the pasteboard, but found none.
-                                 **/
-                                macOSWorkaroundNeeded = true;
+                            if (Thread.currentThread() != monitoringThread) {
+                                return;
                             }
+                        } catch (InterruptedException e) {
+                            LogController.CL().finer("Interrupted ClipBoard Monitoring Thread");
+                            return;
                         }
-                        if (StringUtils.isEmpty(handleThisRound)) {
-                            /* change detection for String/HTML content */
-                            String newStringContent = getStringTransferData(currentContent);
+                        waitTimeout = Math.min(waitTimeout + 200, maxWaitTimeout);
+                        if (skipChangeDetection) {
+                            waitTimeout = maxWaitTimeout;
+                            continue;
+                        }
+                        try {
+                            lastBrowserUrl = null;
+                            Transferable currentContent = clipboard.getContents(null);
+                            if (ignoreTransferable(currentContent)) {
+                                continue;
+                            }
+
+                            final boolean htmlFlavorAllowed = isHtmlFlavorAllowed();
+                            String handleThisRound = null;
+                            boolean macOSWorkaroundNeeded = false;
                             try {
-                                if (changeDetector(oldStringContent, newStringContent)) {
-                                    /*
-                                     * we only use normal String Content to detect a change
-                                     */
-                                    handleThisRound = newStringContent;
-                                    try {
-                                        /*
-                                         * lets fetch fresh HTML Content if available
-                                         */
-                                        if (htmlFlavorAllowed) {
-                                            String htmlContent = getHTMLTransferData(currentContent);
-                                            if (htmlContent != null) {
-                                                /*
-                                                 * remember that we had HTML content this round
-                                                 */
-                                                oldHTMLContent = htmlContent;
-                                                handleThisRound = handleThisRound + "\r\n" + htmlContent;
-                                                lastBrowserUrl = getCurrentBrowserURL(currentContent);
-                                            } else {
-                                                oldHTMLContent = null;
-                                            }
-                                        } else {
-                                            oldHTMLContent = null;
-                                        }
-                                    } catch (final Throwable e) {
+                                /* change detection for List/URI content */
+                                String newListContent = getListTransferData(currentContent);
+                                try {
+                                    if (changeDetector(oldListContent, newListContent)) {
+                                        handleThisRound = newListContent;
+                                    } else if (noChangeDetector(oldListContent, newListContent)) {
+                                        continue;
                                     }
-                                } else if (oldHTMLContent != null) {
-                                    /*
-                                     * no String Content change detected, let's verify if the HTML content hasn't changed
-                                     */
-                                    try {
+                                } finally {
+                                    if (!StringUtils.isEmpty(newListContent)) {
+                                        oldListContent = newListContent;
+                                    } else {
+                                        oldListContent = null;
+                                    }
+                                }
+                            } catch (final Throwable e) {
+                                if (CrossSystem.isMac() && e instanceof IOException) {
+                                    /**
+                                     * Couldn't get a file system path for a URL: file:///.file/id=6571367.1715588 2014-02-28 09:52:10.362
+                                     * java[1637:507] Looked for URLs on the pasteboard, but found none.
+                                     **/
+                                    macOSWorkaroundNeeded = true;
+                                }
+                            }
+                            if (StringUtils.isEmpty(handleThisRound)) {
+                                /* change detection for String/HTML content */
+                                String newStringContent = getStringTransferData(currentContent);
+                                try {
+                                    if (changeDetector(oldStringContent, newStringContent)) {
                                         /*
-                                         * lets fetch fresh HTML Content if available
+                                         * we only use normal String Content to detect a change
                                          */
-                                        if (htmlFlavorAllowed) {
-                                            String htmlContent = getHTMLTransferData(currentContent);
-                                            if (htmlContent != null) {
-                                                /*
-                                                 * remember that we had HTML content this round
-                                                 */
-                                                if (changeDetector(oldHTMLContent, htmlContent)) {
+                                        handleThisRound = newStringContent;
+                                        try {
+                                            /*
+                                             * lets fetch fresh HTML Content if available
+                                             */
+                                            if (htmlFlavorAllowed) {
+                                                String htmlContent = getHTMLTransferData(currentContent);
+                                                if (htmlContent != null) {
+                                                    /*
+                                                     * remember that we had HTML content this round
+                                                     */
                                                     oldHTMLContent = htmlContent;
-                                                    handleThisRound = newStringContent + "\r\n" + htmlContent;
+                                                    handleThisRound = handleThisRound + "\r\n" + htmlContent;
                                                     lastBrowserUrl = getCurrentBrowserURL(currentContent);
+                                                } else {
+                                                    oldHTMLContent = null;
                                                 }
                                             } else {
                                                 oldHTMLContent = null;
                                             }
-                                        } else {
-                                            oldHTMLContent = null;
+                                        } catch (final Throwable e) {
                                         }
-                                    } catch (final Throwable e) {
+                                    } else if (oldHTMLContent != null) {
+                                        /*
+                                         * no String Content change detected, let's verify if the HTML content hasn't changed
+                                         */
+                                        try {
+                                            /*
+                                             * lets fetch fresh HTML Content if available
+                                             */
+                                            if (htmlFlavorAllowed) {
+                                                String htmlContent = getHTMLTransferData(currentContent);
+                                                if (htmlContent != null) {
+                                                    /*
+                                                     * remember that we had HTML content this round
+                                                     */
+                                                    if (changeDetector(oldHTMLContent, htmlContent)) {
+                                                        oldHTMLContent = htmlContent;
+                                                        handleThisRound = newStringContent + "\r\n" + htmlContent;
+                                                        lastBrowserUrl = getCurrentBrowserURL(currentContent);
+                                                    }
+                                                } else {
+                                                    oldHTMLContent = null;
+                                                }
+                                            } else {
+                                                oldHTMLContent = null;
+                                            }
+                                        } catch (final Throwable e) {
+                                        }
                                     }
+                                } finally {
+                                    oldStringContent = newStringContent;
                                 }
-                            } finally {
-                                oldStringContent = newStringContent;
                             }
-                        }
-                        if (!StringUtils.isEmpty(handleThisRound)) {
-                            if (FIRSTROUNDDONE) {
-                                waitTimeout = minWaitTimeout;
-                                LinkCollectingJob job = new LinkCollectingJob(new LinkOriginDetails(LinkOrigin.CLIPBOARD, null), handleThisRound);
-                                final HashSet<String> pws = PasswordUtils.getPasswords(handleThisRound);
-                                if (pws != null && pws.size() > 0) {
-                                    job.setCrawledLinkModifier(new CrawledLinkModifier() {
+                            if (!StringUtils.isEmpty(handleThisRound)) {
+                                if (FIRSTROUNDDONE) {
+                                    waitTimeout = minWaitTimeout;
+                                    LinkCollectingJob job = new LinkCollectingJob(new LinkOriginDetails(LinkOrigin.CLIPBOARD, null), handleThisRound);
+                                    final HashSet<String> pws = PasswordUtils.getPasswords(handleThisRound);
+                                    if (pws != null && pws.size() > 0) {
+                                        job.setCrawledLinkModifier(new CrawledLinkModifier() {
 
-                                        @Override
-                                        public void modifyCrawledLink(CrawledLink link) {
-                                            link.getArchiveInfo().getExtractionPasswords().addAll(pws);
-                                        }
-                                    });
+                                            @Override
+                                            public void modifyCrawledLink(CrawledLink link) {
+                                                link.getArchiveInfo().getExtractionPasswords().addAll(pws);
+                                            }
+                                        });
+                                    }
+                                    job.setCustomSourceUrl(lastBrowserUrl);
+                                    LinkCollector.getInstance().addCrawlerJob(job);
+                                } else {
+                                    FIRSTROUNDDONE = true;
                                 }
-                                job.setCustomSourceUrl(lastBrowserUrl);
-                                LinkCollector.getInstance().addCrawlerJob(job);
-                            } else {
-                                FIRSTROUNDDONE = true;
                             }
+                            if (macOSWorkaroundNeeded) {
+                                setCurrentContent(handleThisRound);
+                            }
+                        } catch (final Throwable e) {
+                            Log.exception(e);
                         }
-                        if (macOSWorkaroundNeeded) {
-                            setCurrentContent(handleThisRound);
-                        }
-                    } catch (final Throwable e) {
-                        Log.exception(e);
                     }
                 }
-            }
 
-        };
-        monitoringThread.setName("ClipboardMonitor");
-        monitoringThread.setDaemon(true);
-        monitoringThread.start();
+            };
+            monitoringThread.setName("ClipboardMonitor");
+            monitoringThread.setDaemon(true);
+            monitoringThread.start();
+        }
     }
 
     public synchronized ClipboardContent getCurrentContent() {
-        Transferable currentContent = null;
-        try {
-            currentContent = clipboard.getContents(null);
-        } catch (final Throwable e) {
-            return null;
+        if (clipboard != null) {
+            Transferable currentContent = null;
+            try {
+                currentContent = clipboard.getContents(null);
+            } catch (final Throwable e) {
+                return null;
+            }
+            if (currentContent != null) {
+                String stringContent = null;
+                try {
+                    stringContent = getStringTransferData(currentContent);
+                } catch (final Throwable e) {
+                }
+                String htmlContent = null;
+                String browserUrl = null;
+                try {
+                    /* lets fetch fresh HTML Content if available */
+                    htmlContent = getHTMLTransferData(currentContent);
+                    if (htmlContent != null) {
+                        browserUrl = getCurrentBrowserURL(currentContent);
+                    }
+                } catch (final Throwable e) {
+                    e.printStackTrace();
+                }
+                StringBuilder sb = new StringBuilder();
+                if (stringContent != null) {
+                    sb.append(stringContent);
+                }
+                if (sb.length() > 0) {
+                    sb.append("\r\n");
+                }
+                if (htmlContent != null) {
+                    sb.append(htmlContent);
+                }
+                return new ClipboardContent(sb.toString(), browserUrl);
+            }
         }
-        if (currentContent == null) return null;
-        String stringContent = null;
-        try {
-            stringContent = getStringTransferData(currentContent);
-        } catch (final Throwable e) {
-        }
-        String htmlContent = null;
-        String browserUrl = null;
-        try {
-            /* lets fetch fresh HTML Content if available */
-            htmlContent = getHTMLTransferData(currentContent);
-            if (htmlContent != null) browserUrl = getCurrentBrowserURL(currentContent);
-        } catch (final Throwable e) {
-            e.printStackTrace();
-        }
-        StringBuilder sb = new StringBuilder();
-        if (stringContent != null) sb.append(stringContent);
-        if (sb.length() > 0) sb.append("\r\n");
-        if (htmlContent != null) sb.append(htmlContent);
-        return new ClipboardContent(sb.toString(), browserUrl);
+        return null;
     }
 
     public synchronized void setCurrentContent(String string) {
-        try {
-            clipboard.setContents(new StringSelection(string), new ClipboardOwner() {
+        if (clipboard != null) {
+            try {
+                clipboard.setContents(new StringSelection(string), new ClipboardOwner() {
 
-                public void lostOwnership(Clipboard clipboard, Transferable contents) {
-                    skipChangeDetection = false;
-                }
-            });
-            skipChangeDetection = true;
-        } catch (final Throwable e) {
-            skipChangeDetection = false;
+                    public void lostOwnership(Clipboard clipboard, Transferable contents) {
+                        skipChangeDetection = false;
+                    }
+                });
+                skipChangeDetection = true;
+            } catch (final Throwable e) {
+                skipChangeDetection = false;
+            }
         }
     }
 
     public synchronized void setCurrentContent(Transferable object) {
-        try {
-            clipboard.setContents(object, new ClipboardOwner() {
+        if (clipboard != null) {
+            try {
+                clipboard.setContents(object, new ClipboardOwner() {
 
-                public void lostOwnership(Clipboard clipboard, Transferable contents) {
-                    skipChangeDetection = false;
-                }
-            });
-            skipChangeDetection = true;
-        } catch (final Throwable e) {
-            skipChangeDetection = false;
+                    public void lostOwnership(Clipboard clipboard, Transferable contents) {
+                        skipChangeDetection = false;
+                    }
+                });
+                skipChangeDetection = true;
+            } catch (final Throwable e) {
+                skipChangeDetection = false;
+            }
         }
     }
 
     private boolean changeDetector(String oldS, String newS) {
-        if (oldS == null && newS != null) return true;
-        if (oldS != null && newS != null && !oldS.equalsIgnoreCase(newS)) return true;
+        if (oldS == null && newS != null) {
+            return true;
+        }
+        if (oldS != null && newS != null && !oldS.equalsIgnoreCase(newS)) {
+            return true;
+        }
         return false;
     }
 
     private boolean noChangeDetector(String oldS, String newS) {
-        if (oldS != null && newS != null && oldS.equalsIgnoreCase(newS)) return true;
+        if (oldS != null && newS != null && oldS.equalsIgnoreCase(newS)) {
+            return true;
+        }
         return false;
     }
 
     public synchronized void stopMonitoring() {
-        if (monitoringThread != null) monitoringThread.interrupt();
+        if (monitoringThread != null) {
+            monitoringThread.interrupt();
+        }
         monitoringThread = null;
     }
 
@@ -373,14 +410,27 @@ public class ClipboardMonitoring {
     }
 
     public ClipboardMonitoring() {
-        clipboard = Toolkit.getDefaultToolkit().getSystemClipboard();
-        if (CrossSystem.isWindows()) {
-            try {
-                CLIPBOARDHACK = new WindowsClipboardHack(clipboard);
-            } catch (final Throwable e) {
-                LogController.CL().log(e);
+        Clipboard lclipboard = null;
+        WindowsClipboardHack lclipboardHack = null;
+        try {
+            if (!GraphicsEnvironment.isHeadless()) {
+                lclipboard = Toolkit.getDefaultToolkit().getSystemClipboard();
+                if (lclipboard != null && CrossSystem.isWindows()) {
+                    try {
+                        lclipboardHack = new WindowsClipboardHack(lclipboard);
+                    } catch (final Throwable e) {
+                        LogController.CL().log(e);
+                    }
+                }
             }
+        } catch (final Throwable e) {
+            e.printStackTrace();
+            lclipboard = null;
+            lclipboardHack = null;
         }
+        clipboard = lclipboard;
+        CLIPBOARDHACK = lclipboardHack;
+
     }
 
     static {
@@ -427,8 +477,12 @@ public class ClipboardMonitoring {
     }
 
     private static String convertBytes(byte[] bytes, String charSet, boolean linuxWorkaround) throws UnsupportedEncodingException {
-        if (bytes == null || bytes.length == 0) return null;
-        if (StringUtils.isEmpty(charSet)) charSet = "UTF-8";
+        if (bytes == null || bytes.length == 0) {
+            return null;
+        }
+        if (StringUtils.isEmpty(charSet)) {
+            charSet = "UTF-8";
+        }
         if (CrossSystem.isLinux()) {
             /*
              * workaround for firefox bug https://bugzilla .mozilla.org/show_bug .cgi?id=385421
@@ -438,7 +492,9 @@ public class ClipboardMonitoring {
              */
             int indexOriginal = 0;
             int i = 0;
-            if (linuxWorkaround) i = 6;
+            if (linuxWorkaround) {
+                i = 6;
+            }
             for (; i < bytes.length - 1; i++) {
                 if (bytes[i] != 0) {
                     /* copy byte */
@@ -474,8 +530,12 @@ public class ClipboardMonitoring {
             String htmlContent = null;
             String listContent = getListTransferData(transferable);
             String stringContent = getStringTransferData(transferable);
-            if (StringUtils.isNotEmpty(stringContent)) htmlContent = getHTMLTransferData(transferable);
-            if (StringUtils.isNotEmpty(htmlContent)) browserUrl = getCurrentBrowserURL(transferable);
+            if (StringUtils.isNotEmpty(stringContent)) {
+                htmlContent = getHTMLTransferData(transferable);
+            }
+            if (StringUtils.isNotEmpty(htmlContent)) {
+                browserUrl = getCurrentBrowserURL(transferable);
+            }
             StringBuilder sb = new StringBuilder();
             if (StringUtils.isNotEmpty(listContent)) {
                 sb.append("<");
@@ -515,7 +575,9 @@ public class ClipboardMonitoring {
     public static String getStringTransferData(final Transferable transferable) throws UnsupportedFlavorException, IOException {
         if (transferable.isDataFlavorSupported(DataFlavor.stringFlavor)) {
             Object ret = transferable.getTransferData(DataFlavor.stringFlavor);
-            if (ret == null) return null;
+            if (ret == null) {
+                return null;
+            }
             return (String) ret;
         }
         return null;
@@ -524,9 +586,13 @@ public class ClipboardMonitoring {
     public static String getURLTransferData(final Transferable transferable) throws UnsupportedFlavorException, IOException {
         if (URLFLAVOR != null && transferable.isDataFlavorSupported(URLFLAVOR)) {
             Object ret = transferable.getTransferData(URLFLAVOR);
-            if (ret == null) return null;
+            if (ret == null) {
+                return null;
+            }
             URL url = (URL) ret;
-            if (StringUtils.isEmpty(url.getFile())) return null;
+            if (StringUtils.isEmpty(url.getFile())) {
+                return null;
+            }
             return url.toExternalForm();
         }
         return null;
@@ -540,8 +606,12 @@ public class ClipboardMonitoring {
             if (ret != null) {
                 final List<File> list = (List<File>) ret;
                 for (final File f : list) {
-                    if (!f.isAbsolute()) continue;
-                    if (sb.length() > 0) sb.append("\r\n");
+                    if (!f.isAbsolute()) {
+                        continue;
+                    }
+                    if (sb.length() > 0) {
+                        sb.append("\r\n");
+                    }
                     sb.append("file://" + f.getPath());
                 }
             }
@@ -552,13 +622,19 @@ public class ClipboardMonitoring {
             if (ret != null) {
                 final StringTokenizer izer = new StringTokenizer((String) ret, "\r\n");
                 while (izer.hasMoreTokens()) {
-                    if (sb.length() > 0) sb.append("\r\n");
+                    if (sb.length() > 0) {
+                        sb.append("\r\n");
+                    }
                     String next = izer.nextToken();
-                    if (StringUtils.isNotEmpty(next)) sb.append(next);
+                    if (StringUtils.isNotEmpty(next)) {
+                        sb.append(next);
+                    }
                 }
             }
         }
-        if (sb.length() == 0) return null;
+        if (sb.length() == 0) {
+            return null;
+        }
         return sb.toString();
     }
 
@@ -570,7 +646,9 @@ public class ClipboardMonitoring {
     }
 
     private static byte[] getBytes(String mimeType, DataFlavor flavor, final Transferable transferable) throws UnsupportedFlavorException, IOException {
-        if (mimeType == null && flavor == null) return null;
+        if (mimeType == null && flavor == null) {
+            return null;
+        }
         final Class<?> preferClass = byte[].class;
         /*
          * for our workaround for https://bugzilla.mozilla.org/show_bug.cgi?id=385421, it would be good if we have utf8 charset
@@ -607,10 +685,12 @@ public class ClipboardMonitoring {
 
     public static String getCurrentBrowserURL(final Transferable transferable) throws UnsupportedFlavorException, IOException {
         String ret = null;
-        if (CLIPBOARDHACK != null) {
-            ret = CLIPBOARDHACK.getURLFromCF_HTML();
+        if (ClipboardMonitoring.getINSTANCE().CLIPBOARDHACK != null) {
+            ret = ClipboardMonitoring.getINSTANCE().CLIPBOARDHACK.getURLFromCF_HTML();
         }
-        if (!StringUtils.isEmpty(ret)) return ret;
+        if (!StringUtils.isEmpty(ret)) {
+            return ret;
+        }
         byte[] xmozurlprivBytes = getBytes("x-moz-url-priv", null, transferable);
         return convertBytes(xmozurlprivBytes, "UTF-8", false);
     }

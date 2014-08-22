@@ -95,9 +95,9 @@ public class NitroFlareCom extends PluginForHost {
     }
 
     public boolean checkLinks(final DownloadLink[] urls) {
+        boolean okay = true;
         try {
             final Browser br = new Browser();
-            final StringBuilder sb = new StringBuilder();
             final ArrayList<DownloadLink> links = new ArrayList<DownloadLink>();
             int index = 0;
             while (true) {
@@ -109,19 +109,23 @@ public class NitroFlareCom extends PluginForHost {
                     links.add(urls[index]);
                     index++;
                 }
-                sb.delete(0, sb.capacity());
+                final StringBuilder sb = new StringBuilder();
                 sb.append("files=");
+                boolean atLeastOneDL = false;
                 for (final DownloadLink dl : links) {
+                    if (atLeastOneDL) {
+                        sb.append(",");
+                    }
                     sb.append(getFUID(dl));
-                    sb.append(",");
+                    atLeastOneDL = true;
                 }
-                // lets remove last ","
-                sb.replace(sb.length() - 1, sb.length(), "");
                 br.getPage(apiURL + "/getFileInfo?" + sb);
                 for (final DownloadLink dl : links) {
                     final String filter = br.getRegex("(\"" + getFUID(dl) + "\":\\{.*?\\})").getMatch(0);
                     if (filter == null) {
-                        return false;
+                        dl.setProperty("apiInfo", Property.NULL);
+                        okay = false;
+                        continue;
                     }
                     final String status = getJson(filter, "status");
                     if (!"invalid".equalsIgnoreCase(status)) {
@@ -135,16 +139,11 @@ public class NitroFlareCom extends PluginForHost {
                     final String prem = getJson(filter, "premiumOnly");
                     final String pass = getJson(filter, "password");
                     if (name != null) {
-                        dl.setName(name);
+                        dl.setFinalFileName(name);
                     }
                     if (size != null) {
-                        try {
-                            dl.setVerifiedFileSize(Long.parseLong(size));
-                        } catch (final Throwable e) {
-                            /* not available in old 09581 stable */
-                            dl.setDownloadSize(Long.parseLong(size));
-                        }
-                   }
+                        dl.setVerifiedFileSize(Long.parseLong(size));
+                    }
                     if (md5 != null) {
                         dl.setMD5Hash(md5);
                     }
@@ -154,6 +153,7 @@ public class NitroFlareCom extends PluginForHost {
                     if (pass != null) {
                         dl.setProperty("passwordRequired", Boolean.parseBoolean(pass));
                     }
+                    dl.setProperty("apiInfo", Boolean.TRUE);
                 }
                 if (index == urls.length) {
                     break;
@@ -162,11 +162,15 @@ public class NitroFlareCom extends PluginForHost {
         } catch (final Exception e) {
             return false;
         }
-        return true;
+        return okay;
     }
 
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
+        if (link.getBooleanProperty("apiInfo", Boolean.FALSE) == Boolean.FALSE) {
+            /* try to fetch apiInfos at least once */
+            checkLinks(new DownloadLink[] { link });
+        }
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         br.getHeaders().put("User-Agent", "Mozilla/5.0 (Windows NT 6.1; WOW64; rv:30.0) Gecko/20100101 Firefox/30.0");
@@ -180,8 +184,11 @@ public class NitroFlareCom extends PluginForHost {
         if (filename == null || filesize == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        link.setName(Encoding.htmlDecode(filename.trim()));
-        link.setDownloadSize(SizeFormatter.getSize(filesize));
+        if (link.getBooleanProperty("apiInfo", Boolean.FALSE) == Boolean.FALSE) {
+            /* no apiInfos available, set unverified name/size here */
+            link.setName(Encoding.htmlDecode(filename.trim()));
+            link.setDownloadSize(SizeFormatter.getSize(filesize));
+        }
         return AvailableStatus.TRUE;
     }
 
@@ -418,6 +425,9 @@ public class NitroFlareCom extends PluginForHost {
 
     @Override
     public void resetDownloadlink(final DownloadLink link) {
+        if (link != null) {
+            link.setProperty("apiInfo", Property.NULL);
+        }
     }
 
     private String  dllink             = null;
@@ -433,7 +443,7 @@ public class NitroFlareCom extends PluginForHost {
 
     /**
      * Tries to return value of key from JSon response, from String source.
-     *
+     * 
      * @author raztoki
      * */
     private String getJson(final String source, final String key) {
@@ -449,7 +459,7 @@ public class NitroFlareCom extends PluginForHost {
 
     /**
      * Tries to return value of key from JSon response, from default 'br' Browser.
-     *
+     * 
      * @author raztoki
      * */
     private String getJson(final String key) {
@@ -458,7 +468,7 @@ public class NitroFlareCom extends PluginForHost {
 
     /**
      * Tries to return value of key from JSon response, from provided Browser.
-     *
+     * 
      * @author raztoki
      * */
     private String getJson(final Browser ibr, final String key) {
@@ -467,7 +477,7 @@ public class NitroFlareCom extends PluginForHost {
 
     /**
      * Validates string to series of conditions, null, whitespace, or "". This saves effort factor within if/for/while statements
-     *
+     * 
      * @param s
      *            Imported String to match against.
      * @return <b>true</b> on valid rule match. <b>false</b> on invalid rule match.
