@@ -956,7 +956,7 @@ public class FileFactory extends PluginForHost {
                         dl.setName(name);
                     }
                     if (size != null) {
-                        dl.setDownloadSize(Long.parseLong(size));
+                        dl.setVerifiedFileSize(Long.parseLong(size));
                     }
                     if (md5 != null) {
                         dl.setMD5Hash(md5);
