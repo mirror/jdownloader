@@ -1,6 +1,5 @@
 package org.jdownloader.extensions.translator;
 
-import java.awt.GraphicsEnvironment;
 import java.io.File;
 import java.io.IOException;
 import java.lang.reflect.Method;
@@ -115,36 +114,37 @@ public class TranslatorExtension extends AbstractExtension<TranslatorConfig, Tra
 
         setTitle(_.Translator());
         eventSender = new TranslatorExtensionEventSender();
+        if (!Application.isHeadless()) {
+            // unload extensions on exit
+            ShutdownController.getInstance().addShutdownEvent(new ShutdownEvent() {
+                {
+                    setHookPriority(Integer.MAX_VALUE);
+                }
 
-        // unload extensions on exit
-        ShutdownController.getInstance().addShutdownEvent(new ShutdownEvent() {
-            {
-                setHookPriority(Integer.MAX_VALUE);
-            }
+                @Override
+                public void onShutdown(final ShutdownRequest shutdownRequest) {
 
-            @Override
-            public void onShutdown(final ShutdownRequest shutdownRequest) {
-
-                if (!getSettings().isRememberLoginsEnabled()) {
-                    try {
-                        doLogout();
-                    } catch (InterruptedException e) {
-                        e.printStackTrace();
-                    }
-                } else {
-                    try {
+                    if (!getSettings().isRememberLoginsEnabled()) {
                         try {
-                            getGUI().stopEditing(true);
-                            write();
+                            doLogout();
                         } catch (InterruptedException e) {
                             e.printStackTrace();
                         }
-                    } catch (IOException e) {
-                        e.printStackTrace();
+                    } else {
+                        try {
+                            try {
+                                getGUI().stopEditing(true);
+                                write();
+                            } catch (InterruptedException e) {
+                                e.printStackTrace();
+                            }
+                        } catch (IOException e) {
+                            e.printStackTrace();
+                        }
                     }
                 }
-            }
-        });
+            });
+        }
         // init extension GUI
 
     }
