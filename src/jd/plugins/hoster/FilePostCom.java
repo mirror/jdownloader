@@ -71,7 +71,9 @@ public class FilePostCom extends PluginForHost {
     }
 
     public boolean checkLinks(DownloadLink[] urls) {
-        if (urls == null || urls.length == 0) { return false; }
+        if (urls == null || urls.length == 0) {
+            return false;
+        }
         try {
             Browser br = new Browser();
             ArrayList<DownloadLink> links = new ArrayList<DownloadLink>();
@@ -83,7 +85,9 @@ public class FilePostCom extends PluginForHost {
                 links.clear();
                 while (true) {
                     /* we test 100 links at once */
-                    if (index == urls.length || links.size() > 100) break;
+                    if (index == urls.length || links.size() > 100) {
+                        break;
+                    }
                     links.add(urls[index]);
                     index++;
                 }
@@ -92,7 +96,9 @@ public class FilePostCom extends PluginForHost {
                     /*
                      * append fake filename, because api will not report anything else
                      */
-                    if (c > 0) sb.append("%0D%0A");
+                    if (c > 0) {
+                        sb.append("%0D%0A");
+                    }
                     sb.append(Encoding.urlEncode(dl.getDownloadURL()));
                     c++;
                 }
@@ -117,7 +123,9 @@ public class FilePostCom extends PluginForHost {
                     dl.setFinalFileName(Encoding.htmlDecode(filename));
                     dl.setDownloadSize(SizeFormatter.getSize(filesize));
                 }
-                if (index == urls.length) break;
+                if (index == urls.length) {
+                    break;
+                }
             }
         } catch (Exception e) {
             return false;
@@ -127,7 +135,7 @@ public class FilePostCom extends PluginForHost {
 
     /*
      * (non-Javadoc)
-     * 
+     *
      * @see jd.plugins.PluginForHost#correctDownloadLink(jd.plugins.DownloadLink)
      */
     @Override
@@ -163,7 +171,9 @@ public class FilePostCom extends PluginForHost {
                         }
                         if (CrossSystem.isOpenBrowserSupported()) {
                             int result = JOptionPane.showConfirmDialog(jd.gui.swing.jdgui.JDGui.getInstance().getMainFrame(), message, title, JOptionPane.YES_NO_OPTION, JOptionPane.INFORMATION_MESSAGE, null);
-                            if (JOptionPane.OK_OPTION == result) CrossSystem.openURL(new URL("http://update3.jdownloader.org/jdserv/BuyPremiumInterface/redirect?" + domain + "&freedialog"));
+                            if (JOptionPane.OK_OPTION == result) {
+                                CrossSystem.openURL(new URL("http://update3.jdownloader.org/jdserv/BuyPremiumInterface/redirect?" + domain + "&freedialog"));
+                            }
                         }
                     } catch (Throwable e) {
                     }
@@ -223,9 +233,13 @@ public class FilePostCom extends PluginForHost {
             return ai;
         }
         String space = br.getRegex("(?i)<li>(Used )?storage: <span.*?>([\\d\\.]+ ?(MB|GB))</span>").getMatch(1);
-        if (space != null) ai.setUsedSpace(space.trim());
+        if (space != null) {
+            ai.setUsedSpace(space.trim());
+        }
         String filesNum = br.getRegex("<li>Active files: <span.*?>(\\d+)</span>").getMatch(0);
-        if (filesNum != null) ai.setFilesNum(Integer.parseInt(filesNum));
+        if (filesNum != null) {
+            ai.setFilesNum(Integer.parseInt(filesNum));
+        }
         ai.setUnlimitedTraffic();
         String expire = br.getRegex("<li>.*?Valid until: <span>(.*?)</span>").getMatch(0);
         if (expire == null) {
@@ -265,69 +279,109 @@ public class FilePostCom extends PluginForHost {
         }
         prepBr.getHeaders().put("User-Agent", agent.get());
         prepBr.setCookie("http://filepost.com", "lang", "1");
+        prepBr.getHeaders().put("Accept-Language", "en-gb,en;q=0.8");
     }
 
     @Override
     public void handleFree(DownloadLink downloadLink) throws Exception, PluginException {
+        br = new Browser();
         requestFileInformation(downloadLink);
         checkShowFreeDialog();
         br.setFollowRedirects(true);
         prepBrowser(br);
         br.getPage(downloadLink.getDownloadURL());
         String premiumlimit = br.getRegex("Files over (.*?) can be downloaded by premium").getMatch(0);
-        if (premiumlimit != null) throw new PluginException(LinkStatus.ERROR_FATAL, JDL.L("plugins.hoster.filepostcom.only4premium", "Files over " + premiumlimit + " are only downloadable for premium users"));
-        if (br.containsHTML(FREEBLOCKED)) if (br.containsHTML("The file owner has limited free downloads of this file")) throw new PluginException(LinkStatus.ERROR_FATAL, JDL.L("plugins.hoster.filepostcom.only4premium2", "Only downloadable for premium users"));
-        if (br.containsHTML("We are sorry, the server where this file is")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Serverissue", 60 * 60 * 1000l);
-        if (br.containsHTML("(>Your IP address is already downloading a file at the moment|>Please wait till the download completion and try again)")) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, "IP Already Loading", 20 * 60 * 1000l);
+        if (premiumlimit != null) {
+            throw new PluginException(LinkStatus.ERROR_FATAL, JDL.L("plugins.hoster.filepostcom.only4premium", "Files over " + premiumlimit + " are only downloadable for premium users"));
+        }
+        if (br.containsHTML(FREEBLOCKED)) {
+            if (br.containsHTML("The file owner has limited free downloads of this file")) {
+                throw new PluginException(LinkStatus.ERROR_FATAL, JDL.L("plugins.hoster.filepostcom.only4premium2", "Only downloadable for premium users"));
+            }
+        }
+        if (br.containsHTML("We are sorry, the server where this file is")) {
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Serverissue", 60 * 60 * 1000l);
+        }
+        if (br.containsHTML("(>Your IP address is already downloading a file at the moment|>Please wait till the download completion and try again)")) {
+            throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, "IP Already Loading", 20 * 60 * 1000l);
+        }
         String passCode = downloadLink.getStringProperty("pass", null);
         // Errorhandling in case their linkchecker lies
-        if (br.containsHTML("(<title>FilePost\\.com: Download  \\- fast \\&amp; secure\\!</title>|>File not found<|>It may have been deleted by the uploader or due to the received complaint|<div class=\"file_info file_info_deleted\">)")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (br.containsHTML("(<title>FilePost\\.com: Download  - fast &amp; secure\\!</title>|>File not found<|>It may have been deleted by the uploader or due to the received complaint|<div class=\"file_info file_info_deleted\">)")) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
         /* token and SID used for all requests */
         String token = getToken();
         final String action = getAction();
-        if (action == null || token == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (action == null || token == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         String id = new Regex(downloadLink.getDownloadURL(), FILEIDREGEX).getMatch(0);
         Browser brc = br.cloneBrowser();
         Form form = new Form();
         form.setMethod(MethodType.POST);
         form.setAction(action + System.currentTimeMillis() + "-xml");
         form.put("action", "set_download");
-        // form.put("download", token);
+        // this was commented out and was download, now token - 20140824 raztoki
+        form.put("token", token);
         form.put("code", id);
-        form.setEncoding("application/octet-stream; charset=UTF-8");
+        form.setEncoding("application/octet-stream;");
         /* click on low speed button */
+        brc.getHeaders().put("Accept", "*/*");
+        brc.getHeaders().put("Accept-Charset", null);
         brc.submitForm(form);
+        final long start = System.currentTimeMillis();
         boolean nextD = false;
         String nextDownload = brc.getRegex("next_download\":\"(\\d+)").getMatch(0);
-        if (nextDownload != null) nextD = true;
-        if (nextDownload == null) nextDownload = brc.getRegex("wait_time\":\"(\\-?\\d+)").getMatch(0);
+        if (nextDownload != null) {
+            nextD = true;
+        }
+        if (nextDownload == null) {
+            nextDownload = brc.getRegex("wait_time\":\"(-?\\d+)").getMatch(0);
+        }
         int wait = 30;
         if (nextDownload != null) {
             if (nextDownload.contains("-")) {
                 nextDownload = "0";
             }
             wait = Integer.parseInt(nextDownload);
-            if (wait > 300) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, wait * 1000l);
+            if (wait > 300) {
+                throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, wait * 1000l);
+            }
         }
-        sleep(wait * 1001l, downloadLink);
         String dllink = null;
+        boolean waitDone = false;
         /** Password handling */
         if (br.containsHTML("var is_pass_exists = true")) {
-            if (passCode == null) passCode = Plugin.getUserInput("Password?", downloadLink);
-            brc.postPage(action + action + System.currentTimeMillis() + "-xml", "code=" + id + "&file_pass=" + Encoding.urlEncode(passCode) + "&token=" + token);
-            if (brc.containsHTML("\"Wrong file password\"")) throw new PluginException(LinkStatus.ERROR_RETRY, "Wrong password");
+            if (passCode == null) {
+                passCode = Plugin.getUserInput("Password?", downloadLink);
+            }
+            brc = br.cloneBrowser();
+            brc.getHeaders().put("Accept", "*/*");
+            brc.getHeaders().put("Accept-Charset", null);
+            brc.getHeaders().put("Content-Type", "application/octet-stream");
+            if (!waitDone) {
+                waitDone = handleWait(start, wait, downloadLink);
+            }
+            brc.postPage(action + System.currentTimeMillis() + "-xml", "code=" + id + "&file_pass=" + Encoding.urlEncode(passCode) + "&token=" + token);
+            if (brc.containsHTML("\"Wrong file password\"")) {
+                throw new PluginException(LinkStatus.ERROR_RETRY, "Wrong password");
+            }
             dllink = getDllink(brc.toString().replace("\\", ""));
         }
         if (dllink == null) {
             boolean captchaNeeded = br.containsHTML("show_captcha = 1");
-            if (!captchaNeeded) captchaNeeded = br.containsHTML("show_captcha = true");
+            if (!captchaNeeded) {
+                captchaNeeded = br.containsHTML("show_captcha = true");
+            }
             form = new Form();
             form.setMethod(MethodType.POST);
             form.setAction(action + System.currentTimeMillis() + "-xml");
-            form.put("download", token);
+            // this change not tested, but the rest change from download to token - 20140824 raztoki
+            form.put("token", token);
             form.put("file_pass", "undefined");
             form.put("code", id);
-            form.setEncoding("application/octet-stream; charset=UTF-8");
+            form.setEncoding("application/octet-stream;");
             if (captchaNeeded) {
                 PluginForHost recplug = JDUtilities.getPluginForHost("DirectHTTP");
                 jd.plugins.hoster.DirectHTTP.Recaptcha rc = ((DirectHTTP) recplug).getReCaptcha(br);
@@ -340,58 +394,90 @@ public class FilePostCom extends PluginForHost {
                 form.put("recaptcha_challenge_field", rc.getChallenge());
             }
             brc = br.cloneBrowser();
+            brc.getHeaders().put("Accept", "*/*");
+            brc.getHeaders().put("Accept-Charset", null);
+            // I assume if there was no password above wait would be here! - 20140824 raztoki
+            if (!waitDone) {
+                handleWait(start, wait, downloadLink);
+            }
             brc.submitForm(form);
-            if (brc.containsHTML("\"file_too_big_for_user\"")) throw new PluginException(LinkStatus.ERROR_FATAL, JDL.L("plugins.hoster.filepostcom.only4premium2", "Only downloadable for premium"));
+            if (brc.containsHTML("\"file_too_big_for_user\"")) {
+                throw new PluginException(LinkStatus.ERROR_FATAL, JDL.L("plugins.hoster.filepostcom.only4premium2", "Only downloadable for premium"));
+            }
             if (brc.containsHTML("You entered a wrong CAPTCHA code")) {
-                try {
-                    invalidateLastChallengeResponse();
-                } catch (final Throwable e) {
-                }
                 throw new PluginException(LinkStatus.ERROR_CAPTCHA);
-            } else {
-                try {
-                    validateLastChallengeResponse();
-                } catch (final Throwable e) {
-                }
             }
             String correctedBR = brc.toString().replace("\\", "");
-            if (correctedBR.contains("Your download is not found or has expired")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Serverissue", 10 * 60 * 1000l);
+            if (correctedBR.contains("Your download is not found or has expired")) {
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Serverissue", 10 * 60 * 1000l);
+            }
             if (correctedBR.contains("Your IP address is already")) {
-                if (nextD) throw new PluginException(LinkStatus.ERROR_RETRY);
+                if (nextD) {
+                    throw new PluginException(LinkStatus.ERROR_RETRY);
+                }
                 throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, "IP Already Loading", 5 * 60 * 1000l);
             }
             dllink = getDllink(correctedBR);
-            if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            if (dllink == null) {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
         }
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 1);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
-            if (br.getCookie(MAINPAGE, "error") != null && new Regex(br.getCookie(MAINPAGE, "error"), "(Sorry%2C%20you%20have%20exceeded%20your%20daily%20download%20limit\\.|%3Cbr%20%2F%3ETry%20again%20tomorrow%20or%20obtain%20a%20premium%20membership\\.)").matches()) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, "Daily limit reached", 2 * 60 * 60 * 1000l);
-            if (br.getCookie(MAINPAGE, "error") != null) logger.warning("Unhandled error: " + br.getCookie(MAINPAGE, "error"));
-            if (br.containsHTML(">403 Forbidden<")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error", 60 * 60 * 1000);
+            if (br.getCookie(MAINPAGE, "error") != null && new Regex(br.getCookie(MAINPAGE, "error"), "(Sorry%2C%20you%20have%20exceeded%20your%20daily%20download%20limit\\.|%3Cbr%20%2F%3ETry%20again%20tomorrow%20or%20obtain%20a%20premium%20membership\\.)").matches()) {
+                throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, "Daily limit reached", 2 * 60 * 60 * 1000l);
+            }
+            if (br.getCookie(MAINPAGE, "error") != null) {
+                logger.warning("Unhandled error: " + br.getCookie(MAINPAGE, "error"));
+            }
+            if (br.containsHTML(">403 Forbidden<")) {
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error", 60 * 60 * 1000);
+            }
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        if (passCode != null) downloadLink.setProperty("pass", passCode);
+        if (passCode != null) {
+            downloadLink.setProperty("pass", passCode);
+        }
         dl.startDownload();
     }
 
+    private boolean handleWait(final long start, final int wait, final DownloadLink downloadLink) throws PluginException {
+        // remove one second from past, to prevent returning too quickly.
+        final long passedTime = ((System.currentTimeMillis() - start) / 1000) - 1;
+        final long tt = wait - passedTime;
+        logger.info("WaitTime detected: " + wait + " second(s). Elapsed Time: " + (passedTime > 0 ? passedTime : 0) + " second(s). Remaining Time: " + tt + " second(s)");
+        if (tt > 0) {
+            sleep(tt * 1000l, downloadLink);
+        }
+        return true;
+    }
+
     private String getToken() {
-        String token = br.getRegex("flp_token\\', \\'(.*?)\\'").getMatch(0);
-        if (token == null) token = br.getRegex("token\\', \\'(.*?)\\'").getMatch(0);
-        if (token == null) token = br.getRegex("token: \\'(\\w+)\\'").getMatch(0);
+        String token = br.getRegex("flp_token', '(.*?)'").getMatch(0);
+        if (token == null) {
+            token = br.getRegex("token', '(.*?)'").getMatch(0);
+        }
+        if (token == null) {
+            token = br.getRegex("token: '(\\w+)'").getMatch(0);
+        }
         return token;
     }
 
     private String getAction() {
         String action = null;
         final String SID = br.getCookie("http://filepost.com/", "SID");
-        if (SID != null) action = "http://filepost.com/files/get/?SID=" + SID + "&JsHttpRequest=";
+        if (SID != null) {
+            action = "http://filepost.com/files/get/?SID=" + SID + "&JsHttpRequest=";
+        }
         return action;
     }
 
     private String getDllink(String correctedBR) {
         String dllink = new Regex(correctedBR, "\"answer\":\\{\"link\":\"(https?://.*?)\"").getMatch(0);
-        if (dllink == null) dllink = new Regex(correctedBR, "\"(https?://fs\\d+\\.filepost\\.com/get_file/.*?)\"").getMatch(0);
+        if (dllink == null) {
+            dllink = new Regex(correctedBR, "\"(https?://fs\\d+\\.filepost\\.com/get_file/.*?)\"").getMatch(0);
+        }
         return dllink;
     }
 
@@ -405,7 +491,9 @@ public class FilePostCom extends PluginForHost {
         login(account, true);
         br.setFollowRedirects(true);
         br.getPage(link.getDownloadURL());
-        if (br.containsHTML("We are sorry, the server where this file is")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Serverissue", 60 * 60 * 1000l);
+        if (br.containsHTML("We are sorry, the server where this file is")) {
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Serverissue", 60 * 60 * 1000l);
+        }
         if (br.containsHTML("(>Sorry, you have reached the daily download limit|>Please contact our support team if you have questions about this limit)")) {
             logger.info("Premium downloadlimit reached, disabling account...");
             throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
@@ -422,21 +510,26 @@ public class FilePostCom extends PluginForHost {
             String action = getAction();
             String token = getToken();
             Browser brc = br.cloneBrowser();
-            if (passCode == null) passCode = Plugin.getUserInput("Password?", link);
+            if (passCode == null) {
+                passCode = Plugin.getUserInput("Password?", link);
+            }
             brc.postPage(action + action + System.currentTimeMillis() + "-xml", "code=" + new Regex(link.getDownloadURL(), FILEIDREGEX).getMatch(0) + "&file_pass=" + Encoding.urlEncode(passCode) + "&token=" + token);
-            if (brc.containsHTML("\"Wrong file password\"")) throw new PluginException(LinkStatus.ERROR_RETRY, "Wrong password");
+            if (brc.containsHTML("\"Wrong file password\"")) {
+                throw new PluginException(LinkStatus.ERROR_RETRY, "Wrong password");
+            }
             dllink = getDllink(brc.toString().replace("\\", ""));
         }
         if (dllink == null) {
-            dllink = br.getRegex("<button onclick=\"download_file\\(\\'(https?://.*?)\\'\\)").getMatch(0);
-            if (dllink == null) dllink = br.getRegex("\\'(https?://fs\\d+\\.filepost\\.com/get_file/.*?)\\'").getMatch(0);
+            dllink = br.getRegex("<button onclick=\"download_file\\('(https?://.*?)'\\)").getMatch(0);
+            if (dllink == null) {
+                dllink = br.getRegex("'(https?://fs\\d+\\.filepost\\.com/get_file/.*?)'").getMatch(0);
+            }
             if (dllink == null) {
                 logger.warning("Final downloadlink (String is \"dllink\") regex didn't match!");
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
         }
-        // Connectionlimit not tested but user said it didn't work with 2
-        // connections
+        // Connection limit not tested but user said it didn't work with 2 connections
         int chunks = 0;
         boolean resume = true;
         if (link.getBooleanProperty(FilePostCom.NOCHUNKS, false) || resume == false) {
@@ -446,13 +539,19 @@ public class FilePostCom extends PluginForHost {
         if (dl.getConnection().getContentType().contains("html")) {
             logger.warning("The final dllink seems not to be a file!");
             br.followConnection();
-            if (br.containsHTML(">403 Forbidden<")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error", 60 * 60 * 1000);
+            if (br.containsHTML(">403 Forbidden<")) {
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error", 60 * 60 * 1000);
+            }
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        if (passCode != null) link.setProperty("pass", passCode);
+        if (passCode != null) {
+            link.setProperty("pass", passCode);
+        }
         if (!this.dl.startDownload()) {
             try {
-                if (dl.externalDownloadStop()) return;
+                if (dl.externalDownloadStop()) {
+                    return;
+                }
             } catch (final Throwable e) {
             }
             if (link.getLinkStatus().getErrorMessage() != null && link.getLinkStatus().getErrorMessage().startsWith(JDL.L("download.error.message.rangeheaders", "Server does not support chunkload"))) {
@@ -490,7 +589,9 @@ public class FilePostCom extends PluginForHost {
             try {
                 final Object ret = account.getProperty("cookies", null);
                 boolean acmatch = Encoding.urlEncode(account.getUser()).equals((account.getStringProperty("name", Encoding.urlEncode(account.getUser()))));
-                if (acmatch) acmatch = Encoding.urlEncode(account.getPass()).equals(account.getStringProperty("pass", Encoding.urlEncode(account.getPass())));
+                if (acmatch) {
+                    acmatch = Encoding.urlEncode(account.getPass()).equals(account.getStringProperty("pass", Encoding.urlEncode(account.getPass())));
+                }
                 if (acmatch && ret != null && ret instanceof HashMap<?, ?>) {
                     final HashMap<String, String> cookies = (HashMap<String, String>) ret;
                     if (cookies.containsKey("remembered_user") && account.isValid()) {
@@ -501,7 +602,9 @@ public class FilePostCom extends PluginForHost {
                         }
                         Browser brc = br.cloneBrowser();
                         brc.postPage("http://filepost.com/general/login_form/?SID=" + brc.getCookie(MAINPAGE, "SID"), "action=check");
-                        if (brc.containsHTML("premium")) return;
+                        if (brc.containsHTML("premium")) {
+                            return;
+                        }
                     }
                 }
                 String pw = encodeRFC2396(account.getPass());
@@ -535,7 +638,9 @@ public class FilePostCom extends PluginForHost {
                     }
                     throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
                 }
-                if (br.getCookie(MAINPAGE, "u") == null) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+                if (br.getCookie(MAINPAGE, "u") == null) {
+                    throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+                }
                 // Save cookies
                 final HashMap<String, String> cookies = new HashMap<String, String>();
                 final Cookies add = this.br.getCookies(MAINPAGE);
@@ -559,7 +664,9 @@ public class FilePostCom extends PluginForHost {
         checkLinks(new DownloadLink[] { downloadLink });
         if (!downloadLink.isAvailabilityStatusChecked()) {
             downloadLink.setAvailableStatus(AvailableStatus.UNCHECKABLE);
-        } else if (!downloadLink.isAvailable()) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        } else if (!downloadLink.isAvailable()) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
         return getAvailableStatus(downloadLink);
     }
 
@@ -568,7 +675,9 @@ public class FilePostCom extends PluginForHost {
             final Field field = link.getClass().getDeclaredField("availableStatus");
             field.setAccessible(true);
             Object ret = field.get(link);
-            if (ret != null && ret instanceof AvailableStatus) return (AvailableStatus) ret;
+            if (ret != null && ret instanceof AvailableStatus) {
+                return (AvailableStatus) ret;
+            }
         } catch (final Throwable e) {
         }
         return AvailableStatus.UNCHECKED;
