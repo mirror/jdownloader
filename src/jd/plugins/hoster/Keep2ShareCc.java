@@ -23,6 +23,7 @@ import java.util.HashMap;
 import java.util.Locale;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 
 import javax.script.ScriptEngine;
@@ -70,10 +71,12 @@ public class Keep2ShareCc extends K2SApi {
         return MAINPAGE + "/page/terms.html";
     }
 
-    private final String DOWNLOADPOSSIBLE = ">To download this file with slow speed, use";
-    private final String MAINPAGE         = "http://k2s.cc";
-    private final String DOMAINS_PLAIN    = "((keep2share|k2s|k2share|keep2s|keep2)\\.cc)";
-    private final String DOMAINS_HTTP     = "(https?://(www\\.)?" + DOMAINS_PLAIN + ")";
+    private final String         DOWNLOADPOSSIBLE = ">To download this file with slow speed, use";
+    private final String         MAINPAGE         = "http://k2s.cc";
+    private final String         DOMAINS_PLAIN    = "((keep2share|k2s|k2share|keep2s|keep2)\\.cc)";
+    private final String         DOMAINS_HTTP     = "(https?://(www\\.)?" + DOMAINS_PLAIN + ")";
+
+    private static AtomicInteger maxPrem          = new AtomicInteger(1);
 
     /* api setters */
     /**
@@ -542,8 +545,31 @@ public class Keep2ShareCc extends K2SApi {
                 }
             }
         }
+        setAccountLimits(account);
         account.setValid(true);
         return ai;
+    }
+
+    @Override
+    protected void setAccountLimits(Account account) {
+        if (account != null && account.getBooleanProperty("free", false)) {
+            try {
+                maxPrem.set(1);
+                /* free accounts can still have captcha */
+                account.setMaxSimultanDownloads(maxPrem.get());
+                account.setConcurrentUsePossible(false);
+            } catch (final Throwable e) {
+                /* not available in old Stable 0.9.581 */
+            }
+        } else if (account != null && !account.getBooleanProperty("free", false)) {
+            try {
+                maxPrem.set(20);
+                account.setMaxSimultanDownloads(maxPrem.get());
+                account.setConcurrentUsePossible(true);
+            } catch (final Throwable e) {
+                /* not available in old Stable 0.9.581 */
+            }
+        }
     }
 
     @Override
@@ -695,7 +721,7 @@ public class Keep2ShareCc extends K2SApi {
 
     @Override
     public int getMaxSimultanPremiumDownloadNum() {
-        return -1;
+        return maxPrem.get();
     }
 
     @Override
