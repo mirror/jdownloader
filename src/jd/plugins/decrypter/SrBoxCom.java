@@ -71,7 +71,9 @@ public class SrBoxCom extends PluginForDecrypt {
 
         // Creation of the array of link that is supported by all plug-in
         String[] links = br.getRegex("<a href=\"(.*?)\"").getColumn(0);
-        if (links == null || links.length == 0) return null;
+        if (links == null || links.length == 0) {
+            return null;
+        }
 
         // Number of picture
         int iImage = TabImage == null ? 0 : TabImage.length;
@@ -104,28 +106,34 @@ public class SrBoxCom extends PluginForDecrypt {
                     strImageLink = "http://www.israbox.com/uploads" + strImageLink;
 
                     DownloadLink DLLink = createDownloadlink(strImageLink, false);
-                    String strExtension = "";
-                    int iIndex = strImageLink.lastIndexOf('.');
-                    if (iIndex > -1) {
-                        strExtension = strImageLink.substring(iIndex);
-                    }
-                    if (strExtension != "") {
-                        if (fpName != null) {
-                            String strName = fpName;
-                            iIndex = fpName.lastIndexOf(')');
-                            if (iIndex == fpName.length() - 1) {
-                                iIndex = fpName.lastIndexOf(" (");
-                                if (iIndex == -1) iIndex = fpName.lastIndexOf("(");
-                                if (iIndex != -1) strName = fpName.substring(0, iIndex);
-                            }
-                            if (TabImage.length > 1) {
-                                strName += "_" + Integer.toString(iImageIndex);
-                                iImageIndex++;
-                            }
-                            DLLink.setFinalFileName(strName + strExtension);
+                    if (DLLink != null) {
+                        String strExtension = "";
+                        int iIndex = strImageLink.lastIndexOf('.');
+                        if (iIndex > -1) {
+                            strExtension = strImageLink.substring(iIndex);
                         }
+                        if (strExtension != "") {
+                            if (fpName != null) {
+                                String strName = fpName;
+                                iIndex = fpName.lastIndexOf(')');
+                                if (iIndex == fpName.length() - 1) {
+                                    iIndex = fpName.lastIndexOf(" (");
+                                    if (iIndex == -1) {
+                                        iIndex = fpName.lastIndexOf("(");
+                                    }
+                                    if (iIndex != -1) {
+                                        strName = fpName.substring(0, iIndex);
+                                    }
+                                }
+                                if (TabImage.length > 1) {
+                                    strName += "_" + Integer.toString(iImageIndex);
+                                    iImageIndex++;
+                                }
+                                DLLink.setFinalFileName(strName + strExtension);
+                            }
+                        }
+                        decryptedLinks.add(DLLink);
                     }
-                    decryptedLinks.add(DLLink);
                 }
                 progress.increase(1);
             }
@@ -152,10 +160,29 @@ public class SrBoxCom extends PluginForDecrypt {
     }
 
     protected DownloadLink createDownloadlink(String link, Boolean bVerify) {
-        if (!link.startsWith("http")) return null;
-        if (link.contains("?media=")) return null;
-        if (link.startsWith("http://ax-d.pixfuture.net")) return null;
-        if (bVerify && link.startsWith("http://www.israbox.com")) return null;
+        if (!link.startsWith("http")) {
+            return null;
+        }
+
+        if (link.contains("?media=")) {
+            return null;
+        }
+
+        if (link.startsWith("http://www.israbox.com/uploads/img/")) {
+            return null;
+        }
+
+        if (link.contains("signup?")) {
+            return null;
+        }
+
+        if (link.startsWith("http://ax-d.pixfuture.net")) {
+            return null;
+        }
+
+        if (bVerify && link.startsWith("http://www.israbox.com")) {
+            return null;
+        }
 
         return super.createDownloadlink(link);
     }
@@ -170,6 +197,7 @@ public class SrBoxCom extends PluginForDecrypt {
     private String RemoveCharacter(String strName) {
         strName = strName.replace("", "-");
         strName = strName.replace("", "'");
+        strName = strName.replace("–", "-");
         strName = strName.replace(":", ",");
         strName = strName.replace("/", "&");
         strName = strName.replace("\\", "&");
@@ -212,12 +240,11 @@ public class SrBoxCom extends PluginForDecrypt {
         strName = ReplacePattern(strName, "320 *&");
         strName = ReplacePattern(strName, "& 320");
         strName = ReplacePattern(strName, "\\s{2,}");
-        strName = ReplacePattern(strName, "\\s{2,}");
-        strName = ReplacePattern(strName, "\\s{2,}");
-        strName = ReplacePattern(strName, "\\s{2,}");
 
         strName = strName.trim();
-        if (strName.endsWith("320")) strName = strName.substring(0, strName.length() - 3);
+        if (strName.endsWith("320")) {
+            strName = strName.substring(0, strName.length() - 3);
+        }
 
         // Replace brackets with parenthesis
         strName = strName.replace("[", "(");
@@ -237,7 +264,9 @@ public class SrBoxCom extends PluginForDecrypt {
      * @return the text with a capital letter on each words.
      */
     private String CapitalLetterForEachWords(String strText) {
-        if (strText == null || strText == "") return "";
+        if (strText == null || strText == "") {
+            return "";
+        }
 
         String strReturn = "";
         try {
@@ -268,10 +297,12 @@ public class SrBoxCom extends PluginForDecrypt {
                         if (strWord.length() > 1) {
                             strCharacter += strWord.substring(1, 2).toUpperCase();
                             strRemain = strWord.substring(2, strWord.length());
-                        } else
+                        } else {
                             strCharacter = strWord;
-                    } else
+                        }
+                    } else {
                         strCharacter = strFirstChar.toUpperCase();
+                    }
 
                     String strCharacterIn = "";
                     strTemp = "";
@@ -289,26 +320,34 @@ public class SrBoxCom extends PluginForDecrypt {
                                         if (strAllCarac.length() > 1) {
                                             strCharacterIn += strAllCarac.substring(1, 1).toUpperCase();
                                             strRemain = strAllCarac.substring(2, strAllCarac.length());
-                                        } else
+                                        } else {
                                             strCharacterIn = strAllCarac;
-                                    } else
+                                        }
+                                    } else {
                                         strCharacterIn = strFirstChar.toUpperCase();
+                                    }
 
                                     strTemp += strCharacterIn + strRemain;
                                     boolean bSpaceAtTheEnd = strTemp.endsWith(" ");
                                     strTemp = strTemp.trim();
                                     strTemp += strInException;
-                                    if (bSpaceAtTheEnd) strTemp += " ";
-                                } else
+                                    if (bSpaceAtTheEnd) {
+                                        strTemp += " ";
+                                    }
+                                } else {
                                     strTemp += strAllCarac + strInException;
+                                }
                             }
-                            if (strTemp.endsWith(strInException)) strTemp = strTemp.substring(0, strTemp.length());
+                            if (strTemp.endsWith(strInException)) {
+                                strTemp = strTemp.substring(0, strTemp.length() - 1);
+                            }
                             strRemain = strTemp;
                         }
                     }
                     strReturn += strCharacter + strRemain + " ";
-                } else
+                } else {
                     strReturn += " ";
+                }
             }
         } catch (Exception e) {
             strReturn = strText;
