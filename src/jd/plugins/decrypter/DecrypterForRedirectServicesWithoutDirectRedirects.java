@@ -65,6 +65,7 @@ public class DecrypterForRedirectServicesWithoutDirectRedirects extends PluginFo
     public ArrayList<DownloadLink> decryptIt(final CryptedLink param, final ProgressController progress) throws Exception {
         final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String parameter = param.toString();
+        br = new Browser();
         br.setFollowRedirects(false);
         br.setReadTimeout(60 * 1000);
         boolean dh = false;
@@ -80,7 +81,7 @@ public class DecrypterForRedirectServicesWithoutDirectRedirects extends PluginFo
         }
         /* Some links don't have to be accessed (here) */
         try {
-            if (!parameter.contains("imageto.net/") && !parameter.contains("musicloud.fm/dl") && !parameter.contains("1tool.biz") && !parameter.contains("catchfile.net") && !parameter.contains("file4ever.us") && !parameter.contains("fairtilizer.com/") && !parameter.contains("tm-exchange.com/") && !parameter.contains("fileblip.com/") && !parameter.contains("mixconnect.com/") && !parameter.contains("machines.") && !parameter.contains("ubuntuone.com") && !parameter.contains("trancearoundtheworld.com/") && !parameter.contains("dwz.cn/") && !parameter.contains("getunite.com/") && !parameter.contains("bookgn.com/")) {
+            if (!parameter.contains("imageto.net/") && !parameter.contains("musicloud.fm/dl") && !parameter.contains("1tool.biz") && !parameter.contains("catchfile.net") && !parameter.contains("file4ever.us") && !parameter.contains("fairtilizer.com/") && !parameter.contains("tm-exchange.com/") && !parameter.contains("fileblip.com/") && !parameter.contains("mixconnect.com/") && !parameter.contains("machines.") && !parameter.contains("ubuntuone.com") && !parameter.contains("trancearoundtheworld.com/") && !parameter.contains("dwz.cn/") && !parameter.contains("getunite.com/") && !parameter.contains("bookgn.com/") && !parameter.contains("prialepaste.com/")) {
                 br.getPage(parameter);
             }
             if (parameter.contains("link.songs.pk/") || parameter.contains("songspk.info/ghazals/download/ghazals.php?id=")) {
@@ -838,8 +839,8 @@ public class DecrypterForRedirectServicesWithoutDirectRedirects extends PluginFo
                 if (finallink == null) {
                     finallink = br.getRegex("id=\"redir_btn\" href=\"(https?://[^<>\"]*?)\"").getMatch(0);
                 }
-            } else if (parameter.contains("://prialepaste.com/")) {
-                br.getPage(parameter.replace("#", "?"));
+            } else if (parameter.contains("prialepaste.com/")) {
+                br.getPage(parameter.substring(0, parameter.indexOf("#")));
                 String hash = new Regex(parameter, "#(.+)$").getMatch(0);
                 String redirect = br.getRegex("var url_redir\\s*=\\s*\"(https?://[^/]+/redirect[^\"]+)").getMatch(0);
                 if (hash != null && redirect != null) {
