@@ -36,7 +36,7 @@ import org.appwork.utils.os.CrossSystem;
 /**
  * Abstract class supporting keep2share/fileboom/publish2<br/>
  * <a href="https://github.com/keep2share/api/">Github documentation</a>
- * 
+ *
  * @author raztoki
  *
  */
@@ -393,8 +393,19 @@ public abstract class K2SApi extends PluginForHost {
     }
 
     private void handleErrors(final Account account, final Browser ibr) throws PluginException {
-        final String errCode = getJson(ibr, "errorCode");
-        if (errCode != null && errCode.matches("\\d+")) {
+        handleErrors(account, ibr.toString());
+    }
+
+    private void handleErrors(final Account account, final String iString) throws PluginException {
+        if (inValidate(iString)) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        String errCode = getJson(iString, "errorCode");
+        if (inValidate(errCode)) {
+            // subErrors
+            errCode = getJson(iString, "code");
+        }
+        if (!inValidate(errCode) && errCode.matches("\\d+")) {
             final int err = Integer.parseInt(errCode);
             String msg = getMessage(err);
             try {
@@ -418,11 +429,18 @@ public abstract class K2SApi extends PluginForHost {
                     premiumDownloadRestriction(msg);
                 case 4:
                     // DOWNLOAD_NO_ACCESS = 4; //'You no can access to this file'
-                    return;
+                    // not sure about this...
+                    throw new PluginException(LinkStatus.ERROR_FATAL, msg);
                 case 5:
                     // DOWNLOAD_WAITING = 5; //'Please wait to download this file'
-                    // how long??
-                    return;
+                    // {"message":"Download not available","status":"error","code":406,"errorCode":42,"errors":[{"code":5,"timeRemaining":"2521.000000"}]}
+                    // think timeRemaining is in seconds
+                    final String time = getJson(iString, "timeRemaining");
+                    if (!inValidate(time) && time.matches("[\\d\\.]")) {
+                        throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, getMessage(err), Integer.parseInt(time) * 1000);
+                    } else {
+                        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, getMessage(err));
+                    }
                 case 6:
                     // DOWNLOAD_FREE_THREAD_COUNT_TO_MANY = 6; //'Free account does not allow to download more than one file at the same
                     // time'
@@ -447,6 +465,16 @@ public abstract class K2SApi extends PluginForHost {
                 case 31:
                     // ERROR_CAPTCHA_INVALID = 31;
                     throw new PluginException(LinkStatus.ERROR_CAPTCHA, msg);
+                case 40:
+                    // ERROR_WRONG_FREE_DOWNLOAD_KEY = 40;
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, msg);
+                case 41:
+                case 42:
+                    // ERROR_NEED_WAIT_TO_FREE_DOWNLOAD = 41;
+                    // ERROR_DOWNLOAD_NOT_AVAILABLE = 42;
+                    // {"message":"Download not available","status":"error","code":406,"errorCode":42,"errors":[{"code":5,"timeRemaining":"2521.000000"}]}
+                    // sub error, pass it back into itself.
+                    handleErrors(account, getJson(iString, "errors"));
                 case 70:
                     // ERROR_INCORRECT_USERNAME_OR_PASSWORD = 70;
                     dumpAuthToken(account);
