@@ -18,6 +18,7 @@ package jd.plugins.hoster;
 
 import java.io.File;
 import java.io.IOException;
+import java.lang.reflect.Field;
 import java.util.ArrayList;
 import java.util.Locale;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -167,10 +168,6 @@ public class NitroFlareCom extends PluginForHost {
 
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
-        if (link.getBooleanProperty("apiInfo", Boolean.FALSE) == Boolean.FALSE) {
-            /* try to fetch apiInfos at least once */
-            checkLinks(new DownloadLink[] { link });
-        }
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         br.getHeaders().put("User-Agent", "Mozilla/5.0 (Windows NT 6.1; WOW64; rv:30.0) Gecko/20100101 Firefox/30.0");
@@ -180,7 +177,7 @@ public class NitroFlareCom extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         final String filename = br.getRegex("<b>File Name: </b><span title=\"([^<>\"]*?)\"").getMatch(0);
-        final String filesize = br.getRegex("dir=\"ltr\" style=\"text\\-align: left;\">([^<>\"]*?)</span>").getMatch(0);
+        final String filesize = br.getRegex("dir=\"ltr\" style=\"text-align: left;\">([^<>\"]*?)</span>").getMatch(0);
         if (filename == null || filesize == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
@@ -314,14 +311,14 @@ public class NitroFlareCom extends PluginForHost {
 
     private void handleDownload_API(final DownloadLink downloadLink, final Account account) throws Exception {
         setConstants(account);
-        checkLinks(new DownloadLink[] { downloadLink });
+        reqFileInformation(downloadLink);
         dllink = checkDirectLink(downloadLink, directlinkproperty);
         if (inValidate(dllink)) {
             // links that require premium...
             if (downloadLink.getBooleanProperty("premiumRequired", false) && account == null) {
                 throwPremiumRequiredException();
             }
-            final String req = apiURL + "/getDownloadLink?file=" + getFUID(downloadLink) + (account.getUser() != null ? "&user=" + Encoding.urlEncode(account.getUser()) : "&user=") + (account != null ? "&premiumKey=" + Encoding.urlEncode(account.getPass()) : "");
+            final String req = apiURL + "/getDownloadLink?file=" + getFUID(downloadLink) + (account != null && account.getUser() != null ? "&user=" + Encoding.urlEncode(account.getUser()) : "") + (account != null ? "&premiumKey=" + Encoding.urlEncode(account.getPass()) : "");
             // needed for when dropping to frame, the cookie session seems to carry over current position in download sequence and you get
             // recaptcha error codes at first step.
             br = new Browser();
@@ -409,6 +406,28 @@ public class NitroFlareCom extends PluginForHost {
         return dllink;
     }
 
+    private AvailableStatus reqFileInformation(final DownloadLink link) throws IOException, PluginException {
+        if (!checkLinks(new DownloadLink[] { link }) || !link.isAvailabilityStatusChecked()) {
+            link.setAvailableStatus(AvailableStatus.UNCHECKABLE);
+        } else if (!link.isAvailable()) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
+        return getAvailableStatus(link);
+    }
+
+    private AvailableStatus getAvailableStatus(DownloadLink link) {
+        try {
+            final Field field = link.getClass().getDeclaredField("availableStatus");
+            field.setAccessible(true);
+            Object ret = field.get(link);
+            if (ret != null && ret instanceof AvailableStatus) {
+                return (AvailableStatus) ret;
+            }
+        } catch (final Throwable e) {
+        }
+        return AvailableStatus.UNCHECKED;
+    }
+
     @Override
     public void reset() {
     }
@@ -443,7 +462,7 @@ public class NitroFlareCom extends PluginForHost {
 
     /**
      * Tries to return value of key from JSon response, from String source.
-     * 
+     *
      * @author raztoki
      * */
     private String getJson(final String source, final String key) {
@@ -459,7 +478,7 @@ public class NitroFlareCom extends PluginForHost {
 
     /**
      * Tries to return value of key from JSon response, from default 'br' Browser.
-     * 
+     *
      * @author raztoki
      * */
     private String getJson(final String key) {
@@ -468,7 +487,7 @@ public class NitroFlareCom extends PluginForHost {
 
     /**
      * Tries to return value of key from JSon response, from provided Browser.
-     * 
+     *
      * @author raztoki
      * */
     private String getJson(final Browser ibr, final String key) {
@@ -477,7 +496,7 @@ public class NitroFlareCom extends PluginForHost {
 
     /**
      * Validates string to series of conditions, null, whitespace, or "". This saves effort factor within if/for/while statements
-     * 
+     *
      * @param s
      *            Imported String to match against.
      * @return <b>true</b> on valid rule match. <b>false</b> on invalid rule match.
