@@ -393,15 +393,15 @@ public abstract class K2SApi extends PluginForHost {
     }
 
     private void handleErrors(final Account account, final Browser ibr) throws PluginException {
-        handleErrors(account, ibr.toString());
+        handleErrors(account, ibr.toString(), false);
     }
 
-    private void handleErrors(final Account account, final String iString) throws PluginException {
+    private void handleErrors(final Account account, final String iString, final boolean subErrors) throws PluginException {
         if (inValidate(iString)) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         String errCode = getJson(iString, "errorCode");
-        if (inValidate(errCode)) {
+        if (inValidate(errCode) && subErrors) {
             // subErrors
             errCode = getJson(iString, "code");
         }
@@ -474,7 +474,7 @@ public abstract class K2SApi extends PluginForHost {
                     // ERROR_DOWNLOAD_NOT_AVAILABLE = 42;
                     // {"message":"Download not available","status":"error","code":406,"errorCode":42,"errors":[{"code":5,"timeRemaining":"2521.000000"}]}
                     // sub error, pass it back into itself.
-                    handleErrors(account, getJson(iString, "errors"));
+                    handleErrors(account, getJson(iString, "errors"), true);
                 case 70:
                     // ERROR_INCORRECT_USERNAME_OR_PASSWORD = 70;
                     dumpAuthToken(account);
