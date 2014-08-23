@@ -226,7 +226,7 @@ public class XFileSharingProBasic extends PluginForHost {
                 brv.getPage("/vidembed-" + fuid);
                 dllink = brv.getRedirectLocation();
                 if (dllink == null) {
-                    logger.info("Failed to get link via vidembed");
+                    logger.info("Failed to get link via embed because: " + br.toString());
                 } else {
                     logger.info("Successfully found link via vidembed");
                 }
@@ -241,7 +241,7 @@ public class XFileSharingProBasic extends PluginForHost {
                 getPage(embed_access);
                 dllink = getDllink();
                 if (dllink == null) {
-                    logger.info("Failed to get link via embed");
+                    logger.info("Failed to get link via embed because: " + br.toString());
                 } else {
                     logger.info("Successfully found link via embed");
                 }
