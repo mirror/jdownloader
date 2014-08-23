@@ -18,6 +18,7 @@ package jd.plugins.hoster;
 
 import java.io.File;
 import java.io.IOException;
+import java.lang.reflect.Field;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -120,6 +121,17 @@ public class FileFactory extends PluginForHost {
         if (isPremiumOnly(br)) {
             throwPremiumRequiredException();
         }
+        // this should cover error codes jumping to stream links in redirect, since filefactory wont fix this issue, this is my workaround.
+        String code = new Regex(br.getURL(), "(?:\\?|&)code=(\\d+)").getMatch(0);
+        final String ref = br.getHeaders().get("Referer");
+        if (!inValidate(ref)) {
+            if (br.getURL().contains("/stream/" + fuid)) {
+                code = new Regex(ref, "(?:\\?|&)code=(\\d+)").getMatch(0);
+            }
+        }
+
+        final int errCode = (!inValidate(code) && code.matches("\\d+") ? Integer.parseInt(code) : -1);
+
         if (postDownload && freeDownload) {
             if (br.containsHTML("have exceeded the download limit|Please try again in <span>")) {
                 long waittime = 10 * 60 * 1000l;
@@ -155,28 +167,28 @@ public class FileFactory extends PluginForHost {
                     throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, waittime);
                 }
             }
-            if (br.containsHTML("You are currently downloading too many files at once") || br.containsHTML(">You have recently started a download") || br.getURL().contains("code=275")) {
+            if (br.containsHTML("You are currently downloading too many files at once") || br.containsHTML(">You have recently started a download") || errCode == 275) {
                 throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 5 * 60 * 1000l);
             }
         }
-        if (br.getURL().contains("code=265")) {
+        if (errCode == 265) {
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "The requested Download URL was invalid.  Please retry your download", 5 * 60 * 1000l);
         }
-        if (br.getURL().contains("code=263")) {
+        if (errCode == 263) {
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Could not retrieve information about your download, or your download key has expired. Please try again. ", 5 * 60 * 1000l);
         }
         if (freeDownload) {
             if (br.containsHTML(CAPTCHALIMIT)) {
                 throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 10 * 60 * 1000l);
             }
-            if (br.containsHTML(NO_SLOT) || br.getURL().contains("code=257")) {
+            if (br.containsHTML(NO_SLOT) || errCode == 257) {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, NO_SLOT_USERTEXT, 10 * 60 * 1000l);
             }
             if (br.getRegex("Please wait (\\d+) minutes to download more files, or").getMatch(0) != null) {
                 throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, Integer.parseInt(br.getRegex("Please wait (\\d+) minutes to download more files, or").getMatch(0)) * 60 * 1001l);
             }
         }
-        if (br.getURL().contains("code=274")) {
+        if (errCode == 274) {
             // <h2>File Unavailable</h2>
             // <p>
             // This file cannot be downloaded at this time. Please let us know about this issue by using the contact link below. </p>
@@ -761,7 +773,7 @@ public class FileFactory extends PluginForHost {
     public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws Exception {
         setBrowserExclusive();
         prepBrowser(br);
-        downloadLink.setName(new Regex(downloadLink.getDownloadURL(), "filefactory\\.com/(.+)").getMatch(0));
+        fuid = getFUID(downloadLink);
         br.setFollowRedirects(true);
         for (int i = 0; i < 4; i++) {
             try {
@@ -981,6 +993,7 @@ public class FileFactory extends PluginForHost {
     private final String        api     = "https://api.filefactory.com/v1";
     private final AtomicBoolean useAPI  = new AtomicBoolean(true);
 
+    private String              fuid    = null;
     private String              dllink  = null;
     private int                 chunks  = 0;
     private boolean             resumes = true;
@@ -1019,22 +1032,9 @@ public class FileFactory extends PluginForHost {
 
     private void handleDownload_API(final DownloadLink downloadLink, final Account account) throws Exception {
         setConstants(account, false);
+        fuid = getFUID(downloadLink);
         prepApiBrowser(br);
-        // for when checkLinks_API returns false due to exception!
-        for (int retry_checkLinks = 0; retry_checkLinks < 3; retry_checkLinks++) {
-            if (!checkLinks_API(new DownloadLink[] { downloadLink }, account)) {
-                if (retry_checkLinks == 3) {
-                    // disable API use!
-                    logger.warning("Issue with API");
-                    useAPI.set(false);
-                    throw new PluginException(LinkStatus.ERROR_RETRY);
-                } else {
-                    continue;
-                }
-            } else {
-                break;
-            }
-        }
+        reqFileInformation(downloadLink, account);
         String passCode = downloadLink.getStringProperty("pass", null);
         // error handling can be within redirects.
         br.setFollowRedirects(true);
@@ -1054,7 +1054,7 @@ public class FileFactory extends PluginForHost {
                     throw new PluginException(LinkStatus.ERROR_RETRY, "Invalid password", 1 * 60 * 1001);
                 }
             }
-            getPage(br, api + "/getDownloadLink?file=" + getFUID(downloadLink) + (!inValidate(passCode) ? "&password=" + Encoding.urlEncode(passCode) : ""), account);
+            getPage(br, api + "/getDownloadLink?file=" + fuid + (!inValidate(passCode) ? "&password=" + Encoding.urlEncode(passCode) : ""), account);
             if (br.containsHTML("\"type\":\"error\"") && br.containsHTML("\"code\":701")) {
                 // {"type":"error","message":"Error generating download link.  Please try again","code":701}
                 // TODO: remove this when retry count comes back!
@@ -1242,6 +1242,28 @@ public class FileFactory extends PluginForHost {
             }
         }
         throw new PluginException(LinkStatus.ERROR_FATAL, "This file is only available to Premium Members");
+    }
+
+    private AvailableStatus reqFileInformation(final DownloadLink link, final Account account) throws Exception {
+        if (!checkLinks_API(new DownloadLink[] { link }, account) || !link.isAvailabilityStatusChecked()) {
+            link.setAvailableStatus(AvailableStatus.UNCHECKABLE);
+        } else if (!link.isAvailable()) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
+        return getAvailableStatus(link);
+    }
+
+    private AvailableStatus getAvailableStatus(DownloadLink link) {
+        try {
+            final Field field = link.getClass().getDeclaredField("availableStatus");
+            field.setAccessible(true);
+            Object ret = field.get(link);
+            if (ret != null && ret instanceof AvailableStatus) {
+                return (AvailableStatus) ret;
+            }
+        } catch (final Throwable e) {
+        }
+        return AvailableStatus.UNCHECKED;
     }
 
     /**
