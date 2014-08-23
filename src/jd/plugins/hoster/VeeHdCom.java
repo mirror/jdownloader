@@ -108,7 +108,7 @@ public class VeeHdCom extends PluginForHost {
                 final String iframe = br.getRegex("<iframe id=\"iframe\" src=\"(/va/[^<>\"]*?)\"").getMatch(0);
                 if (iframe != null) {
                     /*
-                     * Seems to be some kind of ad-stuff - heppens one time every time a user has a NEW ip and logs into his account for the
+                     * Seems to be some kind of ad-stuff - happens one time every time a user has a NEW ip and logs into his account for the
                      * first time
                      */
                     br.getPage(iframe);
