@@ -6,6 +6,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.UnsupportedEncodingException;
+import java.lang.reflect.Field;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.ArrayList;
@@ -26,6 +27,7 @@ import jd.parser.Regex;
 import jd.plugins.Account;
 import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
+import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
@@ -204,7 +206,7 @@ public abstract class K2SApi extends PluginForHost {
 
     public void handleDownload(final DownloadLink downloadLink, final Account account) throws Exception {
         // linkcheck here..
-        checkLinks(new DownloadLink[] { downloadLink });
+        reqFileInformation(downloadLink);
         String fuid = getFUID(downloadLink);
         String dllink = checkDirectLink(downloadLink, directlinkproperty);
         // required to get overrides to work
@@ -229,7 +231,7 @@ public abstract class K2SApi extends PluginForHost {
                     sleep(Integer.parseInt(getJson("time_wait")) * 1001l, downloadLink);
                 } else {
                     // fail over
-                    sleep(45 * 1001l, downloadLink);
+                    sleep(31 * 1001l, downloadLink);
                 }
                 postPage(br, "/geturl", "{\"file_id\":\"" + fuid + "\",\"free_download_key\":\"" + free_download_key + "\",\"captcha_challenge\":null,\"captcha_response\":null}", account);
             } else {
@@ -400,6 +402,10 @@ public abstract class K2SApi extends PluginForHost {
         if (inValidate(iString)) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
+        if ("success".equalsIgnoreCase(getJson(iString, "status")) && "200".equalsIgnoreCase(getJson(iString, "code")) && !subErrors) {
+            return;
+        }
+        // let the error handling begin!
         String errCode = getJson(iString, "errorCode");
         if (inValidate(errCode) && subErrors) {
             // subErrors
@@ -435,8 +441,9 @@ public abstract class K2SApi extends PluginForHost {
                     // DOWNLOAD_WAITING = 5; //'Please wait to download this file'
                     // {"message":"Download not available","status":"error","code":406,"errorCode":42,"errors":[{"code":5,"timeRemaining":"2521.000000"}]}
                     // think timeRemaining is in seconds
-                    final String time = getJson(iString, "timeRemaining");
-                    if (!inValidate(time) && time.matches("[\\d\\.]")) {
+                    String time = getJson(iString, "timeRemaining");
+                    if (!inValidate(time) && time.matches("[\\d\\.]+")) {
+                        time = time.substring(0, time.indexOf("."));
                         throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, getMessage(err), Integer.parseInt(time) * 1000);
                     } else {
                         throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, getMessage(err));
@@ -473,8 +480,9 @@ public abstract class K2SApi extends PluginForHost {
                     // ERROR_NEED_WAIT_TO_FREE_DOWNLOAD = 41;
                     // ERROR_DOWNLOAD_NOT_AVAILABLE = 42;
                     // {"message":"Download not available","status":"error","code":406,"errorCode":42,"errors":[{"code":5,"timeRemaining":"2521.000000"}]}
+                    // {"message":"Download is not available","status":"error","code":406,"errorCode":42,"errors":[{"code":6,"message":" Free account does not allow to download more than one file at the same time"}]}
                     // sub error, pass it back into itself.
-                    handleErrors(account, getJson(iString, "errors"), true);
+                    handleErrors(account, getJsonArray(iString, "errors"), true);
                 case 70:
                     // ERROR_INCORRECT_USERNAME_OR_PASSWORD = 70;
                     dumpAuthToken(account);
@@ -584,6 +592,33 @@ public abstract class K2SApi extends PluginForHost {
     protected void handleGeneralServerErrors(final Account account) throws PluginException {
     }
 
+    @Override
+    public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
+        return reqFileInformation(link);
+    }
+
+    private AvailableStatus reqFileInformation(final DownloadLink link) throws Exception {
+        if (!checkLinks(new DownloadLink[] { link }) || !link.isAvailabilityStatusChecked()) {
+            link.setAvailableStatus(AvailableStatus.UNCHECKABLE);
+        } else if (!link.isAvailable()) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
+        return getAvailableStatus(link);
+    }
+
+    private AvailableStatus getAvailableStatus(DownloadLink link) {
+        try {
+            final Field field = link.getClass().getDeclaredField("availableStatus");
+            field.setAccessible(true);
+            Object ret = field.get(link);
+            if (ret != null && ret instanceof AvailableStatus) {
+                return (AvailableStatus) ret;
+            }
+        } catch (final Throwable e) {
+        }
+        return AvailableStatus.UNCHECKED;
+    }
+
     protected String checkDirectLink(final DownloadLink downloadLink, final String property) {
         String dllink = downloadLink.getStringProperty(property);
         if (!inValidate(dllink)) {
@@ -661,6 +696,19 @@ public abstract class K2SApi extends PluginForHost {
      * */
     protected String getJson(final Browser ibr, final String key) {
         return getJson(ibr.toString(), key);
+    }
+
+    /**
+     * Tries to return value given JSon Array of Key from JSon response provided String source.
+     *
+     * @author raztoki
+     * */
+    protected String getJsonArray(final String source, final String key) {
+        String result = new Regex(source, "\"" + key + "\":(\\[[^\\]]+\\])").getMatch(0);
+        if (result != null) {
+            result = result.replaceAll("\\\\/", "/");
+        }
+        return result;
     }
 
     /**
