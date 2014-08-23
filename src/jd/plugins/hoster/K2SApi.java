@@ -446,7 +446,7 @@ public abstract class K2SApi extends PluginForHost {
                         time = time.substring(0, time.indexOf("."));
                         throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, getMessage(err), Integer.parseInt(time) * 1000);
                     } else {
-                        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, getMessage(err));
+                        throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, getMessage(err), 15 * 60 * 1000);
                     }
                 case 6:
                     // DOWNLOAD_FREE_THREAD_COUNT_TO_MANY = 6; //'Free account does not allow to download more than one file at the same
@@ -479,6 +479,7 @@ public abstract class K2SApi extends PluginForHost {
                 case 42:
                     // ERROR_NEED_WAIT_TO_FREE_DOWNLOAD = 41;
                     // ERROR_DOWNLOAD_NOT_AVAILABLE = 42;
+                    // {"message":"Download not available","status":"error","code":406,"errorCode":42,"errors":[{"code":3}]}
                     // {"message":"Download not available","status":"error","code":406,"errorCode":42,"errors":[{"code":5,"timeRemaining":"2521.000000"}]}
                     // {"message":"Download is not available","status":"error","code":406,"errorCode":42,"errors":[{"code":6,"message":" Free account does not allow to download more than one file at the same time"}]}
                     // sub error, pass it back into itself.
@@ -635,7 +636,10 @@ public abstract class K2SApi extends PluginForHost {
                 downloadLink.setProperty(property, Property.NULL);
                 dllink = null;
             } finally {
-                con.disconnect();
+                try {
+                    con.disconnect();
+                } catch (Throwable e) {
+                }
             }
         }
         return dllink;
