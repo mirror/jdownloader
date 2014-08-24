@@ -177,7 +177,9 @@ public class FlickrCom extends PluginForDecrypt {
                 }
                 if (parameter.matches(SETLINK)) {
 
-                    picCount = br.getRegex("class=\"Results\">\\((\\d+) in set\\)</div>").getMatch(0);
+                    if (picCount == null) {
+                        picCount = br.getRegex("class=\"Results\">\\((\\d+) in set\\)</div>").getMatch(0);
+                    }
                     if (picCount == null) {
                         picCount = br.getRegex("<div class=\"vsNumbers\">[\t\n\r ]+(\\d+) photos").getMatch(0);
                     }
@@ -267,6 +269,11 @@ public class FlickrCom extends PluginForDecrypt {
                     dl.setAvailable(true);
                     /* No need to hide decrypted single links */
                     dl.setBrowserUrl("http://www.flickr.com" + aLink);
+                    try {
+                        distribute(dl);
+                    } catch (final Throwable e) {
+                        // Not available in old 0.9.581 Stable
+                    }
                     decryptedLinks.add(dl);
                 }
             }
