@@ -269,15 +269,13 @@ public class NitroFlareCom extends PluginForHost {
         final String user = account.getUser();
         final String pass = account.getPass();
         if (inValidate(pass)) {
-            throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nYou haven't provided a valid password (this field can not be empty)!", PluginException.VALUE_ID_PREMIUM_DISABLE);
+            throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nYou haven't provided a valid password or premiumKey (this field can not be empty)!", PluginException.VALUE_ID_PREMIUM_DISABLE);
         }
-        final boolean isPremiumKey = pass.matches("(?-i)NF[a-zA-Z0-9]{10}");
-        if (isPremiumKey) {
+        if (pass.matches("(?-i)NF[a-zA-Z0-9]{10}")) {
             // no need to urlencode, this is always safe.
             return "user=&premiumKey=" + pass;
         }
-        final boolean isEmail = user.matches(".+@.+");
-        if (!isEmail) {
+        if (inValidate(user) || !user.matches(".+@.+")) {
             throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nYou haven't provided a valid username (must be email address)!", PluginException.VALUE_ID_PREMIUM_DISABLE);
         }
         // urlencode required!
