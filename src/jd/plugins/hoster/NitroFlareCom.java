@@ -369,6 +369,8 @@ public class NitroFlareCom extends PluginForHost {
                     }
                 }
             }
+            // some times error 4 is found here
+            handleApiErrors(account, downloadLink);
             dllink = getJson("url");
             if (inValidate(dllink)) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
