@@ -58,6 +58,7 @@ import jd.http.Browser;
 import jd.plugins.DownloadLink;
 import jd.utils.JDUtilities;
 
+import org.appwork.console.ConsoleDialog;
 import org.appwork.controlling.SingleReachableState;
 import org.appwork.resources.AWUTheme;
 import org.appwork.shutdown.ShutdownController;
@@ -529,7 +530,9 @@ public class SecondLevelLaunch {
                         String txt = "It seems that JDownloader did not exit properly on " + error + "\r\nThis might result in losing settings or your downloadlist!\r\n\r\nPlease make sure to close JDownloader using Menu->File->Exit or Window->Close [X]";
                         LOG.warning("BAD EXIT Detected!: " + txt);
 
-                        UIOManager.I().showConfirmDialog(UIOManager.BUTTONS_HIDE_CANCEL | Dialog.STYLE_SHOW_DO_NOT_DISPLAY_AGAIN | Dialog.LOGIC_DONOTSHOW_BASED_ON_TITLE_ONLY, "Warning - Bad Exit!", txt, AWUTheme.I().getIcon(Dialog.ICON_ERROR, 32), null, null);
+                        if (!Application.isHeadless()) {
+                            UIOManager.I().showConfirmDialog(UIOManager.BUTTONS_HIDE_CANCEL | Dialog.STYLE_SHOW_DO_NOT_DISPLAY_AGAIN | Dialog.LOGIC_DONOTSHOW_BASED_ON_TITLE_ONLY, "Warning - Bad Exit!", txt, AWUTheme.I().getIcon(Dialog.ICON_ERROR, 32), null, null);
+                        }
 
                     };
                 }.start();
@@ -898,8 +901,13 @@ public class SecondLevelLaunch {
 
                         } catch (Throwable e) {
                             SecondLevelLaunch.LOG.log(e);
-                            Dialog.getInstance().showExceptionDialog("Exception occured", "An unexpected error occured.\r\nJDownloader will try to fix this. If this happens again, please contact our support.", e);
-                            // org.jdownloader.controlling.JDRestartController.getInstance().restartViaUpdater(false);
+                            if (Application.isHeadless()) {
+                                ConsoleDialog.showExceptionDialog("Exception occured", "An unexpected error occured.\r\nJDownloader will try to fix this. If this happens again, please contact our support.", e);
+
+                            } else {
+                                Dialog.getInstance().showExceptionDialog("Exception occured", "An unexpected error occured.\r\nJDownloader will try to fix this. If this happens again, please contact our support.", e);
+                                // org.jdownloader.controlling.JDRestartController.getInstance().restartViaUpdater(false);
+                            }
                         } finally {
                             OperatingSystemEventSender.getInstance().init();
                         }
