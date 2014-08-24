@@ -89,53 +89,47 @@ public class MyJDownloaderController implements ShutdownVetoListener, GenericCon
 
     protected void start() {
         stop();
-        String email;
-        String password;
-        if (!validateLogins(email = CFG_MYJD.CFG.getEmail(), password = CFG_MYJD.CFG.getPassword())) {
-            if (Application.isHeadless()) {
-                synchronized (AbstractConsole.LOCK) {
-
-                    ConsoleDialog cd = new ConsoleDialog("MyJDownloader Setup");
-                    cd.start();
+        String email = null;
+        String password = null;
+        if (!validateLogins(email = CFG_MYJD.CFG.getEmail(), password = CFG_MYJD.CFG.getPassword()) && Application.isHeadless()) {
+            synchronized (AbstractConsole.LOCK) {
+                ConsoleDialog cd = new ConsoleDialog("MyJDownloader Setup");
+                cd.start();
+                try {
+                    cd.printLines(_JDT._.MyJDownloaderController_onError_badlogins());
                     try {
+                        while (true) {
+                            cd.waitYesOrNo(0, "Enter Logins", "Exit JDownloader");
 
-                        cd.printLines(_JDT._.MyJDownloaderController_onError_badlogins());
-
-                        try {
-                            while (true) {
-                                cd.waitYesOrNo(0, "Enter Logins", "Exit JDownloader");
-
-                                email = cd.ask("Please Enter your MyJDownloader Email:");
-                                password = cd.ask("Please Enter your MyJDownloader Password:");
-                                if (validateLogins(email, password)) {
-                                    CFG_MYJD.EMAIL.setValue(email);
-                                    CFG_MYJD.PASSWORD.setValue(password);
-                                    break;
-                                } else {
-                                    cd.println("Invalid Logins");
-                                }
+                            email = cd.ask("Please Enter your MyJDownloader Email:");
+                            password = cd.ask("Please Enter your MyJDownloader Password:");
+                            if (validateLogins(email, password)) {
+                                CFG_MYJD.EMAIL.setValue(email);
+                                CFG_MYJD.PASSWORD.setValue(password);
+                                break;
+                            } else {
+                                cd.println("Invalid Logins");
                             }
-                        } catch (DialogNoAnswerException e) {
-                            ShutdownController.getInstance().requestShutdown();
                         }
-
-                    } finally {
-                        cd.end();
+                    } catch (DialogNoAnswerException e) {
+                        ShutdownController.getInstance().requestShutdown();
                     }
 
+                } finally {
+                    cd.end();
                 }
             }
-
         }
+        if (validateLogins(email, password)) {
+            MyJDownloaderConnectThread lthread = new MyJDownloaderConnectThread(this);
 
-        MyJDownloaderConnectThread lthread = new MyJDownloaderConnectThread(this);
-
-        lthread.setEmail(email);
-        lthread.setPassword(password);
-        lthread.setDeviceName(CFG_MYJD.CFG.getDeviceName());
-        if (thread.compareAndSet(null, lthread)) {
-            ShutdownController.getInstance().addShutdownVetoListener(this);
-            lthread.start();
+            lthread.setEmail(email);
+            lthread.setPassword(password);
+            lthread.setDeviceName(CFG_MYJD.CFG.getDeviceName());
+            if (thread.compareAndSet(null, lthread)) {
+                ShutdownController.getInstance().addShutdownVetoListener(this);
+                lthread.start();
+            }
         }
     }
 
