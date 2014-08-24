@@ -265,11 +265,7 @@ public class NitroFlareCom extends PluginForHost {
      * @return
      * @throws PluginException
      */
-    private String userPassString(final Account account) throws PluginException {
-        // account is only null from other methods, fetch account will always have associated account. Its safe to do this!
-        if (account == null) {
-            return "";
-        }
+    private String validateAccount(final Account account) throws PluginException {
         final String user = account.getUser();
         final String pass = account.getPass();
         if (inValidate(pass)) {
@@ -289,7 +285,7 @@ public class NitroFlareCom extends PluginForHost {
     @Override
     public AccountInfo fetchAccountInfo(final Account account) throws Exception {
         AccountInfo ai = new AccountInfo();
-        br.getPage(apiURL + "/getKeyInfo?" + userPassString(account));
+        br.getPage(apiURL + "/getKeyInfo?" + validateAccount(account));
         handleApiErrors(account, null);
         final String expire = getJson("expiryDate");
         final String status = getJson("status");
@@ -336,7 +332,7 @@ public class NitroFlareCom extends PluginForHost {
             if (downloadLink.getBooleanProperty("premiumRequired", false) && account == null) {
                 throwPremiumRequiredException();
             }
-            final String req = apiURL + "/getDownloadLink?file=" + getFUID(downloadLink) + userPassString(account);
+            final String req = apiURL + "/getDownloadLink?file=" + getFUID(downloadLink) + (account != null ? "&" + validateAccount(account) : "");
             // needed for when dropping to frame, the cookie session seems to carry over current position in download sequence and you get
             // recaptcha error codes at first step.
             br = new Browser();
