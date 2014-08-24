@@ -124,7 +124,14 @@ public abstract class K2SApi extends PluginForHost {
         return getProtocol() + getDomain() + "/api/v1";
     }
 
-    protected String getProtocol() {
+    /**
+     * Returns plugin specific user setting. <br />
+     * <b>NOTE:</b> public method, so that the decrypter can use it!
+     *
+     * @author raztoki
+     * @return
+     */
+    public String getProtocol() {
         return (isSecure() ? "https://" : "http://");
     }
 
@@ -140,7 +147,11 @@ public abstract class K2SApi extends PluginForHost {
     }
 
     protected String getFUID(final DownloadLink downloadLink) {
-        return new Regex(downloadLink.getDownloadURL(), "/([a-z0-9]+)$").getMatch(0);
+        return getFUID(downloadLink.getDownloadURL());
+    }
+
+    public String getFUID(final String link) {
+        return new Regex(link, "/([a-z0-9]+)$").getMatch(0);
     }
 
     private static HashMap<String, String> antiDDoSCookies = new HashMap<String, String>();

@@ -21,7 +21,6 @@ import java.util.ArrayList;
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.nutils.encoding.Encoding;
-import jd.parser.Regex;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
@@ -43,14 +42,20 @@ public class Keep2ShareCcDecrypter extends PluginForDecrypt {
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-        String parameter = param.toString();
-        parameter = parameter.replace("keep2share.cc/", "k2s.cc/");
         final PluginForHost plugin = JDUtilities.getPluginForHost("keep2share.cc");
         if (plugin == null) {
             throw new IllegalStateException("keep2share plugin not found!");
         }
         // set cross browser support
         ((jd.plugins.hoster.Keep2ShareCc) plugin).setBrowser(br);
+        // corrections
+        final String uid = ((jd.plugins.hoster.Keep2ShareCc) plugin).getFUID(param.toString());
+        final String host = ((jd.plugins.hoster.Keep2ShareCc) plugin).MAINPAGE.replaceFirst("^https?://", ((jd.plugins.hoster.Keep2ShareCc) plugin).getProtocol());
+        if (uid == null || host == null) {
+            logger.warning("Decrypter broken for link: " + param.toString());
+            return null;
+        }
+        final String parameter = host + "/file/" + uid;
         ((jd.plugins.hoster.Keep2ShareCc) plugin).getPage(parameter);
         // Check if we have a single link or a folder
         if (br.containsHTML("class=\"summary\"")) {
@@ -69,7 +74,7 @@ public class Keep2ShareCcDecrypter extends PluginForDecrypt {
                 fp.addLinks(decryptedLinks);
             }
         } else {
-            final DownloadLink singlink = createDownloadlink("http://keep2sharedecrypted.cc/file/" + new Regex(parameter, "([a-z0-9]+)$").getMatch(0));
+            final DownloadLink singlink = createDownloadlink("http://keep2sharedecrypted.cc/file/" + uid);
             final String filename = ((jd.plugins.hoster.Keep2ShareCc) plugin).getFileName();
             final String filesize = ((jd.plugins.hoster.Keep2ShareCc) plugin).getFileSize();
             if (filename != null) {

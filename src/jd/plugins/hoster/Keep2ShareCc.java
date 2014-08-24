@@ -61,7 +61,7 @@ public class Keep2ShareCc extends K2SApi {
     }
 
     private final String         DOWNLOADPOSSIBLE = ">To download this file with slow speed, use";
-    private final String         MAINPAGE         = "http://k2s.cc";
+    public final String          MAINPAGE         = "http://k2s.cc";
     private final String         DOMAINS_PLAIN    = "((keep2share|k2s|k2share|keep2s|keep2)\\.cc)";
     private final String         DOMAINS_HTTP     = "(https?://(www\\.)?" + DOMAINS_PLAIN + ")";
 
