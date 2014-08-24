@@ -17,7 +17,6 @@
 package jd.plugins.hoster;
 
 import java.io.File;
-import java.io.IOException;
 import java.util.HashMap;
 import java.util.Locale;
 import java.util.Map;
@@ -60,15 +59,27 @@ public class Publish2Me extends K2SApi {
         return MAINPAGE + "/page/terms.html";
     }
 
+    @Override
+    public void correctDownloadLink(final DownloadLink link) {
+        // link cleanup, but respect users protocol choosing.
+        link.setUrlDownload(link.getDownloadURL().replaceFirst("^https?://", getProtocol()));
+    }
+
     private static AtomicInteger maxPrem = new AtomicInteger(1);
 
-    /* api stuff */
+    /* K2SApi setters */
+
     /**
      * sets domain the API will use!
      */
     @Override
     protected String getDomain() {
         return "publish2.me";
+    }
+
+    @Override
+    protected Browser prepBrowser(Browser prepBr) {
+        return prepADB(prepBr);
     }
 
     @Override
@@ -107,26 +118,18 @@ public class Publish2Me extends K2SApi {
         }
     }
 
-    private boolean apiEnabled() {
-        return true;
-        // this.getPluginConfig().getBooleanProperty(USE_API, default_SSL_CONNECTION);
-    }
-
-    /* User settings */
-    private final String  USE_API                = "USE_API";
-    private final String  SSL_CONNECTION         = "SSL_CONNECTION";
-    private final boolean default_USE_API        = true;
-    private final boolean default_SSL_CONNECTION = false;
+    /* end of K2SApi stuff */
 
     private void setConfigElements() {
-//        this.getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, this.getPluginConfig(), USE_API, JDL.L("plugins.hoster.Publish2Me.useAPI", "Use API (recommended!)\r\nIMPORTANT: Free accounts will still be accepted in API mode but they can not be used!")).setDefaultValue(default_USE_API));
-        this.getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, this.getPluginConfig(), SSL_CONNECTION, JDL.L("plugins.hoster.Publish2Me.preferSSL", "Use Secure Communication over SSL (HTTPS://)")).setDefaultValue(default_SSL_CONNECTION));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, this.getPluginConfig(), USE_API, JDL.L("plugins.hoster.Publish2Me.useAPI", "Use API (recommended!)")).setDefaultValue(default_USE_API));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, this.getPluginConfig(), SSL_CONNECTION, JDL.L("plugins.hoster.Publish2Me.preferSSL", "Use Secure Communication over SSL (HTTPS://)")).setDefaultValue(default_SSL_CONNECTION));
     }
 
     @Override
-    public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
+    public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
+        correctDownloadLink(link);
         this.setBrowserExclusive();
-        br.getPage(link.getDownloadURL());
+        getPage(link.getDownloadURL());
         if (br.getRequest().getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
@@ -144,7 +147,7 @@ public class Publish2Me extends K2SApi {
     public void handleFree(final DownloadLink downloadLink) throws Exception, PluginException {
         setConstants(null);
         checkShowFreeDialog(Browser.getHost(MAINPAGE));
-        if (this.apiEnabled()) {
+        if (useAPI()) {
             super.handleDownload(downloadLink, null);
         } else {
             requestFileInformation(downloadLink);
@@ -168,7 +171,7 @@ public class Publish2Me extends K2SApi {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
             br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
-            br.postPage(br.getURL(), "slow_id=" + id);
+            postPage(br.getURL(), "slow_id=" + id);
             if (br.containsHTML("Free user can't download large files")) {
                 premiumDownloadRestriction("This file can only be downloaded by premium users");
             } else if (br.containsHTML(freeAccConLimit)) {
@@ -212,7 +215,7 @@ public class Publish2Me extends K2SApi {
                         rc.load();
                         final File cf = rc.downloadCaptcha(getLocalCaptchaFile());
                         final String c = getCaptchaCode(cf, downloadLink);
-                        br.postPage(br.getURL(), "recaptcha_challenge_field=" + rc.getChallenge() + "&recaptcha_response_field=" + Encoding.urlEncode(c) + "&free=1&freeDownloadRequest=1&uniqueId=" + id);
+                        postPage(br.getURL(), "recaptcha_challenge_field=" + rc.getChallenge() + "&recaptcha_response_field=" + Encoding.urlEncode(c) + "&free=1&freeDownloadRequest=1&uniqueId=" + id);
                         if (br.containsHTML(reCaptcha) && i + 1 != repeat) {
                             continue;
                         } else if (br.containsHTML(reCaptcha) && i + 1 == repeat) {
@@ -228,9 +231,9 @@ public class Publish2Me extends K2SApi {
                             }
                         }
                         String code = getCaptchaCode(captcha, downloadLink);
-                        br.postPage(br.getURL(), "CaptchaForm%5Bcode%5D=" + code + "&free=1&freeDownloadRequest=1&uniqueId=" + id);
+                        postPage(br.getURL(), "CaptchaForm%5Bcode%5D=" + code + "&free=1&freeDownloadRequest=1&uniqueId=" + id);
                         if (br.containsHTML(formCaptcha) && i + 1 != repeat) {
-                            cbr.getPage("/file/captcha.html?refresh=1&_=" + System.currentTimeMillis());
+                            getPage(cbr, "/file/captcha.html?refresh=1&_=" + System.currentTimeMillis());
                             captcha = cbr.getRegex("\"url\":\"([^<>\"]*?)\"").getMatch(0);
                             if (captcha != null) {
                                 captcha = captcha.replace("\\", "");
@@ -249,7 +252,7 @@ public class Publish2Me extends K2SApi {
                     wait = Integer.parseInt(waittime);
                 }
                 this.sleep(wait * 1001l, downloadLink);
-                br.postPage(br.getURL(), "free=1&uniqueId=" + id);
+                postPage(br.getURL(), "free=1&uniqueId=" + id);
                 if (br.containsHTML(freeAccConLimit)) {
                     // could be shared network or a download hasn't timed out yet or user downloading in another program?
                     throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, "Connection limit reached", 10 * 60 * 60 * 1001);
@@ -304,7 +307,7 @@ public class Publish2Me extends K2SApi {
                     }
                 }
                 br.setFollowRedirects(false);
-                br.getPage(MAINPAGE + "/login.html");
+                getPage(MAINPAGE.replaceFirst("^https?://", getProtocol()) + "/login.html");
                 String logincaptcha = br.getRegex("\"(/auth/captcha\\.html[^<>\"]*?)\"").getMatch(0);
                 String postData = "LoginForm%5BrememberMe%5D=0&LoginForm%5BrememberMe%5D=1&LoginForm%5Busername%5D=" + Encoding.urlEncode(account.getUser()) + "&LoginForm%5Bpassword%5D=" + Encoding.urlEncode(account.getPass());
                 if (logincaptcha != null) {
@@ -313,7 +316,7 @@ public class Publish2Me extends K2SApi {
                     postData += "&LoginForm%5BverifyCode%5D=" + Encoding.urlEncode(c);
                 }
                 br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
-                br.postPage("/login.html", postData);
+                postPage("/login.html", postData);
                 if (!br.containsHTML("\"url\":\"")) {
                     if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
                         throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUngültiger Benutzername, ungültiges Passwort oder ungültiges Login Captcha!\r\nSchnellhilfe: \r\nDu bist dir sicher, dass dein eingegebener Benutzername und Passwort stimmen?\r\nFalls dein Passwort Sonderzeichen enthält, ändere es und versuche es erneut!", PluginException.VALUE_ID_PREMIUM_DISABLE);
@@ -345,7 +348,7 @@ public class Publish2Me extends K2SApi {
             ai.setStatus("Please use E-Mail as login/name!\r\nBitte E-Mail Adresse als Benutzername benutzen!");
             return ai;
         }
-        if (this.apiEnabled()) {
+        if (useAPI()) {
             ai = super.fetchAccountInfo(account);
         } else {
             /* reset maxPrem workaround on every fetchaccount info */
@@ -355,7 +358,7 @@ public class Publish2Me extends K2SApi {
                 account.setValid(false);
                 throw e;
             }
-            br.getPage("/site/profile.html");
+            getPage("/site/profile.html");
             ai.setUnlimitedTraffic();
             final String expire = br.getRegex("Premium expires:[\t\n\r ]+<b>([^<>\"]*?)</b>").getMatch(0);
             if (expire == null) {
@@ -401,13 +404,13 @@ public class Publish2Me extends K2SApi {
     @Override
     public void handlePremium(final DownloadLink link, final Account account) throws Exception {
         setConstants(account);
-        if (this.apiEnabled()) {
+        if (useAPI()) {
             super.handleDownload(link, account);
         } else {
             requestFileInformation(link);
             login(account, false);
             br.setFollowRedirects(false);
-            br.getPage(link.getDownloadURL());
+            getPage(link.getDownloadURL());
             if (account.getBooleanProperty("free", false)) {
                 checkShowFreeDialog(Browser.getHost(MAINPAGE));
                 doFree(link, account);
@@ -429,10 +432,10 @@ public class Publish2Me extends K2SApi {
         }
     }
 
-    private String getDllink() throws IOException, PluginException {
+    private String getDllink() throws Exception {
         String dllink = br.getRegex("(\"|')(/file/url\\.html\\?file=[a-z0-9]+)\\1").getMatch(1);
         if (dllink != null) {
-            br.getPage(dllink);
+            getPage(dllink);
             dllink = br.getRegex("\"url\":\"(http[^<>\"]*?)\"").getMatch(0);
             if (dllink == null) {
                 dllink = br.getRedirectLocation();
