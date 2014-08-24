@@ -265,7 +265,11 @@ public class NitroFlareCom extends PluginForHost {
      * @return
      * @throws PluginException
      */
-    private String validateAccount(final Account account) throws PluginException {
+    private String userPassString(final Account account) throws PluginException {
+        // account is only null from other methods, fetch account will always have associated account. Its safe to do this!
+        if (account == null) {
+            return "";
+        }
         final String user = account.getUser();
         final String pass = account.getPass();
         if (inValidate(pass)) {
@@ -282,25 +286,14 @@ public class NitroFlareCom extends PluginForHost {
         return "user=" + Encoding.urlEncode(user) + "&premiumKey=" + Encoding.urlEncode(pass);
     }
 
-    // API Error handling codes.
-    // 1 => 'Access denied',
-    // 2 => 'Invalid premium key',
-    // 3 => 'Bad input',
-    // 4 => 'File doesn't exist',
-    // 5 => 'Free downloading is not possible. You have to wait 60 minutes between free downloads.',
-    // 6 => 'Invalid captcha',
-    // 7 => 'Free users can download only 1 file at the same time'
-
     @Override
     public AccountInfo fetchAccountInfo(final Account account) throws Exception {
         AccountInfo ai = new AccountInfo();
-        br.getPage(apiURL + "/getKeyInfo?" + validateAccount(account));
+        br.getPage(apiURL + "/getKeyInfo?" + userPassString(account));
+        handleApiErrors(account, null);
         final String expire = getJson("expiryDate");
         final String status = getJson("status");
         final String storage = getJson("storeageUsed");
-        if ("error".equalsIgnoreCase(getJson("type")) && "2".equalsIgnoreCase(getJson("code"))) {
-            throw new PluginException(LinkStatus.ERROR_PREMIUM, getJson("message"), PluginException.VALUE_ID_PREMIUM_DISABLE);
-        }
         if (inValidate(status)) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
@@ -343,21 +336,14 @@ public class NitroFlareCom extends PluginForHost {
             if (downloadLink.getBooleanProperty("premiumRequired", false) && account == null) {
                 throwPremiumRequiredException();
             }
-            final String req = apiURL + "/getDownloadLink?" + validateAccount(account) + "&file=" + getFUID(downloadLink);
+            final String req = apiURL + "/getDownloadLink?file=" + getFUID(downloadLink) + userPassString(account);
             // needed for when dropping to frame, the cookie session seems to carry over current position in download sequence and you get
             // recaptcha error codes at first step.
             br = new Browser();
             br.getPage(req);
+            handleApiErrors(account, downloadLink);
             // error handling here.
-            if ("error".equalsIgnoreCase(getJson("type")) && "5".equalsIgnoreCase(getJson("code"))) {
-                final String msg = getJson("message");
-                final String time = new Regex(msg, "You have to wait (\\d+) minutes").getMatch(0);
-                final long t = (!inValidate(time) ? Long.parseLong(time) * 60 * 1000 : 1 * 60 * 60 * 1000);
-                throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, msg, t);
-            } else if ("error".equalsIgnoreCase(getJson("type")) && "7".equalsIgnoreCase(getJson("code"))) {
-                // shouldn't happen as its hard limited.
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            } else if ("free".equalsIgnoreCase(getJson("linkType"))) {
+            if ("free".equalsIgnoreCase(getJson("linkType"))) {
                 // wait
                 String delay = getJson("delay");
                 long startTime = System.currentTimeMillis();
@@ -399,6 +385,54 @@ public class NitroFlareCom extends PluginForHost {
         }
         downloadLink.setProperty(directlinkproperty, dllink);
         dl.startDownload();
+    }
+
+    private void handleApiErrors(final Account account, final DownloadLink downloadLink) throws PluginException {
+        // API Error handling codes.
+        // 1 => 'Access denied', (banned for tring incorrect x times for y minutes
+        // 2 => 'Invalid premium key',
+        // 3 => 'Bad input',
+        // 4 => 'File doesn't exist',
+        // 5 => 'Free downloading is not possible. You have to wait 60 minutes between free downloads.',
+        // 6 => 'Invalid captcha',
+        // 7 => 'Free users can download only 1 file at the same time'
+        // 8 => ﻿{"type":"error","message":"Wrong login","code":8}
+
+        final String type = getJson("type");
+        final String code = getJson("code");
+        final String msg = getJson("message");
+        final int cde = (!inValidate(code) && code.matches("\\d+") ? Integer.parseInt(code) : -1);
+        if ("error".equalsIgnoreCase(type)) {
+            try {
+                if (cde == 1) {
+                    if (account == null) {
+                        throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, (!inValidate(msg) ? msg : null), 60 * 60 * 1000);
+                    } else {
+                        throw new PluginException(LinkStatus.ERROR_PREMIUM, (!inValidate(msg) ? msg : null), 60 * 60 * 1000);
+                    }
+                } else if (cde == 2) {
+                    throw new PluginException(LinkStatus.ERROR_PREMIUM, msg, PluginException.VALUE_ID_PREMIUM_DISABLE);
+                } else if (cde == 3 && downloadLink != null) {
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, (!inValidate(msg) ? msg : null));
+                } else if (cde == 4 && downloadLink != null) {
+                    throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND, (!inValidate(msg) ? msg : null));
+                } else if (cde == 5 && downloadLink != null) {
+                    final String time = new Regex(msg, "You have to wait (\\d+) minutes").getMatch(0);
+                    final long t = (!inValidate(time) ? Long.parseLong(time) * 60 * 1000 : 1 * 60 * 60 * 1000);
+                    throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, (!inValidate(msg) ? msg : null), t);
+                } else if (cde == 7 && downloadLink != null) {
+                    // shouldn't happen as its hard limited.
+                    throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, (!inValidate(msg) ? msg : "You can't download more than one file within a certain time period in free mode"), 60 * 60 * 1000l);
+                } else if (cde == 8) {
+                    throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nIncorrect login attempt!", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                }
+            } catch (final PluginException p) {
+                if (!inValidate(msg)) {
+                    logger.warning("ERROR :: " + msg);
+                }
+                throw p;
+            }
+        }
     }
 
     private void throwPremiumRequiredException() throws PluginException {
