@@ -257,6 +257,33 @@ public class NitroFlareCom extends PluginForHost {
         }
     }
 
+    /**
+     * Validates account and returns correct account info, when user has provided incorrect user pass fields to JD client. Or Throws
+     * exception indicating users mistake, when it's a irreversible mistake.
+     *
+     * @param account
+     * @return
+     * @throws PluginException
+     */
+    private String validateAccount(final Account account) throws PluginException {
+        final String user = account.getUser();
+        final String pass = account.getPass();
+        if (inValidate(pass)) {
+            throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nYou haven't provided a valid password (this field can not be empty)!", PluginException.VALUE_ID_PREMIUM_DISABLE);
+        }
+        final boolean isPremiumKey = pass.matches("(?-i)NF[a-zA-Z0-9]{10}");
+        if (isPremiumKey) {
+            // no need to urlencode, this is always safe.
+            return "user=&premiumKey=" + pass;
+        }
+        final boolean isEmail = user.matches(".+@.+");
+        if (!isEmail) {
+            throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nYou haven't provided a valid username (must be email address)!", PluginException.VALUE_ID_PREMIUM_DISABLE);
+        }
+        // urlencode required!
+        return "user=" + Encoding.urlEncode(user) + "&premiumKey=" + Encoding.urlEncode(pass);
+    }
+
     // API Error handling codes.
     // 1 => 'Access denied',
     // 2 => 'Invalid premium key',
@@ -269,7 +296,7 @@ public class NitroFlareCom extends PluginForHost {
     @Override
     public AccountInfo fetchAccountInfo(final Account account) throws Exception {
         AccountInfo ai = new AccountInfo();
-        br.getPage(apiURL + "/getKeyInfo?" + (account.getUser() != null ? "user=" + Encoding.urlEncode(account.getUser()) : "user=") + "&premiumKey=" + Encoding.urlEncode(account.getPass()));
+        br.getPage(apiURL + "/getKeyInfo?" + validateAccount(account));
         final String expire = getJson("expiryDate");
         final String status = getJson("status");
         final String storage = getJson("storeageUsed");
@@ -318,7 +345,7 @@ public class NitroFlareCom extends PluginForHost {
             if (downloadLink.getBooleanProperty("premiumRequired", false) && account == null) {
                 throwPremiumRequiredException();
             }
-            final String req = apiURL + "/getDownloadLink?file=" + getFUID(downloadLink) + (account != null && account.getUser() != null ? "&user=" + Encoding.urlEncode(account.getUser()) : "") + (account != null ? "&premiumKey=" + Encoding.urlEncode(account.getPass()) : "");
+            final String req = apiURL + "/getDownloadLink?" + validateAccount(account) + "&file=" + getFUID(downloadLink);
             // needed for when dropping to frame, the cookie session seems to carry over current position in download sequence and you get
             // recaptcha error codes at first step.
             br = new Browser();
