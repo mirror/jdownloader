@@ -239,7 +239,8 @@ public class VideoFCTwoCom extends PluginForHost {
         }
 
         filename = filename.replaceAll("\\p{Z}", " ");
-        filename = filename.replaceAll("[\\.\\d]{3,}$", "");
+        // why do we do this?? http://board.jdownloader.org/showthread.php?p=304933#post304933
+        // filename = filename.replaceAll("[\\.\\d]{3,}$", "");
         filename = filename.trim();
         filename = filename.replaceAll("(:|,|\\s)", "_");
         filename = filename + (new Regex(filename, "\\.[0-9A-Za-z]{2,5}$").matches() ? "" : ".mp4");
