@@ -9,11 +9,9 @@ import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
-import jd.plugins.LinkStatus;
-import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "oboom.com" }, urls = { "https?://(www\\.)?oboom\\.com/(#share/[a-f0-9\\-]+|#folder/[A-Z0-9]+)" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "oboom.com" }, urls = { "https?://(www\\.)?oboom\\.com/(#share/[a-f0-9\\-]+|#?folder/[A-Z0-9]+)" }, flags = { 0 })
 public class OBoomCom extends PluginForDecrypt {
 
     private final String APPID  = "43340D9C23";
@@ -28,17 +26,15 @@ public class OBoomCom extends PluginForDecrypt {
     public ArrayList<DownloadLink> decryptIt(CryptedLink parameter, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         br.getPage(wwwURL + "guestsession?source=" + APPID);
+        final String uid = new Regex(parameter.toString(), "(share|folder)/([A-Z0-9\\-]+)").getMatch(1);
         String guestSession = br.getRegex("200,.*?\"(.*?)\"").getMatch(0);
-        if (guestSession == null) {
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
-        String UID = new Regex(parameter.toString(), "#(share|folder)/([A-Z0-9\\-]+)").getMatch(1);
-        if (UID == null) {
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (guestSession == null || uid == null) {
+            logger.warning("Decrypter broken for link: " + parameter);
+            return null;
         }
         String name = null;
-        if (parameter.toString().contains("#share")) {
-            br.getPage(wwwURL + guestSession + "/share?share=" + UID);
+        if (parameter.toString().contains("share/")) {
+            br.getPage(wwwURL + guestSession + "/share?share=" + uid);
             String files = br.getRegex("\"files\":\\[(.*?)\\]").getMatch(0);
             name = br.getRegex("\"name\":\"(.*?)\"").getMatch(0);
             if (name != null && "undefined".equals(name)) {
@@ -50,12 +46,21 @@ public class OBoomCom extends PluginForDecrypt {
                     decryptedLinks.add(createDownloadlink("https://www.oboom.com/#" + fileID));
                 }
             }
-        } else if (parameter.toString().contains("#folder")) {
-            br.getPage(apiURL + "ls?item=" + UID + "&token=" + guestSession);
+        } else if (parameter.toString().contains("folder/")) {
+            br.getPage(apiURL + "ls?item=" + uid + "&token=" + guestSession);
+            if (br.getHttpConnection().getResponseCode() == 404) {
+                final DownloadLink offline = createDownloadlink("directhttp://" + parameter);
+                offline.setFinalFileName(uid);
+                offline.setAvailable(false);
+                offline.setProperty("offline", true);
+                decryptedLinks.add(offline);
+                return decryptedLinks;
+            }
             name = br.getRegex("\"name\":\"(.*?)\"").getMatch(0);
-            String[] files = br.getRegex("\\{\"size.*?\\}").getColumn(-1);
-            if (files != null && files.length != 0) {
-                for (final String f : files) {
+            final String jsontext = br.getRegex(",\\[(.+)").getMatch(0);
+            String[] items = jsontext.split("\\},\\{");
+            if (items != null && items.length != 0) {
+                for (final String f : items) {
                     final String fname = getJson(f, "name");
                     final String fsize = getJson(f, "size");
                     final String fuid = getJson(f, "id");
@@ -81,8 +86,10 @@ public class OBoomCom extends PluginForDecrypt {
                             dl.setProperty("LINKDUPEID", linkID);
                         }
                         decryptedLinks.add(dl);
-                    }
-                    if (fuid != null && !"file".equalsIgnoreCase(type)) {
+                    } else if (fuid != null && "folder".equalsIgnoreCase(type)) {
+                        final DownloadLink dl = createDownloadlink("https://www.oboom.com/folder/" + fuid);
+                        decryptedLinks.add(dl);
+                    } else if (fuid != null && !"file".equalsIgnoreCase(type)) {
                         // sub folders maybe possible also ??
                         return null; // should get users reporting issue!
                     }
