@@ -16,8 +16,12 @@ public class WindowsRestarter extends Restarter {
     protected List<String> getApplicationStartCommands(File root) {
         ArrayList<String> lst = new ArrayList<String>();
         File restartBinary = new File(root, "JDownloader.exe");
-        if (!restartBinary.exists() || !restartBinary.isFile()) restartBinary = new File(root, "JDownloader2.exe");
-        if (!restartBinary.exists() || !restartBinary.isFile()) restartBinary = new File(root, "JDownloader 2.exe");
+        if (!restartBinary.exists() || !restartBinary.isFile()) {
+            restartBinary = new File(root, "JDownloader2.exe");
+        }
+        if (!restartBinary.exists() || !restartBinary.isFile()) {
+            restartBinary = new File(root, "JDownloader 2.exe");
+        }
         if (restartBinary.exists() && restartBinary.isFile()) {
             getLogger().info("Found binary: " + restartBinary + " for restart");
             try {
@@ -34,6 +38,11 @@ public class WindowsRestarter extends Restarter {
         }
         if (restartBinary != null) {
             lst.add(restartBinary.getAbsolutePath());
+            if (Application.isHeadless()) {
+                // VM passthrough for install4j and exe4j
+                lst.add("-J-Djava.awt.headless=true");
+            }
+
         } else {
             getLogger().info("No binary found! Will use JavaBinary!");
             lst.addAll(getJVMApplicationStartCommands(root));
