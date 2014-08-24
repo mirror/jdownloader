@@ -135,6 +135,10 @@ public class VeeHdCom extends PluginForHost {
                 }
             }
         }
+        if (br.containsHTML(">429 Too Many Requests")) {
+            logger.info("Server: '429 Too Many Requests' --> Wait 5 minutes");
+            throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Wait before starting new downloads", 5 * 60 * 1001l);
+        }
         /* This case usually won't happen */
         if (dllink == null && acc == null) {
             try {
@@ -236,7 +240,7 @@ public class VeeHdCom extends PluginForHost {
         ai.setUnlimitedTraffic();
         try {
             account.setType(AccountType.FREE);
-            account.setMaxSimultanDownloads(20);
+            account.setMaxSimultanDownloads(FREE_MAXDOWNLOADS);
             account.setConcurrentUsePossible(true);
         } catch (final Throwable e) {
             /* not available in old Stable 0.9.581 */

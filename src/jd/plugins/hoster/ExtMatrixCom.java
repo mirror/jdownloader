@@ -30,6 +30,7 @@ import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.plugins.Account;
+import jd.plugins.Account.AccountType;
 import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
@@ -257,6 +258,7 @@ public class ExtMatrixCom extends PluginForHost {
                 // free accounts can still have captcha.
                 account.setMaxSimultanDownloads(maxPrem.get());
                 account.setConcurrentUsePossible(false);
+                account.setType(AccountType.FREE);
             } catch (final Throwable e) {
                 // not available in old Stable 0.9.581
             }
@@ -266,6 +268,7 @@ public class ExtMatrixCom extends PluginForHost {
                 maxPrem.set(20);
                 account.setMaxSimultanDownloads(maxPrem.get());
                 account.setConcurrentUsePossible(true);
+                account.setType(AccountType.PREMIUM);
             } catch (final Throwable e) {
                 // not available in old Stable 0.9.581
             }

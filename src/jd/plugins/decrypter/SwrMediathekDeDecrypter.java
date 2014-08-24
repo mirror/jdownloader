@@ -67,7 +67,6 @@ public class SwrMediathekDeDecrypter extends PluginForDecrypt {
         final ArrayList<String> selectedQualities = new ArrayList<String>();
         final boolean grabsubtitles = cfg.getBooleanProperty(Q_SUBTITLES, false);
         PARAMETER = param.toString().replace("/lq/", "/");
-        VIDEOID = new Regex(PARAMETER, "([a-z0-9\\-]+)$").getMatch(0);
         br.setFollowRedirects(true);
         synchronized (ctrlLock) {
             if (!pluginLoaded.get()) {
@@ -76,9 +75,10 @@ public class SwrMediathekDeDecrypter extends PluginForDecrypt {
                 pluginLoaded.set(true);
             }
             br.getPage(PARAMETER);
-            final String ekey = new Regex(PARAMETER, "show=(.+)").getMatch(0);
-            if (ekey == null || !ekey.contains("-")) {
+            VIDEOID = new Regex(br.getURL(), "show=([a-z0-9\\-]+)$").getMatch(0);
+            if (VIDEOID == null || !VIDEOID.contains("-")) {
                 final DownloadLink dl = createDownloadlink("directhttp://" + PARAMETER);
+                dl.setFinalFileName(new Regex(PARAMETER, "swrmediathek\\.de/player\\.htm\\?show=(.+)").getMatch(0));
                 dl.setProperty("offline", true);
                 dl.setFinalFileName(VIDEOID);
                 decryptedLinks.add(dl);
@@ -101,7 +101,7 @@ public class SwrMediathekDeDecrypter extends PluginForDecrypt {
              * Example of a link which does not seem to be available via http:
              * http://swrmediathek.de/player.htm?show=3229e410-166d-11e4-9894-0026b975f2e6
              */
-            br.getPage("http://swrmediathek.de/AjaxEntry?ekey=" + ekey);
+            br.getPage("http://swrmediathek.de/AjaxEntry?ekey=" + VIDEOID);
             SUBTITLE_URL = br.getRegex("\"entry_capuri\":\"(https?://[^<>\"]*?)\"").getMatch(0);
             br.getPage("http://swrmediathek.de/rtmpQuals/" + VIDEOID + "/clips.smil");
             final String[] qualities = br.getRegex("src=\"([^<>\"]*?\\.mp4)\"").getColumn(0);
