@@ -184,6 +184,7 @@ public abstract class K2SApi extends PluginForHost {
         // prep site (this will load cloudflare)
         prepBrowser(prepBr);
         try {
+            // response codes that API spews out.
             prepBr.setAllowedResponseCodes(400, 403, 406, 429);
         } catch (final Throwable t) {
             // not in stable;
@@ -422,16 +423,15 @@ public abstract class K2SApi extends PluginForHost {
      * @param url
      * @param arg
      * @param account
-     * @throws IOException
-     * @throws PluginException
      * @author raztoki
-     * @author Jiaz
+     * @throws Exception
      */
-    public void postPageRaw(final Browser ibr, final String url, final String arg, final Account account) throws IOException, PluginException {
+    public void postPageRaw(final Browser ibr, final String url, final String arg, final Account account) throws Exception {
         URLConnectionAdapter con = null;
         try {
             con = ibr.openPostConnection(getApiUrl() + url, arg);
             readConnection(con, ibr);
+            antiDDoS(ibr);
             if (sessionTokenInvalid(account, ibr)) {
                 // we retry once after failure!
                 if (authTokenFail > 1) {
@@ -463,6 +463,14 @@ public abstract class K2SApi extends PluginForHost {
         }
     }
 
+    /**
+     * @author razotki
+     * @author jiaz
+     * @param con
+     * @param ibr
+     * @throws IOException
+     * @throws PluginException
+     */
     private void readConnection(final URLConnectionAdapter con, final Browser ibr) throws IOException, PluginException {
         InputStream is = null;
         try {
@@ -483,10 +491,18 @@ public abstract class K2SApi extends PluginForHost {
         }
     }
 
-    private String readInputStream(final InputStream es) throws UnsupportedEncodingException, IOException {
+    /**
+     * @author razotki
+     * @author jiaz
+     * @param es
+     * @return
+     * @throws UnsupportedEncodingException
+     * @throws IOException
+     */
+    private String readInputStream(final InputStream is) throws UnsupportedEncodingException, IOException {
         BufferedReader f = null;
         try {
-            f = new BufferedReader(new InputStreamReader(es, "UTF8"));
+            f = new BufferedReader(new InputStreamReader(is, "UTF8"));
             String line;
             final StringBuilder ret = new StringBuilder();
             final String sep = System.getProperty("line.separator");
@@ -499,7 +515,7 @@ public abstract class K2SApi extends PluginForHost {
             return ret.toString();
         } finally {
             try {
-                es.close();
+                is.close();
             } catch (final Throwable e) {
             }
         }
@@ -516,7 +532,7 @@ public abstract class K2SApi extends PluginForHost {
         }
     }
 
-    private synchronized String getAuthToken(final Account account) throws IOException, PluginException {
+    private synchronized String getAuthToken(final Account account) throws Exception {
         String authToken = account.getStringProperty(authtoken, null);
         if (authToken == null) {
             // we don't want to pollute this.br
