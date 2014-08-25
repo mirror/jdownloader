@@ -45,7 +45,7 @@ public class PanBaiduCom extends PluginForHost {
     private String              DLLINK                                     = null;
     private static final String TYPE_FOLDER_LINK_NORMAL_PASSWORD_PROTECTED = "http://(www\\.)?pan\\.baidu\\.com/share/init\\?shareid=\\d+\\&uk=\\d+";
     private static final String NOCHUNKS                                   = "NOCHUNKS";
-    private static final String USER_AGENT                                 = "netdisk;4.6.4.1;PC;PC-Windows;6.3.9600;WindowsBaiduYunGuanJia";
+    private static final String USER_AGENT                                 = "netdisk;4.8.2.0;PC;PC-Windows;6.3.9600;WindowsBaiduYunGuanJia";
 
     private static final String NICE_HOST                                  = "pan.baidu.com";
     private static final String NICE_HOSTproperty                          = "panbaiducom";
@@ -55,6 +55,8 @@ public class PanBaiduCom extends PluginForHost {
         if (downloadLink.getBooleanProperty("offline", false)) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
+        br.getHeaders().put("Accept-Charset", null);
+        br.getHeaders().put("Accept-Language", "en-gb, en;q=0.8");
         // Other or older User-Agents might get slow speed
         br.getHeaders().put("User-Agent", USER_AGENT);
         // From decrypter
@@ -67,25 +69,6 @@ public class PanBaiduCom extends PluginForHost {
             // We might need to enter a captcha to get the link so let's just stop here
             downloadLink.setAvailable(true);
             return AvailableStatus.TRUE;
-        }
-        DLLINK = DLLINK.replace("\\", "");
-        final Browser br2 = br.cloneBrowser();
-        br2.setFollowRedirects(true);
-        URLConnectionAdapter con = null;
-        try {
-            con = br2.openGetConnection(DLLINK);
-            if (!con.getContentType().contains("html")) {
-                downloadLink.setDownloadSize(con.getLongContentLength());
-                // Make sure only to use one property
-                downloadLink.setProperty("panbaidudirectlink", DLLINK);
-            } else {
-                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-            }
-        } finally {
-            try {
-                con.disconnect();
-            } catch (Throwable e) {
-            }
         }
         return AvailableStatus.TRUE;
     }
@@ -169,7 +152,7 @@ public class PanBaiduCom extends PluginForHost {
         }
 
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, DLLINK, true, maxChunks);
-        if (dl.getConnection().getContentType().contains("html")) {
+        if (dl.getConnection().getContentType().contains("html") || dl.getConnection().getResponseCode() == 403) {
             br.followConnection();
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
@@ -213,20 +196,25 @@ public class PanBaiduCom extends PluginForHost {
     }
 
     private String checkDirectLink(final DownloadLink downloadLink, final String property) {
-        String dllink = downloadLink.getStringProperty(property);
+        String dllink = downloadLink.getStringProperty(property, null);
         if (dllink != null) {
+            URLConnectionAdapter con = null;
+            final Browser br2 = br.cloneBrowser();
+            br2.setFollowRedirects(true);
             try {
-                final Browser br2 = br.cloneBrowser();
-                br2.setFollowRedirects(true);
-                URLConnectionAdapter con = br2.openGetConnection(dllink);
-                if (con.getContentType().contains("html") || con.getLongContentLength() == -1) {
+                con = br2.openGetConnection(dllink);
+                if (con.getContentType().contains("html") || con.getLongContentLength() == -1 || con.getResponseCode() == 403) {
                     downloadLink.setProperty(property, Property.NULL);
                     dllink = null;
                 }
-                con.disconnect();
             } catch (final Exception e) {
                 downloadLink.setProperty(property, Property.NULL);
                 dllink = null;
+            } finally {
+                try {
+                    con.disconnect();
+                } catch (final Exception e) {
+                }
             }
         }
         return dllink;
@@ -235,7 +223,7 @@ public class PanBaiduCom extends PluginForHost {
     /**
      * Is intended to handle out of date errors which might occur seldom by re-tring a couple of times before throwing the out of date
      * error.
-     * 
+     *
      * @param dl
      *            : The DownloadLink
      * @param error
@@ -271,9 +259,8 @@ public class PanBaiduCom extends PluginForHost {
     public void resetDownloadlink(DownloadLink link) {
     }
 
-
-/* NO OVERRIDE!! We need to stay 0.9*compatible */
-public boolean hasCaptcha(DownloadLink link, jd.plugins.Account acc) {
-return true;
-}
+    /* NO OVERRIDE!! We need to stay 0.9*compatible */
+    public boolean hasCaptcha(DownloadLink link, jd.plugins.Account acc) {
+        return true;
+    }
 }
