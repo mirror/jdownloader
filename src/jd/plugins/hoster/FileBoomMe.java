@@ -67,12 +67,6 @@ public class FileBoomMe extends K2SApi {
 
     /* K2SApi setters */
 
-    private static HashMap<String, String> antiDDoSCookies = new HashMap<String, String>();
-
-    protected HashMap<String, String> getADC() {
-        return antiDDoSCookies;
-    }
-
     /**
      * sets domain the API will use!
      */
@@ -287,12 +281,11 @@ public class FileBoomMe extends K2SApi {
         }
     }
 
-    private final String  MAINPAGE = "http://fboom.me";
-    private static Object LOCK     = new Object();
+    private final String MAINPAGE = "http://fboom.me";
 
     @SuppressWarnings("unchecked")
     private void login(final Account account, final boolean force) throws Exception {
-        synchronized (LOCK) {
+        synchronized (ACCLOCK) {
             try {
                 // Load cookies
                 br.setCookiesExclusive(true);
