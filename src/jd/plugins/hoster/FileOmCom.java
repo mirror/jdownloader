@@ -604,7 +604,7 @@ public class FileOmCom extends PluginForHost {
         }
         // monitor this
         // class= "err"><center>You have reached the download-limit: 1024 Mb</center></div>
-        if (cbr.containsHTML("(class=\"err\">(<center>)?You have reached the download(\\-| )limit([^<]+for last[^<]+|: \\d+[^<]+))")) {
+        if (cbr.containsHTML("((class=\"err\">(<center>)?|>Error</td></tr>.*?>)You have reached the download(\\-| )limit([^<]+for last[^<]+|: \\d+[^<]+))")) {
             /*
              * Indication of when you've reached the max download limit for that given session! Usually shows how long the session was
              * recorded from x time (hours|days) which can trigger false positive below wait handling. As its only indication of what's
