@@ -20,6 +20,7 @@ import java.awt.Dimension;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
 import java.awt.Insets;
+import java.io.IOException;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
@@ -33,6 +34,7 @@ import java.util.Set;
 
 import javax.swing.Icon;
 import javax.swing.JLabel;
+import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.JTextArea;
@@ -79,6 +81,8 @@ public class FreeWayMe extends PluginForHost {
 
     private final String                                   NOTIFY_ON_FULLSPEED_LIMIT_BUBBLE    = "NOTIFY_ON_FULLSPEED_LIMIT_BUBBLE";
     private final String                                   NOTIFY_ON_FULLSPEED_LIMIT_DIALOG    = "NOTIFY_ON_FULLSPEED_LIMIT_DIALOG";
+
+    private final String                                   SETTING_2FA_DEVCEID                 = "SETTING_2FA_DEVCEID";
 
     private static final String                            NORESUME                            = "NORESUME";
     private static final String                            PREVENTSPRITUSAGE                   = "PREVENTSPRITUSAGE";
@@ -140,6 +144,9 @@ public class FreeWayMe extends PluginForHost {
                                                       put("SETTINGS_FULLSPEED_NOTIFICATION_BUBBLE", "Show bubble notification if fullspeed limit is reached");
                                                       put("SETTINGS_FULLSPEED_NOTIFICATION_DIALOG", "Show dialog notification if fullspeed limit is reached");
                                                       put("SETTING_MAXRETRIES_UNKNOWN_ERROR", "Max retries on unknown errors");
+                                                      put("SETTING_2FA_DEVICEID", "Device ID (Two-Factor Authentication)");
+                                                      put("POPUP_2FA_TITLE", "Free-Way 2-Factor Authentication");
+                                                      put("POPUP_2FA_DESCRIPTION", "Please authenticate this device or disable 2-factor authentication on free-way.me\n\n" + "Device: ");
                                                   }
                                               };
 
@@ -181,6 +188,9 @@ public class FreeWayMe extends PluginForHost {
                                                       put("SETTINGS_FULLSPEED_NOTIFICATION_BUBBLE", "Zeige Bubble-Benachrichtigung wenn das Fullspeedlimit ausgeschöpft ist");
                                                       put("SETTINGS_FULLSPEED_NOTIFICATION_DIALOG", "Zeige Dialog-Benachrichtigung wenn das Fullspeedlimit ausgeschöpft ist");
                                                       put("SETTING_MAXRETRIES_UNKNOWN_ERROR", "Maximale Neuversuche bei unbekannten Fehlerfällen");
+                                                      put("SETTING_2FA_DEVICEID", "Geräte ID (Zwei-Faktor Authentifizierung)");
+                                                      put("POPUP_2FA_TITLE", "Free-Way 2-Faktor Authentifizierung");
+                                                      put("POPUP_2FA_DESCRIPTION", "Bitte autorisiere das folgende Gerät oder deaktiviere die 2-Faktor Authent-\n" + "entifizierung auf der Free-Way Seite.\n\nGerät: ");
                                                   }
                                               };
 
@@ -200,6 +210,33 @@ public class FreeWayMe extends PluginForHost {
         return "Translation not found!";
     }
 
+    private String getPage2FA(String url) throws IOException, PluginException {
+        String twoFactorDeviceID = this.getPluginConfig().getStringProperty(SETTING_2FA_DEVCEID);
+        br.getHeaders().put("User-Agent", twoFactorDeviceID);
+        String page = br.getPage(url);
+        if (page.contains("Advanced authentification needed")) {
+            return getPageForce2FA(url);
+        }
+        return page;
+    }
+
+    private String getPageForce2FA(String url) throws PluginException, IOException {
+        String twoFactorDeviceID = this.getPluginConfig().getStringProperty(SETTING_2FA_DEVCEID);
+        br.getHeaders().put("User-Agent", twoFactorDeviceID);
+        // page require 2FA
+        String authcode = JOptionPane.showInputDialog(null, getPhrase("POPUP_2FA_DESCRIPTION") + twoFactorDeviceID, getPhrase("POPUP_2FA_TITLE"), JOptionPane.PLAIN_MESSAGE);
+
+        // If a string was returned, say so.
+        if (authcode == null || authcode.length() <= 0) {
+            throw new PluginException(LinkStatus.ERROR_PREMIUM);
+        }
+        String page = br.getPage(url + "&2fa_action=login&2fa_alias=" + Encoding.urlTotalEncode(twoFactorDeviceID) + "&2fa_auth=" + Encoding.urlTotalEncode(authcode));
+        if (page.contains("auth invalid")) {
+            throw new PluginException(LinkStatus.ERROR_PREMIUM);
+        }
+        return page;
+    }
+
     public void setConfigElements() {
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), ALLOWRESUME, getPhrase("SETTING_RESUME")).setDefaultValue(true));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), PREVENTSPRITUSAGE, getPhrase("SETTING_SPRITUSAGE")).setDefaultValue(false));
@@ -209,6 +246,8 @@ public class FreeWayMe extends PluginForHost {
 
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), BETAUSER, getPhrase("SETTING_BETA")).setDefaultValue(false));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_SPINNER, getPluginConfig(), FreeWayMe.MAX_RETRIES_UNKNOWN_ERROR, JDL.L("plugins.hoster.FreeWayMe.maxRetriesOnUnknownErrors", getPhrase("SETTING_MAXRETRIES_UNKNOWN_ERROR")), 3, 50, 1).setDefaultValue(max_retries_unknown_error_default));
+
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_TEXTFIELD, getPluginConfig(), SETTING_2FA_DEVCEID, getPhrase("SETTING_2FA_DEVICEID")).setDefaultValue("JDownloader - " + System.getProperty("user.name")));
     }
 
     @Override
@@ -250,7 +289,7 @@ public class FreeWayMe extends PluginForHost {
         String hosts[] = null;
         ac.setProperty("multiHostSupport", Property.NULL);
         // check if account is valid
-        br.getPage("https://www.free-way.me/ajax/jd.php?id=1&user=" + username + "&pass=" + pass + "&encoded");
+        getPage2FA("https://www.free-way.me/ajax/jd.php?id=1&user=" + username + "&pass=" + pass + "&encoded");
         // "Invalid login" / "Banned" / "Valid login"
         if (br.toString().equalsIgnoreCase("Valid login")) {
             logger.info("{fetchAccInfo} Account " + username + " is valid");
@@ -273,7 +312,7 @@ public class FreeWayMe extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_PREMIUM, getPhrase("ERROR_UNKNOWN_FULL"), PluginException.VALUE_ID_PREMIUM_DISABLE);
         }
         // account should be valid now, let's get account information:
-        String accInfoAPIResp = br.getPage("https://www.free-way.me/ajax/jd.php?id=4&user=" + username + "&pass=" + pass + "&encoded");
+        String accInfoAPIResp = getPage2FA("https://www.free-way.me/ajax/jd.php?id=4&user=" + username + "&pass=" + pass + "&encoded");
 
         int maxPremi = 1;
         final String maxPremApi = getJson("parallel", accInfoAPIResp);
@@ -377,7 +416,7 @@ public class FreeWayMe extends PluginForHost {
         }
 
         // now let's get a list of all supported hosts:
-        br.getPage(hostsUrl);
+        getPage2FA(hostsUrl);
         hosts = br.getRegex("\"([^\"]*)\"").getColumn(0);
         ArrayList<String> supportedHosts = new ArrayList<String>();
         for (String host : hosts) {
@@ -444,13 +483,14 @@ public class FreeWayMe extends PluginForHost {
         br.setReadTimeout(95 * 1000);
 
         br.setFollowRedirects(false);
-        String page = br.getPage(dllink);
+        String page = getPage2FA(dllink);
         if (page.contains("Invalid login")) {
             logger.info("{handleMultiHost} Invalid Login for account: " + acc.getUser());
             acc.setError(AccountError.TEMP_DISABLED, getPhrase("ERROR_INVALID_LOGIN"));
             throw new PluginException(LinkStatus.ERROR_RETRY);
         }
         dllink = br.getRedirectLocation();
+
         if (dllink == null) {
             handleError(acc, link);
             // if above error handling fails... ie unknown error
@@ -556,6 +596,10 @@ public class FreeWayMe extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, getPhrase("ERROR_NO_STABLE_ACCOUNTS") + msg);
         } else if (br.containsHTML("cURL-Error: Couldn't resolve host")) {
             errorMagic(acc, link, getPhrase("ERROR_SERVER"), 10);
+        } else if (br.containsHTML("Advanced authentification needed")) {
+            // 2FA auth required => do it during acc check
+            acc.setUpdateTime(-1); // force update acc next try
+            throw new PluginException(LinkStatus.ERROR_RETRY);
         }
     }
 
