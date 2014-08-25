@@ -45,13 +45,14 @@ public class PanBaiduCom extends PluginForHost {
     private String              DLLINK                                     = null;
     private static final String TYPE_FOLDER_LINK_NORMAL_PASSWORD_PROTECTED = "http://(www\\.)?pan\\.baidu\\.com/share/init\\?shareid=\\d+\\&uk=\\d+";
     private static final String NOCHUNKS                                   = "NOCHUNKS";
-    private static final String USER_AGENT                                 = "netdisk;4.8.2.0;PC;PC-Windows;6.3.9600;WindowsBaiduYunGuanJia";
+    private static final String USER_AGENT                                 = "netdisk;4.8.3.1;PC;PC-Windows;6.3.9600;WindowsBaiduYunGuanJia";
 
     private static final String NICE_HOST                                  = "pan.baidu.com";
     private static final String NICE_HOSTproperty                          = "panbaiducom";
 
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws Exception {
+        br = new Browser();
         if (downloadLink.getBooleanProperty("offline", false)) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
@@ -115,32 +116,37 @@ public class PanBaiduCom extends PluginForHost {
             }
             final String fsid = downloadLink.getStringProperty("important_fsid", null);
             final String postLink = "http://pan.baidu.com/share/download?channel=chunlei&clienttype=0&web=1&uk=" + uk + "&shareid=" + shareid + "&timestamp=" + tsamp + "&sign=" + sign + "&bdstoken=null&channel=chunlei&clienttype=0&web=1";
-            br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
-            br.postPage(postLink, "fid_list=%5B" + fsid + "%5D");
-            String code = null;
-            for (int i = 1; i <= 3; i++) {
-                final String captchaLink = getJson("img");
-                if (captchaLink == null) {
-                    break;
-                }
+            Browser br2 = prepAjax(br.cloneBrowser());
+            br2.postPage(postLink, "fid_list=%5B" + fsid + "%5D");
+            String captchaLink = getJson(br2, "img");
+            final int repeat = 3;
+            for (int i = 1; i <= repeat; i++) {
                 final String captchaid = new Regex(captchaLink, "([A-Z0-9]+)$").getMatch(0);
+                String code = null;
                 try {
                     code = getCaptchaCode(captchaLink, downloadLink);
                 } catch (final Throwable e) {
                     logger.info("Captcha download failed -> Retrying!");
                     throw new PluginException(LinkStatus.ERROR_RETRY, "Captcha download failed");
                 }
-                br.postPage(postLink, "fid_list=%5B" + fsid + "%5D&input=" + Encoding.urlEncode(code) + "&vcode=" + captchaid);
+                br2 = prepAjax(br.cloneBrowser());
+                br2.postPage(postLink, "fid_list=%5B" + fsid + "%5D&input=" + Encoding.urlEncode(code) + "&vcode=" + captchaid);
+                captchaLink = null;
+                captchaLink = getJson(br2, "img");
+                if (captchaLink == null) {
+                    break;
+                } else if (i + 1 == repeat && captchaLink != null) {
+                    throw new PluginException(LinkStatus.ERROR_CAPTCHA);
+                } else if (i + 1 != repeat) {
+                    continue;
+                }
             }
-            if (getJson("img") != null) {
-                throw new PluginException(LinkStatus.ERROR_CAPTCHA);
-            }
-            if (br.containsHTML("\"errno\":\\-20")) {
+            if (br2.containsHTML("\"errno\":\\-20")) {
                 handlePluginBroken(downloadLink, "unknownerror20", 3);
-            } else if (br.containsHTML("\"errno\":112")) {
+            } else if (br2.containsHTML("\"errno\":112")) {
                 handlePluginBroken(downloadLink, "unknownerror112", 3);
             }
-            DLLINK = getJson("dlink");
+            DLLINK = getJson(br2, "dlink");
             if (DLLINK == null) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
@@ -186,13 +192,44 @@ public class PanBaiduCom extends PluginForHost {
         }
     }
 
-    private String getJson(final String parameter) {
-        br.getRequest().setHtmlCode(br.toString().replace("\\", ""));
-        String result = br.getRegex("\"" + parameter + "\":(\\d+)").getMatch(0);
+    private Browser prepAjax(final Browser prepBr) {
+        prepBr.getHeaders().put("Accept", "application/json, text/javascript, */*; q=0.01");
+        prepBr.getHeaders().put("X-Requested-With", "XMLHttpRequest");
+        return prepBr;
+    }
+
+    /**
+     * Tries to return value of key from JSon response, from String source.
+     *
+     * @author raztoki
+     * */
+    private String getJson(final String source, final String key) {
+        String result = new Regex(source, "\"" + key + "\":(-?\\d+(\\.\\d+)?|true|false|null)").getMatch(0);
         if (result == null) {
-            result = br.getRegex("\"" + parameter + "\":\"([^<>\"]*?)\"").getMatch(0);
+            result = new Regex(source, "\"" + key + "\":\"([^\"]+)\"").getMatch(0);
+        }
+        if (result != null) {
+            result = result.replaceAll("\\\\/", "/");
         }
         return result;
+    }
+
+    /**
+     * Tries to return value of key from JSon response, from default 'br' Browser.
+     *
+     * @author raztoki
+     * */
+    private String getJson(final String key) {
+        return getJson(br.toString(), key);
+    }
+
+    /**
+     * Tries to return value of key from JSon response, from provided Browser.
+     *
+     * @author raztoki
+     * */
+    private String getJson(final Browser ibr, final String key) {
+        return getJson(ibr.toString(), key);
     }
 
     private String checkDirectLink(final DownloadLink downloadLink, final String property) {
