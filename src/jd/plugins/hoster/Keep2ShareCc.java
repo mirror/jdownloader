@@ -105,8 +105,6 @@ public class Keep2ShareCc extends K2SApi {
         }
     }
 
-    private static Object LOCK = new Object();
-
     @Override
     public void correctDownloadLink(final DownloadLink link) {
         // link cleanup, but respect users protocol choosing.
@@ -345,7 +343,7 @@ public class Keep2ShareCc extends K2SApi {
 
     @SuppressWarnings("unchecked")
     private HashMap<String, String> login(final Account account, final boolean force, AtomicBoolean validateCookie) throws Exception {
-        synchronized (LOCK) {
+        synchronized (ACCLOCK) {
             try {
                 // Load cookies
                 br.setCookiesExclusive(true);
@@ -539,7 +537,7 @@ public class Keep2ShareCc extends K2SApi {
             requestFileInformation(link);
             boolean fresh = false;
             Object after = null;
-            synchronized (LOCK) {
+            synchronized (ACCLOCK) {
                 Object before = account.getProperty("cookies", null);
                 after = login(account, false, null);
                 fresh = before != after;
@@ -547,7 +545,7 @@ public class Keep2ShareCc extends K2SApi {
             getPage(MAINPAGE + "/site/profile.html");
             if (br.getURL().contains("login.html")) {
                 logger.info("Redirected to login page, seems cookies are no longer valid!");
-                synchronized (LOCK) {
+                synchronized (ACCLOCK) {
                     if (after == account.getProperty("cookies", null)) {
                         account.setProperty("cookies", Property.NULL);
                     }
@@ -595,7 +593,7 @@ public class Keep2ShareCc extends K2SApi {
                     if (br.containsHTML("Traffic limit exceed!<")) {
                         throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
                     }
-                    synchronized (LOCK) {
+                    synchronized (ACCLOCK) {
                         if (after == account.getProperty("cookies", null)) {
                             account.setProperty("cookies", Property.NULL);
                         }

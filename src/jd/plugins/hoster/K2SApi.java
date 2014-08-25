@@ -552,7 +552,7 @@ public abstract class K2SApi extends PluginForHost {
         }
     }
 
-    private static Object ACCLOCK = new Object();
+    public static Object ACCLOCK = new Object();
 
     private String getAuthToken(final Account account) throws Exception {
         synchronized (ACCLOCK) {

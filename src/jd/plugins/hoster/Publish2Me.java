@@ -285,12 +285,11 @@ public class Publish2Me extends K2SApi {
         }
     }
 
-    private final String  MAINPAGE = "http://publish2.me";
-    private static Object LOCK     = new Object();
+    private final String MAINPAGE = "http://publish2.me";
 
     @SuppressWarnings("unchecked")
     private void login(final Account account, final boolean force) throws Exception {
-        synchronized (LOCK) {
+        synchronized (ACCLOCK) {
             try {
                 // Load cookies
                 br.setCookiesExclusive(true);
