@@ -414,14 +414,16 @@ public abstract class PackageControllerTable<ParentType extends AbstractPackageN
             return;
         }
         ArrayList<AbstractNode> toSelect = new ArrayList<AbstractNode>();
-        SelectionInfo<ParentType, ChildrenType> selection = getSelectionInfo();
-
+        SelectionInfo<ParentType, ChildrenType> selection = getSelectionInfo(true, true);
+        boolean selectall = true;
         for (PackageView<ParentType, ChildrenType> pv : selection.getPackageViews()) {
-            toSelect.addAll(pv.getPackage().getChildren());
+            if (pv.getPackage().isExpanded()) {
+                toSelect.addAll(new SelectionInfo<ParentType, ChildrenType>(pv.getPackage(), null, true).getChildren());
+            }
             toSelect.add(pv.getPackage());
-
         }
-        if (selection.getRawSelection().size() == toSelect.size()) {
+        selectall = selection.getRawSelection().size() == toSelect.size();
+        if (selectall) {
             super.onShortcutSelectAll();
         } else {
             getModel().setSelectedObjects(toSelect);
