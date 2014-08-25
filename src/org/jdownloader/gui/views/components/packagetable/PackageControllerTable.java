@@ -44,6 +44,7 @@ import org.appwork.utils.swing.EDTRunner;
 import org.jdownloader.actions.AppAction;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.gui.views.SelectionInfo;
+import org.jdownloader.gui.views.SelectionInfo.PackageView;
 import org.jdownloader.gui.views.components.packagetable.PackageControllerTableModel.TOGGLEMODE;
 import org.jdownloader.gui.views.components.packagetable.actions.SortPackagesDownloadOrdnerOnColumn;
 import org.jdownloader.images.NewTheme;
@@ -404,6 +405,27 @@ public abstract class PackageControllerTable<ParentType extends AbstractPackageN
             }
         }
         return new boolean[] { moveUp, moveDown };
+    }
+
+    @Override
+    public void onShortcutSelectAll() {
+        if (!CFG_GUI.CFG.isTwoStepCtrlASelectionEnabled()) {
+            super.onShortcutSelectAll();
+            return;
+        }
+        ArrayList<AbstractNode> toSelect = new ArrayList<AbstractNode>();
+        SelectionInfo<ParentType, ChildrenType> selection = getSelectionInfo();
+
+        for (PackageView<ParentType, ChildrenType> pv : selection.getPackageViews()) {
+            toSelect.addAll(pv.getPackage().getChildren());
+            toSelect.add(pv.getPackage());
+
+        }
+        if (selection.getRawSelection().size() == toSelect.size()) {
+            super.onShortcutSelectAll();
+        } else {
+            getModel().setSelectedObjects(toSelect);
+        }
     }
 
     protected boolean updateMoveButtonEnabledStatus() {
