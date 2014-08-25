@@ -49,7 +49,7 @@ public interface GraphicalUserInterfaceSettings extends ConfigInterface {
 
     /**
      * How many ms the speedmeter shall show/record. Please note that big Timeframes and high fps values may cause high CPU usage
-     * 
+     *
      * @return
      */
     @AboutConfig
@@ -60,7 +60,7 @@ public interface GraphicalUserInterfaceSettings extends ConfigInterface {
 
     /**
      * How many refreshes and datasamples the speedmeter uses. Please note that big Timeframes and high fps values may cause high CPU usage
-     * 
+     *
      * @return
      */
     @AboutConfig
@@ -607,6 +607,13 @@ public interface GraphicalUserInterfaceSettings extends ConfigInterface {
     ShowSpeedInWindowTitleTrigger getSpeedInWindowTitle();
 
     void setSpeedInWindowTitle(ShowSpeedInWindowTitleTrigger b);
+
+    @AboutConfig
+    @DefaultIntValue(14)
+    @DescriptionForConfigEntry("Days to keep disabled accounts displayed in PremiumBar and AccountToolTip overviews.")
+    int getPremiumStatusBarDisabledAccountExpire();
+
+    void setPremiumStatusBarDisabledAccountExpire(int i);
 
     public static enum PremiumStatusBarDisplay {
         @EnumLabel("Group by Account Type")

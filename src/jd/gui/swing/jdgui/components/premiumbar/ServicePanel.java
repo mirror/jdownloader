@@ -317,9 +317,7 @@ public class ServicePanel extends JPanel implements MouseListener, AccountToolti
             if (acc.getLastValidTimestamp() < 0 && acc.getError() != null) {
                 continue;
             }
-            // TODO: add advanced setting for this
-            final int daysToExpire = 14;
-            final long expireTimeMS = daysToExpire * 7 * 24 * 60 * 60 * 1000l;
+            final long expireTimeMS = CFG_GUI.CFG.getPremiumStatusBarDisabledAccountExpire() * 7 * 24 * 60 * 60 * 1000l;
             final long timeSinceValidLogin = System.currentTimeMillis() - acc.getLastValidTimestamp();
             final boolean debug = false;
             if (debug) {

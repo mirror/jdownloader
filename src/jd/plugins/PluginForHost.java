@@ -135,21 +135,21 @@ import org.jdownloader.updatev2.UpdateController;
 
 /**
  * Dies ist die Oberklasse fuer alle Plugins, die von einem Anbieter Dateien herunterladen koennen
- * 
+ *
  * @author astaldo
  */
 public abstract class PluginForHost extends Plugin {
     private static final String         COPY_MOVE_FILE        = "CopyMoveFile";
 
     private static Pattern[]            PATTERNS              = new Pattern[] {
-                                                              /**
-                                                               * these patterns should split filename and fileextension (extension must
-                                                               * include the point)
-                                                               */
-                                                              // multipart rar archives
-            Pattern.compile("(.*)(\\.pa?r?t?\\.?[0-9]+.*?\\.rar$)", Pattern.CASE_INSENSITIVE),
-            // normal files with extension
-            Pattern.compile("(.*)(\\..*?$)", Pattern.CASE_INSENSITIVE) };
+        /**
+         * these patterns should split filename and fileextension (extension must
+         * include the point)
+         */
+        // multipart rar archives
+        Pattern.compile("(.*)(\\.pa?r?t?\\.?[0-9]+.*?\\.rar$)", Pattern.CASE_INSENSITIVE),
+        // normal files with extension
+        Pattern.compile("(.*)(\\..*?$)", Pattern.CASE_INSENSITIVE) };
 
     private LazyHostPlugin              lazyP                 = null;
     /**
@@ -514,7 +514,7 @@ public abstract class PluginForHost extends Plugin {
     /**
      * Hier werden Treffer fuer Downloadlinks dieses Anbieters in diesem Text gesucht. Gefundene Links werden dann in einem ArrayList
      * zurueckgeliefert
-     * 
+     *
      * @param data
      *            Ein Text mit beliebig vielen Downloadlinks dieses Anbieters
      * @return Ein ArrayList mit den gefundenen Downloadlinks
@@ -565,7 +565,7 @@ public abstract class PluginForHost extends Plugin {
         return true;
     }
 
-    /*
+    /**
      * OVERRIDE this function if you need to modify the link, ATTENTION: you have to use new browser instances, this plugin might not have
      * one!
      */
@@ -574,7 +574,7 @@ public abstract class PluginForHost extends Plugin {
 
     /**
      * Holt Informationen zu einem Link. z.B. dateigroeße, Dateiname, verfuegbarkeit etc.
-     * 
+     *
      * @param parameter
      * @return true/false je nach dem ob die Datei noch online ist (verfuegbar)
      * @throws IOException
@@ -591,7 +591,7 @@ public abstract class PluginForHost extends Plugin {
 
     /**
      * this method returns absolut numbers of max allowed downloads for given plugin/link/account combination
-     * 
+     *
      * @param link
      * @param account
      * @return
@@ -648,7 +648,7 @@ public abstract class PluginForHost extends Plugin {
     /**
      * By overriding this method, a plugin is able to return a HostPluginInfoGenerator. <br>
      * <b>Attention: Until next stable update, we have to return Object here.</b>
-     * 
+     *
      * @return
      */
     // @Override DO NEVER USE OVERRIDE ON THIS METHOD BEFORE NEXT STABLE UPDATE.
@@ -676,7 +676,7 @@ public abstract class PluginForHost extends Plugin {
 
     /**
      * return if we can download given downloadLink via given account with this pluginForHost
-     * 
+     *
      * @param downloadLink
      * @param account
      * @return
@@ -687,7 +687,7 @@ public abstract class PluginForHost extends Plugin {
 
     /**
      * return if the given downloadLink can be downloaded via given pluginForHost
-     * 
+     *
      * @param downloadLink
      * @param plugin
      * @return
@@ -695,7 +695,7 @@ public abstract class PluginForHost extends Plugin {
     public boolean allowHandle(DownloadLink downloadLink, PluginForHost plugin) {
         /**
          * example: only allow original host plugin
-         * 
+         *
          * return downloadLink.getHost().equalsIgnoreCase(plugin.getHost());
          */
         return true;
@@ -851,16 +851,16 @@ public abstract class PluginForHost extends Plugin {
     public void handleMultiHost(DownloadLink downloadLink, Account account) throws Exception {
         /*
          * fetchAccountInfo must fill ai.setProperty("multiHostSupport", ArrayList<String>); to signal all supported multiHosts
-         * 
+         *
          * please synchronized on accountinfo and the ArrayList<String> when you change something in the handleMultiHost function
-         * 
+         *
          * in fetchAccountInfo we don't have to synchronize because we create a new instance of AccountInfo and fill it
-         * 
+         *
          * if you need customizable maxDownloads, please use getMaxSimultanDownload to handle this you are in multihost when account host
          * does not equal link host!
-         * 
-         * 
-         * 
+         *
+         *
+         *
          * will update this doc about error handling
          */
         logger.severe("invalid call to handleMultiHost: " + downloadLink.getName() + ":" + downloadLink.getHost() + " to " + getHost() + ":" + this.getVersion() + " with " + account);
@@ -1002,7 +1002,7 @@ public abstract class PluginForHost extends Plugin {
 
     /**
      * JD2 only
-     * 
+     *
      * @return
      */
     public boolean isAbort() {
@@ -1048,7 +1048,7 @@ public abstract class PluginForHost extends Plugin {
 
     /**
      * Gibt die Url zurueck, unter welcher ein PremiumAccount gekauft werden kann
-     * 
+     *
      * @return
      */
     public String getBuyPremiumUrl() {
@@ -1179,7 +1179,7 @@ public abstract class PluginForHost extends Plugin {
 
     /**
      * plugins may change the package identifier used for auto package matching. some hosters replace chars, shorten filenames...
-     * 
+     *
      * @param packageIdentifier
      * @return
      */
@@ -1190,7 +1190,7 @@ public abstract class PluginForHost extends Plugin {
     /**
      * Some hosters have bad filenames. Rapidshare for example replaces all special chars and spaces with _. Plugins can try to autocorrect
      * this based on other downloadlinks
-     * 
+     *
      * @param cache
      *            TODO
      * @param downloadable
@@ -1436,7 +1436,7 @@ public abstract class PluginForHost extends Plugin {
 
     /**
      * Some hoster manipulate the filename after upload. rapidshare for example, replaces special chars and spaces with _
-     * 
+     *
      * @return
      */
     public boolean isHosterManipulatesFilenames() {
@@ -1445,7 +1445,7 @@ public abstract class PluginForHost extends Plugin {
 
     /**
      * If a plugin want's to define it's one premium info dialog or premiuminfo panel. overwrite this methods
-     * 
+     *
      * @param dialog
      * @return
      */
@@ -1455,7 +1455,7 @@ public abstract class PluginForHost extends Plugin {
 
     /**
      * Can be overridden to support special accounts like login tokens instead of username/password
-     * 
+     *
      * @return
      */
     public AccountFactory getAccountFactory() {
@@ -1667,7 +1667,7 @@ public abstract class PluginForHost extends Plugin {
 
     /**
      * JD2 ONLY
-     * 
+     *
      * @param accounts
      * @param downloadLink
      * @return
@@ -1678,7 +1678,7 @@ public abstract class PluginForHost extends Plugin {
 
     /**
      * THIS IS JDOWNLOADER 2 ONLY!
-     * 
+     *
      * @param domain
      * @throws DialogCanceledException
      * @throws DialogClosedException
@@ -1724,7 +1724,7 @@ public abstract class PluginForHost extends Plugin {
      * Do not call directly. This method is called from the DownloadWatchdog.rename method only. The DownloadWatchdog assures, that the
      * method is not called during a processing download, but afterwards. Avoid to override this method. if possible, try to override
      * #listFilePairsToMove instead
-     * 
+     *
      * @param link
      * @param string2
      * @param string
@@ -1976,7 +1976,7 @@ public abstract class PluginForHost extends Plugin {
     /**
      * plugins may set a mirrorid to help the mirror detector. You have to ensure, that two mirrors either get the same mirror id, or no
      * mirrorid(null)
-     * 
+     *
      * @return
      */
 

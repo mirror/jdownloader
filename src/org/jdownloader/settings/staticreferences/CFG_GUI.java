@@ -371,6 +371,11 @@ public class CFG_GUI {
 
     public static final EnumKeyHandler                                 PREMIUM_STATUS_BAR_DISPLAY                              = SH.getKeyHandler("PremiumStatusBarDisplay", EnumKeyHandler.class);
 
+    /**
+     * sets int value for how many days before disabled accounts no longer display in account bar and AccountTooltip
+     */
+    public static final IntegerKeyHandler                              PREMIUM_STATUS_BAR_DISABLED_ACCOUNT_EXPIRE              = SH.getKeyHandler("PremiumStatusBarDisabledAccountExpire", IntegerKeyHandler.class);
+
     public static final BooleanKeyHandler                              OVERVIEW_PANEL_DOWNLOAD_BYTES_LOADED_VISIBLE            = SH.getKeyHandler("OverviewPanelDownloadBytesLoadedVisible", BooleanKeyHandler.class);
 
     public static final BooleanKeyHandler                              OVERVIEW_PANEL_SELECTED_INFO_VISIBLE                    = SH.getKeyHandler("OverviewPanelSelectedInfoVisible", BooleanKeyHandler.class);
