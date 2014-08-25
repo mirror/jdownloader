@@ -58,6 +58,7 @@ import org.appwork.storage.config.handler.KeyHandler;
 import org.appwork.swing.components.ExtButton;
 import org.appwork.utils.Application;
 import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.TimeFormatter;
 import org.appwork.utils.logging.Log;
 import org.appwork.utils.swing.EDTHelper;
 import org.jdownloader.DomainInfo;
@@ -316,9 +317,22 @@ public class ServicePanel extends JPanel implements MouseListener, AccountToolti
             if (acc.getLastValidTimestamp() < 0 && acc.getError() != null) {
                 continue;
             }
-            if ((System.currentTimeMillis() - acc.getLastValidTimestamp()) < 14 * 7 * 24 * 60 * 60 * 1000 && acc.getError() != null) {
+            // TODO: add advanced setting for this
+            final int daysToExpire = 14;
+            final long expireTimeMS = daysToExpire * 7 * 24 * 60 * 60 * 1000l;
+            final long timeSinceValidLogin = System.currentTimeMillis() - acc.getLastValidTimestamp();
+            final boolean debug = false;
+            if (debug) {
+                if (acc.getLastValidTimestamp() == -1) {
+                    System.out.println(acc.getUser() + " NO LAST LOGIN");
+                } else if (timeSinceValidLogin > expireTimeMS) {
+                    System.out.println(acc.getHoster() + " @ " + acc.getUser() + " last login: " + TimeFormatter.formatMilliSeconds(timeSinceValidLogin, 0));
+                }
+            }
+            if (acc.getLastValidTimestamp() == -1 || (!acc.isEnabled() && timeSinceValidLogin > expireTimeMS)) {
                 continue;
             }
+
             final PluginForHost plugin = acc.getPlugin();
             if (plugin != null) {
                 final DomainInfo domainInfo = plugin.getDomainInfo(null);
