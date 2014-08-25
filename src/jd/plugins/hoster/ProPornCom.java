@@ -66,6 +66,9 @@ public class ProPornCom extends PluginForHost {
         final String vkey = br.getRegex("vkey=\\' \\+ \\'([a-z0-9]+)\\';").getMatch(0);
         br.getPage("http://www.proporn.com/player_config/?h=" + h + "&t=" + t + "&vkey=" + vkey + "&pkey=" + JDHash.getMD5(vkey + Encoding.Base64Decode(SKEY)) + "&aid=&domain_id=");
         DLLINK = br.getRegex("<video_file>(http://[^<>\"]*?)</video_file>").getMatch(0);
+        if (DLLINK == null) {
+            DLLINK = br.getRegex("<video_file><\\!\\[CDATA\\[(http://[^<>\"]*?)\\]\\]></video_file>").getMatch(0);
+        }
         if (filename == null || DLLINK == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }

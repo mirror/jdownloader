@@ -69,7 +69,7 @@ public class RuTubeRuDecrypter extends PluginForDecrypt {
                 // tracks link
                 br.getPage(parameter);
                 if (br.getHttpConnection().getResponseCode() == 404) {
-                    final DownloadLink offline = createDownloadlink("directhttp://" + parameter);
+                    final DownloadLink offline = super.createDownloadlink("directhttp://" + parameter);
                     offline.setAvailable(false);
                     offline.setProperty("offline", true);
                     decryptedLinks.add(offline);

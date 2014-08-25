@@ -39,10 +39,14 @@ public class FileObozUa extends PluginForHost {
         return "http://file.oboz.ua/";
     }
 
-    private String DLLINK;
+    private String               DLLINK;
+    private static final boolean offline = true;
 
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
+        if (offline) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         try {
