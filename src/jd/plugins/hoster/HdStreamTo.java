@@ -56,7 +56,6 @@ public class HdStreamTo extends PluginForHost {
             return false;
         }
         try {
-            final Browser br = new Browser();
             prepBrowser(br);
             br.setCookiesExclusive(true);
             final StringBuilder sb = new StringBuilder();
@@ -118,9 +117,27 @@ public class HdStreamTo extends PluginForHost {
         return AvailableStatus.TRUE;
     }
 
+    @SuppressWarnings("deprecation")
     @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
+        checkDownloadable();
+        final String server = getJson("server");
+        final String free_downloadable = getJson("downloadable");
+        final String free_downloadable_max_filesize = new Regex(free_downloadable, "mb(\\d+)").getMatch(0);
+        if (free_downloadable.equals("premium") || (free_downloadable_max_filesize != null && downloadLink.getDownloadSize() >= SizeFormatter.getSize(free_downloadable_max_filesize + " mb"))) {
+            try {
+                throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);
+            } catch (final Throwable e) {
+                if (e instanceof PluginException) {
+                    throw (PluginException) e;
+                }
+            }
+            throw new PluginException(LinkStatus.ERROR_FATAL, "This file can only be downloaded by premium users");
+        }
+        if (server == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         final String fid = getFID(downloadLink);
         try {
             br.getPage("http://hdstream.to/json/filelist.php?file=" + fid);
@@ -132,7 +149,7 @@ public class HdStreamTo extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         this.sleep(Integer.parseInt(waittime) * 1001l, downloadLink);
-        final String dllink = "http://s1.hdstream.to/send.php?token=" + fid;
+        final String dllink = "http://s" + server + ".hdstream.to/send.php?token=" + fid;
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, false, 1);
         if (dl.getConnection().getContentType().contains("html")) {
             if (dl.getConnection().getResponseCode() == 403) {
@@ -170,6 +187,13 @@ public class HdStreamTo extends PluginForHost {
 
     private String getFID(final DownloadLink dl) {
         return new Regex(dl.getDownloadURL(), "([A-Za-z0-9]+)$").getMatch(0);
+    }
+
+    /* Check if the link can be downloaded - 0 = NOT downloadable, not even for premium users - either server problems or only streamable */
+    private void checkDownloadable() throws PluginException {
+        if (!this.getJson("download").equals("1")) {
+            throw new PluginException(LinkStatus.ERROR_FATAL, "This link is not downloadable");
+        }
     }
 
     /**
