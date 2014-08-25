@@ -33,7 +33,7 @@ import jd.plugins.decrypter.AniLinkzCom.StringContainer;
 import jd.utils.JDHexUtils;
 import jd.utils.JDUtilities;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "mixcloud.com" }, urls = { "http://(www\\.)?mixcloud\\.com/[A-Za-z0-9\\-]+/[A-Za-z0-9\\-_%]+/" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "mixcloud.com" }, urls = { "http://(www\\.)?mixcloud\\.com/[A-Za-z0-9\\-_]+/[A-Za-z0-9\\-_%]+/" }, flags = { 0 })
 public class MxCloudCom extends PluginForDecrypt {
 
     public MxCloudCom(final PluginWrapper wrapper) {

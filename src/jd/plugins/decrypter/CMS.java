@@ -59,7 +59,7 @@ public class CMS extends PluginForDecrypt {
      * Returns the annotations names array
      */
     public static String[] getAnnotationNames() {
-        return new String[] { "top-hitz.com", "fettrap.com", "omega-music.com", "saugking.net", "sceneload.to" };
+        return new String[] { "atomload.at", "fettrap.com" };
     }
 
     /**
