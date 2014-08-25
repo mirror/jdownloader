@@ -10,7 +10,7 @@ import org.appwork.swing.components.tooltips.ExtTooltip;
 public abstract class ServiceCollection<T> extends ArrayList<T> implements Comparable<ServiceCollection<?>> {
 
     /**
-     * 
+     *
      */
     private static final long serialVersionUID = 8265367370670318032L;
 
@@ -32,23 +32,37 @@ public abstract class ServiceCollection<T> extends ArrayList<T> implements Compa
 
     @Override
     public int compareTo(ServiceCollection<?> o) {
-        int ret = o.getName().compareTo(getName());
+        int ret = new Boolean(o.isEnabled()).compareTo(new Boolean(isEnabled()));
         if (ret == 0) {
-            ret = compare(o.isEnabled(), isEnabled());
+            ret = new Boolean(o.isInUse()).compareTo(new Boolean(isInUse()));
             if (ret == 0) {
-                ret = compare(o.getInvalidCount(), getInvalidCount());
+                ret = new Integer(getInvalidCount()).compareTo(new Integer(o.getInvalidCount()));
                 if (ret == 0) {
-                    if (o.isEnabled()) {
-                        // sort on name
-                        ret = compare(o.isInUse(), isInUse());
-                    } else {
-                        // last enabled one should be the first
-                        ret = compare(o.getLastActiveTimestamp(), getLastActiveTimestamp());
-                    }
+                    ret = getName().compareTo(o.getName());
+                } else {
+                    ret = new Long(o.getLastActiveTimestamp()).compareTo(getLastActiveTimestamp());
                 }
             }
         }
         return ret;
+
+        // int ret = o.getName().compareTo(getName());
+        // if (ret == 0) {
+        // ret = compare(o.isEnabled(), isEnabled());
+        // if (ret == 0) {
+        // ret = compare(o.getInvalidCount(), getInvalidCount());
+        // if (ret == 0) {
+        // if (o.isEnabled()) {
+        // // sort on name
+        // ret = compare(o.isInUse(), isInUse());
+        // } else {
+        // // last enabled one should be the first
+        // ret = compare(o.getLastActiveTimestamp(), getLastActiveTimestamp());
+        // }
+        // }
+        // }
+        // }
+        // return ret;
 
     }
 
