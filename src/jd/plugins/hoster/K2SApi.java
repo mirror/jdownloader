@@ -357,7 +357,7 @@ public abstract class K2SApi extends PluginForHost {
                 postPageRaw(br, "/geturl", "{\"file_id\":\"" + fuid + "\",\"free_download_key\":\"" + free_download_key + "\",\"captcha_challenge\":null,\"captcha_response\":null}", account);
             } else {
                 // premium
-                postPageRaw(br, "/geturl", "{\"auth_token\":\"" + getAuthToken(account) + "\",\"file_id\":\"" + fuid + "\",\"free_download_key\":null,\"captcha_challenge\":null,\"captcha_response\":null}", account);
+                postPageRaw(br, "/geturl", "{\"auth_token\":\"" + getAuthToken(account) + "\",\"file_id\":\"" + fuid + "\"}", account);
             }
             dllink = getJson("url");
             if (inValidate(dllink)) {
@@ -637,6 +637,12 @@ public abstract class K2SApi extends PluginForHost {
                 case 30:
                     // ERROR_CAPTCHA_REQUIRED = 30;
                     // this shouldn't happen in dl method.. be aware website login can contain captcha, api not of yet.
+                    if (account != null) {
+                        // {"message":"You need send request for free download with captcha fields","status":"error","code":406,"errorCode":30}
+                        // false positive! dump cookies and retry
+                        dumpAuthToken(account);
+                        throw new PluginException(LinkStatus.ERROR_RETRY);
+                    }
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 case 31:
                     // ERROR_CAPTCHA_INVALID = 31;
