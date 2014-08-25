@@ -8,7 +8,7 @@ import java.io.IOException;
 import java.io.ObjectOutputStream;
 import java.net.InetAddress;
 import java.net.Socket;
-import java.util.LinkedList;
+import java.util.List;
 
 import javax.imageio.ImageIO;
 import javax.swing.Icon;
@@ -93,7 +93,7 @@ public class CaptchaResolutorCaptchaSolver extends CESChallengeSolver<String> {
             try {
                 job.setStatus(_GUI._.DeathByCaptchaSolver_solveBasicCaptchaChallenge_uploading(), NewTheme.I().getIcon(IconKey.ICON_UPLOAD, 20));
 
-                String address[] = ((String) InetAddress.getByName(SERVER_PRODUCTION).toString()).split(_ADDRESS_SEPARATOR);
+                String address[] = InetAddress.getByName(SERVER_PRODUCTION).toString().split(_ADDRESS_SEPARATOR);
                 sk = new Socket(address[1], PORT);
                 dos = new DataOutputStream(sk.getOutputStream());
                 dis = new DataInputStream(sk.getInputStream());
@@ -145,7 +145,7 @@ public class CaptchaResolutorCaptchaSolver extends CESChallengeSolver<String> {
     }
 
     @Override
-    public void extendServicePabel(LinkedList<ServiceCollection<?>> services) {
+    public void extendServicePabel(List<ServiceCollection<?>> services) {
     }
 
     @Override

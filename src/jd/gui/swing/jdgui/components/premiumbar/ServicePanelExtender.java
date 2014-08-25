@@ -1,9 +1,9 @@
 package jd.gui.swing.jdgui.components.premiumbar;
 
-import java.util.LinkedList;
+import java.util.List;
 
 public interface ServicePanelExtender {
 
-    void extendServicePabel(LinkedList<ServiceCollection<?>> services);
+    void extendServicePabel(List<ServiceCollection<?>> services);
 
 }

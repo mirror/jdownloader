@@ -2,7 +2,7 @@ package org.jdownloader.captcha.v2.solver.captchabrotherhood;
 
 import java.io.IOException;
 import java.net.URL;
-import java.util.LinkedList;
+import java.util.List;
 import java.util.concurrent.Executors;
 import java.util.concurrent.LinkedBlockingDeque;
 import java.util.concurrent.ThreadPoolExecutor;
@@ -93,7 +93,7 @@ public class CBSolver extends CESChallengeSolver<String> implements ChallengeRes
     }
 
     @Override
-    public void extendServicePabel(LinkedList<ServiceCollection<?>> services) {
+    public void extendServicePabel(List<ServiceCollection<?>> services) {
         if (validateLogins()) {
             services.add(new ServiceCollection<DeathByCaptchaSolver>() {
 

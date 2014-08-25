@@ -4,7 +4,7 @@ import java.awt.Color;
 import java.awt.Point;
 import java.awt.event.KeyEvent;
 import java.awt.event.MouseEvent;
-import java.util.LinkedList;
+import java.util.List;
 
 import javax.swing.JPopupMenu;
 
@@ -100,7 +100,7 @@ public class PremiumAccountTable extends BasicJDTable<AccountEntry> {
             return null;
         }
         try {
-            final LinkedList<ServiceCollection<?>> services = ServicePanel.getInstance().groupServices(PremiumStatusBarDisplay.GROUP_BY_ACCOUNT_TYPE, false, elementAt.getAccount().getHoster(), elementAt.getAccount());
+            final List<ServiceCollection<?>> services = ServicePanel.getInstance().groupServices(PremiumStatusBarDisplay.GROUP_BY_ACCOUNT_TYPE, false, elementAt.getAccount().getHoster(), elementAt.getAccount());
             if (services.size() > 0) {
                 return services.get(0).createTooltip(null);
             }

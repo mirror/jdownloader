@@ -1,7 +1,7 @@
 package org.jdownloader.captcha.v2.solver.solver9kw;
 
 import java.io.IOException;
-import java.util.LinkedList;
+import java.util.List;
 import java.util.concurrent.Executors;
 import java.util.concurrent.LinkedBlockingDeque;
 import java.util.concurrent.ThreadPoolExecutor;
@@ -477,7 +477,7 @@ public class Captcha9kwSolver extends CESChallengeSolver<String> implements Chal
     }
 
     @Override
-    public void extendServicePabel(LinkedList<ServiceCollection<?>> services) {
+    public void extendServicePabel(List<ServiceCollection<?>> services) {
         if (StringUtils.isNotEmpty(config.getApiKey())) {
             services.add(new ServiceCollection<Captcha9kwSolver>() {
 

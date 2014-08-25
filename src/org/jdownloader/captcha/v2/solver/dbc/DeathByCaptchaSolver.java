@@ -1,6 +1,6 @@
 package org.jdownloader.captcha.v2.solver.dbc;
 
-import java.util.LinkedList;
+import java.util.List;
 import java.util.concurrent.Executors;
 import java.util.concurrent.LinkedBlockingDeque;
 import java.util.concurrent.ThreadPoolExecutor;
@@ -259,7 +259,7 @@ public class DeathByCaptchaSolver extends CESChallengeSolver<String> implements 
     }
 
     @Override
-    public void extendServicePabel(LinkedList<ServiceCollection<?>> services) {
+    public void extendServicePabel(List<ServiceCollection<?>> services) {
         if (validateLogins()) {
             services.add(new ServiceCollection<DeathByCaptchaSolver>() {
 
