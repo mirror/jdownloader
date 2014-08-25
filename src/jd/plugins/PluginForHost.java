@@ -24,7 +24,6 @@ import java.io.IOException;
 import java.net.URISyntaxException;
 import java.net.URL;
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
@@ -1474,22 +1473,8 @@ public abstract class PluginForHost extends Plugin {
         return false;
     }
 
-    public boolean checkLinkList(Collection<DownloadLink> massLinkCheck) {
-        try {
-            return checkLinks(massLinkCheck.toArray(new DownloadLink[massLinkCheck.size()]));
-        } finally {
-
-        }
-
-    }
-
-    //
     public AvailableStatus checkLink(DownloadLink downloadLink) throws Exception {
-        try {
-            return requestFileInformation(downloadLink);
-        } finally {
-
-        }
+        return requestFileInformation(downloadLink);
     }
 
     public void setActiveVariantByLink(DownloadLink downloadLink, LinkVariant variant) {

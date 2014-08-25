@@ -66,7 +66,17 @@ public class Keep2ShareCcDecrypter extends PluginForDecrypt {
                 return null;
             }
             for (final String link : links) {
-                decryptedLinks.add(createDownloadlink("http://keep2sharedecrypted.cc" + link));
+                final DownloadLink singlink = createDownloadlink("http://keep2sharedecrypted.cc" + link);
+                String name = br.getRegex("target=\"_blank\" href=\"([^\"]+)?" + link + ".*?\">(.*?)</a>").getMatch(1);
+                String size = br.getRegex("target=\"_blank\" href=\"([^\"]+)?" + link + ".*?\">.*?>\\[.*?([0-9\\.GKMB ]+?) \\]<").getMatch(1);
+                if (name != null) {
+                    singlink.setName(name);
+                    singlink.setAvailable(true);
+                }
+                if (size != null) {
+                    singlink.setDownloadSize(SizeFormatter.getSize(size.trim()));
+                }
+                decryptedLinks.add(singlink);
             }
             if (fpName != null) {
                 final FilePackage fp = FilePackage.getInstance();
@@ -83,18 +93,18 @@ public class Keep2ShareCcDecrypter extends PluginForDecrypt {
             if (filesize != null) {
                 singlink.setDownloadSize(SizeFormatter.getSize(filesize.trim()));
             }
+            if (filename == null) {
+                singlink.setAvailable(false);
+            } else {
+                // prevent wasteful double linkchecks.
+                singlink.setAvailable(true);
+            }
             if (br.containsHTML("Downloading blocked due to")) {
                 throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Downloading blocked: No JD bug, please contact the keep2share support", 10 * 60 * 1000l);
             }
             // you can set filename for offline links! handling should come here!
             if (br.containsHTML("Sorry, an error occurred while processing your request|File not found or deleted|>Sorry, this file is blocked or deleted\\.</h5>|class=\"empty\"|>Displaying 1")) {
                 singlink.setAvailable(false);
-            }
-            if (filename == null) {
-                singlink.setAvailable(false);
-            } else {
-                // prevent wasteful double linkchecks.
-                singlink.setAvailable(true);
             }
             decryptedLinks.add(singlink);
         }
