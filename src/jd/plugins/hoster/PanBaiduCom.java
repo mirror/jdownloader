@@ -16,6 +16,8 @@
 
 package jd.plugins.hoster;
 
+import java.util.Random;
+
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.http.Browser;
@@ -80,6 +82,8 @@ public class PanBaiduCom extends PluginForHost {
         String passCode = downloadLink.getStringProperty("pass", null);
         DLLINK = checkDirectLink(downloadLink, "panbaidudirectlink");
         if (DLLINK == null) {
+            /* Needed to get the pcsett cookie on http://.pcs.baidu.com/ to avoid "hotlinking forbidden" errormessage later */
+            br.getPage("http://pcs.baidu.com/rest/2.0/pcs/file?method=plantcookie&type=ett");
             final String original_url = downloadLink.getStringProperty("mainLink", null);
             final String shareid = downloadLink.getStringProperty("origurl_shareid", null);
             final String uk = downloadLink.getStringProperty("origurl_uk", null);
@@ -115,12 +119,20 @@ public class PanBaiduCom extends PluginForHost {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
             final String fsid = downloadLink.getStringProperty("important_fsid", null);
-            final String postLink = "http://pan.baidu.com/share/download?channel=chunlei&clienttype=0&web=1&uk=" + uk + "&shareid=" + shareid + "&timestamp=" + tsamp + "&sign=" + sign + "&bdstoken=null&channel=chunlei&clienttype=0&web=1";
+            final String postLink = "http://pan.baidu.com/share/download?channel=chunlei&clienttype=0&web=1&uk=" + uk + "&shareid=" + shareid + "&timestamp=" + tsamp + "&sign=" + sign + "&bdstoken=null";
             Browser br2 = prepAjax(br.cloneBrowser());
+            try {
+                br2.getPage("http://pan.baidu.com/mis/dtcount?channel=chunlei&clienttype=0&web=1&bdstoken=null");
+                br2.getPage("http://pan.baidu.com/share/autoincre?channel=chunlei&clienttype=0&web=1&type=1&shareid=" + shareid + "&uk=" + uk + "&sign=" + sign + "&timestamp=" + tsamp + "&bdstoken=null");
+            } catch (final Throwable e) {
+            }
             br2.postPage(postLink, "fid_list=%5B" + fsid + "%5D");
             String captchaLink = getJson(br2, "img");
             final int repeat = 3;
             for (int i = 1; i <= repeat; i++) {
+                if (captchaLink == null) {
+                    break;
+                }
                 final String captchaid = new Regex(captchaLink, "([A-Z0-9]+)$").getMatch(0);
                 String code = null;
                 try {
@@ -131,11 +143,8 @@ public class PanBaiduCom extends PluginForHost {
                 }
                 br2 = prepAjax(br.cloneBrowser());
                 br2.postPage(postLink, "fid_list=%5B" + fsid + "%5D&input=" + Encoding.urlEncode(code) + "&vcode=" + captchaid);
-                captchaLink = null;
                 captchaLink = getJson(br2, "img");
-                if (captchaLink == null) {
-                    break;
-                } else if (i + 1 == repeat && captchaLink != null) {
+                if (i + 1 == repeat && captchaLink != null) {
                     throw new PluginException(LinkStatus.ERROR_CAPTCHA);
                 } else if (i + 1 != repeat) {
                     continue;
@@ -150,6 +159,8 @@ public class PanBaiduCom extends PluginForHost {
             if (DLLINK == null) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
+            /* Not necessary */
+            DLLINK += "&cflg=" + new Random().nextInt(10000);
         }
 
         int maxChunks = 0;
@@ -160,7 +171,9 @@ public class PanBaiduCom extends PluginForHost {
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, DLLINK, true, maxChunks);
         if (dl.getConnection().getContentType().contains("html") || dl.getConnection().getResponseCode() == 403) {
             br.followConnection();
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            if (br.containsHTML("\"error_code\":31326")) {
+                throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "pan.baidu.com is blocking JDownloader", 10 * 60 * 60 * 1001l);
+            }
         }
         downloadLink.setFinalFileName(Encoding.htmlDecode(getFileNameFromHeader(dl.getConnection())));
         if (passCode != null) {
