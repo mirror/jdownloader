@@ -55,9 +55,9 @@ import org.appwork.utils.reflection.Clazz;
 import org.jdownloader.DomainInfo;
 import org.jdownloader.controlling.DefaultDownloadLinkViewImpl;
 import org.jdownloader.controlling.DownloadLinkView;
-import org.jdownloader.controlling.UrlProtection;
 import org.jdownloader.controlling.Priority;
 import org.jdownloader.controlling.UniqueAlltimeID;
+import org.jdownloader.controlling.UrlProtection;
 import org.jdownloader.controlling.linkcrawler.LinkVariant;
 import org.jdownloader.extensions.extraction.ExtractionStatus;
 import org.jdownloader.gui.translate._GUI;
@@ -145,6 +145,8 @@ public class DownloadLink extends Property implements Serializable, AbstractPack
 
     @Deprecated
     private LinkStatus                                          linkStatus;
+    @Deprecated
+    private int                                                 linkType                            = 0;
 
     /** Beschreibung des Downloads */
     /* kann sich noch ändern, NICHT final */
@@ -189,7 +191,7 @@ public class DownloadLink extends Property implements Serializable, AbstractPack
     private transient volatile FilePackage                      lastValidFilePackage                = null;
     private transient volatile String[]                         cachedName                          = null;
 
-    private transient UrlProtection                                  urlProtection                                = UrlProtection.UNSET;
+    private transient UrlProtection                             urlProtection                       = UrlProtection.UNSET;
 
     public FilePackage getLastValidFilePackage() {
         return lastValidFilePackage;
@@ -229,10 +231,8 @@ public class DownloadLink extends Property implements Serializable, AbstractPack
      *            Markiert diesen DownloadLink als aktiviert oder deaktiviert
      */
     public DownloadLink(PluginForHost plugin, String name, String host, String urlDownload, boolean isEnabled) {
-
         setDefaultPlugin(plugin);
         setView(new DefaultDownloadLinkViewImpl());
-
         setName(name);
         downloadMax = -1;
         setHost(host);
@@ -296,6 +296,11 @@ public class DownloadLink extends Property implements Serializable, AbstractPack
         enabled = new AtomicBoolean(isEnabled);
         linkInfo = new NullsafeAtomicReference<LinkInfo>();
         availableStatus = AvailableStatus.UNCHECKED;
+        if (linkType == 0) {
+            urlProtection = UrlProtection.UNSET;
+        } else {
+            urlProtection = UrlProtection.PROTECTED_CONTAINER;
+        }
         try {
             if (linkStatus != null) {
                 if (linkStatus.getStatus() == LinkStatus.FINISHED || linkStatus.hasStatus(LinkStatus.FINISHED)) {
@@ -636,7 +641,6 @@ public class DownloadLink extends Property implements Serializable, AbstractPack
     }
 
     public UrlProtection getUrlProtection() {
-
         return urlProtection;
     }
 
@@ -1147,8 +1151,10 @@ public class DownloadLink extends Property implements Serializable, AbstractPack
     }
 
     public void setUrlProtection(UrlProtection type) {
+        if (type == null) {
+            type = UrlProtection.UNSET;
+        }
         this.urlProtection = type;
-
     }
 
     /**
