@@ -13,6 +13,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 
 import javax.script.ScriptEngine;
@@ -54,12 +55,13 @@ import org.appwork.utils.os.CrossSystem;
  */
 public abstract class K2SApi extends PluginForHost {
 
+    private String          authToken;
     protected String        directlinkproperty;
     protected int           chunks;
     protected boolean       resumes;
     protected boolean       isFree;
     private final String    lng                    = System.getProperty("user.language");
-    private final String    authtoken              = "authtoken";
+    private final String    AUTHTOKEN              = "auth_token";
     private int             authTokenFail          = 0;
 
     // plugin config definition
@@ -373,7 +375,14 @@ public abstract class K2SApi extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         downloadLink.setProperty(directlinkproperty, dllink);
-        dl.startDownload();
+        // add download slot
+        controlSlot(+1, account);
+        try {
+            dl.startDownload();
+        } finally {
+            // remove download slot
+            controlSlot(-1, account);
+        }
     }
 
     /**
@@ -543,22 +552,28 @@ public abstract class K2SApi extends PluginForHost {
         }
     }
 
-    private synchronized String getAuthToken(final Account account) throws Exception {
-        String authToken = account.getStringProperty(authtoken, null);
-        if (authToken == null) {
-            // we don't want to pollute this.br
-            Browser auth = prepBrowser(newBrowser());
-            postPageRaw(auth, "/login", "{\"username\":\"" + account.getUser() + "\",\"password\":\"" + account.getPass() + "\"}", account);
-            authToken = getJson(auth, "auth_token");
+    private static Object ACCLOCK = new Object();
+
+    private String getAuthToken(final Account account) throws Exception {
+        synchronized (ACCLOCK) {
             if (authToken == null) {
-                // problemo?
-                logger.warning("problem in the old carel");
-                throw new PluginException(LinkStatus.ERROR_FATAL);
-            } else {
-                account.setProperty(authtoken, authToken);
+                authToken = account.getStringProperty(AUTHTOKEN, null);
+                if (authToken == null) {
+                    // we don't want to pollute this.br
+                    Browser auth = prepBrowser(newBrowser());
+                    postPageRaw(auth, "/login", "{\"username\":\"" + account.getUser() + "\",\"password\":\"" + account.getPass() + "\"}", account);
+                    authToken = getJson(auth, "auth_token");
+                    if (authToken == null) {
+                        // problemo?
+                        logger.warning("problem in the old carel");
+                        throw new PluginException(LinkStatus.ERROR_FATAL);
+                    } else {
+                        account.setProperty(AUTHTOKEN, authToken);
+                    }
+                }
             }
+            return authToken;
         }
-        return authToken;
     }
 
     private void handleErrors(final Account account, final Browser ibr) throws PluginException {
@@ -763,7 +778,14 @@ public abstract class K2SApi extends PluginForHost {
     }
 
     private void dumpAuthToken(Account account) {
-        account.setProperty(authtoken, Property.NULL);
+        synchronized (ACCLOCK) {
+            // only wipe token when authToken equals current storable
+            final String propertyToken = account.getStringProperty(AUTHTOKEN, null);
+            if (authToken != null && propertyToken != null && authToken.equals(propertyToken)) {
+                account.setProperty(AUTHTOKEN, Property.NULL);
+                authToken = null;
+            }
+        }
     }
 
     protected void handleGeneralServerErrors(final Account account) throws PluginException {
@@ -882,6 +904,45 @@ public abstract class K2SApi extends PluginForHost {
             return true;
         } else {
             return false;
+        }
+    }
+
+    private static Object                CTRLLOCK                     = new Object();
+    protected static AtomicInteger       maxPrem                      = new AtomicInteger(1);
+    protected static AtomicInteger       maxFree                      = new AtomicInteger(1);
+
+    /**
+     * Connection Management<br />
+     * <b>NOTE:</b> CAN NOT be negative or zero! (ie. -1 or 0) Otherwise math sections fail. .:. use [1-20]<br />
+     * <b>@Override</b> when incorrect
+     **/
+    protected static final AtomicInteger totalMaxSimultanFreeDownload = new AtomicInteger(1);
+
+    /**
+     * Prevents more than one free download from starting at a given time. One step prior to dl.startDownload(), it adds a slot to maxFree
+     * which allows the next singleton download to start, or at least try.
+     *
+     * This is needed because xfileshare(website) only throws errors after a final dllink starts transferring or at a given step within pre
+     * download sequence. But this template(XfileSharingProBasic) allows multiple slots(when available) to commence the download sequence,
+     * this.setstartintival does not resolve this issue. Which results in x(20) captcha events all at once and only allows one download to
+     * start. This prevents wasting peoples time and effort on captcha solving and|or wasting captcha trading credits. Users will experience
+     * minimal harm to downloading as slots are freed up soon as current download begins.
+     *
+     * @param controlSlot
+     *            (+1|-1)
+     * @author raztoki
+     * */
+    protected void controlSlot(final int num, final Account account) {
+        synchronized (CTRLLOCK) {
+            if (account == null) {
+                int was = maxFree.get();
+                maxFree.set(Math.min(Math.max(1, maxFree.addAndGet(num)), totalMaxSimultanFreeDownload.get()));
+                logger.info("maxFree was = " + was + " && maxFree now = " + maxFree.get());
+            } else {
+                int was = maxPrem.get();
+                maxPrem.set(Math.min(Math.max(1, maxPrem.addAndGet(num)), account.getIntegerProperty("totalMaxSim", 20)));
+                logger.info("maxPrem was = " + was + " && maxPrem now = " + maxPrem.get());
+            }
         }
     }
 
