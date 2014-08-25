@@ -444,7 +444,7 @@ public class ExternInterfaceImpl implements Cnl2APIBasics, Cnl2APIFlash {
                             if (downloadPassword != null) {
                                 dl.setDownloadPassword(downloadPassword);
                             }
-                            if (!dl.gotBrowserUrl()) {
+                            if (!dl.hasBrowserUrl()) {
                                 dl.setBrowserUrl(referer);
                             }
                             if (index2 < desc.length) {

@@ -59,6 +59,17 @@ public class Lnksvn extends PluginForDecrypt {
         super(wrapper);
     }
 
+    @Override
+    protected DownloadLink createDownloadlink(String link) {
+        DownloadLink ret = super.createDownloadlink(link);
+        try {
+            ret.setUrlProtection(org.jdownloader.controlling.UrlProtection.PROTECTED_DECRYPTER);
+        } catch (Throwable e) {
+
+        }
+        return ret;
+    }
+
     private static final String INVALIDLINKS = "http://(www\\.)?linksave\\.in/(news|api|partner|usercp|protect|faq|contact|language).*?";
 
     @Override

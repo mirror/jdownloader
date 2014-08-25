@@ -40,4 +40,11 @@ public interface DownloadLinkView {
 
     String getDisplayName();
 
+    /**
+     * returns the downloadlink to display in the ui
+     * 
+     * @return
+     */
+    String getDownloadUrl();
+
 }

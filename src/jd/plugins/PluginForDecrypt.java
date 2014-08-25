@@ -55,7 +55,7 @@ import org.jdownloader.plugins.controller.crawler.LazyCrawlerPlugin;
 
 /**
  * Dies ist die Oberklasse für alle Plugins, die Links entschlüsseln können
- *
+ * 
  * @author astaldo
  */
 public abstract class PluginForDecrypt extends Plugin {
@@ -138,7 +138,7 @@ public abstract class PluginForDecrypt extends Plugin {
 
     /**
      * return how many Instances of this PluginForDecrypt may crawl concurrently
-     *
+     * 
      * @return
      */
     public int getMaxConcurrentProcessingInstances() {
@@ -147,7 +147,7 @@ public abstract class PluginForDecrypt extends Plugin {
 
     /**
      * Diese Methode entschlüsselt Links.
-     *
+     * 
      * @param cryptedLinks
      *            Ein Vector, mit jeweils einem verschlüsseltem Link. Die einzelnen verschlüsselten Links werden aufgrund des Patterns
      *            {@link jd.plugins.Plugin#getSupportedLinks() getSupportedLinks()} herausgefiltert
@@ -171,7 +171,7 @@ public abstract class PluginForDecrypt extends Plugin {
 
     /**
      * creates a offline link, with logger and comment message.
-     *
+     * 
      * @param link
      * @param message
      * @return
@@ -184,7 +184,7 @@ public abstract class PluginForDecrypt extends Plugin {
 
     /**
      * creates a offline link, with filename, with logger and comment message.
-     *
+     * 
      * @param link
      * @param filename
      * @param message
@@ -231,10 +231,10 @@ public abstract class PluginForDecrypt extends Plugin {
     /**
      * Die Methode entschlüsselt einen einzelnen Link. Alle steps werden durchlaufen. Der letzte step muss als parameter einen
      * Vector<String> mit den decoded Links setzen
-     *
+     * 
      * @param cryptedLink
      *            Ein einzelner verschlüsselter Link
-     *
+     * 
      * @return Ein Vector mit Klartext-links
      */
     public ArrayList<DownloadLink> decryptLink(CrawledLink source) {
@@ -258,6 +258,7 @@ public abstract class PluginForDecrypt extends Plugin {
             br.setDebug(true);
             /* now we let the decrypter do its magic */
             tmpLinks = decryptIt(cryptLink, progress);
+
             validateLastChallengeResponse();
         } catch (InterruptedException e) {
             /* plugin got interrupted, clear log and note what happened */
@@ -333,9 +334,9 @@ public abstract class PluginForDecrypt extends Plugin {
 
     /**
      * use this to process decrypted links while the decrypter itself is still running
-     *
+     * 
      * NOTE: if you use this, please put it in try{}catch(Throwable) as this function is ONLY available in>09581
-     *
+     * 
      * @param links
      */
     protected void distribute(DownloadLink... links) {
@@ -438,7 +439,7 @@ public abstract class PluginForDecrypt extends Plugin {
     }
 
     /**
-     *
+     * 
      * @param method
      *            Method name (name of the captcha method)
      * @param file
@@ -563,7 +564,7 @@ public abstract class PluginForDecrypt extends Plugin {
 
     /**
      * Can be overridden to show the current status for example in captcha dialog
-     *
+     * 
      * @return
      */
     public String getCrawlerStatusString() {
@@ -576,7 +577,7 @@ public abstract class PluginForDecrypt extends Plugin {
 
     /**
      * DO not use in Plugins for old 09581 Stable or try/catch
-     *
+     * 
      * @return
      */
     public boolean isAbort() {

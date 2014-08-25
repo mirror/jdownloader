@@ -13,7 +13,6 @@ import jd.controlling.linkcollector.LinkCollectorEvent;
 import jd.controlling.linkcollector.LinkCollectorListener;
 import jd.controlling.linkcrawler.CrawledLink;
 import jd.controlling.linkcrawler.CrawledPackage;
-import jd.plugins.DownloadLink;
 
 import org.appwork.utils.ImageProvider.ImageProvider;
 import org.appwork.utils.swing.EDTRunner;
@@ -134,17 +133,11 @@ public class LinkPropertiesPanel extends AbstractNodePropertiesPanel implements 
 
     @Override
     protected String loadDownloadFrom() {
-        DownloadLink dlLink = currentLink.getDownloadLink();
-        if (dlLink.getLinkType() == DownloadLink.LINKTYPE_CONTAINER) {
-            if (dlLink.gotBrowserUrl()) {
-                return dlLink.getBrowserUrl();
-            } else {
-                return ("*******************************");
-            }
-
-        } else {
-            return (dlLink.getBrowserUrl());
+        String dlLink = currentLink.getDownloadLink().getView().getDownloadUrl();
+        if (dlLink == null) {
+            dlLink = "*******************************";
         }
+        return dlLink;
 
     }
 

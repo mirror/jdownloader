@@ -212,15 +212,8 @@ public class LinkTreeUtils {
             }
             if (link != null) {
                 rawURL = link.getDownloadURL();
-                if (DownloadLink.LINKTYPE_CONTAINER != link.getLinkType()) {
-                    if (link.gotBrowserUrl()) {
-                        urls.add(link.getBrowserUrl());
-                    } else {
-                        urls.add(link.getDownloadURL());
-                    }
-                } else if (link.gotBrowserUrl()) {
-                    urls.add(link.getBrowserUrl());
-                }
+                urls.add(link.getView().getDownloadUrl());
+
             }
         }
         if (openInBrowser) {

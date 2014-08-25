@@ -48,9 +48,18 @@ public class OpenInBrowserAction extends CustomizableTableContextAppAction<Crawl
             setEnabled(false);
             return;
         }
+
         for (CrawledLink cl : links) {
             DownloadLink link = cl.getDownloadLink();
-            if (link.getLinkType() == DownloadLink.LINKTYPE_NORMAL || link.gotBrowserUrl()) {
+            switch (link.getUrlProtection()) {
+            case PROTECTED_CONTAINER:
+            case PROTECTED_DECRYPTER:
+                if (link.hasBrowserUrl()) {
+                    setEnabled(true);
+                    return;
+                }
+                break;
+            default:
                 setEnabled(true);
                 return;
             }

@@ -54,4 +54,20 @@ public class DefaultDownloadLinkViewImpl implements DownloadLinkView {
         return link.getName();
     }
 
+    @Override
+    public String getDownloadUrl() {
+        switch (link.getUrlProtection()) {
+        case PROTECTED_CONTAINER:
+        case PROTECTED_DECRYPTER:
+            if (link.hasBrowserUrl()) {
+                return link.getBrowserUrl();
+            } else {
+                return null;
+            }
+        default:
+            return link.getDownloadURL();
+        }
+
+    }
+
 }

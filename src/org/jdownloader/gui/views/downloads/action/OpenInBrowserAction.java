@@ -53,11 +53,19 @@ public class OpenInBrowserAction extends CustomizableTableContextAppAction<FileP
             return;
         }
         for (DownloadLink link : links) {
-            if (link.getLinkType() == DownloadLink.LINKTYPE_NORMAL || link.gotBrowserUrl()) {
-
+            switch (link.getUrlProtection()) {
+            case PROTECTED_CONTAINER:
+            case PROTECTED_DECRYPTER:
+                if (link.hasBrowserUrl()) {
+                    setEnabled(true);
+                    return;
+                }
+                break;
+            default:
                 setEnabled(true);
                 return;
             }
+
         }
         setEnabled(false);
     }

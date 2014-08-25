@@ -180,7 +180,7 @@ public abstract class PluginForHost extends Plugin {
         LogSource errlogger = LogController.getInstance().getLogger("PluginErrors");
         try {
             errlogger.severe("HosterPlugin out of date: " + this + " :" + getVersion());
-            if (link.gotBrowserUrl()) {
+            if (link.hasBrowserUrl()) {
                 errlogger.severe("URL:" + link.getDownloadURL() + "|BrowserURL:" + link.getBrowserUrl());
             } else {
                 errlogger.severe("URL:" + link.getDownloadURL());
