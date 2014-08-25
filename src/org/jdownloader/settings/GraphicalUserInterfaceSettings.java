@@ -1080,4 +1080,12 @@ public interface GraphicalUserInterfaceSettings extends ConfigInterface {
     boolean isRenameActionRegexEnabled();
 
     void setRenameActionRegexEnabled(boolean b);
+
+    @RequiresRestart("If enabled ctrl+A first of all selects all children in all current packages, and in a second step all packages")
+    @AboutConfig
+    @DefaultBooleanValue(true)
+    boolean isTwoStepCtrlASelectionEnabled();
+
+    void setTwoStepCtrlASelectionEnabled(boolean b);
+
 }

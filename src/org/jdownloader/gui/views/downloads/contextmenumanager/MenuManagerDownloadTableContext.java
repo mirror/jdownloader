@@ -22,7 +22,6 @@ import org.jdownloader.gui.views.components.packagetable.context.PriorityHighest
 import org.jdownloader.gui.views.components.packagetable.context.PriorityLowerAction;
 import org.jdownloader.gui.views.components.packagetable.context.RenameAction;
 import org.jdownloader.gui.views.components.packagetable.context.SetDownloadPassword;
-import org.jdownloader.gui.views.components.packagetable.context.URLEditorAction;
 import org.jdownloader.gui.views.downloads.action.CollapseExpandContextAction;
 import org.jdownloader.gui.views.downloads.action.CopyGenericContextAction;
 import org.jdownloader.gui.views.downloads.action.CreateDLCAction;
@@ -155,7 +154,7 @@ public class MenuManagerDownloadTableContext extends ContextMenuManager<FilePack
 
         settings.add(RenameAction.class);
         settings.add(new MenuItemData(new ActionData(OpenInBrowserAction.class)));
-        settings.add(new MenuItemData(new ActionData(URLEditorAction.class)));
+
         settings.add(new SeperatorData());
         settings.add(new MenuItemData(new ActionData(PackageNameAction.class)));
         settings.add(new MenuItemData(new ActionData(SetDownloadFolderInDownloadTableAction.class)));
