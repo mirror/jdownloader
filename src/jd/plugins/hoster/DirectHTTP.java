@@ -482,13 +482,11 @@ public class DirectHTTP extends PluginForHost {
         } catch (Throwable t) {
             // jd1
             String url;
-
             if ("CONTAINER".equals(link.getStringProperty("LINKTYPE"))) {
                 url = link.getHost();
             } else {
                 url = link.getBrowserUrl();
             }
-
             try {
                 username = Plugin.getUserInput(JDL.LF(DirectHTTP.JDL_PREFIX + "username", "Username (BasicAuth) for %s", url), link);
                 password = Plugin.getUserInput(JDL.LF(DirectHTTP.JDL_PREFIX + "password", "Password (BasicAuth) for %s", url), link);

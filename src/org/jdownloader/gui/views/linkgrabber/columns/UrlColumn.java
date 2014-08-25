@@ -63,52 +63,8 @@ public class UrlColumn extends ExtTextColumn<AbstractNode> {
     public UrlColumn() {
         super(_GUI._.LinkGrabberTableModel_initColumns_url());
         this.setClickcount(2);
-        // editorField.addMouseListener(new MouseAdapter() {
-        //
-        // @Override
-        // public void mouseClicked(MouseEvent e) {
-        // if (e.getClickCount() >= 2) {
-        // editorField.selectAll();
-        // if (isOpenURLAllowed(editing)) CrossSystem.openURLOrShowMessage(editorField.getText());
-        // UrlColumn.this.stopCellEditing();
-        // }
-        // }
-        // });
-        // editorField.setBorder(new JTextField().getBorder());
-        // editorField.setEditable(false);
-        // bt = new ExtButton(new BasicAction() {
-        // /**
-        // *
-        // */
-        // private static final long serialVersionUID = -5856576135198890532L;
-        //
-        // {
-        // setSmallIcon(NewTheme.I().getIcon("browse", 16));
-        // setTooltipText(_GUI._.UrlColumn_UrlColumn_open_tt_());
-        // }
-        //
-        // public void actionPerformed(ActionEvent e) {
-        // noset = true;
-        // if (isOpenURLAllowed(editing)) CrossSystem.openURLOrShowMessage(getStringValue(editing));
-        // UrlColumn.this.stopCellEditing();
-        // }
-        // });
-        //
-        // // bt.setRolloverEffectEnabled(true);
-        // editor.setLayout(new MigLayout("ins 1 4 1 0", "[grow,fill][]", "[fill,grow]"));
-        // editor.removeAll();
-        // editor.add(this.editorField, "height 20!");
-        // editor.add(bt, "height 20!,width 20!");
 
     }
-
-    // @Override
-    // public void configureEditorComponent(AbstractNode value, boolean isSelected, int row, int column) {
-    // super.configureEditorComponent(value, isSelected, row, column);
-    // editing = value;
-    // noset = false;
-    // bt.setEnabled(CrossSystem.isOpenBrowserSupported() && isOpenURLAllowed(value));
-    // }
 
     @Override
     public void focusGained(final FocusEvent e) {
