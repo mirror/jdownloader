@@ -20,7 +20,6 @@ import java.io.File;
 import java.util.HashMap;
 import java.util.Locale;
 import java.util.Map;
-import java.util.concurrent.atomic.AtomicInteger;
 
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
@@ -65,8 +64,6 @@ public class FileBoomMe extends K2SApi {
         link.setUrlDownload(link.getDownloadURL().replaceFirst("^https?://", getProtocol()));
         link.setUrlDownload(link.getDownloadURL().replace("fileboom.me/", "fboom.me/"));
     }
-
-    private static AtomicInteger           maxPrem         = new AtomicInteger(1);
 
     /* K2SApi setters */
 
@@ -273,7 +270,14 @@ public class FileBoomMe extends K2SApi {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         downloadLink.setProperty("directlink", dllink);
-        dl.startDownload();
+        // add download slot
+        controlSlot(+1, account);
+        try {
+            dl.startDownload();
+        } finally {
+            // remove download slot
+            controlSlot(-1, account);
+        }
     }
 
     @Override
@@ -353,7 +357,6 @@ public class FileBoomMe extends K2SApi {
         if (useAPI()) {
             ai = super.fetchAccountInfo(account);
         } else {
-            /* reset maxPrem workaround on every fetchaccount info */
             try {
                 login(account, true);
             } catch (PluginException e) {
@@ -384,22 +387,9 @@ public class FileBoomMe extends K2SApi {
     @Override
     protected void setAccountLimits(Account account) {
         if (account != null && account.getBooleanProperty("free", false)) {
-            try {
-                maxPrem.set(1);
-                /* free accounts can still have captcha */
-                account.setMaxSimultanDownloads(maxPrem.get());
-                account.setConcurrentUsePossible(false);
-            } catch (final Throwable e) {
-                /* not available in old Stable 0.9.581 */
-            }
+            maxPrem.set(1);
         } else if (account != null && !account.getBooleanProperty("free", false)) {
-            try {
-                maxPrem.set(20);
-                account.setMaxSimultanDownloads(maxPrem.get());
-                account.setConcurrentUsePossible(true);
-            } catch (final Throwable e) {
-                /* not available in old Stable 0.9.581 */
-            }
+            maxPrem.set(20);
         }
     }
 
@@ -429,7 +419,14 @@ public class FileBoomMe extends K2SApi {
                     handleGeneralServerErrors(account);
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 }
-                dl.startDownload();
+                // add download slot
+                controlSlot(+1, account);
+                try {
+                    dl.startDownload();
+                } finally {
+                    // remove download slot
+                    controlSlot(-1, account);
+                }
             }
         }
     }
@@ -456,12 +453,12 @@ public class FileBoomMe extends K2SApi {
     }
 
     @Override
-    public void reset() {
+    public int getMaxSimultanFreeDownloadNum() {
+        return maxFree.get();
     }
 
     @Override
-    public int getMaxSimultanFreeDownloadNum() {
-        return 1;
+    public void reset() {
     }
 
     @Override
