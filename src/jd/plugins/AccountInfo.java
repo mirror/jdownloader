@@ -63,7 +63,7 @@ public class AccountInfo extends Property {
 
     /**
      * Gibt zurück wieviel (in Cent) Geld gerade auf diesem Account ist
-     * 
+     *
      * @return
      */
     public long getAccountBalance() {
@@ -72,7 +72,7 @@ public class AccountInfo extends Property {
 
     /**
      * Gibt zurück wieviele Files auf dem Account hochgeladen sind
-     * 
+     *
      * @return
      */
     public long getFilesNum() {
@@ -81,7 +81,7 @@ public class AccountInfo extends Property {
 
     /**
      * Gibt an wieviele PremiumPunkte der Account hat
-     * 
+     *
      * @return
      */
     public long getPremiumPoints() {
@@ -94,7 +94,7 @@ public class AccountInfo extends Property {
 
     /**
      * Gibt an wieviel Traffic noch frei ist (in bytes)
-     * 
+     *
      * @return
      */
     public long getTrafficLeft() {
@@ -107,7 +107,7 @@ public class AccountInfo extends Property {
 
     /**
      * Gibt zurück wieviel Platz (bytes) die Oploads auf diesem Account belegen
-     * 
+     *
      * @return
      */
     public long getUsedSpace() {
@@ -116,7 +116,7 @@ public class AccountInfo extends Property {
 
     /**
      * Gibt einen Timestamp zurück zu dem der Account auslaufen wird bzw. ausgelaufen ist.(-1 für Nie)
-     * 
+     *
      * @return
      */
     public long getValidUntil() {
@@ -125,7 +125,7 @@ public class AccountInfo extends Property {
 
     /**
      * Gibt zurück ob der Account abgelaufen ist
-     * 
+     *
      * @return
      */
     public boolean isExpired() {
@@ -201,7 +201,7 @@ public class AccountInfo extends Property {
 
     /**
      * -1 für Niemals ablaufen
-     * 
+     *
      * @param validUntil
      */
     public void setValidUntil(final long validUntil) {
@@ -224,7 +224,7 @@ public class AccountInfo extends Property {
 
     /**
      * Removes forbidden hosts, adds host corrections, de-dupes, and then sets AccountInfo property 'multiHostSupport'
-     * 
+     *
      * @author raztoki
      * @since JD2
      * */
@@ -265,6 +265,24 @@ public class AccountInfo extends Property {
                 supportedHostsSet.add("k2s.cc");
                 supportedHostsSet.add("keep2s.cc");
                 supportedHostsSet.add("keep2.cc");
+            }
+            // workaround for nowvideo
+            if (supportedHostsSet.contains("nowvideo.eu") || supportedHostsSet.contains("nowvideo.sx") || supportedHostsSet.contains("nowvideo.co") || supportedHostsSet.contains("nowvideo.ch") || supportedHostsSet.contains("nowvideo.at")) {
+                supportedHostsSet.add("nowvideo.eu");
+                supportedHostsSet.add("nowvideo.sx");
+                supportedHostsSet.add("nowvideo.co");
+                supportedHostsSet.add("nowvideo.ch");
+                supportedHostsSet.add("nowvideo.ag");
+                supportedHostsSet.add("nowvideo.at");
+            }
+            // workaround for nowdownload
+            if (supportedHostsSet.contains("nowdownload.eu") || supportedHostsSet.contains("nowdownload.sx") || supportedHostsSet.contains("nowdownload.co") || supportedHostsSet.contains("nowdownload.ch") || supportedHostsSet.contains("nowdownload.at")) {
+                supportedHostsSet.add("nowdownload.eu");
+                supportedHostsSet.add("nowdownload.sx");
+                supportedHostsSet.add("nowdownload.co");
+                supportedHostsSet.add("nowdownload.ch");
+                supportedHostsSet.add("nowdownload.ag");
+                supportedHostsSet.add("nowdownload.at");
             }
             supportedHosts = new ArrayList<String>(supportedHostsSet);
         }

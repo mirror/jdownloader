@@ -42,54 +42,56 @@ public class AccountTooltip extends PanelToolTip {
     private AccountListTable      table;
     private AccountListTableModel model;
     private AccountTooltipOwner   owner;
-    
+
     public Point getDesiredLocation(JComponent activeComponent, Point ttPosition) {
         if (owner instanceof ServicePanel) {
             ttPosition.y = activeComponent.getLocationOnScreen().y - getPreferredSize().height;
             ttPosition.x = activeComponent.getLocationOnScreen().x;
-            
+
             return AbstractLocator.correct(ttPosition, getPreferredSize());
         } else {
-            
+
             return MouseInfo.getPointerInfo().getLocation();
         }
     }
-    
+
     public AccountTooltip(AccountTooltipOwner owner, AccountServiceCollection accountCollection) {
-        
+
         super(new TooltipPanel("ins 0,wrap 1", "[]", "[][][][][grow,fill]") {
             @Override
             public Dimension getPreferredSize() {
                 Dimension pref = super.getPreferredSize();
                 // pref.width = 850;
                 // pref.height = 600;
-                System.out.println(pref);
+                // System.out.println(pref);
                 return pref;
             }
         });
-        
+
         this.owner = owner;
         color = (LAFOptions.getInstance().getColorForTooltipForeground());
-        
+
         final LinkedList<AccountEntry> domains = new LinkedList<AccountEntry>();
         for (Account acc : accountCollection) {
-            
+
             domains.add(new AccountEntry(acc));
-            
+
         }
-        
+
         table = new AccountListTable(model = new AccountListTableModel(this, owner));
         model.setData(domains);
         model.addTableModelListener(new TableModelListener() {
-            
+
             @Override
             public void tableChanged(TableModelEvent e) {
-                if (AccountTooltip.this.owner != null) AccountTooltip.this.owner.redraw();
+                if (AccountTooltip.this.owner != null) {
+                    AccountTooltip.this.owner.redraw();
+                }
                 table.getTableHeader().repaint();
             }
         });
         table.getTableHeader().setOpaque(false);
-        
+
         JScrollPane sp;
         String txt = accountCollection.getDomainInfo().getTld();
         if (accountCollection.isMulti()) {
@@ -101,10 +103,10 @@ public class AccountTooltip extends PanelToolTip {
         panel.add(label, "gapleft 5,pushx,growx");
         panel.add(table.getTableHeader());
         panel.add(table);
-        
+
         if (accountCollection.isMulti()) {
             panel.setLayout(new MigLayout("ins 0,wrap 1", "[grow,fill]", "[][][][][grow,fill]"));
-            
+
             label = new JLabel(_GUI._.AccountTooltip_AccountTooltip_supported_hosters());
             SwingUtils.toBold(label);
             label.setForeground(LAFOptions.getInstance().getColorForTooltipForeground());
@@ -115,10 +117,10 @@ public class AccountTooltip extends PanelToolTip {
             list.setLayoutOrientation(JList.VERTICAL_WRAP);
             final ListCellRenderer org = list.getCellRenderer();
             list.setCellRenderer(new ListCellRenderer() {
-                
+
                 public Component getListCellRendererComponent(JList list, Object value, int index, boolean isSelected, boolean cellHasFocus) {
                     DomainInfo di = (DomainInfo) value;
-                    
+
                     JLabel ret = (JLabel) org.getListCellRendererComponent(list, "", index, isSelected, cellHasFocus);
                     ret.setForeground(LAFOptions.getInstance().getColorForTooltipForeground());
                     ret.setText(di.getTld());
@@ -128,15 +130,15 @@ public class AccountTooltip extends PanelToolTip {
                     return ret;
                 }
             });
-            
+
             list.setVisibleRowCount(dis.size() / 5);
             // list.setFixedCellHeight(22);
             // list.setFixedCellWidth(22);
             list.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
             list.setOpaque(false);
-            
+
             panel.add(list);
-            
+
         } else {
             panel.setLayout(new MigLayout("ins 0,wrap 1", "[grow,fill]", "[][][grow,fill]"));
         }
@@ -145,16 +147,16 @@ public class AccountTooltip extends PanelToolTip {
         // table.setBackground(LAFOptions.getInstance().getColorForTooltipBackground());
         // table.setOpaque(true);
         // table.getTableHeader().setBackground(LAFOptions.getInstance().getColorForTooltipBackground());
-        
+
         // panel.setPreferredSize(new Dimension(500, 100));
         // panel.setPreferredSize(new Dimension(panel.getPreferredSize().width, 400));
     }
-    
+
     @Override
     public Dimension getPreferredSize() {
         return super.getPreferredSize();
     }
-    
+
     private List<DomainInfo> getDomainInfos(AccountServiceCollection accountCollection) {
         HashSet<DomainInfo> domains = new HashSet<DomainInfo>();
         for (Account acc : accountCollection) {
@@ -168,19 +170,19 @@ public class AccountTooltip extends PanelToolTip {
                     supported = ai.getProperty("multiHostSupport", Property.NULL);
                 }
                 if (Property.NULL != supported && supported != null) {
-                    
+
                     synchronized (supported) {
                         /*
                          * synchronized on list because plugins can change the list in runtime
                          */
-                        
+
                         if (supported instanceof ArrayList) {
                             for (String sup : (java.util.List<String>) supported) {
                                 LazyHostPlugin plg = HostPluginController.getInstance().get((String) sup);
                                 if (plg != null) {
                                     domains.add(DomainInfo.getInstance(plg.getHost()));
                                 }
-                                
+
                             }
                         }
                     }
@@ -189,7 +191,7 @@ public class AccountTooltip extends PanelToolTip {
         }
         ArrayList<DomainInfo> ret = new ArrayList<DomainInfo>(domains);
         Collections.sort(ret, new Comparator<DomainInfo>() {
-            
+
             @Override
             public int compare(DomainInfo o1, DomainInfo o2) {
                 return o1.getTld().compareToIgnoreCase(o2.getTld());
@@ -197,9 +199,9 @@ public class AccountTooltip extends PanelToolTip {
         });
         return ret;
     }
-    
+
     public void update() {
-        
+
         table.getModel().fireTableStructureChanged();
     }
 }
