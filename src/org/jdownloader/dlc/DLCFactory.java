@@ -56,7 +56,9 @@ public class DLCFactory extends D {
         final String service = "http://service.jdownloader.org/dlcrypt/service.php";
         try {
             final String dlcKey = callService(service, key);
-            if (dlcKey == null) return null;
+            if (dlcKey == null) {
+                return null;
+            }
             return xml + dlcKey;
         } catch (final Exception e) {
             logger.log(e);
@@ -73,7 +75,9 @@ public class DLCFactory extends D {
             return null;
         } else {
             final String dlcKey = br.getRegex("<rc>(.*?)</rc>").getMatch(0);
-            if (dlcKey.trim().length() < 80) return null;
+            if (dlcKey.trim().length() < 80) {
+                return null;
+            }
             return dlcKey;
         }
     }
@@ -84,7 +88,9 @@ public class DLCFactory extends D {
         lc.waitForCrawling();
         ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
         for (CrawledLink link : lc.getCrawledLinks()) {
-            if (link.getDownloadLink() == null) continue;
+            if (link.getDownloadLink() == null) {
+                continue;
+            }
             ret.add(link.getDownloadLink());
         }
         return ret;
@@ -159,7 +165,9 @@ public class DLCFactory extends D {
             file = new File(file.getAbsolutePath() + ".dlc");
         }
 
-        if (writeDLC(file, xml)) return;
+        if (writeDLC(file, xml)) {
+            return;
+        }
         logger.severe("Container creation failed");
 
         Dialog.getInstance().showErrorDialog("Container encryption failed");
@@ -200,13 +208,10 @@ public class DLCFactory extends D {
         java.util.List<CrawledLink> filter = new ArrayList<CrawledLink>();
         // filter
         for (CrawledLink l : links) {
-            String url = null;
-            if (l.getDownloadLink().getLinkType() == DownloadLink.LINKTYPE_CONTAINER) {
-                url = l.getDownloadLink().getBrowserUrl();
-            } else {
-                url = l.getDownloadLink().getDownloadURL();
+            String url = l.getDownloadLink().getDownloadURL();
+            if (url == null) {
+                continue;
             }
-            if (url == null) continue;
             if (!map.containsKey(url)) {
                 filter.add(l);
             }
@@ -293,11 +298,8 @@ public class DLCFactory extends D {
                     Element filename = content.createElement("filename");
                     Element size = content.createElement("size");
                     DownloadLink link = tmpLinks.get(x).getDownloadLink();
-                    if (link.getLinkType() == DownloadLink.LINKTYPE_CONTAINER) {
-                        url.appendChild(content.createTextNode(Encoding.Base64Encode(link.getBrowserUrl())));
-                    } else {
-                        url.appendChild(content.createTextNode(Encoding.Base64Encode(link.getDownloadURL())));
-                    }
+                    url.appendChild(content.createTextNode(Encoding.Base64Encode(link.getDownloadURL())));
+
                     // String decoded=JDUtilities.Base64Decode(encode);
 
                     // url.appendChild(content.createTextNode(JDUtilities.

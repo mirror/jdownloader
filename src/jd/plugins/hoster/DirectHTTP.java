@@ -482,7 +482,8 @@ public class DirectHTTP extends PluginForHost {
         } catch (Throwable t) {
             // jd1
             String url;
-            if (link.getLinkType() == DownloadLink.LINKTYPE_CONTAINER) {
+
+            if ("CONTAINER".equals(link.getStringProperty("LINKTYPE"))) {
                 url = link.getHost();
             } else {
                 url = link.getBrowserUrl();

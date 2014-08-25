@@ -53,6 +53,7 @@ public class CrawledLink implements AbstractPackageChildrenNode<CrawledPackage>,
 
     public void setOrigin(LinkOriginDetails source) {
         this.origin = source;
+
     }
 
     public LinkOriginDetails getOrigin() {

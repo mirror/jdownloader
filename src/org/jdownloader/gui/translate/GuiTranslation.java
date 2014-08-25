@@ -5167,4 +5167,16 @@ public interface GuiTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "New Name" })
     String ResultTableModel_initColumns_newname();
 
+    @Default(lngs = { "en" }, values = { "Copy download address to Clipboard (%s1)" })
+    String UrlColumn_onDoubleClick_object_copy(String url);
+
+    @Default(lngs = { "en" }, values = { "Open download address in browser (%s1)" })
+    String UrlColumn_onDoubleClick_object_open(String url);
+
+    @Default(lngs = { "en" }, values = { "Copy origin address to Clipboard (%s1)" })
+    String UrlColumn_onDoubleClick_object_copy_origin(String url);
+
+    @Default(lngs = { "en" }, values = { "Open origin address in browser (%s1)" })
+    String UrlColumn_onDoubleClick_object_open_origin(String url);
+
 }

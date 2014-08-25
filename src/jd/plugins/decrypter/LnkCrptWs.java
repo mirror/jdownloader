@@ -2086,6 +2086,17 @@ public class LnkCrptWs extends PluginForDecrypt {
         return decryptedLinks;
     }
 
+    @Override
+    protected DownloadLink createDownloadlink(String link) {
+        DownloadLink ret = super.createDownloadlink(link);
+        try {
+            ret.setUrlProtection(org.jdownloader.controlling.UrlProtection.PROTECTED_DECRYPTER);
+        } catch (Throwable e) {
+
+        }
+        return ret;
+    }
+
     /**
      * TODO: can be removed with next major update cause of recaptcha change
      */

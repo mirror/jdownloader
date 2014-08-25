@@ -36,6 +36,7 @@ import org.appwork.utils.Regex;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.logging2.LogSource;
 import org.jdownloader.controlling.UniqueAlltimeID;
+import org.jdownloader.controlling.UrlProtection;
 import org.jdownloader.logging.LogController;
 import org.jdownloader.plugins.controller.PluginClassLoader;
 import org.jdownloader.plugins.controller.PluginClassLoader.PluginClassLoaderChild;
@@ -587,7 +588,8 @@ public class LinkCrawler {
                                                     /* we hide the links */
                                                     DownloadLink dl = link.getDownloadLink();
                                                     if (dl != null) {
-                                                        dl.setLinkType(DownloadLink.LINKTYPE_CONTAINER);
+                                                        dl.setUrlProtection(UrlProtection.PROTECTED_CONTAINER);
+
                                                     }
                                                 }
                                             }
@@ -1088,7 +1090,9 @@ public class LinkCrawler {
                 }
             });
         }
-
+        if (source.getDownloadLink() != null && dest.getDownloadLink() != null && dest.getDownloadLink().getUrlProtection() == UrlProtection.UNSET) {
+            dest.getDownloadLink().setUrlProtection(source.getDownloadLink().getUrlProtection());
+        }
         // if we decrypted a dlc,source.getDesiredPackageInfo() is null, and dest might already have package infos from the container.
         // maybe it would be even better to merge the packageinfos
         // However. if there are crypted links in the container, it may be up to the decrypterplugin to decide
@@ -1186,7 +1190,7 @@ public class LinkCrawler {
             dl.setName(source.getView().getDisplayName());
             dl.setForcedFileName(source.getForcedFileName());
             dl.setFinalFileName(source.getFinalFileName());
-            if (source.gotBrowserUrl()) {
+            if (source.hasBrowserUrl()) {
                 dl.setBrowserUrl(source.getBrowserUrl());
             }
             dl.setAvailableStatus(source.getAvailableStatus());
@@ -1195,6 +1199,9 @@ public class LinkCrawler {
                 dl.setProperties(props);
             }
             dl.setDownloadSize(source.getView().getBytesTotal());
+            if (dl.getUrlProtection() == UrlProtection.UNSET) {
+                dl.setUrlProtection(source.getUrlProtection());
+            }
         }
     }
 
@@ -1435,7 +1442,7 @@ public class LinkCrawler {
                                 parentLinkModifier.modifyCrawledLink(link);
                             }
                             DownloadLink dl = link.getDownloadLink();
-                            if (dl != null && !dl.gotBrowserUrl()) {
+                            if (dl != null && !dl.hasBrowserUrl()) {
                                 dl.setBrowserUrl(cryptedLink.getURL());
                             }
                         }

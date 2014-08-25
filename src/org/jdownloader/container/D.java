@@ -943,12 +943,8 @@ public class D extends PluginsC {
         java.util.List<DownloadLink> filter = new ArrayList<DownloadLink>();
         // filter
         for (DownloadLink l : links) {
-            String url = null;
-            if (l.getLinkType() == DownloadLink.LINKTYPE_CONTAINER) {
-                url = l.getBrowserUrl();
-            } else {
-                url = l.getDownloadURL();
-            }
+            String url = l.getDownloadURL();
+
             if (url == null) {
                 continue;
             }
@@ -1029,11 +1025,8 @@ public class D extends PluginsC {
                     Element filename = content.createElement("filename");
                     Element size = content.createElement("size");
                     DownloadLink link = tmpLinks.get(x);
-                    if (link.getLinkType() == DownloadLink.LINKTYPE_CONTAINER) {
-                        url.appendChild(content.createTextNode(Encoding.Base64Encode(link.getBrowserUrl())));
-                    } else {
-                        url.appendChild(content.createTextNode(Encoding.Base64Encode(link.getDownloadURL())));
-                    }
+
+                    url.appendChild(content.createTextNode(Encoding.Base64Encode(link.getDownloadURL())));
 
                     // url.appendChild(content.createTextNode(JDUtilities.
                     // Base64Encode(tmpLinks.get(x).getDownloadURL())));

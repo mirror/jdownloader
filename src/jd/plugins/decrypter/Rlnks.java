@@ -55,6 +55,17 @@ public class Rlnks extends PluginForDecrypt {
         super(wrapper);
     }
 
+    @Override
+    protected DownloadLink createDownloadlink(String link) {
+        DownloadLink ret = super.createDownloadlink(link);
+        try {
+            ret.setUrlProtection(org.jdownloader.controlling.UrlProtection.PROTECTED_DECRYPTER);
+        } catch (Throwable e) {
+
+        }
+        return ret;
+    }
+
     private String correctCryptedLink(final String input) {
         return input.replaceAll("(go|view|container_captcha)\\.php\\?id=", "f/");
     }

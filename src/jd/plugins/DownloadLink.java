@@ -55,6 +55,7 @@ import org.appwork.utils.reflection.Clazz;
 import org.jdownloader.DomainInfo;
 import org.jdownloader.controlling.DefaultDownloadLinkViewImpl;
 import org.jdownloader.controlling.DownloadLinkView;
+import org.jdownloader.controlling.UrlProtection;
 import org.jdownloader.controlling.Priority;
 import org.jdownloader.controlling.UniqueAlltimeID;
 import org.jdownloader.controlling.linkcrawler.LinkVariant;
@@ -113,10 +114,6 @@ public class DownloadLink extends Property implements Serializable, AbstractPack
     public static final String                                  PROPERTY_EXTRACTION_STATUS          = "EXTRACTION_STATUS";
     public static final String                                  PROPERTY_CUSTOM_MESSAGE             = "CUSTOM_MESSAGE";
 
-    public static final int                                     LINKTYPE_CONTAINER                  = 1;
-
-    public static final int                                     LINKTYPE_NORMAL                     = 0;
-
     private static final long                                   serialVersionUID                    = 1981079856214268373L;
 
     private static final String                                 UNKNOWN_FILE_NAME                   = "unknownFileName";
@@ -148,8 +145,6 @@ public class DownloadLink extends Property implements Serializable, AbstractPack
 
     @Deprecated
     private LinkStatus                                          linkStatus;
-
-    private int                                                 linkType                            = LINKTYPE_NORMAL;
 
     /** Beschreibung des Downloads */
     /* kann sich noch ändern, NICHT final */
@@ -193,6 +188,8 @@ public class DownloadLink extends Property implements Serializable, AbstractPack
 
     private transient volatile FilePackage                      lastValidFilePackage                = null;
     private transient volatile String[]                         cachedName                          = null;
+
+    private transient UrlProtection                                  urlProtection                                = UrlProtection.UNSET;
 
     public FilePackage getLastValidFilePackage() {
         return lastValidFilePackage;
@@ -472,7 +469,7 @@ public class DownloadLink extends Property implements Serializable, AbstractPack
         browserurl = url;
     }
 
-    public boolean gotBrowserUrl() {
+    public boolean hasBrowserUrl() {
         return browserurl != null;
     }
 
@@ -638,8 +635,9 @@ public class DownloadLink extends Property implements Serializable, AbstractPack
         }
     }
 
-    public int getLinkType() {
-        return linkType;
+    public UrlProtection getUrlProtection() {
+
+        return urlProtection;
     }
 
     public String getName() {
@@ -1148,15 +1146,9 @@ public class DownloadLink extends Property implements Serializable, AbstractPack
         return skipReason;
     }
 
-    public void setLinkType(int linktypeContainer) {
-        if (linktypeContainer == linkType) {
-            return;
-        }
-        if (linkType == LINKTYPE_CONTAINER) {
-            System.out.println("You are not allowd to Change the Linktype of " + this);
-            return;
-        }
-        linkType = linktypeContainer;
+    public void setUrlProtection(UrlProtection type) {
+        this.urlProtection = type;
+
     }
 
     /**
