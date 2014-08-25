@@ -529,7 +529,7 @@ public class FileOmCom extends PluginForHost {
             }
         }
         regexStuff.add("<!(--.*?--)>");
-        regexStuff.add("(<\\s*(\\w+)\\s+[^>]*style\\s*=\\s*(\"|')[\\w:;\\s]*(visibility\\s*:\\s*hidden|display\\s*:\\s*none)[\\w:;\\s]*\\3[^>]*(>.*?<\\s*/\\2[^>]*>|/\\s*>))");
+        regexStuff.add("(<\\s*(\\w+)\\s+[^>]*style\\s*=\\s*(\"|')[\\w:;\\s#-]*(visibility\\s*:\\s*hidden|display\\s*:\\s*none)[\\w:;\\s#-]*\\3[^>]*(>.*?<\\s*/\\2[^>]*>|/\\s*>))");
 
         for (String aRegex : regexStuff) {
             String results[] = new Regex(toClean, aRegex).getColumn(0);
@@ -1427,20 +1427,25 @@ public class FileOmCom extends PluginForHost {
     }
 
     private String checkDirectLink(final DownloadLink downloadLink) {
-        dllink = downloadLink.getStringProperty(directlinkproperty);
+        dllink = downloadLink.getStringProperty(directlinkproperty, null);
         if (dllink != null) {
+            URLConnectionAdapter con = null;
             try {
                 Browser br2 = br.cloneBrowser();
                 br2.setFollowRedirects(true);
-                URLConnectionAdapter con = br2.openGetConnection(dllink);
+                con = br2.openGetConnection(dllink);
                 if (con.getContentType().contains("html") || con.getLongContentLength() == -1) {
                     downloadLink.setProperty(directlinkproperty, Property.NULL);
                     dllink = null;
                 }
-                con.disconnect();
             } catch (Exception e) {
                 downloadLink.setProperty(directlinkproperty, Property.NULL);
                 dllink = null;
+            } finally {
+                try {
+                    con.disconnect();
+                } catch (final Throwable e) {
+                }
             }
         }
         return dllink;

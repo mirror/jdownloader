@@ -396,7 +396,7 @@ public class SecureUploadEu extends PluginForHost {
         ArrayList<String> someStuff = new ArrayList<String>();
         ArrayList<String> regexStuff = new ArrayList<String>();
         regexStuff.add("<\\!(\\-\\-.*?\\-\\-)>");
-        regexStuff.add("(<\\s*(\\w+)\\s+[^>]*style\\s*=\\s*(\"|')[\\w:;\\s]*(visibility\\s*:\\s*hidden|display\\s*:\\s*none)[\\w:;\\s]*\\3[^>]*(>.*?<\\s*/\\2[^>]*>|/\\s*>))");
+        regexStuff.add("(<\\s*(\\w+)\\s+[^>]*style\\s*=\\s*(\"|')[\\w:;\\s#-]*(visibility\\s*:\\s*hidden|display\\s*:\\s*none)[\\w:;\\s#-]*\\3[^>]*(>.*?<\\s*/\\2[^>]*>|/\\s*>))");
 
         for (String aRegex : regexStuff) {
             String lolz[] = br.getRegex(aRegex).getColumn(0);
