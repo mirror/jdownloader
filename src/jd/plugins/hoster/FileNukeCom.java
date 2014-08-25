@@ -142,6 +142,11 @@ public class FileNukeCom extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         filename = filename.replaceAll("(</b>|<b>|\\.html)", "");
+        /* Such links can never be downloaded - others might at least return a final downloadlink although they will often time out */
+        if (filename.equals("file.mp4")) {
+            logger.info("Seems like this link is offline (workaround-offline-detection)");
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
         link.setProperty("plainfilename", filename);
         link.setFinalFileName(filename.trim());
         if (filesize != null && !filesize.equals("")) {
@@ -171,7 +176,7 @@ public class FileNukeCom extends PluginForHost {
             postPage(br.getURL(), "method_free=Free");
             dllink = br.getRegex("file[\t\n\r ]+:[\t\n\r ]+\"(http://[^<>\"]*?)\"").getMatch(0);
             if (dllink == null) {
-                getDllink();
+                dllink = getDllink();
             }
             if (dllink == null) {
                 force_premiumonly = true;
