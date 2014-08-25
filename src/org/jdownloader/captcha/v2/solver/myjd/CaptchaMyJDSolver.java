@@ -2,7 +2,7 @@ package org.jdownloader.captcha.v2.solver.myjd;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
-import java.util.LinkedList;
+import java.util.List;
 
 import javax.swing.Icon;
 
@@ -243,7 +243,7 @@ public class CaptchaMyJDSolver extends CESChallengeSolver<String> implements Cha
     }
 
     @Override
-    public void extendServicePabel(LinkedList<ServiceCollection<?>> services) {
+    public void extendServicePabel(List<ServiceCollection<?>> services) {
         if (isMyJDownloaderAccountValid() && enabled) {
 
             services.add(new ServiceCollection<CaptchaMyJDSolver>() {
