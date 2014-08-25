@@ -157,6 +157,10 @@ public class InCloudDriveCom extends PluginForHost {
         hashTag = new Regex(br.getURL(), "/(link_download)/\\?token=([A-Za-z0-9=_]+)").getRow(0);
         if (hashTag == null) {
             hashTag = new Regex(br.getURL(), "/(?:#/)?(file_download|file|link)/([0-9a-zA-Z_=-]+)").getRow(0);
+            if (hashTag == null) {
+                logger.info("hashTag is not in url --> Offline");
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            }
         }
         if (hashTag == null || hashTag.length != 2) {
             logger.warning("Can not determin hashTag");

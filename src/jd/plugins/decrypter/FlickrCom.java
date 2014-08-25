@@ -35,7 +35,7 @@ import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
 import jd.utils.JDUtilities;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "flickr.com" }, urls = { "https?://(www\\.)?flickr\\.com/(photos/([^<>\"/]+/(\\d+|favorites)|[^<>\"/]+(/galleries)?/(page\\d+|sets/\\d+)|[^<>\"/]+)|groups/[^<>\"/]+/(?!members|discuss)[^<>\"/]+(/[^<>\"/]+)?)" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "flickr.com" }, urls = { "https?://(www\\.)?flickr\\.com/(photos|groups)/.+" }, flags = { 0 })
 public class FlickrCom extends PluginForDecrypt {
 
     public FlickrCom(PluginWrapper wrapper) {
@@ -175,8 +175,18 @@ public class FlickrCom extends PluginForDecrypt {
                 if (fpName == null) {
                     fpName = br.getRegex("\"search_default\":\"Search ([^<>\"]*)\"").getMatch(0);
                 }
-                if (parameter.matches(SETLINK)) {
-
+                if (parameter.endsWith("/sets/") && !parameter.matches(SETLINK)) {
+                    logger.info("Decrypting all set links (albums) of a user...");
+                    final String[] set_ids = br.getRegex("class=\"Seta\" data\\-setid=\"(\\d+)\"").getColumn(0);
+                    if (set_ids == null || set_ids.length == 0) {
+                        logger.warning("Decrypter broken for link: " + parameter);
+                        return null;
+                    }
+                    for (final String set_id : set_ids) {
+                        decryptedLinks.add(createDownloadlink(parameter + set_id));
+                    }
+                    return decryptedLinks;
+                } else if (parameter.matches(SETLINK)) {
                     if (picCount == null) {
                         picCount = br.getRegex("class=\"Results\">\\((\\d+) in set\\)</div>").getMatch(0);
                     }
