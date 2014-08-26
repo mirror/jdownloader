@@ -27,6 +27,8 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.download.DownloadInterface;
 
+import org.appwork.utils.StringUtils;
+
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "clipfish.de" }, urls = { "clipfish://.+" }, flags = { 0 })
 public class ClipfishDe extends PluginForHost {
 
@@ -81,21 +83,20 @@ public class ClipfishDe extends PluginForHost {
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws Exception {
         if (downloadLink.getDownloadURL().startsWith("http")) {
-
-            URLConnectionAdapter con = br.openGetConnection(downloadLink.getDownloadURL());
+            final URLConnectionAdapter con = br.openHeadConnection(downloadLink.getDownloadURL());
             try {
-                if (con.getCompleteContentLength() > 0) {
+                if (con.getResponseCode() == 200 && StringUtils.containsIgnoreCase(con.getContentType(), "video") && con.getCompleteContentLength() > 0) {
                     downloadLink.setVerifiedFileSize(con.getCompleteContentLength());
                 } else {
                     return AvailableStatus.FALSE;
                 }
             } finally {
-                con.disconnect();
+                if (con != null) {
+                    con.disconnect();
+                }
             }
-            System.out.println(1);
         }
         return AvailableStatus.TRUE;
-
     }
 
     @Override

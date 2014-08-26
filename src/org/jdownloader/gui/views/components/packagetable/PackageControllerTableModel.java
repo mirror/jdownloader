@@ -8,7 +8,8 @@ import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.CopyOnWriteArraySet;
 import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicLong;
 
 import javax.swing.Icon;
 
@@ -81,16 +82,20 @@ public abstract class PackageControllerTableModel<PackageType extends AbstractPa
         return availableTableFilters;
     }
 
-    private ScheduledExecutorService queue                 = DelayedRunnable.getNewScheduledExecutorService();
+    private ScheduledExecutorService queue                    = DelayedRunnable.getNewScheduledExecutorService();
 
     private final DelayedRunnable    asyncRecreateFast;
 
     private final Storage            storage;
 
-    private final AtomicBoolean      repaintFired          = new AtomicBoolean(false);
-    private final AtomicBoolean      structureChangedFired = new AtomicBoolean(false);
+    private long                     repaintFiredCounter      = 0;
+    private long                     structureChangedCounter  = 0;
+    private final AtomicLong         repaintRequested         = new AtomicLong(0);
+    private final AtomicLong         repaintProcessed         = new AtomicLong(0);
+    private final AtomicLong         structureChangeRequested = new AtomicLong(0);
+    private final AtomicLong         structureChangeProcessed = new AtomicLong(0);
 
-    private volatile boolean         hideSinglePackage     = false;
+    private volatile boolean         hideSinglePackage        = false;
 
     public boolean isHideSinglePackage() {
         return hideSinglePackage;
@@ -153,49 +158,43 @@ public abstract class PackageControllerTableModel<PackageType extends AbstractPa
     }
 
     private void fireRepaint() {
-        if (structureChangedFired.get() == false && repaintFired.compareAndSet(false, true)) {
-            boolean set = false;
-            try {
-                ArrayList<ChildrenView<ChildrenType>> viewUpdates = new ArrayList<ChildrenView<ChildrenType>>();
-                for (AbstractNode node : getTableData()) {
-                    if (node instanceof AbstractPackageNode) {
-                        ChildrenView<ChildrenType> view = ((AbstractPackageNode) node).getView();
-                        if (view.updateRequired()) {
-                            viewUpdates.add(view);
-                        }
+        if (repaintRequested.get() > structureChangeRequested.get()) {
+            ArrayList<ChildrenView<ChildrenType>> viewUpdates = new ArrayList<ChildrenView<ChildrenType>>();
+            for (AbstractNode node : getTableData()) {
+                if (node instanceof AbstractPackageNode) {
+                    ChildrenView<ChildrenType> view = ((AbstractPackageNode) node).getView();
+                    if (view.updateRequired()) {
+                        viewUpdates.add(view);
                     }
                 }
-                for (ChildrenView<ChildrenType> view : viewUpdates) {
-                    view.aggregate();
-                }
-                new EDTRunner() {
-                    @Override
-                    protected void runInEDT() {
-                        /**
-                         * we just want to repaint
-                         */
+            }
+            for (ChildrenView<ChildrenType> view : viewUpdates) {
+                view.aggregate();
+            }
+            new EDTRunner() {
+                @Override
+                protected void runInEDT() {
+                    /**
+                     * we just want to repaint
+                     */
+                    if (repaintRequested.get() > structureChangeRequested.get()) {
                         try {
                             getTable().repaint();
                         } finally {
-                            repaintFired.set(false);
+                            getTable().firePropertyChange("repaintFired", repaintFiredCounter, ++repaintFiredCounter);
                         }
                     }
-                };
-                set = true;
-            } finally {
-                if (set == false) {
-                    repaintFired.set(false);
                 }
-            }
+            };
         }
     }
 
     private void fireStructureChange() {
-        if (structureChangedFired.compareAndSet(false, true)) {
+        if (structureChangeRequested.get() > structureChangeProcessed.getAndSet(System.currentTimeMillis())) {
             try {
                 _fireTableStructureChanged(getTableData(), true);
             } finally {
-                structureChangedFired.set(false);
+                getTable().firePropertyChange("structureChangedFired", structureChangedCounter, ++structureChangedCounter);
             }
         }
     }
@@ -215,6 +214,7 @@ public abstract class PackageControllerTableModel<PackageType extends AbstractPa
     }
 
     public void recreateModel(boolean delay) {
+        structureChangeRequested.set(System.currentTimeMillis());
         if (delay) {
             asyncRecreate.run();
         } else {
@@ -227,10 +227,15 @@ public abstract class PackageControllerTableModel<PackageType extends AbstractPa
     }
 
     public void refreshModel(boolean delay) {
+        repaintRequested.set(System.currentTimeMillis());
         if (delay) {
             asyncRefresh.run();
         } else {
-            asyncRefresh.delayedrun();
+            queue.schedule(new Runnable() {
+                public void run() {
+                    fireRepaint();
+                }
+            }, 0, TimeUnit.SECONDS);
         }
     }
 
@@ -299,7 +304,7 @@ public abstract class PackageControllerTableModel<PackageType extends AbstractPa
                 return unfilteredChildren;
             }
         });
-        asyncRecreateFast.delayedrun();
+        recreateModel(false);
     }
 
     public void setFilePackageExpand(final boolean expanded, final AbstractPackageNode... fp2) {
@@ -316,7 +321,7 @@ public abstract class PackageControllerTableModel<PackageType extends AbstractPa
                 return unfilteredChildren;
             }
         });
-        asyncRecreateFast.delayedrun();
+        recreateModel(false);
     }
 
     public void addFilter(PackageControllerTableModelFilter<PackageType, ChildrenType> filter) {

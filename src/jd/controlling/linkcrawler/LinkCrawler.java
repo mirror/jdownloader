@@ -1013,8 +1013,8 @@ public class LinkCrawler {
                         try {
                             hosterLinks = wplg.getDownloadLinks(url, sourcePackage);
                             if (hosterLinks != null) {
-                                UrlProtection protection = wplg.getUrlProtection(hosterLinks);
-                                if (protection != null) {
+                                final UrlProtection protection = wplg.getUrlProtection(hosterLinks);
+                                if (protection != null && protection != UrlProtection.UNSET) {
                                     for (DownloadLink dl : hosterLinks) {
                                         if (dl.getUrlProtection() == UrlProtection.UNSET) {
                                             dl.setUrlProtection(protection);
@@ -1208,7 +1208,7 @@ public class LinkCrawler {
                 dl.setProperties(props);
             }
             dl.setDownloadSize(source.getView().getBytesTotal());
-            if (dl.getUrlProtection() == UrlProtection.UNSET) {
+            if (dl.getUrlProtection() == UrlProtection.UNSET && source.getUrlProtection() != UrlProtection.UNSET) {
                 dl.setUrlProtection(source.getUrlProtection());
             }
         }
