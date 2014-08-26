@@ -65,14 +65,16 @@ public class RuTubeRuDecrypter extends PluginForDecrypt {
                 // embed link, grab info since we are already on this page
                 br.getPage("http://rutube.ru/play/embed/" + vid + "?wmode=opaque&autoStart=true");
                 uid = br.getRegex("\"id\"\\s*:\\s*\"([a-f0-9]{32})\"").getMatch(0);
+                if (uid == null && br.containsHTML("/video/private/([a-f0-9]{32})/")) {
+                    // not supported
+                    decryptedLinks.add(createOfflinelink(parameter, vid, "Private Video"));
+                    return decryptedLinks;
+                }
             } else {
                 // tracks link
                 br.getPage(parameter);
                 if (br.getHttpConnection().getResponseCode() == 404) {
-                    final DownloadLink offline = super.createDownloadlink("directhttp://" + parameter);
-                    offline.setAvailable(false);
-                    offline.setProperty("offline", true);
-                    decryptedLinks.add(offline);
+                    decryptedLinks.add(createOfflinelink(parameter));
                     return decryptedLinks;
                 }
                 br.getPage(br.getURL().replace("/video/", "/api/video/") + "?format=xml");
