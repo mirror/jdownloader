@@ -318,9 +318,7 @@ public class TurboBitNet extends PluginForHost {
         prepBrowser(br, userAgent.get());
         String dllink = downloadLink.getDownloadURL();
         sleep(2500, downloadLink);
-        br.setFollowRedirects(true);
         getPage(dllink);
-        br.setFollowRedirects(false);
         if (br.containsHTML("(>Please wait, searching file|\\'File not found\\. Probably it was deleted)")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
