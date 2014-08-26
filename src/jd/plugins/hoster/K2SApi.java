@@ -542,7 +542,9 @@ public abstract class K2SApi extends PluginForHost {
     }
 
     private boolean sessionTokenInvalid(final Account account, final Browser ibr) {
-        if ("error".equalsIgnoreCase(getJson(ibr, "status")) && ("10".equalsIgnoreCase(getJson(ibr, "errorCode")))) {
+        final String status = getJson(ibr, "status");
+        final String errorCode = getJson(ibr, "errorCode");
+        if ("error".equalsIgnoreCase(status) && ("10".equalsIgnoreCase(errorCode)) || ("11".equalsIgnoreCase(errorCode))) {
             // expired sessionToken
             dumpAuthToken(account);
             authTokenFail++;
@@ -637,7 +639,9 @@ public abstract class K2SApi extends PluginForHost {
                     // time'
                     throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, msg);
                 case 10:
+                case 11:
                     // ERROR_YOU_ARE_NEED_AUTHORIZED = 10;
+                    // ERROR_AUTHORIZATION_EXPIRED = 11;
                     // this should never happen, as its handled within postPage and auth_token should be valid for download
                     dumpAuthToken(account);
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -673,6 +677,8 @@ public abstract class K2SApi extends PluginForHost {
                     // {"message":"Download not available","status":"error","code":406,"errorCode":42,"errors":[{"code":3}]}
                     // {"message":"Download not available","status":"error","code":406,"errorCode":42,"errors":[{"code":5,"timeRemaining":"2521.000000"}]}
                     // {"message":"Download is not available","status":"error","code":406,"errorCode":42,"errors":[{"code":6,"message":" Free account does not allow to download more than one file at the same time"}]}
+                    // {"message":"Download not available","status":"error","code":406,"errorCode":42,"errors":[{"code":6}]}
+
                     // sub error, pass it back into itself.
                     handleErrors(account, getJsonArray(iString, "errors"), true);
                 case 70:
@@ -734,6 +740,8 @@ public abstract class K2SApi extends PluginForHost {
             } else if (code == 6) {
                 msg = "Maximium number pararell downloads reached!";
             } else if (code == 10) {
+                msg = "Your not authorised req: auth_token!";
+            } else if (code == 11) {
                 msg = "auth_token has expired!";
             } else if (code == 30) {
                 msg = "Captcha required!";
@@ -1242,7 +1250,15 @@ public abstract class K2SApi extends PluginForHost {
                         logger.warning("Possible plugin error within cloudflare handling");
                         throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                     }
-                } else {
+                } else if (ibr.containsHTML("<title>Too Many Requests</title>") && ibr.containsHTML("<body>\\s*<h1>Too Many Requests</h1>\\s*You are sending too many requests\\s*</body>")) {
+                    // new code here...
+                    // <script type="text/javascript">
+                    // //<![CDATA[
+                    // try{if (!window.CloudFlare) {var
+                    // CloudFlare=[{verbose:0,p:1408958160,byc:0,owlid:"cf",bag2:1,mirage2:0,oracle:0,paths:{cloudflare:"/cdn-cgi/nexp/dokv=88e434a982/"},atok:"661da6801927b0eeec95f9f3e160b03a",petok:"107d6db055b8700cf1e7eec1324dbb7be6b978d0-1408974417-1800",zone:"fileboom.me",rocket:"0",apps:{}}];CloudFlare.push({"apps":{"ape":"3a15e211d076b73aac068065e559c1e4"}});!function(a,b){a=document.createElement("script"),b=document.getElementsByTagName("script")[0],a.async=!0,a.src="//ajax.cloudflare.com/cdn-cgi/nexp/dokv=97fb4d042e/cloudflare.min.js",b.parentNode.insertBefore(a,b)}()}}catch(e){};
+                    // //]]>
+                    // </script>
+
                     // nothing wrong, or something wrong (unsupported format)....
                     // commenting out return prevents caching of cookies per request
                     // return;
