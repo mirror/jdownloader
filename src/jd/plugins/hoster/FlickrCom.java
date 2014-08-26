@@ -17,6 +17,7 @@
 package jd.plugins.hoster;
 
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -33,6 +34,7 @@ import jd.plugins.Account;
 import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
+import jd.plugins.FilePackage;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
@@ -68,6 +70,17 @@ public class FlickrCom extends PluginForHost {
      */
     public boolean isProxyRotationEnabledForLinkChecker() {
         return false;
+    }
+
+    @Override
+    public ArrayList<DownloadLink> getDownloadLinks(String data, FilePackage fp) {
+        ArrayList<DownloadLink> ret = super.getDownloadLinks(data, fp);
+        try {
+            org.jdownloader.controlling.UrlProtection.PROTECTED_INTERNAL_URL.setTo(ret);
+        } catch (Throwable e) {
+            // jd09
+        }
+        return ret;
     }
 
     @Override

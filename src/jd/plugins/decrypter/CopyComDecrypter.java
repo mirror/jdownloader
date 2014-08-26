@@ -43,6 +43,17 @@ public class CopyComDecrypter extends PluginForDecrypt {
 
     private static final String  VALID_URL      = "https?://(www\\.)?copy\\.com/s/[A-Za-z0-9]+(/[^<>\"]+)?";
 
+    @Override
+    protected DownloadLink createDownloadlink(String link) {
+        DownloadLink ret = super.createDownloadlink(link);
+        try {
+            ret.setUrlProtection(org.jdownloader.controlling.UrlProtection.PROTECTED_INTERNAL_URL);
+        } catch (Throwable e) {
+            // jd09
+        }
+        return ret;
+    }
+
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         br.setFollowRedirects(false);

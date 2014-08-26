@@ -69,6 +69,10 @@ public class ClpfshD extends PluginForDecrypt {
         }
         if (!br.containsHTML("CFAdBrandedPlayer\\.js") && !br.containsHTML("CFPlayerBasic\\.js")) {
             logger.info("Link offline/unsupported: " + parameter);
+            final DownloadLink offline = createDownloadlink("directhttp://" + parameter);
+            offline.setAvailable(false);
+            offline.setProperty("offline", true);
+            decryptedLinks.add(offline);
             return decryptedLinks;
         }
         String tmpStr = regexInfo.getMatch(0);
@@ -79,7 +83,11 @@ public class ClpfshD extends PluginForDecrypt {
             }
         }
         if (tmpStr == null) {
-            return null;
+            final DownloadLink offline = createDownloadlink("directhttp://" + parameter);
+            offline.setAvailable(false);
+            offline.setProperty("offline", true);
+            decryptedLinks.add(offline);
+            return decryptedLinks;
         }
         String name = tmpStr.substring(0, tmpStr.lastIndexOf("-"));
         String cType = tmpStr.substring(tmpStr.lastIndexOf("-") + 1, tmpStr.length()).toLowerCase(Locale.ENGLISH);

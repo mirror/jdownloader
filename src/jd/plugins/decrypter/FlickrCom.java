@@ -48,13 +48,24 @@ public class FlickrCom extends PluginForDecrypt {
     private static final String PHOTOLINK    = "https?://(www\\.)?flickr\\.com/photos/.*?";
     private static final String SETLINK      = "https?://(www\\.)?flickr\\.com/photos/[^<>\"/]+/sets/\\d+";
 
-    private static final String INVALIDLINKS = "https?://(www\\.)?flickr\\.com/(photos/(me|upload|tags)|groups/[a-z0-9\\-_]+/(rules))";
+    private static final String INVALIDLINKS = "https?://(www\\.)?flickr\\.com/(photos/(me|upload|tags.*?)|groups/[a-z0-9\\-_]+/rules)";
 
     private static final String api_key      = "44044129d5965db8c39819e54274917b";
 
     // private boolean USE_API = false;
 
-    /* TODO: Maybe implement API: https://api.flickr.com/services/rest?photo_id=&extras=can_ ... */
+    @Override
+    protected DownloadLink createDownloadlink(String link) {
+        DownloadLink ret = super.createDownloadlink(link);
+        try {
+            ret.setUrlProtection(org.jdownloader.controlling.UrlProtection.PROTECTED_INTERNAL_URL);
+        } catch (Throwable e) {
+            // jd09
+        }
+        return ret;
+    }
+
+    /* TODO: Implement API: https://api.flickr.com/services/rest?photo_id=&extras=can_ ... */
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         ArrayList<String> addLinks = new ArrayList<String>();
@@ -62,7 +73,13 @@ public class FlickrCom extends PluginForDecrypt {
         br.setCookiesExclusive(true);
         br.setCookie(MAINPAGE, "localization", "en-us%3Bus%3Bde");
         br.setCookie(MAINPAGE, "fldetectedlang", "en-us");
+
         String parameter = Encoding.htmlDecode(param.toString()).replace("http://", "https://");
+        final String remove_string = new Regex(parameter, "(/player/.+)").getMatch(0);
+        if (remove_string != null) {
+            parameter = parameter.replace(remove_string, "");
+        }
+
         int lastPage = 1;
         /* Check if link is for hosterplugin */
         if (parameter.matches("https?://(www\\.)?flickr\\.com/photos/[^<>\"/]+/\\d+")) {

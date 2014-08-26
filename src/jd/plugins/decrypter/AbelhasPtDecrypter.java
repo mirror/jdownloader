@@ -127,10 +127,12 @@ public class AbelhasPtDecrypter extends PluginForDecrypt {
                 String filename = finfo.getMatch(0);
                 final String ext = finfo.getMatch(1);
                 String filesize = new Regex(lnkinfo, "<li><span>([^<>\"]*?)</span></li>").getMatch(0);
-                if (fid == null || filename == null || ext == null || filesize == null) {
+                String mainlink = br.getRegex("\"(/[^<>\"]*?)\" class=\"downloadAction\"").getMatch(0);
+                if (fid == null || filename == null || ext == null || filesize == null || mainlink == null) {
                     logger.warning("Decrypter broken for link: " + parameter);
                     return null;
                 }
+                mainlink = "http://abelhas.pt" + mainlink;
                 filesize = Encoding.htmlDecode(filesize).trim();
                 filename = Encoding.htmlDecode(filename).trim() + Encoding.htmlDecode(ext).trim();
 
@@ -139,7 +141,7 @@ public class AbelhasPtDecrypter extends PluginForDecrypt {
                 dl.setProperty("plain_filename", filename);
                 dl.setProperty("plain_filesize", filesize);
                 dl.setProperty("plain_fid", fid);
-                dl.setProperty("mainlink", parameter);
+                dl.setProperty("mainlink", mainlink);
                 dl.setProperty("LINKDUPEID", fid + filename);
 
                 dl.setName(filename);
