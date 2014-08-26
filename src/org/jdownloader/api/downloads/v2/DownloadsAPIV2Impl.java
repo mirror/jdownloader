@@ -18,6 +18,9 @@ import jd.plugins.PluginProgress;
 import org.appwork.remoteapi.exceptions.BadParameterException;
 import org.jdownloader.DomainInfo;
 import org.jdownloader.api.RemoteAPIController;
+import org.jdownloader.extensions.extraction.ExtractionStatus;
+import org.jdownloader.gui.IconKey;
+import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.gui.views.SelectionInfo;
 import org.jdownloader.myjdownloader.client.bindings.PriorityStorable;
 import org.jdownloader.myjdownloader.client.bindings.interfaces.DownloadsListInterface;
@@ -265,20 +268,6 @@ public class DownloadsAPIV2Impl implements DownloadsAPIV2 {
     }
 
     private void setStatus(DownloadLinkAPIStorableV2 dls, DownloadLink link) {
-        // this.trueIcon = NewTheme.I().getIcon("true", 16);
-        // this.trueIconMirror = NewTheme.I().getIcon("true-orange", 16);
-        // this.falseIcon = NewTheme.I().getIcon("false", 16);
-        // this.infoIcon = NewTheme.I().getIcon("info", 16);
-        // this.iconWait = NewTheme.I().getIcon("wait", 16);
-        // this.extracting = NewTheme.I().getIcon(org.jdownloader.gui.IconKey.ICON_COMPRESS, 16);
-        // startingIcon = NewTheme.I().getIcon("run", 16);
-        // trueIconExtracted = new ImageIcon(ImageProvider.merge(trueIcon.getImage(),
-        // NewTheme.I().getImage(org.jdownloader.gui.IconKey.ICON_COMPRESS, 16), 0, 0, trueIcon.getIconWidth() + 4,
-        // (trueIcon.getIconHeight() - 16) / 2 + 2));
-        // trueIconExtractedFailed = new ImageIcon(ImageProvider.merge(trueIconExtracted.getImage(), NewTheme.I().getImage("error", 10), 0,
-        // 0, trueIcon.getIconWidth() + 12, trueIconExtracted.getIconHeight() - 10));
-        // startingString = _GUI._.TaskColumn_fillColumnHelper_starting();
-
         Icon icon = null;
         String label = null;
         PluginProgress prog = link.getPluginProgress();
@@ -309,57 +298,59 @@ public class DownloadsAPIV2Impl implements DownloadsAPIV2 {
             dls.setStatus(label);
             return;
         }
-        // final FinalLinkState finalLinkState = link.getFinalLinkState();
-        // if (finalLinkState != null) {
-        // if (FinalLinkState.CheckFailed(finalLinkState)) {
-        //
-        // label = finalLinkState.getExplanation(this, link);
-        // dls.setStatusIconKey(IconKey.ICON_FALSE);
-        // dls.setStatus(label);
-        // return;
-        // }
-        // ExtractionStatus extractionStatus = link.getExtractionStatus();
-        // if (extractionStatus != null) {
-        // switch (extractionStatus) {
-        // case ERROR:
-        // case ERROR_PW:
-        // case ERROR_CRC:
-        // case ERROR_NOT_ENOUGH_SPACE:
-        // case ERRROR_FILE_NOT_FOUND:
-        // icon = trueIconExtractedFailed;
-        // label = extractionStatus.getExplanation();
-        // tooltip = null;
-        // return;
-        // case SUCCESSFUL:
-        // icon = trueIconExtracted;
-        // label = extractionStatus.getExplanation();
-        // tooltip = null;
-        // return;
-        // case RUNNING:
-        // icon = extracting;
-        // label = extractionStatus.getExplanation();
-        // tooltip = null;
-        // return;
-        // }
-        // }
-        // if (FinalLinkState.FINISHED_MIRROR.equals(finalLinkState)) {
-        // icon = trueIconMirror;
-        // } else {
-        // icon = trueIcon;
-        // }
-        // label = finalLinkState.getExplanation(this, link);
-        // tooltip = null;
-        // return;
-        // }
-        // if (link.getDownloadLinkController() != null) {
-        // icon = startingIcon;
-        // label = startingString;
-        // tooltip = null;
-        // return;
-        // }
-        // icon = null;
-        // tooltip = null;
-        // label = "";
+        final FinalLinkState finalLinkState = link.getFinalLinkState();
+        if (finalLinkState != null) {
+            if (FinalLinkState.CheckFailed(finalLinkState)) {
+
+                label = finalLinkState.getExplanation(this, link);
+                dls.setStatusIconKey(IconKey.ICON_FALSE);
+                dls.setStatus(label);
+                return;
+            }
+            ExtractionStatus extractionStatus = link.getExtractionStatus();
+            if (extractionStatus != null) {
+                switch (extractionStatus) {
+                case ERROR:
+                case ERROR_PW:
+                case ERROR_CRC:
+                case ERROR_NOT_ENOUGH_SPACE:
+                case ERRROR_FILE_NOT_FOUND:
+
+                    label = extractionStatus.getExplanation();
+                    dls.setStatusIconKey(IconKey.ICON_EXTRACTION_TRUE_FAILED);
+                    dls.setStatus(label);
+                    return;
+                case SUCCESSFUL:
+
+                    label = extractionStatus.getExplanation();
+                    dls.setStatusIconKey(IconKey.ICON_EXTRACTION_TRUE);
+                    dls.setStatus(label);
+                    return;
+                case RUNNING:
+
+                    label = extractionStatus.getExplanation();
+                    dls.setStatusIconKey(IconKey.ICON_COMPRESS);
+                    dls.setStatus(label);
+                    return;
+
+                }
+            }
+            if (FinalLinkState.FINISHED_MIRROR.equals(finalLinkState)) {
+                dls.setStatusIconKey(IconKey.ICON_TRUE_ORANGE);
+            } else {
+                dls.setStatusIconKey(IconKey.ICON_TRUE);
+            }
+            label = finalLinkState.getExplanation(this, link);
+            dls.setStatus(label);
+            return;
+        }
+        if (link.getDownloadLinkController() != null) {
+
+            dls.setStatusIconKey(IconKey.ICON_RUN);
+            dls.setStatus(_GUI._.TaskColumn_fillColumnHelper_starting());
+            return;
+        }
+
     }
 
     @Override
