@@ -76,7 +76,7 @@ public class PutLockerCom extends PluginForHost {
     }
 
     public Boolean rewriteHost(Account acc) {
-        if ("putlocker.com".equals(getHost())) {
+        if ("firedrive.com".equals(getHost())) {
             if (acc != null && "putlocker.com".equals(acc.getHoster())) {
                 acc.setHoster("firedrive.com");
                 return true;
@@ -87,7 +87,7 @@ public class PutLockerCom extends PluginForHost {
     }
 
     public Boolean rewriteHost(DownloadLink link) {
-        if ("putlocker.com".equals(getHost())) {
+        if ("firedrive.com".equals(getHost())) {
             if (link != null && "putlocker.com".equals(link.getHost())) {
                 link.setHost("firedrive.com");
                 return true;
