@@ -97,6 +97,7 @@ public class MenuManagerLinkgrabberTableContext extends ContextMenuManager<Crawl
         mr.add(EnabledAction.class);
 
         mr.add(new SeperatorData());
+        mr.add(CheckStatusAction.class);
         mr.add(new ActionData(OpenInBrowserAction.class));
         mr.add(new SeperatorData());
 
@@ -155,7 +156,6 @@ public class MenuManagerLinkgrabberTableContext extends ContextMenuManager<Crawl
         SettingsLGSubmenu ret = new SettingsLGSubmenu();
 
         ret.add(RenameAction.class);
-        ret.add(CheckStatusAction.class);
 
         ret.add(SetDownloadFolderInLinkgrabberAction.class);
         ret.add(SetDownloadPassword.class);

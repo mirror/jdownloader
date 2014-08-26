@@ -1012,7 +1012,16 @@ public class LinkCrawler {
                         java.util.List<DownloadLink> hosterLinks = null;
                         try {
                             hosterLinks = wplg.getDownloadLinks(url, sourcePackage);
-
+                            if (hosterLinks != null) {
+                                UrlProtection protection = wplg.getUrlProtection(hosterLinks);
+                                if (protection != null) {
+                                    for (DownloadLink dl : hosterLinks) {
+                                        if (dl.getUrlProtection() == UrlProtection.UNSET) {
+                                            dl.setUrlProtection(protection);
+                                        }
+                                    }
+                                }
+                            }
                             /* in case the function returned without exceptions, we can clear log */
                             logger.clear();
                         } finally {

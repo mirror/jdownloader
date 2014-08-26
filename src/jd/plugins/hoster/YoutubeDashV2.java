@@ -90,6 +90,7 @@ import org.appwork.utils.swing.EDTRunner;
 import org.jdownloader.DomainInfo;
 import org.jdownloader.controlling.DefaultDownloadLinkViewImpl;
 import org.jdownloader.controlling.DownloadLinkView;
+import org.jdownloader.controlling.UrlProtection;
 import org.jdownloader.controlling.ffmpeg.FFMpegProgress;
 import org.jdownloader.controlling.ffmpeg.FFmpeg;
 import org.jdownloader.controlling.linkcrawler.LinkVariant;
@@ -131,6 +132,22 @@ public class YoutubeDashV2 extends PluginForHost {
     @Override
     public Class<? extends ConfigInterface> getConfigInterface() {
         return YoutubeConfig.class;
+    }
+
+    @Override
+    public ArrayList<DownloadLink> getDownloadLinks(String data, FilePackage fp) {
+        ArrayList<DownloadLink> ret = super.getDownloadLinks(data, fp);
+        if (ret != null) {
+            for (DownloadLink link : ret) {
+                try {
+                    link.setUrlProtection(UrlProtection.PROTECTED_INTERNAL_URL);
+                } catch (Throwable e) {
+
+                }
+            }
+        }
+
+        return ret;
     }
 
     @Override
@@ -477,6 +494,7 @@ public class YoutubeDashV2 extends PluginForHost {
     @Override
     public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws Exception {
         cfg = PluginJsonConfig.get(YoutubeConfig.class);
+        downloadLink.setUrlProtection(UrlProtection.PROTECTED_INTERNAL_URL);
         YoutubeProperties data = downloadLink.bindData(YoutubeProperties.class);
         if (!downloadLink.getDownloadURL().startsWith("youtubev2://")) {
             convertOldLink(downloadLink);

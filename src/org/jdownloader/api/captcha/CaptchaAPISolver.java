@@ -18,6 +18,7 @@ import org.appwork.remoteapi.RemoteAPIResponse;
 import org.appwork.remoteapi.exceptions.InternalApiException;
 import org.appwork.storage.JSonStorage;
 import org.appwork.storage.TypeRef;
+import org.appwork.utils.Application;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.logging.Log;
 import org.appwork.utils.net.Base64OutputStream;
@@ -82,9 +83,13 @@ public class CaptchaAPISolver extends ChallengeSolver<Object> implements Captcha
     public List<CaptchaJob> list() {
 
         java.util.List<CaptchaJob> ret = new ArrayList<CaptchaJob>();
-        if (!CFG_CAPTCHA.REMOTE_CAPTCHA_ENABLED.isEnabled()) return ret;
+        if (!CFG_CAPTCHA.REMOTE_CAPTCHA_ENABLED.isEnabled()) {
+            return ret;
+        }
         for (SolverJob<?> entry : listJobs()) {
-            if (entry.isDone()) continue;
+            if (entry.isDone()) {
+                continue;
+            }
             if (entry.getChallenge() instanceof ImageCaptchaChallenge) {
                 CaptchaJob job = new CaptchaJob();
                 Class<?> cls = entry.getChallenge().getClass();
@@ -105,7 +110,9 @@ public class CaptchaAPISolver extends ChallengeSolver<Object> implements Captcha
 
     public void get(RemoteAPIRequest request, RemoteAPIResponse response, long id) throws InternalApiException, InvalidCaptchaIDException {
         SolverJob<?> job = ChallengeResponseController.getInstance().getJobById(id);
-        if (job == null || !(job.getChallenge() instanceof ImageCaptchaChallenge) || job.isDone()) { throw new InvalidCaptchaIDException(); }
+        if (job == null || !(job.getChallenge() instanceof ImageCaptchaChallenge) || job.isDone()) {
+            throw new InvalidCaptchaIDException();
+        }
 
         ImageCaptchaChallenge<?> challenge = (ImageCaptchaChallenge<?>) job.getChallenge();
         try {
@@ -151,8 +158,10 @@ public class CaptchaAPISolver extends ChallengeSolver<Object> implements Captcha
     }
 
     public boolean isJobDone(SolverJob<?> job) {
-        if (!isMyJDownloaderActive()) return true;
-        // if (job.areDone(DialogBasicCaptchaSolver.getInstance(), DialogClickCaptchaSolver.getInstance())) return true;
+        if (!isMyJDownloaderActive()) {
+            return true;
+            // if (job.areDone(DialogBasicCaptchaSolver.getInstance(), DialogClickCaptchaSolver.getInstance())) return true;
+        }
 
         synchronized (map) {
             return !map.containsKey(job);
@@ -192,7 +201,9 @@ public class CaptchaAPISolver extends ChallengeSolver<Object> implements Captcha
 
         }
         SolverJob<?> job = ChallengeResponseController.getInstance().getJobById(id);
-        if (job == null || !(job.getChallenge() instanceof ImageCaptchaChallenge) || job.isDone()) { throw new InvalidCaptchaIDException(); }
+        if (job == null || !(job.getChallenge() instanceof ImageCaptchaChallenge) || job.isDone()) {
+            throw new InvalidCaptchaIDException();
+        }
 
         ImageCaptchaChallenge<?> challenge = (ImageCaptchaChallenge<?>) job.getChallenge();
 
@@ -229,7 +240,9 @@ public class CaptchaAPISolver extends ChallengeSolver<Object> implements Captcha
         // job.kill();
 
         SolverJob<Object> job = (SolverJob<Object>) ChallengeResponseController.getInstance().getJobById(id);
-        if (job == null) throw new InvalidCaptchaIDException();
+        if (job == null) {
+            throw new InvalidCaptchaIDException();
+        }
         ChallengeResponseController.getInstance().setSkipRequest(type, this, job.getChallenge());
         return true;
     }
@@ -244,7 +257,9 @@ public class CaptchaAPISolver extends ChallengeSolver<Object> implements Captcha
     @Override
     public CaptchaJob getCaptchaJob(long id) {
         SolverJob<?> entry = ChallengeResponseController.getInstance().getJobById(id);
-        if (entry == null) { return null; }
+        if (entry == null) {
+            return null;
+        }
 
         CaptchaJob ret = new CaptchaJob();
 
@@ -327,12 +342,18 @@ public class CaptchaAPISolver extends ChallengeSolver<Object> implements Captcha
 
     @Override
     public void onJobSolverEnd(ChallengeSolver<?> solver, SolverJob<?> job) {
-        if (solver == this) return;
-        if (job.areDone(DialogBasicCaptchaSolver.getInstance(), DialogClickCaptchaSolver.getInstance())) {
-            // dialogs and jac is done. let's kill this one,
+        if (solver == this) {
+            return;
+        }
+        if (Application.isHeadless()) {
+            // dispose(job);
+        } else {
+            if (job.areDone(DialogBasicCaptchaSolver.getInstance(), DialogClickCaptchaSolver.getInstance())) {
+                // dialogs and jac is done. let's kill this one,
 
-            dispose(job);
+                dispose(job);
 
+            }
         }
     }
 

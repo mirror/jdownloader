@@ -820,8 +820,13 @@ public class SecondLevelLaunch {
                                                 }
                                             });
                                             ChallengeResponseController.getInstance().addSolver(JACSolver.getInstance());
-                                            ChallengeResponseController.getInstance().addSolver(DialogBasicCaptchaSolver.getInstance());
-                                            ChallengeResponseController.getInstance().addSolver(DialogClickCaptchaSolver.getInstance());
+
+                                            if (!Application.isHeadless()) {
+                                                ChallengeResponseController.getInstance().addSolver(DialogBasicCaptchaSolver.getInstance());
+                                            }
+                                            if (!Application.isHeadless()) {
+                                                ChallengeResponseController.getInstance().addSolver(DialogClickCaptchaSolver.getInstance());
+                                            }
                                             ChallengeResponseController.getInstance().addSolver(CaptchaMyJDSolver.getInstance());
                                             ChallengeResponseController.getInstance().addSolver(CBSolver.getInstance());
                                             ChallengeResponseController.getInstance().addSolver(DeathByCaptchaSolver.getInstance());

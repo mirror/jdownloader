@@ -102,6 +102,7 @@ import org.jdownloader.captcha.v2.ChallengeSolver;
 import org.jdownloader.captcha.v2.challenge.stringcaptcha.BasicCaptchaChallenge;
 import org.jdownloader.captcha.v2.solverjob.ResponseList;
 import org.jdownloader.controlling.FileCreationManager;
+import org.jdownloader.controlling.UrlProtection;
 import org.jdownloader.controlling.ffmpeg.FFMpegInstallProgress;
 import org.jdownloader.controlling.ffmpeg.FFmpeg;
 import org.jdownloader.controlling.ffmpeg.FFmpegProvider;
@@ -2031,6 +2032,10 @@ public abstract class PluginForHost extends Plugin {
 
     public List<String> getConvertToList(DownloadLink downloadLink) {
 
+        return null;
+    }
+
+    public UrlProtection getUrlProtection(List<DownloadLink> hosterLinks) {
         return null;
     }
 

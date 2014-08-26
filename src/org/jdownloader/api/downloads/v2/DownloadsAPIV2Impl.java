@@ -25,6 +25,7 @@ public class DownloadsAPIV2Impl implements DownloadsAPIV2 {
 
     public DownloadsAPIV2Impl() {
         RemoteAPIController.validateInterfaces(DownloadsAPIV2.class, DownloadsListInterface.class);
+
     }
 
     @Override
@@ -182,6 +183,39 @@ public class DownloadsAPIV2Impl implements DownloadsAPIV2 {
             if (queryParams.isBytesTotal()) {
                 dls.setBytesTotal(dl.getView().getBytesTotalEstimated());
             }
+            if (queryParams.isStatus()) {
+                setStatus(dls, dl);
+                // if (value instanceof DownloadLink)
+
+                // } else {
+                // FilePackage fp = (FilePackage) value;
+                // FilePackageView view = fp.getView();
+                //
+                // PluginStateCollection ps = view.getPluginStates();
+                // if (ps.size() > 0) {
+                // icon = ps.getMergedIcon();
+                // label = ps.isMultiline() ? "" : ps.getText();
+                //
+                // tooltip = ps.getText();
+                // return;
+                // }
+                // if (view.isFinished()) {
+                // icon = trueIcon;
+                // label = finishedText;
+                // tooltip = null;
+                // return;
+                // } else if (view.getETA() != -1) {
+                // icon = null;
+                // label = runningText;
+                // tooltip = null;
+                // return;
+                // }
+                // tooltip = null;
+                // icon = null;
+                // label = "";
+                //
+                // }
+            }
             if (queryParams.isBytesLoaded()) {
                 dls.setBytesLoaded(dl.getView().getBytesLoaded());
             }
@@ -224,6 +258,92 @@ public class DownloadsAPIV2Impl implements DownloadsAPIV2 {
         }
 
         return result;
+    }
+
+    private void setStatus(DownloadLinkAPIStorableV2 dls, DownloadLink link) {
+        // Icon icon = null;
+        // String label = null;
+        // PluginProgress prog = link.getPluginProgress();
+        // if (prog != null) {
+        // icon = prog.getIcon(this);
+        // label = prog.getMessage(this);
+        // if (icon instanceof AbstractIcon) {
+        // dls.setStatusIconKey(((AbstractIcon) icon).getKey());
+        // } else {
+        // dls.setStatusIcon(icon == null ? null : IconIO.toDataUrl(icon));
+        // }
+        // dls.setStatus(label);
+        // return;
+        // }
+        //
+        // ConditionalSkipReason conditionalSkipReason = link.getConditionalSkipReason();
+        // if (conditionalSkipReason != null && !conditionalSkipReason.isConditionReached()) {
+        // icon = conditionalSkipReason.getIcon(this, null);
+        // label = conditionalSkipReason.getMessage(this, null);
+        // dls.setStatusIcon(icon == null ? null : IconIO.toDataUrl(icon));
+        // dls.setStatus(label);
+        // return;
+        // }
+        // SkipReason skipReason = link.getSkipReason();
+        // if (skipReason != null) {
+        //
+        // icon = skipReason.getIcon(this, 18);
+        // label = skipReason.getExplanation(this);
+        // dls.setStatusIcon(icon == null ? null : IconIO.toDataUrl(icon));
+        // dls.setStatus(label);
+        // return;
+        // }
+        // final FinalLinkState finalLinkState = link.getFinalLinkState();
+        // if (finalLinkState != null) {
+        // if (FinalLinkState.CheckFailed(finalLinkState)) {
+        // icon = falseIcon;
+        // label = finalLinkState.getExplanation(this, link);
+        // dls.setStatusIcon(icon == null ? null : IconIO.toDataUrl(icon));
+        // dls.setStatus(label);
+        // return;
+        // }
+        // ExtractionStatus extractionStatus = link.getExtractionStatus();
+        // if (extractionStatus != null) {
+        // switch (extractionStatus) {
+        // case ERROR:
+        // case ERROR_PW:
+        // case ERROR_CRC:
+        // case ERROR_NOT_ENOUGH_SPACE:
+        // case ERRROR_FILE_NOT_FOUND:
+        // icon = trueIconExtractedFailed;
+        // label = extractionStatus.getExplanation();
+        // tooltip = null;
+        // return;
+        // case SUCCESSFUL:
+        // icon = trueIconExtracted;
+        // label = extractionStatus.getExplanation();
+        // tooltip = null;
+        // return;
+        // case RUNNING:
+        // icon = extracting;
+        // label = extractionStatus.getExplanation();
+        // tooltip = null;
+        // return;
+        // }
+        // }
+        // if (FinalLinkState.FINISHED_MIRROR.equals(finalLinkState)) {
+        // icon = trueIconMirror;
+        // } else {
+        // icon = trueIcon;
+        // }
+        // label = finalLinkState.getExplanation(this, link);
+        // tooltip = null;
+        // return;
+        // }
+        // if (link.getDownloadLinkController() != null) {
+        // icon = startingIcon;
+        // label = startingString;
+        // tooltip = null;
+        // return;
+        // }
+        // icon = null;
+        // tooltip = null;
+        // label = "";
     }
 
     @Override

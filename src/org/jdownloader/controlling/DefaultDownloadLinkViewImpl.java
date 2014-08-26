@@ -64,6 +64,11 @@ public class DefaultDownloadLinkViewImpl implements DownloadLinkView {
             } else {
                 return null;
             }
+
+        case PROTECTED_INTERNAL_URL:
+            if (link.hasBrowserUrl()) {
+                return link.getBrowserUrl();
+            }
         default:
             return link.getDownloadURL();
         }
