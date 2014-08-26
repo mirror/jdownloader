@@ -13,4 +13,6 @@ public interface ContentAPIV2 extends RemoteAPIInterface {
     public void getFavIcon(RemoteAPIRequest request, final RemoteAPIResponse response, String hostername) throws APIFileNotFoundException, InternalApiException;
 
     public void getFileIcon(RemoteAPIRequest request, final RemoteAPIResponse response, String filename) throws InternalApiException;
+
+    public void getIcon(RemoteAPIRequest request, final RemoteAPIResponse response, String key, int size) throws InternalApiException;
 }

@@ -115,6 +115,18 @@ public class VKontakteRu extends PluginForDecrypt {
 
     private ArrayList<DownloadLink> decryptedLinks2                      = new ArrayList<DownloadLink>();
 
+    @Override
+    protected DownloadLink createDownloadlink(String link) {
+        DownloadLink ret = super.createDownloadlink(link);
+        try {
+
+            ret.setUrlProtection(org.jdownloader.controlling.UrlProtection.PROTECTED_INTERNAL_URL);
+        } catch (Throwable e) {
+            // jd09
+        }
+        return ret;
+    }
+
     /*
      * TODO: Include already decrypted-count of links in reloop-links so the logger works fine for reloop links, also check if the maxoffse
      * changes, if so, maybe update it...maybe

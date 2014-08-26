@@ -4,6 +4,8 @@ import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 
+import javax.swing.Icon;
+
 import jd.controlling.downloadcontroller.DownloadController;
 import jd.controlling.downloadcontroller.DownloadSession.STOPMARK;
 import jd.controlling.downloadcontroller.DownloadWatchDog;
@@ -19,7 +21,9 @@ import org.jdownloader.api.RemoteAPIController;
 import org.jdownloader.gui.views.SelectionInfo;
 import org.jdownloader.myjdownloader.client.bindings.PriorityStorable;
 import org.jdownloader.myjdownloader.client.bindings.interfaces.DownloadsListInterface;
+import org.jdownloader.plugins.ConditionalSkipReason;
 import org.jdownloader.plugins.FinalLinkState;
+import org.jdownloader.plugins.SkipReason;
 
 public class DownloadsAPIV2Impl implements DownloadsAPIV2 {
 
@@ -261,44 +265,56 @@ public class DownloadsAPIV2Impl implements DownloadsAPIV2 {
     }
 
     private void setStatus(DownloadLinkAPIStorableV2 dls, DownloadLink link) {
-        // Icon icon = null;
-        // String label = null;
-        // PluginProgress prog = link.getPluginProgress();
-        // if (prog != null) {
-        // icon = prog.getIcon(this);
-        // label = prog.getMessage(this);
-        // if (icon instanceof AbstractIcon) {
-        // dls.setStatusIconKey(((AbstractIcon) icon).getKey());
-        // } else {
-        // dls.setStatusIcon(icon == null ? null : IconIO.toDataUrl(icon));
-        // }
-        // dls.setStatus(label);
-        // return;
-        // }
-        //
-        // ConditionalSkipReason conditionalSkipReason = link.getConditionalSkipReason();
-        // if (conditionalSkipReason != null && !conditionalSkipReason.isConditionReached()) {
-        // icon = conditionalSkipReason.getIcon(this, null);
-        // label = conditionalSkipReason.getMessage(this, null);
-        // dls.setStatusIcon(icon == null ? null : IconIO.toDataUrl(icon));
-        // dls.setStatus(label);
-        // return;
-        // }
-        // SkipReason skipReason = link.getSkipReason();
-        // if (skipReason != null) {
-        //
-        // icon = skipReason.getIcon(this, 18);
-        // label = skipReason.getExplanation(this);
-        // dls.setStatusIcon(icon == null ? null : IconIO.toDataUrl(icon));
-        // dls.setStatus(label);
-        // return;
-        // }
+        // this.trueIcon = NewTheme.I().getIcon("true", 16);
+        // this.trueIconMirror = NewTheme.I().getIcon("true-orange", 16);
+        // this.falseIcon = NewTheme.I().getIcon("false", 16);
+        // this.infoIcon = NewTheme.I().getIcon("info", 16);
+        // this.iconWait = NewTheme.I().getIcon("wait", 16);
+        // this.extracting = NewTheme.I().getIcon(org.jdownloader.gui.IconKey.ICON_COMPRESS, 16);
+        // startingIcon = NewTheme.I().getIcon("run", 16);
+        // trueIconExtracted = new ImageIcon(ImageProvider.merge(trueIcon.getImage(),
+        // NewTheme.I().getImage(org.jdownloader.gui.IconKey.ICON_COMPRESS, 16), 0, 0, trueIcon.getIconWidth() + 4,
+        // (trueIcon.getIconHeight() - 16) / 2 + 2));
+        // trueIconExtractedFailed = new ImageIcon(ImageProvider.merge(trueIconExtracted.getImage(), NewTheme.I().getImage("error", 10), 0,
+        // 0, trueIcon.getIconWidth() + 12, trueIconExtracted.getIconHeight() - 10));
+        // startingString = _GUI._.TaskColumn_fillColumnHelper_starting();
+
+        Icon icon = null;
+        String label = null;
+        PluginProgress prog = link.getPluginProgress();
+        if (prog != null) {
+            icon = prog.getIcon(this);
+            label = prog.getMessage(this);
+            if (icon != null) {
+                dls.setStatusIconKey(RemoteAPIController.getInstance().getContentAPI().getIconKey(icon));
+            }
+            dls.setStatus(label);
+            return;
+        }
+
+        ConditionalSkipReason conditionalSkipReason = link.getConditionalSkipReason();
+        if (conditionalSkipReason != null && !conditionalSkipReason.isConditionReached()) {
+            icon = conditionalSkipReason.getIcon(this, null);
+            label = conditionalSkipReason.getMessage(this, null);
+            dls.setStatusIconKey(RemoteAPIController.getInstance().getContentAPI().getIconKey(icon));
+            dls.setStatus(label);
+            return;
+        }
+        SkipReason skipReason = link.getSkipReason();
+        if (skipReason != null) {
+
+            icon = skipReason.getIcon(this, 18);
+            label = skipReason.getExplanation(this);
+            dls.setStatusIconKey(RemoteAPIController.getInstance().getContentAPI().getIconKey(icon));
+            dls.setStatus(label);
+            return;
+        }
         // final FinalLinkState finalLinkState = link.getFinalLinkState();
         // if (finalLinkState != null) {
         // if (FinalLinkState.CheckFailed(finalLinkState)) {
-        // icon = falseIcon;
+        //
         // label = finalLinkState.getExplanation(this, link);
-        // dls.setStatusIcon(icon == null ? null : IconIO.toDataUrl(icon));
+        // dls.setStatusIconKey(IconKey.ICON_FALSE);
         // dls.setStatus(label);
         // return;
         // }
