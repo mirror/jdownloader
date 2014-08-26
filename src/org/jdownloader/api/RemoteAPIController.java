@@ -87,6 +87,7 @@ public class RemoteAPIController {
     private EventsAPI                          eventsapi;
     private LogSource                          logger;
     private AdvancedConfigManagerAPIImpl       advancedConfigAPI;
+    private ContentAPIImplV2                   contentAPI;
 
     public static class MyJDownloaderEvent extends MyJDEvent implements Storable {
         public MyJDownloaderEvent() {
@@ -250,7 +251,7 @@ public class RemoteAPIController {
         register(new LinkCollectorAPIImpl());
         register(new LinkCollectorAPIImplV2());
         register(new ContentAPIImpl());
-        register(new ContentAPIImplV2());
+        register(contentAPI = new ContentAPIImplV2());
         register(new PollingAPIImpl());
         register(new ExtractionAPIImpl());
         register(new LinkCrawlerAPIImpl());
@@ -267,6 +268,10 @@ public class RemoteAPIController {
         register(wrapper.getEventPublisher());
         register(wrapper.getApi());
         JDAnywhereAPI.getInstance().init(this, downloadsAPI);
+    }
+
+    public ContentAPIImplV2 getContentAPI() {
+        return contentAPI;
     }
 
     public AdvancedConfigManagerAPIImpl getAdvancedConfigAPI() {
