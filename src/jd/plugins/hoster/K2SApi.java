@@ -630,14 +630,18 @@ public abstract class K2SApi extends PluginForHost {
                     String time = getJson(iString, "timeRemaining");
                     if (!inValidate(time) && time.matches("[\\d\\.]+")) {
                         time = time.substring(0, time.indexOf("."));
-                        throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, getErrorMessage(err), Integer.parseInt(time) * 1000);
+                        throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, msg, Integer.parseInt(time) * 1000);
                     } else {
-                        throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, getErrorMessage(err), 15 * 60 * 1000);
+                        throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, msg, 15 * 60 * 1000);
                     }
                 case 6:
                     // DOWNLOAD_FREE_THREAD_COUNT_TO_MANY = 6; //'Free account does not allow to download more than one file at the same
                     // time'
                     throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, msg);
+                case 7:
+                    // {"message":"Download not available","status":"error","code":406,"errorCode":42,"errors":[{"code":7}]}
+                    // unknown error and undocumented
+                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, msg);
                 case 10:
                 case 11:
                     // ERROR_YOU_ARE_NEED_AUTHORIZED = 10;
@@ -678,7 +682,7 @@ public abstract class K2SApi extends PluginForHost {
                     // {"message":"Download not available","status":"error","code":406,"errorCode":42,"errors":[{"code":5,"timeRemaining":"2521.000000"}]}
                     // {"message":"Download is not available","status":"error","code":406,"errorCode":42,"errors":[{"code":6,"message":" Free account does not allow to download more than one file at the same time"}]}
                     // {"message":"Download not available","status":"error","code":406,"errorCode":42,"errors":[{"code":6}]}
-
+                    // {"message":"Download not available","status":"error","code":406,"errorCode":42,"errors":[{"code":7}]}
                     // sub error, pass it back into itself.
                     handleErrors(account, getJsonArray(iString, "errors"), true);
                 case 70:
@@ -739,6 +743,8 @@ public abstract class K2SApi extends PluginForHost {
                 msg = "Wait time detected!";
             } else if (code == 6) {
                 msg = "Maximium number pararell downloads reached!";
+            } else if (code == 7) {
+                msg = "Download not possible at this time!";
             } else if (code == 10) {
                 msg = "Your not authorised req: auth_token!";
             } else if (code == 11) {
