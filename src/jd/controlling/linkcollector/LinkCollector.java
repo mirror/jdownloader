@@ -1069,7 +1069,8 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
                         /* avoid additional linkCheck when linkID already exists */
                         /* update dupeCheck map */
                         final String id = link.getLinkID();
-                        if (getCrawledLinkByLinkID(id) != null) {
+                        final CrawledLink existing = getCrawledLinkByLinkID(id);
+                        if (existing != null) {
                             /* clear references */
                             logger.info("Filtered Dupe: " + id);
                             link.setCollectingInfo(null);
@@ -1094,7 +1095,8 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
                     protected Void run() throws RuntimeException {
                         /* update dupeCheck map */
                         final String id = link.getLinkID();
-                        if (getCrawledLinkByLinkID(id) != null) {
+                        final CrawledLink existing = getCrawledLinkByLinkID(id);
+                        if (existing != null) {
                             /* clear references */
                             link.setCollectingInfo(null);
                             link.setSourceJob(null);
@@ -1137,68 +1139,41 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
                 /* run packagizer on checked link */
                 pc.runByFile(link);
             }
-
             if (!addGenericVariant(link.getDownloadLink())) {
                 return;
             }
-
-            // if (additionalLinks != null) {
-            // for (DownloadLink dl : additionalLinks) {
-            // CrawledLink cl = new CrawledLink(dl);
-            //
-            // cl.setSourceLink(link.getSourceLink());
-            // cl.setOrigin(link.getOrigin());
-            // cl.setSourceUrls(link.getSourceUrls());
-            // cl.setMatchingFilter(link.getMatchingFilter());
-            //
-            // cl.setCustomCrawledLinkModifier(link.getCustomCrawledLinkModifier());
-            //
-            // cl.setDesiredPackageInfo(link.getDesiredPackageInfo());
-            // cl.setArchiveInfo(link.getArchiveInfo());
-            //
-            // handleFinalLink(cl);
-            // }
-            // }
             addCrawledLink(link);
         }
     }
 
     private boolean addGenericVariant(final DownloadLink downloadLink) {
+        if (!downloadLink.hasVariantSupport()) {
+            final List<GenericVariants> converts = downloadLink.getDefaultPlugin().getGenericVariants(downloadLink);
+            if (converts != null && converts.size() > 0) {
+                final List<LinkVariant> variants = new ArrayList<LinkVariant>();
+                variants.add(GenericVariants.ORIGINAL);
+                variants.addAll(converts);
+                if (variants.size() > 1) {
+                    return Boolean.TRUE.equals(getQueue().addWait(new QueueAction<Boolean, RuntimeException>() {
 
-        if (downloadLink.hasVariantSupport()) {
-            return true;
-        }
-        // String name = downloadLink.getName();
-        List<GenericVariants> converts = downloadLink.getDefaultPlugin().getGenericVariants(downloadLink);
-        if (converts != null && converts.size() > 0) {
-            final List<LinkVariant> variants = new ArrayList<LinkVariant>();
-            variants.add(GenericVariants.ORIGINAL);
-            variants.addAll(converts);
-
-            if (variants.size() > 1) {
-
-                return Boolean.TRUE == getQueue().addWait(new QueueAction<Boolean, RuntimeException>() {
-
-                    @Override
-                    protected Boolean run() throws RuntimeException {
-                        downloadLink.setProperty("GENERIC_VARIANTS", true);
-                        downloadLink.setVariants(variants);
-                        // setActiveVariantForLink(downloadLink, GenericVariants.ORIGINAL);
-                        String oldLinkID = downloadLink.getLinkID();
-                        downloadLink.setVariant(GenericVariants.ORIGINAL);
-                        if (getCrawledLinkByLinkID(downloadLink.getLinkID()) != null) {
-                            System.out.println("Variant Dupe");
-                            return Boolean.FALSE;
+                        @Override
+                        protected Boolean run() throws RuntimeException {
+                            downloadLink.setProperty("GENERIC_VARIANTS", true);
+                            downloadLink.setVariants(variants);
+                            downloadLink.setVariant(GenericVariants.ORIGINAL);
+                            final CrawledLink existing = getCrawledLinkByLinkID(downloadLink.getLinkID());
+                            if (existing != null && existing.getDownloadLink() != downloadLink) {
+                                logger.info("Dupecheck Filtered Variant");
+                                return Boolean.FALSE;
+                            }
+                            downloadLink.setVariantSupport(true);
+                            return Boolean.TRUE;
                         }
-                        downloadLink.setVariantSupport(true);
-                        return Boolean.TRUE;
-                    }
 
-                });
-
+                    }));
+                }
             }
         }
-
         return true;
     }
 
@@ -2037,12 +2012,11 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
 
             @Override
             protected Void run() throws RuntimeException {
-
-                String old = link.getLinkID();
-                LinkVariant oldVariant = link.getDefaultPlugin().getActiveVariantByLink(link);
+                final LinkVariant oldVariant = link.getDefaultPlugin().getActiveVariantByLink(link);
                 link.getDefaultPlugin().setActiveVariantByLink(link, variant);
                 final String newLinkID = link.getLinkID();
-                if (getCrawledLinkByLinkID(newLinkID) != null) {
+                final CrawledLink existing = getCrawledLinkByLinkID(newLinkID);
+                if (existing != null && link != existing.getDownloadLink()) {
                     logger.info("Dupecheck Filtered Variant");
                     // variant available
                     link.getDefaultPlugin().setActiveVariantByLink(link, oldVariant);
