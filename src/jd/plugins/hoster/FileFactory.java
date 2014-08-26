@@ -123,7 +123,7 @@ public class FileFactory extends PluginForHost {
         }
         // this should cover error codes jumping to stream links in redirect, since filefactory wont fix this issue, this is my workaround.
         String code = new Regex(br.getURL(), "(?:\\?|&)code=(\\d+)").getMatch(0);
-        final String ref = br.getHeaders().get("Referer");
+        final String ref = br.getRequest().getHeaders().get("Referer");
         if (!inValidate(ref)) {
             if (br.getURL().contains("/stream/" + fuid)) {
                 code = new Regex(ref, "(?:\\?|&)code=(\\d+)").getMatch(0);
