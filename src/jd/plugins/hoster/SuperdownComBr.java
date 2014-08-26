@@ -284,7 +284,7 @@ public class SuperdownComBr extends PluginForHost {
         for (final String[] filehost : HOSTS) {
             final String crippledHost = filehost[0];
             final String realHost = filehost[1];
-            if (br.containsHTML("<b>" + crippledHost + ":</b>[\t\n\r ]+(Available|Testing)")) {
+            if (br.containsHTML("<b>.*?" + crippledHost + ".*?:</b>[\t\n\r ]+(Available|Testing)")) {
                 supportedHosts.add(realHost);
             }
         }
