@@ -16,11 +16,14 @@
 
 package jd.plugins.hoster;
 
+import java.util.ArrayList;
+
 import jd.PluginWrapper;
 import jd.http.URLConnectionAdapter;
 import jd.parser.Regex;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
+import jd.plugins.FilePackage;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
@@ -34,6 +37,16 @@ public class ClipfishDe extends PluginForHost {
 
     public ClipfishDe(final PluginWrapper wrapper) {
         super(wrapper);
+    }
+
+    @Override
+    public ArrayList<DownloadLink> getDownloadLinks(String data, FilePackage fp) {
+        final ArrayList<DownloadLink> ret = super.getDownloadLinks(data, fp);
+        try {
+            org.jdownloader.controlling.UrlProtection.PROTECTED_INTERNAL_URL.setTo(ret);
+        } catch (final Throwable e) {
+        }
+        return ret;
     }
 
     @Override
@@ -82,6 +95,10 @@ public class ClipfishDe extends PluginForHost {
 
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws Exception {
+        try {
+            org.jdownloader.controlling.UrlProtection.PROTECTED_INTERNAL_URL.setTo(downloadLink);
+        } catch (final Throwable e) {
+        }
         if (downloadLink.getDownloadURL().startsWith("http")) {
             final URLConnectionAdapter con = br.openHeadConnection(downloadLink.getDownloadURL());
             try {
