@@ -459,12 +459,7 @@ public abstract class K2SApi extends PluginForHost {
                     throw new PluginException(LinkStatus.ERROR_FATAL);
                 }
                 // lets retry
-                try {
-                    // a short wait
-                    Thread.sleep(2000);
-                } catch (InterruptedException e) {
-                }
-                // arg contains auth_key, we need to update the original request with new auth_token
+                // The arg contains auth_key, we need to update the original request with new auth_token
                 if (arg.contains("\"auth_token\"")) {
                     final String r = arg.replace(getJson(arg, "auth_token"), getAuthToken(account));
                     // re-enter using new auth_token
