@@ -309,6 +309,9 @@ public class SrBoxCom extends PluginForDecrypt {
                     for (String strInException : CapitalCharacterInException) {
                         strTemp = "";
                         if (strRemain.contains(strInException)) {
+                            if (strInException == ".") {
+                                strInException = "\\" + strInException;
+                            }
                             String[] AllCharacter = strRemain.split(strInException);
                             for (int iIndex = 0; iIndex < AllCharacter.length; iIndex++) {
                                 String strAllCarac = AllCharacter[iIndex];
