@@ -345,6 +345,10 @@ public abstract class K2SApi extends PluginForHost {
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 }
                 final String code = getCaptchaCode(captcha_url, downloadLink);
+                if (inValidate(code)) {
+                    // captcha can't be blank! Why we don't return null I don't know!
+                    throw new PluginException(LinkStatus.ERROR_CAPTCHA);
+                }
                 postPageRaw(br, "/geturl", "{\"file_id\":\"" + fuid + "\",\"free_download_key\":null,\"captcha_challenge\":\"" + challenge + "\",\"captcha_response\":\"" + Encoding.urlEncode(code) + "\"}", account);
                 final String free_download_key = getJson("free_download_key");
                 if (inValidate(free_download_key)) {
