@@ -26,6 +26,7 @@ public class DownloadListTest extends Test {
         query.setRunning(true);
         query.setSkipped(true);
         query.setSpeed(true);
+        query.setStatus(true);
         // query.setUrl(true);
         query.setPriority(true);
         List<DownloadLinkStorable> bigList = link.queryLinks(query);

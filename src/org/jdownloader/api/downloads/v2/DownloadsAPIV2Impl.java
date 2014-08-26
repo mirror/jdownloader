@@ -22,6 +22,7 @@ import org.jdownloader.extensions.extraction.ExtractionStatus;
 import org.jdownloader.gui.IconKey;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.gui.views.SelectionInfo;
+import org.jdownloader.images.NewTheme;
 import org.jdownloader.myjdownloader.client.bindings.PriorityStorable;
 import org.jdownloader.myjdownloader.client.bindings.interfaces.DownloadsListInterface;
 import org.jdownloader.plugins.ConditionalSkipReason;
@@ -192,6 +193,7 @@ public class DownloadsAPIV2Impl implements DownloadsAPIV2 {
             }
             if (queryParams.isStatus()) {
                 setStatus(dls, dl);
+
                 // if (value instanceof DownloadLink)
 
                 // } else {
@@ -324,6 +326,8 @@ public class DownloadsAPIV2Impl implements DownloadsAPIV2 {
 
                     label = extractionStatus.getExplanation();
                     dls.setStatusIconKey(IconKey.ICON_EXTRACTION_TRUE);
+                    dls.setStatusIconKey(RemoteAPIController.getInstance().getContentAPI().getIconKey(NewTheme.I().getIcon(IconKey.ICON_EXTRACTION_TRUE, 32)));
+
                     dls.setStatus(label);
                     return;
                 case RUNNING:
