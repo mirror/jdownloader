@@ -16,9 +16,12 @@
 
 package jd.plugins.hoster;
 
+import java.util.ArrayList;
+
 import jd.PluginWrapper;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
+import jd.plugins.FilePackage;
 import jd.plugins.HostPlugin;
 import jd.plugins.PluginForHost;
 
@@ -27,6 +30,17 @@ public class GameOneDe extends PluginForHost {
 
     public GameOneDe(final PluginWrapper wrapper) {
         super(wrapper);
+    }
+
+    @Override
+    public ArrayList<DownloadLink> getDownloadLinks(String data, FilePackage fp) {
+        ArrayList<DownloadLink> ret = super.getDownloadLinks(data, fp);
+        try {
+            org.jdownloader.controlling.UrlProtection.PROTECTED_INTERNAL_URL.setTo(ret);
+        } catch (Throwable e) {
+            // jd09
+        }
+        return ret;
     }
 
     @Override

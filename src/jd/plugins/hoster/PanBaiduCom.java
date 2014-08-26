@@ -16,6 +16,7 @@
 
 package jd.plugins.hoster;
 
+import java.util.ArrayList;
 import java.util.Random;
 
 import jd.PluginWrapper;
@@ -27,6 +28,7 @@ import jd.parser.Regex;
 import jd.plugins.CaptchaException;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
+import jd.plugins.FilePackage;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
@@ -38,6 +40,17 @@ public class PanBaiduCom extends PluginForHost {
 
     public PanBaiduCom(PluginWrapper wrapper) {
         super(wrapper);
+    }
+
+    @Override
+    public ArrayList<DownloadLink> getDownloadLinks(String data, FilePackage fp) {
+        ArrayList<DownloadLink> ret = super.getDownloadLinks(data, fp);
+        try {
+            org.jdownloader.controlling.UrlProtection.PROTECTED_INTERNAL_URL.setTo(ret);
+        } catch (Throwable e) {
+            // jd09
+        }
+        return ret;
     }
 
     @Override
@@ -55,10 +68,19 @@ public class PanBaiduCom extends PluginForHost {
 
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws Exception {
+
+        try {
+            org.jdownloader.controlling.UrlProtection.PROTECTED_INTERNAL_URL.setTo(downloadLink);
+        } catch (Throwable e) {
+            // jd09
+        }
+
         br = new Browser();
+
         if (downloadLink.getBooleanProperty("offline", false)) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
+
         br.getHeaders().put("Accept-Charset", null);
         br.getHeaders().put("Accept-Language", "en-gb, en;q=0.8");
         // Other or older User-Agents might get slow speed
@@ -143,7 +165,7 @@ public class PanBaiduCom extends PluginForHost {
                 } catch (final Throwable e) {
                     if (e instanceof CaptchaException) {
                         // JD2 reference to skip button we should abort!
-                        throw e;
+                        throw (CaptchaException) e;
                     }
                     // failure of image download! or opening file?, retry should get new captcha image..
                     logger.info("Captcha download failed -> Retrying!");
@@ -235,7 +257,7 @@ public class PanBaiduCom extends PluginForHost {
 
     /**
      * Tries to return value of key from JSon response, from String source.
-     *
+     * 
      * @author raztoki
      * */
     private String getJson(final String source, final String key) {
@@ -251,7 +273,7 @@ public class PanBaiduCom extends PluginForHost {
 
     /**
      * Tries to return value of key from JSon response, from default 'br' Browser.
-     *
+     * 
      * @author raztoki
      * */
     private String getJson(final String key) {
@@ -260,7 +282,7 @@ public class PanBaiduCom extends PluginForHost {
 
     /**
      * Tries to return value of key from JSon response, from provided Browser.
-     *
+     * 
      * @author raztoki
      * */
     private String getJson(final Browser ibr, final String key) {
@@ -295,7 +317,7 @@ public class PanBaiduCom extends PluginForHost {
     /**
      * Is intended to handle out of date errors which might occur seldom by re-tring a couple of times before throwing the out of date
      * error.
-     *
+     * 
      * @param dl
      *            : The DownloadLink
      * @param error

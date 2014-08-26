@@ -4,6 +4,7 @@ import java.awt.Graphics2D;
 import java.awt.image.BufferedImage;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.util.ArrayList;
 
 import javax.imageio.ImageIO;
 
@@ -12,6 +13,7 @@ import jd.http.URLConnectionAdapter;
 import jd.parser.Regex;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
+import jd.plugins.FilePackage;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
@@ -22,6 +24,17 @@ public class Mangastream extends PluginForHost {
 
     public Mangastream(PluginWrapper wrapper) {
         super(wrapper);
+    }
+
+    @Override
+    public ArrayList<DownloadLink> getDownloadLinks(String data, FilePackage fp) {
+        ArrayList<DownloadLink> ret = super.getDownloadLinks(data, fp);
+        try {
+            org.jdownloader.controlling.UrlProtection.PROTECTED_INTERNAL_URL.setTo(ret);
+        } catch (Throwable e) {
+            // jd09
+        }
+        return ret;
     }
 
     @Override
@@ -88,7 +101,9 @@ public class Mangastream extends PluginForHost {
             /* old method - or most recent one! (present in Naturo chap. 547) */
             String picUrl = br.getRegex("id=\"manga-page\"\\s+src=\"(http[^<>\"]*?)\"").getMatch(0);
             String ext = new Regex(picUrl, ".*?(\\.jpg|\\.png)").getMatch(0);
-            if (picUrl == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            if (picUrl == null) {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
             dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, picUrl, true, 1);
             try {
                 dl.setAllowFilenameFromURL(false);
@@ -110,7 +125,9 @@ public class Mangastream extends PluginForHost {
     public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws IOException, PluginException {
         this.setBrowserExclusive();
         br.getPage("http://mangastream.com" + downloadLink.getDownloadURL().substring(14));
-        if (br.containsHTML("We couldn't find the page you were looking for")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (br.containsHTML("We couldn't find the page you were looking for")) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
 
         return AvailableStatus.TRUE;
     }

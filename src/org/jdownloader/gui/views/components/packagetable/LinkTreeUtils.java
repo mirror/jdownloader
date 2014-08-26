@@ -1,7 +1,6 @@
 package org.jdownloader.gui.views.components.packagetable;
 
 import java.io.File;
-import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 
@@ -17,28 +16,11 @@ import org.appwork.exceptions.WTFException;
 import org.appwork.storage.config.JsonConfig;
 import org.appwork.utils.os.CrossSystem;
 import org.jdownloader.controlling.packagizer.PackagizerController;
+import org.jdownloader.gui.views.ArraySet;
+import org.jdownloader.gui.views.SelectionInfo;
 import org.jdownloader.settings.GeneralSettings;
 
 public class LinkTreeUtils {
-
-    public static java.util.List<CrawledLink> getChildren(java.util.List<AbstractNode> selection) {
-        java.util.List<CrawledLink> ret = new ArrayList<CrawledLink>();
-        for (AbstractNode a : selection) {
-            if (a instanceof CrawledLink) {
-                ret.add((CrawledLink) a);
-            } else if (a instanceof CrawledPackage) {
-                if (!((CrawledPackage) a).isExpanded()) {
-                    boolean readL = ((CrawledPackage) a).getModifyLock().readLock();
-                    try {
-                        ret.addAll(((CrawledPackage) a).getChildren());
-                    } finally {
-                        ((CrawledPackage) a).getModifyLock().readUnlock(readL);
-                    }
-                }
-            }
-        }
-        return ret;
-    }
 
     @SuppressWarnings({ "rawtypes", "unchecked" })
     public static <T extends AbstractNode> java.util.List<T> getPackages(AbstractNode contextObject, java.util.List<AbstractNode> selection, java.util.List<T> container) {
@@ -193,22 +175,15 @@ public class LinkTreeUtils {
         if (links == null || links.size() == 0) {
             return urls;
         }
+
         String rawURL = null;
-        for (AbstractNode node : links) {
+        ArraySet actualChildren = new SelectionInfo(null, links, true).getChildren();
+        for (Object node : actualChildren) {
             DownloadLink link = null;
             if (node instanceof DownloadLink) {
                 link = (DownloadLink) node;
             } else if (node instanceof CrawledLink) {
                 link = ((CrawledLink) node).getDownloadLink();
-            } else if (node instanceof AbstractPackageNode) {
-                List<AbstractNode> children = null;
-                boolean readL = ((AbstractPackageNode) node).getModifyLock().readLock();
-                try {
-                    children = ((AbstractPackageNode) node).getChildren();
-                } finally {
-                    ((AbstractPackageNode) node).getModifyLock().readUnlock(readL);
-                }
-                urls.addAll(getURLs(children, openInBrowser));
             }
             if (link != null) {
                 rawURL = link.getDownloadURL();
@@ -219,10 +194,10 @@ public class LinkTreeUtils {
         if (openInBrowser) {
             // should always open browserURL, otherwise you get users going to final links returned from decrypters into directhttp or
             // dedicated hoster plugins.
-        } else if (links.size() == 1 && (rawURL != null && (!rawURL.matches("((?-i)ftp|https?)://.+"))) && JsonConfig.create(GeneralSettings.class).isCopySingleRealURL()) {
+        } else if (actualChildren.size() == 1 && (rawURL != null && (!rawURL.matches("((?-i)ftp|https?)://.+"))) && JsonConfig.create(GeneralSettings.class).isCopySingleRealURL()) {
             // for 'copy urls' and 'open in browser', when youtube type of prefixes are pointless within this context! Only open rawURL when
             // URL are actually traditional browser URL structure.
-        } else if (links.size() == 1 && rawURL != null && JsonConfig.create(GeneralSettings.class).isCopySingleRealURL()) {
+        } else if (actualChildren.size() == 1 && rawURL != null && JsonConfig.create(GeneralSettings.class).isCopySingleRealURL()) {
             urls.clear();
             urls.add(rawURL);
         }

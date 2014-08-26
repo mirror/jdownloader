@@ -17,6 +17,7 @@
 package jd.plugins.hoster;
 
 import jd.PluginWrapper;
+import jd.http.URLConnectionAdapter;
 import jd.parser.Regex;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
@@ -25,7 +26,6 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.download.DownloadInterface;
-import jd.utils.JDUtilities;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "clipfish.de" }, urls = { "clipfish://.+" }, flags = { 0 })
 public class ClipfishDe extends PluginForHost {
@@ -53,28 +53,22 @@ public class ClipfishDe extends PluginForHost {
     public void handleFree(final DownloadLink downloadLink) throws Exception {
         final LinkStatus linkStatus = downloadLink.getLinkStatus();
         final String dllink = downloadLink.getDownloadURL();
-
+        String type = downloadLink.getStringProperty("MEDIA_TYPE");
+        if (type != null && !"video".equalsIgnoreCase(type)) {
+            // this will throw statserv errors.
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, "Unsupported Media Type: " + type);
+        }
         if (dllink.startsWith("http")) {
             dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, downloadLink.getDownloadURL());
             if (dl.getConnection().getLongContentLength() == 0) {
                 br.followConnection();
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
-
-            if (dl.startDownload()) {
-                if (downloadLink.getProperty("convertto") != null) {
-                    JDUtilities.getPluginForDecrypt("youtube.com");
-                    final jd.plugins.decrypter.TbCm.DestinationFormat convertTo = jd.plugins.decrypter.TbCm.DestinationFormat.valueOf(downloadLink.getProperty("convertto").toString());
-                    final jd.plugins.decrypter.TbCm.DestinationFormat inType = jd.plugins.decrypter.TbCm.DestinationFormat.VIDEO_FLV;
-                    /* to load the TbCm plugin */
-
-                    if (!jd.plugins.decrypter.TbCm.ConvertFile(downloadLink, inType, convertTo)) {
-                        logger.severe("Video-Convert failed!");
-                    }
-                }
-            }
+            dl.startDownload();
         } else if (dllink.startsWith("rtmp")) {
-            if (downloadLink.getStringProperty("FLASHPLAYER", null) == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            if (downloadLink.getStringProperty("FLASHPLAYER", null) == null) {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
             dl = new RTMPDownload(this, downloadLink, dllink);
             setupRTMPConnection(dllink, dl, downloadLink.getStringProperty("FLASHPLAYER"));
             ((RTMPDownload) dl).startDownload();
@@ -85,13 +79,23 @@ public class ClipfishDe extends PluginForHost {
     }
 
     @Override
-    public AvailableStatus requestFileInformation(final DownloadLink downloadLink) {
-        /*
-         * warum sollte ein video das der decrypter sagte es sei online, offline sein ;)
-         * 
-         * coa: hm.. weil er vieleicht so nem anderen zeitpunk eingefügt worden ist als er dann geladen wird?
-         */
+    public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws Exception {
+        if (downloadLink.getDownloadURL().startsWith("http")) {
+
+            URLConnectionAdapter con = br.openGetConnection(downloadLink.getDownloadURL());
+            try {
+                if (con.getCompleteContentLength() > 0) {
+                    downloadLink.setVerifiedFileSize(con.getCompleteContentLength());
+                } else {
+                    return AvailableStatus.FALSE;
+                }
+            } finally {
+                con.disconnect();
+            }
+            System.out.println(1);
+        }
         return AvailableStatus.TRUE;
+
     }
 
     @Override
