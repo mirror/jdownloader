@@ -43,9 +43,7 @@ import org.appwork.storage.simplejson.JSonObject;
 import org.appwork.storage.simplejson.JSonValue;
 import org.appwork.storage.simplejson.ParserException;
 
-// I think there's nothing I could do about this.
-@SuppressWarnings("unchecked")
-@HostPlugin(revision = "1", interfaceVersion = 1, names = { "account-pool.de" }, urls = { "REGEX_NOT_POSSIBLE_RANDOM-asdfasdfsadfsfsXXX" }, flags = { 2 })
+@HostPlugin(revision = "1", interfaceVersion = 3, names = { "account-pool.de" }, urls = { "REGEX_NOT_POSSIBLE_RANDOM-asdfasdfsadfsfsXXX" }, flags = { 0 })
 /**
  * Hoster plugin for the account-pool.de beta.
  *
@@ -53,10 +51,10 @@ import org.appwork.storage.simplejson.ParserException;
  */
 public class AccountPool extends PluginForHost {
 
-    protected static final String API_HOST                 = "https://api.account-pool.de";
-    protected static final String TOS_URL                  = "https://account-pool.de/tos";
+    private final String API_HOST                 = "https://api.account-pool.de";
+    private final String TOS_URL                  = "https://account-pool.de/tos";
 
-    protected static final String CLIENT_CONFIGURATION_KEY = "client_configuraion";
+    private final String CLIENT_CONFIGURATION_KEY = "client_configuraion";
 
     @SuppressWarnings("deprecation")
     public AccountPool(PluginWrapper wrapper) {
@@ -71,22 +69,15 @@ public class AccountPool extends PluginForHost {
 
     @Override
     public boolean canHandle(DownloadLink downloadLink, Account account) {
-        if (account == null) {
-            return false;
-        }
-        return true;
+        return account != null;
     }
 
     @Override
     public int getMaxSimultanDownload(DownloadLink link, Account account) {
-
-        Integer value = (Integer) this.getHosterSetting(account, link, "maximum_parallel_downloads");
-        if (value != null) {
-            int maximumDownloads = value;
-            System.out.println("Max parallel downloads: " + maximumDownloads);
-            return maximumDownloads;
+        final Object value = this.getHosterSetting(account, link, "maximum_parallel_downloads");
+        if (value != null && value instanceof Number) {
+            return ((Number) value).intValue();
         }
-
         return super.getMaxSimultanDownload(link, account);
     }
 
@@ -128,7 +119,7 @@ public class AccountPool extends PluginForHost {
                 if (clientConfigurationRoot != null) {
 
                     System.out.println("New Client Configuration: " + clientConfigurationRoot.toString());
-                    ai.setProperty(AccountPool.CLIENT_CONFIGURATION_KEY, clientConfigurationRoot);
+                    ai.setProperty(CLIENT_CONFIGURATION_KEY, clientConfigurationRoot);
 
                     // Extract supported hosters
                     Map<String, Object> supportedHosters = (Map<String, Object>) clientConfigurationRoot.get("supported_hosters");
@@ -171,7 +162,7 @@ public class AccountPool extends PluginForHost {
 
         if (response.getResponseCode() != 200) {
             this.handleApiError(response.getResponseCode(), account);
-            return;
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
 
         JSonObject download = (JSonObject) response.getData().get("download");
@@ -185,49 +176,44 @@ public class AccountPool extends PluginForHost {
         JSonObject chunkSettings = (JSonObject) instructions.get("chunks");
         if (chunkSettings != null) {
             JSonValue maximumChunksSetting = (JSonValue) chunkSettings.get("maximum");
-            if (maximumChunksSetting != null) {
-                maxChunks = (int) (long) maximumChunksSetting.getValue();
+            if (maximumChunksSetting != null && maximumChunksSetting.getValue() instanceof Number) {
+                maxChunks = ((Number) maximumChunksSetting.getValue()).intValue();
             }
         }
 
         // Resumable setting
         boolean resumable = false;
         JSonValue resumableSetting = (JSonValue) instructions.get("resumable");
-        if (resumableSetting != null) {
-            resumable = (boolean) resumableSetting.getValue();
+        if (resumableSetting != null && resumableSetting.getValue() instanceof Boolean) {
+            resumable = (Boolean) resumableSetting.getValue();
         }
-
         if (!resumable) {
             maxChunks = 1;
         }
-
         System.out.println("Downloading using URL " + downloadUrl + " (resumable: " + resumable + ", max Chunks: " + maxChunks + ")");
-
         link.getLinkStatus().setStatusText("Step 2: Starting actual Download");
-
         this.br = newBrowser();
         br.setFollowRedirects(true);
-
         dl = jd.plugins.BrowserAdapter.openDownload(br, link, downloadUrl, resumable, maxChunks);
-
         final int downloadResponseCode = dl.getConnection().getResponseCode();
         if (downloadResponseCode == 200) {
-            if (!dl.getConnection().isContentDisposition()) {
+            if (dl.getConnection().isContentDisposition()) {
+                dl.startDownload();
+            } else {
                 logger.info("Received invalid download (no content disposition)");
-                return;
-            }
-
-            if (!this.dl.startDownload()) {
-                dl.externalDownloadStop();
+                br.followConnection();
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
         } else {
+            br.followConnection();
             this.handleApiError(downloadResponseCode, account);
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
     }
 
     /**
      * Handles a non-200 response code from the API by emitting the correct error (throwing a PluginException)
-     *
+     * 
      * @param downloadResponseCode
      *            the received response status code
      * @param account
@@ -237,13 +223,12 @@ public class AccountPool extends PluginForHost {
      */
     protected void handleApiError(final int downloadResponseCode, final Account account) throws PluginException {
         System.out.println("Received download response error code " + downloadResponseCode);
-
         switch (downloadResponseCode) {
         case 503:
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Service temporarily in maintenance mode.", 10 * 60 * 1000l);
         case 401:
         case 403:
-            throw new PluginException(LinkStatus.ERROR_PREMIUM, "Authentication error. Check your credentials.", PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
+            throw new PluginException(LinkStatus.ERROR_PREMIUM, "Authentication error. Check your credentials.", PluginException.VALUE_ID_PREMIUM_DISABLE);
         case 400:
         case 404:
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND, "File not found, invalid download URL or hoster currently not supported.", 60 * 60 * 1000l);
@@ -254,9 +239,9 @@ public class AccountPool extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Files for this hoster cannot be served at the moment. Maybe the account is blocked.", 15 * 60 * 1000l);
         case 424:
         case 428:
-            throw new PluginException(LinkStatus.ERROR_DOWNLOAD_FAILED, "Hoster specific error", 15 * 60 * 1000l);
+            throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Hoster specific error", 15 * 60 * 1000l);
         case 509:
-            throw new PluginException(LinkStatus.ERROR_PREMIUM, "Bandwidth limit exceeded", 60 * 60 * 1000l);
+            throw new PluginException(LinkStatus.ERROR_PREMIUM, "Bandwidth limit exceeded", PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
         case 500:
         case 501:
         case 502:
@@ -269,7 +254,7 @@ public class AccountPool extends PluginForHost {
     // API Communication
     /**
      * Sends an authorized POST request to the API.
-     *
+     * 
      * @param account
      *            Account for which the request should be sent
      * @param path
@@ -283,23 +268,18 @@ public class AccountPool extends PluginForHost {
      * @throws ParserException
      */
     private APIResponse authorizedApiPostRequest(Account account, String path, LinkedHashMap<String, String> parameters) throws IOException, ParserException {
-
         this.br = newBrowser();
-
         String authenticationToken = this.getAuthenticationToken(account);
         br.setHeader("X-Authentication-Token", authenticationToken);
-
         Request request = br.loadConnection(br.openPostConnection(API_HOST + path, parameters));
-
         final int responseCode = request.getHttpConnection().getResponseCode();
         JSonObject root = (JSonObject) new JSonFactory(br.toString()).parse();
-
         return new APIResponse(responseCode, root);
     }
 
     /**
      * Sends an authorized GET request to the API.
-     *
+     * 
      * @param account
      *            Account for which the request should be sent
      * @param path
@@ -311,22 +291,18 @@ public class AccountPool extends PluginForHost {
      * @throws ParserException
      */
     private APIResponse authorizedApiGetRequest(Account account, String path) throws IOException, ParserException {
-
         this.br = newBrowser();
-
         String authenticationToken = this.getAuthenticationToken(account);
         br.setHeader("X-Authentication-Token", authenticationToken);
         Request request = br.loadConnection(br.openGetConnection(API_HOST + path));
-
         final int responseCode = request.getHttpConnection().getResponseCode();
         JSonObject root = (JSonObject) new JSonFactory(br.toString()).parse();
-
         return new APIResponse(responseCode, root);
     }
 
     /**
      * Sends an unauthorized request to the API.
-     *
+     * 
      * @param path
      *            API path
      * @param parameters
@@ -336,19 +312,16 @@ public class AccountPool extends PluginForHost {
      * @throws ParserException
      */
     private APIResponse unauthorizedApiRequest(String path, LinkedHashMap<String, String> parameters) throws IOException, ParserException {
-
         this.br = newBrowser();
         Request request = br.loadConnection(br.openPostConnection(API_HOST + path, parameters));
-
         final int responseCode = request.getHttpConnection().getResponseCode();
         JSonObject root = (JSonObject) new JSonFactory(br.toString()).parse();
-
         return new APIResponse(responseCode, root);
     }
 
     /**
      * Returns the API authentication token which was stored for the specified account.
-     *
+     * 
      * @param account
      *            Account for which the token should be retrieved
      * @return Authentication token for the specified account
@@ -357,7 +330,6 @@ public class AccountPool extends PluginForHost {
         if (account == null) {
             throw new IllegalArgumentException("an account must be specified in order to get the authenication token");
         }
-
         return (String) account.getProperty("authentication_token");
     }
 
@@ -385,10 +357,10 @@ public class AccountPool extends PluginForHost {
     // Storage
     /**
      * Converts data returned from the JSON parser and standardizes it so it can be serialized.
-     *
+     * 
      * @param node
      *            JSON data to convert
-     *
+     * 
      * @return graph representing the JSON data. Consists of Maps, Lists and Objects.
      */
     private Object convertJSonToSerializableData(Object node) {
@@ -429,7 +401,7 @@ public class AccountPool extends PluginForHost {
 
     /**
      * Returns configuration from for the specified Account/Hoster combination.
-     *
+     * 
      * @param account
      *            Account for which the configuration should be retrieved.
      * @param link
@@ -437,33 +409,26 @@ public class AccountPool extends PluginForHost {
      *            returned instead of a hoster specific one.
      * @param key
      *            Name of the setting which should be retrieved.
-     *
+     * 
      * @return retrieved configuration value
      */
     private Object getHosterSetting(Account account, DownloadLink link, String key) {
-
         AccountInfo ai = account.getAccountInfo();
-
-        Map<String, Object> clientConfiguration = (Map<String, Object>) ai.getProperty(AccountPool.CLIENT_CONFIGURATION_KEY);
-
+        Map<String, Object> clientConfiguration = (Map<String, Object>) ai.getProperty(CLIENT_CONFIGURATION_KEY);
         if (clientConfiguration == null) {
             return null;
         }
-
         if (link == null) {
             return clientConfiguration.get(key);
         } else {
             Map<String, Object> allHostersSettings = (Map<String, Object>) clientConfiguration.get("supported_hosters");
-
             if (allHostersSettings != null) {
-
                 Map<String, Object> hosterSettings = (Map<String, Object>) allHostersSettings.get(link.getHost());
                 if (hosterSettings != null) {
                     return hosterSettings.get(key);
                 }
             }
         }
-
         return null;
     }
 
