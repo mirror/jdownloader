@@ -25,6 +25,7 @@ import org.jdownloader.gui.views.components.packagetable.context.PriorityLowerAc
 import org.jdownloader.gui.views.components.packagetable.context.RenameAction;
 import org.jdownloader.gui.views.components.packagetable.context.SetCommentAction;
 import org.jdownloader.gui.views.components.packagetable.context.SetDownloadPassword;
+import org.jdownloader.gui.views.components.packagetable.context.URLEditorAction;
 import org.jdownloader.gui.views.downloads.action.CollapseExpandContextAction;
 import org.jdownloader.gui.views.downloads.action.ConfirmHashValuesAction;
 import org.jdownloader.gui.views.downloads.action.CopyGenericContextAction;
@@ -156,7 +157,7 @@ public class MenuManagerLinkgrabberTableContext extends ContextMenuManager<Crawl
         SettingsLGSubmenu ret = new SettingsLGSubmenu();
 
         ret.add(RenameAction.class);
-
+        ret.add(URLEditorAction.class);
         ret.add(SetDownloadFolderInLinkgrabberAction.class);
         ret.add(SetDownloadPassword.class);
         ret.add(SetCommentAction.class);

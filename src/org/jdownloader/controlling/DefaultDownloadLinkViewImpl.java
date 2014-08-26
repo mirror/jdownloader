@@ -56,6 +56,15 @@ public class DefaultDownloadLinkViewImpl implements DownloadLinkView {
 
     @Override
     public String getDownloadUrl() {
+
+        // Workaround for links added before this change
+        if (1409057525234l - link.getCreated() > 0) {
+            if (link.hasBrowserUrl()) {
+                return link.getBrowserUrl();
+            } else {
+                return link.getDownloadURL();
+            }
+        }
         switch (link.getUrlProtection()) {
         case PROTECTED_CONTAINER:
         case PROTECTED_DECRYPTER:
@@ -69,6 +78,7 @@ public class DefaultDownloadLinkViewImpl implements DownloadLinkView {
             if (link.hasBrowserUrl()) {
                 return link.getBrowserUrl();
             }
+
         default:
             return link.getDownloadURL();
         }

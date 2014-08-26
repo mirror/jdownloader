@@ -413,6 +413,8 @@ public abstract class PackageControllerTable<ParentType extends AbstractPackageN
             super.onShortcutSelectAll();
             return;
         }
+
+        // help
         ArrayList<AbstractNode> toSelect = new ArrayList<AbstractNode>();
         SelectionInfo<ParentType, ChildrenType> selection = getSelectionInfo(true, true);
         boolean selectall = true;

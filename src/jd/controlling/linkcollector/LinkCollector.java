@@ -1142,6 +1142,7 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
             if (!addGenericVariant(link.getDownloadLink())) {
                 return;
             }
+
             addCrawledLink(link);
         }
     }
