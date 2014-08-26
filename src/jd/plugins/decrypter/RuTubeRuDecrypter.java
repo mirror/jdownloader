@@ -49,13 +49,14 @@ public class RuTubeRuDecrypter extends PluginForDecrypt {
         super(wrapper);
     }
 
-    private String uid = null;
-    private String vid = null;
+    private String uid       = null;
+    private String vid       = null;
+    private String parameter = null;
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
 
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-        final String parameter = param.toString();
+        parameter = param.toString();
 
         uid = new Regex(parameter, "/([a-f0-9]{32})").getMatch(0);
         vid = new Regex(parameter, "rutube\\.ru/(?:play/|video/)?embed/(\\d+)").getMatch(0);
@@ -65,10 +66,14 @@ public class RuTubeRuDecrypter extends PluginForDecrypt {
                 // embed link, grab info since we are already on this page
                 br.getPage("http://rutube.ru/play/embed/" + vid + "?wmode=opaque&autoStart=true");
                 uid = br.getRegex("\"id\"\\s*:\\s*\"([a-f0-9]{32})\"").getMatch(0);
-                if (uid == null && br.containsHTML("/video/private/([a-f0-9]{32})/")) {
-                    // not supported
-                    decryptedLinks.add(createOfflinelink(parameter, vid, "Private Video"));
-                    return decryptedLinks;
+                if (uid == null) {
+                    String msg = getErrorMessage();
+                    if (msg != null) {
+                        decryptedLinks.add(createOfflinelink(parameter, vid + " - " + msg, msg));
+                        return decryptedLinks;
+                    } else {
+                        throw new Exception("Error: Unknown Reason");
+                    }
                 }
             } else {
                 // tracks link
@@ -93,6 +98,22 @@ public class RuTubeRuDecrypter extends PluginForDecrypt {
         }
 
         return decryptedLinks;
+    }
+
+    /**
+     * error message types on the embeded link url
+     *
+     */
+    private String getErrorMessage() {
+        String msg = null;
+        if (br.containsHTML("\"description\":\\s*\"The author made this video private\\.\"") || br.containsHTML("/video/private/([a-f0-9]{32})/")) {
+            // not supported
+            msg = "Private Video, Unsupported feature";
+        } else if (br.containsHTML("\"description\":\\s*\"This video does not exist or URL link isn't correct\\.\"") || br.containsHTML("\"description\":\\s*\"Video removed at the request of the copyright holder\"")) {
+            // wrong url or removed content
+            msg = "Video does not exist";
+        }
+        return msg;
     }
 
     public static class RuTubeVariant implements LinkVariant, Storable {
@@ -186,12 +207,18 @@ public class RuTubeRuDecrypter extends PluginForDecrypt {
                 // since we know the embed url for player/embed link types no need todo this step
                 br.getPage("http://rutube.ru/api/video/" + id);
                 if (br.containsHTML("<root><detail>Not found</detail></root>")) {
-                    return createOfflinelink(this.getCurrentLink().getURL());
+                    return createOfflinelink(parameter);
                 }
                 vid = br.getRegex("/embed/(\\d+)").getMatch(0);
             }
             br.getPage("http://rutube.ru/play/embed/" + vid + "?wmode=opaque&autoStart=true");
-
+            {
+                // shouldn't be needed, non embeded links without 'vid' value should create offlinelink above.
+                final String msg = getErrorMessage();
+                if (msg != null) {
+                    return createOfflinelink(parameter, vid + " - " + msg, msg);
+                }
+            }
             String videoBalancer = br.getRegex("(http\\:\\/\\/bl\\.rutube\\.ru[^\"]+)").getMatch(0);
 
             if (videoBalancer != null) {
