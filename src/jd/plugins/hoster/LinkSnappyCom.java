@@ -70,6 +70,7 @@ public class LinkSnappyCom extends PluginForHost {
     private static final String HTTP_S                 = "https://";
     private static final int    MAX_DOWNLOAD_ATTEMPTS  = 10;
     private static final int    MAX_CHUNKS             = 0;
+    private static final String ERROR_OFFLINE          = "\"error\":\"File not found";
 
     private DownloadLink        currentLink            = null;
     private Account             currentAcc             = null;
@@ -264,10 +265,12 @@ public class LinkSnappyCom extends PluginForHost {
             }
             dl = jd.plugins.BrowserAdapter.openDownload(br, currentLink, dllink, true, maxChunks);
         } else {
+            boolean dlAttemptSuccess = false;
             if (use_api) {
                 for (int i = 1; i <= MAX_DOWNLOAD_ATTEMPTS; i++) {
                     getPageSecure(HTTP_S + "gen.linksnappy.com/genAPI.php?genLinks=" + encode("{\"link\"+:+\"" + link.getDownloadURL() + "\",+\"username\"+:+\"" + account.getUser() + "\",+\"password\"+:+\"" + account.getPass() + "\"}"));
-                    if (!attemptDownload()) {
+                    dlAttemptSuccess = attemptDownload();
+                    if (!dlAttemptSuccess) {
                         continue;
                     }
                     break;
@@ -286,11 +289,16 @@ public class LinkSnappyCom extends PluginForHost {
                         }
                         throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUnknown problem!\r\nPlease try again later!", PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
                     }
-                    if (!attemptDownload()) {
+                    dlAttemptSuccess = attemptDownload();
+                    if (!dlAttemptSuccess) {
                         continue;
                     }
                     break;
                 }
+            }
+            if (!dlAttemptSuccess && br.containsHTML(ERROR_OFFLINE)) {
+                logger.info("Okay maybe our source link is really offline: " + link.getDownloadURL());
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
         }
 
@@ -380,7 +388,7 @@ public class LinkSnappyCom extends PluginForHost {
             tempUnavailableHoster(currentAcc, currentLink, 60 * 60 * 1000);
         }
         /* Bullshit, we just try again */
-        if (br.containsHTML("\"error\":\"File not found")) {
+        if (br.containsHTML(ERROR_OFFLINE)) {
             logger.info("Attempt failed: bullshit 'file not found' error");
             return false;
         }

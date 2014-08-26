@@ -367,7 +367,6 @@ public class VKontakteRuHoster extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         try {
-
             org.jdownloader.controlling.UrlProtection.PROTECTED_INTERNAL_URL.setTo(link);
         } catch (Throwable e) {
             // jd09
@@ -512,7 +511,7 @@ public class VKontakteRuHoster extends PluginForHost {
     /**
      * Try to get best quality and test links till a working link is found as it can happen that the found link is offline but others are
      * online
-     * 
+     *
      * @throws IOException
      */
     private void getHighestQualityPic(final DownloadLink dl, String source) throws Exception {
