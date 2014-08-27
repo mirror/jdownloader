@@ -22,6 +22,7 @@ import java.util.regex.Pattern;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
+import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.plugins.CryptedLink;
@@ -51,7 +52,12 @@ public class ClpfshD extends PluginForDecrypt {
         final String parameter = cryptedLink.getCryptedUrl();
         br.clearCookies(getHost());
         br.setFollowRedirects(true);
-        final Regex regexInfo = new Regex(br.getPage(parameter), PATTERN_TITEL);
+        URLConnectionAdapter con = br.openGetConnection(parameter);
+        if (con.getResponseCode() == 410) {
+            con.disconnect();
+            return decryptedLinks;
+        }
+        final Regex regexInfo = new Regex(br.followConnection(), PATTERN_TITEL);
         if (br.getURL().contains("clipfish.de/special/cfhome/home/")) {
             logger.info("Link offline: " + parameter);
             return decryptedLinks;
