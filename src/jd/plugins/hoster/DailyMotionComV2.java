@@ -19,7 +19,6 @@ package jd.plugins.hoster;
 import java.io.File;
 import java.io.IOException;
 import java.text.ParseException;
-import java.util.ArrayList;
 import java.util.List;
 
 import javax.swing.JComponent;
@@ -29,7 +28,6 @@ import jd.config.ConfigEntry;
 import jd.http.URLConnectionAdapter;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
-import jd.plugins.FilePackage;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
@@ -129,15 +127,6 @@ public class DailyMotionComV2 extends DailyMotionCom {
             dl.setVariants(variants);
 
         }
-    }
-
-    @Override
-    public ArrayList<DownloadLink> getDownloadLinks(String data, FilePackage fp) {
-        ArrayList<DownloadLink> ret = super.getDownloadLinks(data, fp);
-        // for(DownloadLink dl:ret){
-        // dl.setPro
-        // }
-        return ret;
     }
 
     @Override

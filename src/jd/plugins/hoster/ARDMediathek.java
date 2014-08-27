@@ -62,22 +62,6 @@ public class ARDMediathek extends PluginForHost {
         setConfigElements();
     }
 
-    // @Override
-    // public ArrayList<DownloadLink> getDownloadLinks(String data, FilePackage fp) {
-    // ArrayList<DownloadLink> ret = super.getDownloadLinks(data, fp);
-    // if (ret != null) {
-    // for (DownloadLink link : ret) {
-    // try {
-    // link.setUrlProtection(UrlProtection.PROTECTED_INTERNAL_URL);
-    // } catch (Throwable e) {
-    //
-    // }
-    // }
-    // }
-    //
-    // return ret;
-    // }
-
     @Override
     public void correctDownloadLink(DownloadLink link) {
         link.setUrlDownload(link.getDownloadURL().replaceFirst("decrypted://", "http://"));
