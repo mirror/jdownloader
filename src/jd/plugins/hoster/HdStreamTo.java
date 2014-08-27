@@ -84,8 +84,8 @@ public class HdStreamTo extends PluginForHost {
             while (true) {
                 links.clear();
                 while (true) {
-                    /* we test 50 links at once */
-                    if (index == urls.length || links.size() > 50) {
+                    /* we test 100 links at once */
+                    if (index == urls.length || links.size() > 100) {
                         break;
                     }
                     links.add(urls[index]);
@@ -326,6 +326,10 @@ public class HdStreamTo extends PluginForHost {
         ai.setCreateTime(TimeFormatter.getMilliSeconds(createtime, "yyyy-MM-dd HH:mm:ss", Locale.ENGLISH));
         ai.setTrafficLeft(Long.parseLong(trafficleft) * 1024 * 1024);
         if (expire.equals("0")) {
+            /*
+             * Free accounts are accepted but basically never used because their traffic is ZERO. Admin told us they only bring minor
+             * advantages, not related to downloading links of others so it's all fine.
+             */
             account.setProperty("free", true);
             try {
                 account.setType(AccountType.FREE);
