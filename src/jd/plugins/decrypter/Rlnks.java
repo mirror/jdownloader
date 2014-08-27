@@ -35,6 +35,7 @@ import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterException;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
+import jd.plugins.FilePackage;
 import jd.plugins.Plugin;
 import jd.plugins.PluginForDecrypt;
 import jd.utils.JDUtilities;
@@ -117,6 +118,12 @@ public class Rlnks extends PluginForDecrypt {
 
             final String page = br.toString();
             progress.setRange(0);
+            final String title = br.getRegex("shrink\"><th>(Titel|Baslik|Title)</th><td>(.*?)</td></tr>").getMatch(1);
+            FilePackage fp = null;
+            if (title != null && title.trim().length() > 0) {
+                fp = FilePackage.getInstance();
+                fp.setName(title);
+            }
 
             /* use cnl2 button if available */
             String cnlUrl = "http://127\\.0\\.0\\.1:9666/flash/addcrypted2";
@@ -145,6 +152,9 @@ public class Rlnks extends PluginForDecrypt {
                         infos.put("source", source);
                         String json = JSonStorage.toString(infos);
                         final DownloadLink dl = createDownloadlink("http://dummycnl.jdownloader.org/" + HexFormatter.byteArrayToHex(json.getBytes("UTF-8")));
+                        if (fp != null) {
+                            fp.add(dl);
+                        }
                         try {
                             distribute(dl);
                         } catch (final Throwable e) {
@@ -153,7 +163,6 @@ public class Rlnks extends PluginForDecrypt {
                         decryptedLinks.add(dl);
                         return decryptedLinks;
                     } else {
-
                         String jk = cnlbr.getRegex("<input type=\"hidden\" name=\"jk\" value=\"([^\"]+)\"").getMatch(0);
                         cnlForm.remove("jk");
                         cnlForm.put("jk", (jk != null ? jk.replaceAll("\\+", "%2B") : "nothing"));
@@ -195,6 +204,9 @@ public class Rlnks extends PluginForDecrypt {
             try {
                 validateLastChallengeResponse();
             } catch (final Throwable e) {
+            }
+            if (fp != null) {
+                fp.addLinks(decryptedLinks);
             }
             return decryptedLinks;
         }
