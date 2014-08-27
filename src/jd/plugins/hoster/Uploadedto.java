@@ -116,6 +116,7 @@ public class Uploadedto extends PluginForHost {
     public void correctDownloadLink(final DownloadLink link) {
         String protocol = new Regex(link.getDownloadURL(), "(https?)://").getMatch(0);
         String id = getID(link);
+        link.setLinkID(getHost() + "://" + id);
         link.setUrlDownload(protocol + "://uploaded.net/file/" + id);
     }
 
