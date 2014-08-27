@@ -30,6 +30,7 @@ import jd.http.Cookies;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.plugins.Account;
+import jd.plugins.Account.AccountError;
 import jd.plugins.Account.AccountType;
 import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
@@ -67,8 +68,6 @@ public class HdStreamTo extends PluginForHost {
     private static final int     ACCOUNT_PREMIUM_MAXDOWNLOADS = 10;
     /* don't touch the following! */
     private static AtomicInteger maxPrem                      = new AtomicInteger(1);
-
-    private String               DOWNLOAD_SERVER              = null;
 
     /** Using API: http://hdstream.to/#!p=api */
     @Override
@@ -173,6 +172,11 @@ public class HdStreamTo extends PluginForHost {
         this.sleep(Integer.parseInt(waittime) * 1001l, downloadLink);
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, false, 1);
         if (dl.getConnection().getContentType().contains("html")) {
+            /* 403 error means different things for free and premium */
+            /* Should never happen here */
+            if (dl.getConnection().getResponseCode() == 403) {
+                throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Wait before starting new downloads", 3 * 60 * 1000l);
+            }
             handleServerErrors();
             logger.warning("The final dllink seems not to be a file!");
             br.followConnection();
@@ -182,8 +186,9 @@ public class HdStreamTo extends PluginForHost {
     }
 
     private void handleServerErrors() throws PluginException {
-        if (dl.getConnection().getResponseCode() == 403) {
-            throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Wait before starting new downloads", 3 * 60 * 1000l);
+        /* Should never happen */
+        if (dl.getConnection().getResponseCode() == 404) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
     }
 
@@ -367,6 +372,14 @@ public class HdStreamTo extends PluginForHost {
         } else {
             dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, ACCOUNT_PREMIUM_RESUME, ACCOUNT_PREMIUM_MAXCHUNKS);
             if (dl.getConnection().getContentType().contains("html")) {
+                if (dl.getConnection().getResponseCode() == 403) {
+                    logger.info("Received 403 error in premium mode --> Traffic limit reached or server error (usually traffic limit reached)");
+                    try {
+                        account.setError(AccountError.TEMP_DISABLED, "Daily traffic limit reached");
+                    } catch (final Throwable e) {
+                    }
+                    throw new PluginException(LinkStatus.ERROR_PREMIUM, "Daily traffic limit reached", PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
+                }
                 handleServerErrors();
                 logger.warning("The final dllink seems not to be a file!");
                 br.followConnection();
