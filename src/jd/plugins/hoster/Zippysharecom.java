@@ -126,6 +126,7 @@ public class Zippysharecom extends PluginForHost {
                 String[] functions = new Regex(fun, "var ([a-z0-9]+) = function\\(\\)").getColumn(0);
                 if (functions != null) {
                     for (String f : functions) {
+                        result = new Object();
                         try {
                             result = processJS(f, fun);
                         } catch (final Throwable e) {
@@ -135,7 +136,7 @@ public class Zippysharecom extends PluginForHost {
                         }
                     }
                 }
-                if (functions == null) {
+                if (functions == null || functions.length == 0) {
                     String v = new Regex(fun, "var ([a-z0-9]+) = function").getMatch(0);
                     if (v == null) {
                         // prevent null value or static value been used against us.
@@ -147,7 +148,7 @@ public class Zippysharecom extends PluginForHost {
                         }
                     }
                     // document.getElementById('id').href
-                    processJS(v, fun);
+                    result = processJS(v, fun);
                 }
             } else {
                 final ScriptEngineManager manager = jd.plugins.hoster.DummyScriptEnginePlugin.getScriptEngineManager(this);
@@ -279,16 +280,20 @@ public class Zippysharecom extends PluginForHost {
             } else {
                 DLLINK = br.getRegex("(document\\.getElementById\\(\\'dlbutton\\'\\)\\.href\\s*= \"/((?!\\s*)|.*?)\";)").getMatch(0);
                 String math = br.getRegex("<script type=\"text/javascript\">([^>]+var\\s+\\w+\\s*=\\s*function\\(\\)\\s*\\{.*?" + Pattern.quote(DLLINK) + ".*?\\}[^<]*)</script>").getMatch(0);
+                if (math == null) {
+                    // this covers when they drop function and var
+                    math = br.getRegex("<script type=\"text/javascript\">(\\s*\\.*?" + Pattern.quote(DLLINK) + ".*?[^<]*)</script>").getMatch(0);
+                }
                 if (DLLINK != null && math != null) {
                     math = math.replace(DLLINK, "var result = " + DLLINK);
                     String data = execJS(math, false);
                     if (data == null) {
                         throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                     }
-                    if (data.startsWith("/")) {
-                        data = data.substring(1);
+                    if (!data.startsWith("/")) {
+                        data = "/" + data;
                     }
-                    DLLINK = mainpage + data;
+                    DLLINK = data;
                 } else {
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 }
