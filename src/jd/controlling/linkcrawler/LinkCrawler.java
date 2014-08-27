@@ -66,10 +66,10 @@ public class LinkCrawler {
 
     private final AtomicInteger                     crawler                     = new AtomicInteger(0);
     private final static AtomicInteger              CRAWLER                     = new AtomicInteger(0);
-    private final ConcurrentHashMap<String, Object> duplicateFinderContainer    = new ConcurrentHashMap<String, Object>(8, 0.9f, 1);
-    private final ConcurrentHashMap<String, Object> duplicateFinderCrawler      = new ConcurrentHashMap<String, Object>(8, 0.9f, 1);
-    private final ConcurrentHashMap<String, Object> duplicateFinderFinal        = new ConcurrentHashMap<String, Object>(8, 0.9f, 1);
-    private final ConcurrentHashMap<String, Object> duplicateFinderDeep         = new ConcurrentHashMap<String, Object>(8, 0.9f, 1);
+    private final ConcurrentHashMap<String, Object> duplicateFinderContainer;
+    private final ConcurrentHashMap<String, Object> duplicateFinderCrawler;
+    private final ConcurrentHashMap<String, Object> duplicateFinderFinal;
+    private final ConcurrentHashMap<String, Object> duplicateFinderDeep;
     private LinkCrawlerHandler                      handler                     = null;
     protected static final ThreadPoolExecutor       threadPool;
 
@@ -188,8 +188,16 @@ public class LinkCrawler {
             this.ftp = parentCrawler.ftp;
             this.directHttpEnabled = parentCrawler.directHttpEnabled;
             this.defaultDownloadFolder = parentCrawler.defaultDownloadFolder;
+            duplicateFinderContainer = parentCrawler.duplicateFinderContainer;
+            duplicateFinderCrawler = parentCrawler.duplicateFinderCrawler;
+            duplicateFinderFinal = parentCrawler.duplicateFinderFinal;
+            duplicateFinderDeep = parentCrawler.duplicateFinderDeep;
             setHandler(parentCrawler.getHandler());
         } else {
+            duplicateFinderContainer = new ConcurrentHashMap<String, Object>(8, 0.9f, 1);
+            duplicateFinderCrawler = new ConcurrentHashMap<String, Object>(8, 0.9f, 1);
+            duplicateFinderFinal = new ConcurrentHashMap<String, Object>(8, 0.9f, 1);
+            duplicateFinderDeep = new ConcurrentHashMap<String, Object>(8, 0.9f, 1);
             setHandler(defaulHandlerFactory());
             defaultDownloadFolder = JsonConfig.create(GeneralSettings.class).getDefaultDownloadFolder();
             parentCrawler = null;
@@ -958,7 +966,7 @@ public class LinkCrawler {
         possibleCryptedLink.setCustomCrawledLinkModifier(null);
         final String[] sourceURLs = getAndClearSourceURLs(possibleCryptedLink);
         possibleCryptedLink.setBrokenCrawlerHandler(null);
-        if (pHost == null || possibleCryptedLink.getURL() == null) {
+        if (pHost == null || possibleCryptedLink.getURL() == null || this.isCrawledLinkFiltered(possibleCryptedLink)) {
             return;
         }
         if (checkStartNotify()) {
@@ -1352,10 +1360,7 @@ public class LinkCrawler {
         final String[] sourceURLs = getAndClearSourceURLs(cryptedLink);
         final BrokenCrawlerHandler brokenCrawler = cryptedLink.getBrokenCrawlerHandler();
         cryptedLink.setBrokenCrawlerHandler(null);
-        if (lazyC == null || cryptedLink.getCryptedLink() == null) {
-            return;
-        }
-        if (duplicateFinderCrawler.putIfAbsent(cryptedLink.getURL(), this) != null || this.isCrawledLinkFiltered(cryptedLink)) {
+        if (lazyC == null || cryptedLink.getCryptedLink() == null || duplicateFinderCrawler.putIfAbsent(cryptedLink.getURL(), this) != null || this.isCrawledLinkFiltered(cryptedLink)) {
             return;
         }
         if (checkStartNotify()) {

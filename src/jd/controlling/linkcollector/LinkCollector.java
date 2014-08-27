@@ -548,9 +548,19 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
             @Override
             protected Void run() throws RuntimeException {
                 try {
+                    final String linkID = link.getLinkID();
+                    final CrawledLink existingLink = getCrawledLinkByLinkID(linkID);
+                    if (existingLink != null && existingLink != link) {
+                        /* clear references */
+                        link.setCollectingInfo(null);
+                        link.setSourceJob(null);
+                        link.setMatchingFilter(null);
+                        eventsender.fireEvent(new LinkCollectorEvent(LinkCollector.this, LinkCollectorEvent.TYPE.DUPE_LINK, link, QueuePriority.NORM));
+                        return null;
+                    }
                     final LinkCollectingInformation info = link.getCollectingInfo();
                     if (info == null || info.getCollectingID() == getCollectingID()) {
-                        putCrawledLinkByLinkID(link.getLinkID(), link);
+                        putCrawledLinkByLinkID(linkID, link);
                         LinkCollectingJob job = link.getSourceJob();
                         if (job != null) {
                             try {
@@ -649,9 +659,7 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
                                     String newID = plg.filterPackageID(next.getKey());
                                     if (!next.getKey().equals(newID)) {
                                         it.remove();
-
                                         CrawledPackage existing = newMap.get(newID);
-
                                         if (existing != null) {
                                             List<CrawledLink> links = null;
                                             boolean readL = existing.getModifyLock().readLock();
@@ -874,6 +882,7 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
             /** RestoreButton is disabled, no need to save the filtered links */
             /* clear references */
             filtered.setSourceJob(null);
+            filtered.setMatchingFilter(null);
             return;
         } else {
             collectingRequested.incrementAndGet();
@@ -882,13 +891,18 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
                 @Override
                 protected Void run() throws RuntimeException {
                     try {
-                        if (checkDupe && getCrawledLinkByLinkID(filtered.getLinkID()) != null) {
-                            /* clear references */
-                            filtered.setSourceJob(null);
-                            filtered.setMatchingFilter(null);
-                            eventsender.fireEvent(new LinkCollectorEvent(LinkCollector.this, LinkCollectorEvent.TYPE.DUPE_LINK, filtered, QueuePriority.NORM));
-                            return null;
+                        final String linkID = filtered.getLinkID();
+                        if (checkDupe) {
+                            final CrawledLink existing = getCrawledLinkByLinkID(linkID);
+                            if (existing != null) {
+                                /* clear references */
+                                filtered.setSourceJob(null);
+                                filtered.setMatchingFilter(null);
+                                eventsender.fireEvent(new LinkCollectorEvent(LinkCollector.this, LinkCollectorEvent.TYPE.DUPE_LINK, filtered, QueuePriority.NORM));
+                                return null;
+                            }
                         }
+                        putCrawledLinkByLinkID(linkID, filtered);
                         filteredStuff.add(filtered);
                         eventsender.fireEvent(new LinkCollectorEvent(LinkCollector.this, LinkCollectorEvent.TYPE.FILTERED_AVAILABLE));
                     } finally {
@@ -1093,17 +1107,6 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
 
                     @Override
                     protected Void run() throws RuntimeException {
-                        /* update dupeCheck map */
-                        final String id = link.getLinkID();
-                        final CrawledLink existing = getCrawledLinkByLinkID(id);
-                        if (existing != null) {
-                            /* clear references */
-                            link.setCollectingInfo(null);
-                            link.setSourceJob(null);
-                            link.setMatchingFilter(null);
-                            eventsender.fireEvent(new LinkCollectorEvent(LinkCollector.this, LinkCollectorEvent.TYPE.DUPE_LINK, link, QueuePriority.NORM));
-                            return null;
-                        }
                         addCrawledLink(link);
                         return null;
                     }
@@ -2085,7 +2088,7 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
     }
 
     public boolean containsLinkId(final String linkID) {
-        return Boolean.TRUE.equals(getQueue().addWait(new QueueAction<Boolean, RuntimeException>() {
+        return linkID != null && Boolean.TRUE.equals(getQueue().addWait(new QueueAction<Boolean, RuntimeException>() {
 
             @Override
             protected Boolean run() throws RuntimeException {

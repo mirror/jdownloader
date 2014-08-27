@@ -6,7 +6,6 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashSet;
 import java.util.List;
-import java.util.concurrent.atomic.AtomicBoolean;
 
 import jd.config.Property;
 import jd.controlling.AccountController;
@@ -40,9 +39,7 @@ public class NewRuleAction extends AbstractAddAction {
         for (AccountUsageRule aur : HosterRuleController.getInstance().list()) {
             list.remove(DomainInfo.getInstance(aur.getHoster()));
         }
-
         ChooseHosterDialog d = new ChooseHosterDialog(_GUI._.NewRuleAction_actionPerformed_choose_hoster_message(), list.toArray(new DomainInfo[] {}));
-
         try {
             Dialog.getInstance().showDialog(d);
             DomainInfo di = d.getSelectedItem();
@@ -57,33 +54,25 @@ public class NewRuleAction extends AbstractAddAction {
     }
 
     protected ArrayList<DomainInfo> getAvailableDomainInfoList() {
-        HashSet<DomainInfo> domains = new HashSet<DomainInfo>();
-        HashSet<String> plugins = new HashSet<String>();
-        final AtomicBoolean refreshRequired = new AtomicBoolean();
+        final HashSet<DomainInfo> domains = new HashSet<DomainInfo>();
         for (Account acc : AccountController.getInstance().list()) {
-
-            AccountInfo ai = acc.getAccountInfo();
+            final AccountInfo ai = acc.getAccountInfo();
             if (ai != null) {
-                Object supported = ai.getProperty("multiHostSupport", Property.NULL);
-                if (supported != null && supported instanceof List) {
-                    for (Object support : (List<?>) supported) {
-                        if (support instanceof String) {
-
-                            LazyHostPlugin plg = HostPluginController.getInstance().get((String) support);
-                            if (plg != null && plugins.add(plg.getClassname())) {
+                final Object supportedHosts = ai.getProperty("multiHostSupport", Property.NULL);
+                if (supportedHosts != null && supportedHosts instanceof List) {
+                    for (Object supportedHost : (List<?>) supportedHosts) {
+                        if (supportedHost != null && supportedHost instanceof String) {
+                            final LazyHostPlugin plg = HostPluginController.getInstance().get((String) supportedHost);
+                            if (plg != null) {
                                 domains.add(DomainInfo.getInstance(plg.getHost()));
                             }
                         }
                     }
-                } else {
-                    domains.add(DomainInfo.getInstance(acc.getHoster()));
                 }
             } else {
-                refreshRequired.set(true);
+                domains.add(DomainInfo.getInstance(acc.getHoster()));
             }
-
         }
-
         final ArrayList<DomainInfo> lst = new ArrayList<DomainInfo>(domains);
         Collections.sort(lst, new Comparator<DomainInfo>() {
 
