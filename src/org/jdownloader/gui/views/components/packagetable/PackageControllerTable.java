@@ -12,6 +12,7 @@ import java.awt.event.ActionEvent;
 import java.awt.event.InputEvent;
 import java.awt.event.KeyEvent;
 import java.awt.event.MouseEvent;
+import java.lang.ref.WeakReference;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.LinkedHashSet;
@@ -162,6 +163,26 @@ public abstract class PackageControllerTable<ParentType extends AbstractPackageN
         return getSelectionInfo(true, true);
     }
 
+    protected WeakReference<AbstractNode> contextMenuTrigger = null;
+
+    protected void processMouseEvent(final MouseEvent e) {
+        if (e.getID() == MouseEvent.MOUSE_RELEASED && CrossSystem.isContextMenuTrigger(e)) {
+            final int row = this.rowAtPoint(e.getPoint());
+            final AbstractNode node = this.getModel().getObjectbyRow(row);
+            if (contextMenuTrigger == null || contextMenuTrigger.get() != node) {
+                contextMenuTrigger = new WeakReference<AbstractNode>(node);
+            }
+        }
+        super.processMouseEvent(e);
+    }
+
+    protected AbstractNode getContextMenuTrigger() {
+        if (contextMenuTrigger != null) {
+            return contextMenuTrigger.get();
+        }
+        return null;
+    }
+
     public SelectionInfo<ParentType, ChildrenType> getSelectionInfo(final boolean selectionOnly, final boolean excludeFilteredLinks) {
         return new EDTHelper<SelectionInfo<ParentType, ChildrenType>>() {
 
@@ -179,17 +200,22 @@ public abstract class PackageControllerTable<ParentType extends AbstractPackageN
                         cachedSelectionInfo.unfilteredSelection = null;
                         cachedSelectionInfo.filteredSelection = null;
                     }
-                    ListSelectionModel sm = getSelectionModel();
+                    final ListSelectionModel sm = getSelectionModel();
                     if (excludeFilteredLinks) {
+                        final AbstractNode contextMenuTrigger = getContextMenuTrigger();
+                        if (cachedSelectionInfo.filteredSelection != null) {
+                            if (contextMenuTrigger != cachedSelectionInfo.filteredSelection.getRawContext()) {
+                                cachedSelectionInfo.filteredSelection = null;
+                            }
+                        }
                         if (cachedSelectionInfo.filteredSelection == null) {
                             if (sm.isSelectionEmpty()) {
                                 cachedSelectionInfo.filteredSelection = new SelectionInfo<ParentType, ChildrenType>(null, null, true);
                             } else {
-                                cachedSelectionInfo.filteredSelection = new SelectionInfo<ParentType, ChildrenType>(getModel().getObjectbyRow(sm.getLeadSelectionIndex()), getModel().getSelectedObjects(), true);
+                                cachedSelectionInfo.filteredSelection = new SelectionInfo<ParentType, ChildrenType>(contextMenuTrigger, getModel().getSelectedObjects(), true);
                             }
                         }
                         return cachedSelectionInfo.filteredSelection;
-
                     } else {
                         if (cachedSelectionInfo.unfilteredSelection == null) {
                             if (sm.isSelectionEmpty()) {
@@ -202,7 +228,6 @@ public abstract class PackageControllerTable<ParentType extends AbstractPackageN
                     }
 
                 } else {
-
                     if (excludeFilteredLinks) {
                         if (cachedSelectionInfo.filteredList == null) {
                             cachedSelectionInfo.filteredList = new SelectionInfo<ParentType, ChildrenType>(null, getModel().getElements(), true);
@@ -292,7 +317,6 @@ public abstract class PackageControllerTable<ParentType extends AbstractPackageN
     }
 
     public void getSelected(List<ParentType> selectedPkgs, List<ChildrenType> selectedChld) {
-        final java.util.List<ChildrenType> ret = new ArrayList<ChildrenType>();
         int iMin = selectionModel.getMinSelectionIndex();
         int iMax = selectionModel.getMaxSelectionIndex();
         if ((iMin == -1) || (iMax == -1)) {
