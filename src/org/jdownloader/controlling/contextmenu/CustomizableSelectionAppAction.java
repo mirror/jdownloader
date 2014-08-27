@@ -17,13 +17,17 @@ public abstract class CustomizableSelectionAppAction<PackageType extends Abstrac
 
     @SuppressWarnings("unchecked")
     protected SelectionInfo<PackageType, ChildrenType> getSelection() {
-        if (selection != null) return selection;
-        View view = MainTabbedPane.getInstance().getSelectedView();
-
+        if (selection != null) {
+            return selection;
+        }
+        final View view = MainTabbedPane.getInstance().getSelectedView();
         if (view instanceof DownloadsView) {
             return (SelectionInfo<PackageType, ChildrenType>) DownloadsTable.getInstance().getSelectionInfo();
-        } else if (view instanceof LinkGrabberView) { return (SelectionInfo<PackageType, ChildrenType>) LinkGrabberTable.getInstance().getSelectionInfo(); }
-        return null;
+        } else if (view instanceof LinkGrabberView) {
+            return (SelectionInfo<PackageType, ChildrenType>) LinkGrabberTable.getInstance().getSelectionInfo();
+        } else {
+            return null;
+        }
     }
 
     protected boolean hasSelection(SelectionInfo<PackageType, ChildrenType> selection2) {

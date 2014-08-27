@@ -37,7 +37,7 @@ public abstract class CustomizableAppAction extends AppAction {
         return new ArrayList<ActionContext>(setupObjects);
     }
 
-    protected ImageIcon getCheckBoxedIcon(String string, boolean selected, boolean enabled) {
+    protected static ImageIcon getCheckBoxedIcon(String string, boolean selected, boolean enabled) {
         return new ImageIcon(ImageProvider.merge(NewTheme.I().getIcon(string, 18), new CheckBoxIcon(selected, enabled), -2, -2, 6, 6, null, AlphaComposite.getInstance(AlphaComposite.SRC_OVER, 0.75f)));
     }
 
