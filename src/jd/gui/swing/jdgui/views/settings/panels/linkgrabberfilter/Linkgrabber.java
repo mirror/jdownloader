@@ -16,7 +16,7 @@
 
 package jd.gui.swing.jdgui.views.settings.panels.linkgrabberfilter;
 
-import javax.swing.ImageIcon;
+import javax.swing.Icon;
 
 import jd.controlling.TaskQueue;
 import jd.gui.swing.jdgui.views.settings.sidebar.CheckBoxedEntry;
@@ -58,7 +58,7 @@ public class Linkgrabber extends AbstractConfigPanel implements CheckBoxedEntry 
     }
 
     @Override
-    public ImageIcon getIcon() {
+    public Icon getIcon() {
         return NewTheme.I().getIcon("linkgrabber", 32);
     }
 
@@ -73,13 +73,15 @@ public class Linkgrabber extends AbstractConfigPanel implements CheckBoxedEntry 
 
             @Override
             protected Void run() throws RuntimeException {
-                if (isShown()) filter.update();
+                if (isShown()) {
+                    filter.update();
+                }
                 return null;
             }
         });
     }
 
-    public ImageIcon _getIcon(int size) {
+    public Icon _getIcon(int size) {
         return getIcon();
     }
 

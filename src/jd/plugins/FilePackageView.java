@@ -9,7 +9,6 @@ import java.util.List;
 import java.util.concurrent.atomic.AtomicLong;
 
 import javax.swing.Icon;
-import javax.swing.ImageIcon;
 
 import jd.controlling.downloadcontroller.DownloadWatchDog;
 import jd.controlling.downloadcontroller.SingleDownloadController;
@@ -27,7 +26,7 @@ import org.jdownloader.extensions.extraction.contextmenu.downloadlist.action.Ext
 import org.jdownloader.gui.IconKey;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.gui.views.downloads.columns.AvailabilityColumn;
-import org.jdownloader.images.NewTheme;
+import org.jdownloader.images.AbstractIcon;
 import org.jdownloader.plugins.ConditionalSkipReason;
 import org.jdownloader.plugins.FinalLinkState;
 import org.jdownloader.plugins.MirrorLoading;
@@ -53,7 +52,7 @@ public class FilePackageView extends ChildrenView<DownloadLink> {
 
     private volatile java.util.List<DownloadLink> items                    = new ArrayList<DownloadLink>();
 
-    private final ImageIcon                       falseIcon;
+    private final AbstractIcon                    falseIcon;
 
     protected static final long                   GUIUPDATETIMEOUT         = JsonConfig.create(GraphicalUserInterfaceSettings.class).getDownloadViewRefresh();
 
@@ -68,7 +67,8 @@ public class FilePackageView extends ChildrenView<DownloadLink> {
      */
     public FilePackageView(FilePackage fp) {
         this.fp = fp;
-        this.falseIcon = NewTheme.I().getIcon("false", 16);
+
+        this.falseIcon = new AbstractIcon("false", 16);
 
     }
 

@@ -3,7 +3,7 @@ package jd.controlling.reconnect.pluginsinc.liveheader;
 import java.awt.event.ActionEvent;
 
 import javax.swing.AbstractAction;
-import javax.swing.ImageIcon;
+import javax.swing.Icon;
 import javax.swing.JButton;
 import javax.swing.JComponent;
 import javax.swing.JLabel;
@@ -132,7 +132,7 @@ public class DataCompareDialog extends AbstractDialog<Object> {
         return txt;
     }
 
-    private MigPanel header(ImageIcon icon, String string, String desc) {
+    private MigPanel header(Icon icon, String string, String desc) {
         MigPanel ret = new MigPanel("ins 0", "[][][][grow,fill]", "[grow,fill]");
         ret.add(new JLabel(icon));
         ret.add(new JSeparator(), "width 10");

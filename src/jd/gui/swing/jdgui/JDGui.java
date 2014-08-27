@@ -47,7 +47,6 @@ import java.util.ArrayList;
 
 import javax.swing.AbstractAction;
 import javax.swing.Icon;
-import javax.swing.ImageIcon;
 import javax.swing.JComponent;
 import javax.swing.JFrame;
 import javax.swing.JPanel;
@@ -1702,7 +1701,7 @@ public class JDGui implements UpdaterListener, OwnerFinder {
             name = container.getGroup().getName();
         }
 
-        ImageIcon icon = null;
+        Icon icon = null;
         if (container.getIcon() != null) {
             icon = container.getIcon();
         } else if (container.getGroup() != null && container.getGroup().getIcon() != null) {

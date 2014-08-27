@@ -7,7 +7,7 @@ import java.awt.event.ActionListener;
 import java.util.Collections;
 import java.util.Comparator;
 
-import javax.swing.ImageIcon;
+import javax.swing.Icon;
 import javax.swing.JComponent;
 import javax.swing.JLabel;
 import javax.swing.JProgressBar;
@@ -227,7 +227,7 @@ public abstract class ReconnectFindDialog extends AbstractDialog<Object> impleme
 
     }
 
-    public void setSubStatusState(final String txt, final ImageIcon imageIcon) {
+    public void setSubStatusState(final String txt, final Icon imageIcon) {
         new EDTRunner() {
 
             @Override

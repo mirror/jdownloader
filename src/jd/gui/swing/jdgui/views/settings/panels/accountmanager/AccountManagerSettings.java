@@ -16,7 +16,7 @@
 
 package jd.gui.swing.jdgui.views.settings.panels.accountmanager;
 
-import javax.swing.ImageIcon;
+import javax.swing.Icon;
 
 import jd.gui.swing.jdgui.views.settings.components.Checkbox;
 
@@ -62,7 +62,7 @@ public class AccountManagerSettings extends AbstractConfigPanel {
     }
 
     @Override
-    public ImageIcon getIcon() {
+    public Icon getIcon() {
         return NewTheme.I().getIcon("premium", 32);
     }
 

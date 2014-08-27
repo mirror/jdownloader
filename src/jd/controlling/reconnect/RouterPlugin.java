@@ -1,6 +1,6 @@
 package jd.controlling.reconnect;
 
-import javax.swing.ImageIcon;
+import javax.swing.Icon;
 import javax.swing.JComponent;
 
 import jd.controlling.reconnect.ipcheck.IPCheckProvider;
@@ -34,7 +34,7 @@ public abstract class RouterPlugin {
      */
     public abstract JComponent getGUI();
 
-    public abstract ImageIcon getIcon16();
+    public abstract Icon getIcon16();
 
     /**
      * Returns a UNIQUE ID for this plugin.This ID should NEVER change
@@ -64,7 +64,8 @@ public abstract class RouterPlugin {
     public abstract String getName();
 
     /**
-     * override this method to set a special waittime. For example, if the check is local through the users router, we do not have to wait long.<br>
+     * override this method to set a special waittime. For example, if the check is local through the users router, we do not have to wait
+     * long.<br>
      * By default, this method returns the settings form advanced reconnect panel
      */
     public int getWaittimeBeforeFirstIPCheck() {

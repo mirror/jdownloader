@@ -107,8 +107,7 @@ public abstract class SearchField<SearchCat extends SearchCatInterface> extends 
             g2.setColor(getBackground().darker());
             g2.drawLine(labelWidth + 5 + iconGap + 8, 1, labelWidth + iconGap + 5 + 8, getHeight() - 1);
             g2.setComposite(comp);
-
-            g2.drawImage(selectedCategory.getIcon().getImage(), iconGap - 24, 3, null);
+            selectedCategory.getIcon().paintIcon(this, g2, iconGap - 24, 3);
 
             g2.translate(iconGap + 1, 0);
             label.getUI().paint(g2, label);
@@ -169,7 +168,9 @@ public abstract class SearchField<SearchCat extends SearchCatInterface> extends 
     }
 
     private void updateCursor(MouseEvent e) {
-        if (!hasFocus()) return;
+        if (!hasFocus()) {
+            return;
+        }
         if (label != null && e.getX() < labelWidth + 5 + iconGap + 8) {
             setCursor(Cursor.getPredefinedCursor(Cursor.DEFAULT_CURSOR));
             setCaretColor(getBackground());
@@ -182,7 +183,9 @@ public abstract class SearchField<SearchCat extends SearchCatInterface> extends 
     }
 
     public void focusGained(final FocusEvent arg0) {
-        if (arg0 != null && arg0.getOppositeComponent() instanceof JRootPane) return;
+        if (arg0 != null && arg0.getOppositeComponent() instanceof JRootPane) {
+            return;
+        }
         super.focusGained(arg0);
     }
 
@@ -197,7 +200,9 @@ public abstract class SearchField<SearchCat extends SearchCatInterface> extends 
         JPopupMenu popup = new JPopupMenu();
 
         for (final SearchCat sc : searchCategories) {
-            if (sc == selectedCategory) continue;
+            if (sc == selectedCategory) {
+                continue;
+            }
             popup.add(new AppAction() {
                 private SearchCat category;
                 {
@@ -247,7 +252,9 @@ public abstract class SearchField<SearchCat extends SearchCatInterface> extends 
         }
         SearchCat old = this.selectedCategory;
         this.selectedCategory = selectedCategory;
-        if (this.selectedCategory != old) onChanged();
+        if (this.selectedCategory != old) {
+            onChanged();
+        }
         if (label != null) {
             label.setText(selectedCategory.getLabel());
             setHelpText(selectedCategory.getHelpText());

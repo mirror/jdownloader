@@ -14,6 +14,7 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.FilePackageView;
 import jd.plugins.PluginProgress;
+import jd.plugins.PluginStateCollection;
 
 import org.appwork.remoteapi.exceptions.BadParameterException;
 import org.jdownloader.DomainInfo;
@@ -94,12 +95,13 @@ public class DownloadsAPIV2Impl implements DownloadsAPIV2 {
 
                     fps.setHosts(hosts);
                 }
-                // if (queryParams.isActiveTask()) {
-                // // TODO
-                // fps.setActiveTask("N/A");
-                // }
+
                 if (queryParams.isSpeed()) {
                     fps.setSpeed(dwd.getDownloadSpeedbyFilePackage(fp));
+                }
+                if (queryParams.isStatus()) {
+
+                    setStatus(fps, fp);
                 }
                 if (queryParams.isFinished()) {
 
@@ -130,6 +132,30 @@ public class DownloadsAPIV2Impl implements DownloadsAPIV2 {
             }
         }
         return ret;
+    }
+
+    private void setStatus(FilePackageAPIStorableV2 fps, FilePackage fp) {
+
+        FilePackageView view = fp.getView();
+
+        PluginStateCollection ps = view.getPluginStates();
+        if (ps.size() > 0) {
+
+            fps.setStatusIconKey(RemoteAPIController.getInstance().getContentAPI().getIconKey(ps.getMergedIcon()));
+            fps.setStatus(ps.isMultiline() ? "" : ps.getText());
+            return;
+        }
+        if (view.isFinished()) {
+
+            fps.setStatusIconKey(IconKey.ICON_TRUE);
+            fps.setStatus(_GUI._.TaskColumn_getStringValue_finished_());
+            return;
+        } else if (view.getETA() != -1) {
+
+            fps.setStatus(_GUI._.TaskColumn_getStringValue_running_());
+            return;
+        }
+
     }
 
     @SuppressWarnings("rawtypes")

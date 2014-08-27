@@ -1,6 +1,6 @@
 package jd.gui.swing.jdgui.views.settings.sidebar;
 
-import javax.swing.ImageIcon;
+import javax.swing.Icon;
 
 import org.jdownloader.extensions.StartException;
 import org.jdownloader.extensions.StopException;
@@ -9,7 +9,7 @@ public interface CheckBoxedEntry {
 
     String getName();
 
-    ImageIcon _getIcon(int size);
+    Icon _getIcon(int size);
 
     boolean _isEnabled();
 

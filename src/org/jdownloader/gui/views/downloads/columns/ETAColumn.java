@@ -4,7 +4,6 @@ import java.awt.event.ActionEvent;
 import java.awt.event.MouseEvent;
 
 import javax.swing.Icon;
-import javax.swing.ImageIcon;
 import javax.swing.JCheckBoxMenuItem;
 import javax.swing.JPopupMenu;
 import javax.swing.JSeparator;
@@ -41,8 +40,8 @@ public class ETAColumn extends ExtTextColumn<AbstractNode> {
      */
     private static final long serialVersionUID = 1L;
 
-    private ImageIcon         wait;
-    private ImageIcon         ipwait;
+    private Icon              wait;
+    private Icon              ipwait;
     private ColumnHelper      columnHelper     = new ColumnHelper();
 
     @Override
@@ -77,12 +76,16 @@ public class ETAColumn extends ExtTextColumn<AbstractNode> {
 
             @Override
             public int compare(final AbstractNode o1, final AbstractNode o2) {
-                if (o1 == o2) return 0;
+                if (o1 == o2) {
+                    return 0;
+                }
                 fillColumnHelper(o1, helper1);
                 fillColumnHelper(o2, helper2);
                 final long l1 = helper1.eta;
                 final long l2 = helper2.eta;
-                if (l1 == l2) { return 0; }
+                if (l1 == l2) {
+                    return 0;
+                }
                 if (this.getSortOrderIdentifier() == ExtColumn.SORT_ASC) {
                     return l1 > l2 ? -1 : 1;
                 } else {

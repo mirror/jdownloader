@@ -13,7 +13,6 @@ import java.util.regex.Pattern;
 
 import javax.swing.BorderFactory;
 import javax.swing.Icon;
-import javax.swing.ImageIcon;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
@@ -64,7 +63,7 @@ public class PluginSettingsPanel extends JPanel implements SettingsComponent, Ac
      */
     private static final long             serialVersionUID = 1L;
 
-    private ImageIcon                     decryterIcon;
+    private Icon                          decryterIcon;
     private MigPanel                      card;
     protected SwitchPanel                 configPanel;
     protected List<Pattern>               filter;

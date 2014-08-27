@@ -1,10 +1,10 @@
 package jd.gui.swing.jdgui.views.settings.panels.anticaptcha;
 
-import javax.swing.ImageIcon;
+import javax.swing.Icon;
 
 public interface CESService {
 
-    public ImageIcon getIcon(int i);
+    public Icon getIcon(int i);
 
     public String getDisplayName();
 

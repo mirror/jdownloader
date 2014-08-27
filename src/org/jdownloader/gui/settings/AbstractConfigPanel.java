@@ -5,7 +5,7 @@ import java.awt.Point;
 import java.lang.reflect.Field;
 import java.util.ArrayList;
 
-import javax.swing.ImageIcon;
+import javax.swing.Icon;
 import javax.swing.JComponent;
 import javax.swing.JLabel;
 import javax.swing.JScrollPane;
@@ -200,7 +200,7 @@ public abstract class AbstractConfigPanel extends SwitchPanel implements DirectF
         return txt;
     }
 
-    public void addTopHeader(String name, ImageIcon icon) {
+    public void addTopHeader(String name, Icon icon) {
         add(new Header(name, icon), "spanx,growx,pushx");
 
     }
@@ -219,7 +219,7 @@ public abstract class AbstractConfigPanel extends SwitchPanel implements DirectF
         this.addHeader(name, NewTheme.I().getIcon(iconKey, 32));
     }
 
-    public abstract ImageIcon getIcon();
+    public abstract Icon getIcon();
 
     public abstract String getTitle();
 
@@ -293,7 +293,7 @@ public abstract class AbstractConfigPanel extends SwitchPanel implements DirectF
         return "32";
     }
 
-    protected void addHeader(String name, ImageIcon icon) {
+    protected void addHeader(String name, Icon icon) {
         if (getComponentCount() == 0) {
             // first header
             add(new Header(name, icon), "spanx,growx,pushx");

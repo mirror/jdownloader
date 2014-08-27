@@ -1,6 +1,6 @@
 package org.jdownloader.extensions.streaming.gui.bottombar;
 
-import javax.swing.ImageIcon;
+import javax.swing.Icon;
 
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.gui.views.components.SearchCatInterface;
@@ -23,7 +23,7 @@ public enum MediaArchiveSearchCategory implements SearchCatInterface {
         return label;
     }
 
-    public ImageIcon getIcon() {
+    public Icon getIcon() {
         return NewTheme.I().getIcon(iconKey, 18);
     }
 

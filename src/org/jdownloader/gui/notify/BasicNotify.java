@@ -4,7 +4,7 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.MouseEvent;
 
-import javax.swing.ImageIcon;
+import javax.swing.Icon;
 
 import jd.gui.swing.jdgui.JDGui;
 import jd.gui.swing.jdgui.views.settings.ConfigurationView;
@@ -19,7 +19,7 @@ public class BasicNotify extends AbstractNotifyWindow<BasicContentPanel> {
 
     private ActionListener actionListener;
 
-    public BasicNotify(String caption, String text, ImageIcon icon) {
+    public BasicNotify(String caption, String text, Icon icon) {
         super(null, caption, new BasicContentPanel(text, icon));
 
     }
@@ -28,7 +28,9 @@ public class BasicNotify extends AbstractNotifyWindow<BasicContentPanel> {
     protected void onMouseClicked(MouseEvent m) {
         super.onMouseClicked(m);
 
-        if (actionListener != null) actionListener.actionPerformed(new ActionEvent(m.getSource(), ActionEvent.ACTION_PERFORMED, null, m.getWhen(), m.getModifiers()));
+        if (actionListener != null) {
+            actionListener.actionPerformed(new ActionEvent(m.getSource(), ActionEvent.ACTION_PERFORMED, null, m.getWhen(), m.getModifiers()));
+        }
     }
 
     public void setActionListener(ActionListener actionListener) {

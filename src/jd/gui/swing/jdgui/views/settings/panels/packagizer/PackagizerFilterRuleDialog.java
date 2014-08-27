@@ -11,7 +11,7 @@ import java.util.HashMap;
 
 import javax.swing.AbstractAction;
 import javax.swing.ButtonGroup;
-import javax.swing.ImageIcon;
+import javax.swing.Icon;
 import javax.swing.JComboBox;
 import javax.swing.JComponent;
 import javax.swing.JLabel;
@@ -84,7 +84,7 @@ public class PackagizerFilterRuleDialog extends ConditionDialog<PackagizerRule> 
             prio = priority;
         }
 
-        public ImageIcon getIcon() {
+        public Icon getIcon() {
             return priority.loadIcon(18);
         }
 

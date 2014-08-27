@@ -2,7 +2,7 @@ package org.jdownloader.extensions;
 
 import java.awt.Component;
 
-import javax.swing.ImageIcon;
+import javax.swing.Icon;
 
 import org.appwork.storage.config.ValidationException;
 import org.appwork.storage.config.events.ConfigEventListener;
@@ -88,7 +88,7 @@ public abstract class ExtensionConfigPanel<T extends AbstractExtension> extends 
     }
 
     @Override
-    public ImageIcon getIcon() {
+    public Icon getIcon() {
         return NewTheme.I().getIcon(extension.getIconKey(), 32);
     }
 

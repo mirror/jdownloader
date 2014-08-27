@@ -1,6 +1,6 @@
 package jd.gui.swing.jdgui.views.settings.panels.pluginsettings;
 
-import javax.swing.ImageIcon;
+import javax.swing.Icon;
 
 import jd.plugins.PluginForHost;
 
@@ -25,7 +25,7 @@ public class PluginSettings extends AbstractConfigPanel {
     }
 
     @Override
-    public ImageIcon getIcon() {
+    public Icon getIcon() {
         return NewTheme.I().getIcon("plugin", 32);
     }
 
@@ -40,7 +40,9 @@ public class PluginSettings extends AbstractConfigPanel {
     }
 
     private PluginSettingsPanel getPanel() {
-        if (psp != null) return psp;
+        if (psp != null) {
+            return psp;
+        }
         psp = new PluginSettingsPanel();
         return psp;
     }

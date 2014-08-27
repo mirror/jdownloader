@@ -5,7 +5,7 @@ import java.awt.Component;
 import java.awt.Font;
 
 import javax.swing.Box;
-import javax.swing.ImageIcon;
+import javax.swing.Icon;
 import javax.swing.JLabel;
 import javax.swing.JList;
 import javax.swing.JPanel;
@@ -59,7 +59,7 @@ public class ExtensionPanelListRenderer extends JPanel implements ListCellRender
         return this;
     }
 
-    private void setIcon(ImageIcon icon) {
+    private void setIcon(Icon icon) {
         lbl.setIcon(icon);
         lbl.setDisabledIcon(NewTheme.I().getDisabledIcon(icon));
     }

@@ -26,7 +26,7 @@ import java.util.List;
 import java.util.Locale;
 
 import javax.swing.DefaultComboBoxModel;
-import javax.swing.ImageIcon;
+import javax.swing.Icon;
 import javax.swing.JLabel;
 import javax.swing.JList;
 import javax.swing.event.PopupMenuEvent;
@@ -113,7 +113,9 @@ public class GUISettings extends AbstractConfigPanel implements StateUpdateListe
                     if (tmpIndex >= 0) {
                         String tmp = value.substring(0, tmpIndex);
                         Locale tmpLoc = TranslationFactory.stringToLocale(tmp);
-                        if (tmpLoc != null) set = tmpLoc.getDisplayName(Locale.ENGLISH);
+                        if (tmpLoc != null) {
+                            set = tmpLoc.getDisplayName(Locale.ENGLISH);
+                        }
                     }
                     if (StringUtils.isEmpty(set)) {
                         set = value;
@@ -134,7 +136,7 @@ public class GUISettings extends AbstractConfigPanel implements StateUpdateListe
 
             @Override
             public void popupMenuWillBecomeInvisible(PopupMenuEvent e) {
-                String newLng = (String) lng.getSelectedItem();
+                String newLng = lng.getSelectedItem();
                 if (!newLng.equals(TranslationFactory.getDesiredLanguage())) {
                     JSonStorage.saveTo(Application.getResource("cfg/language.json"), newLng);
 
@@ -422,7 +424,7 @@ public class GUISettings extends AbstractConfigPanel implements StateUpdateListe
     }
 
     @Override
-    public ImageIcon getIcon() {
+    public Icon getIcon() {
         return NewTheme.I().getIcon("gui", 32);
     }
 
@@ -453,9 +455,15 @@ public class GUISettings extends AbstractConfigPanel implements StateUpdateListe
                                 Locale lc2 = TranslationFactory.stringToLocale(o2);
                                 String v1 = lc1.getDisplayName(Locale.ENGLISH);
                                 String v2 = lc2.getDisplayName(Locale.ENGLISH);
-                                if (StringUtils.isEmpty(v1) && StringUtils.isEmpty(v2)) return 0;
-                                if (StringUtils.isEmpty(v1) && !StringUtils.isEmpty(v2)) return 1;
-                                if (StringUtils.isEmpty(v2) && !StringUtils.isEmpty(v1)) return -11;
+                                if (StringUtils.isEmpty(v1) && StringUtils.isEmpty(v2)) {
+                                    return 0;
+                                }
+                                if (StringUtils.isEmpty(v1) && !StringUtils.isEmpty(v2)) {
+                                    return 1;
+                                }
+                                if (StringUtils.isEmpty(v2) && !StringUtils.isEmpty(v1)) {
+                                    return -11;
+                                }
                                 return v1.compareToIgnoreCase(v2);
                             }
                         });
@@ -481,6 +489,8 @@ public class GUISettings extends AbstractConfigPanel implements StateUpdateListe
 
     @Override
     public void onStateUpdated() {
-        if (!setting) save();
+        if (!setting) {
+            save();
+        }
     }
 }

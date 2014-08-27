@@ -5,14 +5,12 @@ import java.util.HashMap;
 import java.util.regex.Pattern;
 
 import javax.swing.Icon;
-import javax.swing.ImageIcon;
 
 import jd.controlling.packagecontroller.AbstractPackageChildrenNode;
 import jd.parser.Regex;
 
 import org.appwork.utils.Files;
 import org.appwork.utils.StringUtils;
-import org.appwork.utils.images.IconIO;
 import org.appwork.utils.os.CrossSystem;
 import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
 import org.jdownloader.controlling.filter.CompiledFiletypeFilter.ExtensionsFilterInterface;
@@ -21,11 +19,11 @@ import org.jdownloader.logging.LogController;
 
 public class LinkInfo {
 
-    private final int       partNum;
+    private final int  partNum;
 
-    private final ImageIcon icon;
+    private final Icon icon;
 
-    public ImageIcon getIcon() {
+    public Icon getIcon() {
         return icon;
     }
 
@@ -39,7 +37,7 @@ public class LinkInfo {
         return extension;
     }
 
-    private LinkInfo(final int partNum, final ExtensionsFilterInterface extension, ImageIcon icon) {
+    private LinkInfo(final int partNum, final ExtensionsFilterInterface extension, Icon icon) {
         this.partNum = partNum;
         this.icon = icon;
         this.extension = extension;
@@ -118,13 +116,13 @@ public class LinkInfo {
         return null;
     }
 
-    public static ImageIcon getIcon(final String name, final ExtensionsFilterInterface extension) {
-        ImageIcon newIcon = null;
+    public static Icon getIcon(final String name, final ExtensionsFilterInterface extension) {
+        Icon newIcon = null;
         final String ext = Files.getExtension(name);
         if (CrossSystem.isWindows() && ext != null) {
             try {
-                Icon ico = CrossSystem.getMime().getFileIcon(ext, 16, 16);
-                newIcon = IconIO.toImageIcon(ico);
+                newIcon = CrossSystem.getMime().getFileIcon(ext, 16, 16);
+
             } catch (Throwable e) {
                 LogController.CL().log(e);
             }

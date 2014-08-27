@@ -1,6 +1,6 @@
 package org.jdownloader.plugins;
 
-import javax.swing.ImageIcon;
+import javax.swing.Icon;
 
 import jd.controlling.packagecontroller.AbstractNode;
 import jd.plugins.DownloadLink;
@@ -11,7 +11,7 @@ public interface ConditionalSkipReason {
 
     public String getMessage(Object requestor, AbstractNode node);
 
-    public ImageIcon getIcon(Object requestor, AbstractNode node);
+    public Icon getIcon(Object requestor, AbstractNode node);
 
     public void finalize(DownloadLink link);
 

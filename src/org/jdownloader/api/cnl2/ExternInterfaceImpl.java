@@ -9,7 +9,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
 
-import javax.swing.ImageIcon;
+import javax.swing.Icon;
 
 import jd.controlling.linkcollector.LinkCollectingJob;
 import jd.controlling.linkcollector.LinkCollector;
@@ -339,8 +339,8 @@ public class ExternInterfaceImpl implements Cnl2APIBasics, Cnl2APIFlash {
         try {
             response.getResponseHeaders().add(new HTTPHeader(HTTPConstants.HEADER_REQUEST_CONTENT_TYPE, "image/x-icon", false));
             out = RemoteAPI.getOutputStream(response, null, false, false);
-            ImageIcon logo = NewTheme.I().getIcon("logo/jd_logo_128_128", 32);
-            ICOEncoder.write(IconIO.toBufferedImage(logo.getImage()), out);
+            Icon logo = NewTheme.I().getIcon("logo/jd_ logo_128_128", 32);
+            ICOEncoder.write(IconIO.toBufferedImage(logo), out);
         } catch (Throwable e) {
             throw new InternalApiException(e);
         } finally {

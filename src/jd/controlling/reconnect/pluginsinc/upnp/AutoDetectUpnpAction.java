@@ -5,7 +5,7 @@ import java.util.Collections;
 import java.util.Comparator;
 
 import javax.swing.AbstractAction;
-import javax.swing.ImageIcon;
+import javax.swing.Icon;
 
 import jd.controlling.reconnect.ReconnectConfig;
 import jd.controlling.reconnect.ReconnectResult;
@@ -86,7 +86,7 @@ public class AutoDetectUpnpAction extends BasicAction {
 
                 final java.util.List<ReconnectResult> scripts = plugin.runDetectionWizard(new ProcessCallBack() {
 
-                    public void showDialog(Object caller, String title, String message, ImageIcon icon) {
+                    public void showDialog(Object caller, String title, String message, Icon icon) {
                         try {
                             Dialog.getInstance().showConfirmDialog(UIOManager.BUTTONS_HIDE_CANCEL, title, message, icon, null, null);
                         } catch (DialogClosedException e) {

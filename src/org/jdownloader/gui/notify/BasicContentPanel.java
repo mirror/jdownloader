@@ -2,7 +2,7 @@ package org.jdownloader.gui.notify;
 
 import java.awt.Component;
 
-import javax.swing.ImageIcon;
+import javax.swing.Icon;
 
 import net.miginfocom.swing.MigLayout;
 
@@ -11,7 +11,7 @@ import org.appwork.utils.swing.SwingUtils;
 
 public class BasicContentPanel extends AbstractBubbleContentPanel {
 
-    public BasicContentPanel(String text, ImageIcon icon) {
+    public BasicContentPanel(String text, Icon icon) {
         super(icon);
         setLayout(new MigLayout("ins 0,wrap 2", "[][grow,fill]", "[]"));
 

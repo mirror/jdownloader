@@ -2,7 +2,7 @@ package jd.gui.swing.jdgui.views.settings.panels.anticaptcha.ces;
 
 import java.awt.event.ActionEvent;
 
-import javax.swing.ImageIcon;
+import javax.swing.Icon;
 
 import jd.gui.swing.jdgui.JDGui;
 import jd.gui.swing.jdgui.views.settings.ConfigurationView;
@@ -20,7 +20,7 @@ import org.jdownloader.settings.GraphicalUserInterfaceSettings;
 public class MyJDownloaderService implements CESService {
 
     @Override
-    public ImageIcon getIcon(int i) {
+    public Icon getIcon(int i) {
         return NewTheme.I().getIcon("myjdownloader", i);
     }
 

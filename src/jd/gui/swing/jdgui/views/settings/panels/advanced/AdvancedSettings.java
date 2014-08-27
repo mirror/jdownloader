@@ -6,7 +6,7 @@ import java.awt.Graphics;
 import java.awt.Graphics2D;
 
 import javax.swing.BorderFactory;
-import javax.swing.ImageIcon;
+import javax.swing.Icon;
 import javax.swing.JComponent;
 import javax.swing.JScrollPane;
 import javax.swing.JTextField;
@@ -78,7 +78,8 @@ public class AdvancedSettings extends AbstractConfigPanel implements DocumentLis
                 Composite comp = g2.getComposite();
 
                 g2.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, 0.6f));
-                g2.drawImage(NewTheme.I().getIcon("search", 16).getImage(), 3, 3, null);
+                NewTheme.I().getIcon("search", 16).paintIcon(this, g2, 3, 3);
+
                 g2.setComposite(comp);
             }
 
@@ -120,7 +121,7 @@ public class AdvancedSettings extends AbstractConfigPanel implements DocumentLis
     }
 
     @Override
-    public ImageIcon getIcon() {
+    public Icon getIcon() {
         return NewTheme.I().getIcon("advancedConfig", 20);
     }
 

@@ -2,7 +2,7 @@ package jd.gui.swing.jdgui.views.settings.panels.anticaptcha;
 
 import java.awt.Component;
 
-import javax.swing.ImageIcon;
+import javax.swing.Icon;
 import javax.swing.JLabel;
 
 import jd.gui.swing.jdgui.views.settings.components.Checkbox;
@@ -43,7 +43,7 @@ public class CaptchaConfigPanel extends AbstractConfigPanel {
     }
 
     @Override
-    public ImageIcon getIcon() {
+    public Icon getIcon() {
         return NewTheme.I().getIcon("ocr", 32);
     }
 

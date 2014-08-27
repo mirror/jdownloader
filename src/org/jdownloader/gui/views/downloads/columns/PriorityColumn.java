@@ -41,15 +41,15 @@ public class PriorityColumn extends ExtComboColumn<AbstractNode, Priority> {
      * 
      */
     private static final long serialVersionUID = 1L;
-    private ImageIcon         imgPriorityS;
-    private ImageIcon         imgPriority1;
-    private ImageIcon         imgPriority2;
-    private ImageIcon         imgPriority3;
+    private Icon              imgPriorityS;
+    private Icon              imgPriority1;
+    private Icon              imgPriority2;
+    private Icon              imgPriority3;
     private String            strPriorityS;
     private String            strPriority1;
     private String            strPriority2;
     private String            strPriority3;
-    private ImageIcon         imgPriorityDefault;
+    private Icon              imgPriorityDefault;
 
     public ExtTableHeaderRenderer getHeaderRenderer(final JTableHeader jTableHeader) {
 
@@ -140,11 +140,11 @@ public class PriorityColumn extends ExtComboColumn<AbstractNode, Priority> {
             {
 
                 setName(modelItemToString(o));
-                ImageIcon ico = getIconByPriority(o);
+                Icon ico = getIconByPriority(o);
 
                 if (selected) {
                     CheckBoxIcon checkBox = CheckBoxIcon.TRUE;
-                    BufferedImage back = ImageProvider.merge(ico, checkBox, 5, 0, 0, ico.getImage().getHeight(null) - checkBox.getIconHeight() + 5);
+                    BufferedImage back = ImageProvider.merge(ico, checkBox, 5, 0, 0, ico.getIconHeight() - checkBox.getIconHeight() + 5);
 
                     setSmallIcon(new ImageIcon(back));
                 } else {
@@ -196,7 +196,7 @@ public class PriorityColumn extends ExtComboColumn<AbstractNode, Priority> {
      * @param p
      * @return
      */
-    protected ImageIcon getIconByPriority(Priority p) {
+    protected Icon getIconByPriority(Priority p) {
         switch (p) {
         case DEFAULT:
         default:

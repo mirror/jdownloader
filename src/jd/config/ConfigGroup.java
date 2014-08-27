@@ -18,7 +18,7 @@ package jd.config;
 
 import java.io.Serializable;
 
-import javax.swing.ImageIcon;
+import javax.swing.Icon;
 
 import org.jdownloader.images.NewTheme;
 
@@ -26,13 +26,13 @@ public class ConfigGroup implements Serializable {
     private static final long serialVersionUID = 1075652697591884926L;
 
     private final String      name;
-    private final ImageIcon   icon;
+    private final Icon        icon;
 
     public ConfigGroup(final String name, final String iconKey) {
         this(name, NewTheme.I().getIcon(iconKey, 32));
     }
 
-    public ConfigGroup(final String name, final ImageIcon icon) {
+    public ConfigGroup(final String name, final Icon icon) {
         this.name = name;
         this.icon = icon;
     }
@@ -41,7 +41,7 @@ public class ConfigGroup implements Serializable {
         return name;
     }
 
-    public ImageIcon getIcon() {
+    public Icon getIcon() {
         return icon;
     }
 

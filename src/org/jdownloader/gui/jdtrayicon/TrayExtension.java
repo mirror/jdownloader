@@ -39,7 +39,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import javax.swing.ImageIcon;
+import javax.swing.Icon;
 import javax.swing.JFrame;
 import javax.swing.SwingUtilities;
 
@@ -748,7 +748,7 @@ public class TrayExtension extends AbstractExtension<TrayConfig, TrayiconTransla
     }
 
     @Override
-    public ImageIcon _getIcon(int size) {
+    public Icon _getIcon(int size) {
 
         return NewTheme.I().getIcon(getIconKey(), size);
 

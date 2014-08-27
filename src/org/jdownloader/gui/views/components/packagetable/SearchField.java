@@ -128,8 +128,7 @@ public class SearchField<SearchCat extends SearchCatInterface, PackageType exten
             g2.setColor(getBackground().darker());
             g2.drawLine(labelWidth + 5 + iconGap + 8, 1, labelWidth + iconGap + 5 + 8, getHeight() - 1);
             g2.setComposite(comp);
-
-            g2.drawImage(selectedCategory.getIcon().getImage(), iconGap - 24, 3, null);
+            selectedCategory.getIcon().paintIcon(this, g2, iconGap - 24, 3);
 
             g2.translate(iconGap + 1, 0);
             label.getUI().paint(g2, label);
@@ -176,8 +175,12 @@ public class SearchField<SearchCat extends SearchCatInterface, PackageType exten
             }
         }
         PackageControllerTableModelFilter<PackageType, ChildType> oldFilter = appliedFilter.getAndSet(newFilter);
-        if (oldFilter != null) table2Filter.getModel().removeFilter(oldFilter);
-        if (newFilter != null) table2Filter.getModel().addFilter(newFilter);
+        if (oldFilter != null) {
+            table2Filter.getModel().removeFilter(oldFilter);
+        }
+        if (newFilter != null) {
+            table2Filter.getModel().addFilter(newFilter);
+        }
         table2Filter.getModel().recreateModel(true);
     }
 
@@ -193,7 +196,9 @@ public class SearchField<SearchCat extends SearchCatInterface, PackageType exten
     }
 
     private void updateCursor(MouseEvent e) {
-        if (!hasFocus()) return;
+        if (!hasFocus()) {
+            return;
+        }
         if (label != null && e.getX() < labelWidth + 5 + iconGap + 8) {
             setCursor(Cursor.getPredefinedCursor(Cursor.DEFAULT_CURSOR));
             setCaretColor(getBackground());
@@ -213,7 +218,9 @@ public class SearchField<SearchCat extends SearchCatInterface, PackageType exten
     }
 
     public void focusGained(final FocusEvent arg0) {
-        if (arg0 != null && arg0.getOppositeComponent() instanceof JRootPane) return;
+        if (arg0 != null && arg0.getOppositeComponent() instanceof JRootPane) {
+            return;
+        }
         super.focusGained(arg0);
     }
 
@@ -235,7 +242,9 @@ public class SearchField<SearchCat extends SearchCatInterface, PackageType exten
         JPopupMenu popup = new JPopupMenu();
 
         for (final SearchCat sc : searchCategories) {
-            if (sc == selectedCategory) continue;
+            if (sc == selectedCategory) {
+                continue;
+            }
             popup.add(new AppAction() {
                 private SearchCat category;
                 {
@@ -286,7 +295,9 @@ public class SearchField<SearchCat extends SearchCatInterface, PackageType exten
         }
         SearchCat old = this.selectedCategory;
         this.selectedCategory = selectedCategory;
-        if (this.selectedCategory != old) onChanged();
+        if (this.selectedCategory != old) {
+            onChanged();
+        }
         if (label != null) {
             label.setText(selectedCategory.getLabel());
             setHelpText(selectedCategory.getHelpText());
@@ -318,7 +329,9 @@ public class SearchField<SearchCat extends SearchCatInterface, PackageType exten
         if (!found) {
             SearchCat old = selectedCategory;
             this.selectedCategory = searchCategories[0];
-            if (this.selectedCategory != old) onChanged();
+            if (this.selectedCategory != old) {
+                onChanged();
+            }
         }
         label.setSize(labelWidth, 24);
         // label.setEnabled(false);

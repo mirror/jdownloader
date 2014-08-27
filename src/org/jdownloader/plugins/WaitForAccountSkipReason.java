@@ -1,6 +1,6 @@
 package org.jdownloader.plugins;
 
-import javax.swing.ImageIcon;
+import javax.swing.Icon;
 
 import jd.controlling.packagecontroller.AbstractNode;
 import jd.nutils.Formatter;
@@ -12,8 +12,8 @@ import org.jdownloader.translate._JDT;
 
 public class WaitForAccountSkipReason implements ConditionalSkipReason, IgnorableConditionalSkipReason, TimeOutCondition {
 
-    private final Account   account;
-    private final ImageIcon icon;
+    private final Account account;
+    private final Icon    icon;
 
     public WaitForAccountSkipReason(Account account) {
         this.account = account;
@@ -55,7 +55,7 @@ public class WaitForAccountSkipReason implements ConditionalSkipReason, Ignorabl
     }
 
     @Override
-    public ImageIcon getIcon(Object requestor, AbstractNode node) {
+    public Icon getIcon(Object requestor, AbstractNode node) {
         return icon;
     }
 

@@ -16,7 +16,7 @@
 
 package jd.gui.swing.jdgui.views.settings.panels;
 
-import javax.swing.ImageIcon;
+import javax.swing.Icon;
 
 import jd.gui.swing.jdgui.views.settings.components.Checkbox;
 import jd.gui.swing.jdgui.views.settings.panels.reconnect.ReconnectManager;
@@ -55,7 +55,7 @@ public class ReconnectSettings extends AbstractConfigPanel {
     }
 
     @Override
-    public ImageIcon getIcon() {
+    public Icon getIcon() {
         return NewTheme.I().getIcon("reconnect", 32);
     }
 

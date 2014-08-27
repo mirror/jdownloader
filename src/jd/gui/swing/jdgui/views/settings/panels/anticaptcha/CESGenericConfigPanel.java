@@ -1,6 +1,6 @@
 package jd.gui.swing.jdgui.views.settings.panels.anticaptcha;
 
-import javax.swing.ImageIcon;
+import javax.swing.Icon;
 
 import net.miginfocom.swing.MigLayout;
 
@@ -19,7 +19,7 @@ public abstract class CESGenericConfigPanel extends AbstractConfigPanel {
     }
 
     @Override
-    public ImageIcon getIcon() {
+    public Icon getIcon() {
         return service.getIcon(32);
     }
 

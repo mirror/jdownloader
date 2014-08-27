@@ -14,7 +14,9 @@ public class MergedIcon extends ExtMergedIcon {
         int width = 0;
         for (Icon i : icons) {
             height = Math.max(height, i.getIconHeight());
-            if (width > 0) width += gap;
+            if (width > 0) {
+                width += gap;
+            }
             width += i.getIconWidth();
         }
         int x = 0;

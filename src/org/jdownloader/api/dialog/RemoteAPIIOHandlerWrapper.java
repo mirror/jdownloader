@@ -1,11 +1,10 @@
 package org.jdownloader.api.dialog;
 
 import java.awt.Dialog.ModalityType;
-import java.awt.GraphicsEnvironment;
 import java.awt.event.WindowEvent;
 import java.awt.event.WindowListener;
 
-import javax.swing.ImageIcon;
+import javax.swing.Icon;
 import javax.swing.SwingUtilities;
 
 import jd.gui.swing.jdgui.JDGui;
@@ -45,7 +44,7 @@ public class RemoteAPIIOHandlerWrapper implements UserIOHandlerInterface {
     }
 
     @Override
-    public boolean showConfirmDialog(int flags, String title, String message, ImageIcon icon, String ok, String cancel) {
+    public boolean showConfirmDialog(int flags, String title, String message, Icon icon, String ok, String cancel) {
         ConfirmDialog ret = new ConfirmDialog(flags, title, message, icon, ok, cancel);
         ConfirmDialogInterface io = show(ConfirmDialogInterface.class, ret);
         return io.getCloseReason() == CloseReason.OK;

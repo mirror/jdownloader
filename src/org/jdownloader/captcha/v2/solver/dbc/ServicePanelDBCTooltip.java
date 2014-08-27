@@ -4,7 +4,7 @@ import java.awt.Color;
 import java.awt.Point;
 
 import javax.swing.BorderFactory;
-import javax.swing.ImageIcon;
+import javax.swing.Icon;
 import javax.swing.JComponent;
 import javax.swing.JLabel;
 import javax.swing.JProgressBar;
@@ -112,7 +112,7 @@ public class ServicePanelDBCTooltip extends PanelToolTip {
 
     }
 
-    private JLabel lbl(String string, ImageIcon icon, int left) {
+    private JLabel lbl(String string, Icon icon, int left) {
         JLabel ret = new JLabel(string, icon, left);
         ret.setForeground(LAFOptions.getInstance().getColorForTooltipForeground());
         return ret;

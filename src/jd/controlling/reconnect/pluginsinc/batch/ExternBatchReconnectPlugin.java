@@ -3,7 +3,7 @@ package jd.controlling.reconnect.pluginsinc.batch;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 
-import javax.swing.ImageIcon;
+import javax.swing.Icon;
 import javax.swing.JComponent;
 import javax.swing.JFileChooser;
 import javax.swing.JLabel;
@@ -51,7 +51,7 @@ public class ExternBatchReconnectPlugin extends RouterPlugin implements ActionLi
 
     private JTextPane           txtBatch;
 
-    private ImageIcon           icon;
+    private Icon                icon;
 
     private ReconnectInvoker    invoker;
 
@@ -227,7 +227,7 @@ public class ExternBatchReconnectPlugin extends RouterPlugin implements ActionLi
     }
 
     @Override
-    public ImageIcon getIcon16() {
+    public Icon getIcon16() {
         return icon;
     }
 

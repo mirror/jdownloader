@@ -3,7 +3,7 @@ package jd.gui.swing.jdgui.views.settings.panels.accountmanager;
 import java.awt.Component;
 import java.awt.event.MouseEvent;
 
-import javax.swing.ImageIcon;
+import javax.swing.Icon;
 import javax.swing.JLabel;
 import javax.swing.JTabbedPane;
 import javax.swing.event.ChangeEvent;
@@ -32,7 +32,7 @@ public class AccountManager extends SwitchPanel implements SettingsComponent {
 
     private AccountListPanel  accountListPanel;
 
-    private Component createHeader(String tooltip, String lbl, ImageIcon icon) {
+    private Component createHeader(String tooltip, String lbl, Icon icon) {
 
         JLabel ret = new JLabel(lbl, icon, JLabel.LEFT);
         ret.setToolTipText(tooltip);

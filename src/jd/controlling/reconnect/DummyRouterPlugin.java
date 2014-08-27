@@ -1,6 +1,6 @@
 package jd.controlling.reconnect;
 
-import javax.swing.ImageIcon;
+import javax.swing.Icon;
 import javax.swing.JComponent;
 import javax.swing.JPanel;
 import javax.swing.JTextPane;
@@ -21,7 +21,7 @@ public class DummyRouterPlugin extends RouterPlugin {
         return DummyRouterPlugin.INSTANCE;
     }
 
-    private ImageIcon icon;
+    private Icon icon;
 
     private DummyRouterPlugin() {
         icon = NewTheme.I().getIcon("delete", 16);
@@ -62,7 +62,7 @@ public class DummyRouterPlugin extends RouterPlugin {
     }
 
     @Override
-    public ImageIcon getIcon16() {
+    public Icon getIcon16() {
         return icon;
     }
 

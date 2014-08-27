@@ -16,7 +16,7 @@
 
 package jd.gui.swing.jdgui.views.settings.panels.packagizer;
 
-import javax.swing.ImageIcon;
+import javax.swing.Icon;
 
 import jd.controlling.TaskQueue;
 import jd.gui.swing.jdgui.views.settings.sidebar.CheckBoxedEntry;
@@ -50,7 +50,7 @@ public class Packagizer extends AbstractConfigPanel implements CheckBoxedEntry {
     }
 
     @Override
-    public ImageIcon getIcon() {
+    public Icon getIcon() {
         return NewTheme.I().getIcon("packagizer", 32);
     }
 
@@ -76,7 +76,7 @@ public class Packagizer extends AbstractConfigPanel implements CheckBoxedEntry {
         return getTitle();
     }
 
-    public ImageIcon _getIcon(int size) {
+    public Icon _getIcon(int size) {
         return getIcon();
     }
 

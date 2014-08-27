@@ -1,6 +1,6 @@
 package jd.plugins;
 
-import javax.swing.ImageIcon;
+import javax.swing.Icon;
 import javax.swing.JLabel;
 import javax.swing.JSeparator;
 
@@ -21,7 +21,7 @@ public abstract class PluginConfigPanelNG extends AbstractConfigPanel {
     }
 
     @Override
-    protected void addHeader(String name, ImageIcon icon) {
+    protected void addHeader(String name, Icon icon) {
 
         Header header;
         add(header = new Header(name, icon), "spanx,newline,growx,pushx");
@@ -77,7 +77,7 @@ public abstract class PluginConfigPanelNG extends AbstractConfigPanel {
     public abstract void reset();
 
     @Override
-    public ImageIcon getIcon() {
+    public Icon getIcon() {
         return null;
     }
 

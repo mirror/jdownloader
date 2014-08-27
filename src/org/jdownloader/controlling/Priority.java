@@ -1,6 +1,6 @@
 package org.jdownloader.controlling;
 
-import javax.swing.ImageIcon;
+import javax.swing.Icon;
 
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.images.NewTheme;
@@ -29,13 +29,17 @@ public enum Priority {
         return translation;
     }
 
-    public ImageIcon loadIcon(int size) {
+    public Icon loadIcon(int size) {
         return NewTheme.I().getIcon("prio_" + id, size);
     }
 
     public static Priority getPriority(int p) {
-        if (p > 3) p = 3;
-        if (p < -1) p = -1;
+        if (p > 3) {
+            p = 3;
+        }
+        if (p < -1) {
+            p = -1;
+        }
         switch (p) {
         case 3:
             return HIGHEST;

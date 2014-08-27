@@ -6,7 +6,7 @@ import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileWriter;
 
-import javax.swing.ImageIcon;
+import javax.swing.Icon;
 import javax.swing.JCheckBox;
 import javax.swing.JComponent;
 import javax.swing.JFileChooser;
@@ -55,7 +55,7 @@ public class ExternReconnectPlugin extends RouterPlugin implements ActionListene
 
     private ComboBrowseFile     browse;
 
-    private ImageIcon           icon;
+    private Icon                icon;
 
     private ReconnectInvoker    invoker;
 
@@ -82,7 +82,9 @@ public class ExternReconnectPlugin extends RouterPlugin implements ActionListene
                     }
                     final File tmp = Application.getTempResource("recon_" + number + ".bat");
                     if (tmp.exists()) {
-                        if (FileCreationManager.getInstance().delete(tmp, null)) { return tmp; }
+                        if (FileCreationManager.getInstance().delete(tmp, null)) {
+                            return tmp;
+                        }
                         tmp.deleteOnExit();
                     } else {
                         return tmp;
@@ -95,10 +97,13 @@ public class ExternReconnectPlugin extends RouterPlugin implements ActionListene
             public void run() throws ReconnectException {
                 final int waitForReturn = getWaitForReturn();
                 final String command = getCommand();
-                if (command.length() == 0) { throw new ReconnectException("Command Invalid: " + command); }
+                if (command.length() == 0) {
+                    throw new ReconnectException("Command Invalid: " + command);
+                }
 
                 final File f = new File(command);
-                if (!f.exists()) { throw new ReconnectException("Command does not exist: " + f.getAbsolutePath());
+                if (!f.exists()) {
+                    throw new ReconnectException("Command does not exist: " + f.getAbsolutePath());
 
                 }
 
@@ -109,7 +114,8 @@ public class ExternReconnectPlugin extends RouterPlugin implements ActionListene
                      * for windows we create a temporary batchfile that calls our external tool and redirect its streams to nul
                      */
                     final File bat = getDummyBat();
-                    if (bat == null) { throw new ReconnectException("Could not create Dummy Batch");
+                    if (bat == null) {
+                        throw new ReconnectException("Could not create Dummy Batch");
 
                     }
                     BufferedWriter output = null;
@@ -153,7 +159,7 @@ public class ExternReconnectPlugin extends RouterPlugin implements ActionListene
     }
 
     @Override
-    public ImageIcon getIcon16() {
+    public Icon getIcon16() {
         return icon;
     }
 

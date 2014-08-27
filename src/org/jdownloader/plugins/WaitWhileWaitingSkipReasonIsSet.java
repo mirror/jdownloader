@@ -1,6 +1,6 @@
 package org.jdownloader.plugins;
 
-import javax.swing.ImageIcon;
+import javax.swing.Icon;
 
 import jd.controlling.packagecontroller.AbstractNode;
 import jd.plugins.DownloadLink;
@@ -28,15 +28,19 @@ public class WaitWhileWaitingSkipReasonIsSet implements ConditionalSkipReason, D
     public String getMessage(Object requestor, AbstractNode node) {
         if (source == node) {
             return reason.getMessage(requestor, node);
-        } else if (requestor instanceof TaskColumn || requestor instanceof FilePackageView) { return reason.getMessage(requestor, node); }
+        } else if (requestor instanceof TaskColumn || requestor instanceof FilePackageView) {
+            return reason.getMessage(requestor, node);
+        }
         return null;
     }
 
     @Override
-    public ImageIcon getIcon(Object requestor, AbstractNode node) {
+    public Icon getIcon(Object requestor, AbstractNode node) {
         if (source == node) {
             return reason.getIcon(requestor, node);
-        } else if (requestor instanceof TaskColumn || requestor instanceof FilePackageView) { return reason.getIcon(requestor, node); }
+        } else if (requestor instanceof TaskColumn || requestor instanceof FilePackageView) {
+            return reason.getIcon(requestor, node);
+        }
         return null;
     }
 
@@ -59,7 +63,9 @@ public class WaitWhileWaitingSkipReasonIsSet implements ConditionalSkipReason, D
 
     @Override
     public boolean isValid() {
-        if (valid == false) return false;
+        if (valid == false) {
+            return false;
+        }
         return reason.isValid();
     }
 
