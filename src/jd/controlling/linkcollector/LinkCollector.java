@@ -619,7 +619,15 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
                                 }
                             }
                             if (packageName == null) {
-                                packageName = LinknameCleaner.cleanFileName(link.getName(), false, true, LinknameCleaner.EXTENSION_SETTINGS.REMOVE_ALL, true);
+                                final DownloadLink dlLink = link.getDownloadLink();
+                                if (link.isNameSet() || dlLink.isNameSet()) {
+                                    packageName = link.getName();
+                                } else {
+                                    packageName = dlLink.getBrowserUrl();
+                                }
+                                if (packageName != null) {
+                                    packageName = LinknameCleaner.cleanFileName(packageName, false, true, LinknameCleaner.EXTENSION_SETTINGS.REMOVE_ALL, true);
+                                }
                             }
                         }
 

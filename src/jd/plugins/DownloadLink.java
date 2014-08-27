@@ -25,7 +25,6 @@ import java.lang.reflect.Method;
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Proxy;
 import java.lang.reflect.Type;
-import java.net.URL;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashSet;
@@ -247,9 +246,6 @@ public class DownloadLink extends Property implements Serializable, AbstractPack
                 LogController.CL().log(e);
             }
         }
-        if (name == null && urlDownload != null) {
-            setName(Plugin.extractFileNameFromURL(getDownloadURL()));
-        }
     }
 
     public long getFinishedDate() {
@@ -351,7 +347,6 @@ public class DownloadLink extends Property implements Serializable, AbstractPack
         } else {
             setProperty(PROPERTY_CHUNKS, chunks);
         }
-
     }
 
     public void setCustomSpeedLimit(int limit) {
@@ -684,13 +679,15 @@ public class DownloadLink extends Property implements Serializable, AbstractPack
             return null;
         }
         try {
+            final String name = getRawName();
             if (name != null) {
                 ret = replaceCustomExtension(name);
                 setCachedName(ignoreUnsafe, ignoreForcedFilename, ret);
                 return ret;
             }
-            if (this.getDownloadURL() != null) {
-                String urlName = new File(new URL(this.getDownloadURL()).toURI()).getName();
+            final String url = this.getDownloadURL();
+            if (url != null) {
+                final String urlName = Plugin.extractFileNameFromURL(url);
                 if (urlName != null) {
                     ret = replaceCustomExtension(urlName);
                     setCachedName(ignoreUnsafe, ignoreForcedFilename, ret);
@@ -701,6 +698,18 @@ public class DownloadLink extends Property implements Serializable, AbstractPack
         } catch (Exception e) {
             return UNKNOWN_FILE_NAME;
         }
+    }
+
+    public String getRawName() {
+        final String lName = name;
+        if (lName != UNKNOWN_FILE_NAME) {
+            return lName;
+        }
+        return null;
+    }
+
+    public boolean isNameSet() {
+        return getRawName() != null || getForcedFileName() != null || getFinalFileName() != null;
     }
 
     public String replaceCustomExtension(String name) {
@@ -1195,7 +1204,6 @@ public class DownloadLink extends Property implements Serializable, AbstractPack
         if (StringUtils.isEmpty(name)) {
             name = UNKNOWN_FILE_NAME;
         }
-
         this.name = name;
         cachedName = null;
         setLinkInfo(null);
