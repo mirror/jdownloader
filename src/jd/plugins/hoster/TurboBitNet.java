@@ -80,37 +80,28 @@ public class TurboBitNet extends PluginForHost {
         enablePremium(MAINPAGE + "/turbo/emoney/12");
     }
 
-    public void correctDownloadLink(final DownloadLink link) {
+    public void correctDownloadLink(final DownloadLink link) throws PluginException {
         // changing to temp hosts (subdomains causes issues with multihosters.
-        final String linkpart = new Regex(link.getDownloadURL(), "https?://(www\\.|new\\.)?[A-Za-z0-9\\-\\.]+/(.+)").getMatch(1);
-        link.setUrlDownload(MAINPAGE + "/" + linkpart);
+        final String uid = getFUID(link);
+        if (link.getDownloadURL().matches("https?://[^/]+/[a-z0-9]+(/[^/]+)?\\.html")) {
+            link.setUrlDownload(link.getDownloadURL().replaceAll("https?://[^/]+", MAINPAGE));
+        } else if (link.getDownloadURL().matches("https?://[^/]+/download/free/.*")) {
+            link.setUrlDownload(MAINPAGE + "/" + uid + ".html");
+        } else if (link.getDownloadURL().matches("https?://[^/]+/?/download/redirect/.*")) {
+            link.setUrlDownload(link.getDownloadURL().replaceAll("://[^/]+//download", "://" + MAINPAGE + "/download"));
+        }
+        final String linkID = getHost() + "://" + uid;
+        try {
+            link.setLinkID(linkID);
+        } catch (Throwable e) {
+            link.setProperty("LINKDUPEID", linkID);
+        }
     }
 
     @Override
     public boolean checkLinks(final DownloadLink[] urls) {
         if (urls == null || urls.length == 0) {
             return false;
-        }
-        // correct link stuff goes here, stable is lame!
-        for (DownloadLink link : urls) {
-            correctDownloadLink(link);
-            if (link.getStringProperty("LINKUID", null) == null) {
-                try {
-                    String uid = getFUID(link);
-                    link.setProperty("LINKUID", uid);
-                    if (link.getDownloadURL().matches("https?://[^/]+/[a-z0-9]+(/[^/]+)?\\.html")) {
-                        link.setUrlDownload(link.getDownloadURL().replaceAll("://[^/]+", "://" + MAINPAGE));
-                    }
-                    if (link.getDownloadURL().matches("https?://[^/]+/download/free/.*")) {
-                        link.setUrlDownload(MAINPAGE + "/" + uid + ".html");
-                    }
-                    if (link.getDownloadURL().matches("https?://[^/]+/?/download/redirect/.*")) {
-                        link.setUrlDownload(link.getDownloadURL().replaceAll("://[^/]+//download", "://" + MAINPAGE + "/download"));
-                    }
-                } catch (PluginException e) {
-                    return false;
-                }
-            }
         }
         try {
             final Browser br = new Browser();
@@ -133,14 +124,16 @@ public class TurboBitNet extends PluginForHost {
                 sb.delete(0, sb.capacity());
                 sb.append("links_to_check=");
                 for (final DownloadLink dl : links) {
-                    sb.append(Encoding.urlEncode("http://" + getHost() + "/" + dl.getStringProperty("LINKUID", null) + ".html"));
+                    correctDownloadLink(dl);
+                    sb.append(Encoding.urlEncode(MAINPAGE + "/" + getFUID(dl) + ".html"));
                     sb.append("%0A");
                 }
                 // remove last
                 sb.delete(sb.length() - 3, sb.length());
-                br.postPage("http://" + MAINPAGE + "/linkchecker/check", sb.toString());
+                // without new, can cause issue every now and then
+                br.postPage("http://" + NICE_HOST + "/linkchecker/check", sb.toString());
                 for (final DownloadLink dllink : links) {
-                    final Regex fileInfo = br.getRegex("<td>" + dllink.getProperty("LINKUID") + "</td>[\t\n\r ]+<td>([^<>/\"]+)</td>[\t\n\r ]+<td style=\"text-align:center;\"><img src=\"[^\"]+/(done|error)\\.png\"");
+                    final Regex fileInfo = br.getRegex("<td>" + getFUID(dllink) + "</td>[\t\n\r ]+<td>([^<>/\"]+)</td>[\t\n\r ]+<td style=\"text-align:center;\"><img src=\"[^\"]+/(done|error)\\.png\"");
                     if (fileInfo.getMatches() == null || fileInfo.getMatches().length == 0) {
                         dllink.setAvailable(false);
                         logger.warning("Linkchecker broken for " + getHost() + " Example link: " + dllink.getDownloadURL());
@@ -585,19 +578,16 @@ public class TurboBitNet extends PluginForHost {
     }
 
     private String getFUID(DownloadLink downloadLink) throws PluginException {
-        String fuid = downloadLink.getStringProperty("LINKUID", null);
         // standard links turbobit.net/uid.html && turbobit.net/uid/filename.html
+        String fuid = new Regex(downloadLink.getDownloadURL(), "https?://[^/]+/([a-z0-9]+)(/[^/]+)?\\.html").getMatch(0);
         if (fuid == null) {
-            fuid = new Regex(downloadLink.getDownloadURL(), "https?://[^/]+/([a-z0-9]+)(/[^/]+)?\\.html").getMatch(0);
+            // download/free/
+            fuid = new Regex(downloadLink.getDownloadURL(), "download/free/([a-z0-9]+)").getMatch(0);
             if (fuid == null) {
-                // download/free/
-                fuid = new Regex(downloadLink.getDownloadURL(), "download/free/([a-z0-9]+)").getMatch(0);
+                // support for public premium links
+                fuid = new Regex(downloadLink.getDownloadURL(), "download/redirect/[A-Za-z0-9]+/([a-z0-9]+)").getMatch(0);
                 if (fuid == null) {
-                    // support for public premium links
-                    fuid = new Regex(downloadLink.getDownloadURL(), "download/redirect/[A-Za-z0-9]+/([a-z0-9]+)").getMatch(0);
-                    if (fuid == null) {
-                        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                    }
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 }
             }
         }
