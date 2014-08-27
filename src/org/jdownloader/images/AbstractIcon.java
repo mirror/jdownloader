@@ -4,11 +4,11 @@ import java.awt.Component;
 import java.awt.Graphics;
 
 import javax.swing.Icon;
-import javax.swing.ImageIcon;
 
+import org.appwork.swing.components.IdentifierInterface;
 import org.appwork.utils.ImageProvider.ImageProvider;
 
-public class AbstractIcon implements Icon {
+public class AbstractIcon implements Icon, IdentifierInterface {
 
     private String key;
 
@@ -44,14 +44,16 @@ public class AbstractIcon implements Icon {
      * 
      */
     protected void update() {
-        ImageIcon icon = NewTheme.I().getIcon(getKey(), getSize());
+        Icon icon = NewTheme.I().getIcon(getKey(), getSize());
         width = icon.getIconWidth();
         height = icon.getIconHeight();
     }
 
     @Override
     public boolean equals(Object obj) {
-        if (obj == null || !(obj instanceof AbstractIcon)) { return false; }
+        if (obj == null || !(obj instanceof AbstractIcon)) {
+            return false;
+        }
         return key.equals(((AbstractIcon) obj).key) && size == ((AbstractIcon) obj).size;
     }
 
@@ -78,6 +80,11 @@ public class AbstractIcon implements Icon {
     @Override
     public int getIconHeight() {
         return height;
+    }
+
+    @Override
+    public Object toIdentifier() {
+        return key;
     }
 
 }

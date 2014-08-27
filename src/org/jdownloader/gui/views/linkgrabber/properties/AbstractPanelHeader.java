@@ -5,7 +5,7 @@ import java.awt.event.HierarchyBoundsListener;
 import java.awt.event.HierarchyEvent;
 
 import javax.swing.BorderFactory;
-import javax.swing.ImageIcon;
+import javax.swing.Icon;
 import javax.swing.JButton;
 import javax.swing.JLabel;
 
@@ -36,7 +36,7 @@ public abstract class AbstractPanelHeader extends MigPanel {
         }
     }
 
-    protected void setIcon(ImageIcon icon) {
+    protected void setIcon(Icon icon) {
         this.icon.setIcon(icon);
     }
 
@@ -45,7 +45,7 @@ public abstract class AbstractPanelHeader extends MigPanel {
         updateLabelString();
     }
 
-    public AbstractPanelHeader(String title, ImageIcon imageIcon) {
+    public AbstractPanelHeader(String title, Icon imageIcon) {
         super("ins 0 0 1 0", "[]2[grow,fill][]0[]0", "[grow,fill]");
 
         lbl = SwingUtils.toBold(new JLabel(""));

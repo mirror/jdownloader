@@ -17,7 +17,7 @@
 package jd.gui.swing.jdgui.views.settings.panels;
 
 import javax.swing.Box;
-import javax.swing.ImageIcon;
+import javax.swing.Icon;
 import javax.swing.JCheckBox;
 import javax.swing.JComponent;
 import javax.swing.JLabel;
@@ -211,7 +211,7 @@ public class GeneralSettingsConfigPanel extends AbstractConfigPanel {
     }
 
     @Override
-    public ImageIcon getIcon() {
+    public Icon getIcon() {
         return NewTheme.I().getIcon("home", 32);
     }
 

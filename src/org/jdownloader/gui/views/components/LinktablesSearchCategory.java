@@ -1,6 +1,6 @@
 package org.jdownloader.gui.views.components;
 
-import javax.swing.ImageIcon;
+import javax.swing.Icon;
 
 import org.appwork.storage.config.annotations.EnumLabel;
 import org.jdownloader.gui.IconKey;
@@ -31,7 +31,7 @@ public enum LinktablesSearchCategory implements SearchCatInterface {
         return label;
     }
 
-    public ImageIcon getIcon() {
+    public Icon getIcon() {
         return NewTheme.I().getIcon(iconKey, 18);
     }
 

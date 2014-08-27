@@ -2,7 +2,7 @@ package org.jdownloader.controlling.contextmenu.gui;
 
 import javax.swing.BorderFactory;
 import javax.swing.Box;
-import javax.swing.ImageIcon;
+import javax.swing.Icon;
 import javax.swing.JLabel;
 
 import org.appwork.swing.MigPanel;
@@ -11,7 +11,7 @@ import org.jdownloader.updatev2.gui.LAFOptions;
 
 public class Header extends MigPanel {
 
-    public Header(String layoutManager, ImageIcon icon) {
+    public Header(String layoutManager, Icon icon) {
         super("ins 0 0 1 0", "[]2[][][grow,fill][]0", "[grow,fill]");
 
         // setBackground(Color.RED);

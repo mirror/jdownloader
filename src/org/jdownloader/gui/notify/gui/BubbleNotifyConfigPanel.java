@@ -19,7 +19,7 @@ package org.jdownloader.gui.notify.gui;
 import java.util.ArrayList;
 import java.util.List;
 
-import javax.swing.ImageIcon;
+import javax.swing.Icon;
 
 import jd.gui.swing.jdgui.views.settings.components.Checkbox;
 import jd.gui.swing.jdgui.views.settings.components.ComboBox;
@@ -31,8 +31,8 @@ import org.appwork.storage.config.ValidationException;
 import org.appwork.storage.config.events.GenericConfigEventListener;
 import org.appwork.storage.config.handler.KeyHandler;
 import org.appwork.utils.swing.EDTRunner;
-import org.jdownloader.gui.notify.BubbleNotify;
 import org.jdownloader.gui.notify.AbstractBubbleSupport;
+import org.jdownloader.gui.notify.BubbleNotify;
 import org.jdownloader.gui.notify.gui.BubbleNotifyConfig.BubbleNotifyEnabledState;
 import org.jdownloader.gui.settings.AbstractConfigPanel;
 import org.jdownloader.gui.settings.Pair;
@@ -76,8 +76,7 @@ public class BubbleNotifyConfigPanel extends AbstractConfigPanel implements Stat
     protected void layoutComponents() {
         this.addHeader(getTitle(), NewTheme.I().getIcon("bubble", 32));
         this.addDescription(_GUI._.plugins_optional_JDLightTray_ballon_desc());
-        addPair(_GUI._.BubbleNotifyConfigPanel_BubbleNotifyConfigPanel_enabledstate(), null,
-                new ComboBox<BubbleNotifyEnabledState>((KeyHandler<BubbleNotifyEnabledState>) CFG_BUBBLE.SH.getKeyHandler("BubbleNotifyEnabledState", KeyHandler.class), new BubbleNotifyEnabledState[] { BubbleNotifyEnabledState.ALWAYS, BubbleNotifyEnabledState.JD_NOT_ACTIVE, BubbleNotifyEnabledState.TRAY_OR_TASKBAR, BubbleNotifyEnabledState.TASKBAR, BubbleNotifyEnabledState.TRAY, BubbleNotifyEnabledState.NEVER, }, new String[] { _GUI._.BubbleNotifyConfigPanel_BubbleNotifyConfigPanel_always(), _GUI._.BubbleNotifyConfigPanel_BubbleNotifyConfigPanel_jdnotactive(), _GUI._.BubbleNotifyConfigPanel_BubbleNotifyConfigPanel_trayortask(), _GUI._.BubbleNotifyConfigPanel_BubbleNotifyConfigPanel_taskbar(), _GUI._.BubbleNotifyConfigPanel_BubbleNotifyConfigPanel_tray(), _GUI._.BubbleNotifyConfigPanel_BubbleNotifyConfigPanel_never(), }));
+        addPair(_GUI._.BubbleNotifyConfigPanel_BubbleNotifyConfigPanel_enabledstate(), null, new ComboBox<BubbleNotifyEnabledState>(CFG_BUBBLE.SH.getKeyHandler("BubbleNotifyEnabledState", KeyHandler.class), new BubbleNotifyEnabledState[] { BubbleNotifyEnabledState.ALWAYS, BubbleNotifyEnabledState.JD_NOT_ACTIVE, BubbleNotifyEnabledState.TRAY_OR_TASKBAR, BubbleNotifyEnabledState.TASKBAR, BubbleNotifyEnabledState.TRAY, BubbleNotifyEnabledState.NEVER, }, new String[] { _GUI._.BubbleNotifyConfigPanel_BubbleNotifyConfigPanel_always(), _GUI._.BubbleNotifyConfigPanel_BubbleNotifyConfigPanel_jdnotactive(), _GUI._.BubbleNotifyConfigPanel_BubbleNotifyConfigPanel_trayortask(), _GUI._.BubbleNotifyConfigPanel_BubbleNotifyConfigPanel_taskbar(), _GUI._.BubbleNotifyConfigPanel_BubbleNotifyConfigPanel_tray(), _GUI._.BubbleNotifyConfigPanel_BubbleNotifyConfigPanel_never(), }));
 
         boxes = new ArrayList<Pair<Checkbox>>();
         for (AbstractBubbleSupport pt : BubbleNotify.getInstance().getTypes()) {
@@ -94,7 +93,7 @@ public class BubbleNotifyConfigPanel extends AbstractConfigPanel implements Stat
     }
 
     @Override
-    public ImageIcon getIcon() {
+    public Icon getIcon() {
         return NewTheme.I().getIcon("bubble", 32);
     }
 

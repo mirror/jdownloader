@@ -8,6 +8,7 @@ import javax.swing.ImageIcon;
 import jd.plugins.DownloadLink;
 
 import org.appwork.utils.ImageProvider.ImageProvider;
+import org.appwork.utils.images.IconIO;
 import org.jdownloader.actions.AppAction;
 import org.jdownloader.extensions.streaming.upnp.PlayToDevice;
 import org.jdownloader.images.NewTheme;
@@ -28,12 +29,14 @@ public class DirectPlayToAction extends AppAction {
         extension = streamingExtension;
         setName(T._.playto(device.getDisplayName()));
         Image front = NewTheme.I().getImage("media-playback-start", 20, true);
-        setSmallIcon(new ImageIcon(ImageProvider.merge(streamingExtension.getIcon(20).getImage(), front, 0, 0, 5, 5)));
+        setSmallIcon(new ImageIcon(ImageProvider.merge(IconIO.toBufferedImage(streamingExtension.getIcon(20)), front, 0, 0, 5, 5)));
 
     }
 
     public boolean isDirectPlaySupported(DownloadLink link) {
-        if (link == null) return false;
+        if (link == null) {
+            return false;
+        }
 
         return true;
     }

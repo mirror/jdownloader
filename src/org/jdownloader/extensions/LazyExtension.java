@@ -1,6 +1,5 @@
 package org.jdownloader.extensions;
 
-import java.awt.GraphicsEnvironment;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
@@ -9,7 +8,7 @@ import java.net.MalformedURLException;
 import java.net.URL;
 import java.net.URLClassLoader;
 
-import javax.swing.ImageIcon;
+import javax.swing.Icon;
 
 import jd.gui.swing.jdgui.views.settings.sidebar.CheckBoxedEntry;
 import jd.plugins.ExtensionConfigInterface;
@@ -152,7 +151,7 @@ public class LazyExtension implements Storable, CheckBoxedEntry {
      * @param size
      * @return
      */
-    public ImageIcon _getIcon(int size) {
+    public Icon _getIcon(int size) {
         if (extension == null) {
 
             return NewTheme.I().getIcon(iconPath, size);

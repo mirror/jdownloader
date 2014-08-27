@@ -5,7 +5,7 @@ import java.awt.event.FocusEvent;
 import java.awt.event.FocusListener;
 
 import javax.swing.AbstractAction;
-import javax.swing.ImageIcon;
+import javax.swing.Icon;
 import javax.swing.JButton;
 import javax.swing.JComponent;
 import javax.swing.JLabel;
@@ -55,12 +55,12 @@ public class LiveHeaderReconnect extends RouterPlugin implements ConfigEventList
     private ExtTextField     txtIP;
 
     @Override
-    public ImageIcon getIcon16() {
+    public Icon getIcon16() {
         return icon;
     }
 
     private ExtTextField                txtName;
-    private ImageIcon                   icon;
+    private Icon                        icon;
 
     private LiveHeaderReconnectSettings settings;
 
@@ -149,7 +149,9 @@ public class LiveHeaderReconnect extends RouterPlugin implements ConfigEventList
             if (newScript != null) {
 
                 // changed script.reset router sender state
-                if (settings.getScript() == null || newScript.equals(settings.getScript())) settings.setAlreadySendToCollectServer2(false);
+                if (settings.getScript() == null || newScript.equals(settings.getScript())) {
+                    settings.setAlreadySendToCollectServer2(false);
+                }
                 settings.setScript(newScript);
             }
         } catch (DialogClosedException e1) {
@@ -278,7 +280,9 @@ public class LiveHeaderReconnect extends RouterPlugin implements ConfigEventList
 
                                     }
                                     // changed script.reset router sender state
-                                    if ((jd.methode != null && jd.methode.equals(settings.getScript()))) settings.setAlreadySendToCollectServer2(false);
+                                    if ((jd.methode != null && jd.methode.equals(settings.getScript()))) {
+                                        settings.setAlreadySendToCollectServer2(false);
+                                    }
                                     settings.setScript(jd.methode);
                                     setName("Router Recorder Custom Script");
 
@@ -316,11 +320,15 @@ public class LiveHeaderReconnect extends RouterPlugin implements ConfigEventList
             protected void runInEDT() {
                 try {
                     String str = "";
-                    if (settings.getRouterData().getRouterName() != null) str += settings.getRouterData().getRouterName();
+                    if (settings.getRouterData().getRouterName() != null) {
+                        str += settings.getRouterData().getRouterName();
+                    }
                     str = str.trim();
 
                     if (settings.getRouterData().getManufactor() != null && settings.getRouterData().getManufactor().length() > 0) {
-                        if (str.length() > 0) str += " - ";
+                        if (str.length() > 0) {
+                            str += " - ";
+                        }
                         str += settings.getRouterData().getManufactor();
                     }
                     LiveHeaderReconnect.this.txtName.setText(str);
@@ -399,7 +407,9 @@ public class LiveHeaderReconnect extends RouterPlugin implements ConfigEventList
             settings.setUserName(i.getUser());
             settings.setRouterIP(i.getIp());
             // changed script.reset router sender state
-            if (i.getScript() != null && i.getScript().equals(JsonConfig.create(LiveHeaderReconnectSettings.class).getScript())) JsonConfig.create(LiveHeaderReconnectSettings.class).setAlreadySendToCollectServer2(false);
+            if (i.getScript() != null && i.getScript().equals(JsonConfig.create(LiveHeaderReconnectSettings.class).getScript())) {
+                JsonConfig.create(LiveHeaderReconnectSettings.class).setAlreadySendToCollectServer2(false);
+            }
 
             settings.setScript(i.getScript());
 
@@ -415,7 +425,9 @@ public class LiveHeaderReconnect extends RouterPlugin implements ConfigEventList
     public ReconnectInvoker getReconnectInvoker() {
         String script;
         script = settings.getScript();
-        if (script == null) return null;
+        if (script == null) {
+            return null;
+        }
         final String user = settings.getUserName();
         final String pass = settings.getPassword();
         final String ip = settings.getRouterIP();

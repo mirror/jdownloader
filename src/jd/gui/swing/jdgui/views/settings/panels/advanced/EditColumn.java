@@ -6,9 +6,7 @@ import java.awt.event.MouseEvent;
 
 import javax.swing.AbstractAction;
 import javax.swing.Action;
-import javax.swing.GrayFilter;
 import javax.swing.Icon;
-import javax.swing.ImageIcon;
 
 import org.appwork.storage.JSonStorage;
 import org.appwork.swing.components.tooltips.ExtTooltip;
@@ -31,8 +29,8 @@ public class EditColumn extends ExtTextColumn<AdvancedConfigEntry> {
     static class InfoAction extends AbstractAction {
         private static final long   serialVersionUID = 1L;
         private AdvancedConfigEntry value;
-        private ImageIcon           iconEnabled      = NewTheme.I().getIcon("help", 16);
-        private ImageIcon           iconDisabled     = new ImageIcon(GrayFilter.createDisabledImage(NewTheme.I().getIcon("help", 16).getImage()));
+        private Icon                iconEnabled      = NewTheme.I().getIcon("help", 16);
+        private Icon                iconDisabled     = NewTheme.I().getDisabledIcon(NewTheme.I().getIcon("help", 16));
 
         public InfoAction() {
             super("Help", NewTheme.I().getIcon("help", 16));
@@ -94,8 +92,8 @@ public class EditColumn extends ExtTextColumn<AdvancedConfigEntry> {
     class ResetAction extends AbstractAction {
         private static final long   serialVersionUID = 1L;
         private AdvancedConfigEntry value;
-        private ImageIcon           reset_no         = NewTheme.I().getIcon(IconKey.ICON_RESET, 16);
-        private ImageIcon           reset_yes        = new ImageIcon(GrayFilter.createDisabledImage(NewTheme.I().getIcon(IconKey.ICON_RESET, 16).getImage()));
+        private Icon                reset_no         = NewTheme.I().getIcon(IconKey.ICON_RESET, 16);
+        private Icon                reset_yes        = NewTheme.I().getDisabledIcon(NewTheme.I().getIcon(IconKey.ICON_RESET, 16));
         private boolean             resetable        = false;
 
         public ResetAction() {

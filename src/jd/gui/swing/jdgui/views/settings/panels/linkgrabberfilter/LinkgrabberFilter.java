@@ -7,7 +7,7 @@ import java.awt.event.FocusListener;
 import java.awt.event.MouseEvent;
 
 import javax.swing.Box;
-import javax.swing.ImageIcon;
+import javax.swing.Icon;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
@@ -40,7 +40,7 @@ import org.jdownloader.images.NewTheme;
 public class LinkgrabberFilter extends JPanel implements SettingsComponent {
     private static final long              serialVersionUID = 6070464296168772795L;
 
-    private SettingsFilterTable                    filterTable;
+    private SettingsFilterTable            filterTable;
     private ExtButton                      btadd;
 
     private ExtButton                      btImport;
@@ -146,7 +146,9 @@ public class LinkgrabberFilter extends JPanel implements SettingsComponent {
 
         exceptionsTable.getSelectionModel().addListSelectionListener(new MinimumSelectionObserver(exceptionsTable, btRemove.getAction(), 1) {
             public void valueChanged(final ListSelectionEvent e) {
-                if (e == null || e.getValueIsAdjusting()) return;
+                if (e == null || e.getValueIsAdjusting()) {
+                    return;
+                }
                 boolean en = true;
                 for (LinkgrabberFilterRule rule : LinkgrabberFilter.this.exceptionsTable.getModel().getSelectedObjects()) {
                     en &= !rule.isStaticRule();
@@ -167,7 +169,9 @@ public class LinkgrabberFilter extends JPanel implements SettingsComponent {
         });
         filterTable.getSelectionModel().addListSelectionListener(new MinimumSelectionObserver(filterTable, btRemove.getAction(), 1) {
             public void valueChanged(final ListSelectionEvent e) {
-                if (e == null || e.getValueIsAdjusting()) return;
+                if (e == null || e.getValueIsAdjusting()) {
+                    return;
+                }
                 boolean en = true;
                 for (LinkgrabberFilterRule rule : LinkgrabberFilter.this.filterTable.getModel().getSelectedObjects()) {
                     en &= !rule.isStaticRule();
@@ -189,7 +193,7 @@ public class LinkgrabberFilter extends JPanel implements SettingsComponent {
 
     }
 
-    private Component createHeader(String tooltip, String lbl, ImageIcon icon) {
+    private Component createHeader(String tooltip, String lbl, Icon icon) {
 
         JLabel ret = new JLabel(lbl, icon, JLabel.LEFT);
         ret.setToolTipText(tooltip);

@@ -1,6 +1,6 @@
 package org.jdownloader.plugins;
 
-import javax.swing.ImageIcon;
+import javax.swing.Icon;
 
 import jd.controlling.packagecontroller.AbstractNode;
 import jd.nutils.Formatter;
@@ -39,10 +39,10 @@ public class WaitingSkipReason implements ConditionalSkipReason, TimeOutConditio
         return cause;
     }
 
-    private final long      timeOutTimeStamp;
-    private final String    message;
-    private final ImageIcon icon;
-    private boolean         valid = true;
+    private final long   timeOutTimeStamp;
+    private final String message;
+    private final Icon   icon;
+    private boolean      valid = true;
 
     public long getTimeOutTimeStamp() {
         return timeOutTimeStamp;
@@ -104,15 +104,21 @@ public class WaitingSkipReason implements ConditionalSkipReason, TimeOutConditio
     public String getMessage(Object requestor, AbstractNode node) {
         long left = getTimeOutLeft();
         if (left > 0) {
-            if (requestor instanceof TaskColumn) { return getMessage(); }
-            if (requestor instanceof FilePackageView) { return getMessage(); }
-            if (requestor instanceof ETAColumn) { return Formatter.formatSeconds(left / 1000); }
+            if (requestor instanceof TaskColumn) {
+                return getMessage();
+            }
+            if (requestor instanceof FilePackageView) {
+                return getMessage();
+            }
+            if (requestor instanceof ETAColumn) {
+                return Formatter.formatSeconds(left / 1000);
+            }
         }
         return null;
     }
 
     @Override
-    public ImageIcon getIcon(Object requestor, AbstractNode node) {
+    public Icon getIcon(Object requestor, AbstractNode node) {
         return icon;
     }
 

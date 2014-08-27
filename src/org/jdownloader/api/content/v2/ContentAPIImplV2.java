@@ -16,6 +16,8 @@ import org.appwork.remoteapi.RemoteAPIRequest;
 import org.appwork.remoteapi.RemoteAPIResponse;
 import org.appwork.remoteapi.exceptions.APIFileNotFoundException;
 import org.appwork.remoteapi.exceptions.InternalApiException;
+import org.appwork.storage.JSonStorage;
+import org.appwork.swing.components.IdentifierInterface;
 import org.appwork.utils.Application;
 import org.appwork.utils.Hash;
 import org.appwork.utils.IO;
@@ -82,9 +84,12 @@ public class ContentAPIImplV2 implements ContentAPIV2 {
     private static final HashMap<Integer, String> ICON_KEY_MAP = new HashMap<Integer, String>();
 
     public String getIconKey(Icon icon) {
-        if (icon instanceof AbstractIcon) {
-            return ((AbstractIcon) icon).getKey();
+        if (icon instanceof IdentifierInterface) {
+            Object id = ((IdentifierInterface) icon).toIdentifier();
+            String ret = JSonStorage.serializeToJson(id);
+            return ret;
         }
+
         synchronized (LOCK) {
             String cached = ICON_KEY_MAP.get(icon.hashCode());
             if (cached != null) {

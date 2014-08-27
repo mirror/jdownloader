@@ -1,7 +1,7 @@
 package jd.gui.swing.jdgui.views.settings.panels.proxy;
 
 import javax.swing.Box;
-import javax.swing.ImageIcon;
+import javax.swing.Icon;
 import javax.swing.JScrollPane;
 import javax.swing.event.ListSelectionEvent;
 
@@ -128,7 +128,7 @@ public class ProxyConfig extends AbstractConfigPanel implements DefaultEventList
     }
 
     @Override
-    public ImageIcon getIcon() {
+    public Icon getIcon() {
         return NewTheme.I().getIcon("proxy_rotate", ConfigPanel.ICON_SIZE);
     }
 

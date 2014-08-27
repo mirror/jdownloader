@@ -4,7 +4,7 @@ import java.util.ArrayList;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import javax.swing.ImageIcon;
+import javax.swing.Icon;
 import javax.swing.JButton;
 import javax.swing.JComponent;
 import javax.swing.JLabel;
@@ -51,7 +51,7 @@ public class UPNPRouterPlugin extends RouterPlugin implements IPCheckProvider {
 
     protected java.util.List<UpnpRouterDevice> devices;
 
-    private ImageIcon                          icon;
+    private Icon                               icon;
 
     private UPUPReconnectSettings              settings;
 
@@ -77,7 +77,9 @@ public class UPNPRouterPlugin extends RouterPlugin implements IPCheckProvider {
             logger.info("Found devices: " + devices);
             for (int i = 0; i < devices.size(); i++) {
                 UpnpRouterDevice device = devices.get(i);
-                if (Thread.currentThread().isInterrupted()) throw new InterruptedException();
+                if (Thread.currentThread().isInterrupted()) {
+                    throw new InterruptedException();
+                }
 
                 ReconnectResult res;
                 try {
@@ -90,7 +92,9 @@ public class UPNPRouterPlugin extends RouterPlugin implements IPCheckProvider {
                         processCallBack.setStatus(this, ret);
                         if (i < devices.size() - 1) {
 
-                            if (ret.size() == 1) Dialog.getInstance().showConfirmDialog(0, _GUI._.LiveHeaderDetectionWizard_testList_firstSuccess_title(), _GUI._.LiveHeaderDetectionWizard_testList_firstsuccess_msg(TimeFormatter.formatMilliSeconds(res.getSuccessDuration(), 0)), NewTheme.I().getIcon("ok", 32), _GUI._.LiveHeaderDetectionWizard_testList_ok(), _GUI._.LiveHeaderDetectionWizard_testList_use());
+                            if (ret.size() == 1) {
+                                Dialog.getInstance().showConfirmDialog(0, _GUI._.LiveHeaderDetectionWizard_testList_firstSuccess_title(), _GUI._.LiveHeaderDetectionWizard_testList_firstsuccess_msg(TimeFormatter.formatMilliSeconds(res.getSuccessDuration(), 0)), NewTheme.I().getIcon("ok", 32), _GUI._.LiveHeaderDetectionWizard_testList_ok(), _GUI._.LiveHeaderDetectionWizard_testList_use());
+                            }
 
                         }
                     }
@@ -126,7 +130,9 @@ public class UPNPRouterPlugin extends RouterPlugin implements IPCheckProvider {
         }
         try {
             final Matcher ipm = Pattern.compile("<\\s*NewExternalIPAddress\\s*>\\s*(.*)\\s*<\\s*/\\s*NewExternalIPAddress\\s*>", Pattern.CASE_INSENSITIVE).matcher(ipxml);
-            if (ipm.find()) { return IP.getInstance(ipm.group(1)); }
+            if (ipm.find()) {
+                return IP.getInstance(ipm.group(1));
+            }
         } catch (final InvalidIPRangeException e2) {
             throw new InvalidProviderException(e2);
         }
@@ -136,7 +142,7 @@ public class UPNPRouterPlugin extends RouterPlugin implements IPCheckProvider {
     }
 
     @Override
-    public ImageIcon getIcon16() {
+    public Icon getIcon16() {
         return icon;
     }
 
@@ -209,7 +215,9 @@ public class UPNPRouterPlugin extends RouterPlugin implements IPCheckProvider {
     }
 
     public IPCheckProvider getIPCheckProvider() {
-        if (!this.isIPCheckEnabled()) { return null; }
+        if (!this.isIPCheckEnabled()) {
+            return null;
+        }
         return this;
     }
 

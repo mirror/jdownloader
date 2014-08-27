@@ -1,7 +1,6 @@
 package org.jdownloader.extensions;
 
 import javax.swing.Icon;
-import javax.swing.ImageIcon;
 import javax.swing.JCheckBox;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
@@ -25,7 +24,7 @@ public class Header extends JPanel {
     private JLabel            iconLabel;
     private int               version;
 
-    public Header(String name, ImageIcon icon) {
+    public Header(String name, Icon icon) {
         super(new MigLayout("ins 0", "[35!]5[]10[grow,fill]"));
 
         iconLabel = new JLabel(icon);
@@ -46,11 +45,11 @@ public class Header extends JPanel {
         return iconLabel;
     }
 
-    public Header(String name, ImageIcon icon, BooleanKeyHandler listener) {
+    public Header(String name, Icon icon, BooleanKeyHandler listener) {
         this(name, icon, listener, -1);
     }
 
-    public Header(String name, ImageIcon icon, BooleanKeyHandler listener, int version) {
+    public Header(String name, Icon icon, BooleanKeyHandler listener, int version) {
 
         super(new MigLayout("ins 0", "[35!]5[]10[grow,fill]10[]2[]"));
         iconLabel = new JLabel(icon);
@@ -80,7 +79,9 @@ public class Header extends JPanel {
         iconLabel.setEnabled(isEnabled);
         // do not fire events of nothing changed
         if (enabled != null) {
-            if (enabled.isSelected() == isEnabled) return;
+            if (enabled.isSelected() == isEnabled) {
+                return;
+            }
             enabled.setSelected(isEnabled);
         }
 

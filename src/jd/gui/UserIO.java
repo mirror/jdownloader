@@ -19,7 +19,7 @@ package jd.gui;
 import java.awt.Point;
 import java.io.File;
 
-import javax.swing.ImageIcon;
+import javax.swing.Icon;
 import javax.swing.JFileChooser;
 import javax.swing.ListCellRenderer;
 import javax.swing.filechooser.FileFilter;
@@ -256,7 +256,7 @@ public class UserIO {
         return ret;
     }
 
-    public static ImageIcon getDefaultIcon(final String text) {
+    public static Icon getDefaultIcon(final String text) {
         if (text.contains("?")) {
             return getIcon(UserIO.ICON_QUESTION);
         } else if (text.matches(_GUI._.userio_errorregex())) {
@@ -268,7 +268,7 @@ public class UserIO {
         }
     }
 
-    public static ImageIcon getIcon(final int iconInfo) {
+    public static Icon getIcon(final int iconInfo) {
         switch (iconInfo) {
         case UserIO.ICON_ERROR:
             return NewTheme.I().getIcon("stop", 32);
@@ -375,7 +375,7 @@ public class UserIO {
      *            TODO
      * @return
      */
-    public int requestComboDialog(int flag, final String title, final String question, final Object[] options, final int defaultSelection, final ImageIcon icon, final String okText, final String cancelText, final ListCellRenderer renderer) {
+    public int requestComboDialog(int flag, final String title, final String question, final Object[] options, final int defaultSelection, final Icon icon, final String okText, final String cancelText, final ListCellRenderer renderer) {
 
         flag = this.convertFlagToAWDialog(flag);
 
@@ -405,7 +405,7 @@ public class UserIO {
         return this.requestConfirmDialog(flag, title, question, getDefaultIcon(title + question), null, null);
     }
 
-    public int requestConfirmDialog(final int flag, final String title, final String message, final ImageIcon icon, final String okOption, final String cancelOption) {
+    public int requestConfirmDialog(final int flag, final String title, final String message, final Icon icon, final String okOption, final String cancelOption) {
         return requestUIOManagerDialog(ConfirmDialogInterface.class, new ConfirmDialog(this.convertFlagToAWDialog(flag), title, message, icon, okOption, cancelOption));
     }
 
@@ -532,7 +532,7 @@ public class UserIO {
         return this.requestInputDialog(flag, _GUI._.jd_gui_userio_defaulttitle_input(), question, defaultvalue, this.getDefaultIcon(question), null, null);
     }
 
-    public String requestInputDialog(final int flag, final String title, final String message, final String defaultMessage, final ImageIcon icon, final String okOption, final String cancelOption) {
+    public String requestInputDialog(final int flag, final String title, final String message, final String defaultMessage, final Icon icon, final String okOption, final String cancelOption) {
 
         try {
 
@@ -578,7 +578,7 @@ public class UserIO {
      * 
      * @return indices of selected options or null if user canceled
      */
-    public int[] requestMultiSelectionDialog(final int flag, final String title, final String question, final Object[] options, final ImageIcon icon, final String okText, final String cancelText, final ListCellRenderer renderer) {
+    public int[] requestMultiSelectionDialog(final int flag, final String title, final String question, final Object[] options, final Icon icon, final String okText, final String cancelText, final ListCellRenderer renderer) {
         try {
             MultiSelectionDialogInterface d = UIOManager.I().show(MultiSelectionDialogInterface.class, new MultiSelectionDialog(flag, title, question, options, icon, okText, cancelText, renderer) {
                 @Override

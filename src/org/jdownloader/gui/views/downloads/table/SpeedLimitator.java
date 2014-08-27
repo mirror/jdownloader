@@ -3,7 +3,7 @@ package org.jdownloader.gui.views.downloads.table;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 
-import javax.swing.ImageIcon;
+import javax.swing.Icon;
 import javax.swing.JComponent;
 import javax.swing.JLabel;
 import javax.swing.event.ChangeEvent;
@@ -24,9 +24,9 @@ import org.jdownloader.images.NewTheme;
 
 public class SpeedLimitator extends AbstractDialog<Object> {
 
-    private AbstractNode            contextObject;
-    private ExtCheckBox             enabledBox;
-    private SizeSpinner             spinner;
+    private AbstractNode                 contextObject;
+    private ExtCheckBox                  enabledBox;
+    private SizeSpinner                  spinner;
     private java.util.List<AbstractNode> inteliSelect;
 
     public SpeedLimitator(final AbstractNode contextObject, java.util.List<AbstractNode> inteliSelect) {
@@ -35,7 +35,7 @@ public class SpeedLimitator extends AbstractDialog<Object> {
         this.inteliSelect = inteliSelect;
     }
 
-    private JLabel getLbl(String customSpeedLimitator_SpeedlimitEditor__lbl, ImageIcon icon) {
+    private JLabel getLbl(String customSpeedLimitator_SpeedlimitEditor__lbl, Icon icon) {
         JLabel ret = new JLabel(customSpeedLimitator_SpeedlimitEditor__lbl);
         ret.setIcon(icon);
         return ret;

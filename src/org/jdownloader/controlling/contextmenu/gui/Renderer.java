@@ -6,7 +6,6 @@ import java.awt.Font;
 import java.awt.Rectangle;
 
 import javax.swing.Icon;
-import javax.swing.ImageIcon;
 import javax.swing.JLabel;
 import javax.swing.JTree;
 import javax.swing.tree.TreeCellRenderer;
@@ -26,7 +25,7 @@ import org.jdownloader.images.NewTheme;
 public class Renderer implements TreeCellRenderer {
     private JLabel    renderer;
 
-    private ImageIcon right;
+    private Icon      right;
 
     private Font      bold;
 
@@ -75,7 +74,9 @@ public class Renderer implements TreeCellRenderer {
 
             String desc = mid._getDescription();
             if (StringUtils.isNotEmpty(desc)) {
-                if (tt.length() > 0) tt.append("; ");
+                if (tt.length() > 0) {
+                    tt.append("; ");
+                }
                 tt.append(desc);
             }
         }

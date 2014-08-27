@@ -20,7 +20,7 @@ import java.awt.event.ActionListener;
 import java.io.Serializable;
 import java.util.ArrayList;
 
-import javax.swing.ImageIcon;
+import javax.swing.Icon;
 
 /**
  * Diese Klasse speichert die GUI-Dialog Informationen. Jede GUI kann diese Infos Abfragen und Entsprechend verarbeiten
@@ -48,7 +48,7 @@ public class ConfigContainer implements Serializable {
     /**
      * ConfigElement ist ein Button ConfigEntry(int type, ActionListener listener, String label)
      * 
-     * @see ConfigEntry#ConfigEntry(int, ActionListener, String, String, ImageIcon)
+     * @see ConfigEntry#ConfigEntry(int, ActionListener, String, String, Icon)
      */
     public static final int                   TYPE_BUTTON         = 2;
     /**
@@ -104,7 +104,8 @@ public class ConfigContainer implements Serializable {
      */
     public static final int                   TYPE_COMPONENT      = 12;
     /**
-     * ConfigElement ist ein Textbereich, welcher von einem eigenen Controller verwaltet wird (siehe PasswordListController und HTAccessController)
+     * ConfigElement ist ein Textbereich, welcher von einem eigenen Controller verwaltet wird (siehe PasswordListController und
+     * HTAccessController)
      * 
      * @see ConfigEntry#ConfigEntry(int, ListController, String)
      */
@@ -119,7 +120,7 @@ public class ConfigContainer implements Serializable {
     private final java.util.List<ConfigEntry> content;
     private String                            title;
     private ConfigGroup                       group;
-    private ImageIcon                         icon;
+    private Icon                              icon;
 
     public ConfigContainer() {
         this.content = new ArrayList<ConfigEntry>();
@@ -189,11 +190,11 @@ public class ConfigContainer implements Serializable {
      * 
      * @param icon
      */
-    public void setIcon(final ImageIcon icon) {
+    public void setIcon(final Icon icon) {
         this.icon = icon;
     }
 
-    public ImageIcon getIcon() {
+    public Icon getIcon() {
         return icon;
     }
 

@@ -3,7 +3,7 @@ package jd.gui.swing.jdgui.menu;
 import java.awt.Point;
 import java.awt.event.MouseEvent;
 
-import javax.swing.ImageIcon;
+import javax.swing.Icon;
 import javax.swing.JLabel;
 import javax.swing.SwingUtilities;
 
@@ -37,7 +37,7 @@ public class MenuEditor extends MigPanel implements ToolTipHandler {
         setOpaque(false);
     }
 
-    protected JLabel getLbl(String name, ImageIcon icon) {
+    protected JLabel getLbl(String name, Icon icon) {
         JLabel ret = new JLabel(shrink ? "" : name, icon, JLabel.LEADING);
         setToolTipText(name);
         ToolTipController.getInstance().register(this);
@@ -45,7 +45,7 @@ public class MenuEditor extends MigPanel implements ToolTipHandler {
         return ret;
     }
 
-    public void addLbl(String chunksEditor_ChunksEditor_, ImageIcon icon) {
+    public void addLbl(String chunksEditor_ChunksEditor_, Icon icon) {
 
         add(getLbl(chunksEditor_ChunksEditor_, icon));
     }
@@ -69,7 +69,9 @@ public class MenuEditor extends MigPanel implements ToolTipHandler {
     public int getTooltipDelay(Point mousePositionOnScreen) {
         SwingUtilities.convertPointFromScreen(mousePositionOnScreen, this);
 
-        if (mousePositionOnScreen.x < 24) { return 200; }
+        if (mousePositionOnScreen.x < 24) {
+            return 200;
+        }
         return 1000;
     }
 

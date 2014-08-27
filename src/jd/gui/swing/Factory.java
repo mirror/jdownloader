@@ -20,7 +20,6 @@ import java.awt.Cursor;
 import java.awt.event.ActionListener;
 
 import javax.swing.Icon;
-import javax.swing.ImageIcon;
 import javax.swing.JButton;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
@@ -42,7 +41,7 @@ public final class Factory {
         return createHeader(group.getName(), group.getIcon());
     }
 
-    public static JPanel createHeader(final String name, final ImageIcon icon) {
+    public static JPanel createHeader(final String name, final Icon icon) {
         JLabel label = new JLabel("<html><u><b>" + name + "</b></u></html>");
         label.setIcon(icon);
         label.setIconTextGap(5);
@@ -61,14 +60,18 @@ public final class Factory {
 
     public static JButton createButton(final String string, final Icon i, final ActionListener listener) {
         final JButton bt = new JButton(string);
-        if (i != null) bt.setIcon(i);
+        if (i != null) {
+            bt.setIcon(i);
+        }
         bt.setContentAreaFilled(false);
         bt.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
         bt.setFocusPainted(false);
         bt.setBorderPainted(false);
         bt.setHorizontalAlignment(JButton.LEFT);
         bt.setIconTextGap(5);
-        if (listener != null) bt.addActionListener(listener);
+        if (listener != null) {
+            bt.addActionListener(listener);
+        }
         bt.addMouseListener(new JDUnderlinedText(bt));
         return bt;
     }

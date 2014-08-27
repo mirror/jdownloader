@@ -3,7 +3,6 @@ package org.jdownloader.gui.views.linkgrabber.quickfilter;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import javax.swing.Icon;
-import javax.swing.ImageIcon;
 
 import jd.config.Property;
 import jd.config.SubConfiguration;
@@ -40,16 +39,20 @@ public abstract class Filter implements FavIconRequestor {
     }
 
     public void setIcon(Icon icon) {
-        if (icon != null) this.icon = NewTheme.I().getScaledInstance(icon, 16);
+        if (icon != null) {
+            this.icon = NewTheme.I().getScaledInstance(icon, 16);
+        }
     }
 
     protected Filter(String string) {
         this.name = string;
     }
 
-    public Filter(String string, ImageIcon icon) {
+    public Filter(String string, Icon icon) {
         this.name = string;
-        if (icon != null) this.icon = NewTheme.I().getScaledInstance(icon, 16);
+        if (icon != null) {
+            this.icon = NewTheme.I().getScaledInstance(icon, 16);
+        }
         enabled = filterSubConfig.getBooleanProperty(getID(), true);
     }
 
@@ -60,7 +63,9 @@ public abstract class Filter implements FavIconRequestor {
     }
 
     public void setEnabled(boolean enabled) {
-        if (this.enabled == enabled) return;
+        if (this.enabled == enabled) {
+            return;
+        }
         this.enabled = enabled;
         if (!enabled) {
             filterSubConfig.setProperty(getID(), false);

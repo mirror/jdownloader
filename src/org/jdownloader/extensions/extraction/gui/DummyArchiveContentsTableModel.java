@@ -1,7 +1,6 @@
 package org.jdownloader.extensions.extraction.gui;
 
 import javax.swing.Icon;
-import javax.swing.ImageIcon;
 
 import jd.plugins.DownloadLink.AvailableStatus;
 
@@ -49,11 +48,17 @@ public class DummyArchiveContentsTableModel extends ExtTableModel<DummyArchiveFi
                     }
                 } else {
                     if (value.getArchiveFile() == null) {
-                        if (value.isMissing() || value.isIncomplete()) { return T._.file_exists_not(); }
+                        if (value.isMissing() || value.isIncomplete()) {
+                            return T._.file_exists_not();
+                        }
                         return T._.unknown_tt();
                     } else {
-                        if (value.isMissing() || value.isIncomplete()) { return T._.offline_tt(); }
-                        if (value.getOnlineStatus() == AvailableStatus.TRUE) return T._.online_tt();
+                        if (value.isMissing() || value.isIncomplete()) {
+                            return T._.offline_tt();
+                        }
+                        if (value.getOnlineStatus() == AvailableStatus.TRUE) {
+                            return T._.online_tt();
+                        }
                         return T._.unknown_tt();
                     }
                 }
@@ -62,10 +67,10 @@ public class DummyArchiveContentsTableModel extends ExtTableModel<DummyArchiveFi
         });
 
         addColumn(linkStatus = new ExtTextColumn<DummyArchiveFile>(T._.exists()) {
-            private ImageIcon unknown;
-            private ImageIcon online;
+            private Icon unknown;
+            private Icon online;
 
-            private ImageIcon offline;
+            private Icon offline;
 
             {
 
@@ -77,22 +82,34 @@ public class DummyArchiveContentsTableModel extends ExtTableModel<DummyArchiveFi
 
             @Override
             protected Icon getIcon(DummyArchiveFile value) {
-                if (value.isMissing()) { return offline; }
-                if (value.getOnlineStatus() == AvailableStatus.TRUE) return online;
+                if (value.isMissing()) {
+                    return offline;
+                }
+                if (value.getOnlineStatus() == AvailableStatus.TRUE) {
+                    return online;
+                }
                 return unknown;
             }
 
             @Override
             public String getStringValue(DummyArchiveFile value) {
-                if (value.isMissing()) { return T._.offline(); }
-                if (value.getOnlineStatus() == AvailableStatus.TRUE) return T._.online();
+                if (value.isMissing()) {
+                    return T._.offline();
+                }
+                if (value.getOnlineStatus() == AvailableStatus.TRUE) {
+                    return T._.online();
+                }
                 return T._.unknown();
             }
 
             @Override
             protected String getTooltipText(DummyArchiveFile value) {
-                if (value.isMissing() || value.isIncomplete()) { return T._.offline_tt(); }
-                if (value.getOnlineStatus() == AvailableStatus.TRUE) return T._.online_tt();
+                if (value.isMissing() || value.isIncomplete()) {
+                    return T._.offline_tt();
+                }
+                if (value.getOnlineStatus() == AvailableStatus.TRUE) {
+                    return T._.online_tt();
+                }
                 return T._.unknown_tt();
             }
 
@@ -102,7 +119,9 @@ public class DummyArchiveContentsTableModel extends ExtTableModel<DummyArchiveFi
 
             @Override
             protected Icon getIcon(DummyArchiveFile value) {
-                if (value.isLocalFileAvailable()) { return NewTheme.I().getIcon("true", 16); }
+                if (value.isLocalFileAvailable()) {
+                    return NewTheme.I().getIcon("true", 16);
+                }
                 return NewTheme.I().getIcon("false", 16);
 
             }

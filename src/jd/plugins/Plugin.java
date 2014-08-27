@@ -28,7 +28,7 @@ import java.util.logging.Logger;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import javax.swing.ImageIcon;
+import javax.swing.Icon;
 
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
@@ -407,7 +407,7 @@ public abstract class Plugin implements ActionListener {
                  * we dont have to catch icon until it is really needed
                  */
                 @Override
-                public ImageIcon getIcon() {
+                public Icon getIcon() {
                     return NewTheme.I().getIcon("warning", 16);
                 }
 

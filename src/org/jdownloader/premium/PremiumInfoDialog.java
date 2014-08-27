@@ -61,7 +61,7 @@ public class PremiumInfoDialog extends AbstractDialog<Object> {
     }
 
     protected void layoutDialog() {
-        final Image back = NewTheme.I().hasIcon("fav/footer." + info.getTld()) ? NewTheme.I().getIcon("fav/footer." + info.getTld(), -1).getImage() : null;
+        final Image back = NewTheme.I().hasIcon("fav/footer." + info.getTld()) ? NewTheme.I().getImage("fav/footer." + info.getTld(), -1) : null;
 
         super.layoutDialog();
         getDialog().setContentPane(new JPanel() {
@@ -95,7 +95,9 @@ public class PremiumInfoDialog extends AbstractDialog<Object> {
         if (plg != null) {
             // let's ask the plugin
             JComponent plgPanel = plg.layoutPremiumInfoPanel(this);
-            if (plgPanel != null) return plgPanel;
+            if (plgPanel != null) {
+                return plgPanel;
+            }
         }
         final MigPanel ret = new MigPanel("ins 0,wrap 2", "[][grow,fill]", "[]");
 

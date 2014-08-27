@@ -16,7 +16,7 @@
 
 package jd.gui.swing.jdgui.views.settings.panels;
 
-import javax.swing.ImageIcon;
+import javax.swing.Icon;
 
 import jd.controlling.TaskQueue;
 import jd.gui.swing.jdgui.views.settings.panels.basicauthentication.BasicAuthenticationPanel;
@@ -44,7 +44,7 @@ public class BasicAuthentication extends AbstractConfigPanel {
     }
 
     @Override
-    public ImageIcon getIcon() {
+    public Icon getIcon() {
         return NewTheme.I().getIcon("basicauth", 32);
     }
 
@@ -58,7 +58,9 @@ public class BasicAuthentication extends AbstractConfigPanel {
 
             @Override
             protected Void run() throws RuntimeException {
-                if (isShown()) BasicAuthenticationPanel.getInstance().getTable().getModel()._fireTableStructureChanged(AuthenticationController.getInstance().list(), false);
+                if (isShown()) {
+                    BasicAuthenticationPanel.getInstance().getTable().getModel()._fireTableStructureChanged(AuthenticationController.getInstance().list(), false);
+                }
                 return null;
             }
         });

@@ -2,7 +2,7 @@ package jd.gui.swing.jdgui.views.settings.panels.anticaptcha.ces;
 
 import java.awt.event.ActionEvent;
 
-import javax.swing.ImageIcon;
+import javax.swing.Icon;
 
 import jd.gui.swing.jdgui.views.settings.components.Checkbox;
 import jd.gui.swing.jdgui.views.settings.components.PasswordInput;
@@ -21,7 +21,7 @@ import org.jdownloader.settings.staticreferences.CFG_DBC;
 public class DeathByCaptchaConfigPanel implements CESService {
 
     @Override
-    public ImageIcon getIcon(int i) {
+    public Icon getIcon(int i) {
         return NewTheme.I().getIcon("dbc", i);
     }
 

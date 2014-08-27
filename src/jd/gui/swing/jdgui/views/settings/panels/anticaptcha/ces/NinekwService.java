@@ -5,7 +5,7 @@ import java.awt.event.ActionEvent;
 import java.io.File;
 import java.io.IOException;
 
-import javax.swing.ImageIcon;
+import javax.swing.Icon;
 import javax.swing.JLabel;
 import javax.swing.filechooser.FileFilter;
 
@@ -62,7 +62,7 @@ public class NinekwService implements CESService {
     public static final String DEBUGEXT = ".txt";
 
     @Override
-    public ImageIcon getIcon(int i) {
+    public Icon getIcon(int i) {
         return NewTheme.I().getIcon(IconKey.ICON_9KW, i);
     }
 

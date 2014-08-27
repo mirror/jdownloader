@@ -5,7 +5,6 @@ import java.awt.event.MouseEvent;
 import java.util.List;
 
 import javax.swing.Icon;
-import javax.swing.ImageIcon;
 import javax.swing.JComponent;
 import javax.swing.JPopupMenu;
 import javax.swing.SwingUtilities;
@@ -73,7 +72,7 @@ public class HosterColumn extends ExtColumn<AbstractNode> {
     private int               maxIcons           = 10;
     private MigPanel          panel;
     private RenderLabel[]     labels;
-    private ImageIcon         moreIcon;
+    private Icon              moreIcon;
 
     private static int        DEFAULT_ICON_COUNT = 4;
 

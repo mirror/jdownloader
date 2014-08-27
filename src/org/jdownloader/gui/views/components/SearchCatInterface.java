@@ -1,11 +1,11 @@
 package org.jdownloader.gui.views.components;
 
-import javax.swing.ImageIcon;
+import javax.swing.Icon;
 
 public interface SearchCatInterface {
     public String getLabel();
 
-    public ImageIcon getIcon();
+    public Icon getIcon();
 
     public String getHelpText();
 }

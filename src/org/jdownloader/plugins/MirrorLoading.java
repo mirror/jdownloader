@@ -1,6 +1,6 @@
 package org.jdownloader.plugins;
 
-import javax.swing.ImageIcon;
+import javax.swing.Icon;
 
 import jd.controlling.packagecontroller.AbstractNode;
 import jd.plugins.DownloadLink;
@@ -12,7 +12,7 @@ import org.jdownloader.translate._JDT;
 public class MirrorLoading implements ConditionalSkipReason, DownloadLinkCondition {
 
     private final DownloadLink dependency;
-    private final ImageIcon    icon;
+    private final Icon         icon;
     private final String       mirror;
 
     public MirrorLoading(DownloadLink dependency) {
@@ -55,7 +55,7 @@ public class MirrorLoading implements ConditionalSkipReason, DownloadLinkConditi
     }
 
     @Override
-    public ImageIcon getIcon(Object requestor, AbstractNode node) {
+    public Icon getIcon(Object requestor, AbstractNode node) {
         if (requestor instanceof ETAColumn) {
             return null;
         }

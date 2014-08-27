@@ -5,7 +5,6 @@ import java.awt.Point;
 import java.awt.event.MouseEvent;
 
 import javax.swing.Icon;
-import javax.swing.ImageIcon;
 import javax.swing.JComponent;
 import javax.swing.JLabel;
 import javax.swing.JPopupMenu;
@@ -44,16 +43,16 @@ public class ConnectionColumn extends ExtColumn<AbstractNode> {
 
     private MigPanel          panel;
     private RenderLabel[]     labels;
-    private final ImageIcon   resumeIndicator;
-    private final ImageIcon   directConnection;
-    private final ImageIcon   proxyConnection;
-    private final ImageIcon   connections;
+    private final Icon        resumeIndicator;
+    private final Icon        directConnection;
+    private final Icon        proxyConnection;
+    private final Icon        connections;
 
     private final int         DEFAULT_ICON_COUNT = 4;
 
-    private ImageIcon         skipped;
+    private Icon              skipped;
 
-    private ImageIcon         forced;
+    private Icon              forced;
 
     private DownloadWatchDog  dlWatchdog;
 

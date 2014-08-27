@@ -25,7 +25,7 @@ import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
 
-import javax.swing.ImageIcon;
+import javax.swing.Icon;
 import javax.swing.JComponent;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
@@ -68,7 +68,7 @@ public class ExtractionListenerList implements ExtractionListener {
     public static final class ExtractPasswordDialog extends InputDialog implements ExtractPasswordDialogInterface {
         private final ExtractionController controller;
 
-        public ExtractPasswordDialog(int flag, String title, String message, String defaultMessage, ImageIcon icon, String okOption, String cancelOption, ExtractionController controller) {
+        public ExtractPasswordDialog(int flag, String title, String message, String defaultMessage, Icon icon, String okOption, String cancelOption, ExtractionController controller) {
             super(flag, title, message, defaultMessage, icon, okOption, cancelOption);
             this.controller = controller;
             setTimeout(Math.max(1000, CFG_EXTRACTION.CFG.getAskForPasswordDialogTimeoutInMS()));

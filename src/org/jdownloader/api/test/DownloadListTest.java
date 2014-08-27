@@ -7,6 +7,8 @@ import org.jdownloader.api.test.TestClient.Test;
 import org.jdownloader.myjdownloader.client.AbstractMyJDClientForDesktopJVM;
 import org.jdownloader.myjdownloader.client.bindings.downloadlist.DownloadLinkQuery;
 import org.jdownloader.myjdownloader.client.bindings.downloadlist.DownloadLinkStorable;
+import org.jdownloader.myjdownloader.client.bindings.downloadlist.DownloadPackageQuery;
+import org.jdownloader.myjdownloader.client.bindings.downloadlist.DownloadPackageStorable;
 import org.jdownloader.myjdownloader.client.bindings.interfaces.DownloadsListInterface;
 
 public class DownloadListTest extends Test {
@@ -14,6 +16,11 @@ public class DownloadListTest extends Test {
     @Override
     public void run(Storage config, AbstractMyJDClientForDesktopJVM api) throws Exception {
         DownloadsListInterface link = api.link(DownloadsListInterface.class, chooseDevice(api));
+
+        DownloadPackageQuery pq = new DownloadPackageQuery();
+        pq.setStatus(true);
+
+        List<DownloadPackageStorable> packages = link.queryPackages(pq);
         List<DownloadLinkStorable> smallList = link.queryLinks(new DownloadLinkQuery());
         DownloadLinkQuery query = new DownloadLinkQuery();
         query.setBytesLoaded(true);

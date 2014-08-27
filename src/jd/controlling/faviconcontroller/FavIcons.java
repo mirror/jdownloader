@@ -26,6 +26,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.logging.Logger;
 
 import javax.imageio.ImageIO;
+import javax.swing.Icon;
 import javax.swing.ImageIcon;
 
 import jd.captcha.utils.GifDecoder;
@@ -130,11 +131,11 @@ public class FavIcons {
 
     }
 
-    public static ImageIcon getFavIcon(String host, FavIconRequestor requestor) {
+    public static Icon getFavIcon(String host, FavIconRequestor requestor) {
         if (host == null) {
             return null;
         }
-        ImageIcon image = null;
+        Icon image = null;
         synchronized (LOCK) {
             /* check if we already have a favicon? */
             if (NewTheme.I().hasIcon("fav/" + host)) {
@@ -259,7 +260,7 @@ public class FavIcons {
                                     fos = new FileOutputStream(imageFile);
                                     ImageIO.write(favicon, "png", fos);
                                     /* load and scale it again */
-                                    ImageIcon image = NewTheme.I().getIcon("fav/" + host, -1);
+                                    Icon image = NewTheme.I().getIcon("fav/" + host, -1);
                                     if (image != null && requestors != null) {
                                         /* refresh icons for all queued plugins */
                                         for (FavIconRequestor requestor : requestors) {

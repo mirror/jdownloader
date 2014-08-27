@@ -11,7 +11,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.prefs.Preferences;
 
-import javax.swing.ImageIcon;
+import javax.swing.Icon;
 
 import jd.SecondLevelLaunch;
 import jd.nutils.Executer;
@@ -525,7 +525,7 @@ public class StreamingExtension extends AbstractExtension<StreamingConfig, Strea
         return null;
     }
 
-    public ImageIcon getIcon(int i) {
+    public Icon getIcon(int i) {
         return NewTheme.I().getIcon(getIconKey(), i);
     }
 

@@ -1,13 +1,13 @@
 package org.jdownloader.extensions.streaming.mediaarchive;
 
-import javax.swing.ImageIcon;
+import javax.swing.Icon;
 
 public interface MediaNode {
     public String getName();
 
     public long getSize();
 
-    public ImageIcon getIcon();
+    public Icon getIcon();
 
     public String getUniqueID();
 

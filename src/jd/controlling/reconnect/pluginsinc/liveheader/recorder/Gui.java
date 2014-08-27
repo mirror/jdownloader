@@ -19,7 +19,7 @@ package jd.controlling.reconnect.pluginsinc.liveheader.recorder;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 
-import javax.swing.ImageIcon;
+import javax.swing.Icon;
 import javax.swing.JButton;
 import javax.swing.JCheckBox;
 import javax.swing.JComponent;
@@ -61,11 +61,11 @@ public class Gui extends AbstractDialog<Object> {
 
             private static final long serialVersionUID = -3280613281656283625L;
 
-            private final ImageIcon   imageProgress;
+            private final Icon        imageProgress;
 
-            private final ImageIcon   imageBad;
+            private final Icon        imageBad;
 
-            private final ImageIcon   imageGood;
+            private final Icon        imageGood;
 
             private final String      strProgress;
 
@@ -282,7 +282,9 @@ public class Gui extends AbstractDialog<Object> {
 
             JsonConfig.create(LiveHeaderReconnectSettings.class).setRouterIP(this.routerip.getText().trim());
             // changed script.reset router sender state
-            if (methode != null && methode.equals(JsonConfig.create(LiveHeaderReconnectSettings.class).getScript())) JsonConfig.create(LiveHeaderReconnectSettings.class).setAlreadySendToCollectServer2(false);
+            if (methode != null && methode.equals(JsonConfig.create(LiveHeaderReconnectSettings.class).getScript())) {
+                JsonConfig.create(LiveHeaderReconnectSettings.class).setAlreadySendToCollectServer2(false);
+            }
             JsonConfig.create(LiveHeaderReconnectSettings.class).setScript(this.methode);
 
             DataCompareDialog dcd = new DataCompareDialog(routerip.getText().trim(), null, null, null, null, null);

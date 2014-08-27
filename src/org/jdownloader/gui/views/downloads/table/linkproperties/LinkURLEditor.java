@@ -7,7 +7,7 @@ import java.awt.event.MouseEvent;
 import java.util.ArrayList;
 import java.util.List;
 
-import javax.swing.ImageIcon;
+import javax.swing.Icon;
 import javax.swing.JLabel;
 import javax.swing.JPopupMenu;
 import javax.swing.JScrollPane;
@@ -145,7 +145,7 @@ public class LinkURLEditor<PackageType extends AbstractPackageNode<ChildrenType,
         add(sp, "spanx");
     }
 
-    private JLabel getLbl(String linkURLEditor, ImageIcon icon) {
+    private JLabel getLbl(String linkURLEditor, Icon icon) {
         JLabel ret = new JLabel(linkURLEditor);
         ret.setIcon(icon);
         return ret;

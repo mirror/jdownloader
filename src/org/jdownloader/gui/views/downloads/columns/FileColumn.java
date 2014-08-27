@@ -8,7 +8,6 @@ import java.util.logging.Level;
 
 import javax.swing.BorderFactory;
 import javax.swing.Icon;
-import javax.swing.ImageIcon;
 import javax.swing.JCheckBoxMenuItem;
 import javax.swing.JPopupMenu;
 import javax.swing.JSeparator;
@@ -58,10 +57,10 @@ public class FileColumn extends ExtTextColumn<AbstractNode> implements GenericCo
      */
     private static final long serialVersionUID  = -2963955407564917958L;
     protected Border          leftGapBorder;
-    private ImageIcon         iconPackageOpen;
-    private ImageIcon         iconPackageClosed;
-    private ImageIcon         iconArchive;
-    private ImageIcon         iconArchiveOpen;
+    private Icon              iconPackageOpen;
+    private Icon              iconPackageClosed;
+    private Icon              iconArchive;
+    private Icon              iconArchiveOpen;
     protected Border          normalBorder;
     private boolean           selectAll         = false;
     private boolean           hideSinglePackage = true;
@@ -267,7 +266,7 @@ public class FileColumn extends ExtTextColumn<AbstractNode> implements GenericCo
             if (isMultiArchive) {
                 String title = _GUI._.FileColumn_setStringValue_title_();
                 String msg = _GUI._.FileColumn_setStringValue_msg_();
-                ImageIcon icon = NewTheme.I().getIcon("warning", 32);
+                Icon icon = NewTheme.I().getIcon("warning", 32);
                 JDGui.help(title, msg, icon);
             }
         } else if (object instanceof DownloadLink) {
@@ -287,7 +286,7 @@ public class FileColumn extends ExtTextColumn<AbstractNode> implements GenericCo
             if (isMultiArchive) {
                 String title = _GUI._.FileColumn_setStringValue_title_();
                 String msg = _GUI._.FileColumn_setStringValue_msg_();
-                ImageIcon icon = NewTheme.I().getIcon("warning", 32);
+                Icon icon = NewTheme.I().getIcon("warning", 32);
                 JDGui.help(title, msg, icon);
             }
         }

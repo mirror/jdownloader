@@ -3,7 +3,7 @@ package org.jdownloader.captcha.v2.solver.myjd;
 import java.awt.Point;
 
 import javax.swing.BorderFactory;
-import javax.swing.ImageIcon;
+import javax.swing.Icon;
 import javax.swing.JComponent;
 import javax.swing.JLabel;
 import javax.swing.JProgressBar;
@@ -65,7 +65,9 @@ public class ServicePanelMyJDCESTooltip extends PanelToolTip {
 
                         @Override
                         protected void runInEDT() {
-                            if (!isShowing()) { return; }
+                            if (!isShowing()) {
+                                return;
+                            }
                             panel.removeAll();
                             // panel.setPreferredSize(null);
                             panel.setLayout(new MigLayout("ins 0,wrap 2", "[][grow,align right]", "[]0"));
@@ -108,7 +110,7 @@ public class ServicePanelMyJDCESTooltip extends PanelToolTip {
 
     }
 
-    private JLabel lbl(String string, ImageIcon icon, int left) {
+    private JLabel lbl(String string, Icon icon, int left) {
         JLabel ret = new JLabel(string, icon, left);
         ret.setForeground(LAFOptions.getInstance().getColorForTooltipForeground());
         return ret;

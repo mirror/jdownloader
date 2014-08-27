@@ -78,7 +78,7 @@ public class BuyAndAddPremiumAccount extends AbstractDialog<Boolean> implements 
 
     protected void layoutDialog() {
 
-        final Image back = NewTheme.I().hasIcon("fav/footer." + info.getTld()) ? NewTheme.I().getIcon("fav/footer." + info.getTld(), -1).getImage() : null;
+        final Image back = NewTheme.I().hasIcon("fav/footer." + info.getTld()) ? NewTheme.I().getImage("fav/footer." + info.getTld(), -1) : null;
         super.layoutDialog();
         getDialog().setContentPane(new JPanel() {
             /**
@@ -104,7 +104,7 @@ public class BuyAndAddPremiumAccount extends AbstractDialog<Boolean> implements 
     public JComponent layoutDialogContent() {
 
         final MigPanel ret = new MigPanel("ins 0,wrap 1", "[grow,fill]", "[]");
-        final Image logo = NewTheme.I().hasIcon("fav/large." + info.getTld()) ? NewTheme.I().getIcon("fav/large." + info.getTld(), -1).getImage() : null;
+        final Image logo = NewTheme.I().hasIcon("fav/large." + info.getTld()) ? NewTheme.I().getImage("fav/large." + info.getTld(), -1) : null;
 
         if (logo != null) {
             JLabel ico = new JLabel(new ImageIcon(logo));

@@ -13,6 +13,7 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 
 import org.appwork.utils.ImageProvider.ImageProvider;
+import org.appwork.utils.images.IconIO;
 import org.jdownloader.controlling.contextmenu.MenuContainer;
 import org.jdownloader.controlling.contextmenu.gui.ExtMenuImpl;
 import org.jdownloader.gui.translate._GUI;
@@ -44,7 +45,7 @@ public class SettingsMenuContainer extends MenuContainer {
 
             } else if (selection.isLinkContext()) {
 
-                Image back = (selection.getLink().getLinkInfo().getIcon().getImage());
+                Image back = IconIO.toBufferedImage(selection.getLink().getLinkInfo().getIcon());
                 subMenu.setIcon(new ImageIcon(ImageProvider.merge(back, NewTheme.I().getImage("settings", 14), 0, 0, 6, 6)));
 
             }
@@ -57,7 +58,7 @@ public class SettingsMenuContainer extends MenuContainer {
 
             } else if (selection.isLinkContext()) {
 
-                Image back = (selection.getLink().getDownloadLink().getLinkInfo().getIcon().getImage());
+                Image back = IconIO.toBufferedImage(selection.getLink().getDownloadLink().getLinkInfo().getIcon());
                 subMenu.setIcon(new ImageIcon(ImageProvider.merge(back, NewTheme.I().getImage("settings", 14), 0, 0, 6, 6)));
 
             }

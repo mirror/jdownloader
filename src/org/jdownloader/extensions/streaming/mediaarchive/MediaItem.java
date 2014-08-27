@@ -1,6 +1,6 @@
 package org.jdownloader.extensions.streaming.mediaarchive;
 
-import javax.swing.ImageIcon;
+import javax.swing.Icon;
 
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForHost;
@@ -85,7 +85,9 @@ public abstract class MediaItem implements MediaNode {
     }
 
     public long getDate() {
-        if (date <= 0) date = System.currentTimeMillis();
+        if (date <= 0) {
+            date = System.currentTimeMillis();
+        }
         return date;
     }
 
@@ -102,7 +104,7 @@ public abstract class MediaItem implements MediaNode {
     }
 
     @Override
-    public ImageIcon getIcon() {
+    public Icon getIcon() {
         return NewTheme.I().getIcon("video", 20);
     }
 
