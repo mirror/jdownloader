@@ -45,8 +45,7 @@ public class EnabledAction extends CustomizableTableContextAppAction {
         }
     }
 
-    private State               state = State.MIXED_ENABLE;
-    private SelectionInfo<?, ?> selection;
+    private State state = State.MIXED_ENABLE;
 
     @Override
     public void requestUpdate(Object requestor) {
@@ -92,11 +91,8 @@ public class EnabledAction extends CustomizableTableContextAppAction {
             if (first == null) {
                 first = node.isEnabled();
             } else if (node.isEnabled() != first) {
-                if (selection.getContextLink() != null) {
-                    node = selection.getContextLink();
-                    return node.isEnabled() ? State.MIXED_ENABLE : State.MIXED_DISABLE;
-                } else if (selection.getFirstPackage() != null) {
-                    node = selection.getFirstPackage();
+                if (selection.getRawContext() != null) {
+                    node = selection.getRawContext();
                     return node.isEnabled() ? State.MIXED_ENABLE : State.MIXED_DISABLE;
                 } else {
                     break;
