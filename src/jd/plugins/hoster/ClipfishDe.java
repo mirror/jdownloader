@@ -16,14 +16,11 @@
 
 package jd.plugins.hoster;
 
-import java.util.ArrayList;
-
 import jd.PluginWrapper;
 import jd.http.URLConnectionAdapter;
 import jd.parser.Regex;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
-import jd.plugins.FilePackage;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
@@ -32,7 +29,7 @@ import jd.plugins.download.DownloadInterface;
 
 import org.appwork.utils.StringUtils;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "clipfish.de" }, urls = { "clipfish://.+" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "clipfish.de" }, urls = { "clipfish2://.+" }, flags = { 0 })
 public class ClipfishDe extends PluginForHost {
 
     public ClipfishDe(final PluginWrapper wrapper) {
@@ -40,18 +37,10 @@ public class ClipfishDe extends PluginForHost {
     }
 
     @Override
-    public ArrayList<DownloadLink> getDownloadLinks(String data, FilePackage fp) {
-        final ArrayList<DownloadLink> ret = super.getDownloadLinks(data, fp);
-        try {
-            org.jdownloader.controlling.UrlProtection.PROTECTED_INTERNAL_URL.setTo(ret);
-        } catch (final Throwable e) {
-        }
-        return ret;
-    }
-
-    @Override
     public void correctDownloadLink(final DownloadLink link) {
-        link.setUrlDownload(link.getDownloadURL().replaceAll("clipfish://", ""));
+        if (link.getDownloadURL().startsWith("clipfish2")) {
+            link.setUrlDownload(link.getDownloadURL().replaceAll("clipfish2://", "http://"));
+        }
     }
 
     @Override
@@ -66,15 +55,19 @@ public class ClipfishDe extends PluginForHost {
 
     @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception {
-        final LinkStatus linkStatus = downloadLink.getLinkStatus();
-        final String dllink = downloadLink.getDownloadURL();
+        String dllink = downloadLink.getStringProperty("dlURL", "");
+        if ("".equals(dllink)) {
+            dllink = downloadLink.getDownloadURL();
+        } else if (dllink == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         String type = downloadLink.getStringProperty("MEDIA_TYPE");
         if (type != null && !"video".equalsIgnoreCase(type)) {
             // this will throw statserv errors.
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, "Unsupported Media Type: " + type);
         }
         if (dllink.startsWith("http")) {
-            dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, downloadLink.getDownloadURL());
+            dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink);
             if (dl.getConnection().getLongContentLength() == 0) {
                 br.followConnection();
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -88,19 +81,21 @@ public class ClipfishDe extends PluginForHost {
             setupRTMPConnection(dllink, dl, downloadLink.getStringProperty("FLASHPLAYER"));
             ((RTMPDownload) dl).startDownload();
         } else {
-            logger.severe("Plugin out of date for link: " + downloadLink.getDownloadURL());
+            logger.severe("Plugin out of date for link: " + dllink);
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
     }
 
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws Exception {
-        try {
-            org.jdownloader.controlling.UrlProtection.PROTECTED_INTERNAL_URL.setTo(downloadLink);
-        } catch (final Throwable e) {
+        String dllink = downloadLink.getStringProperty("dlURL", "");
+        if ("".equals(dllink)) {
+            dllink = downloadLink.getDownloadURL();
+        } else if (dllink == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        if (downloadLink.getDownloadURL().startsWith("http")) {
-            final URLConnectionAdapter con = br.openHeadConnection(downloadLink.getDownloadURL());
+        if (dllink.startsWith("http")) {
+            final URLConnectionAdapter con = br.openHeadConnection(dllink);
             try {
                 if (con.getResponseCode() == 200 && StringUtils.containsIgnoreCase(con.getContentType(), "video") && con.getCompleteContentLength() > 0) {
                     downloadLink.setVerifiedFileSize(con.getCompleteContentLength());
