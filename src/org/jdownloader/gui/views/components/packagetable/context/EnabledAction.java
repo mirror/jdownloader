@@ -3,6 +3,8 @@ package org.jdownloader.gui.views.components.packagetable.context;
 import java.awt.event.ActionEvent;
 import java.util.List;
 
+import javax.swing.ImageIcon;
+
 import jd.controlling.TaskQueue;
 import jd.controlling.downloadcontroller.DownloadWatchDog;
 import jd.controlling.downloadcontroller.SingleDownloadController;
@@ -29,36 +31,47 @@ public class EnabledAction extends CustomizableTableContextAppAction {
     private static final long serialVersionUID = -1733286276459073749L;
 
     enum State {
-        ALL_ENABLED,
-        ALL_DISABLED,
-        MIXED;
+        ALL_ENABLED(false, getCheckBoxedIcon("select", true, true)),
+        ALL_DISABLED(true, getCheckBoxedIcon("select", false, true)),
+        MIXED_ENABLE(true, getCheckBoxedIcon("select", true, false)),
+        MIXED_DISABLE(false, getCheckBoxedIcon("select", false, false));
+
+        private final ImageIcon icon;
+        private final boolean   enable;
+
+        private State(boolean enable, ImageIcon icon) {
+            this.icon = icon;
+            this.enable = enable;
+        }
     }
 
-    private State               state = State.MIXED;
+    private State               state = State.MIXED_ENABLE;
     private SelectionInfo<?, ?> selection;
 
     @Override
     public void requestUpdate(Object requestor) {
         super.requestUpdate(requestor);
-        selection = getSelection();
         if (selection != null) {
-
-            switch (state = getState()) {
-            case MIXED:
-                setSmallIcon(getCheckBoxedIcon("select", true, false));
+            switch (state = getState(selection)) {
+            case MIXED_DISABLE:
+                setSmallIcon(state.icon);
                 setName(_GUI._.EnabledAction_EnabledAction_disable());
                 break;
+            case MIXED_ENABLE:
+                setSmallIcon(state.icon);
+                setName(_GUI._.EnabledAction_EnabledAction_enable());
+                break;
             case ALL_DISABLED:
-                setSmallIcon(getCheckBoxedIcon("select", false, true));
+                setSmallIcon(state.icon);
                 setName(_GUI._.EnabledAction_EnabledAction_enable());
                 break;
             case ALL_ENABLED:
-                setSmallIcon(getCheckBoxedIcon("select", true, true));
+                setSmallIcon(state.icon);
                 setName(_GUI._.EnabledAction_EnabledAction_disable());
                 break;
             }
         } else {
-            setSmallIcon(getCheckBoxedIcon("select", false, true));
+            setSmallIcon(State.MIXED_ENABLE.icon);
             setName(_GUI._.EnabledAction_EnabledAction_empty());
         }
     }
@@ -67,37 +80,49 @@ public class EnabledAction extends CustomizableTableContextAppAction {
         super();
         setSmallIcon(getCheckBoxedIcon("select", true, true));
         setName(_GUI._.EnabledAction_EnabledAction_disable());
-
     }
 
-    private State getState() {
-        if (getSelection().isEmpty()) return State.ALL_DISABLED;
+    private State getState(final SelectionInfo<?, ?> selection) {
+        if (selection.isEmpty()) {
+            return State.ALL_DISABLED;
+        }
         Boolean first = null;
         for (Object a : selection.getChildren()) {
             AbstractNode node = (AbstractNode) a;
-            /*
-             * c1 heck a child
-             */
-            if (first == null) first = node.isEnabled();
-            if (node.isEnabled() != first) { return State.MIXED; }
-
+            if (first == null) {
+                first = node.isEnabled();
+            } else if (node.isEnabled() != first) {
+                if (selection.getContextLink() != null) {
+                    node = selection.getContextLink();
+                    return node.isEnabled() ? State.MIXED_ENABLE : State.MIXED_DISABLE;
+                } else if (selection.getFirstPackage() != null) {
+                    node = selection.getFirstPackage();
+                    return node.isEnabled() ? State.MIXED_ENABLE : State.MIXED_DISABLE;
+                } else {
+                    break;
+                }
+            }
         }
         return first ? State.ALL_ENABLED : State.ALL_DISABLED;
     }
 
     public void actionPerformed(ActionEvent e) {
-        if (!isEnabled()) return;
+        if (!isEnabled()) {
+            return;
+        }
+        final SelectionInfo<?, ?> lSelection = selection;
+        final State lState = state;
         TaskQueue.getQueue().add(new QueueAction<Void, RuntimeException>() {
 
             @Override
             protected Void run() throws RuntimeException {
-                final boolean enable = state.equals(State.ALL_DISABLED);
+                final boolean enable = lState.enable;
                 if (!enable) {
                     int count = 0;
 
                     long i = 0;
                     if (DownloadWatchDog.getInstance().isRunning()) {
-                        for (Object a : selection.getChildren()) {
+                        for (Object a : lSelection.getChildren()) {
                             if (a instanceof DownloadLink) {
                                 DownloadLink link = (DownloadLink) a;
                                 SingleDownloadController slc = link.getDownloadLinkController();
@@ -122,22 +147,26 @@ public class EnabledAction extends CustomizableTableContextAppAction {
 
                                 if (bytesToDelete > 0) {
                                     if (JDGui.bugme(WarnLevel.SEVERE)) {
-                                        if (!UIOManager.I().showConfirmDialog(Dialog.STYLE_SHOW_DO_NOT_DISPLAY_AGAIN, _GUI._.lit_are_you_sure(), _GUI._.EnableAction_run_msg_(SizeFormatter.formatBytes(bytesToDelete), finalCount), NewTheme.I().getIcon("stop", 32), _GUI._.lit_yes(), _GUI._.lit_no())) { return; }
+                                        if (!UIOManager.I().showConfirmDialog(Dialog.STYLE_SHOW_DO_NOT_DISPLAY_AGAIN, _GUI._.lit_are_you_sure(), _GUI._.EnableAction_run_msg_(SizeFormatter.formatBytes(bytesToDelete), finalCount), NewTheme.I().getIcon("stop", 32), _GUI._.lit_yes(), _GUI._.lit_no())) {
+                                            return;
+                                        }
 
                                     }
                                 } else {
                                     if (JDGui.bugme(WarnLevel.LOW)) {
-                                        if (!UIOManager.I().showConfirmDialog(Dialog.STYLE_SHOW_DO_NOT_DISPLAY_AGAIN, _GUI._.lit_are_you_sure(), _GUI._.EnableAction_run_msg_(SizeFormatter.formatBytes(bytesToDelete), finalCount), NewTheme.I().getIcon("stop", 32), _GUI._.lit_yes(), _GUI._.lit_no())) { return; }
+                                        if (!UIOManager.I().showConfirmDialog(Dialog.STYLE_SHOW_DO_NOT_DISPLAY_AGAIN, _GUI._.lit_are_you_sure(), _GUI._.EnableAction_run_msg_(SizeFormatter.formatBytes(bytesToDelete), finalCount), NewTheme.I().getIcon("stop", 32), _GUI._.lit_yes(), _GUI._.lit_no())) {
+                                            return;
+                                        }
 
                                     }
                                 }
-                                setEnabled(enable, getSelection().getChildren());
+                                setEnabled(enable, lSelection.getChildren());
                             }
                         };
                         return null;
                     }
                 }
-                setEnabled(enable, getSelection().getChildren());
+                setEnabled(enable, lSelection.getChildren());
                 return null;
             }
         });
