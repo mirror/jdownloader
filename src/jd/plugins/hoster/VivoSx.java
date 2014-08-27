@@ -33,10 +33,10 @@ import jd.plugins.PluginForHost;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "shared.sx" }, urls = { "http://(www\\.)?shared\\.sx/[a-z0-9]{10}" }, flags = { 0 })
-public class SharedSx extends PluginForHost {
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "vivo.sx" }, urls = { "http://(www\\.)?vivo\\.sx/[a-z0-9]{10}" }, flags = { 0 })
+public class VivoSx extends PluginForHost {
 
-    public SharedSx(PluginWrapper wrapper) {
+    public VivoSx(PluginWrapper wrapper) {
         super(wrapper);
     }
 
@@ -53,18 +53,15 @@ public class SharedSx extends PluginForHost {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         br.getPage(link.getDownloadURL());
-        if (!br.containsHTML("data\\-type=\"video\"")) {
+        if (br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        String filename = br.getRegex("addthis:title=\"Watch (\\&#34;)?([^<>\"]*?)(\\&#34;)? on shared\\.sx\"").getMatch(1);
-        if (filename == null) {
-            filename = br.getRegex("data\\-type=\"video\">Watch ([^<>\"]*?)(\\&nbsp;)?<strong>").getMatch(0);
-        }
+        final String filename = br.getRegex("\"og:description\" content=\"Watch \\&#34;([^<>\"]*?)\\&#34; on vivo\\.sx,").getMatch(0);
         final String filesize = br.getRegex("<strong>\\((\\d+(\\.\\d{2})? (KB|MB|GB))\\)</strong>").getMatch(0);
         if (filename == null || filesize == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        link.setName(Encoding.htmlDecode(filename).trim());
+        link.setFinalFileName(encodeUnicode(Encoding.htmlDecode(filename.trim())));
         link.setDownloadSize(SizeFormatter.getSize(filesize));
         return AvailableStatus.TRUE;
     }
@@ -94,14 +91,8 @@ public class SharedSx extends PluginForHost {
             brc.postPage("http://" + domain + "/request", "action=view&abs=false&hash=" + new Regex(downloadLink.getDownloadURL(), "([a-z0-9]+)$").getMatch(0));
         } catch (final Throwable e) {
         }
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, -2);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 1);
         if (dl.getConnection().getContentType().contains("html")) {
-            if (dl.getConnection().getResponseCode() == 403) {
-                throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Server error 403", 10 * 60 * 1000l);
-            }
-            if (dl.getConnection().getResponseCode() == 404) {
-                throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Server error 404", 30 * 60 * 1000l);
-            }
             br.followConnection();
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
@@ -128,13 +119,29 @@ public class SharedSx extends PluginForHost {
         return dllink;
     }
 
+    /* Avoid chars which are not allowed in filenames under certain OS' */
+    private static String encodeUnicode(final String input) {
+        String output = input;
+        output = output.replace(":", ";");
+        output = output.replace("|", "¦");
+        output = output.replace("<", "[");
+        output = output.replace(">", "]");
+        output = output.replace("/", "⁄");
+        output = output.replace("\\", "∖");
+        output = output.replace("*", "#");
+        output = output.replace("?", "¿");
+        output = output.replace("!", "¡");
+        output = output.replace("\"", "'");
+        return output;
+    }
+
     @Override
     public void reset() {
     }
 
     @Override
     public int getMaxSimultanFreeDownloadNum() {
-        return 1;
+        return 4;
     }
 
     @Override
