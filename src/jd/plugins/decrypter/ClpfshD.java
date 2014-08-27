@@ -27,33 +27,22 @@ import jd.parser.Regex;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
-import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "clipfish.de" }, urls = { "http://(www\\.)?clipfish\\.de/(.*?channel/\\d+/video/\\d+|video/\\d+(/.+)?|special/.*?/video/\\d+|musikvideos/video/\\d+(/.+)?)" }, flags = { 0 })
 public class ClpfshD extends PluginForDecrypt {
 
-    private static final Pattern PATTERN_CAHNNEL_VIDEO  = Pattern.compile("http://[w\\.]+?clipfish\\.de/.*?channel/\\d+/video/(\\d+)");
-    private static final Pattern PATTERN_MUSIK_VIDEO    = Pattern.compile("http://[w\\.]+?clipfish\\.de/musikvideos/video/(\\d+)(/.+)?");
-    private static final Pattern PATTERN_STANDARD_VIDEO = Pattern.compile("http://[w\\.]+?clipfish\\.de/video/(\\d+)(/.+)?");
-    private static final Pattern PATTERN_SPECIAL_VIDEO  = Pattern.compile("http://[w\\.]+?clipfish\\.de/special/.*?/video/(\\d+)");
-    private static final Pattern PATTERN_FLV_FILE       = Pattern.compile("&url=(http://.+?\\....)&|<filename><\\!\\[CDATA\\[(.*?)\\]\\]></filename>", Pattern.CASE_INSENSITIVE);
-    private static final Pattern PATTERN_TITEL          = Pattern.compile("<meta property=\"og:title\" content=\"(.+?)\"/>", Pattern.CASE_INSENSITIVE);
+    private final Pattern PATTERN_CAHNNEL_VIDEO  = Pattern.compile("http://[w\\.]+?clipfish\\.de/.*?channel/\\d+/video/(\\d+)");
+    private final Pattern PATTERN_MUSIK_VIDEO    = Pattern.compile("http://[w\\.]+?clipfish\\.de/musikvideos/video/(\\d+)(/.+)?");
+    private final Pattern PATTERN_STANDARD_VIDEO = Pattern.compile("http://[w\\.]+?clipfish\\.de/video/(\\d+)(/.+)?");
+    private final Pattern PATTERN_SPECIAL_VIDEO  = Pattern.compile("http://[w\\.]+?clipfish\\.de/special/.*?/video/(\\d+)");
+    private final Pattern PATTERN_FLV_FILE       = Pattern.compile("&url=(http://.+?\\....)&|<filename><\\!\\[CDATA\\[(.*?)\\]\\]></filename>", Pattern.CASE_INSENSITIVE);
+    private final Pattern PATTERN_TITEL          = Pattern.compile("<meta property=\"og:title\" content=\"(.+?)\"/>", Pattern.CASE_INSENSITIVE);
 
-    private static final String  NEW_XMP_PATH           = "http://www.clipfish.de/devxml/videoinfo/";
+    private final String  NEW_XMP_PATH           = "http://www.clipfish.de/devxml/videoinfo/";
 
     public ClpfshD(final PluginWrapper wrapper) {
         super(wrapper);
-    }
-
-    private void addLink(final CryptedLink cryptedLink, final ArrayList<DownloadLink> decryptedLinks, final String name, final DownloadLink downloadLink, final jd.plugins.decrypter.TbCm.DestinationFormat convertTo) {
-        final FilePackage filePackage = FilePackage.getInstance();
-        filePackage.setName("ClipFish " + convertTo.getText() + "(" + convertTo.getExtFirst() + ")");
-        filePackage.add(downloadLink);
-        downloadLink.setFinalFileName(name + ".tmp");
-        downloadLink.setBrowserUrl(cryptedLink.getCryptedUrl());
-        downloadLink.setProperty("convertto", convertTo.name());
-        decryptedLinks.add(downloadLink);
     }
 
     @Override
@@ -130,18 +119,8 @@ public class ClpfshD extends PluginForDecrypt {
             }
 
         }
-        if (pathToflv == null) {
-
-            return null;
-        }
-        final DownloadLink downloadLink = createDownloadlink("clipfish://" + pathToflv);
-        downloadLink.setBrowserUrl(parameter);
-        try {
-
-            downloadLink.setUrlProtection(org.jdownloader.controlling.UrlProtection.PROTECTED_INTERNAL_URL);
-        } catch (Throwable e) {
-            // jd09
-        }
+        final DownloadLink downloadLink = createDownloadlink("clipfish2://" + parameter.replaceFirst("http://", ""));
+        downloadLink.setProperty("dlURL", pathToflv);
         downloadLink.setProperty("MEDIA_TYPE", cType);
         downloadLink.setProperty("VIDEO_ID", vidId);
         name = Encoding.htmlDecode(name.trim());
