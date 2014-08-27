@@ -55,6 +55,10 @@ public class ClpfshD extends PluginForDecrypt {
         URLConnectionAdapter con = br.openGetConnection(parameter);
         if (con.getResponseCode() == 410) {
             con.disconnect();
+            final DownloadLink offline = createDownloadlink("directhttp://" + parameter);
+            offline.setAvailable(false);
+            offline.setProperty("offline", true);
+            decryptedLinks.add(offline);
             return decryptedLinks;
         }
         final Regex regexInfo = new Regex(br.followConnection(), PATTERN_TITEL);
