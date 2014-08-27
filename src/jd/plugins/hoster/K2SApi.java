@@ -649,11 +649,14 @@ public abstract class K2SApi extends PluginForHost {
                     dumpAuthToken(account);
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 case 20:
+                    // ERROR_FILE_NOT_FOUND = 20;
+                    throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND, msg);
                 case 21:
                 case 22:
-                    // ERROR_FILE_NOT_FOUND = 20;
                     // ERROR_FILE_IS_NOT_AVAILABLE = 21;
-                    throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND, msg);
+                    // {"message":"Download is not available","status":"error","code":406,"errorCode":21,"errors":[{"code":2,"message":"Traffic limit exceed"}]}
+                    // sub error, pass it back into itself.
+                    handleErrors(account, getJsonArray(iString, "errors"), true);
                     // ERROR_FILE_IS_BLOCKED = 22;
                     // what does this mean? premium only link ? treating as 'file not found'
                 case 30:
@@ -743,11 +746,14 @@ public abstract class K2SApi extends PluginForHost {
             } else if (code == 6) {
                 msg = "Maximium number pararell downloads reached!";
             } else if (code == 7) {
+                // unknown err cause.. this mssage could change..
                 msg = "Download not possible at this time!";
             } else if (code == 10) {
                 msg = "Your not authorised req: auth_token!";
             } else if (code == 11) {
                 msg = "auth_token has expired!";
+            } else if (code == 21 || code == 42) {
+                msg = "Download not possible at this time!";
             } else if (code == 30) {
                 msg = "Captcha required!";
             } else if (code == 31) {
@@ -756,8 +762,6 @@ public abstract class K2SApi extends PluginForHost {
                 msg = "Wrong download key";
             } else if (code == 41) {
                 msg = "Wait time detetected!";
-            } else if (code == 42) {
-                msg = "Download not avaiable at this time!";
             } else if (code == 70) {
                 msg = "\r\nInvalid username/password!\r\nYou're sure that the username and password you entered are correct? Some hints:\r\n1. If your password contains special characters, change it (remove them) and try again!\r\n2. Type in your username/password by hand without copy & paste.";
             } else if (code == 71) {
