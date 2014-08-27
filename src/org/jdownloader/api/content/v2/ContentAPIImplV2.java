@@ -1,5 +1,6 @@
 package org.jdownloader.api.content.v2;
 
+import java.awt.image.BufferedImage;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.IOException;
@@ -122,7 +123,15 @@ public class ContentAPIImplV2 implements ContentAPIV2 {
             out = RemoteAPI.getOutputStream(response, request, RemoteAPI.gzip(request), false);
             if (key.startsWith("tmp.")) {
                 String hash = key.substring(4).replaceAll("[^A-Fa-f0-9]", "");
-                out.write(IO.readFile(Application.getTempResource("apiIcons/" + hash + ".png")));
+
+                BufferedImage image = IconIO.getImage(Application.getRessourceURL("tmp/apiIcons/" + hash + ".png"));
+                if (size > 0) {
+                    if (image.getWidth() > size || image.getHeight() > size) {
+                        image = IconIO.getScaledInstance(image, size, size);
+                    }
+                }
+
+                ImageIO.write(image, "png", out);
             } else {
                 ImageIO.write(IconIO.toBufferedImage(new AbstractIcon(key, size)), "png", out);
             }
