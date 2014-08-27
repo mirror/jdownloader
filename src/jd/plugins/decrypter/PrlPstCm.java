@@ -1,5 +1,5 @@
 //jDownloader - Downloadmanager
-//Copyright (C) 2009  JD-Team support@jdownloader.org
+//Copyright (C) 2014  JD-Team support@jdownloader.org
 //
 //This program is free software: you can redistribute it and/or modify
 //it under the terms of the GNU General Public License as published by
@@ -27,6 +27,9 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
 
+/**
+ * @author raztoki
+ * */
 @DecrypterPlugin(revision = "$Revision: 22355 $", interfaceVersion = 2, names = { "prialepaste.com", }, urls = { "https?://[\\w\\.]*prialepaste\\.com/(f[a-z]{0,1}\\.php#[a-zA-Z0-9\\+-/=]+|p/[A-Z0-9]{8})" }, flags = { 0 })
 public class PrlPstCm extends PluginForDecrypt {
 
