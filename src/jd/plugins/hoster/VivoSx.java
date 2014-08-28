@@ -56,7 +56,10 @@ public class VivoSx extends PluginForHost {
         if (br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        final String filename = br.getRegex("\"og:description\" content=\"Watch \\&#34;([^<>\"]*?)\\&#34; on vivo\\.sx,").getMatch(0);
+        String filename = br.getRegex("addthis:title=\"(Watch|Listen to) (\\&#34;)?([^<>\"]*?)(\\&#34;)? on shared\\.sx\"").getMatch(2);
+        if (filename == null) {
+            filename = br.getRegex("data\\-type=\"video\">(Watch|Listen to) ([^<>\"]*?)(\\&nbsp;)?<strong>").getMatch(1);
+        }
         final String filesize = br.getRegex("<strong>\\((\\d+(\\.\\d{2})? (KB|MB|GB))\\)</strong>").getMatch(0);
         if (filename == null || filesize == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);

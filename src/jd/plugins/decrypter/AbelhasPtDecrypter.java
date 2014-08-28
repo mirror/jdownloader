@@ -116,7 +116,10 @@ public class AbelhasPtDecrypter extends PluginForDecrypt {
             decryptedLinks.add(dl);
         } else {
             final String fpName = br.getRegex("class=\"T_selected\">([^<>\"]*?)<").getMatch(0);
-            final String[] linkinfo = br.getRegex("<div class=\"fileinfo tab\">(.*?)<span class=\"filedescription\"").getColumn(0);
+            String[] linkinfo = br.getRegex("class=\"galleryItem\">(.*?)<span class=\"filedescription\"").getColumn(0);
+            if (linkinfo == null || linkinfo.length == 0) {
+                linkinfo = br.getRegex("class=\"filename\">(.*?)class=\"directFileLink\"").getColumn(0);
+            }
             if (linkinfo == null || linkinfo.length == 0 || fpName == null) {
                 logger.warning("Decrypter broken for link: " + parameter);
                 return null;
@@ -127,6 +130,9 @@ public class AbelhasPtDecrypter extends PluginForDecrypt {
                 String filename = finfo.getMatch(0);
                 final String ext = finfo.getMatch(1);
                 String filesize = new Regex(lnkinfo, "<li><span>([^<>\"]*?)</span></li>").getMatch(0);
+                if (filesize == null) {
+                    filesize = new Regex(lnkinfo, "<li>([^<>\"]*?)</li>").getMatch(0);
+                }
                 String mainlink = br.getRegex("\"(/[^<>\"]*?)\" class=\"downloadAction\"").getMatch(0);
                 if (fid == null || filename == null || ext == null || filesize == null || mainlink == null) {
                     logger.warning("Decrypter broken for link: " + parameter);

@@ -53,12 +53,12 @@ public class SharedSx extends PluginForHost {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         br.getPage(link.getDownloadURL());
-        if (!br.containsHTML("data\\-type=\"video\"")) {
+        if (br.containsHTML(">File does not exist<") || !br.containsHTML("class=\"download\\-wrapper\">")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        String filename = br.getRegex("addthis:title=\"Watch (\\&#34;)?([^<>\"]*?)(\\&#34;)? on shared\\.sx\"").getMatch(1);
+        String filename = br.getRegex("addthis:title=\"(Watch|Listen to) (\\&#34;)?([^<>\"]*?)(\\&#34;)? on shared\\.sx\"").getMatch(2);
         if (filename == null) {
-            filename = br.getRegex("data\\-type=\"video\">Watch ([^<>\"]*?)(\\&nbsp;)?<strong>").getMatch(0);
+            filename = br.getRegex("data\\-type=\"video\">(Watch|Listen to) ([^<>\"]*?)(\\&nbsp;)?<strong>").getMatch(1);
         }
         final String filesize = br.getRegex("<strong>\\((\\d+(\\.\\d{2})? (KB|MB|GB))\\)</strong>").getMatch(0);
         if (filename == null || filesize == null) {

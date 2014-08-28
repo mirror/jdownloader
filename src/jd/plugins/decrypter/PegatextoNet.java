@@ -52,8 +52,13 @@ public class PegatextoNet extends PluginForDecrypt {
         }
         final String[] links = new Regex(linkText, "target=\"_blank\" href=\"(http[^<>\"]*?)\"").getColumn(0);
         if (links == null || links.length == 0) {
-            logger.warning("Decrypter broken for link: " + parameter);
-            return null;
+            /* Maybe there are no links to decrypt */
+            final DownloadLink offline = createDownloadlink("directhttp://" + parameter);
+            offline.setFinalFileName(new Regex(parameter, "https?://[^<>\"/]+/(.+)").getMatch(0));
+            offline.setAvailable(false);
+            offline.setProperty("offline", true);
+            decryptedLinks.add(offline);
+            return decryptedLinks;
         }
         for (final String singleLink : links) {
             decryptedLinks.add(createDownloadlink(singleLink));
