@@ -49,7 +49,7 @@ public interface GraphicalUserInterfaceSettings extends ConfigInterface {
 
     /**
      * How many ms the speedmeter shall show/record. Please note that big Timeframes and high fps values may cause high CPU usage
-     *
+     * 
      * @return
      */
     @AboutConfig
@@ -60,7 +60,7 @@ public interface GraphicalUserInterfaceSettings extends ConfigInterface {
 
     /**
      * How many refreshes and datasamples the speedmeter uses. Please note that big Timeframes and high fps values may cause high CPU usage
-     *
+     * 
      * @return
      */
     @AboutConfig
@@ -1088,11 +1088,18 @@ public interface GraphicalUserInterfaceSettings extends ConfigInterface {
 
     void setRenameActionRegexEnabled(boolean b);
 
-    @RequiresRestart("If enabled ctrl+A first of all selects all children in all current packages, and in a second step all packages")
+    @DescriptionForConfigEntry("If enabled ctrl+A first of all selects all children in all current packages, and in a second step all packages")
     @AboutConfig
     @DefaultBooleanValue(true)
     boolean isTwoStepCtrlASelectionEnabled();
 
     void setTwoStepCtrlASelectionEnabled(boolean b);
+
+    @AboutConfig
+    @DescriptionForConfigEntry("Show the links origin if possible in all tables and copy features")
+    @DefaultBooleanValue(false)
+    boolean isAlwaysShowLinkOriginInsteadOfDownloadUrl();
+
+    void setAlwaysShowLinkOriginInsteadOfDownloadUrl(boolean b);
 
 }
