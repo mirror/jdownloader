@@ -55,21 +55,27 @@ public class RomHustlerNet extends PluginForDecrypt {
             return decryptedLinks;
         }
         final String fpName = br.getRegex("<h1 style=\"font\\-size: 14pt;\">([^<>\"]*?)</h1>").getMatch(0);
-        final String[] results = br.getRegex("(<a[^>]+/download/\\d+/[A-Za-z0-9/\\+=%]+[^>]+)>").getColumn(0);
-        if (results == null || results.length == 0) {
+        final String[] results = br.getRegex("(<a[^>]+/file/\\d+/[A-Za-z0-9/\\+=%]+[^>]+)>").getColumn(0);
+        if (results == null || results.length == 0 || fpName == null) {
             logger.warning("Decrypter broken for link: " + parameter);
             return null;
         }
+        int counter = 1;
         for (final String result : results) {
-            String link = new Regex(result, "href=\"(/download/\\d+/[A-Za-z0-9/\\+=%]+[^>]+)\"").getMatch(0);
-            String name = new Regex(result, "title[^\"]+>(.*?)</a>").getMatch(0);
-            if (name == null) name = new Regex(result, "title=\"([^\"]+)").getMatch(0);
-            if (name == null || link == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            DownloadLink dl = createDownloadlink("http://romhustler.net" + link);
+            String link = new Regex(result, "href=\"(http://romhustler\\.net/file/\\d+/[A-Za-z0-9/\\+=%]+[^>]+)\"").getMatch(0);
+            final String name = fpName + "_" + counter;
+            if (link == null) {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
+            DownloadLink dl = createDownloadlink(link);
             dl.setName(name);
             dl.setProperty("decrypterLink", parameter);
+            if (counter > 1) {
+                dl.setProperty("splitlink", true);
+            }
             dl.setAvailable(true);
             decryptedLinks.add(dl);
+            counter++;
         }
         if (fpName != null) {
             final FilePackage fp = FilePackage.getInstance();

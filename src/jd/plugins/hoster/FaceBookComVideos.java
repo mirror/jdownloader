@@ -48,7 +48,7 @@ import jd.plugins.PluginForHost;
 import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "facebook.com" }, urls = { "https?://(www\\.)?facebook\\.com/(video/video\\.php\\?v=|video/embed\\?video_id=|profile\\.php\\?id=\\d+\\&ref=ts#\\!/video/video\\.php\\?v=|(photo/)?photo\\.php\\?v=|photo\\.php\\?fbid=|download/)\\d+" }, flags = { 2 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "facebook.com" }, urls = { "https?://(www\\.)?facebook\\.com/(video\\.php\\?v=|video/embed\\?video_id=|profile\\.php\\?id=\\d+\\&ref=ts#\\!/video/video\\.php\\?v=|(photo/)?photo\\.php\\?v=|photo\\.php\\?fbid=|download/)\\d+" }, flags = { 2 })
 public class FaceBookComVideos extends PluginForHost {
 
     private String              FACEBOOKMAINPAGE           = "http://www.facebook.com";
@@ -57,7 +57,7 @@ public class FaceBookComVideos extends PluginForHost {
     public static String        Agent                      = "Mozilla/5.0 (Windows NT 6.1; WOW64; rv:27.0) Gecko/20100101 Firefox/27.0";
     private boolean             pluginloaded               = false;
     private static final String TYPE_PHOTO                 = "https?://(www\\.)?facebook\\.com/photo\\.php\\?fbid=\\d+";
-    private static final String TYPE_VIDEO                 = "https?://(www\\.)?facebook\\.com/(video/video|photo)\\.php\\?v=\\d+";
+    private static final String TYPE_VIDEO                 = "https?://(www\\.)?facebook\\.com/(video(/video)?|photo)\\.php\\?v=\\d+";
     private static final String TYPE_DOWNLOAD              = "https?://(www\\.)?facebook\\.com/download/\\d+";
     private String              DLLINK                     = null;
     private boolean             loggedIN                   = false;
@@ -74,9 +74,9 @@ public class FaceBookComVideos extends PluginForHost {
 
     public void correctDownloadLink(DownloadLink link) {
         String thislink = link.getDownloadURL().replace("https://", "http://");
-        String videoID = new Regex(thislink, "facebook\\.com/(ts#\\!/video/video\\.php\\?v=|photo\\.php\\?v=|video/embed\\?video_id=)(\\d+)").getMatch(1);
+        String videoID = new Regex(thislink, "facebook\\.com/(ts#\\!/video\\.php\\?v=|video\\.php\\?v=|photo\\.php\\?v=|video/embed\\?video_id=)(\\d+)").getMatch(1);
         if (videoID != null) {
-            thislink = "http://facebook.com/video/video.php?v=" + videoID;
+            thislink = "http://facebook.com/video.php?v=" + videoID;
         }
         link.setUrlDownload(thislink);
     }
@@ -628,23 +628,23 @@ public class FaceBookComVideos extends PluginForHost {
     public void resetDownloadlink(final DownloadLink link) {
     }
 
-/* NO OVERRIDE!! We need to stay 0.9*compatible */
-public boolean hasCaptcha(DownloadLink link, jd.plugins.Account acc) {
-if (acc == null) {
-/* no account, yes we can expect captcha */
-return true;
-}
- if (Boolean.TRUE.equals(acc.getBooleanProperty("free"))) {
-/* free accounts also have captchas */
-return true;
-}
- if (Boolean.TRUE.equals(acc.getBooleanProperty("nopremium"))) {
-/* free accounts also have captchas */
-return true;
-}
- if (acc.getStringProperty("session_type")!=null&&!"premium".equalsIgnoreCase(acc.getStringProperty("session_type"))) {
-return true;
-}
-return false;
-}
+    /* NO OVERRIDE!! We need to stay 0.9*compatible */
+    public boolean hasCaptcha(DownloadLink link, jd.plugins.Account acc) {
+        if (acc == null) {
+            /* no account, yes we can expect captcha */
+            return true;
+        }
+        if (Boolean.TRUE.equals(acc.getBooleanProperty("free"))) {
+            /* free accounts also have captchas */
+            return true;
+        }
+        if (Boolean.TRUE.equals(acc.getBooleanProperty("nopremium"))) {
+            /* free accounts also have captchas */
+            return true;
+        }
+        if (acc.getStringProperty("session_type") != null && !"premium".equalsIgnoreCase(acc.getStringProperty("session_type"))) {
+            return true;
+        }
+        return false;
+    }
 }

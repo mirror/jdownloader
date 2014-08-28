@@ -858,6 +858,7 @@ public class VKontakteRu extends PluginForDecrypt {
         if (fastLinkcheck) {
             dl.setAvailable(true);
         }
+        dl.setBrowserUrl("http://vk.com/photo" + photoID);
         return dl;
     }
 

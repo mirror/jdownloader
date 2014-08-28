@@ -30,7 +30,7 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.utils.JDUtilities;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "romhustler.net" }, urls = { "http://(www\\.)?romhustler\\.net/download/\\d+/[A-Za-z0-9/\\+=%]+" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "romhustler.net" }, urls = { "http://(www\\.)?romhustler\\.net/file/\\d+/[A-Za-z0-9/\\+=%]+" }, flags = { 0 })
 public class RomHustlerNet extends PluginForHost {
 
     public RomHustlerNet(PluginWrapper wrapper) {
@@ -68,13 +68,18 @@ public class RomHustlerNet extends PluginForHost {
     public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws PluginException, IOException {
         this.setBrowserExclusive();
         prepBrowser(br);
-        if (downloadLink.getBooleanProperty("offline", false)) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (downloadLink.getBooleanProperty("offline", false)) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
         final String decrypterLink = downloadLink.getStringProperty("decrypterLink", null);
         br.getPage(decrypterLink);
         String jslink = br.getRegex("\"(/js/cache[a-z0-9\\-]+\\.js)\"").getMatch(0);
-        if (jslink != null) br.cloneBrowser().getPage("http://romhustler.net" + jslink);
-        br.getPage(downloadLink.getDownloadURL());
-        if (br.containsHTML(">404 \\- Page got lost")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (jslink != null) {
+            try {
+                br.cloneBrowser().getPage("http://romhustler.net" + jslink);
+            } catch (final Throwable e) {
+            }
+        }
         // don't worry about filename... set within decrypter should be good until download starts.
         return AvailableStatus.TRUE;
     }
@@ -85,22 +90,32 @@ public class RomHustlerNet extends PluginForHost {
         if (!skipWaittime) {
             int wait = 8;
             final String waittime = br.getRegex("start=\"(\\d+)\"></span>").getMatch(0);
-            if (waittime != null) wait = Integer.parseInt(waittime);
+            if (waittime != null) {
+                wait = Integer.parseInt(waittime);
+            }
             sleep(wait * 1001l, downloadLink);
         }
 
-        String fuid = new Regex(downloadLink.getDownloadURL(), "/(\\d+)/").getMatch(0);
-        if (fuid == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        final String fuid = new Regex(downloadLink.getDownloadURL(), "/(\\d+)/").getMatch(0);
+        if (fuid == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         String ddlink = null;
         if (true) {
             Browser br2 = br.cloneBrowser();
             br2.getHeaders().put("X-Requested-With", "XMLHttpRequest");
             br2.getHeaders().put("Content-Type", "application/x-www-form-urlencoded");
             br2.getPage("/link/" + fuid + "?_=" + System.currentTimeMillis());
-            ddlink = br2.getRegex("(https?://romhustler\\.net/file/" + fuid + "/[A-Za-z0-9/\\+=%]+)").getMatch(0);
+            ddlink = br2.getRegex("\"hashed\":\"(http:[^<>\"]*?)\"").getMatch(0);
         }
 
-        if (ddlink == null || !ddlink.startsWith("http") || ddlink.length() > 500) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (ddlink == null || !ddlink.startsWith("http") || ddlink.length() > 500) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        ddlink = ddlink.replace("\\", "");
+        if (downloadLink.getBooleanProperty("splitlink", false)) {
+            ddlink += "/1";
+        }
 
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, ddlink, true, -4);
         if (dl.getConnection().getContentType().contains("html")) {
@@ -108,11 +123,9 @@ public class RomHustlerNet extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
 
-        String filename = dl.getConnection().getURL().toString();
-        filename = Encoding.htmlDecode(filename.substring(filename.lastIndexOf("/") + 1));
-        if (filename != null && filename.contains(downloadLink.getName())) {
-            downloadLink.setFinalFileName(filename);
-        }
+        String filename = getFileNameFromHeader(dl.getConnection());
+        filename = Encoding.htmlDecode(filename);
+        downloadLink.setFinalFileName(filename);
         dl.startDownload();
     }
 
