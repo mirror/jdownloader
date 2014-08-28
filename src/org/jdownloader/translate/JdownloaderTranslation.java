@@ -297,6 +297,9 @@ public interface JdownloaderTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "Various Files" })
     String LinkCollector_addCrawledLink_variouspackage();
 
+    @Default(lngs = { "en" }, values = { "Unknown Files" })
+    String LinkCollector_addCrawledLink_unknownpackage();
+
     @Default(lngs = { "en" }, values = { "%s1" })
     String LinkCollector_archiv(String cleanFileName);
 

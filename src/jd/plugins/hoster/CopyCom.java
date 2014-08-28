@@ -62,7 +62,7 @@ public class CopyCom extends PluginForHost {
      * Corrects downloadLink.urlDownload().<br/>
      * <br/>
      * The following code respect the hoster supported protocols via plugin boolean settings and users config preference
-     *
+     * 
      * @author raztoki
      * */
     @Override
@@ -78,12 +78,12 @@ public class CopyCom extends PluginForHost {
             URLConnectionAdapter con = null;
             try {
                 con = br.openGetConnection(ddlink);
-                if (con.isContentDisposition()) {
+                if (con.isContentDisposition() && con.isOK()) {
                     // ddlink!
                     if (link.getFinalFileName() == null) {
                         link.setFinalFileName(getFileNameFromHeader(con));
                     }
-                    link.setVerifiedFileSize(con.getLongContentLength());
+                    link.setVerifiedFileSize(con.getContentLength());
                     link.setProperty("ddlink", true);
                     return AvailableStatus.TRUE;
                 } else {
