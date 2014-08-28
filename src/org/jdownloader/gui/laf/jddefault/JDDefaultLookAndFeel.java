@@ -25,6 +25,7 @@ public class JDDefaultLookAndFeel extends SyntheticaLookAndFeel {
     }
 
     public Icon getDisabledIcon(JComponent component, Icon icon) {
+        /* do not use NewTheme.getDisabled as it will ask this method again */
         return ImageProvider.getDisabledIcon(icon);
     }
 
