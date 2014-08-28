@@ -79,9 +79,16 @@ public class Keep2ShareCc extends K2SApi {
         return (Math.max(super.getVersion(), 0) * 100000) + getAPIRevision();
     }
 
+    @Override
+    protected Browser prepBrowser(final Browser prepBr) {
+        prepADB(prepBr);
+        prepBr.setConnectTimeout(90 * 1000);
+        return prepBr;
+    }
+
     /**
      * easiest way to set variables, without the need for multiple declared references
-     * 
+     *
      * @param account
      */
     private void setConstants(final Account account) {
@@ -116,13 +123,6 @@ public class Keep2ShareCc extends K2SApi {
         link.setUrlDownload(link.getDownloadURL().replaceFirst("^https?://", getProtocol()));
         link.setUrlDownload(link.getDownloadURL().replace("keep2sharedecrypted.cc/", "k2s.cc/"));
         link.setUrlDownload(link.getDownloadURL().replace("keep2share.cc/", "k2s.cc/"));
-    }
-
-    @Override
-    protected Browser prepBrowser(final Browser prepBr) {
-        prepADB(prepBr);
-        prepBr.setConnectTimeout(90 * 1000);
-        return prepBr;
     }
 
     @Override

@@ -75,6 +75,11 @@ public class Publish2Me extends K2SApi {
     }
 
     @Override
+    public long getVersion() {
+        return (Math.max(super.getVersion(), 0) * 100000) + getAPIRevision();
+    }
+
+    @Override
     protected Browser prepBrowser(Browser prepBr) {
         return prepADB(prepBr);
     }
