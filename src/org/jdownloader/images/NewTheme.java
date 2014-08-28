@@ -50,19 +50,22 @@ public class NewTheme extends Theme {
     }
 
     protected String getCacheKey(final Object... objects) {
-        if (objects.length == 1) {
-            return objects[0].toString();
-        }
-        final StringBuilder sb = new StringBuilder();
-        for (final Object o : objects) {
-            if (sb.length() > 0) {
-                sb.append("_");
+        if (objects != null) {
+            if (objects.length == 1 && objects[0] != null) {
+                return objects[0].toString();
             }
-
-            sb.append(o.toString());
-
+            final StringBuilder sb = new StringBuilder();
+            for (final Object o : objects) {
+                if (o != null) {
+                    if (sb.length() > 0) {
+                        sb.append("_");
+                    }
+                    sb.append(o.toString());
+                }
+            }
+            return sb.toString();
         }
-        return sb.toString();
+        return null;
     }
 
     @Override
