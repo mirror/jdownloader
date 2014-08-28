@@ -265,7 +265,7 @@ public abstract class K2SApi extends PluginForHost {
                     final String name = getJson(filter, "name");
                     final String size = getJson(filter, "size");
                     final String md5 = getJson(filter, "md5");
-                    final String prem = getJson(filter, "premiumOnly");
+                    final String access = getJson(filter, "access");
                     final String pass = getJson(filter, "password");
                     if (!inValidate(name)) {
                         dl.setName(name);
@@ -276,8 +276,23 @@ public abstract class K2SApi extends PluginForHost {
                     if (!inValidate(md5)) {
                         dl.setMD5Hash(md5);
                     }
-                    if (!inValidate(prem)) {
-                        dl.setProperty("premiumRequired", Boolean.parseBoolean(prem));
+                    if (!inValidate(access)) {
+                        // access: ['public', 'private', 'premium']
+                        // public = everyone users
+                        // premium = restricted to premium
+                        // private = owner only..
+                        dl.setProperty("access", access);
+                        if ("premium".equalsIgnoreCase(access)) {
+                            try {
+                                dl.setComment(getErrorMessage(7));
+                            } catch (final Throwable e) {
+                            }
+                        } else if ("private".equalsIgnoreCase(access)) {
+                            try {
+                                dl.setComment(getErrorMessage(8));
+                            } catch (final Throwable e) {
+                            }
+                        }
                     }
                     if (!inValidate(pass)) {
                         dl.setProperty("passwordRequired", Boolean.parseBoolean(pass));
@@ -335,8 +350,14 @@ public abstract class K2SApi extends PluginForHost {
         // required to get overrides to work
         br = prepAPI(newBrowser());
         if (inValidate(dllink)) {
-            if (account == null || account.getBooleanProperty("free", false)) {
-                // free non account (still waiting on free download method
+            if ("premium".equalsIgnoreCase(downloadLink.getStringProperty("access", null)) && isFree) {
+                // download not possible
+                premiumDownloadRestriction(getErrorMessage(3));
+            } else if ("private".equalsIgnoreCase(downloadLink.getStringProperty("access", null)) && isFree) {
+                privateDownloadRestriction(getErrorMessage(8));
+            }
+            if (isFree) {
+                // free non account, and free account download method.
                 postPageRaw(br, "/requestcaptcha", "", account);
                 final String challenge = getJson("challenge");
                 final String captcha_url = getJson("captcha_url");
@@ -362,8 +383,9 @@ public abstract class K2SApi extends PluginForHost {
                 }
                 postPageRaw(br, "/geturl", "{\"file_id\":\"" + fuid + "\",\"free_download_key\":\"" + free_download_key + "\",\"captcha_challenge\":null,\"captcha_response\":null}", account);
             } else {
-                // premium
+                // premium download
                 postPageRaw(br, "/geturl", "{\"auth_token\":\"" + getAuthToken(account) + "\",\"file_id\":\"" + fuid + "\"}", account);
+                // private error files happen here, because we can't identify the owner until download squence starts!
             }
             dllink = getJson("url");
             if (inValidate(dllink)) {
@@ -600,11 +622,11 @@ public abstract class K2SApi extends PluginForHost {
             try {
                 switch (err) {
                 case 1:
-                    // DOWNLOAD_COUNT_EXCEEDED = 1; //'Download count files exceed'
+                    // DOWNLOAD_COUNT_EXCEEDED = 1; "Download count files exceed"
                     // assume non account/free account
                     throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, msg);
                 case 2:
-                    // DOWNLOAD_TRAFFIC_EXCEEDED = 2; //'Traffic limit exceed'
+                    // DOWNLOAD_TRAFFIC_EXCEEDED = 2; "Traffic limit exceed"
                     // assume all types
                     if (account == null) {
                         throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, msg);
@@ -615,15 +637,17 @@ public abstract class K2SApi extends PluginForHost {
                         throw new PluginException(LinkStatus.ERROR_RETRY, msg);
                     }
                 case 3:
-                    // DOWNLOAD_FILE_SIZE_EXCEEDED = 3;
-                    // //"Free user can't download large files. Upgrade to PREMIUM and forget about limits."
+                case 7:
+                    // DOWNLOAD_FILE_SIZE_EXCEEDED = 3; "Free user can't download large files. Upgrade to PREMIUM and forget about limits."
+                    // PREMIUM_ONLY = 7; "This download available only for premium users"
+                    // {"message":"Download not available","status":"error","code":406,"errorCode":42,"errors":[{"code":7}]}
                     premiumDownloadRestriction(msg);
                 case 4:
-                    // DOWNLOAD_NO_ACCESS = 4; //'You no can access to this file'
+                    // DOWNLOAD_NO_ACCESS = 4; "You no can access to this file"
                     // not sure about this...
                     throw new PluginException(LinkStatus.ERROR_FATAL, msg);
                 case 5:
-                    // DOWNLOAD_WAITING = 5; //'Please wait to download this file'
+                    // DOWNLOAD_WAITING = 5; "Please wait to download this file"
                     // {"message":"Download not available","status":"error","code":406,"errorCode":42,"errors":[{"code":5,"timeRemaining":"2521.000000"}]}
                     // think timeRemaining is in seconds
                     String time = getJson(iString, "timeRemaining");
@@ -634,13 +658,11 @@ public abstract class K2SApi extends PluginForHost {
                         throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, msg, 15 * 60 * 1000);
                     }
                 case 6:
-                    // DOWNLOAD_FREE_THREAD_COUNT_TO_MANY = 6; //'Free account does not allow to download more than one file at the same
-                    // time'
+                    // DOWNLOAD_FREE_THREAD_COUNT_TO_MANY = 6; "Free account does not allow to download more than one file at the same time"
                     throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, msg);
-                case 7:
-                    // {"message":"Download not available","status":"error","code":406,"errorCode":42,"errors":[{"code":7}]}
-                    // unknown error and undocumented
-                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, msg);
+                case 8:
+                    // PRIVATE_ONLY = 8; //'This is private file',
+                    privateDownloadRestriction(msg);
                 case 10:
                 case 11:
                     // ERROR_YOU_ARE_NEED_AUTHORIZED = 10;
@@ -661,10 +683,10 @@ public abstract class K2SApi extends PluginForHost {
                     // what does this mean? premium only link ? treating as 'file not found'
                 case 30:
                     // ERROR_CAPTCHA_REQUIRED = 30;
-                    // this shouldn't happen in dl method.. be aware website login can contain captcha, api not of yet.
+                    // this shouldn't happen in dl method.. beware website can contain captcha onlogin, api not of yet.
                     if (account != null) {
                         // {"message":"You need send request for free download with captcha fields","status":"error","code":406,"errorCode":30}
-                        // false positive! dump cookies and retry
+                        // false positive for invalid auth_token (work around)! dump cookies and retry
                         dumpAuthToken(account);
                         throw new PluginException(LinkStatus.ERROR_RETRY);
                     }
@@ -688,15 +710,14 @@ public abstract class K2SApi extends PluginForHost {
                     // sub error, pass it back into itself.
                     handleErrors(account, getJsonArray(iString, "errors"), true);
                 case 70:
+                case 72:
                     // ERROR_INCORRECT_USERNAME_OR_PASSWORD = 70;
+                    // ERROR_ACCOUNT_BANNED = 72;
                     dumpAuthToken(account);
-                    throw new PluginException(LinkStatus.ERROR_PREMIUM, msg, PluginException.VALUE_ID_PREMIUM_DISABLE);
+                    throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\n" + msg, PluginException.VALUE_ID_PREMIUM_DISABLE);
                 case 71:
                     // ERROR_LOGIN_ATTEMPTS_EXCEEDED = 71;
                     throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\n" + msg, PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
-                case 72:
-                    // ERROR_ACCOUNT_BANNED = 72;
-                    throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\n" + msg, PluginException.VALUE_ID_PREMIUM_DISABLE);
                 case 73:
                 case 74:
                     // ERROR_NO_ALLOW_ACCESS_FROM_NETWORK = 73;
@@ -746,8 +767,9 @@ public abstract class K2SApi extends PluginForHost {
             } else if (code == 6) {
                 msg = "Maximium number pararell downloads reached!";
             } else if (code == 7) {
-                // unknown err cause.. this mssage could change..
-                msg = "Download not possible at this time!";
+                msg = "Access Restriction - Only premium account holders can download this file!";
+            } else if (code == 8) {
+                msg = "Access Restriction - Only the owner of this file is allowed to download!";
             } else if (code == 10) {
                 msg = "Your not authorised req: auth_token!";
             } else if (code == 11) {
@@ -763,7 +785,7 @@ public abstract class K2SApi extends PluginForHost {
             } else if (code == 41) {
                 msg = "Wait time detetected!";
             } else if (code == 70) {
-                msg = "\r\nInvalid username/password!\r\nYou're sure that the username and password you entered are correct? Some hints:\r\n1. If your password contains special characters, change it (remove them) and try again!\r\n2. Type in your username/password by hand without copy & paste.";
+                msg = "Invalid username/password!\r\nYou're sure that the username and password you entered are correct? Some hints:\r\n1. If your password contains special characters, change it (remove them) and try again!\r\n2. Type in your username/password by hand without copy & paste.";
             } else if (code == 71) {
                 msg = "You've tried logging in too many times!";
             } else if (code == 72) {
@@ -791,6 +813,16 @@ public abstract class K2SApi extends PluginForHost {
                 throw (PluginException) e;
             }
         }
+        throw new PluginException(LinkStatus.ERROR_FATAL, msg);
+    }
+
+    /**
+     * Only the owner of the file can download!
+     *
+     * @param msg
+     * @throws PluginException
+     */
+    public void privateDownloadRestriction(final String msg) throws PluginException {
         throw new PluginException(LinkStatus.ERROR_FATAL, msg);
     }
 
