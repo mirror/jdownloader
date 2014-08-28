@@ -43,7 +43,7 @@ import jd.plugins.PluginForHost;
 import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.formatter.TimeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "hdstream.to" }, urls = { "http://(www\\.)?hdstream\\.to/#\\!f=[A-Za-z0-9]+" }, flags = { 2 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "hdstream.to" }, urls = { "https?://(www\\.)?hdstream\\.to/(#\\!f=[A-Za-z0-9]+(\\-[A-Za-z0-9]+)?|f/.+)" }, flags = { 2 })
 public class HdStreamTo extends PluginForHost {
 
     public HdStreamTo(PluginWrapper wrapper) {
@@ -101,7 +101,7 @@ public class HdStreamTo extends PluginForHost {
                 for (final DownloadLink dllink : links) {
                     final String fid = this.getFID(dllink);
                     final String thisjson = br.getRegex("(\"" + fid + "\":\\{.*?\\})").getMatch(0);
-                    if (thisjson == null || !"on".equals(this.getJson(thisjson, "state"))) {
+                    if (fid == null || thisjson == null || !"on".equals(this.getJson(thisjson, "state"))) {
                         dllink.setAvailable(false);
                     } else {
                         final String hash = this.getJson(thisjson, "hash");
@@ -144,11 +144,17 @@ public class HdStreamTo extends PluginForHost {
     }
 
     @SuppressWarnings("deprecation")
-    public void doFree(final DownloadLink downloadLink, final boolean resume, final int maxchunks) throws Exception, PluginException {
+    public void doFree(final DownloadLink downloadLink, boolean resume, int maxchunks) throws Exception, PluginException {
         checkDownloadable();
+        String premiumtoken = getPremiumToken(downloadLink);
+        if (!premiumtoken.equals("")) {
+            resume = true;
+            maxchunks = -10;
+        }
         final String free_downloadable = getJson("downloadable");
         final String free_downloadable_max_filesize = new Regex(free_downloadable, "mb(\\d+)").getMatch(0);
-        if (free_downloadable.equals("premium") || (free_downloadable_max_filesize != null && downloadLink.getDownloadSize() >= SizeFormatter.getSize(free_downloadable_max_filesize + " mb"))) {
+        /* Note that premiumtokens can override this */
+        if (free_downloadable.equals("premium") || (free_downloadable_max_filesize != null && downloadLink.getDownloadSize() >= SizeFormatter.getSize(free_downloadable_max_filesize + " mb")) && premiumtoken.equals("")) {
             try {
                 throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);
             } catch (final Throwable e) {
@@ -158,19 +164,20 @@ public class HdStreamTo extends PluginForHost {
             }
             throw new PluginException(LinkStatus.ERROR_FATAL, "This file can only be downloaded by premium users");
         }
-        final String dllink = getDllink(downloadLink);
+        String dllink = getDllink(downloadLink);
+        dllink += "&premium=" + premiumtoken;
         final String fid = getFID(downloadLink);
         try {
             br.getPage("http://hdstream.to/json/filelist.php?file=" + fid);
         } catch (final Throwable e) {
         }
-        br.getPage("http://hdstream.to/send.php?visited=" + fid);
+        br.getPage("http://hdstream.to/send.php?visited=" + fid + "&premium=" + premiumtoken);
         final String waittime = getJson("wait");
         if (waittime == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         this.sleep(Integer.parseInt(waittime) * 1001l, downloadLink);
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, false, 1);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, resume, maxchunks);
         if (dl.getConnection().getContentType().contains("html")) {
             /* 403 error means different things for free and premium */
             /* Should never happen here */
@@ -208,8 +215,29 @@ public class HdStreamTo extends PluginForHost {
         return output;
     }
 
+    /** Get fid of the link, no matter which linktype is added by the user. */
     private String getFID(final DownloadLink dl) {
-        return new Regex(dl.getDownloadURL(), "([A-Za-z0-9]+)$").getMatch(0);
+        final String addedlink = dl.getDownloadURL();
+        String fid = new Regex(addedlink, "([A-Za-z0-9]+)\\.html$").getMatch(0);
+        if (fid == null) {
+            fid = new Regex(addedlink, "hdstream\\.to/(f/|#\\!f=)([A-Za-z0-9]+)").getMatch(1);
+        }
+        return fid;
+    }
+
+    /**
+     * Links which contain a premium token can be downloaded via free like a premium user - in case such a token exists in a link, this
+     * function will return it.
+     *
+     * @return: "" (empty String) if there is no token and the token if there is one
+     */
+    private String getPremiumToken(final DownloadLink dl) {
+        final String addedlink = dl.getDownloadURL();
+        String premtoken = new Regex(addedlink, "hdstream\\.to/(f/|#\\!f=)[A-Za-z0-9]+\\-([A-Za-z0-9]+)$").getMatch(1);
+        if (premtoken == null) {
+            premtoken = "";
+        }
+        return premtoken;
     }
 
     /**
