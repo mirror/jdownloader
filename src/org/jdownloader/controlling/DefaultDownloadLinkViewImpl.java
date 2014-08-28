@@ -2,6 +2,8 @@ package org.jdownloader.controlling;
 
 import jd.plugins.DownloadLink;
 
+import org.jdownloader.settings.staticreferences.CFG_GUI;
+
 public class DefaultDownloadLinkViewImpl implements DownloadLinkView {
 
     protected DownloadLink link;
@@ -56,7 +58,15 @@ public class DefaultDownloadLinkViewImpl implements DownloadLinkView {
 
     @Override
     public String getDownloadUrl() {
+        // http://board.jdownloader.org/showpost.php?p=305216&postcount=12
+        if (CFG_GUI.SHOW_BROWSER_URL_IF_POSSIBLE) {
+            if (link.hasBrowserUrl()) {
+                return link.getBrowserUrl();
+            } else {
+                return link.getDownloadURL();
 
+            }
+        }
         // Workaround for links added before this change
         if (1409057525234l - link.getCreated() > 0) {
             if (link.hasBrowserUrl()) {

@@ -1074,6 +1074,7 @@ public class LinkCrawler {
     private String[] getAndClearSourceURLs(CrawledLink link) {
         ArrayList<String> sources = new ArrayList<String>();
         CrawledLink source = link;
+
         while (source != null) {
             if (sources.size() == 0 || !StringUtils.equals(source.getURL(), sources.get(sources.size() - 1))) {
                 sources.add(source.getURL());
@@ -1081,6 +1082,18 @@ public class LinkCrawler {
             source = source.getSourceLink();
         }
         link.setSourceUrls(null);
+
+        if (link.getSourceJob() != null) {
+            String cust = link.getSourceJob().getCustomSourceUrl();
+            if (cust != null) {
+                sources.add(cust);
+            }
+        } else if (this instanceof JobLinkCrawler) {
+            String cust = ((JobLinkCrawler) this).getJob().getCustomSourceUrl();
+            if (cust != null) {
+                sources.add(cust);
+            }
+        }
         return sources.toArray(new String[] {});
     }
 

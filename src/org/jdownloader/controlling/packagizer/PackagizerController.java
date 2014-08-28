@@ -10,6 +10,7 @@ import java.util.Locale;
 import java.util.regex.Pattern;
 
 import jd.controlling.TaskQueue;
+import jd.controlling.linkcollector.LinkCollectingJob;
 import jd.controlling.linkcollector.PackagizerInterface;
 import jd.controlling.linkcrawler.CrawledLink;
 import jd.controlling.linkcrawler.PackageInfo;
@@ -193,15 +194,47 @@ public class PackagizerController implements PackagizerInterface, FileCreationLi
                 int id = Integer.parseInt(modifiers);
                 String[] sources = link.getSourceUrls();
                 String txt = input;
-                if (sources != null) {
-                    for (String s : sources) {
-                        Regex regex = new Regex(s, lgr.getSourceRule().getPattern());
-                        if (regex.matches()) {
-                            String[] values = regex.getRow(0);
-                            txt = Pattern.compile("<jd:source:" + id + "/?>").matcher(txt).replaceAll(values[id - 1]);
-                        }
+                // the i counter allows us to write regular expressions that adress a certain line only.
+                String pattern = lgr.getSourceRule().getPattern().pattern();
+                boolean indexed = pattern.matches("^\\-?\\d+\\\\\\. .+");
+                boolean inverted = pattern.startsWith("-");
+
+                if (sources == null) {
+                    /* the first link never has sourceURLs */
+                    sources = new String[2];
+                    sources[0] = link.getURL();
+                    LinkCollectingJob job = link.getSourceJob();
+                    if (job != null) {
+                        sources[1] = job.getCustomSourceUrl();
                     }
                 }
+                int i = 1;
+                for (int j = inverted ? 0 : sources.length - 1; (inverted ? (j < sources.length) : (j >= 0)); j = (inverted ? (j + 1) : (j - 1))) {
+
+                    String s = sources[j];
+                    if (s == null) {
+                        continue;
+                    }
+                    String toMatch = indexed ? (inverted ? "-" : "") + (i++) + ". " + s : s;
+
+                    Regex regex = new Regex(toMatch, lgr.getSourceRule().getPattern());
+                    if (regex.matches()) {
+                        String[] values = regex.getRow(0);
+                        if (values[id - 1] != null) {
+                            txt = Pattern.compile("<jd:source:" + id + "/?>").matcher(txt).replaceAll(values[id - 1]);
+                        }
+                    } else {
+                        regex = new Regex(s, lgr.getSourceRule().getPattern());
+                        if (regex.matches()) {
+                            String[] values = regex.getRow(0);
+                            if (values[id - 1] != null) {
+                                txt = Pattern.compile("<jd:source:" + id + "/?>").matcher(txt).replaceAll(values[id - 1]);
+                            }
+                        }
+                    }
+
+                }
+
                 return txt;
             }
 
