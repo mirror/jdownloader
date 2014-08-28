@@ -1493,6 +1493,11 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
                                 }
                             }
                             updateUniqueAlltimeIDMaps(lpackages);
+                            for (final CrawledPackage filePackage : lpackages) {
+                                for (final CrawledLink link : filePackage.getChildren()) {
+                                    putCrawledLinkByLinkID(link.getLinkID(), link);
+                                }
+                            }
                             packages.addAll(0, lpackages);
                         } finally {
                             writeUnlock();
