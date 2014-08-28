@@ -47,12 +47,15 @@ public class NewTheme extends Theme {
     private NewTheme() {
         super("org/jdownloader/");
         AWUTheme.getInstance().setNameSpace(getNameSpace());
+        AWUTheme.I().setDelegate(this);
     }
 
     protected String getCacheKey(final Object... objects) {
+
         if (objects != null) {
             if (objects.length == 1 && objects[0] != null) {
                 return objects[0].toString();
+
             }
             final StringBuilder sb = new StringBuilder();
             for (final Object o : objects) {
