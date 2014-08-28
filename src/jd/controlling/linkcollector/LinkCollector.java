@@ -199,13 +199,20 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
                 if (infos == null) {
                     // compatibility
                     infos = new Regex(combined, "^(.*?)_\\|\\|_(.*?)_\\|\\|_(.*?)$").getRow(0);
-
                 }
-                if (infos == null) {
-                    return new CrawledPackageMappingID(combined, null, null);
-                }
-                if (infos[0] != null || infos[1] != null || infos[2] != null) {
-                    return new CrawledPackageMappingID(infos[0], infos[1], infos[2]);
+                if (infos != null && infos.length == 3) {
+                    if ("Null".equalsIgnoreCase(infos[0])) {
+                        infos[0] = null;
+                    }
+                    if ("Null".equalsIgnoreCase(infos[1])) {
+                        infos[1] = null;
+                    }
+                    if ("Null".equalsIgnoreCase(infos[2])) {
+                        infos[2] = null;
+                    }
+                    if (infos[0] != null || infos[1] != null || infos[2] != null) {
+                        return new CrawledPackageMappingID(infos[0], infos[1], infos[2]);
+                    }
                 }
             }
             return null;
