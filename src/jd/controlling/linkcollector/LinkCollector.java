@@ -195,7 +195,15 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
 
         private static CrawledPackageMappingID get(String combined) {
             if (combined != null) {
-                final String infos[] = new Regex(combined, "^(.*?)\\|_\\|(.*?)\\|_\\|(.*?)$").getRow(0);
+                String[] infos = new Regex(combined, "^(.*?)\\|_\\|(.*?)\\|_\\|(.*?)$").getRow(0);
+                if (infos == null) {
+                    // compatibility
+                    infos = new Regex(combined, "^(.*?)_\\|\\|_(.*?)_\\|\\|_(.*?)$").getRow(0);
+
+                }
+                if (infos == null) {
+                    return new CrawledPackageMappingID(combined, null, null);
+                }
                 if (infos[0] != null || infos[1] != null || infos[2] != null) {
                     return new CrawledPackageMappingID(infos[0], infos[1], infos[2]);
                 }
