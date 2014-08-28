@@ -271,7 +271,7 @@ public abstract class K2SApi extends PluginForHost {
                     final String size = getJson(filter, "size");
                     final String md5 = getJson(filter, "md5");
                     final String access = getJson(filter, "access");
-                    final String pass = getJson(filter, "password");
+                    final String isFolder = getJson(filter, "is_folder");
                     if (!inValidate(name)) {
                         dl.setName(name);
                     }
@@ -299,8 +299,12 @@ public abstract class K2SApi extends PluginForHost {
                             }
                         }
                     }
-                    if (!inValidate(pass)) {
-                        dl.setProperty("passwordRequired", Boolean.parseBoolean(pass));
+                    if (!inValidate(isFolder) && "true".equalsIgnoreCase(isFolder)) {
+                        dl.setAvailable(false);
+                        try {
+                            dl.setComment(getErrorMessage(23));
+                        } catch (final Throwable e) {
+                        }
                     }
                     setFUID(dl);
                 }
@@ -686,6 +690,9 @@ public abstract class K2SApi extends PluginForHost {
                     handleErrors(account, getJsonArray(iString, "errors"), true);
                     // ERROR_FILE_IS_BLOCKED = 22;
                     // what does this mean? premium only link ? treating as 'file not found'
+                case 23:
+                    // {"message":"file_id is folder","status":"error","code":406,"errorCode":23}
+                    throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND, msg);
                 case 30:
                     // ERROR_CAPTCHA_REQUIRED = 30;
                     // this shouldn't happen in dl method.. beware website can contain captcha onlogin, api not of yet.
@@ -780,7 +787,9 @@ public abstract class K2SApi extends PluginForHost {
             } else if (code == 11) {
                 msg = "auth_token has expired!";
             } else if (code == 21 || code == 42) {
-                msg = "Download not possible at this time!";
+                msg = "Download not possible at this time! Generic Error code with subcode!";
+            } else if (code == 23) {
+                msg = "This URL is a Folder, you can not download folder as a file!";
             } else if (code == 30) {
                 msg = "Captcha required!";
             } else if (code == 31) {
