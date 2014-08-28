@@ -3,7 +3,7 @@ package org.jdownloader.gui.laf.jddefault;
 import javax.swing.Icon;
 import javax.swing.JComponent;
 
-import org.jdownloader.images.NewTheme;
+import org.appwork.utils.ImageProvider.ImageProvider;
 
 import de.javasoft.plaf.synthetica.SyntheticaLookAndFeel;
 import de.javasoft.util.OS;
@@ -25,8 +25,7 @@ public class JDDefaultLookAndFeel extends SyntheticaLookAndFeel {
     }
 
     public Icon getDisabledIcon(JComponent component, Icon icon) {
-
-        return NewTheme.I().getDisabledIcon(icon);
+        return ImageProvider.getDisabledIcon(icon);
     }
 
     // return the LAF name - readable for humans
