@@ -74,7 +74,7 @@ public class DownloadLinkPropertiesPanel extends AbstractNodePropertiesPanel imp
     }
 
     protected Icon getHighestPackagePriorityIcon() {
-        return ImageProvider.getDisabledIcon(currentPackage.getView().getHighestPriority().loadIcon(18));
+        return   org.jdownloader.images.NewTheme.I().getDisabledIcon(currentPackage.getView().getHighestPriority().loadIcon(18));
     }
 
     protected boolean isArchiveLineEnabled() {

@@ -46,7 +46,6 @@ import org.appwork.swing.exttable.ExtTableModel;
 import org.appwork.uio.CloseReason;
 import org.appwork.uio.UIOManager;
 import org.appwork.utils.StringUtils;
-import org.appwork.utils.ImageProvider.ImageProvider;
 import org.appwork.utils.swing.SwingUtils;
 import org.appwork.utils.swing.dialog.Dialog;
 import org.appwork.utils.swing.dialog.DialogCanceledException;
@@ -252,7 +251,7 @@ public class PackagizerFilterRuleDialog extends ConditionDialog<PackagizerRule> 
                     r.setIcon(index == 1 ? CheckBoxIcon.FALSE : CheckBoxIcon.TRUE);
                 }
                 if (!ret.isEnabled()) {
-                    r.setIcon(ImageProvider.getDisabledIcon(r.getIcon()));
+                    r.setIcon(NewTheme.I().getDisabledIcon(r.getIcon()));
                 }
                 return r;
             }

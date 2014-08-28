@@ -67,7 +67,7 @@ public class AbstractIcon implements Icon, IDIcon {
     @Override
     public void paintIcon(Component c, Graphics g, int x, int y) {
         if (c != null && !c.isEnabled()) {
-            ImageProvider.getDisabledIcon(NewTheme.I().getIcon(getKey(), getSize())).paintIcon(c, g, x, y);
+              org.jdownloader.images.NewTheme.I().getDisabledIcon(NewTheme.I().getIcon(getKey(), getSize())).paintIcon(c, g, x, y);
         } else {
             NewTheme.I().getIcon(getKey(), getSize()).paintIcon(c, g, x, y);
         }
