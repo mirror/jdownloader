@@ -77,7 +77,7 @@ public class LinkPropertiesPanel extends AbstractNodePropertiesPanel implements 
 
     @Override
     protected Icon getHighestPackagePriorityIcon() {
-        return ImageProvider.getDisabledIcon(currentPackage.getView().getHighestPriority().loadIcon(18));
+        return   org.jdownloader.images.NewTheme.I().getDisabledIcon(currentPackage.getView().getHighestPriority().loadIcon(18));
     }
 
     @Override

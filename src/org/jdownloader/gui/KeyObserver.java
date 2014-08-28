@@ -5,8 +5,6 @@ import java.awt.Toolkit;
 import java.awt.event.AWTEventListener;
 import java.awt.event.KeyEvent;
 
-import javax.swing.KeyStroke;
-
 import org.jdownloader.gui.event.GUIEvent;
 import org.jdownloader.gui.event.GUIEventSender;
 
@@ -46,7 +44,8 @@ public class KeyObserver implements AWTEventListener {
         // currentMod &= CLEAR_OLD_MASK;
         if (nootherKey) {
 
-        return currentMod == modifier; }
+            return currentMod == modifier;
+        }
 
         int and = (currentMod & modifier);
         return and == modifier;
@@ -121,7 +120,7 @@ public class KeyObserver implements AWTEventListener {
         int modifier = kEvent.getModifiersEx();
 
         if (modifier != this.modifiers) {
-            System.out.println("Modifier: " + KeyStroke.getKeyStroke(0, modifier));
+
             this.modifiers = modifier;
 
             GUIEventSender.getInstance().fireEvent(new GUIEvent(this, GUIEvent.Type.KEY_MODIFIER, modifier));

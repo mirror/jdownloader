@@ -152,7 +152,7 @@ public class PseudoCombo<Type> extends JButton {
         super.paintComponent(g);
         Icon icon = getPopIcon(closed);
         if (!isEnabled()) {
-            icon = ImageProvider.getDisabledIcon(icon);
+            icon =   org.jdownloader.images.NewTheme.I().getDisabledIcon(icon);
         }
         icon.paintIcon(this, g, getWidth() - icon.getIconWidth() - 5, (getHeight() - icon.getIconHeight()) / 2);
 

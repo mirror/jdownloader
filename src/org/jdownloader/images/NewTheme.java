@@ -8,7 +8,6 @@ import javax.swing.ImageIcon;
 import org.appwork.resources.AWUTheme;
 import org.appwork.resources.Theme;
 import org.appwork.swing.components.CheckBoxIcon;
-import org.appwork.swing.components.IDIcon;
 import org.appwork.utils.ImageProvider.ImageProvider;
 import org.appwork.utils.images.IconIO;
 
@@ -59,11 +58,9 @@ public class NewTheme extends Theme {
             if (sb.length() > 0) {
                 sb.append("_");
             }
-            if (o instanceof IDIcon) {
-                sb.append(((IDIcon) o).getIdentifier());
-            } else {
-                sb.append(o.toString());
-            }
+
+            sb.append(o.toString());
+
         }
         return sb.toString();
     }

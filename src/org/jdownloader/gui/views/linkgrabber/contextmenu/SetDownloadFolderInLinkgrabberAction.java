@@ -13,6 +13,7 @@ import org.appwork.utils.event.queue.Queue;
 import org.appwork.utils.swing.dialog.DialogCanceledException;
 import org.appwork.utils.swing.dialog.DialogClosedException;
 import org.jdownloader.gui.translate._GUI;
+import org.jdownloader.gui.views.BadContextException;
 import org.jdownloader.gui.views.DownloadFolderChooserDialog;
 import org.jdownloader.gui.views.SelectionInfo;
 import org.jdownloader.gui.views.components.packagetable.context.SetDownloadFolderAction;
@@ -35,7 +36,14 @@ public class SetDownloadFolderInLinkgrabberAction extends SetDownloadFolderActio
     }
 
     protected File dialog(File path) throws DialogClosedException, DialogCanceledException {
-        return DownloadFolderChooserDialog.open(path, true, _GUI._.OpenDownloadFolderAction_actionPerformed_object_(getSelection().getContextPackage().getName()));
+
+        CrawledPackage cp = getSelection().getFirstPackage();
+        try {
+            cp = getSelection().getContextPackage();
+        } catch (BadContextException e) {
+            // happens if we open the contextmenu in the linkgrabber sidebar.
+        }
+        return DownloadFolderChooserDialog.open(path, true, _GUI._.OpenDownloadFolderAction_actionPerformed_object_(cp.getName()));
     }
 
     @Override

@@ -412,6 +412,12 @@ public abstract class FilterTable extends BasicJDTable<Filter> implements Packag
             action.requestUpdate(null);
             action.actionPerformed(null);
             return true;
+        case KeyEvent.VK_SPACE:
+
+            for (Filter f : getModel().getSelectedObjects()) {
+                f.setEnabled(!f.isEnabled());
+            }
+            return true;
         case KeyEvent.VK_X:
         case KeyEvent.VK_V:
         case KeyEvent.VK_C:

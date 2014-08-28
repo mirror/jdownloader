@@ -13,7 +13,6 @@ import org.appwork.swing.components.tooltips.ExtTooltip;
 import org.appwork.swing.exttable.ExtColumn;
 import org.appwork.swing.exttable.ExtDefaultRowSorter;
 import org.appwork.swing.exttable.columns.ExtTextColumn;
-import org.appwork.utils.ImageProvider.ImageProvider;
 import org.appwork.utils.swing.EDTHelper;
 import org.appwork.utils.swing.dialog.Dialog;
 import org.appwork.utils.swing.dialog.DialogCanceledException;
@@ -166,9 +165,9 @@ public class EditColumn extends ExtTextColumn<AdvancedConfigEntry> {
     public EditColumn() {
         super("Actions");
 
-        iconDD = new MergedIcon(ImageProvider.getDisabledIcon(NewTheme.I().getIcon("help", 16)), ImageProvider.getDisabledIcon(NewTheme.I().getIcon("reset", 16)));
-        iconED = new MergedIcon(NewTheme.I().getIcon("help", 16), ImageProvider.getDisabledIcon(NewTheme.I().getIcon("reset", 16)));
-        iconDE = new MergedIcon(ImageProvider.getDisabledIcon(NewTheme.I().getIcon("help", 16)), NewTheme.I().getIcon("reset", 16));
+        iconDD = new MergedIcon(org.jdownloader.images.NewTheme.I().getDisabledIcon(NewTheme.I().getIcon("help", 16)), org.jdownloader.images.NewTheme.I().getDisabledIcon(NewTheme.I().getIcon("reset", 16)));
+        iconED = new MergedIcon(NewTheme.I().getIcon("help", 16), org.jdownloader.images.NewTheme.I().getDisabledIcon(NewTheme.I().getIcon("reset", 16)));
+        iconDE = new MergedIcon(org.jdownloader.images.NewTheme.I().getDisabledIcon(NewTheme.I().getIcon("help", 16)), NewTheme.I().getIcon("reset", 16));
         iconEE = new MergedIcon(NewTheme.I().getIcon("help", 16), NewTheme.I().getIcon("reset", 16));
         info = new InfoAction();
         reset = new ResetAction();
