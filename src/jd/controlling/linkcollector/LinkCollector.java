@@ -2182,6 +2182,7 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
                 final CrawledLink existing = getCrawledLinkByLinkID(newLinkID);
                 if (existing != null && link != existing.getDownloadLink()) {
                     logger.info("Dupecheck Filtered Variant");
+                    //
                     // variant available
                     link.getDefaultPlugin().setActiveVariantByLink(link, oldVariant);
                     return null;
