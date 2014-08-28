@@ -579,7 +579,9 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
         List<CrawledLink> list = map.get(crawledPackageMappingID);
         if (list == null) {
             list = new ArrayList<CrawledLink>();
-            map.put(crawledPackageMappingID, list);
+            if (crawledPackageMappingID != null) {
+                map.put(crawledPackageMappingID, list);
+            }
         }
         return list;
     }
@@ -1446,8 +1448,10 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
                                         final String id = link.getID();
                                         if (id != null) {
                                             final CrawledPackageMappingID packageID = CrawledPackageMappingID.get(id);
-                                            final List<CrawledLink> list = getIdentifiedMap(packageID, variousMap);
-                                            list.add(link._getCrawledLink());
+                                            if (packageID != null) {
+                                                final List<CrawledLink> list = getIdentifiedMap(packageID, variousMap);
+                                                list.add(link._getCrawledLink());
+                                            }
                                         }
                                     }
                                     break;
@@ -1459,8 +1463,10 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
                                         final String id = link.getID();
                                         if (id != null) {
                                             final CrawledPackageMappingID packageID = CrawledPackageMappingID.get(id);
-                                            final List<CrawledLink> list = getIdentifiedMap(packageID, offlineMap);
-                                            list.add(link._getCrawledLink());
+                                            if (packageID != null) {
+                                                final List<CrawledLink> list = getIdentifiedMap(packageID, offlineMap);
+                                                list.add(link._getCrawledLink());
+                                            }
                                         }
                                     }
                                     break;
