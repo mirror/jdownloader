@@ -6,17 +6,17 @@ import org.appwork.utils.Regex;
 import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
 
 public class LinknameCleaner {
-    public static final Pattern   pat0     = Pattern.compile("(.*)(\\.|_|-)pa?r?t?\\.?[0-9]+.(rar|exe)$", Pattern.CASE_INSENSITIVE);
-    public static final Pattern   pat1     = Pattern.compile("(.*)(\\.|_|-)part\\.?[0]*[1].(rar|exe)$", Pattern.CASE_INSENSITIVE);
-    public static final Pattern   pat3     = Pattern.compile("(.*)\\.rar$", Pattern.CASE_INSENSITIVE);
-    public static final Pattern   pat4     = Pattern.compile("(.*)\\.r\\d+$", Pattern.CASE_INSENSITIVE);
-    public static final Pattern   pat5     = Pattern.compile("(.*)(\\.|_|-)\\d+$", Pattern.CASE_INSENSITIVE);
+    public static final Pattern   pat0     = Pattern.compile("(.*)(\\.|_|-)pa?r?t?\\.?[0-9]+.(rar|exe)($|\\.html?)", Pattern.CASE_INSENSITIVE);
+    public static final Pattern   pat1     = Pattern.compile("(.*)(\\.|_|-)part\\.?[0]*[1].(rar|exe)($|\\.html?)", Pattern.CASE_INSENSITIVE);
+    public static final Pattern   pat3     = Pattern.compile("(.*)\\.rar($|\\.html?)", Pattern.CASE_INSENSITIVE);
+    public static final Pattern   pat4     = Pattern.compile("(.*)\\.r\\d+($|\\.html?)", Pattern.CASE_INSENSITIVE);
+    public static final Pattern   pat5     = Pattern.compile("(.*)(\\.|_|-)\\d+($|\\.html?)", Pattern.CASE_INSENSITIVE);
     public static final Pattern[] rarPats  = new Pattern[] { pat0, pat1, pat3, pat4, pat5 };
 
-    public static final Pattern   pat6     = Pattern.compile("(.*)\\.zip$", Pattern.CASE_INSENSITIVE);
-    public static final Pattern   pat7     = Pattern.compile("(.*)\\.z\\d+$", Pattern.CASE_INSENSITIVE);
-    public static final Pattern   pat8     = Pattern.compile("(?is).*\\.7z\\.[\\d]+$", Pattern.CASE_INSENSITIVE);
-    public static final Pattern   pat9     = Pattern.compile("(.*)\\.a.$", Pattern.CASE_INSENSITIVE);
+    public static final Pattern   pat6     = Pattern.compile("(.*)\\.zip($|\\.html?)", Pattern.CASE_INSENSITIVE);
+    public static final Pattern   pat7     = Pattern.compile("(.*)\\.z\\d+($|\\.html?)", Pattern.CASE_INSENSITIVE);
+    public static final Pattern   pat8     = Pattern.compile("(?is).*\\.7z\\.[\\d]+($|\\.html?)", Pattern.CASE_INSENSITIVE);
+    public static final Pattern   pat9     = Pattern.compile("(.*)\\.a.($|\\.html?)", Pattern.CASE_INSENSITIVE);
     public static final Pattern[] zipPats  = new Pattern[] { pat6, pat7, pat8, pat9 };
 
     public static final Pattern   pat10    = Pattern.compile("(.*)\\._((_[a-z]{1})|([a-z]{2}))(\\.|$)");
@@ -39,11 +39,11 @@ public class LinknameCleaner {
     public static final Pattern   pat15    = Pattern.compile("(.+)-+$");
     public static final Pattern   pat16    = Pattern.compile("(.+)_+$");
 
-    public static final Pattern   pat17    = Pattern.compile("(.+)\\.\\d+\\.xtm$");
+    public static final Pattern   pat17    = Pattern.compile("(.+)\\.\\d+\\.xtm($|\\.html?)");
 
-    public static final Pattern   pat18    = Pattern.compile("(.*)\\.isz$", Pattern.CASE_INSENSITIVE);
+    public static final Pattern   pat18    = Pattern.compile("(.*)\\.isz($|\\.html?)", Pattern.CASE_INSENSITIVE);
     public static final Pattern   pat19    = Pattern.compile("(.*)\\.i\\d{2}$", Pattern.CASE_INSENSITIVE);
-    public static final Pattern[] iszPats  = new Pattern[] { pat18, pat19 };                                                         ;
+    public static final Pattern[] iszPats  = new Pattern[] { pat18, pat19 };                                                                    ;
 
     public static enum EXTENSION_SETTINGS {
         KEEP,
@@ -52,6 +52,9 @@ public class LinknameCleaner {
     }
 
     public static String cleanFileName(String name, boolean splitUpperLowerCase, boolean ignoreArchiveFilters, final EXTENSION_SETTINGS extensionSettings, boolean cleanup) {
+        if (name == null) {
+            return null;
+        }
         boolean extensionStilExists = true;
         String before = name;
         if (!ignoreArchiveFilters) {
@@ -135,7 +138,7 @@ public class LinknameCleaner {
             }
             if (lastPoint > 0) {
                 int extLength = (name.length() - (lastPoint + 1));
-                if (extLength <= 3) {
+                if (extLength <= 4) {
                     final String ext = name.substring(lastPoint + 1);
                     if (EXTENSION_SETTINGS.REMOVE_ALL.equals(extensionSettings) || CompiledFiletypeFilter.getExtensionsFilterInterface(ext) != null) {
                         /* make sure to cut off only known extensions */

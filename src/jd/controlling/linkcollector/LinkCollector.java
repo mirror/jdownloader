@@ -44,7 +44,6 @@ import jd.gui.swing.jdgui.WarnLevel;
 import jd.parser.Regex;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
-import jd.plugins.PluginForHost;
 import jd.utils.JDUtilities;
 
 import org.appwork.controlling.SingleReachableState;
@@ -60,6 +59,7 @@ import org.appwork.storage.TypeRef;
 import org.appwork.storage.config.JsonConfig;
 import org.appwork.uio.UIOManager;
 import org.appwork.utils.Application;
+import org.appwork.utils.Files;
 import org.appwork.utils.IO;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.event.queue.Queue;
@@ -90,8 +90,6 @@ import org.jdownloader.gui.views.linkgrabber.LinkgrabberSearchField;
 import org.jdownloader.gui.views.linkgrabber.contextmenu.MenuManagerLinkgrabberTableContext;
 import org.jdownloader.images.NewTheme;
 import org.jdownloader.myjdownloader.client.json.AvailableLinkState;
-import org.jdownloader.plugins.controller.UpdateRequiredClassNotFoundException;
-import org.jdownloader.plugins.controller.host.HostPluginController;
 import org.jdownloader.plugins.controller.host.LazyHostPlugin;
 import org.jdownloader.plugins.controller.host.PluginFinder;
 import org.jdownloader.settings.GeneralSettings;
@@ -172,6 +170,64 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
         }
     }
 
+    private static class CrawledPackageMappingID {
+        private final String id;
+
+        private String getId() {
+            return id;
+        }
+
+        private String getPackageName() {
+            return packageName;
+        }
+
+        private String getDownloadFolder() {
+            return downloadFolder;
+        }
+
+        private final String packageName;
+        private final String downloadFolder;
+        private final String combined;
+
+        public String getCombined() {
+            return combined;
+        }
+
+        private static CrawledPackageMappingID get(String combined) {
+            if (combined != null) {
+                final String infos[] = new Regex(combined, "^(.*?)\\|_\\|(.*?)\\|_\\|(.*?)$").getRow(0);
+                if (infos[0] != null || infos[1] != null || infos[2] != null) {
+                    return new CrawledPackageMappingID(infos[0], infos[1], infos[2]);
+                }
+            }
+            return null;
+        }
+
+        private CrawledPackageMappingID(String id, String packageName, String downloadFolder) {
+            this.id = id;
+            this.packageName = packageName;
+            this.downloadFolder = downloadFolder;
+            combined = id + "|_|" + packageName + "|_|" + downloadFolder;
+        }
+
+        @Override
+        public int hashCode() {
+            return combined.hashCode();
+        }
+
+        @Override
+        public boolean equals(Object obj) {
+            if (obj == this) {
+                return true;
+            }
+            if (obj != null && obj instanceof CrawledPackageMappingID) {
+                return StringUtils.equals(combined, ((CrawledPackageMappingID) obj).combined);
+            }
+            return false;
+        }
+
+    }
+
     public static LinkCollector getInstance() {
         return INSTANCE;
     }
@@ -190,42 +246,43 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
         eventsender.fireEvent(new LinkCollectorEvent(this, LinkCollectorEvent.TYPE.CRAWLER_STARTED, crawledLinkCrawler, QueuePriority.NORM));
     }
 
-    private transient LinkCollectorEventSender                         eventsender        = new LinkCollectorEventSender();
-    public final ScheduledExecutorService                              TIMINGQUEUE        = DelayedRunnable.getNewScheduledExecutorService();
-    public static SingleReachableState                                 CRAWLERLIST_LOADED = new SingleReachableState("CRAWLERLIST_COMPLETE");
-    private static LinkCollector                                       INSTANCE           = new LinkCollector();
+    private transient LinkCollectorEventSender                                  eventsender        = new LinkCollectorEventSender();
+    public final ScheduledExecutorService                                       TIMINGQUEUE        = DelayedRunnable.getNewScheduledExecutorService();
+    public static SingleReachableState                                          CRAWLERLIST_LOADED = new SingleReachableState("CRAWLERLIST_COMPLETE");
+    private static LinkCollector                                                INSTANCE           = new LinkCollector();
 
-    private volatile LinkChecker<CrawledLink>                          linkChecker        = null;
+    private volatile LinkChecker<CrawledLink>                                   linkChecker        = null;
     /**
      * NOTE: only access these fields inside the IOEQ
      */
-    private final HashMap<String, WeakReference<CrawledLink>>          dupeCheckMap       = new HashMap<String, WeakReference<CrawledLink>>();
-    private HashMap<String, CrawledPackage>                            packageMap         = new HashMap<String, CrawledPackage>();
+    private final HashMap<String, WeakReference<CrawledLink>>                   dupeCheckMap       = new HashMap<String, WeakReference<CrawledLink>>();
+    private HashMap<CrawledPackageMappingID, CrawledPackage>                    packageMap         = new HashMap<CrawledPackageMappingID, CrawledPackage>();
 
     /* sync on filteredStuff itself when accessing it */
-    private java.util.List<CrawledLink>                                filteredStuff      = new ArrayList<CrawledLink>();
+    private java.util.List<CrawledLink>                                         filteredStuff      = new ArrayList<CrawledLink>();
 
-    private LinkCrawlerFilter                                          crawlerFilter      = null;
+    private LinkCrawlerFilter                                                   crawlerFilter      = null;
 
-    private ExtractionExtension                                        archiver;
-    private DelayedRunnable                                            asyncSaving        = null;
+    private ExtractionExtension                                                 archiver;
+    private DelayedRunnable                                                     asyncSaving        = null;
 
-    private PackagizerInterface                                        packagizer         = null;
+    private PackagizerInterface                                                 packagizer         = null;
 
-    protected CrawledPackage                                           offlinePackage;
+    protected CrawledPackage                                                    offlinePackage;
 
-    protected CrawledPackage                                           variousPackage;
+    protected CrawledPackage                                                    variousPackage;
 
-    protected CrawledPackage                                           permanentofflinePackage;
+    protected CrawledPackage                                                    permanentofflinePackage;
 
-    private final CopyOnWriteArrayList<File>                           linkcollectorLists = new CopyOnWriteArrayList<File>();
+    private final CopyOnWriteArrayList<File>                                    linkcollectorLists = new CopyOnWriteArrayList<File>();
 
-    private final HashMap<String, java.util.List<CrawledLink>>         offlineMap         = new HashMap<String, java.util.List<CrawledLink>>();
-    private final HashMap<String, java.util.List<CrawledLink>>         variousMap         = new HashMap<String, java.util.List<CrawledLink>>();
-    private final HashMap<String, java.util.List<CrawledLink>>         hosterMap          = new HashMap<String, java.util.List<CrawledLink>>();
-    private final WeakHashMap<CrawledPackage, HashMap<Object, Object>> autoRenameCache    = new WeakHashMap<CrawledPackage, HashMap<Object, Object>>();
-    private DelayedRunnable                                            asyncCacheCleanup;
-    private final AtomicLong                                           collectingID       = new AtomicLong(0);
+    private final HashMap<CrawledPackageMappingID, java.util.List<CrawledLink>> offlineMap         = new HashMap<CrawledPackageMappingID, java.util.List<CrawledLink>>();
+    private final HashMap<CrawledPackageMappingID, java.util.List<CrawledLink>> variousMap         = new HashMap<CrawledPackageMappingID, java.util.List<CrawledLink>>();
+    private final HashMap<CrawledPackageMappingID, java.util.List<CrawledLink>> badMappingMap      = new HashMap<CrawledPackageMappingID, java.util.List<CrawledLink>>();
+    private final WeakHashMap<CrawledPackage, HashMap<Object, Object>>          autoRenameCache    = new WeakHashMap<CrawledPackage, HashMap<Object, Object>>();
+
+    private DelayedRunnable                                                     asyncCacheCleanup;
+    private final AtomicLong                                                    collectingID       = new AtomicLong(0);
 
     public long getCollectingID() {
         return collectingID.get();
@@ -387,7 +444,7 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
             }
         }
         autoRenameCache.remove(pkg);
-        String id = getPackageMapID(pkg);
+        final CrawledPackageMappingID id = getPackageMapID(pkg);
         if (id != null) {
             packageMap.remove(id);
         }
@@ -398,9 +455,9 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
     /**
      * NOTE: only access the IOEQ
      */
-    private String getPackageMapID(CrawledPackage pkg) {
-        for (Iterator<Entry<String, CrawledPackage>> iterator = packageMap.entrySet().iterator(); iterator.hasNext();) {
-            Entry<String, CrawledPackage> type = iterator.next();
+    private CrawledPackageMappingID getPackageMapID(CrawledPackage pkg) {
+        for (Iterator<Entry<CrawledPackageMappingID, CrawledPackage>> iterator = packageMap.entrySet().iterator(); iterator.hasNext();) {
+            final Entry<CrawledPackageMappingID, CrawledPackage> type = iterator.next();
             if (type.getValue() == pkg) {
                 return type.getKey();
             }
@@ -518,31 +575,155 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
         super.moveOrAddAt(pkg, movechildren, moveChildrenindex, pkgIndex);
     }
 
+    private List<CrawledLink> getIdentifiedMap(final CrawledPackageMappingID crawledPackageMappingID, HashMap<CrawledPackageMappingID, List<CrawledLink>> map) {
+        List<CrawledLink> list = map.get(crawledPackageMappingID);
+        if (list == null) {
+            list = new ArrayList<CrawledLink>();
+            map.put(crawledPackageMappingID, list);
+        }
+        return list;
+    }
+
     public void addCrawledLink(final CrawledLink link) {
         collectingRequested.incrementAndGet();
         /* try to find good matching package or create new one */
         QUEUE.add(new QueueAction<Void, RuntimeException>() {
 
-            public void newPackage(final java.util.List<CrawledLink> links, String packageName, String downloadFolder, String identifier) {
-                CrawledPackage pkg = new CrawledPackage();
+            private void newPackage(final java.util.List<CrawledLink> links, String newPackageName, final String downloadFolder, final CrawledPackageMappingID crawledPackageMappingID) {
+                final CrawledPackage pkg = new CrawledPackage();
                 pkg.setExpanded(JsonConfig.create(LinkCollectorConfig.class).isPackageAutoExpanded());
-                pkg.setName(packageName);
+                pkg.setName(newPackageName);
                 if (downloadFolder != null) {
                     pkg.setDownloadFolder(downloadFolder);
                 }
-                packageMap.put(identifier, pkg);
+                packageMap.put(crawledPackageMappingID, pkg);
                 if (links != null && links.size() > 0) {
                     LinkCollector.this.moveOrAddAt(pkg, links, -1);
+                    putBadMappings(newPackageName, crawledPackageMappingID, links);
                 }
                 // check of we have matching links in offline maper
-                java.util.List<CrawledLink> list = offlineMap.remove(identifier);
+                List<CrawledLink> list = offlineMap.remove(crawledPackageMappingID);
                 if (list != null && list.size() > 0) {
                     LinkCollector.this.moveOrAddAt(pkg, list, -1);
                 }
-                list = variousMap.remove(identifier);
+                list = variousMap.remove(crawledPackageMappingID);
                 if (list != null && list.size() > 0) {
                     LinkCollector.this.moveOrAddAt(pkg, list, -1);
                 }
+                if (StringUtils.equals(newPackageName, crawledPackageMappingID.getPackageName())) {
+                    list = getBadMappings(crawledPackageMappingID, pkg);
+                    if (list != null && list.size() > 0) {
+                        LinkCollector.this.moveOrAddAt(pkg, list, -1);
+                    }
+                }
+            }
+
+            private void putBadMappings(String newPackageName, CrawledPackageMappingID crawledPackageMappingID, List<CrawledLink> links) {
+                if (!StringUtils.equals(newPackageName, crawledPackageMappingID.getPackageName())) {
+                    final CrawledPackageMappingID badID = new CrawledPackageMappingID(crawledPackageMappingID.getId(), null, crawledPackageMappingID.getDownloadFolder());
+                    List<CrawledLink> badMappings = badMappingMap.get(badID);
+                    if (links != null) {
+                        for (CrawledLink link : links) {
+                            if (link.getDownloadLink().hasBrowserUrl()) {
+                                if (badMappings == null) {
+                                    badMappings = new ArrayList<CrawledLink>();
+                                    badMappingMap.put(badID, badMappings);
+                                }
+                                badMappings.add(link);
+                            }
+                        }
+                    }
+                }
+            }
+
+            private List<CrawledLink> getBadMappings(CrawledPackageMappingID crawledPackageMappingID, CrawledPackage pkg) {
+                final List<CrawledLink> ret = new ArrayList<CrawledLink>();
+                final CrawledPackageMappingID badID = new CrawledPackageMappingID(crawledPackageMappingID.getId(), null, crawledPackageMappingID.getDownloadFolder());
+                List<CrawledLink> badMappings = badMappingMap.get(badID);
+                if (badMappings != null) {
+                    final HashMap<String, Boolean> checked = new HashMap<String, Boolean>();
+                    final boolean readL = pkg.getModifyLock().readLock();
+                    try {
+                        for (CrawledLink link : badMappings) {
+                            final String browserURL = link.getDownloadLink().getBrowserUrl();
+                            Boolean check = checked.get(browserURL);
+                            if (check == null) {
+                                for (final CrawledLink cLink : pkg.getChildren()) {
+                                    final DownloadLink dlLink = cLink.getDownloadLink();
+                                    if (StringUtils.equals(browserURL, dlLink.getBrowserUrl())) {
+                                        check = Boolean.TRUE;
+                                        checked.put(browserURL, check);
+                                        break;
+                                    }
+                                }
+                                if (check == null) {
+                                    check = Boolean.FALSE;
+                                    checked.put(browserURL, check);
+                                }
+                            }
+                            if (Boolean.TRUE.equals(check)) {
+                                ret.add(link);
+                            }
+                        }
+                    } finally {
+                        pkg.getModifyLock().readUnlock(readL);
+                    }
+                    badMappings.removeAll(ret);
+                    if (badMappings.size() == 0) {
+                        badMappingMap.remove(badID);
+                    }
+                }
+                return ret;
+            }
+
+            private CrawledPackage getCrawledPackage(CrawledPackageMappingID crawledPackageMappingID, CrawledLink mappingLink) {
+                CrawledPackage ret = packageMap.get(crawledPackageMappingID);
+                if (ret == null && crawledPackageMappingID.getPackageName() == null && mappingLink.getDownloadLink().hasBrowserUrl()) {
+                    final HashMap<Integer, HashMap<CrawledPackageMappingID, CrawledPackage>> bestMappings = new HashMap<Integer, HashMap<CrawledPackageMappingID, CrawledPackage>>();
+                    for (final Entry<CrawledPackageMappingID, CrawledPackage> chance : packageMap.entrySet()) {
+                        int equals = 0;
+                        if (StringUtils.equals(crawledPackageMappingID.getId(), chance.getKey().getId())) {
+                            equals++;
+                        }
+                        if (StringUtils.equals(crawledPackageMappingID.getDownloadFolder(), chance.getKey().getDownloadFolder())) {
+                            equals++;
+                        }
+                        if (equals > 0) {
+                            HashMap<CrawledPackageMappingID, CrawledPackage> mappings = bestMappings.get(new Integer(equals));
+                            if (mappings == null) {
+                                mappings = new HashMap<CrawledPackageMappingID, CrawledPackage>();
+                                bestMappings.put(new Integer(equals), mappings);
+                            }
+                            mappings.put(chance.getKey(), chance.getValue());
+                        }
+                    }
+                    final String browserURL = mappingLink.getDownloadLink().getBrowserUrl();
+                    for (int x = 2; x > 0; x--) {
+                        HashMap<CrawledPackageMappingID, CrawledPackage> mappings = bestMappings.get(new Integer(x));
+                        if (mappings != null) {
+                            for (final Entry<CrawledPackageMappingID, CrawledPackage> mapping : mappings.entrySet()) {
+                                final CrawledPackage pkg = mapping.getValue();
+                                final boolean readL = pkg.getModifyLock().readLock();
+                                try {
+                                    for (final CrawledLink cLink : pkg.getChildren()) {
+                                        final DownloadLink dlLink = cLink.getDownloadLink();
+                                        if (dlLink != null && dlLink.hasBrowserUrl() && StringUtils.equals(dlLink.getBrowserUrl(), browserURL)) {
+                                            final CrawledPackageMappingID id = mapping.getKey();
+                                            if (id.getPackageName() != null) {
+                                                return pkg;
+                                            } else if (ret != null) {
+                                                ret = pkg;
+                                            }
+                                        }
+                                    }
+                                } finally {
+                                    pkg.getModifyLock().readUnlock(readL);
+                                }
+                            }
+                        }
+                    }
+                }
+                return ret;
             }
 
             @Override
@@ -585,12 +766,8 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
                         String packageID = null;
                         String downloadFolder = null;
                         boolean ignoreSpecialPackages = dpi != null && (dpi.isPackagizerRuleMatched() || dpi.isIgnoreVarious());
-                        boolean isMultiArchive = false;
                         if (dpi != null) {
                             packageName = dpi.getName();
-                            if ((uID = dpi.getUniqueId()) != null) {
-                                packageID = dpi.getUniqueId().toString();
-                            }
                             downloadFolder = dpi.getDestinationFolder();
                             if (downloadFolder != null) {
                                 downloadFolder = downloadFolder.replaceFirst("/$", "");
@@ -603,106 +780,65 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
                                     ignoreSpecialPackages = true;
                                 }
                             }
+                            if ((uID = dpi.getUniqueId()) != null) {
+                                packageID = dpi.getUniqueId().toString();
+                                if (ignoreSpecialPackages && LinkCrawler.PERMANENT_OFFLINE_ID == uID) {
+                                    packageID = null;
+                                }
+                            }
                         }
-                        CrawledLinkFactory clf = new CrawledLinkFactory(link);
-                        ExtractionExtension lArchiver = archiver;
-                        if (lArchiver != null && org.jdownloader.settings.staticreferences.CFG_LINKGRABBER.ARCHIVE_PACKAGIZER_ENABLED.getValue()) {
-                            if (lArchiver.isMultiPartArchive(clf)) {
-                                isMultiArchive = true;
+
+                        if (packageName == null) {
+                            final DownloadLink dlLink = link.getDownloadLink();
+                            if (link.isNameSet() || dlLink.isNameSet()) {
+                                packageName = link.getName();
+                            } else {
+                                final String name = link.getName();
+                                final String extension = Files.getExtension(name);
+                                if (extension != null) {
+                                    packageName = name;
+                                }
+                            }
+                            if (packageName != null) {
+                                packageName = LinknameCleaner.cleanFileName(packageName, false, false, LinknameCleaner.EXTENSION_SETTINGS.REMOVE_ALL, true);
                             }
                         }
                         if (packageName == null) {
-                            if (isMultiArchive) {
-                                packageID = lArchiver.createArchiveID(clf);
-                                if (packageID != null) {
-                                    packageName = _JDT._.LinkCollector_archiv(LinknameCleaner.cleanFileName(lArchiver.getArchiveName(clf), false, true, LinknameCleaner.EXTENSION_SETTINGS.REMOVE_KNOWN, true));
-                                }
-                            }
-                            if (packageName == null) {
-                                final DownloadLink dlLink = link.getDownloadLink();
-                                if (link.isNameSet() || dlLink.isNameSet()) {
-                                    packageName = link.getName();
-                                } else {
-                                    packageName = dlLink.getBrowserUrl();
-                                }
-                                if (packageName != null) {
-                                    packageName = LinknameCleaner.cleanFileName(packageName, false, true, LinknameCleaner.EXTENSION_SETTINGS.REMOVE_ALL, true);
+                            final CrawledLinkFactory clf = new CrawledLinkFactory(link);
+                            final ExtractionExtension lArchiver = archiver;
+                            if (lArchiver != null && org.jdownloader.settings.staticreferences.CFG_LINKGRABBER.ARCHIVE_PACKAGIZER_ENABLED.getValue()) {
+                                if (lArchiver.isMultiPartArchive(clf)) {
+                                    if (packageID == null) {
+                                        packageID = lArchiver.createArchiveID(clf);
+                                    }
+                                    if (packageName == null) {
+                                        packageName = _JDT._.LinkCollector_archiv(LinknameCleaner.cleanFileName(lArchiver.getArchiveName(clf), false, true, LinknameCleaner.EXTENSION_SETTINGS.REMOVE_KNOWN, true));
+                                    }
                                 }
                             }
                         }
 
-                        String identifier = (packageID + "_||_" + packageName + "_||_" + downloadFolder);
                         if (CrossSystem.isWindows() || CFG_LINKGRABBER.AUTO_FILENAME_CORRECTION_ENABLED.isEnabled()) {
                             // only on windows, because mac and linux have case sensitive file systems.
-                            identifier = identifier.toLowerCase(Locale.ENGLISH);
-                        }
-                        LazyHostPlugin lazyPlg = null;
-                        PluginForHost plg = link.gethPlugin();
-                        if (plg != null && CFG_LINKGRABBER.AUTO_PACKAGE_MATCHING_CORRECTION_ENABLED.isEnabled()) {
-                            identifier = plg.filterPackageID(identifier);
-                            // run through all active hosts, and filter the identifier
-                            for (String host : hosterMap.keySet()) {
-                                lazyPlg = HostPluginController.getInstance().get(host);
-                                PluginForHost plg2 = null;
-                                if (lazyPlg != null) {
-                                    try {
-                                        plg2 = lazyPlg.getPrototype(null);
-                                    } catch (UpdateRequiredClassNotFoundException e) {
-                                        logger.log(e);
-                                    }
-                                }
-                                if (plg2 != null) {
-                                    identifier = plg2.filterPackageID(identifier);
-                                }
+                            if (packageName != null) {
+                                packageName = packageName.toLowerCase(Locale.ENGLISH);
                             }
-                            java.util.List<CrawledLink> list = hosterMap.get(link.getHost());
-
-                            if (list == null || list.size() == 0) {
-                                // new hoster - we have to update all identifiers and maps
-
-                                HashMap<String, CrawledPackage> newMap = new HashMap<String, CrawledPackage>();
-                                Entry<String, CrawledPackage> next;
-                                for (Iterator<Entry<String, CrawledPackage>> it = packageMap.entrySet().iterator(); it.hasNext();) {
-                                    next = it.next();
-                                    String newID = plg.filterPackageID(next.getKey());
-                                    if (!next.getKey().equals(newID)) {
-                                        it.remove();
-                                        CrawledPackage existing = newMap.get(newID);
-                                        if (existing != null) {
-                                            List<CrawledLink> links = null;
-                                            boolean readL = existing.getModifyLock().readLock();
-                                            try {
-                                                links = existing.getChildren();
-                                            } finally {
-                                                existing.getModifyLock().readUnlock(readL);
-                                            }
-                                            moveOrAddAt(next.getValue(), links, -1);
-                                        }
-                                        newMap.put(newID, next.getValue());
-                                    }
-                                }
-
-                                for (Iterator<Entry<String, CrawledPackage>> it = newMap.entrySet().iterator(); it.hasNext();) {
-                                    next = it.next();
-                                    CrawledPackage current = packageMap.remove(next.getKey());
-
-                                    if (current != null) {
-                                        moveOrAddAt(current, next.getValue().getChildren(), -1);
-                                    } else {
-                                        packageMap.put(next.getKey(), next.getValue());
-                                    }
-
-                                }
-                                remapIdentifier(variousMap, plg);
-                                remapIdentifier(offlineMap, plg);
+                            if (downloadFolder != null) {
+                                downloadFolder = downloadFolder.toLowerCase(Locale.ENGLISH);
                             }
-
                         }
-                        // add to hostermap
-                        java.util.List<CrawledLink> hosterlist = getIdentifiedMap(link.getHost(), hosterMap);
-                        hosterlist.add(link);
-
-                        CrawledPackage pkg = packageMap.get(identifier);
+                        final CrawledPackageMappingID crawledPackageMapID = new CrawledPackageMappingID(packageID, packageName, downloadFolder);
+                        String newPackageName = packageName;
+                        if (newPackageName == null) {
+                            newPackageName = link.getName();
+                            if (newPackageName != null) {
+                                newPackageName = LinknameCleaner.cleanFileName(newPackageName, false, true, LinknameCleaner.EXTENSION_SETTINGS.REMOVE_ALL, true);
+                            }
+                            if (StringUtils.isEmpty(newPackageName)) {
+                                newPackageName = _JDT._.LinkCollector_addCrawledLink_offlinepackage();
+                            }
+                        }
+                        final CrawledPackage pkg = getCrawledPackage(crawledPackageMapID, link);
                         if (pkg == null) {
                             if (!ignoreSpecialPackages && LinkCrawler.PERMANENT_OFFLINE_ID == uID) {
                                 /* these links will never come back online */
@@ -710,16 +846,16 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
                                 add.add(link);
                                 LinkCollector.this.moveOrAddAt(getPermanentOfflineCrawledPackage(), add, -1);
                             } else if (!ignoreSpecialPackages && link.getLinkState() == AvailableLinkState.OFFLINE && org.jdownloader.settings.staticreferences.CFG_LINKGRABBER.OFFLINE_PACKAGE_ENABLED.getValue()) {
-                                java.util.List<CrawledLink> list = getIdentifiedMap(identifier, offlineMap);
+                                java.util.List<CrawledLink> list = getIdentifiedMap(crawledPackageMapID, offlineMap);
                                 list.add(link);
                                 List<CrawledLink> add = new ArrayList<CrawledLink>(1);
                                 add.add(link);
                                 LinkCollector.this.moveOrAddAt(getOfflineCrawledPackage(), add, -1);
                             } else if (!ignoreSpecialPackages && org.jdownloader.settings.staticreferences.CFG_LINKGRABBER.VARIOUS_PACKAGE_LIMIT.getValue() > 0 && CFG_LINKGRABBER.VARIOUS_PACKAGE_ENABLED.isEnabled()) {
-                                java.util.List<CrawledLink> list = getIdentifiedMap(identifier, variousMap);
+                                java.util.List<CrawledLink> list = getIdentifiedMap(crawledPackageMapID, variousMap);
                                 list.add(link);
                                 if (list.size() > org.jdownloader.settings.staticreferences.CFG_LINKGRABBER.VARIOUS_PACKAGE_LIMIT.getValue()) {
-                                    newPackage(null, packageName, downloadFolder, identifier);
+                                    newPackage(null, newPackageName, downloadFolder, crawledPackageMapID);
                                 } else {
                                     List<CrawledLink> add = new ArrayList<CrawledLink>(1);
                                     add.add(link);
@@ -728,7 +864,7 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
                             } else {
                                 java.util.List<CrawledLink> add = new ArrayList<CrawledLink>(1);
                                 add.add(link);
-                                newPackage(add, packageName, downloadFolder, identifier);
+                                newPackage(add, newPackageName, downloadFolder, crawledPackageMapID);
                             }
                         } else {
                             List<CrawledLink> add = new ArrayList<CrawledLink>(1);
@@ -755,47 +891,6 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
                 }
             }
         });
-    }
-
-    private static void remapIdentifier(HashMap<String, java.util.List<CrawledLink>> map, PluginForHost plg) {
-
-        Entry<String, java.util.List<CrawledLink>> entry;
-        HashMap<String, java.util.List<CrawledLink>> mapmap = new HashMap<String, java.util.List<CrawledLink>>();
-        for (Iterator<Entry<String, java.util.List<CrawledLink>>> it = map.entrySet().iterator(); it.hasNext();) {
-            entry = it.next();
-            String newID = plg.filterPackageID(entry.getKey());
-            if (!entry.getKey().equals(newID)) {
-                it.remove();
-
-                java.util.List<CrawledLink> existing = mapmap.get(newID);
-
-                if (existing != null) {
-                    existing.addAll(entry.getValue());
-
-                }
-                mapmap.put(newID, entry.getValue());
-            }
-        }
-        for (Iterator<Entry<String, java.util.List<CrawledLink>>> it = mapmap.entrySet().iterator(); it.hasNext();) {
-            entry = it.next();
-            java.util.List<CrawledLink> current = map.remove(entry.getKey());
-            if (current != null) {
-                current.addAll(entry.getValue());
-            } else {
-                map.put(entry.getKey(), entry.getValue());
-            }
-
-        }
-
-    }
-
-    private java.util.List<CrawledLink> getIdentifiedMap(String identifier, HashMap<String, java.util.List<CrawledLink>> map) {
-        java.util.List<CrawledLink> list = map.get(identifier);
-        if (list == null) {
-            list = new ArrayList<CrawledLink>();
-            map.put(identifier, list);
-        }
-        return list;
     }
 
     private CrawledPackage getPermanentOfflineCrawledPackage() {
@@ -930,9 +1025,11 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
         }
         for (CrawledLink l : links) {
             removeCrawledLinkByLinkID(l);
-            removeFromMap(variousMap, l);
-            removeFromMap(offlineMap, l);
-            removeFromMap(hosterMap, l);
+            if (!removeFromMap(variousMap, l)) {
+                if (!removeFromMap(offlineMap, l)) {
+                    removeFromMap(badMappingMap, l);
+                }
+            }
         }
     }
 
@@ -962,8 +1059,8 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
                 variousPackage = null;
                 permanentofflinePackage = null;
                 variousMap.clear();
+                badMappingMap.clear();
                 offlineMap.clear();
-                hosterMap.clear();
                 autoRenameCache.isEmpty();
                 asyncCacheCleanup.stop();
                 asyncCacheCleanup.delayedrun();
@@ -1229,27 +1326,26 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
         });
     }
 
-    // clean up offline and various map
-    private void removeFromMap(HashMap<String, java.util.List<CrawledLink>> idListMap, CrawledLink l) {
-        final Iterator<Entry<String, java.util.List<CrawledLink>>> it = idListMap.entrySet().iterator();
-        while (it.hasNext()) {
-            final Entry<String, java.util.List<CrawledLink>> elem = it.next();
-            final String identifier = elem.getKey();
-            final java.util.List<CrawledLink> mapElems = elem.getValue();
-            if (mapElems != null && mapElems.remove(l)) {
-                if (mapElems.size() == 0) {
-                    idListMap.remove(identifier);
+    private boolean removeFromMap(HashMap<CrawledPackageMappingID, java.util.List<CrawledLink>> idListMap, CrawledLink l) {
+        final Iterator<Entry<CrawledPackageMappingID, java.util.List<CrawledLink>>> mapIt = idListMap.entrySet().iterator();
+        while (mapIt.hasNext()) {
+            final Entry<CrawledPackageMappingID, java.util.List<CrawledLink>> map = mapIt.next();
+            final java.util.List<CrawledLink> list = map.getValue();
+            if (list != null && list.remove(l)) {
+                if (list.size() == 0) {
+                    mapIt.remove();
                 }
-                break;
+                return true;
             }
         }
+        return false;
     }
 
-    private String getIDFromMap(HashMap<String, java.util.List<CrawledLink>> idListMap, CrawledLink l) {
-        final Iterator<Entry<String, java.util.List<CrawledLink>>> it = idListMap.entrySet().iterator();
+    private CrawledPackageMappingID getIDFromMap(HashMap<CrawledPackageMappingID, java.util.List<CrawledLink>> idListMap, CrawledLink l) {
+        final Iterator<Entry<CrawledPackageMappingID, java.util.List<CrawledLink>>> it = idListMap.entrySet().iterator();
         while (it.hasNext()) {
-            final Entry<String, java.util.List<CrawledLink>> elem = it.next();
-            final String identifier = elem.getKey();
+            final Entry<CrawledPackageMappingID, java.util.List<CrawledLink>> elem = it.next();
+            final CrawledPackageMappingID identifier = elem.getKey();
             final java.util.List<CrawledLink> mapElems = elem.getValue();
             if (mapElems != null && mapElems.contains(l)) {
                 return identifier;
@@ -1325,32 +1421,32 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
                         try {
                             writeLock();
                             for (final CrawledPackage filePackage : lpackages) {
-                                for (CrawledLink link : filePackage.getChildren()) {
+                                for (final CrawledLink link : filePackage.getChildren()) {
                                     if (link.getDownloadLink() != null) {
                                         /* set CrawledLink as changeListener to its DownloadLink */
                                         link.getDownloadLink().setNodeChangeListener(link);
                                     }
-                                    /* keep maps up2date */
-                                    putCrawledLinkByLinkID(link.getLinkID(), link);
-                                    java.util.List<CrawledLink> list = getIdentifiedMap(link.getHost(), hosterMap);
-                                    list.add(link);
                                 }
                                 filePackage.setControlledBy(LinkCollector.this);
                                 CrawledPackageStorable storable = restoreMap.get(filePackage);
                                 switch (filePackage.getType()) {
                                 case NORMAL:
                                     if (storable.getPackageID() != null) {
-                                        packageMap.put(storable.getPackageID(), filePackage);
+                                        final CrawledPackageMappingID packageID = CrawledPackageMappingID.get(storable.getPackageID());
+                                        if (packageID != null) {
+                                            packageMap.put(packageID, filePackage);
+                                        }
                                     }
                                     break;
                                 case VARIOUS:
                                     if (variousPackage == null) {
                                         variousPackage = filePackage;
                                     }
-                                    for (CrawledLinkStorable link : storable.getLinks()) {
-                                        String id = link.getID();
+                                    for (final CrawledLinkStorable link : storable.getLinks()) {
+                                        final String id = link.getID();
                                         if (id != null) {
-                                            java.util.List<CrawledLink> list = getIdentifiedMap(id, variousMap);
+                                            final CrawledPackageMappingID packageID = CrawledPackageMappingID.get(id);
+                                            final List<CrawledLink> list = getIdentifiedMap(packageID, variousMap);
                                             list.add(link._getCrawledLink());
                                         }
                                     }
@@ -1359,10 +1455,11 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
                                     if (offlinePackage == null) {
                                         offlinePackage = filePackage;
                                     }
-                                    for (CrawledLinkStorable link : storable.getLinks()) {
-                                        String id = link.getID();
+                                    for (final CrawledLinkStorable link : storable.getLinks()) {
+                                        final String id = link.getID();
                                         if (id != null) {
-                                            java.util.List<CrawledLink> list = getIdentifiedMap(id, offlineMap);
+                                            final CrawledPackageMappingID packageID = CrawledPackageMappingID.get(id);
+                                            final List<CrawledLink> list = getIdentifiedMap(packageID, offlineMap);
                                             list.add(link._getCrawledLink());
                                         }
                                     }
@@ -1612,30 +1709,37 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
                             }
                         };
                         zip = new ZipIOWriter(new BufferedOutputStream(fos, bufferSize));
-                        for (CrawledPackage pkg : packages) {
+                        for (final CrawledPackage pkg : packages) {
                             /* convert FilePackage to JSon */
-                            CrawledPackageStorable storable = new CrawledPackageStorable(pkg);
+                            final CrawledPackageStorable storable = new CrawledPackageStorable(pkg);
                             /* save packageID */
-                            storable.setPackageID(LinkCollector.this.getPackageMapID(pkg));
+                            final CrawledPackageMappingID crawledPackageMappingID = LinkCollector.this.getPackageMapID(pkg);
+                            if (crawledPackageMappingID != null) {
+                                storable.setPackageID(crawledPackageMappingID.getCombined());
+                            }
                             if (!CrawledPackageStorable.TYPE.NORMAL.equals(storable.getType())) {
                                 if (CrawledPackageStorable.TYPE.VARIOUS.equals(storable.getType())) {
                                     /* save ID for variousMap */
                                     for (CrawledLinkStorable link : storable.getLinks()) {
-                                        CrawledLink cLink = link._getCrawledLink();
-                                        link.setID(getIDFromMap(variousMap, cLink));
+                                        final CrawledLink cLink = link._getCrawledLink();
+                                        final CrawledPackageMappingID id = getIDFromMap(variousMap, cLink);
+                                        if (id != null) {
+                                            link.setID(id.getCombined());
+                                        }
                                     }
                                 } else if (CrawledPackageStorable.TYPE.OFFLINE.equals(storable.getType())) {
-                                    /* save ID for variousMap */
+                                    /* save ID for offlineMap */
                                     for (CrawledLinkStorable link : storable.getLinks()) {
-                                        CrawledLink cLink = link._getCrawledLink();
-                                        link.setID(getIDFromMap(offlineMap, cLink));
+                                        final CrawledLink cLink = link._getCrawledLink();
+                                        final CrawledPackageMappingID id = getIDFromMap(offlineMap, cLink);
+                                        if (id != null) {
+                                            link.setID(id.getCombined());
+                                        }
                                     }
                                 }
                             }
-                            String string = JSonStorage.serializeToJson(storable);
-                            storable = null;
+                            final String string = JSonStorage.serializeToJson(storable);
                             byte[] bytes = string.getBytes("UTF-8");
-                            string = null;
                             zip.addByteArry(bytes, true, "", String.format(format, (index++)));
                         }
                         LinkCollectorStorable lcs = new LinkCollectorStorable();

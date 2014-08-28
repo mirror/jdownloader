@@ -32,6 +32,7 @@ import jd.plugins.PluginsC;
 
 import org.appwork.scheduler.DelayedRunnable;
 import org.appwork.storage.config.JsonConfig;
+import org.appwork.utils.Files;
 import org.appwork.utils.Regex;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.logging2.LogSource;
@@ -1216,14 +1217,30 @@ public class LinkCrawler {
             if (srcPWs != null && srcPWs.size() > 0) {
                 dl.setSourcePluginPasswordList(new ArrayList<String>(srcPWs));
             }
-            dl.setComment(source.getComment());
-            dl.setName(source.getView().getDisplayName());
-            dl.setForcedFileName(source.getForcedFileName());
-            dl.setFinalFileName(source.getFinalFileName());
+            if (source.getComment() != null) {
+                dl.setComment(source.getComment());
+            }
+            if (source.isNameSet()) {
+                dl.setName(source.getName());
+            } else {
+                final String name = source.getName();
+                final String extension = Files.getExtension(name);
+                if (extension != null) {
+                    dl.setName(name);
+                }
+            }
+            if (source.getForcedFileName() != null) {
+                dl.setForcedFileName(source.getForcedFileName());
+            }
+            if (source.getFinalFileName() != null) {
+                dl.setFinalFileName(source.getFinalFileName());
+            }
             if (source.hasBrowserUrl()) {
                 dl.setBrowserUrl(source.getBrowserUrl());
             }
-            dl.setAvailableStatus(source.getAvailableStatus());
+            if (source.getAvailableStatus() != dl.getAvailableStatus()) {
+                dl.setAvailableStatus(source.getAvailableStatus());
+            }
             Map<String, Object> props = source.getProperties();
             if (props != null && !props.isEmpty()) {
                 dl.setProperties(props);
