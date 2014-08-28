@@ -187,7 +187,7 @@ public class HdStreamTo extends PluginForHost {
             handleServerErrors();
             logger.warning("The final dllink seems not to be a file!");
             br.followConnection();
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Unknown server error - please contact our support", 30 * 60 * 1000l);
         }
         dl.startDownload();
     }
@@ -277,6 +277,9 @@ public class HdStreamTo extends PluginForHost {
 
     private void prepBrowser(final Browser br) {
         br.setCookie("http://hdstream.to/", "lang", "en");
+        /* User can select https or http in his hdstream account, therefore, redirects should be allowed */
+        br.setFollowRedirects(true);
+        br.getHeaders().put("User-Agent", "JDownloader");
     }
 
     /** Returns final downloadlink, same for free and premium */
@@ -310,7 +313,6 @@ public class HdStreamTo extends PluginForHost {
                         return;
                     }
                 }
-                br.setFollowRedirects(false);
                 br.postPage("http://hdstream.to/json/login.php", "data=%7B%22username%22%3A%22" + Encoding.urlEncode(account.getUser()) + "%22%2C+%22password%22%3A%22" + Encoding.urlEncode(account.getPass()) + "%22%7D");
                 if (br.getCookie(MAINPAGE, "username") == null || br.containsHTML("\"logged_in\":false")) {
                     if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
@@ -415,7 +417,7 @@ public class HdStreamTo extends PluginForHost {
                 handleServerErrors();
                 logger.warning("The final dllink seems not to be a file!");
                 br.followConnection();
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Unknown server error - please contact our support", 30 * 60 * 1000l);
             }
             dl.startDownload();
         }
