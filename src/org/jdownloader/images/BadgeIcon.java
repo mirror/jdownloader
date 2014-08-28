@@ -12,6 +12,8 @@ package org.jdownloader.images;
 import javax.swing.Icon;
 
 import org.appwork.swing.components.ExtMergedIcon;
+import org.appwork.swing.components.IDIcon;
+import org.appwork.swing.components.IconIdentifier;
 
 /**
  * @author Thomas
@@ -30,6 +32,27 @@ public class BadgeIcon extends ExtMergedIcon {
     public BadgeIcon(final String mainIconKEy, final String badge, final int size, final int badgesize, final int xOffset, final int yOffset) {
         this(new AbstractIcon(mainIconKEy, size), new AbstractIcon(badge, badgesize), xOffset, yOffset);
 
+    }
+
+    @Override
+    public IconIdentifier getIdentifier() {
+
+        if (internalID != null) {
+            return internalID;
+        }
+        IconIdentifier t = new IconIdentifier("Badge");
+
+        for (Entry e : entries) {
+            if (e.icon instanceof IDIcon) {
+                t.add(((IDIcon) e.icon).getIdentifier());
+
+            } else {
+                t.add(new IconIdentifier("unknown", e.icon.toString()));
+
+            }
+        }
+
+        return t;
     }
 
     protected void addMain() {

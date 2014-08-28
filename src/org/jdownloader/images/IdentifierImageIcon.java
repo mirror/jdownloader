@@ -5,9 +5,10 @@ import java.awt.Image;
 import javax.swing.Icon;
 import javax.swing.ImageIcon;
 
-import org.appwork.swing.components.IdentifierInterface;
+import org.appwork.swing.components.IDIcon;
+import org.appwork.swing.components.IconIdentifier;
 
-public class IdentifierImageIcon extends ImageIcon implements Icon, IdentifierInterface {
+public class IdentifierImageIcon extends ImageIcon implements Icon, IDIcon {
 
     private String id;
 
@@ -17,8 +18,8 @@ public class IdentifierImageIcon extends ImageIcon implements Icon, IdentifierIn
     }
 
     @Override
-    public Object toIdentifier() {
-        return id;
+    public IconIdentifier getIdentifier() {
+        return new IconIdentifier(null, id);
     }
 
 }

@@ -6,29 +6,30 @@ import java.awt.Component;
 import java.awt.Composite;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
-import java.util.HashMap;
 
 import javax.swing.Icon;
 
 import jd.controlling.faviconcontroller.FavIconRequestor;
 import jd.controlling.faviconcontroller.FavIcons;
 
-import org.appwork.swing.components.IdentifierInterface;
+import org.appwork.swing.components.IDIcon;
+import org.appwork.swing.components.IconIdentifier;
 import org.appwork.utils.images.IconIO;
 import org.jdownloader.DomainInfo;
 import org.jdownloader.api.RemoteAPIController;
 
-public class FavitIcon implements Icon, FavIconRequestor, IdentifierInterface {
+public class FavitIcon implements Icon, FavIconRequestor, IDIcon {
 
     private int        width;
     private int        height;
-    private final int  size  = 10;
+    private int        size  = 10;
     private final Icon icon;
     private Icon       badge = null;
     private DomainInfo domainInfo;
 
     public FavitIcon(Icon icon, DomainInfo domainInfo) {
         width = icon.getIconWidth();
+        this.size = (width * 10) / 18;
         height = icon.getIconHeight();
         this.domainInfo = domainInfo;
         this.badge = IconIO.getScaledInstance(FavIcons.getFavIcon(domainInfo.getTld(), this), size, size);
@@ -36,19 +37,20 @@ public class FavitIcon implements Icon, FavIconRequestor, IdentifierInterface {
     }
 
     @Override
-    public Object toIdentifier() {
+    public IconIdentifier getIdentifier() {
 
-        HashMap<String, Object> map = new HashMap<String, Object>();
-        map.put("type", "Favit");
-        map.put("tld", domainInfo.getTld());
-        if (icon instanceof IdentifierInterface) {
-            map.put("ico", ((IdentifierInterface) icon).toIdentifier());
+        IconIdentifier ret = new IconIdentifier("Favit");
+
+        ret.add(new IconIdentifier("tld", domainInfo.getTld()));
+
+        if (icon instanceof IDIcon) {
+            ret.add(((IDIcon) icon).getIdentifier());
 
         } else {
-            map.put("ico", RemoteAPIController.getInstance().getContentAPI().getIconKey(icon));
+            ret.add(new IconIdentifier(null, RemoteAPIController.getInstance().getContentAPI().getIconKey(icon)));
 
         }
-        return map;
+        return ret;
     }
 
     @Override
