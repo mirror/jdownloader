@@ -50,9 +50,9 @@ import org.appwork.utils.os.CrossSystem;
 /**
  * Abstract class supporting keep2share/fileboom/publish2<br/>
  * <a href="https://github.com/keep2share/api/">Github documentation</a>
- * 
+ *
  * @author raztoki
- * 
+ *
  */
 public abstract class K2SApi extends PluginForHost {
 
@@ -77,18 +77,18 @@ public abstract class K2SApi extends PluginForHost {
 
     /**
      * sets domain the API will use!
-     * 
+     *
      */
     protected abstract String getDomain();
 
     /**
      * Does the site enforce HTTPS? <br />
      * <br />
-     * 
+     *
      * @Override this when incorrect<br />
      * <br />
      *           <b>NOTE:</b> When setting to true, make sure that supportsHTTPS
-     * 
+     *
      * @return
      */
     protected boolean enforcesHTTPS() {
@@ -102,9 +102,9 @@ public abstract class K2SApi extends PluginForHost {
     /**
      * Does the site support HTTPS? <br />
      * <br />
-     * 
+     *
      * @Override this when incorrect
-     * 
+     *
      * @return
      */
     protected boolean supportsHTTPS() {
@@ -114,9 +114,9 @@ public abstract class K2SApi extends PluginForHost {
     /**
      * useAPI frame work? <br />
      * <br />
-     * 
+     *
      * @Override this when incorrect
-     * 
+     *
      * @return
      */
     protected boolean useAPI() {
@@ -134,7 +134,7 @@ public abstract class K2SApi extends PluginForHost {
     /**
      * Returns plugin specific user setting. <br />
      * <b>NOTE:</b> public method, so that the decrypter can use it!
-     * 
+     *
      * @author raztoki
      * @return
      */
@@ -214,7 +214,7 @@ public abstract class K2SApi extends PluginForHost {
 
     /**
      * sets DownloadLink LinkID property
-     * 
+     *
      * @param downloadLink
      * @throws PluginException
      */
@@ -418,7 +418,7 @@ public abstract class K2SApi extends PluginForHost {
 
     /**
      * We have to reinvent the wheel. With the help of @Override openPostConnection created us openRequestConnection in postRaw format.
-     * 
+     *
      * @author raztoki
      * @return
      */
@@ -427,7 +427,7 @@ public abstract class K2SApi extends PluginForHost {
 
             /**
              * overrides openPostConnection and turns it into openPostRawConnection
-             * 
+             *
              * @author raztoki
              */
             @Override
@@ -437,7 +437,7 @@ public abstract class K2SApi extends PluginForHost {
 
             /**
              * creates new Post Raw Request! merge components from JD2 Browser stripped of Appwork references.
-             * 
+             *
              * @author raztoki
              * @param url
              * @param post
@@ -469,7 +469,7 @@ public abstract class K2SApi extends PluginForHost {
 
     /**
      * general handling postPage requests! It's stable compliant with various response codes. It then passes to error handling!
-     * 
+     *
      * @param ibr
      * @param url
      * @param arg
@@ -732,7 +732,7 @@ public abstract class K2SApi extends PluginForHost {
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 }
             } catch (final PluginException p) {
-                logger.warning("ERROR :: " + msg);
+                logger.warning("ERROR :: " + getAPIRevision() + " :: " + msg);
                 throw p;
             }
         } else if (errCode != null && !errCode.matches("\\d+")) {
@@ -744,7 +744,7 @@ public abstract class K2SApi extends PluginForHost {
 
     /**
      * Provides translation service
-     * 
+     *
      * @param code
      * @return
      */
@@ -806,7 +806,7 @@ public abstract class K2SApi extends PluginForHost {
 
     /**
      * When premium only download restriction (eg. filesize), throws exception with given message
-     * 
+     *
      * @param msg
      * @throws PluginException
      */
@@ -823,7 +823,7 @@ public abstract class K2SApi extends PluginForHost {
 
     /**
      * Only the owner of the file can download!
-     * 
+     *
      * @param msg
      * @throws PluginException
      */
@@ -900,7 +900,7 @@ public abstract class K2SApi extends PluginForHost {
 
     /**
      * Tries to return value of key from JSon response, from String source.
-     * 
+     *
      * @author raztoki
      * */
     protected String getJson(final String source, final String key) {
@@ -916,7 +916,7 @@ public abstract class K2SApi extends PluginForHost {
 
     /**
      * Tries to return value of key from JSon response, from default 'br' Browser.
-     * 
+     *
      * @author raztoki
      * */
     protected String getJson(final String key) {
@@ -925,7 +925,7 @@ public abstract class K2SApi extends PluginForHost {
 
     /**
      * Tries to return value of key from JSon response, from provided Browser.
-     * 
+     *
      * @author raztoki
      * */
     protected String getJson(final Browser ibr, final String key) {
@@ -934,7 +934,7 @@ public abstract class K2SApi extends PluginForHost {
 
     /**
      * Tries to return value given JSon Array of Key from JSon response provided String source.
-     * 
+     *
      * @author raztoki
      * */
     protected String getJsonArray(final String source, final String key) {
@@ -947,7 +947,7 @@ public abstract class K2SApi extends PluginForHost {
 
     /**
      * Validates string to series of conditions, null, whitespace, or "". This saves effort factor within if/for/while statements
-     * 
+     *
      * @param s
      *            Imported String to match against.
      * @return <b>true</b> on valid rule match. <b>false</b> on invalid rule match.
@@ -975,13 +975,13 @@ public abstract class K2SApi extends PluginForHost {
     /**
      * Prevents more than one free download from starting at a given time. One step prior to dl.startDownload(), it adds a slot to maxFree
      * which allows the next singleton download to start, or at least try.
-     * 
+     *
      * This is needed because xfileshare(website) only throws errors after a final dllink starts transferring or at a given step within pre
      * download sequence. But this template(XfileSharingProBasic) allows multiple slots(when available) to commence the download sequence,
      * this.setstartintival does not resolve this issue. Which results in x(20) captcha events all at once and only allows one download to
      * start. This prevents wasting peoples time and effort on captcha solving and|or wasting captcha trading credits. Users will experience
      * minimal harm to downloading as slots are freed up soon as current download begins.
-     * 
+     *
      * @param controlSlot
      *            (+1|-1)
      * @author raztoki
@@ -1072,7 +1072,7 @@ public abstract class K2SApi extends PluginForHost {
     /**
      * Gets page <br />
      * - natively supports silly cloudflare anti DDoS crapola
-     * 
+     *
      * @author raztoki
      */
     public void getPage(final Browser ibr, final String page) throws Exception {
@@ -1100,9 +1100,9 @@ public abstract class K2SApi extends PluginForHost {
 
     /**
      * Wrapper into getPage(importBrowser, page), where browser = br;
-     * 
+     *
      * @author raztoki
-     * 
+     *
      * */
     public void getPage(final String page) throws Exception {
         getPage(br, page);
@@ -1136,9 +1136,9 @@ public abstract class K2SApi extends PluginForHost {
 
     /**
      * Wrapper into postPage(importBrowser, page, postData), where browser == this.br;
-     * 
+     *
      * @author raztoki
-     * 
+     *
      * */
     public void postPage(String page, final String postData) throws Exception {
         postPage(br, page, postData);
@@ -1199,9 +1199,9 @@ public abstract class K2SApi extends PluginForHost {
 
     /**
      * Wrapper into sendForm(importBrowser, form), where browser == this.br;
-     * 
+     *
      * @author raztoki
-     * 
+     *
      * */
     public void sendForm(final Form form) throws Exception {
         sendForm(br, form);
@@ -1211,7 +1211,7 @@ public abstract class K2SApi extends PluginForHost {
      * Performs Cloudflare and Incapsula requirements.<br />
      * Auto fill out the required fields and updates antiDDoSCookies session.<br />
      * Always called after Browser Request!
-     * 
+     *
      * @version 0.03
      * @author raztoki
      **/
@@ -1327,7 +1327,7 @@ public abstract class K2SApi extends PluginForHost {
     }
 
     /**
-     * 
+     *
      * @author raztoki
      * */
     private boolean requestHeadersHasKeyNValueStartsWith(final Browser ibr, final String k, final String v) {
@@ -1343,7 +1343,7 @@ public abstract class K2SApi extends PluginForHost {
     }
 
     /**
-     * 
+     *
      * @author raztoki
      * */
     private boolean requestHeadersHasKeyNValueContains(final Browser ibr, final String k, final String v) {

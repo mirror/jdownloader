@@ -379,6 +379,11 @@ public class NitroFlareCom extends PluginForHost {
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, resumes, chunks);
         if (!dl.getConnection().isContentDisposition()) {
             br.followConnection();
+            final String err1 = "ERROR: Wrong IP. If you are using proxy, please turn it off / Or buy premium key to remove the limitation";
+            if (br.containsHTML(err1)) {
+                // I don't see why this would happening logs contain no proxy!
+                throw new PluginException(LinkStatus.ERROR_FATAL, err1);
+            }
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         downloadLink.setProperty(directlinkproperty, dllink);
@@ -387,7 +392,7 @@ public class NitroFlareCom extends PluginForHost {
 
     private void handleApiErrors(final Account account, final DownloadLink downloadLink) throws PluginException {
         // API Error handling codes.
-        // 1 => 'Access denied', (banned for tring incorrect x times for y minutes
+        // 1 => 'Access denied', (banned for trying incorrect x times for y minutes
         // 2 => 'Invalid premium key',
         // 3 => 'Bad input',
         // 4 => 'File doesn't exist',
