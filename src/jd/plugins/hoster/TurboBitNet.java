@@ -1029,7 +1029,7 @@ public class TurboBitNet extends PluginForHost {
                 }
                 // lets set a new agent
                 prepBrowser(br, null);
-                getPage("http://" + NICE_HOST);
+                getPage(MAINPAGE);
                 br.postPage("/user/login", "user%5Blogin%5D=" + Encoding.urlEncode(account.getUser()) + "&user%5Bpass%5D=" + Encoding.urlEncode(account.getPass()) + "&user%5Bmemory%5D=on&user%5Bsubmit%5D=Login");
                 // Check for stupid login captcha
                 if (br.containsHTML(">Limit of login attempts exceeded") || br.containsHTML(">Please enter the captcha")) {
