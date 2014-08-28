@@ -74,9 +74,14 @@ public class Keep2ShareCc extends K2SApi {
         return "keep2share.cc";
     }
 
+    @Override
+    public long getVersion() {
+        return (Math.max(super.getVersion(), 0) * 100000) + getAPIRevision();
+    }
+
     /**
      * easiest way to set variables, without the need for multiple declared references
-     *
+     * 
      * @param account
      */
     private void setConstants(final Account account) {
