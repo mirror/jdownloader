@@ -41,6 +41,7 @@ GenericVariants_ORIGINAL=Orijinal Görüntü
 GenericVariants_TO_OGG=Ogg Vorbis Sesine Dönüştür
 ImportAction_tt=*.jdfilter (*.jdregexfilter) dosyalarından Kuralları içe aktar
 LinkCollector_addCrawledLink_offlinepackage=Çevrimdışı Dosyalar
+LinkCollector_addCrawledLink_unknownpackage=Bilinmeyen Dosyalar
 LinkCollector_addCrawledLink_variouspackage=Çeşitli Dosyalar
 LinkCollector_archiv=%s1
 LinkCollector_onShutdownRequest_=Bağlantı Toplayıcısı hala devam etmekte!
