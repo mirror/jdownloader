@@ -50,7 +50,7 @@ public class DefaultDownloadLinkViewImpl implements DownloadLinkView {
 
     @Override
     public String getDisplayName() {
-
+        //
         return link.getName();
     }
 
