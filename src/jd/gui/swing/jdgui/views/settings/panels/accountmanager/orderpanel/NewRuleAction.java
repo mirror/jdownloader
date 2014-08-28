@@ -56,7 +56,7 @@ public class NewRuleAction extends AbstractAddAction {
         }
     }
 
-    private static boolean implementshandlePremium(PluginForHost plugin) {
+    private static boolean implementsHandlePremium(PluginForHost plugin) {
         try {
             if (plugin != null) {
                 final Method method = plugin.getClass().getMethod("handlePremium", new Class[] { DownloadLink.class, Account.class });
@@ -85,7 +85,7 @@ public class NewRuleAction extends AbstractAddAction {
                     }
                 }
             }
-            if (implementshandlePremium(acc.getPlugin())) {
+            if (implementsHandlePremium(acc.getPlugin())) {
                 domains.add(DomainInfo.getInstance(acc.getHoster()));
             }
         }
