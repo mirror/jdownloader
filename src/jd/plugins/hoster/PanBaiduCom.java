@@ -74,7 +74,6 @@ public class PanBaiduCom extends PluginForHost {
         } catch (Throwable e) {
             // jd09
         }
-
         br = new Browser();
 
         if (downloadLink.getBooleanProperty("offline", false)) {
@@ -116,6 +115,10 @@ public class PanBaiduCom extends PluginForHost {
                 br.setCookie("http://pan.baidu.com/", "BDCLND", link_password_cookie);
             }
             br.getPage(original_url);
+            /* Re-check here for offline because if we always used the directlink before, we cannot know if the link is still online. */
+            if (br.containsHTML("id=\"share_nofound_des\"")) {
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            }
 
             /* Experimental code */
             final String i_frame = br.getRegex("<iframe src=\"(http://pan\\.baidu\\.com/share/link\\?shareid=\\d+\\&uk=\\d+\\&t=[A-Za-z0-9]+)\"").getMatch(0);
@@ -257,7 +260,7 @@ public class PanBaiduCom extends PluginForHost {
 
     /**
      * Tries to return value of key from JSon response, from String source.
-     * 
+     *
      * @author raztoki
      * */
     private String getJson(final String source, final String key) {
@@ -273,7 +276,7 @@ public class PanBaiduCom extends PluginForHost {
 
     /**
      * Tries to return value of key from JSon response, from default 'br' Browser.
-     * 
+     *
      * @author raztoki
      * */
     private String getJson(final String key) {
@@ -282,7 +285,7 @@ public class PanBaiduCom extends PluginForHost {
 
     /**
      * Tries to return value of key from JSon response, from provided Browser.
-     * 
+     *
      * @author raztoki
      * */
     private String getJson(final Browser ibr, final String key) {
@@ -317,7 +320,7 @@ public class PanBaiduCom extends PluginForHost {
     /**
      * Is intended to handle out of date errors which might occur seldom by re-tring a couple of times before throwing the out of date
      * error.
-     * 
+     *
      * @param dl
      *            : The DownloadLink
      * @param error
