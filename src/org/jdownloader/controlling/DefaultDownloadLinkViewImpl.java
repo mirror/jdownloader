@@ -60,11 +60,23 @@ public class DefaultDownloadLinkViewImpl implements DownloadLinkView {
     public String getDownloadUrl() {
         // http://board.jdownloader.org/showpost.php?p=305216&postcount=12
         if (CFG_GUI.SHOW_BROWSER_URL_IF_POSSIBLE) {
-            if (link.hasBrowserUrl()) {
-                return link.getBrowserUrl();
-            } else {
-                return link.getDownloadURL();
 
+            switch (link.getUrlProtection()) {
+            case PROTECTED_CONTAINER:
+            case PROTECTED_DECRYPTER:
+                if (link.hasBrowserUrl()) {
+                    return link.getBrowserUrl();
+                } else {
+                    return null;
+                }
+
+            default:
+                if (link.hasBrowserUrl()) {
+                    return link.getBrowserUrl();
+                } else {
+                    return link.getDownloadURL();
+
+                }
             }
         }
         // Workaround for links added before this change
