@@ -143,7 +143,7 @@ public class BtoNt extends PluginForDecrypt {
                     br.getPage(url + "/" + i);
                 }
                 String pageNumber = df_page.format(i);
-                final String[] unformattedSource = br.getRegex("src=\"(http://img\\.batoto\\.net/comics/\\d{4}/\\d{1,2}/\\d{1,2}/[a-z]/read[^/]+/[^\"]+(\\.[a-z]+))\"").getRow(0);
+                final String[] unformattedSource = br.getRegex("src=\"(http://img\\.(batoto\\.net|bato\\.to)/comics/\\d{4}/\\d{1,2}/\\d{1,2}/[a-z]/read[^/]+/[^\"]+(\\.[a-z]+))\"").getRow(0);
                 if (unformattedSource == null || unformattedSource.length == 0) {
                     skippedPics++;
                     if (skippedPics > 5) {
@@ -152,8 +152,8 @@ public class BtoNt extends PluginForDecrypt {
                     }
                     continue;
                 }
-                String source = unformattedSource[0];
-                String extension = unformattedSource[1];
+                final String source = unformattedSource[0];
+                final String extension = unformattedSource[2];
                 final DownloadLink link = createDownloadlink("directhttp://" + source);
                 link.setFinalFileName(title + " - Page " + pageNumber + extension);
                 fp.add(link);
