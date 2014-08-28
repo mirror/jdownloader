@@ -3,6 +3,8 @@ package org.jdownloader.gui.views.components;
 import javax.swing.Icon;
 
 import org.appwork.swing.components.ExtMergedIcon;
+import org.appwork.swing.components.IDIcon;
+import org.appwork.swing.components.IconIdentifier;
 
 public class MergedIcon extends ExtMergedIcon {
 
@@ -28,4 +30,21 @@ public class MergedIcon extends ExtMergedIcon {
 
     }
 
+    @Override
+    public IconIdentifier getIdentifier() {
+        if (internalID != null) {
+            return internalID;
+        }
+        IconIdentifier map = new IconIdentifier("ColMerge");
+
+        for (Entry e : entries) {
+            if (e.icon instanceof IDIcon) {
+                map.add(((IDIcon) e.icon).getIdentifier());
+            } else {
+                map.add(new IconIdentifier("unknown", e.icon.toString()));
+            }
+        }
+
+        return map;
+    }
 }

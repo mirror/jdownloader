@@ -5,10 +5,11 @@ import java.awt.Graphics;
 
 import javax.swing.Icon;
 
-import org.appwork.swing.components.IdentifierInterface;
+import org.appwork.swing.components.IDIcon;
+import org.appwork.swing.components.IconIdentifier;
 import org.appwork.utils.ImageProvider.ImageProvider;
 
-public class AbstractIcon implements Icon, IdentifierInterface {
+public class AbstractIcon implements Icon, IDIcon {
 
     private String key;
 
@@ -22,6 +23,7 @@ public class AbstractIcon implements Icon, IdentifierInterface {
     }
 
     public int getSize() {
+
         return size;
     }
 
@@ -83,8 +85,8 @@ public class AbstractIcon implements Icon, IdentifierInterface {
     }
 
     @Override
-    public Object toIdentifier() {
-        return key;
+    public IconIdentifier getIdentifier() {
+        return new IconIdentifier(null, key);
     }
 
 }
