@@ -917,7 +917,7 @@ public class SecondLevelLaunch {
                             OperatingSystemEventSender.getInstance().init();
                         }
 
-                        if (CFG_GENERAL.CFG.isSambaPrefetchEnabled()) {
+                        if (!Application.isHeadless() && CFG_GENERAL.CFG.isSambaPrefetchEnabled()) {
                             ExtFileSystemView.runSambaScanner();
                         }
                     }
@@ -944,7 +944,7 @@ public class SecondLevelLaunch {
             public void onConfigValidatorError(KeyHandler<Enum> keyHandler, Enum invalidValue, ValidationException validateException) {
             }
         });
-        if (!org.appwork.utils.Application.isHeadless()) {
+        if (!Application.isHeadless()) {
             new EDTHelper<Void>() {
                 @Override
                 public Void edtRun() {
@@ -975,7 +975,7 @@ public class SecondLevelLaunch {
             thread.join(10000);
         } catch (InterruptedException e) {
         }
-        if (!org.appwork.utils.Application.isHeadless()) {
+        if (!Application.isHeadless()) {
             while (true) {
                 Thread initThread = JDGui.getInstance().getInitThread();
                 if (initThread == null || initThread.isAlive() == false) {
@@ -989,7 +989,6 @@ public class SecondLevelLaunch {
                 }
             }
             JDGui.getInstance().badLaunchCheck();
-
         }
         SecondLevelLaunch.GUI_COMPLETE.setReached();
         SecondLevelLaunch.LOG.info("Initialisation finished");
@@ -999,16 +998,18 @@ public class SecondLevelLaunch {
         StatsManager.I();
 
         // init Filechooser. filechoosers may freeze the first time the get initialized. maybe this helps
-        try {
-            long t = System.currentTimeMillis();
-            File[] baseFolders = AccessController.doPrivileged(new PrivilegedAction<File[]>() {
-                public File[] run() {
-                    return (File[]) sun.awt.shell.ShellFolder.get("fileChooserComboBoxFolders");
-                }
-            });
-            LOG.info("fileChooserComboBoxFolders " + (System.currentTimeMillis() - t));
-        } catch (final Throwable e) {
-            e.printStackTrace();
+        if (!Application.isHeadless()) {
+            try {
+                long t = System.currentTimeMillis();
+                File[] baseFolders = AccessController.doPrivileged(new PrivilegedAction<File[]>() {
+                    public File[] run() {
+                        return (File[]) sun.awt.shell.ShellFolder.get("fileChooserComboBoxFolders");
+                    }
+                });
+                LOG.info("fileChooserComboBoxFolders " + (System.currentTimeMillis() - t));
+            } catch (final Throwable e) {
+                e.printStackTrace();
+            }
         }
 
     }

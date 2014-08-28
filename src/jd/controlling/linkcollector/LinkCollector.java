@@ -1409,12 +1409,14 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
                 if (JsonConfig.create(GeneralSettings.class).isSaveLinkgrabberListEnabled()) {
                     LinkedList<CrawledPackage> lpackages = null;
                     final HashMap<CrawledPackage, CrawledPackageStorable> restoreMap = new HashMap<CrawledPackage, CrawledPackageStorable>();
+                    File loadedList = null;
                     for (File collectorList : availableCollectorLists) {
                         try {
                             if (lpackages == null) {
                                 restoreMap.clear();
                                 lpackages = load(collectorList, restoreMap);
                             } else {
+                                loadedList = collectorList;
                                 break;
                             }
                         } catch (final Throwable e) {
@@ -1432,9 +1434,9 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
                         restoreMap.clear();
                         lpackages = new LinkedList<CrawledPackage>();
                     }
-                    preProcessCrawledPackages(lpackages);
                     /* add loaded Packages to this controller */
                     try {
+                        preProcessCrawledPackages(lpackages);
                         try {
                             writeLock();
                             for (final CrawledPackage filePackage : lpackages) {
@@ -1503,6 +1505,23 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
                             writeUnlock();
                         }
                         eventsender.fireEvent(new LinkCollectorEvent(LinkCollector.this, LinkCollectorEvent.TYPE.REFRESH_STRUCTURE));
+                    } catch (final Throwable e) {
+                        if (loadedList != null) {
+                            final File renameTo = new File(loadedList.getAbsolutePath() + ".backup");
+                            boolean backup = false;
+                            try {
+                                if (loadedList.exists()) {
+                                    if (loadedList.renameTo(renameTo) == false) {
+                                        IO.copyFile(loadedList, renameTo);
+                                    }
+                                    backup = true;
+                                }
+                            } catch (final Throwable e2) {
+                                logger.log(e2);
+                            }
+                            logger.severe("Could backup " + loadedList + " to " + renameTo + " ->" + backup);
+                        }
+                        logger.log(e);
                     } finally {
                         CRAWLERLIST_LOADED.setReached();
                     }
@@ -1644,17 +1663,20 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
                     zip.close();
                 } catch (final Throwable e2) {
                 }
-                File renameTo = new File(file.getAbsolutePath() + ".broken");
+                final File renameTo = new File(file.getAbsolutePath() + ".backup");
                 boolean backup = false;
                 try {
-                    if (file.renameTo(renameTo) == false) {
-                        IO.copyFile(file, renameTo);
+                    if (file.exists()) {
+                        if (file.renameTo(renameTo) == false) {
+                            IO.copyFile(file, renameTo);
+                        }
+                        backup = true;
                     }
-                    backup = true;
                 } catch (final Throwable e2) {
+                    logger.log(e2);
                 }
-                logger.log(e);
                 logger.severe("Could backup " + file + " to " + renameTo + " ->" + backup);
+                logger.log(e);
             } finally {
                 try {
                     zip.close();
