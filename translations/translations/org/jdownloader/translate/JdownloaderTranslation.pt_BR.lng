@@ -41,6 +41,7 @@ GenericVariants_ORIGINAL=Vídeo original
 GenericVariants_TO_OGG=Converter para áudio OGG Vorbis
 ImportAction_tt=Importar Regras de arquivos *.jdfilter (*.jdregexfilter)
 LinkCollector_addCrawledLink_offlinepackage=Arquivos Online
+LinkCollector_addCrawledLink_unknownpackage=Arquivos desconhecidos
 LinkCollector_addCrawledLink_variouspackage=Vários Arquivos
 LinkCollector_archiv=%s1
 LinkCollector_onShutdownRequest_=Coletor de Links ainda está em progresso!
