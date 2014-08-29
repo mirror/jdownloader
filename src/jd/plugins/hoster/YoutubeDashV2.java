@@ -1251,10 +1251,10 @@ public class YoutubeDashV2 extends PluginForHost {
                         throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                     }
                 }
-                if (new File(getAudioStreamPath(downloadLink)).exists()) {
+                /* videoStream is finished */
+                if (getAudioStreamPath(downloadLink) != null && new File(getAudioStreamPath(downloadLink)).exists()) {
                     data.setDashAudioFinished(true);
                 }
-                /* videoStream is finished */
                 boolean loadAudio = !data.isDashAudioFinished();
                 loadAudio |= !new File(getAudioStreamPath(downloadLink)).exists();
                 if (loadAudio) {
