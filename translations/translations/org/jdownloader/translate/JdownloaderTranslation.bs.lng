@@ -41,6 +41,7 @@ GenericVariants_ORIGINAL=Originalni Video
 GenericVariants_TO_OGG=Konvertuj u Ogg Vorbis Audio
 ImportAction_tt=Importuj Pravila iz *.jdfilter (*.jdregexfilter) dokumenata
 LinkCollector_addCrawledLink_offlinepackage=Offline Dokumenti
+LinkCollector_addCrawledLink_unknownpackage=Nepoznati Dokumenti
 LinkCollector_addCrawledLink_variouspackage=Razni Dokumenti
 LinkCollector_archiv=%s1
 LinkCollector_onShutdownRequest_=Sakupljač Linkova još uvijek radi!
