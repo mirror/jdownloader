@@ -62,7 +62,7 @@ public abstract class AbstractPanelHeader extends MigPanel {
         });
         LAFOptions.getInstance().applyHeaderColorBackground(lbl);
         add(icon = new JLabel(NewTheme.I().getIcon("download", 16)), "gapleft 1");
-        add(lbl, "height 17!");
+        add(lbl, "height 17!, wmax 100% - 61px");
 
         options = new SettingsButton(new AppAction() {
             {
