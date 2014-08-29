@@ -43,7 +43,7 @@ import org.appwork.storage.simplejson.JSonObject;
 import org.appwork.storage.simplejson.JSonValue;
 import org.appwork.storage.simplejson.ParserException;
 
-@HostPlugin(revision = "1", interfaceVersion = 3, names = { "account-pool.de" }, urls = { "REGEX_NOT_POSSIBLE_RANDOM-asdfasdfsadfsfsXXX" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "account-pool.de" }, urls = { "REGEX_NOT_POSSIBLE_RANDOM-asdfasdfsadfsfsXXX" }, flags = { 0 })
 /**
  * Hoster plugin for the account-pool.de beta.
  *
