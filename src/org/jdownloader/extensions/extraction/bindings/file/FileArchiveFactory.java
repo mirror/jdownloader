@@ -200,7 +200,7 @@ public class FileArchiveFactory extends FileArchiveFile implements ArchiveFactor
                 dif = "";
             }
             path = path.replace(SUBFOLDER, dif);
-            return CrossSystem.fixPathSeperators(path);
+            return CrossSystem.fixPathSeparators(path);
         } catch (Exception e) {
             Log.exception(e);
         }

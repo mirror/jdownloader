@@ -2157,7 +2157,7 @@ public interface GuiTranslation extends TranslateInterface {
     String gui_table_contextmenu_stopmark();
 
     @Default(lngs = { "en" }, values = { "----------------------------" })
-    String Renderer_getTreeCellRendererComponent_seperator();
+    String Renderer_getTreeCellRendererComponent_separator();
 
     @Default(lngs = { "en" }, values = { "Edit Menu Structure (Use Drag&Drop)" })
     String ManagerFrame_layoutPanel_menustructure_();
@@ -2204,8 +2204,8 @@ public interface GuiTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "Predefined: \"%s1\"" })
     String AddSubMenuAction_getListCellRendererComponent(String name);
 
-    @Default(lngs = { "en" }, values = { "---- Seperator Line ----" })
-    String AddSpecialAction_actionPerformed_seperator();
+    @Default(lngs = { "en" }, values = { "---- Separator Line ----" })
+    String AddSpecialAction_actionPerformed_separator();
 
     @Default(lngs = { "en" }, values = { "Choose Menu Item" })
     String AddSpecialAction_actionPerformed_title();
@@ -2234,8 +2234,8 @@ public interface GuiTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "Add %s1" })
     String AddGenericItem_AddGenericItem_(String name);
 
-    @Default(lngs = { "en" }, values = { "Seperator" })
-    String SeperatorData_SeperatorData();
+    @Default(lngs = { "en" }, values = { "Separator" })
+    String SeparatorData_SeparatorData();
 
     @Default(lngs = { "en" }, values = { "export" })
     String lit_export();
@@ -3311,7 +3311,7 @@ public interface GuiTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "Auto Confirm Button" })
     String AutoConfirmMenuLink_getName();
 
-    @Default(lngs = { "en" }, values = { "Sidebar Seperator: |" })
+    @Default(lngs = { "en" }, values = { "Sidebar Separator: |" })
     String LeftRightDividerItem_LeftRightDividerItem();
 
     @Default(lngs = { "en" }, values = { "Linkgrabber Bottom Bar" })

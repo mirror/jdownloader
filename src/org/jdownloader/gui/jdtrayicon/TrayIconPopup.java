@@ -58,7 +58,7 @@ import org.jdownloader.controlling.contextmenu.CustomizableAppAction;
 import org.jdownloader.controlling.contextmenu.MenuContainer;
 import org.jdownloader.controlling.contextmenu.MenuItemData;
 import org.jdownloader.controlling.contextmenu.MenuLink;
-import org.jdownloader.controlling.contextmenu.SeperatorData;
+import org.jdownloader.controlling.contextmenu.SeparatorData;
 import org.jdownloader.controlling.contextmenu.gui.ExtPopupMenu;
 import org.jdownloader.controlling.contextmenu.gui.MenuBuilder;
 import org.jdownloader.extensions.ExtensionNotLoadedException;
@@ -135,17 +135,21 @@ public final class TrayIconPopup extends ExtJFrame implements MouseListener {
             AbstractButton bt = null;
             AppAction action;
             try {
-                if (!menudata.isVisible()) continue;
-                if (menudata instanceof SeperatorData) {
-                    if (last != null && last instanceof SeperatorData) {
-                        // no seperator dupes
+                if (!menudata.isVisible()) {
+                    continue;
+                }
+                if (menudata instanceof SeparatorData) {
+                    if (last != null && last instanceof SeparatorData) {
+                        // no separator dupes
                         continue;
                     }
                     content.add(new JSeparator(SwingConstants.HORIZONTAL), "growx,spanx");
                     last = menudata;
                     continue;
                 }
-                if (menudata._getValidateException() != null) continue;
+                if (menudata._getValidateException() != null) {
+                    continue;
+                }
 
                 if (menudata.getType() == org.jdownloader.controlling.contextmenu.MenuItemData.Type.CONTAINER) {
 
@@ -159,7 +163,7 @@ public final class TrayIconPopup extends ExtJFrame implements MouseListener {
                             g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
                             g2.setRenderingHint(RenderingHints.KEY_INTERPOLATION, RenderingHints.VALUE_INTERPOLATION_BILINEAR);
                             g2.setRenderingHint(RenderingHints.KEY_RENDERING, RenderingHints.VALUE_RENDER_QUALITY);
-                            ((Graphics2D) g2).setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, 0.8f));
+                            g2.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, 0.8f));
                             g2.setColor(Color.BLACK);
                             g2.fillPolygon(new int[] { getWidth() - 5, getWidth() - 5 - 6, getWidth() - 5 - 6 }, new int[] { getHeight() / 2, getHeight() / 2 - 4, getHeight() / 2 + 4 }, 3);
                         }
@@ -174,7 +178,9 @@ public final class TrayIconPopup extends ExtJFrame implements MouseListener {
 
                         public void actionPerformed(ActionEvent e) {
                             hideThreadrunning = false;
-                            if (root != null && root.isShowing()) return;
+                            if (root != null && root.isShowing()) {
+                                return;
+                            }
                             root = new ExtPopupMenu();
 
                             new MenuBuilder(MenuManagerMainToolbar.getInstance(), root, (MenuContainer) menudata) {
@@ -265,7 +271,9 @@ public final class TrayIconPopup extends ExtJFrame implements MouseListener {
                 } else if (menudata.getActionData() != null) {
 
                     action = menudata.createAction();
-                    if (!action.isVisible()) continue;
+                    if (!action.isVisible()) {
+                        continue;
+                    }
                     if (StringUtils.isNotEmpty(menudata.getShortcut()) && KeyStroke.getKeyStroke(menudata.getShortcut()) != null) {
                         action.setAccelerator(KeyStroke.getKeyStroke(menudata.getShortcut()));
                     } else if (MenuItemData.isEmptyValue(menudata.getShortcut())) {
@@ -445,8 +453,9 @@ public final class TrayIconPopup extends ExtJFrame implements MouseListener {
     }
 
     /**
-     * When we perform a tray action, we need a away to ask in the silentmode controller (JDGui) is the action has been invoked from the tray
-     * 
+     * When we perform a tray action, we need a away to ask in the silentmode controller (JDGui) is the action has been invoked from the
+     * tray
+     *
      * @return
      */
     public boolean hasBeenRecentlyActive() {

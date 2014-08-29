@@ -26,13 +26,13 @@ import jd.captcha.utils.Utilities;
 
 /**
  * Diese Klasse beinhaltet alle Methoden für einzellne Letter.
- * 
+ *
  * @author JD-Team
  */
 public class Letter extends PixelGrid {
 
     /**
-     * 
+     *
      */
     private static final long serialVersionUID = 1L;
     private int               angle;
@@ -65,7 +65,7 @@ public class Letter extends PixelGrid {
     private String            sourcehash;
 
     /**
-     * 
+     *
      */
     public Letter() {
         super(0, 0);
@@ -76,10 +76,10 @@ public class Letter extends PixelGrid {
     }
 
     /**
-     * Versucht den Buchstaben automatisch auszurichten. Als kriterium dient das minimale Breite/Höhe Verhältniss Es wird zuerst die optimale DRehrichtung
-     * ermittelt und dann gedreht. Die Methode funktioniert nicht immer zuverlässig. align(double contrast,double objectContrast,int angleA, int angleB) braucht
-     * länger, liefert aber bessere Ergebnisse
-     * 
+     * Versucht den Buchstaben automatisch auszurichten. Als kriterium dient das minimale Breite/Höhe Verhältniss Es wird zuerst die
+     * optimale DRehrichtung ermittelt und dann gedreht. Die Methode funktioniert nicht immer zuverlässig. align(double contrast,double
+     * objectContrast,int angleA, int angleB) braucht länger, liefert aber bessere Ergebnisse
+     *
      * @param objectContrast
      * @return Ausgerichteter Buchstabe
      */
@@ -94,9 +94,9 @@ public class Letter extends PixelGrid {
     }
 
     /**
-     * Gibt einen Ausgerichteten Buchstaben zurück. Es wird vom Winkel angleA bis angleB nach der Besten Ausrichtung (Breite/Höhe) gesucht. Ist zuverlässiger
-     * als align(double contrast,double objectContrast)
-     * 
+     * Gibt einen Ausgerichteten Buchstaben zurück. Es wird vom Winkel angleA bis angleB nach der Besten Ausrichtung (Breite/Höhe) gesucht.
+     * Ist zuverlässiger als align(double contrast,double objectContrast)
+     *
      * @param objectContrast
      * @param angleA
      * @param angleB
@@ -114,8 +114,9 @@ public class Letter extends PixelGrid {
     }
 
     /**
-     * Autoasurichtung. Diese Funktion geht nicht den Umweg über ein Pixelobject. Braucht etwas mehr zeit und liefrt dafür deutlich bessere Ergebnisse!
-     * 
+     * Autoasurichtung. Diese Funktion geht nicht den Umweg über ein Pixelobject. Braucht etwas mehr zeit und liefrt dafür deutlich bessere
+     * Ergebnisse!
+     *
      * @param angleA
      * @param angleB
      * @return Gedrehter buchstabe
@@ -151,7 +152,7 @@ public class Letter extends PixelGrid {
 
     /**
      * Richtet sich an den Pixelzahlen der oberen und unteren Zeile und gibt unter umständen ein besseres Ergebnis aus
-     * 
+     *
      * @param angleA
      * @param angleB
      * @return Gedrehter buchstabe
@@ -187,13 +188,16 @@ public class Letter extends PixelGrid {
 
         for (int y = 0; y < getHeight(); y++) {
             for (int x = 0; x < getWidth(); x++) {
-                if (isElement(getPixelValue(x, y), avg))
+                if (isElement(getPixelValue(x, y), avg)) {
                     b++;
-                else
+                } else {
                     w++;
+                }
             }
         }
-        if (b > w) invert();
+        if (b > w) {
+            invert();
+        }
     }
 
     public void colorize(int color) {
@@ -217,7 +221,9 @@ public class Letter extends PixelGrid {
     }
 
     private void followPixelObject(int x, int y, int[][] map, boolean[][] bmap) {
-        if (bmap[x][y]) { return; }
+        if (bmap[x][y]) {
+            return;
+        }
         bmap[x][y] = true;
         // links oben
         int posX = -1;
@@ -296,7 +302,7 @@ public class Letter extends PixelGrid {
 
     /**
      * Gib den drehwinkel des letterszurück
-     * 
+     *
      * @return drehwinkel
      */
     public int getAngle() {
@@ -305,7 +311,7 @@ public class Letter extends PixelGrid {
     }
 
     /**
-     * 
+     *
      * @return Gibt die Fläche des Objekts zurück
      */
     public int getArea() {
@@ -330,7 +336,9 @@ public class Letter extends PixelGrid {
      * @return the elementPixel
      */
     public int getElementPixel() {
-        if (elementPixel > 0) { return elementPixel; }
+        if (elementPixel > 0) {
+            return elementPixel;
+        }
         elementPixel = 0;
         for (int x = 0; x < getWidth(); x++) {
             for (int y = 0; y < getHeight(); y++) {
@@ -455,17 +463,18 @@ public class Letter extends PixelGrid {
 
     /*
      * private int[] getPartnerPixel(int x, int y, Vector<int[]> border) {
-     * 
-     * int radius = 1; boolean[][] badgrid = new boolean[this.getWidth()][this.getHeight()]; badgrid[x][y] = true; double dir = getBorderDir(x, y);
-     * 
+     *
+     * int radius = 1; boolean[][] badgrid = new boolean[this.getWidth()][this.getHeight()]; badgrid[x][y] = true; double dir =
+     * getBorderDir(x, y);
+     *
      * return null; }
-     * 
-     * private double getBorderDir(int x, int y) { int count = 0; double angle = 0; int[][] angleMap = new int[3][3]; angleMap[2][1] = 0; angleMap[2][0] = 45;
-     * angleMap[1][0] = 90; angleMap[0][0] = 135; angleMap[0][1] = 180; angleMap[0][2] = 225; angleMap[1][2] = 270; angleMap[2][2] = 315; angleMap[1][1] = -1;
-     * for (int xx = -1; xx < 2; xx++) { for (int yy = -1; yy < 2; yy++) { try { // ((x + xx < 0 || x + xx > this.getWidth() - 1 || y + yy < // 0 || y + yy >
-     * this.getHeight() - 1) || if ((grid[x + xx][y + yy] > 0) && angleMap[xx + 1][yy + 1] >= 0) { //
-     * if(Utilities.isLoggerActive())logger.info(xx+","+yy+" - "+angleMap[xx+1][yy+1]); angle = count angle + angleMap[xx + 1][yy + 1]; count++; angle /= count;
-     * } } catch (Exception e) { } } } return angle; }
+     *
+     * private double getBorderDir(int x, int y) { int count = 0; double angle = 0; int[][] angleMap = new int[3][3]; angleMap[2][1] = 0;
+     * angleMap[2][0] = 45; angleMap[1][0] = 90; angleMap[0][0] = 135; angleMap[0][1] = 180; angleMap[0][2] = 225; angleMap[1][2] = 270;
+     * angleMap[2][2] = 315; angleMap[1][1] = -1; for (int xx = -1; xx < 2; xx++) { for (int yy = -1; yy < 2; yy++) { try { // ((x + xx < 0
+     * || x + xx > this.getWidth() - 1 || y + yy < // 0 || y + yy > this.getHeight() - 1) || if ((grid[x + xx][y + yy] > 0) && angleMap[xx +
+     * 1][yy + 1] >= 0) { // if(Utilities.isLoggerActive())logger.info(xx+","+yy+" - "+angleMap[xx+1][yy+1]); angle = count angle +
+     * angleMap[xx + 1][yy + 1]; count++; angle /= count; } } catch (Exception e) { } } } return angle; }
      */
 
     public int[][] getLocalMap(int[][] grid, int x, int y) {
@@ -589,7 +598,7 @@ public class Letter extends PixelGrid {
 
     /**
      * Gibt den Pixelstring zurück. Pixelsep: * ZeilenSep: |
-     * 
+     *
      * @return Pixelstring 1*0*1|0*0*1|...
      */
     public String getPixelString() {
@@ -612,12 +621,14 @@ public class Letter extends PixelGrid {
 
     /**
      * TODO: EINE saubere verkleinerung * gibt den Letter um den faktor faktor verkleinert zurück. Es wird ein Kontrastvergleich vorgenommen
-     * 
+     *
      * @param faktor
      * @return Vereinfachter Buchstabe
      */
     public Letter getSimplified(double faktor) {
-        if (faktor == 1.0 || faktor == 0.0) { return this; }
+        if (faktor == 1.0 || faktor == 0.0) {
+            return this;
+        }
 
         int newWidth = (int) Math.ceil(getWidth() / faktor);
         int newHeight = (int) Math.ceil(getHeight() / faktor);
@@ -728,7 +739,7 @@ public class Letter extends PixelGrid {
 
     /**
      * Resize auf newWidth. die proportionen bleiben erhalten
-     * 
+     *
      * @param newWidth
      */
     public void resizetoWidth(int newWidth) {
@@ -755,7 +766,7 @@ public class Letter extends PixelGrid {
 
     /**
      * Resize auf newHeight. die proportionen bleiben erhalten
-     * 
+     *
      * @param newHeight
      */
     public void resizetoHeight(int newHeight) {
@@ -782,7 +793,7 @@ public class Letter extends PixelGrid {
 
     /**
      * Skaliert den Letter auf die höhe
-     * 
+     *
      * @param newHeight
      * @param d
      *            Grenzfaktor. darunter wird nicht skaliert
@@ -851,8 +862,8 @@ public class Letter extends PixelGrid {
     }
 
     /**
-     * Setzt das grid aus einem TextString. PixelSeperator: * Zeilensperator: |
-     * 
+     * Setzt das grid aus einem TextString. PixelSeparator: * Zeilenseparator: |
+     *
      * @param content
      *            PixelString
      * @return true/false
@@ -869,7 +880,9 @@ public class Letter extends PixelGrid {
                 grid = new int[width][code.length];
                 // TODO war vorher width < 2 kann zu regressionen führen
                 // beobachten
-                if (width < 1 || code.length < 2) { return false; }
+                if (width < 1 || code.length < 2) {
+                    return false;
+                }
 
             }
             for (int x = 0; x < width; x++) {
@@ -911,7 +924,7 @@ public class Letter extends PixelGrid {
 
     /**
      * Entfernt die Reihen 0-left und right-ende aus dem interne Grid
-     * 
+     *
      * @param left
      * @param right
      * @return true bei Erfolg, sonst false
@@ -934,14 +947,16 @@ public class Letter extends PixelGrid {
     }
 
     /**
-     * Dreht den buchstaben um angle. Dabei wird breite und höhe angepasst. Das drehen dauert länger als über PixelObject, leidet dafür deutlich weniger unter
-     * Pixelfehlern
-     * 
+     * Dreht den buchstaben um angle. Dabei wird breite und höhe angepasst. Das drehen dauert länger als über PixelObject, leidet dafür
+     * deutlich weniger unter Pixelfehlern
+     *
      * @param angle
      * @return new letter
      */
     public Letter turn(double angle) {
-        if (angle == 0.0) return this;
+        if (angle == 0.0) {
+            return this;
+        }
         while (angle < 0) {
             angle += 360;
         }

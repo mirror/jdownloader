@@ -56,7 +56,7 @@ import org.jdownloader.updatev2.gui.LAFOptions;
 
 public class LinkGrabberPanel extends SwitchPanel implements LinkCollectorListener, GenericConfigEventListener<Boolean> {
     /**
-     * 
+     *
      */
     private static final long     serialVersionUID = 1L;
     private LinkGrabberTableModel tableModel;
@@ -219,13 +219,13 @@ public class LinkGrabberPanel extends SwitchPanel implements LinkCollectorListen
 
             protected MenuContainerRoot prepare(MenuContainerRoot menuData) {
                 MenuContainerRoot ret = new MenuContainerRoot();
-                boolean foundSeperator = false;
+                boolean foundSeparator = false;
                 for (MenuItemData mi : menuData.getItems()) {
                     if (mi instanceof LeftRightDividerItem) {
-                        foundSeperator = true;
+                        foundSeparator = true;
                         continue;
                     }
-                    if (foundSeperator) {
+                    if (foundSeparator) {
                         ret.add(mi);
                     }
                 }
@@ -462,7 +462,7 @@ public class LinkGrabberPanel extends SwitchPanel implements LinkCollectorListen
             }
 
             /**
-             * 
+             *
              */
             private static final long serialVersionUID = 1L;
             // protected int getHeaderHeight() {

@@ -5,10 +5,10 @@ import javax.swing.JSeparator;
 
 import org.jdownloader.gui.translate._GUI;
 
-public class SeperatorData extends MenuItemData {
+public class SeparatorData extends MenuItemData {
 
-    public SeperatorData() {
-        setName(_GUI._.SeperatorData_SeperatorData());
+    public SeparatorData() {
+        setName(_GUI._.SeparatorData_SeparatorData());
     }
 
     @Override

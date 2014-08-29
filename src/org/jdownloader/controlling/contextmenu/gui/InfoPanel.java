@@ -50,7 +50,7 @@ import org.jdownloader.controlling.contextmenu.Customizer;
 import org.jdownloader.controlling.contextmenu.MenuContainer;
 import org.jdownloader.controlling.contextmenu.MenuItemData;
 import org.jdownloader.controlling.contextmenu.MenuLink;
-import org.jdownloader.controlling.contextmenu.SeperatorData;
+import org.jdownloader.controlling.contextmenu.SeparatorData;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.images.NewTheme;
 import org.jdownloader.logging.LogController;
@@ -369,7 +369,9 @@ public class InfoPanel extends MigPanel implements ActionListener, Scrollable {
         } else {
             try {
 
-                if (value.getActionData() == null) return;
+                if (value.getActionData() == null) {
+                    return;
+                }
                 ActionData actionData = value.getActionData();
 
                 Class<?> clazz = actionData._getClazz();
@@ -429,7 +431,7 @@ public class InfoPanel extends MigPanel implements ActionListener, Scrollable {
         }
         visibleBox.setSelected(value.isVisible());
 
-        MenuItemData mid = ((MenuItemData) value);
+        MenuItemData mid = (value);
         Rectangle bounds = null;
 
         String n = mid.getName();
@@ -488,8 +490,12 @@ public class InfoPanel extends MigPanel implements ActionListener, Scrollable {
                                 String lbl2 = o2.gs.getKey();
                                 Customizer oc1 = o1.gs.getAnnotation(Customizer.class);
                                 Customizer oc2 = o2.gs.getAnnotation(Customizer.class);
-                                if (oc1 != null) lbl1 = oc1.name();
-                                if (oc2 != null) lbl2 = oc2.name();
+                                if (oc1 != null) {
+                                    lbl1 = oc1.name();
+                                }
+                                if (oc2 != null) {
+                                    lbl2 = oc2.name();
+                                }
 
                                 return lbl1.compareToIgnoreCase(lbl2);
                             } catch (Throwable e) {
@@ -532,9 +538,9 @@ public class InfoPanel extends MigPanel implements ActionListener, Scrollable {
 
             // label.setText(_GUI._.InfoPanel_updateInfo_header_actionlabel(, ));
 
-        } else if (mid instanceof SeperatorData) {
+        } else if (mid instanceof SeparatorData) {
 
-            name = _GUI._.Renderer_getTreeCellRendererComponent_seperator();
+            name = _GUI._.Renderer_getTreeCellRendererComponent_separator();
 
         } else {
             if (mid instanceof MenuLink) {

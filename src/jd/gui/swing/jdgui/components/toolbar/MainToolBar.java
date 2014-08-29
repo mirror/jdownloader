@@ -72,7 +72,7 @@ import org.jdownloader.controlling.contextmenu.CustomizableAppAction;
 import org.jdownloader.controlling.contextmenu.MenuContainer;
 import org.jdownloader.controlling.contextmenu.MenuItemData;
 import org.jdownloader.controlling.contextmenu.MenuLink;
-import org.jdownloader.controlling.contextmenu.SeperatorData;
+import org.jdownloader.controlling.contextmenu.SeparatorData;
 import org.jdownloader.controlling.contextmenu.gui.ExtPopupMenu;
 import org.jdownloader.controlling.contextmenu.gui.MenuBuilder;
 import org.jdownloader.extensions.ExtensionNotLoadedException;
@@ -100,7 +100,9 @@ public class MainToolBar extends JToolBar implements MouseListener, DownloadWatc
     }
 
     public static synchronized MainToolBar getInstance() {
-        if (INSTANCE == null) INSTANCE = new MainToolBar();
+        if (INSTANCE == null) {
+            INSTANCE = new MainToolBar();
+        }
         return INSTANCE;
     }
 
@@ -174,7 +176,7 @@ public class MainToolBar extends JToolBar implements MouseListener, DownloadWatc
 
     /**
      * USed to register the shortcuts to the rootpane during init
-     * 
+     *
      * @param jdGui
      */
     public void registerAccelerators(final JDGui jdGui) {
@@ -185,7 +187,9 @@ public class MainToolBar extends JToolBar implements MouseListener, DownloadWatc
      * Updates the toolbar
      */
     public final void updateToolbar() {
-        if (!SecondLevelLaunch.GUI_COMPLETE.isReached()) return;
+        if (!SecondLevelLaunch.GUI_COMPLETE.isReached()) {
+            return;
+        }
         initDone = true;
         new EDTRunner() {
 
@@ -225,17 +229,21 @@ public class MainToolBar extends JToolBar implements MouseListener, DownloadWatc
             AbstractButton bt = null;
             CustomizableAppAction action;
             try {
-                if (!menudata.isVisible()) continue;
-                if (menudata instanceof SeperatorData) {
-                    if (last != null && last instanceof SeperatorData) {
-                        // no seperator dupes
+                if (!menudata.isVisible()) {
+                    continue;
+                }
+                if (menudata instanceof SeparatorData) {
+                    if (last != null && last instanceof SeparatorData) {
+                        // no separator dupes
                         continue;
                     }
                     this.add(new JSeparator(SwingConstants.VERTICAL), "gapleft 10,gapright 10,width 2!,pushy,growy");
                     last = menudata;
                     continue;
                 }
-                if (menudata._getValidateException() != null) continue;
+                if (menudata._getValidateException() != null) {
+                    continue;
+                }
 
                 if (menudata.getType() == org.jdownloader.controlling.contextmenu.MenuItemData.Type.CONTAINER) {
                     bt = new ExtButton(new AppAction() {
@@ -250,7 +258,9 @@ public class MainToolBar extends JToolBar implements MouseListener, DownloadWatc
                         @Override
                         public void actionPerformed(final ActionEvent e) {
                             ExtPopupMenu lroot = root;
-                            if (lroot != null && lroot.isShowing()) { return; }
+                            if (lroot != null && lroot.isShowing()) {
+                                return;
+                            }
                             Object src = e.getSource();
                             if (e.getSource() instanceof Component) {
                                 lroot = new ExtPopupMenu();
@@ -304,7 +314,9 @@ public class MainToolBar extends JToolBar implements MouseListener, DownloadWatc
                                     @Override
                                     protected void addContainer(JComponent root, MenuItemData inst) throws InstantiationException, IllegalAccessException, InvocationTargetException, ClassNotFoundException, NoSuchMethodException, ExtensionNotLoadedException {
                                         final JMenu submenu = (JMenu) inst.addTo(root);
-                                        if (submenu == null) return;
+                                        if (submenu == null) {
+                                            return;
+                                        }
                                         submenu.addMouseListener(ml);
                                         createLayer(submenu, (MenuContainer) inst);
 
@@ -368,7 +380,9 @@ public class MainToolBar extends JToolBar implements MouseListener, DownloadWatc
                         public void mouseEntered(MouseEvent e) {
                             Timer ltimer = timer;
                             timer = null;
-                            if (ltimer != null) ltimer.stop();
+                            if (ltimer != null) {
+                                ltimer.stop();
+                            }
                             ltimer = new Timer(200, new ActionListener() {
 
                                 @Override
@@ -536,13 +550,17 @@ public class MainToolBar extends JToolBar implements MouseListener, DownloadWatc
 
     protected String validateIconKey(String key) {
 
-        if (StringUtils.isEmpty(key) || !NewTheme.I().hasIcon(key)) return IconKey.ICON_QUESTION;
+        if (StringUtils.isEmpty(key) || !NewTheme.I().hasIcon(key)) {
+            return IconKey.ICON_QUESTION;
+        }
         return key;
 
     }
 
     protected ImageIcon createDropdownImage(String iconKey) {
-        if (MenuItemData.isEmptyValue(iconKey)) iconKey = IconKey.ICON_QUESTION;
+        if (MenuItemData.isEmptyValue(iconKey)) {
+            iconKey = IconKey.ICON_QUESTION;
+        }
         Image back = NewTheme.I().getImage(iconKey, 20, false);
         return createDropdownImage(back);
 
@@ -556,7 +574,9 @@ public class MainToolBar extends JToolBar implements MouseListener, DownloadWatc
     }
 
     protected void updateSpecial() {
-        if (speedmeter != null && CFG_GUI.SPEED_METER_VISIBLE.isEnabled()) add(speedmeter, "width 32:300:300,pushy,growy");
+        if (speedmeter != null && CFG_GUI.SPEED_METER_VISIBLE.isEnabled()) {
+            add(speedmeter, "width 32:300:300,pushy,growy");
+        }
     }
 
     // made speedMeter Instance public. Used in remote API
@@ -595,7 +615,9 @@ public class MainToolBar extends JToolBar implements MouseListener, DownloadWatc
 
             @Override
             protected void runInEDT() {
-                if (speedmeter != null) speedmeter.stop();
+                if (speedmeter != null) {
+                    speedmeter.stop();
+                }
             }
         };
     }
@@ -610,7 +632,9 @@ public class MainToolBar extends JToolBar implements MouseListener, DownloadWatc
 
             @Override
             protected void runInEDT() {
-                if (speedmeter != null) speedmeter.start();
+                if (speedmeter != null) {
+                    speedmeter.start();
+                }
             }
         };
     }
@@ -621,7 +645,9 @@ public class MainToolBar extends JToolBar implements MouseListener, DownloadWatc
 
             @Override
             protected void runInEDT() {
-                if (speedmeter != null) speedmeter.stop();
+                if (speedmeter != null) {
+                    speedmeter.stop();
+                }
             }
         };
     }

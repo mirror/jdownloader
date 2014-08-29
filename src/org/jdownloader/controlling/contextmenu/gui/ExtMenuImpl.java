@@ -18,12 +18,14 @@ public class ExtMenuImpl extends JMenu implements ExtMenuInterface {
     }
 
     /**
-     * 
+     *
      */
     private static final long serialVersionUID = 1L;
 
     protected JMenuItem createActionComponent(Action a) {
-        if (((AppAction) a).isToggle()) { return new JCheckBoxMenuItem(a); }
+        if (((AppAction) a).isToggle()) {
+            return new JCheckBoxMenuItem(a);
+        }
 
         return super.createActionComponent(a);
     }
@@ -36,10 +38,14 @@ public class ExtMenuImpl extends JMenu implements ExtMenuInterface {
     }
 
     public Component add(Component c) {
-        // avoid seperators as first component and double seperators
+        // avoid separators as first component and double separators
         if (c instanceof JSeparator) {
-            if (getMenuComponentCount() == 0) return c;
-            if (getMenuComponentCount() > 0 && getMenuComponent(getMenuComponentCount() - 1) instanceof JSeparator) return c;
+            if (getMenuComponentCount() == 0) {
+                return c;
+            }
+            if (getMenuComponentCount() > 0 && getMenuComponent(getMenuComponentCount() - 1) instanceof JSeparator) {
+                return c;
+            }
         } else {
             if (c.isEnabled()) {
                 setEnabled(true);

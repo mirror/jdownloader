@@ -13,7 +13,7 @@ import org.appwork.utils.swing.EDTRunner;
 import org.jdownloader.controlling.contextmenu.ContextMenuManager;
 import org.jdownloader.controlling.contextmenu.MenuContainer;
 import org.jdownloader.controlling.contextmenu.MenuItemData;
-import org.jdownloader.controlling.contextmenu.SeperatorData;
+import org.jdownloader.controlling.contextmenu.SeparatorData;
 import org.jdownloader.extensions.ExtensionNotLoadedException;
 
 public class MenuBuilder {
@@ -84,7 +84,7 @@ public class MenuBuilder {
                 if (root instanceof JMenu) {
                     count = ((JMenu) root).getMenuComponentCount() + root.getComponentCount();
                 }
-                if (count == 0 && inst instanceof SeperatorData) continue;
+                if (count == 0 && inst instanceof SeparatorData) continue;
 
                 switch (inst.getType()) {
                 case ACTION:

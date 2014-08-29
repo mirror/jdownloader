@@ -9,7 +9,7 @@ import javax.swing.KeyStroke;
 import org.jdownloader.controlling.contextmenu.ActionData;
 import org.jdownloader.controlling.contextmenu.MenuContainerRoot;
 import org.jdownloader.controlling.contextmenu.MenuItemData;
-import org.jdownloader.controlling.contextmenu.SeperatorData;
+import org.jdownloader.controlling.contextmenu.SeparatorData;
 import org.jdownloader.gui.IconKey;
 import org.jdownloader.gui.mainmenu.ChunksEditorLink;
 import org.jdownloader.gui.mainmenu.ParalellDownloadsEditorLink;
@@ -35,7 +35,7 @@ public class MenuManagerDownloadTabBottomBar extends AbstractBottomBarMenuManage
 
     /**
      * get the only existing instance of DownloadListContextMenuManager. This is a singleton
-     * 
+     *
      * @return
      */
     public static MenuManagerDownloadTabBottomBar getInstance() {
@@ -85,11 +85,11 @@ public class MenuManagerDownloadTabBottomBar extends AbstractBottomBarMenuManage
         quicksettings.add(new ParallelDownloadsPerHostEditorLink());
         //
         quicksettings.add(new SpeedlimitEditorLink());
-        quicksettings.add(new SeperatorData());
+        quicksettings.add(new SeparatorData());
         quicksettings.add(DownloadsPropertiesToggleAction.class);
         quicksettings.add(DownloadsOverviewPanelToggleAction.class);
 
-        quicksettings.add(new SeperatorData());
+        quicksettings.add(new SeparatorData());
         quicksettings.add(BottomBarMenuManagerAction.class);
 
         mr.add(quicksettings);

@@ -25,7 +25,7 @@ import javax.swing.tree.TreeSelectionModel;
 import org.appwork.utils.os.CrossSystem;
 import org.appwork.utils.swing.dialog.Dialog;
 import org.jdownloader.controlling.contextmenu.MenuItemData;
-import org.jdownloader.controlling.contextmenu.SeperatorData;
+import org.jdownloader.controlling.contextmenu.SeparatorData;
 
 public class MenuManagerTree extends JTree {
     public void expandAll() {
@@ -135,7 +135,7 @@ public class MenuManagerTree extends JTree {
                     popup.add(new AddActionAction(managerFrame));
                     popup.add(new AddSubMenuAction(managerFrame));
                     popup.add(new AddSpecialAction(managerFrame));
-                    popup.add(new AddGenericItem(managerFrame, new SeperatorData()));
+                    popup.add(new AddGenericItem(managerFrame, new SeparatorData()));
                     popup.add(new RemoveAction(managerFrame));
                     popup.show(MenuManagerTree.this, e.getPoint().x, e.getPoint().y);
                 }
@@ -159,7 +159,9 @@ public class MenuManagerTree extends JTree {
         setTransferHandler(new TransferHandler() {
             public boolean canImport(TransferHandler.TransferSupport support) {
 
-                if (!support.isDataFlavorSupported(MenuItemTransferAble.NODE_FLAVOR) || !support.isDrop()) { return false; }
+                if (!support.isDataFlavorSupported(MenuItemTransferAble.NODE_FLAVOR) || !support.isDrop()) {
+                    return false;
+                }
 
                 JTree.DropLocation dropLocation = (JTree.DropLocation) support.getDropLocation();
                 Transferable transferable = support.getTransferable();
@@ -170,15 +172,25 @@ public class MenuManagerTree extends JTree {
                     MenuItemData item = ((MenuItemData) data.getLastPathComponent());
                     MenuItemData parent = (MenuItemData) path.getLastPathComponent();
 
-                    if (data.isDescendant(path)) return false;
-                    if (parent == item) return false;
+                    if (data.isDescendant(path)) {
+                        return false;
+                    }
+                    if (parent == item) {
+                        return false;
+                    }
                     int childIndex = dropLocation.getChildIndex();
-                    if (item instanceof SeperatorData) {
-                        if (childIndex == 0) return false;
-                        if (childIndex == parent.getItems().size()) return false;
+                    if (item instanceof SeparatorData) {
+                        if (childIndex == 0) {
+                            return false;
+                        }
+                        if (childIndex == parent.getItems().size()) {
+                            return false;
+                        }
                         return true;
                     }
-                    if (oldParent == parent) return true;
+                    if (oldParent == parent) {
+                        return true;
+                    }
                     return !parent._getItemIdentifiers().contains(item._getIdentifier());
 
                 } catch (Exception e) {
@@ -207,7 +219,9 @@ public class MenuManagerTree extends JTree {
             }
 
             public boolean importData(TransferHandler.TransferSupport support) {
-                if (!canImport(support)) { return false; }
+                if (!canImport(support)) {
+                    return false;
+                }
 
                 JTree.DropLocation dropLocation = (JTree.DropLocation) support.getDropLocation();
 

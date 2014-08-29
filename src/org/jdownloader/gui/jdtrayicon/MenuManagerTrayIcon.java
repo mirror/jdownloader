@@ -17,7 +17,7 @@ import org.jdownloader.controlling.contextmenu.ActionData;
 import org.jdownloader.controlling.contextmenu.ContextMenuManager;
 import org.jdownloader.controlling.contextmenu.MenuContainerRoot;
 import org.jdownloader.controlling.contextmenu.MenuItemData;
-import org.jdownloader.controlling.contextmenu.SeperatorData;
+import org.jdownloader.controlling.contextmenu.SeparatorData;
 import org.jdownloader.gui.jdtrayicon.actions.ChunksEditorLink;
 import org.jdownloader.gui.jdtrayicon.actions.ParalellDownloadsEditorLink;
 import org.jdownloader.gui.jdtrayicon.actions.ParallelDownloadsPerHostEditorLink;
@@ -37,7 +37,7 @@ public class MenuManagerTrayIcon extends ContextMenuManager<FilePackage, Downloa
 
     /**
      * get the only existing instance of DownloadListContextMenuManager. This is a singleton
-     * 
+     *
      * @return
      */
     public static MenuManagerTrayIcon getInstance() {
@@ -78,16 +78,16 @@ public class MenuManagerTrayIcon extends ContextMenuManager<FilePackage, Downloa
         mr.add(new MenuItemData(new ActionData(GlobalPremiumSwitchToggleAction.class)));
         mr.add(new MenuItemData(new ActionData(ClipBoardToggleAction.class)));
         mr.add(new MenuItemData(new ActionData(AutoReconnectToggleAction.class)));
-        mr.add(new SeperatorData());
+        mr.add(new SeparatorData());
         mr.add(new ChunksEditorLink());
         mr.add(new ParalellDownloadsEditorLink());
         mr.add(new ParallelDownloadsPerHostEditorLink());
         mr.add(new SpeedlimitEditorLink());
-        mr.add(new SeperatorData());
+        mr.add(new SeparatorData());
 
         mr.add(new MenuItemData(new ActionData(TrayMenuManagerAction.class)));
 
-        mr.add(new SeperatorData());
+        mr.add(new SeparatorData());
         mr.add(new MenuItemData(ExitAction.class));
 
         OptionalContainer opt;

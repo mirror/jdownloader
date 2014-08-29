@@ -45,7 +45,7 @@ public class HosterRuleController implements AccountControllerListener {
 
     /**
      * get the only existing instance of HosterRuleController. This is a singleton
-     * 
+     *
      * @return
      */
     public static HosterRuleController getInstance() {
@@ -183,7 +183,7 @@ public class HosterRuleController implements AccountControllerListener {
                         for (AccountGroup ag : hr.getAccounts()) {
                             if (lastCacheSize != newCache.size()) {
                                 lastCacheSize = newCache.size();
-                                /* add null as seperator for different AccountGroups */
+                                /* add null as separator for different AccountGroups */
                                 rules.add(null);
                             }
                             for (AccountReference acr : ag.getChildren()) {

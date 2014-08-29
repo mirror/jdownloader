@@ -37,7 +37,7 @@ import org.jdownloader.controlling.contextmenu.MenuContainer;
 import org.jdownloader.controlling.contextmenu.MenuContainerRoot;
 import org.jdownloader.controlling.contextmenu.MenuItemData;
 import org.jdownloader.controlling.contextmenu.MenuLink;
-import org.jdownloader.controlling.contextmenu.SeperatorData;
+import org.jdownloader.controlling.contextmenu.SeparatorData;
 import org.jdownloader.controlling.contextmenu.gui.ExtPopupMenu;
 import org.jdownloader.controlling.contextmenu.gui.MenuBuilder;
 import org.jdownloader.extensions.ExtensionNotLoadedException;
@@ -79,7 +79,9 @@ public class CustomizeableActionBar extends MigPanel implements PropertyChangeLi
     }
 
     public void updateGui() {
-        if (!SecondLevelLaunch.GUI_COMPLETE.isReached()) return;
+        if (!SecondLevelLaunch.GUI_COMPLETE.isReached()) {
+            return;
+        }
         removeAll();
         MenuContainerRoot items = prepare(manager.getMenuData());
 
@@ -91,17 +93,21 @@ public class CustomizeableActionBar extends MigPanel implements PropertyChangeLi
             // "height 24!,aligny top"
 
             try {
-                if (!menudata.isVisible()) continue;
-                if (menudata instanceof SeperatorData) {
-                    if (last != null && last instanceof SeperatorData) {
-                        // no seperator dupes
+                if (!menudata.isVisible()) {
+                    continue;
+                }
+                if (menudata instanceof SeparatorData) {
+                    if (last != null && last instanceof SeparatorData) {
+                        // no separator dupes
                         continue;
                     }
                     this.add(new JSeparator(SwingConstants.VERTICAL), "gapleft 10,gapright 10,width 2!,pushy,growy");
                     last = menudata;
                     continue;
                 }
-                if (menudata._getValidateException() != null) continue;
+                if (menudata._getValidateException() != null) {
+                    continue;
+                }
 
                 if (menudata.getType() == org.jdownloader.controlling.contextmenu.MenuItemData.Type.CONTAINER) {
                     addContainer(menudata);
@@ -146,7 +152,9 @@ public class CustomizeableActionBar extends MigPanel implements PropertyChangeLi
         // action.setEnabled(true);
         action.removePropertyChangeListener(this);
         action.addPropertyChangeListener(this);
-        if (!action.isVisible()) return;
+        if (!action.isVisible()) {
+            return;
+        }
         if (StringUtils.isNotEmpty(menudata.getShortcut())) {
             action.setAccelerator(KeyStroke.getKeyStroke(menudata.getShortcut()));
         } else if (MenuItemData.isEmptyValue(menudata.getShortcut())) {
@@ -185,8 +193,8 @@ public class CustomizeableActionBar extends MigPanel implements PropertyChangeLi
 
             ExtButton bt = new ExtButton(createPopupAction(menudata, getComponentCount() > 0 ? getComponent(getComponentCount() - 1) : null)) {
                 /**
-                *
-                */
+                 *
+                 */
                 private static final long serialVersionUID = 1L;
 
                 public void setBounds(int x, int y, int width, int height) {
@@ -208,8 +216,12 @@ public class CustomizeableActionBar extends MigPanel implements PropertyChangeLi
     }
 
     private String validateIconKey(String iconKey) {
-        if (MenuItemData.isEmptyValue(iconKey)) return "";
-        if (StringUtils.isEmpty(iconKey)) return "";
+        if (MenuItemData.isEmptyValue(iconKey)) {
+            return "";
+        }
+        if (StringUtils.isEmpty(iconKey)) {
+            return "";
+        }
         return iconKey;
     }
 

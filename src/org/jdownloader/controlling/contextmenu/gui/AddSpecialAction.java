@@ -19,7 +19,7 @@ import org.jdownloader.controlling.contextmenu.ContextMenuManager;
 import org.jdownloader.controlling.contextmenu.MenuContainer;
 import org.jdownloader.controlling.contextmenu.MenuItemData;
 import org.jdownloader.controlling.contextmenu.MenuLink;
-import org.jdownloader.controlling.contextmenu.SeperatorData;
+import org.jdownloader.controlling.contextmenu.SeparatorData;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.images.NewTheme;
 
@@ -68,8 +68,8 @@ public class AddSpecialAction extends AppAction {
                                 ret.setIcon(null);
                             }
                             return ret;
-                        } else if (value instanceof SeperatorData) {
-                            JLabel ret = (JLabel) orgRenderer.getListCellRendererComponent(list, _GUI._.AddSpecialAction_actionPerformed_seperator(), index, isSelected, cellHasFocus);
+                        } else if (value instanceof SeparatorData) {
+                            JLabel ret = (JLabel) orgRenderer.getListCellRendererComponent(list, _GUI._.AddSpecialAction_actionPerformed_separator(), index, isSelected, cellHasFocus);
                             ret.setIcon(null);
                             return ret;
                         } else {

@@ -122,7 +122,7 @@ public interface UpdaterTranslation extends TranslateInterface {
     @Default(lngs = { "en", "de" }, values = { "New JDownloader Version found...", "Neue JDownloader Version gefunden..." })
     String installframe_statusmsg_selfupdate();
 
-    @Default(lngs = { "en", "de" }, values = { "Validing Installation.\r\nThis can take up to 5 minutes...", "Installation wird validiert.\r\nDies kann bis zu 5 Minuten dauern." })
+    @Default(lngs = { "en", "de" }, values = { "Validating Installation.\r\nThis can take up to 5 minutes...", "Installation wird validiert.\r\nDies kann bis zu 5 Minuten dauern." })
     String installframe_statusmsg_selfupdate_validating();
 
     @Default(lngs = { "en", "de" }, values = { "Close", "Schließen" })

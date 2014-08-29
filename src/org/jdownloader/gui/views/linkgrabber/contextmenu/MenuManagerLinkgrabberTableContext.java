@@ -10,7 +10,7 @@ import org.jdownloader.controlling.contextmenu.ActionData;
 import org.jdownloader.controlling.contextmenu.ContextMenuManager;
 import org.jdownloader.controlling.contextmenu.MenuContainerRoot;
 import org.jdownloader.controlling.contextmenu.MenuItemData;
-import org.jdownloader.controlling.contextmenu.SeperatorData;
+import org.jdownloader.controlling.contextmenu.SeparatorData;
 import org.jdownloader.controlling.contextmenu.TableContext;
 import org.jdownloader.gui.IconKey;
 import org.jdownloader.gui.mainmenu.container.OptionalContainer;
@@ -43,7 +43,7 @@ public class MenuManagerLinkgrabberTableContext extends ContextMenuManager<Crawl
 
     /**
      * get the only existing instance of DownloadListContextMenuManager. This is a singleton
-     * 
+     *
      * @return
      */
     public static MenuManagerLinkgrabberTableContext getInstance() {
@@ -85,35 +85,35 @@ public class MenuManagerLinkgrabberTableContext extends ContextMenuManager<Crawl
         mr.add(PasteContextLinksAction.class);
         mr.add(AddContainerContextMenuAction.class);
 
-        mr.add(new SeperatorData());
+        mr.add(new SeparatorData());
         mr.add(new MenuItemData(new ActionData(ConfirmLinksContextAction.class)));
         mr.add(new MenuItemData(new ActionData(ConfirmLinksContextAction.class).putSetup(ConfirmLinksContextAction.SELECTION_ONLY, false).putSetup(TableContext.ITEM_VISIBLE_FOR_EMPTY_SELECTION, true)));
 
-        mr.add(new SeperatorData());
+        mr.add(new SeparatorData());
         mr.add(new LinkgrabberPluginLink());
-        mr.add(new SeperatorData());
+        mr.add(new SeparatorData());
         mr.add(createSettingsSubmenu());
 
         mr.add(SortAction.class);
         mr.add(EnabledAction.class);
 
-        mr.add(new SeperatorData());
+        mr.add(new SeparatorData());
         mr.add(CheckStatusAction.class);
         mr.add(new ActionData(OpenInBrowserAction.class));
-        mr.add(new SeperatorData());
+        mr.add(new SeparatorData());
 
         mr.add(createOthersMenu());
         // others
 
-        mr.add(new SeperatorData());
+        mr.add(new SeparatorData());
         /* remove menu */
 
         mr.add(setAccelerator(new MenuItemData(setName(setIconKey(new ActionData(GenericDeleteFromLinkgrabberContextAction.class).putSetup(GenericDeleteFromLinkgrabberContextAction.DELETE_ALL, true), IconKey.ICON_DELETE), _GUI._.DeleteQuickAction_DeleteQuickAction_object_())), CrossSystem.getDeleteShortcut()));
 
         mr.add(createCleanupMenu());
-        mr.add(new SeperatorData());
+        mr.add(new SeparatorData());
         mr.add(new ActionData(PropertiesAction.class));
-        mr.add(new SeperatorData());
+        mr.add(new SeparatorData());
         mr.add(new MenuItemData(new ActionData(LGMenuManagerAction.class)));
         OptionalContainer opt;
         mr.add(opt = new OptionalContainer(false));

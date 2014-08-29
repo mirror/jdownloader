@@ -13,7 +13,9 @@ import org.jdownloader.actions.AppAction;
 public class ExtPopupMenu extends JPopupMenu implements ExtMenuInterface {
 
     protected JMenuItem createActionComponent(Action a) {
-        if (((AppAction) a).isToggle()) { return new JCheckBoxMenuItem(a); }
+        if (((AppAction) a).isToggle()) {
+            return new JCheckBoxMenuItem(a);
+        }
 
         return super.createActionComponent(a);
     }
@@ -24,10 +26,14 @@ public class ExtPopupMenu extends JPopupMenu implements ExtMenuInterface {
     }
 
     public Component add(Component c) {
-        // avoid seperators as first component and double seperators
+        // avoid separators as first component and double separators
         if (c instanceof JSeparator) {
-            if (getComponentCount() == 0) return c;
-            if (getComponentCount() > 0 && getComponent(getComponentCount() - 1) instanceof JSeparator) return c;
+            if (getComponentCount() == 0) {
+                return c;
+            }
+            if (getComponentCount() > 0 && getComponent(getComponentCount() - 1) instanceof JSeparator) {
+                return c;
+            }
         }
         return super.add(c);
     }

@@ -55,7 +55,7 @@ import org.jdownloader.controlling.contextmenu.MenuContainer;
 import org.jdownloader.controlling.contextmenu.MenuContainerRoot;
 import org.jdownloader.controlling.contextmenu.MenuItemData;
 import org.jdownloader.controlling.contextmenu.MenuLink;
-import org.jdownloader.controlling.contextmenu.SeperatorData;
+import org.jdownloader.controlling.contextmenu.SeparatorData;
 import org.jdownloader.controlling.contextmenu.gui.ExtPopupMenu;
 import org.jdownloader.controlling.contextmenu.gui.MenuBuilder;
 import org.jdownloader.extensions.extraction.BooleanStatus;
@@ -229,7 +229,9 @@ public class LinkGrabberTable extends PackageControllerTable<CrawledPackage, Cra
     }
 
     protected boolean onHeaderSortClick(final MouseEvent event, final ExtColumn<AbstractNode> oldColumn, final String oldIdentifier, ExtColumn<AbstractNode> newColumn) {
-        if (((LinkGrabberTableModel) getModel()).isTristateSorterEnabled()) return false;
+        if (((LinkGrabberTableModel) getModel()).isTristateSorterEnabled()) {
+            return false;
+        }
 
         //
         if (JDGui.bugme(WarnLevel.NORMAL)) {
@@ -279,8 +281,12 @@ public class LinkGrabberTable extends PackageControllerTable<CrawledPackage, Cra
 
             nodesToDelete.add(dl);
 
-            if (TYPE.OFFLINE == dl.getParentNode().getType()) continue;
-            if (TYPE.POFFLINE == dl.getParentNode().getType()) continue;
+            if (TYPE.OFFLINE == dl.getParentNode().getType()) {
+                continue;
+            }
+            if (TYPE.POFFLINE == dl.getParentNode().getType()) {
+                continue;
+            }
             if (dl.getDownloadLink().getAvailableStatus() != AvailableStatus.FALSE) {
                 containsOnline = true;
 
@@ -298,21 +304,27 @@ public class LinkGrabberTable extends PackageControllerTable<CrawledPackage, Cra
 
     @Override
     protected boolean onShortcutCopy(java.util.List<AbstractNode> selectedObjects, KeyEvent evt) {
-        if (evt.isAltDown() || evt.isMetaDown() || evt.isAltGraphDown() || evt.isShiftDown()) return false;
+        if (evt.isAltDown() || evt.isMetaDown() || evt.isAltGraphDown() || evt.isShiftDown()) {
+            return false;
+        }
         TransferHandler.getCopyAction().actionPerformed(new ActionEvent(this, ActionEvent.ACTION_PERFORMED, "copy"));
         return true;
     }
 
     @Override
     protected boolean onShortcutCut(java.util.List<AbstractNode> selectedObjects, KeyEvent evt) {
-        if (evt.isAltDown() || evt.isMetaDown() || evt.isAltGraphDown() || evt.isShiftDown()) return false;
+        if (evt.isAltDown() || evt.isMetaDown() || evt.isAltGraphDown() || evt.isShiftDown()) {
+            return false;
+        }
         TransferHandler.getCutAction().actionPerformed(new ActionEvent(this, ActionEvent.ACTION_PERFORMED, "cut"));
         return true;
     }
 
     @Override
     protected boolean onShortcutPaste(java.util.List<AbstractNode> selectedObjects, KeyEvent evt) {
-        if (evt.isAltDown() || evt.isMetaDown() || evt.isAltGraphDown() || evt.isShiftDown()) return false;
+        if (evt.isAltDown() || evt.isMetaDown() || evt.isAltGraphDown() || evt.isShiftDown()) {
+            return false;
+        }
         TransferHandler.getPasteAction().actionPerformed(new ActionEvent(this, ActionEvent.ACTION_PERFORMED, "paste"));
         return true;
     }
@@ -379,7 +391,9 @@ public class LinkGrabberTable extends PackageControllerTable<CrawledPackage, Cra
     }
 
     private void fillActions(MenuContainer menuData) {
-        if (!menuData._isValidated()) return;
+        if (!menuData._isValidated()) {
+            return;
+        }
         final InputMap input = getInputMap(JComponent.WHEN_ANCESTOR_OF_FOCUSED_COMPONENT);
         final InputMap input2 = getInputMap(JComponent.WHEN_FOCUSED);
         final InputMap input3 = getInputMap(JComponent.WHEN_IN_FOCUSED_WINDOW);
@@ -387,17 +401,21 @@ public class LinkGrabberTable extends PackageControllerTable<CrawledPackage, Cra
         final ActionMap actions = getActionMap();
 
         for (MenuItemData mi : menuData.getItems()) {
-            if (!mi._isValidated()) continue;
+            if (!mi._isValidated()) {
+                continue;
+            }
             if (mi instanceof MenuContainer) {
                 fillActions((MenuContainer) mi);
-            } else if (mi instanceof SeperatorData) {
+            } else if (mi instanceof SeparatorData) {
                 continue;
             } else if (mi instanceof MenuLink) {
                 continue;
             } else {
                 AppAction action;
                 try {
-                    if (mi.getActionData() == null) continue;
+                    if (mi.getActionData() == null) {
+                        continue;
+                    }
                     action = mi.createAction();
                     KeyStroke keystroke;
                     if (StringUtils.isNotEmpty(mi.getShortcut())) {
