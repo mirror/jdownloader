@@ -146,6 +146,22 @@ public class MegaConz extends PluginForHost {
             keyString = getNodeFileKey(link);
             publicFile = false;
         }
+        // check finished encrypted file. if the decryption interrupted - for whatever reason
+        String path = link.getFileOutput();
+        File src = null;
+        if (path.endsWith(encrypted)) {
+            src = new File(path);
+
+        } else {
+            src = new File(path);
+            ;
+        }
+        if (src.exists() && src.length() == link.getVerifiedFileSize()) {
+            // ready for decryption
+            decrypt(link, keyString);
+            link.getLinkStatus().setStatus(LinkStatus.FINISHED);
+            return;
+        }
         try {
             if (fileID == null || keyString == null) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
