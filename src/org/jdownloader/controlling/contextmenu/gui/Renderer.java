@@ -18,7 +18,7 @@ import org.jdownloader.controlling.contextmenu.CustomizableAppAction;
 import org.jdownloader.controlling.contextmenu.MenuContainer;
 import org.jdownloader.controlling.contextmenu.MenuItemData;
 import org.jdownloader.controlling.contextmenu.MenuLink;
-import org.jdownloader.controlling.contextmenu.SeperatorData;
+import org.jdownloader.controlling.contextmenu.SeparatorData;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.images.NewTheme;
 
@@ -87,9 +87,9 @@ public class Renderer implements TreeCellRenderer {
             font = bold;
             // label.setText(_GUI._.InfoPanel_updateInfo_header_actionlabel(, ));
 
-        } else if (mid instanceof SeperatorData) {
+        } else if (mid instanceof SeparatorData) {
 
-            name = _GUI._.Renderer_getTreeCellRendererComponent_seperator();
+            name = _GUI._.Renderer_getTreeCellRendererComponent_separator();
 
         } else {
             if (mid instanceof MenuLink) {

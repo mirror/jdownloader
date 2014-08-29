@@ -9,7 +9,7 @@ import org.jdownloader.controlling.contextmenu.ActionData;
 import org.jdownloader.controlling.contextmenu.ContextMenuManager;
 import org.jdownloader.controlling.contextmenu.MenuContainerRoot;
 import org.jdownloader.controlling.contextmenu.MenuItemData;
-import org.jdownloader.controlling.contextmenu.SeperatorData;
+import org.jdownloader.controlling.contextmenu.SeparatorData;
 import org.jdownloader.gui.IconKey;
 import org.jdownloader.gui.mainmenu.container.OptionalContainer;
 import org.jdownloader.gui.translate._GUI;
@@ -61,7 +61,7 @@ public class MenuManagerDownloadTableContext extends ContextMenuManager<FilePack
 
     /**
      * get the only existing instance of DownloadListContextMenuManager. This is a singleton
-     * 
+     *
      * @return
      */
     public static MenuManagerDownloadTableContext getInstance() {
@@ -87,33 +87,33 @@ public class MenuManagerDownloadTableContext extends ContextMenuManager<FilePack
         mr.add(AddLinksContextMenuAction.class);
         mr.add(AddContainerContextMenuAction.class);
 
-        mr.add(new SeperatorData());
+        mr.add(new SeparatorData());
         // mr.add()
         mr.add(createSettingsMenu());
 
-        mr.add(new SeperatorData());
+        mr.add(new SeparatorData());
         mr.add(new DownloadsTablePluginLink());
-        mr.add(new SeperatorData());
+        mr.add(new SeparatorData());
         mr.add(new MenuItemData(new ActionData(OpenFileAction.class)));
         mr.add(new MenuItemData(new ActionData(OpenDirectoryAction.class)));
         mr.add(new MenuItemData(new ActionData(SortAction.class)));
         mr.add(new MenuItemData(new ActionData(EnabledAction.class)));
         mr.add(new MenuItemData(new ActionData(SkipAction.class)));
-        mr.add(new SeperatorData());
+        mr.add(new SeparatorData());
 
         mr.add(new MenuItemData(new ActionData(ForceDownloadAction.class)));
         mr.add(new MenuItemData(new ActionData(StopsignAction.class)));
-        mr.add(new SeperatorData());
+        mr.add(new SeparatorData());
 
         mr.add(createMoreMenu());
 
-        mr.add(new SeperatorData());
+        mr.add(new SeparatorData());
         mr.add(setAccelerator(new MenuItemData(setName(setIconKey(new ActionData(GenericDeleteFromDownloadlistContextAction.class).putSetup(GenericDeleteFromDownloadlistAction.DELETE_ALL, true), IconKey.ICON_DELETE), _GUI._.DeleteQuickAction_DeleteQuickAction_object_())), CrossSystem.getDeleteShortcut()));
 
         mr.add(createDeleteMenu());
-        mr.add(new SeperatorData());
+        mr.add(new SeparatorData());
         mr.add(PropertiesAction.class);
-        mr.add(new SeperatorData());
+        mr.add(new SeparatorData());
 
         mr.add(new MenuItemData(new ActionData(MenuManagerAction.class)));
         OptionalContainer opt;
@@ -139,7 +139,7 @@ public class MenuManagerDownloadTableContext extends ContextMenuManager<FilePack
         MoreMenuContainer more = new MoreMenuContainer();
         more.add(new MenuItemData(new ActionData(ResumeAction.class)));
         more.add(new MenuItemData(new ActionData(ResetAction.class)));
-        more.add(new SeperatorData());
+        more.add(new SeparatorData());
         more.add(new MenuItemData(new ActionData(MergeToPackageAction.class)));
         more.add(new MenuItemData(new ActionData(SplitPackagesByHost.class)));
 
@@ -156,7 +156,7 @@ public class MenuManagerDownloadTableContext extends ContextMenuManager<FilePack
         settings.add(RenameAction.class);
         settings.add(new MenuItemData(new ActionData(OpenInBrowserAction.class)));
         settings.add(URLEditorAction.class);
-        settings.add(new SeperatorData());
+        settings.add(new SeparatorData());
         settings.add(new MenuItemData(new ActionData(PackageNameAction.class)));
         settings.add(new MenuItemData(new ActionData(SetDownloadFolderInDownloadTableAction.class)));
         settings.add(new MenuItemData(new ActionData(SetDownloadPassword.class)));

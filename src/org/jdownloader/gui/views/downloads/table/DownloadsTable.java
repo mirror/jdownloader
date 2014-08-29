@@ -56,7 +56,7 @@ import org.jdownloader.controlling.contextmenu.CustomizableAppAction;
 import org.jdownloader.controlling.contextmenu.MenuContainer;
 import org.jdownloader.controlling.contextmenu.MenuItemData;
 import org.jdownloader.controlling.contextmenu.MenuLink;
-import org.jdownloader.controlling.contextmenu.SeperatorData;
+import org.jdownloader.controlling.contextmenu.SeparatorData;
 import org.jdownloader.gui.helpdialogs.HelpDialog;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.gui.views.components.packagetable.PackageControllerTable;
@@ -218,7 +218,9 @@ public class DownloadsTable extends PackageControllerTable<FilePackage, Download
             public void actionPerformed(ActionEvent e) {
                 Timer t = (Timer) e.getSource();
                 t.stop();
-                if (oldSortColumn == getModel().getSortColumn()) return;
+                if (oldSortColumn == getModel().getSortColumn()) {
+                    return;
+                }
                 if (getModel().getSortColumn() != null) {
                     if (CFG_GUI.CFG.isHelpDialogsEnabled()) {
                         HelpDialog.show(e1.getLocationOnScreen(), "downloadtabe_sortwarner", Dialog.STYLE_SHOW_DO_NOT_DISPLAY_AGAIN, _GUI._.DownloadsTable_actionPerformed_sortwarner_title(getModel().getSortColumn().getName()), _GUI._.DownloadsTable_actionPerformed_sortwarner_text(), NewTheme.I().getIcon("sort", 32));
@@ -232,42 +234,60 @@ public class DownloadsTable extends PackageControllerTable<FilePackage, Download
 
     @Override
     protected boolean onShortcutCopy(java.util.List<AbstractNode> selectedObjects, KeyEvent evt) {
-        if (evt.isAltDown() || evt.isMetaDown() || evt.isAltGraphDown() || evt.isShiftDown()) return false;
+        if (evt.isAltDown() || evt.isMetaDown() || evt.isAltGraphDown() || evt.isShiftDown()) {
+            return false;
+        }
         TransferHandler.getCopyAction().actionPerformed(new ActionEvent(this, ActionEvent.ACTION_PERFORMED, "copy"));
         return true;
     }
 
     @Override
     protected boolean onShortcutCut(java.util.List<AbstractNode> selectedObjects, KeyEvent evt) {
-        if (evt.isAltDown() || evt.isMetaDown() || evt.isAltGraphDown() || evt.isShiftDown()) return false;
+        if (evt.isAltDown() || evt.isMetaDown() || evt.isAltGraphDown() || evt.isShiftDown()) {
+            return false;
+        }
         TransferHandler.getCutAction().actionPerformed(new ActionEvent(this, ActionEvent.ACTION_PERFORMED, "cut"));
         return true;
     }
 
     @Override
     protected boolean onShortcutPaste(java.util.List<AbstractNode> selectedObjects, KeyEvent evt) {
-        if (evt.isAltDown() || evt.isMetaDown() || evt.isAltGraphDown() || evt.isShiftDown()) return false;
+        if (evt.isAltDown() || evt.isMetaDown() || evt.isAltGraphDown() || evt.isShiftDown()) {
+            return false;
+        }
         TransferHandler.getPasteAction().actionPerformed(new ActionEvent(this, ActionEvent.ACTION_PERFORMED, "paste"));
         return true;
     }
 
     @Override
     protected boolean isDeleteFinalSelectionTrigger(KeyStroke ks) {
-        if (super.isDeleteFinalSelectionTrigger(ks)) return true;
-        if (CrossSystem.isMac()) {
-            if (ks == KeyStroke.getKeyStroke(KeyEvent.VK_BACK_SPACE, Toolkit.getDefaultToolkit().getMenuShortcutKeyMask() | InputEvent.CTRL_MASK | InputEvent.SHIFT_MASK)) return true;
+        if (super.isDeleteFinalSelectionTrigger(ks)) {
+            return true;
         }
-        if (ks == KeyStroke.getKeyStroke(KeyEvent.VK_DELETE, Toolkit.getDefaultToolkit().getMenuShortcutKeyMask() | InputEvent.SHIFT_MASK)) return true;
+        if (CrossSystem.isMac()) {
+            if (ks == KeyStroke.getKeyStroke(KeyEvent.VK_BACK_SPACE, Toolkit.getDefaultToolkit().getMenuShortcutKeyMask() | InputEvent.CTRL_MASK | InputEvent.SHIFT_MASK)) {
+                return true;
+            }
+        }
+        if (ks == KeyStroke.getKeyStroke(KeyEvent.VK_DELETE, Toolkit.getDefaultToolkit().getMenuShortcutKeyMask() | InputEvent.SHIFT_MASK)) {
+            return true;
+        }
         return false;
     }
 
     @Override
     protected boolean isDeleteSelectionTrigger(KeyStroke ks) {
-        if (super.isDeleteSelectionTrigger(ks)) return true;
-        if (CrossSystem.isMac()) {
-            if (ks == KeyStroke.getKeyStroke(KeyEvent.VK_BACK_SPACE, Toolkit.getDefaultToolkit().getMenuShortcutKeyMask() | InputEvent.CTRL_MASK)) return true;
+        if (super.isDeleteSelectionTrigger(ks)) {
+            return true;
         }
-        if (ks == KeyStroke.getKeyStroke(KeyEvent.VK_DELETE, Toolkit.getDefaultToolkit().getMenuShortcutKeyMask())) return true;
+        if (CrossSystem.isMac()) {
+            if (ks == KeyStroke.getKeyStroke(KeyEvent.VK_BACK_SPACE, Toolkit.getDefaultToolkit().getMenuShortcutKeyMask() | InputEvent.CTRL_MASK)) {
+                return true;
+            }
+        }
+        if (ks == KeyStroke.getKeyStroke(KeyEvent.VK_DELETE, Toolkit.getDefaultToolkit().getMenuShortcutKeyMask())) {
+            return true;
+        }
 
         return false;
     }
@@ -334,7 +354,9 @@ public class DownloadsTable extends PackageControllerTable<FilePackage, Download
     }
 
     private void fillActions(MenuContainer menuData) {
-        if (!menuData._isValidated()) return;
+        if (!menuData._isValidated()) {
+            return;
+        }
         final InputMap input = getInputMap(JComponent.WHEN_ANCESTOR_OF_FOCUSED_COMPONENT);
         final InputMap input2 = getInputMap(JComponent.WHEN_FOCUSED);
         final InputMap input3 = getInputMap(JComponent.WHEN_IN_FOCUSED_WINDOW);
@@ -342,17 +364,21 @@ public class DownloadsTable extends PackageControllerTable<FilePackage, Download
         final ActionMap actions = getActionMap();
 
         for (MenuItemData mi : menuData.getItems()) {
-            if (!mi._isValidated()) return;
+            if (!mi._isValidated()) {
+                return;
+            }
             if (mi instanceof MenuContainer) {
                 fillActions((MenuContainer) mi);
-            } else if (mi instanceof SeperatorData) {
+            } else if (mi instanceof SeparatorData) {
                 continue;
             } else if (mi instanceof MenuLink) {
                 continue;
             } else {
                 AppAction action;
                 try {
-                    if (mi.getActionData() == null) continue;
+                    if (mi.getActionData() == null) {
+                        continue;
+                    }
                     action = mi.createAction();
                     KeyStroke keystroke;
                     if (StringUtils.isNotEmpty(mi.getShortcut())) {

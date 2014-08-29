@@ -30,7 +30,7 @@ import org.jdownloader.controlling.contextmenu.ActionData;
 import org.jdownloader.controlling.contextmenu.ContextMenuManager;
 import org.jdownloader.controlling.contextmenu.MenuContainerRoot;
 import org.jdownloader.controlling.contextmenu.MenuItemData;
-import org.jdownloader.controlling.contextmenu.SeperatorData;
+import org.jdownloader.controlling.contextmenu.SeparatorData;
 import org.jdownloader.gui.IconKey;
 import org.jdownloader.gui.mainmenu.ChunksEditorLink;
 import org.jdownloader.gui.mainmenu.ParalellDownloadsEditorLink;
@@ -65,7 +65,7 @@ public class MenuManagerMainToolbar extends ContextMenuManager<FilePackage, Down
 
     /**
      * get the only existing instance of DownloadListContextMenuManager. This is a singleton
-     * 
+     *
      * @return
      */
     public static MenuManagerMainToolbar getInstance() {
@@ -116,19 +116,19 @@ public class MenuManagerMainToolbar extends ContextMenuManager<FilePackage, Down
         mr.add(PauseDownloadsAction.class);
         mr.add(StopDownloadsAction.class);
         mr.add(optional(new MenuItemData(new ActionData(StopDownloadsButFinishRunningOnesAction.class))));
-        mr.add(new SeperatorData());
+        mr.add(new SeparatorData());
         mr.add(new MenuItemData(new ActionData(MoveToTopAction.class)));
         mr.add(new MenuItemData(new ActionData(MoveUpAction.class)));
         mr.add(new MenuItemData(new ActionData(MoveDownAction.class)));
         mr.add(new MenuItemData(new ActionData(MoveToBottomAction.class)));
-        mr.add(new SeperatorData());
+        mr.add(new SeparatorData());
 
         mr.add(ClipBoardToggleAction.class);
         mr.add(AutoReconnectToggleAction.class);
         mr.add(GlobalPremiumSwitchToggleAction.class);
         mr.add(SilentModeToggleAction.class);
         mr.add(setVisible(new MenuItemData(SpeedLimiterToggleAction.class), false));
-        mr.add(new SeperatorData());
+        mr.add(new SeparatorData());
 
         mr.add(ReconnectAction.class);
         mr.add(UpdateAction.class);

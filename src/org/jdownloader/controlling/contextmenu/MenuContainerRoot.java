@@ -71,20 +71,20 @@ public class MenuContainerRoot extends MenuContainer implements Storable {
                             lr = mid;
                         }
                         lr._setRoot(_getRoot());
-                        if (lr instanceof SeperatorData && (i == 0 || i == container.getItems().size() - 1)) {
+                        if (lr instanceof SeparatorData && (i == 0 || i == container.getItems().size() - 1)) {
 
                             container.getItems().remove(i);
                             ret = false;
                             continue main;
                         }
-                        if (lr instanceof SeperatorData && last instanceof SeperatorData) {
+                        if (lr instanceof SeparatorData && last instanceof SeparatorData) {
 
                             container.getItems().remove(i);
                             ret = false;
                             continue main;
                         }
                         // let's allow this. actions may have a different setup
-                        // if (!set.add(lr._getIdentifier()) && !(lr instanceof SeperatorData) && lr.getType() == Type.ACTION) {
+                        // if (!set.add(lr._getIdentifier()) && !(lr instanceof SeparatorData) && lr.getType() == Type.ACTION) {
                         //
                         // container.getItems().remove(i);
                         // ret = false;
@@ -284,7 +284,7 @@ public class MenuContainerRoot extends MenuContainer implements Storable {
 
             MenuItemData aN = above.get(a);
 
-            if (aN instanceof SeperatorData) {
+            if (aN instanceof SeparatorData) {
                 lastAWasSep = true;
                 continue;
             }
@@ -292,7 +292,7 @@ public class MenuContainerRoot extends MenuContainer implements Storable {
                 for (int b = 0; b < below.size(); b++) {
                     if (bestMatch <= 1 + a + b) break main;
                     MenuItemData bN = below.get(b);
-                    if (bN instanceof SeperatorData) {
+                    if (bN instanceof SeparatorData) {
                         lastBwasSep = true;
                         continue;
                     }

@@ -481,7 +481,7 @@ public abstract class ContextMenuManager<PackageType extends AbstractPackageNode
         }
         ArrayList<MenuItemData> ret = new ArrayList<MenuItemData>(specials);
 
-        ret.add(0, new SeperatorData());
+        ret.add(0, new SeparatorData());
         return ret;
     }
 

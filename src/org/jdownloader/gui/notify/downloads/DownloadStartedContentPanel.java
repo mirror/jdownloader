@@ -15,6 +15,7 @@ import org.jdownloader.gui.notify.AbstractBubbleContentPanel;
 import org.jdownloader.gui.notify.gui.CFG_BUBBLE;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.images.NewTheme;
+import org.jdownloader.settings.staticreferences.CFG_GUI;
 
 public class DownloadStartedContentPanel extends AbstractBubbleContentPanel {
 
@@ -35,21 +36,21 @@ public class DownloadStartedContentPanel extends AbstractBubbleContentPanel {
     protected void layoutComponents() {
 
         DownloadLink downloadLink = downloadController.getDownloadLink();
+        Account account = downloadController.getAccount();
 
         if (CFG_BUBBLE.DOWNLOAD_STARTED_BUBBLE_CONTENT_FILENAME_VISIBLE.isEnabled()) {
             filename = addPair(filename, _GUI._.lit_filename() + ":", downloadLink.getLinkInfo().getIcon());
             filename.setText(new File(downloadLink.getFileOutput()).getName());
         }
-        if (CFG_BUBBLE.DOWNLOAD_STARTED_BUBBLE_CONTENT_HOSTER_VISIBLE.isEnabled()) {
+        if (CFG_BUBBLE.DOWNLOAD_STARTED_BUBBLE_CONTENT_HOSTER_VISIBLE.isEnabled() && (account == null || account.isMulti())) {
             hoster = addPair(hoster, _GUI._.lit_hoster() + ":", downloadLink.getDomainInfo().getFavIcon());
             hoster.setText(downloadLink.getDomainInfo().getTld());
         }
-        Account account = downloadController.getAccount();
         if (CFG_BUBBLE.DOWNLOAD_STARTED_BUBBLE_CONTENT_ACCOUNT_VISIBLE.isEnabled()) {
 
             if (account != null) {
                 this.account = addPair(this.account, _GUI._.lit_account() + ":", DomainInfo.getInstance(account.getHoster()).getFavIcon());
-                this.account.setText(account.getUser() + "@" + account.getHoster());
+                this.account.setText(account.getUser() + (CFG_GUI.SHOW_FULL_HOSTNAME.isEnabled() ? "@" + account.getHoster() : ""));
             }
         }
         AbstractProxySelectorImpl proxy = downloadController.getDownloadLinkCandidate().getProxySelector();

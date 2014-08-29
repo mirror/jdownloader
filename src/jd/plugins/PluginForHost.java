@@ -231,7 +231,7 @@ public abstract class PluginForHost extends Plugin {
 
     protected String getCaptchaCode(final String method, final String captchaAddress, final DownloadLink downloadLink) throws Exception {
         if (captchaAddress == null) {
-            logger.severe("Captcha Adresse nicht definiert");
+            logger.severe("Captcha Address nicht definiert");
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         File captchaFile = null;

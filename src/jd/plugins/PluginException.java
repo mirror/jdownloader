@@ -45,8 +45,10 @@ public class PluginException extends Exception {
         if (linkStatus == LinkStatus.ERROR_PLUGIN_DEFECT) {
             try {
                 LogSource logger = LogController.getInstance().getPreviousThreadLogSource();
-                if (logger == null) logger = LogController.getInstance().getLogger(PluginException.class.getName());
-                logger.log(new Exception("Created Plugin_defect linkStatus"));
+                if (logger == null) {
+                    logger = LogController.getInstance().getLogger(PluginException.class.getName());
+                }
+                logger.log(new Exception("Created 'ERROR_PLUGIN_DEFECT' LinkStatus"));
                 logger.info("Self: ");
                 logger.log(this);
             } catch (Throwable e) {
@@ -74,7 +76,7 @@ public class PluginException extends Exception {
 
     /**
      * JD2Only
-     * 
+     *
      * @return
      */
     public int getLinkStatus() {

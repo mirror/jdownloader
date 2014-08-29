@@ -19,7 +19,7 @@ import org.jdownloader.controlling.contextmenu.ActionData;
 import org.jdownloader.controlling.contextmenu.ContextMenuManager;
 import org.jdownloader.controlling.contextmenu.MenuContainerRoot;
 import org.jdownloader.controlling.contextmenu.MenuItemData;
-import org.jdownloader.controlling.contextmenu.SeperatorData;
+import org.jdownloader.controlling.contextmenu.SeparatorData;
 import org.jdownloader.gui.mainmenu.action.AddLinksMenuAction;
 import org.jdownloader.gui.mainmenu.action.LogSendAction;
 import org.jdownloader.gui.mainmenu.action.ReportADownloadErrorAction;
@@ -50,7 +50,7 @@ public class MenuManagerMainmenu extends ContextMenuManager<FilePackage, Downloa
 
     /**
      * get the only existing instance of DownloadListContextMenuManager. This is a singleton
-     * 
+     *
      * @return
      */
     public static MenuManagerMainmenu getInstance() {
@@ -122,7 +122,7 @@ public class MenuManagerMainmenu extends ContextMenuManager<FilePackage, Downloa
 
         ret.add(ReportADownloadErrorAction.class);
 
-        ret.add(new SeperatorData());
+        ret.add(new SeparatorData());
         ret.add(LogSendAction.class);
         return ret;
     }
@@ -132,7 +132,7 @@ public class MenuManagerMainmenu extends ContextMenuManager<FilePackage, Downloa
         ret.add(LatestChangesAction.class);
         ret.add(KnowledgeAction.class);
         ret.add(LogSendAction.class);
-        ret.add(new SeperatorData());
+        ret.add(new SeparatorData());
         ret.add(CheckForUpdatesAction.class);
         ret.add(AboutAction.class);
         return ret;
@@ -151,7 +151,7 @@ public class MenuManagerMainmenu extends ContextMenuManager<FilePackage, Downloa
         SettingsMenuContainer ret = new SettingsMenuContainer();
 
         ret.add(SettingsAction.class);
-        ret.add(new SeperatorData());
+        ret.add(new SeparatorData());
         // add(new ChunksEditor());
         // add(new ParalellDownloadsEditor());
         // add(new ParallelDownloadsPerHostEditor());
@@ -173,7 +173,7 @@ public class MenuManagerMainmenu extends ContextMenuManager<FilePackage, Downloa
         // add(new FileMenu());3
         ret.add(AddLinksMenuAction.class);
         ret.add(AddContainerAction.class);
-        ret.add(new SeperatorData());
+        ret.add(new SeparatorData());
         BackupMenuContainer backup = new BackupMenuContainer();
 
         backup.add(BackupCreateAction.class);

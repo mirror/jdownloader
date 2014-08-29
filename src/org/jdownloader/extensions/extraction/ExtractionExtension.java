@@ -16,7 +16,6 @@
 
 package org.jdownloader.extensions.extraction;
 
-import java.awt.GraphicsEnvironment;
 import java.io.File;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -56,7 +55,7 @@ import org.jdownloader.controlling.contextmenu.ContextMenuManager;
 import org.jdownloader.controlling.contextmenu.MenuContainerRoot;
 import org.jdownloader.controlling.contextmenu.MenuExtenderHandler;
 import org.jdownloader.controlling.contextmenu.MenuItemData;
-import org.jdownloader.controlling.contextmenu.SeperatorData;
+import org.jdownloader.controlling.contextmenu.SeparatorData;
 import org.jdownloader.controlling.packagizer.PackagizerController;
 import org.jdownloader.extensions.AbstractExtension;
 import org.jdownloader.extensions.ExtensionConfigPanel;
@@ -155,7 +154,7 @@ public class ExtractionExtension extends AbstractExtension<ExtractionConfig, Ext
 
     /**
      * Adds an ectraction plugin to the framework.
-     * 
+     *
      * @param extractor
      *            The exractor.
      */
@@ -166,7 +165,7 @@ public class ExtractionExtension extends AbstractExtension<ExtractionConfig, Ext
 
     /**
      * Checks if there is supported extractor.
-     * 
+     *
      * @param file
      *            Path of the packed file
      * @return True if a extractor was found
@@ -195,10 +194,10 @@ public class ExtractionExtension extends AbstractExtension<ExtractionConfig, Ext
 
     /**
      * CReates and returns an id for the archive filenames belongs to.
-     * 
+     *
      * @param factory
      *            TODO
-     * 
+     *
      * @return
      */
     public String createArchiveID(ArchiveFactory factory) {
@@ -295,7 +294,7 @@ public class ExtractionExtension extends AbstractExtension<ExtractionConfig, Ext
 
     /**
      * Builds an archive for an {@link DownloadLink}.
-     * 
+     *
      * @param link
      * @return
      * @throws ArchiveException
@@ -376,7 +375,7 @@ public class ExtractionExtension extends AbstractExtension<ExtractionConfig, Ext
 
     /**
      * Returns the extractor for the {@link DownloadLink}.
-     * 
+     *
      * @param link
      * @return
      */
@@ -399,7 +398,7 @@ public class ExtractionExtension extends AbstractExtension<ExtractionConfig, Ext
 
     /**
      * Finishes the extraction process.
-     * 
+     *
      * @param controller
      */
     void onFinished(ExtractionController controller) {
@@ -409,7 +408,7 @@ public class ExtractionExtension extends AbstractExtension<ExtractionConfig, Ext
 
     /**
      * Removes an {@link Archive} from the list.
-     * 
+     *
      * @param archive
      */
     void removeArchive(Archive archive) {
@@ -709,7 +708,7 @@ public class ExtractionExtension extends AbstractExtension<ExtractionConfig, Ext
 
     /**
      * Cancels a job
-     * 
+     *
      * @param activeValue
      */
     public void cancel(ExtractionController activeValue) {
@@ -943,7 +942,7 @@ public class ExtractionExtension extends AbstractExtension<ExtractionConfig, Ext
             ArchivesSubMenu root;
             mr.getItems().add(addonLinkIndex, root = new ArchivesSubMenu());
             root.add(new MenuItemData(new ActionData(ValidateArchivesAction.class)));
-            root.add(new SeperatorData());
+            root.add(new SeparatorData());
             root.add(new MenuItemData(new ActionData(AutoExtractEnabledToggleAction.class)));
             root.add(new MenuItemData(new ActionData(SetExtractToAction.class)));
             root.add(new MenuItemData(new ActionData(SetExtractPasswordAction.class)));
@@ -968,7 +967,7 @@ public class ExtractionExtension extends AbstractExtension<ExtractionConfig, Ext
             root.add(new MenuItemData(new ActionData(ShowExtractionResultAction.class)));
             root.add(new MenuItemData(new ActionData(ValidateArchivesAction.class)));
 
-            root.add(new SeperatorData());
+            root.add(new SeparatorData());
             root.add(new MenuItemData(new ActionData(AutoExtractEnabledToggleAction.class)));
             root.add(new MenuItemData(new ActionData(SetExtractToAction.class)));
             root.add(new MenuItemData(new ActionData(SetExtractPasswordAction.class)));

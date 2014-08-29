@@ -3,7 +3,7 @@ package org.jdownloader.gui.views.linkgrabber.bottombar;
 import org.jdownloader.controlling.contextmenu.ActionData;
 import org.jdownloader.controlling.contextmenu.MenuContainer;
 import org.jdownloader.controlling.contextmenu.MenuContainerRoot;
-import org.jdownloader.controlling.contextmenu.SeperatorData;
+import org.jdownloader.controlling.contextmenu.SeparatorData;
 import org.jdownloader.controlling.contextmenu.TableContext;
 import org.jdownloader.gui.IconKey;
 import org.jdownloader.gui.translate._GUI;
@@ -26,7 +26,7 @@ public class MenuManagerLinkgrabberTabBottombar extends AbstractBottomBarMenuMan
 
     /**
      * get the only existing instance of DownloadListContextMenuManager. This is a singleton
-     * 
+     *
      * @return
      */
     public static MenuManagerLinkgrabberTabBottombar getInstance() {
@@ -72,7 +72,7 @@ public class MenuManagerLinkgrabberTabBottombar extends AbstractBottomBarMenuMan
 
         delete.add(setIconKey(new ActionData(GenericDeleteFromLinkgrabberAction.class).putSetup(GenericDeleteFromLinkgrabberAction.DELETE_OFFLINE, true).putSetup(IncludedSelectionSetup.INCLUDE_UNSELECTED_LINKS, true).putSetup(IncludedSelectionSetup.INCLUDE_SELECTED_LINKS, true), IconKey.ICON_REMOVE_OFFLINE));
 
-        delete.add(new SeperatorData());
+        delete.add(new SeparatorData());
         delete.add(new ActionData(RemoveIncompleteArchives.class).putSetup(TableContext.ITEM_VISIBLE_FOR_EMPTY_SELECTION, true));
 
         delete.add(new ActionData(ClearFilteredLinksAction.class));
@@ -108,12 +108,12 @@ public class MenuManagerLinkgrabberTabBottombar extends AbstractBottomBarMenuMan
         quicksettings.add(AutoStartToggleAction.class);
         quicksettings.add(setOptional(LinkFilterToggleAction.class));
 
-        quicksettings.add(new SeperatorData());
+        quicksettings.add(new SeparatorData());
         quicksettings.add((LinkgrabberPropertiesToggleAction.class));
         quicksettings.add((LinkgrabberOverviewPanelToggleAction.class));
 
         quicksettings.add((LinkgrabberSidebarToggleAction.class));
-        quicksettings.add(new SeperatorData());
+        quicksettings.add(new SeparatorData());
         quicksettings.add(BottomBarMenuManagerAction.class);
         mr.add(quicksettings);
         return mr;

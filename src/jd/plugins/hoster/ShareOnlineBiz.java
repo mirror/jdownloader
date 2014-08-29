@@ -400,14 +400,14 @@ public class ShareOnlineBiz extends PluginForHost {
     }
 
     /* parse the response from api into an hashmap */
-    private HashMap<String, String> getInfos(String response, String seperator) throws PluginException {
+    private HashMap<String, String> getInfos(String response, String separator) throws PluginException {
         if (response == null || response.length() == 0) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         String infos[] = Regex.getLines(response);
         HashMap<String, String> ret = new HashMap<String, String>();
         for (String info : infos) {
-            String data[] = info.split(seperator);
+            String data[] = info.split(separator);
             if (data.length == 1) {
                 ret.put(data[0].trim(), null);
             } else if (data.length == 2) {

@@ -84,7 +84,7 @@ public class DownloadLinkArchiveFactory extends DownloadLinkArchiveFile implemen
                     path = path.replace(SUBFOLDER, CrossSystem.alleviatePathParts(dif));
                 }
             }
-            return CrossSystem.fixPathSeperators(path);
+            return CrossSystem.fixPathSeparators(path);
         } catch (Exception e) {
             Log.exception(e);
         }
