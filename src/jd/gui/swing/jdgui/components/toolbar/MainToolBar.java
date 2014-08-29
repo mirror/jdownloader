@@ -54,6 +54,8 @@ import jd.controlling.downloadcontroller.DownloadWatchDogJob;
 import jd.controlling.downloadcontroller.DownloadWatchDogProperty;
 import jd.controlling.downloadcontroller.SingleDownloadController;
 import jd.controlling.downloadcontroller.event.DownloadWatchdogListener;
+import jd.gui.swing.components.SetIconInterface;
+import jd.gui.swing.components.SetLabelInterface;
 import jd.gui.swing.jdgui.JDGui;
 import jd.gui.swing.jdgui.components.speedmeter.SpeedMeterPanel;
 import net.miginfocom.swing.MigLayout;
@@ -176,7 +178,7 @@ public class MainToolBar extends JToolBar implements MouseListener, DownloadWatc
 
     /**
      * USed to register the shortcuts to the rootpane during init
-     *
+     * 
      * @param jdGui
      */
     public void registerAccelerators(final JDGui jdGui) {
@@ -486,6 +488,16 @@ public class MainToolBar extends JToolBar implements MouseListener, DownloadWatc
                     if (StringUtils.isNotEmpty(menudata.getIconKey())) {
                         if (item instanceof AbstractButton) {
                             ((AbstractButton) item).setIcon(NewTheme.I().getIcon(validateIconKey(menudata.getIconKey()), 24));
+                        } else if (item instanceof SetIconInterface) {
+                            ((SetIconInterface) item).setIcon(NewTheme.I().getIcon(validateIconKey(menudata.getIconKey()), 24));
+
+                        }
+                    }
+
+                    if (StringUtils.isNotEmpty(menudata.getName())) {
+                        if (item instanceof SetLabelInterface) {
+                            ((SetLabelInterface) item).setText(menudata.getName());
+
                         }
                     }
 

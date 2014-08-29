@@ -24,6 +24,8 @@ import javax.swing.SwingConstants;
 import javax.swing.SwingUtilities;
 
 import jd.SecondLevelLaunch;
+import jd.gui.swing.components.SetIconInterface;
+import jd.gui.swing.components.SetLabelInterface;
 import jd.gui.swing.jdgui.JDGui;
 import net.miginfocom.swing.MigLayout;
 
@@ -139,6 +141,21 @@ public class CustomizeableActionBar extends MigPanel implements PropertyChangeLi
 
     private void addLink(MenuItemData menudata) throws InstantiationException, IllegalAccessException, IllegalArgumentException, InvocationTargetException, ClassNotFoundException, NoSuchMethodException, SecurityException, ExtensionNotLoadedException {
         final JComponent item = menudata.createItem();
+
+        if (StringUtils.isNotEmpty(menudata.getIconKey())) {
+            if (item instanceof SetIconInterface) {
+                ((SetIconInterface) item).setIcon(NewTheme.I().getIcon(validateIconKey(menudata.getIconKey()), 20));
+
+            }
+        }
+
+        if (StringUtils.isNotEmpty(menudata.getName())) {
+            if (item instanceof SetLabelInterface) {
+                ((SetLabelInterface) item).setText(menudata.getName());
+
+            }
+        }
+
         if (menudata instanceof SelfLayoutInterface) {
             add(item, ((SelfLayoutInterface) menudata).createConstraints());
         } else {
