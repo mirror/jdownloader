@@ -7,19 +7,23 @@ import javax.swing.Icon;
 import javax.swing.JLabel;
 import javax.swing.SwingUtilities;
 
+import jd.gui.swing.components.SetIconInterface;
+import jd.gui.swing.components.SetLabelInterface;
+
 import org.appwork.swing.MigPanel;
 import org.appwork.swing.components.tooltips.ExtTooltip;
 import org.appwork.swing.components.tooltips.ToolTipController;
 import org.appwork.swing.components.tooltips.ToolTipHandler;
 import org.appwork.swing.components.tooltips.TooltipTextDelegateFactory;
 
-public class MenuEditor extends MigPanel implements ToolTipHandler {
+public class MenuEditor extends MigPanel implements ToolTipHandler, SetIconInterface, SetLabelInterface {
     /**
 	 * 
 	 */
     private static final long          serialVersionUID = -1702338721344188944L;
     private boolean                    shrink;
     private TooltipTextDelegateFactory tooltipFactory;
+    private JLabel                     label;
 
     public boolean isShrink() {
         return shrink;
@@ -38,11 +42,11 @@ public class MenuEditor extends MigPanel implements ToolTipHandler {
     }
 
     protected JLabel getLbl(String name, Icon icon) {
-        JLabel ret = new JLabel(shrink ? "" : name, icon, JLabel.LEADING);
+        label = new JLabel(shrink ? "" : name, icon, JLabel.LEADING);
         setToolTipText(name);
         ToolTipController.getInstance().register(this);
-        ret.setIconTextGap(7);
-        return ret;
+        label.setIconTextGap(7);
+        return label;
     }
 
     public void addLbl(String chunksEditor_ChunksEditor_, Icon icon) {
@@ -87,5 +91,17 @@ public class MenuEditor extends MigPanel implements ToolTipHandler {
 
     public int getPreferredEditorWidth() {
         return 100;
+    }
+
+    @Override
+    public void setText(String text) {
+        label.setText(text);
+    }
+
+    @Override
+    public void setIcon(Icon icon) {
+        if (label != null) {
+            label.setIcon(icon);
+        }
     }
 }

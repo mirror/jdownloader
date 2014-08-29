@@ -23,8 +23,9 @@ public class ChunksEditorLink extends MenuItemData implements MenuLink {
 
     public JComponent createItem() throws InstantiationException, IllegalAccessException, IllegalArgumentException, InvocationTargetException, ClassNotFoundException, NoSuchMethodException, SecurityException, ExtensionNotLoadedException {
 
-        return new ChunksEditor();
+        ChunksEditor ret = new ChunksEditor();
+
+        return ret;
 
     }
-
 }
