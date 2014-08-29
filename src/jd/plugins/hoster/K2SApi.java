@@ -892,7 +892,7 @@ public abstract class K2SApi extends PluginForHost {
                 Browser br2 = br.cloneBrowser();
                 br2.setFollowRedirects(true);
                 con = br2.openGetConnection(dllink);
-                if (con.getContentType().contains("html") || con.getLongContentLength() == -1) {
+                if (con.getContentType().contains("html") || con.getLongContentLength() == -1 || con.getResponseCode() == 401) {
                     downloadLink.setProperty(property, Property.NULL);
                     dllink = null;
                 }
