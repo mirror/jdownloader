@@ -203,7 +203,7 @@ public abstract class K2SApi extends PluginForHost {
         prepBrowser(prepBr);
         try {
             // response codes that API spews out.
-            prepBr.setAllowedResponseCodes(400, 403, 406, 429);
+            prepBr.setAllowedResponseCodes(400, 401, 403, 406, 429);
         } catch (final Throwable t) {
             // not in stable;
         }
@@ -358,7 +358,9 @@ public abstract class K2SApi extends PluginForHost {
         String dllink = checkDirectLink(downloadLink, directlinkproperty);
         // required to get overrides to work
         br = prepAPI(newBrowser());
-        if (inValidate(dllink)) {
+        if (!inValidate(dllink)) {
+            logger.info("Reusing cached finallink!");
+        } else {
             if ("premium".equalsIgnoreCase(downloadLink.getStringProperty("access", null)) && isFree) {
                 // download not possible
                 premiumDownloadRestriction(getErrorMessage(3));
@@ -394,7 +396,7 @@ public abstract class K2SApi extends PluginForHost {
             } else {
                 // premium download
                 postPageRaw(br, "/geturl", "{\"auth_token\":\"" + getAuthToken(account) + "\",\"file_id\":\"" + fuid + "\"}", account);
-                // private error files happen here, because we can't identify the owner until download squence starts!
+                // private error files happen here, because we can't identify the owner until download sequence starts!
             }
             dllink = getJson("url");
             if (inValidate(dllink)) {
