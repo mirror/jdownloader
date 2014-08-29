@@ -29,7 +29,7 @@ public class MergeToPackageAction extends CustomizableTableContextAppAction<Craw
     public MergeToPackageAction() {
         setName(_GUI._.MergeToPackageAction_MergeToPackageAction_());
         setIconKey("package_new");
-        setLastPathDefault(true);
+
     }
 
     private boolean askForNewFolderAndName = true;
