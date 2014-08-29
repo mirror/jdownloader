@@ -30,6 +30,7 @@ Extraction_onShutdownRequest_=解壓縮仍在處理中！
 Extraction_onShutdownRequest_msg=中止解壓縮？
 ImportAction_tt=從 *.jdfilter (*.jdregexfilter) 檔案匯入規則
 LinkCollector_addCrawledLink_offlinepackage=離線檔案
+LinkCollector_addCrawledLink_unknownpackage=未知檔案
 LinkCollector_addCrawledLink_variouspackage=各種檔案
 LinkCollector_archiv=%s1
 LinkCollector_onShutdownRequest_=下載清單仍在處理中！
