@@ -191,7 +191,7 @@ public class TbCmV2 extends PluginForDecrypt {
         {
             // Prevents accidental decrypting of entire Play-List or Channel-List or User-List.
             IfUrlisAPlaylistAction playListAction = cfg.getLinkIsPlaylistUrlAction();
-            if (((StringUtils.isNotEmpty(playlistID) || StringUtils.isNotEmpty(watch_videos) || StringUtils.isNotEmpty(channelID)) && StringUtils.isEmpty(videoID)) || (StringUtils.isEmpty(videoID) && StringUtils.isNotEmpty(userID))) {
+            if ((StringUtils.isNotEmpty(playlistID) || StringUtils.isNotEmpty(channelID) || StringUtils.isNotEmpty(userID)) && StringUtils.isEmpty(videoID)) {
 
                 if (playListAction == IfUrlisAPlaylistAction.ASK) {
                     ConfirmDialog confirm = new ConfirmDialog(UIOManager.LOGIC_COUNTDOWN, cleanedurl, JDL.L("plugins.host.youtube.isplaylist.question.message", "This link is a Play-List or Channel-List or User-List. What would you like to do?"), null, JDL.L("plugins.host.youtube.isplaylist.question.onlyplaylist", "Process Playlist?"), JDL.L("plugins.host.youtube.isvideoandplaylist.question.nothing", "Do Nothing?")) {
