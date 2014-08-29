@@ -40,7 +40,6 @@ public class PrlPstCm extends PluginForDecrypt {
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         final String parameter = param.toString();
-        br.setFollowRedirects(true);
         String finallink = null;
         if (parameter.contains("prialepaste.com/f")) {
             br.getPage(parameter.substring(0, parameter.indexOf("#")));
