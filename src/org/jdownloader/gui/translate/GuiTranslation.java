@@ -4076,7 +4076,7 @@ public interface GuiTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "If Link contains Video & Play-List Information" })
     String YoutubeDashConfigPanel_YoutubeDashConfigPanel_if_link_contains_video_and_playlist();
 
-    @Default(lngs = { "en" }, values = { "If Link equals Play-List or Channel-List" })
+    @Default(lngs = { "en" }, values = { "If Link equals Play-List or Channel-List or User-List" })
     String YoutubeDashConfigPanel_YoutubeDashConfigPanel_if_link_equals_playlist();
 
     @Default(lngs = { "en" }, values = { "Explanation of the available tags:" })
