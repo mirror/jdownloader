@@ -55,7 +55,7 @@ import jd.utils.locale.JDL;
 import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.formatter.TimeFormatter;
 
-@HostPlugin(revision = "$Revision: 25962 $", interfaceVersion = 2, names = { "files2share.ch" }, urls = { "https?://(www\\.)?files2share\\.ch/(vidembed\\-)?[a-z0-9]{12}" }, flags = { 2 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "files2share.ch" }, urls = { "https?://(www\\.)?files2share\\.ch/(vidembed\\-)?[a-z0-9]{12}" }, flags = { 2 })
 public class FilesTwoShareCh extends PluginForHost {
 
     private String                         correctedBR                  = "";

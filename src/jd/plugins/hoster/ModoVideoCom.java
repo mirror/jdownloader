@@ -46,7 +46,7 @@ import jd.utils.locale.JDL;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "modovideo.com" }, urls = { "https?://(www\\.)?modovideo\\.com/[a-z0-9]{12}" }, flags = { 0 })
+@HostPlugin(revision = "$Revision: 26673$", interfaceVersion = 3, names = { "modovideo.com" }, urls = { "https?://(www\\.)?modovideo\\.com/[a-z0-9]{12}" }, flags = { 0 })
 public class ModoVideoCom extends PluginForHost {
 
     private String                         correctedBR                  = "";

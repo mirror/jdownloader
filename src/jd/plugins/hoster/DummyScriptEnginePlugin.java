@@ -50,7 +50,7 @@ import org.mozilla.javascript.Synchronizer;
 import org.mozilla.javascript.Undefined;
 import org.mozilla.javascript.Wrapper;
 
-@HostPlugin(revision = "$Revision: 25886 $", interfaceVersion = 2, names = { "DummyScriptEnginePlugin" }, urls = { "donotmatch://neverever" }, flags = { 2 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "DummyScriptEnginePlugin" }, urls = { "donotmatch://neverever" }, flags = { 2 })
 public class DummyScriptEnginePlugin extends PluginForHost {
     public DummyScriptEnginePlugin(PluginWrapper wrapper) {
         super(wrapper);

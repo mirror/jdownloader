@@ -50,7 +50,7 @@ import jd.utils.JDUtilities;
 
 import org.appwork.utils.os.CrossSystem;
 
-@HostPlugin(revision = "$Revision: 21813 $", interfaceVersion = 2, names = { "pururin.com" }, urls = { "^http://(www\\.)?pururin\\.com/view/\\d+/\\d+/[\\-a-z0-9]+_\\d+\\.html$" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "pururin.com" }, urls = { "^http://(www\\.)?pururin\\.com/view/\\d+/\\d+/[\\-a-z0-9]+_\\d+\\.html$" }, flags = { 0 })
 public class PururinCom extends PluginForHost {
 
     // raztoki embed video player template.

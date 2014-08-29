@@ -33,7 +33,7 @@ import org.jdownloader.controlling.ffmpeg.json.Stream;
 import org.jdownloader.controlling.ffmpeg.json.StreamInfo;
 import org.jdownloader.downloader.hls.HLSDownloader;
 
-@HostPlugin(revision = "$Revision: 24748 $", interfaceVersion = 3, names = { "M3u8" }, urls = { "m3u8s?://.+?\\.m3u8" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "M3u8" }, urls = { "m3u8s?://.+?\\.m3u8" }, flags = { 0 })
 public class GenericM3u8 extends PluginForHost {
 
     private String customFavIconHost = null;

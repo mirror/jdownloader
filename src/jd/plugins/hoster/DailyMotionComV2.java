@@ -41,7 +41,7 @@ import org.jdownloader.controlling.linkcrawler.LinkVariant;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.translate._JDT;
 
-@HostPlugin(revision = "$Revision: 26321 $", interfaceVersion = 3, names = { "dailymotion.com" }, urls = { "http://dailymotiondecrypted\\.com/video/\\w+" }, flags = { 2 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "dailymotion.com" }, urls = { "http://dailymotiondecrypted\\.com/video/\\w+" }, flags = { 2 })
 public class DailyMotionComV2 extends DailyMotionCom {
 
     public DailyMotionComV2(PluginWrapper wrapper) {
