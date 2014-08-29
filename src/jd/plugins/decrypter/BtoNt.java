@@ -73,12 +73,17 @@ public class BtoNt extends PluginForDecrypt {
 
         // We get the title
         String[] t = new String[6];
+        String tag_title = br.getRegex("<title>.*?</title>").getMatch(-1);
+        if (tag_title != null) {
+            // cleanup bad html entity
+            tag_title = tag_title.replaceAll("&amp;?", "&");
+        }
         // works for individual pages, with and without volume, and all in one page
-        String reg = "<title>(.*?) - (vol ([\\d\\.]+) )?(ch ([\\d\\.v\\-]+[a-z]*) )(Page [\\d\\.]+ )?\\|[^<]+</title";
-        t = br.getRegex(reg).getRow(0);
+        String reg = "<title>(.*?) - (vol ([\\d\\.]+) )?(ch ([\\d\\.v\\-&]+[a-z]*) )(Page [\\d\\.]+ )?\\|[^<]+</title";
+        t = new Regex(tag_title, reg).getRow(0);
         if (t == null) {
             // some times no chapter or page is shown, this is a bug on there side.. we can then construct ourselves.
-            String titties = br.getRegex("<title>(.*?) - (vol ([\\d\\.]+) )?(ch ([\\d\\.v\\-]+[a-z]*) )?(Page [\\d\\.]+ )?\\|[^<]+</title").getMatch(0);
+            String titties = new Regex(tag_title, "<title>(.*?) - (vol ([\\d\\.]+) )?(ch ([\\d\\.v\\-&]+[a-z]*) )?(Page [\\d\\.]+ )?\\|[^<]+</title").getMatch(0);
             String chapter = br.getRegex("selected=\"selected\">Ch\\.([\\d\\.v\\-]+[\\: a-z]*)</option>").getMatch(0);
             if (titties != null && chapter != null) {
                 t = new String[6];
