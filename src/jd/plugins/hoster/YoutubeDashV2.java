@@ -514,6 +514,9 @@ public class YoutubeDashV2 extends PluginForHost {
         case SUBTITLES:
             for (int i = 0; i < 2; i++) {
                 UrlCollection urls = getUrlPair(downloadLink);
+                if (StringUtils.isEmpty(urls.data)) {
+                    throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+                }
                 String encoding = br.getHeaders().get("Accept-Encoding");
                 try {
                     br.getHeaders().put("Accept-Encoding", "");
@@ -537,6 +540,9 @@ public class YoutubeDashV2 extends PluginForHost {
         case IMAGE:
             for (int i = 0; i < 2; i++) {
                 UrlCollection urls = getUrlPair(downloadLink);
+                if (StringUtils.isEmpty(urls.data)) {
+                    throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+                }
                 con = br.openGetConnection(urls.data);
                 con.disconnect();
                 if (!con.getContentType().startsWith("image/jpeg") || con.getResponseCode() != 200) {
