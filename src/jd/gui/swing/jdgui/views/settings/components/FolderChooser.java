@@ -15,16 +15,13 @@ import jd.gui.swing.jdgui.views.settings.panels.packagizer.VariableAction;
 import org.appwork.swing.components.ExtTextField;
 import org.appwork.swing.components.pathchooser.PathChooser;
 import org.appwork.uio.UIOManager;
-import org.appwork.utils.swing.dialog.Dialog;
 import org.appwork.utils.swing.dialog.DialogCanceledException;
 import org.appwork.utils.swing.dialog.DialogClosedException;
-import org.appwork.utils.swing.dialog.DialogNoAnswerException;
 import org.jdownloader.controlling.FileCreationManager;
 import org.jdownloader.controlling.packagizer.PackagizerController;
 import org.jdownloader.gui.packagehistorycontroller.DownloadPathHistoryManager;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.gui.views.DownloadFolderChooserDialog;
-import org.jdownloader.logging.LogController;
 import org.jdownloader.translate._JDT;
 
 public class FolderChooser extends PathChooser implements SettingsComponent {
@@ -165,17 +162,14 @@ public class FolderChooser extends PathChooser implements SettingsComponent {
                 return file;
             }
             if (!file.exists()) {
-                try {
 
-                    Dialog.getInstance().showConfirmDialog(0, _GUI._.DownloadFolderChooserDialog_handleNonExistingFolders_title_(), _GUI._.DownloadFolderChooserDialog_handleNonExistingFolders_msg_(file.getAbsolutePath()));
+                if (UIOManager.I().showConfirmDialog(UIOManager.STYLE_SHOW_DO_NOT_DISPLAY_AGAIN, _GUI._.DownloadFolderChooserDialog_handleNonExistingFolders_title_(), _GUI._.DownloadFolderChooserDialog_handleNonExistingFolders_msg_(file.getAbsolutePath()))) {
                     if (!FileCreationManager.getInstance().mkdir(file)) {
                         UIOManager.I().showErrorMessage(_GUI._.DownloadFolderChooserDialog_handleNonExistingFolders_couldnotcreatefolder(file.getAbsolutePath()));
                         return presetPath;
                     }
-                } catch (DialogNoAnswerException e) {
-                    LogController.GL.log(e);
-
                 }
+
             }
         }
         return file;
