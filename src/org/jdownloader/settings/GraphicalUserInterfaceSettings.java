@@ -1102,4 +1102,16 @@ public interface GraphicalUserInterfaceSettings extends ConfigInterface {
 
     void setAlwaysShowLinkOriginInsteadOfDownloadUrl(boolean b);
 
+    @AboutConfig
+    @DefaultBooleanValue(true)
+    boolean isDownloadControlColumnAutoShowEnabled();
+
+    void setDownloadControlColumnAutoShowEnabled(boolean b);
+
+    @AboutConfig
+    @DefaultBooleanValue(true)
+    boolean isPriorityColumnAutoShowEnabled();
+
+    void setPriorityColumnAutoShowEnabled(boolean b);
+
 }

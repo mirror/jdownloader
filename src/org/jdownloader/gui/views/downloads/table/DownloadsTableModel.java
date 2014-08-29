@@ -29,6 +29,7 @@ import org.jdownloader.gui.views.downloads.columns.StopSignColumn;
 import org.jdownloader.gui.views.downloads.columns.TaskColumn;
 import org.jdownloader.gui.views.linkgrabber.columns.PartColumn;
 import org.jdownloader.gui.views.linkgrabber.columns.UrlColumn;
+import org.jdownloader.settings.staticreferences.CFG_GUI;
 
 public class DownloadsTableModel extends PackageControllerTableModel<FilePackage, DownloadLink> {
 
@@ -101,12 +102,18 @@ public class DownloadsTableModel extends PackageControllerTableModel<FilePackage
     }
 
     public void setStopSignColumnVisible(boolean b) {
+        if (!CFG_GUI.CFG.isDownloadControlColumnAutoShowEnabled()) {
+            return;
+        }
         if (stopSignColumn != null) {
             this.setColumnVisible(stopSignColumn, b);
         }
     }
 
     public void setPriorityColumnVisible(boolean b) {
+        if (!CFG_GUI.CFG.isPriorityColumnAutoShowEnabled()) {
+            return;
+        }
         if (priorityColumn != null) {
             this.setColumnVisible(priorityColumn, b);
         }
