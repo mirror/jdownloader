@@ -201,7 +201,16 @@ public class MenuItemData implements MinTimeWeakReferenceCleanup, Storable {
             ret = (MenuItemData) ExtensionController.getInstance().loadClass(menuItemData.getClassName()).newInstance();
 
         } else {
+
+            // we renamed SeparatorData.class. and we have to fix the stored name here.
+            // we probably can remove this workaround in a few weeks/months
+            // 29th august 2014
+            if ("org.jdownloader.controlling.contextmenu.SeperatorData".equals(menuItemData.getClassName())) {
+                menuItemData.setClassName(SeparatorData.class.getName());
+                menuItemData.setName("Separator");
+            }
             ret = (MenuItemData) Class.forName(menuItemData.getClassName()).newInstance();
+
         }
         ret.setVisible(menuItemData.isVisible());
         if (getActionData() != null) {
