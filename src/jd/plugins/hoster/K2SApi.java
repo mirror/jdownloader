@@ -11,10 +11,12 @@ import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.Locale;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.regex.Pattern;
 
 import javax.script.ScriptEngine;
 import javax.script.ScriptEngineManager;
@@ -44,6 +46,7 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.utils.JDUtilities;
 
+import org.appwork.txtresource.TranslationFactory;
 import org.appwork.utils.net.HTTPHeader;
 import org.appwork.utils.os.CrossSystem;
 
@@ -61,7 +64,7 @@ public abstract class K2SApi extends PluginForHost {
     protected int           chunks;
     protected boolean       resumes;
     protected boolean       isFree;
-    private final String    lng                    = System.getProperty("user.language");
+    private final String    lng                    = getLanguage();
     private final String    AUTHTOKEN              = "auth_token";
     private int             authTokenFail          = 0;
 
@@ -763,8 +766,94 @@ public abstract class K2SApi extends PluginForHost {
             if (code == 70) {
                 msg = "\r\nUngültiger Benutzername oder ungültiges Passwort!\r\nDu bist dir sicher, dass dein eingegebener Benutzername und Passwort stimmen? Versuche folgendes:\r\n1. Falls dein Passwort Sonderzeichen enthält, ändere es (entferne diese) und versuche es erneut!\r\n2. Gib deine Zugangsdaten per Hand (ohne kopieren/einfügen) ein.";
             }
+        } else if ("pt".equalsIgnoreCase(lng)) {
+            if (code == 1) {
+                msg = "Já descarregou a quantidade maxima de arquivos!";
+            } else if (code == 2) {
+                msg = "Limite de tráfego alcançado!";
+            } else if (code == 3) {
+                msg = "Limite do tamanho do ficheiro";
+            } else if (code == 4) {
+                msg = "Sem acesso a este ficheiro!";
+            } else if (code == 5) {
+                msg = "Detectado tempo de espera!";
+            } else if (code == 6) {
+                msg = "Alcancado o limite maximo de descargas paralelas!";
+            } else if (code == 7) {
+                msg = "Acesso Restrito - So os possuidores de Contas Premium podem efectuar a descarga deste ficheiro!";
+            } else if (code == 8) {
+                msg = "Acesso Restrito - Só o proprietário deste ficheiro pode fazer esta descarga!";
+            } else if (code == 10) {
+                msg = "Nao tem autorizacao!";
+            } else if (code == 11) {
+                msg = "auth_token - expirou!";
+            } else if (code == 21 || code == 42) {
+                msg = "Nao è possivel fazer a descarga! Erro no Código genérico da Subrotina!";
+            } else if (code == 23) {
+                msg = "Esta ligacao (URL) é uma Pasta, nao pode descarregar uma pasta como um ficheiro!";
+            } else if (code == 30) {
+                msg = "Inserir Captcha!";
+            } else if (code == 31) {
+                msg = "Captcha inválido";
+            } else if (code == 40) {
+                msg = "Chave de descarga inválida";
+            } else if (code == 41) {
+                msg = "Detectado tempo de espera!";
+            } else if (code == 70) {
+                msg = "IInvalido username/password!\r\nTem a certeza que o username e a password que introduziu estao correctos? Algumas dicas:\r\n1. ISe a password contem cacteres especiais, mude (elemine) e tente novamente!\r\n2. Digite o username/password manualmente, nao use copiar e colar.";
+            } else if (code == 71) {
+                msg = "Tentou a ligacao vezes demais!";
+            } else if (code == 72) {
+                msg = "A sua conta foi banida!";
+            } else if (code == 73) {
+                msg = "Nao pode aceder " + getDomain() + " a partir desta ligacao de NET!";
+            } else if (code == 74) {
+                msg = "Erro Login desconhecido!";
+            }
         } else if ("es".equalsIgnoreCase(lng)) {
-
+            if (code == 1) {
+                msg = "¡Ha descargado la cantidad máxima de archivos!";
+            } else if (code == 2) {
+                msg = "¡Límite de tráfico alcanzado!";
+            } else if (code == 3) {
+                msg = "Limitación del tamaño del archivo";
+            } else if (code == 4) {
+                msg = "¡No hay acceso a este archivo!";
+            } else if (code == 5) {
+                msg = "¡Tiempo de espera detectado!";
+            } else if (code == 6) {
+                msg = "¡Se alcanzó el número máximo de descargas paralelas!";
+            } else if (code == 7) {
+                msg = "Restricción de acceso - ¡Sólo los titulares de las cuentas premium pueden descargar este archivo!";
+            } else if (code == 8) {
+                msg = "Restricción de acceso - ¡La descarga Sólo está permitida para el propietario de este archivo!";
+            } else if (code == 10) {
+                msg = "Your not authorised!";
+            } else if (code == 11) {
+                msg = "auth_token has expired!";
+            } else if (code == 21 || code == 42) {
+                msg = "No es posible realizar la descarga en este momento. ¡Código de error genérico con subcódigo!";
+            } else if (code == 23) {
+                msg = "Este enlace es un folder. ¡Usted no puede descargar este folder como archivo!";
+            } else if (code == 30) {
+                msg = "Captcha requerida!";
+            } else if (code == 31) {
+                msg = "Captcha inválido";
+            } else if (code == 40) {
+                msg = "Clave de descarga incorrecta";
+            } else if (code == 41) {
+                msg = "¡Tiempo de espera detectado!";
+            } else if (code == 70) {
+                msg = "Usario/Contraseña inválida\r\n¿Está seguro que el usuario y la contraseña ingresados son correctos? Algunos consejos:\r\n1. Si su contraseña contiene carácteres especiales, cambiela (remuevala) e intente de nuevo.\r\n2. Escriba su usuario/contraseña manualmente en lugar de copiar y pegar.";
+            } else if (code == 71) {
+                msg = "¡Usted ha intentado iniciar sesión demasiadas veces!";
+            } else if (code == 72) {
+                msg = "¡Su cuenta ha sido baneada!";
+            } else if (code == 73) {
+                msg = "¡Usted no puede acceder " + getDomain() + " desde su conexión de red actual!";
+            } else if (code == 74) {
+                msg = "¡Error de inicio de sesión desconocido!";
+            }
         }
         if (inValidate(msg)) {
             // default english!
@@ -779,7 +868,7 @@ public abstract class K2SApi extends PluginForHost {
             } else if (code == 5) {
                 msg = "Wait time detected!";
             } else if (code == 6) {
-                msg = "Maximium number pararell downloads reached!";
+                msg = "Maximum number parallel downloads reached!";
             } else if (code == 7) {
                 msg = "Access Restriction - Only premium account holders can download this file!";
             } else if (code == 8) {
@@ -795,11 +884,11 @@ public abstract class K2SApi extends PluginForHost {
             } else if (code == 30) {
                 msg = "Captcha required!";
             } else if (code == 31) {
-                msg = "Invalid captcha";
+                msg = "Invalid Captcha";
             } else if (code == 40) {
                 msg = "Wrong download key";
             } else if (code == 41) {
-                msg = "Wait time detetected!";
+                msg = "Wait time detected!";
             } else if (code == 70) {
                 msg = "Invalid username/password!\r\nYou're sure that the username and password you entered are correct? Some hints:\r\n1. If your password contains special characters, change it (remove them) and try again!\r\n2. Type in your username/password by hand without copy & paste.";
             } else if (code == 71) {
@@ -957,6 +1046,15 @@ public abstract class K2SApi extends PluginForHost {
     }
 
     /**
+     * Tries to return value given JSon Array of Key from JSon response, from default 'br' Browser.
+     *
+     * @author raztoki
+     * */
+    protected String getJsonArray(final String key) {
+        return getJsonArray(br.toString(), key);
+    }
+
+    /**
      * Validates string to series of conditions, null, whitespace, or "". This saves effort factor within if/for/while statements
      *
      * @param s
@@ -969,6 +1067,14 @@ public abstract class K2SApi extends PluginForHost {
             return true;
         } else {
             return false;
+        }
+    }
+
+    private String getLanguage() {
+        if (System.getProperty("jd.revision.jdownloaderrevision") != null) {
+            return TranslationFactory.getDesiredLocale().getLanguage().toLowerCase(Locale.ENGLISH);
+        } else {
+            return System.getProperty("user.language");
         }
     }
 
@@ -1319,6 +1425,12 @@ public abstract class K2SApi extends PluginForHost {
                     // nothing wrong, or something wrong (unsupported format)....
                     // commenting out return prevents caching of cookies per request
                     // return;
+                } else if (ibr.containsHTML("<p>The owner of this website \\(" + Pattern.quote(getDomain()) + "\\) has banned your IP address") && ibr.containsHTML("<title>Access denied \\| " + Pattern.quote(getDomain()) + " used CloudFlare to restrict access</title>")) {
+                    // common when proxies are used?? see keep2share.cc jdlog://5562413173041
+                    String ip = ibr.getRegex("your IP address \\((.*?)\\)\\.</p>").getMatch(0);
+                    String message = getDomain() + " has banned your IP Address" + (inValidate(ip) ? "!" : "! " + ip);
+                    logger.warning(message);
+                    throw new PluginException(LinkStatus.ERROR_FATAL, message);
                 }
                 // get cookies we want/need.
                 // refresh these with every getPage/postPage/submitForm?
