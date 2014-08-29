@@ -7,6 +7,7 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Locale;
+import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import jd.controlling.TaskQueue;
@@ -177,7 +178,7 @@ public class PackagizerController implements PackagizerInterface, FileCreationLi
                 }
                 String format = modifiers;
                 String dateString = new SimpleDateFormat(format).format(new Date());
-                return Pattern.compile("<jd:simpledate:" + format + "/?>").matcher(input).replaceAll(dateString);
+                return Pattern.compile("<jd:simpledate:" + format + "/?>").matcher(input).replaceAll(Matcher.quoteReplacement(dateString));
             }
 
         });
@@ -221,14 +222,14 @@ public class PackagizerController implements PackagizerInterface, FileCreationLi
                     if (regex.matches()) {
                         String[] values = regex.getRow(0);
                         if (values[id - 1] != null) {
-                            txt = Pattern.compile("<jd:source:" + id + "/?>").matcher(txt).replaceAll(values[id - 1]);
+                            txt = Pattern.compile("<jd:source:" + id + "/?>").matcher(txt).replaceAll(Matcher.quoteReplacement(values[id - 1]));
                         }
                     } else {
                         regex = new Regex(s, lgr.getSourceRule().getPattern());
                         if (regex.matches()) {
                             String[] values = regex.getRow(0);
                             if (values[id - 1] != null) {
-                                txt = Pattern.compile("<jd:source:" + id + "/?>").matcher(txt).replaceAll(values[id - 1]);
+                                txt = Pattern.compile("<jd:source:" + id + "/?>").matcher(txt).replaceAll(Matcher.quoteReplacement(values[id - 1]));
                             }
                         }
                     }
@@ -246,9 +247,10 @@ public class PackagizerController implements PackagizerInterface, FileCreationLi
 
             public String replace(String modifiers, CrawledLink link, String input, PackagizerRuleWrapper lgr) {
                 if (modifiers != null) {
-                    return Pattern.compile("<jd:orgfilename:" + modifiers + "/?>").matcher(input).replaceAll(new Regex(link.getName(), lgr.getFileNameRule().getPattern()).getRow(0)[Integer.parseInt(modifiers) - 1]);
+                    String rep = new Regex(link.getName(), lgr.getFileNameRule().getPattern()).getRow(0)[Integer.parseInt(modifiers) - 1];
+                    return Pattern.compile("<jd:orgfilename:" + modifiers + "/?>").matcher(input).replaceAll(Matcher.quoteReplacement(rep));
                 }
-                return pat.matcher(input).replaceAll(link.getName());
+                return pat.matcher(input).replaceAll(Matcher.quoteReplacement(link.getName()));
             }
 
             public String getID() {
@@ -274,10 +276,10 @@ public class PackagizerController implements PackagizerInterface, FileCreationLi
                 if (modifiers != null) {
                     Pattern patt = lgr.getPackageNameRule().getPattern();
                     String[] matches = new Regex(packagename, patt).getRow(0);
-                    return Pattern.compile("<jd:" + ORGPACKAGENAME + ":" + modifiers + "/?>").matcher(input).replaceAll(matches[Integer.parseInt(modifiers) - 1]);
+                    return Pattern.compile("<jd:" + ORGPACKAGENAME + ":" + modifiers + "/?>").matcher(input).replaceAll(Matcher.quoteReplacement(matches[Integer.parseInt(modifiers) - 1]));
                     //
                 }
-                return pat.matcher(input).replaceAll(packagename);
+                return pat.matcher(input).replaceAll(Matcher.quoteReplacement(packagename));
             }
 
             public String getID() {
@@ -293,9 +295,9 @@ public class PackagizerController implements PackagizerInterface, FileCreationLi
                 String fileType = new Regex(link.getName(), "\\.([0-9a-zA-Z]+)$").getMatch(0);
 
                 if (modifiers != null) {
-                    return Pattern.compile("<jd:orgfiletype:" + modifiers + "/?>").matcher(input).replaceAll(new Regex(fileType, lgr.getFileNameRule().getPattern()).getRow(0)[Integer.parseInt(modifiers) - 1]);
+                    return Pattern.compile("<jd:orgfiletype:" + modifiers + "/?>").matcher(input).replaceAll(Matcher.quoteReplacement(new Regex(fileType, lgr.getFileNameRule().getPattern()).getRow(0)[Integer.parseInt(modifiers) - 1]));
                 }
-                return pat.matcher(input).replaceAll(fileType);
+                return pat.matcher(input).replaceAll(Matcher.quoteReplacement(fileType));
             }
 
             public String getID() {
@@ -314,7 +316,7 @@ public class PackagizerController implements PackagizerInterface, FileCreationLi
                 Regex regex = new Regex(link.getURL(), lgr.getHosterRule().getPattern());
                 if (regex.matches()) {
                     String[] values = regex.getRow(0);
-                    return Pattern.compile("<jd:hoster:" + id + "/?>").matcher(input).replaceAll(values[id - 1]);
+                    return Pattern.compile("<jd:hoster:" + id + "/?>").matcher(input).replaceAll(Matcher.quoteReplacement(values[id - 1]));
                 }
                 return input;
             }
@@ -335,7 +337,7 @@ public class PackagizerController implements PackagizerInterface, FileCreationLi
                 if (property == null || !(property instanceof String)) {
                     return Pattern.compile("<jd:prop:" + modifiers + "/?>").matcher(input).replaceAll("");
                 } else {
-                    return Pattern.compile("<jd:prop:" + modifiers + "/?>").matcher(input).replaceAll(property.toString());
+                    return Pattern.compile("<jd:prop:" + modifiers + "/?>").matcher(input).replaceAll(Matcher.quoteReplacement(property.toString()));
                 }
             }
 
