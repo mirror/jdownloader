@@ -763,8 +763,48 @@ public abstract class K2SApi extends PluginForHost {
     private String getErrorMessage(final int code) {
         String msg = null;
         if ("de".equalsIgnoreCase(lng)) {
-            if (code == 70) {
-                msg = "\r\nUngültiger Benutzername oder ungültiges Passwort!\r\nDu bist dir sicher, dass dein eingegebener Benutzername und Passwort stimmen? Versuche folgendes:\r\n1. Falls dein Passwort Sonderzeichen enthält, ändere es (entferne diese) und versuche es erneut!\r\n2. Gib deine Zugangsdaten per Hand (ohne kopieren/einfügen) ein.";
+            if (code == 1) {
+                msg = "Du hast die maximale Anzahl an Dateien heruntergeladen.";
+            } else if (code == 2) {
+                msg = "Traffic limit erreicht!";
+            } else if (code == 3) {
+                msg = "Dateigrößenlimitierung";
+            } else if (code == 4) {
+                msg = "Du hast keinen Zugriff auf diese Datei!";
+            } else if (code == 5) {
+                msg = "Wartezeit entdeckt!";
+            } else if (code == 6) {
+                msg = "Maximale Anzahl paralleler Downloads erreicht!";
+            } else if (code == 7) {
+                msg = "Zugriffsbeschränkung - Nur Premiumbenutzer können diese Datei herunterladen!";
+            } else if (code == 8) {
+                msg = "Zugriffsbeschränkung - Nur der Besitzer dieser Datei darf sie herunterladen!";
+            } else if (code == 10) {
+                msg = "Du bist nicht berechtigt!";
+            } else if (code == 11) {
+                msg = "auth_token is abgelaufen!";
+            } else if (code == 21 || code == 42) {
+                msg = "Download momentan nicht möglich! Genereller Fehlercode mit Sub-Code!";
+            } else if (code == 23) {
+                msg = "Das ist ein Ordner - du kannst keine Ordner als Datei herunterladen!";
+            } else if (code == 30) {
+                msg = "Captchaeingabe benötigt!";
+            } else if (code == 31) {
+                msg = "Ungültiges Captcha";
+            } else if (code == 40) {
+                msg = "Falscher download key";
+            } else if (code == 41) {
+                msg = "Wartezeit entdeckt!";
+            } else if (code == 70) {
+                msg = "Ungültiger Benutzername oder ungültiges Passwort!\r\nDu bist dir sicher, dass dein eingegebener Benutzername und Passwort stimmen? Versuche folgendes:\r\n1. Falls dein Passwort Sonderzeichen enthält, ändere es (entferne diese) und versuche es erneut!\r\n2. Gib deine Zugangsdaten per Hand (ohne kopieren/einfügen) ein.";
+            } else if (code == 71) {
+                msg = "Zu viele Loginversuche!";
+            } else if (code == 72) {
+                msg = "Dein Account wurde gesperrt!";
+            } else if (code == 73) {
+                msg = "Du kannst dich mit deiner aktuellen Verbindung nicht zu " + getDomain() + " verbinden!";
+            } else if (code == 74) {
+                msg = "Unbekannter Login Fehler!";
             }
         } else if ("pt".equalsIgnoreCase(lng)) {
             if (code == 1) {
