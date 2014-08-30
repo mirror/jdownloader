@@ -1782,7 +1782,7 @@ public class FileparadoxIn extends PluginForHost {
      *            Integer positive or negative. Positive adds slots. Negative integer removes slots.
      * */
     private synchronized void setHashedHashKeyValue(final Account account, final Integer x) {
-        if (usedHost == null || x == null || account == null) {
+        if (usedHost == null || x == null) {
             return;
         }
         HashMap<String, Integer> holder = new HashMap<String, Integer>();
