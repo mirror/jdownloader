@@ -178,6 +178,9 @@ public class PremiumaxNet extends PluginForHost {
 
         dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, true, maxChunks);
         if (dl.getConnection().getContentType().contains("html")) {
+            if (dl.getConnection().getResponseCode() == 404) {
+                handleErrors(acc, link, "404servererror", 10);
+            }
             br.followConnection();
             logger.info("Unhandled download error on premiumax.net: " + br.toString());
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -225,6 +228,32 @@ public class PremiumaxNet extends PluginForHost {
             }
         }
         return dllink;
+    }
+
+    /**
+     * Is intended to handle errors which might occur seldom by re-tring a couple of times before we temporarily remove the host from the
+     * host list.
+     *
+     * @param dl
+     *            : The DownloadLink
+     * @param error
+     *            : The name of the error
+     * @param maxRetries
+     *            : Max retries before out of date error is thrown
+     */
+    private void handleErrors(final Account acc, final DownloadLink dl, final String error, final int maxRetries) throws PluginException {
+        int timesFailed = dl.getIntegerProperty(NICE_HOSTproperty + "failedtimes_" + error, 0);
+        dl.getLinkStatus().setRetryCount(0);
+        if (timesFailed <= maxRetries) {
+            logger.info(NICE_HOST + ": " + error + " -> Retrying");
+            timesFailed++;
+            dl.setProperty(NICE_HOSTproperty + "failedtimes_" + error, timesFailed);
+            throw new PluginException(LinkStatus.ERROR_RETRY, error);
+        } else {
+            dl.setProperty(NICE_HOSTproperty + "failedtimes_" + error, Property.NULL);
+            logger.info(NICE_HOST + ": " + error + " -> Disabling current host");
+            tempUnavailableHoster(acc, dl, 1 * 60 * 60 * 1000l);
+        }
     }
 
     @Override

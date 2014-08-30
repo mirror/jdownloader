@@ -173,7 +173,7 @@ public class RapideoPl extends PluginForHost {
             }
             id = br.getRegex("data\\-id=\"([a-z0-9]+)\"").getMatch(0);
             if (id == null) {
-                handlePluginBroken(acc, link, "id_null", 10);
+                handleErrors(acc, link, "id_null", 10);
             }
 
             br.postPage("https://www.rapideo.pl/twoje_pliki", "downloadprogress=1");
@@ -209,7 +209,7 @@ public class RapideoPl extends PluginForHost {
                 break;
             }
             if (dllink == null) {
-                handlePluginBroken(acc, link, "dllink_null", 10);
+                handleErrors(acc, link, "dllink_null", 10);
             }
             dllink = dllink.replace("\\", "");
         }
@@ -247,8 +247,8 @@ public class RapideoPl extends PluginForHost {
     }
 
     /**
-     * Is intended to handle out of date errors which might occur seldom by re-tring a couple of times before we temporarily remove the host
-     * from the host list.
+     * Is intended to handle errors which might occur seldom by re-tring a couple of times before we temporarily remove the host from the
+     * host list.
      *
      * @param dl
      *            : The DownloadLink
@@ -257,7 +257,7 @@ public class RapideoPl extends PluginForHost {
      * @param maxRetries
      *            : Max retries before out of date error is thrown
      */
-    private void handlePluginBroken(final Account acc, final DownloadLink dl, final String error, final int maxRetries) throws PluginException {
+    private void handleErrors(final Account acc, final DownloadLink dl, final String error, final int maxRetries) throws PluginException {
         int timesFailed = dl.getIntegerProperty(NICE_HOSTproperty + "failedtimes_" + error, 0);
         dl.getLinkStatus().setRetryCount(0);
         if (timesFailed <= maxRetries) {
