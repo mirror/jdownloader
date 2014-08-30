@@ -91,6 +91,7 @@ public class TestWaitDialog extends AbstractDialog<List<CrawledLink>> {
         }
         found = new ArrayList<CrawledLink>();
         filtered = 0;
+
         lch.setLinkCheckHandler(new LinkCheckerHandler<CrawledLink>() {
 
             public void linkCheckStopped() {
@@ -140,7 +141,8 @@ public class TestWaitDialog extends AbstractDialog<List<CrawledLink>> {
             public void handleUnHandledLink(CrawledLink link) {
             }
         });
-        lc.crawl(url);
+        lc.crawl(url, null, true);
+
         lc.waitForCrawling();
         lch.waitForChecked();
     }
