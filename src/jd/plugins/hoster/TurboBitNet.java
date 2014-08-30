@@ -58,7 +58,6 @@ import jd.utils.locale.JDL;
 
 import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.formatter.TimeFormatter;
-import org.appwork.utils.net.HTTPHeader;
 import org.appwork.utils.os.CrossSystem;
 
 //When adding new domains here also add them to the turbobit.net decrypter (TurboBitNetFolder)
@@ -964,10 +963,8 @@ public class TurboBitNet extends PluginForHost {
         if (k == null || v == null) {
             return false;
         }
-        for (HTTPHeader s : br.getRequest().getHeaders()) {
-            if (s.getKey().startsWith(k) && s.getValue().startsWith(v)) {
-                return true;
-            }
+        if (br.getHttpConnection() != null && br.getHttpConnection().getHeaderField(k).toLowerCase(Locale.ENGLISH) != null) {
+            return true;
         }
         return false;
     }
@@ -980,10 +977,8 @@ public class TurboBitNet extends PluginForHost {
         if (k == null || v == null) {
             return false;
         }
-        for (HTTPHeader s : br.getRequest().getHeaders()) {
-            if (s.getKey().contains(k) && s.getValue().contains(v)) {
-                return true;
-            }
+        if (br.getHttpConnection() != null && br.getHttpConnection().getHeaderField(k).toLowerCase(Locale.ENGLISH).contains(v.toLowerCase(Locale.ENGLISH))) {
+            return true;
         }
         return false;
     }

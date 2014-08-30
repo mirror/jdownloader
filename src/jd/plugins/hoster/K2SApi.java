@@ -11,6 +11,7 @@ import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Locale;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -47,7 +48,6 @@ import jd.plugins.PluginForHost;
 import jd.utils.JDUtilities;
 
 import org.appwork.txtresource.TranslationFactory;
-import org.appwork.utils.net.HTTPHeader;
 import org.appwork.utils.os.CrossSystem;
 
 /**
@@ -86,11 +86,8 @@ public abstract class K2SApi extends PluginForHost {
 
     /**
      * Does the site enforce HTTPS? <br />
-     * <br />
-     *
-     * @Override this when incorrect<br />
-     * <br />
-     *           <b>NOTE:</b> When setting to true, make sure that supportsHTTPS
+     * Override this when incorrect<br />
+     * <b>NOTE:</b> When setting to true, make sure that supportsHTTPS is also set to true!
      *
      * @return
      */
@@ -98,15 +95,27 @@ public abstract class K2SApi extends PluginForHost {
         return false;
     }
 
+    /**
+     * returns API Revision number as long
+     *
+     * @author Jiaz
+     */
     protected long getAPIRevision() {
         return Math.max(0, Formatter.getRevision("$Revision$"));
     }
 
     /**
-     * Does the site support HTTPS? <br />
-     * <br />
+     * returns String in friendly format, to be used in logger outputs.
      *
-     * @Override this when incorrect
+     * @author raztoki
+     */
+    protected String getRevisionInfo() {
+        return "RevisionInfo: " + this.getClass().getSimpleName() + "=" + Math.max(super.getVersion(), 0) + ", K2SApi=" + getAPIRevision();
+    }
+
+    /**
+     * Does the site support HTTPS? <br />
+     * Override this when incorrect
      *
      * @return
      */
@@ -116,9 +125,7 @@ public abstract class K2SApi extends PluginForHost {
 
     /**
      * useAPI frame work? <br />
-     * <br />
-     *
-     * @Override this when incorrect
+     * Override this when incorrect
      *
      * @return
      */
@@ -171,11 +178,8 @@ public abstract class K2SApi extends PluginForHost {
     protected Browser prepADB(final Browser prepBr) {
         // define custom browser headers and language settings.
         // required for native cloudflare support, without the need to repeat requests.
-        try {
-            /* not available in old stable */
-            prepBr.setAllowedResponseCodes(new int[] { 503, 522 });
-        } catch (Throwable e) {
-        }
+        addAllowedResponseCodes(prepBr, new int[] { 503, 522 });
+
         synchronized (antiDDoSCookies) {
             if (!antiDDoSCookies.isEmpty()) {
                 for (final Map.Entry<String, String> cookieEntry : antiDDoSCookies.entrySet()) {
@@ -202,15 +206,40 @@ public abstract class K2SApi extends PluginForHost {
     }
 
     private Browser prepAPI(final Browser prepBr) {
-        // prep site (this will load cloudflare)
+        // prep site variables, this links back to prepADB from Override
         prepBrowser(prepBr);
-        try {
-            // response codes that API spews out.
-            prepBr.setAllowedResponseCodes(400, 401, 403, 406, 429);
-        } catch (final Throwable t) {
-            // not in stable;
-        }
+        // api && dl server response codes
+        addAllowedResponseCodes(prepBr, new int[] { 400, 401, 403, 406, 429 });
         return prepBr;
+    }
+
+    /**
+     * Grabs existing response codes from import browser, and adds new input. This solves the issue were setAllowedResponseCodes(int...)
+     * destroys old with new. <br/>
+     * <b>TODO</b> remove after next build full.
+     *
+     * @param ibr
+     * @param input
+     * @author raztoki
+     */
+    protected void addAllowedResponseCodes(final Browser ibr, final int... input) {
+        try {
+            final int[] original = ibr.getAllowedResponseCodes();
+            final HashSet<Integer> dupe = new HashSet<Integer>();
+            for (final int a : original) {
+                dupe.add(a);
+            }
+            for (final int a : input) {
+                dupe.add(a);
+            }
+            final int[] outcome = new int[dupe.size()];
+            int index = 0;
+            for (final Integer i : dupe) {
+                outcome[index++] = i;
+            }
+            ibr.setAllowedResponseCodes(outcome);
+        } catch (final Throwable t) {
+        }
     }
 
     protected abstract Browser prepBrowser(final Browser prepBr);
@@ -325,6 +354,7 @@ public abstract class K2SApi extends PluginForHost {
      * IMPORTANT: Current implementation seems to be correct - admin told us that there are no lifetime accounts (anymore)
      */
     public AccountInfo fetchAccountInfo(final Account account) throws Exception {
+        logger.info(getRevisionInfo());
         final AccountInfo ai = new AccountInfo();
         // required to get overrides to work
         br = prepAPI(newBrowser());
@@ -355,6 +385,7 @@ public abstract class K2SApi extends PluginForHost {
     }
 
     public void handleDownload(final DownloadLink downloadLink, final Account account) throws Exception {
+        logger.info(getRevisionInfo());
         // linkcheck here..
         reqFileInformation(downloadLink);
         String fuid = getFUID(downloadLink);
@@ -744,6 +775,7 @@ public abstract class K2SApi extends PluginForHost {
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 }
             } catch (final PluginException p) {
+                logger.warning(getRevisionInfo());
                 logger.warning("ERROR :: " + getAPIRevision() + " :: " + msg);
                 throw p;
             }
@@ -808,7 +840,7 @@ public abstract class K2SApi extends PluginForHost {
             }
         } else if ("pt".equalsIgnoreCase(lng)) {
             if (code == 1) {
-                msg = "Já descarregou a quantidade maxima de arquivos!";
+                msg = "Já descarregou a quantidade máxima de arquivos!";
             } else if (code == 2) {
                 msg = "Limite de tráfego alcançado!";
             } else if (code == 3) {
@@ -816,21 +848,21 @@ public abstract class K2SApi extends PluginForHost {
             } else if (code == 4) {
                 msg = "Sem acesso a este ficheiro!";
             } else if (code == 5) {
-                msg = "Detectado tempo de espera!";
+                msg = "Detetado tempo de espera!";
             } else if (code == 6) {
-                msg = "Alcancado o limite maximo de descargas paralelas!";
+                msg = "Alcançado o limite máximo de descargas paralelas!";
             } else if (code == 7) {
-                msg = "Acesso Restrito - So os possuidores de Contas Premium podem efectuar a descarga deste ficheiro!";
+                msg = "Acesso Restrito - Só os possuidores de Contas Premium podem efetuar a descarga deste ficheiro!";
             } else if (code == 8) {
                 msg = "Acesso Restrito - Só o proprietário deste ficheiro pode fazer esta descarga!";
             } else if (code == 10) {
-                msg = "Nao tem autorizacao!";
+                msg = "Não tem autorização!";
             } else if (code == 11) {
                 msg = "auth_token - expirou!";
             } else if (code == 21 || code == 42) {
-                msg = "Nao è possivel fazer a descarga! Erro no Código genérico da Subrotina!";
+                msg = "Não é possível fazer a descarga! Erro no Código genérico da Sub-rotina!";
             } else if (code == 23) {
-                msg = "Esta ligacao (URL) é uma Pasta, nao pode descarregar uma pasta como um ficheiro!";
+                msg = "Esta ligação (URL) é uma Pasta. Não pode descarregar a pasta como ficheiro!";
             } else if (code == 30) {
                 msg = "Inserir Captcha!";
             } else if (code == 31) {
@@ -838,17 +870,17 @@ public abstract class K2SApi extends PluginForHost {
             } else if (code == 40) {
                 msg = "Chave de descarga inválida";
             } else if (code == 41) {
-                msg = "Detectado tempo de espera!";
+                msg = "Detetado tempo de espera!";
             } else if (code == 70) {
-                msg = "IInvalido username/password!\r\nTem a certeza que o username e a password que introduziu estao correctos? Algumas dicas:\r\n1. ISe a password contem cacteres especiais, mude (elemine) e tente novamente!\r\n2. Digite o username/password manualmente, nao use copiar e colar.";
+                msg = "Invalido username/password!\r\nTem a certeza que o username e a password que introduziu estao corretos? Algumas dicas:\r\n1. Se a password contem caracteres especiais, altere (ou elimine) e tente novamente!\r\n2. Digite o username/password manualmente, não use copiar e colar.";
             } else if (code == 71) {
-                msg = "Tentou a ligacao vezes demais!";
+                msg = "Tentou esta ligação vezes demais!";
             } else if (code == 72) {
                 msg = "A sua conta foi banida!";
             } else if (code == 73) {
-                msg = "Nao pode aceder " + getDomain() + " a partir desta ligacao de NET!";
+                msg = "Não pode aceder " + getDomain() + " a partir desta ligação de NET!";
             } else if (code == 74) {
-                msg = "Erro Login desconhecido!";
+                msg = "Erro, Login desconhecido!";
             }
         } else if ("es".equalsIgnoreCase(lng)) {
             if (code == 1) {
@@ -868,9 +900,9 @@ public abstract class K2SApi extends PluginForHost {
             } else if (code == 8) {
                 msg = "Restricción de acceso - ¡La descarga Sólo está permitida para el propietario de este archivo!";
             } else if (code == 10) {
-                msg = "Your not authorised!";
+                msg = "¡No está autorizado!";
             } else if (code == 11) {
-                msg = "auth_token has expired!";
+                msg = "¡auth_token ha expirado!";
             } else if (code == 21 || code == 42) {
                 msg = "No es posible realizar la descarga en este momento. ¡Código de error genérico con subcódigo!";
             } else if (code == 23) {
@@ -1497,10 +1529,8 @@ public abstract class K2SApi extends PluginForHost {
         if (k == null || v == null) {
             return false;
         }
-        for (HTTPHeader s : ibr.getRequest().getHeaders()) {
-            if (s.getKey().startsWith(k) && s.getValue().startsWith(v)) {
-                return true;
-            }
+        if (ibr.getHttpConnection() != null && ibr.getHttpConnection().getHeaderField(k).toLowerCase(Locale.ENGLISH) != null) {
+            return true;
         }
         return false;
     }
@@ -1513,10 +1543,8 @@ public abstract class K2SApi extends PluginForHost {
         if (k == null || v == null) {
             return false;
         }
-        for (HTTPHeader s : ibr.getRequest().getHeaders()) {
-            if (s.getKey().contains(k) && s.getValue().contains(v)) {
-                return true;
-            }
+        if (ibr.getHttpConnection() != null && ibr.getHttpConnection().getHeaderField(k).toLowerCase(Locale.ENGLISH).contains(v.toLowerCase(Locale.ENGLISH))) {
+            return true;
         }
         return false;
     }
