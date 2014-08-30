@@ -3566,12 +3566,14 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
                                                         final HashResult hashResult = downloadable.getHashResult(hashInfo, fileOutput);
                                                         if (hashResult != null && hashResult.match()) {
                                                             downloadable.setHashResult(hashResult);
+                                                            downloadLink.setDownloadCurrent(fileOutput.length());
                                                             throw new PluginException(LinkStatus.FINISHED);
                                                         }
                                                     }
                                                 case FILENAME_FILESIZE:
                                                     final long fileSize = downloadable.getVerifiedFileSize();
                                                     if (fileSize >= 0 && fileSize == fileOutput.length()) {
+                                                        downloadLink.setDownloadCurrent(fileOutput.length());
                                                         throw new PluginException(LinkStatus.FINISHED);
                                                     }
                                                     break;
@@ -3588,6 +3590,7 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
                                 throw new PluginException(LinkStatus.ERROR_ALREADYEXISTS);
                             }
                         case SET_FILE_TO_SUCCESSFUL:
+
                             throw new PluginException(LinkStatus.FINISHED);
                         default:
                             throw new PluginException(LinkStatus.ERROR_ALREADYEXISTS);
