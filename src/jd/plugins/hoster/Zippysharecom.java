@@ -212,6 +212,10 @@ public class Zippysharecom extends PluginForHost {
         br.setFollowRedirects(true);
         setBrowserExclusive();
         requestFileInformation(downloadLink);
+        if (!br.containsHTML("</body>\\s*</html>")) {
+            // page didn't fully load! http://svn.jdownloader.org/issues/50445 jd://0121413173041
+            throw new PluginException(LinkStatus.ERROR_RETRY);
+        }
         final String mainpage = downloadLink.getDownloadURL().substring(0, downloadLink.getDownloadURL().indexOf(".com/") + 5);
         // DLLINK via packed JS or Flash App
         if (br.containsHTML("DownloadButton_v1\\.14s\\.swf")) {
