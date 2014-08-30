@@ -79,6 +79,13 @@ public class AbelhasPtDecrypter extends PluginForDecrypt {
             dl.setProperty("offline", true);
             decryptedLinks.add(dl);
             return decryptedLinks;
+        } else if (br.getURL().length() <= 30) {
+            /* Link redirected to mainpage or category page --> Offline */
+            final DownloadLink dl = createDownloadlink("http://abelhasdecrypted.pt/" + System.currentTimeMillis() + new Random().nextInt(1000000));
+            dl.setFinalFileName(parameter);
+            dl.setProperty("mainlink", parameter);
+            dl.setProperty("offline", true);
+            decryptedLinks.add(dl);
         }
         /* Password protected link --> Not yet supported --> And this code is not yet tested either :D */
         // if (br.containsHTML(">Digite senha:</label>")) {
@@ -116,7 +123,7 @@ public class AbelhasPtDecrypter extends PluginForDecrypt {
             decryptedLinks.add(dl);
         } else {
             final String fpName = br.getRegex("class=\"T_selected\">([^<>\"]*?)<").getMatch(0);
-            String[] linkinfo = br.getRegex("class=\"galleryItem\">(.*?)<span class=\"filedescription\"").getColumn(0);
+            String[] linkinfo = br.getRegex(" class=\"fileinfo tab\">(.*?)<span class=\"filedescription\"").getColumn(0);
             if (linkinfo == null || linkinfo.length == 0) {
                 linkinfo = br.getRegex("class=\"filename\">(.*?)class=\"directFileLink\"").getColumn(0);
             }
@@ -149,6 +156,7 @@ public class AbelhasPtDecrypter extends PluginForDecrypt {
                 dl.setProperty("plain_fid", fid);
                 dl.setProperty("mainlink", mainlink);
                 dl.setProperty("LINKDUPEID", fid + filename);
+                dl.setBrowserUrl(mainlink);
 
                 dl.setName(filename);
                 dl.setDownloadSize(SizeFormatter.getSize(filesize));
