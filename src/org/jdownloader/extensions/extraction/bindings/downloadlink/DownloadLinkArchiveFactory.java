@@ -97,6 +97,10 @@ public class DownloadLinkArchiveFactory extends DownloadLinkArchiveFile implemen
 
             public boolean acceptNode(DownloadLink node) {
                 String nodeFile = node.getFileOutput(false, true);
+                if (nodeFile == null) {
+                    // http://board.jdownloader.org/showthread.php?t=59031
+                    return false;
+                }
                 return file.equals(nodeFile) || pat.matcher(nodeFile).matches();
             }
 
