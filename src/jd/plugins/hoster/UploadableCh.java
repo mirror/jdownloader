@@ -259,7 +259,7 @@ public class UploadableCh extends PluginForHost {
             account.setProperty("nopremium", true);
             ai.setStatus("Registered (free) user");
         } else {
-            ai.setValidUntil(TimeFormatter.getMilliSeconds(expiredate.trim(), "dd MMM yyyy", Locale.ENGLISH));
+            ai.setValidUntil(TimeFormatter.getMilliSeconds(expiredate.trim(), "dd MMM yyyy", Locale.ENGLISH) + (24 * 60 * 60 * 1000l));
             try {
                 maxPrem.set(20);
                 account.setMaxSimultanDownloads(maxPrem.get());
@@ -325,24 +325,23 @@ public class UploadableCh extends PluginForHost {
     public void resetDownloadlink(final DownloadLink link) {
     }
 
-
-/* NO OVERRIDE!! We need to stay 0.9*compatible */
-public boolean hasCaptcha(DownloadLink link, jd.plugins.Account acc) {
-if (acc == null) {
-/* no account, yes we can expect captcha */
-return true;
-}
- if (Boolean.TRUE.equals(acc.getBooleanProperty("free"))) {
-/* free accounts also have captchas */
-return true;
-}
- if (Boolean.TRUE.equals(acc.getBooleanProperty("nopremium"))) {
-/* free accounts also have captchas */
-return true;
-}
- if (acc.getStringProperty("session_type")!=null&&!"premium".equalsIgnoreCase(acc.getStringProperty("session_type"))) {
-return true;
-}
-return false;
-}
+    /* NO OVERRIDE!! We need to stay 0.9*compatible */
+    public boolean hasCaptcha(DownloadLink link, jd.plugins.Account acc) {
+        if (acc == null) {
+            /* no account, yes we can expect captcha */
+            return true;
+        }
+        if (Boolean.TRUE.equals(acc.getBooleanProperty("free"))) {
+            /* free accounts also have captchas */
+            return true;
+        }
+        if (Boolean.TRUE.equals(acc.getBooleanProperty("nopremium"))) {
+            /* free accounts also have captchas */
+            return true;
+        }
+        if (acc.getStringProperty("session_type") != null && !"premium".equalsIgnoreCase(acc.getStringProperty("session_type"))) {
+            return true;
+        }
+        return false;
+    }
 }
