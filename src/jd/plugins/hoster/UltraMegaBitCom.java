@@ -176,7 +176,7 @@ public class UltraMegaBitCom extends PluginForHost {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 500");
             }
             br.followConnection();
-            if (br.containsHTML("<b>Fatal error</b>:")) {
+            if (br.containsHTML("<b>Fatal error</b>:|<h4>A PHP Error was encountered</h4>")) {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Fatal server error");
             } else if (br.containsHTML(">Download limit exceeded<|<div id=\"file_delay_carousel\"")) {
                 throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 60 * 60 * 1001l);
