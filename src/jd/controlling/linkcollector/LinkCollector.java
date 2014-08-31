@@ -834,9 +834,7 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
                                 }
                             }
                         }
-
-                        if (CrossSystem.isWindows() || CFG_LINKGRABBER.AUTO_FILENAME_CORRECTION_ENABLED.isEnabled()) {
-                            // only on windows, because mac and linux have case sensitive file systems.
+                        if (CFG_LINKGRABBER.PACKAGE_NAME_TO_LOWER_CASE.isEnabled()) {
                             if (packageName != null) {
                                 packageName = packageName.toLowerCase(Locale.ENGLISH);
                             }
@@ -1089,9 +1087,9 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
 
     /*
      * converts a CrawledPackage into a FilePackage
-     * 
+     *
      * if plinks is not set, then the original children of the CrawledPackage will get added to the FilePackage
-     * 
+     *
      * if plinks is set, then only plinks will get added to the FilePackage
      */
     private FilePackage createFilePackage(final CrawledPackage pkg, java.util.List<CrawledLink> plinks) {
@@ -1689,7 +1687,7 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
 
     /**
      * saves List of CrawledPackages to given File as ZippedJSon
-     * 
+     *
      * @param packages
      * @param file
      */
@@ -1996,7 +1994,7 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
         /* add the converted FilePackages to DownloadController */
         /**
          * addTop = 0, to insert the packages at the top
-         * 
+         *
          * addBottom = negative number -> add at the end
          */
         DownloadController.getInstance().addAllAt(filePackagesToAdd, addTop ? 0 : -(filePackagesToAdd.size() + 10));
