@@ -123,6 +123,7 @@ public class Rlnks extends PluginForDecrypt {
             if (title != null && title.trim().length() > 0) {
                 fp = FilePackage.getInstance();
                 fp.setName(title);
+                fp.setProperty("ALLOW_MERGE", true);
             }
 
             /* use cnl2 button if available */
