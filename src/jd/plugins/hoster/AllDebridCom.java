@@ -16,12 +16,14 @@
 
 package jd.plugins.hoster;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Locale;
 
 import jd.PluginWrapper;
 import jd.config.Property;
+import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.plugins.Account;
@@ -34,7 +36,7 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.utils.locale.JDL;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "alldebrid.com" }, urls = { "REGEX_NOT_POSSIBLE_RANDOM-asdfasdfsadfsdgfd32423" }, flags = { 2 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "alldebrid.com" }, urls = { "https?://s\\d+.alldebrid\\.com/dl/[a-z0-9]+/.+" }, flags = { 2 })
 public class AllDebridCom extends PluginForHost {
 
     private static HashMap<Account, HashMap<String, Long>> hostUnavailableMap = new HashMap<Account, HashMap<String, Long>>();
@@ -158,8 +160,66 @@ public class AllDebridCom extends PluginForHost {
     }
 
     @Override
-    public void handleFree(DownloadLink downloadLink) throws Exception, PluginException {
-        throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);
+    public void handleFree(final DownloadLink link) throws Exception, PluginException {
+        showMessage(link, "Task 1: Check URL validity!");
+        requestFileInformation(link);
+        handleDL(null, link, link.getDownloadURL());
+    }
+
+    @Override
+    public void handlePremium(final DownloadLink link, final Account account) throws Exception {
+        showMessage(link, "Task 1: Check URL validity!");
+        requestFileInformation(link);
+        handleDL(account, link, link.getDownloadURL());
+    }
+
+    private void handleDL(final Account acc, final DownloadLink link, final String genlink) throws Exception {
+        showMessage(link, "Task 2: Download begins!");
+        int maxChunks = 0;
+        if (link.getBooleanProperty(AllDebridCom.NOCHUNKS, false)) {
+            maxChunks = 1;
+        }
+        dl = jd.plugins.BrowserAdapter.openDownload(br, link, genlink, true, maxChunks);
+        if (dl.getConnection().getResponseCode() == 404) {
+            /* file offline */
+            dl.getConnection().disconnect();
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
+        if (!dl.getConnection().isContentDisposition() && dl.getConnection().getContentType().contains("html")) {
+            br.followConnection();
+            if (br.containsHTML(">An error occured while processing your request<")) {
+                logger.info("Retrying: Failed to generate alldebrid.com link because API connection failed for host link: " + link.getDownloadURL());
+                throw new PluginException(LinkStatus.ERROR_RETRY);
+            }
+            if (!isDirectLink(link)) {
+                /* unknown error */
+                logger.severe("AllDebrid(Error): " + br.toString());
+                // disable hoster for 5min
+                tempUnavailableHoster(acc, link, 5 * 60 * 1000l);
+            } else {
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE);
+            }
+        }
+        /* save generated link, only if... it it comes from handleMulti */
+        if (!isDirectLink(link)) {
+            link.setProperty("genLinkAllDebrid", genlink);
+        }
+        if (!this.dl.startDownload()) {
+            try {
+                if (dl.externalDownloadStop()) {
+                    return;
+                }
+            } catch (final Throwable e) {
+            }
+            final String errormessage = link.getLinkStatus().getErrorMessage();
+            if (errormessage != null && (errormessage.startsWith(JDL.L("download.error.message.rangeheaders", "Server does not support chunkload")) || errormessage.equals("Unerwarteter Mehrfachverbindungsfehlernull"))) {
+                /* unknown error, we disable multiple chunks */
+                if (link.getBooleanProperty(AllDebridCom.NOCHUNKS, false) == false) {
+                    link.setProperty(AllDebridCom.NOCHUNKS, Boolean.valueOf(true));
+                    throw new PluginException(LinkStatus.ERROR_RETRY);
+                }
+            }
+        }
     }
 
     private void showMessage(DownloadLink link, String message) {
@@ -202,52 +262,34 @@ public class AllDebridCom extends PluginForHost {
             String msg = "(" + link.getLinkStatus().getRetryCount() + 1 + "/" + 3 + ")";
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Retry in few secs" + msg, 20 * 1000l);
         }
-        int maxChunks = 0;
-        if (link.getBooleanProperty(AllDebridCom.NOCHUNKS, false)) {
-            maxChunks = 1;
-        }
-        dl = jd.plugins.BrowserAdapter.openDownload(br, link, genlink, true, maxChunks);
-        if (dl.getConnection().getResponseCode() == 404) {
-            /* file offline */
-            dl.getConnection().disconnect();
-            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        }
-        if (!dl.getConnection().isContentDisposition() && dl.getConnection().getContentType().contains("html")) {
-            br.followConnection();
-            if (br.containsHTML(">An error occured while processing your request<")) {
-                logger.info("Retrying: Failed to generate alldebrid.com link because API connection failed for host link: " + link.getDownloadURL());
-                throw new PluginException(LinkStatus.ERROR_RETRY);
-            }
-            /* unknown error */
-            logger.severe("AllDebrid(Error): " + br.toString());
-            // disable hoster for 5min
-            tempUnavailableHoster(acc, link, 5 * 60 * 1000l);
-            // throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE);
-        }
-        /* save generated link */
-        link.setProperty("genLinkAllDebrid", genlink);
-        showMessage(link, "Phase 2/2: Download begins!");
-        if (!this.dl.startDownload()) {
-            try {
-                if (dl.externalDownloadStop()) {
-                    return;
-                }
-            } catch (final Throwable e) {
-            }
-            final String errormessage = link.getLinkStatus().getErrorMessage();
-            if (errormessage != null && (errormessage.startsWith(JDL.L("download.error.message.rangeheaders", "Server does not support chunkload")) || errormessage.equals("Unerwarteter Mehrfachverbindungsfehlernull"))) {
-                /* unknown error, we disable multiple chunks */
-                if (link.getBooleanProperty(AllDebridCom.NOCHUNKS, false) == false) {
-                    link.setProperty(AllDebridCom.NOCHUNKS, Boolean.valueOf(true));
-                    throw new PluginException(LinkStatus.ERROR_RETRY);
-                }
-            }
-        }
+        handleDL(acc, link, link.getDownloadURL());
     }
 
     @Override
-    public AvailableStatus requestFileInformation(DownloadLink link) throws Exception {
-        return AvailableStatus.UNCHECKABLE;
+    public AvailableStatus requestFileInformation(DownloadLink dl) throws PluginException, IOException {
+        URLConnectionAdapter con = null;
+        try {
+            con = br.openGetConnection(dl.getDownloadURL());
+            if (con.isContentDisposition()) {
+                if (dl.getFinalFileName() == null) {
+                    dl.setFinalFileName(getFileNameFromHeader(con));
+                }
+                dl.setVerifiedFileSize(con.getLongContentLength());
+                dl.setAvailable(true);
+                return AvailableStatus.TRUE;
+            } else {
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            }
+        } catch (final Throwable e) {
+            dl.setAvailable(false);
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        } finally {
+            try {
+                /* make sure we close connection */
+                con.disconnect();
+            } catch (final Throwable e) {
+            }
+        }
     }
 
     private void tempUnavailableHoster(Account account, DownloadLink downloadLink, long timeout) throws PluginException {
@@ -268,6 +310,10 @@ public class AllDebridCom extends PluginForHost {
 
     @Override
     public boolean canHandle(DownloadLink downloadLink, Account account) {
+        if (isDirectLink(downloadLink)) {
+            // generated links do not require an account to download
+            return true;
+        }
         synchronized (hostUnavailableMap) {
             HashMap<String, Long> unavailableMap = hostUnavailableMap.get(account);
             if (unavailableMap != null) {
@@ -283,6 +329,13 @@ public class AllDebridCom extends PluginForHost {
             }
         }
         return true;
+    }
+
+    private boolean isDirectLink(final DownloadLink downloadLink) {
+        if (downloadLink.getDownloadURL().matches(this.getLazyP().getPatternSource())) {
+            return true;
+        }
+        return false;
     }
 
     @Override
