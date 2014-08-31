@@ -42,6 +42,7 @@ import org.appwork.storage.simplejson.JSonFactory;
 import org.appwork.storage.simplejson.JSonObject;
 import org.appwork.storage.simplejson.JSonValue;
 import org.appwork.storage.simplejson.ParserException;
+import org.appwork.utils.net.httpconnection.HTTPConnection;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "account-pool.de" }, urls = { "REGEX_NOT_POSSIBLE_RANDOM-asdfasdfsadfsfsXXX" }, flags = { 0 })
 /**
@@ -75,7 +76,7 @@ public class AccountPool extends PluginForHost {
     @Override
     public int getMaxSimultanDownload(DownloadLink link, Account account) {
         final Object value = this.getHosterSetting(account, link, "maximum_parallel_downloads");
-        if (value != null && value instanceof Number) {
+        if (value instanceof Number) {
             return ((Number) value).intValue();
         }
         return super.getMaxSimultanDownload(link, account);
@@ -161,7 +162,7 @@ public class AccountPool extends PluginForHost {
         APIResponse response = this.authorizedApiPostRequest(account, "/v1/downloads", parameters);
 
         if (response.getResponseCode() != 200) {
-            this.handleApiError(response.getResponseCode(), account);
+            this.handleApiError(response, account);
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
 
@@ -190,6 +191,8 @@ public class AccountPool extends PluginForHost {
         if (!resumable) {
             maxChunks = 1;
         }
+
+        // Start the download task
         System.out.println("Downloading using URL " + downloadUrl + " (resumable: " + resumable + ", max Chunks: " + maxChunks + ")");
         link.getLinkStatus().setStatusText("Step 2: Starting actual Download");
         this.br = newBrowser();
@@ -206,55 +209,115 @@ public class AccountPool extends PluginForHost {
             }
         } else {
             br.followConnection();
-            this.handleApiError(downloadResponseCode, account);
+            APIResponse apiResp = this.createApiResponse(dl.getConnection(), br);
+            this.handleApiError(apiResp, account);
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
     }
 
     /**
      * Handles a non-200 response code from the API by emitting the correct error (throwing a PluginException)
-     * 
-     * @param downloadResponseCode
-     *            the received response status code
+     *
+     * @param response
+     *            the received response
      * @param account
      *            the account for which the error occurred
      * @throws PluginException
      *             is thrown, no matter what response code was received
      */
-    protected void handleApiError(final int downloadResponseCode, final Account account) throws PluginException {
-        System.out.println("Received download response error code " + downloadResponseCode);
-        switch (downloadResponseCode) {
+    protected void handleApiError(final APIResponse response, final Account account) throws PluginException {
+
+        // Try to get error message from the API
+        String errorMessage = null;
+        if (response != null) {
+            errorMessage = (String) ((JSonValue) response.getData().get("error")).getValue();
+        }
+
+        // Get default error message if API didn't return one
+        if (errorMessage == null) {
+            switch (response.getResponseCode()) {
+            case 503:
+                errorMessage = "Service temporarily in maintenance mode.";
+            case 401:
+            case 403:
+                errorMessage = "Authentication error. Check your credentials.";
+            case 400:
+            case 404:
+                errorMessage = "File not found, invalid download URL or hoster currently not supported.";
+            case 420:
+            case 429:
+                errorMessage = "Too many parallel connections.";
+            case 423:
+                errorMessage = "Files for this hoster cannot be served at the moment. Maybe the account is blocked.";
+            case 424:
+            case 428:
+                errorMessage = "Hoster specific error";
+            case 509:
+                errorMessage = "Bandwidth limit exceeded";
+            default:
+                errorMessage = "An unknown error occurred. Error code: " + response.getResponseCode();
+            }
+        }
+
+        // Try to get the delay from the API
+        int delay = -1;
+        if (response != null) {
+            JSonObject instructions = (JSonObject) response.getData().get("instructions");
+            if (instructions != null) {
+                JSonValue delayJsonValue = (JSonValue) instructions.get("delay");
+                if (delayJsonValue != null && delayJsonValue.getValue() instanceof Number) {
+                    delay = ((Number) delayJsonValue.getValue()).intValue() * 1000;
+                }
+            }
+        }
+
+        // Get default delay
+        if (delay < 0) {
+            switch (response.getResponseCode()) {
+            case 503:
+            case 420:
+            case 429:
+                delay = 10 * 60 * 1000;
+                break;
+            case 400:
+            case 404:
+                delay = 60 * 60 * 1000;
+                break;
+            default:
+                delay = 15 * 60 * 1000;
+            }
+        }
+
+        switch (response.getResponseCode()) {
         case 503:
-            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Service temporarily in maintenance mode.", 10 * 60 * 1000l);
-        case 401:
-        case 403:
-            throw new PluginException(LinkStatus.ERROR_PREMIUM, "Authentication error. Check your credentials.", PluginException.VALUE_ID_PREMIUM_DISABLE);
-        case 400:
-        case 404:
-            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND, "File not found, invalid download URL or hoster currently not supported.", 60 * 60 * 1000l);
         case 420:
         case 429:
-            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Too many parallel connections.", 3 * 60 * 1000l);
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, errorMessage, delay);
+        case 401:
+        case 403:
+            throw new PluginException(LinkStatus.ERROR_PREMIUM, errorMessage, PluginException.VALUE_ID_PREMIUM_DISABLE);
+        case 509:
+            throw new PluginException(LinkStatus.ERROR_PREMIUM, errorMessage, PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
+        case 400:
+        case 404:
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND, errorMessage, delay);
         case 423:
-            throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Files for this hoster cannot be served at the moment. Maybe the account is blocked.", 15 * 60 * 1000l);
         case 424:
         case 428:
-            throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Hoster specific error", 15 * 60 * 1000l);
-        case 509:
-            throw new PluginException(LinkStatus.ERROR_PREMIUM, "Bandwidth limit exceeded", PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
+            throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, errorMessage, delay);
         case 500:
         case 501:
         case 502:
         case 504:
         default:
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, "An unknown error occurred. Error code: " + downloadResponseCode, 15 * 60 * 1000l);
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, errorMessage, delay);
         }
     }
 
     // API Communication
     /**
      * Sends an authorized POST request to the API.
-     * 
+     *
      * @param account
      *            Account for which the request should be sent
      * @param path
@@ -267,19 +330,18 @@ public class AccountPool extends PluginForHost {
      * @throws IOException
      * @throws ParserException
      */
-    private APIResponse authorizedApiPostRequest(Account account, String path, LinkedHashMap<String, String> parameters) throws IOException, ParserException {
+    private APIResponse authorizedApiPostRequest(Account account, String path, LinkedHashMap<String, String> parameters) throws IOException {
         this.br = newBrowser();
         String authenticationToken = this.getAuthenticationToken(account);
         br.setHeader("X-Authentication-Token", authenticationToken);
         Request request = br.loadConnection(br.openPostConnection(API_HOST + path, parameters));
-        final int responseCode = request.getHttpConnection().getResponseCode();
-        JSonObject root = (JSonObject) new JSonFactory(br.toString()).parse();
-        return new APIResponse(responseCode, root);
+
+        return this.createApiResponse(request.getHttpConnection(), br);
     }
 
     /**
      * Sends an authorized GET request to the API.
-     * 
+     *
      * @param account
      *            Account for which the request should be sent
      * @param path
@@ -290,19 +352,18 @@ public class AccountPool extends PluginForHost {
      * @throws IOException
      * @throws ParserException
      */
-    private APIResponse authorizedApiGetRequest(Account account, String path) throws IOException, ParserException {
+    private APIResponse authorizedApiGetRequest(Account account, String path) throws IOException {
         this.br = newBrowser();
         String authenticationToken = this.getAuthenticationToken(account);
         br.setHeader("X-Authentication-Token", authenticationToken);
         Request request = br.loadConnection(br.openGetConnection(API_HOST + path));
-        final int responseCode = request.getHttpConnection().getResponseCode();
-        JSonObject root = (JSonObject) new JSonFactory(br.toString()).parse();
-        return new APIResponse(responseCode, root);
+
+        return this.createApiResponse(request.getHttpConnection(), br);
     }
 
     /**
      * Sends an unauthorized request to the API.
-     * 
+     *
      * @param path
      *            API path
      * @param parameters
@@ -311,17 +372,16 @@ public class AccountPool extends PluginForHost {
      * @throws IOException
      * @throws ParserException
      */
-    private APIResponse unauthorizedApiRequest(String path, LinkedHashMap<String, String> parameters) throws IOException, ParserException {
+    private APIResponse unauthorizedApiRequest(String path, LinkedHashMap<String, String> parameters) throws IOException {
         this.br = newBrowser();
         Request request = br.loadConnection(br.openPostConnection(API_HOST + path, parameters));
-        final int responseCode = request.getHttpConnection().getResponseCode();
-        JSonObject root = (JSonObject) new JSonFactory(br.toString()).parse();
-        return new APIResponse(responseCode, root);
+
+        return this.createApiResponse(request.getHttpConnection(), br);
     }
 
     /**
      * Returns the API authentication token which was stored for the specified account.
-     * 
+     *
      * @param account
      *            Account for which the token should be retrieved
      * @return Authentication token for the specified account
@@ -354,13 +414,36 @@ public class AccountPool extends PluginForHost {
         }
     }
 
+    /**
+     * Instanciates a new APIResponse object for the specified connection and browser.
+     *
+     * @param con
+     *            Connection
+     * @param browser
+     *            Browser
+     * @return newly created APIResponse object
+     */
+    private APIResponse createApiResponse(HTTPConnection con, Browser browser) {
+
+        JSonObject root = null;
+        if (con.getContentType().contains("json")) {
+            try {
+                root = (JSonObject) new JSonFactory(browser.toString()).parse();
+            } catch (ParserException e) {
+            }
+        }
+
+        final int responseCode = con.getResponseCode();
+        return new APIResponse(responseCode, root);
+    }
+
     // Storage
     /**
      * Converts data returned from the JSON parser and standardizes it so it can be serialized.
-     * 
+     *
      * @param node
      *            JSON data to convert
-     * 
+     *
      * @return graph representing the JSON data. Consists of Maps, Lists and Objects.
      */
     private Object convertJSonToSerializableData(Object node) {
@@ -401,7 +484,7 @@ public class AccountPool extends PluginForHost {
 
     /**
      * Returns configuration from for the specified Account/Hoster combination.
-     * 
+     *
      * @param account
      *            Account for which the configuration should be retrieved.
      * @param link
@@ -409,7 +492,7 @@ public class AccountPool extends PluginForHost {
      *            returned instead of a hoster specific one.
      * @param key
      *            Name of the setting which should be retrieved.
-     * 
+     *
      * @return retrieved configuration value
      */
     private Object getHosterSetting(Account account, DownloadLink link, String key) {
