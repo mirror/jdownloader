@@ -64,7 +64,7 @@ public class RuTubeRu extends PluginForHost {
      * Corrects downloadLink.urlDownload().<br/>
      * <br/>
      * The following code respect the hoster supported protocols via plugin boolean settings and users config preference
-     *
+     * 
      * @author raztoki
      * */
     @Override
@@ -170,7 +170,14 @@ public class RuTubeRu extends PluginForHost {
                 Node media;
                 for (int j = 0; j < mediaUrls.getLength(); j++) {
                     media = mediaUrls.item(j);
-                    if (StringUtils.equals(getAttByNamedItem(media, "streamId"), var.getStreamID())) {
+                    if (var == null) {
+                        downloadLink.setDownloadSize(bestSizeEstimation);
+                        downloadLink.setProperty("f4vUrl", getAttByNamedItem(media, "url"));
+
+                        downloadLink.setFinalFileName(Encoding.htmlDecode(filename.trim()) + "_" + height + "p" + ".mp4");
+                        return AvailableStatus.TRUE;
+                    }
+                    if (var == null || StringUtils.equals(getAttByNamedItem(media, "streamId"), var.getStreamID())) {
                         // found
                         bestUrl = getAttByNamedItem(media, "url");
                         if (var != null) {
@@ -213,7 +220,7 @@ public class RuTubeRu extends PluginForHost {
 
     /**
      * lets try and prevent possible NPE from killing progress.
-     *
+     * 
      * @author raztoki
      * @param n
      * @param item
