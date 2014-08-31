@@ -82,9 +82,10 @@ public class DummyCNL extends PluginForDecrypt {
 
         for (String s : Regex.getLines(decrypted)) {
             final DownloadLink dl = createDownloadlink(s);
-            // respect cryptedLink origins, do not set browser url when another decrypter!
+            // respect cryptedLink origins
             if (getCurrentLink().getSourceLink().getSourceUrls() != null) {
-                // if link origin comes from decrypter, it's set to the dummy link url and not original cryptedLink.
+                // if link origin comes from decrypter, and we don't set a BrowserUrl, it will be set to it's set to param.toString() and
+                // not getOriginLink().getURL().
                 dl.setBrowserUrl(getCurrentLink().getSourceLink().getOriginLink().getURL());
             } else if (source != null) {
                 dl.setBrowserUrl(source);
