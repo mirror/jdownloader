@@ -148,4 +148,6 @@ public interface Downloadable {
 
     public <T> T getDataBindingInterface(Class<? extends DownloadLinkDatabindingInterface> T);
 
+    public int getChunks();
+
 }

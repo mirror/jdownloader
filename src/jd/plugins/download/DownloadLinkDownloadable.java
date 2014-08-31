@@ -532,4 +532,9 @@ public class DownloadLinkDownloadable implements Downloadable {
     public <T> T getDataBindingInterface(Class<? extends DownloadLinkDatabindingInterface> T) {
         return null;
     }
+
+    @Override
+    public int getChunks() {
+        return downloadLink.getChunks();
+    }
 }

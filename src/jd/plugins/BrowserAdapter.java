@@ -33,10 +33,12 @@ public class BrowserAdapter {
 
     private static DownloadInterface getDownloadInterface(Downloadable downloadable, Request request, boolean resumeEnabled, int chunksCount) throws Exception {
         OldRAFDownload dl = new OldRAFDownload(downloadable, request);
+        int chunks = downloadable.getChunks();
+        ;
         if (chunksCount == 0) {
-            dl.setChunkNum(JsonConfig.create(GeneralSettings.class).getMaxChunksPerFile());
+            dl.setChunkNum(chunks <= 0 ? JsonConfig.create(GeneralSettings.class).getMaxChunksPerFile() : chunks);
         } else {
-            dl.setChunkNum(chunksCount < 0 ? Math.min(chunksCount * -1, JsonConfig.create(GeneralSettings.class).getMaxChunksPerFile()) : chunksCount);
+            dl.setChunkNum(chunksCount < 0 ? Math.min(chunksCount * -1, chunks <= 0 ? JsonConfig.create(GeneralSettings.class).getMaxChunksPerFile() : chunks) : chunksCount);
         }
         dl.setResume(resumeEnabled);
 
