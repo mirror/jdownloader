@@ -804,7 +804,6 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
                                 }
                             }
                         }
-
                         if (packageName == null) {
                             final DownloadLink dlLink = link.getDownloadLink();
                             if (link.isNameSet() || dlLink.isNameSet()) {
@@ -842,7 +841,7 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
                                 downloadFolder = downloadFolder.toLowerCase(Locale.ENGLISH);
                             }
                         }
-                        final CrawledPackageMappingID crawledPackageMapID = new CrawledPackageMappingID(packageID, packageName, downloadFolder);
+                        final CrawledPackageMappingID crawledPackageMapID = new CrawledPackageMappingID(packageID, (packageName != null ? packageName.toLowerCase(Locale.ENGLISH) : packageName), (downloadFolder != null ? downloadFolder.toLowerCase(Locale.ENGLISH) : downloadFolder));
                         String newPackageName = packageName;
                         if (newPackageName == null) {
                             newPackageName = link.getName();
