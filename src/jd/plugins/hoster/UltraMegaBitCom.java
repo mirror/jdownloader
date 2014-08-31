@@ -170,15 +170,9 @@ public class UltraMegaBitCom extends PluginForHost {
         waitTime(timeBefore, downloadLink);
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dlform, true, 1);
         if (dl.getConnection().getContentType().contains("html")) {
-            if (dl.getConnection().getResponseCode() == 403) {
-                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND, "Hoster Issue, Please contact hoster for resolution");
-            } else if (dl.getConnection().getResponseCode() == 500) {
-                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 500");
-            }
             br.followConnection();
-            if (br.containsHTML("<b>Fatal error</b>:|<h4>A PHP Error was encountered</h4>")) {
-                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Fatal server error");
-            } else if (br.containsHTML(">Download limit exceeded<|<div id=\"file_delay_carousel\"")) {
+            handleServerError();
+            if (br.containsHTML(">Download limit exceeded<|<div id=\"file_delay_carousel\"")) {
                 throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 60 * 60 * 1001l);
             } else if (br.containsHTML("guests are only able to download 1 file every")) {
                 throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 30 * 60 * 1000l);
@@ -209,6 +203,21 @@ public class UltraMegaBitCom extends PluginForHost {
         }
         downloadLink.setFinalFileName(Encoding.htmlDecode(getFileNameFromHeader(dl.getConnection())));
         dl.startDownload();
+    }
+
+    /**
+     * Shared server error handling method between free and premium.
+     *
+     * @throws PluginException
+     */
+    private void handleServerError() throws PluginException {
+        if (dl.getConnection().getResponseCode() == 403) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND, "Hoster Issue, Please contact hoster for resolution");
+        } else if (dl.getConnection().getResponseCode() == 500) {
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 500");
+        } else if (br.containsHTML("<b>Fatal error</b>:|<h4>A PHP Error was encountered</h4>")) {
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Fatal server error");
+        }
     }
 
     private void waitTime(long timeBefore, final DownloadLink downloadLink) throws PluginException {
@@ -398,13 +407,9 @@ public class UltraMegaBitCom extends PluginForHost {
             if (dl.getConnection().getContentType().contains("html")) {
                 logger.warning("The final dllink seems not to be a file!");
                 br.followConnection();
-                if (dl.getConnection().getResponseCode() == 403) {
-                    // this error happens in browser also, this is not a JD issue...
-                    // seen it jump to multihoster and free when trying ERROR_FATAL, in my mind should not do this.
-                    throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND, "Hoster Issue, Please contact hoster for resolution");
-                } else {
-                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                }
+                handleServerError();
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+
             }
             link.setFinalFileName(Encoding.htmlDecode(getFileNameFromHeader(dl.getConnection())));
             dl.startDownload();
