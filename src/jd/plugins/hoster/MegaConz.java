@@ -37,6 +37,7 @@ import jd.plugins.download.RAFDownload;
 import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
 
+import org.appwork.utils.Exceptions;
 import org.jdownloader.images.NewTheme;
 import org.jdownloader.plugins.PluginTaskID;
 
@@ -398,7 +399,11 @@ public class MegaConz extends PluginForHost {
 
             };
             progress.setProgressSource(this);
-            progress.setIcon(NewTheme.I().getIcon("lock", 16));
+            try {
+                progress.setIcon(NewTheme.I().getIcon("lock", 16));
+            } catch (Throwable e) {
+                logger.warning(Exceptions.getStackTrace(e));
+            }
             link.addPluginProgress(progress);
             fis = new FileInputStream(src);
             if (tmp != null) {
