@@ -227,7 +227,12 @@ public class FilePostCom extends PluginForHost {
         } finally {
             showAccountCaptcha = false;
         }
-        br.getPage(MAINPAGE);
+
+        if (br.getRequest() == null) {
+            br.getPage(MAINPAGE);
+        } else {
+            br.getPage("/");
+        }
         if (!br.containsHTML("<li>Account type: <span>Premium</span>")) {
             account.setValid(false);
             return ai;
@@ -256,7 +261,7 @@ public class FilePostCom extends PluginForHost {
 
     @Override
     public String getAGBLink() {
-        return "http://filepost.com/terms/";
+        return MAINPAGE + "/terms/";
     }
 
     @Override
@@ -468,7 +473,7 @@ public class FilePostCom extends PluginForHost {
         String action = null;
         final String SID = br.getCookie("http://filepost.com/", "SID");
         if (SID != null) {
-            action = "http://filepost.com/files/get/?SID=" + SID + "&JsHttpRequest=";
+            action = "/files/get/?SID=" + SID + "&JsHttpRequest=";
         }
         return action;
     }
@@ -601,7 +606,7 @@ public class FilePostCom extends PluginForHost {
                             this.br.setCookie(MAINPAGE, key, value);
                         }
                         Browser brc = br.cloneBrowser();
-                        brc.postPage("http://filepost.com/general/login_form/?SID=" + brc.getCookie(MAINPAGE, "SID"), "action=check");
+                        brc.postPage("https://filepost.com/general/login_form/?SID=" + brc.getCookie(MAINPAGE, "SID"), "action=check");
                         if (brc.containsHTML("premium")) {
                             return;
                         }
@@ -618,7 +623,7 @@ public class FilePostCom extends PluginForHost {
                         }
                         throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
                     } else {
-                        br.getPage("https://filepost.com");
+                        br.getPage("/");
                         PluginForHost recplug = JDUtilities.getPluginForHost("DirectHTTP");
                         jd.plugins.hoster.DirectHTTP.Recaptcha rc = ((DirectHTTP) recplug).getReCaptcha(br);
                         String id = br.getRegex("Captcha\\.init.*?key.*?'(.*?)'").getMatch(0);
@@ -627,7 +632,7 @@ public class FilePostCom extends PluginForHost {
                         File cf = rc.downloadCaptcha(getLocalCaptchaFile());
                         DownloadLink dummyLink = new DownloadLink(this, "Account", "filepost.com", "http://filepost.com", true);
                         String c = getCaptchaCode(cf, dummyLink);
-                        br.postPage("https://filepost.com/general/login_form/?JsHttpRequest=" + System.currentTimeMillis() + "-xml", "email=" + Encoding.urlEncode(account.getUser()) + "&password=" + pw + "&remember=on&recaptcha_response_field=" + Encoding.urlEncode(c) + "&recaptcha_challenge_field=" + rc.getChallenge());
+                        br.postPage("/general/login_form/?JsHttpRequest=" + System.currentTimeMillis() + "-xml", "email=" + Encoding.urlEncode(account.getUser()) + "&password=" + pw + "&remember=on&recaptcha_response_field=" + Encoding.urlEncode(c) + "&recaptcha_challenge_field=" + rc.getChallenge());
                     }
                 }
                 if (br.containsHTML("captcha\":true")) {
@@ -651,7 +656,7 @@ public class FilePostCom extends PluginForHost {
                 account.setProperty("pass", Encoding.urlEncode(account.getPass()));
                 account.setProperty("cookies", cookies);
                 /* change language to english */
-                br.postPage("http://filepost.com/general/select_language/?SID=" + br.getCookie(MAINPAGE, "SID") + "&JsHttpRequest=" + System.currentTimeMillis() + "-xml", "language=1");
+                br.postPage("/general/select_language/?SID=" + br.getCookie(MAINPAGE, "SID") + "&JsHttpRequest=" + System.currentTimeMillis() + "-xml", "language=1");
             } catch (PluginException e) {
                 account.setProperty("cookies", null);
                 throw e;

@@ -1525,11 +1525,12 @@ public abstract class K2SApi extends PluginForHost {
      *
      * @author raztoki
      * */
+    @SuppressWarnings("unused")
     private boolean requestHeadersHasKeyNValueStartsWith(final Browser ibr, final String k, final String v) {
-        if (k == null || v == null) {
+        if (k == null || v == null || ibr == null || ibr.getHttpConnection() == null) {
             return false;
         }
-        if (ibr.getHttpConnection() != null && ibr.getHttpConnection().getHeaderField(k).toLowerCase(Locale.ENGLISH) != null) {
+        if (ibr.getHttpConnection().getHeaderField(k) != null && ibr.getHttpConnection().getHeaderField(k).toLowerCase(Locale.ENGLISH).startsWith(v.toLowerCase(Locale.ENGLISH))) {
             return true;
         }
         return false;
@@ -1540,10 +1541,10 @@ public abstract class K2SApi extends PluginForHost {
      * @author raztoki
      * */
     private boolean requestHeadersHasKeyNValueContains(final Browser ibr, final String k, final String v) {
-        if (k == null || v == null) {
+        if (k == null || v == null || ibr == null || ibr.getHttpConnection() == null) {
             return false;
         }
-        if (ibr.getHttpConnection() != null && ibr.getHttpConnection().getHeaderField(k).toLowerCase(Locale.ENGLISH).contains(v.toLowerCase(Locale.ENGLISH))) {
+        if (ibr.getHttpConnection().getHeaderField(k) != null && ibr.getHttpConnection().getHeaderField(k).toLowerCase(Locale.ENGLISH).contains(v.toLowerCase(Locale.ENGLISH))) {
             return true;
         }
         return false;

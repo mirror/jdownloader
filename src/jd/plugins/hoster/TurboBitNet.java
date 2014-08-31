@@ -959,11 +959,12 @@ public class TurboBitNet extends PluginForHost {
      *
      * @author raztoki
      * */
+    @SuppressWarnings("unused")
     private boolean requestHeadersHasKeyNValueStartsWith(final String k, final String v) {
-        if (k == null || v == null) {
+        if (k == null || v == null || br == null || br.getHttpConnection() == null) {
             return false;
         }
-        if (br.getHttpConnection() != null && br.getHttpConnection().getHeaderField(k).toLowerCase(Locale.ENGLISH) != null) {
+        if (br.getHttpConnection().getHeaderField(k) != null && br.getHttpConnection().getHeaderField(k).toLowerCase(Locale.ENGLISH).startsWith(v.toLowerCase(Locale.ENGLISH))) {
             return true;
         }
         return false;
@@ -977,7 +978,7 @@ public class TurboBitNet extends PluginForHost {
         if (k == null || v == null) {
             return false;
         }
-        if (br.getHttpConnection() != null && br.getHttpConnection().getHeaderField(k).toLowerCase(Locale.ENGLISH).contains(v.toLowerCase(Locale.ENGLISH))) {
+        if (br.getHttpConnection().getHeaderField(k) != null && br.getHttpConnection().getHeaderField(k).toLowerCase(Locale.ENGLISH).contains(v.toLowerCase(Locale.ENGLISH))) {
             return true;
         }
         return false;
