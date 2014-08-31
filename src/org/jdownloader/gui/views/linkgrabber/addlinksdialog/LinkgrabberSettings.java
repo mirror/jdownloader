@@ -104,6 +104,20 @@ public interface LinkgrabberSettings extends ConfigInterface {
     void setContextMenuAddLinksActionAlwaysVisible(boolean b);
 
     @AboutConfig
+    @DefaultBooleanValue(false)
+    @DescriptionForConfigEntry("If true, Packagenames will renamed to lowercase. This is useful to prevent duplicated downloads on case sensitive file systems.")
+    boolean isPackageNameToLowerCaseEnabled();
+
+    void setPackageNameToLowerCaseEnabled(boolean b);
+
+    @AboutConfig
+    @DefaultBooleanValue(false)
+    @DescriptionForConfigEntry("If true, Filenames will renamed to lowercase. This is useful to prevent duplicated downloads on case sensitive file systems.")
+    boolean isFileNameToLowerCaseEnabled();
+
+    void setFileNameToLowerCaseEnabled(boolean b);
+
+    @AboutConfig
     @DefaultBooleanValue(true)
     @DescriptionForConfigEntry("If true, Offline Links, that do not fit in a existing package, will be moved to a offline package.")
     boolean isOfflinePackageEnabled();
@@ -135,7 +149,7 @@ public interface LinkgrabberSettings extends ConfigInterface {
 
     @AboutConfig
     @DefaultBooleanValue(true)
-    @DescriptionForConfigEntry("If true, Plugins will try to correct filenames to match to others. For example in splitted archives.")
+    @DescriptionForConfigEntry("If true, Plugins will try to correct filenames to match to others. For example in split archives.")
     boolean isAutoFilenameCorrectionEnabled();
 
     void setAutoFilenameCorrectionEnabled(boolean b);

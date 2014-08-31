@@ -64,6 +64,16 @@ public class CFG_LINKGRABBER {
     public static final ObjectKeyHandler                    PACKAGE_NAME_HISTORY                                     = SH.getKeyHandler("PackageNameHistory", ObjectKeyHandler.class);
 
     /**
+     * Useful for to prevent download dupes on case sensitive file systems.
+     * */
+    public static final BooleanKeyHandler                   PACKAGE_NAME_TO_LOWER_CASE                               = SH.getKeyHandler("PackageNameToLowerCaseEnabled", BooleanKeyHandler.class);
+
+    /**
+     * Useful for to prevent download dupes on case sensitive file systems.
+     * */
+    public static final BooleanKeyHandler                   FILENAME_TO_LOWER_CASE                                   = SH.getKeyHandler("FileNameToLowerCaseEnabled", BooleanKeyHandler.class);
+
+    /**
      * If true, Plugins will try to correct filenames to match to others. For example in splitted archives.
      **/
     public static final BooleanKeyHandler                   AUTO_FILENAME_CORRECTION_ENABLED                         = SH.getKeyHandler("AutoFilenameCorrectionEnabled", BooleanKeyHandler.class);
