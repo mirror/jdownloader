@@ -79,16 +79,21 @@ public class LoadTo extends PluginForHost {
         prepareBrowser();
         br.setFollowRedirects(true);
         br.getPage(link.getDownloadURL());
-        if (br.containsHTML(">Can\\'t find file")) {
+        if (br.containsHTML(">Can't find file")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        final String filename = Encoding.htmlDecode(br.getRegex("<title>([^<>\"]*?) // Load\\.to</title>").getMatch(0));
-        final String filesize = br.getRegex("Size: ([^<>\"]*?) <span class=\"space\">").getMatch(0);
-        if (filename == null || filesize == null) {
+        String filename = br.getRegex("<title>(?:Load\\.to - )?([^<>\"]*?)(?: // Load\\.to)?</title>").getMatch(0);
+        if (filename == null) {
+            filename = br.getRegex("Download file\\s*:\\s*<br/>\\s*<h1>(.*?)</h1>").getMatch(0);
+        }
+        final String filesize = br.getRegex("Size:\\s*(\\d+(\\.\\d+)?\\s*(KB|MB|GB))").getMatch(0);
+        if (filename == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         link.setName(Encoding.htmlDecode(filename.trim()));
-        link.setDownloadSize(SizeFormatter.getSize(filesize));
+        if (filesize != null) {
+            link.setDownloadSize(SizeFormatter.getSize(filesize));
+        }
         return AvailableStatus.TRUE;
     }
 
@@ -215,13 +220,13 @@ public class LoadTo extends PluginForHost {
     /**
      * Prevents more than one free download from starting at a given time. One step prior to dl.startDownload(), it adds a slot to maxFree
      * which allows the next singleton download to start, or at least try.
-     * 
+     *
      * This is needed because xfileshare(website) only throws errors after a final dllink starts transferring or at a given step within pre
      * download sequence. But this template(XfileSharingProBasic) allows multiple slots(when available) to commence the download sequence,
      * this.setstartintival does not resolve this issue. Which results in x(20) captcha events all at once and only allows one download to
      * start. This prevents wasting peoples time and effort on captcha solving and|or wasting captcha trading credits. Users will experience
      * minimal harm to downloading as slots are freed up soon as current download begins.
-     * 
+     *
      * @param controlFree
      *            (+1|-1)
      */
