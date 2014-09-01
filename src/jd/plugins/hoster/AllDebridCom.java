@@ -155,12 +155,12 @@ public class AllDebridCom extends PluginForHost {
 
     @Override
     public int getMaxSimultanFreeDownloadNum() {
-        return 0;
+        return -1;
     }
 
     @Override
     public int getMaxSimultanPremiumDownloadNum() {
-        return 0;
+        return -1;
     }
 
     @Override
