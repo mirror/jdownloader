@@ -76,6 +76,8 @@ public class DirectHTTP extends PluginForHost {
             if (this.getTries() > 0) {
                 this.reload();
             }
+            // this.rcBr could be null at this stage, if we are specifying challenge id and image ourselves.
+            prepRcBr();
             this.rcBr.setFollowRedirects(true);
             try {
                 Browser.download(captchaFile, this.rcBr.openGetConnection(this.captchaAddress));
@@ -89,7 +91,7 @@ public class DirectHTTP extends PluginForHost {
         public void findID() throws PluginException {
             this.id = this.br.getRegex("\\?k=([A-Za-z0-9%_\\+\\- ]+)\"").getMatch(0);
             if (this.id == null) {
-                this.id = this.br.getRegex("Recaptcha\\.create\\((\"|\\')([A-Za-z0-9%_\\+\\- ]+)(\"|\\')").getMatch(1);
+                this.id = this.br.getRegex("Recaptcha\\.create\\((\"|\\')([A-Za-z0-9%_\\+\\- ]+)\\1").getMatch(1);
             }
             if (this.id == null) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -166,30 +168,38 @@ public class DirectHTTP extends PluginForHost {
             }
         }
 
-        public void load() throws IOException, PluginException {
-            this.rcBr = this.br.cloneBrowser();
-            // recaptcha works off API key, and javascript. The imported browser session isn't actually needed.
-            /*
-             * Randomise user-agent to prevent tracking by google, each time we load(). Without this they could make the captchas images
-             * harder read, the more a user requests captcha'. Also algos could track captcha requests based on user-agent globally, which
-             * means JD default user-agent been very old (firefox 3.x) negatively biased to JD clients! Tracking takes place on based on IP
-             * address, User-Agent, and APIKey of request (site of APIKey), cookies session submitted, and combinations of those.
-             * Effectively this can all be done with a new browser, with regex tasks from source browser (ids|keys|submitting forms).
-             */
-            /* we first have to load the plugin, before we can reference it */
-            JDUtilities.getPluginForHost("mediafire.com");
-            this.rcBr.getHeaders().put("User-Agent", jd.plugins.hoster.MediafireCom.stringUserAgent());
+        private void prepRcBr() {
+            // only run if this.rcBr == null
+            if (this.rcBr == null) {
+                this.rcBr = this.br.cloneBrowser();
+                // recaptcha works off API key, and javascript. The imported browser session isn't actually needed.
+                /*
+                 * Randomise user-agent to prevent tracking by google, each time we load(). Without this they could make the captchas images
+                 * harder read, the more a user requests captcha'. Also algos could track captcha requests based on user-agent globally,
+                 * which means JD default user-agent been very old (firefox 3.x) negatively biased to JD clients! Tracking takes place on
+                 * based on IP address, User-Agent, and APIKey of request (site of APIKey), cookies session submitted, and combinations of
+                 * those. Effectively this can all be done with a new browser, with regex tasks from source browser (ids|keys|submitting
+                 * forms).
+                 */
+                /* we first have to load the plugin, before we can reference it */
+                JDUtilities.getPluginForHost("mediafire.com");
+                this.rcBr.getHeaders().put("User-Agent", jd.plugins.hoster.MediafireCom.stringUserAgent());
 
-            // this prevents google/recaptcha group from seeing referrer
-            try {
-                if (this.clearReferer) {
-                    this.rcBr.setCurrentURL(null);
+                // this prevents google/recaptcha group from seeing referrer
+                try {
+                    if (this.clearReferer) {
+                        this.rcBr.setCurrentURL(null);
+                    }
+                } catch (final Throwable e) {
+                    /* 09581 will break here */
                 }
-            } catch (final Throwable e) {
-                /* 09581 will break here */
-            }
 
-            // end of privacy protection
+                // end of privacy protection
+            }
+        }
+
+        public void load() throws IOException, PluginException {
+            prepRcBr();
 
             /* follow redirect needed as google redirects to another domain */
             this.rcBr.setFollowRedirects(true);
@@ -864,7 +874,7 @@ public class DirectHTTP extends PluginForHost {
 
     /**
      * update this map to your needs
-     * 
+     *
      * @param mimeType
      * @return
      */
