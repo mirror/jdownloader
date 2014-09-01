@@ -23,7 +23,9 @@ import java.util.Locale;
 
 import jd.PluginWrapper;
 import jd.config.Property;
+import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
+import jd.nutils.JDHash;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.plugins.Account;
@@ -48,9 +50,11 @@ public class AllDebridCom extends PluginForHost {
     }
 
     private static final String NOCHUNKS = "NOCHUNKS";
+    private final String        hash1    = "593f356a67e32332c13d6692d1fe10b7";
 
     @Override
     public AccountInfo fetchAccountInfo(Account account) throws Exception {
+        prepBrowser(br);
         HashMap<String, String> accDetails = new HashMap<String, String>();
         AccountInfo ac = new AccountInfo();
         String page = null;
@@ -59,12 +63,12 @@ public class AllDebridCom extends PluginForHost {
             page = br.getPage("http://www.alldebrid.com/api.php?action=info_user&login=" + Encoding.urlEncode(account.getUser()) + "&pw=" + Encoding.urlEncode(account.getPass()));
             hosts = br.getPage("http://www.alldebrid.com/api.php?action=get_host");
         } catch (Exception e) {
-            account.setTempDisabled(true);
-            account.setValid(true);
-            ac.setProperty("multiHostSupport", Property.NULL);
-            ac.setStatus("AllDebrid Server Error, temp disabled");
-            return ac;
+            throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nServer Error", PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
         }
+        if (hash1.equalsIgnoreCase(JDHash.getMD5(page))) {
+            throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nYou've been blocked from the API!", PluginException.VALUE_ID_PREMIUM_DISABLE);
+        }
+
         /* parse api response in easy2handle hashmap */
         String info[][] = new Regex(page, "<([^<>]*?)>([^<]*?)</.*?>").getMatches();
 
@@ -117,7 +121,7 @@ public class AllDebridCom extends PluginForHost {
                         } catch (final Throwable e) {
                             logger.severe(e.toString());
                         }
-                        supportedHosts.add(host.trim());
+                        supportedHosts.add(host);
                     }
                 }
             }
@@ -138,9 +142,8 @@ public class AllDebridCom extends PluginForHost {
             ac.setMultiHostSupport(supportedHosts);
             ac.setStatus("Account valid");
         } else {
-            account.setValid(false);
             ac.setProperty("multiHostSupport", Property.NULL);
-            ac.setStatus("Account invalid");
+            throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nNormal accounts are not supported!", PluginException.VALUE_ID_PREMIUM_DISABLE);
         }
         return ac;
     }
@@ -194,7 +197,7 @@ public class AllDebridCom extends PluginForHost {
             }
             if (!isDirectLink(link)) {
                 /* unknown error */
-                logger.severe("AllDebrid(Error): Unknown Error");
+                logger.severe("Error: Unknown Error");
                 // disable hoster for 5min
                 tempUnavailableHoster(acc, link, 5 * 60 * 1000l);
             } else {
@@ -229,14 +232,17 @@ public class AllDebridCom extends PluginForHost {
 
     /** no override to keep plugin compatible to old stable */
     public void handleMultiHost(final DownloadLink link, final Account acc) throws Exception {
+        prepBrowser(br);
         showMessage(link, "Phase 1/2: Generating link");
 
         // here we can get a 503 error page, which causes an exception
         String genlink = br.getPage("http://www.alldebrid.com/service.php?pseudo=" + Encoding.urlEncode(acc.getUser()) + "&password=" + Encoding.urlEncode(acc.getPass()) + "&link=" + Encoding.urlEncode(link.getDownloadURL()) + "&view=1");
 
-        if (!genlink.startsWith("http://")) {
-            logger.severe("AllDebrid(Error): " + genlink);
-            if (genlink.contains("Hoster unsupported or under maintenance.")) {
+        if (genlink == null || !genlink.matches("https?://.+")) {
+            logger.severe("Error: " + genlink);
+            if (hash1.equalsIgnoreCase(JDHash.getMD5(br.toString()))) {
+                throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nYou've been blocked from the API!", PluginException.VALUE_ID_PREMIUM_DISABLE);
+            } else if (genlink.contains("Hoster unsupported or under maintenance.")) {
                 // disable host for 4h
                 tempUnavailableHoster(acc, link, 4 * 60 * 60 * 1000l);
             } else if (genlink.contains("_limit")) {
@@ -244,8 +250,7 @@ public class AllDebridCom extends PluginForHost {
                 tempUnavailableHoster(acc, link, 4 * 60 * 60 * 1000l);
             } else if (genlink.contains("\"error\":\"Ip not allowed.\"")) {
                 // dedicated server/colo ip range, not allowed!
-                logger.info("Dedicated server detected, account disabled");
-                throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+                throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nDedicated server detected, account disabled", PluginException.VALUE_ID_PREMIUM_DISABLE);
             }
             /*
              * after x retries we disable this host and retry with normal plugin
@@ -263,8 +268,18 @@ public class AllDebridCom extends PluginForHost {
         handleDL(acc, link, genlink);
     }
 
+    private Browser prepBrowser(Browser prepBr) {
+        // define custom browser headers and language settings.
+        prepBr.getHeaders().put("Accept-Language", "en-gb, en;q=0.9");
+        prepBr.getHeaders().put("User-Agent", "JDownloader");
+        prepBr.setCustomCharset("utf-8");
+        prepBr.setFollowRedirects(true);
+        return prepBr;
+    }
+
     @Override
     public AvailableStatus requestFileInformation(DownloadLink dl) throws PluginException, IOException {
+        prepBrowser(br);
         URLConnectionAdapter con = null;
         try {
             con = br.openGetConnection(dl.getDownloadURL());
