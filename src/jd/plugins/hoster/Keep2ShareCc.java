@@ -291,7 +291,7 @@ public class Keep2ShareCc extends K2SApi {
             logger.info(br.toString());
             dllink = br.getRegex("\"url\":\"(https?:[^<>\"]*?)\"").getMatch(0);
             if (dllink == null) {
-                handleGeneralServerErrors(account);
+                handleGeneralServerErrors(account, downloadLink);
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
             dllink = dllink.replace("\\", "");
@@ -615,7 +615,7 @@ public class Keep2ShareCc extends K2SApi {
                 if (dl.getConnection().getContentType().contains("html")) {
                     logger.warning("The final dllink seems not to be a file!");
                     br.followConnection();
-                    handleGeneralServerErrors(account);
+                    handleGeneralServerErrors(account, link);
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 }
                 // add download slot
@@ -636,22 +636,6 @@ public class Keep2ShareCc extends K2SApi {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 'Store is temporarily unavailable'", 5 * 60 * 1000l);
             }
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Unknown server error", 30 * 60 * 1000l);
-        }
-    }
-
-    @Override
-    protected void handleGeneralServerErrors(final Account account) throws PluginException {
-        final String alreadyDownloading = "Your current tariff doesn't allow to download more files then you are downloading now\\.";
-        if ((account == null || account.getBooleanProperty("free", false)) && br.containsHTML(alreadyDownloading)) {
-            // found from jdlog://4140408642041 also note: ISP seems to have transparent proxy!
-            // should only happen to free.
-            // We also only have 1 max free sim currently, if we go higher we need to track current transfers against
-            // connection_candidate(proxy|direct) IP address, and reduce max sim by one.
-            throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, alreadyDownloading, 10 * 60 * 1000);
-        } else if (dl.getConnection().getResponseCode() == 503) {
-            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 503", 5 * 60 * 1000l);
-        } else if (dl.getConnection().getResponseCode() == 404 || br.containsHTML(">Not Found<")) {
-            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 404", 30 * 60 * 1000l);
         }
     }
 
