@@ -47,7 +47,7 @@ public class FileProjectComBr extends PluginForHost {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         br.getPage(link.getDownloadURL());
-        if (br.getHttpConnection().getResponseCode() == 403 || br.getURL() != null && br.getURL().contains("aliancaproject.com.br/")) {
+        if (br.getHttpConnection().getResponseCode() == 403 || (br.getURL() != null && br.getURL().contains("aliancaproject.com.br/"))) {
             // country block, seems to 403 outside of Brazil!
             link.getLinkStatus().setStatusText("Provider blocks your IP Address!");
             return AvailableStatus.UNCHECKABLE;
@@ -66,7 +66,7 @@ public class FileProjectComBr extends PluginForHost {
     @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
-        if (br.getHttpConnection().getResponseCode() == 403) {
+        if (br.getHttpConnection().getResponseCode() == 403 || (br.getURL() != null && br.getURL().contains("aliancaproject.com.br/"))) {
             throw new PluginException(LinkStatus.ERROR_FATAL, "Provider blocks your IP Address!");
         }
         final String dllink = br.getRegex("\"(http://[a-z0-9\\.:]+/download/[^<>\"]*?)\"").getMatch(0);
