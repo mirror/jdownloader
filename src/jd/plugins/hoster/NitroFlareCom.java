@@ -129,7 +129,7 @@ public class NitroFlareCom extends PluginForHost {
                         continue;
                     }
                     final String status = getJson(filter, "status");
-                    if (!"invalid".equalsIgnoreCase(status)) {
+                    if ("online".equalsIgnoreCase(status)) {
                         dl.setAvailable(true);
                     } else {
                         dl.setAvailable(false);
