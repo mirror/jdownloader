@@ -709,49 +709,72 @@ public class YoutubeHelper {
         this.variantsMap = Collections.unmodifiableMap(variantsMap);
     }
 
+    private HashMap<String, HashMap<String, String>> jsCache = new HashMap<String, HashMap<String, String>>();
+
     /**
      * *
-     * 
+     *
      * @param html5PlayerJs
      *            TODO
      * @param br
      * @param s
-     * 
+     *
      * @return
      * @throws IOException
      * @throws PluginException
      */
-    String descrambleSignature(final String sig, String jsUrl) throws IOException, PluginException {
+    String descrambleSignature(final String sig, String jsUrl, final String id) throws IOException, PluginException {
         if (sig == null) {
             return null;
         }
 
+        String all = null;
+        String descrambler = null;
         String des = null;
-
-        Browser clone = br.cloneBrowser();
-
-        String jsContent = getAbsolute(jsUrl, jsUrl, clone);
-        final String descrambler = new Regex(jsContent, "\\w+\\.signature\\=([\\$\\w\\d]+)\\([\\w\\d]+\\)").getMatch(0);
-        if (descrambler == null) {
-            return sig;
-        }
-        final String func = "function " + Pattern.quote(descrambler) + "\\(([^)]+)\\)\\{(.+?return.*?)\\}";
-        des = new Regex(jsContent, Pattern.compile(func)).getMatch(1);
-        String all = new Regex(jsContent, Pattern.compile("function " + Pattern.quote(descrambler) + "\\(([^)]+)\\)\\{(.+?return.*?)\\}.*?\\{.*?\\}")).getMatch(-1);
+        String jsContent = null;
         Object result = null;
 
+        HashMap<String, String> cache = jsCache.get(id);
+        if (cache != null && !cache.isEmpty()) {
+            all = cache.get("all");
+            descrambler = cache.get("descrambler");
+            des = cache.get("des");
+        } else {
+            cache = new HashMap<String, String>();
+            jsContent = getAbsolute(jsUrl, jsUrl, br.cloneBrowser());
+        }
+        if (all == null || descrambler == null || des == null) {
+            descrambler = new Regex(jsContent, "\\w+\\.signature\\=([\\$\\w\\d]+)\\([\\w\\d]+\\)").getMatch(0);
+            if (descrambler == null) {
+                return sig;
+            }
+            final String func = "function " + Pattern.quote(descrambler) + "\\(([^)]+)\\)\\{(.+?return.*?)\\}";
+            des = new Regex(jsContent, Pattern.compile(func)).getMatch(1);
+            all = new Regex(jsContent, Pattern.compile("function " + Pattern.quote(descrambler) + "\\(([^)]+)\\)\\{(.+?return.*?)\\}.*?\\{.*?\\}")).getMatch(-1);
+        }
         while (true) {
             try {
                 final ScriptEngineManager manager = jd.plugins.hoster.DummyScriptEnginePlugin.getScriptEngineManager(this);
                 final ScriptEngine engine = manager.getEngineByName("javascript");
                 result = engine.eval(all + " " + descrambler + "(\"" + sig + "\")");
                 if (result != null) {
+                    if (cache.isEmpty()) {
+                        cache.put("all", all);
+                        cache.put("descrambler", descrambler);
+                        // not used by js but the failover.
+                        cache.put("des", des);
+                        jsCache.put(id, cache);
+                    }
                     return result.toString();
                 }
             } catch (final Throwable e) {
                 if (e.getMessage() != null) {
                     final String ee = new Regex(e.getMessage(), "ReferenceError: \"(\\w+)\" is not defined\\.").getMatch(0);
+                    // should only be needed on the first entry, then on after 'cache' should get result the first time!
                     if (ee != null) {
+                        if (jsContent == null) {
+                            jsContent = getAbsolute(jsUrl, jsUrl, br.cloneBrowser());
+                        }
                         // lets look for missing reference
                         final String ref = new Regex(jsContent, "var\\s+" + ee + "\\s*=\\s*\\{.*?\\};").getMatch(-1);
                         if (ref != null) {
@@ -1121,7 +1144,7 @@ public class YoutubeHelper {
                     }
                     if (StringUtils.isEmpty(signature)) {
                         // verified 7.1.213
-                        signature = this.descrambleSignature(query.get("s"), html5PlayerJs);
+                        signature = this.descrambleSignature(query.get("s"), html5PlayerJs, vid.videoID);
                     }
 
                     if (url != null && !url.contains("sig")) {
@@ -1596,7 +1619,7 @@ public class YoutubeHelper {
 
         if (StringUtils.isEmpty(signature) && query.get("s") != null) {
             // verified 7.1.213
-            signature = this.descrambleSignature(query.get("s"), html5PlayerJs);
+            signature = this.descrambleSignature(query.get("s"), html5PlayerJs, vid.videoID);
         }
 
         if (url != null && !url.contains("sig")) {
