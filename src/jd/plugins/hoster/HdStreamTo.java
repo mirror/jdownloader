@@ -147,10 +147,6 @@ public class HdStreamTo extends PluginForHost {
     public void doFree(final DownloadLink downloadLink, boolean resume, int maxchunks) throws Exception, PluginException {
         checkDownloadable();
         String premiumtoken = getPremiumToken(downloadLink);
-        if (!premiumtoken.equals("")) {
-            resume = true;
-            maxchunks = -10;
-        }
         final String free_downloadable = getJson("downloadable");
         final String free_downloadable_max_filesize = new Regex(free_downloadable, "mb(\\d+)").getMatch(0);
         /* Note that premiumtokens can override this */
@@ -175,6 +171,13 @@ public class HdStreamTo extends PluginForHost {
         final String waittime = getJson("wait");
         if (waittime == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        final int wait = Integer.parseInt(waittime);
+        /* Make sure that the premiumtoken is valid - if it is not valid, wait is higher than 0 */
+        if (!premiumtoken.equals("") && wait == 0) {
+            logger.info("Seems like the user is using a valid premiumtoken, enabling chunks & resume...");
+            resume = true;
+            maxchunks = -10;
         }
         this.sleep(Integer.parseInt(waittime) * 1001l, downloadLink);
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, resume, maxchunks);

@@ -76,20 +76,17 @@ public class AudioMa extends PluginForHost {
     public void handleFree(final DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
         String dllink;
+        String apilink;
         if (downloadLink.getDownloadURL().matches(TYPE_API)) {
-            br.getPage(downloadLink.getDownloadURL());
-            dllink = br.getRegex("\"url\":\"(http[^<>\"]*?)\"").getMatch(0);
+            apilink = downloadLink.getDownloadURL();
         } else {
-            /* download */
-            dllink = br.getRegex("\"(http://music\\.audiomack\\.com/[^<>\"]*?)\"").getMatch(0);
-            /* stream */
-            if (dllink == null) {
-                dllink = br.getRegex("id=\"audiomack\\-embed\"[\t\n\r ]+src=\"(http://[^<>\"]*?)\"").getMatch(0);
-            }
-            if (dllink == null) {
-                dllink = br.getRegex("\"(http://music\\.audiomack\\.com/tracks/[a-z0-9\\-_]+/[^<>\"]*?)\"").getMatch(0);
+            apilink = br.getRegex("\"(http://(www\\.)?audiomack\\.com/api/[^<>\"]*?)\"").getMatch(0);
+            if (apilink == null) {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
         }
+        br.getPage(apilink);
+        dllink = br.getRegex("\"url\":\"(http[^<>\"]*?)\"").getMatch(0);
         if (dllink == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }

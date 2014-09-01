@@ -119,7 +119,6 @@ public class VKontakteRu extends PluginForDecrypt {
     protected DownloadLink createDownloadlink(String link) {
         DownloadLink ret = super.createDownloadlink(link);
         try {
-
             ret.setUrlProtection(org.jdownloader.controlling.UrlProtection.PROTECTED_INTERNAL_URL);
         } catch (Throwable e) {
             // jd09
