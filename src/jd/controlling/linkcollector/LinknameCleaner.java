@@ -6,9 +6,9 @@ import org.appwork.utils.Regex;
 import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
 
 public class LinknameCleaner {
-    public static final Pattern   pat0     = Pattern.compile("(.*)(\\.|_|-)pa?r?t?\\.?[0-9]+.(rar|exe)($|\\.html?)", Pattern.CASE_INSENSITIVE);
-    public static final Pattern   pat1     = Pattern.compile("(.*)(\\.|_|-)part\\.?[0]*[1].(rar|exe)($|\\.html?)", Pattern.CASE_INSENSITIVE);
-    public static final Pattern   pat3     = Pattern.compile("(.*)\\.rar($|\\.html?)", Pattern.CASE_INSENSITIVE);
+    public static final Pattern   pat0     = Pattern.compile("(.*)(\\.|_|-)pa?r?t?\\.?[0-9]+.(rar|rev|exe)($|\\.html?)", Pattern.CASE_INSENSITIVE);
+    public static final Pattern   pat1     = Pattern.compile("(.*)(\\.|_|-)part\\.?[0]*[1].(rar|rev|exe)($|\\.html?)", Pattern.CASE_INSENSITIVE);
+    public static final Pattern   pat3     = Pattern.compile("(.*)\\.(?:rar|rev)($|\\.html?)", Pattern.CASE_INSENSITIVE);
     public static final Pattern   pat4     = Pattern.compile("(.*)\\.r\\d+($|\\.html?)", Pattern.CASE_INSENSITIVE);
     public static final Pattern   pat5     = Pattern.compile("(.*)(\\.|_|-)\\d+($|\\.html?)", Pattern.CASE_INSENSITIVE);
     public static final Pattern[] rarPats  = new Pattern[] { pat0, pat1, pat3, pat4, pat5 };
@@ -43,7 +43,7 @@ public class LinknameCleaner {
 
     public static final Pattern   pat18    = Pattern.compile("(.*)\\.isz($|\\.html?)", Pattern.CASE_INSENSITIVE);
     public static final Pattern   pat19    = Pattern.compile("(.*)\\.i\\d{2}$", Pattern.CASE_INSENSITIVE);
-    public static final Pattern[] iszPats  = new Pattern[] { pat18, pat19 };                                                                    ;
+    public static final Pattern[] iszPats  = new Pattern[] { pat18, pat19 };                                                                        ;
 
     public static enum EXTENSION_SETTINGS {
         KEEP,
@@ -105,7 +105,7 @@ public class LinknameCleaner {
             if (extensionStilExists && ffsjPats != null) {
                 /**
                  * FFSJ splitted files
-                 * 
+                 *
                  * */
                 before = name;
                 for (Pattern Pat : ffsjPats) {
