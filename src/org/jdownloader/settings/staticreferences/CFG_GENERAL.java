@@ -123,6 +123,9 @@ public class CFG_GENERAL {
     // false
     public static final BooleanKeyHandler               DOWNLOAD_SPEED_LIMIT_ENABLED                                     = SH.getKeyHandler("DownloadSpeedLimitEnabled", BooleanKeyHandler.class);
     // true
+    public static final BooleanKeyHandler               DOWNLOAD_SPEED_LIMIT_REMEMBERED                                  = SH.getKeyHandler("DownloadSpeedLimitRememberedEnabled", BooleanKeyHandler.class);
+
+    // true
     /**
      * @see AutoStartCountdownSeconds
      **/

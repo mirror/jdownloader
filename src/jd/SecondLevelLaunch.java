@@ -230,9 +230,9 @@ public class SecondLevelLaunch {
          * previous implementation silently ignored such a situation. If the previous behavior is desired, you can use the new system
          * property, java.util.Arrays.useLegacyMergeSort, to restore previous mergesort behavior. Nature of Incompatibility: behavioral RFE:
          * http://bugs.sun.com/bugdatabase/view_bug.do?bug_id=6804124
-         * 
+         *
          * Sorting live data (values changing during sorting) violates the general contract
-         * 
+         *
          * java.lang.IllegalArgumentException: Comparison method violates its general contract!
          */
         System.setProperty("java.util.Arrays.useLegacyMergeSort", "true");
@@ -264,8 +264,8 @@ public class SecondLevelLaunch {
 
     /**
      * Lädt ein Dynamicplugin.
-     * 
-     * 
+     *
+     *
      * @throws IOException
      */
 
@@ -733,6 +733,10 @@ public class SecondLevelLaunch {
         // Disable silentmode on each session start
         if (CFG_SILENTMODE.AUTO_RESET_ON_STARTUP_ENABLED.isEnabled()) {
             CFG_SILENTMODE.MANUAL_ENABLED.setValue(false);
+        }
+        // reset speed limit enabled on start
+        if (!CFG_GENERAL.DOWNLOAD_SPEED_LIMIT_REMEMBERED.isEnabled()) {
+            CFG_GENERAL.DOWNLOAD_SPEED_LIMIT_ENABLED.setValue(false);
         }
         GUI_COMPLETE.executeWhenReached(new Runnable() {
 
