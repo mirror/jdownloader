@@ -442,7 +442,7 @@ public abstract class K2SApi extends PluginForHost {
         if (dl.getConnection().getContentType().contains("html")) {
             logger.warning("The final dllink seems not to be a file!");
             br.followConnection();
-            handleGeneralServerErrors(account);
+            handleGeneralServerErrors(account, downloadLink);
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         downloadLink.setProperty(directlinkproperty, dllink);
@@ -1014,7 +1014,32 @@ public abstract class K2SApi extends PluginForHost {
         }
     }
 
-    protected void handleGeneralServerErrors(final Account account) throws PluginException {
+    protected void handleGeneralServerErrors(final Account account, final DownloadLink downloadLink) throws PluginException {
+        final String alreadyDownloading = "Your current tariff doesn't allow to download more files then you are downloading now\\.";
+        if ((account == null || account.getBooleanProperty("free", false)) && br.containsHTML(alreadyDownloading)) {
+            // found from jdlog://4140408642041 also note: ISP seems to have transparent proxy!
+            // should only happen to free.
+            // We also only have 1 max free sim currently, if we go higher we need to track current transfers against
+            // connection_candidate(proxy|direct) IP address, and reduce max sim by one.
+            throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, alreadyDownloading, 10 * 60 * 1000);
+        } else if (dl.getConnection().getResponseCode() == 401) {
+            // we should never get this here because checkcheckDirectLink should pick it up.
+            // this happens when link is old, and site then prompts with basicauth which is under 401 header.
+            // ----------------Response------------------------
+            // HTTP/1.1 401 Unauthorized
+            // Server: nginx/1.4.6 (Ubuntu)
+            // Date: Fri, 29 Aug 2014 08:07:54 GMT
+            // Content-Type: text/plain
+            // Content-Length: 35
+            // Connection: close
+            // Www-Authenticate: Swift realm="AUTH_system"
+            downloadLink.setProperty(directlinkproperty, Property.NULL);
+            throw new PluginException(LinkStatus.ERROR_RETRY);
+        } else if (dl.getConnection().getResponseCode() == 404 || br.containsHTML(">Not Found<")) {
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 404", 30 * 60 * 1000l);
+        } else if (dl.getConnection().getResponseCode() == 503) {
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 503", 5 * 60 * 1000l);
+        }
     }
 
     @Override

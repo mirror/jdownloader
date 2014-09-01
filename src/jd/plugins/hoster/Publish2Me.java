@@ -47,6 +47,8 @@ import org.appwork.utils.formatter.TimeFormatter;
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "publish2.me" }, urls = { "https?://(www\\.)?publish2\\.me/file/[a-z0-9]{13,}/" }, flags = { 2 })
 public class Publish2Me extends K2SApi {
 
+    private final String MAINPAGE = "http://publish2.me";
+
     public Publish2Me(PluginWrapper wrapper) {
         super(wrapper);
         this.enablePremium(MAINPAGE + "/#premium");
@@ -269,7 +271,7 @@ public class Publish2Me extends K2SApi {
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, resumes, chunks);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
-            handleGeneralServerErrors(account);
+            handleGeneralServerErrors(account, downloadLink);
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         downloadLink.setProperty("directlink", dllink);
@@ -282,15 +284,6 @@ public class Publish2Me extends K2SApi {
             controlSlot(-1, account);
         }
     }
-
-    @Override
-    protected void handleGeneralServerErrors(final Account account) throws PluginException {
-        if (dl.getConnection().getResponseCode() == 401) {
-            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 401", 30 * 60 * 1000l);
-        }
-    }
-
-    private final String MAINPAGE = "http://publish2.me";
 
     @SuppressWarnings("unchecked")
     private void login(final Account account, final boolean force) throws Exception {
@@ -418,7 +411,7 @@ public class Publish2Me extends K2SApi {
                 if (dl.getConnection().getContentType().contains("html")) {
                     logger.warning("The final dllink seems not to be a file!");
                     br.followConnection();
-                    handleGeneralServerErrors(account);
+                    handleGeneralServerErrors(account, link);
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 }
                 // add download slot
