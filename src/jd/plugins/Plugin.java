@@ -85,6 +85,7 @@ public abstract class Plugin implements ActionListener {
         if (logger == null) {
             logger = LogController.TRASH;
         }
+        //
         this.logger = logger;
     }
 
