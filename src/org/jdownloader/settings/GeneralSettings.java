@@ -266,6 +266,11 @@ public interface GeneralSettings extends ConfigInterface {
     boolean isDownloadSpeedLimitEnabled();
 
     @AboutConfig
+    @DescriptionForConfigEntry("Remember Speed Limiter enabled/disabled setting after restart. Note: not associated with pause mode.")
+    @DefaultBooleanValue(true)
+    boolean isDownloadSpeedLimitRememberedEnabled();
+
+    @AboutConfig
     @DefaultBooleanValue(false)
     boolean isFilterRegex();
 
@@ -338,6 +343,8 @@ public interface GeneralSettings extends ConfigInterface {
     void setDownloadSpeedLimit(int bytes);
 
     void setDownloadSpeedLimitEnabled(boolean b);
+
+    void setDownloadSpeedLimitRememberedEnabled(boolean b);
 
     void setDownloadTempUnavailableRetryWaittime(long ms);
 
