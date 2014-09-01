@@ -93,16 +93,12 @@ public class UltraMegaBitCom extends PluginForHost {
         if (br.getURL().contains("uploadto.us/folder/add/")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        if (br.containsHTML(">File not found<|>File restricted<|>File not available")) {
-            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        }
-        // Deleted because of inactivity
-        if (br.containsHTML(">File has been deleted|>We\\'re sorry\\. This file has been deleted due to inactivity\\.<")) {
-            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        }
-        String filename = br.getRegex("<title>uploadto\\.us \\- ([^<>\"]*?)</title>").getMatch(0);
+        String filename = br.getRegex("<title>uploadto\\.us - ([^<>\"]*?)</title>").getMatch(0);
         if (filename == null) {
             filename = br.getRegex("<h4>(<img[^>]+>)?(.*?) \\(([^\\)]+)\\)</h4>").getMatch(1);
+        }
+        if (filename != null) {
+            link.setName(Encoding.htmlDecode(filename.trim()));
         }
         String filesize = br.getRegex("data-toggle=\"modal\">Download \\(([^<>\"]*?)\\) <span").getMatch(0);
         if (filesize == null) {
@@ -111,13 +107,20 @@ public class UltraMegaBitCom extends PluginForHost {
                 filesize = br.getRegex("<h4>(<img[^>]+>)?(.*?) \\(([^\\)]+)\\)</h4>").getMatch(2);
             }
         }
-
-        if (filename == null) {
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
-        link.setName(Encoding.htmlDecode(filename.trim()));
         if (filesize != null) {
             link.setDownloadSize(SizeFormatter.getSize(filesize));
+        }
+        // place offline content here, can contain filenames/filesize this is useful to users.
+        if (br.containsHTML(">File not found<|>File restricted<|>File not available")) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
+        // Deleted because of inactivity
+        if (br.containsHTML(">File has been deleted|>We're sorry\\. This file has been deleted due to inactivity\\.<")) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
+        // now throw ERROR_PLUGIN_DEFECT
+        if (filename == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         return AvailableStatus.TRUE;
     }
@@ -125,10 +128,10 @@ public class UltraMegaBitCom extends PluginForHost {
     @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
-        doFree(downloadLink);
+        doFree(downloadLink, null);
     }
 
-    public void doFree(final DownloadLink downloadLink) throws Exception, PluginException {
+    public void doFree(final DownloadLink downloadLink, final Account account) throws Exception, PluginException {
         final long timeBefore = System.currentTimeMillis();
         if (br.containsHTML(">Premium members only<|The owner of this file has decided to only allow premium members to download it")) {
             try {
@@ -172,6 +175,7 @@ public class UltraMegaBitCom extends PluginForHost {
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
             handleServerError();
+            handleErrors(account);
             if (br.containsHTML(">Download limit exceeded<|<div id=\"file_delay_carousel\"")) {
                 throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 60 * 60 * 1001l);
             } else if (br.containsHTML("guests are only able to download 1 file every")) {
@@ -217,6 +221,19 @@ public class UltraMegaBitCom extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 500");
         } else if (br.containsHTML("<b>Fatal error</b>:|<h4>A PHP Error was encountered</h4>")) {
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Fatal server error");
+        }
+    }
+
+    /**
+     * Shared errors handling method between free and premium
+     *
+     * @param account
+     * @throws PluginException
+     */
+    private void handleErrors(final Account account) throws PluginException {
+        // some reason this shows up for accounts also... go figure they lock useage ip
+        if (br.containsHTML("<h4>File access denied by file owner</h4>") && (br.containsHTML("<p>We're sorry\\. This owner of this file has imposed additional access limitations to his original content") || br.containsHTML("\\s*You have exceeded the number of downloads this file owner allows from a single IP in 24 hours\\.<"))) {
+            throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 60 * 60 * 1001l);
         }
     }
 
@@ -391,7 +408,7 @@ public class UltraMegaBitCom extends PluginForHost {
         login(account, true);
         if (account.getBooleanProperty("free", false)) {
             br.getPage(link.getDownloadURL());
-            doFree(link);
+            doFree(link, account);
         } else {
             final String token = br.getCookie(MAINPAGE, "csrf_cookie");
             if (token == null) {
@@ -408,6 +425,7 @@ public class UltraMegaBitCom extends PluginForHost {
                 logger.warning("The final dllink seems not to be a file!");
                 br.followConnection();
                 handleServerError();
+                handleErrors(account);
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
 
             }
