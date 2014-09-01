@@ -53,14 +53,10 @@ public class AllDebridCom extends PluginForHost {
     public AccountInfo fetchAccountInfo(Account account) throws Exception {
         HashMap<String, String> accDetails = new HashMap<String, String>();
         AccountInfo ac = new AccountInfo();
-        br.setConnectTimeout(60 * 1000);
-        br.setReadTimeout(60 * 1000);
-        String username = Encoding.urlEncode(account.getUser());
-        String pass = Encoding.urlEncode(account.getPass());
         String page = null;
         String hosts = null;
         try {
-            page = br.getPage("http://www.alldebrid.com/api.php?action=info_user&login=" + username + "&pw=" + pass);
+            page = br.getPage("http://www.alldebrid.com/api.php?action=info_user&login=" + Encoding.urlEncode(account.getUser()) + "&pw=" + Encoding.urlEncode(account.getPass()));
             hosts = br.getPage("http://www.alldebrid.com/api.php?action=get_host");
         } catch (Exception e) {
             account.setTempDisabled(true);
@@ -160,6 +156,11 @@ public class AllDebridCom extends PluginForHost {
     }
 
     @Override
+    public int getMaxSimultanPremiumDownloadNum() {
+        return 0;
+    }
+
+    @Override
     public void handleFree(final DownloadLink link) throws Exception, PluginException {
         showMessage(link, "Task 1: Check URL validity!");
         requestFileInformation(link);
@@ -193,7 +194,7 @@ public class AllDebridCom extends PluginForHost {
             }
             if (!isDirectLink(link)) {
                 /* unknown error */
-                logger.severe("AllDebrid(Error): " + br.toString());
+                logger.severe("AllDebrid(Error): Unknown Error");
                 // disable hoster for 5min
                 tempUnavailableHoster(acc, link, 5 * 60 * 1000l);
             } else {
@@ -228,13 +229,10 @@ public class AllDebridCom extends PluginForHost {
 
     /** no override to keep plugin compatible to old stable */
     public void handleMultiHost(final DownloadLink link, final Account acc) throws Exception {
-        String user = Encoding.urlEncode(acc.getUser());
-        String pw = Encoding.urlEncode(acc.getPass());
-        String url = Encoding.urlEncode(link.getDownloadURL());
         showMessage(link, "Phase 1/2: Generating link");
 
         // here we can get a 503 error page, which causes an exception
-        String genlink = br.getPage("http://www.alldebrid.com/service.php?pseudo=" + user + "&password=" + pw + "&link=" + url + "&view=1");
+        String genlink = br.getPage("http://www.alldebrid.com/service.php?pseudo=" + Encoding.urlEncode(acc.getUser()) + "&password=" + Encoding.urlEncode(acc.getPass()) + "&link=" + Encoding.urlEncode(link.getDownloadURL()) + "&view=1");
 
         if (!genlink.startsWith("http://")) {
             logger.severe("AllDebrid(Error): " + genlink);
@@ -262,7 +260,7 @@ public class AllDebridCom extends PluginForHost {
             String msg = "(" + link.getLinkStatus().getRetryCount() + 1 + "/" + 3 + ")";
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Retry in few secs" + msg, 20 * 1000l);
         }
-        handleDL(acc, link, link.getDownloadURL());
+        handleDL(acc, link, genlink);
     }
 
     @Override
