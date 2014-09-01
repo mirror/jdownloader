@@ -437,19 +437,17 @@ public class SoundCloudComDecrypter extends PluginForDecrypt {
             for (final String item : items) {
                 DownloadLink dl = null;
                 final String type = getXML("type", br.toString());
+                final String permalink_url = getXML("permalink-url", item);
                 final String url = getXML("permalink", item);
-                if (url == null || type == null) {
+                if (type == null || permalink_url == null || url == null) {
                     logger.warning("Decrypter broken for link: " + parameter);
                     throw new DecrypterException("null");
                 }
                 if (type.equals("playlist")) {
                     dl = createDownloadlink("https://soundcloud.com/" + url_username + "/sets/" + url);
                 } else {
-                    if (parameter.endsWith("/")) {
-                        dl = createDownloadlink(parameter.replace("soundcloud.com/", "soundclouddecrypted.com/") + url);
-                    } else {
-                        dl = createDownloadlink(parameter.replace("soundcloud.com/", "soundclouddecrypted.com/") + "/" + url);
-                    }
+                    final String track_url = permalink_url.replace("http://", "https://").replace("soundcloud.com", "soundclouddecrypted.com") + "/" + url;
+                    dl = createDownloadlink(track_url);
                     dl = setDlData(dl, item);
                     get500Thumbnail(dl, item);
                     getOriginalThumbnail(dl, item);

@@ -20,6 +20,7 @@ import java.util.ArrayList;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
+import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
@@ -41,26 +42,43 @@ public class NewGrndsCom extends PluginForDecrypt {
         br.getPage(parameter);
         boolean directhttp = false;
         String finallink = null;
+        String finalfilename = null;
         if (parameter.matches(ARTLINK)) {
             finallink = br.getRegex("id=\"blackout_center\">[\t\n\r ]+<img src=\"(http://[^<>\"]*?)\"").getMatch(0);
             directhttp = true;
         } else {
             if (parameter.contains("/audio/listen/")) {
-                finallink = "http://www.newgrounds.com/audio/download/" + new Regex(parameter, "(\\d+)$").getMatch(0);
+                final String fid = new Regex(parameter, "(\\d+)$").getMatch(0);
+                finalfilename = br.getRegex("property=\"og:title\" content=\"([^<>\"]*?)\"").getMatch(0);
+                if (finalfilename != null) {
+                    finalfilename = Encoding.htmlDecode(finalfilename).trim() + "_" + fid + ".mp3";
+                }
+                finallink = "http://www.newgrounds.com/audio/download/" + fid;
                 directhttp = true;
             } else {
                 finallink = br.getRegex("\"src\":[\t\n\r ]+\"(http:[^<>\"]*?)\"").getMatch(0);
                 // Maybe video or .swf
-                if (finallink == null) finallink = br.getRegex("\"url\":\"(http:[^<>\"]*?)\"").getMatch(0);
-                if (finallink != null) finallink = finallink.replace("\\", "");
+                if (finallink == null) {
+                    finallink = br.getRegex("\"url\":\"(http:[^<>\"]*?)\"").getMatch(0);
+                }
+                if (finallink != null) {
+                    finallink = finallink.replace("\\", "");
+                }
             }
         }
         if (finallink == null) {
             logger.warning("Decrypter broken for link: " + parameter);
             return null;
         }
-        if (directhttp) finallink = "directhttp://" + finallink;
-        decryptedLinks.add(createDownloadlink(finallink));
+        if (directhttp) {
+            finallink = "directhttp://" + finallink;
+        }
+        final DownloadLink dl = createDownloadlink(finallink);
+        if (finalfilename != null) {
+            finalfilename = Encoding.htmlDecode(finalfilename).trim();
+            dl.setFinalFileName(finalfilename);
+        }
+        decryptedLinks.add(dl);
 
         return decryptedLinks;
     }

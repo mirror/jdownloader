@@ -91,7 +91,6 @@ public class VKontakteRuHoster extends PluginForHost {
     public ArrayList<DownloadLink> getDownloadLinks(String data, FilePackage fp) {
         ArrayList<DownloadLink> ret = super.getDownloadLinks(data, fp);
         try {
-
             org.jdownloader.controlling.UrlProtection.PROTECTED_INTERNAL_URL.setTo(ret);
         } catch (Throwable e) {
             // jd09

@@ -74,11 +74,7 @@ public class FlickrCom extends PluginForDecrypt {
         br.setCookie(MAINPAGE, "localization", "en-us%3Bus%3Bde");
         br.setCookie(MAINPAGE, "fldetectedlang", "en-us");
 
-        String parameter = Encoding.htmlDecode(param.toString()).replace("http://", "https://");
-        final String remove_string = new Regex(parameter, "(/player/.+)").getMatch(0);
-        if (remove_string != null) {
-            parameter = parameter.replace(remove_string, "");
-        }
+        final String parameter = correctParameter(param.toString());
 
         int lastPage = 1;
         /* Check if link is for hosterplugin */
@@ -311,6 +307,20 @@ public class FlickrCom extends PluginForDecrypt {
             fp.addLinks(decryptedLinks);
         }
         return decryptedLinks;
+    }
+
+    /** Corrects links added by the user */
+    private String correctParameter(String parameter) {
+        parameter = Encoding.htmlDecode(parameter).replace("http://", "https://");
+        String remove_string = new Regex(parameter, "(/player/.+)").getMatch(0);
+        if (remove_string != null) {
+            parameter = parameter.replace(remove_string, "");
+        }
+        if (parameter.matches(PHOTOLINK)) {
+            remove_string = new Regex(parameter, "(/sizes/.+)").getMatch(0);
+            parameter = parameter.replace(remove_string, "");
+        }
+        return parameter;
     }
 
     private void getPage(final String url) throws IOException {
