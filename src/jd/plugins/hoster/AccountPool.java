@@ -229,8 +229,11 @@ public class AccountPool extends PluginForHost {
 
         // Try to get error message from the API
         String errorMessage = null;
-        if (response != null) {
-            errorMessage = (String) ((JSonValue) response.getData().get("error")).getValue();
+        if (response.getData() != null) {
+            JSonValue errorMessageValue = (JSonValue) response.getData().get("error");
+            if (errorMessageValue != null) {
+                errorMessage = (String) errorMessageValue.getValue();
+            }
         }
 
         // Get default error message if API didn't return one
@@ -261,7 +264,7 @@ public class AccountPool extends PluginForHost {
 
         // Try to get the delay from the API
         int delay = -1;
-        if (response != null) {
+        if (response.getData() != null) {
             JSonObject instructions = (JSonObject) response.getData().get("instructions");
             if (instructions != null) {
                 JSonValue delayJsonValue = (JSonValue) instructions.get("delay");
@@ -411,6 +414,10 @@ public class AccountPool extends PluginForHost {
 
         public JSonObject getData() {
             return this.data;
+        }
+
+        public boolean isError() {
+            return this.getResponseCode() != 200;
         }
     }
 
