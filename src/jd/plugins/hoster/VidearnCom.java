@@ -55,7 +55,9 @@ public class VidearnCom extends PluginForHost {
         setBrowserExclusive();
         final String dllink = downloadLink.getDownloadURL();
         br.getPage(dllink);
-        if (!br.containsHTML("\\w+")) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
+        if (!br.containsHTML("\\w+")) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
         String filename = br.getRegex("<h3 class=\"page\\-title\"><strong>(.*?)</strong></h3>").getMatch(0);
         if (filename == null) {
             filename = br.getRegex("<title>Video \\- (.*?)</title>").getMatch(0);
@@ -63,7 +65,9 @@ public class VidearnCom extends PluginForHost {
                 filename = dllink.substring(dllink.lastIndexOf("/"));
             }
         }
-        if (filename == null) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
+        if (filename == null) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
         downloadLink.setName(Encoding.htmlDecode(filename.trim()) + ".flv");
         return AvailableStatus.TRUE;
     }
@@ -77,6 +81,9 @@ public class VidearnCom extends PluginForHost {
         if (playpath == null && url == null) {
             /* videarn now also supports download of the flv stream */
             String directURL = br.getRegex("player\\.swf.*?file: \"(http://.*?)\"").getMatch(0);
+            if (directURL == null) {
+                directURL = br.getRegex("file:\"(http://[^<>\"]*?)\"").getMatch(0);
+            }
             if (directURL != null) {
                 dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, directURL, true, 0);
                 if (dl.getConnection().getContentType() != null && dl.getConnection().getContentType().contains("text")) {
@@ -87,14 +94,20 @@ public class VidearnCom extends PluginForHost {
                 return;
             }
         }
-        if (playpath == null || url == null) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
-        if (oldStyle()) throw new PluginException(LinkStatus.ERROR_FATAL, "This host only works in the JDownloader 2 BETA version.");
+        if (playpath == null || url == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        if (oldStyle()) {
+            throw new PluginException(LinkStatus.ERROR_FATAL, "This host only works in the JDownloader 2 BETA version.");
+        }
         dl = new RTMPDownload(this, downloadLink, url + playpath);
         final jd.network.rtmp.url.RtmpUrlConnection rtmp = ((RTMPDownload) dl).getRtmpConnection();
 
         final String host = url.substring(0, url.lastIndexOf("lb/"));
         final String app = "videarn";
-        if (host == null || app == null) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
+        if (host == null || app == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
 
         rtmp.setResume(false); // Must be set on false
         rtmp.setPlayPath(playpath);
@@ -112,7 +125,9 @@ public class VidearnCom extends PluginForHost {
             prev = prev.replaceAll(",|\\.", "");
         }
         int rev = Integer.parseInt(prev);
-        if (rev < 14000) return true;
+        if (rev < 14000) {
+            return true;
+        }
         return false;
     }
 

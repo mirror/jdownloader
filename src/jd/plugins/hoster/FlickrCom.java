@@ -59,7 +59,7 @@ public class FlickrCom extends PluginForHost {
     private static final String MAINPAGE  = "http://flickr.com";
     private static final String intl      = "us";
     private static final String lang_post = "en-US";
-    private static final String api_key   = "44044129d5965db8c39819e54274917b";
+    private static final String api_key   = "a9823cb30086af802708b39e005668d0";
 
     public void correctDownloadLink(DownloadLink link) {
         link.setUrlDownload("https://www.flickr.com/" + new Regex(link.getDownloadURL(), "\\.com/(.+)").getMatch(0));
