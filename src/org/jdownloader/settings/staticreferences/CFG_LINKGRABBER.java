@@ -63,10 +63,6 @@ public class CFG_LINKGRABBER {
 
     public static final ObjectKeyHandler                    PACKAGE_NAME_HISTORY                                     = SH.getKeyHandler("PackageNameHistory", ObjectKeyHandler.class);
 
-    public static final BooleanKeyHandler                   PACKAGE_NAME_TO_LOWER_CASE                               = SH.getKeyHandler("PackageNameToLowerCaseEnabled", BooleanKeyHandler.class);
-
-    public static final BooleanKeyHandler                   FILENAME_TO_LOWER_CASE                                   = SH.getKeyHandler("FileNameToLowerCaseEnabled", BooleanKeyHandler.class);
-
     /**
      * If true, Plugins will try to correct filenames to match to others. For example in splitted archives.
      **/

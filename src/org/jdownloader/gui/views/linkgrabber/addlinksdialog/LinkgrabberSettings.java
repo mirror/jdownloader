@@ -104,20 +104,6 @@ public interface LinkgrabberSettings extends ConfigInterface {
     void setContextMenuAddLinksActionAlwaysVisible(boolean b);
 
     @AboutConfig
-    @DefaultBooleanValue(false)
-    @DescriptionForConfigEntry("If true, Packagenames will renamed to lowercase.")
-    boolean isPackageNameToLowerCaseEnabled();
-
-    void setPackageNameToLowerCaseEnabled(boolean b);
-
-    @AboutConfig
-    @DefaultBooleanValue(false)
-    @DescriptionForConfigEntry("If true, Filenames will renamed to lowercase.")
-    boolean isFileNameToLowerCaseEnabled();
-
-    void setFileNameToLowerCaseEnabled(boolean b);
-
-    @AboutConfig
     @DefaultBooleanValue(true)
     @DescriptionForConfigEntry("If true, Offline Links, that do not fit in a existing package, will be moved to a offline package.")
     boolean isOfflinePackageEnabled();

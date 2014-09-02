@@ -779,12 +779,12 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
                         PackageInfo dpi = link.getDesiredPackageInfo();
                         UniqueAlltimeID uID = null;
 
-                        String packageName = null;
-                        String packageID = null;
+                        String crawledPackageName = null;
+                        String crawledPackageID = null;
                         String downloadFolder = null;
                         boolean ignoreSpecialPackages = dpi != null && (dpi.isPackagizerRuleMatched() || dpi.isIgnoreVarious());
                         if (dpi != null) {
-                            packageName = dpi.getName();
+                            crawledPackageName = dpi.getName();
                             downloadFolder = dpi.getDestinationFolder();
                             if (downloadFolder != null) {
                                 downloadFolder = downloadFolder.replaceFirst("/$", "");
@@ -798,51 +798,49 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
                                 }
                             }
                             if ((uID = dpi.getUniqueId()) != null) {
-                                packageID = dpi.getUniqueId().toString();
+                                crawledPackageID = dpi.getUniqueId().toString();
                                 if (ignoreSpecialPackages && LinkCrawler.PERMANENT_OFFLINE_ID == uID) {
-                                    packageID = null;
+                                    crawledPackageID = null;
                                 }
                             }
                         }
-                        if (packageName == null) {
+                        if (crawledPackageName == null) {
                             final DownloadLink dlLink = link.getDownloadLink();
                             if (link.isNameSet() || dlLink.isNameSet()) {
-                                packageName = link.getName();
+                                crawledPackageName = link.getName();
                             } else {
                                 final String name = link.getName();
                                 final String extension = Files.getExtension(name);
                                 if (extension != null) {
-                                    packageName = name;
+                                    crawledPackageName = name;
                                 }
                             }
-                            if (packageName != null) {
-                                packageName = LinknameCleaner.cleanFileName(packageName, false, false, LinknameCleaner.EXTENSION_SETTINGS.REMOVE_ALL, true);
+                            if (crawledPackageName != null) {
+                                crawledPackageName = LinknameCleaner.cleanFileName(crawledPackageName, false, false, LinknameCleaner.EXTENSION_SETTINGS.REMOVE_ALL, true);
                             }
                         }
-                        if (packageName == null) {
+                        if (crawledPackageName == null) {
                             final CrawledLinkFactory clf = new CrawledLinkFactory(link);
                             final ExtractionExtension lArchiver = archiver;
                             if (lArchiver != null && org.jdownloader.settings.staticreferences.CFG_LINKGRABBER.ARCHIVE_PACKAGIZER_ENABLED.getValue()) {
                                 if (lArchiver.isMultiPartArchive(clf)) {
-                                    if (packageID == null) {
-                                        packageID = lArchiver.createArchiveID(clf);
+                                    if (crawledPackageID == null) {
+                                        crawledPackageID = lArchiver.createArchiveID(clf);
                                     }
-                                    if (packageName == null) {
-                                        packageName = _JDT._.LinkCollector_archiv(LinknameCleaner.cleanFileName(lArchiver.getArchiveName(clf), false, true, LinknameCleaner.EXTENSION_SETTINGS.REMOVE_KNOWN, true));
+                                    if (crawledPackageName == null) {
+                                        crawledPackageName = _JDT._.LinkCollector_archiv(LinknameCleaner.cleanFileName(lArchiver.getArchiveName(clf), false, true, LinknameCleaner.EXTENSION_SETTINGS.REMOVE_KNOWN, true));
                                     }
                                 }
                             }
                         }
-                        if (CFG_LINKGRABBER.PACKAGE_NAME_TO_LOWER_CASE.isEnabled()) {
-                            if (packageName != null) {
-                                packageName = packageName.toLowerCase(Locale.ENGLISH);
-                            }
+                        if (CrossSystem.isWindows()) {
                             if (downloadFolder != null) {
                                 downloadFolder = downloadFolder.toLowerCase(Locale.ENGLISH);
                             }
                         }
-                        final CrawledPackageMappingID crawledPackageMapID = new CrawledPackageMappingID(packageID, (packageName != null ? packageName.toLowerCase(Locale.ENGLISH) : packageName), (downloadFolder != null ? downloadFolder.toLowerCase(Locale.ENGLISH) : downloadFolder));
-                        String newPackageName = packageName;
+                        final CrawledPackageMappingID crawledPackageMapID = new CrawledPackageMappingID(crawledPackageID, crawledPackageName, downloadFolder);
+
+                        String newPackageName = crawledPackageName;
                         if (newPackageName == null) {
                             newPackageName = link.getName();
                             if (newPackageName != null) {
@@ -1086,9 +1084,9 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
 
     /*
      * converts a CrawledPackage into a FilePackage
-     *
+     * 
      * if plinks is not set, then the original children of the CrawledPackage will get added to the FilePackage
-     *
+     * 
      * if plinks is set, then only plinks will get added to the FilePackage
      */
     private FilePackage createFilePackage(final CrawledPackage pkg, java.util.List<CrawledLink> plinks) {
@@ -1686,7 +1684,7 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
 
     /**
      * saves List of CrawledPackages to given File as ZippedJSon
-     *
+     * 
      * @param packages
      * @param file
      */
@@ -1993,7 +1991,7 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
         /* add the converted FilePackages to DownloadController */
         /**
          * addTop = 0, to insert the packages at the top
-         *
+         * 
          * addBottom = negative number -> add at the end
          */
         DownloadController.getInstance().addAllAt(filePackagesToAdd, addTop ? 0 : -(filePackagesToAdd.size() + 10));
