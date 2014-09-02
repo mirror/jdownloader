@@ -18,7 +18,6 @@ import org.appwork.utils.os.CrossSystem;
 import org.jdownloader.controlling.Priority;
 import org.jdownloader.controlling.UniqueAlltimeID;
 import org.jdownloader.controlling.packagizer.PackagizerController;
-import org.jdownloader.gui.views.linkgrabber.addlinksdialog.LinkgrabberSettings;
 import org.jdownloader.settings.GeneralSettings;
 import org.jdownloader.settings.staticreferences.CFG_LINKCOLLECTOR;
 
@@ -95,8 +94,6 @@ public class CrawledPackage implements AbstractPackageNode<CrawledLink, CrawledP
     }
 
     private static final GeneralSettings                   GENERALSETTINGS        = JsonConfig.create(GeneralSettings.class);
-
-    private static final LinkgrabberSettings               LINKGRABBERSETTINGS    = JsonConfig.create(LinkgrabberSettings.class);
 
     private List<CrawledLink>                              children;
     private String                                         comment                = null;

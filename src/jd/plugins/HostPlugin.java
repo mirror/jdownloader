@@ -25,9 +25,8 @@ import java.lang.annotation.Target;
 @Target(value = ElementType.TYPE)
 public @interface HostPlugin {
     /**
-     * Current Interface Version id for the hostplugin interface. Increase this
-     * id if you changed the host plugin's interface. This will mark plugins
-     * that do not fit as outdated.
+     * Current Interface Version id for the hostplugin interface. Increase this id if you changed the host plugin's interface. This will
+     * mark plugins that do not fit as outdated.
      */
     int INTERFACE_VERSION = 2;
 
@@ -50,8 +49,7 @@ public @interface HostPlugin {
     String[] urls();
 
     /**
-     * A list of Pluginflags. For most plugins the flag 0 is ok. Use
-     * PluginWrapper.*** FLAGS for special cases
+     * A list of Pluginflags. For most plugins the flag 0 is ok. Use PluginWrapper.*** FLAGS for special cases
      * 
      * Take care that names, urls and flags ALWAYS have to have the same length.
      * 
@@ -61,8 +59,7 @@ public @interface HostPlugin {
     int[] flags();
 
     /**
-     * A Plugins interface always has to have the same value as
-     * HostPlugin.INTERFACE_VERSION . This value is used to filter out outdated
+     * A Plugins interface always has to have the same value as HostPlugin.INTERFACE_VERSION . This value is used to filter out outdated
      * plugins if the plugin interface has changed.
      * 
      * @return
@@ -70,8 +67,7 @@ public @interface HostPlugin {
     int interfaceVersion();
 
     /**
-     * The Revision is autoset by SVN. always is revision="$Revision$" and to
-     * not forget to ste the svn keyword svn:keywords to Revision
+     * The Revision is autoset by SVN. always is revision="$Revision$" and to not forget to ste the svn keyword svn:keywords to Revision
      * 
      * @return
      */
