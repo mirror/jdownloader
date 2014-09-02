@@ -44,7 +44,6 @@ import jd.plugins.FilePackage;
 import jd.plugins.FilePackageProperty;
 import jd.plugins.FilePackageView;
 import jd.plugins.LinkStatus;
-import jd.plugins.LinkStatusProperty;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.PluginProgress;
@@ -602,10 +601,6 @@ public class SingleDownloadController extends BrowserSettingsThread implements D
 
     @Override
     public void onDownloadControllerUpdatedData(FilePackage pkg, FilePackageProperty property) {
-    }
-
-    @Override
-    public void onDownloadControllerUpdatedData(DownloadLink downloadlink, LinkStatusProperty property) {
     }
 
     @Override

@@ -206,87 +206,7 @@ public class DownloadsAPIV2Impl implements DownloadsAPIV2 {
         for (int i = startWith; i < Math.min(startWith + maxResults, links.size()); i++) {
 
             DownloadLink dl = links.get(i);
-            DownloadLinkAPIStorableV2 dls = new DownloadLinkAPIStorableV2(dl);
-            if (queryParams.isPriority()) {
-                dls.setPriority(org.jdownloader.myjdownloader.client.bindings.PriorityStorable.valueOf(dl.getPriorityEnum().name()));
-            }
-            if (queryParams.isHost()) {
-                dls.setHost(dl.getHost());
-            }
-            if (queryParams.isBytesTotal()) {
-                dls.setBytesTotal(dl.getView().getBytesTotalEstimated());
-            }
-            if (queryParams.isStatus()) {
-                setStatus(dls, dl);
-
-                // if (value instanceof DownloadLink)
-
-                // } else {
-                // FilePackage fp = (FilePackage) value;
-                // FilePackageView view = fp.getView();
-                //
-                // PluginStateCollection ps = view.getPluginStates();
-                // if (ps.size() > 0) {
-                // icon = ps.getMergedIcon();
-                // label = ps.isMultiline() ? "" : ps.getText();
-                //
-                // tooltip = ps.getText();
-                // return;
-                // }
-                // if (view.isFinished()) {
-                // icon = trueIcon;
-                // label = finishedText;
-                // tooltip = null;
-                // return;
-                // } else if (view.getETA() != -1) {
-                // icon = null;
-                // label = runningText;
-                // tooltip = null;
-                // return;
-                // }
-                // tooltip = null;
-                // icon = null;
-                // label = "";
-                //
-                // }
-            }
-            if (queryParams.isBytesLoaded()) {
-                dls.setBytesLoaded(dl.getView().getBytesLoaded());
-            }
-            if (queryParams.isSpeed()) {
-                dls.setSpeed(dl.getView().getSpeedBps());
-            }
-            if (queryParams.isEta()) {
-                PluginProgress plg = dl.getPluginProgress();
-                if (plg != null) {
-                    dls.setEta(plg.getETA());
-                } else {
-                    dls.setEta(-1l);
-                }
-            }
-            if (queryParams.isFinished()) {
-                dls.setFinished((FinalLinkState.CheckFinished(dl.getFinalLinkState())));
-            }
-
-            if (queryParams.isRunning()) {
-                dls.setRunning(dl.getDownloadLinkController() != null);
-            }
-            if (queryParams.isSkipped()) {
-                dls.setSkipped(dl.isSkipped());
-            }
-            if (queryParams.isUrl()) {
-                dls.setUrl(dl.getBrowserUrl());
-            }
-            if (queryParams.isEnabled()) {
-                dls.setEnabled(dl.isEnabled());
-            }
-            if (queryParams.isExtractionStatus()) {
-                if (dl.getExtractionStatus() != null) {
-                    dls.setExtractionStatus(dl.getExtractionStatus().toString());
-                }
-            }
-
-            dls.setPackageUUID(dl.getParentNode().getUniqueID().getID());
+            DownloadLinkAPIStorableV2 dls = toStorable(queryParams, dl, this);
 
             result.add(dls);
         }
@@ -294,45 +214,131 @@ public class DownloadsAPIV2Impl implements DownloadsAPIV2 {
         return result;
     }
 
-    private void setStatus(DownloadLinkAPIStorableV2 dls, DownloadLink link) {
+    public static DownloadLinkAPIStorableV2 toStorable(LinkQueryStorable queryParams, DownloadLink dl, Object caller) {
+        DownloadLinkAPIStorableV2 dls = new DownloadLinkAPIStorableV2(dl);
+        if (queryParams.isPriority()) {
+            dls.setPriority(org.jdownloader.myjdownloader.client.bindings.PriorityStorable.valueOf(dl.getPriorityEnum().name()));
+        }
+        if (queryParams.isHost()) {
+            dls.setHost(dl.getHost());
+        }
+        if (queryParams.isBytesTotal()) {
+            dls.setBytesTotal(dl.getView().getBytesTotalEstimated());
+        }
+
+        if (queryParams.isStatus()) {
+            setStatus(dls, dl, caller);
+
+            // if (value instanceof DownloadLink)
+
+            // } else {
+            // FilePackage fp = (FilePackage) value;
+            // FilePackageView view = fp.getView();
+            //
+            // PluginStateCollection ps = view.getPluginStates();
+            // if (ps.size() > 0) {
+            // icon = ps.getMergedIcon();
+            // label = ps.isMultiline() ? "" : ps.getText();
+            //
+            // tooltip = ps.getText();
+            // return;
+            // }
+            // if (view.isFinished()) {
+            // icon = trueIcon;
+            // label = finishedText;
+            // tooltip = null;
+            // return;
+            // } else if (view.getETA() != -1) {
+            // icon = null;
+            // label = runningText;
+            // tooltip = null;
+            // return;
+            // }
+            // tooltip = null;
+            // icon = null;
+            // label = "";
+            //
+            // }
+        }
+        if (queryParams.isBytesLoaded()) {
+            dls.setBytesLoaded(dl.getView().getBytesLoaded());
+        }
+        if (queryParams.isSpeed()) {
+            dls.setSpeed(dl.getView().getSpeedBps());
+        }
+        if (queryParams.isEta()) {
+            PluginProgress plg = dl.getPluginProgress();
+            if (plg != null) {
+                dls.setEta(plg.getETA());
+            } else {
+                dls.setEta(-1l);
+            }
+        }
+        if (queryParams.isFinished()) {
+            dls.setFinished((FinalLinkState.CheckFinished(dl.getFinalLinkState())));
+        }
+
+        if (queryParams.isRunning()) {
+            dls.setRunning(dl.getDownloadLinkController() != null);
+        }
+        if (queryParams.isSkipped()) {
+            dls.setSkipped(dl.isSkipped());
+        }
+        if (queryParams.isUrl()) {
+            dls.setUrl(dl.getView().getDownloadUrl());
+        }
+        if (queryParams.isEnabled()) {
+            dls.setEnabled(dl.isEnabled());
+        }
+        if (queryParams.isExtractionStatus()) {
+            if (dl.getExtractionStatus() != null) {
+                dls.setExtractionStatus(dl.getExtractionStatus().toString());
+            }
+        }
+
+        dls.setPackageUUID(dl.getParentNode().getUniqueID().getID());
+        return dls;
+    }
+
+    public static DownloadLinkAPIStorableV2 setStatus(DownloadLinkAPIStorableV2 dls, DownloadLink link, Object caller) {
         Icon icon = null;
         String label = null;
         PluginProgress prog = link.getPluginProgress();
         if (prog != null) {
-            icon = prog.getIcon(this);
-            label = prog.getMessage(this);
+            icon = prog.getIcon(caller);
+            label = prog.getMessage(caller);
             if (icon != null) {
                 dls.setStatusIconKey(RemoteAPIController.getInstance().getContentAPI().getIconKey(icon));
             }
             dls.setStatus(label);
-            return;
+            return dls;
         }
 
         ConditionalSkipReason conditionalSkipReason = link.getConditionalSkipReason();
         if (conditionalSkipReason != null && !conditionalSkipReason.isConditionReached()) {
-            icon = conditionalSkipReason.getIcon(this, null);
-            label = conditionalSkipReason.getMessage(this, null);
+            icon = conditionalSkipReason.getIcon(caller, null);
+            label = conditionalSkipReason.getMessage(caller, null);
             dls.setStatusIconKey(RemoteAPIController.getInstance().getContentAPI().getIconKey(icon));
             dls.setStatus(label);
-            return;
+            return dls;
         }
         SkipReason skipReason = link.getSkipReason();
         if (skipReason != null) {
 
-            icon = skipReason.getIcon(this, 18);
-            label = skipReason.getExplanation(this);
+            icon = skipReason.getIcon(caller, 18);
+            label = skipReason.getExplanation(caller);
             dls.setStatusIconKey(RemoteAPIController.getInstance().getContentAPI().getIconKey(icon));
             dls.setStatus(label);
-            return;
+            return dls;
         }
         final FinalLinkState finalLinkState = link.getFinalLinkState();
         if (finalLinkState != null) {
             if (FinalLinkState.CheckFailed(finalLinkState)) {
 
-                label = finalLinkState.getExplanation(this, link);
+                label = finalLinkState.getExplanation(caller, link);
                 dls.setStatusIconKey(IconKey.ICON_FALSE);
                 dls.setStatus(label);
-                return;
+                return dls;
             }
             ExtractionStatus extractionStatus = link.getExtractionStatus();
             if (extractionStatus != null) {
@@ -346,20 +352,20 @@ public class DownloadsAPIV2Impl implements DownloadsAPIV2 {
                     label = extractionStatus.getExplanation();
                     dls.setStatusIconKey(IconKey.ICON_EXTRACTION_TRUE_FAILED);
                     dls.setStatus(label);
-                    return;
+                    return dls;
                 case SUCCESSFUL:
 
                     label = extractionStatus.getExplanation();
                     dls.setStatusIconKey(IconKey.ICON_EXTRACTION_TRUE);
 
                     dls.setStatus(label);
-                    return;
+                    return dls;
                 case RUNNING:
 
                     label = extractionStatus.getExplanation();
                     dls.setStatusIconKey(IconKey.ICON_COMPRESS);
                     dls.setStatus(label);
-                    return;
+                    return dls;
 
                 }
             }
@@ -368,16 +374,17 @@ public class DownloadsAPIV2Impl implements DownloadsAPIV2 {
             } else {
                 dls.setStatusIconKey(IconKey.ICON_TRUE);
             }
-            label = finalLinkState.getExplanation(this, link);
+            label = finalLinkState.getExplanation(caller, link);
             dls.setStatus(label);
-            return;
+            return dls;
         }
         if (link.getDownloadLinkController() != null) {
 
             dls.setStatusIconKey(IconKey.ICON_RUN);
             dls.setStatus(_GUI._.TaskColumn_fillColumnHelper_starting());
-            return;
+            return dls;
         }
+        return dls;
 
     }
 

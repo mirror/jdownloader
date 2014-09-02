@@ -42,7 +42,6 @@ import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLinkProperty;
 import jd.plugins.FilePackage;
 import jd.plugins.FilePackageProperty;
-import jd.plugins.LinkStatusProperty;
 import jd.utils.JDUtilities;
 
 import org.appwork.controlling.SingleReachableState;
@@ -241,11 +240,6 @@ public class DownloadController extends PackageController<FilePackage, DownloadL
 
             @Override
             public void onDownloadControllerUpdatedData(FilePackage pkg, FilePackageProperty property) {
-                changesSaver.run();
-            }
-
-            @Override
-            public void onDownloadControllerUpdatedData(DownloadLink downloadlink, LinkStatusProperty property) {
                 changesSaver.run();
             }
 

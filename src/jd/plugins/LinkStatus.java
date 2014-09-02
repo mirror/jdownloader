@@ -129,13 +129,6 @@ public class LinkStatus implements Serializable {
         errorMessage = string;
     }
 
-    private void notifyChanges(LinkStatusProperty property) {
-        DownloadLink dl = this.downloadLink;
-        if (dl != null) {
-            dl.getFilePackage().nodeUpdated(dl, jd.controlling.packagecontroller.AbstractNodeNotifier.NOTIFY.PROPERTY_CHANCE, property);
-        }
-    }
-
     /**
      * Setzt den Linkstatus. Es dürfen nur LInkStatus.*STATUS ids verwendet werden
      * 
@@ -143,6 +136,11 @@ public class LinkStatus implements Serializable {
      */
     public void setStatus(final int status) {
         this.status = status;
+        DownloadLink dl = downloadLink;
+        if (dl != null && dl.hasNotificationListener()) {
+            dl.notifyChanges(jd.controlling.packagecontroller.AbstractNodeNotifier.NOTIFY.PROPERTY_CHANCE, new DownloadLinkProperty(dl, DownloadLinkProperty.Property.LINKSTATUS, null));
+
+        }
     }
 
     public void setStatusText(final String l) {
@@ -150,7 +148,13 @@ public class LinkStatus implements Serializable {
             return;
         }
         statusText = l;
-        notifyChanges(new LinkStatusProperty(this, LinkStatusProperty.Property.STATUSTEXT, l));
+
+        DownloadLink dl = downloadLink;
+        if (dl != null && dl.hasNotificationListener()) {
+            dl.notifyChanges(jd.controlling.packagecontroller.AbstractNodeNotifier.NOTIFY.PROPERTY_CHANCE, new DownloadLinkProperty(dl, DownloadLinkProperty.Property.LINKSTATUS, null));
+
+        }
+
     }
 
     public static String toString(int status) {

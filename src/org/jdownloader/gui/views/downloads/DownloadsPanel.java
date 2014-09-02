@@ -23,7 +23,6 @@ import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLinkProperty;
 import jd.plugins.FilePackage;
 import jd.plugins.FilePackageProperty;
-import jd.plugins.LinkStatusProperty;
 import net.miginfocom.swing.MigLayout;
 
 import org.appwork.scheduler.DelayedRunnable;
@@ -83,7 +82,9 @@ public class DownloadsPanel extends SwitchPanel implements DownloadControllerLis
                 CFG_GUI.DOWNLOADS_TAB_PROPERTIES_PANEL_VISIBLE.setValue(false);
                 CustomizeableActionBar iconComp = bottomBar;
                 Point loc = iconComp.getLocationOnScreen();
-                if (CFG_GUI.HELP_DIALOGS_ENABLED.isEnabled()) HelpDialog.show(false, false, new Point(loc.x + iconComp.getWidth() - iconComp.getHeight() / 2, loc.y + iconComp.getHeight() / 2), "propertiesclosed", Dialog.STYLE_SHOW_DO_NOT_DISPLAY_AGAIN, _GUI._.DownloadsPanel_onCloseAction(), _GUI._.Linkgrabber_properties_onCloseAction_help(), NewTheme.I().getIcon("bottombar", 32));
+                if (CFG_GUI.HELP_DIALOGS_ENABLED.isEnabled()) {
+                    HelpDialog.show(false, false, new Point(loc.x + iconComp.getWidth() - iconComp.getHeight() / 2, loc.y + iconComp.getHeight() / 2), "propertiesclosed", Dialog.STYLE_SHOW_DO_NOT_DISPLAY_AGAIN, _GUI._.DownloadsPanel_onCloseAction(), _GUI._.Linkgrabber_properties_onCloseAction_help(), NewTheme.I().getIcon("bottombar", 32));
+                }
 
             }
         });
@@ -184,7 +185,9 @@ public class DownloadsPanel extends SwitchPanel implements DownloadControllerLis
 
             @Override
             public void valueChanged(ListSelectionEvent e) {
-                if (e == null || e.getValueIsAdjusting() || table.getModel().isTableSelectionClearing() || !CFG_GUI.DOWNLOADS_TAB_PROPERTIES_PANEL_VISIBLE.isEnabled()) return;
+                if (e == null || e.getValueIsAdjusting() || table.getModel().isTableSelectionClearing() || !CFG_GUI.DOWNLOADS_TAB_PROPERTIES_PANEL_VISIBLE.isEnabled()) {
+                    return;
+                }
                 propertiesDelayer.run();
             }
         });
@@ -386,7 +389,9 @@ public class DownloadsPanel extends SwitchPanel implements DownloadControllerLis
                     CustomizeableActionBar iconComp = bottomBar;
                     Point loc = bottomBar.getLocationOnScreen();
 
-                    if (CFG_GUI.HELP_DIALOGS_ENABLED.isEnabled()) HelpDialog.show(false, false, new Point(loc.x + iconComp.getWidth() - iconComp.getHeight() / 2, loc.y + iconComp.getHeight() / 2), "overviewclosed", Dialog.STYLE_SHOW_DO_NOT_DISPLAY_AGAIN, _GUI._.DownloadsPanel_onCloseAction(), _GUI._.DownloadsPanel_onCloseAction_help(), NewTheme.I().getIcon("bottombar", 32));
+                    if (CFG_GUI.HELP_DIALOGS_ENABLED.isEnabled()) {
+                        HelpDialog.show(false, false, new Point(loc.x + iconComp.getWidth() - iconComp.getHeight() / 2, loc.y + iconComp.getHeight() / 2), "overviewclosed", Dialog.STYLE_SHOW_DO_NOT_DISPLAY_AGAIN, _GUI._.DownloadsPanel_onCloseAction(), _GUI._.DownloadsPanel_onCloseAction_help(), NewTheme.I().getIcon("bottombar", 32));
+                    }
 
                 }
 
@@ -468,7 +473,9 @@ public class DownloadsPanel extends SwitchPanel implements DownloadControllerLis
     protected void onShow() {
         tableModel.recreateModel(false);
         synchronized (this) {
-            if (timer != null) timer.cancel(false);
+            if (timer != null) {
+                timer.cancel(false);
+            }
             timer = tableModel.getThreadPool().scheduleWithFixedDelay(new Runnable() {
                 long lastContentChanges = -1;
 
@@ -476,8 +483,8 @@ public class DownloadsPanel extends SwitchPanel implements DownloadControllerLis
                     long contentChanges = DownloadController.getInstance().getContentChanges();
                     if (lastContentChanges != contentChanges && tableModel.isFilteredView()) {
                         /*
-                         * in case we have content changes(eg downloads started) and an active filteredView, we need to recreate the tablemodel to reflect
-                         * possible status changes in filtered view
+                         * in case we have content changes(eg downloads started) and an active filteredView, we need to recreate the
+                         * tablemodel to reflect possible status changes in filtered view
                          */
                         tableModel.recreateModel();
                     } else {
@@ -501,7 +508,9 @@ public class DownloadsPanel extends SwitchPanel implements DownloadControllerLis
         // }
         // });
         table.requestFocusInWindow();
-        if (propertiesPanel != null) propertiesPanel.refreshAfterTabSwitch();
+        if (propertiesPanel != null) {
+            propertiesPanel.refreshAfterTabSwitch();
+        }
     }
 
     @Override
@@ -556,11 +565,6 @@ public class DownloadsPanel extends SwitchPanel implements DownloadControllerLis
 
     @Override
     public void onDownloadControllerUpdatedData(FilePackage pkg, FilePackageProperty property) {
-        tableModel.refreshModel();
-    }
-
-    @Override
-    public void onDownloadControllerUpdatedData(DownloadLink downloadlink, LinkStatusProperty property) {
         tableModel.refreshModel();
     }
 

@@ -5,7 +5,6 @@ import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLinkProperty;
 import jd.plugins.FilePackage;
 import jd.plugins.FilePackageProperty;
-import jd.plugins.LinkStatusProperty;
 
 import org.appwork.exceptions.WTFException;
 
@@ -21,8 +20,7 @@ public class DownloadControllerEventDataUpdate extends DownloadControllerEvent {
             listener.onDownloadControllerUpdatedData((DownloadLink) getParameter(0), (DownloadLinkProperty) getParameter(1));
         } else if (getParameter(0) instanceof FilePackage && getParameter(1) instanceof FilePackageProperty) {
             listener.onDownloadControllerUpdatedData((FilePackage) getParameter(0), (FilePackageProperty) getParameter(1));
-        } else if (getParameter(0) instanceof DownloadLink && getParameter(1) instanceof LinkStatusProperty) {
-            listener.onDownloadControllerUpdatedData((DownloadLink) getParameter(0), (LinkStatusProperty) getParameter(1));
+
         } else if (getParameter(0) instanceof DownloadLink && getParameter(1) == null) {
             listener.onDownloadControllerUpdatedData((DownloadLink) getParameter(0));
         } else if (getParameter(0) instanceof FilePackage && getParameter(1) == null) {

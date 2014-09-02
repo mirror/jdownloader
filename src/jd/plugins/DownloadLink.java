@@ -344,15 +344,25 @@ public class DownloadLink extends Property implements Serializable, AbstractPack
     }
 
     public void setChunks(int chunks) {
+        if (chunks == getChunks()) {
+            return;
+        }
         if (chunks <= 0) {
             setProperty(PROPERTY_CHUNKS, Property.NULL);
         } else {
             setProperty(PROPERTY_CHUNKS, chunks);
         }
 
+        if (hasNotificationListener()) {
+            notifyChanges(AbstractNodeNotifier.NOTIFY.PROPERTY_CHANCE, new DownloadLinkProperty(this, DownloadLinkProperty.Property.CHUNKS, chunks));
+        }
+
     }
 
     public void setCustomSpeedLimit(int limit) {
+        if (limit == getCustomSpeedLimit()) {
+            return;
+        }
         if (limit == 0) {
             setProperty(PROPERTY_SPEEDLIMIT, Property.NULL);
         } else {
@@ -360,6 +370,9 @@ public class DownloadLink extends Property implements Serializable, AbstractPack
                 limit = 1;
             }
             setProperty(PROPERTY_SPEEDLIMIT, limit);
+        }
+        if (hasNotificationListener()) {
+            notifyChanges(AbstractNodeNotifier.NOTIFY.PROPERTY_CHANCE, new DownloadLinkProperty(this, DownloadLinkProperty.Property.SPEED_LIMIT, limit));
         }
     }
 
@@ -469,7 +482,14 @@ public class DownloadLink extends Property implements Serializable, AbstractPack
     }
 
     public void setBrowserUrl(String url) {
+        if (StringUtils.equals(url, browserurl)) {
+            return;
+        }
         browserurl = url;
+
+        if (hasNotificationListener()) {
+            notifyChanges(AbstractNodeNotifier.NOTIFY.PROPERTY_CHANCE, new DownloadLinkProperty(this, DownloadLinkProperty.Property.BROWSER_URL, url));
+        }
     }
 
     public boolean hasBrowserUrl() {
@@ -647,6 +667,16 @@ public class DownloadLink extends Property implements Serializable, AbstractPack
     }
 
     /**
+     * <<<<<<< .mine
+     * 
+     * 
+     * priority of returned fileName 0.) tmpAsynchRenameFilename (e.g. renamed in downloadlist) 1.) forcedFileName (eg manually set)
+     * 
+     * 2.) finalFileName (eg set by plugin where the final is 100% safe, eg API)
+     * 
+     * 3.) unsafeFileName (eg set by plugin when no api is available, or no filename provided)
+     * 
+     * =======
      * 
      * 
      * priority of returned fileName<br />
@@ -654,6 +684,8 @@ public class DownloadLink extends Property implements Serializable, AbstractPack
      * 1.) forcedFileName (eg manually set)<br />
      * 2.) finalFileName (eg set by plugin where the final is 100% safe, eg API)<br />
      * 3.) unsafeFileName (eg set by plugin when no api is available, or no filename provided)<br />
+     * 
+     * >>>>>>> .r26817
      * 
      * @param ignoreUnsafe
      * @param ignoreForcedFilename
@@ -911,7 +943,7 @@ public class DownloadLink extends Property implements Serializable, AbstractPack
         return lastAvailableStatusChange;
     }
 
-    private void notifyChanges(AbstractNodeNotifier.NOTIFY notify, Object param) {
+    public void notifyChanges(AbstractNodeNotifier.NOTIFY notify, Object param) {
         final AbstractNodeNotifier pl = propertyListener;
         if (pl != null) {
             pl.nodeUpdated(this, notify, param);
@@ -1058,7 +1090,7 @@ public class DownloadLink extends Property implements Serializable, AbstractPack
         }
         this.downloadMax = Math.max(-1, downloadMax);
         if (hasNotificationListener() && this.getCurrentDownloadInterface() == null) {
-            notifyChanges(AbstractNodeNotifier.NOTIFY.PROPERTY_CHANCE, null);
+            notifyChanges(AbstractNodeNotifier.NOTIFY.PROPERTY_CHANCE, new DownloadLinkProperty(this, DownloadLinkProperty.Property.DOWNLOADSIZE, downloadMax));
         }
     }
 
@@ -1078,6 +1110,7 @@ public class DownloadLink extends Property implements Serializable, AbstractPack
         if (enabled.getAndSet(isEnabled) == isEnabled) {
             return;
         }
+
         if (isEnabled == false) {
             setProperty(PROPERTY_ENABLED, isEnabled);
         } else {
@@ -1163,10 +1196,17 @@ public class DownloadLink extends Property implements Serializable, AbstractPack
     }
 
     public void setUrlProtection(UrlProtection type) {
+
         if (type == null) {
             type = UrlProtection.UNSET;
         }
+        if (type == getUrlProtection()) {
+            return;
+        }
         this.urlProtection = type;
+        if (hasNotificationListener()) {
+            notifyChanges(AbstractNodeNotifier.NOTIFY.PROPERTY_CHANCE, new DownloadLinkProperty(this, DownloadLinkProperty.Property.URL_PROTECTION, type));
+        }
     }
 
     /**
@@ -1257,10 +1297,16 @@ public class DownloadLink extends Property implements Serializable, AbstractPack
      * @since JD2
      */
     public void setComment(String comment) {
+        if (StringUtils.equals(comment, getComment())) {
+            return;
+        }
         if (comment == null || comment.length() == 0) {
             this.setProperty(PROPERTY_COMMENT, Property.NULL);
         } else {
             this.setProperty(PROPERTY_COMMENT, comment);
+        }
+        if (hasNotificationListener()) {
+            notifyChanges(AbstractNodeNotifier.NOTIFY.PROPERTY_CHANCE, new DownloadLinkProperty(this, DownloadLinkProperty.Property.COMMENT, comment));
         }
     }
 
@@ -1321,6 +1367,9 @@ public class DownloadLink extends Property implements Serializable, AbstractPack
             this.urlDownload = null;
         }
         cachedName = null;
+        if (hasNotificationListener()) {
+            notifyChanges(AbstractNodeNotifier.NOTIFY.PROPERTY_CHANCE, new DownloadLinkProperty(this, DownloadLinkProperty.Property.DOWNLOAD_URL, urlDownload));
+        }
         if (previousLinkID == null && previousURLDownload != null && !previousURLDownload.equals(urlDownload)) {
             /* downloadURL changed, so set original one as linkID, so all dupemaps still work */
             setLinkID(previousURLDownload);
@@ -1373,20 +1422,33 @@ public class DownloadLink extends Property implements Serializable, AbstractPack
      * @since JD2
      */
     public void setDownloadPassword(String pass) {
+        if (StringUtils.equals(pass, getDownloadPassword())) {
+            return;
+        }
         if (StringUtils.isEmpty(pass)) {
             this.setProperty(PROPERTY_PASS, Property.NULL);
         } else {
             this.setProperty(PROPERTY_PASS, pass);
         }
+        if (hasNotificationListener()) {
+            notifyChanges(AbstractNodeNotifier.NOTIFY.PROPERTY_CHANCE, new DownloadLinkProperty(this, DownloadLinkProperty.Property.DOWNLOAD_PASSWORD, pass));
+        }
     }
 
     public void setMD5Hash(String md5) {
+        if (StringUtils.equals(md5, getMD5Hash())) {
+            return;
+        }
         // validate md5 String is a MD5 hash!
         if (StringUtils.isEmpty(md5) || !md5.trim().matches("[a-fA-F0-9]{32}")) {
             this.setProperty(PROPERTY_MD5, Property.NULL);
         } else {
             this.setProperty(PROPERTY_MD5, md5.trim());
-            this.setProperty(PROPERTY_SHA1, Property.NULL);
+            setSha1Hash(null);
+
+        }
+        if (hasNotificationListener()) {
+            notifyChanges(AbstractNodeNotifier.NOTIFY.PROPERTY_CHANCE, new DownloadLinkProperty(this, DownloadLinkProperty.Property.MD5, md5));
         }
     }
 
@@ -1469,12 +1531,19 @@ public class DownloadLink extends Property implements Serializable, AbstractPack
     }
 
     public void setSha1Hash(String sha1) {
+        if (StringUtils.equals(sha1, getSha1Hash())) {
+            return;
+        }
         // validate sha1 String is a SHA1 hash!
         if (StringUtils.isEmpty(sha1) || !sha1.trim().matches("[a-fA-F0-9]{40}")) {
             this.setProperty(PROPERTY_SHA1, Property.NULL);
         } else {
             this.setProperty(PROPERTY_SHA1, sha1.trim());
-            this.setProperty(PROPERTY_MD5, Property.NULL);
+            setMD5Hash(null);
+
+        }
+        if (hasNotificationListener()) {
+            notifyChanges(AbstractNodeNotifier.NOTIFY.PROPERTY_CHANCE, new DownloadLinkProperty(this, DownloadLinkProperty.Property.SHA1, sha1));
         }
     }
 
@@ -1488,11 +1557,17 @@ public class DownloadLink extends Property implements Serializable, AbstractPack
      * @param size
      */
     public void setVerifiedFileSize(long size) {
+        if (size == getVerifiedFileSize()) {
+            return;
+        }
         setDownloadSize(size);
         if (size < 0) {
             setProperty(DownloadLink.PROPERTY_VERIFIEDFILESIZE, Property.NULL);
         } else {
             setProperty(DownloadLink.PROPERTY_VERIFIEDFILESIZE, size);
+        }
+        if (hasNotificationListener()) {
+            notifyChanges(AbstractNodeNotifier.NOTIFY.PROPERTY_CHANCE, new DownloadLinkProperty(this, DownloadLinkProperty.Property.DOWNLOADSIZE_VERIFIED, size));
         }
     }
 
@@ -1511,11 +1586,17 @@ public class DownloadLink extends Property implements Serializable, AbstractPack
      * @param size
      */
     public void setResumeable(boolean b) {
+        if (b == isResumeable()) {
+            return;
+        }
         resumeable = b;
         if (!b) {
             setProperty(PROPERTY_RESUMEABLE, Property.NULL);
         } else {
             setProperty(PROPERTY_RESUMEABLE, true);
+        }
+        if (hasNotificationListener()) {
+            notifyChanges(AbstractNodeNotifier.NOTIFY.PROPERTY_CHANCE, new DownloadLinkProperty(this, DownloadLinkProperty.Property.RESUMABLE, b));
         }
     }
 
@@ -1607,10 +1688,16 @@ public class DownloadLink extends Property implements Serializable, AbstractPack
     }
 
     public void setArchiveID(String id) {
+        if (StringUtils.equals(id, getArchiveID())) {
+            return;
+        }
         if (!StringUtils.isEmpty(id)) {
             setProperty(DownloadLink.PROPERTY_ARCHIVE_ID, id);
         } else {
             setProperty(DownloadLink.PROPERTY_ARCHIVE_ID, Property.NULL);
+        }
+        if (hasNotificationListener()) {
+            notifyChanges(AbstractNodeNotifier.NOTIFY.PROPERTY_CHANCE, new DownloadLinkProperty(this, DownloadLinkProperty.Property.ARCHIVE_ID, id));
         }
     }
 
@@ -1646,10 +1733,16 @@ public class DownloadLink extends Property implements Serializable, AbstractPack
     }
 
     public void setVariantSupport(boolean b) {
+        if (b == hasVariantSupport()) {
+            return;
+        }
         if (b) {
             setProperty(VARIANT_SUPPORT, b);
         } else {
             setProperty(VARIANT_SUPPORT, Property.NULL);
+        }
+        if (hasNotificationListener()) {
+            notifyChanges(AbstractNodeNotifier.NOTIFY.PROPERTY_CHANCE, new DownloadLinkProperty(this, DownloadLinkProperty.Property.VARIANTS_ENABLED, b));
         }
     }
 
@@ -1842,11 +1935,23 @@ public class DownloadLink extends Property implements Serializable, AbstractPack
     }
 
     public void setVariants(List<? extends LinkVariant> list) {
-        this.setProperty("VARIANTS", JSonStorage.serializeToJson(list));
+
+        String variantsString = JSonStorage.serializeToJson(list);
+        if (StringUtils.equals(variantsString, getStringProperty("VARIANTS"))) {
+            return;
+        }
+        this.setProperty("VARIANTS", variantsString);
         getTempProperties().setProperty("VARIANTS", null);
+
+        if (hasNotificationListener()) {
+            notifyChanges(AbstractNodeNotifier.NOTIFY.PROPERTY_CHANCE, new DownloadLinkProperty(this, DownloadLinkProperty.Property.VARIANTS, list));
+        }
     }
 
     public void setVariant(LinkVariant variant) {
+        if (StringUtils.equals(getStringProperty("VARIANT"), variant._getUniqueId())) {
+            return;
+        }
         String orgLinkID = getStringProperty("ORG_LINKID");
         if (orgLinkID == null) {
             String linkID = getLinkID();
@@ -1859,6 +1964,10 @@ public class DownloadLink extends Property implements Serializable, AbstractPack
             getTempProperties().setProperty("VARIANT", null);
         }
         setLinkID(getStringProperty("ORG_LINKID") + "_" + variant._getUniqueId());
+
+        if (hasNotificationListener()) {
+            notifyChanges(AbstractNodeNotifier.NOTIFY.PROPERTY_CHANCE, new DownloadLinkProperty(this, DownloadLinkProperty.Property.VARIANT, variant));
+        }
     }
 
     public <T extends LinkVariant> T getVariant(Class<T> type) {

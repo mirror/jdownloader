@@ -6,6 +6,9 @@ import jd.controlling.packagecontroller.AbstractNode;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackageView;
 
+import org.jdownloader.api.downloads.ChannelCollector;
+import org.jdownloader.api.downloads.DownloadControllerEventPublisher;
+import org.jdownloader.api.downloads.v2.DownloadsAPIV2Impl;
 import org.jdownloader.gui.views.downloads.columns.TaskColumn;
 
 public class WaitWhileWaitingSkipReasonIsSet implements ConditionalSkipReason, DownloadLinkCondition, ValidatableConditionalSkipReason {
@@ -29,6 +32,12 @@ public class WaitWhileWaitingSkipReasonIsSet implements ConditionalSkipReason, D
         if (source == node) {
             return reason.getMessage(requestor, node);
         } else if (requestor instanceof TaskColumn || requestor instanceof FilePackageView) {
+            return reason.getMessage(requestor, node);
+        } else if (requestor instanceof DownloadControllerEventPublisher) {
+            return reason.getMessage(requestor, node);
+        } else if (requestor instanceof DownloadsAPIV2Impl) {
+            return reason.getMessage(requestor, node);
+        } else if (requestor instanceof ChannelCollector) {
             return reason.getMessage(requestor, node);
         }
         return null;

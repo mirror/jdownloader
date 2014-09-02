@@ -88,6 +88,7 @@ public class RemoteAPIController {
     private LogSource                          logger;
     private AdvancedConfigManagerAPIImpl       advancedConfigAPI;
     private ContentAPIImplV2                   contentAPI;
+    private DownloadsAPIV2Impl                 downloadsAPIV2;
 
     public static class MyJDownloaderEvent extends MyJDEvent implements Storable {
         public MyJDownloaderEvent() {
@@ -241,7 +242,7 @@ public class RemoteAPIController {
         DownloadWatchDogEventPublisher downloadWatchDogEventPublisher = new DownloadWatchDogEventPublisher();
         DownloadsAPIImpl downloadsAPI;
         register(downloadsAPI = new DownloadsAPIImpl());
-        register(new DownloadsAPIV2Impl());
+        register(downloadsAPIV2 = new DownloadsAPIV2Impl());
         register(new DownloadWatchdogAPIImpl());
         register(downloadWatchDogEventPublisher);
         register(advancedConfigAPI = new AdvancedConfigManagerAPIImpl());
@@ -257,7 +258,7 @@ public class RemoteAPIController {
         register(new LinkCrawlerAPIImpl());
         register(new PluginsAPIImpl());
         register(new ExternInterfaceImpl());
-        register(new DownloadControllerEventPublisher());
+        register(new DownloadControllerEventPublisher(eventsapi));
         register(new LinkCollectorEventPublisher());
         register(new ExtensionsAPIImpl());
         register(new UpdateAPIImpl());
@@ -265,9 +266,13 @@ public class RemoteAPIController {
         register(new DeviceAPIImpl());
         RemoteAPIIOHandlerWrapper wrapper;
         UIOManager.setUserIO(wrapper = new RemoteAPIIOHandlerWrapper(UIOManager.I()));
-        register(wrapper.getEventPublisher());
-        register(wrapper.getApi());
+        register(wrapper.getRemoteHandler());
+
         JDAnywhereAPI.getInstance().init(this, downloadsAPI);
+    }
+
+    public DownloadsAPIV2Impl getDownloadsAPIV2() {
+        return downloadsAPIV2;
     }
 
     public ContentAPIImplV2 getContentAPI() {
@@ -329,18 +334,25 @@ public class RemoteAPIController {
         return sessionc;
     }
 
-    public boolean register(final RemoteAPIInterface x) {
+    public boolean register(final Object x) {
         if (x == null) {
             return false;
         }
-        try {
-            rapi.register(x);
-            return true;
-        } catch (final Throwable e) {
-            logger.log(e);
-            Dialog.getInstance().showExceptionDialog("Bad API Interface", e.getMessage(), e);
-            return false;
+        boolean ret = false;
+        if (x instanceof EventPublisher) {
+            ret = ret || eventsapi.register((EventPublisher) x);
         }
+        if (x instanceof RemoteAPIInterface) {
+            try {
+                rapi.register((RemoteAPIInterface) x);
+                ret = true;
+            } catch (final Throwable e) {
+                logger.log(e);
+                Dialog.getInstance().showExceptionDialog("Bad API Interface", e.getMessage(), e);
+                return false;
+            }
+        }
+        return ret;
     }
 
     public boolean unregister(final RemoteAPIInterface x) {
@@ -354,13 +366,6 @@ public class RemoteAPIController {
             logger.log(e);
             return false;
         }
-    }
-
-    public boolean register(EventPublisher publisher) {
-        if (publisher == null) {
-            return false;
-        }
-        return eventsapi.register(publisher);
     }
 
     public boolean unregister(EventPublisher publisher) {
