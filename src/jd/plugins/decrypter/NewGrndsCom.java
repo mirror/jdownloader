@@ -56,6 +56,10 @@ public class NewGrndsCom extends PluginForDecrypt {
                 finallink = "http://www.newgrounds.com/audio/download/" + fid;
                 directhttp = true;
             } else {
+                if (br.containsHTML("requires a Newgrounds account to play\\.<")) {
+                    logger.info("Account needed to decrypt this link: " + parameter);
+                    return decryptedLinks;
+                }
                 finallink = br.getRegex("\"src\":[\t\n\r ]+\"(http:[^<>\"]*?)\"").getMatch(0);
                 // Maybe video or .swf
                 if (finallink == null) {

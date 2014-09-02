@@ -66,6 +66,9 @@ public class HdStreamTo extends PluginForHost {
     private static final boolean ACCOUNT_PREMIUM_RESUME       = true;
     private static final int     ACCOUNT_PREMIUM_MAXCHUNKS    = 1;
     private static final int     ACCOUNT_PREMIUM_MAXDOWNLOADS = 10;
+
+    private static final int     PREMIUM_OVERALL_MAXCON       = -ACCOUNT_PREMIUM_MAXDOWNLOADS;
+
     /* don't touch the following! */
     private static AtomicInteger maxPrem                      = new AtomicInteger(1);
 
@@ -176,10 +179,11 @@ public class HdStreamTo extends PluginForHost {
         /* Make sure that the premiumtoken is valid - if it is not valid, wait is higher than 0 */
         if (!premiumtoken.equals("") && wait == 0) {
             logger.info("Seems like the user is using a valid premiumtoken, enabling chunks & resume...");
-            resume = true;
-            maxchunks = -10;
+            resume = ACCOUNT_PREMIUM_RESUME;
+            maxchunks = PREMIUM_OVERALL_MAXCON;
+        } else {
+            this.sleep(Integer.parseInt(waittime) * 1001l, downloadLink);
         }
-        this.sleep(Integer.parseInt(waittime) * 1001l, downloadLink);
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, resume, maxchunks);
         if (dl.getConnection().getContentType().contains("html")) {
             /* 403 error means different things for free and premium */

@@ -89,7 +89,7 @@ public class BlSt extends PluginForHost {
 
     /* DEV NOTES */
     // XfileSharingProBasic Version 2.6.6.2
-    // mods:
+    // mods: requestFileInformation[Added another FNF text]
     // limit-info: completely untested because of server errors, set standard limits
     // protocol: no https
     // captchatype: null 4dignum solvemedia recaptcha
@@ -122,7 +122,7 @@ public class BlSt extends PluginForHost {
         prepBrowser(br);
         setFUID(link);
         getPage(link.getDownloadURL());
-        if (new Regex(correctedBR, "(No such file|>File Not Found<|>The file was removed by|Reason for deletion:\n)").matches()) {
+        if (new Regex(correctedBR, "(No such file|>File Not Found<|>The file was removed by|Reason for deletion:\n|<Title>Download </Title>)").matches()) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         if (new Regex(correctedBR, MAINTENANCE).matches()) {

@@ -64,22 +64,6 @@ public class FourTubeCom extends PluginForHost {
         if (filename == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        String mediaID = br.getRegex("idMedia: (\\d+)").getMatch(0);
-        if (mediaID == null) {
-            mediaID = br.getRegex("video_id: (\\d+)").getMatch(0);
-        }
-        String availablequalities = br.getRegex("\\(\\d+, \\d+, \\[([0-9,]+)\\]\\);").getMatch(0);
-        if (availablequalities != null) {
-            availablequalities = availablequalities.replace(",", "+");
-        } else {
-            availablequalities = "1080+720+480+360+240";
-        }
-        if (mediaID == null || filename == null) {
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
-        br.getHeaders().put("Accept", "application/json, text/javascript, */*; q=0.01");
-        br.getHeaders().put("Origin", "http://www.4tube.com");
-        br.postPage("http://tkn.4tube.com/" + mediaID + "/desktop/" + availablequalities, "");
         // seems to be listed in order highest quality to lowest. 20130513
         getDllink();
         String ext = "mp4";
@@ -109,6 +93,24 @@ public class FourTubeCom extends PluginForHost {
     }
 
     private void getDllink() throws PluginException, IOException {
+        // final String new_linkpart =
+        // br.getRegex("image: \"http://cdn[a-z0-9]+\\.thumbnails\\.4tube\\.com/([0-9/]+)/\\d+x\\d+/\\d+\\.jpeg\"").getMatch(0);
+        String mediaID = br.getRegex("idMedia: (\\d+)").getMatch(0);
+        if (mediaID == null) {
+            mediaID = br.getRegex("video_id: (\\d+)").getMatch(0);
+        }
+        String availablequalities = br.getRegex("\\(\\d+, \\d+, \\[([0-9,]+)\\]\\);").getMatch(0);
+        if (availablequalities != null) {
+            availablequalities = availablequalities.replace(",", "+");
+        } else {
+            availablequalities = "1080+720+480+360+240";
+        }
+        if (mediaID == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        br.getHeaders().put("Accept", "application/json, text/javascript, */*; q=0.01");
+        br.getHeaders().put("Origin", "http://www.4tube.com");
+        br.postPage("http://tkn.4tube.com/" + mediaID + "/desktop/" + availablequalities, "");
         String finallink = null;
         final String[] qualities = new String[] { "1080", "720", "480", "360", "240" };
         for (final String quality : qualities) {
@@ -116,6 +118,10 @@ public class FourTubeCom extends PluginForHost {
                 finallink = br.getRegex("\"" + quality + "\":\\{\"status\":\"success\",\"token\":\"(http[^<>\"]*?)\"").getMatch(0);
                 if (finallink != null) {
                     finallink += "&start=0";
+                    // final String old_linkpart = new Regex(finallink, "/default/videos/([0-9/]+)/p\\d+\\.mp4.+").getMatch(0);
+                    // if (old_linkpart != null && new_linkpart != null) {
+                    // finallink = finallink.replace(old_linkpart, new_linkpart);
+                    // }
                 }
                 if (finallink != null && checkDirectLink(finallink) != null) {
                     break;
