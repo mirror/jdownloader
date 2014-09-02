@@ -1,108 +1,138 @@
 package org.jdownloader.plugins.controller;
 
 import java.io.File;
-import java.io.FilenameFilter;
+import java.io.FileInputStream;
+import java.io.IOException;
+import java.lang.reflect.Modifier;
+import java.nio.file.DirectoryStream;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.attribute.BasicFileAttributes;
+import java.security.MessageDigest;
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
 
 import jd.plugins.Plugin;
 
 import org.appwork.utils.Application;
-import org.appwork.utils.Hash;
 import org.appwork.utils.logging2.LogSource;
-import org.jdownloader.logging.LogController;
 import org.jdownloader.plugins.controller.PluginClassLoader.PluginClassLoaderChild;
 
-public class PluginController<T extends Plugin> {
+public abstract class PluginController<T extends Plugin> {
 
-    @SuppressWarnings("unchecked")
-    public java.util.List<PluginInfo<T>> scan(String hosterpath, Map<String, ArrayList<LazyPlugin>> pluginCache) {
-        LogSource logger = LogController.getRebirthLogger();
-        final boolean ownLogger;
-        if (logger == null) {
-            ownLogger = true;
-            logger = LogController.CL();
-            logger.setAllowTimeoutFlush(false);
+    private final static HashSet<String> ignoreList = new HashSet<String>();
+    static {
+        ignoreList.add("YoutubeDashConfigPanel");
+        ignoreList.add("RTMPDownload");
+        ignoreList.add("YoutubeHelper");
+        ignoreList.add("K2SApi");
+    }
+
+    protected List<PluginInfo<T>> scan(LogSource logger, String hosterpath, Map<LazyPluginClass, ArrayList<LazyPlugin>> pluginCache) throws Exception {
+        DirectoryStream<Path> stream = null;
+        PluginClassLoaderChild cl = null;
+        final ArrayList<PluginInfo<T>> ret = new ArrayList<PluginInfo<T>>();
+        MessageDigest md = null;
+        final String pkg = hosterpath.replace("/", ".");
+        final byte[] mdCache = new byte[32767];
+        final HashMap<String, LazyPluginClass> lazyPluginClassMap;
+        if (pluginCache != null && pluginCache.size() > 0) {
+            lazyPluginClassMap = new HashMap<String, LazyPluginClass>();
+            for (final LazyPluginClass lazyPluginClass : pluginCache.keySet()) {
+                lazyPluginClassMap.put(lazyPluginClass.getClassName() + ".class", lazyPluginClass);
+            }
         } else {
-            ownLogger = false;
+            lazyPluginClassMap = null;
         }
-        final java.util.List<PluginInfo<T>> ret = new ArrayList<PluginInfo<T>>();
+        final long timeStamp = System.currentTimeMillis();
         try {
-            final File path = Application.getRootByClass(jd.SecondLevelLaunch.class, hosterpath);
-            final PluginClassLoaderChild cl = PluginClassLoader.getInstance().getChild();
-            final File[] pluginClassFiles = path.listFiles(new FilenameFilter() {
-                public boolean accept(final File dir, final String name) {
-                    if (!name.endsWith(".class") || name.contains("$")) {
-                        return false;
+            stream = Files.newDirectoryStream(Application.getRootByClass(jd.SecondLevelLaunch.class, hosterpath).toPath(), "*.class");
+            for (final Path path : stream) {
+                final String pathFileName = path.getFileName().toString();
+                final String className = pathFileName.substring(0, pathFileName.length() - 6);
+                if (className.indexOf("$") < 0 && !ignoreList.contains(className)) {
+                    byte[] sha256 = null;
+                    final BasicFileAttributes pathAttr = Files.readAttributes(path, BasicFileAttributes.class);
+                    if (lazyPluginClassMap != null) {
+                        final LazyPluginClass lazyPluginClass = lazyPluginClassMap.get(pathFileName);
+                        if (lazyPluginClass != null && (lazyPluginClass.getLastModified() == pathAttr.lastModifiedTime().toMillis() || ((md = MessageDigest.getInstance("SHA-256")) != null && (sha256 = getFileHashBytes(path.toFile(), md, mdCache)) != null && Arrays.equals(sha256, lazyPluginClass.getSha256())))) {
+                            for (final LazyPlugin lazyPlugin : pluginCache.get(lazyPluginClass)) {
+                                // logger.finer("Cached: " + className + "|" + lazyPlugin.getDisplayName() + "|" +
+                                // lazyPluginClass.getRevision());
+                                final PluginInfo<T> pluginInfo = new PluginInfo<T>(lazyPluginClass, null);
+                                pluginInfo.setLazyPlugin(lazyPlugin);
+                                ret.add(pluginInfo);
+                            }
+                            continue;
+                        }
                     }
-                    if (name.startsWith("YoutubeDashConfigPanel")) {
-                        return false;
-                    }
-                    if (name.startsWith("RTMPDownload")) {
-                        return false;
-                    }
-                    if (name.startsWith("YoutubeHelper")) {
-                        return false;
-                    }
-                    return true;
-                }
-            });
-            final String pkg = hosterpath.replace("/", ".");
-            boolean errorFree = true;
-            final ArrayList<PluginInfo<T>> scannedPlugins = new ArrayList<PluginInfo<T>>();
-            if (pluginClassFiles != null) {
-                for (final File pluginClassFile : pluginClassFiles) {
+                    Class<T> pluginClass = null;
+                    long[] infos = null;
                     try {
-                        final long lastModified = pluginClassFile.lastModified();
-                        final String name = pluginClassFile.getName();
-                        final String classFileName = name.substring(0, name.length() - 6);
-                        String sha256 = null;
-                        scannedPlugins.clear();
-                        if (pluginCache != null) {
-                            final ArrayList<LazyPlugin> cachedPlugins = pluginCache.get(name);
-                            if (cachedPlugins != null) {
-                                for (final LazyPlugin plugin : cachedPlugins) {
-                                    if (plugin != null && ((plugin.getMainClassLastModified() > 0 && plugin.getMainClassLastModified() == lastModified) || ((sha256 != null || (sha256 = Hash.getSHA1(pluginClassFile)) != null) && sha256.equals(plugin.getMainClassSHA256())))) {
-                                        final PluginInfo<T> retPlugin = new PluginInfo<T>(pluginClassFile, null);
-                                        retPlugin.setLazyPlugin(plugin);
-                                        scannedPlugins.add(retPlugin);
-                                    } else {
-                                        scannedPlugins.clear();
-                                        break;
-                                    }
-                                }
-                            }
+                        if (cl == null) {
+                            cl = PluginClassLoader.getInstance().getChild();
                         }
-                        if (scannedPlugins.size() == 0) {
-                            final PluginInfo<T> pluginInfo = new PluginInfo<T>(pluginClassFile, (Class<T>) cl.loadClass(pkg + "." + classFileName));
-                            ret.add(pluginInfo);
-                            pluginInfo.setMainClassLastModified(lastModified);
-                            if (sha256 == null) {
-                                sha256 = Hash.getSHA256(pluginClassFile);
+                        if (md == null) {
+                            md = MessageDigest.getInstance("SHA-256");
+                        }
+                        pluginClass = (Class<T>) cl.loadClass(pkg + "." + className);
+                        if (!Modifier.isAbstract(pluginClass.getModifiers()) && Plugin.class.isAssignableFrom(pluginClass)) {
+                            infos = getInfos(pluginClass);
+                            if (infos == null) {
+                                continue;
                             }
-                            pluginInfo.setMainClassSHA256(sha256);
-                            logger.finer("Loaded: " + classFileName);
                         } else {
-                            for (final PluginInfo<T> scannedPlugin : scannedPlugins) {
-                                logger.finer("Cached: " + classFileName + "|" + scannedPlugin.getLazyPlugin().getDisplayName() + "|" + scannedPlugin.getLazyPlugin().getVersion());
-                            }
-                            ret.addAll(scannedPlugins);
+                            continue;
                         }
-                    } catch (Throwable e) {
-                        errorFree = false;
+                    } catch (final Throwable e) {
+                        logger.finer("Failed: " + className);
                         logger.log(e);
+                        continue;
                     }
+                    if (sha256 == null) {
+                        sha256 = getFileHashBytes(path.toFile(), md, mdCache);
+                    }
+                    final LazyPluginClass lazyPluginClass = new LazyPluginClass(className, sha256, pathAttr.lastModifiedTime().toMillis(), (int) infos[0], infos[1]);
+                    final PluginInfo<T> pluginInfo = new PluginInfo<T>(lazyPluginClass, pluginClass);
+                    // logger.finer("Scaned: " + className + "|" + lazyPluginClass.getRevision());
+                    ret.add(pluginInfo);
                 }
             }
-            if (errorFree && ownLogger) {
-                logger.clear();
+            return ret;
+        } finally {
+            logger.info("@PluginController: scan took " + (System.currentTimeMillis() - timeStamp) + "ms for " + ret.size());
+            if (stream != null) {
+                stream.close();
+            }
+        }
+    }
+
+    protected abstract long[] getInfos(Class<T> clazz);
+
+    private static byte[] getFileHashBytes(final File arg, final MessageDigest md, final byte[] mdCache) throws IOException {
+        if (arg == null || !arg.exists() || arg.isDirectory()) {
+            return null;
+        }
+        FileInputStream fis = null;
+        try {
+            md.reset();
+            fis = new FileInputStream(arg);
+            int n = 0;
+            while ((n = fis.read(mdCache)) >= 0) {
+                if (n > 0) {
+                    md.update(mdCache, 0, n);
+                }
             }
         } finally {
-            if (ownLogger) {
-                logger.close();
+            try {
+                fis.close();
+            } catch (final Throwable e) {
             }
         }
-        return ret;
-
+        return md.digest();
     }
 }

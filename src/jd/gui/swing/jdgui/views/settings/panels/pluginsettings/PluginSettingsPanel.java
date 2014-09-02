@@ -208,7 +208,7 @@ public class PluginSettingsPanel extends JPanel implements SettingsComponent, Ac
                             int selectIndex = 0;
                             if (active != null) {
                                 for (int i = 0; i < searchCombobox.getModel().getSize(); i++) {
-                                    if (((LazyPlugin<?>) searchCombobox.getModel().getElementAt(i)).getClassname().equals(active)) {
+                                    if (((LazyPlugin<?>) searchCombobox.getModel().getElementAt(i)).getClassName().equals(active)) {
                                         selectIndex = i;
                                         break;
                                     }
@@ -236,7 +236,7 @@ public class PluginSettingsPanel extends JPanel implements SettingsComponent, Ac
                     int selectIndex = 0;
                     if (active != null) {
                         for (int i = 0; i < searchCombobox.getModel().getSize(); i++) {
-                            if (((LazyPlugin<?>) searchCombobox.getModel().getElementAt(i)).getClassname().equals(active)) {
+                            if (((LazyPlugin<?>) searchCombobox.getModel().getElementAt(i)).getClassName().equals(active)) {
                                 selectIndex = i;
                                 break;
                             }
@@ -297,10 +297,8 @@ public class PluginSettingsPanel extends JPanel implements SettingsComponent, Ac
 
     public void actionPerformed(ActionEvent e) {
         LazyPlugin<?> selected = searchCombobox.getSelectedItem();
-
         if (selected != null) {
-            JsonConfig.create(GraphicalUserInterfaceSettings.class).setActivePluginConfigPanel(selected.getClassname());
-
+            JsonConfig.create(GraphicalUserInterfaceSettings.class).setActivePluginConfigPanel(selected.getClassName());
             show(selected);
         }
     }

@@ -1,6 +1,5 @@
 package org.jdownloader.settings.advanced;
 
-import java.awt.GraphicsEnvironment;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Set;
@@ -124,9 +123,7 @@ public class AdvancedConfigManager {
                     map.put(m, true);
                 }
             }
-
         }
-
         eventSender.fireEvent(new AdvancedConfigEvent(this, AdvancedConfigEvent.Types.UPDATED, cf));
     }
 

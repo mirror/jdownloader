@@ -637,7 +637,8 @@ public class AddLinksDialog extends AbstractDialog<LinkCollectingJob> {
                     input.setToolTipText(null);
                 }
                 if (!validateFolder(destination.getFile().getAbsolutePath())) {
-                    if (okButton.getToolTipText().length() == 0) {
+                    final String toolTip = okButton.getToolTipText();
+                    if (toolTip == null || toolTip.length() == 0) {
                         okButton.setToolTipText(_GUI._.AddLinksDialog_validateForm_folder_invalid_missing());
                     }
                     okButton.setEnabled(false);

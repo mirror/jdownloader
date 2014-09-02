@@ -1,6 +1,7 @@
 package org.jdownloader.plugins.controller.host;
 
-import java.net.MalformedURLException;
+import java.io.File;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -25,8 +26,6 @@ import jd.plugins.HostPlugin;
 import jd.plugins.PluginForHost;
 
 import org.appwork.exceptions.WTFException;
-import org.appwork.storage.JSonStorage;
-import org.appwork.storage.TypeRef;
 import org.appwork.storage.config.ConfigInterface;
 import org.appwork.utils.Application;
 import org.appwork.utils.ModifyLock;
@@ -36,6 +35,7 @@ import org.jdownloader.controlling.FileCreationManager;
 import org.jdownloader.logging.LogController;
 import org.jdownloader.plugins.FinalLinkState;
 import org.jdownloader.plugins.controller.LazyPlugin;
+import org.jdownloader.plugins.controller.LazyPluginClass;
 import org.jdownloader.plugins.controller.PluginClassLoader.PluginClassLoaderChild;
 import org.jdownloader.plugins.controller.PluginController;
 import org.jdownloader.plugins.controller.PluginInfo;
@@ -65,7 +65,7 @@ public class HostPluginController extends PluginController<PluginForHost> {
     }
 
     private String getCache() {
-        return "hosts2.json";
+        return "hosterCache";
     }
 
     /**
@@ -88,6 +88,7 @@ public class HostPluginController extends PluginController<PluginForHost> {
         logger.setAutoFlushOnThrowable(true);
         LogController.setRebirthLogger(logger);
         final long completeTimeStamp = System.currentTimeMillis();
+        List<LazyHostPlugin> finalPlugins = null;
         try {
             List<LazyHostPlugin> updateCache = null;
             /* try to load from cache */
@@ -138,7 +139,7 @@ public class HostPluginController extends PluginController<PluginForHost> {
             timeStamp = System.currentTimeMillis();
             final LinkedHashMap<String, LazyHostPlugin> retMap = new LinkedHashMap<String, LazyHostPlugin>();
             LazyHostPlugin fallBackPlugin = null;
-            for (LazyHostPlugin plugin : plugins) {
+            for (final LazyHostPlugin plugin : plugins) {
                 plugin.setPluginClass(null);
                 plugin.setClassLoader(null);
                 if (fallBackPlugin == null && "UpdateRequired".equalsIgnoreCase(plugin.getDisplayName())) {
@@ -149,11 +150,13 @@ public class HostPluginController extends PluginController<PluginForHost> {
                 final String pluginID = plugin.getDisplayName().toLowerCase(Locale.ENGLISH);
                 final LazyHostPlugin existingPlugin = retMap.put(pluginID, plugin);
                 if (existingPlugin != null) {
-                    if (existingPlugin.getInterfaceVersion() > plugin.getInterfaceVersion()) {
+                    if (existingPlugin.getLazyPluginClass().getInterfaceVersion() > plugin.getLazyPluginClass().getInterfaceVersion()) {
                         retMap.put(pluginID, existingPlugin);
-                        logger.finest("@HostPlugin keep:" + existingPlugin.getClassname() + "|" + existingPlugin.getInterfaceVersion() + ":" + existingPlugin.getVersion() + " instead " + plugin.getClassname() + "|" + plugin.getInterfaceVersion() + ":" + plugin.getVersion());
+                        // logger.finest("@HostPlugin keep:" + existingPlugin.getLazyPluginClass() + ":" + existingPlugin.getVersion() +
+                        // " instead " + plugin.getLazyPluginClass() + ":" + plugin.getVersion());
                     } else {
-                        logger.finest("@HostPlugin replaced:" + existingPlugin.getClassname() + "|" + existingPlugin.getInterfaceVersion() + ":" + existingPlugin.getVersion() + " with " + plugin.getClassname() + "|" + plugin.getInterfaceVersion() + ":" + plugin.getVersion());
+                        // logger.finest("@HostPlugin replaced:" + existingPlugin.getLazyPluginClass() + ":" + existingPlugin.getVersion() +
+                        // " with " + plugin.getLazyPluginClass() + ":" + plugin.getVersion());
                     }
                 }
             }
@@ -161,31 +164,30 @@ public class HostPluginController extends PluginController<PluginForHost> {
                 plugin.setFallBackPlugin(fallBackPlugin);
             }
             logger.info("@HostPluginController: mapping took " + (System.currentTimeMillis() - timeStamp) + "ms for " + plugins.size());
-            final List<LazyHostPlugin> finalPlugins = plugins;
-            Thread saveThread = new Thread("@HostPluginController:save") {
-                public void run() {
-                    final ArrayList<AbstractHostPlugin> saveList = new ArrayList<AbstractHostPlugin>(finalPlugins.size());
-                    for (LazyHostPlugin plugin : finalPlugins) {
-                        saveList.add(plugin.getAbstractHostPlugin());
-                    }
-                    save(saveList);
-                };
-            };
-            saveThread.setDaemon(true);
-            saveThread.start();
-            list = Collections.<String, LazyHostPlugin> unmodifiableMap(retMap);
+            finalPlugins = plugins;
+            list = retMap;
         } finally {
-            validateCache();
-            LogController.setRebirthLogger(null);
             final Map<String, LazyHostPlugin> llist = list;
             if (llist != null) {
                 logger.info("@HostPluginController: init took " + (System.currentTimeMillis() - completeTimeStamp) + "ms for " + llist.size());
             } else {
                 logger.info("@HostPluginController: init took " + (System.currentTimeMillis() - completeTimeStamp));
             }
+            LogController.setRebirthLogger(null);
+            validateCache();
+            if (finalPlugins != null) {
+                final List<LazyHostPlugin> plugins = finalPlugins;
+                final Thread saveThread = new Thread("@HostPluginController:save") {
+                    public void run() {
+                        save(plugins);
+                    };
+                };
+                saveThread.setDaemon(true);
+                saveThread.start();
+            }
             logger.close();
+            System.gc();
         }
-        System.gc();
         SecondLevelLaunch.INIT_COMPLETE.executeWhenReached(new Runnable() {
 
             @Override
@@ -265,70 +267,57 @@ public class HostPluginController extends PluginController<PluginForHost> {
         return list;
     }
 
-    private List<LazyHostPlugin> loadFromCache() {
-        boolean readL = lock.readLock();
-        final List<AbstractHostPlugin> list;
+    private List<LazyHostPlugin> loadFromCache() throws IOException {
+        final boolean readL = lock.readLock();
         try {
-            list = JSonStorage.restoreFrom(Application.getTempResource(getCache()), true, null, new TypeRef<ArrayList<AbstractHostPlugin>>() {
-            }, null);
+            return LazyHostPluginCache.read(Application.getTempResource(getCache()));
         } finally {
             lock.readUnlock(readL);
         }
-        if (list == null || list.size() == 0) {
-            return null;
-        }
-        final List<LazyHostPlugin> cachedPlugins = new ArrayList<LazyHostPlugin>(list.size());
-        for (AbstractHostPlugin ap : list) {
-            if (ap.getCacheVersion() != AbstractHostPlugin.CACHEVERSION) {
-                throw new WTFException("Invalid CacheVersion found");
-            }
-            cachedPlugins.add(new LazyHostPlugin(ap, null, null));
-        }
-        return cachedPlugins;
     }
 
-    private List<LazyHostPlugin> update(LogSource logger, List<LazyHostPlugin> updateCache) throws MalformedURLException {
-        final Map<String, ArrayList<LazyPlugin>> updateCacheMap;
+    @Override
+    protected long[] getInfos(Class<PluginForHost> clazz) {
+        final HostPlugin infos = clazz.getAnnotation(HostPlugin.class);
+        return new long[] { infos.interfaceVersion(), Formatter.getRevision(infos.revision()) };
+    }
+
+    private List<LazyHostPlugin> update(LogSource logger, List<LazyHostPlugin> updateCache) throws Exception {
+        final Map<LazyPluginClass, ArrayList<LazyPlugin>> updateCacheMap;
         if (updateCache != null && updateCache.size() > 0) {
-            updateCacheMap = new HashMap<String, ArrayList<LazyPlugin>>();
-            try {
-                for (final LazyHostPlugin cachedPlugin : updateCache) {
-                    final String classFilename = cachedPlugin.getMainClassFilename();
-                    if (classFilename != null && cachedPlugin.getMainClassLastModified() > 0 && cachedPlugin.getMainClassSHA256() != null) {
-                        ArrayList<LazyPlugin> cachedPlugins = updateCacheMap.get(classFilename);
-                        if (cachedPlugins == null) {
-                            cachedPlugins = new ArrayList<LazyPlugin>();
-                            updateCacheMap.put(classFilename, cachedPlugins);
-                        }
-                        cachedPlugins.add(cachedPlugin);
-                    }
+            updateCacheMap = new HashMap<LazyPluginClass, ArrayList<LazyPlugin>>();
+            for (final LazyHostPlugin cachedPlugin : updateCache) {
+                ArrayList<LazyPlugin> list = updateCacheMap.get(cachedPlugin.getLazyPluginClass());
+                if (list == null) {
+                    list = new ArrayList<LazyPlugin>();
+                    updateCacheMap.put(cachedPlugin.getLazyPluginClass(), list);
                 }
-            } catch (final Throwable e) {
-                logger.log(e);
+                list.add(cachedPlugin);
             }
         } else {
             updateCacheMap = null;
         }
         final List<LazyHostPlugin> retList = new ArrayList<LazyHostPlugin>();
-        for (PluginInfo<PluginForHost> c : scan("jd/plugins/hoster", updateCacheMap)) {
-            if (c.getLazyPlugin() != null) {
-                final LazyHostPlugin plugin = (LazyHostPlugin) c.getLazyPlugin();
+        for (PluginInfo<PluginForHost> pluginInfo : scan(logger, "jd/plugins/hoster", updateCacheMap)) {
+            if (pluginInfo.getLazyPlugin() != null) {
+                final LazyHostPlugin plugin = (LazyHostPlugin) pluginInfo.getLazyPlugin();
                 retList.add(plugin);
-                logger.finer("@HostPlugin ok(cached):" + plugin.getClassname() + " " + plugin.getDisplayName() + " " + plugin.getVersion());
+                // logger.finer("@HostPlugin ok(cached):" + plugin.getClassName() + " " + plugin.getDisplayName() + " " +
+                // plugin.getVersion());
             } else {
-                final String simpleName = new String(c.getClazz().getSimpleName());
-                final HostPlugin a = c.getClazz().getAnnotation(HostPlugin.class);
+                final String simpleName = new String(pluginInfo.getClazz().getSimpleName());
+                final HostPlugin a = pluginInfo.getClazz().getAnnotation(HostPlugin.class);
                 if (a != null) {
                     try {
-                        final long revision = Formatter.getRevision(a.revision());
+                        final long revision = pluginInfo.getLazyPluginClass().getRevision();
                         String[] names = a.names();
                         String[] patterns = a.urls();
                         int[] flags = a.flags();
                         if (names.length == 0) {
                             /* create multiple hoster plugins from one source */
-                            patterns = (String[]) c.getClazz().getDeclaredMethod("getAnnotationUrls", new Class[] {}).invoke(null, new Object[] {});
-                            names = (String[]) c.getClazz().getDeclaredMethod("getAnnotationNames", new Class[] {}).invoke(null, new Object[] {});
-                            flags = (int[]) c.getClazz().getDeclaredMethod("getAnnotationFlags", new Class[] {}).invoke(null, new Object[] {});
+                            patterns = (String[]) pluginInfo.getClazz().getDeclaredMethod("getAnnotationUrls", new Class[] {}).invoke(null, new Object[] {});
+                            names = (String[]) pluginInfo.getClazz().getDeclaredMethod("getAnnotationNames", new Class[] {}).invoke(null, new Object[] {});
+                            flags = (int[]) pluginInfo.getClazz().getDeclaredMethod("getAnnotationFlags", new Class[] {}).invoke(null, new Object[] {});
                         }
                         if (patterns.length != names.length) {
                             //
@@ -342,74 +331,49 @@ public class HostPluginController extends PluginController<PluginForHost> {
                             //
                             throw new WTFException("names.length=0");
                         }
-                        final PluginClassLoaderChild classLoader = (PluginClassLoaderChild) c.getClazz().getClassLoader();
+                        final PluginClassLoaderChild classLoader = (PluginClassLoaderChild) pluginInfo.getClazz().getClassLoader();
                         /* during init we dont want dummy libs being created */
                         classLoader.setCreateDummyLibs(false);
                         for (int i = 0; i < names.length; i++) {
                             LazyHostPlugin lazyHostPlugin = null;
                             try {
-                                String displayName = new String(names[i]);
-                                /* we use new String() here to dereference the Annotation and it's loaded class */
-                                AbstractHostPlugin ap = new AbstractHostPlugin(new String(c.getClazz().getSimpleName()));
-                                ap.setCacheVersion(AbstractHostPlugin.CACHEVERSION);
-                                ap.setDisplayName(displayName);
-                                ap.setPattern(new String(patterns[i]));
-                                ap.setVersion(revision);
-                                ap.setInterfaceVersion(a.interfaceVersion());
-
-                                /* information to speed up rescan */
-                                ap.setMainClassSHA256(c.getMainClassSHA256());
-                                ap.setMainClassLastModified(c.getMainClassLastModified());
-                                ap.setMainClassFilename(c.getFile().getName());
-                                lazyHostPlugin = new LazyHostPlugin(ap, null, classLoader);
+                                lazyHostPlugin = new LazyHostPlugin(pluginInfo.getLazyPluginClass(), new String(patterns[i]), new String(names[i]), pluginInfo.getClazz(), classLoader);
                                 try {
                                     /* check for stable compatibility */
-                                    classLoader.setPluginClass(new String(c.getClazz().getName()));
-                                    classLoader.setCheckStableCompatibility(a.interfaceVersion() == 2);
-                                    PluginForHost plg = lazyHostPlugin.newInstance(classLoader);
+                                    classLoader.setPluginClass(pluginInfo.getClazz().getName());
+                                    classLoader.setCheckStableCompatibility(pluginInfo.getLazyPluginClass().getInterfaceVersion() == 2);
+                                    final PluginForHost plg = lazyHostPlugin.newInstance(classLoader);
                                     /* set configinterface */
-                                    Class<? extends ConfigInterface> configInterface = plg.getConfigInterface();
+                                    final Class<? extends ConfigInterface> configInterface = plg.getConfigInterface();
                                     if (configInterface != null) {
-                                        String name = new String(configInterface.getName());
-                                        ap.setConfigInterface(name);
-                                        lazyHostPlugin.setConfigInterface(name);
+                                        lazyHostPlugin.setConfigInterface(new String(configInterface.getName()));
                                     }
                                     /* set premium */
-                                    ap.setPremium(plg.isPremiumEnabled());
-                                    lazyHostPlugin.setPremium(plg.isPremiumEnabled());
-
-                                    /* set premiumUrl */
-                                    String purl = plg.getBuyPremiumUrl();
-                                    if (purl != null) {
-                                        purl = new String(purl);
+                                    if (plg.isPremiumEnabled()) {
+                                        lazyHostPlugin.setPremium(true);
+                                        /* set premiumUrl */
+                                        final String purl = plg.getBuyPremiumUrl();
+                                        if (purl != null) {
+                                            lazyHostPlugin.setPremiumUrl(new String(purl));
+                                        }
                                     }
-                                    lazyHostPlugin.setPremiumUrl(purl);
-                                    ap.setPremiumUrl(purl);
-
                                     /* set hasConfig */
-                                    ap.setHasConfig(plg.hasConfig());
                                     lazyHostPlugin.setHasConfig(plg.hasConfig());
-
                                     /* set hasAccountRewrite */
-                                    boolean hasAccountRewrite = false;
                                     try {
                                         if (plg.rewriteHost((Account) null) != null) {
-                                            hasAccountRewrite = true;
+                                            lazyHostPlugin.setHasAccountRewrite(true);
                                         }
                                     } catch (Throwable e) {
                                     }
-                                    ap.setHasAccountRewrite(hasAccountRewrite);
-                                    lazyHostPlugin.setHasAccountRewrite(hasAccountRewrite);
+
                                     /* set hasLinkRewrite */
-                                    boolean hasLinkRewrite = false;
                                     try {
                                         if (plg.rewriteHost((DownloadLink) null) != null) {
-                                            hasLinkRewrite = true;
+                                            lazyHostPlugin.setHasLinkRewrite(true);
                                         }
                                     } catch (Throwable e) {
                                     }
-                                    ap.setHasLinkRewrite(hasLinkRewrite);
-                                    lazyHostPlugin.setHasLinkRewrite(hasLinkRewrite);
                                 } catch (Throwable e) {
                                     if (e instanceof UpdateRequiredClassNotFoundException) {
                                         logger.log(e);
@@ -420,7 +384,7 @@ public class HostPluginController extends PluginController<PluginForHost> {
                                 }
                                 if (lazyHostPlugin != null) {
                                     retList.add(lazyHostPlugin);
-                                    logger.finer("@HostPlugin ok:" + simpleName + " " + new String(names[i]) + " " + revision);
+                                    // logger.finer("@HostPlugin ok:" + simpleName + " " + new String(names[i]) + " " + revision);
                                 }
                             } catch (Throwable e) {
                                 logger.log(e);
@@ -445,7 +409,7 @@ public class HostPluginController extends PluginController<PluginForHost> {
         return retList;
     }
 
-    private AtomicBoolean cacheInvalidated = new AtomicBoolean(false);
+    private final AtomicBoolean cacheInvalidated = new AtomicBoolean(false);
 
     public boolean isCacheInvalidated() {
         return cacheInvalidated.get();
@@ -459,10 +423,14 @@ public class HostPluginController extends PluginController<PluginForHost> {
         cacheInvalidated.set(false);
     }
 
-    private void save(List<AbstractHostPlugin> save) {
+    private void save(List<LazyHostPlugin> save) {
         lock.writeLock();
+        final File cache = Application.getTempResource(getCache());
         try {
-            JSonStorage.saveTo(Application.getTempResource(getCache()), save);
+            LazyHostPluginCache.write(save, cache);
+        } catch (final IOException e) {
+            e.printStackTrace();
+            cache.delete();
         } finally {
             lock.writeUnlock();
             FileCreationManager.getInstance().delete(Application.getTempResource(TMP_INVALIDPLUGINS), null);

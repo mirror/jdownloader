@@ -5,6 +5,7 @@ import java.io.IOException;
 import java.lang.ref.WeakReference;
 import java.net.URL;
 import java.net.URLClassLoader;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map.Entry;
@@ -16,6 +17,7 @@ import jd.plugins.PluginForHost;
 
 import org.appwork.utils.Application;
 import org.appwork.utils.IO;
+import org.appwork.utils.formatter.HexFormatter;
 import org.appwork.utils.logging2.LogSource;
 import org.jdownloader.logging.LogController;
 import org.jdownloader.plugins.controller.crawler.LazyCrawlerPlugin;
@@ -347,10 +349,10 @@ public class PluginClassLoader extends URLClassLoader {
     private static String getCacheID(final Plugin plugin) {
         if (plugin instanceof PluginForHost) {
             final LazyHostPlugin lazyP = ((PluginForHost) plugin).getLazyP();
-            return lazyP.getClassname() + lazyP.getVersion() + lazyP.getMainClassSHA256();
+            return lazyP.getClassName() + lazyP.getVersion() + HexFormatter.byteArrayToHex(lazyP.getLazyPluginClass().getSha256());
         } else if (plugin instanceof PluginForDecrypt) {
             final LazyCrawlerPlugin lazyC = ((PluginForDecrypt) plugin).getLazyC();
-            return lazyC.getClassname() + lazyC.getVersion() + lazyC.getMainClassSHA256();
+            return lazyC.getClassName() + lazyC.getVersion() + HexFormatter.byteArrayToHex(lazyC.getLazyPluginClass().getSha256());
         }
         return null;
     }
@@ -383,7 +385,7 @@ public class PluginClassLoader extends URLClassLoader {
             final WeakReference<LazyPlugin<? extends Plugin>> weakPlugin = next.getValue();
             if (weakPlugin != null) {
                 final LazyPlugin<? extends Plugin> plugin = weakPlugin.get();
-                if (plugin != null && (lazyPlugin == plugin || lazyPlugin.getClassname().equals(plugin.getClassname()) && lazyPlugin.getVersion() == plugin.getVersion() && lazyPlugin.getMainClassSHA256().equals(plugin.getMainClassSHA256()))) {
+                if (plugin != null && (lazyPlugin == plugin || lazyPlugin.getClassName().equals(plugin.getClassName()) && lazyPlugin.getVersion() == plugin.getVersion() && Arrays.equals(lazyPlugin.getLazyPluginClass().getSha256(), plugin.getLazyPluginClass().getSha256()))) {
                     final PluginClassLoaderChild ret = next.getKey();
                     if (ret != null) {
                         return ret;
