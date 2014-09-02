@@ -178,7 +178,7 @@ public class OBoomCom extends PluginForHost {
                     }
                     // infos.put("premium_unix", ("" + (System.currentTimeMillis() + 6 * 60 * 60 * 1000l) / 1000));
                     String premium_unix = infos.get("premium_unix");
-                    if (premium_unix != null) {
+                    if (premium_unix != null && premium_unix.matches("^[0-9]+$")) {
                         long timeStamp = Long.parseLong(premium_unix) * 1000l;
                         account.setProperty("PREMIUM_UNIX", timeStamp);
                         if (timeStamp <= System.currentTimeMillis()) {
@@ -504,7 +504,7 @@ public class OBoomCom extends PluginForHost {
     }
 
     private void refreshTokenHandling(Map<String, String> usedInfos, Account account, final boolean freshInfos) throws PluginException {
-        if ((br.containsHTML("403,\"token") || br.containsHTML("404,\"token") || br.containsHTML("403,\"resume") || br.containsHTML("421,\"connections")) && freshInfos == false) {
+        if ((br.containsHTML("400,\"auth") || br.containsHTML("403,\"token") || br.containsHTML("404,\"token") || br.containsHTML("403,\"resume") || br.containsHTML("421,\"connections")) && freshInfos == false) {
             /* only retry on NON-fresh tokens */
             synchronized (ACCOUNTINFOS) {
                 if (ACCOUNTINFOS.get(account) == usedInfos) {
