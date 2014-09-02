@@ -255,6 +255,7 @@ public class AccountController implements AccountControllerListener, AccountProp
             }
             boolean validAccountCheck = false;
             try {
+                plugin.init();
                 Browser br = new Browser();
                 br.setLogger(logger);
                 plugin.setBrowser(br);
@@ -475,7 +476,7 @@ public class AccountController implements AccountControllerListener, AccountProp
 
     /**
      * Restores accounts from old database
-     * 
+     *
      * @return
      */
     private HashMap<String, ArrayList<AccountData>> restore() {
