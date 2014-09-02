@@ -3,52 +3,27 @@ package org.jdownloader.plugins.controller.host;
 import jd.plugins.PluginForHost;
 
 import org.jdownloader.plugins.controller.LazyPlugin;
+import org.jdownloader.plugins.controller.LazyPluginClass;
 import org.jdownloader.plugins.controller.PluginClassLoader.PluginClassLoaderChild;
 import org.jdownloader.plugins.controller.UpdateRequiredClassNotFoundException;
 
 public class LazyHostPlugin extends LazyPlugin<PluginForHost> {
 
-    protected static final String JD_PLUGINS_HOSTER = "jd.plugins.hoster.";
-    private String                premiumUrl;
-    private boolean               hasConfig         = false;
-    private LazyHostPlugin        fallBackPlugin    = null;
+    private String         premiumUrl;
+    private boolean        hasConfig      = false;
+    private LazyHostPlugin fallBackPlugin = null;
 
-    private volatile long         parses            = 0;
-    private volatile long         parsesRuntime     = 0;
+    private volatile long  parses         = 0;
+    private volatile long  parsesRuntime  = 0;
 
     public long getAverageParseRuntime() {
         synchronized (this) {
             if (parses == 0 || parsesRuntime == 0) {
                 return 0;
             }
-            long ret = parsesRuntime / parses;
+            final long ret = parsesRuntime / parses;
             return ret;
         }
-    }
-
-    protected AbstractHostPlugin getAbstractHostPlugin() {
-        /* we only need the classname and not complete path */
-        String className = getClassname().substring(JD_PLUGINS_HOSTER.length());
-        AbstractHostPlugin ap = new AbstractHostPlugin(className);
-        ap.setDisplayName(getDisplayName());
-        if (isPremium()) {
-            ap.setPremium(isPremium());
-            ap.setPremiumUrl(getPremiumUrl());
-        }
-        ap.setHasAccountRewrite(isHasAccountRewrite());
-        ap.setConfigInterface(getConfigInterface());
-        ap.setHasLinkRewrite(isHasLinkRewrite());
-        ap.setPattern(getPatternSource());
-        ap.setVersion(getVersion());
-        ap.setHasConfig(isHasConfig());
-        ap.setInterfaceVersion(getInterfaceVersion());
-
-        ap.setMainClassSHA256(getMainClassSHA256());
-        ap.setMainClassLastModified(getMainClassLastModified());
-        ap.setMainClassFilename(getMainClassFilename());
-
-        ap.setCacheVersion(AbstractHostPlugin.CACHEVERSION);
-        return ap;
     }
 
     public void updateParseRuntime(long r) {
@@ -58,6 +33,11 @@ public class LazyHostPlugin extends LazyPlugin<PluginForHost> {
                 parsesRuntime += r;
             }
         }
+    }
+
+    @Override
+    public String getClassName() {
+        return "jd.plugins.hoster." + getLazyPluginClass().getClassName();
     }
 
     public long getParsesCounter() {
@@ -95,19 +75,18 @@ public class LazyHostPlugin extends LazyPlugin<PluginForHost> {
     private boolean premium;
     private boolean hasAccountRewrite;
     private boolean hasLinkRewrite;
+    private String  configInterface = null;
 
-    public LazyHostPlugin(AbstractHostPlugin ap, Class<PluginForHost> class1, PluginClassLoaderChild classLoaderChild) {
-        super(ap.getPattern(), JD_PLUGINS_HOSTER + ap.getClassname(), ap.getConfigInterface(), ap.getDisplayName(), ap.getVersion(), class1, classLoaderChild);
-        premiumUrl = ap.getPremiumUrl();
-        premium = ap.isPremium();
-        hasConfig = ap.isHasConfig();
-        mainClassFilename = ap.getMainClassFilename();
-        mainClassLastModified = ap.getMainClassLastModified();
-        mainClassSHA256 = ap.getMainClassSHA256();
-        interfaceVersion = ap.getInterfaceVersion();
-        hasAccountRewrite = ap.isHasAccountRewrite();
-        hasLinkRewrite = ap.isHasLinkRewrite();
+    public LazyHostPlugin(LazyPluginClass lazyPluginClass, String pattern, String displayName, Class<PluginForHost> pluginClass, PluginClassLoaderChild classLoaderChild) {
+        super(lazyPluginClass, pattern, displayName, pluginClass, classLoaderChild);
+    }
 
+    public String getConfigInterface() {
+        return configInterface;
+    }
+
+    public void setConfigInterface(String configInterface) {
+        this.configInterface = configInterface;
     }
 
     public boolean isHasAccountRewrite() {

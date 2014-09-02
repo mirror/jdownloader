@@ -17,7 +17,7 @@ import org.jdownloader.container.sft.sftContainer;
 public class SFT extends PluginsC {
 
     public SFT() {
-        super("SFT", "file://.+\\.sft", "$Revision: $");
+        super("SFT", "file://.+\\.sft", "$Revision$");
     }
 
     @Override
@@ -48,9 +48,9 @@ public class SFT extends PluginsC {
             cs.setStatus(ContainerStatus.STATUS_FAILED);
         } catch (Exception e) {
             cs.setStatus(ContainerStatus.STATUS_FAILED);
-            if ((e.getMessage() != null) | (e.getMessage().length() > 0))
+            if ((e.getMessage() != null) | (e.getMessage().length() > 0)) {
                 UserIO.getInstance().requestMessageDialog(e.getMessage());
-            else {
+            } else {
                 UserIO.getInstance().requestMessageDialog("sft decrypt error");
             }
         }

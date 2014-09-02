@@ -152,7 +152,7 @@ public class PluginFinder {
             /* no cached plugin found, first lets try to find a valid plugin for given host */
             try {
                 LazyHostPlugin hPlugin = HostPluginController.getInstance().get(acc.getHoster());
-                if (hPlugin != null && (hPlugin.isPremium() || hPlugin.getClassname().endsWith("r.Offline"))) {
+                if (hPlugin != null && (hPlugin.isPremium() || hPlugin.getClassName().endsWith("r.Offline"))) {
                     pluginForHost = hPlugin.getPrototype(null);
                 }
             } catch (final Throwable e) {

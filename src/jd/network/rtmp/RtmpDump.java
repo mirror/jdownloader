@@ -512,7 +512,7 @@ public class RtmpDump extends RTMPDownload {
                 String e = error.toLowerCase();
 
                 /* special ArteTv handling */
-                if (this.plg.getLazyP().getClassname().endsWith("ArteTv")) {
+                if (this.plg.getLazyP().getClassName().endsWith("ArteTv")) {
                     if (e.contains("netstream.failed")) {
                         if (downloadable.getDownloadTotalBytes() > 0) {
                             dLink.setProperty("STREAMURLISEXPIRED", true);
