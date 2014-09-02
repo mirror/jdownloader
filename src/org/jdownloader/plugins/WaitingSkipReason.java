@@ -7,6 +7,9 @@ import jd.nutils.Formatter;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackageView;
 
+import org.jdownloader.api.downloads.ChannelCollector;
+import org.jdownloader.api.downloads.DownloadControllerEventPublisher;
+import org.jdownloader.api.downloads.v2.DownloadsAPIV2Impl;
 import org.jdownloader.gui.IconKey;
 import org.jdownloader.gui.views.downloads.columns.ETAColumn;
 import org.jdownloader.gui.views.downloads.columns.TaskColumn;
@@ -105,6 +108,15 @@ public class WaitingSkipReason implements ConditionalSkipReason, TimeOutConditio
         long left = getTimeOutLeft();
         if (left > 0) {
             if (requestor instanceof TaskColumn) {
+                return getMessage();
+            }
+            if (requestor instanceof DownloadControllerEventPublisher) {
+                return getMessage();
+            }
+            if (requestor instanceof ChannelCollector) {
+                return getMessage();
+            }
+            if (requestor instanceof DownloadsAPIV2Impl) {
                 return getMessage();
             }
             if (requestor instanceof FilePackageView) {

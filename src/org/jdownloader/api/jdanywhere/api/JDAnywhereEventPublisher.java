@@ -29,13 +29,12 @@ import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLinkProperty;
 import jd.plugins.FilePackage;
 import jd.plugins.FilePackageProperty;
-import jd.plugins.LinkStatusProperty;
 import jd.plugins.PluginProgress;
 
 import org.appwork.controlling.StateEvent;
 import org.appwork.controlling.StateEventListener;
 import org.appwork.remoteapi.events.EventPublisher;
-import org.appwork.remoteapi.events.EventsSender;
+import org.appwork.remoteapi.events.RemoteAPIEventsSender;
 import org.appwork.remoteapi.events.SimpleEventObject;
 import org.appwork.storage.config.ValidationException;
 import org.appwork.storage.config.events.GenericConfigEventListener;
@@ -55,7 +54,7 @@ import org.jdownloader.settings.staticreferences.CFG_RECONNECT;
 
 public class JDAnywhereEventPublisher implements EventPublisher, AccountControllerListener, DownloadWatchdogListener, DownloadControllerListener, StateEventListener, LinkCollectorListener, ChallengeResponseListener {
 
-    private CopyOnWriteArraySet<EventsSender> eventSenders       = new CopyOnWriteArraySet<EventsSender>();
+    private CopyOnWriteArraySet<RemoteAPIEventsSender> eventSenders       = new CopyOnWriteArraySet<RemoteAPIEventsSender>();
     private EventsAPI                         eventsApi          = new EventsAPI();
     HashMap<Long, String>                     linkStatusMessages = new HashMap<Long, String>();
 
@@ -98,7 +97,7 @@ public class JDAnywhereEventPublisher implements EventPublisher, AccountControll
                                                                                            data.put("message", "Limitspeed");
                                                                                            data.put("data", CFG_GENERAL.DOWNLOAD_SPEED_LIMIT.getValue());
                                                                                            SimpleEventObject eventObject = new SimpleEventObject(JDAnywhereEventPublisher.this, EVENTID.SETTINGSCHANGED.name(), data, "DOWNLOAD_SPEED_LIMIT");
-                                                                                           for (EventsSender eventSender : eventSenders) {
+                                                                                           for (RemoteAPIEventsSender eventSender : eventSenders) {
                                                                                                eventSender.publishEvent(eventObject, null);
                                                                                            }
                                                                                            // JDAnywhereController.getInstance().getEventsapi().publishEvent(new
@@ -118,7 +117,7 @@ public class JDAnywhereEventPublisher implements EventPublisher, AccountControll
                                                                                            data.put("message", "LimitspeedActivated");
                                                                                            data.put("data", CFG_GENERAL.DOWNLOAD_SPEED_LIMIT_ENABLED.isEnabled());
                                                                                            SimpleEventObject eventObject = new SimpleEventObject(JDAnywhereEventPublisher.this, EVENTID.SETTINGSCHANGED.name(), data, "DOWNLOAD_SPEED_LIMIT_ENABLED");
-                                                                                           for (EventsSender eventSender : eventSenders) {
+                                                                                           for (RemoteAPIEventsSender eventSender : eventSenders) {
                                                                                                eventSender.publishEvent(eventObject, null);
                                                                                            }
                                                                                        }
@@ -130,7 +129,7 @@ public class JDAnywhereEventPublisher implements EventPublisher, AccountControll
                                                                                            data.put("message", "MaxDL");
                                                                                            data.put("data", CFG_GENERAL.MAX_SIMULTANE_DOWNLOADS.getValue());
                                                                                            SimpleEventObject eventObject = new SimpleEventObject(JDAnywhereEventPublisher.this, EVENTID.SETTINGSCHANGED.name(), data, "MAX_SIMULTANE_DOWNLOADS");
-                                                                                           for (EventsSender eventSender : eventSenders) {
+                                                                                           for (RemoteAPIEventsSender eventSender : eventSenders) {
                                                                                                eventSender.publishEvent(eventObject, null);
                                                                                            }
                                                                                        }
@@ -146,7 +145,7 @@ public class JDAnywhereEventPublisher implements EventPublisher, AccountControll
                                                                                            data.put("message", "MaxConDL");
                                                                                            data.put("data", CFG_GENERAL.MAX_CHUNKS_PER_FILE.getValue());
                                                                                            SimpleEventObject eventObject = new SimpleEventObject(JDAnywhereEventPublisher.this, EVENTID.SETTINGSCHANGED.name(), data, "MAX_CHUNKS_PER_FILE");
-                                                                                           for (EventsSender eventSender : eventSenders) {
+                                                                                           for (RemoteAPIEventsSender eventSender : eventSenders) {
                                                                                                eventSender.publishEvent(eventObject, null);
                                                                                            }
                                                                                        }
@@ -162,7 +161,7 @@ public class JDAnywhereEventPublisher implements EventPublisher, AccountControll
                                                                                            data.put("message", "MaxConHost");
                                                                                            data.put("data", CFG_GENERAL.MAX_SIMULTANE_DOWNLOADS_PER_HOST.getValue());
                                                                                            SimpleEventObject eventObject = new SimpleEventObject(JDAnywhereEventPublisher.this, EVENTID.SETTINGSCHANGED.name(), data, "MAX_SIMULTANE_DOWNLOADS_PER_HOST");
-                                                                                           for (EventsSender eventSender : eventSenders) {
+                                                                                           for (RemoteAPIEventsSender eventSender : eventSenders) {
                                                                                                eventSender.publishEvent(eventObject, null);
                                                                                            }
                                                                                        }
@@ -181,7 +180,7 @@ public class JDAnywhereEventPublisher implements EventPublisher, AccountControll
                                                                                            data.put("message", "MaxConHostActivated");
                                                                                            data.put("data", CFG_GENERAL.MAX_DOWNLOADS_PER_HOST_ENABLED.isEnabled());
                                                                                            SimpleEventObject eventObject = new SimpleEventObject(JDAnywhereEventPublisher.this, EVENTID.SETTINGSCHANGED.name(), data, "MAX_DOWNLOADS_PER_HOST_ENABLED");
-                                                                                           for (EventsSender eventSender : eventSenders) {
+                                                                                           for (RemoteAPIEventsSender eventSender : eventSenders) {
                                                                                                eventSender.publishEvent(eventObject, null);
                                                                                            }
                                                                                        }
@@ -197,7 +196,7 @@ public class JDAnywhereEventPublisher implements EventPublisher, AccountControll
                                                                                            data.put("message", "Reconnect");
                                                                                            data.put("data", CFG_RECONNECT.AUTO_RECONNECT_ENABLED.isEnabled());
                                                                                            SimpleEventObject eventObject = new SimpleEventObject(JDAnywhereEventPublisher.this, EVENTID.SETTINGSCHANGED.name(), data, "AUTO_RECONNECT_ENABLED");
-                                                                                           for (EventsSender eventSender : eventSenders) {
+                                                                                           for (RemoteAPIEventsSender eventSender : eventSenders) {
                                                                                                eventSender.publishEvent(eventObject, null);
                                                                                            }
                                                                                        }
@@ -213,7 +212,7 @@ public class JDAnywhereEventPublisher implements EventPublisher, AccountControll
                                                                                            data.put("message", "Premium");
                                                                                            data.put("data", CFG_GENERAL.USE_AVAILABLE_ACCOUNTS.isEnabled());
                                                                                            SimpleEventObject eventObject = new SimpleEventObject(JDAnywhereEventPublisher.this, EVENTID.SETTINGSCHANGED.name(), data, "USE_AVAILABLE_ACCOUNTS");
-                                                                                           for (EventsSender eventSender : eventSenders) {
+                                                                                           for (RemoteAPIEventsSender eventSender : eventSenders) {
                                                                                                eventSender.publishEvent(eventObject, null);
                                                                                            }
                                                                                        }
@@ -221,14 +220,14 @@ public class JDAnywhereEventPublisher implements EventPublisher, AccountControll
 
     private void publishEvent(EVENTID eventID, Object data, String id) {
         SimpleEventObject eventObject = new SimpleEventObject(this, eventID.name(), data, id);
-        for (EventsSender eventSender : eventSenders) {
+        for (RemoteAPIEventsSender eventSender : eventSenders) {
             eventSender.publishEvent(eventObject, null);
         }
     }
 
     private void publishEvent(EVENTID eventID, Object data) {
         SimpleEventObject eventObject = new SimpleEventObject(this, eventID.name(), data);
-        for (EventsSender eventSender : eventSenders) {
+        for (RemoteAPIEventsSender eventSender : eventSenders) {
             eventSender.publishEvent(eventObject, null);
         }
     }
@@ -287,7 +286,9 @@ public class JDAnywhereEventPublisher implements EventPublisher, AccountControll
     private void sendEvent(SolverJob<?> job, String type) {
         long captchCount = 0;
         for (SolverJob<?> entry : ChallengeResponseController.getInstance().listJobs()) {
-            if (entry.isDone()) continue;
+            if (entry.isDone()) {
+                continue;
+            }
             if (entry.getChallenge() instanceof ImageCaptchaChallenge) {
                 captchCount++;
             }
@@ -296,10 +297,11 @@ public class JDAnywhereEventPublisher implements EventPublisher, AccountControll
         ImageCaptchaChallenge<?> challenge = (ImageCaptchaChallenge<?>) job.getChallenge();
 
         CaptchaJob apiJob = new CaptchaJob();
-        if (challenge.getResultType().isAssignableFrom(String.class))
+        if (challenge.getResultType().isAssignableFrom(String.class)) {
             apiJob.setType("Text");
-        else
+        } else {
             apiJob.setType("Click");
+        }
 
         apiJob.setID(challenge.getId().getID());
         apiJob.setHoster(challenge.getPlugin().getHost());
@@ -468,7 +470,9 @@ public class JDAnywhereEventPublisher implements EventPublisher, AccountControll
                         linkCollectorApiLinkRemoved((List<CrawledLink>) object);
                     }
                 }
-                if (object instanceof CrawledPackage) linkCollectorApiPackageRemoved((CrawledPackage) event.getParameter());
+                if (object instanceof CrawledPackage) {
+                    linkCollectorApiPackageRemoved((CrawledPackage) event.getParameter());
+                }
             }
         }
     }
@@ -477,15 +481,19 @@ public class JDAnywhereEventPublisher implements EventPublisher, AccountControll
     public void onLinkCollectorContentAdded(LinkCollectorEvent event) {
         if (event.getParameters() != null) {
             for (Object object : event.getParameters()) {
-                if (object instanceof CrawledLink) linkCollectorApiLinkAdded((CrawledLink) object);
-                if (object instanceof CrawledPackage) linkCollectorApiPackageAdded((CrawledPackage) event.getParameter());
+                if (object instanceof CrawledLink) {
+                    linkCollectorApiLinkAdded((CrawledLink) object);
+                }
+                if (object instanceof CrawledPackage) {
+                    linkCollectorApiPackageAdded((CrawledPackage) event.getParameter());
+                }
             }
         }
     }
 
     @Override
     public void onLinkCollectorLinkAdded(LinkCollectorEvent event, CrawledLink parameter) {
-        linkCollectorApiLinkAdded((CrawledLink) parameter);
+        linkCollectorApiLinkAdded(parameter);
     }
 
     @Override
@@ -516,7 +524,7 @@ public class JDAnywhereEventPublisher implements EventPublisher, AccountControll
     }
 
     @Override
-    public synchronized void register(EventsSender eventsAPI) {
+    public synchronized void register(RemoteAPIEventsSender eventsAPI) {
         boolean wasEmpty = eventSenders.isEmpty();
         eventSenders.add(eventsAPI);
         if (wasEmpty && eventSenders.isEmpty() == false) {
@@ -538,7 +546,7 @@ public class JDAnywhereEventPublisher implements EventPublisher, AccountControll
     }
 
     @Override
-    public synchronized void unregister(EventsSender eventsAPI) {
+    public synchronized void unregister(RemoteAPIEventsSender eventsAPI) {
         eventSenders.remove(eventsAPI);
         if (eventSenders.isEmpty()) {
             DownloadController.getInstance().removeListener(this);
@@ -771,19 +779,11 @@ public class JDAnywhereEventPublisher implements EventPublisher, AccountControll
     }
 
     @Override
-    public void onDownloadControllerUpdatedData(DownloadLink downloadlink, LinkStatusProperty property) {
-    }
-
-    @Override
     public void onDownloadControllerUpdatedData(DownloadLink downloadlink) {
     }
 
     @Override
     public void onDownloadControllerUpdatedData(FilePackage pkg) {
-    }
-
-    @Override
-    public void terminatedSubscription(EventsSender eventsSender, long subscriptionid) {
     }
 
     @Override
@@ -802,10 +802,11 @@ public class JDAnywhereEventPublisher implements EventPublisher, AccountControll
                 break;
             case ACCOUNT_PROPERTY_UPDATE:
                 data.put("Property", ((AccountPropertyChangedEvent) event).getProperty().getProperty().toString());
-                if (((AccountPropertyChangedEvent) event).getProperty().getValue() != null)
+                if (((AccountPropertyChangedEvent) event).getProperty().getValue() != null) {
                     data.put("NewValue", ((AccountPropertyChangedEvent) event).getProperty().getValue().toString());
-                else
+                } else {
                     data.put("NewValue", "");
+                }
                 break;
             case ADDED:
                 // data.put("NewValue", event.getAccount().getId().toString());

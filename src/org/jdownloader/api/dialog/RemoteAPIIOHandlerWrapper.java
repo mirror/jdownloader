@@ -10,8 +10,6 @@ import javax.swing.SwingUtilities;
 import jd.gui.swing.jdgui.JDGui;
 
 import org.appwork.exceptions.WTFException;
-import org.appwork.remoteapi.RemoteAPIInterface;
-import org.appwork.remoteapi.events.EventPublisher;
 import org.appwork.resources.AWUTheme;
 import org.appwork.uio.CloseReason;
 import org.appwork.uio.ConfirmDialogInterface;
@@ -323,11 +321,7 @@ public class RemoteAPIIOHandlerWrapper implements UserIOHandlerInterface {
         }
     }
 
-    public RemoteAPIInterface getApi() {
-        return remoteHandler;
-    }
-
-    public EventPublisher getEventPublisher() {
+    public DialogApiImpl getRemoteHandler() {
         return remoteHandler;
     }
 

@@ -23,7 +23,6 @@ import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLinkProperty;
 import jd.plugins.FilePackage;
 import jd.plugins.FilePackageProperty;
-import jd.plugins.LinkStatusProperty;
 
 import org.appwork.controlling.StateEvent;
 import org.appwork.controlling.StateEventListener;
@@ -124,7 +123,9 @@ public class DownloadOverview extends AbstractOverviewPanel<AggregatedNumbers> i
         DownloadsTableModel.getInstance().getTable().getSelectionModel().addListSelectionListener(listSelection = new ListSelectionListener() {
             @Override
             public void valueChanged(ListSelectionEvent e) {
-                if (e == null || e.getValueIsAdjusting() || DownloadsTableModel.getInstance().isTableSelectionClearing()) { return; }
+                if (e == null || e.getValueIsAdjusting() || DownloadsTableModel.getInstance().isTableSelectionClearing()) {
+                    return;
+                }
                 onConfigValueModified(null, null);
             }
         });
@@ -136,9 +137,15 @@ public class DownloadOverview extends AbstractOverviewPanel<AggregatedNumbers> i
 
             @Override
             public void setData(AggregatedNumbers total, AggregatedNumbers filtered, AggregatedNumbers selected) {
-                if (total != null) setTotal(total.getPackageCount() + "");
-                if (filtered != null) setFiltered(filtered.getPackageCount() + "");
-                if (selected != null) setSelected(selected.getPackageCount() + "");
+                if (total != null) {
+                    setTotal(total.getPackageCount() + "");
+                }
+                if (filtered != null) {
+                    setFiltered(filtered.getPackageCount() + "");
+                }
+                if (selected != null) {
+                    setSelected(selected.getPackageCount() + "");
+                }
             }
 
             @Override
@@ -151,9 +158,15 @@ public class DownloadOverview extends AbstractOverviewPanel<AggregatedNumbers> i
 
             @Override
             public void setData(AggregatedNumbers total, AggregatedNumbers filtered, AggregatedNumbers selected) {
-                if (total != null) setTotal(total.getTotalBytesString(CFG_GUI.OVERVIEW_PANEL_DOWNLOAD_PANEL_INCLUDE_DISABLED_LINKS.isEnabled()));
-                if (filtered != null) setFiltered(filtered.getTotalBytesString(CFG_GUI.OVERVIEW_PANEL_DOWNLOAD_PANEL_INCLUDE_DISABLED_LINKS.isEnabled()));
-                if (selected != null) setSelected(selected.getTotalBytesString(CFG_GUI.OVERVIEW_PANEL_DOWNLOAD_PANEL_INCLUDE_DISABLED_LINKS.isEnabled()));
+                if (total != null) {
+                    setTotal(total.getTotalBytesString(CFG_GUI.OVERVIEW_PANEL_DOWNLOAD_PANEL_INCLUDE_DISABLED_LINKS.isEnabled()));
+                }
+                if (filtered != null) {
+                    setFiltered(filtered.getTotalBytesString(CFG_GUI.OVERVIEW_PANEL_DOWNLOAD_PANEL_INCLUDE_DISABLED_LINKS.isEnabled()));
+                }
+                if (selected != null) {
+                    setSelected(selected.getTotalBytesString(CFG_GUI.OVERVIEW_PANEL_DOWNLOAD_PANEL_INCLUDE_DISABLED_LINKS.isEnabled()));
+                }
             }
 
             @Override
@@ -166,9 +179,15 @@ public class DownloadOverview extends AbstractOverviewPanel<AggregatedNumbers> i
 
             @Override
             public void setData(AggregatedNumbers total, AggregatedNumbers filtered, AggregatedNumbers selected) {
-                if (total != null) setTotal(total.getLoadedBytesString(CFG_GUI.OVERVIEW_PANEL_DOWNLOAD_PANEL_INCLUDE_DISABLED_LINKS.isEnabled()));
-                if (filtered != null) setFiltered(filtered.getLoadedBytesString(CFG_GUI.OVERVIEW_PANEL_DOWNLOAD_PANEL_INCLUDE_DISABLED_LINKS.isEnabled()));
-                if (selected != null) setSelected(selected.getLoadedBytesString(CFG_GUI.OVERVIEW_PANEL_DOWNLOAD_PANEL_INCLUDE_DISABLED_LINKS.isEnabled()));
+                if (total != null) {
+                    setTotal(total.getLoadedBytesString(CFG_GUI.OVERVIEW_PANEL_DOWNLOAD_PANEL_INCLUDE_DISABLED_LINKS.isEnabled()));
+                }
+                if (filtered != null) {
+                    setFiltered(filtered.getLoadedBytesString(CFG_GUI.OVERVIEW_PANEL_DOWNLOAD_PANEL_INCLUDE_DISABLED_LINKS.isEnabled()));
+                }
+                if (selected != null) {
+                    setSelected(selected.getLoadedBytesString(CFG_GUI.OVERVIEW_PANEL_DOWNLOAD_PANEL_INCLUDE_DISABLED_LINKS.isEnabled()));
+                }
             }
 
             @Override
@@ -181,9 +200,15 @@ public class DownloadOverview extends AbstractOverviewPanel<AggregatedNumbers> i
 
             @Override
             public void setData(AggregatedNumbers total, AggregatedNumbers filtered, AggregatedNumbers selected) {
-                if (total != null) setTotal(total.getRunning() + "");
-                if (filtered != null) setFiltered(filtered.getRunning() + "");
-                if (selected != null) setSelected(selected.getRunning() + "");
+                if (total != null) {
+                    setTotal(total.getRunning() + "");
+                }
+                if (filtered != null) {
+                    setFiltered(filtered.getRunning() + "");
+                }
+                if (selected != null) {
+                    setSelected(selected.getRunning() + "");
+                }
             }
 
             @Override
@@ -197,9 +222,15 @@ public class DownloadOverview extends AbstractOverviewPanel<AggregatedNumbers> i
 
             @Override
             public void setData(AggregatedNumbers total, AggregatedNumbers filtered, AggregatedNumbers selected) {
-                if (total != null) setTotal(total.getLinkCount() + "");
-                if (filtered != null) setFiltered(filtered.getLinkCount() + "");
-                if (selected != null) setSelected(selected.getLinkCount() + "");
+                if (total != null) {
+                    setTotal(total.getLinkCount() + "");
+                }
+                if (filtered != null) {
+                    setFiltered(filtered.getLinkCount() + "");
+                }
+                if (selected != null) {
+                    setSelected(selected.getLinkCount() + "");
+                }
             }
 
             @Override
@@ -213,9 +244,15 @@ public class DownloadOverview extends AbstractOverviewPanel<AggregatedNumbers> i
 
             @Override
             public void setData(AggregatedNumbers total, AggregatedNumbers filtered, AggregatedNumbers selected) {
-                if (total != null) setTotal(total.getDownloadSpeedString());
-                if (filtered != null) setFiltered(filtered.getDownloadSpeedString());
-                if (selected != null) setSelected(selected.getDownloadSpeedString());
+                if (total != null) {
+                    setTotal(total.getDownloadSpeedString());
+                }
+                if (filtered != null) {
+                    setFiltered(filtered.getDownloadSpeedString());
+                }
+                if (selected != null) {
+                    setSelected(selected.getDownloadSpeedString());
+                }
             }
 
             @Override
@@ -228,9 +265,15 @@ public class DownloadOverview extends AbstractOverviewPanel<AggregatedNumbers> i
 
             @Override
             public void setData(AggregatedNumbers total, AggregatedNumbers filtered, AggregatedNumbers selected) {
-                if (total != null) setTotal(total.getEtaString());
-                if (filtered != null) setFiltered(filtered.getEtaString());
-                if (selected != null) setSelected(selected.getEtaString());
+                if (total != null) {
+                    setTotal(total.getEtaString());
+                }
+                if (filtered != null) {
+                    setFiltered(filtered.getEtaString());
+                }
+                if (selected != null) {
+                    setSelected(selected.getEtaString());
+                }
             }
 
             @Override
@@ -244,9 +287,15 @@ public class DownloadOverview extends AbstractOverviewPanel<AggregatedNumbers> i
 
             @Override
             public void setData(AggregatedNumbers total, AggregatedNumbers filtered, AggregatedNumbers selected) {
-                if (total != null) setTotal(total.getConnections() + "");
-                if (filtered != null) setFiltered(filtered.getConnections() + "");
-                if (selected != null) setSelected(selected.getConnections() + "");
+                if (total != null) {
+                    setTotal(total.getConnections() + "");
+                }
+                if (filtered != null) {
+                    setFiltered(filtered.getConnections() + "");
+                }
+                if (selected != null) {
+                    setSelected(selected.getConnections() + "");
+                }
             }
 
             @Override
@@ -260,9 +309,15 @@ public class DownloadOverview extends AbstractOverviewPanel<AggregatedNumbers> i
 
             @Override
             public void setData(AggregatedNumbers total, AggregatedNumbers filtered, AggregatedNumbers selected) {
-                if (total != null) setTotal(total.getFinishedString(CFG_GUI.OVERVIEW_PANEL_DOWNLOAD_PANEL_INCLUDE_DISABLED_LINKS.isEnabled()));
-                if (filtered != null) setFiltered(filtered.getFinishedString(CFG_GUI.OVERVIEW_PANEL_DOWNLOAD_PANEL_INCLUDE_DISABLED_LINKS.isEnabled()));
-                if (selected != null) setSelected(selected.getFinishedString(CFG_GUI.OVERVIEW_PANEL_DOWNLOAD_PANEL_INCLUDE_DISABLED_LINKS.isEnabled()));
+                if (total != null) {
+                    setTotal(total.getFinishedString(CFG_GUI.OVERVIEW_PANEL_DOWNLOAD_PANEL_INCLUDE_DISABLED_LINKS.isEnabled()));
+                }
+                if (filtered != null) {
+                    setFiltered(filtered.getFinishedString(CFG_GUI.OVERVIEW_PANEL_DOWNLOAD_PANEL_INCLUDE_DISABLED_LINKS.isEnabled()));
+                }
+                if (selected != null) {
+                    setSelected(selected.getFinishedString(CFG_GUI.OVERVIEW_PANEL_DOWNLOAD_PANEL_INCLUDE_DISABLED_LINKS.isEnabled()));
+                }
             }
 
             @Override
@@ -275,9 +330,15 @@ public class DownloadOverview extends AbstractOverviewPanel<AggregatedNumbers> i
 
             @Override
             public void setData(AggregatedNumbers total, AggregatedNumbers filtered, AggregatedNumbers selected) {
-                if (total != null) setTotal(total.getSkippedString(CFG_GUI.OVERVIEW_PANEL_DOWNLOAD_PANEL_INCLUDE_DISABLED_LINKS.isEnabled()));
-                if (filtered != null) setFiltered(filtered.getSkippedString(CFG_GUI.OVERVIEW_PANEL_DOWNLOAD_PANEL_INCLUDE_DISABLED_LINKS.isEnabled()));
-                if (selected != null) setSelected(selected.getSkippedString(CFG_GUI.OVERVIEW_PANEL_DOWNLOAD_PANEL_INCLUDE_DISABLED_LINKS.isEnabled()));
+                if (total != null) {
+                    setTotal(total.getSkippedString(CFG_GUI.OVERVIEW_PANEL_DOWNLOAD_PANEL_INCLUDE_DISABLED_LINKS.isEnabled()));
+                }
+                if (filtered != null) {
+                    setFiltered(filtered.getSkippedString(CFG_GUI.OVERVIEW_PANEL_DOWNLOAD_PANEL_INCLUDE_DISABLED_LINKS.isEnabled()));
+                }
+                if (selected != null) {
+                    setSelected(selected.getSkippedString(CFG_GUI.OVERVIEW_PANEL_DOWNLOAD_PANEL_INCLUDE_DISABLED_LINKS.isEnabled()));
+                }
             }
 
             @Override
@@ -290,9 +351,15 @@ public class DownloadOverview extends AbstractOverviewPanel<AggregatedNumbers> i
 
             @Override
             public void setData(AggregatedNumbers total, AggregatedNumbers filtered, AggregatedNumbers selected) {
-                if (total != null) setTotal(total.getFailedString(CFG_GUI.OVERVIEW_PANEL_DOWNLOAD_PANEL_INCLUDE_DISABLED_LINKS.isEnabled()));
-                if (filtered != null) setFiltered(filtered.getFailedString(CFG_GUI.OVERVIEW_PANEL_DOWNLOAD_PANEL_INCLUDE_DISABLED_LINKS.isEnabled()));
-                if (selected != null) setSelected(selected.getFailedString(CFG_GUI.OVERVIEW_PANEL_DOWNLOAD_PANEL_INCLUDE_DISABLED_LINKS.isEnabled()));
+                if (total != null) {
+                    setTotal(total.getFailedString(CFG_GUI.OVERVIEW_PANEL_DOWNLOAD_PANEL_INCLUDE_DISABLED_LINKS.isEnabled()));
+                }
+                if (filtered != null) {
+                    setFiltered(filtered.getFailedString(CFG_GUI.OVERVIEW_PANEL_DOWNLOAD_PANEL_INCLUDE_DISABLED_LINKS.isEnabled()));
+                }
+                if (selected != null) {
+                    setSelected(selected.getFailedString(CFG_GUI.OVERVIEW_PANEL_DOWNLOAD_PANEL_INCLUDE_DISABLED_LINKS.isEnabled()));
+                }
             }
 
             @Override
@@ -375,11 +442,6 @@ public class DownloadOverview extends AbstractOverviewPanel<AggregatedNumbers> i
 
     @Override
     public void onDownloadControllerUpdatedData(FilePackage pkg, FilePackageProperty property) {
-        slowDelayer.run();
-    }
-
-    @Override
-    public void onDownloadControllerUpdatedData(DownloadLink downloadlink, LinkStatusProperty property) {
         slowDelayer.run();
     }
 

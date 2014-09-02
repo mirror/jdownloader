@@ -8,7 +8,6 @@ import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLinkProperty;
 import jd.plugins.FilePackage;
 import jd.plugins.FilePackageProperty;
-import jd.plugins.LinkStatusProperty;
 
 public interface DownloadControllerListener extends EventListener {
 
@@ -27,8 +26,6 @@ public interface DownloadControllerListener extends EventListener {
     void onDownloadControllerUpdatedData(DownloadLink downloadlink, DownloadLinkProperty property);
 
     void onDownloadControllerUpdatedData(FilePackage pkg, FilePackageProperty property);
-
-    void onDownloadControllerUpdatedData(DownloadLink downloadlink, LinkStatusProperty property);
 
     void onDownloadControllerUpdatedData(DownloadLink downloadlink);
 

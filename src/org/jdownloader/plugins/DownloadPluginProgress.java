@@ -8,6 +8,9 @@ import jd.plugins.PluginProgress;
 import jd.plugins.download.DownloadInterface;
 import jd.plugins.download.Downloadable;
 
+import org.jdownloader.api.downloads.ChannelCollector;
+import org.jdownloader.api.downloads.DownloadControllerEventPublisher;
+import org.jdownloader.api.downloads.v2.DownloadsAPIV2Impl;
 import org.jdownloader.api.jdanywhere.api.Helper;
 import org.jdownloader.gui.views.downloads.columns.TaskColumn;
 import org.jdownloader.images.NewTheme;
@@ -59,12 +62,18 @@ public class DownloadPluginProgress extends PluginProgress {
 
     @Override
     public String getMessage(Object requestor) {
-        if (requestor instanceof TaskColumn || requestor == Helper.REQUESTOR || requestor instanceof FilePackageView || requestor instanceof PluginProgressTask) { return normal; }
+        if (requestor instanceof TaskColumn || requestor == Helper.REQUESTOR || requestor instanceof FilePackageView || requestor instanceof PluginProgressTask || requestor instanceof DownloadsAPIV2Impl || requestor instanceof DownloadControllerEventPublisher || requestor instanceof ChannelCollector) {
+            return normal;
+        }
         long total = getTotal();
 
-        if (total < 0) { return unknownFileSize; }
+        if (total < 0) {
+            return unknownFileSize;
+        }
         long eta = getETA();
-        if (eta > 0) { return Formatter.formatSeconds(eta); }
+        if (eta > 0) {
+            return Formatter.formatSeconds(eta);
+        }
         return null;
     }
 

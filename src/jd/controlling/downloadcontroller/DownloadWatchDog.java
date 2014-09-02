@@ -81,7 +81,6 @@ import jd.plugins.DownloadLinkProperty;
 import jd.plugins.FilePackage;
 import jd.plugins.FilePackageProperty;
 import jd.plugins.LinkStatus;
-import jd.plugins.LinkStatusProperty;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.PluginsC;
@@ -3128,11 +3127,6 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
                         }
 
                         @Override
-                        public void onDownloadControllerUpdatedData(DownloadLink downloadlink, LinkStatusProperty property) {
-                            lastStructureChange.set(-1l);
-                        }
-
-                        @Override
                         public void onDownloadControllerUpdatedData(DownloadLink downloadlink) {
                             lastStructureChange.set(-1l);
                         }
@@ -3927,10 +3921,6 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
 
     @Override
     public void onDownloadControllerUpdatedData(FilePackage pkg, FilePackageProperty property) {
-    }
-
-    @Override
-    public void onDownloadControllerUpdatedData(DownloadLink downloadlink, LinkStatusProperty property) {
     }
 
     @Override

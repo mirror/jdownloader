@@ -13,7 +13,7 @@ import java.util.concurrent.atomic.AtomicLong;
 
 import org.appwork.remoteapi.events.EventObject;
 import org.appwork.remoteapi.events.EventPublisher;
-import org.appwork.remoteapi.events.EventsSender;
+import org.appwork.remoteapi.events.RemoteAPIEventsSender;
 import org.appwork.remoteapi.events.SimpleEventObject;
 import org.appwork.storage.JSonStorage;
 import org.appwork.storage.TypeRef;
@@ -36,7 +36,7 @@ public class DialogApiImpl implements EventPublisher, DialogApiInterface {
     private LogSource                         logger;
     private HashMap<Long, ApiHandle>          map;
     private String[]                          eventIDs;
-    private CopyOnWriteArraySet<EventsSender> eventSenders;
+    private CopyOnWriteArraySet<RemoteAPIEventsSender> eventSenders;
 
     public static enum Event {
         NEW,
@@ -50,7 +50,7 @@ public class DialogApiImpl implements EventPublisher, DialogApiInterface {
         logger = LogController.getInstance().getLogger(DialogApiImpl.class.getName());
         map = new HashMap<Long, ApiHandle>();
         eventIDs = new String[] { Event.NEW.toString(), Event.EXPIRED.toString() };
-        eventSenders = new CopyOnWriteArraySet<EventsSender>();
+        eventSenders = new CopyOnWriteArraySet<RemoteAPIEventsSender>();
     }
 
     public <T extends UserIODefinition> ApiHandle enqueue(Class<T> class1, T impl) {
@@ -68,7 +68,7 @@ public class DialogApiImpl implements EventPublisher, DialogApiInterface {
             public void run() {
                 try {
                     EventObject eventObject = new SimpleEventObject(DialogApiImpl.this, Event.NEW.toString(), ret.getId(), "" + ret.getId());
-                    for (EventsSender eventSender : eventSenders) {
+                    for (RemoteAPIEventsSender eventSender : eventSenders) {
                         eventSender.publishEvent(eventObject, null);
                     }
                     ret.waitFor();
@@ -77,7 +77,7 @@ public class DialogApiImpl implements EventPublisher, DialogApiInterface {
                 } finally {
                     try {
                         EventObject eventObject = new SimpleEventObject(DialogApiImpl.this, Event.EXPIRED.toString(), ret.getId(), "" + ret.getId());
-                        for (EventsSender eventSender : eventSenders) {
+                        for (RemoteAPIEventsSender eventSender : eventSenders) {
                             eventSender.publishEvent(eventObject, null);
                         }
                     } finally {
@@ -104,12 +104,12 @@ public class DialogApiImpl implements EventPublisher, DialogApiInterface {
     }
 
     @Override
-    public synchronized void register(EventsSender eventsAPI) {
+    public synchronized void register(RemoteAPIEventsSender eventsAPI) {
         eventSenders.add(eventsAPI);
     }
 
     @Override
-    public synchronized void unregister(EventsSender eventsAPI) {
+    public synchronized void unregister(RemoteAPIEventsSender eventsAPI) {
         eventSenders.remove(eventsAPI);
     }
 
@@ -300,7 +300,4 @@ public class DialogApiImpl implements EventPublisher, DialogApiInterface {
         return ret;
     }
 
-    @Override
-    public void terminatedSubscription(EventsSender eventsSender, long subscriptionid) {
-    }
 }

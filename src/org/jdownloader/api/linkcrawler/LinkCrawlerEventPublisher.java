@@ -7,12 +7,12 @@ import jd.controlling.linkcrawler.LinkCrawlerEvent;
 import jd.controlling.linkcrawler.LinkCrawlerListener;
 
 import org.appwork.remoteapi.events.EventPublisher;
-import org.appwork.remoteapi.events.EventsSender;
+import org.appwork.remoteapi.events.RemoteAPIEventsSender;
 import org.appwork.remoteapi.events.SimpleEventObject;
 
 public class LinkCrawlerEventPublisher implements EventPublisher, LinkCrawlerListener {
 
-    private CopyOnWriteArraySet<EventsSender> eventSenders = new CopyOnWriteArraySet<EventsSender>();
+    private CopyOnWriteArraySet<RemoteAPIEventsSender> eventSenders = new CopyOnWriteArraySet<RemoteAPIEventsSender>();
     private final String[]                    eventIDs;
 
     private enum EVENTID {
@@ -27,7 +27,7 @@ public class LinkCrawlerEventPublisher implements EventPublisher, LinkCrawlerLis
     @Override
     public void onLinkCrawlerEvent(LinkCrawlerEvent event) {
         SimpleEventObject eventObject = new SimpleEventObject(this, event.getType().name(), null);
-        for (EventsSender eventSender : eventSenders) {
+        for (RemoteAPIEventsSender eventSender : eventSenders) {
             eventSender.publishEvent(eventObject, null);
         }
     }
@@ -43,7 +43,7 @@ public class LinkCrawlerEventPublisher implements EventPublisher, LinkCrawlerLis
     }
 
     @Override
-    public void register(EventsSender eventsAPI) {
+    public void register(RemoteAPIEventsSender eventsAPI) {
         boolean wasEmpty = eventSenders.isEmpty();
         eventSenders.add(eventsAPI);
         if (wasEmpty && eventSenders.isEmpty() == false) {
@@ -52,15 +52,11 @@ public class LinkCrawlerEventPublisher implements EventPublisher, LinkCrawlerLis
     }
 
     @Override
-    public void unregister(EventsSender eventsAPI) {
+    public void unregister(RemoteAPIEventsSender eventsAPI) {
         eventSenders.remove(eventsAPI);
         if (eventSenders.isEmpty()) {
             LinkCrawler.getGlobalEventSender().removeListener(this);
         }
-    }
-
-    @Override
-    public void terminatedSubscription(EventsSender eventsSender, long subscriptionid) {
     }
 
 }

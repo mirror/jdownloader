@@ -22,7 +22,8 @@ public abstract class DownloadControllerEvent extends SimpleEvent<Object, Object
          * [0]=DownloadLink<br>
          * [1]=LinkStatusPropery<br>
          */
-        REFRESH_CONTENT
+        REFRESH_CONTENT,
+
     }
 
     public DownloadControllerEvent(TYPE type, Object... parameters) {

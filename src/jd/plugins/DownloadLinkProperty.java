@@ -12,7 +12,24 @@ public class DownloadLinkProperty {
         PLUGIN_PROGRESS,
         CONDITIONAL_SKIPPED,
         ARCHIVE,
-        EXTRACTION_STATUS;
+        EXTRACTION_STATUS,
+        LINKSTATUS,
+        ARCHIVE_ID,
+        BROWSER_URL,
+        CHUNKS,
+        SPEED_LIMIT,
+        DOWNLOAD_PASSWORD,
+        MD5,
+        RESUMABLE,
+        SHA1,
+        DOWNLOAD_URL,
+        URL_PROTECTION,
+        VARIANT,
+        VARIANTS,
+        VARIANTS_ENABLED,
+        DOWNLOADSIZE_VERIFIED,
+        DOWNLOADSIZE,
+        COMMENT;
     }
 
     private final Object       value;

@@ -22,7 +22,6 @@ import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.DownloadLinkProperty;
 import jd.plugins.FilePackage;
 import jd.plugins.FilePackageProperty;
-import jd.plugins.LinkStatusProperty;
 
 import org.appwork.scheduler.DelayedRunnable;
 import org.appwork.swing.exttable.ExtTableEvent;
@@ -114,7 +113,9 @@ public class GenericDeleteFromTableToolbarAction extends AbstractToolBarAction i
     }
 
     public List<KeyStroke> getAdditionalShortcuts(KeyStroke keystroke) {
-        if (keystroke == null) return null;
+        if (keystroke == null) {
+            return null;
+        }
 
         ArrayList<KeyStroke> ret = new ArrayList<KeyStroke>();
         Modifier mod = byPass.getByPassDialogToggleModifier();
@@ -134,7 +135,9 @@ public class GenericDeleteFromTableToolbarAction extends AbstractToolBarAction i
 
         // Modifier byPassDialog = getByPassDialogToggleModifier();
         Modifier deletToggle = getDeleteFilesToggleModifier();
-        if (deleteMode == null) deleteMode = DeleteFileOptions.REMOVE_LINKS_ONLY;
+        if (deleteMode == null) {
+            deleteMode = DeleteFileOptions.REMOVE_LINKS_ONLY;
+        }
         if (deletToggle != null && KeyObserver.getInstance().isModifierPressed(deletToggle.getModifier(), false)) {
             switch (deleteMode) {
             case REMOVE_LINKS_ONLY:
@@ -156,7 +159,9 @@ public class GenericDeleteFromTableToolbarAction extends AbstractToolBarAction i
 
     @Override
     public void actionPerformed(final ActionEvent e) {
-        if (table == null) return;
+        if (table == null) {
+            return;
+        }
         if (table instanceof DownloadsTable) {
             final List<DownloadLink> nodesToDelete = new ArrayList<DownloadLink>();
             for (final Object dl : selection.getChildren()) {
@@ -184,8 +189,12 @@ public class GenericDeleteFromTableToolbarAction extends AbstractToolBarAction i
                 if (checkCrawledLink(dl)) {
                     nodesToDelete.add(dl);
 
-                    if (TYPE.OFFLINE == dl.getParentNode().getType()) continue;
-                    if (TYPE.POFFLINE == dl.getParentNode().getType()) continue;
+                    if (TYPE.OFFLINE == dl.getParentNode().getType()) {
+                        continue;
+                    }
+                    if (TYPE.POFFLINE == dl.getParentNode().getType()) {
+                        continue;
+                    }
                     if (dl.getDownloadLink().getAvailableStatus() != AvailableStatus.FALSE) {
                         containsOnline = true;
 
@@ -197,32 +206,42 @@ public class GenericDeleteFromTableToolbarAction extends AbstractToolBarAction i
     }
 
     public boolean checkCrawledLink(CrawledLink cl) {
-        if (isDeleteAll()) return true;
+        if (isDeleteAll()) {
+            return true;
+        }
         if (isDeleteDisabled() && !cl.isEnabled()) {
 
-        return true; }
+            return true;
+        }
 
         if (isDeleteOffline() && cl.getDownloadLink().isAvailabilityStatusChecked() && cl.getDownloadLink().getAvailableStatus() == AvailableStatus.FALSE) {
 
-        return true; }
+            return true;
+        }
         return false;
     }
 
     public boolean checkDownloadLink(DownloadLink link) {
-        if (isDeleteAll()) { return true; }
+        if (isDeleteAll()) {
+            return true;
+        }
 
         if (isDeleteDisabled() && !link.isEnabled()) {
 
-        return true; }
+            return true;
+        }
         if (isDeleteFailed() && FinalLinkState.CheckFailed(link.getFinalLinkState())) {
 
-        return true; }
+            return true;
+        }
         if (isDeleteFinished() && FinalLinkState.CheckFinished(link.getFinalLinkState())) {
 
-        return true; }
+            return true;
+        }
         if (isDeleteOffline() && link.getFinalLinkState() == FinalLinkState.OFFLINE) {
 
-        return true; }
+            return true;
+        }
         return false;
     }
 
@@ -356,11 +375,6 @@ public class GenericDeleteFromTableToolbarAction extends AbstractToolBarAction i
 
     @Override
     public void onDownloadControllerUpdatedData(DownloadLink downloadlink, DownloadLinkProperty property) {
-        delayer.resetAndStart();
-    }
-
-    @Override
-    public void onDownloadControllerUpdatedData(DownloadLink downloadlink, LinkStatusProperty property) {
         delayer.resetAndStart();
     }
 

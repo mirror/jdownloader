@@ -14,11 +14,9 @@ import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLinkProperty;
 import jd.plugins.FilePackage;
 import jd.plugins.FilePackageProperty;
-import jd.plugins.LinkStatusProperty;
 
 import org.appwork.storage.config.events.GenericConfigEventListener;
 import org.appwork.swing.components.ExtTextField;
-import org.appwork.utils.ImageProvider.ImageProvider;
 import org.appwork.utils.swing.EDTRunner;
 import org.jdownloader.controlling.Priority;
 import org.jdownloader.controlling.UniqueAlltimeID;
@@ -74,7 +72,7 @@ public class DownloadLinkPropertiesPanel extends AbstractNodePropertiesPanel imp
     }
 
     protected Icon getHighestPackagePriorityIcon() {
-        return   org.jdownloader.images.NewTheme.I().getDisabledIcon(currentPackage.getView().getHighestPriority().loadIcon(18));
+        return org.jdownloader.images.NewTheme.I().getDisabledIcon(currentPackage.getView().getHighestPriority().loadIcon(18));
     }
 
     protected boolean isArchiveLineEnabled() {
@@ -201,11 +199,6 @@ public class DownloadLinkPropertiesPanel extends AbstractNodePropertiesPanel imp
 
     @Override
     public void onDownloadControllerUpdatedData(DownloadLink downloadlink, DownloadLinkProperty property) {
-        refreshOnLinkUpdate(downloadlink);
-    }
-
-    @Override
-    public void onDownloadControllerUpdatedData(DownloadLink downloadlink, LinkStatusProperty property) {
         refreshOnLinkUpdate(downloadlink);
     }
 

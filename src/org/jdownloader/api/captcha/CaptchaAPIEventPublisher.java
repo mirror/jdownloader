@@ -4,7 +4,7 @@ import java.util.concurrent.CopyOnWriteArraySet;
 
 import org.appwork.remoteapi.events.EventObject;
 import org.appwork.remoteapi.events.EventPublisher;
-import org.appwork.remoteapi.events.EventsSender;
+import org.appwork.remoteapi.events.RemoteAPIEventsSender;
 import org.appwork.remoteapi.events.SimpleEventObject;
 import org.jdownloader.captcha.v2.solverjob.SolverJob;
 
@@ -18,7 +18,7 @@ public class CaptchaAPIEventPublisher implements EventPublisher {
         // SOLVER_END
     }
 
-    private CopyOnWriteArraySet<EventsSender> eventSenders = new CopyOnWriteArraySet<EventsSender>();
+    private CopyOnWriteArraySet<RemoteAPIEventsSender> eventSenders = new CopyOnWriteArraySet<RemoteAPIEventsSender>();
     private final String[]                    eventIDs;
 
     /**
@@ -47,7 +47,7 @@ public class CaptchaAPIEventPublisher implements EventPublisher {
 
     public void fireJobDoneEvent(SolverJob<?> job) {
         EventObject eventObject = new SimpleEventObject(this, EVENTID.DONE.name(), job.getChallenge().getId().getID());
-        for (EventsSender eventSender : eventSenders) {
+        for (RemoteAPIEventsSender eventSender : eventSenders) {
             eventSender.publishEvent(eventObject, null);
         }
     }
@@ -55,7 +55,7 @@ public class CaptchaAPIEventPublisher implements EventPublisher {
     public void fireNewJobEvent(SolverJob<?> job) {
 
         EventObject eventObject = new SimpleEventObject(this, EVENTID.NEW.name(), job.getChallenge().getId().getID());
-        for (EventsSender eventSender : eventSenders) {
+        for (RemoteAPIEventsSender eventSender : eventSenders) {
             eventSender.publishEvent(eventObject, null);
         }
     }
@@ -77,19 +77,16 @@ public class CaptchaAPIEventPublisher implements EventPublisher {
     // }
 
     @Override
-    public synchronized void register(EventsSender eventsAPI) {
+    public synchronized void register(RemoteAPIEventsSender eventsAPI) {
         boolean wasEmpty = eventSenders.isEmpty();
         eventSenders.add(eventsAPI);
 
     }
 
     @Override
-    public synchronized void unregister(EventsSender eventsAPI) {
+    public synchronized void unregister(RemoteAPIEventsSender eventsAPI) {
         eventSenders.remove(eventsAPI);
 
     }
 
-    @Override
-    public void terminatedSubscription(EventsSender eventsSender, long subscriptionid) {
-    }
 }
