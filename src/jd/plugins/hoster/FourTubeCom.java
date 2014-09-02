@@ -52,6 +52,7 @@ public class FourTubeCom extends PluginForHost {
     public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws IOException, InterruptedException, PluginException {
         setBrowserExclusive();
         String dllink = downloadLink.getDownloadURL();
+        br.getHeaders().put("User-Agent", "Mozilla/5.0 (Windows NT 6.1; WOW64; rv:31.0) Gecko/20100101 Firefox/31.0");
         br.setFollowRedirects(true);
         br.getPage(dllink);
         if (br.containsHTML("Page not found|This Video Is No Longer Available")) {
@@ -110,7 +111,16 @@ public class FourTubeCom extends PluginForHost {
         }
         br.getHeaders().put("Accept", "application/json, text/javascript, */*; q=0.01");
         br.getHeaders().put("Origin", "http://www.4tube.com");
-        br.postPage("http://tkn.4tube.com/" + mediaID + "/desktop/" + availablequalities, "");
+        br.getHeaders().put("Accept-Charset", null);
+        br.getHeaders().put("Content-Type", null);
+        // br.getHeaders().put("", "");
+        // br.getHeaders().put("", "");
+        // br.getHeaders().put("", "");
+        // br.getHeaders().put("", "");
+        // br.getHeaders().put("", "");
+        // br.getHeaders().put("", "");
+        br.clearCookies("http://4tube.com/");
+        br.postPageRaw("http://tkn.4tube.com/" + mediaID + "/desktop/" + availablequalities, "");
         String finallink = null;
         final String[] qualities = new String[] { "1080", "720", "480", "360", "240" };
         for (final String quality : qualities) {

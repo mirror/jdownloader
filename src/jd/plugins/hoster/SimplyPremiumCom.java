@@ -79,6 +79,8 @@ public class SimplyPremiumCom extends PluginForHost {
     private Browser newBrowser() {
         br = new Browser();
         br.setCookiesExclusive(true);
+        /* Admin asked us to make sure we follow redirects. */
+        br.setFollowRedirects(true);
         /* define custom browser headers and language settings. */
         br.getHeaders().put("Accept", "application/json");
         br.getHeaders().put("User-Agent", "JDownloader");
@@ -133,9 +135,6 @@ public class SimplyPremiumCom extends PluginForHost {
     }
 
     private void handleDL(final Account account, final DownloadLink link, final String dllink) throws Exception {
-        /* we want to follow redirects in final stage */
-        br.setFollowRedirects(true);
-
         final boolean resume_allowed = account.getBooleanProperty("resume_allowed", false);
 
         int maxChunks = (int) account.getLongProperty("maxconnections", 1);
@@ -200,7 +199,6 @@ public class SimplyPremiumCom extends PluginForHost {
         String dllink = checkDirectLink(link, NICE_HOSTproperty + "directlink");
         if (dllink == null) {
             /* request download information */
-            br.setFollowRedirects(true);
             br.getPage("http://www.simply-premium.com/premium.php?info=&link=" + Encoding.urlEncode(link.getDownloadURL()));
             downloadErrorhandling(account, link);
 
@@ -271,7 +269,6 @@ public class SimplyPremiumCom extends PluginForHost {
     public AccountInfo fetchAccountInfo(final Account account) throws Exception {
         this.br = newBrowser();
         final AccountInfo ai = new AccountInfo();
-        br.setFollowRedirects(true);
         getapikey(account);
         br.getPage("http://simply-premium.com/api/user.php?apikey=" + APIKEY);
         final String acctype = getXML("account_typ");
@@ -565,35 +562,35 @@ public class SimplyPremiumCom extends PluginForHost {
     }
 
     private HashMap<String, String> phrasesEN = new HashMap<String, String>() {
-                                                  {
-                                                      put("ACCOUNT_TYPE", "Account type:");
-                                                      put("ACCOUNT_TYPE_TIME", "Time account");
-                                                      put("ACCOUNT_TYPE_VOLUME", "Volume account");
-                                                      put("DOWNLOAD_MAXSIMULTAN", "Max. number of simultan downloads:");
-                                                      put("DOWNLOAD_MAXCHUNKS", "Max. chunks (connections per file):");
-                                                      put("DOWNLOAD_RESUMABLE", "Resuming of stopped downloads possible:");
-                                                      put("DOWNLOAD_RESUMABLE_TRUE", "Yes");
-                                                      put("DOWNLOAD_RESUMABLE_FALSE", "No");
-                                                  }
-                                              };
+        {
+            put("ACCOUNT_TYPE", "Account type:");
+            put("ACCOUNT_TYPE_TIME", "Time account");
+            put("ACCOUNT_TYPE_VOLUME", "Volume account");
+            put("DOWNLOAD_MAXSIMULTAN", "Max. number of simultan downloads:");
+            put("DOWNLOAD_MAXCHUNKS", "Max. chunks (connections per file):");
+            put("DOWNLOAD_RESUMABLE", "Resuming of stopped downloads possible:");
+            put("DOWNLOAD_RESUMABLE_TRUE", "Yes");
+            put("DOWNLOAD_RESUMABLE_FALSE", "No");
+        }
+    };
 
     private HashMap<String, String> phrasesDE = new HashMap<String, String>() {
-                                                  {
-                                                      put("ACCOUNT_TYPE", "Account Typ:");
-                                                      put("ACCOUNT_TYPE_TIME", "Zeitaccount");
-                                                      put("ACCOUNT_TYPE_VOLUME", "Volumenaccount");
-                                                      put("DOWNLOAD_MAXSIMULTAN", "Max. Anzahl gleichzeitiger Downloads:");
-                                                      put("DOWNLOAD_MAXCHUNKS", "Max. Anzahl Verbindungen pro Datei (Chunks):");
-                                                      put("DOWNLOAD_RESUMABLE", "Abgebrochene Downloads fortsetzbar:");
-                                                      put("DOWNLOAD_RESUMABLE_TRUE", "Ja");
-                                                      put("DOWNLOAD_RESUMABLE_FALSE", "Nein");
-                                                  }
-                                              };
+        {
+            put("ACCOUNT_TYPE", "Account Typ:");
+            put("ACCOUNT_TYPE_TIME", "Zeitaccount");
+            put("ACCOUNT_TYPE_VOLUME", "Volumenaccount");
+            put("DOWNLOAD_MAXSIMULTAN", "Max. Anzahl gleichzeitiger Downloads:");
+            put("DOWNLOAD_MAXCHUNKS", "Max. Anzahl Verbindungen pro Datei (Chunks):");
+            put("DOWNLOAD_RESUMABLE", "Abgebrochene Downloads fortsetzbar:");
+            put("DOWNLOAD_RESUMABLE_TRUE", "Ja");
+            put("DOWNLOAD_RESUMABLE_FALSE", "Nein");
+        }
+    };
 
     /**
      * Returns a germen/english translation of a phrase - we don't use the JDownloader translation framework since we need only germen and
      * english (provider is german)
-     * 
+     *
      * @param key
      * @return
      */
@@ -614,24 +611,23 @@ public class SimplyPremiumCom extends PluginForHost {
     public void resetDownloadlink(DownloadLink link) {
     }
 
-
-/* NO OVERRIDE!! We need to stay 0.9*compatible */
-public boolean hasCaptcha(DownloadLink link, jd.plugins.Account acc) {
-if (acc == null) {
-/* no account, yes we can expect captcha */
-return true;
-}
- if (Boolean.TRUE.equals(acc.getBooleanProperty("free"))) {
-/* free accounts also have captchas */
-return true;
-}
- if (Boolean.TRUE.equals(acc.getBooleanProperty("nopremium"))) {
-/* free accounts also have captchas */
-return true;
-}
- if (acc.getStringProperty("session_type")!=null&&!"premium".equalsIgnoreCase(acc.getStringProperty("session_type"))) {
-return true;
-}
-return false;
-}
+    /* NO OVERRIDE!! We need to stay 0.9*compatible */
+    public boolean hasCaptcha(DownloadLink link, jd.plugins.Account acc) {
+        if (acc == null) {
+            /* no account, yes we can expect captcha */
+            return true;
+        }
+        if (Boolean.TRUE.equals(acc.getBooleanProperty("free"))) {
+            /* free accounts also have captchas */
+            return true;
+        }
+        if (Boolean.TRUE.equals(acc.getBooleanProperty("nopremium"))) {
+            /* free accounts also have captchas */
+            return true;
+        }
+        if (acc.getStringProperty("session_type") != null && !"premium".equalsIgnoreCase(acc.getStringProperty("session_type"))) {
+            return true;
+        }
+        return false;
+    }
 }

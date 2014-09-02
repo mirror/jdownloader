@@ -201,7 +201,7 @@ public class FoxLeechCom extends PluginForHost {
         if (seconds != null) {
             expire += Long.parseLong(seconds) * 1000;
         }
-        ac.setValidUntil(expire);
+        ac.setValidUntil(System.currentTimeMillis() + expire);
         /* They only have accounts with traffic, no free/premium difference (other than no traffic) */
         account.setType(AccountType.PREMIUM);
         account.setMaxSimultanDownloads(-1);

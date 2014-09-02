@@ -319,6 +319,7 @@ public class FileniumCom extends PluginForHost {
         return ai;
     }
 
+    @SuppressWarnings("unchecked")
     private void login(Account account, boolean force) throws Exception {
         synchronized (LOCK) {
             try {
