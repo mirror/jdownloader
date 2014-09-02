@@ -318,7 +318,9 @@ public class FlickrCom extends PluginForDecrypt {
         }
         if (parameter.matches(PHOTOLINK)) {
             remove_string = new Regex(parameter, "(/sizes/.+)").getMatch(0);
-            parameter = parameter.replace(remove_string, "");
+            if (remove_string != null) {
+                parameter = parameter.replace(remove_string, "");
+            }
         }
         return parameter;
     }
