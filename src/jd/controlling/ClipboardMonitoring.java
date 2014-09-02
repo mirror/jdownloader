@@ -27,6 +27,7 @@ import jd.controlling.linkcollector.LinkOriginDetails;
 import jd.controlling.linkcrawler.CrawledLink;
 import jd.controlling.linkcrawler.CrawledLinkModifier;
 
+import org.appwork.exceptions.WTFException;
 import org.appwork.utils.IO;
 import org.appwork.utils.Regex;
 import org.appwork.utils.StringUtils;
@@ -41,22 +42,28 @@ import sun.awt.datatransfer.SunClipboard;
 public class ClipboardMonitoring {
 
     private static class WindowsClipboardHack {
-        Method    openClipboard    = null;
-        Method    closeClipboard   = null;
-        Method    getClipboardData = null;
-        long      cf_html          = -1;
-        Clipboard clipboard        = null;
+        Method          openClipboard    = null;
+        Method          closeClipboard   = null;
+        Method          getClipboardData = null;
+        long            cf_html          = -1;
+        final Clipboard clipboard;
 
         private WindowsClipboardHack(Clipboard clipboard) throws Exception {
+            this.clipboard = clipboard;
             try {
-                this.clipboard = clipboard;
-                cf_html = (Long) Class.forName("sun.awt.windows.WDataTransferer").getDeclaredField("CF_HTML").get(null);
-                openClipboard = clipboard.getClass().getDeclaredMethod("openClipboard", new Class[] { SunClipboard.class });
-                openClipboard.setAccessible(true);
-                closeClipboard = clipboard.getClass().getDeclaredMethod("closeClipboard", new Class[] {});
-                closeClipboard.setAccessible(true);
-                getClipboardData = clipboard.getClass().getDeclaredMethod("getClipboardData", new Class[] { long.class });
-                getClipboardData.setAccessible(true);
+                final Field cf_html_field = Class.forName("sun.awt.windows.WDataTransferer").getDeclaredField("CF_HTML");
+                if (cf_html_field != null) {
+                    cf_html_field.setAccessible(true);
+                    cf_html = (Long) cf_html_field.get(null);
+                    openClipboard = clipboard.getClass().getDeclaredMethod("openClipboard", new Class[] { SunClipboard.class });
+                    openClipboard.setAccessible(true);
+                    closeClipboard = clipboard.getClass().getDeclaredMethod("closeClipboard", new Class[] {});
+                    closeClipboard.setAccessible(true);
+                    getClipboardData = clipboard.getClass().getDeclaredMethod("getClipboardData", new Class[] { long.class });
+                    getClipboardData.setAccessible(true);
+                } else {
+                    throw new WTFException("CF_HTML not available");
+                }
             } catch (final Throwable e) {
                 throw new Exception(e);
             }
