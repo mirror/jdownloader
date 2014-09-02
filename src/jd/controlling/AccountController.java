@@ -75,12 +75,12 @@ public class AccountController implements AccountControllerListener, AccountProp
 
     private final Eventsender<AccountControllerListener, AccountControllerEvent> broadcaster      = new Eventsender<AccountControllerListener, AccountControllerEvent>() {
 
-                                                                                                      @Override
-                                                                                                      protected void fireEvent(final AccountControllerListener listener, final AccountControllerEvent event) {
-                                                                                                          listener.onAccountControllerEvent(event);
-                                                                                                      }
+        @Override
+        protected void fireEvent(final AccountControllerListener listener, final AccountControllerEvent event) {
+            listener.onAccountControllerEvent(event);
+        }
 
-                                                                                                  };
+    };
 
     public Eventsender<AccountControllerListener, AccountControllerEvent> getBroadcaster() {
         return broadcaster;
@@ -255,10 +255,10 @@ public class AccountController implements AccountControllerListener, AccountProp
             }
             boolean validAccountCheck = false;
             try {
-                plugin.init();
                 Browser br = new Browser();
                 br.setLogger(logger);
                 plugin.setBrowser(br);
+                plugin.init();
                 /* not every plugin sets this info correct */
                 account.setError(null, null);
                 /* get previous account info and resets info for new update */
