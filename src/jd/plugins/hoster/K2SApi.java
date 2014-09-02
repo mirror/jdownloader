@@ -11,7 +11,6 @@ import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.Locale;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -175,10 +174,24 @@ public abstract class K2SApi extends PluginForHost {
     private static AtomicReference<String> agent           = new AtomicReference<String>(null);
     private boolean                        prepBrSet       = false;
 
+    @Override
+    public void init() {
+        try {
+            if (System.getProperty("org.jdownloader.revision") != null) {
+                Browser.setRequestIntervalLimitGlobal(getDomain(), 3000, 20, 60000);
+            } else {
+                // law of averages, client shouldn't be making a heap of requests every second...
+                Browser.setRequestIntervalLimitGlobal(getDomain(), 1500);
+            }
+        } catch (final Throwable t) {
+            t.printStackTrace();
+        }
+    }
+
     protected Browser prepADB(final Browser prepBr) {
         // define custom browser headers and language settings.
         // required for native cloudflare support, without the need to repeat requests.
-        addAllowedResponseCodes(prepBr, new int[] { 503, 522 });
+        prepBr.addAllowedResponseCodes(new int[] { 503, 522 });
 
         synchronized (antiDDoSCookies) {
             if (!antiDDoSCookies.isEmpty()) {
@@ -209,37 +222,8 @@ public abstract class K2SApi extends PluginForHost {
         // prep site variables, this links back to prepADB from Override
         prepBrowser(prepBr);
         // api && dl server response codes
-        addAllowedResponseCodes(prepBr, new int[] { 400, 401, 403, 406, 429 });
+        prepBr.addAllowedResponseCodes(new int[] { 400, 401, 403, 406, 429 });
         return prepBr;
-    }
-
-    /**
-     * Grabs existing response codes from import browser, and adds new input. This solves the issue were setAllowedResponseCodes(int...)
-     * destroys old with new. <br/>
-     * <b>TODO</b> remove after next build full.
-     *
-     * @param ibr
-     * @param input
-     * @author raztoki
-     */
-    protected void addAllowedResponseCodes(final Browser ibr, final int... input) {
-        try {
-            final int[] original = ibr.getAllowedResponseCodes();
-            final HashSet<Integer> dupe = new HashSet<Integer>();
-            for (final int a : original) {
-                dupe.add(a);
-            }
-            for (final int a : input) {
-                dupe.add(a);
-            }
-            final int[] outcome = new int[dupe.size()];
-            int index = 0;
-            for (final Integer i : dupe) {
-                outcome[index++] = i;
-            }
-            ibr.setAllowedResponseCodes(outcome);
-        } catch (final Throwable t) {
-        }
     }
 
     protected abstract Browser prepBrowser(final Browser prepBr);
@@ -517,12 +501,20 @@ public abstract class K2SApi extends PluginForHost {
      * @author raztoki
      * @throws Exception
      */
-    public void postPageRaw(final Browser ibr, final String url, final String arg, final Account account) throws Exception {
+    private synchronized void postPageRaw(final Browser ibr, final String url, final String arg, final Account account) throws Exception {
         URLConnectionAdapter con = null;
         try {
             con = ibr.openPostConnection(getApiUrl() + url, arg);
             readConnection(con, ibr);
             antiDDoS(ibr);
+            if (con.getResponseCode() == 429 && ibr.containsHTML("<title>Too Many Requests</title>")) {
+                // been blocked! need to wait 1min before next request.
+                Thread.sleep(61000);
+                // try again!
+                postPageRaw(ibr, url, arg, account);
+                // error handling has been done by above re-entry
+                return;
+            }
             if (sessionTokenInvalid(account, ibr)) {
                 // we retry once after failure!
                 if (authTokenFail > 1) {
