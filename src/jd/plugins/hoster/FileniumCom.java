@@ -292,6 +292,7 @@ public class FileniumCom extends PluginForHost {
         }
     }
 
+    @SuppressWarnings("deprecation")
     @Override
     public AccountInfo fetchAccountInfo(Account account) throws Exception {
         AccountInfo ai = new AccountInfo();
@@ -299,7 +300,11 @@ public class FileniumCom extends PluginForHost {
         account.setValid(true);
         account.setConcurrentUsePossible(true);
         account.setMaxSimultanDownloads(8);
+        final String traffic_max = br.getRegex("<maxdailytraffic>(\\d+)</maxdailytraffic>").getMatch(0);
+        final String traffic_left = br.getRegex("<trafficleft>(\\d+)</trafficleft>").getMatch(0);
         final String expire = br.getRegex("(?i)<expiration\\-txt>([^<]+)").getMatch(0);
+        ai.setTrafficMax(Long.parseLong(traffic_max));
+        ai.setTrafficLeft(Long.parseLong(traffic_left));
         if (expire != null) {
             ai.setValidUntil(TimeFormatter.getMilliSeconds(expire, "dd/MM/yyyy hh:mm:ss", Locale.ENGLISH));
         }
