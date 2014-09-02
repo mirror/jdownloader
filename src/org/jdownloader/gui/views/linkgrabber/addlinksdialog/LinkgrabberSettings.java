@@ -105,14 +105,14 @@ public interface LinkgrabberSettings extends ConfigInterface {
 
     @AboutConfig
     @DefaultBooleanValue(false)
-    @DescriptionForConfigEntry("If true, Packagenames will renamed to lowercase. This is useful to prevent duplicated downloads on case sensitive file systems.")
+    @DescriptionForConfigEntry("If true, Packagenames will renamed to lowercase.")
     boolean isPackageNameToLowerCaseEnabled();
 
     void setPackageNameToLowerCaseEnabled(boolean b);
 
     @AboutConfig
     @DefaultBooleanValue(false)
-    @DescriptionForConfigEntry("If true, Filenames will renamed to lowercase. This is useful to prevent duplicated downloads on case sensitive file systems.")
+    @DescriptionForConfigEntry("If true, Filenames will renamed to lowercase.")
     boolean isFileNameToLowerCaseEnabled();
 
     void setFileNameToLowerCaseEnabled(boolean b);
