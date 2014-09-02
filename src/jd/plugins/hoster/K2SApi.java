@@ -178,7 +178,7 @@ public abstract class K2SApi extends PluginForHost {
     public void init() {
         try {
             if (System.getProperty("org.jdownloader.revision") != null) {
-                Browser.setRequestIntervalLimitGlobal(getDomain(), 3000, 20, 60000);
+                // Browser.setRequestIntervalLimitGlobal(getDomain(), 3000, 20, 60000);
             } else {
                 // law of averages, client shouldn't be making a heap of requests every second...
                 Browser.setRequestIntervalLimitGlobal(getDomain(), 1500);
