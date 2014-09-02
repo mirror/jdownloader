@@ -64,6 +64,7 @@ import org.jdownloader.logging.LogController;
 import org.jdownloader.plugins.ConditionalSkipReason;
 import org.jdownloader.plugins.FinalLinkState;
 import org.jdownloader.plugins.SkipReason;
+import org.jdownloader.settings.staticreferences.CFG_LINKGRABBER;
 
 /**
  * Hier werden alle notwendigen Informationen zu einem einzelnen Download festgehalten. Die Informationen werden dann in einer Tabelle
@@ -561,6 +562,9 @@ public class DownloadLink extends Property implements Serializable, AbstractPack
             setProperty(PROPERTY_CUSTOM_LOCALFILENAME, Property.NULL);
         } else {
             fileName = CrossSystem.alleviatePathParts(fileName);
+            if (CFG_LINKGRABBER.FILENAME_TO_LOWER_CASE.isEnabled()) {
+                fileName = fileName.toLowerCase(Locale.ENGLISH);
+            }
             this.setProperty(PROPERTY_CUSTOM_LOCALFILENAME, fileName);
         }
         cachedName = null;
@@ -576,6 +580,9 @@ public class DownloadLink extends Property implements Serializable, AbstractPack
             setProperty(PROPERTY_CUSTOM_LOCALFILENAMEAPPEND, Property.NULL);
         } else {
             fileName = CrossSystem.alleviatePathParts(fileName);
+            if (CFG_LINKGRABBER.FILENAME_TO_LOWER_CASE.isEnabled()) {
+                fileName = fileName.toLowerCase(Locale.ENGLISH);
+            }
             this.setProperty(PROPERTY_CUSTOM_LOCALFILENAMEAPPEND, fileName);
         }
         cachedName = null;
@@ -646,11 +653,11 @@ public class DownloadLink extends Property implements Serializable, AbstractPack
     /**
      *
      *
-     * priority of returned fileName 0.) tmpAsynchRenameFilename (e.g. renamed in downloadlist) 1.) forcedFileName (eg manually set)
-     *
-     * 2.) finalFileName (eg set by plugin where the final is 100% safe, eg API)
-     *
-     * 3.) unsafeFileName (eg set by plugin when no api is available, or no filename provided)
+     * priority of returned fileName<br />
+     * 0.) tmpAsynchRenameFilename (e.g. renamed in downloadlist)<br />
+     * 1.) forcedFileName (eg manually set)<br />
+     * 2.) finalFileName (eg set by plugin where the final is 100% safe, eg API)<br />
+     * 3.) unsafeFileName (eg set by plugin when no api is available, or no filename provided)<br />
      *
      * @param ignoreUnsafe
      * @param ignoreForcedFilename
@@ -851,7 +858,7 @@ public class DownloadLink extends Property implements Serializable, AbstractPack
     /*
      * Gibt zurueck ob Dieser Link schon auf verfuegbarkeit getestet wurde.+ Diese FUnktion fuehrt keinen!! Check durch. Sie prueft nur ob
      * schon geprueft worden ist. anschiessend kann mit isAvailable() die verfuegbarkeit ueberprueft werden
-     *
+     * 
      * @return Link wurde schon getestet (true) nicht getestet(false)
      */
     public boolean isAvailabilityStatusChecked() {
@@ -1200,6 +1207,9 @@ public class DownloadLink extends Property implements Serializable, AbstractPack
         }
         if (!StringUtils.isEmpty(name)) {
             name = CrossSystem.alleviatePathParts(name);
+            if (CFG_LINKGRABBER.FILENAME_TO_LOWER_CASE.isEnabled()) {
+                name = name.toLowerCase(Locale.ENGLISH);
+            }
         }
         if (StringUtils.isEmpty(name)) {
             name = UNKNOWN_FILE_NAME;
@@ -1237,6 +1247,9 @@ public class DownloadLink extends Property implements Serializable, AbstractPack
                 }
             } else {
                 name = CrossSystem.alleviatePathParts(name);
+                if (CFG_LINKGRABBER.FILENAME_TO_LOWER_CASE.isEnabled()) {
+                    name = name.toLowerCase(Locale.ENGLISH);
+                }
                 this.setProperty(PROPERTY_FORCEDFILENAME, name);
             }
         }
@@ -1286,7 +1299,11 @@ public class DownloadLink extends Property implements Serializable, AbstractPack
                 System.out.println("Use Workaround for stupid >>rar.html<< uploaders!");
                 newfinalFileName = newfinalFileName.substring(0, newfinalFileName.length() - new Regex(newfinalFileName, Pattern.compile("r..(\\.htm.?)$", Pattern.CASE_INSENSITIVE)).getMatch(0).length());
             }
-            this.setProperty(PROPERTY_FINALFILENAME, newfinalFileName = CrossSystem.alleviatePathParts(newfinalFileName));
+            newfinalFileName = CrossSystem.alleviatePathParts(newfinalFileName);
+            if (CFG_LINKGRABBER.FILENAME_TO_LOWER_CASE.isEnabled()) {
+                newfinalFileName = newfinalFileName.toLowerCase(Locale.ENGLISH);
+            }
+            this.setProperty(PROPERTY_FINALFILENAME, newfinalFileName);
             setName(newfinalFileName);
         } else {
             this.setProperty(PROPERTY_FINALFILENAME, Property.NULL);
