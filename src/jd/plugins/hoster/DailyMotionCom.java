@@ -52,6 +52,7 @@ public class DailyMotionCom extends PluginForHost {
 
     /* Sync the following functions in hoster- and decrypterplugin */
     public static String getVideosource(final Browser br) {
+
         String videosource = br.getRegex("\"sequence\":\"([^<>\"]*?)\"").getMatch(0);
         if (videosource == null) {
             videosource = br.getRegex("%2Fsequence%2F(.*?)</object>").getMatch(0);
@@ -174,6 +175,8 @@ public class DailyMotionCom extends PluginForHost {
             return AvailableStatus.TRUE;
         }
         if (isHDS(downloadLink)) {
+
+            // br.getPage(downloadLink.getStringProperty("directlink", null));
             downloadLink.getLinkStatus().setStatusText("HDS stream download is not supported (yet)!");
             downloadLink.setFinalFileName(getFormattedFilename(downloadLink));
             return AvailableStatus.FALSE;
@@ -186,6 +189,11 @@ public class DailyMotionCom extends PluginForHost {
             }
         } else {
             dllink = downloadLink.getStringProperty("directlink", null);
+            if (dllink == null) {
+                System.out.println(1);
+            } else {
+                System.out.println("DLink FOund");
+            }
             if (!checkDirectLink(downloadLink) || dllink == null) {
                 dllink = findFreshDirectlink(downloadLink);
                 if (dllink == null) {
@@ -242,6 +250,7 @@ public class DailyMotionCom extends PluginForHost {
     private String findFreshDirectlink(final DownloadLink dl) throws IOException {
         try {
             dllink = null;
+
             br.setFollowRedirects(true);
             br.getPage(dl.getStringProperty("mainlink", null));
             br.setFollowRedirects(false);
@@ -249,7 +258,7 @@ public class DailyMotionCom extends PluginForHost {
             if (videosource == null) {
                 return null;
             }
-            LinkedHashMap<String, String[]> foundqualities = findVideoQualities(this.br, dl.getDownloadURL(), videosource);
+            LinkedHashMap<String, String[]> foundqualities = findVideoQualities(this.br, dl.getStringProperty("mainlink", null), videosource);
             final String qualityvalue = dl.getStringProperty("qualityvalue", null);
             final String directlinkinfo[] = foundqualities.get(qualityvalue);
             dllink = Encoding.htmlDecode(directlinkinfo[0]);
