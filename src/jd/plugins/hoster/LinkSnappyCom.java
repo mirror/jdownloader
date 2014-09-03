@@ -395,7 +395,7 @@ public class LinkSnappyCom extends PluginForHost {
             final String err = getJson("error");
             if ("ERROR Code: 087".equalsIgnoreCase(err)) {
                 // "status":"FAILED","error":"ERROR Code: 087"
-                // I assume offline (webui says his host is offline, but not the api host list.
+                // I assume offline (webui says "The download links your provided are invalid.", but not necessarily the api host list.
                 tempUnavailableHoster(currentAcc, currentLink, 1 * (60 * 60 * 1000l));
             }
         }

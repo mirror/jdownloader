@@ -94,9 +94,13 @@ public class BitShareCom extends PluginForHost {
         }
         br.getPage("http://bitshare.com/myaccount.html");
         String filesNum = br.getRegex("<a href=\"http://bitshare\\.com/myfiles\\.html\">(\\d+) files</a>").getMatch(0);
-        if (filesNum != null) ai.setFilesNum(Integer.parseInt(filesNum));
+        if (filesNum != null) {
+            ai.setFilesNum(Integer.parseInt(filesNum));
+        }
         String space = br.getRegex("<b>Storage</b><br />([\r\n\t ]+)?([\\d+\\.]+ (b|mb|gb|tb)) / \\d+").getMatch(1);
-        if (space != null) ai.setUsedSpace(space.trim());
+        if (space != null) {
+            ai.setUsedSpace(space.trim());
+        }
         account.setValid(true);
         ai.setUnlimitedTraffic();
         if (account.getBooleanProperty("freeaccount")) {
@@ -149,14 +153,22 @@ public class BitShareCom extends PluginForHost {
         br = new Browser();
         prepBR();
         br.getPage(downloadLink.getDownloadURL());
-        if (br.containsHTML(LINKOFFLINE)) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (br.containsHTML(LINKOFFLINE)) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
         doFree(downloadLink);
     }
 
     private void doFree(final DownloadLink downloadLink) throws Exception {
-        if (br.containsHTML("Only Premium members can access this file\\.<")) throw new PluginException(LinkStatus.ERROR_FATAL, JDL.L("plugins.hoster.bitsharecom.premiumonly", "Only downloadable for premium users!"));
-        if (br.containsHTML("Sorry, you cant download more then 1 files at time")) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 5 * 60 * 1000l);
-        if (br.containsHTML("> Your Traffic is used up for today")) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 2 * 60 * 60 * 1000l);
+        if (br.containsHTML("Only Premium members can access this file\\.<")) {
+            throw new PluginException(LinkStatus.ERROR_FATAL, JDL.L("plugins.hoster.bitsharecom.premiumonly", "Only downloadable for premium users!"));
+        }
+        if (br.containsHTML("Sorry, you cant download more then 1 files at time")) {
+            throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 5 * 60 * 1000l);
+        }
+        if (br.containsHTML("> Your Traffic is used up for today")) {
+            throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 2 * 60 * 60 * 1000l);
+        }
         try {
             Browser ads = new Browser();
             prepBrowser(ads);
@@ -177,7 +189,9 @@ public class BitShareCom extends PluginForHost {
                 throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, Integer.parseInt(wait) * 1001l);
             } else {
                 wait = br.getRegex("var blocktime = (\\d+);").getMatch(0);
-                if (wait != null) { throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, Integer.parseInt(wait) * 1001l); }
+                if (wait != null) {
+                    throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, Integer.parseInt(wait) * 1001l);
+                }
             }
             throw new PluginException(LinkStatus.ERROR_IP_BLOCKED);
         }
@@ -188,7 +202,9 @@ public class BitShareCom extends PluginForHost {
         }
         /** Try to find stream links */
         String dllink = br.getRegex("scaling: \\'fit\\',[\t\n\r ]+url: \\'(http://[^<>\"\\']+)\\'").getMatch(0);
-        if (dllink == null) dllink = br.getRegex("\\'(http://s\\d+\\.bitshare\\.com/stream/[^<>\"\\']+)\\'").getMatch(0);
+        if (dllink == null) {
+            dllink = br.getRegex("\\'(http://s\\d+\\.bitshare\\.com/stream/[^<>\"\\']+)\\'").getMatch(0);
+        }
         final Browser ajax = br.cloneBrowser();
         ajax.getHeaders().put("X-Requested-With", "XMLHttpRequest");
         ajax.getHeaders().put("Content-Type", "application/x-www-form-urlencoded");
@@ -251,17 +267,27 @@ public class BitShareCom extends PluginForHost {
                 failed = false;
                 break;
             }
-            if (failed) throw new PluginException(LinkStatus.ERROR_CAPTCHA);
+            if (failed) {
+                throw new PluginException(LinkStatus.ERROR_CAPTCHA);
+            }
+        } else {
+            /* Stream, usually .mp4 */
+            int wait = 10;
+            final String regexedWait = br2.getRegex("[a-z0-9]+:(\\d+):0").getMatch(0);
+            if (regexedWait != null) {
+                wait = Integer.parseInt(regexedWait);
+            }
+            this.sleep(wait * 1001l, downloadLink);
         }
         /* For files */
         if (dllink == null) {
             br2 = ajax.cloneBrowser();
             br2.postPage(ajax_url, "request=getDownloadURL&ajaxid=" + tempID);
-            if (br2.containsHTML("Your Traffic is used up for today"))
+            if (br2.containsHTML("Your Traffic is used up for today")) {
                 throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 60 * 60 * 1000l);
-            else if (br2.containsHTML("Sorry, you cant download more then|You are not able to start a new download right now"))
+            } else if (br2.containsHTML("Sorry, you cant download more then|You are not able to start a new download right now")) {
                 throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Wait before starting new downloads", 5 * 60 * 1000l);
-            else if (br2.containsHTML("ERROR#SESSION ERROR\\!")) {
+            } else if (br2.containsHTML("ERROR#SESSION ERROR\\!")) {
                 logger.info("Session error, retrying...");
                 throw new PluginException(LinkStatus.ERROR_RETRY);
             }
@@ -287,11 +313,21 @@ public class BitShareCom extends PluginForHost {
     }
 
     private void errorHandling(final DownloadLink link, final Browser br) throws PluginException {
-        if (br.getURL().contains("filenotfound")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        if (br.containsHTML("(<title>404 Not Found</title>|<h1>404 Not Found</h1>|bad try)")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error", 10 * 60 * 1000l);
-        if (br.containsHTML("No input file specified|Connection to main server failed")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error", 10 * 60 * 1000l);
-        if (br.containsHTML("You don\\'t have necessary rights to start this download or your session has timed out")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error", 2 * 60 * 60 * 1000l);
-        if (br.containsHTML("<title id=\"title_d_page\">Blocked</title>")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 'Blocked'", 30 * 60 * 1000l);
+        if (br.getURL().contains("filenotfound")) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
+        if (br.containsHTML("(<title>404 Not Found</title>|<h1>404 Not Found</h1>|bad try)")) {
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error", 10 * 60 * 1000l);
+        }
+        if (br.containsHTML("No input file specified|Connection to main server failed")) {
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error", 10 * 60 * 1000l);
+        }
+        if (br.containsHTML("You don\\'t have necessary rights to start this download or your session has timed out")) {
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error", 2 * 60 * 60 * 1000l);
+        }
+        if (br.containsHTML("<title id=\"title_d_page\">Blocked</title>")) {
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 'Blocked'", 30 * 60 * 1000l);
+        }
     }
 
     @Override
@@ -300,7 +336,9 @@ public class BitShareCom extends PluginForHost {
         login(account, false);
         br.setFollowRedirects(false);
         br.getPage(link.getDownloadURL());
-        if (br.containsHTML(LINKOFFLINE)) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (br.containsHTML(LINKOFFLINE)) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
         if (account.getBooleanProperty("freeaccount")) {
             doFree(link);
         } else {
@@ -314,7 +352,9 @@ public class BitShareCom extends PluginForHost {
                 dllink = br.getRegex(DLLINKREGEX).getMatch(0);
             }
             if (dllink == null) {
-                if (br.containsHTML("Your Traffic is used up for today.")) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
+                if (br.containsHTML("Your Traffic is used up for today.")) {
+                    throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
+                }
                 logger.warning("Final downloadlink (String is \"dllink\") regex didn't match!");
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
@@ -361,7 +401,9 @@ public class BitShareCom extends PluginForHost {
                 br.setCookie(MAINPAGE, "language_selection", "EN");
                 final Object ret = account.getProperty("cookies", null);
                 boolean acmatch = Encoding.urlEncode(account.getUser()).equals(account.getStringProperty("name", Encoding.urlEncode(account.getUser())));
-                if (acmatch) acmatch = Encoding.urlEncode(account.getPass()).equals(account.getStringProperty("pass", Encoding.urlEncode(account.getPass())));
+                if (acmatch) {
+                    acmatch = Encoding.urlEncode(account.getPass()).equals(account.getStringProperty("pass", Encoding.urlEncode(account.getPass())));
+                }
                 if (acmatch && ret != null && ret instanceof HashMap<?, ?> && !force) {
                     final HashMap<String, String> cookies = (HashMap<String, String>) ret;
                     if (account.isValid()) {
@@ -412,11 +454,15 @@ public class BitShareCom extends PluginForHost {
             br = new Browser();
             prepBR();
             br.postPage("http://bitshare.com/api/openapi/general.php", "action=getFileStatus&files=" + Encoding.urlEncode(link.getDownloadURL()));
-            if (br.getRedirectLocation() != null && br.getRedirectLocation().contains("http://192.168.")) return AvailableStatus.UNCHECKABLE;
+            if (br.getRedirectLocation() != null && br.getRedirectLocation().contains("http://192.168.")) {
+                return AvailableStatus.UNCHECKABLE;
+            }
 
         }
 
-        if (br.containsHTML("#offline#")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (br.containsHTML("#offline#")) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
 
         if (br.containsHTML("No htmlCode read")) {
             link.getLinkStatus().setStatusText("Server error, uncheckable");
@@ -425,10 +471,14 @@ public class BitShareCom extends PluginForHost {
 
         final Regex fileInfo = br.getRegex("#online#[a-z0-9]{8}#([^<>\"]*?)#(\\d+)");
 
-        if (br.containsHTML("(>We are sorry, but the requested file was not found in our database|>Error \\- File not available<|The file was deleted either by the uploader, inactivity or due to copyright claim)")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (br.containsHTML("(>We are sorry, but the requested file was not found in our database|>Error \\- File not available<|The file was deleted either by the uploader, inactivity or due to copyright claim)")) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
         final String filename = fileInfo.getMatch(0);
         final String filesize = fileInfo.getMatch(1);
-        if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (filename == null || filesize == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         String suggestedName = null;
         /* special filename modding if we have a suggested filename */
         if ((suggestedName = (String) link.getProperty("SUGGESTEDFINALFILENAME", (String) null)) != null) {

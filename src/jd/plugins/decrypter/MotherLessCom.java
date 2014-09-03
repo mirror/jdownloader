@@ -145,6 +145,7 @@ public class MotherLessCom extends PluginForDecrypt {
         return singlelink;
     }
 
+    @SuppressWarnings("deprecation")
     private void Gallery(ArrayList<DownloadLink> ret, String parameter, ProgressController progress) throws IOException {
         if (fpName == null) {
             fpName = br.getRegex("<title>MOTHERLESS\\.COM - Go Ahead She Isn't Looking! :  (.*?)</title>").getMatch(0);
