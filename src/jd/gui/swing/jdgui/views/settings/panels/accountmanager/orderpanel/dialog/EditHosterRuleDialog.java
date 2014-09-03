@@ -96,7 +96,6 @@ public class EditHosterRuleDialog extends AbstractDialog<Integer> {
 
             @Override
             public void focusGained(FocusEvent e) {
-                new Exception().printStackTrace();
             }
         });
         ret.add(tb);
