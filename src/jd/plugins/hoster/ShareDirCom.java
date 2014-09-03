@@ -46,14 +46,17 @@ import org.appwork.utils.formatter.TimeFormatter;
 public class ShareDirCom extends PluginForHost {
 
     // Based on API: http://easyfiles.pl/api_dokumentacja.php?api_en=1
-    private static HashMap<Account, HashMap<String, Long>> hostUnavailableMap = new HashMap<Account, HashMap<String, Long>>();
-    private static final String                            NOCHUNKS           = "NOCHUNKS";
+    private static HashMap<Account, HashMap<String, Long>> hostUnavailableMap               = new HashMap<Account, HashMap<String, Long>>();
+    private static final String                            NOCHUNKS                         = "NOCHUNKS";
 
-    private static final String                            NICE_HOST          = "sharedir.com";
-    private static final String                            API_HTTP           = "http://";
-    private static final String                            NICE_HOSTproperty  = NICE_HOST.replaceAll("(\\.|\\-)", "");
+    private static final String                            NICE_HOST                        = "sharedir.com";
+    private static final String                            API_HTTP                         = "http://";
+    private static final String                            NICE_HOSTproperty                = NICE_HOST.replaceAll("(\\.|\\-)", "");
 
-    private int                                            STATUSCODE         = 0;
+    /* 500 MB, checked/set 03.09.14 */
+    private static final long                              default_free_account_traffic_max = 524288000L;
+
+    private int                                            STATUSCODE                       = 0;
 
     public ShareDirCom(PluginWrapper wrapper) {
         super(wrapper);
@@ -123,6 +126,7 @@ public class ShareDirCom extends PluginForHost {
         safeAPIRequest("http://sharedir.com/sdapi.php?get_acc_type", account, null);
         String acctype = null;
         if (br.containsHTML("0")) {
+            ac.setTrafficMax(default_free_account_traffic_max);
             account.setType(AccountType.FREE);
             acctype = "Registered (free) user";
         } else {
@@ -170,6 +174,7 @@ public class ShareDirCom extends PluginForHost {
         return ac;
     }
 
+    @SuppressWarnings("unused")
     private void apiRequest(final String requestUrl, final Account acc, final DownloadLink dl) throws PluginException, IOException {
         br.getPage(requestUrl);
         updatestatuscode();
@@ -181,6 +186,7 @@ public class ShareDirCom extends PluginForHost {
         handleAPIErrors(this.br, acc, dl);
     }
 
+    @SuppressWarnings("unused")
     private void safeAPIPostRequest(final String requestUrl, final String postData, final Account acc, final DownloadLink dl) throws PluginException, IOException {
         br.postPage(requestUrl, "postData");
         updatestatuscode();
@@ -431,6 +437,7 @@ public class ShareDirCom extends PluginForHost {
 
     @Override
     public boolean canHandle(DownloadLink downloadLink, Account account) {
+        /* Make sure that our account type allows downloading a link with this filesize. */
         final long verifiedFileSize = downloadLink.getVerifiedFileSize();
         if (verifiedFileSize >= 150 * 1000 * 1000l && !Account.AccountType.PREMIUM.equals(account.getType())) {
             return false;

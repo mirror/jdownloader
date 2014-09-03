@@ -88,7 +88,7 @@ public class FileHootCom extends PluginForHost {
 
     /* DEV NOTES */
     // XfileSharingProBasic Version 2.6.6.2
-    // mods:
+    // mods: getDllink & scanInfo[Added other RegExes]
     // limit-info:
     // protocol: no https
     // captchatype: null
@@ -177,6 +177,10 @@ public class FileHootCom extends PluginForHost {
                     }
                 }
             }
+        }
+        if (fileInfo[0] == null) {
+            /* Use BR here */
+            fileInfo[0] = br.getRegex("<b>Filename:</b></td><td nowrap>([^<>\"]*?)</td>").getMatch(0);
         }
         if (fileInfo[1] == null) {
             fileInfo[1] = new Regex(correctedBR, "\\(([0-9]+ bytes)\\)").getMatch(0);
@@ -514,14 +518,18 @@ public class FileHootCom extends PluginForHost {
     public String getDllink() {
         String dllink = br.getRedirectLocation();
         if (dllink == null) {
-            dllink = new Regex(correctedBR, "(\"|\\')(https?://(\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}|([\\w\\-\\.]+\\.)?" + DOMAINS + ")(:\\d{1,4})?/(files|d|cgi\\-bin/dl\\.cgi)/(\\d+/)?[a-z0-9]+/[^<>\"/]*?)(\"|\\')").getMatch(1);
+            /* Use normal br here */
+            dllink = br.getRegex("<img src=\"(http://[0-9\\.]+/i/\\d+/[^<>\"]*?)\" class=\"pic\"").getMatch(0);
             if (dllink == null) {
-                final String cryptedScripts[] = new Regex(correctedBR, "p\\}\\((.*?)\\.split\\('\\|'\\)").getColumn(0);
-                if (cryptedScripts != null && cryptedScripts.length != 0) {
-                    for (String crypted : cryptedScripts) {
-                        dllink = decodeDownloadLink(crypted);
-                        if (dllink != null) {
-                            break;
+                dllink = new Regex(correctedBR, "(\"|\\')(https?://(\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}|([\\w\\-\\.]+\\.)?" + DOMAINS + ")(:\\d{1,4})?/(files|d|cgi\\-bin/dl\\.cgi)/(\\d+/)?[a-z0-9]+/[^<>\"/]*?)(\"|\\')").getMatch(1);
+                if (dllink == null) {
+                    final String cryptedScripts[] = new Regex(correctedBR, "p\\}\\((.*?)\\.split\\('\\|'\\)").getColumn(0);
+                    if (cryptedScripts != null && cryptedScripts.length != 0) {
+                        for (String crypted : cryptedScripts) {
+                            dllink = decodeDownloadLink(crypted);
+                            if (dllink != null) {
+                                break;
+                            }
                         }
                     }
                 }

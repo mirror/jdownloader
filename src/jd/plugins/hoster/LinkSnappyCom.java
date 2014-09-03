@@ -79,6 +79,9 @@ public class LinkSnappyCom extends PluginForHost {
     private ArrayList<String>   supportedHosts         = null;
     private String              dllink                 = null;
 
+    /* 75 GB */
+    private static final long   dfault_traffic_max     = 80530636800L;
+
     /*
      * TODO: Implement correct connection limits - admin said, max 36 connectins per file (no total limit), waiting for more input and/or
      * even api implementation
@@ -150,6 +153,8 @@ public class LinkSnappyCom extends PluginForHost {
             } else {
                 ac.setTrafficLeft((long) Double.parseDouble(trafficLeft) * 1024 * 1024);
             }
+            /* API does not (yet) return max daily traffic - use default value! */
+            ac.setTrafficMax(dfault_traffic_max);
         }
 
         /* now it's time to get all supported hosts */
@@ -235,6 +240,17 @@ public class LinkSnappyCom extends PluginForHost {
                 } else {
                     ac.setTrafficLeft(SizeFormatter.getSize(trafficleft));
                 }
+            }
+            String max_traffic = null;
+            try {
+                br.getPage("https://linksnappy.com/tos");
+                max_traffic = br.getRegex("accounts to a daily transfer of (\\d+GB) a day").getMatch(0);
+            } catch (final Throwable e) {
+            }
+            if (max_traffic != null) {
+                ac.setTrafficMax(SizeFormatter.getSize(max_traffic));
+            } else {
+                ac.setTrafficMax(dfault_traffic_max);
             }
         }
 
