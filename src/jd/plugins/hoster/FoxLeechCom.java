@@ -40,6 +40,8 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.utils.JDUtilities;
 
+import org.appwork.utils.formatter.SizeFormatter;
+
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "foxleech.com" }, urls = { "REGEX_NOT_POSSIBLE_RANDOM-asdfasdfsadfsdgfd32423" }, flags = { 2 })
 public class FoxLeechCom extends PluginForHost {
 
@@ -177,11 +179,23 @@ public class FoxLeechCom extends PluginForHost {
             }
         }
         br.getPage("http://www.foxleech.com/account");
+        /* No downloads possible throuh free accounts --> Supporting them makes no sense! */
+        if (br.containsHTML("<li>Account : <b>Free</b></li>")) {
+            logger.info("Free accounts are not supported!");
+            if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
+                throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nNicht unterstützter Accounttyp!\r\nFalls du denkst diese Meldung sei falsch die Unterstützung dieses Account-Typs sich\r\ndeiner Meinung nach aus irgendeinem Grund lohnt,\r\nkontaktiere uns über das support Forum.", PluginException.VALUE_ID_PREMIUM_DISABLE);
+            } else {
+                throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUnsupported account type!\r\nIf you think this message is incorrect or it makes sense to add support for this account type\r\ncontact us via our support forum.", PluginException.VALUE_ID_PREMIUM_DISABLE);
+            }
+        }
         final String[] hosts = br.getRegex("class=\"host\\-icon\\-work\" alt=\"([^<>\"]*?)\"").getColumn(0);
         final ArrayList<String> supportedHosts = new ArrayList<String>();
         for (final String host : hosts) {
             supportedHosts.add(host);
         }
+        // final String traffic_downloaded = br.getRegex("<li>Download : <a>([^<>\"]*?) / Unlimited</a>").getMatch(0);
+        final String uploaded_size = br.getRegex("<li>Upload : <a>([^<>\"]*?) / \\d+ GB</a>").getMatch(0);
+        final String api_url = br.getRegex("\"(https?://(www\\.)?foxleech\\.com/api/[^<>\"]*?)\"").getMatch(0);
         long expire = System.currentTimeMillis();
         String days, hours, minutes, seconds;
         final Regex expireinfo = br.getRegex("type=\"text\"value=\"(\\d{2})Days (\\d{2})Hours (\\d{2})Minutes (\\d{2})Seconds \"");
@@ -201,7 +215,13 @@ public class FoxLeechCom extends PluginForHost {
         if (seconds != null) {
             expire += Long.parseLong(seconds) * 1000;
         }
-        ac.setValidUntil(System.currentTimeMillis() + expire);
+        ac.setValidUntil(expire);
+        if (api_url != null) {
+            account.setProperty("api_url", api_url);
+        }
+        if (uploaded_size != null) {
+            ac.setUsedSpace(SizeFormatter.getSize(uploaded_size));
+        }
         /* They only have accounts with traffic, no free/premium difference (other than no traffic) */
         account.setType(AccountType.PREMIUM);
         account.setMaxSimultanDownloads(-1);
@@ -287,10 +307,17 @@ public class FoxLeechCom extends PluginForHost {
     }
 
     private String site_get_dllink(final DownloadLink link, final Account acc) throws Exception {
-        site_login(acc, false);
+        String dllink;
+        final String api_url = acc.getStringProperty("api_url", null);
         final String url = Encoding.urlEncode(link.getDownloadURL());
-        br.getPage("http://www.foxleech.com/Generate.php?link=" + url);
-        String dllink = br.getRegex("\"link\":\"(http[^<>\"]*?)\"").getMatch(0);
+        site_login(acc, false);
+        if (api_url != null) {
+            /* Actually there is no reason to use this but whatever ... */
+            br.postPage(api_url, "link=" + url);
+        } else {
+            br.getPage("http://www.foxleech.com/Generate.php?link=" + url);
+        }
+        dllink = br.getRegex("\"link\":\"(http[^<>\"]*?)\"").getMatch(0);
         if (dllink == null) {
             handlePluginBroken(acc, link, "dllink_null", 10);
         }
