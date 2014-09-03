@@ -41,7 +41,7 @@ import jd.utils.JDUtilities;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "emuparadise.me" }, urls = { "http://(www\\.)?emuparadise\\.me/[^<>/]+/[^<>/]+/\\d+" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "emuparadise.me" }, urls = { "http://(www\\.)?emuparadise\\.me/[^<>/]+/[^<>/]+/\\d{4,}" }, flags = { 0 })
 public class EmuParadiseMe extends PluginForHost {
 
     public EmuParadiseMe(PluginWrapper wrapper) {
@@ -83,7 +83,7 @@ public class EmuParadiseMe extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         final String filename = br.getRegex("itemprop=\"name\">([^<>\"]*?)<br>").getMatch(0);
-        final String filesize = br.getRegex("\\((\\d+(\\.\\d+)?(M|G))\\)").getMatch(0);
+        final String filesize = br.getRegex("\\((\\d+(\\.\\d+)?(K|M|G))\\)").getMatch(0);
         if (filename == null || filesize == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }

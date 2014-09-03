@@ -371,8 +371,10 @@ public class DataFileCom extends PluginForHost {
     @Override
     public void handlePremium(final DownloadLink downloadLink, final Account account) throws Exception {
         if (useAPI.get() && !account.getBooleanProperty("free", false)) {
+            /* API + premium */
             handlePremium_API(downloadLink, account);
         } else {
+            /* Either disabled API or free account - free (account) download is not possible via API. */
             requestFileInformation(downloadLink);
             login(account, false);
             if (account.getBooleanProperty("free")) {
@@ -387,25 +389,26 @@ public class DataFileCom extends PluginForHost {
                 }
                 handleGeneralErrors(account);
                 doFree(downloadLink, account);
-            }
-            br.setFollowRedirects(true);
-            dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, downloadLink.getDownloadURL(), true, 0);
-            if (dl.getConnection().getContentType().contains("html")) {
-                if (dl.getConnection().getResponseCode() == 404) {
-                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 404", 30 * 60 * 1000l);
+            } else {
+                br.setFollowRedirects(true);
+                dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, downloadLink.getDownloadURL(), true, 0);
+                if (dl.getConnection().getContentType().contains("html")) {
+                    if (dl.getConnection().getResponseCode() == 404) {
+                        throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 404", 30 * 60 * 1000l);
+                    }
+                    logger.warning("The final dllink seems not to be a file!");
+                    br.followConnection();
+                    handleGeneralErrors(account);
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 }
-                logger.warning("The final dllink seems not to be a file!");
-                br.followConnection();
-                handleGeneralErrors(account);
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            }
-            // add download slot
-            controlSlot(+1, account);
-            try {
-                dl.startDownload();
-            } finally {
-                // remove download slot
-                controlSlot(-1, account);
+                // add download slot
+                controlSlot(+1, account);
+                try {
+                    dl.startDownload();
+                } finally {
+                    // remove download slot
+                    controlSlot(-1, account);
+                }
             }
         }
     }
@@ -657,7 +660,7 @@ public class DataFileCom extends PluginForHost {
 
     /**
      * Tries to return value of key from JSon response, from String source.
-     * 
+     *
      * @author raztoki
      * */
     private String getJson(final String source, final String key) {
@@ -673,7 +676,7 @@ public class DataFileCom extends PluginForHost {
 
     /**
      * Tries to return value of key from JSon response, from default 'br' Browser.
-     * 
+     *
      * @author raztoki
      * */
     private String getJson(final String key) {
@@ -682,7 +685,7 @@ public class DataFileCom extends PluginForHost {
 
     /**
      * Tries to return value of key from JSon response, from provided Browser.
-     * 
+     *
      * @author raztoki
      * */
     private String getJson(final Browser ibr, final String key) {
@@ -697,13 +700,13 @@ public class DataFileCom extends PluginForHost {
     /**
      * Prevents more than one free download from starting at a given time. One step prior to dl.startDownload(), it adds a slot to maxFree
      * which allows the next singleton download to start, or at least try.
-     * 
+     *
      * This is needed because xfileshare(website) only throws errors after a final dllink starts transferring or at a given step within pre
      * download sequence. But this template(XfileSharingProBasic) allows multiple slots(when available) to commence the download sequence,
      * this.setstartintival does not resolve this issue. Which results in x(20) captcha events all at once and only allows one download to
      * start. This prevents wasting peoples time and effort on captcha solving and|or wasting captcha trading credits. Users will experience
      * minimal harm to downloading as slots are freed up soon as current download begins.
-     * 
+     *
      * @param controlSlot
      *            (+1|-1)
      * @author raztoki
