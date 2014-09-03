@@ -148,6 +148,8 @@ public class ExtMatrixCom extends PluginForHost {
             }
         }
         if (dl.getConnection().getContentType().contains("html")) {
+            handleGeneralServerErrors();
+            logger.warning("The final dllink seems not to be a file!");
             br.followConnection();
             if (br.containsHTML("Server is too busy for free users")) {
                 throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "No free slots", 10 * 60 * 1000l);
@@ -165,6 +167,12 @@ public class ExtMatrixCom extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl.startDownload();
+    }
+
+    private void handleGeneralServerErrors() throws PluginException {
+        if (dl.getConnection().getResponseCode() == 404) {
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 404", 10 * 60 * 1000l);
+        }
     }
 
     @Override
@@ -315,6 +323,7 @@ public class ExtMatrixCom extends PluginForHost {
             }
             dl = jd.plugins.BrowserAdapter.openDownload(br, link, getLink, "task=download", true, maxChunks);
             if (dl.getConnection().getContentType().contains("html")) {
+                handleGeneralServerErrors();
                 logger.warning("The final dllink seems not to be a file!");
                 br.followConnection();
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
