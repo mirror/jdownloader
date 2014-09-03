@@ -13,7 +13,12 @@ public class LinkgrabberTest extends Test {
     @Override
     public void run(Storage config, AbstractMyJDClientForDesktopJVM api) throws Exception {
         LinkgrabberInterface link = api.link(LinkgrabberInterface.class, chooseDevice(api));
-        CrawledLinkStorable[] smallList = link.queryLinks(new CrawledLinkQuery());
+        CrawledLinkQuery q = new CrawledLinkQuery();
+        q.setVariants(true);
+        q.setVariantName(true);
+        q.setVariantID(true);
+        // q.setVariantIcon(true);
+        CrawledLinkStorable[] smallList = link.queryLinks(q);
         // CrawledLinkQuery query = new CrawledLinkQuery();
         //
         // query.setBytesTotal(true);

@@ -8,6 +8,8 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
+import javax.swing.Icon;
+
 import jd.controlling.linkchecker.LinkChecker;
 import jd.controlling.linkcollector.LinkCollectingJob;
 import jd.controlling.linkcollector.LinkCollector;
@@ -30,6 +32,7 @@ import org.appwork.utils.event.queue.QueueAction;
 import org.appwork.utils.logging2.LogSource;
 import org.appwork.utils.net.Base64InputStream;
 import org.jdownloader.api.RemoteAPIController;
+import org.jdownloader.api.content.v2.ContentAPIImplV2;
 import org.jdownloader.api.downloads.v2.DownloadsAPIV2Impl;
 import org.jdownloader.controlling.Priority;
 import org.jdownloader.controlling.linkcrawler.LinkVariant;
@@ -262,7 +265,7 @@ public class LinkCollectorAPIImplV2 implements LinkCollectorAPIV2 {
         if (maxResults < 0) {
             maxResults = links.size();
         }
-
+        ContentAPIImplV2 contentAPI = RemoteAPIController.getInstance().getContentAPI();
         for (int i = startWith; i < Math.min(startWith + maxResults, links.size()); i++) {
 
             CrawledLink cl = links.get(i);
@@ -270,8 +273,36 @@ public class LinkCollectorAPIImplV2 implements LinkCollectorAPIV2 {
             if (queryParams.isPriority()) {
                 cls.setPriority(org.jdownloader.myjdownloader.client.bindings.PriorityStorable.valueOf(cl.getPriority().name()));
             }
-            if (queryParams.isVariants()) {
-                cls.setVariants(cl.hasVariantSupport());
+            if (queryParams.isVariantID() || queryParams.isVariantName() || queryParams.isVariantIcon() || queryParams.isVariants()) {
+                try {
+                    if (cl.hasVariantSupport()) {
+                        if (queryParams.isVariants()) {
+                            cls.setVariants(true);
+                        }
+                        if (queryParams.isVariantID() || queryParams.isVariantName() || queryParams.isVariantIcon()) {
+                            LinkVariant v = cl.getDownloadLink().getDefaultPlugin().getActiveVariantByLink(cl.getDownloadLink());
+                            LinkVariantStorableV2 s = new LinkVariantStorableV2();
+                            if (v != null) {
+                                if (queryParams.isVariantID()) {
+                                    s.setId(v._getUniqueId());
+                                }
+                                if (queryParams.isVariantName()) {
+                                    s.setName(v._getName());
+                                }
+                                if (queryParams.isVariantIcon()) {
+                                    Icon icon = v._getIcon();
+                                    if (icon != null) {
+                                        s.setIconKey(contentAPI.getIconKey(icon));
+                                    }
+                                }
+                            }
+                            cls.setVariant(s);
+                        }
+
+                    }
+                } catch (Throwable e) {
+                    logger.log(e);
+                }
             }
             if (queryParams.isBytesTotal()) {
                 cls.setBytesTotal(cl.getSize());
