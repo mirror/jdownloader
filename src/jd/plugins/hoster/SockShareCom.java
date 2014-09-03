@@ -91,6 +91,10 @@ public class SockShareCom extends PluginForHost {
         br.getPage(link.getDownloadURL());
         if (br.getURL().contains("sockshare.com/?404") || br.containsHTML("deleted.php") || br.containsHTML("(>404 Not Found<|>This file doesn\\'t exist, or has been removed|<title>Share Files Easily on SockShare</title>|>This file has been removed<)")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        } else if (br.getHttpConnection().getResponseCode() == 403) {
+            /* TODO: Add handling for this for the download methods: http://svn.jdownloader.org/issues/48590 */
+            link.getLinkStatus().setStatusText("Captcha required, cannot check linkstatus");
+            return AvailableStatus.UNCHECKABLE;
         }
         Regex fileInfo = br.getRegex("<h1>(.*?)<strong>\\( (.*?) \\)</strong></h1>");
         String filename = fileInfo.getMatch(0);
@@ -130,7 +134,6 @@ public class SockShareCom extends PluginForHost {
         } else {
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "File temporarily not available", 15 * 60 * 1000l);
         }
-        br.setFollowRedirects(false);
         if (br.containsHTML("(>You have exceeded the daily stream limit for your country|You can wait until tomorrow, or get a)")) {
             throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, "You have exceeded the daily download limit for your country", 4 * 60 * 60 * 1000l);
         }
@@ -175,7 +178,6 @@ public class SockShareCom extends PluginForHost {
         }
         String passCode = downloadLink.getStringProperty("pass");
         if (br.containsHTML("This file requires a password\\. Please enter it")) {
-            br.setFollowRedirects(true);
             if (passCode == null) {
                 passCode = Plugin.getUserInput("Password?", downloadLink);
             }
@@ -184,7 +186,6 @@ public class SockShareCom extends PluginForHost {
                 downloadLink.setProperty("pass", Property.NULL);
                 throw new PluginException(LinkStatus.ERROR_RETRY, "Wrong password");
             }
-            br.setFollowRedirects(false);
         }
         final String dllink = getDllink(downloadLink);
         int chunks = 0;
@@ -200,6 +201,9 @@ public class SockShareCom extends PluginForHost {
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, chunks);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
+            if (br.getURL().contains("?expired")) {
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 'expired'", 5 * 60 * 1000l);
+            }
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         downloadLink.setProperty("pass", passCode);
@@ -344,7 +348,6 @@ public class SockShareCom extends PluginForHost {
         if (br.containsHTML(SERVERUNAVAILABLE)) {
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server temporarily disabled!", 2 * 60 * 60 * 1000l);
         }
-        br.setFollowRedirects(false);
         String dllink = br.getRegex("\"(/get_file\\.php\\?id=[^<>\"]*?)\"").getMatch(0);
         if (dllink == null) {
             logger.warning("Final downloadlink (String is \"dllink\") regex didn't match!");
@@ -409,11 +412,13 @@ public class SockShareCom extends PluginForHost {
     private String getStreamLink() throws IOException, PluginException {
         String dllink = br.getRegex("\\'(/get_file\\.php\\?stream=[^<>\"/]*?)\\'").getMatch(0);
         if (dllink != null) {
+            br.setFollowRedirects(false);
             br.getPage("http://www." + this.getHost() + dllink);
             dllink = br.getRegex("<media:content url=\"(http://[^<>\"]*?)\"").getMatch(0);
             if (dllink == null) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
+            br.setFollowRedirects(true);
         }
         return dllink;
     }
@@ -421,11 +426,13 @@ public class SockShareCom extends PluginForHost {
     private String getOriginalFormatLink() throws IOException, PluginException {
         String dllink = br.getRegex("\"(/get_file\\.php\\?id=[^<>\"/]*?)\"").getMatch(0);
         if (dllink != null) {
+            br.setFollowRedirects(false);
             br.getPage("http://www." + this.getHost() + dllink);
             dllink = br.getRedirectLocation();
             if (dllink == null) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
+            br.setFollowRedirects(true);
         }
         return dllink;
     }
