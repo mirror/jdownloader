@@ -29,6 +29,7 @@ import jd.http.Cookie;
 import jd.http.Cookies;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
+import jd.parser.Regex;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
@@ -59,6 +60,7 @@ public class EmuParadiseMe extends PluginForHost {
     @SuppressWarnings("unchecked")
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
+        link.setName(Encoding.htmlDecode(new Regex(link.getDownloadURL(), "emuparadise\\.me/[^<>/]+/([^<>/]+)/").getMatch(0)) + ".zip");
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         synchronized (LOCK) {
@@ -81,7 +83,7 @@ public class EmuParadiseMe extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         final String filename = br.getRegex("itemprop=\"name\">([^<>\"]*?)<br>").getMatch(0);
-        final String filesize = br.getRegex("\\((\\d+(\\.\\d+)?M)\\)").getMatch(0);
+        final String filesize = br.getRegex("\\((\\d+(\\.\\d+)?(M|G))\\)").getMatch(0);
         if (filename == null || filesize == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }

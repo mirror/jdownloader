@@ -51,7 +51,7 @@ public class NewGrndsCom extends PluginForDecrypt {
         String finallink = null;
         String finalfilename = null;
         if (parameter.matches(ARTLINK)) {
-            finallink = br.getRegex("id=\"blackout_center\">[\t\n\r ]+<img src=\"(http://[^<>\"]*?)\"").getMatch(0);
+            finallink = br.getRegex("id=\"dim_the_lights\" href=\"(http://[^<>\"]*?)\"").getMatch(0);
             directhttp = true;
         } else {
             if (parameter.contains("/audio/listen/")) {
