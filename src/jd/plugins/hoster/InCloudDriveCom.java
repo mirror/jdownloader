@@ -122,6 +122,11 @@ public class InCloudDriveCom extends PluginForHost {
     public void doFree(final DownloadLink downloadLink, final boolean resume, final int maxchunks, final String directlinkparam) throws Exception, PluginException {
         String dllink = checkDirectLink(downloadLink, directlinkparam);
         if (dllink == null) {
+            if (downloadLink.getBooleanProperty("premiumRequired", false)) {
+                // canHandle for JD2, non JD2 here.
+                premiumDownloadRestriction(downloadLink, downloadLink.getStringProperty("premiumRestrictionMsg", null));
+            }
+
             final String uplid = ajax.getRegex("uploader_id=\"(\\d+)\"").getMatch(0);
             final String fileid = ajax.getRegex("file_id=\"(\\d+)\"").getMatch(0);
             final String predlwait = ajax.getRegex("var pre_download_timer_set\\s*=\\s*'(\\d+)';").getMatch(0);
@@ -163,7 +168,7 @@ public class InCloudDriveCom extends PluginForHost {
                 // style="text-align:center;font-size:17px;">The requested file is to big for a guest or free download. Please upgrade your
                 // account. <span id="buy_premium_access_id" style="font-weight:bold;color:#3AB2F0;cursor: pointer;">Buy Premium
                 // access</span>.</p>';
-                premiumDownloadRestriction("The requested file is to big! You need premium!");
+                premiumDownloadRestriction(downloadLink, "The requested file is to big! You need premium!");
             } else if (!"d_yes".equals(ajax.toString())) {
                 // uncaught error
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -433,7 +438,9 @@ public class InCloudDriveCom extends PluginForHost {
     }
 
     @Override
-    public void resetDownloadlink(final DownloadLink link) {
+    public void resetDownloadlink(final DownloadLink downloadLink) {
+        downloadLink.setProperty("premiumRequired", Property.NULL);
+        downloadLink.setProperty("premiumRestrictionMsg", Property.NULL);
     }
 
     /**
@@ -442,7 +449,18 @@ public class InCloudDriveCom extends PluginForHost {
      * @param msg
      * @throws PluginException
      */
-    public void premiumDownloadRestriction(final String msg) throws PluginException {
+    public void premiumDownloadRestriction(final DownloadLink downloadLink, final String msg) throws PluginException {
+        downloadLink.setProperty("premiumRequired", true);
+        downloadLink.setProperty("premiumRestrictionMsg", msg);
+        try {
+            downloadLink.setComment(msg);
+        } catch (final Throwable e) {
+        }
+        try {
+            downloadLink.getLinkStatus().setStatusText(msg);
+        } catch (final Throwable e) {
+            // if used outside intended methods it will throw exception
+        }
         try {
             throw new PluginException(LinkStatus.ERROR_PREMIUM, msg, PluginException.VALUE_ID_PREMIUM_ONLY);
         } catch (final Throwable e) {
@@ -451,6 +469,14 @@ public class InCloudDriveCom extends PluginForHost {
             }
         }
         throw new PluginException(LinkStatus.ERROR_FATAL, msg);
+    }
+
+    public boolean canHandle(DownloadLink downloadLink, Account account) {
+        if (downloadLink.getBooleanProperty("premiumRequired", false) && (account == null || account.getBooleanProperty("free", false))) {
+            return false;
+        } else {
+            return true;
+        }
     }
 
     public String  folderLinks         = "folderLinks";
