@@ -140,6 +140,7 @@ plugins_errors_hosteroffline=主机离线?
 plugins_errors_hosterproblem=主机问题?
 plugins_errors_nointernetconn=连接问题。
 plugins_errors_wrongpassword=错误密码
+plugins_errors_wrongusername=错误用户名！
 reconnectmanager_wizard=重新连接向导
 settings_sidebar_tooltip_enable_extension=启用/禁用这个扩展
 system_download_doCRC2=[%s1] CRC 正在运行
