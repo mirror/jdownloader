@@ -34,16 +34,16 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "myfastfile.com" }, urls = { "REGEX_NOT_POSSIBLE_RANDOM-asdfasdfsadfsdgfd32423" }, flags = { 2 })
-public class MultiDebridCom extends PluginForHost {
+@HostPlugin(revision = "$Revision: 26092 $", interfaceVersion = 3, names = { "myfastfile.com" }, urls = { "REGEX_NOT_POSSIBLE_RANDOM-asdfasdfsadfsdgfd32423" }, flags = { 2 })
+public class MyFastFileCom extends PluginForHost {
 
     // DEV NOTES
     // password is APIKey from users profile.
-    // myfastfile.com sister site
+    // max-debrid.com sister site
 
     private static HashMap<Account, HashMap<String, Long>> hostUnavailableMap = new HashMap<Account, HashMap<String, Long>>();
-    private final String                                   mName              = "multi-debrid.com";
-    private final String                                   mProt              = "http://";
+    private final String                                   mName              = "www.myfastfile.com";
+    private final String                                   mProt              = "https://";
     private int                                            count              = 0;
     private String                                         ec                 = null;
     // repeat is one more than desired
@@ -52,7 +52,7 @@ public class MultiDebridCom extends PluginForHost {
     private final String                                   sessionRetry       = "sessionRetry";
     private final String                                   globalRetry        = "globalRetry";
 
-    public MultiDebridCom(PluginWrapper wrapper) {
+    public MyFastFileCom(PluginWrapper wrapper) {
         super(wrapper);
         this.enablePremium(mProt + mName + "/premium");
     }
