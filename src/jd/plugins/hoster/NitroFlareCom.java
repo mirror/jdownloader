@@ -19,9 +19,13 @@ package jd.plugins.hoster;
 import java.io.File;
 import java.io.IOException;
 import java.lang.reflect.Field;
+import java.net.URL;
 import java.util.ArrayList;
 import java.util.Locale;
 import java.util.concurrent.atomic.AtomicBoolean;
+
+import javax.swing.JOptionPane;
+import javax.swing.SwingUtilities;
 
 import jd.PluginWrapper;
 import jd.config.Property;
@@ -41,6 +45,7 @@ import jd.utils.JDUtilities;
 
 import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.formatter.TimeFormatter;
+import org.appwork.utils.os.CrossSystem;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "nitroflare.com" }, urls = { "https?://(www\\.)?nitroflare\\.com/view/[A-Z0-9]+" }, flags = { 2 })
 public class NitroFlareCom extends PluginForHost {
@@ -257,6 +262,8 @@ public class NitroFlareCom extends PluginForHost {
         }
     }
 
+    protected static Object LOCK = new Object();
+
     /**
      * Validates account and returns correct account info, when user has provided incorrect user pass fields to JD client. Or Throws
      * exception indicating users mistake, when it's a irreversible mistake.
@@ -269,11 +276,39 @@ public class NitroFlareCom extends PluginForHost {
         final String user = account.getUser();
         final String pass = account.getPass();
         if (inValidate(pass)) {
-            throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nYou haven't provided a valid password or premiumKey (this field can not be empty)!", PluginException.VALUE_ID_PREMIUM_DISABLE);
+            // throw new PluginException(LinkStatus.ERROR_PREMIUM,
+            // "\r\nYou haven't provided a valid password or premiumKey (this field can not be empty)!",
+            // PluginException.VALUE_ID_PREMIUM_DISABLE);
+            throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nYou haven't provided a valid password (this field can not be empty)!", PluginException.VALUE_ID_PREMIUM_DISABLE);
         }
         if (pass.matches("(?-i)NF[a-zA-Z0-9]{10}")) {
             // no need to urlencode, this is always safe.
-            return "user=&premiumKey=" + pass;
+            // return "user=&premiumKey=" + pass;
+            synchronized (LOCK) {
+                try {
+                    SwingUtilities.invokeAndWait(new Runnable() {
+
+                        @Override
+                        public void run() {
+                            try {
+                                String title = "Nitroflare no longer accepts PremiumKeys";
+                                String message = "You are using PremiumKey! These are no longer accepted on Nitroflare.\r\n";
+                                message += "You will need to bind your PremiumKey to account. Please Click -YES- for more information.";
+                                if (CrossSystem.isOpenBrowserSupported()) {
+                                    int result = JOptionPane.showConfirmDialog(jd.gui.swing.jdgui.JDGui.getInstance().getMainFrame(), message, title, JOptionPane.YES_NO_OPTION, JOptionPane.INFORMATION_MESSAGE, null);
+                                    if (JOptionPane.OK_OPTION == result) {
+                                        CrossSystem.openURL(new URL(baseURL + "/upgradeTutorial"));
+                                    }
+                                }
+                            } catch (Throwable e) {
+                            }
+                        }
+                    });
+                } catch (Throwable e) {
+                }
+            }
+
+            throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nPremiumKeys not accepted, you need to use Account (email and password).", PluginException.VALUE_ID_PREMIUM_DISABLE);
         }
         if (inValidate(user) || !user.matches(".+@.+")) {
             throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nYou haven't provided a valid username (must be email address)!", PluginException.VALUE_ID_PREMIUM_DISABLE);
