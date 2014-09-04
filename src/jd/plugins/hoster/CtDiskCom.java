@@ -71,34 +71,61 @@ public class CtDiskCom extends PluginForHost {
         prepBrowser(br);
         br.setFollowRedirects(true);
         br.getPage(link.getDownloadURL());
-        if (br.containsHTML("(>提示：本文件已到期。成为VIP后才能下载所有文件|<title>成为VIP即可下载全部视频和文件</title>|>注意：高级VIP可下载所有文件|color=\"#FF0000\" face=\"黑体\">点击立即成为VIP</font>|>Woops\\!找不到文件 \\- 免费高速下载|>对不起，这个文件已到期或被删除。您可以注册城通会)")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (br.containsHTML("(>提示：本文件已到期。成为VIP后才能下载所有文件|<title>成为VIP即可下载全部视频和文件</title>|>注意：高级VIP可下载所有文件|color=\"#FF0000\" face=\"黑体\">点击立即成为VIP</font>|>Woops\\!找不到文件 \\- 免费高速下载|>对不起，这个文件已到期或被删除。您可以注册城通会)")) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
         String filename = null;
         if (br.getURL().contains("bego.cc/") || br.getURL().contains("pipipan.com/")) {
             filename = br.getRegex("<div class=\"file_title\">([^<>\"]*?)</div>").getMatch(0);
         } else {
             filename = br.getRegex("<div class=\"top_title\"[^>]+>(.*?)<").getMatch(0);
         }
-        if (filename == null) filename = br.getRegex("<title>(.*?) \\- 免费高速下载").getMatch(0);
-        if (filename == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (filename == null) {
+            filename = br.getRegex("<title>(.*?) \\- 免费高速下载").getMatch(0);
+        }
+        if (filename == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         link.setName(Encoding.htmlDecode(filename.trim()));
         String filesize = br.getRegex("\">\\(([\\d\\,\\.]+ (KB|MB|GB))\\)</span><").getMatch(0);
-        if (filesize == null) filesize = br.getRegex("([\\d\\,\\.]+ (KB|MB|GB))").getMatch(0);
-        if (filesize != null) link.setDownloadSize(SizeFormatter.getSize(filesize));
+        if (filesize == null) {
+            filesize = br.getRegex("([\\d\\,\\.]+ (KB|MB|GB))").getMatch(0);
+        }
+        if (filesize != null) {
+            link.setDownloadSize(SizeFormatter.getSize(filesize));
+        }
         return AvailableStatus.TRUE;
     }
 
     public void doFree(final DownloadLink downloadLink, final boolean premium, final int maxchunks) throws Exception, PluginException {
+        br.getPage(downloadLink.getDownloadURL());
         final String fid = new Regex(downloadLink.getDownloadURL(), "(\\d+)$").getMatch(0);
         String dllink = checkDirectLink(downloadLink, "directlink");
         if (dllink == null) {
             dllink = findDllink();
-            if (dllink != null) dllink = Encoding.Base64Decode(Encoding.htmlDecode(dllink));
+            if (dllink != null) {
+                dllink = Encoding.Base64Decode(Encoding.htmlDecode(dllink));
+            }
         }
         if (dllink == null) {
+            try {
+                /* Without this, site won't accept the captcha! */
+                br.cloneBrowser().getPage("http://www.400gb.com/advview2013.php?ad_pos=0");
+            } catch (final Throwable e) {
+            }
             final Form free = br.getFormbyProperty("name", "user_form");
             String captcha = br.getRegex("((https?://[^/]+)?/randcodeV2(_login)?\\.php\\?fid=" + fid + "&rand=)").getMatch(0);
-            if (free == null || captcha == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            if (free == null || captcha == null) {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
+            /*
+             * Check hash_key handling if ever plugin is broken - if it does not work with the correct hash_key, check if it works via
+             * browser with adblocker enabled!
+             */
             String hash_key = br.getRegex("\\$\\(\"#hash_key\"\\)\\.val\\(\"([^<>\"]*?)\"\\)").getMatch(0);
+            if (hash_key == null) {
+                hash_key = br.getRegex("name=\"hash_key\" value=\"([^<>\"]*?)\"").getMatch(0);
+            }
             if (hash_key == null && free.hasInputFieldByName("hash_info")) {
                 String tmp = free.getInputFieldByName("hash_info").getValue();
                 if (tmp != null) {
@@ -115,24 +142,34 @@ public class CtDiskCom extends PluginForHost {
                 } catch (final Throwable e) {
                 }
             }
-            if (hash_key != null) free.put("hash_key", hash_key);
+            if (hash_key != null) {
+                free.put("hash_key", hash_key);
+            }
             captcha = captcha + new Random().nextInt(999999999);
             String code = getCaptchaCode(captcha, downloadLink);
             free.put("randcode", code);
             br.submitForm(free);
-            if (br.containsHTML(">验证码输入错误或<b>广告被拦截</b>")) throw new PluginException(LinkStatus.ERROR_CAPTCHA);
+            if (br.containsHTML(">验证码输入错误或<b>广告被拦截</b>")) {
+                throw new PluginException(LinkStatus.ERROR_CAPTCHA);
+            }
             if (!br.getURL().matches(".+/downhtml/\\d+/.+")) {
                 String continueLink = br.getRegex("\"\\&downlink=(/downhtml/[^<>\"]*?)\";").getMatch(0);
-                if (continueLink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                if (continueLink == null) {
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                }
                 br.getPage(continueLink);
             }
             if (dllink == null) {
                 dllink = findDllink();
-                if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                if (dllink == null) {
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                }
                 dllink = Encoding.Base64Decode(Encoding.htmlDecode(dllink));
             }
         }
-        if (dllink == null || !dllink.startsWith("http")) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (dllink == null || !dllink.startsWith("http")) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         // Check if link is working. If not try mirror. Limits can be extended/skipped using this method :D
         boolean failed = false;
         URLConnectionAdapter con = null;
@@ -144,9 +181,13 @@ public class CtDiskCom extends PluginForHost {
         }
         if (failed || con.getContentType().contains("html") || con.getResponseCode() == 503) {
             dllink = br.getRegex(DLLINKREGEX2).getMatch(0);
-            if (dllink == null) throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Too many simultan downloads", 5 * 60 * 1000l);
+            if (dllink == null) {
+                throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Too many simultan downloads", 5 * 60 * 1000l);
+            }
         }
-        if (con != null) con.disconnect();
+        if (con != null) {
+            con.disconnect();
+        }
         try {
             dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, maxchunks);
         } catch (Exception e) {
@@ -237,13 +278,19 @@ public class CtDiskCom extends PluginForHost {
         if (dllink == null) {
             br.getPage(link.getDownloadURL());
             final String downHTML = br.getRegex("(\\'|\")(/downhtml/[^<>\"]*?\\.html)(\\'|\")").getMatch(1);
-            if (downHTML == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            if (downHTML == null) {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
             br.getPage("http://www.400gb.com" + downHTML);
             final String vipLinks = br.getRegex("<div class=\"viplist\">(.*?)<table class=\"intro_text\"").getMatch(0);
-            if (vipLinks == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            if (vipLinks == null) {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
             dllink = new Regex(vipLinks, "<a href=\"(.*?)\"").getMatch(0);
         }
-        if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (dllink == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         dllink = Encoding.Base64Decode(dllink);
         dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, true, -5);
         if (dl.getConnection().getContentType().contains("html")) {
@@ -267,7 +314,9 @@ public class CtDiskCom extends PluginForHost {
             prepBrowser(br);
             final Object ret = account.getProperty("cookies", null);
             boolean acmatch = Encoding.urlEncode(account.getUser()).equals(account.getStringProperty("name", Encoding.urlEncode(account.getUser())));
-            if (acmatch) acmatch = Encoding.urlEncode(account.getPass()).equals(account.getStringProperty("pass", Encoding.urlEncode(account.getPass())));
+            if (acmatch) {
+                acmatch = Encoding.urlEncode(account.getPass()).equals(account.getStringProperty("pass", Encoding.urlEncode(account.getPass())));
+            }
             if (acmatch && ret != null && ret instanceof HashMap<?, ?> && !force) {
                 final HashMap<String, String> cookies = (HashMap<String, String>) ret;
                 if (cookies.containsKey("pubcookie") && account.isValid()) {
@@ -281,11 +330,15 @@ public class CtDiskCom extends PluginForHost {
             }
             br.getPage("http://www.400gb.com/index.php?item=account&action=login");
             String hash = br.getRegex("name=\"formhash\" value=\"(.*?)\"").getMatch(0);
-            if (hash == null) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+            if (hash == null) {
+                throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+            }
             DownloadLink dummy = new DownloadLink(this, "Account login", "ctdisk.com", null, true);
             String code = getCaptchaCode("http://www.400gb.com/randcode.php", dummy);
             br.postPage("http://www.400gb.com/index.php", "item=account&action=login&task=login&ref=mydisk.php&formhash=" + Encoding.urlEncode(hash) + "&username=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()) + "&randcode=" + Encoding.urlEncode(code) + "&remember=on&btnToLogin.x=" + new Random().nextInt(100) + "&btnToLogin.y=" + new Random().nextInt(100));
-            if (br.getCookie(MAINPAGE, "pubcookie") == null || "deleted".equals(br.getCookie(MAINPAGE, "pubcookie"))) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+            if (br.getCookie(MAINPAGE, "pubcookie") == null || "deleted".equals(br.getCookie(MAINPAGE, "pubcookie"))) {
+                throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+            }
             // Save cookies
             final HashMap<String, String> cookies = new HashMap<String, String>();
             final Cookies add = this.br.getCookies(MAINPAGE);
