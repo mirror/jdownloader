@@ -139,8 +139,14 @@ public class PanBaiduCom extends PluginForHost {
                 }
                 br.getPage(original_url);
             }
-            final String sign = br.getRegex("FileUtils\\.share_sign=\"([a-z0-9]+)\"").getMatch(0);
-            final String tsamp = br.getRegex("FileUtils\\.share_timestamp=\"(\\d+)\"").getMatch(0);
+            String sign = br.getRegex("FileUtils\\.share_sign=\"([a-z0-9]+)\"").getMatch(0);
+            if (sign == null) {
+                sign = br.getRegex("yunData\\.SIGN = \"([a-z0-9]+)\"").getMatch(0);
+            }
+            String tsamp = br.getRegex("FileUtils\\.share_timestamp=\"(\\d+)\"").getMatch(0);
+            if (tsamp == null) {
+                tsamp = br.getRegex("yunData\\.TIMESTAMP = \"(\\d+)\"").getMatch(0);
+            }
             if (sign == null || tsamp == null) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }

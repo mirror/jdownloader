@@ -80,9 +80,16 @@ public class CloudMailRu extends PluginForHost {
             }
         } else {
             /* Check if main-folder still exists */
-            br.getPage("https://cloud.mail.ru/api/v1/folder/recursive?storage=public&id=" + Encoding.urlEncode(getID(link)) + "&sort=%7B%22type%22%3A%22name%22%2C%22order%22%3A%22asc%22%7D&api=1&htmlencoded=false&build=" + BUILD);
-            if (br.containsHTML("\"status\":400")) {
-                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            if (link.getBooleanProperty("noapi", false)) {
+                br.getPage(link.getStringProperty("mainlink", null));
+                if (br.getHttpConnection().getResponseCode() == 404) {
+                    throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+                }
+            } else {
+                br.getPage("https://cloud.mail.ru/api/v1/folder/recursive?storage=public&id=" + Encoding.urlEncode(getID(link)) + "&sort=%7B%22type%22%3A%22name%22%2C%22order%22%3A%22asc%22%7D&api=1&htmlencoded=false&build=" + BUILD);
+                if (br.containsHTML("\"status\":400")) {
+                    throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+                }
             }
             final String filename = link.getStringProperty("plain_name", null);
             final String filesize = link.getStringProperty("plain_size", null);
