@@ -27,7 +27,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "fileproject.com.br" }, urls = { "http://(www\\.)?([a-z0-9]+\\.)?fileproject\\.com\\.br/(pp/files|files/epis(odios)?)/(SD|HD|LQs?|MQ|HQ)/[^<>\"/\\s]+|http://(www\\.)?([a-z0-9]+\\.)?fileproject\\.xpg\\.uol\\.com\\.br/[a-z]{3}/files/((epis(odios)?/(SD|HD|LQs?|MQ|HQ))|Volumes)/[^<>\"/\\s]+" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "fileproject.com.br" }, urls = { "http://(www\\.)?([a-z0-9]+\\.)?fileproject\\.com\\.br/(pp/files|files/epis(odios)?)/(SD|HD|LQs?|MQ|HQ)/[^<>\"/\\s]+|http://(www\\.)?([a-z0-9]+\\.)?fileproject\\.xpg\\.uol\\.com\\.br/([a-z]{2,3}/)?files/([^/]+/){0,3}[^<>\"/\\s]+" }, flags = { 0 })
 public class FileProjectComBr extends PluginForHost {
 
     // DEV NOTES
@@ -46,6 +46,8 @@ public class FileProjectComBr extends PluginForHost {
     public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
+        // String[] host = new Regex(link.getDownloadURL(), "(https?://)([^:/]+)").getRow(0);
+        // br.getHeaders().put("Referer", host[0] + host[1]);
         br.getPage(link.getDownloadURL());
         if (br.getHttpConnection().getResponseCode() == 403 || (br.getURL() != null && br.getURL().contains("aliancaproject.com.br/"))) {
             // country block, seems to 403 outside of Brazil!
