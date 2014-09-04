@@ -212,6 +212,7 @@ public class SecureUploadEu extends PluginForHost {
         // Third, continue like normal.
         if (dllink == null) {
             checkErrors(downloadLink, false, passCode);
+            br.getRequest().setHtmlCode(correctedBR);
             Form download1 = getFormByKey("op", "download1");
             if (download1 == null) {
                 download1 = br.getForm(1);
@@ -224,6 +225,7 @@ public class SecureUploadEu extends PluginForHost {
             dllink = getDllink();
         }
         if (dllink == null) {
+            br.getRequest().setHtmlCode(correctedBR);
             Form dlForm = br.getFormbyProperty("name", "F1");
             if (dlForm == null) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -320,6 +322,7 @@ public class SecureUploadEu extends PluginForHost {
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 } else if (dllink == null && br.containsHTML("<Form name=\"F1\" method=\"POST\" action=\"\"")) {
                     dlForm = br.getFormbyProperty("name", "F1");
+                    br.getRequest().setHtmlCode(correctedBR);
                     continue;
                 } else {
                     break;
@@ -395,7 +398,7 @@ public class SecureUploadEu extends PluginForHost {
         correctedBR = br.toString();
         ArrayList<String> someStuff = new ArrayList<String>();
         ArrayList<String> regexStuff = new ArrayList<String>();
-        regexStuff.add("<\\!(\\-\\-.*?\\-\\-)>");
+        regexStuff.add("<\\!(\\-\\-.*?\\-\\-!*)>");
         regexStuff.add("(<\\s*(\\w+)\\s+[^>]*style\\s*=\\s*(\"|')[\\w:;\\s#-]*(visibility\\s*:\\s*hidden|display\\s*:\\s*none)[\\w:;\\s#-]*\\3[^>]*(>.*?<\\s*/\\2[^>]*>|/\\s*>))");
 
         for (String aRegex : regexStuff) {
