@@ -51,6 +51,7 @@ public class InCloudDriveCom extends PluginForHost {
     public InCloudDriveCom(PluginWrapper wrapper) {
         super(wrapper);
         this.enablePremium("https://www.inclouddrive.com/");
+        setConfigElements();
     }
 
     @Override
@@ -91,21 +92,23 @@ public class InCloudDriveCom extends PluginForHost {
         } else {
             ajaxPostPage("https://www.inclouddrive.com/index.php/" + hashTag[0] + "/" + hashTag[1], "user_id=");
         }
+        final String filename = ajax.getRegex("class=\"propreties-file-count\">[\t\n\r ]+<b>([^<>\"]+)</b>").getMatch(0);
+        final String filesize = ajax.getRegex(">Total size:</span><span class=\"propreties-dark-txt\">([^<>\"]+)</span>").getMatch(0);
+        if (filename != null) {
+            link.setName(encodeUnicode(Encoding.htmlDecode(filename.trim())));
+        }
+        if (filesize != null) {
+            link.setDownloadSize(SizeFormatter.getSize(filesize));
+        }
         if (ajax.containsHTML(">A Database Error Occurred<|This link has been removed from system.")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        final String filename = ajax.getRegex("class=\"propreties-file-count\">[\t\n\r ]+<b>([^<>\"]+)</b>").getMatch(0);
-        final String filesize = ajax.getRegex(">Total size:</span><span class=\"propreties-dark-txt\">([^<>\"]+)</span>").getMatch(0);
         if (filename == null) {
             if (ajax.containsHTML("<button[^>]*file_type=\"folder\"[^>]*>Download</button>")) {
                 // folder, not supported as of yet...
                 return AvailableStatus.FALSE;
             }
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
-        link.setName(encodeUnicode(Encoding.htmlDecode(filename.trim())));
-        if (filesize != null) {
-            link.setDownloadSize(SizeFormatter.getSize(filesize));
         }
         return AvailableStatus.TRUE;
     }
@@ -121,14 +124,22 @@ public class InCloudDriveCom extends PluginForHost {
         if (dllink == null) {
             final String uplid = ajax.getRegex("uploader_id=\"(\\d+)\"").getMatch(0);
             final String fileid = ajax.getRegex("file_id=\"(\\d+)\"").getMatch(0);
+            final String predlwait = ajax.getRegex("var pre_download_timer_set\\s*=\\s*'(\\d+)';").getMatch(0);
             if (uplid == null || fileid == null) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
-            ajaxPostPage("https://www.inclouddrive.com/index.php/download_page_captcha", "type=yes");
+            ajaxPostPage("/index.php/download_page_captcha", "type=yes");
+            long captchaRequest = System.currentTimeMillis();
             final int repeat = 5;
             for (int i = 1; i <= repeat; i++) {
                 final String code = getCaptchaCode("https://www.inclouddrive.com/captcha/php/captcha.php", downloadLink);
-                ajaxPostPage("https://www.inclouddrive.com/captcha/php/check_captcha.php", "captcha_code=" + Encoding.urlEncode(code));
+                // lets try this
+                if (i == 1 && predlwait != null) {
+                    // waittime[to ms] - elapsed time
+                    final long wait = (Long.parseLong(predlwait) * 1000) - (System.currentTimeMillis() - captchaRequest);
+                    sleep(wait, downloadLink);
+                }
+                ajaxPostPage("/captcha/php/check_captcha.php", "captcha_code=" + Encoding.urlEncode(code));
                 if (ajax.toString().equals("not_match") && i + 1 != repeat) {
                     continue;
                 } else if (ajax.toString().equals("not_match") && i + 1 == repeat) {
@@ -137,7 +148,27 @@ public class InCloudDriveCom extends PluginForHost {
                     break;
                 }
             }
-            ajaxPostPage("https://www.inclouddrive.com/index.php/get_download_server/download_page_link", "contact_id=" + uplid + "&table_id=" + fileid);
+            ajaxPostPage("/index.php/download_page_captcha/check_download_delay", "check_download_size=yes&uploder_id=" + uplid + "&file_id=" + fileid);
+            if ("d_no".equals(ajax.toString())) {
+                // this message is shown in browser regardless if your concurrent downloading or not! its also used as a history that you've
+                // downloadded.
+
+                // var msg = '<h3 class="pageheading" style="font-weight:bold;font-size:42px;margin-left:100px;">SORRY!</h3><p
+                // style="text-align:center;font-size:17px;">You can not download more than 1 file at a time in free mode. Wish to remove
+                // the restrictions? <span id="buy_premium_access_id" style="font-weight:bold;color:#3AB2F0;cursor: pointer;">Buy Premium
+                // access</span>.</p>';
+                throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, "Download session limit reached!", 5 * 60 * 1000l);
+            } else if ("max_download_error".equals(ajax.toString())) {
+                // var msg = '<h3 class="pageheading" style="font-weight:bold;font-size:42px;margin-left:100px;">SORRY!</h3><p
+                // style="text-align:center;font-size:17px;">The requested file is to big for a guest or free download. Please upgrade your
+                // account. <span id="buy_premium_access_id" style="font-weight:bold;color:#3AB2F0;cursor: pointer;">Buy Premium
+                // access</span>.</p>';
+                premiumDownloadRestriction("The requested file is to big! You need premium!");
+            } else if (!"d_yes".equals(ajax.toString())) {
+                // uncaught error
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
+            ajaxPostPage("/index.php/get_download_server/download_page_link", "contact_id=" + uplid + "&table_id=" + fileid);
             dllink = ajax.toString();
             if (dllink == null || !dllink.startsWith("http")) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -180,23 +211,29 @@ public class InCloudDriveCom extends PluginForHost {
         ajax.getHeaders().put("Accept", "*/*");
         ajax.getHeaders().put("Connection-Type", "application/x-www-form-urlencoded; charset=UTF-8");
         ajax.getHeaders().put("X-Requested-With", "XMLHttpRequest");
+        ajax.getHeaders().put("Referer", "https://www.inclouddrive.com/");
         ajax.postPage(url, param);
     }
 
     private String checkDirectLink(final DownloadLink downloadLink, final String property) {
         String dllink = downloadLink.getStringProperty(property);
         if (dllink != null) {
+            URLConnectionAdapter con = null;
             try {
                 final Browser br2 = br.cloneBrowser();
-                URLConnectionAdapter con = br2.openGetConnection(dllink);
+                con = br2.openGetConnection(dllink);
                 if (con.getContentType().contains("html") || con.getLongContentLength() == -1) {
                     downloadLink.setProperty(property, Property.NULL);
                     dllink = null;
                 }
-                con.disconnect();
             } catch (final Exception e) {
                 downloadLink.setProperty(property, Property.NULL);
                 dllink = null;
+            } finally {
+                try {
+                    con.disconnect();
+                } catch (final Throwable t) {
+                }
             }
         }
         return dllink;
@@ -380,7 +417,8 @@ public class InCloudDriveCom extends PluginForHost {
         output = output.replace("\\", "∖");
         output = output.replace("*", "#");
         output = output.replace("?", "¿");
-        output = output.replace("!", "¡");
+        // not invalid on any filesystem
+        // output = output.replace("!", "¡");
         output = output.replace("\"", "'");
         return output;
     }
@@ -396,6 +434,44 @@ public class InCloudDriveCom extends PluginForHost {
 
     @Override
     public void resetDownloadlink(final DownloadLink link) {
+    }
+
+    /**
+     * When premium only download restriction (eg. filesize), throws exception with given message
+     *
+     * @param msg
+     * @throws PluginException
+     */
+    public void premiumDownloadRestriction(final String msg) throws PluginException {
+        try {
+            throw new PluginException(LinkStatus.ERROR_PREMIUM, msg, PluginException.VALUE_ID_PREMIUM_ONLY);
+        } catch (final Throwable e) {
+            if (e instanceof PluginException) {
+                throw (PluginException) e;
+            }
+        }
+        throw new PluginException(LinkStatus.ERROR_FATAL, msg);
+    }
+
+    public String  folderLinks         = "folderLinks";
+    public boolean default_folderLinks = true;
+
+    public void setConfigElements() {
+        // getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_LABEL, "How to treat folder links?"));
+        // getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), folderLinks,
+        // JDL.L("plugins.hoster.inclouddrive.folderlinks",
+        // "Process folder pages as individual links")).setDefaultValue(default_folderLinks));
+    }
+
+    /**
+     * because stable is lame!
+     * */
+    public void setBrowser(final Browser ibr) {
+        this.br = ibr;
+    }
+
+    public void setAjaxBrowser(final Browser ajax) {
+        this.ajax = ajax;
     }
 
 }
