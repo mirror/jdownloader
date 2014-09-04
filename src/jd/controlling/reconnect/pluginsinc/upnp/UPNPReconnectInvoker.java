@@ -56,6 +56,7 @@ public class UPNPReconnectInvoker extends ReconnectInvoker {
         con.setRequestProperty("Content-Length", datas.length + "");
         BufferedReader rd = null;
         try {
+            con.connect();
             con.getOutputStream().write(datas);
             con.getOutputStream().flush();
             rd = new BufferedReader(new InputStreamReader(con.getInputStream()));
@@ -120,8 +121,12 @@ public class UPNPReconnectInvoker extends ReconnectInvoker {
     public void run() throws ReconnectException, InterruptedException {
         try {
             logger.info("RUN");
-            if (StringUtils.isEmpty(serviceType)) { throw new ReconnectException(T._.malformedservicetype()); }
-            if (Thread.currentThread().isInterrupted()) throw new InterruptedException();
+            if (StringUtils.isEmpty(serviceType)) {
+                throw new ReconnectException(T._.malformedservicetype());
+            }
+            if (Thread.currentThread().isInterrupted()) {
+                throw new InterruptedException();
+            }
             runCommand(getLogger(), serviceType, controlURL, "ForceTermination");
             try {
                 Thread.sleep(2000);
