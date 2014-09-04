@@ -69,11 +69,11 @@ public class RuTubeRuDecrypter extends PluginForDecrypt {
                 if (uid == null) {
                     String msg = getErrorMessage();
                     if (msg != null) {
-                        decryptedLinks.add(createOfflinelink(parameter, vid + " - " + msg, msg));
-                        return decryptedLinks;
+                        decryptedLinks.add(createOfflinelink(parameter, "Offline - " + vid + " - " + msg, msg));
                     } else {
-                        throw new Exception("Error: Unknown Reason");
+                        decryptedLinks.add(createOfflinelink(parameter, "Offline - " + vid, null));
                     }
+                    return decryptedLinks;
                 }
             } else {
                 // tracks link
