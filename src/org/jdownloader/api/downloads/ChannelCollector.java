@@ -49,35 +49,21 @@ public class ChannelCollector {
 
     public void updateSubscriptions() {
         HashSet<String> eventIds = new HashSet<String>();
-        if (subscriber.getSubscriptions() != null) {
-            for (String s : subscriber.getSubscriptions()) {
-                for (String id : DownloadControllerEventPublisher.INTERVAL_EVENT_ID_LIST) {
 
-                    if (("downloads." + id).matches(s)) {
-                        eventIds.add(id);
+        for (String id : DownloadControllerEventPublisher.INTERVAL_EVENT_ID_LIST) {
 
-                    }
-                }
+            if (subscriber.isSubscribed("downloads." + id)) {
+                eventIds.add(id);
+
             }
         }
 
-        if (subscriber.getExclusions() != null) {
-            for (String e : subscriber.getExclusions()) {
-                for (String id : DownloadControllerEventPublisher.INTERVAL_EVENT_ID_LIST) {
-
-                    if (("downloads." + id).matches(e)) {
-                        eventIds.remove(id);
-
-                    }
-                }
-            }
-        }
         this.activeSubscriptions = eventIds;
     }
 
     public boolean hasIntervalSubscriptions() {
 
-        return activeSubscriptions.size() > 0;
+        return activeSubscriptions != null && activeSubscriptions.size() > 0;
     }
 
     public long getLastPush() {
