@@ -442,7 +442,7 @@ public class LinkSnappyCom extends PluginForHost {
                 // } else {
                 // resumes = true;
                 // }
-                final int c = (int) (h.containsKey("chunks") ? h.get("chunks") : chunks);
+                final int c = h.containsKey("chunks") ? ((Number) h.get("chunks")).intValue() : chunks;
                 chunks = (c > 0 ? -c : c);
                 if (chunks == 1) {
                     // lets treat it like this until further notice.
@@ -728,7 +728,7 @@ public class LinkSnappyCom extends PluginForHost {
 
     /**
      * Tries to return value of key from JSon response, from String source.
-     *
+     * 
      * @author raztoki
      * */
     private String getJson(final String source, final String key) {
@@ -744,7 +744,7 @@ public class LinkSnappyCom extends PluginForHost {
 
     /**
      * Tries to return value of key from JSon response, from default 'br' Browser.
-     *
+     * 
      * @author raztoki
      * */
     private String getJson(final String key) {
@@ -753,7 +753,7 @@ public class LinkSnappyCom extends PluginForHost {
 
     /**
      * Tries to return value of key from JSon response, from provided Browser.
-     *
+     * 
      * @author raztoki
      * */
     private String getJson(final Browser ibr, final String key) {
