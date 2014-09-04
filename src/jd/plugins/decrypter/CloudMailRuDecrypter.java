@@ -30,7 +30,7 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "cloud.mail.ru" }, urls = { "https?://(www\\.)?cloud\\.mail\\.ru(/|%2F)public(/|%2F)[a-z0-9]+(/|%2F)[^<>\"]+" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "cloud.mail.ru" }, urls = { "https?://(www\\.)?cloud\\.mail\\.ru((/|%2F)public(/|%2F)[a-z0-9]+(/|%2F)[^<>\"]+|/[A-Z0-9]{32})" }, flags = { 0 })
 public class CloudMailRuDecrypter extends PluginForDecrypt {
 
     public CloudMailRuDecrypter(PluginWrapper wrapper) {
@@ -42,32 +42,56 @@ public class CloudMailRuDecrypter extends PluginForDecrypt {
     private static final double MAX_ZIP_FILESIZE = 4194304;
     private static final String DOWNLOAD_ZIP     = "DOWNLOAD_ZIP_2";
 
+    private static final String TYPE_NOAPI       = "https?://(www\\.)?cloud\\.mail\\.ru/[A-Z0-9]{32}";
+
+    private String              json;
+    private String              PARAMETER        = null;
+
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-        final String parameter = Encoding.htmlDecode(param.toString()).replace("http://", "https://");
-        final String id = new Regex(parameter, "cloud\\.mail\\.ru/public/(.+)").getMatch(0);
-        final String id_url_encoded = Encoding.urlEncode(id);
-        final DownloadLink main = createDownloadlink("http://clouddecrypted.mail.ru/" + System.currentTimeMillis() + new Random().nextInt(100000));
-        main.setProperty("plain_request_id", id);
-        main.setProperty("mainlink", parameter);
-        main.setName(new Regex(parameter, "public/[a-z0-9]+/(.+)").getMatch(0));
-
         prepBR();
-        br.getPage("https://cloud.mail.ru/api/v1/folder/recursive?storage=public&id=" + id_url_encoded + "&sort=%7B%22type%22%3A%22name%22%2C%22order%22%3A%22asc%22%7D&offset=0&limit=500&api=1&htmlencoded=false&build=" + BUILD);
-        if (br.containsHTML("\"status\":(400|404)")) {
-            main.setAvailable(false);
-            main.setProperty("offline", true);
-            decryptedLinks.add(main);
-            return decryptedLinks;
+        PARAMETER = Encoding.htmlDecode(param.toString()).replace("http://", "https://");
+        String id;
+        String detailedName;
+        final DownloadLink main = createDownloadlink("http://clouddecrypted.mail.ru/" + System.currentTimeMillis() + new Random().nextInt(100000));
+        if (PARAMETER.matches(TYPE_NOAPI)) {
+            detailedName = null;
+            id = new Regex(PARAMETER, "([A-Z0-9]{32})$").getMatch(0);
+            main.setName(PARAMETER);
+            br.getPage(PARAMETER);
+            if (br.getHttpConnection().getResponseCode() == 404) {
+                main.setFinalFileName(id);
+                main.setAvailable(false);
+                main.setProperty("offline", true);
+                decryptedLinks.add(main);
+                return decryptedLinks;
+            }
+            json = br.getRegex("<script>require(.*?)</script>").getMatch(0);
+        } else {
+            id = new Regex(PARAMETER, "cloud\\.mail\\.ru/public/(.+)").getMatch(0);
+            main.setName(new Regex(PARAMETER, "public/[a-z0-9]+/(.+)").getMatch(0));
+            final String id_url_encoded = Encoding.urlEncode(id);
+            br.getPage("https://cloud.mail.ru/api/v1/folder/recursive?storage=public&id=" + id_url_encoded + "&sort=%7B%22type%22%3A%22name%22%2C%22order%22%3A%22asc%22%7D&offset=0&limit=500&api=1&htmlencoded=false&build=" + BUILD);
+            json = br.toString();
+            if (br.containsHTML("\"status\":(400|404)") || br.getHttpConnection().getResponseCode() == 404) {
+                main.setAvailable(false);
+                main.setProperty("offline", true);
+                decryptedLinks.add(main);
+                return decryptedLinks;
+            }
+            detailedName = new Regex(PARAMETER, "([^<>\"/]+)/?$").getMatch(0);
         }
-        // br.getPage(parameter);
+        main.setProperty("plain_request_id", id);
+        main.setProperty("mainlink", PARAMETER);
 
         String fpName = null;
-        String mainName = br.getRegex("\"url\":.*?\\},\"name\":\"([^<>\"]*?)\",\"id").getMatch(0);
+        String mainName = new Regex(json, "\"url\":.*?\\},\"name\":\"([^<>\"]*?)\",\"id").getMatch(0);
         if (mainName == null) {
-            mainName = new Regex(parameter, "public/([a-z0-9]+)/").getMatch(0);
+            mainName = new Regex(PARAMETER, "public/([a-z0-9]+)/").getMatch(0);
         }
-        final String detailedName = new Regex(parameter, "([^<>\"/]+)/?$").getMatch(0);
+        if (mainName == null) {
+            mainName = id;
+        }
         mainName = Encoding.htmlDecode(mainName.trim());
         if (detailedName != null) {
             fpName = mainName + " - " + detailedName;
@@ -76,7 +100,7 @@ public class CloudMailRuDecrypter extends PluginForDecrypt {
         }
         final String[] links = getList(id);
         if (links == null || links.length == 0) {
-            logger.warning("Decrypter broken for link: " + parameter);
+            logger.warning("Decrypter broken for link: " + PARAMETER);
             return null;
         }
         long totalSize = 0;
@@ -84,7 +108,7 @@ public class CloudMailRuDecrypter extends PluginForDecrypt {
             if ("folder".equals(getJson(singleinfo, "kind"))) {
                 String folder_url = getJson(singleinfo, "web");
                 if (folder_url == null) {
-                    logger.warning("Decrypter broken for link: " + parameter);
+                    logger.warning("Decrypter broken for link: " + PARAMETER);
                     return null;
                 }
                 folder_url = "https://cloud.mail.ru" + Encoding.htmlDecode(folder_url);
@@ -93,11 +117,13 @@ public class CloudMailRuDecrypter extends PluginForDecrypt {
                 final DownloadLink dl = createDownloadlink("http://clouddecrypted.mail.ru/" + System.currentTimeMillis() + new Random().nextInt(100000));
                 final String filesize = getJson(singleinfo, "size");
                 String filename = getJson(singleinfo, "name");
-                final String directlink = getJson(singleinfo, "get");
-                final String view = getJson(singleinfo, "view");
-                if (filesize == null || filename == null || directlink == null || view == null) {
-                    logger.warning("Decrypter broken for link: " + parameter);
+                String directlink = getJson(singleinfo, "get");
+                if (filesize == null || filename == null || directlink == null) {
+                    logger.warning("Decrypter broken for link: " + PARAMETER);
                     return null;
+                }
+                if (directlink.startsWith("//")) {
+                    directlink = "http:" + directlink;
                 }
                 filename = Encoding.htmlDecode(filename.trim());
                 final long cursize = Long.parseLong(filesize);
@@ -106,10 +132,12 @@ public class CloudMailRuDecrypter extends PluginForDecrypt {
                 dl.setFinalFileName(filename);
                 dl.setProperty("plain_name", filename);
                 dl.setProperty("plain_size", filesize);
-                dl.setProperty("mainlink", parameter);
-                dl.setProperty("plain_view", view);
+                dl.setProperty("mainlink", PARAMETER);
                 dl.setProperty("plain_directlink", directlink);
                 dl.setProperty("plain_request_id", id);
+                if (PARAMETER.matches(TYPE_NOAPI)) {
+                    dl.setProperty("noapi", true);
+                }
                 dl.setAvailable(true);
                 decryptedLinks.add(dl);
             }
@@ -137,23 +165,25 @@ public class CloudMailRuDecrypter extends PluginForDecrypt {
         if (id.endsWith("/")) {
             id = id.substring(0, id.length() - 1);
         }
-        String[] lists = br.getRegex("\"list\":\\[\\{(.*?\\})\\]").getColumn(0);
-        if (lists == null) {
-            return null;
+        String[] lists;
+        String[] links;
+        if (PARAMETER.matches(TYPE_NOAPI)) {
+            lists = new Regex(json, "\"list\":[\t\n\r ]+\\[(.*?)\\]").getColumn(0);
+            links = lists[lists.length - 1].split("\\},[\t\n\r ]+\\{");
+        } else {
+            lists = new Regex(json, "\"list\":\\[\\{(.*?\\})\\]").getColumn(0);
+            links = lists[lists.length - 1].split("\\},\\{");
         }
-        final String linktext = lists[lists.length - 1];
-
-        final String[] links = linktext.split("\\},\\{");
         if (links == null || links.length == 0) {
             return null;
         }
         return links;
     }
 
-    private String getJson(final String source, final String parameter) {
-        String result = new Regex(source, "\"" + parameter + "\":([\t\n\r ]+)?([0-9\\.]+)").getMatch(1);
+    private String getJson(final String source, final String PARAMETER) {
+        String result = new Regex(source, "\"" + PARAMETER + "\":([\t\n\r ]+)?([0-9\\.]+)").getMatch(1);
         if (result == null) {
-            result = new Regex(source, "\"" + parameter + "\":([\t\n\r ]+)?\"([^<>\"]*?)\"").getMatch(1);
+            result = new Regex(source, "\"" + PARAMETER + "\":([\t\n\r ]+)?\"([^<>\"]*?)\"").getMatch(1);
         }
         return result;
     }

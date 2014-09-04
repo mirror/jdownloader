@@ -27,6 +27,7 @@ import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
 import jd.config.Property;
 import jd.http.Browser;
+import jd.http.Browser.BrowserException;
 import jd.http.Cookie;
 import jd.http.Cookies;
 import jd.http.URLConnectionAdapter;
@@ -212,12 +213,21 @@ public class LinkSnappyCom extends PluginForHost {
     }
 
     private void dailyLimitReached() throws PluginException {
-        final String lang = System.getProperty("user.language");
-        logger.info("Daily limit reached");
-        if ("de".equalsIgnoreCase(lang)) {
-            throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nTageslimit erreicht!", PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
+        final String host = br.getRegex("You have exceeded the daily ([a-z0-9\\-\\.]+) Download quota \\(").getMatch(0);
+        if (host != null) {
+            /* Daily specific host downloadlimit reached --> Disable host for some time */
+            logger.info("Daily limit reached for host: " + host);
+            logger.info("--> Temporarily Disabling " + host);
+            tempUnavailableHoster(currentAcc, currentLink, 60 * 60 * 1000l);
         } else {
-            throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nDaily limit reached!", PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
+            /* Daily total downloadlimit for account is reached */
+            final String lang = System.getProperty("user.language");
+            logger.info("Daily limit reached");
+            if ("de".equalsIgnoreCase(lang)) {
+                throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nTageslimit erreicht!", PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
+            } else {
+                throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nDaily limit reached!", PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
+            }
         }
     }
 
@@ -305,6 +315,8 @@ public class LinkSnappyCom extends PluginForHost {
             dllink = (attemptDownload() ? dllink : null);
         }
         if (dllink == null) {
+            /* Reset value because otherwise if attempts fail, JD will try again with the same broken dllink. */
+            link.setProperty("linksnappycomdirectlink", Property.NULL);
             if (use_api) {
                 for (i = 1; i <= MAX_DOWNLOAD_ATTEMPTS; i++) {
                     getPage(HTTP_S + "gen.linksnappy.com/genAPI.php?genLinks=" + encode("{\"link\"+:+\"" + link.getDownloadURL() + "\",+\"username\"+:+\"" + account.getUser() + "\",+\"password\"+:+\"" + account.getPass() + "\"}"));
@@ -338,6 +350,7 @@ public class LinkSnappyCom extends PluginForHost {
         if (dl.getConnection().getResponseCode() == 503) {
             stupidServerError();
         } else if (dl.getConnection().getResponseCode() == 999) {
+            br.followConnection();
             dailyLimitReached();
         } else if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
@@ -511,6 +524,9 @@ public class LinkSnappyCom extends PluginForHost {
             }
             currentLink.setProperty("sockettimeout", true);
             throw new PluginException(LinkStatus.ERROR_RETRY);
+        } catch (final BrowserException ebr) {
+            logger.info("Attempt failed: Got BrowserException for link: " + dllink);
+            return false;
         }
         if (dl.getConnection().getResponseCode() == 503) {
             try {
@@ -708,6 +724,7 @@ public class LinkSnappyCom extends PluginForHost {
     private Browser prepBrowser(final Browser prepBr) {
         prepBr.setConnectTimeout(60 * 1000);
         prepBr.setReadTimeout(60 * 1000);
+        prepBr.setAllowedResponseCodes(999);
         prepBr.getHeaders().put("User-Agent", "JDownloader");
         return prepBr;
     }
@@ -728,7 +745,7 @@ public class LinkSnappyCom extends PluginForHost {
 
     /**
      * Tries to return value of key from JSon response, from String source.
-     * 
+     *
      * @author raztoki
      * */
     private String getJson(final String source, final String key) {
@@ -744,7 +761,7 @@ public class LinkSnappyCom extends PluginForHost {
 
     /**
      * Tries to return value of key from JSon response, from default 'br' Browser.
-     * 
+     *
      * @author raztoki
      * */
     private String getJson(final String key) {
@@ -753,7 +770,7 @@ public class LinkSnappyCom extends PluginForHost {
 
     /**
      * Tries to return value of key from JSon response, from provided Browser.
-     * 
+     *
      * @author raztoki
      * */
     private String getJson(final Browser ibr, final String key) {

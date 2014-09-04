@@ -56,6 +56,9 @@ public class SevenNineFiveEightCom extends PluginForHost {
         if (filename == null) {
             filename = br.getRegex("class=\"downfenxianginput\"[\t\n\r ]+value=\"\\[url=http://[^<>\"]+\\]下载：([^<>\"]*?)\\[/url\\]\"").getMatch(0);
         }
+        if (filename == null) {
+            filename = br.getRegex("下载：([^<>\"]*?)\\[/url\\]\" class=\"ltdm\"").getMatch(0);
+        }
         String filesize = br.getRegex("> 文件大小：([^<>\"]*?)</td>").getMatch(0);
         if (filesize == null) {
             filesize = br.getRegex(">文件大小：([^<>\"]*?)</td>").getMatch(0);

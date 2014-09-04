@@ -79,7 +79,7 @@ public class PanBaiduCom extends PluginForDecrypt {
             final String linkpart = new Regex(parameter, "(pan\\.baidu\\.com/.+)").getMatch(0);
             for (int i = 1; i <= 3; i++) {
                 link_password = getUserInput("Password for " + linkpart + "?", param);
-                br.postPage("http://pan.baidu.com/share/verify?" + "vcode=&shareid=" + shareid + "&uk=" + uk + "&t=" + System.currentTimeMillis(), "&pwd=" + Encoding.urlEncode(link_password));
+                br.postPage("http://pan.baidu.com/share/verify?" + "channel=chunlei&clienttype=0&web=1&shareid=" + shareid + "&uk=" + uk + "&t=" + System.currentTimeMillis(), "vcode=&pwd=" + Encoding.urlEncode(link_password));
                 if (!br.containsHTML("\"errno\":0")) {
                     continue;
                 }
@@ -88,7 +88,7 @@ public class PanBaiduCom extends PluginForDecrypt {
             if (!br.containsHTML("\"errno\":0")) {
                 throw new DecrypterException(DecrypterException.PASSWORD);
             }
-            parameter = getPlainLink(parameter);
+            parameter = "http://pan.baidu.com/share/link?shareid=" + shareid + "&uk=" + uk;
             link_password_cookie = br.getCookie("http://pan.baidu.com/", "BDCLND");
             br.getHeaders().remove("X-Requested-With");
             br.getPage(parameter);
@@ -102,24 +102,15 @@ public class PanBaiduCom extends PluginForDecrypt {
             final String dirName = new Regex(parameter, "dir/path=%2F(.+)").getMatch(0);
             dir = "%2F" + dirName;
             getDownloadLinks(decryptedLinks, parameter, dirName, dir);
-        } else if (parameter.matches(TYPE_FOLDER_SHORT)) {
-            uk = br.getRegex("FileUtils\\.share_uk=\"(\\d+)\"").getMatch(0);
-            shareid = br.getRegex("FileUtils\\.share_id=\"(\\d+)\"").getMatch(0);
-            if (uk == null || shareid == null) {
+        } else if (br.containsHTML("class=\"size\"|class=\"video\\-save\\-btn\"")) {
+            final String fsid = br.getRegex("yunData\\.FS_ID = \"(\\d+)\"").getMatch(0);
+            if (fsid == null) {
                 logger.warning("Decrypter broken for link: " + parameter);
                 return null;
             }
-            parameter = "http://pan.baidu.com/share/link?shareid=" + shareid + "&uk=" + uk;
-        }
-        // Check if we have a single link here
-        final String fsid = br.getRegex("disk\\.util\\.ViewShareUtils\\.fsId=\"(\\d+)\"").getMatch(0);
-        if (fsid != null) {
             final DownloadLink fina = generateDownloadLink(null, parameter, null, fsid, null);
-            final String filename = br.getRegex("var server_filename=\"([^<>\"]*?)\"").getMatch(0);
-            String filesize = br.getRegex("\\\\\"size\\\\\":\\\\\"(\\d+)\\\\\"").getMatch(0);
-            if (filesize == null) {
-                filesize = br.getRegex("\\\\\"size\\\\\":(\\d+)").getMatch(0);
-            }
+            final String filename = br.getRegex("\"server_filename\":\"([^<>\"]*?)\"").getMatch(0);
+            String filesize = br.getRegex("\"size\":(\\d+)").getMatch(0);
             if (filename == null || filesize == null) {
                 logger.warning("Decrypter broken for link: " + parameter);
                 return null;
@@ -133,27 +124,12 @@ public class PanBaiduCom extends PluginForDecrypt {
             decryptedLinks.add(fina);
         } else {
             /* create HashMap with json key/value pair */
-            String json = new Regex(correctedBR, "\"\\[(\\{.*?\\})\\]\"").getMatch(0);
-            if (json == null) {
-                json = new Regex(correctedBR, "\"(\\{.*?\\})\"").getMatch(0);
-            }
+            final String json = new Regex(correctedBR, "\"list\":\\[(\\{.*?\\})\\]\\},").getMatch(0);
             // cleanup, poor mans method to remove entries that breaks the important 'dlink'
             if (json == null) {
                 logger.warning("Problemo! Please report to JDownloader Development Team, link: " + parameter);
                 return null;
             }
-            // Clean json START
-            String cleaned = json;
-            String thumbs = new Regex(cleaned, "(,\"thumbs\":\\{[^\\}]+\\})").getMatch(0);
-            if (thumbs != null) {
-                cleaned = cleaned.replace(thumbs, "");
-            }
-            String resolution = new Regex(cleaned, "(,\"resolution\":\"[^\"]+\")").getMatch(0);
-            if (resolution != null) {
-                cleaned = cleaned.replace(resolution, "");
-            }
-            json = cleaned;
-            // Clean json END
 
             HashMap<String, String> ret = new HashMap<String, String>();
             for (String[] values : new Regex((json == null ? "" : json), "\\{([^\\}]+)").getMatches()) {

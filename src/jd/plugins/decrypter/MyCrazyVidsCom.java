@@ -73,7 +73,9 @@ public class MyCrazyVidsCom extends PluginForDecrypt {
                 return decryptedLinks;
             }
             externID = br.getRegex("redtube\\.com/player/\"><param name=\"FlashVars\" value=\"id=(\\d+)\\&").getMatch(0);
-            if (externID == null) externID = br.getRegex("embed\\.redtube\\.com/player/\\?id=(\\d+)\\&").getMatch(0);
+            if (externID == null) {
+                externID = br.getRegex("embed\\.redtube\\.com/player/\\?id=(\\d+)\\&").getMatch(0);
+            }
             if (externID != null) {
                 DownloadLink dl = createDownloadlink("http://www.redtube.com/" + externID);
                 decryptedLinks.add(dl);
@@ -102,11 +104,13 @@ public class MyCrazyVidsCom extends PluginForDecrypt {
                 return decryptedLinks;
             }
             // filename needed for all IDs below
-            String filename = br.getRegex("<h1 class=\"name\">([^<>\"]*?)</h1>").getMatch(0);
+            String filename = br.getRegex("<h1 class=\"name\">([^<>]*?)</h1>").getMatch(0);
             if (filename == null) {
                 logger.warning("Decrypter broken for link: " + parameter);
                 return null;
             }
+            filename = Encoding.htmlDecode(filename).trim();
+            filename = encodeUnicode(filename);
             externID = br.getRegex("shufuni\\.com/Flash/.*?flashvars=\"VideoCode=(.*?)\"").getMatch(0);
             if (externID != null) {
                 DownloadLink dl = createDownloadlink("http://www.shufuni.com/handlers/FLVStreamingv2.ashx?videoCode=" + externID);
@@ -125,7 +129,9 @@ public class MyCrazyVidsCom extends PluginForDecrypt {
                 }
             }
             externID = br.getRegex("pornhub\\.com/embed/(\\d+)").getMatch(0);
-            if (externID == null) externID = br.getRegex("pornhub\\.com/view_video\\.php\\?viewkey=(\\d+)").getMatch(0);
+            if (externID == null) {
+                externID = br.getRegex("pornhub\\.com/view_video\\.php\\?viewkey=(\\d+)").getMatch(0);
+            }
             if (externID != null) {
                 DownloadLink dl = createDownloadlink("http://www.pornhub.com/view_video.php?viewkey=" + externID);
                 decryptedLinks.add(dl);
@@ -158,6 +164,22 @@ public class MyCrazyVidsCom extends PluginForDecrypt {
             }
         }
         return decryptedLinks;
+    }
+
+    /* Avoid chars which are not allowed in filenames under certain OS' */
+    private static String encodeUnicode(final String input) {
+        String output = input;
+        output = output.replace(":", ";");
+        output = output.replace("|", "¦");
+        output = output.replace("<", "[");
+        output = output.replace(">", "]");
+        output = output.replace("/", "⁄");
+        output = output.replace("\\", "∖");
+        output = output.replace("*", "#");
+        output = output.replace("?", "¿");
+        output = output.replace("!", "¡");
+        output = output.replace("\"", "'");
+        return output;
     }
 
     /* NO OVERRIDE!! */
