@@ -159,42 +159,44 @@ public class PanBaiduCom extends PluginForHost {
             br2 = prepAjax(br.cloneBrowser());
             br2.postPage(postLink, "fid_list=%5B" + fsid + "%5D");
             String captchaLink = getJson(br2, "img");
-            final int repeat = 3;
-            for (int i = 1; i <= repeat; i++) {
-                final String captchaid = new Regex(captchaLink, "([A-Z0-9]+)$").getMatch(0);
-                String code = null;
-                try {
-                    code = getCaptchaCode(captchaLink, downloadLink);
-                } catch (final Throwable e) {
-                    if (e instanceof CaptchaException) {
-                        // JD2 reference to skip button we should abort!
-                        throw (CaptchaException) e;
+            if (captchaLink != null) {
+                final int repeat = 3;
+                for (int i = 1; i <= repeat; i++) {
+                    final String captchaid = new Regex(captchaLink, "([A-Z0-9]+)$").getMatch(0);
+                    String code = null;
+                    try {
+                        code = getCaptchaCode(captchaLink, downloadLink);
+                    } catch (final Throwable e) {
+                        if (e instanceof CaptchaException) {
+                            // JD2 reference to skip button we should abort!
+                            throw (CaptchaException) e;
+                        }
+                        // failure of image download! or opening file?, retry should get new captcha image..
+                        logger.info("Captcha download failed -> Retrying!");
+                        throw new PluginException(LinkStatus.ERROR_RETRY, "Captcha download failed");
                     }
-                    // failure of image download! or opening file?, retry should get new captcha image..
-                    logger.info("Captcha download failed -> Retrying!");
-                    throw new PluginException(LinkStatus.ERROR_RETRY, "Captcha download failed");
-                }
-                if (code == null || "".equals(code) || code.matches("\\s+")) {
-                    // this covers users entering: empty, whitespace. usually happens by accident.
-                    if (i + 1 != repeat) {
-                        continue;
-                    } else {
+                    if (code == null || "".equals(code) || code.matches("\\s+")) {
+                        // this covers users entering: empty, whitespace. usually happens by accident.
+                        if (i + 1 != repeat) {
+                            continue;
+                        } else {
+                            // exhausted retry count
+                            throw new PluginException(LinkStatus.ERROR_CAPTCHA);
+                        }
+                    }
+                    br2 = prepAjax(br.cloneBrowser());
+                    br2.postPage(postLink, "fid_list=%5B" + fsid + "%5D&input=" + Encoding.urlEncode(code) + "&vcode=" + captchaid);
+                    captchaLink = getJson(br2, "img");
+                    if (captchaLink == null) {
+                        // success!
+                        break;
+                    } else if (i + 1 == repeat && captchaLink != null) {
                         // exhausted retry count
                         throw new PluginException(LinkStatus.ERROR_CAPTCHA);
+                    } else if (i + 1 != repeat) {
+                        // since captchaLink can't be null it must contain captcha and it's fine to continue
+                        continue;
                     }
-                }
-                br2 = prepAjax(br.cloneBrowser());
-                br2.postPage(postLink, "fid_list=%5B" + fsid + "%5D&input=" + Encoding.urlEncode(code) + "&vcode=" + captchaid);
-                captchaLink = getJson(br2, "img");
-                if (captchaLink == null) {
-                    // success!
-                    break;
-                } else if (i + 1 == repeat && captchaLink != null) {
-                    // exhausted retry count
-                    throw new PluginException(LinkStatus.ERROR_CAPTCHA);
-                } else if (i + 1 != repeat) {
-                    // since captchaLink can't be null it must contain captcha and it's fine to continue
-                    continue;
                 }
             }
             if (br2.containsHTML("\"errno\":\\-20")) {

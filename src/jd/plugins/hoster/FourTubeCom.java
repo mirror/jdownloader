@@ -94,8 +94,10 @@ public class FourTubeCom extends PluginForHost {
     }
 
     private void getDllink() throws PluginException, IOException {
-        // final String new_linkpart =
-        // br.getRegex("image: \"http://cdn[a-z0-9]+\\.thumbnails\\.4tube\\.com/([0-9/]+)/\\d+x\\d+/\\d+\\.jpeg\"").getMatch(0);
+        final String[] js = br.getRegex("\"(http://([a-z0-9\\-\\.]+)?4tube\\.com/[^<>\"]*?\\.(js|css))\"").getColumn(0);
+        for (final String jslink : js) {
+            br.cloneBrowser().getPage(jslink);
+        }
         String mediaID = br.getRegex("idMedia: (\\d+)").getMatch(0);
         if (mediaID == null) {
             mediaID = br.getRegex("video_id: (\\d+)").getMatch(0);
@@ -113,13 +115,6 @@ public class FourTubeCom extends PluginForHost {
         br.getHeaders().put("Origin", "http://www.4tube.com");
         br.getHeaders().put("Accept-Charset", null);
         br.getHeaders().put("Content-Type", null);
-        // br.getHeaders().put("", "");
-        // br.getHeaders().put("", "");
-        // br.getHeaders().put("", "");
-        // br.getHeaders().put("", "");
-        // br.getHeaders().put("", "");
-        // br.getHeaders().put("", "");
-        br.clearCookies("http://4tube.com/");
         br.postPageRaw("http://tkn.4tube.com/" + mediaID + "/desktop/" + availablequalities, "");
         String finallink = null;
         final String[] qualities = new String[] { "1080", "720", "480", "360", "240" };
@@ -128,10 +123,6 @@ public class FourTubeCom extends PluginForHost {
                 finallink = br.getRegex("\"" + quality + "\":\\{\"status\":\"success\",\"token\":\"(http[^<>\"]*?)\"").getMatch(0);
                 if (finallink != null) {
                     finallink += "&start=0";
-                    // final String old_linkpart = new Regex(finallink, "/default/videos/([0-9/]+)/p\\d+\\.mp4.+").getMatch(0);
-                    // if (old_linkpart != null && new_linkpart != null) {
-                    // finallink = finallink.replace(old_linkpart, new_linkpart);
-                    // }
                 }
                 if (finallink != null && checkDirectLink(finallink) != null) {
                     break;
