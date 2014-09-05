@@ -456,7 +456,7 @@ public class LinkSnappyCom extends PluginForHost {
                 // resumes = true;
                 // }
                 final int c = h.containsKey("chunks") ? ((Number) h.get("chunks")).intValue() : chunks;
-                chunks = (c > 0 ? -c : c);
+                chunks = (c > 1 ? -c : c);
                 if (chunks == 1) {
                     // lets treat it like this until further notice.
                     resumes = false;
