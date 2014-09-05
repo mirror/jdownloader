@@ -32,14 +32,15 @@ public class MergeToPackageAction extends CustomizableTableContextAppAction<Craw
 
     }
 
-    private boolean askForNewFolderAndName = true;
+    private boolean expandNewPackage = false;
 
-    public boolean isAskForNewFolderAndName() {
-        return askForNewFolderAndName;
+    @Customizer(name = "Expand the new package after creation")
+    public boolean isExpandNewPackage() {
+        return expandNewPackage;
     }
 
-    public void setAskForNewFolderAndName(boolean askForNewFolderAndName) {
-        this.askForNewFolderAndName = askForNewFolderAndName;
+    public void setExpandNewPackage(boolean expandNewPackage) {
+        this.expandNewPackage = expandNewPackage;
     }
 
     private boolean lastPathDefault = false;
@@ -96,6 +97,7 @@ public class MergeToPackageAction extends CustomizableTableContextAppAction<Craw
                     CrawledPackage newPackage = new CrawledPackage();
 
                     newPackage.setName(name);
+                    newPackage.setExpanded(isExpandNewPackage());
                     String f = d.getDownloadFolder();
                     newPackage.setDownloadFolder(f);
 

@@ -34,6 +34,17 @@ public class MergeToPackageAction extends CustomizableTableContextAppAction<File
         setLastPathDefault(true);
     }
 
+    private boolean expandNewPackage = false;
+
+    @Customizer(name = "Expand the new package after creation")
+    public boolean isExpandNewPackage() {
+        return expandNewPackage;
+    }
+
+    public void setExpandNewPackage(boolean expandNewPackage) {
+        this.expandNewPackage = expandNewPackage;
+    }
+
     private boolean lastPathDefault = false;
 
     @Customizer(name = "Use latest selected path as default one")
@@ -86,7 +97,7 @@ public class MergeToPackageAction extends CustomizableTableContextAppAction<File
                 @Override
                 protected Void run() throws RuntimeException {
                     FilePackage newPackage = FilePackage.getInstance();
-
+                    newPackage.setExpanded(isExpandNewPackage());
                     newPackage.setName(name);
                     String f = d.getDownloadFolder();
 
