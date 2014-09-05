@@ -27,7 +27,6 @@ import jd.PluginWrapper;
 import jd.config.Property;
 import jd.controlling.AccountController;
 import jd.http.Browser;
-import jd.http.Browser.BrowserException;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.JDHash;
 import jd.nutils.encoding.Encoding;
@@ -55,9 +54,8 @@ public class SuperLoadCz extends PluginForHost {
     private static HashMap<Account, HashMap<String, Long>> hostUnavailableMap = new HashMap<Account, HashMap<String, Long>>();
 
     private static Object                                  LOCK               = new Object();
-    private String                                         TOKEN              = null;
 
-    public SuperLoadCz(PluginWrapper wrapper) {
+    public SuperLoadCz(final PluginWrapper wrapper) {
         super(wrapper);
         this.enablePremium(mProt + mName + "/");
     }
@@ -67,13 +65,16 @@ public class SuperLoadCz extends PluginForHost {
         return mProt + mName + "/terms";
     }
 
-    public void prepBrowser() {
+    public Browser prepBrowser(final Browser prepBr) {
         // define custom browser headers and language settings.
-        br.getHeaders().put("Accept-Language", "en-gb, en;q=0.9");
-        br.getHeaders().put("User-Agent", "JDownloader");
-        br.setCustomCharset("utf-8");
-        br.setConnectTimeout(3 * 60 * 1000);
-        br.setReadTimeout(3 * 60 * 1000);
+        prepBr.getHeaders().put("Accept-Language", "en-gb, en;q=0.9");
+        prepBr.getHeaders().put("User-Agent", "JDownloader");
+        prepBr.setCustomCharset("utf-8");
+        prepBr.setConnectTimeout(3 * 60 * 1000);
+        prepBr.setReadTimeout(3 * 60 * 1000);
+        prepBr.setAllowedResponseCodes(401);
+        prepBr.setFollowRedirects(true);
+        return prepBr;
     }
 
     /**
@@ -83,8 +84,8 @@ public class SuperLoadCz extends PluginForHost {
         return false;
     }
 
-    public boolean checkLinks(DownloadLink[] urls) {
-        prepBrowser();
+    public boolean checkLinks(final DownloadLink[] urls) {
+        Browser br = prepBrowser(new Browser());
         if (urls == null || urls.length == 0) {
             return false;
         }
@@ -98,7 +99,6 @@ public class SuperLoadCz extends PluginForHost {
                 }
                 return false;
             }
-            // login(accs.get(0), false);
             br.setFollowRedirects(true);
             for (DownloadLink dl : urls) {
                 URLConnectionAdapter con = null;
@@ -126,7 +126,7 @@ public class SuperLoadCz extends PluginForHost {
     }
 
     @Override
-    public AvailableStatus requestFileInformation(DownloadLink link) throws PluginException {
+    public AvailableStatus requestFileInformation(final DownloadLink link) throws PluginException {
         checkLinks(new DownloadLink[] { link });
         if (!link.isAvailable()) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
@@ -134,7 +134,7 @@ public class SuperLoadCz extends PluginForHost {
         return getAvailableStatus(link);
     }
 
-    private AvailableStatus getAvailableStatus(DownloadLink link) {
+    private AvailableStatus getAvailableStatus(final DownloadLink link) {
         try {
             final Field field = link.getClass().getDeclaredField("availableStatus");
             field.setAccessible(true);
@@ -148,7 +148,7 @@ public class SuperLoadCz extends PluginForHost {
     }
 
     @Override
-    public boolean canHandle(DownloadLink downloadLink, Account account) {
+    public boolean canHandle(final DownloadLink downloadLink, final Account account) {
         if (account == null) {
             /* without account its not possible to download the link */
             return false;
@@ -171,7 +171,7 @@ public class SuperLoadCz extends PluginForHost {
     }
 
     @Override
-    public void handleFree(DownloadLink downloadLink) throws Exception, PluginException {
+    public void handleFree(final DownloadLink downloadLink) throws Exception, PluginException {
         throw new PluginException(LinkStatus.ERROR_PREMIUM, "Download only works with a premium" + mName + "account.", PluginException.VALUE_ID_PREMIUM_ONLY);
     }
 
@@ -181,15 +181,14 @@ public class SuperLoadCz extends PluginForHost {
     }
 
     @Override
-    public void handlePremium(DownloadLink downloadLink, Account account) throws Exception {
-        // login(account, false);
+    public void handlePremium(final DownloadLink downloadLink, final Account account) throws Exception {
         showMessage(downloadLink, "Task 1: Check URL validity!");
         requestFileInformation(downloadLink);
         showMessage(downloadLink, "Task 2: Download begins!");
         handleDL(account, downloadLink, downloadLink.getDownloadURL());
     }
 
-    private void handleDL(Account account, DownloadLink link, String dllink) throws Exception {
+    private void handleDL(final Account account, final DownloadLink link, final String dllink) throws Exception {
         /* we want to follow redirects in final stage */
         dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, true, 1);
         if (!dl.getConnection().isContentDisposition()) {
@@ -215,13 +214,8 @@ public class SuperLoadCz extends PluginForHost {
 
     /** no override to keep plugin compatible to old stable */
     public void handleMultiHost(final DownloadLink downloadLink, final Account account) throws Exception {
-        prepBrowser();
-        br.setFollowRedirects(true);
+        prepBrowser(br);
         final String pass = downloadLink.getStringProperty("pass", null);
-        TOKEN = account.getStringProperty("token", null);
-        if (TOKEN == null) {
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
         String dllink = checkDirectLink(downloadLink, "superloadczdirectlink");
         if (dllink == null) {
             showMessage(downloadLink, "Task 1: Generating Link");
@@ -247,7 +241,6 @@ public class SuperLoadCz extends PluginForHost {
             if (dllink == null) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
-            dllink = dllink.replaceAll("\\\\", "");
             showMessage(downloadLink, "Task 2: Download begins!");
         }
         // might need a sleep here hoster seems to have troubles with new links.
@@ -257,17 +250,22 @@ public class SuperLoadCz extends PluginForHost {
     private String checkDirectLink(final DownloadLink downloadLink, final String property) {
         String dllink = downloadLink.getStringProperty(property);
         if (dllink != null) {
+            URLConnectionAdapter con = null;
             try {
                 final Browser br2 = br.cloneBrowser();
-                URLConnectionAdapter con = br2.openGetConnection(dllink);
+                con = br2.openGetConnection(dllink);
                 if (con.getContentType().contains("html") || con.getLongContentLength() == -1) {
                     downloadLink.setProperty(property, Property.NULL);
                     dllink = null;
                 }
-                con.disconnect();
             } catch (Exception e) {
                 downloadLink.setProperty(property, Property.NULL);
                 dllink = null;
+            } finally {
+                try {
+                    con.disconnect();
+                } catch (Throwable t) {
+                }
             }
         }
         return dllink;
@@ -276,17 +274,9 @@ public class SuperLoadCz extends PluginForHost {
     @Override
     public AccountInfo fetchAccountInfo(final Account account) throws Exception {
         AccountInfo ai = new AccountInfo();
-        br.setCookiesExclusive(true);
-        br.setFollowRedirects(true);
-        prepBrowser();
-        try {
-            login(account);
-        } catch (final PluginException e) {
-            account.setValid(false);
-            account.setProperty("token", Property.NULL);
-            ai.setProperty("multiHostSupport", Property.NULL);
-            return ai;
-        }
+        prepBrowser(br);
+        // this will force new login.
+        account.setProperty("token", Property.NULL);
         try {
             updateCredits(ai, account);
         } catch (Throwable e) {
@@ -297,10 +287,10 @@ public class SuperLoadCz extends PluginForHost {
         account.setConcurrentUsePossible(true);
         account.setMaxSimultanDownloads(5);
         ai.setValidUntil(-1);
-        ai.setStatus("Premium User");
+        ai.setStatus("Premium Account");
         try {
             // get the supported host list,
-            String hostsSup = br.cloneBrowser().postPage(mAPI + "/get-supported-hosts", "token=" + TOKEN);
+            String hostsSup = br.cloneBrowser().postPage(mAPI + "/get-supported-hosts", "token=" + getToken(account));
             String[] hosts = new Regex(hostsSup, "\"([^\", ]+\\.[^\", ]+)").getColumn(0);
             ArrayList<String> supportedHosts = new ArrayList<String>(Arrays.asList(hosts));
             ai.setMultiHostSupport(supportedHosts);
@@ -310,43 +300,61 @@ public class SuperLoadCz extends PluginForHost {
         return ai;
     }
 
-    private void login(final Account acc) throws IOException, PluginException {
+    private String getToken(final Account account) throws PluginException, IOException {
         synchronized (LOCK) {
-            br.postPage(mAPI + "/login", "username=" + Encoding.urlEncode(acc.getUser()) + "&password=" + JDHash.getMD5(acc.getPass()));
-            if (br.getHttpConnection() != null && br.getHttpConnection().getResponseCode() == 404) {
-                throw new PluginException(LinkStatus.ERROR_RETRY);
+            String token = account.getStringProperty("token", null);
+            if (inValidate(token)) {
+                // relogin
+                login(account);
+                token = account.getStringProperty("token", null);
+                if (inValidate(token)) {
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                }
             }
-            if (!getSuccess()) {
-                throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
-            }
-            TOKEN = getJson("token");
-            if (TOKEN != null) {
-                acc.setProperty("token", TOKEN);
-            } else {
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            }
+            return token;
         }
+    }
+
+    private boolean login(final Account acc) throws IOException, PluginException {
+        final Browser login = prepBrowser(new Browser());
+        login.postPage(mAPI + "/login", "username=" + Encoding.urlEncode(acc.getUser()) + "&password=" + JDHash.getMD5(acc.getPass()));
+        if (login.getHttpConnection() != null && login.getHttpConnection().getResponseCode() == 404) {
+            throw new PluginException(LinkStatus.ERROR_RETRY);
+        }
+        if (!getSuccess(login)) {
+            throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+        }
+        String token = getJson(login, "token");
+        if (!inValidate(token)) {
+            acc.setProperty("token", token);
+        } else {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        return true;
     }
 
     private void showMessage(DownloadLink link, String message) {
         link.getLinkStatus().setStatusText(message);
     }
 
-    private AccountInfo updateCredits(AccountInfo ai, Account account) throws PluginException, IOException {
-        if (ai == null) {
-            ai = new AccountInfo();
+    private AccountInfo updateCredits(final AccountInfo ai, final Account account) throws PluginException, IOException {
+        AccountInfo ac = ai;
+        if ((ai == null || ac == null) && account != null) {
+            ac = account.getAccountInfo();
         }
-        String token = account.getStringProperty("token", null);
-        if (token == null) {
+        if (ac == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        br.postPage(mAPI + "/get-status-bar", "token=" + token);
-        Integer credits = Integer.parseInt(getJson("credits"));
-        if (credits != null) {
+        br.postPage(mAPI + "/get-status-bar", "token=" + getToken(account));
+        final String credits = getJson("credits");
+        if (!inValidate(credits) && credits.matches("[\\d\\.]+")) {
             // 1000 credits = 1 GB, convert back into 1024 (Bytes)
             // String expression = "(" + credits + " / 1000) * 1073741824";
             // Double result = new DoubleEvaluator().evaluate(expression);
-            ai.setTrafficLeft(SizeFormatter.getSize(credits + "MiB"));
+            ac.setTrafficLeft(SizeFormatter.getSize(credits + "MiB"));
+        }
+        if (ai == null) {
+            account.setAccountInfo(ac);
         }
         return ai;
     }
@@ -367,37 +375,73 @@ public class SuperLoadCz extends PluginForHost {
         throw new PluginException(LinkStatus.ERROR_RETRY);
     }
 
-    private String getJson(final String key) {
-        String result = br.getRegex("\"" + key + "\":\"([^\"]+)\"").getMatch(0);
+    /**
+     * Tries to return value of key from JSon response, from String source.
+     *
+     * @author raztoki
+     * */
+    private String getJson(final String source, final String key) {
+        String result = new Regex(source, "\"" + key + "\":(-?\\d+(\\.\\d+)?|true|false|null)").getMatch(0);
         if (result == null) {
-            result = br.getRegex("\"" + key + "\":([^\"\\}\\,]+)").getMatch(0);
+            result = new Regex(source, "\"" + key + "\":\"([^\"]+)\"").getMatch(0);
+        }
+        if (result != null) {
+            result = result.replaceAll("\\\\/", "/");
         }
         return result;
     }
 
-    private boolean getSuccess() {
-        return br.getRegex("\"success\":true").matches();
+    /**
+     * Tries to return value of key from JSon response, from default 'br' Browser.
+     *
+     * @author raztoki
+     * */
+    private String getJson(final String key) {
+        return getJson(br.toString(), key);
+    }
+
+    /**
+     * Tries to return value of key from JSon response, from provided Browser.
+     *
+     * @author raztoki
+     * */
+    private String getJson(final Browser ibr, final String key) {
+        return getJson(ibr.toString(), key);
+    }
+
+    /**
+     * Validates string to series of conditions, null, whitespace, or "". This saves effort factor within if/for/while statements
+     *
+     * @param s
+     *            Imported String to match against.
+     * @return <b>true</b> on valid rule match. <b>false</b> on invalid rule match.
+     * @author raztoki
+     * */
+    private boolean inValidate(final String s) {
+        if (s == null || s != null && (s.matches("[\r\n\t ]+") || s.equals(""))) {
+            return true;
+        } else {
+            return false;
+        }
+    }
+
+    private boolean getSuccess(final Browser ibr) {
+        return ibr.getRegex("\"success\":true").matches();
     }
 
     private void postPageSafe(final Account acc, final String page, final String postData) throws Exception {
         boolean failed = true;
         for (int i = 1; i <= 5; i++) {
             logger.info("Request try " + i + " of 5");
-            try {
-                br.postPage(page, postData + TOKEN);
-            } catch (final BrowserException e) {
-                if (br.getRequest().getHttpConnection().getResponseCode() == 401) {
-                    logger.info("Request failed (401) -> Re-newing token and trying again");
-                    try {
-                        this.login(acc);
-                    } catch (final Exception e_acc) {
-                        logger.warning("Failed to re-new token!");
-                        throw e_acc;
-                    }
-                    continue;
-                }
-                logger.info("Request failed (other BrowserException) -> Throwing BrowserException");
-                throw e;
+            br.postPage(page, postData + getToken(acc));
+            if (br.getHttpConnection() == null) {
+                Thread.sleep(2500);
+                continue;
+            }
+            if (br.getHttpConnection() != null && br.getHttpConnection().getResponseCode() == 401) {
+                logger.info("Request failed (401) -> Re-newing token and trying again");
+                acc.getProperty("token", Property.NULL);
+                continue;
             }
             failed = false;
             break;
