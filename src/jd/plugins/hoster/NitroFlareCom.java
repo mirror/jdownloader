@@ -273,18 +273,18 @@ public class NitroFlareCom extends PluginForHost {
      * @throws PluginException
      */
     private String validateAccount(final Account account) throws PluginException {
-        final String user = account.getUser();
-        final String pass = account.getPass();
-        if (inValidate(pass)) {
-            // throw new PluginException(LinkStatus.ERROR_PREMIUM,
-            // "\r\nYou haven't provided a valid password or premiumKey (this field can not be empty)!",
-            // PluginException.VALUE_ID_PREMIUM_DISABLE);
-            throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nYou haven't provided a valid password (this field can not be empty)!", PluginException.VALUE_ID_PREMIUM_DISABLE);
-        }
-        if (pass.matches("(?-i)NF[a-zA-Z0-9]{10}")) {
-            // no need to urlencode, this is always safe.
-            // return "user=&premiumKey=" + pass;
-            synchronized (LOCK) {
+        synchronized (LOCK) {
+            final String user = account.getUser();
+            final String pass = account.getPass();
+            if (inValidate(pass)) {
+                // throw new PluginException(LinkStatus.ERROR_PREMIUM,
+                // "\r\nYou haven't provided a valid password or premiumKey (this field can not be empty)!",
+                // PluginException.VALUE_ID_PREMIUM_DISABLE);
+                throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nYou haven't provided a valid password (this field can not be empty)!", PluginException.VALUE_ID_PREMIUM_DISABLE);
+            }
+            if (pass.matches("(?-i)NF[a-zA-Z0-9]{10}")) {
+                // no need to urlencode, this is always safe.
+                // return "user=&premiumKey=" + pass;
                 try {
                     SwingUtilities.invokeAndWait(new Runnable() {
 
@@ -306,15 +306,15 @@ public class NitroFlareCom extends PluginForHost {
                     });
                 } catch (Throwable e) {
                 }
-            }
 
-            throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nPremiumKeys not accepted, you need to use Account (email and password).", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nPremiumKeys not accepted, you need to use Account (email and password).", PluginException.VALUE_ID_PREMIUM_DISABLE);
+            }
+            if (inValidate(user) || !user.matches(".+@.+")) {
+                throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nYou haven't provided a valid username (must be email address)!", PluginException.VALUE_ID_PREMIUM_DISABLE);
+            }
+            // urlencode required!
+            return "user=" + Encoding.urlEncode(user) + "&premiumKey=" + Encoding.urlEncode(pass);
         }
-        if (inValidate(user) || !user.matches(".+@.+")) {
-            throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nYou haven't provided a valid username (must be email address)!", PluginException.VALUE_ID_PREMIUM_DISABLE);
-        }
-        // urlencode required!
-        return "user=" + Encoding.urlEncode(user) + "&premiumKey=" + Encoding.urlEncode(pass);
     }
 
     @Override
@@ -337,7 +337,7 @@ public class NitroFlareCom extends PluginForHost {
             } else {
                 throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nYour account has been banned!", PluginException.VALUE_ID_PREMIUM_DISABLE);
             }
-        } else if ("expired".equalsIgnoreCase(status) || ai.isExpired()) {
+        } else if ("expired".equalsIgnoreCase(status) || "inactive".equalsIgnoreCase(status) || ai.isExpired()) {
             // expired(free)? account
             account.setProperty("free", true);
             // dont support free account?
