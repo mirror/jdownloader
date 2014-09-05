@@ -24,6 +24,7 @@ Extraction_onShutdownRequest_msg=放弃提取吗?
 GenericVariants_DEMUX_GENERIC_AUDIO=提取音频流
 ImportAction_tt=从 *.jdfilter (*.jdregexfilter) 文件导入规则
 LinkCollector_addCrawledLink_offlinepackage=离线文件
+LinkCollector_addCrawledLink_unknownpackage=未知文件
 LinkCollector_addCrawledLink_variouspackage=各种文件
 LinkCollector_archiv=%s1
 LinkCollector_onShutdownRequest_=链接收集器仍在处理中!
