@@ -199,10 +199,8 @@ public class FoxLeechCom extends PluginForHost {
         long expire = System.currentTimeMillis();
         String days, hours, minutes, seconds;
         final Regex expireinfo = br.getRegex("type=\"text\"value=\"(\\d{1,2})Days (\\d{1,2})Hours (\\d{1,2})Minutes (\\d{1,2})Seconds \"");
-        days = expireinfo.getMatch(0);
-        if (days == null) {
-            days = br.getRegex("Expire In: <b>(\\d+?) Days <").getMatch(0);
-        }
+        // days = expireinfo.getMatch(0); - Months info makes incorrect days (e.g. 4Months 21Hours 1Minutes 51Seconds )
+        days = br.getRegex("Expire In: <b>(\\d+?) Days <").getMatch(0);
         hours = expireinfo.getMatch(1);
         minutes = expireinfo.getMatch(2);
         seconds = expireinfo.getMatch(3);
