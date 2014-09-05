@@ -101,7 +101,7 @@ public class DownloadsAPIV2Impl implements DownloadsAPIV2 {
                 }
                 if (queryParams.isStatus()) {
 
-                    setStatus(fps, fp);
+                    setStatus(fps, fp, fpView);
                 }
                 if (queryParams.isFinished()) {
 
@@ -134,9 +134,9 @@ public class DownloadsAPIV2Impl implements DownloadsAPIV2 {
         return ret;
     }
 
-    private void setStatus(FilePackageAPIStorableV2 fps, FilePackage fp) {
+    private void setStatus(FilePackageAPIStorableV2 fps, FilePackage fp, FilePackageView fpView) {
 
-        FilePackageView view = fp.getView();
+        FilePackageView view = fpView;
 
         PluginStateCollection ps = view.getPluginStates();
         if (ps.size() > 0) {
