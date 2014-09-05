@@ -27,14 +27,18 @@ import java.awt.event.MouseListener;
 import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
 import java.lang.reflect.InvocationTargetException;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map.Entry;
 
 import javax.swing.AbstractAction;
 import javax.swing.AbstractButton;
 import javax.swing.Action;
+import javax.swing.ActionMap;
 import javax.swing.Box;
 import javax.swing.Icon;
 import javax.swing.ImageIcon;
+import javax.swing.InputMap;
 import javax.swing.JComponent;
 import javax.swing.JMenu;
 import javax.swing.JRootPane;
@@ -68,10 +72,12 @@ import org.appwork.swing.components.ExtButton;
 import org.appwork.swing.synthetica.SyntheticaSettings;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.ImageProvider.ImageProvider;
+import org.appwork.utils.logging2.LogSource;
 import org.appwork.utils.swing.EDTRunner;
 import org.jdownloader.actions.AppAction;
 import org.jdownloader.controlling.contextmenu.CustomizableAppAction;
 import org.jdownloader.controlling.contextmenu.MenuContainer;
+import org.jdownloader.controlling.contextmenu.MenuContainerRoot;
 import org.jdownloader.controlling.contextmenu.MenuItemData;
 import org.jdownloader.controlling.contextmenu.MenuLink;
 import org.jdownloader.controlling.contextmenu.SeparatorData;
@@ -83,19 +89,24 @@ import org.jdownloader.gui.toolbar.MenuManagerMainToolbar;
 import org.jdownloader.gui.toolbar.action.AbstractToolBarAction;
 import org.jdownloader.gui.views.downloads.QuickSettingsPopup;
 import org.jdownloader.images.NewTheme;
+import org.jdownloader.logging.LogController;
 import org.jdownloader.settings.staticreferences.CFG_GUI;
 import org.jdownloader.updatev2.gui.LAFOptions;
 
 public class MainToolBar extends JToolBar implements MouseListener, DownloadWatchdogListener, GenericConfigEventListener<Boolean> {
 
-    private static final long  serialVersionUID = 922971719957349497L;
+    private static final long          serialVersionUID = 922971719957349497L;
 
-    private static MainToolBar INSTANCE         = null;
+    private static MainToolBar         INSTANCE         = null;
 
-    private SpeedMeterPanel    speedmeter;
-    private JRootPane          rootpane;
+    private SpeedMeterPanel            speedmeter;
+    private JRootPane                  rootpane;
 
-    private boolean            initDone         = false;
+    private boolean                    initDone         = false;
+
+    private LogSource                  logger;
+
+    private HashMap<KeyStroke, Action> shortCutActions;
 
     public boolean isInitDone() {
         return initDone;
@@ -110,7 +121,7 @@ public class MainToolBar extends JToolBar implements MouseListener, DownloadWatc
 
     private MainToolBar() {
         super();
-
+        logger = LogController.getInstance().getLogger("MainToolbar");
         this.setRollover(true);
         this.addMouseListener(this);
         this.setFloatable(false);
@@ -219,9 +230,128 @@ public class MainToolBar extends JToolBar implements MouseListener, DownloadWatc
 
     }
 
-    private void initToolbar() {
+    private void fillActions(MenuContainer menuData) {
+        if (!menuData._isValidated()) {
+            return;
+        }
+        final InputMap input = getInputMap(JComponent.WHEN_ANCESTOR_OF_FOCUSED_COMPONENT);
+        final InputMap input2 = getInputMap(JComponent.WHEN_FOCUSED);
+        final InputMap input3 = getInputMap(JComponent.WHEN_IN_FOCUSED_WINDOW);
 
-        List<MenuItemData> list = MenuManagerMainToolbar.getInstance().getMenuData().getItems();
+        final ActionMap actions = getActionMap();
+
+        for (MenuItemData mi : menuData.getItems()) {
+            if (!mi._isValidated()) {
+                return;
+            }
+            if (mi instanceof MenuContainer) {
+                fillActions((MenuContainer) mi);
+            } else if (mi instanceof SeparatorData) {
+                continue;
+            } else if (mi instanceof MenuLink) {
+                continue;
+            } else {
+                AppAction action;
+                try {
+                    if (mi.getActionData() == null) {
+                        continue;
+                    }
+                    action = mi.createAction();
+                    KeyStroke keystroke;
+                    if (StringUtils.isNotEmpty(mi.getShortcut())) {
+                        keystroke = KeyStroke.getKeyStroke(mi.getShortcut());
+                        if (keystroke != null) {
+                            action.setAccelerator(keystroke);
+                        }
+                    } else if (MenuItemData.isEmptyValue(mi.getShortcut())) {
+                        action.setAccelerator(null);
+                    }
+                    keystroke = (KeyStroke) action.getValue(Action.ACCELERATOR_KEY);
+                    linkAction(input, input2, input3, actions, action, keystroke);
+                    if (action instanceof CustomizableAppAction) {
+                        List<KeyStroke> moreShortCuts = ((CustomizableAppAction) action).getAdditionalShortcuts(keystroke);
+                        if (moreShortCuts != null) {
+                            for (KeyStroke ks : moreShortCuts) {
+                                if (ks != null) {
+                                    linkAction(input, input2, input3, actions, action, ks);
+                                }
+                            }
+                        }
+                    }
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
+
+            }
+        }
+    }
+
+    public void linkAction(final InputMap input, final InputMap input2, final InputMap input3, final ActionMap actions, AppAction action, KeyStroke keystroke) {
+        if (action != null && (keystroke) != null) {
+            String key = "CONTEXT_ACTION_" + keystroke;
+            try {
+                Object old = input.get(keystroke);
+                if (old != null && action.getClass() != actions.get(old).getClass()) {
+                    logger.warning("Duplicate Shortcuts: " + action + " overwrites " + actions.get(old) + "(" + old + ")" + " for keystroke " + keystroke);
+                }
+            } catch (Exception e) {
+                logger.log(e);
+            }
+            try {
+                Object old = input2.get(keystroke);
+                if (old != null && action.getClass() != actions.get(old).getClass()) {
+                    logger.warning("Duplicate Shortcuts: " + action + " overwrites " + actions.get(old) + "(" + old + ")" + " for keystroke " + keystroke);
+                }
+            } catch (Exception e) {
+                logger.log(e);
+            }
+            try {
+                Object old = input3.get(keystroke);
+                if (old != null && action.getClass() != actions.get(old).getClass()) {
+                    logger.warning("Duplicate Shortcuts: " + action + " overwrites " + actions.get(old) + "(" + old + ")" + " for keystroke " + keystroke);
+                }
+            } catch (Exception e) {
+                logger.log(e);
+            }
+
+            logger.info(keystroke + " -> " + action);
+
+            input.put(keystroke, key);
+            input2.put(keystroke, key);
+            input3.put(keystroke, key);
+            actions.put(key, action);
+            shortCutActions.put(keystroke, action);
+
+        }
+    }
+
+    public void updateContextShortcuts(MenuContainerRoot container) {
+
+        final InputMap input = getInputMap(JComponent.WHEN_ANCESTOR_OF_FOCUSED_COMPONENT);
+        final InputMap input2 = getInputMap(JComponent.WHEN_FOCUSED);
+        final InputMap input3 = getInputMap(JComponent.WHEN_IN_FOCUSED_WINDOW);
+        final ActionMap actions = getActionMap();
+
+        if (shortCutActions != null) {
+            for (Entry<KeyStroke, Action> ks : shortCutActions.entrySet()) {
+                Object binding = input.get(ks.getKey());
+                input.remove(ks.getKey());
+                input2.remove(ks.getKey());
+                input3.remove(ks.getKey());
+                actions.remove(binding);
+
+            }
+        }
+
+        shortCutActions = new HashMap<KeyStroke, Action>();
+        fillActions(container);
+
+    }
+
+    private void initToolbar() {
+        MenuContainerRoot container = MenuManagerMainToolbar.getInstance().getMenuData();
+        updateContextShortcuts(container);
+        List<MenuItemData> list = container.getItems();
         this.setLayout(new MigLayout("ins 0 3 0 0", "[]", "[grow,32!]"));
         AbstractButton ab;
         // System.out.println(this.getColConstraints(list.length));
@@ -330,7 +460,9 @@ public class MainToolBar extends JToolBar implements MouseListener, DownloadWatc
                                     @Override
                                     protected void addAction(JComponent root, MenuItemData inst) throws InstantiationException, IllegalAccessException, InvocationTargetException, ClassNotFoundException, NoSuchMethodException, ExtensionNotLoadedException {
                                         JComponent ret = inst.addTo(root);
-                                        ret.addMouseListener(ml);
+                                        if (ret != null) {
+                                            ret.addMouseListener(ml);
+                                        }
 
                                     }
                                 }.run();
@@ -416,11 +548,11 @@ public class MainToolBar extends JToolBar implements MouseListener, DownloadWatc
 
                     action = menudata.createAction();
 
-                    if (StringUtils.isNotEmpty(menudata.getShortcut()) && KeyStroke.getKeyStroke(menudata.getShortcut()) != null) {
-                        action.setAccelerator(KeyStroke.getKeyStroke(menudata.getShortcut()));
-                    } else if (MenuItemData.isEmptyValue(menudata.getShortcut())) {
-                        action.setAccelerator(null);
-                    }
+                    // if (StringUtils.isNotEmpty(menudata.getShortcut()) && KeyStroke.getKeyStroke(menudata.getShortcut()) != null) {
+                    // action.setAccelerator(KeyStroke.getKeyStroke(menudata.getShortcut()));
+                    // } else if (MenuItemData.isEmptyValue(menudata.getShortcut())) {
+                    // action.setAccelerator(null);
+                    // }
                     bt = null;
                     if (action instanceof AbstractToolBarAction) {
                         action.requestUpdate(MainToolBar.this);
