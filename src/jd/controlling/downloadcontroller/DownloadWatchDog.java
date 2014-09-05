@@ -1221,8 +1221,9 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
         case FATAL_ERROR:
             if (!onDetach) {
                 currentSession.removeHistory(link);
-                candidate.getLink().setFinalLinkState(FinalLinkState.FAILED_FATAL);
                 candidate.getLink().setProperty(DownloadLink.PROPERTY_CUSTOM_MESSAGE, value.getMessage());
+                candidate.getLink().setFinalLinkState(FinalLinkState.FAILED_FATAL);
+
             }
             return;
         default:

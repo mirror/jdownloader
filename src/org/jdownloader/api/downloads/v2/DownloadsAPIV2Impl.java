@@ -40,7 +40,6 @@ public class DownloadsAPIV2Impl implements DownloadsAPIV2 {
     public List<FilePackageAPIStorableV2> queryPackages(PackageQueryStorable queryParams) throws BadParameterException {
 
         DownloadController dlc = DownloadController.getInstance();
-        DownloadWatchDog dwd = DownloadWatchDog.getInstance();
 
         // filter out packages, if specific packageUUIDs given, else return all packages
         List<FilePackage> packages = null;
@@ -70,61 +69,8 @@ public class DownloadsAPIV2Impl implements DownloadsAPIV2 {
             FilePackage fp = packages.get(i);
             boolean readL = fp.getModifyLock().readLock();
             try {
-                FilePackageView fpView = new FilePackageView(fp);
-                fpView.setItems(null);
-                FilePackageAPIStorableV2 fps = new FilePackageAPIStorableV2(fp);
 
-                if (queryParams.isSaveTo()) {
-                    fps.setSaveTo(fp.getView().getDownloadDirectory());
-
-                }
-                if (queryParams.isBytesTotal()) {
-
-                    fps.setBytesTotal(fpView.getSize());
-
-                }
-                if (queryParams.isChildCount()) {
-                    fps.setChildCount(fp.size());
-                }
-                if (queryParams.isHosts()) {
-                    DomainInfo[] di = fpView.getDomainInfos();
-                    String[] hosts = new String[di.length];
-                    for (int j = 0; j < hosts.length; j++) {
-                        hosts[j] = di[j].getTld();
-                    }
-
-                    fps.setHosts(hosts);
-                }
-
-                if (queryParams.isSpeed()) {
-                    fps.setSpeed(dwd.getDownloadSpeedbyFilePackage(fp));
-                }
-                if (queryParams.isStatus()) {
-
-                    setStatus(fps, fp, fpView);
-                }
-                if (queryParams.isFinished()) {
-
-                    fps.setFinished(fpView.isFinished());
-                }
-                if (queryParams.isEta()) {
-                    fps.setEta(fpView.getETA());
-                }
-                if (queryParams.isBytesLoaded()) {
-                    fps.setBytesLoaded(fpView.getDone());
-
-                }
-
-                if (queryParams.isComment()) {
-                    fps.setComment(fp.getComment());
-
-                }
-                if (queryParams.isEnabled()) {
-                    fps.setEnabled(fpView.isEnabled());
-                }
-                if (queryParams.isRunning()) {
-                    fps.setRunning(dwd.getRunningFilePackages().contains(fp));
-                }
+                FilePackageAPIStorableV2 fps = toStorable(queryParams, fp, this);
 
                 ret.add(fps);
             } finally {
@@ -134,7 +80,64 @@ public class DownloadsAPIV2Impl implements DownloadsAPIV2 {
         return ret;
     }
 
-    private void setStatus(FilePackageAPIStorableV2 fps, FilePackage fp, FilePackageView fpView) {
+    public FilePackageAPIStorableV2 toStorable(PackageQueryStorable queryParams, FilePackage fp, FilePackageView fpView, DownloadWatchDog dwd) {
+        FilePackageAPIStorableV2 fps = new FilePackageAPIStorableV2(fp);
+
+        if (queryParams.isSaveTo()) {
+            fps.setSaveTo(fp.getView().getDownloadDirectory());
+
+        }
+        if (queryParams.isBytesTotal()) {
+
+            fps.setBytesTotal(fpView.getSize());
+
+        }
+        if (queryParams.isChildCount()) {
+            fps.setChildCount(fp.size());
+        }
+        if (queryParams.isHosts()) {
+            DomainInfo[] di = fpView.getDomainInfos();
+            String[] hosts = new String[di.length];
+            for (int j = 0; j < hosts.length; j++) {
+                hosts[j] = di[j].getTld();
+            }
+
+            fps.setHosts(hosts);
+        }
+
+        if (queryParams.isSpeed()) {
+            fps.setSpeed(dwd.getDownloadSpeedbyFilePackage(fp));
+        }
+        if (queryParams.isStatus()) {
+
+            setStatus(fps, fpView);
+        }
+        if (queryParams.isFinished()) {
+
+            fps.setFinished(fpView.isFinished());
+        }
+        if (queryParams.isEta()) {
+            fps.setEta(fpView.getETA());
+        }
+        if (queryParams.isBytesLoaded()) {
+            fps.setBytesLoaded(fpView.getDone());
+
+        }
+
+        if (queryParams.isComment()) {
+            fps.setComment(fp.getComment());
+
+        }
+        if (queryParams.isEnabled()) {
+            fps.setEnabled(fpView.isEnabled());
+        }
+        if (queryParams.isRunning()) {
+            fps.setRunning(dwd.getRunningFilePackages().contains(fp));
+        }
+        return fps;
+    }
+
+    public static FilePackageAPIStorableV2 setStatus(FilePackageAPIStorableV2 fps, FilePackageView fpView) {
 
         FilePackageView view = fpView;
 
@@ -143,19 +146,19 @@ public class DownloadsAPIV2Impl implements DownloadsAPIV2 {
 
             fps.setStatusIconKey(RemoteAPIController.getInstance().getContentAPI().getIconKey(ps.getMergedIcon()));
             fps.setStatus(ps.isMultiline() ? "" : ps.getText());
-            return;
+            return fps;
         }
         if (view.isFinished()) {
 
             fps.setStatusIconKey(IconKey.ICON_TRUE);
             fps.setStatus(_GUI._.TaskColumn_getStringValue_finished_());
-            return;
+            return fps;
         } else if (view.getETA() != -1) {
 
             fps.setStatus(_GUI._.TaskColumn_getStringValue_running_());
-            return;
+            return fps;
         }
-
+        return fps;
     }
 
     @SuppressWarnings("rawtypes")
@@ -212,6 +215,67 @@ public class DownloadsAPIV2Impl implements DownloadsAPIV2 {
         }
 
         return result;
+    }
+
+    public static FilePackageAPIStorableV2 toStorable(PackageQueryStorable queryParams, FilePackage fp, Object caller) {
+        DownloadWatchDog dwd = DownloadWatchDog.getInstance();
+        FilePackageAPIStorableV2 fps = new FilePackageAPIStorableV2();
+        FilePackageView fpView = new FilePackageView(fp);
+        fpView.setItems(null);
+
+        if (queryParams.isSaveTo()) {
+            fps.setSaveTo(fpView.getDownloadDirectory());
+
+        }
+        if (queryParams.isBytesTotal()) {
+
+            fps.setBytesTotal(fpView.getSize());
+
+        }
+        if (queryParams.isChildCount()) {
+            fps.setChildCount(fp.size());
+        }
+        if (queryParams.isHosts()) {
+            DomainInfo[] di = fpView.getDomainInfos();
+            String[] hosts = new String[di.length];
+            for (int j = 0; j < hosts.length; j++) {
+                hosts[j] = di[j].getTld();
+            }
+
+            fps.setHosts(hosts);
+        }
+
+        if (queryParams.isSpeed()) {
+            fps.setSpeed(dwd.getDownloadSpeedbyFilePackage(fp));
+        }
+        if (queryParams.isStatus()) {
+
+            setStatus(fps, fpView);
+        }
+        if (queryParams.isFinished()) {
+
+            fps.setFinished(fpView.isFinished());
+        }
+        if (queryParams.isEta()) {
+            fps.setEta(fpView.getETA());
+        }
+        if (queryParams.isBytesLoaded()) {
+            fps.setBytesLoaded(fpView.getDone());
+
+        }
+
+        if (queryParams.isComment()) {
+            fps.setComment(fp.getComment());
+
+        }
+        if (queryParams.isEnabled()) {
+            fps.setEnabled(fpView.isEnabled());
+        }
+        if (queryParams.isRunning()) {
+            fps.setRunning(dwd.getRunningFilePackages().contains(fp));
+        }
+
+        return fps;
     }
 
     public static DownloadLinkAPIStorableV2 toStorable(LinkQueryStorable queryParams, DownloadLink dl, Object caller) {

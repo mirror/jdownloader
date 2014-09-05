@@ -474,6 +474,10 @@ public class FilePackage extends Property implements Serializable, AbstractPacka
         } else {
             this.setProperty(PROPERTY_COMMENT, comment);
         }
+
+        if (hasNotificationListener()) {
+            nodeUpdated(this, AbstractNodeNotifier.NOTIFY.PROPERTY_CHANCE, new FilePackageProperty(this, FilePackageProperty.Property.COMMENT, getComment()));
+        }
     }
 
     public String getComment() {

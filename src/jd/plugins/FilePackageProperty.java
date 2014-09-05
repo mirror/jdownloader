@@ -4,7 +4,8 @@ public class FilePackageProperty {
     public static enum Property {
         NAME,
         FOLDER,
-        PRIORITY
+        PRIORITY,
+        COMMENT
     }
 
     private final Object      value;

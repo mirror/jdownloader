@@ -4,6 +4,7 @@ import java.util.ArrayList;
 
 import org.appwork.storage.JSonStorage;
 import org.appwork.storage.Storage;
+import org.appwork.utils.Application;
 import org.jdownloader.api.test.TestClient.Test;
 import org.jdownloader.myjdownloader.client.AbstractMyJDClientForDesktopJVM;
 import org.jdownloader.myjdownloader.client.bindings.events.EventDistributor;
@@ -21,14 +22,14 @@ public class EventsTest extends Test {
 
         String devID;
         ed = new EventDistributor(api, devID = chooseDevice(api));
-        ed.setConnectionConfig(60000, 2 * 60000);
+        ed.setConnectionConfig(10 * 60000, 20 * 60000);
         ArrayList<PublisherResponse> publishers = api.link(EventsInterface.class, devID).listpublisher();
 
         final String pattern;
         // final String event = Dialog.getInstance().showInputDialog("Subscribe to");
         // final String exclude = Dialog.getInstance().showInputDialog("Exclude");
 
-        final String event = "downloads\\.DATA_UPDATE\\..+";
+        final String event = "downloads\\..+";
         final String exclude = "";
         ed.addListener(new EventsDistributorListener() {
 
@@ -61,7 +62,9 @@ public class EventsTest extends Test {
             }
 
         });
-        api.link(DownloadsEventsInterface.class, devID).setStatusEventInterval(ed.getSubscription().getSubscriptionid(), 5000);
+        api.link(DownloadsEventsInterface.class, devID).setStatusEventInterval(ed.getSubscription().getSubscriptionid(), 1000);
+        // disable stdout
+        Application.STD_OUT.setBufferEnabled(true);
         ed.run();
 
     }
