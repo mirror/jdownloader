@@ -24,24 +24,30 @@ import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLinkProperty;
 import jd.plugins.FilePackage;
 import jd.plugins.FilePackageProperty;
+import jd.plugins.FilePackageView;
 
+import org.appwork.exceptions.WTFException;
+import org.appwork.remoteapi.events.EventObject;
 import org.appwork.remoteapi.events.EventPublisher;
 import org.appwork.remoteapi.events.EventsAPI;
 import org.appwork.remoteapi.events.RemoteAPIEventsSender;
 import org.appwork.remoteapi.events.SimpleEventObject;
 import org.appwork.remoteapi.events.Subscriber;
 import org.appwork.remoteapi.events.local.LocalEventsAPIListener;
+import org.appwork.remoteapi.exceptions.BadParameterException;
+import org.appwork.storage.JSonStorage;
 import org.appwork.storage.SimpleMapper;
 import org.appwork.storage.TypeRef;
 import org.jdownloader.api.RemoteAPIController;
 import org.jdownloader.api.downloads.v2.DownloadLinkAPIStorableV2;
+import org.jdownloader.api.downloads.v2.FilePackageAPIStorableV2;
 import org.jdownloader.api.downloads.v2.LinkQueryStorable;
+import org.jdownloader.api.downloads.v2.PackageQueryStorable;
 import org.jdownloader.controlling.download.DownloadControllerListener;
 import org.jdownloader.extensions.extraction.ExtractionStatus;
 import org.jdownloader.myjdownloader.client.bindings.interfaces.DownloadsEventsInterface;
 import org.jdownloader.plugins.ConditionalSkipReason;
 import org.jdownloader.plugins.FinalLinkState;
-import org.jdownloader.plugins.SkipReason;
 
 public class DownloadControllerEventPublisher implements EventPublisher, DownloadControllerListener, LocalEventsAPIListener, DownloadControllerEventPublisherInterface, DownloadWatchdogListener {
 
@@ -50,7 +56,8 @@ public class DownloadControllerEventPublisher implements EventPublisher, Downloa
         REMOVE_CONTENT,
         ADD_CONTENT,
         REFRESH_CONTENT,
-        DATA_UPDATE
+        LINK_UPDATE,
+        PACKAGE_UPDATE
     }
 
     private CopyOnWriteArraySet<RemoteAPIEventsSender> remoteEventSenders      = new CopyOnWriteArraySet<RemoteAPIEventsSender>();
@@ -60,6 +67,7 @@ public class DownloadControllerEventPublisher implements EventPublisher, Downloa
 
     public static List<String>                         INTERVAL_EVENT_ID_LIST;
     private ScheduledExecutorService                   executer;
+    private EventsAPI                                  eventsAPI;
     static {
         EVENT_ID_LIST = new ArrayList<String>();
         for (BASIC_EVENT t : BASIC_EVENT.values()) {
@@ -69,14 +77,33 @@ public class DownloadControllerEventPublisher implements EventPublisher, Downloa
         HashMap<String, Object> map = new SimpleMapper().convert(new LinkQueryStorableDummy(), new TypeRef<HashMap<String, Object>>() {
         });
         for (Entry<String, Object> es : map.entrySet()) {
-            EVENT_ID_LIST.add(BASIC_EVENT.DATA_UPDATE.name() + "." + es.getKey());
+            EVENT_ID_LIST.add(BASIC_EVENT.LINK_UPDATE.name() + "." + es.getKey());
         }
+
+        map = new SimpleMapper().convert(new PackageQueryStorableDummy(), new TypeRef<HashMap<String, Object>>() {
+        });
+        for (Entry<String, Object> es : map.entrySet()) {
+            EVENT_ID_LIST.add(BASIC_EVENT.PACKAGE_UPDATE.name() + "." + es.getKey());
+        }
+
         INTERVAL_EVENT_ID_LIST = new ArrayList<String>();
-        INTERVAL_EVENT_ID_LIST.add(BASIC_EVENT.DATA_UPDATE.name() + ".speed");
-        INTERVAL_EVENT_ID_LIST.add(BASIC_EVENT.DATA_UPDATE.name() + ".bytesLoaded");
-        INTERVAL_EVENT_ID_LIST.add(BASIC_EVENT.DATA_UPDATE.name() + ".eta");
-        INTERVAL_EVENT_ID_LIST.add(BASIC_EVENT.DATA_UPDATE.name() + ".bytesTotal");
-        INTERVAL_EVENT_ID_LIST.add(BASIC_EVENT.DATA_UPDATE.name() + ".status");
+        INTERVAL_EVENT_ID_LIST.add(BASIC_EVENT.LINK_UPDATE.name() + ".speed");
+        INTERVAL_EVENT_ID_LIST.add(BASIC_EVENT.LINK_UPDATE.name() + ".bytesLoaded");
+        INTERVAL_EVENT_ID_LIST.add(BASIC_EVENT.LINK_UPDATE.name() + ".eta");
+        INTERVAL_EVENT_ID_LIST.add(BASIC_EVENT.LINK_UPDATE.name() + ".bytesTotal");
+        INTERVAL_EVENT_ID_LIST.add(BASIC_EVENT.LINK_UPDATE.name() + ".status");
+
+        INTERVAL_EVENT_ID_LIST.add(BASIC_EVENT.PACKAGE_UPDATE.name() + ".speed");
+        INTERVAL_EVENT_ID_LIST.add(BASIC_EVENT.PACKAGE_UPDATE.name() + ".bytesLoaded");
+        INTERVAL_EVENT_ID_LIST.add(BASIC_EVENT.PACKAGE_UPDATE.name() + ".eta");
+        INTERVAL_EVENT_ID_LIST.add(BASIC_EVENT.PACKAGE_UPDATE.name() + ".bytesTotal");
+        INTERVAL_EVENT_ID_LIST.add(BASIC_EVENT.PACKAGE_UPDATE.name() + ".status");
+    }
+
+    public static class PackageQueryStorableDummy extends PackageQueryStorable {
+        public String toJsonString() {
+            return null;
+        }
     }
 
     public static class LinkQueryStorableDummy extends LinkQueryStorable {
@@ -87,7 +114,7 @@ public class DownloadControllerEventPublisher implements EventPublisher, Downloa
 
     public DownloadControllerEventPublisher(EventsAPI eventsapi) {
         RemoteAPIController.validateInterfaces(DownloadControllerEventPublisherInterface.class, DownloadsEventsInterface.class);
-
+        this.eventsAPI = eventsapi;
         eventsapi.getLocalEventSender().addListener(this);
 
     }
@@ -123,50 +150,38 @@ public class DownloadControllerEventPublisher implements EventPublisher, Downloa
 
     @Override
     public void onDownloadControllerAddedPackage(FilePackage pkg) {
-        SimpleEventObject eventObject = new SimpleEventObject(this, BASIC_EVENT.ADD_CONTENT.name(), null);
-        for (RemoteAPIEventsSender eventSender : remoteEventSenders) {
-            eventSender.publishEvent(eventObject, null);
-        }
+        fire(BASIC_EVENT.ADD_CONTENT.name(), null, null);
+
     }
 
     @Override
     public void onDownloadControllerStructureRefresh(FilePackage pkg) {
-        SimpleEventObject eventObject = new SimpleEventObject(this, BASIC_EVENT.REFRESH_STRUCTURE.name(), null);
-        for (RemoteAPIEventsSender eventSender : remoteEventSenders) {
-            eventSender.publishEvent(eventObject, null);
-        }
+        fire(BASIC_EVENT.REFRESH_STRUCTURE.name(), null, null);
+
     }
 
     @Override
     public void onDownloadControllerStructureRefresh() {
-        SimpleEventObject eventObject = new SimpleEventObject(this, BASIC_EVENT.REFRESH_STRUCTURE.name(), BASIC_EVENT.REFRESH_STRUCTURE.name());
-        for (RemoteAPIEventsSender eventSender : remoteEventSenders) {
-            eventSender.publishEvent(eventObject, null);
-        }
+        fire(BASIC_EVENT.REFRESH_STRUCTURE.name(), BASIC_EVENT.REFRESH_STRUCTURE.name(), null);
+
     }
 
     @Override
     public void onDownloadControllerStructureRefresh(AbstractNode node, Object param) {
-        SimpleEventObject eventObject = new SimpleEventObject(this, BASIC_EVENT.REFRESH_STRUCTURE.name(), BASIC_EVENT.REFRESH_STRUCTURE.name());
-        for (RemoteAPIEventsSender eventSender : remoteEventSenders) {
-            eventSender.publishEvent(eventObject, null);
-        }
+        fire(BASIC_EVENT.REFRESH_STRUCTURE.name(), BASIC_EVENT.REFRESH_STRUCTURE.name(), null);
+
     }
 
     @Override
     public void onDownloadControllerRemovedPackage(FilePackage pkg) {
-        SimpleEventObject eventObject = new SimpleEventObject(this, BASIC_EVENT.REMOVE_CONTENT.name(), null);
-        for (RemoteAPIEventsSender eventSender : remoteEventSenders) {
-            eventSender.publishEvent(eventObject, null);
-        }
+        fire(BASIC_EVENT.REMOVE_CONTENT.name(), null, null);
+
     }
 
     @Override
     public void onDownloadControllerRemovedLinklist(List<DownloadLink> list) {
-        SimpleEventObject eventObject = new SimpleEventObject(this, BASIC_EVENT.REMOVE_CONTENT.name(), null);
-        for (RemoteAPIEventsSender eventSender : remoteEventSenders) {
-            eventSender.publishEvent(eventObject, null);
-        }
+        fire(BASIC_EVENT.REMOVE_CONTENT.name(), null, null);
+
     }
 
     @Override
@@ -178,7 +193,7 @@ public class DownloadControllerEventPublisher implements EventPublisher, Downloa
             // DATA_UPDATE.enabled, DATA_UPDATE.skipped, DATA_UPDATE.running, DATA_UPDATE.bytesLoaded, DATA_UPDATE.eta,
             // DATA_UPDATE.maxResults, DATA_UPDATE.packageUUIDs, DATA_UPDATE.host, DATA_UPDATE.comment, DATA_UPDATE.bytesTotal,
             // DATA_UPDATE.startAt, DATA_UPDATE.status]
-
+            System.out.println(property.getProperty());
             switch (property.getProperty()) {
             case ARCHIVE:
                 break;
@@ -194,26 +209,22 @@ public class DownloadControllerEventPublisher implements EventPublisher, Downloa
                 dls = new HashMap<String, Object>();
                 dls.put("uuid", dl.getUniqueID().getID());
                 dls.put("comment", dl.getComment());
-                SimpleEventObject eventObject = new SimpleEventObject(this, BASIC_EVENT.DATA_UPDATE.name() + ".comment", dls, BASIC_EVENT.DATA_UPDATE.name() + ".comment." + dl.getUniqueID().getID() + "");
-                for (RemoteAPIEventsSender eventSender : remoteEventSenders) {
-                    eventSender.publishEvent(eventObject, null);
-                }
+                fire(BASIC_EVENT.LINK_UPDATE.name() + ".comment", dls, BASIC_EVENT.LINK_UPDATE.name() + ".comment." + dl.getUniqueID().getID() + "");
+
                 break;
             case BROWSER_URL:
             case DOWNLOAD_URL:
                 dls = new HashMap<String, Object>();
                 dls.put("uuid", dl.getUniqueID().getID());
                 dls.put("url", dl.getView().getDownloadUrl());
-                eventObject = new SimpleEventObject(this, BASIC_EVENT.DATA_UPDATE.name() + ".url", dls, BASIC_EVENT.DATA_UPDATE.name() + ".url." + dl.getUniqueID().getID() + "");
-                for (RemoteAPIEventsSender eventSender : remoteEventSenders) {
-                    eventSender.publishEvent(eventObject, null);
-                }
+                fire(BASIC_EVENT.LINK_UPDATE.name() + ".url", dls, BASIC_EVENT.LINK_UPDATE.name() + ".url." + dl.getUniqueID().getID() + "");
+
                 break;
             case CONDITIONAL_SKIPPED:
                 ConditionalSkipReason conditionalSkipReason = dl.getConditionalSkipReason();
-                if (conditionalSkipReason != null && !conditionalSkipReason.isConditionReached()) {
-                    pushStatus(dl);
-                }
+
+                pushStatus(dl);
+
                 break;
 
             case DOWNLOAD_PASSWORD:
@@ -223,52 +234,41 @@ public class DownloadControllerEventPublisher implements EventPublisher, Downloa
                 dls = new HashMap<String, Object>();
                 dls.put("uuid", dl.getUniqueID().getID());
                 dls.put("bytesTotal", dl.getView().getBytesTotalEstimated());
-                eventObject = new SimpleEventObject(this, BASIC_EVENT.DATA_UPDATE.name() + ".bytesTotal", dls, BASIC_EVENT.DATA_UPDATE.name() + ".bytesTotal." + dl.getUniqueID().getID() + "");
-                for (RemoteAPIEventsSender eventSender : remoteEventSenders) {
-                    eventSender.publishEvent(eventObject, null);
-                }
+                fire(BASIC_EVENT.LINK_UPDATE.name() + ".bytesTotal", dls, BASIC_EVENT.LINK_UPDATE.name() + ".bytesTotal." + dl.getUniqueID().getID() + "");
+
                 break;
             case DOWNLOADSIZE_VERIFIED:
                 dls = new HashMap<String, Object>();
                 dls.put("uuid", dl.getUniqueID().getID());
                 dls.put("bytesTotal", dl.getView().getBytesTotalEstimated());
-                eventObject = new SimpleEventObject(this, BASIC_EVENT.DATA_UPDATE.name() + ".bytesTotal", dls, BASIC_EVENT.DATA_UPDATE.name() + ".bytesTotal." + dl.getUniqueID().getID() + "");
-                for (RemoteAPIEventsSender eventSender : remoteEventSenders) {
-                    eventSender.publishEvent(eventObject, null);
-                }
+                fire(BASIC_EVENT.LINK_UPDATE.name() + ".bytesTotal", dls, BASIC_EVENT.LINK_UPDATE.name() + ".bytesTotal." + dl.getUniqueID().getID() + "");
+
                 break;
             case ENABLED:
                 dls = new HashMap<String, Object>();
                 dls.put("uuid", dl.getUniqueID().getID());
                 dls.put("enabled", dl.isEnabled());
-                eventObject = new SimpleEventObject(this, BASIC_EVENT.DATA_UPDATE.name() + ".enabled", dls, BASIC_EVENT.DATA_UPDATE.name() + ".enabled." + dl.getUniqueID().getID() + "");
-                for (RemoteAPIEventsSender eventSender : remoteEventSenders) {
-                    eventSender.publishEvent(eventObject, null);
-                }
+                fire(BASIC_EVENT.LINK_UPDATE.name() + ".enabled", dls, BASIC_EVENT.LINK_UPDATE.name() + ".enabled." + dl.getUniqueID().getID() + "");
+
                 break;
             case EXTRACTION_STATUS:
                 dls = new HashMap<String, Object>();
                 dls.put("uuid", dl.getUniqueID().getID());
                 ExtractionStatus es = dl.getExtractionStatus();
                 dls.put("extractionStatus", es == null ? null : es.toString());
-                eventObject = new SimpleEventObject(this, BASIC_EVENT.DATA_UPDATE.name() + ".extractionStatus", dls, BASIC_EVENT.DATA_UPDATE.name() + ".extractionStatus." + dl.getUniqueID().getID() + "");
-                for (RemoteAPIEventsSender eventSender : remoteEventSenders) {
-                    eventSender.publishEvent(eventObject, null);
-                }
+                fire(BASIC_EVENT.LINK_UPDATE.name() + ".extractionStatus", dls, BASIC_EVENT.LINK_UPDATE.name() + ".extractionStatus." + dl.getUniqueID().getID() + "");
+
                 pushStatus(dl);
                 break;
             case FINAL_STATE:
                 dls = new HashMap<String, Object>();
                 dls.put("uuid", dl.getUniqueID().getID());
                 dls.put("finished", (FinalLinkState.CheckFinished(dl.getFinalLinkState())));
-                eventObject = new SimpleEventObject(this, BASIC_EVENT.DATA_UPDATE.name() + ".finished", dls, BASIC_EVENT.DATA_UPDATE.name() + ".finished." + dl.getUniqueID().getID() + "");
-                for (RemoteAPIEventsSender eventSender : remoteEventSenders) {
-                    eventSender.publishEvent(eventObject, null);
-                }
+                fire(BASIC_EVENT.LINK_UPDATE.name() + ".finished", dls, BASIC_EVENT.LINK_UPDATE.name() + ".finished." + dl.getUniqueID().getID() + "");
+
                 final FinalLinkState finalLinkState = dl.getFinalLinkState();
-                if (finalLinkState != null) {
-                    pushStatus(dl);
-                }
+
+                pushStatus(dl);
 
                 break;
             case LINKSTATUS:
@@ -279,10 +279,8 @@ public class DownloadControllerEventPublisher implements EventPublisher, Downloa
                 dls = new HashMap<String, Object>();
                 dls.put("uuid", dl.getUniqueID().getID());
                 dls.put("name", dl.getView().getDisplayName());
-                eventObject = new SimpleEventObject(this, BASIC_EVENT.DATA_UPDATE.name() + ".name", dls, BASIC_EVENT.DATA_UPDATE.name() + ".name." + dl.getUniqueID().getID() + "");
-                for (RemoteAPIEventsSender eventSender : remoteEventSenders) {
-                    eventSender.publishEvent(eventObject, null);
-                }
+                fire(BASIC_EVENT.LINK_UPDATE.name() + ".name", dls, BASIC_EVENT.LINK_UPDATE.name() + ".name." + dl.getUniqueID().getID() + "");
+
                 break;
             case PLUGIN_PROGRESS:
                 synchronized (linksWithPluginProgress) {
@@ -301,10 +299,8 @@ public class DownloadControllerEventPublisher implements EventPublisher, Downloa
                 dls = new HashMap<String, Object>();
                 dls.put("uuid", dl.getUniqueID().getID());
                 dls.put("priority", org.jdownloader.myjdownloader.client.bindings.PriorityStorable.valueOf(dl.getPriorityEnum().name()));
-                eventObject = new SimpleEventObject(this, BASIC_EVENT.DATA_UPDATE.name() + ".priority", dls, BASIC_EVENT.DATA_UPDATE.name() + ".priority." + dl.getUniqueID().getID() + "");
-                for (RemoteAPIEventsSender eventSender : remoteEventSenders) {
-                    eventSender.publishEvent(eventObject, null);
-                }
+                fire(BASIC_EVENT.LINK_UPDATE.name() + ".priority", dls, BASIC_EVENT.LINK_UPDATE.name() + ".priority." + dl.getUniqueID().getID() + "");
+
                 break;
             case RESET:
                 break;
@@ -313,17 +309,15 @@ public class DownloadControllerEventPublisher implements EventPublisher, Downloa
             case SHA1:
                 break;
             case SKIPPED:
-                SkipReason skipReason = dl.getSkipReason();
-                if (skipReason != null) {
-                    pushStatus(dl);
-                }
+                // SkipReason skipReason = dl.getSkipReason();
+
+                pushStatus(dl);
+
                 dls = new HashMap<String, Object>();
                 dls.put("uuid", dl.getUniqueID().getID());
                 dls.put("skipped", dl.isSkipped());
-                eventObject = new SimpleEventObject(this, BASIC_EVENT.DATA_UPDATE.name() + ".skipped", dls, BASIC_EVENT.DATA_UPDATE.name() + ".skipped." + dl.getUniqueID().getID() + "");
-                for (RemoteAPIEventsSender eventSender : remoteEventSenders) {
-                    eventSender.publishEvent(eventObject, null);
-                }
+                fire(BASIC_EVENT.LINK_UPDATE.name() + ".skipped", dls, BASIC_EVENT.LINK_UPDATE.name() + ".skipped." + dl.getUniqueID().getID() + "");
+
                 break;
             case SPEED_LIMIT:
                 break;
@@ -338,10 +332,7 @@ public class DownloadControllerEventPublisher implements EventPublisher, Downloa
 
             }
         }
-        SimpleEventObject eventObject = new SimpleEventObject(this, BASIC_EVENT.REFRESH_CONTENT.name(), null);
-        for (RemoteAPIEventsSender eventSender : remoteEventSenders) {
-            eventSender.publishEvent(eventObject, null);
-        }
+        fire(BASIC_EVENT.REFRESH_CONTENT.name(), null, null);
 
     }
 
@@ -355,38 +346,101 @@ public class DownloadControllerEventPublisher implements EventPublisher, Downloa
         dls.put("statusIconKey", dlss.getStatusIconKey());
         dls.put("status", dlss.getStatus());
 
-        SimpleEventObject eventObject = new SimpleEventObject(this, BASIC_EVENT.DATA_UPDATE.name() + ".status", dls, BASIC_EVENT.DATA_UPDATE.name() + ".status." + dl.getUniqueID().getID() + "");
-        for (RemoteAPIEventsSender eventSender : remoteEventSenders) {
-            eventSender.publishEvent(eventObject, null);
+        fire(BASIC_EVENT.LINK_UPDATE.name() + ".status", dls, BASIC_EVENT.LINK_UPDATE.name() + ".status." + dl.getUniqueID().getID() + "");
+
+        // package
+
+        dls = new HashMap<String, Object>();
+        dls.put("uuid", dl.getUniqueID().getID());
+
+        FilePackageView fpView = new FilePackageView(dl.getFilePackage());
+        fpView.setItems(null);
+        FilePackageAPIStorableV2 dpss = RemoteAPIController.getInstance().getDownloadsAPIV2().setStatus(new FilePackageAPIStorableV2(), fpView);
+        dls.put("statusIconKey", dpss.getStatusIconKey());
+        dls.put("status", dpss.getStatus());
+
+        fire(BASIC_EVENT.PACKAGE_UPDATE.name() + ".status", dls, BASIC_EVENT.PACKAGE_UPDATE.name() + ".status." + dl.getUniqueID().getID() + "");
+
+    }
+
+    // private HashMap<String, Object> cache = new HashMap<String, Object>();
+    private HashMap<Subscriber, List<EventObject>> buffer = new HashMap<Subscriber, List<EventObject>>(); ;
+
+    private void fire(String eventID, Object dls, String collapseKey) {
+        synchronized (this) {
+            System.out.println(JSonStorage.serializeToJson(dls));
+            ArrayList<Subscriber> subscribers = eventsAPI.getSubscribers();
+            SimpleEventObject eventObject = new SimpleEventObject(this, eventID, dls, collapseKey);
+            for (Subscriber subscriber : subscribers) {
+                ChannelCollector col = collectors.get(subscriber.getSubscriptionID());
+                if (dls instanceof HashMap) {
+                    if (col != null) {
+                        HashMap<String, Object> copy = new HashMap<String, Object>((HashMap) dls);
+
+                        if (!col.updateDupeCache(eventID + "." + copy.remove("uuid"), copy)) {
+                            continue;
+                        }
+                    }
+                }
+                pushToBuffer(subscriber, eventObject);
+
+            }
+
         }
     }
 
     @Override
     public void onDownloadControllerUpdatedData(FilePackage pkg, FilePackageProperty property) {
-        SimpleEventObject eventObject = new SimpleEventObject(this, BASIC_EVENT.REFRESH_CONTENT.name(), null);
-        for (RemoteAPIEventsSender eventSender : remoteEventSenders) {
-            eventSender.publishEvent(eventObject, null);
+
+        if (property != null) {
+            HashMap<String, Object> dls = null;
+            // [DATA_UPDATE.extractionStatus, DATA_UPDATE.finished, DATA_UPDATE.priority, DATA_UPDATE.speed, DATA_UPDATE.url,
+            // DATA_UPDATE.enabled, DATA_UPDATE.skipped, DATA_UPDATE.running, DATA_UPDATE.bytesLoaded, DATA_UPDATE.eta,
+            // DATA_UPDATE.maxResults, DATA_UPDATE.packageUUIDs, DATA_UPDATE.host, DATA_UPDATE.comment, DATA_UPDATE.bytesTotal,
+            // DATA_UPDATE.startAt, DATA_UPDATE.status]
+
+            switch (property.getProperty()) {
+            case COMMENT:
+                dls = new HashMap<String, Object>();
+                dls.put("uuid", pkg.getUniqueID().getID());
+                dls.put("comment", pkg.getComment());
+                fire(BASIC_EVENT.PACKAGE_UPDATE.name() + ".comment", dls, BASIC_EVENT.PACKAGE_UPDATE.name() + ".comment." + pkg.getUniqueID().getID() + "");
+
+                break;
+            case FOLDER:
+                break;
+            case NAME:
+                dls = new HashMap<String, Object>();
+                dls.put("uuid", pkg.getUniqueID().getID());
+                dls.put("name", pkg.getName());
+                fire(BASIC_EVENT.PACKAGE_UPDATE.name() + ".name", dls, BASIC_EVENT.PACKAGE_UPDATE.name() + ".name." + pkg.getUniqueID().getID() + "");
+
+                break;
+            case PRIORITY:
+                dls = new HashMap<String, Object>();
+                dls.put("uuid", pkg.getUniqueID().getID());
+                dls.put("priority", org.jdownloader.myjdownloader.client.bindings.PriorityStorable.valueOf(pkg.getPriorityEnum().name()));
+                fire(BASIC_EVENT.PACKAGE_UPDATE.name() + ".priority", dls, BASIC_EVENT.PACKAGE_UPDATE.name() + ".priority." + pkg.getUniqueID().getID() + "");
+
+            }
         }
+
+        fire(BASIC_EVENT.REFRESH_CONTENT.name(), null, null);
+        flushBuffer();
 
     }
 
     @Override
     public void onDownloadControllerUpdatedData(DownloadLink downloadlink) {
 
-        SimpleEventObject eventObject = new SimpleEventObject(this, BASIC_EVENT.REFRESH_CONTENT.name(), null);
-        for (RemoteAPIEventsSender eventSender : remoteEventSenders) {
-            eventSender.publishEvent(eventObject, null);
-        }
-
+        fire(BASIC_EVENT.REFRESH_CONTENT.name(), null, null);
+        flushBuffer();
     }
 
     @Override
     public void onDownloadControllerUpdatedData(FilePackage pkg) {
-        SimpleEventObject eventObject = new SimpleEventObject(this, BASIC_EVENT.REFRESH_CONTENT.name(), null);
-        for (RemoteAPIEventsSender eventSender : remoteEventSenders) {
-            eventSender.publishEvent(eventObject, null);
-        }
-
+        fire(BASIC_EVENT.REFRESH_CONTENT.name(), null, null);
+        flushBuffer();
     }
 
     @Override
@@ -422,11 +476,18 @@ public class DownloadControllerEventPublisher implements EventPublisher, Downloa
                             Set<SingleDownloadController> activeDownloads = DownloadWatchDog.getInstance().getRunningDownloadLinks();
 
                             HashSet<DownloadLink> linksToProcess = new HashSet<DownloadLink>();
+                            HashSet<FilePackage> packagesToProcess = new HashSet<FilePackage>();
                             for (SingleDownloadController dl : activeDownloads) {
                                 linksToProcess.add(dl.getDownloadLink());
                             }
+                            for (DownloadLink dl : linksToProcess) {
+                                FilePackage p = dl.getParentNode();
+                                if (p != null) {
+                                    packagesToProcess.add(p);
+                                }
+                            }
                             linksToProcess.addAll(linksWithPluginProgress.values());
-                            if (linksToProcess.size() > 0) {
+                            if (linksToProcess.size() > 0 || packagesToProcess.size() > 0) {
                                 for (Entry<Long, ChannelCollector> es : collectors.entrySet()) {
                                     if (es.getValue().hasIntervalSubscriptions()) {
                                         kill = false;
@@ -439,19 +500,29 @@ public class DownloadControllerEventPublisher implements EventPublisher, Downloa
                                                     HashMap<String, Object> dls = new HashMap<String, Object>();
                                                     dls.put("uuid", dl.getUniqueID().getID());
                                                     dls.put(entry.getKey(), entry.getValue());
-                                                    SimpleEventObject eventObject = new SimpleEventObject(DownloadControllerEventPublisher.this, BASIC_EVENT.DATA_UPDATE.name() + "." + entry.getKey(), dls, BASIC_EVENT.DATA_UPDATE.name() + "." + entry.getKey() + "." + dl.getUniqueID().getID() + "");
+                                                    SimpleEventObject eventObject = new SimpleEventObject(DownloadControllerEventPublisher.this, BASIC_EVENT.LINK_UPDATE.name() + "." + entry.getKey(), dls, BASIC_EVENT.LINK_UPDATE.name() + "." + entry.getKey() + "." + dl.getUniqueID().getID() + "");
                                                     List<Long> publishTo = new ArrayList<Long>();
-                                                    publishTo.add(es.getValue().getSubscriber().getSubscriptionID());
-                                                    for (RemoteAPIEventsSender eventSender : remoteEventSenders) {
-                                                        eventSender.publishEvent(eventObject, publishTo);
-                                                    }
+
+                                                    pushToBuffer(es.getValue().getSubscriber(), eventObject);
+
+                                                }
+                                            }
+                                            for (FilePackage p : packagesToProcess) {
+                                                HashMap<String, Object> diff = es.getValue().getDiff(p);
+
+                                                for (Entry<String, Object> entry : diff.entrySet()) {
+                                                    HashMap<String, Object> dls = new HashMap<String, Object>();
+                                                    dls.put("uuid", p.getUniqueID().getID());
+                                                    dls.put(entry.getKey(), entry.getValue());
+                                                    SimpleEventObject eventObject = new SimpleEventObject(DownloadControllerEventPublisher.this, BASIC_EVENT.PACKAGE_UPDATE.name() + "." + entry.getKey(), dls, BASIC_EVENT.LINK_UPDATE.name() + "." + entry.getKey() + "." + p.getUniqueID().getID() + "");
+                                                    pushToBuffer(es.getValue().getSubscriber(), eventObject);
                                                 }
                                             }
                                         }
                                     }
                                 }
                             }
-
+                            flushBuffer();
                             if (kill) {
                                 terminationRounds++;
                                 if (terminationRounds > 10) {
@@ -474,6 +545,19 @@ public class DownloadControllerEventPublisher implements EventPublisher, Downloa
                 executer = null;
             }
         }
+    }
+
+    protected void flushBuffer() {
+        synchronized (buffer) {
+
+            for (Entry<Subscriber, List<EventObject>> es : buffer.entrySet()) {
+
+                eventsAPI.push(es.getKey(), es.getValue());
+
+            }
+            buffer.clear();
+        }
+
     }
 
     @Override
@@ -532,10 +616,8 @@ public class DownloadControllerEventPublisher implements EventPublisher, Downloa
         HashMap<String, Object> dls = new HashMap<String, Object>();
         dls.put("uuid", dl.getUniqueID().getID());
         dls.put("running", true);
-        SimpleEventObject eventObject = new SimpleEventObject(this, BASIC_EVENT.DATA_UPDATE.name() + ".running", dls, BASIC_EVENT.DATA_UPDATE.name() + ".running." + dl.getUniqueID().getID() + "");
-        for (RemoteAPIEventsSender eventSender : remoteEventSenders) {
-            eventSender.publishEvent(eventObject, null);
-        }
+        fire(BASIC_EVENT.LINK_UPDATE.name() + ".running", dls, BASIC_EVENT.LINK_UPDATE.name() + ".running." + dl.getUniqueID().getID() + "");
+        flushBuffer();
         for (Entry<Long, ChannelCollector> es : collectors.entrySet()) {
             if (es.getValue().hasIntervalSubscriptions()) {
                 es.getValue().updateBase(dl);
@@ -552,12 +634,11 @@ public class DownloadControllerEventPublisher implements EventPublisher, Downloa
         HashMap<String, Object> dls = new HashMap<String, Object>();
         dls.put("uuid", dl.getUniqueID().getID());
         dls.put("running", false);
-        SimpleEventObject eventObject = new SimpleEventObject(this, BASIC_EVENT.DATA_UPDATE.name() + ".running", dls, BASIC_EVENT.DATA_UPDATE.name() + ".running." + dl.getUniqueID().getID() + "");
-        for (RemoteAPIEventsSender eventSender : remoteEventSenders) {
-            eventSender.publishEvent(eventObject, null);
-        }
+        fire(BASIC_EVENT.LINK_UPDATE.name() + ".running", dls, BASIC_EVENT.LINK_UPDATE.name() + ".running." + dl.getUniqueID().getID() + "");
+
         pushDiff(dl);
         cleanup(dl);
+        flushBuffer();
 
     }
 
@@ -588,21 +669,75 @@ public class DownloadControllerEventPublisher implements EventPublisher, Downloa
                     HashMap<String, Object> dls = new HashMap<String, Object>();
                     dls.put("uuid", dl.getUniqueID().getID());
                     dls.put(entry.getKey(), entry.getValue());
-                    SimpleEventObject eventObject = new SimpleEventObject(DownloadControllerEventPublisher.this, BASIC_EVENT.DATA_UPDATE.name() + "." + entry.getKey(), dls, BASIC_EVENT.DATA_UPDATE.name() + "." + entry.getKey() + "." + dl.getUniqueID().getID() + "");
-                    List<Long> publishTo = new ArrayList<Long>();
-                    publishTo.add(es.getValue().getSubscriber().getSubscriptionID());
-                    for (RemoteAPIEventsSender eventSender : remoteEventSenders) {
-                        eventSender.publishEvent(eventObject, publishTo);
+                    EventObject eventObject = new SimpleEventObject(DownloadControllerEventPublisher.this, BASIC_EVENT.LINK_UPDATE.name() + "." + entry.getKey(), dls, BASIC_EVENT.LINK_UPDATE.name() + "." + entry.getKey() + "." + dl.getUniqueID().getID() + "");
+                    // List<Long> publishTo = new ArrayList<Long>();
+                    // publishTo.add(es.getValue().getSubscriber().getSubscriptionID());
+                    pushToBuffer(es.getValue().getSubscriber(), eventObject);
+
+                }
+
+                FilePackage p = dl.getParentNode();
+                if (p != null) {
+                    diff = es.getValue().getDiff(p);
+
+                    for (Entry<String, Object> entry : diff.entrySet()) {
+                        HashMap<String, Object> dls = new HashMap<String, Object>();
+                        dls.put("uuid", p.getUniqueID().getID());
+                        dls.put(entry.getKey(), entry.getValue());
+                        SimpleEventObject eventObject = new SimpleEventObject(DownloadControllerEventPublisher.this, BASIC_EVENT.PACKAGE_UPDATE.name() + "." + entry.getKey(), dls, BASIC_EVENT.LINK_UPDATE.name() + "." + entry.getKey() + "." + p.getUniqueID().getID() + "");
+                        // List<Long> publishTo = new ArrayList<Long>();
+                        // publishTo.add(es.getValue().getSubscriber().getSubscriptionID());
+                        pushToBuffer(es.getValue().getSubscriber(), eventObject);
+                        // for (RemoteAPIEventsSender eventSender : remoteEventSenders) {
+                        // eventSender.publishEvent(eventObject, publishTo);
+                        // }
                     }
                 }
 
             }
         }
+
+    }
+
+    private void pushToBuffer(Subscriber subscriber, EventObject eventObject) {
+        synchronized (buffer) {
+            List<EventObject> lst = this.buffer.get(subscriber);
+            if (lst == null) {
+                lst = new ArrayList<EventObject>();
+                buffer.put(subscriber, lst);
+            }
+            lst.add(eventObject);
+        }
+
     }
 
     @Override
     public void onDownloadWatchDogPropertyChange(DownloadWatchDogProperty propertyChange) {
 
     }
+
+    @Override
+    public DownloadListDiffStorable queryLinks(LinkQueryStorable queryParams, int diffID) throws BadParameterException {
+
+        // List<DownloadLinkAPIStorableV2> newList = RemoteAPIController.getInstance().getDownloadsAPIV2().queryLinks(queryParams);
+        //
+        // ArrayList<DownloadLinkAPIStorableV2> oldList = new ArrayList<DownloadLinkAPIStorableV2>();
+        // HashMap<Long, DownloadLinkAPIStorableV2> newListMap = toIDMap(newList);
+        // HashMap<Long, DownloadLinkAPIStorableV2> oldListMap = toIDMap(oldList);
+        //
+        //
+        // for(int i=0;i<oldList.size();i++){
+        // old=
+        // }
+        throw new WTFException("Not Implemented");
+        // return null;
+    }
+
+    // private HashMap<Long, DownloadLinkAPIStorableV2> toIDMap(List<DownloadLinkAPIStorableV2> newList) {
+    // HashMap<Long, DownloadLinkAPIStorableV2> ret = new HashMap<Long, DownloadLinkAPIStorableV2>();
+    // for (DownloadLinkAPIStorableV2 dl : newList)
+    // ret.put(dl.getUuid(), dl);
+    // return ret;
+    // }
 
 }
