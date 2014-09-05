@@ -31,7 +31,7 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "atv.at" }, urls = { "http://(www\\.)?atv\\.at/contentset/[A-Za-z0-9/\\-]+" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "atv.at" }, urls = { "http://(www\\.)?atv\\.at/[a-z0-9\\-_]+/[a-z0-9\\-_]+/d\\d+/" }, flags = { 0 })
 public class AtvAt extends PluginForDecrypt {
 
     public AtvAt(PluginWrapper wrapper) {
@@ -39,59 +39,39 @@ public class AtvAt extends PluginForDecrypt {
     }
 
     /**
-     * Important note: Via browser the videos are streamed via RTMP (maybe even in one part) but with this method we get HTTP links which is
-     * fine.
+     * Important note: Via browser the videos are streamed via RTSP
      */
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String parameter = param.toString();
         br.getPage(parameter);
-        if (br.containsHTML(">404 Nicht gefunden<")) {
+        if (br.getHttpConnection().getResponseCode() == 404) {
             logger.info("Link offline (404 error): " + parameter);
             return decryptedLinks;
         }
-        if (!br.containsHTML("<div id=\"player_area\">")) {
+        if (!br.containsHTML("class=\"jsb_ jsb_video/FlashPlayer\"")) {
             logger.info("There is no downloadable content: " + parameter);
             return decryptedLinks;
         }
-        if (br.containsHTML("Dieses Video wird derzeit encodiert und ist in Kürze verfügbar")) {
-            logger.info("Video temporarily unavailable: " + parameter);
+        if (br.containsHTML("is_geo_ip_blocked\\&quot;:true")) {
+            logger.info("Video not available in your country: " + parameter);
             return decryptedLinks;
         }
-        final String activeClipID = br.getRegex("active_clip_id%22%3A(\\d+)%").getMatch(0);
-        if (activeClipID == null) {
-            logger.info("Link probably offline (no clip id found): " + parameter);
-            return decryptedLinks;
-        }
-        br.getPage("http://atv.at/getclip/" + activeClipID);
-        if (br.containsHTML("\"duration\":0")) {
-            logger.info("Link offline/no downlodable content found: " + parameter);
-            return decryptedLinks;
-        }
-        if (br.toString().trim().equals("false")) {
-            logger.info("This video is not available in your country: " + parameter);
-            return decryptedLinks;
-        }
-        String name = br.getRegex("\"title\":\"([^<>\"]*?)\"").getMatch(0);
-        String allLinks = br.getRegex("video_urls\":\\[(\".*?\")\\],").getMatch(0);
-        final String videoProgressiveUrls = br.getRegex("video_progressive_urls\":\\[(\".*?\")\\],").getMatch(0);
-        if (allLinks != null && allLinks.contains("playlist.m3u8")) allLinks = videoProgressiveUrls;
-        if (name == null || allLinks == null) {
+        br.getRequest().setHtmlCode(br.toString().replace("\\", ""));
+        final String source = br.getRegex("<div class=\"jsb_ jsb_video/FlashPlayer\" data\\-jsb=\"(.*?)\">").getMatch(0);
+        String name = br.getRegex("property=\"og:title\" content=\"([^<>\"]*?)\"").getMatch(0);
+        final String[] allLinks = new Regex(source, "application/x\\-mpegurl\\&quot;,\\&quot;src\\&quot;:\\&quot;(http://[^<>\"]*?\\d+\\.mp4/index\\.m3u8)\\&quot;}").getColumn(0);
+        if (name == null || allLinks == null || allLinks.length == 0) {
             logger.warning("Decrypter broken for link: " + parameter);
             return null;
         }
         name = Encoding.htmlDecode(name.trim());
         name = decodeUnicode(name);
-        final String episodeNr = br.getRegex("folge\\-(\\d+)").getMatch(0);
-        final String[] links = new Regex(allLinks, "\"(http[^<>\"]*?)\"").getColumn(0);
-        if (links == null || links.length == 0) {
-            logger.warning("Decrypter broken for link: " + parameter);
-            return null;
-        }
+        final String episodeNr = null;
         final DecimalFormat df = new DecimalFormat("000");
         final DecimalFormat episodeFormat = new DecimalFormat("00");
         int counter = 1;
-        for (String singleLink : links) {
+        for (String singleLink : allLinks) {
             final DownloadLink dl = createDownloadlink("directhttp://" + singleLink.replace("\\", ""));
             if (episodeNr != null) {
                 dl.setFinalFileName(name + "_E" + episodeFormat.format(Integer.parseInt(episodeNr)) + "_" + df.format(counter) + ".mp4");

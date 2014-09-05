@@ -21,6 +21,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.SortedMap;
 import java.util.TreeMap;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.regex.Pattern;
 
 import jd.PluginWrapper;
@@ -46,16 +47,21 @@ import org.appwork.utils.formatter.SizeFormatter;
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "filenuke.com" }, urls = { "https?://(www\\.)?filenuke\\.com/([a-z0-9]{12}|f/[A-Za-z0-9]+)" }, flags = { 0 })
 public class FileNukeCom extends PluginForHost {
 
-    private String               correctedBR         = "";
-    private static final String  PASSWORDTEXT        = "<br><b>Passwor(d|t):</b> <input";
-    private static final String  COOKIE_HOST         = "http://filenuke.com";
-    private static final String  MAINTENANCE         = ">This server is in maintenance mode";
-    private static final String  MAINTENANCEUSERTEXT = "This server is under Maintenance";
-    private static final String  ALLWAIT_SHORT       = "Waiting till new downloads can be started";
+    private String               correctedBR                  = "";
+    private static final String  PASSWORDTEXT                 = "<br><b>Passwor(d|t):</b> <input";
+    private static final String  COOKIE_HOST                  = "http://filenuke.com";
+    private static final String  MAINTENANCE                  = ">This server is in maintenance mode";
+    private static final String  MAINTENANCEUSERTEXT          = "This server is under Maintenance";
+    private static final String  ALLWAIT_SHORT                = "Waiting till new downloads can be started";
 
-    private final boolean        useSpecialWay       = true;
-    private static final boolean TYPE_2_PREMIUMONLY  = false;
-    private static final String  TYPE_2              = "https?://(www\\.)?filenuke\\.com/f/[A-Za-z0-9]+";
+    private final boolean        useSpecialWay                = true;
+    private static final boolean TYPE_2_PREMIUMONLY           = false;
+    private static final String  TYPE_2                       = "https?://(www\\.)?filenuke\\.com/f/[A-Za-z0-9]+";
+
+    /* note: CAN NOT be negative or zero! (ie. -1 or 0) Otherwise math sections fail. .:. use [1-20] */
+    private static AtomicInteger totalMaxSimultanFreeDownload = new AtomicInteger(3);
+    /* don't touch the following! */
+    private static AtomicInteger maxFree                      = new AtomicInteger(1);
 
     // DEV NOTES
     // XfileSharingProBasic Version 2.5.5.3-raz
@@ -326,12 +332,20 @@ public class FileNukeCom extends PluginForHost {
         if (passCode != null) {
             downloadLink.setProperty("pass", passCode);
         }
-        dl.startDownload();
+        try {
+            /* add a download slot */
+            controlFree(+1);
+            /* start the dl */
+            dl.startDownload();
+        } finally {
+            /* remove download slot */
+            controlFree(-1);
+        }
     }
 
     @Override
     public int getMaxSimultanFreeDownloadNum() {
-        return -1;
+        return maxFree.get();
     }
 
     /** Remove HTML code which could break the plugin */
@@ -592,6 +606,25 @@ public class FileNukeCom extends PluginForHost {
                 sleep(tt * 1000l, downloadLink);
             }
         }
+    }
+
+    /**
+     * Prevents more than one free download from starting at a given time. One step prior to dl.startDownload(), it adds a slot to maxFree
+     * which allows the next singleton download to start, or at least try.
+     *
+     * This is needed because xfileshare(website) only throws errors after a final dllink starts transferring or at a given step within pre
+     * download sequence. But this template(XfileSharingProBasic) allows multiple slots(when available) to commence the download sequence,
+     * this.setstartintival does not resolve this issue. Which results in x(20) captcha events all at once and only allows one download to
+     * start. This prevents wasting peoples time and effort on captcha solving and|or wasting captcha trading credits. Users will experience
+     * minimal harm to downloading as slots are freed up soon as current download begins.
+     *
+     * @param controlFree
+     *            (+1|-1)
+     */
+    public synchronized void controlFree(final int num) {
+        logger.info("maxFree was = " + maxFree.get());
+        maxFree.set(Math.min(Math.max(1, maxFree.addAndGet(num)), totalMaxSimultanFreeDownload.get()));
+        logger.info("maxFree now = " + maxFree.get());
     }
 
     /* NO OVERRIDE!! We need to stay 0.9*compatible */
