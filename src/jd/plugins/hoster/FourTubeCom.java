@@ -46,12 +46,14 @@ public class FourTubeCom extends PluginForHost {
         return -1;
     }
 
-    private String DLLINK = null;
+    private String               DLLINK = null;
+    private URLConnectionAdapter con    = null;
 
     @Override
     public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws IOException, InterruptedException, PluginException {
         setBrowserExclusive();
         String dllink = downloadLink.getDownloadURL();
+        br.getHeaders().put("Accept-Language", "en-gb, en;q=0.8");
         br.getHeaders().put("User-Agent", "Mozilla/5.0 (Windows NT 6.1; WOW64; rv:31.0) Gecko/20100101 Firefox/31.0");
         br.setFollowRedirects(true);
         br.getPage(dllink);
@@ -73,36 +75,19 @@ public class FourTubeCom extends PluginForHost {
         }
         filename = filename.endsWith(".") ? filename + ext : filename + "." + ext;
         downloadLink.setFinalFileName(Encoding.htmlDecode(filename.trim()));
-        Browser br2 = br.cloneBrowser();
-        // In case the link redirects to the finallink
-        br2.setFollowRedirects(true);
-        URLConnectionAdapter con = null;
-        try {
-            con = br2.openGetConnection(DLLINK);
-            if (!con.getContentType().contains("html")) {
-                downloadLink.setDownloadSize(con.getLongContentLength());
-            } else {
-                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-            }
-            return AvailableStatus.TRUE;
-        } finally {
-            try {
-                con.disconnect();
-            } catch (Throwable e) {
-            }
+        if (con != null && !con.getContentType().contains("html")) {
+            downloadLink.setDownloadSize(con.getLongContentLength());
+        } else {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
+        return AvailableStatus.TRUE;
     }
 
     private void getDllink() throws PluginException, IOException {
-        final String[] js = br.getRegex("\"(http://([a-z0-9\\-\\.]+)?4tube\\.com/[^<>\"]*?\\.(js|css))\"").getColumn(0);
-        for (final String jslink : js) {
-            br.cloneBrowser().getPage(jslink);
-        }
-        String mediaID = br.getRegex("idMedia: (\\d+)").getMatch(0);
-        if (mediaID == null) {
-            mediaID = br.getRegex("video_id: (\\d+)").getMatch(0);
-        }
-        String availablequalities = br.getRegex("\\(\\d+, \\d+, \\[([0-9,]+)\\]\\);").getMatch(0);
+        final String id_media = "\\((\\d+), \\d+, \\[([0-9,]+)\\]\\);";
+        final String mediaID = br.getRegex(id_media).getMatch(0);
+
+        String availablequalities = br.getRegex(id_media).getMatch(1);
         if (availablequalities != null) {
             availablequalities = availablequalities.replace(",", "+");
         } else {
@@ -111,22 +96,22 @@ public class FourTubeCom extends PluginForHost {
         if (mediaID == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        br.getHeaders().put("Accept", "application/json, text/javascript, */*; q=0.01");
-        br.getHeaders().put("Origin", "http://www.4tube.com");
-        br.getHeaders().put("Accept-Charset", null);
-        br.getHeaders().put("Content-Type", null);
-        br.postPageRaw("http://tkn.4tube.com/" + mediaID + "/desktop/" + availablequalities, "");
+        Browser br2 = br.cloneBrowser();
+        br2.getHeaders().put("Accept", "application/json, text/javascript, */*; q=0.01");
+        br2.getHeaders().put("Origin", "http://www.4tube.com");
+        br2.getHeaders().put("Accept-Charset", null);
+        br2.getHeaders().put("Content-Type", null);
+        br2.postPageRaw("http://tkn.4tube.com/" + mediaID + "/desktop/" + availablequalities, "");
         String finallink = null;
-        final String[] qualities = new String[] { "1080", "720", "480", "360", "240" };
+        final String[] qualities = availablequalities.split("\\+");
         for (final String quality : qualities) {
-            if (br.containsHTML("\"" + quality + "\"")) {
-                finallink = br.getRegex("\"" + quality + "\":\\{\"status\":\"success\",\"token\":\"(http[^<>\"]*?)\"").getMatch(0);
-                if (finallink != null) {
-                    finallink += "&start=0";
-                }
-                if (finallink != null && checkDirectLink(finallink) != null) {
-                    break;
-                }
+            finallink = br2.getRegex("\"" + quality + "\":\\{\"status\":\"success\",\"token\":\"(http[^<>\"]*?)\"").getMatch(0);
+            if (finallink == null) {
+                continue;
+            }
+            finallink += "&start=0";
+            if (checkDirectLink(finallink) != null) {
+                break;
             }
         }
         if (finallink == null) {
@@ -137,15 +122,22 @@ public class FourTubeCom extends PluginForHost {
 
     private String checkDirectLink(String directlink) {
         if (directlink != null) {
+            con = null;
             try {
                 final Browser br2 = br.cloneBrowser();
-                URLConnectionAdapter con = br2.openGetConnection(directlink);
+                br2.getHeaders().put("Accept-Charset", null);
+                br2.getHeaders().put("Content-Type", null);
+                con = br2.openGetConnection(directlink);
                 if (con.getContentType().contains("html") || con.getLongContentLength() == -1) {
                     directlink = null;
                 }
-                con.disconnect();
             } catch (final Exception e) {
                 directlink = null;
+            } finally {
+                try {
+                    con.disconnect();
+                } catch (Throwable t) {
+                }
             }
         }
         return directlink;
