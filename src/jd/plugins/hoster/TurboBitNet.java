@@ -65,13 +65,13 @@ import org.appwork.utils.os.CrossSystem;
 public class TurboBitNet extends PluginForHost {
 
     private static final String RECAPTCHATEXT     = "api\\.recaptcha\\.net";
-    private static final String CAPTCHAREGEX      = "\"(https?://new\\.turbobit\\.net/captcha/.*?)\"";
+    private static final String CAPTCHAREGEX      = "\"(https?://(?:\\w+\\.)?turbobit\\.net/captcha/.*?)\"";
     private static final String MAINPAGE          = "http://turbobit.net";
     private static Object       LOCK              = new Object();
     private static final String BLOCKED           = "Turbobit.net is blocking JDownloader: Please contact the turbobit.net support and complain!";
 
-    private static final String NICE_HOST         = "new.turbobit.net";
-    private static final String NICE_HOSTproperty = "newturbobitnet";
+    private static final String NICE_HOST         = "turbobit.net";
+    private static final String NICE_HOSTproperty = "turbobitnet";
 
     public TurboBitNet(final PluginWrapper wrapper) {
         super(wrapper);
@@ -182,13 +182,8 @@ public class TurboBitNet extends PluginForHost {
             throw e;
         }
         ai.setUnlimitedTraffic();
-        String expire = br.getRegex("<u>(Turbo Access|Turbo Zugang)</u> to(.*?)(<a|</di)").getMatch(1);
-        if (expire == null) {
-            expire = br.getRegex("<u>Турбо доступ</u> до(.*?)(<a|</di)").getMatch(0);
-            if (expire == null) {
-                expire = br.getRegex("<img src=\\'/img/icon/yesturbo\\.png\\'> <u>.{5,20}</u> .{1,5} (.*?) <a href=\\'/turbo\\'>").getMatch(0);
-            }
-        }
+        // >Turbo access till 27.09.2015</span>
+        String expire = br.getRegex(">Turbo access till (.*?)</span>").getMatch(0);
         if (expire == null) {
             ai.setExpired(true);
             account.setValid(false);
@@ -196,7 +191,7 @@ public class TurboBitNet extends PluginForHost {
         } else {
             ai.setValidUntil(TimeFormatter.getMilliSeconds(expire.trim(), "dd.MM.yyyy", Locale.ENGLISH));
         }
-        ai.setStatus("Premium User");
+        ai.setStatus("Premium Account");
         return ai;
     }
 
@@ -297,7 +292,7 @@ public class TurboBitNet extends PluginForHost {
         requestFileInformation(downloadLink);
         checkShowFreeDialog();
         prepBrowser(br, userAgent.get());
-        String dllink = correctLink(downloadLink);
+        String dllink = downloadLink.getDownloadURL();
         sleep(2500, downloadLink);
         getPage(dllink);
         if (br.containsHTML("(>Please wait, searching file|\\'File not found\\. Probably it was deleted)")) {
@@ -560,22 +555,6 @@ public class TurboBitNet extends PluginForHost {
         dl.startDownload();
     }
 
-    /**
-     * This is a temp method which corrects downloadLink domain, because switching this in correctDownloadLink introduces issues with
-     * multihosters...
-     *
-     * @param link
-     * @return
-     * @throws PluginException
-     */
-    private String correctLink(DownloadLink link) throws PluginException {
-        final String[] a = new Regex(link.getDownloadURL(), "(https?://)(www\\.|new\\.)?([A-Za-z0-9\\-\\.]+/.+)").getRow(0);
-        if (a == null || a.length <= 2) {
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
-        return a[0] + (a[1] != null ? a[1] : "new.") + a[2];
-    }
-
     private String getFUID(DownloadLink downloadLink) throws PluginException {
         // standard links turbobit.net/uid.html && turbobit.net/uid/filename.html
         String fuid = new Regex(downloadLink.getDownloadURL(), "https?://[^/]+/([a-z0-9]+)(/[^/]+)?\\.html").getMatch(0);
@@ -611,7 +590,7 @@ public class TurboBitNet extends PluginForHost {
         requestFileInformation(link);
         login(account, false);
         sleep(2000, link);
-        getPage(correctLink(link));
+        getPage(link.getDownloadURL());
         String dllink = null;
         final String[] mirrors = br.getRegex("('|\")(http://([a-z0-9\\.]+)?turbobit\\.net//?download/redirect/.*?)\\1").getColumn(1);
         if (mirrors == null || mirrors.length == 0) {
@@ -1026,7 +1005,7 @@ public class TurboBitNet extends PluginForHost {
                 // lets set a new agent
                 prepBrowser(br, null);
                 getPage(MAINPAGE);
-                br.postPage("/user/login", "user%5Blogin%5D=" + Encoding.urlEncode(account.getUser()) + "&user%5Bpass%5D=" + Encoding.urlEncode(account.getPass()) + "&user%5Bmemory%5D=on&user%5Bsubmit%5D=Login");
+                br.postPage("/user/login", "user%5Blogin%5D=" + Encoding.urlEncode(account.getUser()) + "&user%5Bpass%5D=" + Encoding.urlEncode(account.getPass()) + "&user%5Bmemory%5D=on&user%5Bsubmit%5D=Sign+in");
                 // Check for stupid login captcha
                 if (br.containsHTML(">Limit of login attempts exceeded") || br.containsHTML(">Please enter the captcha")) {
                     logger.info("processing login captcha...");
@@ -1038,7 +1017,7 @@ public class TurboBitNet extends PluginForHost {
                         if (captchaLink.contains("/basic/")) {
                             captchaSubtype = "5";
                         }
-                        br.postPage("/user/login", "user%5Blogin%5D=" + Encoding.urlEncode(account.getUser()) + "&user%5Bpass%5D=" + Encoding.urlEncode(account.getPass()) + "&user%5Bcaptcha_response%5D=" + Encoding.urlEncode(code) + "&user%5Bcaptcha_type%5D=securimg&user%5Bcaptcha_subtype%5D=" + captchaSubtype + "&user%5Bsubmit%5D=Login");
+                        br.postPage("/user/login", "user%5Blogin%5D=" + Encoding.urlEncode(account.getUser()) + "&user%5Bpass%5D=" + Encoding.urlEncode(account.getPass()) + "&user%5Bcaptcha_response%5D=" + Encoding.urlEncode(code) + "&user%5Bcaptcha_type%5D=securimg&user%5Bcaptcha_subtype%5D=" + captchaSubtype + "&user%5Bsubmit%5D=Sign+in");
                     } else {
                         final PluginForHost recplug = JDUtilities.getPluginForHost("DirectHTTP");
                         final jd.plugins.hoster.DirectHTTP.Recaptcha rc = ((DirectHTTP) recplug).getReCaptcha(br);
@@ -1050,12 +1029,12 @@ public class TurboBitNet extends PluginForHost {
                         rc.load();
                         final File cf = rc.downloadCaptcha(getLocalCaptchaFile());
                         final String c = getCaptchaCode("RECAPTCHA", cf, dummyLink);
-                        br.postPage("/user/login", "user%5Blogin%5D=" + Encoding.urlEncode(account.getUser()) + "&user%5Bpass%5D=" + Encoding.urlEncode(account.getPass()) + "&recaptcha_challenge_field=" + rc.getChallenge() + "&recaptcha_response_field=" + Encoding.urlEncode(c) + "&user%5Bcaptcha_type%5D=recaptcha&user%5Bcaptcha_subtype%5D=&user%5Bmemory%5D=on&user%5Bsubmit%5D=Login");
+                        br.postPage("/user/login", "user%5Blogin%5D=" + Encoding.urlEncode(account.getUser()) + "&user%5Bpass%5D=" + Encoding.urlEncode(account.getPass()) + "&recaptcha_challenge_field=" + rc.getChallenge() + "&recaptcha_response_field=" + Encoding.urlEncode(c) + "&user%5Bcaptcha_type%5D=recaptcha&user%5Bcaptcha_subtype%5D=&user%5Bmemory%5D=on&user%5Bsubmit%5D=Sign+in");
                     }
                 }
                 // valid premium (currently no traffic)|valid premium (traffic available)
-                if (!br.containsHTML("/banturbo\\.png\\'>|icon/yesturbo\\.png\\'>")) {
-                    throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nInvalid accounttype (no premium account)!\r\nUngültiger Accounttyp (kein Premiumaccount)!", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                if (!br.containsHTML("<notsure....>|<span class='glyphicon glyphicon-ok yesturbo'>")) {
+                    throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nInvalid account type (Not premium account)!\r\nUngültiger Accounttyp (kein Premium Account)!", PluginException.VALUE_ID_PREMIUM_DISABLE);
                 }
                 if (br.getCookie(MAINPAGE + "/", "sid") == null) {
                     throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nInvalid username/password!\r\nUngültiger Benutzername oder ungültiges Passwort!", PluginException.VALUE_ID_PREMIUM_DISABLE);
