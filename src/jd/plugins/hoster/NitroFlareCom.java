@@ -341,10 +341,12 @@ public class NitroFlareCom extends PluginForHost {
             // expired(free)? account
             account.setProperty("free", true);
             // dont support free account?
+            ai.setStatus("Free Account");
             ai.setExpired(true);
         } else if ("active".equalsIgnoreCase(status)) {
             // premium account
             account.setProperty("free", false);
+            ai.setStatus("Premium Account");
             account.setValid(true);
         }
         if (!inValidate(storage)) {
@@ -360,6 +362,7 @@ public class NitroFlareCom extends PluginForHost {
 
     private void handleDownload_API(final DownloadLink downloadLink, final Account account) throws Exception {
         setConstants(account);
+        br.setAllowedResponseCodes(500);
         reqFileInformation(downloadLink);
         dllink = checkDirectLink(downloadLink, directlinkproperty);
         if (inValidate(dllink)) {
