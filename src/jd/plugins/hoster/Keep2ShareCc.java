@@ -127,6 +127,10 @@ public class Keep2ShareCc extends K2SApi {
 
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
+        // for multihosters which call this method directly.
+        if (useAPI()) {
+            return super.requestFileInformation(link);
+        }
         this.setBrowserExclusive();
         correctDownloadLink(link);
         br.setFollowRedirects(true);
