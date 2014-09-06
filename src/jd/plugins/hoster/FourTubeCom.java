@@ -22,6 +22,7 @@ import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
+import jd.parser.Regex;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
@@ -57,7 +58,10 @@ public class FourTubeCom extends PluginForHost {
         br.getHeaders().put("User-Agent", "Mozilla/5.0 (Windows NT 6.1; WOW64; rv:31.0) Gecko/20100101 Firefox/31.0");
         br.setFollowRedirects(true);
         br.getPage(dllink);
-        if (br.containsHTML("Page not found|This Video Is No Longer Available")) {
+        if (br.getHttpConnection() == null) {
+            return AvailableStatus.UNCHECKABLE;
+        }
+        if (br.containsHTML("Page not found|This Video Is No Longer Available") || new Regex(br.getURL(), "/videos\\?error=\\d+").matches()) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         String filename = br.getRegex("<meta property=\"og:title\" content=\"(.*?) \\| 4tube\"").getMatch(0);
