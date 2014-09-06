@@ -131,6 +131,10 @@ public class Publish2Me extends K2SApi {
 
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
+        // for multihosters which call this method directly.
+        if (useAPI()) {
+            return super.requestFileInformation(link);
+        }
         correctDownloadLink(link);
         this.setBrowserExclusive();
         getPage(link.getDownloadURL());
