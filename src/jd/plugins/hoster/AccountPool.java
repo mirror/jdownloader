@@ -286,6 +286,10 @@ public class AccountPool extends PluginForHost {
             case 404:
                 delay = 60 * 60 * 1000;
                 break;
+            case 423: // File locked
+            case 424: // Hoster-specific error
+                delay = 5 * 60 * 1000;
+                break;
             default:
                 delay = 15 * 60 * 1000;
             }
