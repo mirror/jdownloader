@@ -154,7 +154,7 @@ public class InCloudDriveCom extends PluginForHost {
                 }
             }
             ajaxPostPage("/index.php/download_page_captcha/check_download_delay", "check_download_size=yes&uploder_id=" + uplid + "&file_id=" + fileid);
-            if ("d_no".equals(ajax.toString())) {
+            if (ajax.getHttpConnection() != null && ajax.toString().startsWith("d_no")) {
                 // this message is shown in browser regardless if your concurrent downloading or not! its also used as a history that you've
                 // downloadded.
 
@@ -163,13 +163,15 @@ public class InCloudDriveCom extends PluginForHost {
                 // the restrictions? <span id="buy_premium_access_id" style="font-weight:bold;color:#3AB2F0;cursor: pointer;">Buy Premium
                 // access</span>.</p>';
                 throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, "Download session limit reached!", 5 * 60 * 1000l);
-            } else if ("max_download_error".equals(ajax.toString())) {
+            } else if (ajax.getHttpConnection() != null && ajax.toString().startsWith("max_download_error")) {
                 // var msg = '<h3 class="pageheading" style="font-weight:bold;font-size:42px;margin-left:100px;">SORRY!</h3><p
                 // style="text-align:center;font-size:17px;">The requested file is to big for a guest or free download. Please upgrade your
                 // account. <span id="buy_premium_access_id" style="font-weight:bold;color:#3AB2F0;cursor: pointer;">Buy Premium
                 // access</span>.</p>';
+                // --ID:6405TS:1409860097189-04.09.14 21:48:17 - [jd.http.Browser(loadConnection)] ->
+                // max_download_error@@@1023
                 premiumDownloadRestriction(downloadLink, "The requested file is to big! You need premium!");
-            } else if (!"d_yes".equals(ajax.toString())) {
+            } else if (ajax.getHttpConnection() == null || !ajax.toString().startsWith("d_yes")) {
                 // uncaught error
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
