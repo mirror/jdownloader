@@ -31,7 +31,7 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "batoto.net" }, urls = { "http://[\\w\\.]*?batoto\\.net/read/_/\\d+/[\\w\\-_\\.]+" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "batoto.net" }, urls = { "http://[\\w\\.]*(?:batoto\\.net|bato\\.to)/read/_/\\d+/[\\w\\-_\\.]+" }, flags = { 0 })
 public class BtoNt extends PluginForDecrypt {
 
     /**
@@ -49,7 +49,7 @@ public class BtoNt extends PluginForDecrypt {
     public ArrayList<DownloadLink> decryptIt(CryptedLink parameter, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         br.setFollowRedirects(true);
-        String url = parameter.toString();
+        String url = parameter.toString().replace("batoto.net/", "bato.to/");
         if (url.endsWith("/")) {
             url = url.substring(0, url.length() - 1);
         }
@@ -63,7 +63,7 @@ public class BtoNt extends PluginForDecrypt {
             return decryptedLinks;
         }
 
-        if (br.containsHTML("<div style=\"text-align:center;\"><img src=\"http://www.batoto.net/images/404-Error\\.jpg\" alt=\"File not found\" /></div>")) {
+        if (br.containsHTML("<div style=\"text-align:center;\"><img src=\"https?://[\\w\\.]*(?:batoto\\.net|bato\\.to)/images/404-Error\\.jpg\" alt=\"File not found\" /></div>")) {
             logger.warning("Invalid link or release not yet available, check in your browser: " + parameter);
             return decryptedLinks;
         } else if (br.containsHTML(">This chapter has been removed due to infringement\\.<")) {
