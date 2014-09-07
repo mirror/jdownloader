@@ -81,19 +81,21 @@ public class TurboBitNet extends PluginForHost {
 
     public void correctDownloadLink(final DownloadLink link) throws PluginException {
         // changing to temp hosts (subdomains causes issues with multihosters.
+        final String protocol = new Regex(link.getDownloadURL(), "https?://").getMatch(-1);
         final String uid = getFUID(link);
-        if (link.getDownloadURL().matches("https?://[^/]+/[a-z0-9]+(/[^/]+)?\\.html")) {
-            link.setUrlDownload(link.getDownloadURL().replaceAll("https?://[^/]+", MAINPAGE));
-        } else if (link.getDownloadURL().matches("https?://[^/]+/download/free/.*")) {
-            link.setUrlDownload(MAINPAGE + "/" + uid + ".html");
-        } else if (link.getDownloadURL().matches("https?://[^/]+/?/download/redirect/.*")) {
-            link.setUrlDownload(link.getDownloadURL().replaceAll("://[^/]+//download", "://" + MAINPAGE + "/download"));
+        if (uid == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        final String linkID = getHost() + "://" + uid;
-        try {
-            link.setLinkID(linkID);
-        } catch (Throwable e) {
-            link.setProperty("LINKDUPEID", linkID);
+        // We don't rename match format because these are generated links. Leave as is!
+        if (!link.getDownloadURL().matches("https?://[^/]+/?/download/redirect/.*")) {
+            link.setUrlDownload(protocol + NICE_HOST + "/" + uid + ".html");
+            // we wont use linkid for match format either.
+            final String linkID = getHost() + "://" + uid;
+            try {
+                link.setLinkID(linkID);
+            } catch (Throwable e) {
+                link.setProperty("LINKDUPEID", linkID);
+            }
         }
     }
 
@@ -555,15 +557,22 @@ public class TurboBitNet extends PluginForHost {
         dl.startDownload();
     }
 
+    /**
+     * fuid = case sensitive.
+     *
+     * @param downloadLink
+     * @return
+     * @throws PluginException
+     */
     private String getFUID(DownloadLink downloadLink) throws PluginException {
         // standard links turbobit.net/uid.html && turbobit.net/uid/filename.html
-        String fuid = new Regex(downloadLink.getDownloadURL(), "https?://[^/]+/([a-z0-9]+)(/[^/]+)?\\.html").getMatch(0);
+        String fuid = new Regex(downloadLink.getDownloadURL(), "https?://[^/]+/([a-zA-F0-9]+)(/[^/]+)?\\.html").getMatch(0);
         if (fuid == null) {
             // download/free/
-            fuid = new Regex(downloadLink.getDownloadURL(), "download/free/([a-z0-9]+)").getMatch(0);
+            fuid = new Regex(downloadLink.getDownloadURL(), "download/free/([a-zA-F0-9]+)").getMatch(0);
             if (fuid == null) {
                 // support for public premium links
-                fuid = new Regex(downloadLink.getDownloadURL(), "download/redirect/[A-Za-z0-9]+/([a-z0-9]+)").getMatch(0);
+                fuid = new Regex(downloadLink.getDownloadURL(), "download/redirect/[A-Za-z0-9]+/([a-zA-F0-9]+)").getMatch(0);
                 if (fuid == null) {
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 }
