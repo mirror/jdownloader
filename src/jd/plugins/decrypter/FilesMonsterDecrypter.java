@@ -51,28 +51,37 @@ public class FilesMonsterDecrypter extends PluginForDecrypt {
         boolean addFree = true;
         boolean addPremium = true;
         if (onlyAddNeededLinks) {
+            boolean accAvailable = false;
+            final ArrayList<Account> accs = new ArrayList<Account>();
             try {
-                boolean accAvailable = false;
-                final ArrayList<Account> accs = (ArrayList<Account>) AccountController.getInstance().getMultiHostAccounts("filesmonster.com");
-                if (accs != null && accs.size() != 0) {
-                    Iterator<Account> it = accs.iterator();
-                    while (it.hasNext()) {
-                        Account n = it.next();
-                        if (n.isEnabled() && n.isValid()) {
-                            accAvailable = true;
-                            break;
-                        }
+                // multihoster account!
+                final ArrayList<Account> mHosterAccs = (ArrayList<Account>) AccountController.getInstance().getMultiHostAccounts("filesmonster.com");
+                if (mHosterAccs != null && mHosterAccs.size() != 0) {
+                    accs.addAll(mHosterAccs);
+                }
+            } catch (final Throwable t) {
+            }
+            // traditional account
+            final ArrayList<Account> hoster = AccountController.getInstance().getAllAccounts("filesmonster.com");
+            if (hoster != null && hoster.size() != 0) {
+                accs.addAll(hoster);
+            }
+            if (accs != null && accs.size() != 0) {
+                Iterator<Account> it = accs.iterator();
+                while (it.hasNext()) {
+                    Account n = it.next();
+                    if (n.isEnabled() && n.isValid()) {
+                        accAvailable = true;
+                        break;
                     }
                 }
-                if (accAvailable) {
-                    addPremium = true;
-                    addFree = false;
-                } else {
-                    addPremium = false;
-                    addFree = true;
-                }
-            } catch (final Throwable e) {
-                // Not all of this is available in old 0.9.581 Stable
+            }
+            if (accAvailable) {
+                addPremium = true;
+                addFree = false;
+            } else {
+                addPremium = false;
+                addFree = true;
             }
         }
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
@@ -81,7 +90,9 @@ public class FilesMonsterDecrypter extends PluginForDecrypt {
         String parameter = param.toString();
         String protocol = new Regex(parameter, "(https?)://").getMatch(0);
         String fid = new Regex(parameter, "filesmonster\\.com/dl/(.*?)/free/").getMatch(0);
-        if (fid != null) parameter = protocol + "://filesmonster.com/download.php?id=" + fid;
+        if (fid != null) {
+            parameter = protocol + "://filesmonster.com/download.php?id=" + fid;
+        }
         br.getPage(parameter);
         // Link offline
         if (br.containsHTML(">File was deleted by owner or it was deleted for violation of copyrights<|>File not found<|>The link could not be decoded<")) {
@@ -116,7 +127,9 @@ public class FilesMonsterDecrypter extends PluginForDecrypt {
         } else {
             FAILED = "Limit reached";
         }
-        if (br.containsHTML(">You need Premium membership to download files larger than")) FAILED = "There are no free downloadlinks";
+        if (br.containsHTML(">You need Premium membership to download files larger than")) {
+            FAILED = "There are no free downloadlinks";
+        }
 
         if (addFree) {
             if (FAILED == null) {
@@ -155,7 +168,7 @@ public class FilesMonsterDecrypter extends PluginForDecrypt {
                 thebigone.setDownloadSize(SizeFormatter.getSize(fsize));
                 thebigone.setAvailable(true);
             }
-            thebigone.setProperty("PREMIUMONLY", "true");
+            thebigone.setProperty("PREMIUMONLY", true);
             decryptedLinks.add(thebigone);
         }
         /** All those links belong to the same file so lets make a package */

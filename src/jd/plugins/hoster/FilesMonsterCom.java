@@ -76,7 +76,7 @@ public class FilesMonsterCom extends PluginForHost {
 
     // @Override to keep compatible to stable
     public boolean canHandle(final DownloadLink downloadLink, final Account account) {
-        if (downloadLink.getBooleanProperty("PREMIUMONLY") && account == null) {
+        if (downloadLink.getBooleanProperty("PREMIUMONLY", false) && account == null) {
             /* premium only */
             return false;
         }
@@ -147,7 +147,7 @@ public class FilesMonsterCom extends PluginForHost {
         if (br.containsHTML(TEMPORARYUNAVAILABLE)) {
             downloadLink.getLinkStatus().setStatusText(JDL.L("plugins.hoster.filesmonstercom.temporaryunavailable", "Download not available at the moment"));
         }
-        if (downloadLink.getBooleanProperty("PREMIUMONLY")) {
+        if (downloadLink.getBooleanProperty("PREMIUMONLY", false)) {
             downloadLink.getLinkStatus().setStatusText(JDL.L("plugins.hoster.filesmonstercom.only4premium", PREMIUMONLYUSERTEXT));
         }
         return AvailableStatus.TRUE;
@@ -217,7 +217,7 @@ public class FilesMonsterCom extends PluginForHost {
     @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
-        if (downloadLink.getBooleanProperty("PREMIUMONLY")) {
+        if (downloadLink.getBooleanProperty("PREMIUMONLY", false)) {
             try {
                 throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);
             } catch (final Throwable e) {
@@ -446,6 +446,10 @@ public class FilesMonsterCom extends PluginForHost {
         }
         ai.setUnlimitedTraffic();
         String expires = br.getRegex("<span>\\s*Valid until: <span class='green'>([^<>\"]+)</span>").getMatch(0);
+        if (expires == null) {
+            // picks up expired accounts.
+            expires = br.getRegex("<span.*?>Expire(?:s|d):\\s*(\\d{2}/\\d{2}/\\d{2})</span>").getMatch(0);
+        }
         long ms = 0;
         if (expires != null) {
             ms = TimeFormatter.getMilliSeconds(expires, "MM/dd/yy HH:mm", null);
@@ -453,15 +457,18 @@ public class FilesMonsterCom extends PluginForHost {
                 ms = TimeFormatter.getMilliSeconds(expires, "MM/dd/yy", Locale.ENGLISH);
             }
             ai.setValidUntil(ms);
+        }
+        if (!ai.isExpired()) {
             try {
                 trafficUpdate(ai, account);
             } catch (IOException e) {
             }
             account.setValid(true);
-            ai.setStatus("Premium User");
+            ai.setStatus("Valid Premium Account");
             return ai;
         } else {
             account.setValid(false);
+            ai.setStatus("Expired Premium Account");
             return ai;
         }
     }
