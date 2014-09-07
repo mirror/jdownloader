@@ -58,6 +58,7 @@ SetDownloadFolderAction_yes=包
 StartDownloadsAction_createTooltip_=开始下载
 YoutubeDash_GroupLogic_BY_FILE_TYPE=文件扩展名(MP4, AAC, MP3, ...
 YoutubeDash_GroupLogic_BY_MEDIA_TYPE=媒体类型 (视频, 音频, 图像, 字幕, ...
+YoutubeDash_IfUrlisAPlaylistAction_ASK=问我
 YoutubeDash_IfUrlisAPlaylistAction_NOTHING=什么也不做
 YoutubeDash_IfUrlisAVideoAndPlaylistAction_ASK=问我
 YoutubeDash_IfUrlisAVideoAndPlaylistAction_NOTHING=不载入
