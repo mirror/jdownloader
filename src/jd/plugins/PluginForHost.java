@@ -143,7 +143,8 @@ public abstract class PluginForHost extends Plugin {
     private static final String         COPY_MOVE_FILE        = "CopyMoveFile";
 
     private static Pattern[]            PATTERNS              = new Pattern[] {
-        /**
+
+                                                              /**
          * these patterns should split filename and fileextension (extension must
          * include the point)
          */
@@ -154,7 +155,7 @@ public abstract class PluginForHost extends Plugin {
 
     private LazyHostPlugin              lazyP                 = null;
     /**
-     * Is true if the user has answerd a captcha challenge. does not say anything whether if the answer was correct or not
+     * Is true if the user has answered a captcha challenge. does not say anything whether if the answer was correct or not
      */
     protected transient ResponseList<?> lastChallengeResponse = null;
 

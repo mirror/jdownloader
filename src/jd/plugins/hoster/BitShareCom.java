@@ -440,6 +440,15 @@ public class BitShareCom extends PluginForHost {
         }
     }
 
+    private String getFUID(final DownloadLink downloadLink) {
+        return getFUID(downloadLink.getDownloadURL());
+    }
+
+    private String getFUID(final String link) {
+        final String fuid = new Regex(link, "/(?:\\?(?:f|m)=|files/)([a-z0-9]{8})").getMatch(0);
+        return fuid;
+    }
+
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException, InterruptedException {
         correctDownloadLink(link);
@@ -476,7 +485,7 @@ public class BitShareCom extends PluginForHost {
         }
         final String filename = fileInfo.getMatch(0);
         final String filesize = fileInfo.getMatch(1);
-        if (filename == null || filesize == null) {
+        if (inValidate(filename)) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         String suggestedName = null;
@@ -488,7 +497,9 @@ public class BitShareCom extends PluginForHost {
             }
         }
         link.setName(filename);
-        link.setDownloadSize(SizeFormatter.getSize(filesize));
+        if (!inValidate(filesize)) {
+            link.setDownloadSize(SizeFormatter.getSize(filesize));
+        }
 
         return AvailableStatus.TRUE;
     }
@@ -513,6 +524,22 @@ public class BitShareCom extends PluginForHost {
         prepBr.getHeaders().put("Accept-Language", "en,en-AU;q=0.8");
         prepBr.getHeaders().put("Accept-Charset", null);
         return prepBr;
+    }
+
+    /**
+     * Validates string to series of conditions, null, whitespace, or "". This saves effort factor within if/for/while statements
+     *
+     * @param s
+     *            Imported String to match against.
+     * @return <b>true</b> on valid rule match. <b>false</b> on invalid rule match.
+     * @author raztoki
+     * */
+    private boolean inValidate(final String s) {
+        if (s == null || s != null && (s.matches("[\r\n\t ]+") || s.equals(""))) {
+            return true;
+        } else {
+            return false;
+        }
     }
 
     @Override

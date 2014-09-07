@@ -163,7 +163,8 @@ public abstract class Plugin implements ActionListener {
      * 
      * @return Datename des Downloads.
      */
-    public static String extractFileNameFromURL(String filename) {
+    public static String extractFileNameFromURL(final String iFilename) {
+        String filename = iFilename;
         if (StringUtils.isEmpty(filename)) {
             return null;
         }
@@ -175,7 +176,7 @@ public abstract class Plugin implements ActionListener {
             filename = filename.substring(0, index);
         }
         index = filename.indexOf("#");
-        /* cut off anker */
+        /* cut off anchor */
         if (index > 0) {
             filename = filename.substring(0, index);
         }
