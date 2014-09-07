@@ -43,10 +43,11 @@ public class FilesMonsterDecrypter extends PluginForDecrypt {
 
     public static final String  FILENAMEREGEX            = "\">File name:</td>[\t\n\r ]+<td>(.*?)</td>";
     public static final String  FILESIZEREGEX            = "\">File size:</td>[\t\n\r ]+<td>(.*?)</td>";
-    private static String       FAILED                   = null;
     private static final String ADDLINKSACCOUNTDEPENDANT = "ADDLINKSACCOUNTDEPENDANT";
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
+        ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
+        String FAILED = null;
         final boolean onlyAddNeededLinks = SubConfiguration.getConfig("filesmonster.com").getBooleanProperty(ADDLINKSACCOUNTDEPENDANT, false);
         boolean addFree = true;
         boolean addPremium = true;
@@ -84,7 +85,6 @@ public class FilesMonsterDecrypter extends PluginForDecrypt {
                 addFree = true;
             }
         }
-        ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         br.setReadTimeout(3 * 60 * 1000);
         br.setFollowRedirects(false);
         String parameter = param.toString();
