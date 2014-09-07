@@ -18,6 +18,7 @@ package jd.plugins.decrypter;
 
 import java.util.ArrayList;
 import java.util.Iterator;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 import jd.PluginWrapper;
 import jd.config.SubConfiguration;
@@ -31,6 +32,7 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
+import jd.utils.JDUtilities;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
@@ -145,9 +147,11 @@ public class FilesMonsterDecrypter extends PluginForDecrypt {
                     }
                     String dllink = protocol + "://filesmonsterdecrypted.com/dl/" + theImportantPartOfTheMainLink + "/free/2/" + filelinkPart;
                     final DownloadLink finalOne = createDownloadlink(dllink);
-                    finalOne.setFinalFileName(Encoding.htmlDecode(filename));
+                    // name here can be unicode....
+                    finalOne.setFinalFileName(Encoding.htmlDecode(unescape(filename)));
                     finalOne.setDownloadSize(Integer.parseInt(filesize));
                     finalOne.setAvailable(true);
+                    // for this to be used in hoster plugin it needs non escaped name. see: getNewTemporaryLink
                     finalOne.setProperty("origfilename", filename);
                     finalOne.setProperty("origsize", filesize);
                     finalOne.setProperty("mainlink", parameter);
@@ -179,6 +183,16 @@ public class FilesMonsterDecrypter extends PluginForDecrypt {
             fp.addLinks(decryptedLinks);
         }
         return decryptedLinks;
+    }
+
+    private static AtomicBoolean yt_loaded = new AtomicBoolean(false);
+
+    private String unescape(final String s) {
+        /* we have to make sure the youtube plugin is loaded */
+        if (!yt_loaded.getAndSet(true)) {
+            JDUtilities.getPluginForHost("youtube.com");
+        }
+        return jd.plugins.hoster.Youtube.unescape(s);
     }
 
     /* NO OVERRIDE!! */
