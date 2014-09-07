@@ -142,7 +142,7 @@ public class DownloadLinkAggregator implements MirrorPackageSetup {
                         bytesLoaded += a.length();
                         localFileCount++;
                     } else {
-                        a = new File(link.getFileOutput());
+                        a = new File(link.getFileOutput() + "");
                         if (a.exists()) {
                             bytesLoaded += a.length();
                             localFileCount++;
@@ -224,7 +224,9 @@ public class DownloadLinkAggregator implements MirrorPackageSetup {
     }
 
     public int getLocalFileCount() {
-        if (!isLocalFileUsageEnabled()) throw new IllegalStateException("isLocalFileUsageEnabled() is disabled");
+        if (!isLocalFileUsageEnabled()) {
+            throw new IllegalStateException("isLocalFileUsageEnabled() is disabled");
+        }
         return localFileCount;
     }
 
