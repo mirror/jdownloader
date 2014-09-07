@@ -92,6 +92,7 @@ public class FilesMonsterDecrypter extends PluginForDecrypt {
         String fid = new Regex(parameter, "filesmonster\\.com/dl/(.*?)/free/").getMatch(0);
         if (fid != null) {
             parameter = protocol + "://filesmonster.com/download.php?id=" + fid;
+            param.setCryptedUrl(parameter);
         }
         br.getPage(parameter);
         // Link offline
