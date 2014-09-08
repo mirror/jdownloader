@@ -111,6 +111,10 @@ public class PanBaiduCom extends PluginForHost {
             final String uk = downloadLink.getStringProperty("origurl_uk", null);
             final String link_password = downloadLink.getStringProperty("important_link_password", null);
             final String link_password_cookie = downloadLink.getStringProperty("important_link_password_cookie", null);
+            if (shareid == null || uk == null) {
+                /* Should never happen */
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            }
             if (link_password_cookie != null) {
                 br.setCookie("http://pan.baidu.com/", "BDCLND", link_password_cookie);
             }

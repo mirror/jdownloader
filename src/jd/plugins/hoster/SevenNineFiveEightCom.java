@@ -59,9 +59,15 @@ public class SevenNineFiveEightCom extends PluginForHost {
         if (filename == null) {
             filename = br.getRegex("下载：([^<>\"]*?)\\[/url\\]\" class=\"ltdm\"").getMatch(0);
         }
+        if (filename == null) {
+            filename = br.getRegex("<h2 style=\"float:left;width:auto\">([^<>\"]*?)</h2>").getMatch(0);
+        }
         String filesize = br.getRegex("> 文件大小：([^<>\"]*?)</td>").getMatch(0);
         if (filesize == null) {
             filesize = br.getRegex(">文件大小：([^<>\"]*?)</td>").getMatch(0);
+        }
+        if (filesize == null) {
+            filesize = br.getRegex(">文件大小：([^<>\"]*?)<").getMatch(0);
         }
         if (filename == null || filesize == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);

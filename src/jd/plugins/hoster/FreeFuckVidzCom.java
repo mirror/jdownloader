@@ -48,16 +48,29 @@ public class FreeFuckVidzCom extends PluginForHost {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         br.getPage(downloadLink.getDownloadURL());
-        if (br.containsHTML("(>404 \\- Not found<|> was not found on this server, please try a different URL)")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (br.containsHTML("(>404 \\- Not found<|> was not found on this server, please try a different URL)")) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
         String filename = br.getRegex("<div class=\"content player clearfix\"><h1>([^<>\"]*?)</h1>").getMatch(0);
-        if (filename == null) filename = br.getRegex("<title>([^<>\"]*?) \\- Free Fuck Vidz</title>").getMatch(0);
+        if (filename == null) {
+            filename = br.getRegex(">Embed</a></span><h1>([^<>\"]*?)</h1>").getMatch(0);
+        }
+        if (filename == null) {
+            filename = br.getRegex("<title>([^<>\"]*?)</title>").getMatch(0);
+        }
         getLink("med");
-        if (DLLINK == null) getLink("low");
-        if (filename == null || DLLINK == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (DLLINK == null) {
+            getLink("low");
+        }
+        if (filename == null || DLLINK == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         DLLINK = Encoding.htmlDecode(DLLINK);
         filename = filename.trim();
         String ext = DLLINK.substring(DLLINK.lastIndexOf("."));
-        if (ext == null || ext.length() > 5) ext = ".mp4";
+        if (ext == null || ext.length() > 5) {
+            ext = ".mp4";
+        }
         downloadLink.setFinalFileName(Encoding.htmlDecode(filename) + ext);
         Browser br2 = br.cloneBrowser();
         // In case the link redirects to the finallink
@@ -65,10 +78,11 @@ public class FreeFuckVidzCom extends PluginForHost {
         URLConnectionAdapter con = null;
         try {
             con = br2.openGetConnection(DLLINK);
-            if (!con.getContentType().contains("html"))
+            if (!con.getContentType().contains("html")) {
                 downloadLink.setDownloadSize(con.getLongContentLength());
-            else
+            } else {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            }
             return AvailableStatus.TRUE;
         } finally {
             try {

@@ -59,14 +59,14 @@ public class FileNukeCom extends PluginForHost {
     private static final String  TYPE_2                       = "https?://(www\\.)?filenuke\\.com/f/[A-Za-z0-9]+";
 
     /* note: CAN NOT be negative or zero! (ie. -1 or 0) Otherwise math sections fail. .:. use [1-20] */
-    private static AtomicInteger totalMaxSimultanFreeDownload = new AtomicInteger(3);
+    private static AtomicInteger totalMaxSimultanFreeDownload = new AtomicInteger(1);
     /* don't touch the following! */
     private static AtomicInteger maxFree                      = new AtomicInteger(1);
 
     // DEV NOTES
     // XfileSharingProBasic Version 2.5.5.3-raz
     // mods: heavily modified, do NOT upgrade!
-    // non account: 2 * unlimited?
+    // non account: 2 * 1
     // free account:
     // premium account:
     // protocol: no https

@@ -60,7 +60,7 @@ public class AtvAt extends PluginForDecrypt {
         br.getRequest().setHtmlCode(br.toString().replace("\\", ""));
         final String source = br.getRegex("<div class=\"jsb_ jsb_video/FlashPlayer\" data\\-jsb=\"(.*?)\">").getMatch(0);
         String name = br.getRegex("property=\"og:title\" content=\"([^<>\"]*?)\"").getMatch(0);
-        final String[] allLinks = new Regex(source, "application/x\\-mpegurl\\&quot;,\\&quot;src\\&quot;:\\&quot;(http://[^<>\"]*?\\d+\\.mp4/index\\.m3u8)\\&quot;}").getColumn(0);
+        final String[] allLinks = new Regex(source, "src\\&quot;:\\&quot;(http://[^<>\"]*?(index|playlist)\\.m3u8)\\&quot;}").getColumn(0);
         if (name == null || allLinks == null || allLinks.length == 0) {
             logger.warning("Decrypter broken for link: " + parameter);
             return null;

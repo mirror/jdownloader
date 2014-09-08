@@ -21,6 +21,7 @@ import java.util.ArrayList;
 import java.util.SortedMap;
 import java.util.TreeMap;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.regex.Pattern;
 
 import jd.PluginWrapper;
@@ -45,59 +46,63 @@ import jd.utils.locale.JDL;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "exashare.com" }, urls = { "https?://(www\\.)?exashare\\.com/((vid)?embed\\-)?[a-z0-9]{12}" }, flags = { 0 })
-public class ExaShareCom extends PluginForHost {
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "ultrafile.me" }, urls = { "https?://(www\\.)?ultrafile\\.me/(vidembed\\-)?[a-z0-9]{12}" }, flags = { 0 })
+public class UltraFileMe extends PluginForHost {
 
-    private String               correctedBR                  = "";
-    private String               passCode                     = null;
-    private static final String  PASSWORDTEXT                 = "<br><b>Passwor(d|t):</b> <input";
-    // primary website url, take note of redirects
-    private static final String  COOKIE_HOST                  = "http://exashare.com";
-    private static final String  NICE_HOST                    = COOKIE_HOST.replaceAll("(https://|http://)", "");
-    private static final String  NICE_HOSTproperty            = COOKIE_HOST.replaceAll("(https://|http://|\\.|\\-)", "");
-    // domain names used within download links.
-    private static final String  DOMAINS                      = "(exashare\\.com)";
-    private static final String  MAINTENANCE                  = ">This server is in maintenance mode";
-    private static final String  MAINTENANCEUSERTEXT          = JDL.L("hoster.xfilesharingprobasic.errors.undermaintenance", "This server is under Maintenance");
-    private static final String  ALLWAIT_SHORT                = JDL.L("hoster.xfilesharingprobasic.errors.waitingfordownloads", "Waiting till new downloads can be started");
-    private static final String  PREMIUMONLY1                 = JDL.L("hoster.xfilesharingprobasic.errors.premiumonly1", "Max downloadable filesize for free users:");
-    private static final String  PREMIUMONLY2                 = JDL.L("hoster.xfilesharingprobasic.errors.premiumonly2", "Only downloadable via premium or registered");
-    private static final boolean VIDEOHOSTER                  = false;
-    private static final boolean SUPPORTSHTTPS                = false;
-    // Connection stuff
-    private static final boolean FREE_RESUME                  = true;
-    private static final int     FREE_MAXCHUNKS               = -2;
-    private static final int     FREE_MAXDOWNLOADS            = 4;
-    private static final boolean ACCOUNT_FREE_RESUME          = true;
-    private static final int     ACCOUNT_FREE_MAXCHUNKS       = 0;
-    private static final int     ACCOUNT_FREE_MAXDOWNLOADS    = 20;
-    private static final boolean ACCOUNT_PREMIUM_RESUME       = true;
-    private static final int     ACCOUNT_PREMIUM_MAXCHUNKS    = 0;
-    private static final int     ACCOUNT_PREMIUM_MAXDOWNLOADS = 20;
-    // note: CAN NOT be negative or zero! (ie. -1 or 0) Otherwise math sections fail. .:. use [1-20]
-    private static AtomicInteger totalMaxSimultanFreeDownload = new AtomicInteger(FREE_MAXDOWNLOADS);
-    // don't touch the following!
-    private static AtomicInteger maxFree                      = new AtomicInteger(1);
-    private static AtomicInteger maxPrem                      = new AtomicInteger(1);
-    private static Object        LOCK                         = new Object();
-    private String               fuid                         = null;
+    private String                         correctedBR                  = "";
+    private String                         passCode                     = null;
+    private static final String            PASSWORDTEXT                 = "<br><b>Passwor(d|t):</b> <input";
+    /* primary website url, take note of redirects */
+    private static final String            COOKIE_HOST                  = "http://ultrafile.me";
+    private static final String            NICE_HOST                    = COOKIE_HOST.replaceAll("(https://|http://)", "");
+    private static final String            NICE_HOSTproperty            = COOKIE_HOST.replaceAll("(https://|http://|\\.|\\-)", "");
+    /* domain names used within download links */
+    private static final String            DOMAINS                      = "(ultrafile\\.me)";
+    private static final String            MAINTENANCE                  = ">This server is in maintenance mode";
+    private static final String            MAINTENANCEUSERTEXT          = JDL.L("hoster.xfilesharingprobasic.errors.undermaintenance", "This server is under maintenance");
+    private static final String            ALLWAIT_SHORT                = JDL.L("hoster.xfilesharingprobasic.errors.waitingfordownloads", "Waiting till new downloads can be started");
+    private static final String            PREMIUMONLY1                 = JDL.L("hoster.xfilesharingprobasic.errors.premiumonly1", "Max downloadable filesize for free users:");
+    private static final String            PREMIUMONLY2                 = JDL.L("hoster.xfilesharingprobasic.errors.premiumonly2", "Only downloadable via premium or registered");
+    private static final boolean           VIDEOHOSTER                  = false;
+    private static final boolean           VIDEOHOSTER_2                = false;
+    private static final boolean           SUPPORTSHTTPS                = false;
+    private static final boolean           SUPPORTSHTTPS_FORCED         = false;
+    private final boolean                  ENABLE_RANDOM_UA             = false;
+    private static AtomicReference<String> agent                        = new AtomicReference<String>(null);
+    /* Connection stuff */
+    private static final boolean           FREE_RESUME                  = true;
+    private static final int               FREE_MAXCHUNKS               = -2;
+    private static final int               FREE_MAXDOWNLOADS            = 1;
+    private static final boolean           ACCOUNT_FREE_RESUME          = true;
+    private static final int               ACCOUNT_FREE_MAXCHUNKS       = 0;
+    private static final int               ACCOUNT_FREE_MAXDOWNLOADS    = 20;
+    private static final boolean           ACCOUNT_PREMIUM_RESUME       = true;
+    private static final int               ACCOUNT_PREMIUM_MAXCHUNKS    = 0;
+    private static final int               ACCOUNT_PREMIUM_MAXDOWNLOADS = 20;
+    /* note: CAN NOT be negative or zero! (ie. -1 or 0) Otherwise math sections fail. .:. use [1-20] */
+    private static AtomicInteger           totalMaxSimultanFreeDownload = new AtomicInteger(FREE_MAXDOWNLOADS);
+    /* don't touch the following! */
+    private static AtomicInteger           maxFree                      = new AtomicInteger(1);
+    private static AtomicInteger           maxPrem                      = new AtomicInteger(1);
+    private static Object                  LOCK                         = new Object();
+    private String                         fuid                         = null;
 
-    // DEV NOTES
-    // XfileSharingProBasic Version 2.6.4.2
+    /* DEV NOTES */
+    // XfileSharingProBasic Version 2.6.6.2
     // mods:
     // limit-info:
     // protocol: no https
-    // captchatype: null
+    // captchatype: recaptcha
     // other:
 
     @Override
     public void correctDownloadLink(final DownloadLink link) {
-        // link cleanup, but respect users protocol choosing.
+        /* link cleanup, but respect users protocol choosing or forced protocol */
         if (!SUPPORTSHTTPS) {
             link.setUrlDownload(link.getDownloadURL().replaceFirst("https://", "http://"));
+        } else if (SUPPORTSHTTPS && SUPPORTSHTTPS_FORCED) {
+            link.setUrlDownload(link.getDownloadURL().replaceFirst("http://", "https://"));
         }
-        final String fid = new Regex(link.getDownloadURL(), "([a-z0-9]{12})$").getMatch(0);
-        link.setUrlDownload(COOKIE_HOST + "/" + fid);
     }
 
     @Override
@@ -105,42 +110,19 @@ public class ExaShareCom extends PluginForHost {
         return COOKIE_HOST + "/tos.html";
     }
 
-    public ExaShareCom(PluginWrapper wrapper) {
+    public UltraFileMe(PluginWrapper wrapper) {
         super(wrapper);
         // this.enablePremium(COOKIE_HOST + "/premium.html");
-    }
-
-    // do not add @Override here to keep 0.* compatibility
-    public boolean hasAutoCaptcha() {
-        return true;
-    }
-
-    /* NO OVERRIDE!! We need to stay 0.9*compatible */
-    public boolean hasCaptcha(DownloadLink link, jd.plugins.Account acc) {
-        if (acc == null) {
-            /* no account, yes we can expect captcha */
-            return true;
-        }
-        if (Boolean.TRUE.equals(acc.getBooleanProperty("nopremium"))) {
-            /* free accounts also have captchas */
-            return true;
-        }
-        return false;
-    }
-
-    public void prepBrowser(final Browser br) {
-        // define custom browser headers and language settings.
-        br.getHeaders().put("Accept-Language", "en-gb, en;q=0.9");
-        br.setCookie(COOKIE_HOST, "lang", "english");
     }
 
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
         br.setFollowRedirects(true);
+        correctDownloadLink(link);
         prepBrowser(br);
         setFUID(link);
         getPage(link.getDownloadURL());
-        if (!br.getURL().matches("https?://(www\\.)?exashare\\.com/((vid)?embed\\-)?[a-z0-9]{12}") || new Regex(correctedBR, "(No such file|>File Not Found<|>The file was removed by|Reason for deletion:\n|class=\"error\\-container\")").matches()) {
+        if (new Regex(correctedBR, "(No such file|>File Not Found<|>The file was removed by|Reason for deletion:\n)").matches()) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         if (new Regex(correctedBR, MAINTENANCE).matches()) {
@@ -165,10 +147,6 @@ public class ExaShareCom extends PluginForHost {
             link.setMD5Hash(fileInfo[2].trim());
         }
         fileInfo[0] = fileInfo[0].replaceAll("(</b>|<b>|\\.html)", "");
-        fileInfo[0] = fileInfo[0].trim();
-        if (!fileInfo[0].endsWith(".mp4")) {
-            fileInfo[0] += ".mp4";
-        }
         link.setName(fileInfo[0].trim());
         if (fileInfo[1] != null && !fileInfo[1].equals("")) {
             link.setDownloadSize(SizeFormatter.getSize(fileInfo[1]));
@@ -177,15 +155,14 @@ public class ExaShareCom extends PluginForHost {
     }
 
     private String[] scanInfo(final String[] fileInfo) {
-        final Regex info = new Regex(correctedBR, "<h1>([^<>\"]*?) <small>\\( ([^<>\"]*?) \\)  </small></h1>");
-        // standard traits from base page
+        /* standard traits from base page */
         if (fileInfo[0] == null) {
             fileInfo[0] = new Regex(correctedBR, "You have requested.*?https?://(www\\.)?" + DOMAINS + "/" + fuid + "/(.*?)</font>").getMatch(2);
             if (fileInfo[0] == null) {
                 fileInfo[0] = new Regex(correctedBR, "fname\"( type=\"hidden\")? value=\"(.*?)\"").getMatch(1);
                 if (fileInfo[0] == null) {
                     fileInfo[0] = new Regex(correctedBR, "<h2>Download File(.*?)</h2>").getMatch(0);
-                    // traits from download1 page below.
+                    /* traits from download1 page below */
                     if (fileInfo[0] == null) {
                         fileInfo[0] = new Regex(correctedBR, "Filename:? ?(<[^>]+> ?)+?([^<>\"\\']+)").getMatch(1);
                         // next two are details from sharing box
@@ -194,16 +171,14 @@ public class ExaShareCom extends PluginForHost {
                             if (fileInfo[0] == null) {
                                 fileInfo[0] = new Regex(correctedBR, "copy\\(this\\);.+\\](.+) \\- [\\d\\.]+ (KB|MB|GB)\\[/URL\\]").getMatch(0);
                                 if (fileInfo[0] == null) {
-                                    fileInfo[0] = new Regex(correctedBR, "<div class=\"span12\" style=\"width:1000px;\">[\t\n\r ]+<h3>([^<>\"]*?)<").getMatch(0);
+                                    /* Link of the box without filesize */
+                                    fileInfo[0] = new Regex(correctedBR, "onFocus=\"copy\\(this\\);\">http://(www\\.)?" + DOMAINS + "/" + fuid + "/([^<>\"]*?)</textarea").getMatch(2);
                                 }
                             }
                         }
                     }
                 }
             }
-        }
-        if (fileInfo[0] == null) {
-            fileInfo[0] = info.getMatch(0);
         }
         if (fileInfo[1] == null) {
             fileInfo[1] = new Regex(correctedBR, "\\(([0-9]+ bytes)\\)").getMatch(0);
@@ -213,9 +188,6 @@ public class ExaShareCom extends PluginForHost {
                     fileInfo[1] = new Regex(correctedBR, "(\\d+(\\.\\d+)? ?(KB|MB|GB))").getMatch(0);
                 }
             }
-        }
-        if (fileInfo[1] == null) {
-            fileInfo[1] = info.getMatch(1);
         }
         if (fileInfo[2] == null) {
             fileInfo[2] = new Regex(correctedBR, "<b>MD5.*?</b>.*?nowrap>(.*?)<").getMatch(0);
@@ -233,13 +205,13 @@ public class ExaShareCom extends PluginForHost {
     public void doFree(final DownloadLink downloadLink, final boolean resumable, final int maxchunks, final String directlinkproperty) throws Exception, PluginException {
         br.setFollowRedirects(false);
         passCode = downloadLink.getStringProperty("pass");
-        // First, bring up saved final links
+        /* First, bring up saved final links */
         String dllink = checkDirectLink(downloadLink, directlinkproperty);
-        // Second, check for streaming links on the first page
+        /* Second, check for streaming/direct links on the first page */
         if (dllink == null) {
             dllink = getDllink();
         }
-        // Third, do they provide video hosting?
+        /* Third, do they provide video hosting? */
         if (dllink == null && VIDEOHOSTER) {
             try {
                 logger.info("Trying to get link via vidembed");
@@ -247,19 +219,40 @@ public class ExaShareCom extends PluginForHost {
                 brv.getPage("/vidembed-" + fuid);
                 dllink = brv.getRedirectLocation();
                 if (dllink == null) {
-                    logger.info("Failed to get link via vidembed");
+                    logger.info("Failed to get link via embed because: " + br.toString());
+                } else {
+                    logger.info("Successfully found link via vidembed");
                 }
             } catch (final Throwable e) {
                 logger.info("Failed to get link via vidembed");
             }
         }
-        // Fourth, continue like normal.
+        if (dllink == null && VIDEOHOSTER_2) {
+            try {
+                logger.info("Trying to get link via embed");
+                final String embed_access = "http://" + COOKIE_HOST.replace("http://", "") + "/embed-" + fuid + ".html";
+                getPage(embed_access);
+                dllink = getDllink();
+                if (dllink == null) {
+                    logger.info("Failed to get link via embed because: " + br.toString());
+                } else {
+                    logger.info("Successfully found link via embed");
+                }
+            } catch (final Throwable e) {
+                logger.info("Failed to get link via embed");
+            }
+            if (dllink == null) {
+                /* If failed, go back to the beginning */
+                getPage(downloadLink.getDownloadURL());
+            }
+        }
+        /* Fourth, continue like normal */
         if (dllink == null) {
             checkErrors(downloadLink, false);
             final Form download1 = getFormByKey("op", "download1");
             if (download1 != null) {
                 download1.remove("method_premium");
-                // stable is lame, issue finding input data fields correctly. eg. closes at ' quotation mark - remove when jd2 goes stable!
+                /* stable is lame, issue finding input data fields correctly. eg. closes at ' quotation mark - remove when jd2 goes stable! */
                 if (downloadLink.getName().contains("'")) {
                     String fname = new Regex(br, "<input type=\"hidden\" name=\"fname\" value=\"([^\"]+)\">").getMatch(0);
                     if (fname != null) {
@@ -269,7 +262,7 @@ public class ExaShareCom extends PluginForHost {
                         throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                     }
                 }
-                // end of backward compatibility
+                /* end of backward compatibility */
                 sendForm(download1);
                 checkErrors(downloadLink, false);
                 dllink = getDllink();
@@ -278,9 +271,9 @@ public class ExaShareCom extends PluginForHost {
         if (dllink == null) {
             Form dlForm = br.getFormbyProperty("name", "F1");
             if (dlForm == null) {
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                handlePluginBroken(downloadLink, "dlform_f1_null", 3);
             }
-            // how many forms deep do you want to try.
+            /* how many forms deep do you want to try? */
             int repeat = 2;
             for (int i = 0; i <= repeat; i++) {
                 dlForm.remove(null);
@@ -291,7 +284,7 @@ public class ExaShareCom extends PluginForHost {
                     password = true;
                     logger.info("The downloadlink seems to be password protected.");
                 }
-                // md5 can be on the subsequent pages
+                /* md5 can be on the subsequent pages - it is to be found very rare in current XFS versions */
                 if (downloadLink.getMD5Hash() == null) {
                     String md5hash = new Regex(correctedBR, "<b>MD5.*?</b>.*?nowrap>(.*?)<").getMatch(0);
                     if (md5hash != null) {
@@ -301,7 +294,7 @@ public class ExaShareCom extends PluginForHost {
                 /* Captcha START */
                 if (correctedBR.contains(";background:#ccc;text-align")) {
                     logger.info("Detected captcha method \"plaintext captchas\" for this host");
-                    /** Captcha method by ManiacMansion */
+                    /* Captcha method by ManiacMansion */
                     final String[][] letters = new Regex(br, "<span style=\\'position:absolute;padding\\-left:(\\d+)px;padding\\-top:\\d+px;\\'>(&#\\d+;)</span>").getMatches();
                     if (letters == null || letters.length == 0) {
                         logger.warning("plaintext captchahandling broken!");
@@ -349,7 +342,7 @@ public class ExaShareCom extends PluginForHost {
                     dlForm.put("recaptcha_challenge_field", rc.getChallenge());
                     dlForm.put("recaptcha_response_field", Encoding.urlEncode(c));
                     logger.info("Put captchacode " + c + " obtained by captcha metod \"Re Captcha\" in the form and submitted it.");
-                    /** wait time is often skippable for reCaptcha handling */
+                    /* wait time is usually skippable for reCaptcha handling */
                     skipWaittime = true;
                 } else if (br.containsHTML("solvemedia\\.com/papi/")) {
                     logger.info("Detected captcha method \"solvemedia\" for this host");
@@ -385,7 +378,6 @@ public class ExaShareCom extends PluginForHost {
                         throw new PluginException(LinkStatus.ERROR_FATAL);
                     }
                     dlForm.put("capcode", result);
-                    /** wait time is often skippable for reCaptcha handling */
                     skipWaittime = false;
                 }
                 /* Captcha END */
@@ -428,28 +420,17 @@ public class ExaShareCom extends PluginForHost {
             br.followConnection();
             correctBR();
             checkServerErrors();
-            int timesFailed = downloadLink.getIntegerProperty(NICE_HOSTproperty + "failedtimes_dllinknofile", 0);
-            downloadLink.getLinkStatus().setRetryCount(0);
-            if (timesFailed <= 2) {
-                logger.info(NICE_HOST + ": Final link is no file -> Retrying");
-                timesFailed++;
-                downloadLink.setProperty(NICE_HOSTproperty + "failedtimes_dllinknofile", timesFailed);
-                throw new PluginException(LinkStatus.ERROR_RETRY, "Final download link not found");
-            } else {
-                downloadLink.setProperty(NICE_HOSTproperty + "failedtimes_dllinknofile", Property.NULL);
-                logger.info(NICE_HOST + ": Final link is no file -> Plugin is broken");
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            }
+            handlePluginBroken(downloadLink, "dllinknofile", 3);
         }
         downloadLink.setProperty(directlinkproperty, dllink);
         fixFilename(downloadLink);
         try {
-            // add a download slot
+            /* add a download slot */
             controlFree(+1);
-            // start the dl
+            /* start the dl */
             dl.startDownload();
         } finally {
-            // remove download slot
+            /* remove download slot */
             controlFree(-1);
         }
     }
@@ -457,6 +438,38 @@ public class ExaShareCom extends PluginForHost {
     @Override
     public int getMaxSimultanFreeDownloadNum() {
         return maxFree.get();
+    }
+
+    /* do not add @Override here to keep 0.* compatibility */
+    public boolean hasAutoCaptcha() {
+        return true;
+    }
+
+    /* NO OVERRIDE!! We need to stay 0.9*compatible */
+    public boolean hasCaptcha(DownloadLink link, jd.plugins.Account acc) {
+        if (acc == null) {
+            /* no account, yes we can expect captcha */
+            return true;
+        }
+        if (Boolean.TRUE.equals(acc.getBooleanProperty("nopremium"))) {
+            /* free accounts also have captchas */
+            return true;
+        }
+        return false;
+    }
+
+    private void prepBrowser(final Browser br) {
+        /* define custom browser headers and language settings */
+        br.getHeaders().put("Accept-Language", "en-gb, en;q=0.9");
+        br.setCookie(COOKIE_HOST, "lang", "english");
+        if (ENABLE_RANDOM_UA) {
+            if (agent.get() == null) {
+                /* we first have to load the plugin, before we can reference it */
+                JDUtilities.getPluginForHost("mediafire.com");
+                agent.set(jd.plugins.hoster.MediafireCom.stringUserAgent());
+            }
+            br.getHeaders().put("User-Agent", agent.get());
+        }
     }
 
     /**
@@ -478,14 +491,14 @@ public class ExaShareCom extends PluginForHost {
         logger.info("maxFree now = " + maxFree.get());
     }
 
-    /** Remove HTML code which could break the plugin */
+    /* Removes HTML code which could break the plugin */
     public void correctBR() throws NumberFormatException, PluginException {
         correctedBR = br.toString();
         ArrayList<String> regexStuff = new ArrayList<String>();
 
         // remove custom rules first!!! As html can change because of generic cleanup rules.
 
-        // generic cleanup
+        /* generic cleanup */
         regexStuff.add("<\\!(\\-\\-.*?\\-\\-)>");
         regexStuff.add("(display: ?none;\">.*?</div>)");
         regexStuff.add("(visibility:hidden>.*?<)");
@@ -503,11 +516,7 @@ public class ExaShareCom extends PluginForHost {
     public String getDllink() {
         String dllink = br.getRedirectLocation();
         if (dllink == null) {
-            dllink = new Regex(correctedBR, "(\"|\\')(https?://(\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}|([\\w\\-]+\\.)?" + DOMAINS + ")(:\\d{1,4})?/(files|d|cgi\\-bin/dl\\.cgi)/(\\d+/)?[a-z0-9]+/[^<>\"/]*?)(\"|\\')").getMatch(1);
-            if (dllink == null) {
-                dllink = new Regex(correctedBR, "file: \"(http://[^<>\"]*?)\"").getMatch(0);
-            }
-
+            dllink = new Regex(correctedBR, "(\"|\\')(https?://(\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}|([\\w\\-\\.]+\\.)?" + DOMAINS + ")(:\\d{1,4})?/(files|d|cgi\\-bin/dl\\.cgi)/(\\d+/)?[a-z0-9]+/[^<>\"/]*?)(\"|\\')").getMatch(1);
             if (dllink == null) {
                 final String cryptedScripts[] = new Regex(correctedBR, "p\\}\\((.*?)\\.split\\('\\|'\\)").getColumn(0);
                 if (cryptedScripts != null && cryptedScripts.length != 0) {
@@ -547,7 +556,8 @@ public class ExaShareCom extends PluginForHost {
 
         String finallink = null;
         if (decoded != null) {
-            finallink = new Regex(decoded, "file:\\'(http://[^<>\"]*?)\\'").getMatch(0);
+            /* Open regex is possible because in the unpacked JS there are usually only 1 links */
+            finallink = new Regex(decoded, "(\"|\\')(https?://[^<>\"\\']*?\\.(avi|flv|mkv|mp4))(\"|\\')").getMatch(1);
         }
         return finallink;
     }
@@ -557,6 +567,7 @@ public class ExaShareCom extends PluginForHost {
         if (dllink != null) {
             try {
                 final Browser br2 = br.cloneBrowser();
+                br2.setFollowRedirects(true);
                 URLConnectionAdapter con = br2.openGetConnection(dllink);
                 if (con.getContentType().contains("html") || con.getLongContentLength() == -1) {
                     downloadLink.setProperty(property, Property.NULL);
@@ -576,7 +587,6 @@ public class ExaShareCom extends PluginForHost {
         correctBR();
     }
 
-    @SuppressWarnings("unused")
     private void postPage(final String page, final String postdata) throws Exception {
         br.postPage(page, postdata);
         correctBR();
@@ -592,11 +602,13 @@ public class ExaShareCom extends PluginForHost {
         /** Ticket Time */
         final String ttt = new Regex(correctedBR, "id=\"countdown_str\">[^<>\"]+<span id=\"[^<>\"]+\"( class=\"[^<>\"]+\")?>([\n ]+)?(\\d+)([\n ]+)?</span>").getMatch(2);
         if (ttt != null) {
-            int tt = Integer.parseInt(ttt);
-            tt -= passedTime;
-            logger.info("Waittime detected, waiting " + ttt + " - " + passedTime + " seconds from now on...");
-            if (tt > 0) {
-                sleep(tt * 1000l, downloadLink);
+            int wait = Integer.parseInt(ttt);
+            wait -= passedTime;
+            logger.info("[Seconds] Waittime on the page: " + ttt);
+            logger.info("[Seconds] Passed time: " + passedTime);
+            logger.info("[Seconds] Total time to wait: " + wait);
+            if (wait > 0) {
+                sleep(wait * 1000l, downloadLink);
             }
         }
     }
@@ -680,7 +692,7 @@ public class ExaShareCom extends PluginForHost {
         if (orgName.equalsIgnoreCase(fuid.toLowerCase())) {
             FFN = servNameExt;
         } else if (inValidate(orgExt) && !inValidate(servExt) && (servName.toLowerCase().contains(orgName.toLowerCase()) && !servName.equalsIgnoreCase(orgName))) {
-            // when partial match of filename exists. eg cut off by quotation mark miss match, or orgNameExt has been abbreviated by hoster.
+            /* when partial match of filename exists. eg cut off by quotation mark miss match, or orgNameExt has been abbreviated by hoster */
             FFN = servNameExt;
         } else if (!inValidate(orgExt) && !inValidate(servExt) && !orgExt.equalsIgnoreCase(servExt)) {
             FFN = orgName + servExt;
@@ -705,7 +717,7 @@ public class ExaShareCom extends PluginForHost {
             return null;
         }
         if (pwform == null) {
-            // so we know handlePassword triggered without any form
+            /* so we know handlePassword triggered without any form */
             logger.info("Password Form == null");
         } else {
             logger.info("Put password \"" + passCode + "\" entered by user in the DLForm.");
@@ -718,7 +730,7 @@ public class ExaShareCom extends PluginForHost {
     public void checkErrors(final DownloadLink theLink, final boolean checkAll) throws NumberFormatException, PluginException {
         if (checkAll) {
             if (new Regex(correctedBR, PASSWORDTEXT).matches() && correctedBR.contains("Wrong password")) {
-                // handle password has failed in the past, additional try catching / resetting values
+                /* handle password has failed in the past, additional try catching / resetting values */
                 logger.warning("Wrong password, the entered password \"" + passCode + "\" is wrong, retrying...");
                 passCode = null;
                 theLink.setProperty("pass", Property.NULL);
@@ -734,7 +746,7 @@ public class ExaShareCom extends PluginForHost {
         }
         /** Wait time reconnect handling */
         if (new Regex(correctedBR, "(You have reached the download(\\-| )limit|You have to wait)").matches()) {
-            // adjust this regex to catch the wait time string for COOKIE_HOST
+            /* adjust this regex to catch the wait time string for COOKIE_HOST */
             String WAIT = new Regex(correctedBR, "((You have reached the download(\\-| )limit|You have to wait)[^<>]+)").getMatch(0);
             String tmphrs = new Regex(WAIT, "\\s+(\\d+)\\s+hours?").getMatch(0);
             if (tmphrs == null) {
@@ -765,7 +777,7 @@ public class ExaShareCom extends PluginForHost {
                 }
                 int waittime = ((days * 24 * 3600) + (3600 * hours) + (60 * minutes) + seconds + 1) * 1000;
                 logger.info("Detected waittime #2, waiting " + waittime + "milliseconds");
-                /** Not enough wait time to reconnect->Wait and try again */
+                /* Not enough wait time to reconnect -> Wait short and retry */
                 if (waittime < 180000) {
                     throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, JDL.L("plugins.hoster.xfilesharingprobasic.allwait", ALLWAIT_SHORT), waittime);
                 }
@@ -803,9 +815,15 @@ public class ExaShareCom extends PluginForHost {
                 }
                 throw new PluginException(LinkStatus.ERROR_FATAL, PREMIUMONLY2);
             }
-        }
-        if (br.getURL().contains("/?op=login&redirect=")) {
+        } else if (br.getURL().contains("/?op=login&redirect=")) {
             logger.info("Only downloadable via premium");
+            try {
+                throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);
+            } catch (final Throwable e) {
+                if (e instanceof PluginException) {
+                    throw (PluginException) e;
+                }
+            }
             throw new PluginException(LinkStatus.ERROR_FATAL, PREMIUMONLY2);
         }
         if (new Regex(correctedBR, MAINTENANCE).matches()) {
@@ -815,10 +833,39 @@ public class ExaShareCom extends PluginForHost {
 
     public void checkServerErrors() throws NumberFormatException, PluginException {
         if (new Regex(correctedBR, Pattern.compile("No file", Pattern.CASE_INSENSITIVE)).matches()) {
-            throw new PluginException(LinkStatus.ERROR_FATAL, "Server error");
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error: 'no file'", 2 * 60 * 60 * 1000l);
+        }
+        if (new Regex(correctedBR, Pattern.compile("Wrong IP", Pattern.CASE_INSENSITIVE)).matches()) {
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error: 'Wrong IP'", 2 * 60 * 60 * 1000l);
         }
         if (new Regex(correctedBR, "(File Not Found|<h1>404 Not Found</h1>)").matches()) {
-            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error", 30 * 60 * 1000l);
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error (404)", 30 * 60 * 1000l);
+        }
+    }
+
+    /**
+     * Is intended to handle out of date errors which might occur seldom by re-tring a couple of times before throwing the out of date
+     * error.
+     *
+     * @param dl
+     *            : The DownloadLink
+     * @param error
+     *            : The name of the error
+     * @param maxRetries
+     *            : Max retries before out of date error is thrown
+     */
+    private void handlePluginBroken(final DownloadLink dl, final String error, final int maxRetries) throws PluginException {
+        int timesFailed = dl.getIntegerProperty(NICE_HOSTproperty + "failedtimes_" + error, 0);
+        dl.getLinkStatus().setRetryCount(0);
+        if (timesFailed <= maxRetries) {
+            logger.info(NICE_HOST + ": " + error + " -> Retrying");
+            timesFailed++;
+            dl.setProperty(NICE_HOSTproperty + "failedtimes_" + error, timesFailed);
+            throw new PluginException(LinkStatus.ERROR_RETRY, "Unknown error occured: " + error);
+        } else {
+            dl.setProperty(NICE_HOSTproperty + "failedtimes_" + error, Property.NULL);
+            logger.info(NICE_HOST + ": " + error + " -> Plugin is broken");
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
     }
 
