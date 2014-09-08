@@ -8,6 +8,7 @@ import java.util.Map.Entry;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 
+import org.appwork.utils.StringUtils;
 import org.jdownloader.extensions.extraction.ExtractionStatus;
 import org.jdownloader.gui.views.SelectionInfo;
 import org.jdownloader.plugins.FinalLinkState;
@@ -115,40 +116,42 @@ public class DownloadLinkAggregator implements MirrorPackageSetup {
         int finished = 0;
         long speed = 0;
         int localFileCount = 0;
-        HashMap<String, MirrorPackage> dupeSet = new HashMap<String, MirrorPackage>();
+        final HashMap<String, MirrorPackage> dupeSet = new HashMap<String, MirrorPackage>();
         MirrorPackage list;
         for (DownloadLink link : children) {
             if (isMirrorHandlingEnabled()) {
                 String mirrorID = createDupeID(link);
                 // TODO:Check if this can result in an endless loop
-                while (true) {
+                while (mirrorID != null) {
                     list = dupeSet.get(mirrorID);
                     if (list == null) {
                         dupeSet.put(mirrorID, list = new MirrorPackage(mirrorID, this));
                     }
-                    String newID = list.add(link);
-                    if (newID != null) {
-                        mirrorID = newID;
-                    } else {
+                    final String newID = list.add(link);
+                    if (newID == null || StringUtils.equals(mirrorID, newID)) {
                         break;
+                    } else {
+                        mirrorID = newID;
                     }
                 }
             } else {
                 speed += link.getView().getSpeedBps();
                 totalBytes += link.getView().getBytesTotal();
                 if (isLocalFileUsageEnabled()) {
-                    File a = new File(link.getFileOutput() + ".part");
-                    if (a.exists()) {
-                        bytesLoaded += a.length();
-                        localFileCount++;
-                    } else {
-                        a = new File(link.getFileOutput() + "");
+                    final String fileOutput = link.getFileOutput();
+                    if (StringUtils.isNotEmpty(fileOutput)) {
+                        File a = new File(fileOutput + ".part");
                         if (a.exists()) {
                             bytesLoaded += a.length();
                             localFileCount++;
+                        } else {
+                            a = new File(fileOutput);
+                            if (a.exists()) {
+                                bytesLoaded += a.length();
+                                localFileCount++;
+                            }
                         }
                     }
-
                 } else {
                     bytesLoaded += link.getView().getBytesLoaded();
                 }
