@@ -949,7 +949,9 @@ public class FileFactory extends PluginForHost {
                 sb.replace(sb.length() - 1, sb.length(), "");
                 getPage(br, api + "/getFileInfo?" + sb, account);
                 for (final DownloadLink dl : links) {
-                    final String filter = br.getRegex("(\"" + getFUID(dl) + "\":\\{.*?\\})").getMatch(0);
+                    // password is last value in fuid response, needed because filenames or other values could contain }. It then returns
+                    // invalid response.
+                    final String filter = br.getRegex("(\"" + getFUID(dl) + "\":\\{.*?password\".*?\\})").getMatch(0);
                     if (filter == null) {
                         return false;
                     }
@@ -1127,28 +1129,34 @@ public class FileFactory extends PluginForHost {
         }
     }
 
+    private static Object apiAccLock = new Object();
+
     private String loginKey(final Account account) throws Exception {
-        final Browser nbr = new Browser();
-        prepApiBrowser(nbr);
-        nbr.getPage(api + "/getSessionKey?email=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()));
-        final String apiKey = getJson(nbr, "key");
-        if (apiKey != null) {
-            account.setProperty("apiKey", apiKey);
-        } else if ("error".equalsIgnoreCase(getJson(nbr, "type")) && ("705".equalsIgnoreCase(getJson(nbr, "code")) || "706".equalsIgnoreCase(getJson(nbr, "code")) || "707".equalsIgnoreCase(getJson(nbr, "code")))) {
-            // 705 ERR_API_LOGIN_ATTEMPTS Too many failed login attempts. Please wait 15 minute and try to login again.
-            // 706 ERR_API_LOGIN_FAILED Login details were incorrect
-            // 707 ERR_API_ACCOUNT_DELETED Account has been deleted, or is pending deletion
-            throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\n" + errorMsg(nbr), PluginException.VALUE_ID_PREMIUM_DISABLE);
+        synchronized (apiAccLock) {
+            final Browser nbr = new Browser();
+            prepApiBrowser(nbr);
+            nbr.getPage(api + "/getSessionKey?email=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()));
+            final String apiKey = getJson(nbr, "key");
+            if (apiKey != null) {
+                account.setProperty("apiKey", apiKey);
+            } else if ("error".equalsIgnoreCase(getJson(nbr, "type")) && ("705".equalsIgnoreCase(getJson(nbr, "code")) || "706".equalsIgnoreCase(getJson(nbr, "code")) || "707".equalsIgnoreCase(getJson(nbr, "code")))) {
+                // 705 ERR_API_LOGIN_ATTEMPTS Too many failed login attempts. Please wait 15 minute and try to login again.
+                // 706 ERR_API_LOGIN_FAILED Login details were incorrect
+                // 707 ERR_API_ACCOUNT_DELETED Account has been deleted, or is pending deletion
+                throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\n" + errorMsg(nbr), PluginException.VALUE_ID_PREMIUM_DISABLE);
+            }
+            return apiKey;
         }
-        return apiKey;
     }
 
     private synchronized String getApiKey(final Account account) throws Exception {
-        String apiKey = account.getStringProperty("apiKey", null);
-        if (apiKey == null) {
-            apiKey = loginKey(account);
+        synchronized (apiAccLock) {
+            String apiKey = account.getStringProperty("apiKey", null);
+            if (apiKey == null) {
+                apiKey = loginKey(account);
+            }
+            return apiKey;
         }
-        return apiKey;
     }
 
     private Browser prepApiBrowser(final Browser ibr) {
@@ -1156,25 +1164,27 @@ public class FileFactory extends PluginForHost {
         return ibr;
     }
 
-    private synchronized void getPage(final Browser ibr, final String url, final Account account) throws Exception {
+    private void getPage(final Browser ibr, final String url, final Account account) throws Exception {
         if (account != null) {
-            String apiKey = getApiKey(account);
-            ibr.getPage(url + (url.matches("(" + api + ")?/[a-zA-Z0-9]+\\?[a-zA-Z0-9]+.+") ? "&" : "?") + "key=" + apiKey);
-            if (sessionKeyInValid(account, ibr)) {
-                apiKey = getApiKey(account);
-                if (apiKey != null) {
-                    // can't sessionKeyInValid because getApiKey/loginKey return String, and loginKey uses a new Browser.
-                    ibr.getPage(url + (url.matches("(" + api + ")?/[a-zA-Z0-9]+\\?[a-zA-Z0-9]+.+") ? "&" : "?") + "key=" + apiKey);
-                } else {
-                    // failure occurred.
-                    throw new PluginException(LinkStatus.ERROR_FATAL);
+            synchronized (apiAccLock) {
+                String apiKey = getApiKey(account);
+                ibr.getPage(url + (url.matches("(" + api + ")?/[a-zA-Z0-9]+\\?[a-zA-Z0-9]+.+") ? "&" : "?") + "key=" + apiKey);
+                if (sessionKeyInValid(account, ibr)) {
+                    apiKey = getApiKey(account);
+                    if (apiKey != null) {
+                        // can't sessionKeyInValid because getApiKey/loginKey return String, and loginKey uses a new Browser.
+                        ibr.getPage(url + (url.matches("(" + api + ")?/[a-zA-Z0-9]+\\?[a-zA-Z0-9]+.+") ? "&" : "?") + "key=" + apiKey);
+                    } else {
+                        // failure occurred.
+                        throw new PluginException(LinkStatus.ERROR_FATAL);
+                    }
                 }
-            }
-            // account specific errors which could happen at any point in time!
-            if ("error".equalsIgnoreCase(getJson(ibr, "type")) && ("707".equalsIgnoreCase(getJson(ibr, "code")) || "719".equalsIgnoreCase(getJson(ibr, "code")))) {
-                // 707 ERR_API_ACCOUNT_DELETED Account has been deleted, or is pending deletion
-                // 719 ERR_API_ACCOUNT_SUSPENDED The account being used has been suspended
-                throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\n" + errorMsg(ibr), PluginException.VALUE_ID_PREMIUM_DISABLE);
+                // account specific errors which could happen at any point in time!
+                if ("error".equalsIgnoreCase(getJson(ibr, "type")) && ("707".equalsIgnoreCase(getJson(ibr, "code")) || "719".equalsIgnoreCase(getJson(ibr, "code")))) {
+                    // 707 ERR_API_ACCOUNT_DELETED Account has been deleted, or is pending deletion
+                    // 719 ERR_API_ACCOUNT_SUSPENDED The account being used has been suspended
+                    throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\n" + errorMsg(ibr), PluginException.VALUE_ID_PREMIUM_DISABLE);
+                }
             }
         } else {
             ibr.getPage(url);
