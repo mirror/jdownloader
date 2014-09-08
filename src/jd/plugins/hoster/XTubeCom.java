@@ -64,25 +64,39 @@ public class XTubeCom extends PluginForHost {
         br.setCookie(MAINPAGE, "cookie_warning", "S");
         br.setFollowRedirects(true);
         br.getPage(downloadLink.getDownloadURL());
-        if (br.getURL().contains("msg=Invalid+Video+ID") || br.containsHTML(">This video has been removed from XTube")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (br.getURL().contains("msg=Invalid+Video+ID") || br.containsHTML(">This video has been removed from XTube")) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
         String filename = null;
         if (br.getURL().contains("play.php?preview_id=")) {
             filename = br.getRegex("class=\"sectionNoStyleHeader\">([^<>\"]*?)</div>").getMatch(0);
         } else {
             filename = br.getRegex("<div class=\"font_b_12px\">(.*?)</div><div").getMatch(0);
             // For DVD preview links
-            if (filename == null) filename = br.getRegex("id=\"videoDetails\">[\t\n\r ]+<p class=\"title\">([^<>\"]*?)</p>").getMatch(0);
+            if (filename == null) {
+                filename = br.getRegex("id=\"videoDetails\">[\t\n\r ]+<p class=\"title\">([^<>\"]*?)</p>").getMatch(0);
+            }
         }
         String fileID = new Regex(downloadLink.getDownloadURL(), "xtube\\.com/watch\\.php\\?v=(.+)").getMatch(0);
         String ownerName = br.getRegex("\\?field_subscribe_user_id=([^<>\"]*?)\"").getMatch(0);
-        if (ownerName == null) ownerName = "undefined";
-        if (fileID == null || ownerName == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (ownerName == null) {
+            ownerName = "undefined";
+        }
+        if (fileID == null || ownerName == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         br.postPage("http://www.xtube.com/find_video.php", "user%5Fid=" + Encoding.urlEncode(ownerName) + "&clip%5Fid=&video%5Fid=" + Encoding.urlEncode(fileID));
         DLLINK = br.getRegex("\\&filename=(http.*?)($|\r|\n| )").getMatch(0);
-        if (DLLINK == null) DLLINK = br.getRegex("\\&filename=(%2Fvideos.*?hash.+)").getMatch(0);
-        if (filename == null || DLLINK == null || DLLINK.length() > 500) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (DLLINK == null) {
+            DLLINK = br.getRegex("\\&filename=(%2Fvideos.*?hash.+)").getMatch(0);
+        }
+        if (filename == null || DLLINK == null || DLLINK.length() > 500) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         DLLINK = Encoding.htmlDecode(DLLINK.trim());
-        if (DLLINK.contains("/notfound")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (DLLINK.contains("/notfound")) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
         filename = filename.trim();
         downloadLink.setFinalFileName(filename + ".flv");
         br.setDebug(true);
@@ -90,10 +104,11 @@ public class XTubeCom extends PluginForHost {
         URLConnectionAdapter con = null;
         try {
             con = br2.openGetConnection(DLLINK);
-            if (!con.getContentType().contains("html"))
+            if (!con.getContentType().contains("html")) {
                 downloadLink.setDownloadSize(con.getLongContentLength());
-            else
+            } else {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            }
             return AvailableStatus.TRUE;
         } finally {
             try {

@@ -38,7 +38,9 @@ public class JobRunnable<T> implements Runnable {
 
         try {
             synchronized (this) {
-                if (canceled) return;
+                if (canceled) {
+                    return;
+                }
 
                 getJob().getLogger().info(solver + " RUN!");
                 thread = Thread.currentThread();
@@ -62,7 +64,9 @@ public class JobRunnable<T> implements Runnable {
 
             try {
 
-                if (timeout != null) timeout.resetAndStart();
+                if (timeout != null) {
+                    timeout.resetAndStart();
+                }
 
                 solver.solve(job);
 
@@ -74,7 +78,9 @@ public class JobRunnable<T> implements Runnable {
                 getJob().getLogger().log(e);
 
             } finally {
-
+                if (timeout != null) {
+                    timeout.stop();
+                }
                 fireDoneAndAfterSolveEvents();
 
             }

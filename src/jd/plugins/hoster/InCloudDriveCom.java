@@ -142,7 +142,9 @@ public class InCloudDriveCom extends PluginForHost {
                 if (i == 1 && predlwait != null) {
                     // waittime[to ms] - elapsed time
                     final long wait = (Long.parseLong(predlwait) * 1000) - (System.currentTimeMillis() - captchaRequest);
-                    sleep(wait, downloadLink);
+                    if (wait > 0) {
+                        sleep(wait, downloadLink);
+                    }
                 }
                 ajaxPostPage("/captcha/php/check_captcha.php", "captcha_code=" + Encoding.urlEncode(code));
                 if (ajax.toString().equals("not_match") && i + 1 != repeat) {
@@ -447,7 +449,7 @@ public class InCloudDriveCom extends PluginForHost {
 
     /**
      * When premium only download restriction (eg. filesize), throws exception with given message
-     *
+     * 
      * @param msg
      * @throws PluginException
      */

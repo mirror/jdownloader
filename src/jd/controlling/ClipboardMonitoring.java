@@ -103,15 +103,15 @@ public class ClipboardMonitoring {
         }
     }
 
-    private static ClipboardMonitoring   INSTANCE            = new ClipboardMonitoring();
-    private static DataFlavor            URLFLAVOR           = null;
-    private static DataFlavor            URILISTFLAVOR       = null;
-    private volatile Thread              monitoringThread    = null;
-    protected final Clipboard            clipboard;
-    private volatile boolean             skipChangeDetection = false;
-    protected final WindowsClipboardHack CLIPBOARDHACK;
-    private static boolean               FIRSTROUNDDONE      = true;
-    private static volatile boolean      HTMLFLAVORALLOWED   = true;
+    private static final ClipboardMonitoring INSTANCE            = new ClipboardMonitoring();
+    private static DataFlavor                URLFLAVOR           = null;
+    private static DataFlavor                URILISTFLAVOR       = null;
+    private volatile Thread                  monitoringThread    = null;
+    protected final Clipboard                clipboard;
+    private volatile boolean                 skipChangeDetection = false;
+    protected final WindowsClipboardHack     CLIPBOARDHACK;
+    private static boolean                   FIRSTROUNDDONE      = true;
+    private static volatile boolean          HTMLFLAVORALLOWED   = true;
 
     public static boolean isHtmlFlavorAllowed() {
         return HTMLFLAVORALLOWED;
