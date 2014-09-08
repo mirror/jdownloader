@@ -48,21 +48,43 @@ public class VidGrabNet extends PluginForHost {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         br.getPage(downloadLink.getDownloadURL());
-        if (br.containsHTML(">PAGE NOT FOUND\\!<") || br.getURL().contains("/?404")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (br.containsHTML(">PAGE NOT FOUND\\!<") || br.getURL().contains("/?404")) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
         String filename = br.getRegex("<title>([^<>\"]*?) \\- VIDGRAB</title>").getMatch(0);
-        if (filename == null) filename = br.getRegex("<div class=\"singlepost\">[^<>\"]+<h2>([^<>\"]*?)</h2>").getMatch(0);
-        DLLINK = br.getRegex("config=([^<>\"\\']*?)(\"|\\')").getMatch(0);
-        if (filename == null || DLLINK == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        br.getPage("http://vidgrab.net/95000.php?id=" + Encoding.htmlDecode(DLLINK));
+        if (filename == null) {
+            filename = br.getRegex("<div class=\"singlepost\">[^<>\"]+<h2>([^<>\"]*?)</h2>").getMatch(0);
+        }
+        if (filename == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        final String token = br.getRegex("c=([a-z0-9\\-]+)\"").getMatch(0);
+        if (token != null) {
+            br.postPage("http://vidgrab.net/i.php", "token=" + Encoding.urlEncode(token));
+        } else {
+            DLLINK = br.getRegex("config=([^<>\"\\']*?)(\"|\\')").getMatch(0);
+            if (DLLINK == null) {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
+            br.getPage("http://vidgrab.net/95000.php?id=" + Encoding.htmlDecode(DLLINK));
+        }
         DLLINK = br.getRegex("<file>(http://[^<>\"]*?)</file>").getMatch(0);
         /* Video does not load --> Probably down */
-        if (DLLINK == null && br.containsHTML("<file>")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        if (DLLINK == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (DLLINK == null && br.containsHTML("<file>")) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
+        if (DLLINK == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         DLLINK = Encoding.htmlDecode(DLLINK);
         filename = filename.trim();
         String ext = DLLINK.substring(DLLINK.lastIndexOf("."));
-        if ((ext == null || ext.length() > 5) && DLLINK.contains("MP4")) ext = ".mp4";
-        if (ext == null || ext.length() > 5) ext = ".flv";
+        if ((ext == null || ext.length() > 5) && DLLINK.contains("MP4")) {
+            ext = ".mp4";
+        }
+        if (ext == null || ext.length() > 5) {
+            ext = ".flv";
+        }
         downloadLink.setFinalFileName(Encoding.htmlDecode(filename) + ext);
         Browser br2 = br.cloneBrowser();
         // In case the link redirects to the finallink
@@ -70,10 +92,11 @@ public class VidGrabNet extends PluginForHost {
         URLConnectionAdapter con = null;
         try {
             con = br2.openGetConnection(DLLINK);
-            if (!con.getContentType().contains("html"))
+            if (!con.getContentType().contains("html")) {
                 downloadLink.setDownloadSize(con.getLongContentLength());
-            else
+            } else {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            }
             return AvailableStatus.TRUE;
         } finally {
             try {

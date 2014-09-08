@@ -38,7 +38,7 @@ public class XXXBlg extends PluginForDecrypt {
     }
 
     private static final String INVALIDLINKS   = "http://(www\\.)?xxx\\-blog\\.to/(livecams|download|feed|trade|contact|faq|webmasters|a\\-z\\-index|link\\-us|\\d{4}/|comments/|author/|page/|category/|tag/|blog/|search/).*?";
-    private static final String INVALIDLINKS_2 = "http://(www\\.)?xxx\\-blog\\.to/(typ|dmca)/$";
+    private static final String INVALIDLINKS_2 = "http://(www\\.)?xxx\\-blog\\.to/(typ|dmca|wp\\-admin|poppen)/$";
 
     @Override
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
@@ -67,9 +67,13 @@ public class XXXBlg extends PluginForDecrypt {
                 dLink = createDownloadlink(br.getRedirectLocation());
             } else {
                 Form form = br.getForm(0);
-                if (form == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                if (form == null) {
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                }
                 dLink = createDownloadlink(form.getAction(null));
-                if (!parameter.matches("http://(www\\.)?xxx\\-blog\\.to/((share|sto|com\\-|u|filefactory/|relink/)[\\w\\./\\-]+|.*?\\.html|(blog|typ)/(dvd\\-rips|scenes|amateur\\-clips|hd\\-(scenes|movies)|site\\-rips|image\\-sets|games)/.+/)")) decryptedLinks.add(createDownloadlink(parameter));
+                if (!parameter.matches("http://(www\\.)?xxx\\-blog\\.to/((share|sto|com\\-|u|filefactory/|relink/)[\\w\\./\\-]+|.*?\\.html|(blog|typ)/(dvd\\-rips|scenes|amateur\\-clips|hd\\-(scenes|movies)|site\\-rips|image\\-sets|games)/.+/)")) {
+                    decryptedLinks.add(createDownloadlink(parameter));
+                }
             }
             dLink.setSourcePluginPasswordList(pwList);
             decryptedLinks.add(dLink);
@@ -77,11 +81,19 @@ public class XXXBlg extends PluginForDecrypt {
         } else {
 
             String fpname = br.getRegex("<title>(.*?)\\| XXX\\-Blog").getMatch(0);
-            if (fpname == null) fpname = br.getRegex("rel=\"bookmark\" title=\"(.*?)\"").getMatch(0);
+            if (fpname == null) {
+                fpname = br.getRegex("rel=\"bookmark\" title=\"(.*?)\"").getMatch(0);
+            }
             String pagepiece = br.getRegex("<strong>(.*?)</a></strong></p>").getMatch(0);
-            if (pagepiece == null) pagepiece = br.getRegex("<div class=\"entry\">(.+)\\s+</div>\\s+<br />").getMatch(0);
-            if (pagepiece == null) pagepiece = br.getRegex("<table class=\"dltable\"(.*?)class=\\'easySpoilerConclude\\'").getMatch(0);
-            if (pagepiece == null) pagepiece = br.getRegex("class=\\'easySpoilerTitleA\\'(.*?)class=\\'easySpoilerConclude\\'").getMatch(0);
+            if (pagepiece == null) {
+                pagepiece = br.getRegex("<div class=\"entry\">(.+)\\s+</div>\\s+<br />").getMatch(0);
+            }
+            if (pagepiece == null) {
+                pagepiece = br.getRegex("<table class=\"dltable\"(.*?)class=\\'easySpoilerConclude\\'").getMatch(0);
+            }
+            if (pagepiece == null) {
+                pagepiece = br.getRegex("class=\\'easySpoilerTitleA\\'(.*?)class=\\'easySpoilerConclude\\'").getMatch(0);
+            }
             if (pagepiece == null) {
                 logger.warning("pagepiece is null, using full html code!");
                 pagepiece = br.toString();
@@ -93,7 +105,9 @@ public class XXXBlg extends PluginForDecrypt {
                     continue;
                 }
                 for (final String link : links) {
-                    if (link.matches("http://(www\\.)?xxx\\-blog\\.to/((share|sto|com\\-|u|filefactory/|relink/)[\\w\\./\\-]+|.*?\\.html|(blog|typ)/(dvd\\-rips|scenes|amateur\\-clips|hd\\-(scenes|movies)|site\\-rips|image\\-sets|games)/.+/|[a-z0-9\\-_]+/)")) continue;
+                    if (link.matches("http://(www\\.)?xxx\\-blog\\.to/((share|sto|com\\-|u|filefactory/|relink/)[\\w\\./\\-]+|.*?\\.html|(blog|typ)/(dvd\\-rips|scenes|amateur\\-clips|hd\\-(scenes|movies)|site\\-rips|image\\-sets|games)/.+/|[a-z0-9\\-_]+/)")) {
+                        continue;
+                    }
                     final DownloadLink dlink = createDownloadlink(link);
                     dlink.setSourcePluginPasswordList(pwList);
                     decryptedLinks.add(dlink);

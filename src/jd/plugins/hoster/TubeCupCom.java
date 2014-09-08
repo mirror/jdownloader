@@ -56,7 +56,10 @@ public class TubeCupCom extends PluginForHost {
         if (br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        String filename = br.getRegex("<div class=\"album_title\">[\t\n\r ]+<h2>([^<>\"]*?)</h2>").getMatch(0);
+        String filename = br.getRegex("<div class=\"album_title\">[\t\n\r ]+<h\\d+>([^<>\"]*?)</h\\d+>").getMatch(0);
+        if (filename == null) {
+            filename = br.getRegex("<title>([^<>\"]*?) \\| Tube Cup</title>").getMatch(0);
+        }
         DLLINK = checkDirectLink(downloadLink, "directlink");
         if (DLLINK == null) {
             DLLINK = br.getRegex("\\'(http://(www\\.)?tubecup\\.com/get_file/[^<>\"]*?)\\'").getMatch(0);
