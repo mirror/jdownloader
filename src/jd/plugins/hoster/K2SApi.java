@@ -764,9 +764,11 @@ public abstract class K2SApi extends PluginForHost {
                     throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\n" + msg, PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
                 case 73:
                 case 74:
+                case 75:
                     // ERROR_NO_ALLOW_ACCESS_FROM_NETWORK = 73;
                     // ERROR_UNKNOWN_LOGIN_ERROR = 74;
                     throw new PluginException(LinkStatus.ERROR_FATAL, msg);
+                    // {"message":"This token not allow access from this IP address","status":"error","code":403,"errorCode":75}
                 default:
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 }
@@ -921,6 +923,50 @@ public abstract class K2SApi extends PluginForHost {
                 msg = "¡Usted no puede acceder " + getDomain() + " desde su conexión de red actual!";
             } else if (code == 74) {
                 msg = "¡Error de inicio de sesión desconocido!";
+            }
+        } else if ("pl".equalsIgnoreCase(lng)) {
+            if (code == 1) {
+                msg = "Pobra³e¶ ju¿ maksymaln± liczbê plików!";
+            } else if (code == 2) {
+                msg = "Osi±gniêto limit pobierania!";
+            } else if (code == 3) {
+                msg = "Ograniczenie na rozmiar plików";
+            } else if (code == 4) {
+                msg = "Brak dostêpu do pliku!";
+            } else if (code == 5) {
+                msg = "Wykryto czas oczekiwania!";
+            } else if (code == 6) {
+                msg = "Osi±gniêto maksymaln± liczbê równoczesnych pobierañ!";
+            } else if (code == 7) {
+                msg = "Ograniczenia w dostêpie - tylko u¿ytkownicy Premium mog± pobraæ wybrany plik!";
+            } else if (code == 8) {
+                msg = "Ograniczenia w dostêpie - tylko w³a¶ciciel pliku mo¿e go pobraæ!";
+            } else if (code == 10) {
+                msg = "Brak dostêpu!";
+            } else if (code == 11) {
+                msg = "auth_token wygas³!";
+            } else if (code == 21 || code == 42) {
+                msg = "Pobieranie teraz niemo¿liwe! Ogólny Kod b³êdu z podkodem!";
+            } else if (code == 23) {
+                msg = "Wskazany URL to Katalog, nie mo¿na pobraæ Katalogu jako pliku!";
+            } else if (code == 30) {
+                msg = "wymagany kod Captcha!";
+            } else if (code == 31) {
+                msg = "B³êdny kod Captcha";
+            } else if (code == 40) {
+                msg = "Nieprawid³owy klucz pobierania";
+            } else if (code == 41) {
+                msg = "Wykryto czas oczekiwania!";
+            } else if (code == 70) {
+                msg = "Nieprawid³owa nazwa u¿ytkownika/has³o!\r\nJeste¶ pewien, ¿e wprowadzi³e¶ poprawne has³o i nazwê u¿ytkownika? Podpowied¼:\r\n1. Je¶li w twoim ha¶le wystêpuj± znaki specjalne, zmieñ je (usuñ) i spróbuj ponownie!\r\n2. Wprowad¼ has³o i nazwê u¿ytkownika rêcznie, bez u¿ywania <Kopiuj i Wklej>.";
+            } else if (code == 71) {
+                msg = "Zbyt wiele prób zalogowania!";
+            } else if (code == 72) {
+                msg = "Konto zosta³o zablokowane!";
+            } else if (code == 73) {
+                msg = "Nie mo¿na po³±czyæ siê z " + getDomain() + " u¿ywaj±c obecnych ustawieñ sieciowych!";
+            } else if (code == 74) {
+                msg = "Nieznany b³±d logowania!";
             }
         }
         if (inValidate(msg)) {
