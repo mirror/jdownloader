@@ -219,7 +219,7 @@ public class DownloadsAPIV2Impl implements DownloadsAPIV2 {
 
     public static FilePackageAPIStorableV2 toStorable(PackageQueryStorable queryParams, FilePackage fp, Object caller) {
         DownloadWatchDog dwd = DownloadWatchDog.getInstance();
-        FilePackageAPIStorableV2 fps = new FilePackageAPIStorableV2();
+        FilePackageAPIStorableV2 fps = new FilePackageAPIStorableV2(fp);
         FilePackageView fpView = new FilePackageView(fp);
         fpView.setItems(null);
 
