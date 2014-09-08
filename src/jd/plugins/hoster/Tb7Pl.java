@@ -32,6 +32,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
+import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.formatter.TimeFormatter;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "tb7.pl" }, urls = { "REGEX_NOT_POSSIBLE_RANDOM-asdfasdfsadfsdgfd32423" }, flags = { 2 })
@@ -108,7 +109,11 @@ public class Tb7Pl extends PluginForHost {
         }
         account.setValid(true);
         ai.setMultiHostSupport(supportedHosts);
-        ai.setStatus("Premium User");
+        ai.setProperty("Turbobit traffic", "Unlimited");
+        final String otherHostersLimitLeft = br.getRegex(" Pozostały limit na serwisy dodatkowe: ([^<>\"\\']+)<br />").getMatch(0);
+        ai.setProperty("Other hosters traffic", SizeFormatter.getSize(otherHostersLimitLeft));
+        ai.setStatus("Premium User (TB: unlimited," + " Other: " + otherHostersLimitLeft + ")");
+
         return ai;
     }
 
@@ -148,6 +153,10 @@ public class Tb7Pl extends PluginForHost {
         String postData = "step=1" + "&content=" + url;
         showMessage(link, "Phase 2/3: Generating Link");
         br.postPage(MAINPAGE + "mojekonto/sciagaj", postData);
+        if (br.containsHTML("Wymagane dodatkowe [0-9.]+ MB limitu")) {
+            logger.severe("Tb7.pl(Error): " + br.getRegex("(Wymagane dodatkowe [0-9.]+ MB limitu)"));
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Download limit exceeded!", 1 * 60 * 1000l);
+        }
         postData = "step=2" + "&0=on";
         br.postPage(MAINPAGE + "mojekonto/sciagaj", postData);
 
