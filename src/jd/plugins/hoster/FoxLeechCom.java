@@ -198,7 +198,7 @@ public class FoxLeechCom extends PluginForHost {
         final String api_url = br.getRegex("\"(https?://(www\\.)?foxleech\\.com/api/[^<>\"]*?)\"").getMatch(0);
         long expire = System.currentTimeMillis();
         String months, days, hours, minutes, seconds;
-        final Regex expireinfo = br.getRegex("type=\"text\"[^<>]+ value=\"((\\d{1,2})Months)?( (\\d{1,2})Days)?( (\\d{1,2})Hours)?( (\\d{1,2})Minutes)?( (\\d{1,2})Seconds)? \"");
+        final Regex expireinfo = br.getRegex("type=\"text\"[^<>]+ value=\"((\\d{1,2})Months )?((\\d{1,2})Days )?((\\d{1,2})Hours )?((\\d{1,2})Minutes )?((\\d{1,2})Seconds )?\"");
         months = expireinfo.getMatch(1);
         days = expireinfo.getMatch(3);
         hours = expireinfo.getMatch(5);
