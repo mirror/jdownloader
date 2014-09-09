@@ -172,10 +172,12 @@ public class Tb7Pl extends PluginForHost {
         }
         if (generatedLink == null) {
             logger.severe("Tb7.pl(Error): " + generatedLink);
-            /*
-             * after x retries we disable this host and retry with normal plugin
-             */
-            if (link.getLinkStatus().getRetryCount() >= 3) {
+            //
+            // after x retries we disable this host and retry with normal plugin
+            // but because transfer is decreased even if there's a problem
+            // with download (seems like bug) - we limit retries to 2
+            //
+            if (link.getLinkStatus().getRetryCount() >= 2) {
                 try {
                     // disable hoster for 30min
                     tempUnavailableHoster(acc, link, 30 * 60 * 1000l);
@@ -185,7 +187,7 @@ public class Tb7Pl extends PluginForHost {
                 link.getLinkStatus().setRetryCount(0);
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE);
             }
-            String msg = "(" + link.getLinkStatus().getRetryCount() + 1 + "/" + 3 + ")";
+            String msg = "(" + link.getLinkStatus().getRetryCount() + 1 + "/" + 2 + ")";
 
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Retry in few secs" + msg, 20 * 1000l);
         }
@@ -194,7 +196,8 @@ public class Tb7Pl extends PluginForHost {
         int chunks = 0;
 
         // generated fileshark link allows only 1 chunk
-        if (link.getBrowserUrl().contains("fileshark.pl")) {
+        if (link.getBrowserUrl().contains("fileshark.pl") ||
+            link.getDownloadURL().contains("fileshark.pl")) {
             chunks = 1;
         }
         dl = jd.plugins.BrowserAdapter.openDownload(br, link, generatedLink, true, chunks);
