@@ -197,13 +197,16 @@ public class FoxLeechCom extends PluginForHost {
         final String uploaded_size = br.getRegex("<li>Upload : <a>([^<>\"]*?) / \\d+ GB</a>").getMatch(0);
         final String api_url = br.getRegex("\"(https?://(www\\.)?foxleech\\.com/api/[^<>\"]*?)\"").getMatch(0);
         long expire = System.currentTimeMillis();
-        String days, hours, minutes, seconds;
-        final Regex expireinfo = br.getRegex("type=\"text\"value=\"(\\d{1,2})Days (\\d{1,2})Hours (\\d{1,2})Minutes (\\d{1,2})Seconds \"");
-        // days = expireinfo.getMatch(0); - Months info makes incorrect days (e.g. 4Months 21Hours 1Minutes 51Seconds )
-        days = br.getRegex("Expire In: <b>(\\d+?) Days <").getMatch(0);
-        hours = expireinfo.getMatch(1);
-        minutes = expireinfo.getMatch(2);
-        seconds = expireinfo.getMatch(3);
+        String months, days, hours, minutes, seconds;
+        final Regex expireinfo = br.getRegex("type=\"text\"[^<>]+ value=\"((\\d{1,2})Months)?( (\\d{1,2})Days)?( (\\d{1,2})Hours)?( (\\d{1,2})Minutes)?( (\\d{1,2})Seconds)? \"");
+        months = expireinfo.getMatch(1);
+        days = expireinfo.getMatch(3);
+        hours = expireinfo.getMatch(5);
+        minutes = expireinfo.getMatch(7);
+        seconds = expireinfo.getMatch(9);
+        if (months != null) {
+            expire += Long.parseLong(months) * 30 * 24 * 60 * 60 * 1000;
+        }
         if (days != null) {
             expire += Long.parseLong(days) * 24 * 60 * 60 * 1000;
         }
