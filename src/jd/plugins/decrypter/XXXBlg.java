@@ -55,13 +55,16 @@ public class XXXBlg extends PluginForDecrypt {
         }
         br.setFollowRedirects(true);
         br.getPage(parameter);
-        if (br.containsHTML("Fehler 404 \\- Seite nicht gefunden|<h1>404 Error: Page Not Found</h1>") || br.containsHTML(">403 Forbidden<") || br.containsHTML("No htmlCode read") || br.getURL().equals("http://xxx-blog.to/")) {
-            logger.warning("Link offline or invalid: " + parameter);
+        if (br.getHttpConnection().getResponseCode() == 404 || br.containsHTML(">403 Forbidden<") || br.containsHTML("No htmlCode read") || br.getURL().equals("http://xxx-blog.to/")) {
+            final DownloadLink offline = createDownloadlink("directhttp://" + parameter);
+            offline.setAvailable(false);
+            offline.setProperty("offline", true);
+            offline.setFinalFileName(new Regex(parameter, "xxx\\-blog\\.to/(.+)").getMatch(0));
+            decryptedLinks.add(offline);
             return decryptedLinks;
         }
 
         if (parameter.matches("http://(www\\.)?xxx\\-blog\\.to/((share|sto|com\\-|u|filefactory/|relink/)[\\w\\./\\-]+|.*?\\.html)")) {
-
             DownloadLink dLink;
             if (br.getRedirectLocation() != null) {
                 dLink = createDownloadlink(br.getRedirectLocation());

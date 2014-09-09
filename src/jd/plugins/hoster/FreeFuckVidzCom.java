@@ -58,7 +58,10 @@ public class FreeFuckVidzCom extends PluginForHost {
         if (filename == null) {
             filename = br.getRegex("<title>([^<>\"]*?)</title>").getMatch(0);
         }
-        getLink("med");
+        getLink("720p");
+        if (DLLINK == null) {
+            getLink("med");
+        }
         if (DLLINK == null) {
             getLink("low");
         }

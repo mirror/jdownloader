@@ -29,7 +29,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "vidgrab.net" }, urls = { "http://(www\\.)?vidgrab\\.net/\\d+/[^<>\"]*?\\.html" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "vidgrab.net" }, urls = { "http://(www\\.)?vidgrab\\.net/(\\d+/[^<>\"]*?|[a-z0-9\\-]+)\\.html?" }, flags = { 0 })
 public class VidGrabNet extends PluginForHost {
 
     public VidGrabNet(PluginWrapper wrapper) {
