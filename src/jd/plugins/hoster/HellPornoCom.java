@@ -19,6 +19,7 @@ package jd.plugins.hoster;
 import java.io.IOException;
 
 import jd.PluginWrapper;
+import jd.config.Property;
 import jd.http.Browser;
 import jd.http.Browser.BrowserException;
 import jd.http.URLConnectionAdapter;
@@ -30,18 +31,21 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "imagezilla.net" }, urls = { "http://(www\\.)?imagezilla\\.net/show/[^<>\"/]+" }, flags = { 0 })
-public class ImageZillaNet extends PluginForHost {
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "hellporno.com" }, urls = { "http://(www\\.)?hellporno\\.com/videos/[a-z0-9\\-]+/" }, flags = { 0 })
+public class HellPornoCom extends PluginForHost {
 
-    public ImageZillaNet(PluginWrapper wrapper) {
+    public HellPornoCom(PluginWrapper wrapper) {
         super(wrapper);
     }
 
-    private String DLLINK = null;
+    /* Extension which will be used if no correct extension is found */
+    private static final String default_Extension = ".mp4";
+
+    private String              DLLINK            = null;
 
     @Override
     public String getAGBLink() {
-        return "http://imagezilla.net/terms.php";
+        return "http://hellporno.com/terms/";
     }
 
     @Override
@@ -49,15 +53,33 @@ public class ImageZillaNet extends PluginForHost {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         br.getPage(downloadLink.getDownloadURL());
-        if (br.containsHTML(">The requested image does not exist<")) {
+        if (br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        DLLINK = br.getRegex("id=\"photo\" src=\"(http://[^<>\"]*?)\"").getMatch(0);
+        String filename = br.getRegex("<div id=\"hp_underheader\">[\t\n\r ]+<h3>([^<>\"]*?)</h3>").getMatch(0);
+        if (filename == null) {
+            filename = br.getRegex("<title>([<>\"]*?)</title>").getMatch(0);
+        }
+        DLLINK = checkDirectLink(downloadLink, "directlink");
         if (DLLINK == null) {
-            /* Fallback to static method */
-            DLLINK = downloadLink.getDownloadURL().replace("/show/", "/images2/");
+            DLLINK = br.getRegex("encodeURIComponent\\(\\'(http[^<>\"]*?)\\'\\)").getMatch(0);
+        }
+        if (filename == null || DLLINK == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         DLLINK = Encoding.htmlDecode(DLLINK);
+        filename = Encoding.htmlDecode(filename);
+        filename = filename.trim();
+        filename = encodeUnicode(filename);
+        String ext = DLLINK.substring(DLLINK.lastIndexOf("."));
+        /* Make sure that we get a correct extension */
+        if (ext == null || !ext.matches("\\.[A-Za-z0-9]{3,5}")) {
+            ext = default_Extension;
+        }
+        if (!filename.endsWith(ext)) {
+            filename += ext;
+        }
+        downloadLink.setFinalFileName(filename);
         final Browser br2 = br.cloneBrowser();
         // In case the link redirects to the finallink
         br2.setFollowRedirects(true);
@@ -69,11 +91,11 @@ public class ImageZillaNet extends PluginForHost {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
             if (!con.getContentType().contains("html")) {
-                downloadLink.setFinalFileName(Encoding.htmlDecode(getFileNameFromHeader(con)));
                 downloadLink.setDownloadSize(con.getLongContentLength());
             } else {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
+            downloadLink.setProperty("directlink", DLLINK);
             return AvailableStatus.TRUE;
         } finally {
             try {
@@ -92,6 +114,41 @@ public class ImageZillaNet extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl.startDownload();
+    }
+
+    private String checkDirectLink(final DownloadLink downloadLink, final String property) {
+        String dllink = downloadLink.getStringProperty(property);
+        if (dllink != null) {
+            try {
+                final Browser br2 = br.cloneBrowser();
+                URLConnectionAdapter con = br2.openGetConnection(dllink);
+                if (con.getContentType().contains("html") || con.getLongContentLength() == -1) {
+                    downloadLink.setProperty(property, Property.NULL);
+                    dllink = null;
+                }
+                con.disconnect();
+            } catch (final Exception e) {
+                downloadLink.setProperty(property, Property.NULL);
+                dllink = null;
+            }
+        }
+        return dllink;
+    }
+
+    /* Avoid chars which are not allowed in filenames under certain OS' */
+    private static String encodeUnicode(final String input) {
+        String output = input;
+        output = output.replace(":", ";");
+        output = output.replace("|", "¦");
+        output = output.replace("<", "[");
+        output = output.replace(">", "]");
+        output = output.replace("/", "⁄");
+        output = output.replace("\\", "∖");
+        output = output.replace("*", "#");
+        output = output.replace("?", "¿");
+        output = output.replace("!", "¡");
+        output = output.replace("\"", "'");
+        return output;
     }
 
     @Override

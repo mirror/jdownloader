@@ -46,17 +46,25 @@ public class FreeDiscPlFolder extends PluginForDecrypt {
         final String fpName = br.getRegex("<title>([^<>\"]*?)\\-  Freedisc\\.pl</title>").getMatch(0);
         // style='float: left; overflow: auto;'><a href="
         final String[] links = br.getRegex("<div style=\\'float: left; overflow: auto;\\'>([\t\n\r ]+)?<a  href=\"(/[^<>\"]*?)\"").getColumn(1);
-        if ((links == null || links.length == 0) && br.containsHTML("class=\"directoryText previousDirLinkFS\"") || !br.getURL().matches(TYPE_FOLDER)) {
-            logger.info("Link offline: " + parameter);
+        final String[] folders = br.getRegex("class=\\'dirName2FS\\'><a href=\"(/[^<>\"]*?)\"").getColumn(0);
+        if ((links == null || links.length == 0) && (folders == null || folders.length == 0) && br.containsHTML("class=\"directoryText previousDirLinkFS\"") || !br.getURL().matches(TYPE_FOLDER)) {
+            final DownloadLink offline = createDownloadlink("directhttp://" + parameter);
+            offline.setAvailable(false);
+            offline.setProperty("offline", true);
+            decryptedLinks.add(offline);
             return decryptedLinks;
         }
-        if (links == null || links.length == 0) {
-            logger.warning("Decrypter broken for link: " + parameter);
-            return null;
+        if (links != null && links.length > 0) {
+            for (final String singleLink : links) {
+                decryptedLinks.add(createDownloadlink("http://freedisc.pl" + singleLink));
+            }
         }
-        for (final String singleLink : links) {
-            decryptedLinks.add(createDownloadlink("http://freedisc.pl" + singleLink));
+        if (folders != null && folders.length > 0) {
+            for (final String singleLink : folders) {
+                decryptedLinks.add(createDownloadlink("http://freedisc.pl" + singleLink));
+            }
         }
+
         if (fpName != null) {
             final FilePackage fp = FilePackage.getInstance();
             fp.setName(Encoding.htmlDecode(fpName.trim()));

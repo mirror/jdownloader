@@ -46,18 +46,18 @@ import jd.utils.locale.JDL;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "privatefiles.com" }, urls = { "https?://(www\\.)?privatefiles\\.com/(vidembed\\-)?[a-z0-9]{12}" }, flags = { 0 })
-public class PrivateFilesCom extends PluginForHost {
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "imageeer.com" }, urls = { "https?://(www\\.)?imageeer\\.com/(vidembed\\-)?[a-z0-9]{12}" }, flags = { 0 })
+public class ImageeerCom extends PluginForHost {
 
     private String                         correctedBR                  = "";
     private String                         passCode                     = null;
     private static final String            PASSWORDTEXT                 = "<br><b>Passwor(d|t):</b> <input";
     /* primary website url, take note of redirects */
-    private static final String            COOKIE_HOST                  = "http://privatefiles.com";
+    private static final String            COOKIE_HOST                  = "http://imageeer.com";
     private static final String            NICE_HOST                    = COOKIE_HOST.replaceAll("(https://|http://)", "");
     private static final String            NICE_HOSTproperty            = COOKIE_HOST.replaceAll("(https://|http://|\\.|\\-)", "");
     /* domain names used within download links */
-    private static final String            DOMAINS                      = "(privatefiles\\.com)";
+    private static final String            DOMAINS                      = "(imageeer\\.com)";
     private static final String            MAINTENANCE                  = ">This server is in maintenance mode";
     private static final String            MAINTENANCEUSERTEXT          = JDL.L("hoster.xfilesharingprobasic.errors.undermaintenance", "This server is under maintenance");
     private static final String            ALLWAIT_SHORT                = JDL.L("hoster.xfilesharingprobasic.errors.waitingfordownloads", "Waiting till new downloads can be started");
@@ -65,13 +65,14 @@ public class PrivateFilesCom extends PluginForHost {
     private static final String            PREMIUMONLY2                 = JDL.L("hoster.xfilesharingprobasic.errors.premiumonly2", "Only downloadable via premium or registered");
     private static final boolean           VIDEOHOSTER                  = false;
     private static final boolean           VIDEOHOSTER_2                = false;
-    private static final boolean           SUPPORTSHTTPS                = true;
+    private static final boolean           SUPPORTSHTTPS                = false;
+    private static final boolean           SUPPORTSHTTPS_FORCED         = false;
     private final boolean                  ENABLE_RANDOM_UA             = false;
     private static AtomicReference<String> agent                        = new AtomicReference<String>(null);
     /* Connection stuff */
     private static final boolean           FREE_RESUME                  = true;
-    private static final int               FREE_MAXCHUNKS               = -4;
-    private static final int               FREE_MAXDOWNLOADS            = 1;
+    private static final int               FREE_MAXCHUNKS               = 1;
+    private static final int               FREE_MAXDOWNLOADS            = 20;
     private static final boolean           ACCOUNT_FREE_RESUME          = true;
     private static final int               ACCOUNT_FREE_MAXCHUNKS       = 0;
     private static final int               ACCOUNT_FREE_MAXDOWNLOADS    = 20;
@@ -87,21 +88,21 @@ public class PrivateFilesCom extends PluginForHost {
     private String                         fuid                         = null;
 
     /* DEV NOTES */
-    // XfileSharingProBasic Version 2.6.6.1
+    // XfileSharingProBasic Version 2.6.6.2
     // mods:
     // limit-info:
     // protocol: no https
     // captchatype: null
-    // other:
+    // other: image-host
 
     @Override
     public void correctDownloadLink(final DownloadLink link) {
-        /* link cleanup, but respect users protocol choosing */
+        /* link cleanup, but respect users protocol choosing or forced protocol */
         if (!SUPPORTSHTTPS) {
             link.setUrlDownload(link.getDownloadURL().replaceFirst("https://", "http://"));
+        } else if (SUPPORTSHTTPS && SUPPORTSHTTPS_FORCED) {
+            link.setUrlDownload(link.getDownloadURL().replaceFirst("http://", "https://"));
         }
-        final String fid = new Regex(link.getDownloadURL(), "([a-z0-9]{12})$").getMatch(0);
-        link.setUrlDownload(COOKIE_HOST + "/" + fid);
     }
 
     @Override
@@ -109,7 +110,7 @@ public class PrivateFilesCom extends PluginForHost {
         return COOKIE_HOST + "/tos.html";
     }
 
-    public PrivateFilesCom(PluginWrapper wrapper) {
+    public ImageeerCom(PluginWrapper wrapper) {
         super(wrapper);
         // this.enablePremium(COOKIE_HOST + "/premium.html");
     }
@@ -117,6 +118,7 @@ public class PrivateFilesCom extends PluginForHost {
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
         br.setFollowRedirects(true);
+        correctDownloadLink(link);
         prepBrowser(br);
         setFUID(link);
         getPage(link.getDownloadURL());
@@ -138,8 +140,7 @@ public class PrivateFilesCom extends PluginForHost {
                 logger.warning("Waittime detected, please reconnect to make the linkchecker work!");
                 return AvailableStatus.UNCHECKABLE;
             }
-            logger.warning("filename equals null, throwing \"plugin defect\"");
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            fileInfo[0] = fuid + ".jpg";
         }
         if (fileInfo[2] != null && !fileInfo[2].equals("")) {
             link.setMD5Hash(fileInfo[2].trim());
@@ -150,6 +151,60 @@ public class PrivateFilesCom extends PluginForHost {
             link.setDownloadSize(SizeFormatter.getSize(fileInfo[1]));
         }
         return AvailableStatus.TRUE;
+    }
+
+    @Override
+    public boolean checkLinks(final DownloadLink[] urls) {
+        if (urls == null || urls.length == 0) {
+            return false;
+        }
+        try {
+            final Browser br = new Browser();
+            prepBrowser(br);
+            br.setCookiesExclusive(true);
+            final StringBuilder sb = new StringBuilder();
+            final ArrayList<DownloadLink> links = new ArrayList<DownloadLink>();
+            int index = 0;
+            while (true) {
+                links.clear();
+                while (true) {
+                    /* we test 50 links at once */
+                    if (index == urls.length || links.size() > 50) {
+                        break;
+                    }
+                    links.add(urls[index]);
+                    index++;
+                }
+                sb.delete(0, sb.capacity());
+                sb.append("op=checkfiles&process=Check+URLs&list=");
+                for (final DownloadLink dl : links) {
+                    sb.append(dl.getDownloadURL());
+                    sb.append("%0A");
+                }
+                br.postPage(COOKIE_HOST + "/?op=checkfiles", sb.toString());
+                for (final DownloadLink dllink : links) {
+                    if (br.containsHTML(">" + dllink.getDownloadURL() + "</td><td style=\"color:red;\">Not found\\!</td>")) {
+                        dllink.setAvailable(false);
+                    } else {
+                        final String[][] linkInformation = br.getRegex(">" + dllink.getDownloadURL() + "</td><td style=\"color:green;\">Found</td><td>([^<>\"]*?)</td>").getMatches();
+                        if (linkInformation == null) {
+                            logger.warning("Linkchecker broken for " + this.getHost());
+                            return false;
+                        }
+                        final String size = linkInformation[0][0];
+                        dllink.setAvailable(true);
+                        dllink.setName(new Regex(dllink.getDownloadURL(), "([a-z0-9]{12})$").getMatch(0) + ".jpg");
+                        dllink.setDownloadSize(SizeFormatter.getSize(size));
+                    }
+                }
+                if (index == urls.length) {
+                    break;
+                }
+            }
+        } catch (final Exception e) {
+            return false;
+        }
+        return true;
     }
 
     private String[] scanInfo(final String[] fileInfo) {
@@ -217,7 +272,7 @@ public class PrivateFilesCom extends PluginForHost {
                 brv.getPage("/vidembed-" + fuid);
                 dllink = brv.getRedirectLocation();
                 if (dllink == null) {
-                    logger.info("Failed to get link via vidembed");
+                    logger.info("Failed to get link via embed because: " + br.toString());
                 } else {
                     logger.info("Successfully found link via vidembed");
                 }
@@ -229,11 +284,10 @@ public class PrivateFilesCom extends PluginForHost {
             try {
                 logger.info("Trying to get link via embed");
                 final String embed_access = "http://" + COOKIE_HOST.replace("http://", "") + "/embed-" + fuid + ".html";
-                this.postPage(embed_access, "op=video_embed3&usr_login=&id2=" + fuid + "&fname=" + Encoding.urlEncode(downloadLink.getName()) + "&referer=&file_code=" + fuid + "&method_free=Click+here+to+watch+the+Video");
-                // brv.getPage("http://grifthost.com/embed-" + fuid + ".html");
+                getPage(embed_access);
                 dllink = getDllink();
                 if (dllink == null) {
-                    logger.info("Failed to get link via embed");
+                    logger.info("Failed to get link via embed because: " + br.toString());
                 } else {
                     logger.info("Successfully found link via embed");
                 }
@@ -241,6 +295,7 @@ public class PrivateFilesCom extends PluginForHost {
                 logger.info("Failed to get link via embed");
             }
             if (dllink == null) {
+                /* If failed, go back to the beginning */
                 getPage(downloadLink.getDownloadURL());
             }
         }
@@ -385,6 +440,7 @@ public class PrivateFilesCom extends PluginForHost {
                 if (!skipWaittime) {
                     waitTime(timeBefore, downloadLink);
                 }
+                dlForm.remove("next");
                 sendForm(dlForm);
                 logger.info("Submitted DLForm");
                 checkErrors(downloadLink, true);
@@ -527,6 +583,7 @@ public class PrivateFilesCom extends PluginForHost {
                 }
             }
         }
+        dllink = new Regex(correctedBR, "\"(https?://i\\d+\\." + DOMAINS + "/img/[a-z0-9]+/[^<>\"]*?)\"").getMatch(0);
         return dllink;
     }
 

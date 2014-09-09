@@ -21,7 +21,6 @@ import java.io.IOException;
 import jd.PluginWrapper;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
-import jd.parser.Regex;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
@@ -64,7 +63,9 @@ public class ChipDe extends PluginForHost {
         URLConnectionAdapter con = null;
         try {
             con = br.openGetConnection(link.getDownloadURL());
-            if (con.getResponseCode() == 410) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            if (con.getResponseCode() == 410) {
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            }
             br.followConnection();
         } finally {
             try {
@@ -87,16 +88,22 @@ public class ChipDe extends PluginForHost {
                 }
             }
         }
-        if (filename == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (filename == null) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
         link.setName(filename.trim());
         String filesize = br.getRegex(">Dateigr\\&ouml;\\&szlig;e:</p>[\t\n\r ]+<p class=\"col2\">([^<>\"]*?)<meta itemprop=\"fileSize\"").getMatch(0);
-        if (filesize == null) filesize = br.getRegex("<dt>(File size:|Размер файла:|Dimensioni:|Dateigröße:|Velikost:|Fájlméret:|Bestandsgrootte:|Rozmiar pliku:|Mărime fişier:|Dosya boyu:|文件大小：)<br /></dt>[\t\n\r ]+<dd>(.*?)<br /></dd>").getMatch(1);
+        if (filesize == null) {
+            filesize = br.getRegex("<dt>(File size:|Размер файла:|Dimensioni:|Dateigröße:|Velikost:|Fájlméret:|Bestandsgrootte:|Rozmiar pliku:|Mărime fişier:|Dosya boyu:|文件大小：)<br /></dt>[\t\n\r ]+<dd>(.*?)<br /></dd>").getMatch(1);
+        }
         if (filesize != null) {
             filesize = filesize.replace("GByte", "GB");
             link.setDownloadSize(SizeFormatter.getSize(filesize));
         }
         String md5 = br.getRegex("<dt>(Контрольная сумма \\(MD 5\\):|Checksum:|Prüfsumme:|Kontrolní součet:|Szumma:|Suma kontrolna|Checksum|Kontrol toplamı:|校验码：)<br /></dt>[\t\n\r ]+<dd>(.*?)<br /></dd>").getMatch(1);
-        if (md5 != null) link.setMD5Hash(md5);
+        if (md5 != null) {
+            link.setMD5Hash(md5);
+        }
         return AvailableStatus.TRUE;
     }
 
@@ -104,35 +111,21 @@ public class ChipDe extends PluginForHost {
     public void handleFree(DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
         br.setFollowRedirects(true);
-        final String new_way = br.getRegex("\"http://x\\.chip\\.de/intern/dl/\\?url=(http[^<>\"]*?)\"").getMatch(0);
         String dllink;
-        if (new_way != null) {
-            br.getPage(Encoding.htmlDecode(new_way));
-            final String cont1nute = br.getRegex("class=\"dl\\-btn dl\\-btn_default\" href=\"(http[^<>\"]*?)\"").getMatch(0);
-            if (cont1nute == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            br.getPage(cont1nute);
-            dllink = getDllink();
-        } else {
-            String step1 = br.getRegex("class=\"dl\\-btn\"><a href=\"(http.*?)\"").getMatch(0);
-            if (step1 == null) {
-                step1 = br.getRegex("<h2 class=\"item hProduct\"><a href=\"(http.*?)\"").getMatch(0);
-                if (step1 == null) {
-                    step1 = br.getRegex("\"(http://www\\.chip\\.de/downloads/.*?downloads_auswahl_\\d+\\.html.*?)\"").getMatch(0);
-                    if (step1 == null) step1 = br.getRegex("\"(/.{2}/download_getfile_.*?)\"").getMatch(0);
-                }
-            }
-            if (step1 == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            if (downloadLink.getDownloadURL().contains("download.chip.") && !step1.contains("download.chip.")) step1 = new Regex(downloadLink.getDownloadURL(), "(http://download\\.chip\\..*?)/.{2}/").getMatch(0) + step1;
-            br.getPage(step1);
-            dllink = br.getRegex("<div id=\"start_download_v1\">.{10,500}<a href=\"(http://.*?)\"").getMatch(0);
-            if (dllink == null) {
-                String step2 = br.getRegex("<div class=\"dl\\-faktbox\\-row( bottom)?\">.*?<a href=\"(http.*?)\"").getMatch(1);
-                if (step2 == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                br.getPage(step2);
-                dllink = getDllink();
-            }
+        String step1 = br.getRegex("\"http://x\\.chip\\.de/intern/dl/\\?url=(http[^<>\"]*?)\"").getMatch(0);
+        if (step1 == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        step1 = Encoding.htmlDecode(step1);
+        br.getPage(step1);
+        String step2 = br.getRegex("\"(https?://(www\\.)?chip\\.de/downloads/c1_downloads_hs_getfile[^<>\"]*?)\"").getMatch(0);
+        if (step2 != null) {
+            br.getPage(step2);
+        }
+        dllink = getDllink();
+        if (dllink == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 1);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();

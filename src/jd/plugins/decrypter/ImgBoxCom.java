@@ -21,6 +21,7 @@ import java.util.ArrayList;
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.nutils.encoding.Encoding;
+import jd.parser.Regex;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
@@ -57,13 +58,18 @@ public class ImgBoxCom extends PluginForDecrypt {
                 return decryptedLinks;
             }
             String fpName = br.getRegex("<h1 style=\"padding\\-left:15px;\">(.*?)</h1>").getMatch(0);
-            if (fpName == null) fpName = br.getRegex("<h1>([^<>\"]*?)\\- \\d+ images images</h1>").getMatch(0);
-            final String[] links = br.getRegex("alt=\"[A-Za-z0-9]+\" src=\"(http://s\\.imgbox.com/[^<>\"]*?)\"").getColumn(0);
+            if (fpName == null) {
+                fpName = br.getRegex("<h1>([^<>\"]*?)\\- \\d+ images images</h1>").getMatch(0);
+            }
+            if (fpName == null) {
+                fpName = "imgbox.com gallery " + new Regex(parameter, "imgbox\\.com/g/(.+)").getMatch(0);
+            }
+            final String[] links = br.getRegex("alt=\"[A-Za-z0-9]+\" src=\"(http://[a-z0-9\\.]+s\\.imgbox.com/[^<>\"]*?)\"").getColumn(0);
             if (links == null || links.length == 0) {
                 logger.warning("Decrypter broken for link: " + parameter);
                 return null;
             }
-            for (String singleLink : links) {
+            for (final String singleLink : links) {
                 try {
                     if (this.isAbort()) {
                         logger.info("Decryption aborted...");
@@ -72,8 +78,9 @@ public class ImgBoxCom extends PluginForDecrypt {
                 } catch (final Throwable e) {
                     // Not available in old 0.9.581 Stable
                 }
-                singleLink = singleLink.replace("s.imgbox.com/", "i.imgbox.com/");
-                final DownloadLink dl = createDownloadlink("directhttp://" + singleLink);
+                final String lid = new Regex(singleLink, "imgbox\\.com/(.+)").getMatch(0);
+                final String finallink = "directhttp://http://i.imgbox.com/" + lid;
+                final DownloadLink dl = createDownloadlink(finallink);
                 if (dl == null) {
                     logger.warning("Decrypter broken for link: " + parameter);
                     logger.warning("Failed on singleLink: " + singleLink);
@@ -109,7 +116,9 @@ public class ImgBoxCom extends PluginForDecrypt {
 
     private DownloadLink decryptSingle() {
         final String finallink = br.getRegex("\"(http://(i|[a-z0-9\\-]+)\\.imgbox\\.com/[^<>\"]*?)\"").getMatch(0);
-        if (finallink == null) { return null; }
+        if (finallink == null) {
+            return null;
+        }
         return createDownloadlink("directhttp://" + Encoding.htmlDecode(finallink));
     }
 
