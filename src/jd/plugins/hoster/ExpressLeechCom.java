@@ -411,7 +411,7 @@ public class ExpressLeechCom extends PluginForHost {
                     download1 = handlePassword(download1, downloadLink);
                 }
                 sendForm(download1);
-                checkErrors(downloadLink, account, download1.containsHTML(PASSWORDTEXT) ? true : false);
+                checkErrors(downloadLink, account, download1.containsHTML(PASSWORDTEXT));
                 getDllink();
             }
         }
