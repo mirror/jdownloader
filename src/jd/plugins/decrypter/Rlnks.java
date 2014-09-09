@@ -80,7 +80,7 @@ public class Rlnks extends PluginForDecrypt {
             browser.getDownload(container, "http://relink.us/" + Encoding.htmlDecode(containerURL));
             decryptedLinks.addAll(JDUtilities.getController().getContainerLinks(container));
             container.delete();
-            return true;
+            return decryptedLinks.isEmpty() ? false : true;
         }
         return false;
     }
