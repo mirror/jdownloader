@@ -85,6 +85,11 @@ public class BtoNt extends PluginForDecrypt {
             // some times no chapter or page is shown, this is a bug on there side.. we can then construct ourselves.
             String titties = new Regex(tag_title, "<title>(.*?) - (vol ([\\d\\.]+) )?(ch ([\\d\\.v\\-&]+[a-z]*) )?(Page [\\d\\.]+ )?\\|[^<]+</title").getMatch(0);
             String chapter = br.getRegex("selected=\"selected\">Ch\\.([\\d\\.v\\-]+[\\: a-z]*)</option>").getMatch(0);
+            if (titties != null && chapter == null) {
+                // http://board.jdownloader.org/showpost.php?p=306380&postcount=3
+                // when no chapter is present http://bato.to/read/_/260463/925-nishi-uko_by_helheim
+                chapter = br.getRegex("selected=\"selected\">Ch\\.([\\d\\.]):.*?</option>").getMatch(0);
+            }
             if (titties != null && chapter != null) {
                 t = new String[6];
                 t[0] = titties;
@@ -96,6 +101,8 @@ public class BtoNt extends PluginForDecrypt {
             }
         }
         final FilePackage fp = FilePackage.getInstance();
+        // may as well set this globally. it used to belong inside 2 of the formatting if statements
+        fp.setProperty("CLEANUP_NAME", false);
 
         DecimalFormat df_title = new DecimalFormat("000");
         // some rudimentary cleanup
@@ -106,21 +113,21 @@ public class BtoNt extends PluginForDecrypt {
         // decimal place fks with formatting!
         if (t[2] != null && (t[2].contains(".") || t[2].matches(".+[a-z]$"))) {
             String[] s = new Regex(t[2], "(\\d+)(\\.\\d+)?([a-z]*)").getRow(0);
-            fp.setProperty("CLEANUP_NAME", false);
             t[2] = df_title.format(Integer.parseInt(s[0])) + (s[1] != null ? s[1] : "") + (s[2] != null ? s[2] : "");
         } else if (t[2] != null) {
             t[2] = df_title.format(Integer.parseInt(t[2]));
-        } else if (t[4] != null && (t[4].matches("(\\d+)([\\.v]+\\d+)?([A-Za-z]*)"))) {
+        }
+        if (t[4] != null && (t[4].matches("(\\d+)([\\.v]+\\d+)?([A-Za-z]*)"))) {
             String[] s = new Regex(t[4], "(\\d+)([\\.v]+\\d+)?([A-Za-z]*)").getRow(0);
-            fp.setProperty("CLEANUP_NAME", false);
             t[4] = df_title.format(Integer.parseInt(s[0])) + (s[1] != null ? s[1] : "") + (s[2] != null ? s[2] : "");
         } else if (t[4] != null) {
             t[4] = df_title.format(Integer.parseInt(t[4]));
-        } else {
+        }
+        if (t[0] == null && t[1] == null && t[2] == null && t[3] == null && t[4] == null && t[5] == null) {
             logger.warning("Decrypter broken for: " + parameter + " @ df_title");
             return null;
         }
-        final String title = Encoding.htmlDecode(t[0].trim() + " -" + (t[2] != null ? " Volume " + t[2] : "") + " Chapter " + t[4]);
+        final String title = Encoding.htmlDecode(t[0].trim() + (t[2] != null ? " - Volume " + t[2] : "") + (t[4] != null ? " - Chapter " + t[4] : ""));
 
         String pages = br.getRegex(">page (\\d+)</option>\\s*</select></li>").getMatch(0);
         if (pages != null) {
@@ -148,7 +155,8 @@ public class BtoNt extends PluginForDecrypt {
                     br.getPage(url + "/" + i);
                 }
                 String pageNumber = df_page.format(i);
-                final String[] unformattedSource = br.getRegex("src=\"(http://img\\.(batoto\\.net|bato\\.to)/comics/\\d{4}/\\d{1,2}/\\d{1,2}/[a-z]/read[^/]+/[^\"]+(\\.[a-z]+))\"").getRow(0);
+                // /comics/2014/02/02/1/read52ee48ff90491/img000001.jpg /comics/date/date/date/first[0-z]charof title/read+hash/img\\d+
+                final String[] unformattedSource = br.getRegex("src=\"(http://img\\.(batoto\\.net|bato\\.to)/comics/\\d{4}/\\d{1,2}/\\d{1,2}/[a-z0-9]/read[^/]+/[^\"]+(\\.[a-z]+))\"").getRow(0);
                 if (unformattedSource == null || unformattedSource.length == 0) {
                     skippedPics++;
                     if (skippedPics > 5) {
