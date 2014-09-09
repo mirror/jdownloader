@@ -54,7 +54,7 @@ public class BtoNt extends PluginForDecrypt {
             url = url.substring(0, url.length() - 1);
         }
         // enforcing one img per page because you can't always get all images displayed on one page.
-        br.setCookie(this.getHost(), "supress_webtoon", "t");
+        br.setCookie("bato.to", "supress_webtoon", "t");
         // Access chapter one
         try {
             br.getPage(url + "/1");
@@ -79,25 +79,28 @@ public class BtoNt extends PluginForDecrypt {
             tag_title = tag_title.replaceAll("&amp;?", "&");
         }
         // works for individual pages, with and without volume, and all in one page
-        String reg = "<title>(.*?) - (vol ([\\d\\.]+) )?(ch ([\\d\\.v\\-&]+[a-z]*) )(Page [\\d\\.]+ )?\\|[^<]+</title";
-        t = new Regex(tag_title, reg).getRow(0);
+        t = new Regex(tag_title, "<title>(.*?) - (vol ([\\d\\.]+) )?(ch ([\\d\\.v\\-&]+[a-z]*) )(Page [\\d\\.]+ )?\\|[^<]+</title").getRow(0);
         if (t == null) {
-            // some times no chapter or page is shown, this is a bug on there side.. we can then construct ourselves.
-            String titties = new Regex(tag_title, "<title>(.*?) - (vol ([\\d\\.]+) )?(ch ([\\d\\.v\\-&]+[a-z]*) )?(Page [\\d\\.]+ )?\\|[^<]+</title").getMatch(0);
-            String chapter = br.getRegex("selected=\"selected\">Ch\\.([\\d\\.v\\-]+[\\: a-z]*)</option>").getMatch(0);
-            if (titties != null && chapter == null) {
-                // http://board.jdownloader.org/showpost.php?p=306380&postcount=3
-                // when no chapter is present http://bato.to/read/_/260463/925-nishi-uko_by_helheim
-                chapter = br.getRegex("selected=\"selected\">Ch\\.([\\d\\.]):.*?</option>").getMatch(0);
-            }
-            if (titties != null && chapter != null) {
-                t = new String[6];
-                t[0] = titties;
-                t[4] = chapter;
-            }
-            if (t == null) {
-                logger.warning("Decrypter broken for: " + parameter + " @ t");
-                return null;
+            // try this
+            t = new Regex(tag_title, "<title>(.*?) - (vol ([\\d\\.]+) )?(ch ([\\d\\.v\\-&]+[a-z]*) )?(Page [\\d\\.]+ )?\\|[^<]+</title").getRow(0);
+            if (t == null || t[4] == null) {
+                // some times no chapter or page is shown, this is a bug on there side.. we can then construct ourselves.
+                String chapter = br.getRegex("selected=\"selected\">Ch\\.([\\d\\.v\\-]+[\\: a-z]*)</option>").getMatch(0);
+                if (chapter == null) {
+                    // http://board.jdownloader.org/showpost.php?p=306380&postcount=3
+                    // when no chapter is present http://bato.to/read/_/260463/925-nishi-uko_by_helheim
+                    chapter = br.getRegex("selected=\"selected\">(?:vol\\s*(?:[\\d\\.]+) )?Ch\\.([\\d\\.]):?.*?</option>").getMatch(0);
+                }
+                if (chapter != null) {
+                    if (t == null) {
+                        t = new String[6];
+                    }
+                    t[4] = chapter;
+                }
+                if (t == null) {
+                    logger.warning("Decrypter broken for: " + parameter + " @ t");
+                    return null;
+                }
             }
         }
         final FilePackage fp = FilePackage.getInstance();
@@ -129,7 +132,13 @@ public class BtoNt extends PluginForDecrypt {
         }
         final String title = Encoding.htmlDecode(t[0].trim() + (t[2] != null ? " - Volume " + t[2] : "") + (t[4] != null ? " - Chapter " + t[4] : ""));
 
-        String pages = br.getRegex(">page (\\d+)</option>\\s*</select></li>").getMatch(0);
+        String pages = br.getRegex(">page (\\d+)</option>\\s*</select>\\s*</li>").getMatch(0);
+        if (pages == null) {
+            // even though the cookie is set... they don't always respect this for small page count
+            // http://www.batoto.net/read/_/249050/useful-good-for-nothing_ch1_by_suras-place
+            br.getPage("?supress_webtoon=t");
+            pages = br.getRegex(">page (\\d+)</option>\\s*</select>\\s*</li>").getMatch(0);
+        }
         if (pages != null) {
             int numberOfPages = Integer.parseInt(pages);
             DecimalFormat df_page = new DecimalFormat("00");
@@ -156,7 +165,7 @@ public class BtoNt extends PluginForDecrypt {
                 }
                 String pageNumber = df_page.format(i);
                 // /comics/2014/02/02/1/read52ee48ff90491/img000001.jpg /comics/date/date/date/first[0-z]charof title/read+hash/img\\d+
-                final String[] unformattedSource = br.getRegex("src=\"(http://img\\.(batoto\\.net|bato\\.to)/comics/\\d{4}/\\d{1,2}/\\d{1,2}/[a-z0-9]/read[^/]+/[^\"]+(\\.[a-z]+))\"").getRow(0);
+                final String[] unformattedSource = br.getRegex("src=\"(http://img\\.(?:batoto\\.net|bato\\.to)/comics/\\d{4}/\\d{1,2}/\\d{1,2}/[a-z0-9]/read[^/]+/[^\"]+(\\.[a-z]+))\"").getRow(0);
                 if (unformattedSource == null || unformattedSource.length == 0) {
                     skippedPics++;
                     if (skippedPics > 5) {
@@ -166,7 +175,7 @@ public class BtoNt extends PluginForDecrypt {
                     continue;
                 }
                 final String source = unformattedSource[0];
-                final String extension = unformattedSource[2];
+                final String extension = unformattedSource[1];
                 final DownloadLink link = createDownloadlink("directhttp://" + source);
                 link.setFinalFileName(title + " - Page " + pageNumber + extension);
                 fp.add(link);
