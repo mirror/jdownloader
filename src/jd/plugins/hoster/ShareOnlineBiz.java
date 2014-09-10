@@ -690,9 +690,12 @@ public class ShareOnlineBiz extends PluginForHost {
         if (response.contains("EXCEPTION request download link not found")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        // This one is NOT an API error
-        if (br.containsHTML(">Share\\-Online \\- Page not found \\- #404<|The desired content is not available")) {
-            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Serverfehler, bitte warten...", 30 * 1000l);
+        // These are NO API errors
+        if (br.getHttpConnection().getResponseCode() == 404 || br.containsHTML(">Share\\-Online \\- Page not found \\- #404<|The desired content is not available")) {
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Serverfehler 404, bitte warten...", 30 * 1000l);
+        }
+        if (br.getHttpConnection().getResponseCode() == 502 || br.containsHTML("<title>Share\\-Online \\- The page is temporarily unavailable</title>")) {
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Serverfehler 502, bitte warten...", 30 * 1000l);
         }
         final HashMap<String, String> dlInfos = getInfos(response, ": ");
         final String filename = dlInfos.get("NAME");

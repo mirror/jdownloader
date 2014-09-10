@@ -31,7 +31,7 @@ import jd.plugins.PluginForHost;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "freedisc.pl" }, urls = { "http://(www\\.)?freedisc\\.pl/(#\\!)?[a-z0-9]+,f\\-\\d+" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "freedisc.pl" }, urls = { "http://(www\\.)?freedisc\\.pl/(#\\!)?[A-Za-z0-9\\-_]+,f\\-\\d+" }, flags = { 0 })
 public class FreeDiscPl extends PluginForHost {
 
     public FreeDiscPl(PluginWrapper wrapper) {
@@ -86,7 +86,7 @@ public class FreeDiscPl extends PluginForHost {
         if (filename == null || filesize == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        link.setFinalFileName(Encoding.htmlDecode(filename.trim()));
+        link.setName(Encoding.htmlDecode(filename.trim()));
         link.setDownloadSize(SizeFormatter.getSize(filesize));
         return AvailableStatus.TRUE;
     }
@@ -94,7 +94,24 @@ public class FreeDiscPl extends PluginForHost {
     @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
-        final String dllink = "http://freedisc.pl/download/" + new Regex(downloadLink.getDownloadURL(), "(\\d+)$").getMatch(0);
+        String dllink;
+        if (br.containsHTML("rel=\"video_src\"")) {
+            dllink = br.getRegex("<iframe src=\"(http://freedisc\\.pl/embed/video/\\d+/[^<>\"]*?)\"").getMatch(0);
+            if (dllink == null) {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
+            dllink = dllink.replace("/embed/", "/");
+            String ext = null;
+            final String currentFname = downloadLink.getName();
+            if (currentFname.contains(".")) {
+                ext = currentFname.substring(currentFname.lastIndexOf("."));
+            }
+            if (ext != null && ext.length() <= 5) {
+                downloadLink.setFinalFileName(downloadLink.getName().replace(ext, ".mp4"));
+            }
+        } else {
+            dllink = "http://freedisc.pl/download/" + new Regex(downloadLink.getDownloadURL(), "(\\d+)$").getMatch(0);
+        }
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, false, 1);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();

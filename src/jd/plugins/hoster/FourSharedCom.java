@@ -182,23 +182,6 @@ public class FourSharedCom extends PluginForHost {
         return url;
     }
 
-    private void checkErrors(Browser cbr) throws PluginException {
-        if (cbr.containsHTML("In order to download files bigger that 500MB you need to login at 4shared")) {
-            // links too large!
-            try {
-                throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);
-            } catch (final Throwable e) {
-                if (e instanceof PluginException) {
-                    throw (PluginException) e;
-                }
-            }
-            throw new PluginException(LinkStatus.ERROR_FATAL, "Files over 500MB are only downloadable for registered or premium users!");
-        }
-        if (cbr.containsHTML("The file link that you requested is not valid\\.")) {
-            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error", 60 * 60 * 1000l);
-        }
-    }
-
     @Override
     public int getMaxSimultanFreeDownloadNum() {
         return -1;
@@ -222,9 +205,10 @@ public class FourSharedCom extends PluginForHost {
         boolean wait = true;
         if (url == null && acc != null && TRY_FAST_FREE) {
             try {
+                final String host = new Regex(downloadLink.getDownloadURL(), "https?://(www\\.)?(4shared(\\-china)?\\.com)").getMatch(1);
                 final Browser cbr = new Browser();
                 cbr.getHeaders().put("User-Agent", "UniversalUserAgent(winHTTP)");
-                cbr.getPage("http://www.4shared-china.com/downloadhelper/flink?login=" + Encoding.urlEncode(acc.getUser()) + "&password=" + Encoding.urlEncode(acc.getPass()) + "&url=" + Encoding.urlEncode(downloadLink.getDownloadURL()) + "&forDownloadHelper%3Dtrue%26lgfp%3D" + new Random().nextInt(10000));
+                cbr.getPage("http://www." + host + "/downloadhelper/flink?login=" + Encoding.urlEncode(acc.getUser()) + "&password=" + Encoding.urlEncode(acc.getPass()) + "&url=" + Encoding.urlEncode(downloadLink.getDownloadURL()) + "&forDownloadHelper%3Dtrue%26lgfp%3D" + new Random().nextInt(10000));
                 url = cbr.getRegex("<url>(http[^<>\"]*?)</url>").getMatch(0);
                 if (url != null) {
                     logger.info("FAST-WAY worked|active!");
@@ -235,13 +219,13 @@ public class FourSharedCom extends PluginForHost {
             }
         }
         if (url == null) {
-            handleFreeErrors(downloadLink);
+            handleErrors(downloadLink);
             boolean downloadStreams = getPluginConfig().getBooleanProperty(DOWNLOADSTREAMS);
-            if (downloadLink.getStringProperty("streamDownloadDisabled") == null && downloadStreams) {
+            if (downloadLink.getBooleanProperty("streamDownloadDisabled", false) == false && downloadStreams) {
                 url = getStreamLinks();
                 /* Shouldn't happen */
                 if (url != null && url.contains("4shared_Desktop_")) {
-                    downloadLink.setProperty("streamDownloadDisabled", "true");
+                    downloadLink.setProperty("streamDownloadDisable", true);
                     throw new PluginException(LinkStatus.ERROR_RETRY);
                 }
             }
@@ -249,7 +233,7 @@ public class FourSharedCom extends PluginForHost {
                 String continueLink = null;
                 if (url == null) {
                     /* If file isn't available for free users we can still try to get the stream link */
-                    checkErrors(br);
+                    handleErrors(downloadLink);
                     continueLink = br.getRegex("<a href=\"(http://(www\\.)?4shared(\\-china)?\\.com/get[^\\;\"]+)\"  ?class=\".*?dbtn.*?\" tabindex=\"1\"").getMatch(0);
                     if (continueLink == null) {
                         continueLink = br.getRegex("\"(http://(www\\.)?4shared(\\-china)?\\.com/get/[A-Za-z0-9\\-_]+/.*?)\"").getMatch(0);
@@ -263,7 +247,7 @@ public class FourSharedCom extends PluginForHost {
                     }
                 } else {
                     br.getPage(continueLink);
-                    checkErrors(br);
+                    handleErrors(downloadLink);
                     url = getNormalDownloadlink();
                     if (url == null) {
                         url = getDirectDownloadlink();
@@ -293,9 +277,9 @@ public class FourSharedCom extends PluginForHost {
                         }
                         int tt = 20;
                         if (ttt != null) {
-                            logger.info("Waittime detected, waiting " + ttt.trim() + " seconds from now on...");
                             tt = Integer.parseInt(ttt);
                         }
+                        logger.info("Waiting " + ttt.trim() + " seconds from now on...");
                         sleep(tt * 1000l, downloadLink);
                     }
                 }
@@ -313,28 +297,38 @@ public class FourSharedCom extends PluginForHost {
          * Maybe download failed because we got a wrong directlink, disable getting directlinks first, if it then fails again the correct
          * error message is shown
          */
-        if (br.getURL().contains("401waitm") && downloadLink.getStringProperty("streamDownloadDisabled") == null) {
-            downloadLink.setProperty("streamDownloadDisabled", "true");
+        if (br.getURL().contains("401waitm") && downloadLink.getBooleanProperty("streamDownloadDisabled", false)) {
+            downloadLink.setProperty("streamDownloadDisabled", true);
             throw new PluginException(LinkStatus.ERROR_RETRY);
-        } else if (br.getURL().contains("401waitm") && downloadLink.getStringProperty("streamDownloadDisabled") != null) {
+        } else if (br.getURL().contains("401waitm") && downloadLink.getBooleanProperty("streamDownloadDisabled", false)) {
             throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Unexpected error happened", 5 * 60 * 1000l);
         }
         final String error = br.getURL();
         if (error != null && error.contains("/linkerror.jsp")) {
+            br.followConnection();
             dl.getConnection().disconnect();
-            if (downloadLink.getLinkStatus().getRetryCount() == 3) {
-                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Hoster error, please contact the 4shared.com support!", 3 * 60 * 60 * 1000l);
+            long retryCount = getLongProperty(downloadLink, "retrycount_linkerror", 0);
+            if (retryCount == 3) {
+                /* Try 3 times, then do extended errorhandling */
+                logger.info("linkerror occured more than 3 times --> Extended errorhandling");
+                downloadLink.setProperty("retrycount_linkerror", Property.NULL);
+                if (br.containsHTML("The file link that you requested is not valid")) {
+                    throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+                }
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error, please contact the 4shared.com support!", 3 * 60 * 60 * 1000l);
             } else {
+                retryCount++;
+                downloadLink.setProperty("retrycount_linkerror", retryCount);
                 throw new PluginException(LinkStatus.ERROR_RETRY, error);
             }
         }
         if (!dl.getConnection().isContentDisposition() && dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
-            if (downloadLink.getStringProperty("streamDownloadDisabled") == null) {
-                downloadLink.setProperty("streamDownloadDisabled", "true");
+            if (downloadLink.getBooleanProperty("streamDownloadDisabled", false)) {
+                downloadLink.setProperty("streamDownloadDisabled", true);
                 throw new PluginException(LinkStatus.ERROR_RETRY);
             }
-            handleFreeErrors(downloadLink);
+            handleErrors(downloadLink);
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         if (pass != null) {
@@ -366,12 +360,22 @@ public class FourSharedCom extends PluginForHost {
         }
     }
 
-    private void handleFreeErrors(final DownloadLink downloadLink) throws PluginException {
+    private void handleErrors(final DownloadLink downloadLink) throws PluginException {
         // cau2=0759nousr&ua=LINUX&sop=true', title:"<div>You should log in to download this file.
         String cau2 = new Regex(br.getRequest().getUrl(), "cau2=([^\\&]+)").getMatch(0);
         logger.info("cau2=" + cau2);
         if (br.containsHTML("0759nousr")) {
             throw new PluginException(LinkStatus.ERROR_FATAL, "You should log in to download this file.");
+        } else if (br.containsHTML("In order to download files bigger that \\d+MB you need to login at 4shared")) {
+            // links too large!
+            try {
+                throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);
+            } catch (final Throwable e) {
+                if (e instanceof PluginException) {
+                    throw (PluginException) e;
+                }
+            }
+            throw new PluginException(LinkStatus.ERROR_FATAL, "Only downloadable for premium users");
         }
         // Incorrect msg: <div class="limitErrorMsg"> <span>Sorry, the file link that you requested is not valid.<br/>
         if (br.containsHTML(">The download limit has been reached")) {
@@ -379,9 +383,9 @@ public class FourSharedCom extends PluginForHost {
         }
 
         if (br.containsHTML("(Servers Upgrade|4shared servers are currently undergoing a short\\-time maintenance)")) {
-            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error", 60 * 60 * 1000l);
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error - ongoing maintenance!", 60 * 60 * 1000l);
         }
-        if (br.containsHTML("The file link that you requested is not valid|This file is no longer available because of a claim")) {
+        if (br.containsHTML("The file link that you requested is not valid|This file is no longer available because of a claim|This file is no longer available because it is identical to a file banned because of a claim")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         String ttt = br.getRegex(" var c = (\\d+);").getMatch(0);
@@ -446,7 +450,7 @@ public class FourSharedCom extends PluginForHost {
                 // direct download or not?
                 dllink = br.getRedirectLocation();
                 if (dllink == null) {
-                    checkErrors(br);
+                    handleErrors(downloadLink);
                     dllink = br.getRegex("id=\"btnLink\" href=\"(https?://[^<>\"]*?)\"").getMatch(0);
                     if (dllink == null) {
                         dllink = br.getRegex("\"(http://dc\\d+\\.4shared\\.com/download/[^<>\"]*?)\"").getMatch(0);
@@ -618,10 +622,20 @@ public class FourSharedCom extends PluginForHost {
                 filename = br.getRegex("id=\"fileNameText\">([^<>\"]*?)</h1>").getMatch(0);
             } else {
                 filename = downloadLink.getStringProperty("decrypterfilename", null);
+                /* First corrections for specific filetypes */
                 if (br.containsHTML("MPEG Audio Stream") && filename == null) {
                     filename = br.getRegex("<title>([^<>\"]*?) - MP3 Download,").getMatch(0);
                     if (filename != null) {
                         filename = Encoding.htmlDecode(filename.trim()) + ".mp3";
+                    }
+                } else if (br.containsHTML("MPEG\\-4 Video File|Matroska Video File") && filename == null) {
+                    filename = br.getRegex("property=\"og:title\" content=\"([^<>\"]*?)\"").getMatch(0);
+                    if (filename != null) {
+                        /* Full filename WITHOUT extension --> add extension */
+                        filename += ".mp4";
+                    } else {
+                        /* Crippled filename WITH extension */
+                        filename = br.getRegex("style=\"background\\-image: url\\(http://[a-z0-9]+\\.4shared\\.com/img/[A-Za-z0-9]+/[A-Za-z0-9]+/([^<>\"]*?)\\)\"").getMatch(0);
                     }
                 }
                 if (filename == null) {
@@ -682,6 +696,25 @@ public class FourSharedCom extends PluginForHost {
             return AvailableStatus.TRUE;
         } catch (final Exception e) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
+    }
+
+    private static long getLongProperty(final Property link, final String key, final long def) {
+        try {
+            return link.getLongProperty(key, def);
+        } catch (final Throwable e) {
+            try {
+                Object r = link.getProperty(key, def);
+                if (r instanceof String) {
+                    r = Long.parseLong((String) r);
+                } else if (r instanceof Integer) {
+                    r = ((Integer) r).longValue();
+                }
+                final Long ret = (Long) r;
+                return ret;
+            } catch (final Throwable e2) {
+                return def;
+            }
         }
     }
 
