@@ -190,12 +190,12 @@ public class LinkSnappyCom extends PluginForHost {
             if (usage != null) {
                 e.put("usage", Integer.parseInt(usage));
             }
-            final String noretry = getJson(hostInfo, "noretry");
-            if (noretry != null) {
-                e.put("noretry", (Integer.parseInt(noretry) == 0 ? true : false));
+            final String resumes = getJson(hostInfo, "resume");
+            if (resumes != null) {
+                e.put("resumes", (resumes.matches("\\d+") && Integer.parseInt(resumes) == 1 ? true : false));
             }
             final String connlimit = getJson(hostInfo, "connlimit");
-            e.put("chunks", (connlimit != null ? Integer.parseInt(connlimit) : 0));
+            e.put("chunks", (connlimit != null && connlimit.matches("\\d+") ? Integer.parseInt(connlimit) : 0));
             if (!e.isEmpty()) {
                 con.put(host, e);
             }
@@ -442,24 +442,13 @@ public class LinkSnappyCom extends PluginForHost {
                     // return defaults
                     return;
                 }
-                // no idea, what this means, it could mean it doesn't allow reuse of finallink or maybe resuming downloads from hoster.
-                // values do not much with chunking.. some noretry = 1 and 0, with chunks 0... if thats the case its most likely means need
-                // to generate link each time!
-                // so disabled for now.
-                //
-                // final boolean r = (boolean) (h.containsKey("resumes") ? h.get("resumes") : resumes);
-                // if (!r) {
-                // resumes = r;
-                // chunks = 1;
-                // return;
-                // } else {
-                // resumes = true;
-                // }
                 final int c = h.containsKey("chunks") ? ((Number) h.get("chunks")).intValue() : chunks;
                 chunks = (c > 1 ? -c : c);
-                if (chunks == 1) {
-                    // lets treat it like this until further notice.
-                    resumes = false;
+                final boolean r = (boolean) (h.containsKey("resumes") ? h.get("resumes") : resumes);
+                if (!r && chunks == 1) {
+                    resumes = r;
+                } else {
+                    resumes = true;
                 }
             }
         } else {
