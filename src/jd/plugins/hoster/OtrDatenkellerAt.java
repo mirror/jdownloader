@@ -50,6 +50,7 @@ public class OtrDatenkellerAt extends PluginForHost {
     public void correctDownloadLink(final DownloadLink link) {
         link.setUrlDownload(link.getDownloadURL().replace("otr.datenkeller.at/", "otr.datenkeller.net/"));
         link.setUrlDownload(link.getDownloadURL().replace("getFile", "file").replaceAll("\\&referer=otrkeyfinder\\&lang=[a-z]+", ""));
+        link.setUrlDownload(link.getDownloadURL().replace("http://", "https://"));
     }
 
     @Override
@@ -63,6 +64,7 @@ public class OtrDatenkellerAt extends PluginForHost {
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
         this.setBrowserExclusive();
+        correctDownloadLink(link);
         checkLinks(new DownloadLink[] { link });
         if (!link.isAvailabilityStatusChecked()) {
             return AvailableStatus.UNCHECKED;
@@ -155,6 +157,8 @@ public class OtrDatenkellerAt extends PluginForHost {
         if (br.containsHTML(DOWNLOADAVAILABLE)) {
             dllink = getDllink();
         } else {
+            /* Workaround-try */
+            final boolean force_lowspeed = true;
             downloadLink.getLinkStatus().setStatusText("Waiting for ticket...");
             for (int i = 0; i <= 410; i++) {
                 getPage(this.br, dlPage);
@@ -182,8 +186,8 @@ public class OtrDatenkellerAt extends PluginForHost {
                     break;
                 }
                 lowSpeedLink = br.getRegex("\"(\\?lowSpeed=[^<>\\'\"]+)\"").getMatch(0);
-                if (i > 400 && lowSpeedLink != null) {
-                    getPage(br2, "http://otr.datenkeller.net/" + lowSpeedLink);
+                if (i > 400 && lowSpeedLink != null || force_lowspeed) {
+                    getPage(br2, "https://otr.datenkeller.net/" + lowSpeedLink);
                     dllink = br2.getRegex(">Dein Download Link:<br>[\t\n\r ]+<a href=\"(http://[^<>\\'\"]+)\"").getMatch(0);
                     if (dllink == null) {
                         dllink = br2.getRegex("\"(http://\\d+\\.\\d+\\.\\d+\\.\\d+/low/[a-z0-9]+/[^<>\\'\"]+)\"").getMatch(0);
