@@ -72,12 +72,13 @@ public class AtvAt extends PluginForDecrypt {
         final DecimalFormat episodeFormat = new DecimalFormat("00");
         int counter = 1;
         for (String singleLink : allLinks) {
-            final DownloadLink dl = createDownloadlink("directhttp://" + singleLink.replace("\\", ""));
+            final DownloadLink dl = createDownloadlink(singleLink.replace("\\", ""));
             if (episodeNr != null) {
                 dl.setFinalFileName(name + "_E" + episodeFormat.format(Integer.parseInt(episodeNr)) + "_" + df.format(counter) + ".mp4");
             } else {
                 dl.setFinalFileName(name + "_part_" + df.format(counter) + ".mp4");
             }
+            dl.setAvailable(true);
             decryptedLinks.add(dl);
             counter++;
         }

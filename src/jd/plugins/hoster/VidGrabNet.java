@@ -48,7 +48,7 @@ public class VidGrabNet extends PluginForHost {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         br.getPage(downloadLink.getDownloadURL());
-        if (br.containsHTML(">PAGE NOT FOUND\\!<") || br.getURL().contains("/?404")) {
+        if (br.containsHTML(">PAGE NOT FOUND\\!<") || br.getURL().contains("/?404") || !br.containsHTML("id=\"videoplayer\"")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         String filename = br.getRegex("<title>([^<>\"]*?) \\- VIDGRAB</title>").getMatch(0);

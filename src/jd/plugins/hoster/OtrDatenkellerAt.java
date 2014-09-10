@@ -80,7 +80,7 @@ public class OtrDatenkellerAt extends PluginForHost {
         }
         try {
             final Browser br = new Browser();
-            prepBrowser();
+            api_prepBrowser();
             br.setCookiesExclusive(true);
             final StringBuilder sb = new StringBuilder();
             final ArrayList<DownloadLink> links = new ArrayList<DownloadLink>();
@@ -144,10 +144,11 @@ public class OtrDatenkellerAt extends PluginForHost {
     @Override
     public void handleFree(DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
-        /* Use random UA again here because we do not use the API for free downloads */
+        /* Use random UA again here because we do not use the same API as in linkcheck for free downloads */
+        br.clearCookies("http://otr.datenkeller.net/");
         br.getHeaders().put("User-Agent", agent);
         final String dlPage = getDlpage(downloadLink);
-        getPage(dlPage, this.br);
+        getPage(this.br, dlPage);
         String dllink = null;
         String lowSpeedLink;
         final Browser br2 = br.cloneBrowser();
@@ -156,14 +157,16 @@ public class OtrDatenkellerAt extends PluginForHost {
         } else {
             downloadLink.getLinkStatus().setStatusText("Waiting for ticket...");
             for (int i = 0; i <= 410; i++) {
-                getPage(dlPage, this.br);
+                getPage(this.br, dlPage);
                 String countMe = br.getRegex("\"(otrfuncs/countMe\\.js\\?r=\\d+)\"").getMatch(0);
                 if (countMe != null) {
-                    countMe = "http://otr.datenkeller.net/" + countMe;
+                    countMe = "https://staticaws.lastverteiler.net/" + countMe;
                 } else {
-                    countMe = "http://staticaws.lastverteiler.net/otrfuncs/countMe.js";
+                    countMe = "https://staticaws.lastverteiler.net/otrfuncs/countMe.js";
                 }
-                br2.getPage("http://staticaws.lastverteiler.net/images/style.css");
+                br2.getPage("https://staticaws.lastverteiler.net/images/style.css");
+                br2.getPage("https://waitaws.lastverteiler.net/style2.css");
+                br2.getPage("https://waitaws.lastverteiler.net/functions.js");
                 br2.getPage(countMe);
                 sleep(27 * 1000l, downloadLink);
                 String position = br.getRegex("document\\.title = \"(\\d+/\\d+)").getMatch(0);
@@ -174,13 +177,13 @@ public class OtrDatenkellerAt extends PluginForHost {
                     downloadLink.getLinkStatus().setStatusText("Waiting for ticket...Position in der Warteschlange: " + position);
                 }
                 if (br.containsHTML(DOWNLOADAVAILABLE)) {
-                    getPage(dlPage, this.br);
+                    getPage(this.br, dlPage);
                     dllink = getDllink();
                     break;
                 }
                 lowSpeedLink = br.getRegex("\"(\\?lowSpeed=[^<>\\'\"]+)\"").getMatch(0);
                 if (i > 400 && lowSpeedLink != null) {
-                    getPage("http://otr.datenkeller.net/" + lowSpeedLink, br2);
+                    getPage(br2, "http://otr.datenkeller.net/" + lowSpeedLink);
                     dllink = br2.getRegex(">Dein Download Link:<br>[\t\n\r ]+<a href=\"(http://[^<>\\'\"]+)\"").getMatch(0);
                     if (dllink == null) {
                         dllink = br2.getRegex("\"(http://\\d+\\.\\d+\\.\\d+\\.\\d+/low/[a-z0-9]+/[^<>\\'\"]+)\"").getMatch(0);
@@ -212,7 +215,7 @@ public class OtrDatenkellerAt extends PluginForHost {
     private void login(Account account, boolean force) throws Exception {
         final String lang = System.getProperty("user.language");
         br.setCookiesExclusive(true);
-        prepBrowser();
+        api_prepBrowser();
         String apikey = getAPIKEY(account);
         boolean acmatch = Encoding.urlEncode(account.getUser()).equals(account.getStringProperty("name", Encoding.urlEncode(account.getUser())));
         if (acmatch) {
@@ -293,7 +296,7 @@ public class OtrDatenkellerAt extends PluginForHost {
         dl.startDownload();
     }
 
-    private void prepBrowser() {
+    private void api_prepBrowser() {
         br.getHeaders().put("User-Agent", "JDownloader");
         br.setCustomCharset("utf-8");
     }
@@ -318,8 +321,13 @@ public class OtrDatenkellerAt extends PluginForHost {
         return result;
     }
 
-    private void getPage(final String url, final Browser br) throws IOException {
+    private void getPage(final Browser br, final String url) throws IOException {
         br.getPage(url);
+        // correctBR(br);
+    }
+
+    private void postPage(final Browser br, final String url, final String data) throws IOException {
+        br.postPage(url, data);
         // correctBR(br);
     }
 

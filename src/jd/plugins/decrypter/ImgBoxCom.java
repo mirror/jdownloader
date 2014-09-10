@@ -47,9 +47,13 @@ public class ImgBoxCom extends PluginForDecrypt {
             logger.info("Link invalid: " + parameter);
             return decryptedLinks;
         }
+        br.setFollowRedirects(true);
         br.getPage(parameter);
-        if (br.containsHTML(">The page you were looking for")) {
-            logger.info("Link offline: " + parameter);
+        if (br.containsHTML(">The page you are looking for") || br.getURL().contains("imgbox.com/login")) {
+            final DownloadLink offline = createDownloadlink("directhttp://" + parameter);
+            offline.setAvailable(false);
+            offline.setProperty("offline", true);
+            decryptedLinks.add(offline);
             return decryptedLinks;
         }
         if (parameter.matches(GALLERYLINK)) {
