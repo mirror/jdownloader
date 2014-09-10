@@ -21,13 +21,12 @@ import java.util.ArrayList;
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.nutils.encoding.Encoding;
+import jd.parser.Regex;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
-
-import org.appwork.utils.Regex;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "1channel.ch" }, urls = { "http://(www\\.)?(vodly\\.to|primewire\\.ag)/(watch\\-\\d+([A-Za-z0-9\\-_]+)?|tv\\-\\d+[A-Za-z0-9\\-_]+/season\\-\\d+\\-episode\\-\\d+)" }, flags = { 0 })
 public class OneChannelCh extends PluginForDecrypt {
@@ -47,8 +46,9 @@ public class OneChannelCh extends PluginForDecrypt {
                 logger.warning("Decrypter broken for link: " + parameter);
                 return null;
             }
-            for (String singleLink : episodes)
+            for (String singleLink : episodes) {
                 decryptedLinks.add(createDownloadlink("http://www.1channel.ch" + singleLink));
+            }
         } else {
             if (br.getURL().equals("http://www.1channel.ch/") || br.getURL().contains("/index.php")) {
                 logger.info("Link offline: " + parameter);
@@ -61,7 +61,9 @@ public class OneChannelCh extends PluginForDecrypt {
                 return decryptedLinks;
             }
             String fpName = br.getRegex("<title>Watch ([^<>\"]*?) online \\-  on 1Channel \\| [^<>\"]*?</title>").getMatch(0);
-            if (fpName == null) fpName = br.getRegex("<meta property=\"og:title\" content=\"([^<>\"]*?)\">").getMatch(0);
+            if (fpName == null) {
+                fpName = br.getRegex("<meta property=\"og:title\" content=\"([^<>\"]*?)\">").getMatch(0);
+            }
             if (parameter.contains("season-") && fpName != null) {
                 final Regex seasonAndEpisode = br.getRegex("<a href=\"/tv\\-[^<>\"/]*?/[^<>\"/]*?\">([^<>\"]*?)</a>[\t\n\r ]+</strong>[\t\n\r ]+> <strong>([^<>\"]*?)</strong>");
                 if (seasonAndEpisode.getMatches().length != 0) {
@@ -82,7 +84,9 @@ public class OneChannelCh extends PluginForDecrypt {
             for (final String singleLink : links) {
                 br.getPage("http://www.primewire.ag" + singleLink);
                 String finallink = br.getRedirectLocation();
-                if (finallink == null) finallink = br.getRegex("<frame src=\"(http[^<>\"]*?)\"").getMatch(0);
+                if (finallink == null) {
+                    finallink = br.getRegex("<frame src=\"(http[^<>\"]*?)\"").getMatch(0);
+                }
                 if (finallink == null) {
                     logger.warning("Decrypter broken for link: " + parameter);
                     return null;
