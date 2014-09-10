@@ -606,7 +606,7 @@ public abstract class K2SApi extends PluginForHost {
     private boolean sessionTokenInvalid(final Account account, final Browser ibr) {
         final String status = getJson(ibr, "status");
         final String errorCode = getJson(ibr, "errorCode");
-        if ("error".equalsIgnoreCase(status) && ("10".equalsIgnoreCase(errorCode)) || ("11".equalsIgnoreCase(errorCode))) {
+        if ("error".equalsIgnoreCase(status) && ("10".equalsIgnoreCase(errorCode)) || ("11".equalsIgnoreCase(errorCode)) || ("75".equalsIgnoreCase(errorCode))) {
             // expired sessionToken
             dumpAuthToken(account);
             authTokenFail++;
@@ -706,8 +706,11 @@ public abstract class K2SApi extends PluginForHost {
                     privateDownloadRestriction(msg);
                 case 10:
                 case 11:
+                case 75:
                     // ERROR_YOU_ARE_NEED_AUTHORIZED = 10;
                     // ERROR_AUTHORIZATION_EXPIRED = 11;
+                    // ERROR_ILLEGAL_SESSION_IP = 75;
+                    // {"message":"This token not allow access from this IP address","status":"error","code":403,"errorCode":75}
                     // this should never happen, as its handled within postPage and auth_token should be valid for download
                     dumpAuthToken(account);
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -764,11 +767,9 @@ public abstract class K2SApi extends PluginForHost {
                     throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\n" + msg, PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
                 case 73:
                 case 74:
-                case 75:
                     // ERROR_NO_ALLOW_ACCESS_FROM_NETWORK = 73;
                     // ERROR_UNKNOWN_LOGIN_ERROR = 74;
                     throw new PluginException(LinkStatus.ERROR_FATAL, msg);
-                    // {"message":"This token not allow access from this IP address","status":"error","code":403,"errorCode":75}
                 default:
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 }
