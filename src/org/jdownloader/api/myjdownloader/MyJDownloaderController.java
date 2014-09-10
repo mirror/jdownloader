@@ -102,7 +102,7 @@ public class MyJDownloaderController implements ShutdownVetoListener, GenericCon
                             cd.waitYesOrNo(0, "Enter Logins", "Exit JDownloader");
 
                             email = cd.ask("Please Enter your MyJDownloader Email:");
-                            password = cd.ask("Please Enter your MyJDownloader Password:");
+                            password = cd.askHidden("Please Enter your MyJDownloader Password:");
                             if (validateLogins(email, password)) {
                                 CFG_MYJD.EMAIL.setValue(email);
                                 CFG_MYJD.PASSWORD.setValue(password);
@@ -273,7 +273,7 @@ public class MyJDownloaderController implements ShutdownVetoListener, GenericCon
                                 cd.waitYesOrNo(0, "Enter Logins", "Exit JDownloader");
 
                                 String email = cd.ask("Please Enter your MyJDownloader Email:");
-                                String password = cd.ask("Please Enter your MyJDownloader Password:");
+                                String password = cd.askHidden("Please Enter your MyJDownloader Password:");
                                 if (validateLogins(email, password)) {
                                     CFG_MYJD.EMAIL.setValue(email);
                                     CFG_MYJD.PASSWORD.setValue(password);
