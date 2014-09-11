@@ -76,7 +76,7 @@ public class LinkCrawler {
 
     private LinkCrawlerFilter                       filter                      = null;
     private final AtomicBoolean                     allowCrawling               = new AtomicBoolean(true);
-    private AtomicInteger                           crawlerGeneration           = new AtomicInteger(0);
+    protected final AtomicInteger                   crawlerGeneration           = new AtomicInteger(0);
     private final LinkCrawler                       parentCrawler;
     private final long                              created;
 
@@ -264,7 +264,7 @@ public class LinkCrawler {
      * @param thisGeneration
      * @return
      */
-    protected int getCrawlerGeneration(boolean thisGeneration) {
+    public int getCrawlerGeneration(boolean thisGeneration) {
         if (!thisGeneration && parentCrawler != null) {
             return Math.max(crawlerGeneration.get(), parentCrawler.getCrawlerGeneration(false));
         }
@@ -556,6 +556,10 @@ public class LinkCrawler {
         }
     }
 
+    protected boolean distributeCrawledLink(CrawledLink crawledLink) {
+        return crawledLink != null && crawledLink.gethPlugin() == null;
+    }
+
     protected void distribute(java.util.List<CrawledLink> possibleCryptedLinks) {
         if (possibleCryptedLinks == null || possibleCryptedLinks.size() == 0) {
             return;
@@ -571,7 +575,7 @@ public class LinkCrawler {
                     mainloopretry: while (true) {
                         UnknownCrawledLinkHandler unnknownHandler = possibleCryptedLink.getUnknownHandler();
                         possibleCryptedLink.setUnknownHandler(null);
-                        if (possibleCryptedLink.gethPlugin() != null) {
+                        if (!distributeCrawledLink(possibleCryptedLink)) {
                             // direct forward, if we already have a final link.
                             this.handleCrawledLink(possibleCryptedLink);
                             continue mainloop;
@@ -716,7 +720,7 @@ public class LinkCrawler {
                             }
                         }
                         /* now we will walk through all available hoster plugins */
-                        for (final LazyHostPlugin pHost : pHosts) {
+                        for (final LazyHostPlugin pHost : getHosterPlugins()) {
                             if (!isDirectHttpEnabled() && (pHost.getDisplayName().equals(DIRECT_HTTP) || pHost.getDisplayName().equals(HTTP_LINKS))) {
                                 continue;
                             }
@@ -894,7 +898,7 @@ public class LinkCrawler {
         }
     }
 
-    protected List<LazyCrawlerPlugin> getCrawlerPlugins() {
+    public List<LazyCrawlerPlugin> getCrawlerPlugins() {
         if (cHosts != null) {
             return cHosts;
         }
@@ -905,6 +909,10 @@ public class LinkCrawler {
             cHosts = CrawlerPluginController.getInstance().list();
         }
         return cHosts;
+    }
+
+    public List<LazyHostPlugin> getHosterPlugins() {
+        return pHosts;
     }
 
     public boolean isDirectHttpEnabled() {

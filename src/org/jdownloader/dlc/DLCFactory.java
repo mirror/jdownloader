@@ -14,7 +14,6 @@ import javax.xml.parsers.DocumentBuilderFactory;
 import jd.config.SubConfiguration;
 import jd.controlling.linkcrawler.CrawledLink;
 import jd.controlling.linkcrawler.CrawledPackage;
-import jd.controlling.linkcrawler.LinkCrawler;
 import jd.gui.UserIO;
 import jd.http.Browser;
 import jd.nutils.encoding.Encoding;
@@ -80,20 +79,6 @@ public class DLCFactory extends D {
             }
             return dlcKey;
         }
-    }
-
-    public ArrayList<DownloadLink> getContainerLinks(final File file) {
-        LinkCrawler lc = new LinkCrawler();
-        lc.crawl("file://" + file.getAbsolutePath());
-        lc.waitForCrawling();
-        ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
-        for (CrawledLink link : lc.getCrawledLinks()) {
-            if (link.getDownloadLink() == null) {
-                continue;
-            }
-            ret.add(link.getDownloadLink());
-        }
-        return ret;
     }
 
     public void createDLC(List<DownloadLink> links) {

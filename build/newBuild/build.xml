@@ -88,7 +88,7 @@
 
 
 
-	<!-- Copies all the additional ressources -->
+	<!-- Copies all the additional ressources  -->
 	<target name="copy_res" depends="clean">
 		<copy todir="${dist}/jd">
 			<fileset dir="${res}/jd" includes="**/*" />

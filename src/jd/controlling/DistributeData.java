@@ -21,12 +21,16 @@ import java.util.List;
 
 import jd.controlling.linkcrawler.CrawledLink;
 import jd.controlling.linkcrawler.LinkCrawler;
+import jd.controlling.linkcrawler.LinkCrawlerThread;
 import jd.parser.html.HTMLParser;
 import jd.plugins.DownloadLink;
+import jd.plugins.PluginForDecrypt;
+
+import org.jdownloader.plugins.controller.crawler.LazyCrawlerPlugin;
 
 /**
- * Diese Klasse läuft in einem Thread und verteilt den Inhalt der Zwischenablage an (unter Umständen auch mehrere) Plugins Die gefundenen Treffer werden
- * ausgeschnitten.
+ * Diese Klasse läuft in einem Thread und verteilt den Inhalt der Zwischenablage an (unter Umständen auch mehrere) Plugins Die gefundenen
+ * Treffer werden ausgeschnitten.
  * 
  * @author astaldo
  */
@@ -35,9 +39,7 @@ public class DistributeData {
     /**
      * Die zu verteilenden Daten
      */
-    private String                  data;
-
-    private final ArrayList<String> foundPasswords = new ArrayList<String>();
+    private final String data;
 
     /**
      * Erstellt einen neuen Thread mit dem Text, der verteilt werden soll. Die übergebenen Daten werden durch einen URLDecoder geschickt.
@@ -63,13 +65,66 @@ public class DistributeData {
 
     @Deprecated
     public ArrayList<DownloadLink> findLinks() {
+        final ArrayList<String> foundPasswords = new ArrayList<String>();
         foundPasswords.addAll(HTMLParser.findPasswords(data));
-        LinkCrawler lf = new LinkCrawler();
-        lf.crawl(data);
-        lf.waitForCrawling();
-        ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>(lf.getCrawledLinks().size());
-        for (final CrawledLink link : lf.getCrawledLinks()) {
+        final LinkCrawler lc;
+        if (Thread.currentThread() instanceof LinkCrawlerThread) {
+            final LinkCrawlerThread thread = (LinkCrawlerThread) (Thread.currentThread());
+            Object owner = thread.getCurrentOwner();
+            final CrawledLink source;
+            if (owner instanceof PluginForDecrypt) {
+                source = ((PluginForDecrypt) owner).getCurrentLink();
+            } else {
+                source = null;
+            }
+            final LinkCrawler parent = thread.getCurrentLinkCrawler();
+            lc = new LinkCrawler(false, false) {
+
+                @Override
+                protected CrawledLink crawledLinkFactorybyURL(String url) {
+                    final CrawledLink ret = new CrawledLink(url);
+                    if (source != null) {
+                        ret.setSourceLink(source);
+                    }
+                    return ret;
+                }
+
+                @Override
+                public int getCrawlerGeneration(boolean thisGeneration) {
+                    if (!thisGeneration && parent != null) {
+                        return Math.max(crawlerGeneration.get(), parent.getCrawlerGeneration(false));
+                    }
+                    return crawlerGeneration.get();
+                }
+
+                @Override
+                public List<LazyCrawlerPlugin> getCrawlerPlugins() {
+                    if (parent != null) {
+                        return parent.getCrawlerPlugins();
+                    }
+                    return super.getCrawlerPlugins();
+                }
+
+                @Override
+                protected boolean distributeCrawledLink(CrawledLink crawledLink) {
+                    return crawledLink != null && crawledLink.getSourceUrls() == null;
+                }
+
+            };
+        } else {
+            lc = new LinkCrawler();
+        }
+        lc.crawl(data);
+        lc.waitForCrawling();
+        ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>(lc.getCrawledLinks().size());
+        for (final CrawledLink link : lc.getCrawledLinks()) {
             DownloadLink dl = link.getDownloadLink();
+            if (dl == null) {
+                final String url = link.getURL();
+                if (url != null) {
+                    dl = new DownloadLink(null, null, null, url, true);
+                }
+            }
             if (dl != null) {
                 List<String> oldList = dl.getSourcePluginPasswordList();
                 if (oldList != null && oldList.size() > 0) {
@@ -77,7 +132,9 @@ public class DistributeData {
                     oldList.addAll(foundPasswords);
                     dl.setSourcePluginPasswordList(foundPasswords);
                 } else {
-                    if (foundPasswords.size() > 0) dl.setSourcePluginPasswordList(foundPasswords);
+                    if (foundPasswords.size() > 0) {
+                        dl.setSourcePluginPasswordList(foundPasswords);
+                    }
                 }
                 ret.add(dl);
             }
