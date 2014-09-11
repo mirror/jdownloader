@@ -34,7 +34,7 @@ import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
 import jd.utils.JDUtilities;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "xhamster.com" }, urls = { "http://(www\\.)?xhamster\\.com/photos/gallery/[0-9]+/.*?\\.html" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "xhamster.com" }, urls = { "http://(www\\.)?((de|es|ru|fr|it|jp|pt|nl|pl)\\.)?xhamster\\.com/photos/gallery/[0-9]+/.*?\\.html" }, flags = { 0 })
 public class XHamsterGallery extends PluginForDecrypt {
 
     public XHamsterGallery(PluginWrapper wrapper) {
@@ -45,7 +45,10 @@ public class XHamsterGallery extends PluginForDecrypt {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         ArrayList<String> allPages = new ArrayList<String>();
         allPages.add("1");
-        final String parameter = param.toString().replace("www.", "");
+        String parameter = param.toString().replace("www.", "");
+        /* Force english language */
+        final String replace_string = new Regex(parameter, "(http://(www\\.)?((de|es|ru|fr|it|jp|pt|nl|pl)\\.)?xhamster\\.com/)").getMatch(0);
+        parameter = parameter.replace(replace_string, "http://xhamster.com/");
         final String parameterWihoutHtml = parameter.replace(".html", "");
         // Login if possible
         getUserLogin(false);

@@ -45,29 +45,52 @@ public class AtvAt extends PluginForDecrypt {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String parameter = param.toString();
         br.getPage(parameter);
+        final String fid = new Regex(parameter, "/(d\\d+)/$").getMatch(0);
         if (br.getHttpConnection().getResponseCode() == 404) {
             logger.info("Link offline (404 error): " + parameter);
+            final DownloadLink offline = createDownloadlink("directhttp://" + parameter);
+            offline.setFinalFileName(fid);
+            offline.setAvailable(false);
+            offline.setProperty("offline", true);
+            decryptedLinks.add(offline);
             return decryptedLinks;
         }
         if (!br.containsHTML("class=\"jsb_ jsb_video/FlashPlayer\"")) {
             logger.info("There is no downloadable content: " + parameter);
+            final DownloadLink offline = createDownloadlink("directhttp://" + parameter);
+            offline.setFinalFileName(fid);
+            offline.setAvailable(false);
+            offline.setProperty("offline", true);
+            decryptedLinks.add(offline);
             return decryptedLinks;
         }
         if (br.containsHTML("is_geo_ip_blocked\\&quot;:true")) {
-            logger.info("Video not available in your country: " + parameter);
-            return decryptedLinks;
+            /*
+             * We can get the direct links of geo blocked videos anyways - also, this variable only tells if a video is geo blocked at all -
+             * this does not necessarily mean that it is blocked in the users'country!
+             */
+            logger.info("Video might not be available in your country: " + parameter);
         }
         br.getRequest().setHtmlCode(br.toString().replace("\\", ""));
         final String source = br.getRegex("<div class=\"jsb_ jsb_video/FlashPlayer\" data\\-jsb=\"(.*?)\">").getMatch(0);
-        String name = br.getRegex("property=\"og:title\" content=\"([^<>\"]*?)\"").getMatch(0);
+        String name;
         final String[] allLinks = new Regex(source, "src\\&quot;:\\&quot;(http://[^<>\"]*?(index|playlist)\\.m3u8)\\&quot;}").getColumn(0);
-        if (name == null || allLinks == null || allLinks.length == 0) {
+        if (allLinks == null || allLinks.length == 0) {
+            logger.warning("Decrypter broken for link: " + parameter);
+            return null;
+        }
+        final String episodeNr = br.getRegex("class=\"headline\">Folge (\\d+)</h4>").getMatch(0);
+        if (episodeNr != null) {
+            name = br.getRegex("class=\"title_bar\">[\t\n\r ]+<h1>([^<>\"]*?)</h1>").getMatch(0);
+        } else {
+            name = br.getRegex("property=\"og:title\" content=\"([^<>\"]*?)\"").getMatch(0);
+        }
+        if (name == null) {
             logger.warning("Decrypter broken for link: " + parameter);
             return null;
         }
         name = Encoding.htmlDecode(name.trim());
         name = decodeUnicode(name);
-        final String episodeNr = null;
         final DecimalFormat df = new DecimalFormat("000");
         final DecimalFormat episodeFormat = new DecimalFormat("00");
         int counter = 1;

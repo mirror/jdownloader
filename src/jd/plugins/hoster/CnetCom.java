@@ -46,42 +46,63 @@ public class CnetCom extends PluginForHost {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         br.getPage(link.getDownloadURL());
-        if (br.containsHTML("(>Whoops\\! You broke the Internet\\!<|>No, really,  it looks like you clicked on a borked link)") || br.getURL().contains("/most-popular/")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (br.containsHTML("(>Whoops\\! You broke the Internet\\!<|>No, really,  it looks like you clicked on a borked link)") || br.getURL().contains("/most-popular/")) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
         // External mirrors are of course not supported
-        if (br.containsHTML(">Visit Site<")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (br.containsHTML(">Visit Site<")) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
         String filename = br.getRegex("<meta property=\"og:title\" content=\"([^<>\"]*?)\"").getMatch(0);
-        if (filename == null) filename = br.getRegex("<title>([^<>\"]*?) \\- CNET Download\\.com</title>").getMatch(0);
-        if (filename == null) filename = br.getRegex("\\&fileName=([^<>\"]*?)(\\'|\")").getMatch(0);
+        if (filename == null) {
+            filename = br.getRegex("<title>([^<>\"]*?) \\- CNET Download\\.com</title>").getMatch(0);
+        }
+        if (filename == null) {
+            filename = br.getRegex("\\&fileName=([^<>\"]*?)(\\'|\")").getMatch(0);
+        }
         String filesize = br.getRegex(">File size:</span>([^<>\"]*?)</li>").getMatch(0);
-        if (filesize == null) filesize = br.getRegex(">File Size:</span> <span>([^<>\"]*?)</span>").getMatch(0);
-        if (filename == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (filesize == null) {
+            filesize = br.getRegex(">File Size:</span> <span>([^<>\"]*?)</span>").getMatch(0);
+        }
+        if (filesize == null) {
+            filesize = br.getRegex(">File Size:</div>[\t\n\r ]+<div class=\"product-landing-quick-specs-row-content\">([^<>\"]*?)</div>").getMatch(0);
+        }
+        if (filename == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         link.setName(Encoding.htmlDecode(filename.trim()));
-        if (filesize != null) link.setDownloadSize(SizeFormatter.getSize(filesize));
-        if (br.containsHTML("class=\"dlNowCTA\">Visit Site</span>")) link.getLinkStatus().setStatusText("Not downloadable (external download, see browser)");
+        if (filesize != null) {
+            link.setDownloadSize(SizeFormatter.getSize(filesize));
+        }
+        if (br.containsHTML("class=\"dlNowCTA\">Visit Site</span>")) {
+            link.getLinkStatus().setStatusText("Not downloadable (external download, see browser)");
+        }
         return AvailableStatus.TRUE;
     }
 
     @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
-        // Maybe we're already on the download page
-        String dllink = br.getRegex("\\'(http://software\\-files\\-[a-z0-9]+\\.cnet\\.com/s/software/[^<>\"]*?)\\'").getMatch(0);
+        String dllink = null;
+        /* Try to get installer without adware */
+        final String continueLink = br.getRegex("<a href=\\'(http://[^<>\"]*?)\\' class=\"dln\\-a\">[\t\n\r ]+<span class=\"dln\\-cta\">Direct Download Link</span>").getMatch(0);
+        if (continueLink == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        br.getPage(continueLink);
+        dllink = br.getRegex("data-download-now-url=\"(http://[^<>\"]*?)\"").getMatch(0);
         if (dllink == null) {
-            // Try to get installer without adware
-            String continueLink = br.getRegex("\"(https?://[^<>\"]*?)\" id=\"loggedInUserDlLink\">Direct Download Link</a>").getMatch(0);
-            // Try other ways (witd adware, ...)
-            if (continueLink == null) continueLink = br.getRegex("class=\"downloadNow\"> <a href=\"(http[^<>\"]*?)\"").getMatch(0);
-            if (continueLink == null) continueLink = br.getRegex("\"(http://(www\\.)?dw\\.com\\.com/redir\\?[^<>\"]*?)\"").getMatch(0);
-            if (continueLink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            br.getPage(continueLink);
-            dllink = br.getRegex("src:\\'(http[^<>\"]*?)\\'").getMatch(0);
-            if (dllink == null) dllink = br.getRegex("\\'(http://software\\-files\\-[a-z0-9]+\\.cnet\\.com/s/software/[^<>\"]*?)\\'").getMatch(0);
-            if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            dllink = br.getRegex("http\\-equiv=\"refresh\" content=\\'0;url=(http://[^<>\"]*?)\\'").getMatch(0);
+        }
+        if (dllink == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 0);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
-            if (br.containsHTML("File not found")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            if (br.containsHTML("File not found")) {
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            }
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         downloadLink.setFinalFileName(getFileNameFromHeader(dl.getConnection()));

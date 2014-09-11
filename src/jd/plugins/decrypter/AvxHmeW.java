@@ -76,6 +76,12 @@ public class AvxHmeW extends PluginForDecrypt {
                     }
                 }
             }
+            final String[] covers = br.getRegex("class=\"image\"><a href=\"(http://pixhst\\.com/pictures/\\d+)\"").getColumn(0);
+            if (covers != null && covers.length != 0) {
+                for (final String coverlink : covers) {
+                    decryptedLinks.add(createDownloadlink(coverlink));
+                }
+            }
         } else {
             br.setFollowRedirects(false);
             String[] links = br.getRegex("<h3>Download Link: <a href=\"http://(www\\.)?avaxhome\\.pro/[a-z0-9\\-_]+/(\\d+)\"").getColumn(1);
