@@ -18,11 +18,15 @@ package jd.controlling;
 
 import java.io.File;
 import java.util.ArrayList;
+import java.util.List;
 
+import jd.controlling.linkcrawler.CrawledLink;
+import jd.controlling.linkcrawler.LinkCrawler;
+import jd.controlling.linkcrawler.LinkCrawlerThread;
 import jd.plugins.DownloadLink;
+import jd.plugins.PluginForDecrypt;
 
-import org.jdownloader.dlc.DLCFactory;
-import org.jdownloader.logging.LogController;
+import org.jdownloader.plugins.controller.crawler.LazyCrawlerPlugin;
 
 /**
  * Im JDController wird das ganze App gesteuert. Events werden deligiert.
@@ -43,10 +47,68 @@ public class JDController {
 
     @Deprecated
     public ArrayList<DownloadLink> getContainerLinks(File file) {
-        DLCFactory plugin = new DLCFactory();
-        plugin.setLogger(LogController.CL());
-        return plugin.getContainerLinks(file);
+        final LinkCrawler lc;
+        if (Thread.currentThread() instanceof LinkCrawlerThread) {
+            final LinkCrawlerThread thread = (LinkCrawlerThread) (Thread.currentThread());
+            Object owner = thread.getCurrentOwner();
+            final CrawledLink source;
+            if (owner instanceof PluginForDecrypt) {
+                source = ((PluginForDecrypt) owner).getCurrentLink();
+            } else {
+                source = null;
+            }
+            final LinkCrawler parent = thread.getCurrentLinkCrawler();
+            lc = new LinkCrawler(false, false) {
 
+                @Override
+                protected CrawledLink crawledLinkFactorybyURL(String url) {
+                    final CrawledLink ret = new CrawledLink(url);
+                    if (source != null) {
+                        ret.setSourceLink(source);
+                    }
+                    return ret;
+                }
+
+                @Override
+                public int getCrawlerGeneration(boolean thisGeneration) {
+                    if (!thisGeneration && parent != null) {
+                        return Math.max(crawlerGeneration.get(), parent.getCrawlerGeneration(false));
+                    }
+                    return crawlerGeneration.get();
+                }
+
+                @Override
+                public List<LazyCrawlerPlugin> getCrawlerPlugins() {
+                    if (parent != null) {
+                        return parent.getCrawlerPlugins();
+                    }
+                    return super.getCrawlerPlugins();
+                }
+
+                @Override
+                protected boolean distributeCrawledLink(CrawledLink crawledLink) {
+                    return crawledLink != null && crawledLink.getSourceUrls() == null;
+                }
+
+            };
+        } else {
+            lc = new LinkCrawler();
+        }
+        lc.crawl("file://" + file.getAbsolutePath());
+        lc.waitForCrawling();
+        final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>(lc.getCrawledLinks().size());
+        for (final CrawledLink link : lc.getCrawledLinks()) {
+            DownloadLink dl = link.getDownloadLink();
+            if (dl == null) {
+                final String url = link.getURL();
+                if (url != null) {
+                    dl = new DownloadLink(null, null, null, url, true);
+                }
+            }
+            if (dl != null) {
+                ret.add(dl);
+            }
+        }
+        return ret;
     }
-
 }
