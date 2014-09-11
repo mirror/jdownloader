@@ -19,6 +19,7 @@ import org.appwork.swing.exttable.ExtTableEvent;
 import org.appwork.swing.exttable.ExtTableListener;
 import org.appwork.swing.exttable.ExtTableModelEventWrapper;
 import org.appwork.swing.exttable.ExtTableModelListener;
+import org.appwork.utils.event.queue.QueueAction;
 import org.appwork.utils.swing.EDTRunner;
 import org.jdownloader.controlling.contextmenu.ActionContext;
 import org.jdownloader.controlling.contextmenu.CustomizableAppAction;
@@ -141,55 +142,65 @@ public class GenericDeleteFromLinkgrabberAction extends CustomizableAppAction im
 
     @Override
     public void actionPerformed(final ActionEvent e) {
-        final List<CrawledLink> nodesToDelete = new ArrayList<CrawledLink>();
-        final AtomicBoolean containsOnline = new AtomicBoolean(false);
+        final SelectionInfo<CrawledPackage, CrawledLink> finalSelection = selection;
+        final List<PackageControllerTableModelFilter<CrawledPackage, CrawledLink>> filters = LinkGrabberTableModel.getInstance().getEnabledTableFilters();
+        LinkCollector.getInstance().getQueue().add(new QueueAction<Void, RuntimeException>() {
 
-        switch (includedSelection.getSelectionType()) {
-        case NONE:
-            break;
-        case UNSELECTED:
-            final List<PackageControllerTableModelFilter<CrawledPackage, CrawledLink>> filters = LinkGrabberTableModel.getInstance().getEnabledTableFilters();
-            LinkCollector.getInstance().getChildrenByFilter(new AbstractPackageChildrenNodeFilter<CrawledLink>() {
+            @Override
+            protected Void run() throws RuntimeException {
+                final List<CrawledLink> nodesToDelete = new ArrayList<CrawledLink>();
+                final AtomicBoolean containsOnline = new AtomicBoolean(false);
+                switch (includedSelection.getSelectionType()) {
+                case NONE:
+                    break;
+                case UNSELECTED:
+                    LinkCollector.getInstance().getChildrenByFilter(new AbstractPackageChildrenNodeFilter<CrawledLink>() {
 
-                @Override
-                public int returnMaxResults() {
-                    return 0;
-                }
+                        @Override
+                        public int returnMaxResults() {
+                            return 0;
+                        }
 
-                @Override
-                public boolean acceptNode(CrawledLink node) {
-                    if (!selection.contains(node)) {
+                        @Override
+                        public boolean acceptNode(CrawledLink node) {
+                            if (!finalSelection.contains(node)) {
 
-                        if (isIgnoreFiltered()) {
-                            for (PackageControllerTableModelFilter<CrawledPackage, CrawledLink> filter : filters) {
-                                if (filter.isFiltered(node)) { return false; }
+                                if (isIgnoreFiltered()) {
+                                    for (PackageControllerTableModelFilter<CrawledPackage, CrawledLink> filter : filters) {
+                                        if (filter.isFiltered(node)) {
+                                            return false;
+                                        }
+                                    }
+                                }
+                                if (node.getDownloadLink().getAvailableStatus() != AvailableStatus.FALSE) {
+                                    containsOnline.set(true);
+                                }
+                                nodesToDelete.add(node);
+                            }
+                            return false;
+                        }
+                    });
+                    break;
+                default:
+                    for (final CrawledLink dl : finalSelection.getChildren()) {
+                        if (checkLink(dl)) {
+                            nodesToDelete.add(dl);
+                            final CrawledPackage parent = dl.getParentNode();
+                            if (parent != null && (TYPE.OFFLINE == parent.getType() || TYPE.POFFLINE == parent.getType())) {
+                                continue;
+                            }
+                            if (dl.getDownloadLink().getAvailableStatus() != AvailableStatus.FALSE) {
+                                containsOnline.set(true);
+
                             }
                         }
-                        if (node.getDownloadLink().getAvailableStatus() != AvailableStatus.FALSE) {
-                            containsOnline.set(true);
-                        }
-                        nodesToDelete.add(node);
-                    }
-                    return false;
-                }
-            });
-            break;
-        default:
-            for (final CrawledLink dl : selection.getChildren()) {
-                if (checkLink(dl)) {
-                    nodesToDelete.add(dl);
-
-                    if (TYPE.OFFLINE == dl.getParentNode().getType()) continue;
-                    if (TYPE.POFFLINE == dl.getParentNode().getType()) continue;
-                    if (dl.getDownloadLink().getAvailableStatus() != AvailableStatus.FALSE) {
-                        containsOnline.set(true);
-
                     }
                 }
+
+                finalDelete(nodesToDelete, containsOnline.get());
+                return null;
             }
-        }
-
-        finalDelete(nodesToDelete, containsOnline.get());
+        });
 
     }
 
@@ -206,7 +217,9 @@ public class GenericDeleteFromLinkgrabberAction extends CustomizableAppAction im
     }
 
     public List<KeyStroke> getAdditionalShortcuts(KeyStroke keystroke) {
-        if (keystroke == null) return null;
+        if (keystroke == null) {
+            return null;
+        }
 
         ArrayList<KeyStroke> ret = new ArrayList<KeyStroke>();
         Modifier mod = byPassDialog.getByPassDialogToggleModifier();
@@ -218,14 +231,18 @@ public class GenericDeleteFromLinkgrabberAction extends CustomizableAppAction im
     }
 
     public boolean checkLink(CrawledLink cl) {
-        if (isDeleteAll()) return true;
+        if (isDeleteAll()) {
+            return true;
+        }
         if (isDeleteDisabled() && !cl.isEnabled()) {
 
-        return true; }
+            return true;
+        }
 
         if (isDeleteOffline() && cl.getDownloadLink().isAvailabilityStatusChecked() && cl.getDownloadLink().getAvailableStatus() == AvailableStatus.FALSE) {
 
-        return true; }
+            return true;
+        }
         return false;
     }
 
@@ -233,24 +250,34 @@ public class GenericDeleteFromLinkgrabberAction extends CustomizableAppAction im
         final StringBuilder sb = new StringBuilder();
 
         if (isClearFilteredLinks()) {
-            if (sb.length() > 0) sb.append(", ");
+            if (sb.length() > 0) {
+                sb.append(", ");
+            }
             sb.append(_GUI._.GenericDeleteFromLinkgrabberAction_clearFiltered());
         }
 
         if (isCancelLinkcrawlerJobs()) {
-            if (sb.length() > 0) sb.append(", ");
+            if (sb.length() > 0) {
+                sb.append(", ");
+            }
             sb.append(_GUI._.GenericDeleteFromLinkgrabberAction_cancelCrawler());
         }
         if (isClearSearchFilter()) {
-            if (sb.length() > 0) sb.append(", ");
+            if (sb.length() > 0) {
+                sb.append(", ");
+            }
             sb.append(_GUI._.GenericDeleteFromLinkgrabberAction_clearSearch());
         }
 
         if (isResetTableSorter()) {
-            if (sb.length() > 0) sb.append(", ");
+            if (sb.length() > 0) {
+                sb.append(", ");
+            }
             sb.append(_GUI._.GenericDeleteFromLinkgrabberAction_resetSorter());
         }
-        if (sb.length() > 0) sb.append(" & ");
+        if (sb.length() > 0) {
+            sb.append(" & ");
+        }
         if (this.isDeleteAll()) {
             switch (includedSelection.getSelectionType()) {
             case ALL:
@@ -407,7 +434,7 @@ public class GenericDeleteFromLinkgrabberAction extends CustomizableAppAction im
                                     }
                                     if (isIgnoreFiltered()) {
                                         for (PackageControllerTableModelFilter<CrawledPackage, CrawledLink> filter : filters) {
-                                            if (filter.isFiltered((CrawledLink) child)) {
+                                            if (filter.isFiltered(child)) {
                                                 continue childs;
                                             }
                                         }
