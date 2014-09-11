@@ -92,7 +92,7 @@ public class LinkSnappyCom extends PluginForHost {
         AccountInfo ac;
         setConstants(account, null);
         prepBrowser(br);
-        if (this.getPluginConfig().getBooleanProperty(USE_API, default_api)) {
+        if (api_active()) {
             ac = api_fetchAccountInfo();
         } else {
             ac = site_fetchAccountInfo();
@@ -310,7 +310,7 @@ public class LinkSnappyCom extends PluginForHost {
         setConstants(account, link);
         br.setFollowRedirects(true);
         dllink = link.getStringProperty("linksnappycomdirectlink", null);
-        final boolean use_api = this.getPluginConfig().getBooleanProperty(USE_API, default_api);
+        final boolean use_api = api_active();
         if (dllink != null) {
             dllink = (attemptDownload() ? dllink : null);
         }
@@ -723,6 +723,10 @@ public class LinkSnappyCom extends PluginForHost {
         throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);
     }
 
+    private boolean api_active() {
+        return this.getPluginConfig().getBooleanProperty(USE_API, default_api);
+    }
+
     private final boolean default_api                    = true;
     private final boolean default_clear_download_history = false;
 
@@ -734,7 +738,7 @@ public class LinkSnappyCom extends PluginForHost {
 
     /**
      * Tries to return value of key from JSon response, from String source.
-     * 
+     *
      * @author raztoki
      * */
     private String getJson(final String source, final String key) {
@@ -750,7 +754,7 @@ public class LinkSnappyCom extends PluginForHost {
 
     /**
      * Tries to return value of key from JSon response, from default 'br' Browser.
-     * 
+     *
      * @author raztoki
      * */
     private String getJson(final String key) {
@@ -759,7 +763,7 @@ public class LinkSnappyCom extends PluginForHost {
 
     /**
      * Tries to return value of key from JSon response, from provided Browser.
-     * 
+     *
      * @author raztoki
      * */
     private String getJson(final Browser ibr, final String key) {

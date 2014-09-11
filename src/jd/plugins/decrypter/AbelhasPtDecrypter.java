@@ -39,6 +39,17 @@ public class AbelhasPtDecrypter extends PluginForDecrypt {
         super(wrapper);
     }
 
+    @Override
+    protected DownloadLink createDownloadlink(String link) {
+        DownloadLink ret = super.createDownloadlink(link);
+        try {
+            ret.setUrlProtection(org.jdownloader.controlling.UrlProtection.PROTECTED_INTERNAL_URL);
+        } catch (Throwable e) {
+            // jd09
+        }
+        return ret;
+    }
+
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String parameter = param.toString();
@@ -165,12 +176,20 @@ public class AbelhasPtDecrypter extends PluginForDecrypt {
                     if (filesize == null) {
                         filesize = new Regex(lnkinfo, "<li>([^<>\"]*?)</li>").getMatch(0);
                     }
-                    String mainlink = br.getRegex("\"(/[^<>\"]*?)\" class=\"downloadAction\"").getMatch(0);
+                    String mainlink = new Regex(lnkinfo, "class=\"directFileLink\" rel=\"(http://[^<>\"]*?)\"").getMatch(0);
+                    if (mainlink == null) {
+                        mainlink = new Regex(lnkinfo, "downloadAction\" href=\"(/[^<>\"]*?)\"").getMatch(0);
+                    }
+                    if (mainlink == null) {
+                        mainlink = br.getRegex("\"(/[^<>\"]*?)\" class=\"downloadAction\"").getMatch(0);
+                    }
                     if (fid == null || filename == null || ext == null || filesize == null || mainlink == null) {
                         logger.warning("Decrypter broken for link: " + parameter);
                         return null;
                     }
-                    mainlink = "http://abelhas.pt" + mainlink;
+                    if (mainlink.startsWith("/")) {
+                        mainlink = "http://abelhas.pt" + mainlink;
+                    }
                     filesize = Encoding.htmlDecode(filesize).trim();
                     filename = Encoding.htmlDecode(filename).trim() + Encoding.htmlDecode(ext).trim();
 
@@ -198,5 +217,4 @@ public class AbelhasPtDecrypter extends PluginForDecrypt {
 
         return decryptedLinks;
     }
-
 }
