@@ -70,6 +70,9 @@ public class BrowserAdapter {
                 int maxRedirects = 10;
                 while (maxRedirects-- > 0) {
                     request = br.createRedirectFollowingRequest(request);
+                    if (request.getUrl() != null && request.getUrl().matches("https?://block\\.malwarebytes\\.org")) {
+                        throw new PluginException(LinkStatus.ERROR_FATAL, "Blocked by Malwarebytes");
+                    }
                     if (originalUrl != null) {
                         request.getHeaders().put("Referer", originalUrl);
                     }
@@ -101,7 +104,15 @@ public class BrowserAdapter {
                 dl.getConnection().disconnect();
             } catch (Throwable ignore) {
             }
+            // Bitdefender handling
+            if (dl.getConnection() != null && dl.getConnection().getResponseCode() == 403 && "Blocked by Bitdefender".equalsIgnoreCase(dl.getConnection().getResponseMessage())) {
+                throw new PluginException(LinkStatus.ERROR_FATAL, "Blocked by Bitdefender");
+            }
             throw forward;
+        }
+        // Bitdefender handling
+        if (dl.getConnection() != null && dl.getConnection().getResponseCode() == 403 && "Blocked by Bitdefender".equalsIgnoreCase(dl.getConnection().getResponseMessage())) {
+            throw new PluginException(LinkStatus.ERROR_FATAL, "Blocked by Bitdefender");
         }
         return dl;
     }
