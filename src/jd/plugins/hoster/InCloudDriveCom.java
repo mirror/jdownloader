@@ -327,8 +327,8 @@ public class InCloudDriveCom extends PluginForHost {
             ai.setUsedSpace(space.trim());
         }
 
-        String used_traffic = ajax.getRegex("<span class=\"leftusage\">([^<>\"]*?)</span>").getMatch(0);
-        String max_traffic = ajax.getRegex("<span class=\"rightusage\">([^<>\"]*?)</span>").getMatch(0);
+        String used_traffic = ajax.getRegex("<span class=\"rightusage\">[^<>\"]*?</span>.*?<span class=\"leftusage\">([^<>\"]*?)</span>").getMatch(0);
+        String max_traffic = ajax.getRegex("<span class=\"rightusage\">[^<>\"]*?</span>.*?<span class=\"rightusage\">([^<>\"]*?)</span>").getMatch(0);
         used_traffic = used_traffic.replace("BT", "b");
         max_traffic = max_traffic.replace("BT", "b");
         final long trafficmax = SizeFormatter.getSize(max_traffic);
