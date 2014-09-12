@@ -1766,10 +1766,12 @@ public class LnkCrptWs extends PluginForDecrypt {
 
         final String important[] = { "/js/jquery.js", "/dir/image/Warning.png" };
         URLConnectionAdapter con = null;
-        final Browser br2 = br.cloneBrowser();
         for (final String template : important) {
+            final Browser br2 = br.cloneBrowser();
             try {
                 con = br2.openGetConnection(template);
+            } catch (final Exception e) {
+                e.printStackTrace();
             } finally {
                 try {
                     con.disconnect();
@@ -1827,7 +1829,7 @@ public class LnkCrptWs extends PluginForDecrypt {
                             if (!br.containsHTML("(Our system could not identify you as human beings\\!|Your choice was wrong\\! Please wait some seconds and try it again\\.)")) {
                                 valid = true;
                             } else {
-                                br.getPage("http://linkcrypt.ws/dir/" + containerId);
+                                br.getPage("/dir/" + containerId);
                             }
                         }
                     }
@@ -1882,7 +1884,7 @@ public class LnkCrptWs extends PluginForDecrypt {
                 row = new Regex(decryptedJS, "href=\"([^\"]+)\"[^>]*>.*?<img.*?image/(.*?)\\.").getRow(0); // cnl
             }
             if (row == null) {
-                row = new Regex(decryptedJS, "(http://linkcrypt\\.ws/container/[^\"]+)\".*?http://linkcrypt\\.ws/image/([a-z]+)\\.").getRow(0); // fallback
+                row = new Regex(decryptedJS, "(https?://linkcrypt\\.ws/container/[^\"]+)\".*?https?://linkcrypt\\.ws/image/([a-z]+)\\.").getRow(0); // fallback
             }
             if (row != null) {
                 if ("cnl".equalsIgnoreCase(row[1])) {
@@ -1897,7 +1899,7 @@ public class LnkCrptWs extends PluginForDecrypt {
 
         final Form preRequest = br.getForm(0);
         if (preRequest != null) {
-            final String url = preRequest.getRegex("http://.*/captcha\\.php\\?id=\\d+").getMatch(-1);
+            final String url = preRequest.getRegex("https?://.*/captcha\\.php\\?id=\\d+").getMatch(-1);
             if (url != null) {
                 con = null;
                 try {
@@ -1928,7 +1930,6 @@ public class LnkCrptWs extends PluginForDecrypt {
             Form cnlForm = cnlbr.getForm(0);
 
             if (cnlForm != null) {
-
                 if (System.getProperty("jd.revision.jdownloaderrevision") != null) {
                     HashMap<String, String> infos = new HashMap<String, String>();
                     infos.put("crypted", Encoding.urlDecode(cnlForm.getInputField("crypted").getValue(), false));
@@ -1963,7 +1964,6 @@ public class LnkCrptWs extends PluginForDecrypt {
                         logger.info("linkcrypt.ws: ExternInterface(CNL2) is disabled!");
                     }
                 }
-
             }
             map.remove("cnl");
         }
@@ -1971,30 +1971,31 @@ public class LnkCrptWs extends PluginForDecrypt {
         // Container
         for (Entry<String, String> next : map.entrySet()) {
             if (!next.getKey().equalsIgnoreCase("cnl")) {
-                File container = JDUtilities.getResourceFile("container/" + System.currentTimeMillis() + "." + next.getKey(), true);
+                final File container = JDUtilities.getResourceFile("container/" + System.currentTimeMillis() + "." + next.getKey(), true);
                 if (!container.exists()) {
                     container.createNewFile();
                 }
-                br.cloneBrowser().getDownload(container, next.getValue());
-                if (container != null) {
-                    logger.info("Container found: " + container);
-                    decryptedLinks.addAll(JDUtilities.getController().getContainerLinks(container));
-                    container.delete();
-                    if (decryptedLinks.size() == 0) {
-                        continue;
+                try {
+                    br.cloneBrowser().getDownload(container, next.getValue());
+                    if (container != null) {
+                        logger.info("Container found: " + container);
+                        decryptedLinks.addAll(JDUtilities.getController().getContainerLinks(container));
+                        container.delete();
+                        if (!decryptedLinks.isEmpty()) {
+                            return decryptedLinks;
+                        }
                     }
+                } catch (final Exception e) {
+                    e.printStackTrace();
                 }
             }
         }
 
-        if (decryptedLinks.size() > 0) {
-            return decryptedLinks;
-        }
-
         // Webdecryption
         if (webDecryption) {
+            // shouldn't we already be at this url?
             br.getPage("http://linkcrypt.ws/dir/" + containerId);
-            logger.info("ContainerID is null, trying webdecryption...");
+            logger.info("Trying webdecryption...");
             final Form[] forms = br.getForms();
             progress.setRange(forms.length - 8);
             for (final Form form : forms) {
@@ -2037,7 +2038,6 @@ public class LnkCrptWs extends PluginForDecrypt {
                                                 /* does not exist in 09581 */
                                             }
                                             decryptedLinks.add(dl);
-
                                         }
                                     }
                                 }
@@ -2062,7 +2062,6 @@ public class LnkCrptWs extends PluginForDecrypt {
                     } catch (Throwable e) {
                         /* does not exist in 09581 */
                     }
-
                 }
             }
         }
