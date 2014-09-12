@@ -39,9 +39,13 @@ public class WorldStarHipHopComDecrypter extends PluginForDecrypt {
         String parameter = param.toString();
         br.setFollowRedirects(true);
         br.getPage(parameter);
-        String externID = br.getRegex("\"file\",\"(http://(www\\.)?youtube\\.com/v/[^<>\"]*?)\"\\);").getMatch(0);
-        if (externID == null)
+        String externID = br.getRegex("\"file\",\"(https?://(www\\.)?youtube\\.com/v/[^<>\"]*?)\"\\);").getMatch(0);
+        if (externID == null) {
             externID = br.getRegex("\"file\",\"(https?://(www\\.)?youtube\\.com/v/[A-Za-z0-9\\-_]+)\"").getMatch(0);
+        }
+        if (externID == null) {
+            externID = br.getRegex("<iframe src=\"(https?://(www\\.)?youtube\\.com/v/[^<>\"]*?)\"").getMatch(0);
+        }
         if (externID != null) {
             decryptedLinks.add(createDownloadlink(Encoding.htmlDecode(externID.trim())));
             return decryptedLinks;

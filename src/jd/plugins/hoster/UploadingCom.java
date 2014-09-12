@@ -25,6 +25,7 @@ import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import jd.PluginWrapper;
+import jd.config.Property;
 import jd.http.Browser;
 import jd.http.Cookie;
 import jd.http.Cookies;
@@ -56,10 +57,10 @@ public class UploadingCom extends PluginForHost {
     private static final String  CODEREGEX       = "uploading\\.com/(\\w+)";
     private static Object        LOCK            = new Object();
     private static final String  MAINPAGE        = "http://uploading.com/";
-    private static final String  PASSWORDTEXT    = "Please Enter Password:<";
     private boolean              loginFail       = false;
 
-    private static final String  TYPE_GET        = "http://(www\\.)?uploading\\.com/files/get/[A-Za-z0-9]+";
+    private static final String  TYPE_FILES_GET  = "http://(www\\.)?uploading\\.com/files/get/[A-Za-z0-9]+";
+    private static final String  TYPE_FILES      = "http://(www\\.)?uploading\\.com/files/[A-Za-z0-9]+";
 
     public UploadingCom(PluginWrapper wrapper) {
         super(wrapper);
@@ -374,19 +375,39 @@ public class UploadingCom extends PluginForHost {
         return AvailableStatus.UNCHECKED;
     }
 
-    public void handleFree0(DownloadLink link) throws Exception {
+    public void handleFree0(final DownloadLink link) throws Exception {
+        final String fileID = get_setFID(link);
+        int wait = 60;
+        String waitTimer = br.getRegex("<span id=\"timer_secs\">(\\d+)</span>").getMatch(0);
         if (br.containsHTML("that only premium members are")) {
-            throw new PluginException(LinkStatus.ERROR_FATAL, "Only for premium members");
+            try {
+                throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);
+            } catch (final Throwable e) {
+                if (e instanceof PluginException) {
+                    throw (PluginException) e;
+                }
+            }
+            throw new PluginException(LinkStatus.ERROR_FATAL, "This file can only be downloaded by premium users");
         }
-        String passCode = null;
+        String passCode = link.getStringProperty("pass", null);
         checkErrors(br);
-        passCode = link.getStringProperty("pass", null);
-        String fileID = new Regex(link.getDownloadURL(), CODEREGEX).getMatch(0);
         Browser ajax = this.br.cloneBrowser();
         ajax.getHeaders().put("X-Requested-With", "XMLHttpRequest");
         ajax.getHeaders().put("Accept", "application/json, text/javascript, */*; q=0.01");
-        int wait = 60;
-        String waitTimer = ajax.getRegex("<span id=\"timer_secs\">(\\d+)</span>").getMatch(0);
+        if (br.containsHTML("id=\"enter_pass_form\" style=\"display:none\"")) {
+            if (passCode == null) {
+                passCode = Plugin.getUserInput("Password?", link);
+            }
+            ajax.postPage("http://uploading.com/files/get/?ajax", "action=check_pass&code=" + fileID + "&pass=" + Encoding.urlEncode(passCode));
+            if (ajax.containsHTML("\"error\":\"The entered password is incorrect\"") || !ajax.containsHTML("\"success\":1")) {
+                /* handle password has failed in the past, additional try catching / resetting values */
+                logger.warning("Wrong password, the entered password \"" + passCode + "\" is wrong, retrying...");
+                link.setProperty("pass", Property.NULL);
+                throw new PluginException(LinkStatus.ERROR_RETRY, "Wrong password entered");
+            }
+        } else {
+            passCode = "false";
+        }
         if (waitTimer != null) {
             wait = Integer.parseInt(waitTimer);
         }
@@ -396,7 +417,7 @@ public class UploadingCom extends PluginForHost {
             return;
         }
         logger.info("Submitting ajax request");
-        ajax.postPage("http://uploading.com/files/get/?ajax", "action=get_link&code=" + Encoding.urlEncode(fileID) + "&pass=false&force_exe=0");
+        ajax.postPage("http://uploading.com/files/get/?ajax", "action=get_link&code=" + Encoding.urlEncode(fileID) + "&pass=" + passCode + "&force_exe=0");
         checkErrors(ajax);
         String nextLink = ajax.getRegex("\"link\":\"(http:[^<>\"]*?)\"").getMatch(0);
         if (nextLink == null) {
@@ -424,6 +445,21 @@ public class UploadingCom extends PluginForHost {
             link.setProperty("pass", passCode);
         }
         dl.startDownload();
+    }
+
+    private String get_setFID(final DownloadLink dl) {
+        String fid;
+        if (dl.getDownloadURL().matches(TYPE_FILES_GET)) {
+            fid = new Regex(dl.getDownloadURL(), "uploading\\.com/files/get/(.+)").getMatch(0);
+        } else {
+            fid = new Regex(dl.getDownloadURL(), CODEREGEX).getMatch(0);
+        }
+        try {
+            dl.setLinkID("uploadingcom_" + fid);
+        } catch (final Throwable e) {
+            /* Not available in old 0.9.581 Stable */
+        }
+        return fid;
     }
 
     @Override
@@ -467,18 +503,18 @@ public class UploadingCom extends PluginForHost {
             if (br.containsHTML("class=\"error_page wrapper error_403\"")) {
                 throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Server error 403", 5 * 60 * 1000l);
             }
-            String code = new Regex(link.getDownloadURL(), CODEREGEX).getMatch(0);
-            if (code == null) {
-                logger.warning("The first form equals null");
+            final String fid = this.get_setFID(link);
+            if (fid == null) {
+                logger.warning("code equals null");
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
-            if (br.containsHTML(PASSWORDTEXT)) {
+            if (br.containsHTML("Please Enter Password:<")) {
                 if (passCode == null) {
                     passCode = Plugin.getUserInput("Password?", link);
                 }
                 passCode = Encoding.urlEncode(passCode);
             }
-            redirect = getDownloadUrl(link, null, code, passCode);
+            redirect = getDownloadUrl(link, null, fid, passCode);
         }
         br.setFollowRedirects(false);
         dl = jd.plugins.BrowserAdapter.openDownload(br, link, redirect, true, 0);

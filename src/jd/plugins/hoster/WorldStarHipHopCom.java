@@ -93,7 +93,7 @@ public class WorldStarHipHopCom extends PluginForHost {
                 }
             }
             if (filename == null) {
-                filename = br.getRegex("content=\"([^<>\"]*?)\" name=\"title\" property=\"og:title\"").getMatch(0);
+                filename = br.getRegex("content=\"([^<>]*?)\" name=\"title\" property=\"og:title\"").getMatch(0);
             }
             if (filename == null) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -125,6 +125,8 @@ public class WorldStarHipHopCom extends PluginForHost {
             ext = ".flv";
         }
         downloadLink.setFinalFileName(filename + ext);
+        br.getHeaders().put("Referer", "http://hw-static.worldstarhiphop.com/videos/wplayer/NAPP3e.swf");
+        dllink = dllink.replace(" ", "");
         Browser br2 = br.cloneBrowser();
         // In case the link redirects to the finallink
         br2.setFollowRedirects(true);

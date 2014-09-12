@@ -73,14 +73,29 @@ public class FrShrdFldr extends PluginForDecrypt {
 
         if (br.containsHTML("The file link that you requested is not valid") || br.containsHTML("This folder was deleted") || br.containsHTML("This folder is no longer available because of a claim")) {
             logger.info("Link offline: " + parameter);
+            final DownloadLink offline = createDownloadlink("directhttp://" + parameter);
+            offline.setFinalFileName(new Regex(parameter, "shared(\\-china)?\\.com/(dir|folder|minifolder)/(.+)").getMatch(2));
+            offline.setAvailable(false);
+            offline.setProperty("offline", true);
+            decryptedLinks.add(offline);
             return decryptedLinks;
         }
         if (br.containsHTML(">You need owner\\'s permission to access this folder")) {
             logger.info("Link offline (no permissions): " + parameter);
+            final DownloadLink offline = createDownloadlink("directhttp://" + parameter);
+            offline.setFinalFileName(new Regex(parameter, "shared(\\-china)?\\.com/(dir|folder|minifolder)/(.+)").getMatch(2));
+            offline.setAvailable(false);
+            offline.setProperty("offline", true);
+            decryptedLinks.add(offline);
             return decryptedLinks;
         }
         if (br.containsHTML("class=\"emptyFolderPlaceholder\"")) {
             logger.info("Link offline (empty): " + parameter);
+            final DownloadLink offline = createDownloadlink("directhttp://" + parameter);
+            offline.setFinalFileName(new Regex(parameter, "shared(\\-china)?\\.com/(dir|folder|minifolder)/(.+)").getMatch(2));
+            offline.setAvailable(false);
+            offline.setProperty("offline", true);
+            decryptedLinks.add(offline);
             return decryptedLinks;
         }
 
