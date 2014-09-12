@@ -85,6 +85,10 @@ public class InCloudDriveCom extends PluginForHost {
         } catch (final Throwable e) {
         }
         br.getPage(link.getDownloadURL());
+        return parseFileInformation(link);
+    }
+
+    private AvailableStatus parseFileInformation(final DownloadLink link) throws Exception {
         setFUID(link);
         if ("link".equals(hashTag[0])) {
             ajaxPostPage("https://www.inclouddrive.com/index.php/link", "user_id=&user_loged_in=no&link_value=" + Encoding.urlEncode(hashTag[1]));
@@ -393,15 +397,35 @@ public class InCloudDriveCom extends PluginForHost {
 
     @Override
     public void handlePremium(final DownloadLink link, final Account account) throws Exception {
+        login(account, false);
         if (account.getBooleanProperty("free", false)) {
-            login(account, false);
             requestFileInformation(link);
             doFree(link, ACCOUNT_FREE_RESUME, ACCOUNT_FREE_MAXCHUNKS, "account_free_directlink");
         } else {
-            login(account, false);
             String dllink = checkDirectLink(link, "premium_directlink");
             if (dllink == null) {
-                requestFileInformation(link);
+                br.setFollowRedirects(true);
+                try {
+                    br.setAllowedResponseCodes(400, 500);
+                } catch (final Throwable e) {
+                }
+                URLConnectionAdapter con = null;
+                try {
+                    con = br.openGetConnection(link.getDownloadURL());
+                    if (con.isContentDisposition()) {
+                        dllink = link.getDownloadURL();
+                    } else {
+                        br.followConnection();
+                    }
+                } finally {
+                    try {
+                        con.disconnect();
+                    } catch (final Throwable t) {
+                    }
+                }
+            }
+            if (dllink == null) {
+                parseFileInformation(link);
                 final String uplid = ajax.getRegex("uploader_id=\"(\\d+)\"").getMatch(0);
                 final String fileid = ajax.getRegex("file_id=\"(\\d+)\"").getMatch(0);
                 if (uplid == null || fileid == null) {
@@ -464,7 +488,7 @@ public class InCloudDriveCom extends PluginForHost {
 
     /**
      * When premium only download restriction (eg. filesize), throws exception with given message
-     *
+     * 
      * @param msg
      * @throws PluginException
      */
@@ -539,7 +563,7 @@ public class InCloudDriveCom extends PluginForHost {
 
     /**
      * Validates string to series of conditions, null, whitespace, or "". This saves effort factor within if/for/while statements
-     *
+     * 
      * @param s
      *            Imported String to match against.
      * @return <b>true</b> on valid rule match. <b>false</b> on invalid rule match.
