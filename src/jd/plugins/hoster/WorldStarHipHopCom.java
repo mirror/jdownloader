@@ -62,15 +62,21 @@ public class WorldStarHipHopCom extends PluginForHost {
         br.getPage(downloadLink.getDownloadURL());
         String filename = null;
         if (br.getURL().contains("worldstaruncut.com/")) {
-            if (br.getURL().equals("http://www.worldstarhiphop.com/videos/")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            if (br.getURL().equals("http://www.worldstarhiphop.com/videos/")) {
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            }
             getURLUniversal();
             filename = br.getRegex("<title>([^<>]*?) \\- World Star Uncut</title>").getMatch(0);
-            if (filename == null) filename = br.getRegex("<td width=\"607\" class=\"style4\">([^<>\"]*?) \\(\\*Warning\\*").getMatch(0);
+            if (filename == null) {
+                filename = br.getRegex("<td width=\"607\" class=\"style4\">([^<>\"]*?) \\(\\*Warning\\*").getMatch(0);
+            }
         } else if (br.getURL().contains("worldstarcandy.com/")) {
             filename = br.getRegex("color:#023a70; font\\-size:28px;\">([^<>\"]*?)</span>").getMatch(0);
             getURLUniversal();
         } else {
-            if (br.containsHTML("<title>Video: No Video </title>") || br.getURL().equals("http://www.worldstarhiphop.com/videos/")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            if (br.containsHTML("<title>Video: No Video </title>") || br.getURL().equals("http://www.worldstarhiphop.com/videos/")) {
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            }
             if (br.containsHTML(">This video isn\\'t here right now\\.\\.\\.")) {
                 downloadLink.setName(new Regex(downloadLink.getDownloadURL(), "([a-zA-Z0-9]+)$").getMatch(0));
                 downloadLink.getLinkStatus().setStatusText("Video temporarily unavailable");
@@ -81,10 +87,17 @@ public class WorldStarHipHopCom extends PluginForHost {
                 filename = br.getRegex("<title>Video: (.*?)</title>").getMatch(0);
                 if (filename == null) {
                     filename = br.getRegex("<h1 style=\"width:438px;\">(.*?)</h1>").getMatch(0);
-                    if (filename == null) filename = br.getRegex("<span style=\"display:none;\">Watching: (.*?)</span><img src=\"").getMatch(0);
+                    if (filename == null) {
+                        filename = br.getRegex("<span style=\"display:none;\">Watching: (.*?)</span><img src=\"").getMatch(0);
+                    }
                 }
             }
-            if (filename == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            if (filename == null) {
+                filename = br.getRegex("content=\"([^<>\"]*?)\" name=\"title\" property=\"og:title\"").getMatch(0);
+            }
+            if (filename == null) {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
             if (br.containsHTML("videoplayer\\.vevo\\.com/embed/embedded\"")) {
                 filename = Encoding.htmlDecode(filename.trim());
                 downloadLink.getLinkStatus().setStatusText("This video is blocked in your country");
@@ -96,15 +109,21 @@ public class WorldStarHipHopCom extends PluginForHost {
                 dllink = br.getRegex("(http://hwcdn\\.net/[a-z0-9]+/cds/\\d+/\\d+/\\d+/.*?\\.(mp4|flv))").getMatch(0);
                 if (dllink == null) {
                     dllink = br.getRegex("v=(http://.*?\\.com/.*?/vid/.*?\\.(mp4|flv))").getMatch(0);
-                    if (dllink == null) getURLUniversal();
+                    if (dllink == null) {
+                        getURLUniversal();
+                    }
                 }
             }
         }
-        if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (dllink == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         filename = Encoding.htmlDecode(filename.trim());
         filename = encodeUnicode(filename);
         String ext = ".mp4";
-        if (!dllink.endsWith(".mp4")) ext = ".flv";
+        if (!dllink.endsWith(".mp4")) {
+            ext = ".flv";
+        }
         downloadLink.setFinalFileName(filename + ext);
         Browser br2 = br.cloneBrowser();
         // In case the link redirects to the finallink
@@ -112,10 +131,11 @@ public class WorldStarHipHopCom extends PluginForHost {
         URLConnectionAdapter con = null;
         try {
             con = br2.openGetConnection(dllink);
-            if (!con.getContentType().contains("html"))
+            if (!con.getContentType().contains("html")) {
                 downloadLink.setDownloadSize(con.getLongContentLength());
-            else
+            } else {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            }
             return AvailableStatus.TRUE;
         } finally {
             try {
@@ -128,7 +148,9 @@ public class WorldStarHipHopCom extends PluginForHost {
     @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
-        if (br.containsHTML("videoplayer\\.vevo\\.com/embed/embedded\"")) throw new PluginException(LinkStatus.ERROR_FATAL, "This video is blocked in your country");
+        if (br.containsHTML("videoplayer\\.vevo\\.com/embed/embedded\"")) {
+            throw new PluginException(LinkStatus.ERROR_FATAL, "This video is blocked in your country");
+        }
         if (br.getURL().contains("worldstarhiphop.com/")) {
             if (br.containsHTML(">This video isn\\'t here right now\\.\\.\\.")) {
                 downloadLink.getLinkStatus().setStatusText("Video temporarily unavailable");
