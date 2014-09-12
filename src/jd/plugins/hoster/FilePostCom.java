@@ -430,13 +430,15 @@ public class FilePostCom extends PluginForHost {
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 1);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
-            if (br.getCookie(MAINPAGE, "error") != null && new Regex(br.getCookie(MAINPAGE, "error"), "(Sorry%2C%20you%20have%20exceeded%20your%20daily%20download%20limit\\.|%3Cbr%20%2F%3ETry%20again%20tomorrow%20or%20obtain%20a%20premium%20membership\\.)").matches()) {
+            final String cookieError = br.getCookie(MAINPAGE, "error");
+            if (cookieError != null && new Regex(cookieError, "Your%20download%20is%20not%20found%20or%20has%20expired\\.").matches()) {
+                // since the session has just been created we will treat as file not found jdlog://8255413173041 jdlog://6367313173041
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            } else if (cookieError != null && new Regex(cookieError, "(Sorry%2C%20you%20have%20exceeded%20your%20daily%20download%20limit\\.|%3Cbr%20%2F%3ETry%20again%20tomorrow%20or%20obtain%20a%20premium%20membership\\.)").matches()) {
                 throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, "Daily limit reached", 2 * 60 * 60 * 1000l);
-            }
-            if (br.getCookie(MAINPAGE, "error") != null) {
-                logger.warning("Unhandled error: " + br.getCookie(MAINPAGE, "error"));
-            }
-            if (br.containsHTML(">403 Forbidden<")) {
+            } else if (cookieError != null) {
+                logger.warning("Unhandled error: " + cookieError);
+            } else if (br.containsHTML(">403 Forbidden<")) {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error", 60 * 60 * 1000);
             }
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
