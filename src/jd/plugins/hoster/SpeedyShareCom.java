@@ -44,7 +44,7 @@ import jd.utils.locale.JDL;
 import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.formatter.TimeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "speedyshare.com" }, urls = { "http://(www\\.)?(speedyshare\\.com|speedy\\.sh)/((files?|remote)/)?[A-Za-z0-9]+" }, flags = { 2 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "speedyshare.com" }, urls = { "http://www(\\d+)?\\.speedyshare\\.com/remote/[A-Za-z0-9]+/d\\d+\\-[A-Za-z0-9]+|http://(www\\.)?(speedyshare\\.com|speedy\\.sh)/(files/)?[A-Za-z0-9]+" }, flags = { 2 })
 public class SpeedyShareCom extends PluginForHost {
 
     private static final String                            PREMIUMONLY        = "(>This paraticular file can only be downloaded after you purchase|this file can only be downloaded with SpeedyShare Premium)";
@@ -52,7 +52,7 @@ public class SpeedyShareCom extends PluginForHost {
     private static final String                            MAINPAGE           = "http://www.speedyshare.com";
     private static final String                            CAPTCHATEXT        = "/captcha\\.php\\?";
     private static Object                                  LOCK               = new Object();
-    private final String                                   REMOTELINK         = "http://(www\\.)?speedyshare\\.com/remote/[A-Za-z0-9]+";
+    private final String                                   REMOTELINK         = "http://www(\\d+)?\\.speedyshare\\.com/remote/[A-Za-z0-9]+/d\\d+\\-[A-Za-z0-9]+";
     private String                                         fuid               = null;
     private static HashMap<Account, HashMap<String, Long>> hostUnavailableMap = new HashMap<Account, HashMap<String, Long>>();
 
@@ -93,6 +93,7 @@ public class SpeedyShareCom extends PluginForHost {
         return false;
     }
 
+    @SuppressWarnings("deprecation")
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws Exception {
         this.setBrowserExclusive();
@@ -102,7 +103,7 @@ public class SpeedyShareCom extends PluginForHost {
         if (downloadLink.getDownloadURL().matches(REMOTELINK)) {
             final Account aa = AccountController.getInstance().getValidAccount(this);
             if (aa == null) {
-                downloadLink.getLinkStatus().setStatusText("This link can only be checked when a valid premium account is active");
+                downloadLink.getLinkStatus().setStatusText("This link can only be checked/downloaded when a valid premium account is active");
                 return AvailableStatus.UNCHECKABLE;
             } else {
                 login(aa, false);
@@ -116,7 +117,6 @@ public class SpeedyShareCom extends PluginForHost {
                     } else {
                         throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
                     }
-                    downloadLink.getLinkStatus().setStatusText("This file can only be downloaded by premium users");
                     return AvailableStatus.TRUE;
                 } finally {
                     try {
@@ -424,7 +424,12 @@ public class SpeedyShareCom extends PluginForHost {
 
     private void setFUID(final DownloadLink downloadLink) {
         // not sure of remote link formats....
-        fuid = new Regex(downloadLink.getDownloadURL(), "speedyshare\\.com/(?:(?!remote)|files/)?([A-Z0-9]+)").getMatch(0);
+        if (downloadLink.getDownloadURL().matches(REMOTELINK)) {
+            fuid = new Regex(downloadLink.getDownloadURL(), "speedyshare\\.com/remote/([A-Za-z0-9]+/d\\d+\\-[A-Za-z0-9]+)").getMatch(0);
+            fuid = fuid.replace("/", "_");
+        } else {
+            fuid = new Regex(downloadLink.getDownloadURL(), "speedyshare\\.com/(files/)?([A-Z0-9]+)").getMatch(1);
+        }
         if (fuid != null) {
             final String linkID = getHost() + "://" + fuid;
             try {

@@ -44,7 +44,7 @@ public class OtrDatenkellerAt extends PluginForHost {
     public OtrDatenkellerAt(PluginWrapper wrapper) {
         super(wrapper);
         this.enablePremium();
-        // this.setStartIntervall(60 * 1000l);
+        this.setStartIntervall(60 * 1000l);
     }
 
     public void correctDownloadLink(final DownloadLink link) {
