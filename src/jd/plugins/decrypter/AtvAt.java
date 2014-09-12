@@ -76,8 +76,13 @@ public class AtvAt extends PluginForDecrypt {
         String name;
         final String[] allLinks = new Regex(source, "src\\&quot;:\\&quot;(http://[^<>\"]*?(index|playlist)\\.m3u8)\\&quot;}").getColumn(0);
         if (allLinks == null || allLinks.length == 0) {
-            logger.warning("Decrypter broken for link: " + parameter);
-            return null;
+            logger.info("Seems like the video source of the player is missing: " + parameter);
+            final DownloadLink offline = createDownloadlink("directhttp://" + parameter);
+            offline.setFinalFileName(fid);
+            offline.setAvailable(false);
+            offline.setProperty("offline", true);
+            decryptedLinks.add(offline);
+            return decryptedLinks;
         }
         final String episodeNr = br.getRegex("class=\"headline\">Folge (\\d+)</h4>").getMatch(0);
         if (episodeNr != null) {
