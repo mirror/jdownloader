@@ -50,6 +50,7 @@ public class XHamsterGallery extends PluginForDecrypt {
         final String replace_string = new Regex(parameter, "(http://(www\\.)?((de|es|ru|fr|it|jp|pt|nl|pl)\\.)?xhamster\\.com/)").getMatch(0);
         parameter = parameter.replace(replace_string, "http://xhamster.com/");
         final String parameterWihoutHtml = parameter.replace(".html", "");
+        br.getHeaders().put("Accept-Language", "en-gb, en;q=0.8");
         // Login if possible
         getUserLogin(false);
         br.setFollowRedirects(true);
