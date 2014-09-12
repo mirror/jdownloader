@@ -21,10 +21,14 @@ import java.util.ArrayList;
 import jd.PluginWrapper;
 import jd.controlling.AccountController;
 import jd.controlling.ProgressController;
+import jd.http.Browser;
+import jd.nutils.encoding.Encoding;
+import jd.parser.Regex;
 import jd.plugins.Account;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
+import jd.plugins.FilePackage;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
@@ -37,12 +41,27 @@ public class EasyBytezComFolder extends PluginForDecrypt {
         super(wrapper);
     }
 
+    private PluginForHost plugin = null;
+
+    private Browser prepBrowser(Browser prepBr) {
+        if (plugin == null) {
+            plugin = JDUtilities.getPluginForHost("easybytez.com");
+            if (plugin == null) {
+                throw new IllegalStateException("easybytez.com hoster plugin not found!");
+            }
+        }
+        // set cross browser support
+        ((jd.plugins.hoster.EasyBytezCom) plugin).setBrowser(br);
+        return ((jd.plugins.hoster.EasyBytezCom) plugin).prepBrowser(br);
+    }
+
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-        final String parameter = param.toString();
-        br.setCookie("http://easybytez.com", "", "");
-        br.getPage(parameter);
-        if (br.containsHTML(">\\s*Guest access not possible!\\s*<")) {
+        br = new Browser();
+        prepBrowser(br);
+        final String parameter = param.toString().replaceFirst("https?://", ((jd.plugins.hoster.EasyBytezCom) plugin).getProtocol());
+        ((jd.plugins.hoster.EasyBytezCom) plugin).getPage(parameter);
+        if (((jd.plugins.hoster.EasyBytezCom) plugin).cbr.containsHTML(">\\s*Guest access not possible!\\s*<")) {
             // we only login when required!
             final boolean logged_in = getLogin();
             if (!logged_in) {
@@ -50,9 +69,21 @@ public class EasyBytezComFolder extends PluginForDecrypt {
                 logger.info("Login failed or no accounts active/existing -> Continuing without account");
                 return decryptedLinks;
             }
+            ((jd.plugins.hoster.EasyBytezCom) plugin).getPage(parameter);
+        }
+        // name isn't needed, other than than text output for fpName. (copy paste xfsfolder)
+        String fpName = new Regex(parameter, "(folder/\\d+/|f/[a-z0-9]+/|go/[a-z0-9]+/)[^/]+/(.+)").getMatch(1); // name
+        if (fpName == null) {
+            fpName = new Regex(parameter, "(folder/\\d+/|f/[a-z0-9]+/|go/[a-z0-9]+/)(.+)").getMatch(1); // id
+            if (fpName == null) {
+                fpName = new Regex(parameter, "users/[a-z0-9_]+/[^/]+/(.+)").getMatch(0); // name
+                if (fpName == null) {
+                    fpName = new Regex(parameter, "users/[a-z0-9_]+/(.+)").getMatch(0); // id
+                }
+            }
         }
         int lastPage = 1;
-        final String[] allPages = br.getRegex("<a href='\\?\\&amp;page=(\\d+)'").getColumn(0);
+        final String[] allPages = ((jd.plugins.hoster.EasyBytezCom) plugin).cbr.getRegex("<a href='\\?\\&amp;page=(\\d+)'").getColumn(0);
         if (allPages != null && allPages.length != 0) {
             for (final String aPage : allPages) {
                 final int pp = Integer.parseInt(aPage);
@@ -62,13 +93,13 @@ public class EasyBytezComFolder extends PluginForDecrypt {
             }
         }
         for (int i = 1; i <= lastPage; i++) {
-            br.getPage(parameter + "?&page=" + i);
-            String[] links = br.getRegex("class=\"link\"><a href=\"(http://(www\\.)?easybytez\\.com/[a-z0-9]{12})\"").getColumn(0);
+            ((jd.plugins.hoster.EasyBytezCom) plugin).getPage(parameter + "?&page=" + i);
+            String[] links = ((jd.plugins.hoster.EasyBytezCom) plugin).cbr.getRegex("class=\"link\"><a href=\"(https?://(www\\.)?easybytez\\.com/[a-z0-9]{12})\"").getColumn(0);
             if (links == null || links.length == 0) {
-                links = br.getRegex("<td><a href=\"(http://(www\\.)?easybytez\\.com/[a-z0-9]{12})\"").getColumn(0);
+                links = ((jd.plugins.hoster.EasyBytezCom) plugin).cbr.getRegex("<td><a href=\"(https?://(www\\.)?easybytez\\.com/[a-z0-9]{12})\"").getColumn(0);
             }
             if (links == null || links.length == 0) {
-                if (br.containsHTML(">The selected folder contains the following files")) {
+                if (((jd.plugins.hoster.EasyBytezCom) plugin).cbr.containsHTML(">The selected folder contains the following files")) {
                     logger.info("Link offline: " + parameter);
                     return decryptedLinks;
                 }
@@ -78,6 +109,12 @@ public class EasyBytezComFolder extends PluginForDecrypt {
             for (final String singleLink : links) {
                 decryptedLinks.add(createDownloadlink(singleLink));
             }
+        }
+        if (fpName != null) {
+            fpName = Encoding.urlDecode(fpName, false);
+            FilePackage fp = FilePackage.getInstance();
+            fp.setName(fpName.trim());
+            fp.addLinks(decryptedLinks);
         }
         return decryptedLinks;
     }
@@ -90,26 +127,24 @@ public class EasyBytezComFolder extends PluginForDecrypt {
     }
 
     private boolean getLogin() throws Exception {
-        final PluginForHost easybytezPlugin = JDUtilities.getPluginForHost("easybytez.com");
-        final Account aa = AccountController.getInstance().getValidAccount(easybytezPlugin);
+        final Account aa = AccountController.getInstance().getValidAccount(plugin);
         if (aa != null) {
             try {
-                ((jd.plugins.hoster.EasyBytezCom) easybytezPlugin).setBrowser(this.br);
                 boolean fresh = false;
                 Object after = null;
                 synchronized (jd.plugins.hoster.EasyBytezCom.ACCLOCK) {
                     Object before = aa.getProperty("cookies", null);
-                    after = ((jd.plugins.hoster.EasyBytezCom) easybytezPlugin).login(aa, false);
+                    after = ((jd.plugins.hoster.EasyBytezCom) plugin).login(aa, false);
                     fresh = before != after;
                     if (fresh) {
                         final String myAccount = "/?op=my_account";
                         if (br.getURL() == null) {
                             br.setFollowRedirects(true);
-                            ((jd.plugins.hoster.EasyBytezCom) easybytezPlugin).getPage(((jd.plugins.hoster.EasyBytezCom) easybytezPlugin).COOKIE_HOST.replaceFirst("https?://", ((jd.plugins.hoster.EasyBytezCom) easybytezPlugin).getProtocol()) + myAccount);
+                            ((jd.plugins.hoster.EasyBytezCom) plugin).getPage(((jd.plugins.hoster.EasyBytezCom) plugin).COOKIE_HOST.replaceFirst("https?://", ((jd.plugins.hoster.EasyBytezCom) plugin).getProtocol()) + myAccount);
                         } else if (!br.getURL().contains(myAccount)) {
-                            ((jd.plugins.hoster.EasyBytezCom) easybytezPlugin).getPage(myAccount);
+                            ((jd.plugins.hoster.EasyBytezCom) plugin).getPage(myAccount);
                         }
-                        ((jd.plugins.hoster.EasyBytezCom) easybytezPlugin).updateAccountInfo(aa, aa.getAccountInfo(), this.br);
+                        ((jd.plugins.hoster.EasyBytezCom) plugin).updateAccountInfo(aa, aa.getAccountInfo(), this.br);
                     }
                 }
             } catch (final PluginException e) {

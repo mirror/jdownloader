@@ -175,7 +175,7 @@ public class EasyBytezCom extends PluginForHost {
     /**
      * defines custom browser requirements.
      * */
-    private Browser prepBrowser(final Browser prepBr) {
+    public Browser prepBrowser(final Browser prepBr) {
         HashMap<String, String> map = null;
         synchronized (cloudflareCookies) {
             map = new HashMap<String, String>(cloudflareCookies);
@@ -809,7 +809,6 @@ public class EasyBytezCom extends PluginForHost {
         }
         final String expireDay = cbr.getRegex("(\\d{1,2} (January|February|March|April|May|June|July|August|September|October|November|December) \\d{4})").getMatch(0);
         if (!inValidate(expireDay)) {
-            account.setProperty("free", false);
             long expire = 0, expireD = 0, expireS = 0;
             if (!inValidate(expireDay)) {
                 expireD = TimeFormatter.getMilliSeconds(expireDay, "dd MMMM yyyy", Locale.ENGLISH);
@@ -819,20 +818,16 @@ public class EasyBytezCom extends PluginForHost {
             } else {
                 expire = expireD;
             }
-            account.setProperty("totalMaxSim", 20);
             ai.setValidUntil(expire);
-            if (ai.isExpired()) {
-                ai.setValidUntil(-1);
-                account.setProperty("free", true);
-                ai.setStatus("Registered (free) User");
-                account.setProperty("totalMaxSim", 20);
-            } else {
-                ai.setStatus("Premium User");
-            }
-        } else {
+        }
+        if (ai.isExpired() || inValidate(expireDay)) {
             ai.setValidUntil(-1);
             account.setProperty("free", true);
             ai.setStatus("Registered (free) User");
+            account.setProperty("totalMaxSim", 20);
+        } else {
+            ai.setStatus("Premium User");
+            account.setProperty("free", false);
             account.setProperty("totalMaxSim", 20);
         }
     }
@@ -1071,7 +1066,7 @@ public class EasyBytezCom extends PluginForHost {
     // ***************************************************************************************************** //
     // The components below doesn't require coder interaction, or configuration !
 
-    private Browser                                           cbr                    = new Browser();
+    public Browser                                            cbr                    = new Browser();
 
     private String                                            acctype                = null;
     private String                                            directlinkproperty     = null;
