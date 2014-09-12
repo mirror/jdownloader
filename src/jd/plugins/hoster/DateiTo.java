@@ -53,31 +53,31 @@ public class DateiTo extends PluginForHost {
     private static final String  MAINPAGE                      = "http://datei.to";
     private static final String  NICE_HOST                     = "datei.to";
 
-    // Limit stuff
+    /* Limit stuff */
     private static final boolean FREE_RESUME_API               = false;
     private static final int     FREE_MAXCHUNKS_API            = 1;
     private static final int     FREE_MAXDOWNLOADS_API         = 1;
 
-    private static final boolean FREE_RESUME_WEB               = true;
-    private static final int     FREE_MAXCHUNKS_WEB            = 0;
+    private static final boolean FREE_RESUME_WEB               = false;
+    private static final int     FREE_MAXCHUNKS_WEB            = 1;
     private static final int     FREE_MAXDOWNLOADS_WEB         = 1;
 
     private static final boolean ACCOUNT_FREE_RESUME_API       = false;
     private static final int     ACCOUNT_FREE_MAXCHUNKS_API    = 1;
     private static final int     ACCOUNT_FREE_MAXDOWNLOADS_API = 1;
 
-    private static final boolean ACCOUNT_FREE_RESUME_WEB       = true;
-    private static final int     ACCOUNT_FREE_MAXCHUNKS_WEB    = 0;
-    private static final int     ACCOUNT_FREE_MAXDOWNLOADS_WEB = 20;
+    private static final boolean ACCOUNT_FREE_RESUME_WEB       = false;
+    private static final int     ACCOUNT_FREE_MAXCHUNKS_WEB    = 1;
+    private static final int     ACCOUNT_FREE_MAXDOWNLOADS_WEB = 1;
 
     private static final boolean ACCOUNT_PREMIUM_RESUME        = true;
     private static final int     ACCOUNT_PREMIUM_MAXCHUNKS     = 0;
     private static final int     ACCOUNT_PREMIUM_MAXDOWNLOADS  = 20;
 
-    // Switches to enable/disable API
+    /* Switches to enable/disable API */
     private static final boolean LOGIN_API_GENERAL             = true;
-    private static final boolean FREE_DOWNLOAD_API             = false;
-    private static final boolean ACCOUNT_FREE_DOWNLOAD_API     = false;
+    private static final boolean FREE_DOWNLOAD_API             = true;
+    private static final boolean ACCOUNT_FREE_DOWNLOAD_API     = true;
     private static final boolean ACCOUNT_PREMIUM_DOWNLOAD_API  = true;
 
     private static final String  NOCHUNKS                      = "NOCHUNKS";
@@ -105,7 +105,9 @@ public class DateiTo extends PluginForHost {
     @Override
     public void correctDownloadLink(final DownloadLink link) throws MalformedURLException {
         String id = new Regex(link.getDownloadURL(), "([A-Za-z0-9]+)\\.html$").getMatch(0);
-        if (id != null) link.setUrlDownload("http://datei.to/?" + id);
+        if (id != null) {
+            link.setUrlDownload("http://datei.to/?" + id);
+        }
     }
 
     private void prepbrowser_api(final Browser br) {
@@ -119,7 +121,9 @@ public class DateiTo extends PluginForHost {
 
     @Override
     public boolean checkLinks(final DownloadLink[] urls) {
-        if (urls == null || urls.length == 0) { return false; }
+        if (urls == null || urls.length == 0) {
+            return false;
+        }
         try {
             final Browser br = new Browser();
             br.setCookiesExclusive(true);
@@ -152,12 +156,17 @@ public class DateiTo extends PluginForHost {
                         logger.warning("Linkchecker for datei.to is broken!");
                         return false;
                     }
-                    if (!"online".equalsIgnoreCase(linkInfo[0]))
+                    if (!"online".equalsIgnoreCase(linkInfo[0])) {
                         dllink.setAvailable(false);
-                    else
+                    } else {
                         dllink.setAvailable(true);
-                    if (linkInfo[1] != null) dllink.setFinalFileName(Encoding.htmlDecode(linkInfo[1]));
-                    if (linkInfo[2] != null) dllink.setDownloadSize(Long.parseLong(linkInfo[2]));
+                    }
+                    if (linkInfo[1] != null) {
+                        dllink.setFinalFileName(Encoding.htmlDecode(linkInfo[1]));
+                    }
+                    if (linkInfo[2] != null) {
+                        dllink.setDownloadSize(Long.parseLong(linkInfo[2]));
+                    }
                 }
                 if (index == urls.length) {
                     break;
@@ -179,18 +188,30 @@ public class DateiTo extends PluginForHost {
     public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws Exception {
         if (FREE_DOWNLOAD_API) {
             checkLinks(new DownloadLink[] { downloadLink });
-            if (!downloadLink.isAvailabilityStatusChecked()) { return AvailableStatus.UNCHECKED; }
-            if (downloadLink.isAvailabilityStatusChecked() && !downloadLink.isAvailable()) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
+            if (!downloadLink.isAvailabilityStatusChecked()) {
+                return AvailableStatus.UNCHECKED;
+            }
+            if (downloadLink.isAvailabilityStatusChecked() && !downloadLink.isAvailable()) {
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            }
             return AvailableStatus.TRUE;
         } else {
             prepbrowser_web(br);
             br.getPage(downloadLink.getDownloadURL());
-            if (br.containsHTML("<div id=\"Name\">Diese Datei existiert nicht mehr...</div>")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            if (br.containsHTML("<div id=\"Name\">Diese Datei existiert nicht mehr...</div>")) {
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            }
             String fname = br.getRegex("<div id=\"Name\">(.*?)</div>").getMatch(0);
             String fsize = br.getRegex("<div id=\"Details\">.*?(\\d+,\\d+ ?(B|KB|MB|GB))</div>").getMatch(0);
-            if (fname != null) downloadLink.setName(fname);
-            if (fsize != null) downloadLink.setDownloadSize(SizeFormatter.getSize(fsize));
-            if (br.containsHTML(err_temp_unvail)) return AvailableStatus.UNCHECKABLE;
+            if (fname != null) {
+                downloadLink.setName(fname);
+            }
+            if (fsize != null) {
+                downloadLink.setDownloadSize(SizeFormatter.getSize(fsize));
+            }
+            if (br.containsHTML(err_temp_unvail)) {
+                return AvailableStatus.UNCHECKABLE;
+            }
             downloadLink.setAvailable(true);
             return AvailableStatus.TRUE;
         }
@@ -200,18 +221,20 @@ public class DateiTo extends PluginForHost {
     public void handleFree(final DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
         if (FREE_DOWNLOAD_API) {
-            doFree_api(downloadLink, DateiTo.FREE_RESUME_API, DateiTo.FREE_MAXCHUNKS_API);
+            api_doFree(downloadLink, DateiTo.FREE_RESUME_API, DateiTo.FREE_MAXCHUNKS_API);
         } else {
-            doFree_web(downloadLink, DateiTo.FREE_RESUME_WEB, DateiTo.FREE_MAXCHUNKS_WEB);
+            web_doFree(downloadLink, DateiTo.FREE_RESUME_WEB, DateiTo.FREE_MAXCHUNKS_WEB);
         }
     }
 
-    private void doFree_api(final DownloadLink downloadLink, final boolean resume, final int maxchunks) throws Exception {
+    private void api_doFree(final DownloadLink downloadLink, final boolean resume, final int maxchunks) throws Exception {
         br.postPage(APIPAGE, "op=free&step=1&file=" + getFID(downloadLink));
         generalAPIErrorhandling();
         generalFreeAPIErrorhandling();
         final Regex waitAndID = br.getRegex("(\\d+);([A-Za-z0-9]+)");
-        if (waitAndID.getMatches().length != 1) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (waitAndID.getMatches().length != 1) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         this.sleep(Long.parseLong(waitAndID.getMatch(0)) * 1001l, downloadLink);
         final String id = waitAndID.getMatch(1);
 
@@ -233,13 +256,19 @@ public class DateiTo extends PluginForHost {
                 break;
             }
         }
-        if (br.containsHTML("(wrong|no input)")) { throw new PluginException(LinkStatus.ERROR_CAPTCHA); }
+        if (br.containsHTML("(wrong|no input)")) {
+            throw new PluginException(LinkStatus.ERROR_CAPTCHA);
+        }
 
         br.postPage(APIPAGE, "op=free&step=4&id=" + id);
         generalFreeAPIErrorhandling();
-        if (br.containsHTML("ticket expired")) throw new PluginException(LinkStatus.ERROR_RETRY, "Downloadticket expired");
+        if (br.containsHTML("ticket expired")) {
+            throw new PluginException(LinkStatus.ERROR_RETRY, "Downloadticket expired");
+        }
         String dlUrl = br.toString();
-        if (dlUrl == null || !dlUrl.startsWith("http") || dlUrl.length() > 500 || dlUrl.contains("no file")) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+        if (dlUrl == null || !dlUrl.startsWith("http") || dlUrl.length() > 500 || dlUrl.contains("no file")) {
+            throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+        }
         dlUrl = dlUrl.trim();
 
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dlUrl, resume, maxchunks);
@@ -248,30 +277,42 @@ public class DateiTo extends PluginForHost {
             br.followConnection();
             // Shouldn't happen often
             handleServerErrors();
-            if (br.containsHTML("(window\\.location\\.href=\\'http://datei\\.to/login|form id=\"UploadForm\")")) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 60 * 60 * 1001l);
+            if (br.containsHTML("(window\\.location\\.href=\\'http://datei\\.to/login|form id=\"UploadForm\")")) {
+                throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 60 * 60 * 1001l);
+            }
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl.startDownload();
     }
 
-    private void doFree_web(final DownloadLink downloadLink, boolean resume, int maxchunks) throws Exception {
+    private void web_doFree(final DownloadLink downloadLink, boolean resume, int maxchunks) throws Exception {
         br.getPage(downloadLink.getDownloadURL());
-        if (br.containsHTML(err_temp_unvail)) throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "File is unavailable for technical reasons ", 10 * 60 * 1000l);
+        if (br.containsHTML(err_temp_unvail)) {
+            throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "File is unavailable for technical reasons ", 10 * 60 * 1000l);
+        }
 
         final String dlid = br.getRegex("<button id=\"([AS-Za-z0-9]+)\"").getMatch(0);
-        if (dlid == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (dlid == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         br.postPage("http://datei.to/response/download", "Step=1&ID=" + dlid);
-        if (br.containsHTML(">Ansonsten musst du warten, bis der aktuelle Download beendet ist")) throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Wait before starting new downloads", 5 * 60 * 1000l);
+        if (br.containsHTML(">Ansonsten musst du warten, bis der aktuelle Download beendet ist")) {
+            throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Wait before starting new downloads", 5 * 60 * 1000l);
+        }
 
         final Regex reconWait = br.getRegex("Du musst noch <strong>(\\d+):(\\d+) min</strong> warten");
         final String reconMin = reconWait.getMatch(0);
         final String reconSecs = reconWait.getMatch(1);
-        if (reconMin != null && reconSecs != null) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, Integer.parseInt(reconMin) * 60 * 1000l + Integer.parseInt(reconSecs) * 1001l);
+        if (reconMin != null && reconSecs != null) {
+            throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, Integer.parseInt(reconMin) * 60 * 1000l + Integer.parseInt(reconSecs) * 1001l);
+        }
 
         String dllink = br.getRegex("iframe src=\"(http://[^<>\"]*?)\"").getMatch(0);
         if (dllink == null) {
             final String waittime = br.getRegex("id=\"DCS\">(\\d+)</span> Sekunden").getMatch(0);
-            if (waittime == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            if (waittime == null) {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
             this.sleep(Integer.parseInt(waittime) * 1001l, downloadLink);
             for (int i = 1; i <= 5; i++) {
                 br.postPage("http://datei.to/response/download", "Step=2&ID=" + dlid);
@@ -282,15 +323,21 @@ public class DateiTo extends PluginForHost {
                 final File cf = rc.downloadCaptcha(getLocalCaptchaFile());
                 final String c = getCaptchaCode(cf, downloadLink);
                 br.postPage("http://datei.to/response/recaptcha", "modul=checkDLC&recaptcha_response_field=" + Encoding.urlEncode(c) + "&recaptcha_challenge_field=" + rc.getChallenge() + "&ID=" + dlid);
-                if (br.containsHTML("Eingabe war leider falsch")) continue;
+                if (br.containsHTML("Eingabe war leider falsch")) {
+                    continue;
+                }
                 break;
             }
-            if (br.containsHTML("Eingabe war leider falsch"))
+            if (br.containsHTML("Eingabe war leider falsch")) {
                 throw new PluginException(LinkStatus.ERROR_CAPTCHA);
-            else if (br.containsHTML("Das Download\\-Ticket ist abgelaufen")) throw new PluginException(LinkStatus.ERROR_RETRY, "Downloadticket expired");
+            } else if (br.containsHTML("Das Download\\-Ticket ist abgelaufen")) {
+                throw new PluginException(LinkStatus.ERROR_RETRY, "Downloadticket expired");
+            }
 
             br.postPage("http://datei.to/response/download", "Step=3&ID=" + dlid);
-            if (br.containsHTML(">Du lädst bereits eine Datei herunter")) throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Wait before starting new downloads", 5 * 60 * 1000l);
+            if (br.containsHTML(">Du lädst bereits eine Datei herunter")) {
+                throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Wait before starting new downloads", 5 * 60 * 1000l);
+            }
             dllink = br.getRegex("iframe src=\"(http://[^<>\"]*?)\"").getMatch(0);
             if (dllink == null) {
                 logger.warning(NICE_HOST + ": dllink is null");
@@ -302,7 +349,9 @@ public class DateiTo extends PluginForHost {
         }
         br.setFollowRedirects(true);
 
-        if (downloadLink.getBooleanProperty(NOCHUNKS, false)) maxchunks = 1;
+        if (downloadLink.getBooleanProperty(NOCHUNKS, false)) {
+            maxchunks = 1;
+        }
 
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, resume, maxchunks);
         if (dl.getConnection() == null || dl.getConnection().getContentType().contains("html")) {
@@ -317,7 +366,9 @@ public class DateiTo extends PluginForHost {
         try {
             if (!this.dl.startDownload()) {
                 try {
-                    if (dl.externalDownloadStop()) return;
+                    if (dl.externalDownloadStop()) {
+                        return;
+                    }
                 } catch (final Throwable e) {
                 }
                 /* unknown error, we disable multiple chunks */
@@ -338,17 +389,27 @@ public class DateiTo extends PluginForHost {
     }
 
     private void generalAPIErrorhandling() throws PluginException {
-        if (br.containsHTML("temp down")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error, file is temporarily not downloadable!", 30 * 60 * 1000l);
-        if (br.containsHTML("no file")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (br.containsHTML("temp down")) {
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error, file is temporarily not downloadable!", 30 * 60 * 1000l);
+        }
+        if (br.containsHTML("no file")) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
     }
 
     private void generalFreeAPIErrorhandling() throws NumberFormatException, PluginException {
-        if (br.containsHTML("limit reached")) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, Long.parseLong(br.getRegex("limit reached;(\\d+)").getMatch(0)));
-        if (br.containsHTML("download active")) throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Too many free downloads are active, please wait before starting new ones", 5 * 60 * 1000l);
+        if (br.containsHTML("limit reached")) {
+            throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, Long.parseLong(br.getRegex("limit reached;(\\d+)").getMatch(0)));
+        }
+        if (br.containsHTML("download active")) {
+            throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Too many free downloads are active, please wait before starting new ones", 5 * 60 * 1000l);
+        }
     }
 
     private void handleServerErrors() throws PluginException {
-        if (br.containsHTML("datei\\.to/error/notfound")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error", 60 * 60 * 1000l);
+        if (br.containsHTML("datei\\.to/error/notfound")) {
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error", 60 * 60 * 1000l);
+        }
     }
 
     @Override
@@ -410,9 +471,13 @@ public class DateiTo extends PluginForHost {
                 account.setProperty("isPremium", true);
                 // premium account
                 final String space = br.getRegex(">loadSpaceUsed\\(\\d+, (\\d+)").getMatch(0);
-                if (space != null) ai.setUsedSpace(space + " GB");
+                if (space != null) {
+                    ai.setUsedSpace(space + " GB");
+                }
                 final String traffic = br.getRegex("loadTrafficUsed\\((\\d+(\\.\\d+))").getMatch(0);
-                if (traffic != null) ai.setTrafficLeft(SizeFormatter.getSize(traffic + " GB"));
+                if (traffic != null) {
+                    ai.setTrafficLeft(SizeFormatter.getSize(traffic + " GB"));
+                }
                 final String expire = br.getRegex(">Premium aktiv bis:</div><div[^>]+>(\\d{2}\\.\\d{2}\\.\\d{4} \\d{2}:\\d{2}:\\d{2}) Uhr<").getMatch(0);
                 ai.setValidUntil(TimeFormatter.getMilliSeconds(expire, "dd.MM.yyyy hh:mm:ss", Locale.ENGLISH));
             }
@@ -472,7 +537,9 @@ public class DateiTo extends PluginForHost {
             br.setCookiesExclusive(true);
             final Object ret = account.getProperty("cookies", null);
             boolean acmatch = Encoding.urlEncode(account.getUser()).equals(account.getStringProperty("name", Encoding.urlEncode(account.getUser())));
-            if (acmatch) acmatch = Encoding.urlEncode(account.getPass()).equals(account.getStringProperty("pass", Encoding.urlEncode(account.getPass())));
+            if (acmatch) {
+                acmatch = Encoding.urlEncode(account.getPass()).equals(account.getStringProperty("pass", Encoding.urlEncode(account.getPass())));
+            }
             if (acmatch && ret != null && ret instanceof HashMap<?, ?> && !force) {
                 final HashMap<String, String> cookies = (HashMap<String, String>) ret;
                 if (account.isValid()) {
@@ -515,10 +582,10 @@ public class DateiTo extends PluginForHost {
         requestFileInformation(downloadLink);
         if (!account.getBooleanProperty("isPremium")) {
             if (DateiTo.ACCOUNT_FREE_DOWNLOAD_API) {
-                doFree_api(downloadLink, DateiTo.ACCOUNT_FREE_RESUME_API, DateiTo.ACCOUNT_FREE_MAXCHUNKS_API);
+                api_doFree(downloadLink, DateiTo.ACCOUNT_FREE_RESUME_API, DateiTo.ACCOUNT_FREE_MAXCHUNKS_API);
             } else {
                 this.login_web(account, false);
-                doFree_web(downloadLink, DateiTo.ACCOUNT_FREE_RESUME_WEB, DateiTo.ACCOUNT_FREE_MAXCHUNKS_WEB);
+                web_doFree(downloadLink, DateiTo.ACCOUNT_FREE_RESUME_WEB, DateiTo.ACCOUNT_FREE_MAXCHUNKS_WEB);
             }
         } else {
             if (DateiTo.ACCOUNT_PREMIUM_DOWNLOAD_API) {
@@ -542,7 +609,9 @@ public class DateiTo extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
         }
         String dlUrl = br.toString();
-        if (dlUrl == null || !dlUrl.startsWith("http") || dlUrl.length() > 500 || dlUrl.contains("no file")) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+        if (dlUrl == null || !dlUrl.startsWith("http") || dlUrl.length() > 500 || dlUrl.contains("no file")) {
+            throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+        }
         dlUrl = dlUrl.trim();
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dlUrl, ACCOUNT_PREMIUM_RESUME, ACCOUNT_PREMIUM_MAXCHUNKS);
         br.setFollowRedirects(true);
