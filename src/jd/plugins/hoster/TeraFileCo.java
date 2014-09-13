@@ -73,7 +73,7 @@ public class TeraFileCo extends PluginForHost {
     private static final String  COOKIE_HOST                  = "http://terafile.co";
     // domain names used within download links.
     private static final String  DOMAINS                      = "(terafile\\.co)";
-    private static final String  MAINTENANCE                  = ">This server is in maintenance mode";
+    private static final String  MAINTENANCE                  = ">\\s*This server is in maintenance mode";
     private static final String  MAINTENANCEUSERTEXT          = JDL.L("hoster.xfilesharingprobasic.errors.undermaintenance", "This server is under Maintenance");
     private static final String  ALLWAIT_SHORT                = JDL.L("hoster.xfilesharingprobasic.errors.waitingfordownloads", "Waiting till new downloads can be started");
     private static final String  PREMIUMONLY1                 = JDL.L("hoster.xfilesharingprobasic.errors.premiumonly1", "Max downloadable filesize for free users:");
@@ -928,8 +928,11 @@ public class TeraFileCo extends PluginForHost {
             account.setValid(false);
             throw e;
         }
-        final String space[] = new Regex(correctedBR, ">Used space:</td>.*?<td.*?b>([0-9\\.]+) ?(KB|MB|GB|TB)?</b>").getRow(0);
-        if ((space != null && space.length != 0) && (space[0] != null && space[1] != null)) {
+        String space[] = new Regex(correctedBR, ">Used space:</td>.*?<td.*?b>([0-9\\.]+) ?(KB|MB|GB|TB)?</b>").getRow(0);
+        if (space == null) {
+            space = new Regex(correctedBR, ">Storage: (.*?)</").getRow(0);
+        }
+        if ((space != null && space.length != 0) && (space.length == 2 && space[0] != null && space[1] != null)) {
             // free users it's provided by default
             ai.setUsedSpace(space[0] + " " + space[1]);
         } else if ((space != null && space.length != 0) && space[0] != null) {
