@@ -129,8 +129,12 @@ public class FileFactory extends PluginForHost {
                 code = new Regex(ref, "(?:\\?|&)code=(\\d+)").getMatch(0);
             }
         }
-
+        final int errTries = 4;
         final int errCode = (!inValidate(code) && code.matches("\\d+") ? Integer.parseInt(code) : -1);
+        final String errRetry = "retry_" + errCode;
+        final int tri = this.getDownloadLink().getIntegerProperty(errRetry, 0) + 1;
+        this.getDownloadLink().setProperty(errRetry, (tri >= errTries ? 0 : tri));
+        final String errMsg = (tri >= errTries ? "Exausted retry count" : "Retrying") + " for, '" + errCode + "' error";
 
         if (postDownload && freeDownload) {
             if (br.containsHTML("have exceeded the download limit|Please try again in <span>")) {
@@ -169,6 +173,16 @@ public class FileFactory extends PluginForHost {
             }
             if (br.containsHTML("You are currently downloading too many files at once") || br.containsHTML(">You have recently started a download") || errCode == 275) {
                 throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 5 * 60 * 1000l);
+            }
+            if (errCode == 266) {
+                // <strong>Download error (266)</strong><br>This download is not yet ready. Please retry your download and wait for the
+                // countdown timer to complete. </div>
+                if (tri >= errTries) {
+                    // throw new PluginException(LinkStatus.ERROR_FATAL, errMsg);
+                    // want to see this issue reported to statserv so I can monitor / report back to admin!
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, "266 IS STILL HAPPENING!");
+                }
+                throw new PluginException(LinkStatus.ERROR_RETRY, errMsg, 2 * 60 * 1000l);
             }
         }
         if (errCode == 265) {
@@ -1109,7 +1123,7 @@ public class FileFactory extends PluginForHost {
             }
             if (!inValidate(delay)) {
                 final int s = Integer.parseInt(delay);
-                sleep(s * 1001, downloadLink);
+                sleep((s * 1001) + 1111, downloadLink);
             }
         }
         dllink = dllink.replace("\\", "");
