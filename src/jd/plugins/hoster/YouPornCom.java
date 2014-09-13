@@ -30,7 +30,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "youporn.com" }, urls = { "http://(www\\.)?((de|fr|es|it|nl|tr)\\.)?youporn\\.com/watch/\\d+/?.+/?" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "youporn.com" }, urls = { "http://(www\\.)?([a-z]{2}\\.)?youporn\\.com/watch/\\d+/?.+/?" }, flags = { 0 })
 public class YouPornCom extends PluginForHost {
 
     String DLLINK = null;
@@ -58,17 +58,31 @@ public class YouPornCom extends PluginForHost {
         br.setCookie("http://youporn.com/", "is_pc", "1");
         br.setCookie("http://youporn.com/", "language", "en");
         br.getPage(parameter.getDownloadURL());
-        if (br.getRedirectLocation() != null) br.getPage(br.getRedirectLocation());
+        if (br.getRedirectLocation() != null) {
+            br.getPage(br.getRedirectLocation());
+        }
         // Offline link
-        if (br.containsHTML("<div id=\"video\\-not\\-found\\-related\"")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (br.containsHTML("<div id=\"video\\-not\\-found\\-related\"")) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
         // Invalid link
-        if (br.containsHTML("404 \\- Page Not Found<|id=\"title_404\"")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (br.containsHTML("404 \\- Page Not Found<|id=\"title_404\"")) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
         String filename = br.getRegex("<title>(.*?) \\- Free Porn Videos - YouPorn</title>").getMatch(0);
-        if (filename == null) filename = br.getRegex("addthis:title=\"YouPorn - (.*?)\"></a>").getMatch(0);
+        if (filename == null) {
+            filename = br.getRegex("addthis:title=\"YouPorn - (.*?)\"></a>").getMatch(0);
+        }
         DLLINK = br.getRegex("\"(http://[^<>\"\\']+)\">MP4").getMatch(0);
-        if (DLLINK == null) DLLINK = br.getRegex("\"(http://videos\\-\\d+\\.youporn\\.com/[^<>\"\\'/]+/save/scene_h264[^<>\"\\']+)\"").getMatch(0);
-        if (DLLINK == null) DLLINK = br.getRegex("<ul class=\"downloadList\">.*?href=\"(http://[^\"]+)\">.*?</ul>").getMatch(0);
-        if (DLLINK == null || filename == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (DLLINK == null) {
+            DLLINK = br.getRegex("\"(http://videos\\-\\d+\\.youporn\\.com/[^<>\"\\'/]+/save/scene_h264[^<>\"\\']+)\"").getMatch(0);
+        }
+        if (DLLINK == null) {
+            DLLINK = br.getRegex("<ul class=\"downloadList\">.*?href=\"(http://[^\"]+)\">.*?</ul>").getMatch(0);
+        }
+        if (DLLINK == null || filename == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         DLLINK = Encoding.htmlDecode(DLLINK);
         parameter.setFinalFileName(Encoding.htmlDecode(filename).trim().replaceAll("   ", "-") + ".mp4");
         Browser br2 = br.cloneBrowser();
@@ -77,10 +91,11 @@ public class YouPornCom extends PluginForHost {
         URLConnectionAdapter con = null;
         try {
             con = br2.openGetConnection(DLLINK);
-            if (!con.getContentType().contains("html"))
+            if (!con.getContentType().contains("html")) {
                 parameter.setDownloadSize(con.getLongContentLength());
-            else
+            } else {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            }
             return AvailableStatus.TRUE;
         } finally {
             try {
