@@ -965,7 +965,7 @@ public class FileFactory extends PluginForHost {
                 for (final DownloadLink dl : links) {
                     // password is last value in fuid response, needed because filenames or other values could contain }. It then returns
                     // invalid response.
-                    final String filter = br.getRegex("(\"" + getFUID(dl) + "\":\\{.*?password\".*?\\})").getMatch(0);
+                    final String filter = br.getRegex("(\"" + getFUID(dl) + "\":\\{(?:.*?password\".*?|\"status\":\"[a-z]+\")\\})").getMatch(0);
                     if (filter == null) {
                         return false;
                     }
