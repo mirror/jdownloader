@@ -217,6 +217,9 @@ public class UltraMegaBitCom extends PluginForHost {
     private void handleServerError() throws PluginException {
         if (dl.getConnection().getResponseCode() == 403) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND, "Hoster Issue, Please contact hoster for resolution");
+        } else if (dl.getConnection().getResponseCode() == 404 && br.getURL().endsWith("/file/oops")) {
+            // hoster throwing 404, treat as server error or file not found??
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         } else if (dl.getConnection().getResponseCode() == 500) {
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 500");
         } else if (br.containsHTML("<b>Fatal error</b>:|<h4>A PHP Error was encountered</h4>")) {
