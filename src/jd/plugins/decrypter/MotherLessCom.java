@@ -29,7 +29,7 @@ import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 import jd.utils.JDUtilities;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "motherless.com" }, urls = { "http://(www\\.)?(members\\.)?motherless\\.com/(?!privacy|popular|register|premium|members|galleries|contact)(g/[\\w\\-]+/[A-Z0-9]{7}|[A-Z0-9]{7,9}(/[A-Z0-9]{7})?)" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "motherless.com" }, urls = { "http://(www\\.)?(members\\.)?motherless\\.com/(?!privacy|popular|register|premium|members|galleries|contact)(g(i|v)?/[\\w\\-]+/[A-Z0-9]{7}|[A-Z0-9]{7,9}(/[A-Z0-9]{7})?)" }, flags = { 0 })
 public class MotherLessCom extends PluginForDecrypt {
 
     private String fpName = null;
@@ -72,6 +72,9 @@ public class MotherLessCom extends PluginForDecrypt {
             return decryptedLinks;
         } else if (br.containsHTML("class=\"red-pill-button rounded-corners-r5\">Reply</a>")) {
             logger.info("This is a forum link without any downloadable content: " + parameter);
+            return decryptedLinks;
+        } else if (br.containsHTML(jd.plugins.hoster.MotherLessCom.contentFriendsOnly)) {
+            logger.warning("Unsupported format for " + parameter);
             return decryptedLinks;
         }
         // Common bug: It can happen that the texts that we use to differ between the kinds of links change so the decrypter breaks down,
