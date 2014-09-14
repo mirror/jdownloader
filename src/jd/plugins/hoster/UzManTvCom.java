@@ -169,7 +169,6 @@ public class UzManTvCom extends PluginForHost {
             }
         }
         DLLINK = getDllink();
-        logger.info("filename = " + filename + ", dllink = " + DLLINK);
         if (filename == null || DLLINK == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }

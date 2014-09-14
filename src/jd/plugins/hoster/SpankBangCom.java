@@ -45,10 +45,10 @@ public class SpankBangCom extends PluginForHost {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         br.getPage(link.getDownloadURL());
-        if ("http://spankbang.com/".equals(br.getURL())) {
+        if ("http://spankbang.com/".equals(br.getURL()) || (br.containsHTML(">this video is no longer available.<"))) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        final String filename = br.getRegex("<title>([^<>\"]*?)\\- HD Porn Videos \\- SpankBang</title>").getMatch(0);
+        final String filename = br.getRegex("<title>([^<>\"]*?)\\-? HD Porn Videos \\- SpankBang</title>").getMatch(0);
         if (filename == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
