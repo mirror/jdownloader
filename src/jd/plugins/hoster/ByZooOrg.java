@@ -20,6 +20,7 @@ import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
+import jd.parser.Regex;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
@@ -49,19 +50,24 @@ public class ByZooOrg extends PluginForHost {
     }
 
     @Override
-    public void handleFree(DownloadLink downloadLink) throws Exception {
+    public void handleFree(final DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 0);
         dl.startDownload();
     }
 
     @Override
-    public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws Exception {
+    public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws Exception {
+        downloadLink.setName(new Regex(downloadLink.getDownloadURL(), "byzoo\\.org/embed\\.php\\?(.+)").getMatch(0));
         this.setBrowserExclusive();
         br.getPage(downloadLink.getDownloadURL());
-        dllink = br.getRegex("url: \\'(http[^\\']+byzoo\\.org%2[^\\']+)").getMatch(0);
-        if (dllink == null) dllink = br.getRegex("url: \\'(http://[^<>\"\\']*?)\\',[\t\r\n ]+autoPlay: false").getMatch(0);
-        if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        dllink = br.getRegex("url: \\'(http[^\\']+(byzoo\\.org|play44\\.net)%2[^\\']+)").getMatch(0);
+        if (dllink == null) {
+            dllink = br.getRegex("url: \\'(http://[^<>\"\\']*?)\\',[\t\r\n ]+autoPlay: false").getMatch(0);
+        }
+        if (dllink == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         dllink = Encoding.urlDecode(dllink, false);
         Browser br2 = br.cloneBrowser();
         // In case the link redirects to the finallink
@@ -70,12 +76,15 @@ public class ByZooOrg extends PluginForHost {
         try {
             con = br2.openGetConnection(dllink);
             // only way to check for made up links... or offline is here
-            if (con.getResponseCode() == 404) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            if (con.getResponseCode() == 404) {
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            }
             if (!con.getContentType().contains("html")) {
                 downloadLink.setFinalFileName(getFileNameFromHeader(con));
                 downloadLink.setDownloadSize(con.getLongContentLength());
-            } else
+            } else {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            }
             return AvailableStatus.TRUE;
         } finally {
             try {

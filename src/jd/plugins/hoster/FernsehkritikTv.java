@@ -239,7 +239,7 @@ public class FernsehkritikTv extends PluginForHost {
                 getMassengeschmackDLLINK();
             }
             String channel = br.getRegex("<li><a href=\"/u/\\d+\">([^<>\"]*?)</a> <span class=\"divider\"").getMatch(0);
-            String episodename = br.getRegex("<li class=\"active\">(Folge \\d+[^<>]*?)<").getMatch(0);
+            String episodename = br.getRegex("<li class=\"active\">([^<>]*?)<").getMatch(0);
             /* Get date without time */
             final String date = br.getRegex("<p class=\"muted\">([^<>\"]*?) / (\\d{2}:\\d{2}:\\d{2}|[A-Za-z0-9\\-_ ]+)</p>").getMatch(0);
             if (channel == null || episodename == null || date == null) {
