@@ -152,7 +152,7 @@ public class MegaDebridEu extends PluginForHost {
             logger.warning("Hi please inform JDownloader Development Team about this issue! Link correction needs to take place.");
             tempUnavailableHoster(account, link, 3 * 60 * 60 * 1000l);
         } else if (br.containsHTML("Unable to load file")) {
-            logger.info("mega-debrid.eu: 'Unable to load file'");
+            logger.info("'Unable to load file'");
             int timesFailed = link.getIntegerProperty("timesfailedmegadebrideu_unabletoload", 0);
             if (timesFailed <= 2) {
                 timesFailed++;
@@ -160,6 +160,18 @@ public class MegaDebridEu extends PluginForHost {
                 throw new PluginException(LinkStatus.ERROR_RETRY, "Server error");
             } else {
                 link.setProperty("timesfailedmegadebrideu_unabletoload", Property.NULL);
+                logger.info("Disabling current host for one hour...");
+                tempUnavailableHoster(account, link, 1 * 60 * 60 * 1000l);
+            }
+        } else if (br.containsHTML("\"debridLink\":\"cantDebridLink\"")) {
+            // no idea what this means
+            int timesFailed = link.getIntegerProperty("timesfailedmegadebrideu_cantDebridLink", 0);
+            if (timesFailed <= 2) {
+                timesFailed++;
+                link.setProperty("timesfailedmegadebrideu_cantDebridLink", timesFailed);
+                throw new PluginException(LinkStatus.ERROR_RETRY, "Server error");
+            } else {
+                link.setProperty("timesfailedmegadebrideu_cantDebridLink", Property.NULL);
                 logger.info("Disabling current host for one hour...");
                 tempUnavailableHoster(account, link, 1 * 60 * 60 * 1000l);
             }
