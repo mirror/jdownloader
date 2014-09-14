@@ -28,7 +28,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "spankbang.com" }, urls = { "http://(www\\.)?spankbang\\.com/[a-z0-9]+/video/" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "spankbang.com" }, urls = { "http://(www\\.)?([a-z]{2}\\.)?spankbang\\.com/[a-z0-9]+/video/" }, flags = { 0 })
 public class SpankBangCom extends PluginForHost {
 
     public SpankBangCom(PluginWrapper wrapper) {
@@ -40,10 +40,15 @@ public class SpankBangCom extends PluginForHost {
         return "http://spankbang.com/info#dmca";
     }
 
+    public void correctDownloadLink(DownloadLink link) {
+        link.setUrlDownload(link.getDownloadURL().replaceAll("://(www\\.)?([a-z]{2}\\.)?", "://"));
+    }
+
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
+        br.getHeaders().put("Accept-Language", "en-US,en;q=0.5");
         br.getPage(link.getDownloadURL());
         if ("http://spankbang.com/".equals(br.getURL()) || (br.containsHTML(">this video is no longer available.<"))) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
