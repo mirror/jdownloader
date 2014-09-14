@@ -62,16 +62,30 @@ public class NicoVideoJp extends PluginForHost {
         br.setCustomCharset("utf-8");
         br.setFollowRedirects(true);
         br.getPage(link.getDownloadURL());
-        if (br.containsHTML("<title>ニコニコ動画　ログインフォーム</title>") || br.getURL().contains("/secure/") || br.getURL().contains("login_form?")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (br.containsHTML("<title>ニコニコ動画　ログインフォーム</title>") || br.getURL().contains("/secure/") || br.getURL().contains("login_form?")) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
+        if (br.containsHTML("this video inappropriate.<")) {
+            String watch = br.getRegex("harmful_link\" href=\"([^<>\"]*?)\">Watch this video</a>").getMatch(0);
+            br.getPage(watch);
+        }
         String filename = br.getRegex("<meta property=\"og:title\" content=\"([^<>\"]*?)\"").getMatch(0);
-        if (filename == null) filename = br.getRegex("<h1 itemprop=\"name\">([^<>\"]*?)</h1>").getMatch(0);
-        if (filename == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (filename == null) {
+            filename = br.getRegex("<h1 itemprop=\"name\">([^<>\"]*?)</h1>").getMatch(0);
+        }
+        if (filename == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
 
         link.setProperty("plainfilename", filename);
         final String date = br.getRegex("property=\"video:release_date\" content=\"(\\d{4}\\-\\d{2}\\-\\d{2}T\\d{2}:\\d{2}\\+\\d{4})\"").getMatch(0);
-        if (date != null) link.setProperty("originaldate", date);
+        if (date != null) {
+            link.setProperty("originaldate", date);
+        }
         final String channel = br.getRegex("Uploader: <strong itemprop=\"name\">([^<>\"]*?)</strong>").getMatch(0);
-        if (channel != null) link.setProperty("channel", channel);
+        if (channel != null) {
+            link.setProperty("channel", channel);
+        }
 
         filename = getFormattedFilename(link);
         link.setFinalFileName(filename);
@@ -116,7 +130,9 @@ public class NicoVideoJp extends PluginForHost {
         try {
             throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);
         } catch (final Throwable e) {
-            if (e instanceof PluginException) throw (PluginException) e;
+            if (e instanceof PluginException) {
+                throw (PluginException) e;
+            }
         }
         throw new PluginException(LinkStatus.ERROR_FATAL, ONLYREGISTEREDUSERTEXT);
     }
@@ -128,7 +144,9 @@ public class NicoVideoJp extends PluginForHost {
         br.setFollowRedirects(true);
         // Important, without accessing the link we cannot get the downloadurl!
         br.getPage(link.getDownloadURL());
-        if (Encoding.htmlDecode(br.toString()).contains("closed=1\\&done=true")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error", 10 * 60 * 1000l);
+        if (Encoding.htmlDecode(br.toString()).contains("closed=1\\&done=true")) {
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error", 10 * 60 * 1000l);
+        }
         if (link.getDownloadURL().matches(TYPE_SO) || link.getDownloadURL().matches(TYPE_WATCH)) {
             final String linkid = new Regex(br.getURL(), "(\\d+)$").getMatch(0);
             br.postPage("http://flapi.nicovideo.jp/api/getflv", "v=" + linkid);
@@ -137,14 +155,18 @@ public class NicoVideoJp extends PluginForHost {
             br.postPage("http://flapi.nicovideo.jp/api/getflv", "v=" + vid);
         }
         String dllink = new Regex(Encoding.htmlDecode(br.toString()), "\\&url=(http://.*?)\\&").getMatch(0);
-        if (dllink == null) dllink = new Regex(Encoding.htmlDecode(br.toString()), "(http://smile-com\\d+\\.nicovideo\\.jp/smile\\?v=[0-9\\.]+)").getMatch(0);
+        if (dllink == null) {
+            dllink = new Regex(Encoding.htmlDecode(br.toString()), "(http://smile-com\\d+\\.nicovideo\\.jp/smile\\?v=[0-9\\.]+)").getMatch(0);
+        }
         if (dllink == null) {
             logger.warning("Final downloadlink (String is \"dllink\") regex didn't match!");
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
 
         int maxChunks = 0;
-        if (link.getBooleanProperty(NOCHUNKS, false)) maxChunks = 1;
+        if (link.getBooleanProperty(NOCHUNKS, false)) {
+            maxChunks = 1;
+        }
 
         dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, true, maxChunks);
         if (dl.getConnection().getContentType().contains("html")) {
@@ -155,7 +177,9 @@ public class NicoVideoJp extends PluginForHost {
         try {
             if (!this.dl.startDownload()) {
                 try {
-                    if (dl.externalDownloadStop()) return;
+                    if (dl.externalDownloadStop()) {
+                        return;
+                    }
                 } catch (final Throwable e) {
                 }
                 /* unknown error, we disable multiple chunks */
@@ -179,15 +203,21 @@ public class NicoVideoJp extends PluginForHost {
         this.setBrowserExclusive();
         br.setFollowRedirects(false);
         br.postPage("https://secure.nicovideo.jp/secure/login?site=niconico", "next_url=&mail=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()));
-        if (br.getCookie(MAINPAGE, "user_session") == null) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+        if (br.getCookie(MAINPAGE, "user_session") == null) {
+            throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+        }
     }
 
     private String getFormattedFilename(final DownloadLink downloadLink) throws ParseException {
         String videoName = downloadLink.getStringProperty("plainfilename", null);
         final SubConfiguration cfg = SubConfiguration.getConfig("nicovideo.jp");
         String formattedFilename = cfg.getStringProperty(CUSTOM_FILENAME, defaultCustomFilename);
-        if (formattedFilename == null || formattedFilename.equals("")) formattedFilename = defaultCustomFilename;
-        if (!formattedFilename.contains("*videoname") || !formattedFilename.contains("*ext*")) formattedFilename = defaultCustomFilename;
+        if (formattedFilename == null || formattedFilename.equals("")) {
+            formattedFilename = defaultCustomFilename;
+        }
+        if (!formattedFilename.contains("*videoname") || !formattedFilename.contains("*ext*")) {
+            formattedFilename = defaultCustomFilename;
+        }
 
         String date = downloadLink.getStringProperty("originaldate", null);
         final String channelName = downloadLink.getStringProperty("channel", null);
@@ -212,16 +242,18 @@ public class NicoVideoJp extends PluginForHost {
                     formattedDate = "";
                 }
             }
-            if (formattedDate != null)
+            if (formattedDate != null) {
                 formattedFilename = formattedFilename.replace("*date*", formattedDate);
-            else
+            } else {
                 formattedFilename = formattedFilename.replace("*date*", "");
+            }
         }
         if (formattedFilename.contains("*channelname*")) {
-            if (channelName != null)
+            if (channelName != null) {
                 formattedFilename = formattedFilename.replace("*channelname*", channelName);
-            else
+            } else {
                 formattedFilename = formattedFilename.replace("*channelname*", "");
+            }
         }
         formattedFilename = formattedFilename.replace("*ext*", ".flv");
         // Insert filename at the end to prevent errors with tags
