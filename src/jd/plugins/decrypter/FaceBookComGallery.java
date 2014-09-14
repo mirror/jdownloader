@@ -40,7 +40,7 @@ import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
 import jd.utils.JDUtilities;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "facebook.com" }, urls = { "https?://(www\\.)?(on\\.fb\\.me/[A-Za-z0-9]+\\+?|facebook\\.com/((media/set/\\?set=|[^<>\"/]*?/media_set\\?set=)o?a[0-9\\.]+|media/set/\\?set=vb\\.\\d+|[a-z0-9\\.]+/photos(_(of|all|albums|stream))?|profile\\.php\\?id=\\d+\\&sk=photos\\&collection_token=[A-Z0-9%]+|groups/\\d+/(photos|files)/))" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "facebook.com" }, urls = { "https?://(www\\.)?(on\\.fb\\.me/[A-Za-z0-9]+\\+?|facebook\\.com/.+)" }, flags = { 0 })
 public class FaceBookComGallery extends PluginForDecrypt {
 
     public FaceBookComGallery(PluginWrapper wrapper) {
@@ -69,7 +69,8 @@ public class FaceBookComGallery extends PluginForDecrypt {
     private static final int      MAX_LOOPS_GENERAL              = 150;
     private static final int      MAX_PICS_DEFAULT               = 5000;
 
-    private String                MAINPAGE                       = "http://www.facebook.com";
+    private static String         MAINPAGE                       = "http://www.facebook.com";
+    private static final String   CRYPTLINK                      = "facebookdecrypted.com/";
 
     private static final String   CONTENTUNAVAILABLE             = ">Dieser Inhalt ist derzeit nicht verfügbar|>This content is currently unavailable<";
     private String                PARAMETER                      = null;
@@ -82,6 +83,11 @@ public class FaceBookComGallery extends PluginForDecrypt {
         synchronized (LOCK) {
             String parameter = param.toString().replace("#!/", "");
             PARAMETER = parameter;
+            if (PARAMETER.matches("https?://(www\\.)?facebook\\.com/(video\\.php\\?v=|video/embed\\?video_id=|profile\\.php\\?id=\\d+\\&ref=ts#\\!/video/video\\.php\\?v=|(photo/)?photo\\.php\\?v=|photo\\.php\\?fbid=|download/)\\d+")) {
+                final DownloadLink fina = createDownloadlink(PARAMETER.replace("facebook.com/", "facebookdecrypted.com/"));
+                decryptedLinks.add(fina);
+                return decryptedLinks;
+            }
             br.getHeaders().put("User-Agent", jd.plugins.hoster.FaceBookComVideos.Agent);
             br.setFollowRedirects(false);
             FASTLINKCHECK_PICTURES_ENABLED = SubConfiguration.getConfig("facebook.com").getBooleanProperty(FASTLINKCHECK_PICTURES, false);
@@ -121,7 +127,7 @@ public class FaceBookComGallery extends PluginForDecrypt {
             } else if (parameter.matches(TYPE_PHOTOS_LINK)) {
                 // Old handling removed 05.12.13 in rev 23262
                 decryptPicsGeneral(null);
-            } else if (parameter.matches(TYPE_SET_LINK_PHOTO)) {
+            } else if (parameter.matches(TYPE_SET_LINK_PHOTO) || parameter.contains("set=a.")) {
                 decryptSetLinkPhoto();
             } else if (parameter.matches(TYPE_SET_LINK_VIDEO)) {
                 logged_in = login();
@@ -137,7 +143,7 @@ public class FaceBookComGallery extends PluginForDecrypt {
 
                 final String[] links = br.getRegex("uiVideoLinkMedium\" href=\"(https?://(www\\.)?facebook\\.com/photo\\.php\\?v=\\d+)").getColumn(0);
                 for (final String link : links) {
-                    decryptedLinks.add(createDownloadlink(link));
+                    decryptedLinks.add(createDownloadlink(link.replace("facebook.com/", CRYPTLINK)));
                 }
 
                 if (fpName != null) {
@@ -221,7 +227,7 @@ public class FaceBookComGallery extends PluginForDecrypt {
             boolean stop = false;
             logger.info("Decrypting page " + i + " of ??");
             for (final String link : links) {
-                decryptedLinks.add(createDownloadlink(link));
+                decryptedLinks.add(createDownloadlink(link.replace("facebook.com/", CRYPTLINK)));
             }
             // currentMaxPicCount = max number of links per segment
             if (links.length < currentMaxPicCount) {
@@ -404,7 +410,7 @@ public class FaceBookComGallery extends PluginForDecrypt {
                 decryptedLinks.add(dl);
             }
             // currentMaxPicCount = max number of links per segment
-            if (links.length < currentMaxPicCount) {
+            if (links.length < currentMaxPicCount || profileID == null) {
                 stop = true;
             }
             if (stop) {
@@ -633,7 +639,7 @@ public class FaceBookComGallery extends PluginForDecrypt {
                 final String current_id = new Regex(single_link, "(\\d+)$").getMatch(0);
                 if (!allids.contains(current_id)) {
                     allids.add(current_id);
-                    final DownloadLink dl = createDownloadlink(single_link);
+                    final DownloadLink dl = createDownloadlink(single_link.replace("facebook.com/", CRYPTLINK));
                     if (!logged_in) {
                         dl.setProperty("nologin", true);
                     }
@@ -841,7 +847,7 @@ public class FaceBookComGallery extends PluginForDecrypt {
     }
 
     private DownloadLink createPicDownloadlink(final String picID) {
-        final String final_link = "http://www.facebook.com/photo.php?fbid=" + picID;
+        final String final_link = "http://www." + CRYPTLINK + "photo.php?fbid=" + picID;
         final DownloadLink dl = createDownloadlink(final_link);
         if (!logged_in) {
             dl.setProperty("nologin", true);

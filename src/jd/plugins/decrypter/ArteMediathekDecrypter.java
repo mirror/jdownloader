@@ -35,19 +35,25 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
+import jd.plugins.PluginForHost;
 import jd.utils.JDUtilities;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "www.arte.tv" }, urls = { "http://((videos|www)\\.)?arte\\.tv/(guide/[a-z]{2}/[0-9\\-]+|[a-z]{2}/videos)/.+" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "www.arte.tv" }, urls = { "http://((videos|www)\\.)?arte\\.tv/(guide/[a-z]{2}/[0-9\\-]+|[a-z]{2}/videos)/.+|http://concert\\.arte\\.tv/[a-z]{2}/[a-z0-9\\-]+" }, flags = { 0 })
 public class ArteMediathekDecrypter extends PluginForDecrypt {
 
-    private static final String Q_SUBTITLES = "Q_SUBTITLES";
-    private static final String Q_BEST      = "Q_BEST";
-    private static final String Q_LOW       = "Q_LOW";
-    private static final String Q_HIGH      = "Q_HIGH";
-    private static final String Q_VERYHIGH  = "Q_VERYHIGH";
-    private static final String Q_HD        = "Q_HD";
-    private static final String HBBTV       = "HBBTV";
-    private static final String THUMBNAIL   = "THUMBNAIL";
+    private static final String TYPE_CONCERT = "http://(www\\.)?concert\\.arte\\.tv/[a-z]{2}/[a-z0-9\\-]+";
+    private static final String TYPE_GUIDE   = "http://((videos|www)\\.)?arte\\.tv/(guide/[a-z]{2}/[0-9\\-]+";
+
+    private static final String Q_SUBTITLES  = "Q_SUBTITLES";
+    private static final String Q_BEST       = "Q_BEST";
+    private static final String Q_LOW        = "Q_LOW";
+    private static final String Q_HIGH       = "Q_HIGH";
+    private static final String Q_VERYHIGH   = "Q_VERYHIGH";
+    private static final String Q_HD         = "Q_HD";
+    private static final String HBBTV        = "HBBTV";
+    private static final String THUMBNAIL    = "THUMBNAIL";
+
+    private static boolean      pluginloaded = false;
 
     public ArteMediathekDecrypter(final PluginWrapper wrapper) {
         super(wrapper);
@@ -57,33 +63,32 @@ public class ArteMediathekDecrypter extends PluginForDecrypt {
     public ArrayList<DownloadLink> decryptIt(final CryptedLink param, final ProgressController progress) throws Exception {
         final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String parameter = param.toString();
-        if (!parameter.matches("http://((videos|www)\\.)arte\\.tv/(guide/[a-z]{2}/[0-9\\-]+|[a-z]{2}/videos)/.+")) {
-            parameter = parameter.replace("http://", "http://www.");
-        }
-
         setBrowserExclusive();
         br.setFollowRedirects(false);
         br.getPage(parameter);
-        int status = br.getHttpConnection().getResponseCode();
-        if (!parameter.contains("tv/guide/") && status == 200) {
-            final DownloadLink link = createDownloadlink(parameter.replace("http://", "decrypted://"));
-            decryptedLinks.add(link);
-            return decryptedLinks;
-        }
-        /* new arte+7 handling */
-        if (status == 301 || status == 302) {
-            br.setFollowRedirects(true);
-            if (br.getRedirectLocation() != null) {
-                parameter = br.getRedirectLocation();
-                br.getPage(parameter);
+        if (parameter.matches(TYPE_CONCERT)) {
+        } else {
+            int status = br.getHttpConnection().getResponseCode();
+            if (!parameter.contains("tv/guide/") && status == 200) {
+                final DownloadLink link = createDownloadlink(parameter.replace("http://", "decrypted://"));
+                decryptedLinks.add(link);
+                return decryptedLinks;
             }
-        } else if (status != 200) {
-            // Check...if offline, add to llinkgrabber so user can see it
-            final DownloadLink link = createDownloadlink(parameter.replace("http://", "decrypted://"));
-            link.setAvailable(false);
-            link.setProperty("offline", true);
-            decryptedLinks.add(link);
-            return decryptedLinks;
+            /* new arte+7 handling */
+            if (status == 301 || status == 302) {
+                br.setFollowRedirects(true);
+                if (br.getRedirectLocation() != null) {
+                    parameter = br.getRedirectLocation();
+                    br.getPage(parameter);
+                }
+            } else if (status != 200) {
+                // Check...if offline, add to llinkgrabber so user can see it
+                final DownloadLink link = createDownloadlink(parameter.replace("http://", "decrypted://"));
+                link.setAvailable(false);
+                link.setProperty("offline", true);
+                decryptedLinks.add(link);
+                return decryptedLinks;
+            }
         }
 
         decryptedLinks.addAll(getDownloadLinks(parameter, br));
@@ -109,7 +114,9 @@ public class ArteMediathekDecrypter extends PluginForDecrypt {
         return false;
     }
 
-    private ArrayList<DownloadLink> getDownloadLinks(final String data, final Browser ibr) {
+    private ArrayList<DownloadLink> getDownloadLinks(final String parameter, final Browser ibr) {
+        String tvguideUrl;
+        String title;
         // this allows drop to frame, and prevents subsequent NPE!
         br = ibr.cloneBrowser();
 
@@ -120,7 +127,7 @@ public class ArteMediathekDecrypter extends PluginForDecrypt {
 
         try {
             int languageVersion = 1;
-            String lang = new Regex(data, "/guide/(\\w+)/.+").getMatch(0);
+            String lang = new Regex(parameter, "/guide/(\\w+)/.+").getMatch(0);
             if (lang != null) {
                 if ("fr".equalsIgnoreCase(lang)) {
                     languageVersion = 2;
@@ -128,18 +135,28 @@ public class ArteMediathekDecrypter extends PluginForDecrypt {
             }
             lang = language(languageVersion);
 
-            String ID = new Regex(data, "/guide/\\w+/([0-9\\-]+)/").getMatch(0);
-            if (ID != null && lang != null) {
-                String title = getTitle(br);
+            String vsrRegex = "\"VSR\":\\{(.*?\\})\\}";
+            String strRegex = "\"(.*?)\"\\s*:\\s*\\{(.*?)\\}";
+            String valRegex = "\"(.*?)\"\\s*:\\s*\"?(.*?)\"?,";
 
+            if (parameter.matches(TYPE_CONCERT)) {
+                tvguideUrl = br.getRegex("\"(http://concert\\.arte\\.tv/[a-z]{2}/player/\\d+)\"").getMatch(0);
+                if (tvguideUrl == null) {
+                    return null;
+                }
+                br.getPage(tvguideUrl);
+                title = br.getRegex("\"VTI\":\"([^<>\"]*?)\"").getMatch(0);
+                br.getRequest().setHtmlCode(br.toString().replace("\\", ""));
+            } else {
+                String ID = new Regex(parameter, "/guide/\\w+/([0-9\\-]+)/").getMatch(0);
+                if (ID == null || lang == null) {
+                    return ret;
+                }
                 String tv_channel = br.getRegex("<li class=\"video\" data\\-vid=\"" + ID + "(_[A-Za-z0-9_\\-]+)\\-[A-Za-z]+\">").getMatch(0);
                 if (tv_channel == null) {
                     tv_channel = "_PLUS7";
                 }
-                String tvguideUrl = "http://org-www.arte.tv/papi/tvguide/videos/stream/player/" + lang + "/" + ID + tv_channel + "-" + lang + "/ALL/ALL.json";
-                String vsrRegex = "\"VSR\":\\{(.*?\\})\\}";
-                String strRegex = "\"(.*?)\"\\s*:\\s*\\{(.*?)\\}";
-                String valRegex = "\"(.*?)\"\\s*:\\s*\"?(.*?)\"?,";
+                tvguideUrl = "http://org-www.arte.tv/papi/tvguide/videos/stream/player/" + lang + "/" + ID + tv_channel + "-" + lang + "/ALL/ALL.json";
                 if (cfg.getBooleanProperty(HBBTV, false)) {
                     br.getHeaders().put("User-Agent", "HbbTV/1.1.1 (;;;;;) jd-arte.tv-plugin");
                     tvguideUrl = "http://org-www.arte.tv/papi/tvguide/videos/stream/" + lang + "/" + ID + tv_channel + "-" + lang + "/HBBTV/ALL.json";
@@ -148,214 +165,212 @@ public class ArteMediathekDecrypter extends PluginForDecrypt {
                     valRegex = "\"([^\"]+)\":\"([^\"]+)\"";
                 }
                 br.getPage(tvguideUrl);
-                if (br.containsHTML("<statuscode>wrongParameter</statuscode>")) {
-                    return ret;
-                }
+                title = getTitle(br);
+            }
+            if (br.containsHTML("<statuscode>wrongParameter</statuscode>")) {
+                return ret;
+            }
+            title = unescape(title);
 
-                /* parsing json */
-                HashMap<String, HashMap<String, String>> streamValues = new HashMap<String, HashMap<String, String>>();
-                HashMap<String, String> streamValue;
-                String vsr = br.getRegex(vsrRegex).getMatch(0);
-                if (vsr == null) {
-                    final DownloadLink link = createDownloadlink(data.replace("http://", "decrypted://"));
-                    link.setAvailable(false);
-                    link.setProperty("offline", true);
-                    ret.add(link);
-                    return ret;
-                }
-                for (int i = 0; i < 2; i++) {
-                    for (String[] ss : new Regex(vsr, strRegex).getMatches()) {
-                        if (!cfg.getBooleanProperty(HBBTV, true)) {
-                            String l = new Regex(ss[1], "\"versionCode\":\"(VO|VF)").getMatch(0);
-                            if (l != null) {
-                                l = "VO".equals(l) ? "1" : "2";
-                                if (i == 0) {
-                                    if (Integer.parseInt(l) != languageVersion) {
-                                        continue;
-                                    }
-                                } else {
-                                    languageVersion = Integer.parseInt(l);
-                                }
-                            }
-                        }
-                        streamValue = new HashMap<String, String>();
-                        if (cfg.getBooleanProperty(HBBTV, false)) {
-                            String tmp = ss[0];
-                            ss[0] = ss[1];
-                            ss[1] = tmp;
-                        }
-                        for (String[] peng : new Regex(ss[1], valRegex).getMatches()) {
-                            streamValue.put(peng[0], peng[1]);
-                        }
-                        streamValues.put(ss[0], streamValue);
-                    }
-
-                    if (streamValues.size() > 0) {
-                        break;
-                    }
-                }
-                String VRA = br.getRegex("\"VRA\":\"([^\"]+)\"").getMatch(0);
-                String VRU = br.getRegex("\"VRU\":\"([^\"]+)\"").getMatch(0);
-
-                String extension = ".mp4";
-                if (br.getRegex("new MediaCollection\\(\"audio\",").matches()) {
-                    extension = ".mp3";
-                }
-
-                ArrayList<DownloadLink> newRet = new ArrayList<DownloadLink>();
-                HashMap<String, DownloadLink> bestMap = new HashMap<String, DownloadLink>();
-                String lastQualityFMT = null;
-
-                for (Entry<String, HashMap<String, String>> next : streamValues.entrySet()) {
-                    streamValue = new HashMap<String, String>(next.getValue());
-                    String streamType = next.getKey();
-                    /* only http streams for the old stable */
-                    if (!streamType.matches("HTTP_REACH_EQ_\\d|SQ|EQ|HQ") && isStableEnviroment()) {
-                        continue;
-                    }
-
-                    String url = streamValue.get("url");
-                    if (url == null) {
-                        url = streamValue.get("VUR");
-                    }
-                    // this assumes that all non protocol urls belong to rtmp.
-                    if (url != null && !url.matches("(https?|rtmp)://.+")) {
-                        if (!url.startsWith("mp4:")) {
-                            url = "mp4:" + url;
-                        }
-                        if (streamValue.get("streamer") != null) {
-                            url = streamValue.get("streamer") + url;
-                        }
-                    }
-                    String fmt = streamValue.get("quality");
-                    if (fmt == null) {
-                        fmt = hbbtv(streamValue.get("VQU"));
-                    }
-                    String quality = fmt;
-                    if (fmt != null) {
-                        fmt = fmt.split("\\-")[0].toLowerCase(Locale.ENGLISH).trim();
-                    }
-                    if (fmt != null) {
-                        quality = quality.replaceAll("\\s", "");
-                        /* best selection is done at the end */
-                        if ("ld".equals(fmt)) {
-                            if ((cfg.getBooleanProperty(Q_LOW, true) || BEST) == false) {
-                                continue;
-                            } else {
-                                fmt = "ld";
-                            }
-                        } else if ("md".equals(fmt)) {
-                            if ((cfg.getBooleanProperty(Q_HIGH, true) || BEST) == false) {
-                                continue;
-                            } else {
-                                fmt = "md";
-                            }
-                        } else if ("sd".equals(fmt)) {
-                            if ((cfg.getBooleanProperty(Q_VERYHIGH, true) || BEST) == false) {
-                                continue;
-                            } else {
-                                fmt = "sd";
-                            }
-                        } else if ("hd".equals(fmt)) {
-                            if ((cfg.getBooleanProperty(Q_HD, true) || BEST) == false) {
-                                continue;
-                            } else {
-                                fmt = "hd";
-                            }
-                        }
-                    }
-                    lastQualityFMT = fmt.toUpperCase(Locale.ENGLISH);
-
-                    final String name = title + "@" + quality + "_" + language(languageVersion) + extension;
-                    final DownloadLink link;
-                    if (data.contains("?")) {
-                        link = createDownloadlink(data.replace("http://", "decrypted://") + "&quality=" + quality);
-                    } else {
-                        link = createDownloadlink(data.replace("http://", "decrypted://") + "?quality=" + quality);
-                    }
-
-                    link.setFinalFileName(name);
-                    link.setBrowserUrl(data);
-                    link.setProperty("directURL", url);
-                    link.setProperty("directName", name);
-                    link.setProperty("tvguideUrl", tvguideUrl);
-                    link.setProperty("VRA", convertDateFormat(VRA));
-                    link.setProperty("VRU", convertDateFormat(VRU));
-
+            /* parsing json */
+            HashMap<String, HashMap<String, String>> streamValues = new HashMap<String, HashMap<String, String>>();
+            HashMap<String, String> streamValue;
+            String vsr = br.getRegex(vsrRegex).getMatch(0);
+            if (vsr == null) {
+                final DownloadLink link = createDownloadlink(parameter.replace("http://", "decrypted://"));
+                link.setAvailable(false);
+                link.setProperty("offline", true);
+                ret.add(link);
+                return ret;
+            }
+            for (int i = 0; i < 2; i++) {
+                for (String[] ss : new Regex(vsr, strRegex).getMatches()) {
                     if (!cfg.getBooleanProperty(HBBTV, true)) {
-                        link.setAvailable(true);
-                        link.setProperty("directQuality", streamValue.get("quality"));
-                        link.setProperty("streamingType", streamType);
-                        link.setProperty("flashplayer", "http://www.arte.tv/player/v2//jwplayer6/mediaplayer.6.3.3242.swf");
-                    } else {
-                        link.setProperty("directQuality", streamValue.get("VQU"));
-                        link.setProperty("streamingType", streamValue.get("VFO"));
+                        String l = new Regex(ss[1], "\"versionCode\":\"(VO|VF)").getMatch(0);
+                        if (l != null) {
+                            l = "VO".equals(l) ? "1" : "2";
+                            if (i == 0) {
+                                if (Integer.parseInt(l) != languageVersion) {
+                                    continue;
+                                }
+                            } else {
+                                languageVersion = Integer.parseInt(l);
+                            }
+                        }
                     }
+                    streamValue = new HashMap<String, String>();
+                    if (cfg.getBooleanProperty(HBBTV, false)) {
+                        String tmp = ss[0];
+                        ss[0] = ss[1];
+                        ss[1] = tmp;
+                    }
+                    for (String[] peng : new Regex(ss[1], valRegex).getMatches()) {
+                        streamValue.put(peng[0], peng[1]);
+                    }
+                    streamValues.put(ss[0], streamValue);
+                }
 
-                    DownloadLink best = bestMap.get(fmt);
-                    if (best == null || link.getDownloadSize() > best.getDownloadSize()) {
-                        bestMap.put(fmt, link);
+                if (streamValues.size() > 0) {
+                    break;
+                }
+            }
+            String VRA = br.getRegex("\"VRA\":\"([^\"]+)\"").getMatch(0);
+            String VRU = br.getRegex("\"VRU\":\"([^\"]+)\"").getMatch(0);
+
+            String extension = ".mp4";
+            if (br.getRegex("new MediaCollection\\(\"audio\",").matches()) {
+                extension = ".mp3";
+            }
+
+            ArrayList<DownloadLink> newRet = new ArrayList<DownloadLink>();
+            HashMap<String, DownloadLink> bestMap = new HashMap<String, DownloadLink>();
+            String lastQualityFMT = null;
+
+            for (Entry<String, HashMap<String, String>> next : streamValues.entrySet()) {
+                streamValue = new HashMap<String, String>(next.getValue());
+                String streamType = next.getKey();
+                /* only http streams for the old stable */
+                if (!streamType.matches("HTTP_REACH_EQ_\\d|SQ|EQ|HQ") && isStableEnviroment()) {
+                    continue;
+                }
+
+                String url = streamValue.get("url");
+                if (url == null) {
+                    url = streamValue.get("VUR");
+                }
+                // this assumes that all non protocol urls belong to rtmp.
+                if (url != null && !url.matches("(https?|rtmp)://.+")) {
+                    if (!url.startsWith("mp4:")) {
+                        url = "mp4:" + url;
                     }
+                    if (streamValue.get("streamer") != null) {
+                        url = streamValue.get("streamer") + url;
+                    }
+                }
+                String fmt = streamValue.get("quality");
+                if (fmt == null) {
+                    fmt = hbbtv(streamValue.get("VQU"));
+                }
+                String quality = fmt;
+                if (fmt != null) {
+                    fmt = fmt.split("\\-")[0].toLowerCase(Locale.ENGLISH).trim();
+                }
+                if (fmt != null) {
+                    quality = quality.replaceAll("\\s", "");
+                    /* best selection is done at the end */
+                    if ("ld".equals(fmt)) {
+                        if ((cfg.getBooleanProperty(Q_LOW, true) || BEST) == false) {
+                            continue;
+                        } else {
+                            fmt = "ld";
+                        }
+                    } else if ("md".equals(fmt)) {
+                        if ((cfg.getBooleanProperty(Q_HIGH, true) || BEST) == false) {
+                            continue;
+                        } else {
+                            fmt = "md";
+                        }
+                    } else if ("sd".equals(fmt)) {
+                        if ((cfg.getBooleanProperty(Q_VERYHIGH, true) || BEST) == false) {
+                            continue;
+                        } else {
+                            fmt = "sd";
+                        }
+                    } else if ("hd".equals(fmt)) {
+                        if ((cfg.getBooleanProperty(Q_HD, true) || BEST) == false) {
+                            continue;
+                        } else {
+                            fmt = "hd";
+                        }
+                    }
+                }
+                lastQualityFMT = fmt.toUpperCase(Locale.ENGLISH);
+
+                final String name = title + "@" + quality + "_" + language(languageVersion) + extension;
+                final DownloadLink link;
+                if (parameter.contains("?")) {
+                    link = createDownloadlink(parameter.replace("http://", "decrypted://") + "&quality=" + quality);
+                } else {
+                    link = createDownloadlink(parameter.replace("http://", "decrypted://") + "?quality=" + quality);
+                }
+
+                link.setFinalFileName(name);
+                link.setBrowserUrl(parameter);
+                link.setProperty("directURL", url);
+                link.setProperty("directName", name);
+                link.setProperty("tvguideUrl", tvguideUrl);
+                link.setProperty("VRA", convertDateFormat(VRA));
+                link.setProperty("VRU", convertDateFormat(VRU));
+
+                if (!cfg.getBooleanProperty(HBBTV, true)) {
+                    link.setAvailable(true);
+                    link.setProperty("directQuality", streamValue.get("quality"));
+                    link.setProperty("streamingType", streamType);
+                    link.setProperty("flashplayer", "http://www.arte.tv/player/v2//jwplayer6/mediaplayer.6.3.3242.swf");
+                } else {
+                    link.setProperty("directQuality", streamValue.get("VQU"));
+                    link.setProperty("streamingType", streamValue.get("VFO"));
+                }
+
+                DownloadLink best = bestMap.get(fmt);
+                if (best == null || link.getDownloadSize() > best.getDownloadSize()) {
+                    bestMap.put(fmt, link);
+                }
+                newRet.add(link);
+            }
+
+            if (newRet.size() > 0) {
+                if (BEST) {
+                    /* only keep best quality */
+                    DownloadLink keep = bestMap.get("hd");
+                    if (keep == null) {
+                        lastQualityFMT = "VERYHIGH";
+                        keep = bestMap.get("sd");
+                    }
+                    if (keep == null) {
+                        lastQualityFMT = "HIGH";
+                        keep = bestMap.get("md");
+                    }
+                    if (keep == null) {
+                        lastQualityFMT = "LOW";
+                        keep = bestMap.get("ld");
+                    }
+                    if (keep != null) {
+                        newRet.clear();
+                        newRet.add(keep);
+                    }
+                }
+            }
+            if (cfg.getBooleanProperty(Q_SUBTITLES, false)) {
+                String subtitleInfo = br.getRegex("<caption>(.*?)</caption>").getMatch(0);
+                if (subtitleInfo != null) {
+                    String subtitleUrl = new Regex(subtitleInfo, "<url>(http://utstreaming\\.zdf\\.de/tt/\\d{4}/[A-Za-z0-9_\\-]+\\.xml)</url>").getMatch(0);
+                    final String startTime = new Regex(subtitleInfo, "<offset>(\\-)?(\\d+)</offset>").getMatch(1);
+                    final String name = title + "@" + lastQualityFMT + ".xml";
+                    final DownloadLink link = createDownloadlink("decrypted://zdf.de/subtitles/" + System.currentTimeMillis() + new Random().nextInt(1000000));
+                    link.setAvailable(true);
+                    link.setFinalFileName(name);
+                    link.setProperty("directURL", subtitleUrl);
+                    link.setProperty("directName", name);
+                    link.setProperty("streamingType", "subtitle");
+                    link.setProperty("starttime", startTime);
                     newRet.add(link);
                 }
-
-                if (newRet.size() > 0) {
-                    if (BEST) {
-                        /* only keep best quality */
-                        DownloadLink keep = bestMap.get("hd");
-                        if (keep == null) {
-                            lastQualityFMT = "VERYHIGH";
-                            keep = bestMap.get("sd");
-                        }
-                        if (keep == null) {
-                            lastQualityFMT = "HIGH";
-                            keep = bestMap.get("md");
-                        }
-                        if (keep == null) {
-                            lastQualityFMT = "LOW";
-                            keep = bestMap.get("ld");
-                        }
-                        if (keep != null) {
-                            newRet.clear();
-                            newRet.add(keep);
-                        }
-                    }
-                }
-                if (cfg.getBooleanProperty(Q_SUBTITLES, false)) {
-                    String subtitleInfo = br.getRegex("<caption>(.*?)</caption>").getMatch(0);
-                    if (subtitleInfo != null) {
-                        String subtitleUrl = new Regex(subtitleInfo, "<url>(http://utstreaming\\.zdf\\.de/tt/\\d{4}/[A-Za-z0-9_\\-]+\\.xml)</url>").getMatch(0);
-                        final String startTime = new Regex(subtitleInfo, "<offset>(\\-)?(\\d+)</offset>").getMatch(1);
-                        final String name = title + "@" + lastQualityFMT + ".xml";
-                        final DownloadLink link = createDownloadlink("decrypted://zdf.de/subtitles/" + System.currentTimeMillis() + new Random().nextInt(1000000));
-                        link.setAvailable(true);
-                        link.setFinalFileName(name);
-                        link.setProperty("directURL", subtitleUrl);
-                        link.setProperty("directName", name);
-                        link.setProperty("streamingType", "subtitle");
-                        link.setProperty("starttime", startTime);
-                        newRet.add(link);
-                    }
-                }
-                if (cfg.getBooleanProperty(THUMBNAIL, false)) {
-                    String thumbnailUrl = br.getRegex("\"programImage\":\"([^\"]+)\"").getMatch(0);
-                    if (thumbnailUrl != null) {
-                        final DownloadLink link = createDownloadlink(thumbnailUrl);
-                        link.setFinalFileName(title + ".jpg");
-                        newRet.add(link);
-                    }
-                }
-                if (newRet.size() > 1) {
-                    final FilePackage fp = FilePackage.getInstance();
-                    fp.setName(title);
-                    fp.addLinks(newRet);
-                }
-                ret = newRet;
-            } else {
-                /*
-                 * no other qualities
-                 */
             }
+            if (cfg.getBooleanProperty(THUMBNAIL, false)) {
+                String thumbnailUrl = br.getRegex("\"programImage\":\"([^\"]+)\"").getMatch(0);
+                if (thumbnailUrl != null) {
+                    final DownloadLink link = createDownloadlink(thumbnailUrl);
+                    link.setFinalFileName(title + ".jpg");
+                    newRet.add(link);
+                }
+            }
+            if (newRet.size() > 1) {
+                final FilePackage fp = FilePackage.getInstance();
+                fp.setName(title);
+                fp.addLinks(newRet);
+            }
+            ret = newRet;
         } catch (final Throwable e) {
             logger.severe(e.getMessage());
         }
@@ -433,6 +448,18 @@ public class ArteMediathekDecrypter extends PluginForDecrypt {
             title = "UnknownTitle_" + System.currentTimeMillis();
         }
         return title;
+    }
+
+    private static synchronized String unescape(final String s) {
+        /* we have to make sure the youtube plugin is loaded */
+        if (pluginloaded == false) {
+            final PluginForHost plugin = JDUtilities.getPluginForHost("youtube.com");
+            if (plugin == null) {
+                throw new IllegalStateException("youtube plugin not found!");
+            }
+            pluginloaded = true;
+        }
+        return jd.plugins.hoster.Youtube.unescape(s);
     }
 
     /* NO OVERRIDE!! */

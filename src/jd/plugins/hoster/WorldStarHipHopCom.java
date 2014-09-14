@@ -60,6 +60,9 @@ public class WorldStarHipHopCom extends PluginForHost {
         br.setCookie("http://worldstaruncut.com/", "worldstarAdultOk", "true");
         br.setFollowRedirects(true);
         br.getPage(downloadLink.getDownloadURL());
+        if (br.getHttpConnection().getResponseCode() == 404) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
         String filename = null;
         if (br.getURL().contains("worldstaruncut.com/")) {
             if (br.getURL().equals("http://www.worldstarhiphop.com/videos/")) {

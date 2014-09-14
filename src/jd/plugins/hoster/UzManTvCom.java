@@ -160,6 +160,8 @@ public class UzManTvCom extends PluginForHost {
         br.getPage(downloadLink.getDownloadURL());
         if (br.containsHTML("(\">Sayfa bulunamadı|Buraya gelmek için tıkladığınız linkte bir sorun var gibi görünüyor\\. Çünkü maalesef UZMANTV'de böyle bir sayfa yok\\.)")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        } else if (br.getURL().contains("/kategori/")) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         String filename = br.getRegex("class=\"clear\"></div></div><h5>(.*?)</h5>").getMatch(0);
         if (filename == null) {

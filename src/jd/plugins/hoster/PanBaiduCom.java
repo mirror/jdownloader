@@ -17,7 +17,6 @@
 package jd.plugins.hoster;
 
 import java.util.ArrayList;
-import java.util.Random;
 
 import jd.PluginWrapper;
 import jd.config.Property;
@@ -62,9 +61,12 @@ public class PanBaiduCom extends PluginForHost {
     private static final String TYPE_FOLDER_LINK_NORMAL_PASSWORD_PROTECTED = "http://(www\\.)?pan\\.baidu\\.com/share/init\\?shareid=\\d+\\&uk=\\d+";
     private static final String NOCHUNKS                                   = "NOCHUNKS";
     private static final String USER_AGENT                                 = "netdisk;4.8.3.1;PC;PC-Windows;6.3.9600;WindowsBaiduYunGuanJia";
+    private static final String APPID                                      = "250528";
 
     private static final String NICE_HOST                                  = "pan.baidu.com";
     private static final String NICE_HOSTproperty                          = "panbaiducom";
+
+    /** Known API errors/responses: -20 = Captcha needed / captcha wrong */
 
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws Exception {
@@ -100,6 +102,9 @@ public class PanBaiduCom extends PluginForHost {
 
     @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception, PluginException {
+        final String fsid = downloadLink.getStringProperty("important_fsid", null);
+        String sign;
+        String tsamp;
         requestFileInformation(downloadLink);
         String passCode = downloadLink.getStringProperty("pass", null);
         DLLINK = checkDirectLink(downloadLink, "panbaidudirectlink");
@@ -143,36 +148,39 @@ public class PanBaiduCom extends PluginForHost {
                 }
                 br.getPage(original_url);
             }
-            String sign = br.getRegex("FileUtils\\.share_sign=\"([a-z0-9]+)\"").getMatch(0);
+            sign = br.getRegex("FileUtils\\.share_sign=\"([a-z0-9]+)\"").getMatch(0);
             if (sign == null) {
                 sign = br.getRegex("yunData\\.SIGN = \"([a-z0-9]+)\"").getMatch(0);
             }
-            String tsamp = br.getRegex("FileUtils\\.share_timestamp=\"(\\d+)\"").getMatch(0);
+            tsamp = br.getRegex("FileUtils\\.share_timestamp=\"(\\d+)\"").getMatch(0);
             if (tsamp == null) {
                 tsamp = br.getRegex("yunData\\.TIMESTAMP = \"(\\d+)\"").getMatch(0);
             }
             if (sign == null || tsamp == null) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
-            final String fsid = downloadLink.getStringProperty("important_fsid", null);
-            final String postLink = "http://pan.baidu.com/share/download?channel=chunlei&clienttype=0&web=1&uk=" + uk + "&shareid=" + shareid + "&timestamp=" + tsamp + "&sign=" + sign + "&bdstoken=null";
             Browser br2 = prepAjax(br.cloneBrowser());
             try {
-                br2.getPage("http://pan.baidu.com/mis/dtcount?channel=chunlei&clienttype=0&web=1&bdstoken=null");
-            } catch (final Throwable e) {
-            }
-            try {
-                br2 = prepAjax(br.cloneBrowser());
                 br2.getPage("http://pan.baidu.com/share/autoincre?channel=chunlei&clienttype=0&web=1&type=1&shareid=" + shareid + "&uk=" + uk + "&sign=" + sign + "&timestamp=" + tsamp + "&bdstoken=null");
             } catch (final Throwable e) {
             }
+            /* Last revision without API & csflg handling: 26909 */
+            final String postLink = "http://pan.baidu.com/api/sharedownload?sign=" + sign + "&timestamp=" + tsamp + "&bdstoken=&channel=chunlei&clienttype=0&web=1&app_id=" + APPID;
+            String postData = "encrypt=0&product=share&uk=" + uk + "&primaryid=" + shareid + "&fid_list=%5B" + fsid + "%5D";
+            if (link_password_cookie != null) {
+                postData += "&extra=%7B%22sekey%22%3A%22" + link_password_cookie + "%22%7D";
+            }
             br2 = prepAjax(br.cloneBrowser());
-            br2.postPage(postLink, "fid_list=%5B" + fsid + "%5D");
-            String captchaLink = getJson(br2, "img");
-            if (captchaLink != null) {
+            br2.postPage(postLink, postData);
+            if (br2.containsHTML("\"errno\":\\-20")) {
                 final int repeat = 3;
                 for (int i = 1; i <= repeat; i++) {
-                    final String captchaid = new Regex(captchaLink, "([A-Z0-9]+)$").getMatch(0);
+                    br2.getPage("http://pan.baidu.com/api/getcaptcha?prod=share&bdstoken=&channel=chunlei&clienttype=0&web=1&app_id=" + APPID);
+                    String captchaLink = getJson(br2, "vcode_img");
+                    final String vcode_str = new Regex(captchaLink, "([A-Z0-9]+)$").getMatch(0);
+                    if (captchaLink == null || vcode_str == null) {
+                        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                    }
                     String code = null;
                     try {
                         code = getCaptchaCode(captchaLink, downloadLink);
@@ -195,9 +203,9 @@ public class PanBaiduCom extends PluginForHost {
                         }
                     }
                     br2 = prepAjax(br.cloneBrowser());
-                    br2.postPage(postLink, "fid_list=%5B" + fsid + "%5D&input=" + Encoding.urlEncode(code) + "&vcode=" + captchaid);
+                    br2.postPage(postLink, postData + "&vcode_input=" + Encoding.urlEncode(code) + "&vcode_str=" + vcode_str);
                     captchaLink = getJson(br2, "img");
-                    if (captchaLink == null) {
+                    if (!br2.containsHTML("\"errno\":\\-20")) {
                         // success!
                         break;
                     } else if (i + 1 == repeat && captchaLink != null) {
@@ -210,7 +218,7 @@ public class PanBaiduCom extends PluginForHost {
                 }
             }
             if (br2.containsHTML("\"errno\":\\-20")) {
-                handlePluginBroken(downloadLink, "unknownerror20", 3);
+                throw new PluginException(LinkStatus.ERROR_CAPTCHA);
             } else if (br2.containsHTML("\"errno\":112")) {
                 handlePluginBroken(downloadLink, "unknownerror112", 3);
             }
@@ -218,14 +226,16 @@ public class PanBaiduCom extends PluginForHost {
             if (DLLINK == null) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
-            /* Not necessary */
-            DLLINK += "&cflg=" + new Random().nextInt(10000);
         }
 
         int maxChunks = 0;
         if (downloadLink.getBooleanProperty(NOCHUNKS, false)) {
             maxChunks = 1;
         }
+
+        // br.getCookies("http://baidu.com/").remove("max-age");
+        // br.getCookies("http://baidu.com/").remove("version");
+        // br.getCookies("http://baidu.com/").remove("PANWEB");
 
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, DLLINK, true, maxChunks);
         if (dl.getConnection().getContentType().contains("html") || dl.getConnection().getResponseCode() == 403) {
