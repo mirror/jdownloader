@@ -54,7 +54,9 @@ public class UzManTvCom extends PluginForHost {
             logger.log(Level.SEVERE, e.getMessage(), e);
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        if (result == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (result == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         return result.toString();
     }
 
@@ -65,6 +67,9 @@ public class UzManTvCom extends PluginForHost {
 
     private String getDllink() throws Exception {
         String dllink = br.getRegex("var \\$flv = encodeURIComponent\\(\"(http://[^<>\"]*?)\"\\)").getMatch(0);
+        if (dllink == null) {
+            dllink = br.getRegex("og:video\" content=\"(http://[^<>\"]*?)\">").getMatch(0);
+        }
         if (dllink == null) {
             String crypticID = br.getRegex("/getswf/(.*?)\"").getMatch(0);
             if (crypticID == null) {
@@ -92,9 +97,13 @@ public class UzManTvCom extends PluginForHost {
                     }
                 }
             }
-            if (videoID == null) return null;
+            if (videoID == null) {
+                return null;
+            }
             String ext = br.getRegex("ext=([a-z0-9]{2,5})\\&").getMatch(0);
-            if (ext == null) ext = "flv";
+            if (ext == null) {
+                ext = "flv";
+            }
             dllink = "http://st2.uzmantv.com/c/" + crypticID + "_" + videoID + "_" + execJS(getCorrectJsAdditional()) + "." + ext;
         }
         return dllink;
@@ -103,7 +112,9 @@ public class UzManTvCom extends PluginForHost {
     private String getCorrectJsAdditional() {
         String securedStuff = br.getRegex("var tok = (.*?);").getMatch(0);
         String allJs[] = br.getRegex("<script type=\"text/javascript\">(.*?)</script>").getColumn(0);
-        if (securedStuff == null && (allJs == null || allJs.length == 0)) return null;
+        if (securedStuff == null && (allJs == null || allJs.length == 0)) {
+            return null;
+        }
 
         int j = 0, bestMatch = 0, index = 0;
         for (int i = 0; i < allJs.length; i++) {
@@ -143,9 +154,13 @@ public class UzManTvCom extends PluginForHost {
     public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws Exception {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
-        if (downloadLink.getDownloadURL().matches(INVALIDLINKS)) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (downloadLink.getDownloadURL().matches(INVALIDLINKS)) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
         br.getPage(downloadLink.getDownloadURL());
-        if (br.containsHTML("(\">Sayfa bulunamadı|Buraya gelmek için tıkladığınız linkte bir sorun var gibi görünüyor\\. Çünkü maalesef UZMANTV'de böyle bir sayfa yok\\.)")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (br.containsHTML("(\">Sayfa bulunamadı|Buraya gelmek için tıkladığınız linkte bir sorun var gibi görünüyor\\. Çünkü maalesef UZMANTV'de böyle bir sayfa yok\\.)")) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
         String filename = br.getRegex("class=\"clear\"></div></div><h5>(.*?)</h5>").getMatch(0);
         if (filename == null) {
             filename = br.getRegex("class=\"soru_sel_txt\">(.*?)</div><div").getMatch(0);
@@ -154,11 +169,18 @@ public class UzManTvCom extends PluginForHost {
             }
         }
         DLLINK = getDllink();
-        if (filename == null || DLLINK == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        logger.info("filename = " + filename + ", dllink = " + DLLINK);
+        if (filename == null || DLLINK == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         filename = filename.trim();
         String ext = DLLINK.substring(DLLINK.length() - 4, DLLINK.length());
-        if (ext == null || ext.length() > 5) ext = ".mp4";
-        if (DLLINK.contains(".mp4")) ext = ".mp4";
+        if (ext == null || ext.length() > 5) {
+            ext = ".mp4";
+        }
+        if (DLLINK.contains(".mp4")) {
+            ext = ".mp4";
+        }
         downloadLink.setFinalFileName(filename.replaceAll("\\?$", "") + ext);
         DLLINK += DLLINKPART;
         Browser br2 = br.cloneBrowser();
@@ -167,10 +189,11 @@ public class UzManTvCom extends PluginForHost {
         URLConnectionAdapter con = null;
         try {
             con = br2.openGetConnection(DLLINK);
-            if (!con.getContentType().contains("html"))
+            if (!con.getContentType().contains("html")) {
                 downloadLink.setDownloadSize(con.getLongContentLength());
-            else
+            } else {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            }
             return AvailableStatus.TRUE;
         } finally {
             try {
