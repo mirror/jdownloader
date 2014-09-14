@@ -39,6 +39,7 @@ public class MotherLessCom extends PluginForHost {
     public static final String contentSubscriberOnly  = "The upload is subscriber only. You can subscribe to the member from their";
     public static final String contentSubscriberVideo = "Here's another video instead\\.";
     public static final String contentSubscriberImage = "Here's another image instead\\.";
+    public static final String contentFriendsOnly     = ">\\s*The content you are trying to view is for friends only\\.\\s*<";
     // offline can contain text which is displayed in contentScriber pages
     public static final String OFFLINE                = "Violated Site Terms of Use|The page you're looking for cannot be found|You will be redirected to";
     public static final String notOnlineYet           = "(This video is being processed and will be available shortly|This video will be available in (less than a minute|[0-9]+ minutes))";
@@ -68,6 +69,9 @@ public class MotherLessCom extends PluginForHost {
             } else {
                 br.getPage(link.getBrowserUrl());
             }
+        }
+        if (br.containsHTML(contentFriendsOnly)) {
+            throw new PluginException(LinkStatus.ERROR_FATAL, "Content is for friends only!");
         }
         br.getHeaders().put("Accept-Encoding", "identity");
         if ("video".equals(link.getStringProperty("dltype"))) {
@@ -206,6 +210,8 @@ public class MotherLessCom extends PluginForHost {
             } else if (br.containsHTML(jd.plugins.hoster.MotherLessCom.contentSubscriberOnly)) {
                 // requires account!
                 return AvailableStatus.UNCHECKABLE;
+            } else if (br.containsHTML(contentFriendsOnly)) {
+                return AvailableStatus.UNCHECKABLE;
             } else if (br.containsHTML(OFFLINE) || br.getHttpConnection().getResponseCode() == 404 || br.containsHTML("<img src=\"/images/icons.*/exclamation\\.png\" style=\"margin-top: -5px;\" />[\t\n\r ]+404")) {
                 // should be last
                 // links can go offline between the time of adding && download, also decrypter doesn't check found content, will happen
@@ -228,6 +234,8 @@ public class MotherLessCom extends PluginForHost {
             // links can go offline between the time of adding && download, also decrypter doesn't check found content, will happen here..
             if (br.containsHTML(OFFLINE) || br.getHttpConnection().getResponseCode() == 404 || br.containsHTML("<img src=\"/images/icons.*/exclamation\\.png\" style=\"margin-top: -5px;\" />[\t\n\r ]+404")) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            } else if (br.containsHTML(contentFriendsOnly)) {
+                return AvailableStatus.UNCHECKABLE;
             }
             getPictureLink();
             // No link there but link to the full picture -> Offline
