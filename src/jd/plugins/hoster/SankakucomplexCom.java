@@ -24,6 +24,7 @@ import jd.http.Browser;
 import jd.http.Browser.BrowserException;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
+import jd.parser.Regex;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
@@ -65,10 +66,7 @@ public class SankakucomplexCom extends PluginForHost {
         if (br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        String filename = br.getRegex("<a id=image\\-link class=full>[\t\n\r ]+<img alt=\"([^<>\"]*?)\"").getMatch(0);
-        if (filename == null) {
-            filename = br.getRegex("<title>([^<>\"]*?) \\| Sankaku Channel</title>").getMatch(0);
-        }
+        String filename = new Regex(downloadLink.getDownloadURL(), "(\\d+)$").getMatch(0);
         DLLINK = checkDirectLink(downloadLink, "directlink");
         if (DLLINK == null) {
             DLLINK = br.getRegex("<li>Original: <a href=\"(//[^<>\"]*?)\"").getMatch(0);
@@ -83,7 +81,10 @@ public class SankakucomplexCom extends PluginForHost {
         filename = Encoding.htmlDecode(filename);
         filename = filename.trim();
         filename = encodeUnicode(filename);
-        String ext = DLLINK.substring(DLLINK.lastIndexOf("."));
+        String ext = new Regex(DLLINK, "[a-z0-9]+(\\.[a-z]+)\\?\\d+$").getMatch(0);
+        if (ext == null) {
+            ext = DLLINK.substring(DLLINK.lastIndexOf("."));
+        }
         /* Make sure that we get a correct extension */
         if (ext == null || !ext.matches("\\.[A-Za-z0-9]{3,5}")) {
             ext = default_Extension;

@@ -103,6 +103,11 @@ public class SaveTvDecrypter extends PluginForDecrypt {
             return decryptedLinks;
         }
         crawler_DialogsDisabled = cfg.getBooleanProperty(CRAWLER_DISABLE_DIALOGS, false);
+        // if (apiActive()) {
+        // doSoapRequest("http://tempuri.org/IVideoArchive/SimpleParamsGetVideoArchiveList", "<sessionId i:type=\"d:string\">" + SESSIONID +
+        // "</sessionId><channelId>0</channelId><filterType>0</filterType><recordingState>0</recordingState><tvCategoryId>0</tvCategoryId><tvSubCategoryId>0</tvSubCategoryId><textSearchType>0</textSearchType><from>0</from><count>500</count>");
+        // } else {
+        // }
 
         grab_last_hours_num = getLongProperty(cfg, CRAWLER_LASTHOURS_COUNT, 0);
         tdifference_milliseconds = grab_last_hours_num * 60 * 60 * 1000;
@@ -153,7 +158,7 @@ public class SaveTvDecrypter extends PluginForDecrypt {
                     final String[] telecast_array = array_text.split("TelecastId=\\d+\"\\}\\},\\{");
 
                     for (final String singleid_information : telecast_array) {
-                        addID(singleid_information);
+                        addID_SITE(singleid_information);
                         added_entries++;
                     }
 
@@ -245,7 +250,7 @@ public class SaveTvDecrypter extends PluginForDecrypt {
         return decryptedLinks;
     }
 
-    private void addID(final String id_source) throws ParseException, DecrypterException {
+    private void addID_SITE(final String id_source) throws ParseException, DecrypterException {
         final String telecast_id = getJson(id_source, "ITELECASTID");
         final String telecast_url = "https://www.save.tv/STV/M/obj/archive/VideoArchiveDetails.cfm?TelecastId=" + telecast_id;
         final DownloadLink dl = createDownloadlink(telecast_url);
@@ -344,7 +349,7 @@ public class SaveTvDecrypter extends PluginForDecrypt {
 
     /**
      * Tries to return value of key from JSon response, from String source.
-     * 
+     *
      * @author raztoki
      * */
     private static String getJson(final String source, final String key) {

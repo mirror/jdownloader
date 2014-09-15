@@ -120,10 +120,9 @@ public class SaveTv extends PluginForHost {
     private boolean              ISADSFREEAVAILABLE                        = false;
 
     /* If this != null, API is in use */
-    private String               SESSIONID                                 = null;
+    private String               API_SESSIONID                             = null;
     private static final String  NORESUME                                  = "NORESUME";
     private static final String  NOCHUNKS                                  = "NOCHUNKS";
-    private DownloadLink         DLINK                                     = null;
 
     /* Other */
     private static Object        LOCK                                      = new Object();
@@ -199,14 +198,13 @@ public class SaveTv extends PluginForHost {
     /**
      * TODO: Known Bugs in API mode: API cannot differ between different video formats -> Cannot show any error in case user choice is not
      * available. --> NO FATAL bugs ---> Plugin will work fine with them!
-     * 
+     *
      * @property "category": 0 = undefined, 1 = movies,category: 2 = series, 3 = show, 7 = music
      */
 
     @SuppressWarnings({ "deprecation" })
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
-        DLINK = link;
         br.setFollowRedirects(true);
         link.setProperty("type", EXTENSION);
         /* Show telecast-ID in case it is offline or plugin is broken */
@@ -238,7 +236,10 @@ public class SaveTv extends PluginForHost {
             String api_date = null;
             String api_episodenumber = null;
             String stv_request_selected_format_value = api_get_format_request_value();
-            doSoapRequest("http://tempuri.org/IDownload/GetStreamingUrl", "<sessionId i:type=\"d:string\">" + SESSIONID + "</sessionId><telecastId i:type=\"d:int\">" + getTelecastId(link) + "</telecastId><telecastIdSpecified i:type=\"d:boolean\">true</telecastIdSpecified><recordingFormatId i:type=\"d:int\">" + stv_request_selected_format_value + "</recordingFormatId><adFree i:type=\"d:boolean\">1</adFree><adFreeSpecified i:type=\"d:boolean\">true</adFreeSpecified>");
+            // doSoapRequest("http://tempuri.org/ITelecast/GetTelecastDetail", "<sessionId i:type=\"d:string\">" + API_SESSIONID +
+            // "</sessionId><telecastIds xmlns:a=\"http://schemas.microsoft.com/2003/10/Serialization/Arrays\" xmlns:i=\"http://www.w3.org/2001/XMLSchema-instance\"><a:int>"
+            // + getTelecastId(link) + "</a:int></telecastIds><detailLevel>5</detailLevel>");
+            doSoapRequest("http://tempuri.org/IDownload/GetStreamingUrl", "<sessionId i:type=\"d:string\">" + API_SESSIONID + "</sessionId><telecastId i:type=\"d:int\">" + getTelecastId(link) + "</telecastId><telecastIdSpecified i:type=\"d:boolean\">true</telecastIdSpecified><recordingFormatId i:type=\"d:int\">" + stv_request_selected_format_value + "</recordingFormatId><adFree i:type=\"d:boolean\">1</adFree><adFreeSpecified i:type=\"d:boolean\">true</adFreeSpecified>");
             /* filesize = 0, filename = null - but we know, it is online */
             if (br.containsHTML(API_DL_IMPOSSIBLE)) {
                 link.getLinkStatus().setStatusText(DL_IMPOSSIBLE_USER_TEXT);
@@ -557,7 +558,7 @@ public class SaveTv extends PluginForHost {
             // logger.warning("FAILED!");
             // }
             /* Check if ads-free version is available */
-            doSoapRequest("http://tempuri.org/IVideoArchive/GetAdFreeState", "<sessionId>" + SESSIONID + "</sessionId><telecastId i:type=\"d:int\">" + getTelecastId(downloadLink) + "</telecastId><telecastIdSpecified i:type=\"d:boolean\">true</telecastIdSpecified>");
+            doSoapRequest("http://tempuri.org/IVideoArchive/GetAdFreeState", "<sessionId>" + API_SESSIONID + "</sessionId><telecastId i:type=\"d:int\">" + getTelecastId(downloadLink) + "</telecastId><telecastIdSpecified i:type=\"d:boolean\">true</telecastIdSpecified>");
             if (br.containsHTML("<a:IsAdFreeAvailable>false</a:IsAdFreeAvailable>")) {
                 downloadLink.getLinkStatus().setStatusText(ADSFREEANOTVAILABLE);
                 ISADSFREEAVAILABLE = false;
@@ -890,14 +891,14 @@ public class SaveTv extends PluginForHost {
 
     private void api_login(final Browser br, final Account account) throws IOException, PluginException {
         final String lang = System.getProperty("user.language");
-        SESSIONID = account.getStringProperty("sessionid", null);
+        API_SESSIONID = account.getStringProperty("sessionid", null);
         final long lastUse = getLongProperty(account, "lastuse", -1l);
         /* Only generate new sessionID if we have none or it's older than 6 hours */
-        if (SESSIONID == null || (System.currentTimeMillis() - lastUse) > 360000) {
+        if (API_SESSIONID == null || (System.currentTimeMillis() - lastUse) > 360000) {
             api_prepBrowser(br);
             doSoapRequest("http://tempuri.org/ISession/CreateSession", "<apiKey>" + Encoding.Base64Decode(APIKEY) + "</apiKey>");
-            SESSIONID = br.getRegex("<a:SessionId>([^<>\"]*?)</a:SessionId>").getMatch(0);
-            if (SESSIONID == null) {
+            API_SESSIONID = br.getRegex("<a:SessionId>([^<>\"]*?)</a:SessionId>").getMatch(0);
+            if (API_SESSIONID == null) {
                 if ("de".equalsIgnoreCase(lang)) {
                     throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nPlugin defekt, bitte den JDownloader Support kontaktieren!", PluginException.VALUE_ID_PREMIUM_DISABLE);
                 } else {
@@ -905,9 +906,9 @@ public class SaveTv extends PluginForHost {
                 }
             }
             account.setProperty("lastuse", System.currentTimeMillis());
-            account.setProperty("sessionid", SESSIONID);
+            account.setProperty("sessionid", API_SESSIONID);
         }
-        doSoapRequest("http://tempuri.org/IUser/Login", "<sessionId>" + SESSIONID + "</sessionId><username>" + account.getUser() + "</username><password>" + account.getPass() + "</password>");
+        doSoapRequest("http://tempuri.org/IUser/Login", "<sessionId>" + API_SESSIONID + "</sessionId><username>" + account.getUser() + "</username><password>" + account.getPass() + "</password>");
         if (!br.containsHTML("<a:HasPremiumStatus>true</a:HasPremiumStatus>")) {
             if ("de".equalsIgnoreCase(lang)) {
                 throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUngültiger Benutzername oder ungültiges Passwort!\r\nDu bist dir sicher, dass dein eingegebener Benutzername und Passwort stimmen? Versuche folgendes:\r\n1. Falls dein Passwort Sonderzeichen enthält, ändere es (entferne diese) und versuche es erneut!\r\n2. Gib deine Zugangsdaten per Hand (ohne kopieren/einfügen) ein.", PluginException.VALUE_ID_PREMIUM_DISABLE);
@@ -1001,7 +1002,7 @@ public class SaveTv extends PluginForHost {
 
     /**
      * Tries to return value of key from JSon response, from String source.
-     * 
+     *
      * @author raztoki
      * */
     private static String getJson(final String source, final String key) {
@@ -1060,12 +1061,12 @@ public class SaveTv extends PluginForHost {
      *            : Videos mit angewandter Schnittliste bevorzugen oder nicht
      */
     private void api_postDownloadPage(final DownloadLink dl, final String user_selected_video_quality, final String downloadWithoutAds) throws IOException {
-        doSoapRequest("http://tempuri.org/IDownload/GetStreamingUrl", "<sessionId i:type=\"d:string\">" + SESSIONID + "</sessionId><telecastId i:type=\"d:int\">" + getTelecastId(dl) + "</telecastId><telecastIdSpecified i:type=\"d:boolean\">true</telecastIdSpecified><recordingFormatId i:type=\"d:int\">" + user_selected_video_quality + "</recordingFormatId><recordingFormatIdSpecified i:type=\"d:boolean\">true</recordingFormatIdSpecified><adFree i:type=\"d:boolean\">false</adFree><adFreeSpecified i:type=\"d:boolean\">" + downloadWithoutAds + "</adFreeSpecified>");
+        doSoapRequest("http://tempuri.org/IDownload/GetStreamingUrl", "<sessionId i:type=\"d:string\">" + API_SESSIONID + "</sessionId><telecastId i:type=\"d:int\">" + getTelecastId(dl) + "</telecastId><telecastIdSpecified i:type=\"d:boolean\">true</telecastIdSpecified><recordingFormatId i:type=\"d:int\">" + user_selected_video_quality + "</recordingFormatId><recordingFormatIdSpecified i:type=\"d:boolean\">true</recordingFormatIdSpecified><adFree i:type=\"d:boolean\">false</adFree><adFreeSpecified i:type=\"d:boolean\">" + downloadWithoutAds + "</adFreeSpecified>");
     }
 
     /**
      * Deletes a desired telecastID.
-     * 
+     *
      * @param acc
      *            Account : The users' account which might be needed to log in in case the user uses the API
      * @param dl
@@ -1102,7 +1103,7 @@ public class SaveTv extends PluginForHost {
     }
 
     private boolean apiActive() {
-        return (SESSIONID != null && is_API_enabled());
+        return (API_SESSIONID != null && is_API_enabled());
     }
 
     public static long calculateFilesize(final String minutes) {
