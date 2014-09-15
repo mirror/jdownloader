@@ -364,9 +364,44 @@ public class Multi extends IExtraction {
         File tmp = null;
         String libID = null;
         try {
-            String s = System.getProperty("os.arch");
-            String s1 = System.getProperty("os.name").split(" ")[0];
-            libID = new StringBuilder().append(s1).append("-").append(s).toString();
+            switch (CrossSystem.OS.getFamily()) {
+            case LINUX:
+                switch (CrossSystem.getARCHFamily()) {
+                case ARM:
+                    if (CrossSystem.isRaspberryPi()) {
+                        libID = "Linux-armpi";
+                    } else {
+                        libID = "Linux-arm";
+                    }
+                    break;
+                case X86:
+                    if (CrossSystem.is64BitOperatingSystem()) {
+                        libID = "Linux-amd64";
+                    } else {
+                        libID = "Linux-i386";
+                    }
+                    break;
+                default:
+                    return false;
+                }
+                break;
+            case MAC:
+                if (CrossSystem.is64BitOperatingSystem()) {
+                    libID = "Mac-x86_64";
+                } else {
+                    libID = "Mac-i386";
+                }
+                break;
+            case WINDOWS:
+                if (CrossSystem.is64BitOperatingSystem()) {
+                    libID = "Windows-amd64";
+                } else {
+                    libID = "Windows-x86";
+                }
+                break;
+            default:
+                return false;
+            }
             logger.finer("Lib ID: " + libID);
             tmp = Application.getTempResource("7zip");
             try {
