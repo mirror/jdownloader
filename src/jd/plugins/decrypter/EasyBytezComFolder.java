@@ -61,6 +61,10 @@ public class EasyBytezComFolder extends PluginForDecrypt {
         prepBrowser(br);
         final String parameter = param.toString().replaceFirst("https?://", ((jd.plugins.hoster.EasyBytezCom) plugin).getProtocol());
         ((jd.plugins.hoster.EasyBytezCom) plugin).getPage(parameter);
+        if (((jd.plugins.hoster.EasyBytezCom) plugin).cbr.containsHTML(">\\s*No such user exist\\s*<")) {
+            logger.info("Invalid URL! " + parameter);
+            return decryptedLinks;
+        }
         if (((jd.plugins.hoster.EasyBytezCom) plugin).cbr.containsHTML(">\\s*Guest access not possible!\\s*<")) {
             // we only login when required!
             final boolean logged_in = getLogin();
