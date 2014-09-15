@@ -48,6 +48,8 @@ import jd.plugins.PluginForHost;
 import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
 
+import org.appwork.utils.StringUtils;
+
 /**
  * TODO: Remove after next big update of core to use the public static methods!
  */
@@ -607,11 +609,15 @@ public class DirectHTTP extends PluginForHost {
         } else {
             try {
                 urlConnection = br.openHeadConnection(downloadLink.getDownloadURL());
-            } catch (final Throwable e) {
+                if (urlConnection.getResponseCode() == 404 && StringUtils.contains(urlConnection.getHeaderField("Cache-Control"), "must-revalidate") && urlConnection.getHeaderField("Via") != null) {
+                    urlConnection.disconnect();
+                    urlConnection = br.openGetConnection(downloadLink.getDownloadURL());
+                }
+            } catch (final IOException e) {
                 if (urlConnection != null) {
                     urlConnection.disconnect();
                 }
-                urlConnection = br.openGetConnection(downloadLink.getDownloadURL());
+                throw e;
             }
         }
         return urlConnection;
@@ -874,7 +880,7 @@ public class DirectHTTP extends PluginForHost {
 
     /**
      * update this map to your needs
-     *
+     * 
      * @param mimeType
      * @return
      */
