@@ -126,7 +126,7 @@ public class CtDiskCom extends PluginForHost {
             if (hash_key == null) {
                 hash_key = br.getRegex("name=\"hash_key\" value=\"([^<>\"]*?)\"").getMatch(0);
             }
-            if (hash_key == null && free.hasInputFieldByName("hash_info")) {
+            if ((hash_key == null || hash_key.equals("")) && free.hasInputFieldByName("hash_info")) {
                 String tmp = free.getInputFieldByName("hash_info").getValue();
                 if (tmp != null) {
                     tmp = Encoding.htmlDecode(tmp);
@@ -145,7 +145,7 @@ public class CtDiskCom extends PluginForHost {
             if (hash_key != null) {
                 free.put("hash_key", hash_key);
             }
-            captcha = captcha + new Random().nextInt(999999999);
+            captcha += "0." + new Random().nextInt(999999999);
             String code = getCaptchaCode(captcha, downloadLink);
             free.put("randcode", code);
             br.submitForm(free);

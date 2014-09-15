@@ -44,14 +44,24 @@ public class RevisionThreeCom extends PluginForDecrypt {
         String parameter = param.toString();
         if (parameter.matches(INVALIDLINKS) || parameter.matches(INVALIDLINKS2)) {
             logger.info("Invalid link: " + parameter);
+            final DownloadLink offline = createDownloadlink("directhttp://" + parameter);
+            offline.setAvailable(false);
+            offline.setProperty("offline", true);
+            decryptedLinks.add(offline);
             return decryptedLinks;
         }
         br.getPage(parameter);
-        if (br.containsHTML("ey there\\! You look a little lo|404: Page Not Found<")) {
-            logger.info("Link offline: " + parameter);
+        if (br.containsHTML("ey there\\! You look a little lo|404: Page Not Found<") || br.getHttpConnection().getResponseCode() == 404) {
+            final DownloadLink offline = createDownloadlink("directhttp://" + parameter);
+            offline.setAvailable(false);
+            offline.setProperty("offline", true);
+            decryptedLinks.add(offline);
             return decryptedLinks;
         } else if (!br.getURL().matches(TYPE_NORMAL)) {
-            logger.info("Invalid link: " + parameter);
+            final DownloadLink offline = createDownloadlink("directhttp://" + parameter);
+            offline.setAvailable(false);
+            offline.setProperty("offline", true);
+            decryptedLinks.add(offline);
             return decryptedLinks;
         }
         String fpName = br.getRegex("<meta property=\"og:title\" content=\"([^<>\"]*?)\"").getMatch(0);

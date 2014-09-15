@@ -60,11 +60,11 @@ public class TwoHundredTwentyRo extends PluginForHost {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         br.getPage(downloadLink.getDownloadURL());
-        if (br.getURL().contains("err=cont_not_found") || br.containsHTML("class=\"err\"") || !br.containsHTML("id=\"player_content_wrap\"")) {
-            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        } else if (br.containsHTML("id=\"age_restricted_player\"")) {
+        if (br.containsHTML("id=\"age_restricted_player\"")) {
             downloadLink.getLinkStatus().setStatusText("Age restricted: Account needed to download this video");
             return AvailableStatus.TRUE;
+        } else if (br.getURL().contains("err=cont_not_found") || br.containsHTML("class=\"err\"") || !br.containsHTML("id=\"player_content_wrap\"")) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         String filename = br.getRegex("property=\"og:title\" content=\"([^<>\"]*?)\"").getMatch(0);
         DLLINK = br.getRegex("url[\t\n\r ]+:[\t\n\r ]+\\'(http[^<>\"]*?)\\'").getMatch(0);
