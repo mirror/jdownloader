@@ -33,7 +33,7 @@ import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 import jd.utils.JDUtilities;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "spankbang.com" }, urls = { "http://(www\\.)?(de\\.)?spankbang\\.com/[a-z0-9]+/video/" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "spankbang.com" }, urls = { "http://(www\\.)?([a-z]{2}\\.)?spankbang\\.com/[a-z0-9]+/video/" }, flags = { 0 })
 public class SpankBangCom extends PluginForDecrypt {
 
     public SpankBangCom(PluginWrapper wrapper) {
@@ -70,8 +70,9 @@ public class SpankBangCom extends PluginForDecrypt {
         final SubConfiguration cfg = SubConfiguration.getConfig(DOMAIN);
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         final boolean fastcheck = cfg.getBooleanProperty(FASTLINKCHECK, false);
-        PARAMETER = param.toString().replaceAll("http://(www\\.)?(de\\.)?spankbang\\.com/", "http://spankbang.com/");
+        PARAMETER = param.toString().replaceAll("http://(www\\.)?([a-z]{2}\\.)?spankbang\\.com/", "http://spankbang.com/");
         br.setFollowRedirects(true);
+        br.getHeaders().put("Accept-Language", "en");
         synchronized (ctrlLock) {
             if (!pluginLoaded.get()) {
                 // load plugin!
@@ -79,7 +80,7 @@ public class SpankBangCom extends PluginForDecrypt {
                 pluginLoaded.set(true);
             }
             br.getPage(PARAMETER);
-            if (br.getHttpConnection().getResponseCode() == 404) {
+            if (br.getHttpConnection().getResponseCode() == 404 || br.containsHTML(">this video is no longer available.<")) {
                 final DownloadLink dl = createDownloadlink("directhttp://" + PARAMETER);
                 dl.setProperty("offline", true);
                 decryptedLinks.add(dl);
