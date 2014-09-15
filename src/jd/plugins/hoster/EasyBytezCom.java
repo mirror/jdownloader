@@ -822,7 +822,7 @@ public class EasyBytezCom extends PluginForHost {
             }
             ai.setValidUntil(expire);
             if (!ai.isExpired()) {
-                isFree = true;
+                isFree = false;
                 account.setProperty("free", false);
                 ai.setStatus("Premium User");
                 account.setProperty("totalMaxSim", 20);
