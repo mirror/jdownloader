@@ -29,7 +29,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "androidfilehost.com" }, urls = { "http://(www\\.)?androidfilehost\\.com/\\?fid=\\d+" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "androidfilehost.com" }, urls = { "https?://(www\\.)?androidfilehost\\.com/\\?fid=\\d+" }, flags = { 0 })
 public class AndroidFileHostCom extends PluginForHost {
 
     public AndroidFileHostCom(PluginWrapper wrapper) {
@@ -41,19 +41,30 @@ public class AndroidFileHostCom extends PluginForHost {
         return "http://www.androidfilehost.com/terms-of-use.php";
     }
 
+    public void correctDownloadLink(final DownloadLink link) {
+        /* Forced https */
+        link.setUrlDownload(link.getDownloadURL().replace("http://", "https://"));
+    }
+
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         br.getPage(link.getDownloadURL());
-        if (br.containsHTML(">file not found")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (br.containsHTML(">file not found")) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
         final String filename = br.getRegex("id=\"filename\" value=\"([^<>\"]*?)\"").getMatch(0);
         final String filesize = br.getRegex("name=\"file_size\" id=\"file_size\" value=\"(\\d+)\"").getMatch(0);
-        if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (filename == null || filesize == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         link.setFinalFileName(Encoding.htmlDecode(filename.trim()));
         link.setDownloadSize(Long.parseLong(filesize));
         final String md5 = br.getRegex("<h4>md5</h4>[\t\n\r ]+<p><code>([a-f0-9]{32})</code>").getMatch(0);
-        if (md5 != null) link.setMD5Hash(md5.trim());
+        if (md5 != null) {
+            link.setMD5Hash(md5.trim());
+        }
         return AvailableStatus.TRUE;
     }
 
@@ -66,20 +77,31 @@ public class AndroidFileHostCom extends PluginForHost {
         final String tid = br.getRegex("name=\"tid\" id=\"tid\" value=\"([^<>\"]*?)\"").getMatch(0);
         final String download_id = br.getRegex("name=\"download_id\" id=\"download_id\" value=\"([^<>\"]*?)\"").getMatch(0);
         final String fid = new Regex(downloadLink.getDownloadURL(), "(\\d+)$").getMatch(0);
-        if (filesize == null || flid == null || hc == null || tid == null || download_id == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (filesize == null || flid == null || hc == null || tid == null || download_id == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         // sleep(10 * 1001l, downloadLink);
         br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
-        br.postPage("http://www.androidfilehost.com/libs/otf/mirrors.otf.php", "submit=submit&action=getdownloadmirrors&fid=" + fid);
+        br.postPage("https://www.androidfilehost.com/libs/otf/mirrors.otf.php", "submit=submit&action=getdownloadmirrors&fid=" + fid);
         final String[] adresses = br.getRegex("\"address\":\"([^<>\"]*?)\"").getColumn(0);
-        if (adresses == null || adresses.length == 0) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (adresses == null || adresses.length == 0) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         int position = 0;
-        if (adresses.length > 1) position = new Random().nextInt(adresses.length - 1);
+        if (adresses.length > 1) {
+            position = new Random().nextInt(adresses.length - 1);
+        }
         final String adress = adresses[position];
-        if (adress == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (adress == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         String dllink = "http://" + adress + "/download.php?fid=" + fid + "&registered=0&waittime=10&fid=" + fid + "&flid=" + flid + "&uid=&file_size=" + filesize + "&hc=" + hc + "&tid=" + tid + "&download_id=" + download_id + "&filename=" + downloadLink.getFinalFileName() + "&action=download";
         // Disabled chunks and resume because different downloadserver = different connection limits
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, false, 1);
         if (dl.getConnection().getContentType().contains("html")) {
+            if (dl.getConnection().getResponseCode() == 404) {
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 404", 3 * 60 * 1000l);
+            }
             br.followConnection();
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }

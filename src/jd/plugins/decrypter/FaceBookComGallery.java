@@ -157,8 +157,12 @@ public class FaceBookComGallery extends PluginForDecrypt {
                 decryptGroupsPhotos();
             } else {
                 // Should never happen
-                logger.warning("Unsupported linktype: " + parameter);
-                return null;
+                logger.info("Unsupported linktype: " + parameter);
+                final DownloadLink offline = createDownloadlink("directhttp://" + parameter);
+                offline.setAvailable(false);
+                offline.setProperty("offline", true);
+                decryptedLinks.add(offline);
+                return decryptedLinks;
             }
             if (decryptedLinks == null) {
                 logger.warning("Decrypter broken for link: " + PARAMETER);
@@ -226,8 +230,9 @@ public class FaceBookComGallery extends PluginForDecrypt {
             }
             boolean stop = false;
             logger.info("Decrypting page " + i + " of ??");
-            for (final String link : links) {
-                decryptedLinks.add(createDownloadlink(link.replace("facebook.com/", CRYPTLINK)));
+            for (String link : links) {
+                link = Encoding.htmlDecode(link);
+                decryptedLinks.add(createDownloadlink(link));
             }
             // currentMaxPicCount = max number of links per segment
             if (links.length < currentMaxPicCount) {

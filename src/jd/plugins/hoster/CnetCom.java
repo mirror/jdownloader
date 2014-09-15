@@ -49,10 +49,10 @@ public class CnetCom extends PluginForHost {
         if (br.containsHTML("(>Whoops\\! You broke the Internet\\!<|>No, really,  it looks like you clicked on a borked link)") || br.getURL().contains("/most-popular/")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        // External mirrors are of course not supported
-        if (br.containsHTML(">Visit Site<")) {
-            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        }
+        // // External mirrors are of course not supported
+        // if (br.containsHTML(">Visit Site<")) {
+        // throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        // }
         String filename = br.getRegex("<meta property=\"og:title\" content=\"([^<>\"]*?)\"").getMatch(0);
         if (filename == null) {
             filename = br.getRegex("<title>([^<>\"]*?) \\- CNET Download\\.com</title>").getMatch(0);
@@ -84,8 +84,14 @@ public class CnetCom extends PluginForHost {
     public void handleFree(final DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
         String dllink = null;
+        boolean ads_free = true;
         /* Try to get installer without adware */
-        final String continueLink = br.getRegex("<a href=\\'(http://[^<>\"]*?)\\' class=\"dln\\-a\">[\t\n\r ]+<span class=\"dln\\-cta\">Direct Download Link</span>").getMatch(0);
+        String continueLink = br.getRegex("<a href=\\'(http://[^<>\"]*?)\\' class=\"dln\\-a\">[\t\n\r ]+<span class=\"dln\\-cta\">Direct Download Link</span>").getMatch(0);
+        /* If not, we can only download the installer with ads */
+        if (continueLink == null) {
+            continueLink = br.getRegex("<a href=\\'(http://[^<>\"]*?)\\' class=\"dln\\-a\">[\t\n\r ]+<span class=\"dln\\-cta\">Download Now</span>").getMatch(0);
+            ads_free = false;
+        }
         if (continueLink == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
@@ -105,7 +111,11 @@ public class CnetCom extends PluginForHost {
             }
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        downloadLink.setFinalFileName(getFileNameFromHeader(dl.getConnection()));
+        String server_filename = getFileNameFromHeader(dl.getConnection());
+        if (!ads_free) {
+            server_filename = "BEWARE_OF_ADWARE_INSIDE_ISNTALLER_" + server_filename;
+        }
+        downloadLink.setFinalFileName(server_filename);
         dl.startDownload();
     }
 

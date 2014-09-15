@@ -53,6 +53,7 @@ public class SaveTvDecrypter extends PluginForDecrypt {
 
     /* Settings stuff */
     private final SubConfiguration cfg                      = SubConfiguration.getConfig("save.tv");
+    private final String           USEAPI                   = "USEAPI";
     private final String           CRAWLER_ENABLE_FASTER    = "CRAWLER_ENABLE_FASTER";
     private final boolean          FAST_LINKCHECK           = cfg.getBooleanProperty(CRAWLER_ENABLE_FASTER, false);
     private final String           CRAWLER_ACTIVATE         = "CRAWLER_ACTIVATE";
@@ -80,6 +81,11 @@ public class SaveTvDecrypter extends PluginForDecrypt {
     private int                    requestCount             = 1;
     private long                   time_crawl_started       = 0;
 
+    private Account                acc                      = null;
+    /* If this != null, API can be used */
+    private String                 API_SESSIONID            = null;
+    private String                 parameter                = null;
+
     /**
      * JD2 CODE: DO NOIT USE OVERRIDE FÒR COMPATIBILITY REASONS!!!!!
      */
@@ -89,87 +95,30 @@ public class SaveTvDecrypter extends PluginForDecrypt {
 
     @SuppressWarnings("deprecation")
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
-        final String parameter = param.toString();
+        parameter = param.toString();
         this.br.setFollowRedirects(true);
         if (!cfg.getBooleanProperty(CRAWLER_ACTIVATE, false)) {
             logger.info("dave.tv: Decrypting save.tv archives is disabled, doing nothing...");
             return decryptedLinks;
         }
         time_crawl_started = System.currentTimeMillis();
-        final PluginForHost hostPlugin = JDUtilities.getPluginForHost("save.tv");
-        final Account aa = AccountController.getInstance().getValidAccount(hostPlugin);
         if (!getUserLogin(false)) {
             logger.info("Failed to decrypt link because account is missing: " + parameter);
             return decryptedLinks;
         }
         crawler_DialogsDisabled = cfg.getBooleanProperty(CRAWLER_DISABLE_DIALOGS, false);
-        // if (apiActive()) {
-        // doSoapRequest("http://tempuri.org/IVideoArchive/SimpleParamsGetVideoArchiveList", "<sessionId i:type=\"d:string\">" + SESSIONID +
-        // "</sessionId><channelId>0</channelId><filterType>0</filterType><recordingState>0</recordingState><tvCategoryId>0</tvCategoryId><tvSubCategoryId>0</tvSubCategoryId><textSearchType>0</textSearchType><from>0</from><count>500</count>");
-        // } else {
-        // }
-
         grab_last_hours_num = getLongProperty(cfg, CRAWLER_LASTHOURS_COUNT, 0);
         tdifference_milliseconds = grab_last_hours_num * 60 * 60 * 1000;
-        boolean is_groups_enabled = !br.containsHTML("\"IRECORDINGFORMATID\"");
-        final boolean groups_enabled_by_user = is_groups_enabled;
+        final boolean allow_api_usage = false;
 
         try {
-            getPageSafe("https://www.save.tv/STV/M/obj/archive/JSON/VideoArchiveApi.cfm?iEntriesPerPage=1&iCurrentPage=1");
-            final String totalLinks = getJson(br.toString(), "ITOTALENTRIES");
-            if (totalLinks == null) {
-                logger.warning("Decrypter broken for link: " + parameter);
-                return decryptedLinks;
-            }
-            /* Save on account to display in account information */
-            aa.setProperty("acc_count_telecast_ids", totalLinks);
-            totalLinksNum = Integer.parseInt(totalLinks);
-            final BigDecimal bd = new BigDecimal((double) totalLinksNum / ENTRIES_PER_REQUEST);
-            requestCount = bd.setScale(0, BigDecimal.ROUND_UP).intValue();
-
-            int added_entries = 0;
-            boolean decryptAborted = false;
-
             try {
-                for (int i = 1; i <= requestCount; i++) {
-                    try {
-                        if (this.isAbort()) {
-                            decryptAborted = true;
-                            throw new DecrypterException("Decrypt aborted!");
-                        }
-                    } catch (final DecrypterException e) {
-                        // Not available in old 0.9.581 Stable
-                        if (decryptAborted) {
-                            throw e;
-                        }
-                    }
-
-                    logger.info("save.tv: Decrypting request " + i + " of " + requestCount);
-
-                    is_groups_enabled = !br.containsHTML("\"IRECORDINGFORMATID\"");
-                    if (is_groups_enabled) {
-                        /* Disable stupid groups setting to crawl faster and to make it work anyways */
-                        logger.info("Disabling groups setting");
-                        postPageSafe(this.br, "https://www.save.tv/STV/M/obj/user/submit/submitVideoArchiveOptions.cfm", "ShowGroupedVideoArchive=false");
-                        is_groups_enabled = false;
-                    }
-                    getPageSafe("https://www.save.tv/STV/M/obj/archive/JSON/VideoArchiveApi.cfm?iEntriesPerPage=" + ENTRIES_PER_REQUEST + "&iCurrentPage=" + i);
-                    final String array_text = br.getRegex("\"ARRVIDEOARCHIVEENTRIES\":\\[(\\{.*?\\})\\],\"ENABLEDEFAULTFORMATSETTINGS\"").getMatch(0);
-                    final String[] telecast_array = array_text.split("TelecastId=\\d+\"\\}\\},\\{");
-
-                    for (final String singleid_information : telecast_array) {
-                        addID_SITE(singleid_information);
-                        added_entries++;
-                    }
-
-                    if (added_entries == 0) {
-                        logger.info("save.tv. Can't find entries, stopping at request: " + i + " of " + requestCount);
-                        break;
-                    }
-                    logger.info("Found " + added_entries + " entries in request " + i + " of " + requestCount);
-                    continue;
+                if (cfg.getBooleanProperty(USEAPI, false) && API_SESSIONID != null && allow_api_usage) {
+                    api_doSoapRequest("http://tempuri.org/ITelecast/GetTelecastDetail", "<sessionId i:type=\"d:string\">" + API_SESSIONID + "</sessionId><telecastIds xmlns:a=\"http://schemas.microsoft.com/2003/10/Serialization/Arrays\" xmlns:i=\"http://www.w3.org/2001/XMLSchema-instance\"><a:int>" + "9237574" + "</a:int></telecastIds><detailLevel>1</detailLevel>");
+                    api_doSoapRequest("http://tempuri.org/IVideoArchive/SimpleParamsGetVideoArchiveList", "<sessionId i:type=\"d:string\">" + API_SESSIONID + "</sessionId><channelId>0</channelId><filterType>0</filterType><recordingState>0</recordingState><tvCategoryId>0</tvCategoryId><tvSubCategoryId>0</tvSubCategoryId><textSearchType>0</textSearchType><from>0</from><count>300</count>");
+                } else {
+                    site_decrypt_All();
                 }
-
             } catch (final DecrypterException edec) {
                 logger.info("Decrypt process aborted by user: " + parameter);
                 if (!crawler_DialogsDisabled) {
@@ -236,6 +185,65 @@ public class SaveTvDecrypter extends PluginForDecrypt {
             }
         }
 
+        return decryptedLinks;
+    }
+
+    private void site_decrypt_All() throws Exception {
+        boolean is_groups_enabled = !br.containsHTML("\"IRECORDINGFORMATID\"");
+        final boolean groups_enabled_by_user = is_groups_enabled;
+        getPageSafe("https://www.save.tv/STV/M/obj/archive/JSON/VideoArchiveApi.cfm?iEntriesPerPage=1&iCurrentPage=1");
+        final String totalLinks = getJson(br.toString(), "ITOTALENTRIES");
+        if (totalLinks == null) {
+            logger.warning("Decrypter broken for link: " + parameter);
+            return;
+        }
+        /* Save on account to display in account information */
+        acc.setProperty("acc_count_telecast_ids", totalLinks);
+        totalLinksNum = Integer.parseInt(totalLinks);
+        final BigDecimal bd = new BigDecimal((double) totalLinksNum / ENTRIES_PER_REQUEST);
+        requestCount = bd.setScale(0, BigDecimal.ROUND_UP).intValue();
+
+        int added_entries = 0;
+        boolean decryptAborted = false;
+
+        for (int i = 1; i <= requestCount; i++) {
+            try {
+                if (this.isAbort()) {
+                    decryptAborted = true;
+                    throw new DecrypterException("Decrypt aborted!");
+                }
+            } catch (final DecrypterException e) {
+                // Not available in old 0.9.581 Stable
+                if (decryptAborted) {
+                    throw e;
+                }
+            }
+
+            logger.info("save.tv: Decrypting request " + i + " of " + requestCount);
+
+            is_groups_enabled = !br.containsHTML("\"IRECORDINGFORMATID\"");
+            if (is_groups_enabled) {
+                /* Disable stupid groups setting to crawl faster and to make it work anyways */
+                logger.info("Disabling groups setting");
+                postPageSafe(this.br, "https://www.save.tv/STV/M/obj/user/submit/submitVideoArchiveOptions.cfm", "ShowGroupedVideoArchive=false");
+                is_groups_enabled = false;
+            }
+            getPageSafe("https://www.save.tv/STV/M/obj/archive/JSON/VideoArchiveApi.cfm?iEntriesPerPage=" + ENTRIES_PER_REQUEST + "&iCurrentPage=" + i);
+            final String array_text = br.getRegex("\"ARRVIDEOARCHIVEENTRIES\":\\[(\\{.*?\\})\\],\"ENABLEDEFAULTFORMATSETTINGS\"").getMatch(0);
+            final String[] telecast_array = array_text.split("TelecastId=\\d+\"\\}\\},\\{");
+
+            for (final String singleid_information : telecast_array) {
+                addID_site(singleid_information);
+                added_entries++;
+            }
+
+            if (added_entries == 0) {
+                logger.info("save.tv. Can't find entries, stopping at request: " + i + " of " + requestCount);
+                break;
+            }
+            logger.info("Found " + added_entries + " entries in request " + i + " of " + requestCount);
+            continue;
+        }
         try {
             if (groups_enabled_by_user && !is_groups_enabled) {
                 /* Enable groups setting again because user had it enabled before */
@@ -246,11 +254,9 @@ public class SaveTvDecrypter extends PluginForDecrypt {
         } catch (final Throwable settingfail) {
             logger.info("Failed to re-enable groups setting");
         }
-
-        return decryptedLinks;
     }
 
-    private void addID_SITE(final String id_source) throws ParseException, DecrypterException {
+    private void addID_site(final String id_source) throws ParseException, DecrypterException {
         final String telecast_id = getJson(id_source, "ITELECASTID");
         final String telecast_url = "https://www.save.tv/STV/M/obj/archive/VideoArchiveDetails.cfm?TelecastId=" + telecast_id;
         final DownloadLink dl = createDownloadlink(telecast_url);
@@ -286,17 +292,17 @@ public class SaveTvDecrypter extends PluginForDecrypt {
     @SuppressWarnings("deprecation")
     private boolean getUserLogin(final boolean force) throws Exception {
         final PluginForHost hostPlugin = JDUtilities.getPluginForHost("save.tv");
-        final Account aa = AccountController.getInstance().getValidAccount(hostPlugin);
-        if (aa == null) {
+        acc = AccountController.getInstance().getValidAccount(hostPlugin);
+        if (acc == null) {
             return false;
         }
         try {
-            jd.plugins.hoster.SaveTv.site_login(this.br, aa, force);
+            jd.plugins.hoster.SaveTv.site_login(this.br, acc, force);
         } catch (final PluginException e) {
-
-            aa.setValid(false);
+            acc.setValid(false);
             return false;
         }
+        API_SESSIONID = acc.getStringProperty("sessionid", null);
         return true;
     }
 
@@ -365,6 +371,20 @@ public class SaveTvDecrypter extends PluginForDecrypt {
             result = result.replaceAll("\\\\/", "/");
         }
         return result;
+    }
+
+    /**
+     * @param soapAction
+     *            : The soap link which should be accessed
+     * @param soapPost
+     *            : The soap post data
+     */
+    private void api_doSoapRequest(final String soapAction, final String soapPost) throws IOException {
+        final String method = new Regex(soapAction, "([A-Za-z0-9]+)$").getMatch(0);
+        br.getHeaders().put("SOAPAction", soapAction);
+        br.getHeaders().put("Content-Type", "text/xml");
+        final String postdata = "<?xml version=\"1.0\" encoding=\"utf-8\"?><v:Envelope xmlns:i=\"http://www.w3.org/2001/XMLSchema-instance\" xmlns:d=\"http://www.w3.org/2001/XMLSchema\" xmlns:c=\"http://schemas.xmlsoap.org/soap/encoding/\" xmlns:v=\"http://schemas.xmlsoap.org/soap/envelope/\"><v:Header /><v:Body><" + method + " xmlns=\"http://tempuri.org/\" id=\"o0\" c:root=\"1\">" + soapPost + "</" + method + "></v:Body></v:Envelope>";
+        br.postPageRaw("http://api.save.tv/v2/Api.svc", postdata);
     }
 
     private void handleEndDialogs() {
