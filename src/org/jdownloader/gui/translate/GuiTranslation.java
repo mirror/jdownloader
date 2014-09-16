@@ -5179,4 +5179,7 @@ public interface GuiTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "Open origin address in browser (%s1)" })
     String UrlColumn_onDoubleClick_object_open_origin(String url);
 
+    @Default(lngs = { "en" }, values = { "Installation Directory:" })
+    String jd_gui_swing_components_AboutDialog_installdir();
+
 }
