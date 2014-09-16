@@ -92,7 +92,8 @@ public class FileStormTo extends PluginForHost {
 
     /* DEV NOTES */
     // XfileSharingProBasic Version 2.6.6.1
-    // mods: SSL setting, correctDownloadLink[Add .html to the end of the link], waitTime[Changed RegEx]
+    // mods: SSL setting, correctDownloadLink[Add .html to the end of the link], waitTime[Changed RegEx], doFree[Changed plaintext captcha
+    // RegEx]
     // limit-info:
     // protocol: no https
     // captchatype: null
@@ -295,7 +296,6 @@ public class FileStormTo extends PluginForHost {
                     }
                 }
                 /* Captcha START */
-                System.out.println(correctedBR);
                 if (correctedBR.contains("captchaBG.gif)")) {
                     logger.info("Detected captcha method \"plaintext captchas\" for this host");
                     /* Captcha method by ManiacMansion */
