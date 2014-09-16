@@ -6,12 +6,12 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
-import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicLong;
 
 import jd.SecondLevelLaunch;
 import jd.controlling.downloadcontroller.DownloadController;
@@ -34,8 +34,6 @@ import org.appwork.utils.logging2.LogSource;
 import org.jdownloader.controlling.FileCreationManager;
 import org.jdownloader.logging.LogController;
 import org.jdownloader.plugins.FinalLinkState;
-import org.jdownloader.plugins.controller.LazyPlugin;
-import org.jdownloader.plugins.controller.LazyPluginClass;
 import org.jdownloader.plugins.controller.PluginClassLoader.PluginClassLoaderChild;
 import org.jdownloader.plugins.controller.PluginController;
 import org.jdownloader.plugins.controller.PluginInfo;
@@ -89,12 +87,13 @@ public class HostPluginController extends PluginController<PluginForHost> {
         LogController.setRebirthLogger(logger);
         final long completeTimeStamp = System.currentTimeMillis();
         List<LazyHostPlugin> finalPlugins = null;
+        final AtomicLong lastModification = new AtomicLong(-1l);
         try {
             List<LazyHostPlugin> updateCache = null;
             /* try to load from cache */
             long timeStamp = System.currentTimeMillis();
             try {
-                updateCache = loadFromCache();
+                updateCache = loadFromCache(lastModification);
             } catch (Throwable e) {
                 logger.log(e);
                 logger.severe("@HostPluginController: cache failed!");
@@ -107,8 +106,11 @@ public class HostPluginController extends PluginController<PluginForHost> {
             timeStamp = System.currentTimeMillis();
             try {
                 /* do a fresh scan */
-                plugins = update(logger, updateCache);
+                plugins = update(logger, updateCache, lastModification);
             } catch (Throwable e) {
+                if (lastModification != null) {
+                    lastModification.set(-1l);
+                }
                 logger.log(e);
                 logger.severe("@HostPluginController: update failed!");
             } finally {
@@ -124,12 +126,29 @@ public class HostPluginController extends PluginController<PluginForHost> {
             }
             timeStamp = System.currentTimeMillis();
             try {
-                Collections.sort(plugins, new Comparator<LazyHostPlugin>() {
+                if (false) {
+                    Collections.sort(plugins, new Comparator<LazyHostPlugin>() {
+                        public final boolean smallestCharacter(char a, char b) {
+                            return Character.toLowerCase(a) < Character.toLowerCase(b);
+                        }
 
-                    public int compare(LazyHostPlugin o1, LazyHostPlugin o2) {
-                        return o1.getDisplayName().compareTo(o2.getDisplayName());
-                    }
-                });
+                        public int compare(LazyHostPlugin o1, LazyHostPlugin o2) {
+                            char a = o1.getDisplayName().charAt(0);
+                            char b = o2.getDisplayName().charAt(0);
+                            if (a == b) {
+                                return 0;
+                            }
+                            return smallestCharacter(a, b) ? -1 : 1;
+                        }
+                    });
+                } else {
+                    Collections.sort(plugins, new Comparator<LazyHostPlugin>() {
+
+                        public int compare(LazyHostPlugin o1, LazyHostPlugin o2) {
+                            return o1.getDisplayName().compareTo(o2.getDisplayName());
+                        }
+                    });
+                }
             } catch (final Throwable e) {
                 logger.log(e);
                 logger.severe("@HostPluginController: sort failed!");
@@ -179,7 +198,7 @@ public class HostPluginController extends PluginController<PluginForHost> {
                 final List<LazyHostPlugin> plugins = finalPlugins;
                 final Thread saveThread = new Thread("@HostPluginController:save") {
                     public void run() {
-                        save(plugins);
+                        save(plugins, lastModification);
                     };
                 };
                 saveThread.setDaemon(true);
@@ -267,10 +286,10 @@ public class HostPluginController extends PluginController<PluginForHost> {
         return list;
     }
 
-    private List<LazyHostPlugin> loadFromCache() throws IOException {
+    private List<LazyHostPlugin> loadFromCache(final AtomicLong lastFolderModification) throws IOException {
         final boolean readL = lock.readLock();
         try {
-            return LazyHostPluginCache.read(Application.getTempResource(getCache()));
+            return LazyHostPluginCache.read(Application.getTempResource(getCache()), lastFolderModification);
         } finally {
             lock.readUnlock(readL);
         }
@@ -282,23 +301,9 @@ public class HostPluginController extends PluginController<PluginForHost> {
         return new long[] { infos.interfaceVersion(), Formatter.getRevision(infos.revision()) };
     }
 
-    private List<LazyHostPlugin> update(LogSource logger, List<LazyHostPlugin> updateCache) throws Exception {
-        final Map<LazyPluginClass, ArrayList<LazyPlugin>> updateCacheMap;
-        if (updateCache != null && updateCache.size() > 0) {
-            updateCacheMap = new HashMap<LazyPluginClass, ArrayList<LazyPlugin>>();
-            for (final LazyHostPlugin cachedPlugin : updateCache) {
-                ArrayList<LazyPlugin> list = updateCacheMap.get(cachedPlugin.getLazyPluginClass());
-                if (list == null) {
-                    list = new ArrayList<LazyPlugin>();
-                    updateCacheMap.put(cachedPlugin.getLazyPluginClass(), list);
-                }
-                list.add(cachedPlugin);
-            }
-        } else {
-            updateCacheMap = null;
-        }
+    private List<LazyHostPlugin> update(LogSource logger, final List<LazyHostPlugin> updateCache, final AtomicLong lastFolderModification) throws Exception {
         final List<LazyHostPlugin> retList = new ArrayList<LazyHostPlugin>();
-        for (PluginInfo<PluginForHost> pluginInfo : scan(logger, "jd/plugins/hoster", updateCacheMap)) {
+        for (PluginInfo<PluginForHost> pluginInfo : scan(logger, "jd/plugins/hoster", updateCache, lastFolderModification)) {
             if (pluginInfo.getLazyPlugin() != null) {
                 final LazyHostPlugin plugin = (LazyHostPlugin) pluginInfo.getLazyPlugin();
                 retList.add(plugin);
@@ -423,11 +428,11 @@ public class HostPluginController extends PluginController<PluginForHost> {
         cacheInvalidated.set(false);
     }
 
-    private void save(List<LazyHostPlugin> save) {
+    private void save(List<LazyHostPlugin> save, final AtomicLong lastFolderModification) {
         lock.writeLock();
         final File cache = Application.getTempResource(getCache());
         try {
-            LazyHostPluginCache.write(save, cache);
+            LazyHostPluginCache.write(save, cache, lastFolderModification);
         } catch (final IOException e) {
             e.printStackTrace();
             cache.delete();

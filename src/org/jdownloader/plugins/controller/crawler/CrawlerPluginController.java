@@ -5,10 +5,9 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicLong;
 
 import jd.nutils.Formatter;
 import jd.plugins.DecrypterPlugin;
@@ -22,7 +21,6 @@ import org.appwork.utils.ModifyLock;
 import org.appwork.utils.logging2.LogSource;
 import org.jdownloader.controlling.FileCreationManager;
 import org.jdownloader.logging.LogController;
-import org.jdownloader.plugins.controller.LazyPlugin;
 import org.jdownloader.plugins.controller.LazyPluginClass;
 import org.jdownloader.plugins.controller.PluginClassLoader.PluginClassLoaderChild;
 import org.jdownloader.plugins.controller.PluginController;
@@ -95,12 +93,13 @@ public class CrawlerPluginController extends PluginController<PluginForDecrypt> 
             LogController.setRebirthLogger(logger);
             List<LazyCrawlerPlugin> finalPlugins = null;
             final long completeTimeStamp = System.currentTimeMillis();
+            final AtomicLong lastModification = new AtomicLong(-1l);
             try {
                 List<LazyCrawlerPlugin> updateCache = null;
                 /* try to load from cache */
                 long timeStamp = System.currentTimeMillis();
                 try {
-                    updateCache = loadFromCache();
+                    updateCache = loadFromCache(lastModification);
                 } catch (Throwable e) {
                     logger.log(e);
                     logger.severe("@CrawlerPluginController: cache failed!");
@@ -113,8 +112,11 @@ public class CrawlerPluginController extends PluginController<PluginForDecrypt> 
                 timeStamp = System.currentTimeMillis();
                 try {
                     /* do a fresh scan */
-                    plugins = update(logger, updateCache);
+                    plugins = update(logger, updateCache, lastModification);
                 } catch (Throwable e) {
+                    if (lastModification != null) {
+                        lastModification.set(-1l);
+                    }
                     logger.log(e);
                     logger.severe("@CrawlerPluginController: update failed!");
                 } finally {
@@ -173,7 +175,7 @@ public class CrawlerPluginController extends PluginController<PluginForDecrypt> 
                     final List<LazyCrawlerPlugin> plugins = finalPlugins;
                     Thread saveThread = new Thread("@CrawlerPluginController:save") {
                         public void run() {
-                            save(plugins);
+                            save(plugins, lastModification);
                         };
                     };
                     saveThread.setDaemon(true);
@@ -185,32 +187,18 @@ public class CrawlerPluginController extends PluginController<PluginForDecrypt> 
         }
     }
 
-    private List<LazyCrawlerPlugin> loadFromCache() throws IOException {
+    private List<LazyCrawlerPlugin> loadFromCache(final AtomicLong lastFolderModification) throws IOException {
         final boolean readL = lock.readLock();
         try {
-            return LazyCrawlerPluginCache.read(Application.getTempResource(getCache()));
+            return LazyCrawlerPluginCache.read(Application.getTempResource(getCache()), lastFolderModification);
         } finally {
             lock.readUnlock(readL);
         }
     }
 
-    private List<LazyCrawlerPlugin> update(final LogSource logger, final List<LazyCrawlerPlugin> updateCache) throws Exception {
-        final Map<LazyPluginClass, ArrayList<LazyPlugin>> updateCacheMap;
-        if (updateCache != null && updateCache.size() > 0) {
-            updateCacheMap = new HashMap<LazyPluginClass, ArrayList<LazyPlugin>>();
-            for (final LazyCrawlerPlugin cachedPlugin : updateCache) {
-                ArrayList<LazyPlugin> list = updateCacheMap.get(cachedPlugin.getLazyPluginClass());
-                if (list == null) {
-                    list = new ArrayList<LazyPlugin>();
-                    updateCacheMap.put(cachedPlugin.getLazyPluginClass(), list);
-                }
-                list.add(cachedPlugin);
-            }
-        } else {
-            updateCacheMap = null;
-        }
+    private List<LazyCrawlerPlugin> update(final LogSource logger, final List<LazyCrawlerPlugin> updateCache, final AtomicLong lastFolderModification) throws Exception {
         final ArrayList<LazyCrawlerPlugin> retList = new ArrayList<LazyCrawlerPlugin>();
-        for (final PluginInfo<PluginForDecrypt> pluginInfo : scan(logger, "jd/plugins/decrypter", updateCacheMap)) {
+        for (final PluginInfo<PluginForDecrypt> pluginInfo : scan(logger, "jd/plugins/decrypter", updateCache, lastFolderModification)) {
             if (pluginInfo.getLazyPlugin() != null) {
                 final LazyCrawlerPlugin plugin = (LazyCrawlerPlugin) pluginInfo.getLazyPlugin();
                 retList.add(plugin);
@@ -289,11 +277,11 @@ public class CrawlerPluginController extends PluginController<PluginForDecrypt> 
         return retList;
     }
 
-    private void save(List<LazyCrawlerPlugin> save) {
+    private void save(List<LazyCrawlerPlugin> save, final AtomicLong lastFolderModification) {
         lock.writeLock();
         final File cache = Application.getTempResource(getCache());
         try {
-            LazyCrawlerPluginCache.write(save, cache);
+            LazyCrawlerPluginCache.write(save, cache, lastFolderModification);
         } catch (final IOException e) {
             e.printStackTrace();
             cache.delete();

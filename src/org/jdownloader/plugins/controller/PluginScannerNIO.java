@@ -10,7 +10,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
+import java.util.concurrent.atomic.AtomicLong;
 
 import jd.plugins.Plugin;
 
@@ -30,25 +30,41 @@ public class PluginScannerNIO<T extends Plugin> {
         this.pluginController = pluginController;
     }
 
-    protected List<PluginInfo<T>> scan(LogSource logger, String hosterpath, Map<LazyPluginClass, ArrayList<LazyPlugin>> pluginCache) throws Exception {
+    protected List<PluginInfo<T>> scan(LogSource logger, String hosterpath, final List<? extends LazyPlugin> pluginCache, final AtomicLong lastFolderModification) throws Exception {
         DirectoryStream<Path> stream = null;
-        PluginClassLoaderChild cl = null;
         final ArrayList<PluginInfo<T>> ret = new ArrayList<PluginInfo<T>>();
-        MessageDigest md = null;
-        final String pkg = hosterpath.replace("/", ".");
-        final byte[] mdCache = new byte[32767];
-        final HashMap<String, LazyPluginClass> lazyPluginClassMap;
-        if (pluginCache != null && pluginCache.size() > 0) {
-            lazyPluginClassMap = new HashMap<String, LazyPluginClass>();
-            for (final LazyPluginClass lazyPluginClass : pluginCache.keySet()) {
-                lazyPluginClassMap.put(lazyPluginClass.getClassName() + ".class", lazyPluginClass);
-            }
-        } else {
-            lazyPluginClassMap = null;
-        }
         final long timeStamp = System.currentTimeMillis();
         try {
-            stream = Files.newDirectoryStream(Application.getRootByClass(jd.SecondLevelLaunch.class, hosterpath).toPath(), "*.class");
+            long lastModified = lastFolderModification != null ? lastFolderModification.get() : -1;
+            final Path folder = Application.getRootByClass(jd.SecondLevelLaunch.class, hosterpath).toPath();
+            final long lastFolderModified = Files.readAttributes(folder, BasicFileAttributes.class).lastModifiedTime().toMillis();
+            if (lastModified > 0 && lastFolderModified == lastModified && pluginCache != null && pluginCache.size() > 0) {
+                for (final LazyPlugin lazyPlugin : pluginCache) {
+                    final PluginInfo<T> pluginInfo = new PluginInfo<T>(lazyPlugin.getLazyPluginClass(), null);
+                    pluginInfo.setLazyPlugin(lazyPlugin);
+                    ret.add(pluginInfo);
+                }
+                return ret;
+            }
+            PluginClassLoaderChild cl = null;
+            MessageDigest md = null;
+            final String pkg = hosterpath.replace("/", ".");
+            final byte[] mdCache = new byte[32767];
+            final HashMap<String, List<LazyPlugin>> lazyPluginClassMap;
+            if (pluginCache != null && pluginCache.size() > 0) {
+                lazyPluginClassMap = new HashMap<String, List<LazyPlugin>>();
+                for (final LazyPlugin lazyPlugin : pluginCache) {
+                    List<LazyPlugin> list = lazyPluginClassMap.get(lazyPlugin.getLazyPluginClass().getClassName());
+                    if (list == null) {
+                        list = new ArrayList<LazyPlugin>();
+                        lazyPluginClassMap.put(lazyPlugin.getLazyPluginClass().getClassName(), list);
+                    }
+                    list.add(lazyPlugin);
+                }
+            } else {
+                lazyPluginClassMap = null;
+            }
+            stream = Files.newDirectoryStream(folder, "*.class");
             for (final Path path : stream) {
                 final String pathFileName = path.getFileName().toString();
                 final String className = pathFileName.substring(0, pathFileName.length() - 6);
@@ -56,9 +72,10 @@ public class PluginScannerNIO<T extends Plugin> {
                     byte[] sha256 = null;
                     final BasicFileAttributes pathAttr = Files.readAttributes(path, BasicFileAttributes.class);
                     if (lazyPluginClassMap != null) {
-                        final LazyPluginClass lazyPluginClass = lazyPluginClassMap.get(pathFileName);
+                        final List<LazyPlugin> lazyPlugins = lazyPluginClassMap.get(pathFileName);
+                        final LazyPluginClass lazyPluginClass = lazyPlugins.get(0).getLazyPluginClass();
                         if (lazyPluginClass != null && (lazyPluginClass.getLastModified() == pathAttr.lastModifiedTime().toMillis() || ((md = MessageDigest.getInstance("SHA-256")) != null && (sha256 = PluginController.getFileHashBytes(path.toFile(), md, mdCache)) != null && Arrays.equals(sha256, lazyPluginClass.getSha256())))) {
-                            for (final LazyPlugin lazyPlugin : pluginCache.get(lazyPluginClass)) {
+                            for (final LazyPlugin lazyPlugin : lazyPlugins) {
                                 // logger.finer("Cached: " + className + "|" + lazyPlugin.getDisplayName() + "|" +
                                 // lazyPluginClass.getRevision());
                                 final PluginInfo<T> pluginInfo = new PluginInfo<T>(lazyPluginClass, null);
