@@ -2035,7 +2035,7 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
             loopCounter = 0;
             selector.setForcedOnly(false);
             /* then process normal activationRequests */
-            while (abort == false && getActiveDownloads() < maxConcurrentNormal && loopCounter < maxConcurrentNormal) {
+            while (abort == false && ((getActiveDownloads() < maxConcurrentNormal && loopCounter < maxConcurrentNormal) || checkForAdditionalDownloadSlots(session))) {
                 try {
                     if (abort || (abort = (!this.newDLStartAllowed(session) || session.isStopMarkReached()))) {
                         break;
@@ -2053,6 +2053,43 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
             finalize(selector);
         }
         return ret;
+    }
+
+    private boolean checkForAdditionalDownloadSlots(DownloadSession session2) {
+        try {
+            long speed = getDownloadSpeedManager().getSpeedMeter().getSpeedMeter();
+            if (speed < config.getAutoMaxDownloadsSpeedLimit()) {
+                int speedlijmit = config.isDownloadSpeedLimitEnabled() ? config.getDownloadSpeedLimit() : 0;
+                if (speedlijmit > 0 && speed > speedlijmit * 0.8) {
+                    // do not start a new download: speedlimit is set, and the speed is almost at the limit
+                    return false;
+                }
+                long latestStart = 0;
+                for (SingleDownloadController s : getRunningDownloadLinks()) {
+                    latestStart = Math.max(latestStart, s.getStartTimestamp());
+                    long left = s.getDownloadLink().getView().getBytesTotal() - s.getDownloadLink().getView().getBytesLoaded();
+                    if (left <= 0) {
+                        // download done - like mega.
+
+                        continue;
+                    }
+                    if (s.getDownloadLink().getView().getSpeedBps() <= 0) {
+                        // do not start a new download: not all downloads are running.
+                        return false;
+                    }
+                }
+                if (System.currentTimeMillis() - latestStart < 10000) {
+                    // do not start a new download: latest start is less then 5 secs ago
+                    return false;
+                }
+                return true;
+            }
+            // just to be sure
+        } catch (Throwable e) {
+            logger.log(e);
+        }
+        // do not start a new download.
+        return false;
     }
 
     private void finalize(DownloadLinkCandidateSelector selector) {
