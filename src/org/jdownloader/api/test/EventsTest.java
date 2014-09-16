@@ -29,7 +29,7 @@ public class EventsTest extends Test {
         // final String event = Dialog.getInstance().showInputDialog("Subscribe to");
         // final String exclude = Dialog.getInstance().showInputDialog("Exclude");
 
-        final String event = "downloads\\..+";
+        final String event = "downloads";
         final String exclude = "";
         ed.addListener(new EventsDistributorListener() {
 

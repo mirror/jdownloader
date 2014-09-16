@@ -162,7 +162,7 @@ public class ChannelCollector {
     private HashMap<String, String> dupeCache = new HashMap<String, String>();
 
     public boolean updateDupeCache(String string, HashMap<String, Object> copy) {
-        String id = Hash.getMD5(JSonStorage.serializeToJson(copy));
+        String id = copy == null ? null : Hash.getMD5(JSonStorage.serializeToJson(copy));
         if (StringUtils.equals(id, dupeCache.put(string, id))) {
             return false;
         }
