@@ -72,16 +72,18 @@ public class PluginScannerFiles<T extends Plugin> {
                         lastModified = path.lastModified();
                         if (lazyPluginClassMap != null) {
                             final List<LazyPlugin> lazyPlugins = lazyPluginClassMap.get(className);
-                            final LazyPluginClass lazyPluginClass = lazyPlugins.get(0).getLazyPluginClass();
-                            if (lazyPluginClass != null && (lazyPluginClass.getLastModified() == lastModified || ((md = MessageDigest.getInstance("SHA-256")) != null && (sha256 = PluginController.getFileHashBytes(path, md, mdCache)) != null && Arrays.equals(sha256, lazyPluginClass.getSha256())))) {
-                                for (final LazyPlugin lazyPlugin : lazyPlugins) {
-                                    // logger.finer("Cached: " + className + "|" + lazyPlugin.getDisplayName() + "|" +
-                                    // lazyPluginClass.getRevision());
-                                    final PluginInfo<T> pluginInfo = new PluginInfo<T>(lazyPluginClass, null);
-                                    pluginInfo.setLazyPlugin(lazyPlugin);
-                                    ret.add(pluginInfo);
+                            if (lazyPlugins != null && lazyPlugins.size() > 0) {
+                                final LazyPluginClass lazyPluginClass = lazyPlugins.get(0).getLazyPluginClass();
+                                if (lazyPluginClass != null && (lazyPluginClass.getLastModified() == lastModified || ((md = MessageDigest.getInstance("SHA-256")) != null && (sha256 = PluginController.getFileHashBytes(path, md, mdCache)) != null && Arrays.equals(sha256, lazyPluginClass.getSha256())))) {
+                                    for (final LazyPlugin lazyPlugin : lazyPlugins) {
+                                        // logger.finer("Cached: " + className + "|" + lazyPlugin.getDisplayName() + "|" +
+                                        // lazyPluginClass.getRevision());
+                                        final PluginInfo<T> pluginInfo = new PluginInfo<T>(lazyPluginClass, null);
+                                        pluginInfo.setLazyPlugin(lazyPlugin);
+                                        ret.add(pluginInfo);
+                                    }
+                                    continue;
                                 }
-                                continue;
                             }
                         }
                         Class<T> pluginClass = null;
