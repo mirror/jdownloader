@@ -134,7 +134,7 @@ public interface GeneralSettings extends ConfigInterface {
     int getDownloadSpeedLimit();
 
     @AboutConfig
-    @DescriptionForConfigEntry("If >0 JD will start addiational downloads as long as the total speed is below this value")
+    @DescriptionForConfigEntry("If >0, JD will start additional downloads when total speed is below this value")
     @DefaultIntValue(0)
     @SpinnerValidator(min = -1, max = Integer.MAX_VALUE)
     int getAutoMaxDownloadsSpeedLimit();
