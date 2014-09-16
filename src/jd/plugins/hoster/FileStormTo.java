@@ -295,10 +295,15 @@ public class FileStormTo extends PluginForHost {
                     }
                 }
                 /* Captcha START */
-                if (correctedBR.contains(";background:#ccc;text-align")) {
+                System.out.println(correctedBR);
+                if (correctedBR.contains("captchaBG.gif)")) {
                     logger.info("Detected captcha method \"plaintext captchas\" for this host");
                     /* Captcha method by ManiacMansion */
-                    final String[][] letters = new Regex(br, "<span style=\\'position:absolute;padding\\-left:(\\d+)px;padding\\-top:\\d+px;\\'>(&#\\d+;)</span>").getMatches();
+                    /*
+                     * position:absolute;padding-left:62px;padding-top:3px;'>&#50;</span><span style='color:#c1d7e7; text-shadow: 2px 2px
+                     * #1a4
+                     */
+                    final String[][] letters = new Regex(br, "position:absolute;padding\\-left:(\\d+)px;padding\\-top:\\d+px;\\'>(&#\\d+;)</span>").getMatches();
                     if (letters == null || letters.length == 0) {
                         logger.warning("plaintext captchahandling broken!");
                         throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
