@@ -59,31 +59,46 @@ public class TuDouCom extends PluginForHost {
         br.setReadTimeout(3 * 60 * 1000);
         br.setConnectTimeout(3 * 60 * 1000);
         br.getPage(downloadLink.getDownloadURL());
-        if (!br.getURL().contains("/programs/view/")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        String filename = br.getRegex(",kw: \\'([^<>\"]*?)\\'").getMatch(0);
+        if (!br.getURL().contains("/programs/view/")) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
+        String filename = br.getRegex(",kw: \\'([^\"]*?)\\'").getMatch(0);
         if (filename == null) {
-            filename = br.getRegex("class=\"vcate_title\">([^<>\"]*?)</span>").getMatch(0);
+            filename = br.getRegex("class=\"vcate_title\">([^\"]*?)</span>").getMatch(0);
             if (filename == null) {
-                filename = br.getRegex("class=\"player\"><h1>([^<>\"]*?)</h1>").getMatch(0);
+                filename = br.getRegex("class=\"player\"><h1>([^\"]*?)</h1>").getMatch(0);
             }
         }
-        if (filename == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (filename == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         filename = Encoding.htmlDecode(filename.trim());
+        filename = encodeUnicode(filename);
         downloadLink.setFinalFileName(filename + ".flv");
-        if (HDS) return AvailableStatus.TRUE;
+        if (HDS) {
+            return AvailableStatus.TRUE;
+        }
         String videoID = new Regex(downloadLink.getDownloadURL(), "tudou\\.com/programs/view/(.+)").getMatch(0);
         String iid = br.getRegex("iid: (\\d+)").getMatch(0);
-        if (videoID == null || iid == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (videoID == null || iid == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         final String xmllink = "http://v2.tudou.com/v.action?pw=&ui=0&retc=1&mt=0&sid=11000&refurl=http%3A%2F%2Fwww%2Etudou%2Ecom%2Fprograms%2Fview%2F" + videoID + "&noCache=" + new Random().nextInt(1000) + "&st=2&si=11000&vn=02&hd=1&it=" + iid + "&noCache=&ui=0&st=1,2&si=sp&tAg=";
         br.getPage(xmllink);
         if (br.containsHTML("error=\\'ip is forbidden\\'")) {
             downloadLink.getLinkStatus().setStatusText("Not downloadable in your country");
             return AvailableStatus.TRUE;
         }
-        if (br.containsHTML("No htmlCode read")) return AvailableStatus.UNCHECKABLE;
+        if (br.containsHTML("No htmlCode read")) {
+            return AvailableStatus.UNCHECKABLE;
+        }
         dllink = br.getRegex("brt=\"2\".*?(http://.*?)<").getMatch(0);
-        if (dllink == null) dllink = br.getRegex("brt=\"1\".*?(http://.*?)<").getMatch(0);
-        if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (dllink == null) {
+            dllink = br.getRegex("brt=\"1\".*?(http://.*?)<").getMatch(0);
+        }
+        if (dllink == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         dllink = Encoding.htmlDecode(dllink);
         Browser br2 = br.cloneBrowser();
         // In case the link redirects to the finallink
@@ -91,10 +106,11 @@ public class TuDouCom extends PluginForHost {
         URLConnectionAdapter con = null;
         try {
             con = br2.openGetConnection(dllink);
-            if (!con.getContentType().contains("html") && !con.getContentType().contains("text"))
+            if (!con.getContentType().contains("html") && !con.getContentType().contains("text")) {
                 downloadLink.setDownloadSize(con.getLongContentLength());
-            else
+            } else {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            }
             return AvailableStatus.TRUE;
         } finally {
             try {
@@ -107,14 +123,34 @@ public class TuDouCom extends PluginForHost {
     @Override
     public void handleFree(DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
-        if (HDS) throw new PluginException(LinkStatus.ERROR_FATAL, "HDS protocol is not (yet) supported");
-        if (br.containsHTML("error=\\'ip is forbidden\\'")) throw new PluginException(LinkStatus.ERROR_FATAL, "Not downloadable in your country");
+        if (HDS) {
+            throw new PluginException(LinkStatus.ERROR_FATAL, "HDS protocol is not (yet) supported");
+        }
+        if (br.containsHTML("error=\\'ip is forbidden\\'")) {
+            throw new PluginException(LinkStatus.ERROR_FATAL, "Not downloadable in your country");
+        }
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 0);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl.startDownload();
+    }
+
+    /* Avoid chars which are not allowed in filenames under certain OS' */
+    private static String encodeUnicode(final String input) {
+        String output = input;
+        output = output.replace(":", ";");
+        output = output.replace("|", "¦");
+        output = output.replace("<", "[");
+        output = output.replace(">", "]");
+        output = output.replace("/", "⁄");
+        output = output.replace("\\", "∖");
+        output = output.replace("*", "#");
+        output = output.replace("?", "¿");
+        output = output.replace("!", "¡");
+        output = output.replace("\"", "'");
+        return output;
     }
 
     @Override

@@ -202,12 +202,12 @@ public class SaveTv extends PluginForHost {
      * @property "category": 0 = undefined, 1 = movies,category: 2 = series, 3 = show, 7 = music
      */
 
-    @SuppressWarnings({ "deprecation" })
+    @SuppressWarnings({ "deprecation", "unused" })
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
         br.setFollowRedirects(true);
         link.setProperty("type", EXTENSION);
-        /* Show telecast-ID in case it is offline or plugin is broken */
+        /* Show telecast-ID + extension as dummy name for all error cases */
         if (link.getName() != null && (link.getName().contains(getTelecastId(link)) && !link.getName().endsWith(EXTENSION) || link.getName().contains("VideoArchiveDetails.cfm"))) {
             link.setName(getTelecastId(link) + EXTENSION);
         }
@@ -225,79 +225,16 @@ public class SaveTv extends PluginForHost {
         }
         login(this.br, aa, false);
 
-        String site_title = null;
         String filesize = null;
 
         if (apiActive()) {
-            final String site_site_title = link.getStringProperty("plainfilename", null);
-            final long site_originaldate_milliseconds = getLongProperty(link, "originaldate", 0);
-            final String site_episodename = link.getStringProperty("episodename", null);
-            final String site_episodenumber = getEpisodeNumber(link);
-            String api_date = null;
-            String api_episodenumber = null;
-            String stv_request_selected_format_value = api_get_format_request_value();
-            api_doSoapRequest("http://tempuri.org/IDownload/GetStreamingUrl", "<sessionId i:type=\"d:string\">" + API_SESSIONID + "</sessionId><telecastId i:type=\"d:int\">" + getTelecastId(link) + "</telecastId><telecastIdSpecified i:type=\"d:boolean\">true</telecastIdSpecified><recordingFormatId i:type=\"d:int\">" + stv_request_selected_format_value + "</recordingFormatId><adFree i:type=\"d:boolean\">1</adFree><adFreeSpecified i:type=\"d:boolean\">true</adFreeSpecified>");
-            /* filesize = 0, filename = null - but we know, it is online */
-            if (br.containsHTML(API_DL_IMPOSSIBLE)) {
-                link.getLinkStatus().setStatusText(DL_IMPOSSIBLE_USER_TEXT);
-                return AvailableStatus.TRUE;
-            }
-            String api_filename = br.getRegex("<a:Filename>([^<>\"]*?)</a").getMatch(0);
-            filesize = br.getRegex("<a:SizeMB>(\\d+)</a:SizeMB>").getMatch(0);
-            if (api_filename == null || filesize == null) {
+            /* Last revision with old filename-convert handling: 26988 */
+            api_doSoapRequest("http://tempuri.org/ITelecast/GetTelecastDetail", "<sessionId i:type=\"d:string\">" + API_SESSIONID + "</sessionId><telecastIds xmlns:a=\"http://schemas.microsoft.com/2003/10/Serialization/Arrays\" xmlns:i=\"http://www.w3.org/2001/XMLSchema-instance\"><a:int>" + getTelecastId(link) + "</a:int></telecastIds><detailLevel>2</detailLevel>");
+            if (!br.containsHTML("<a:TelecastDetail>")) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
 
-            /* Remove unneeded data */
-            final Regex api_date_data = new Regex(api_filename, "((\\d{4}\\-\\d{2}\\-\\d{2}_\\d{4})_\\d+\\.mp4)");
-            final String filenameReplace = api_date_data.getMatch(0);
-            /* Remove date, username and extension from filename so we can easily take everything apart below */
-            final String temp_api_filename = api_filename.replace(filenameReplace, "");
-            api_date = api_date_data.getMatch(1);
-
-            /* Get site title */
-            final Regex api_filename_data = new Regex(temp_api_filename, "([^<>\"]+)_Folge(\\d+)(.+)");
-            site_title = api_filename_data.getMatch(0);
-            if (site_title == null) {
-                site_title = temp_api_filename;
-            }
-            if (site_episodename != null) {
-                site_title += "_" + convertNormalDataToServer(site_episodename);
-            }
-            /* Fix api site title */
-            /* Remove '_' at the end in case it exists because it will later be replaced by spaces */
-            if (site_title.endsWith("_")) {
-                site_title = site_title.substring(0, site_title.length() - 1);
-            }
-            site_title = convertServerDataToNormal(site_title);
-            // /* If our site_episodename is there and the api name contains it, remove it so we do not get it twice */
-            if (site_episodename != null && site_title.contains(site_episodename)) {
-                site_title = site_title.replace(" " + site_episodename, "");
-            }
-
-            /* Get additional information */
-            api_episodenumber = api_filename_data.getMatch(1);
-            /* Set data - only set information if we do not already have it via crawler or site */
-            if (api_episodenumber != null) {
-                if (!site_episodenumber.matches("\\d+")) {
-                    link.setProperty("episodenumber", Long.parseLong(api_episodenumber));
-                }
-                /* Set series category - also make sure we do not have category = 0 = force original filename */
-                link.setProperty("category", 2);
-            } else {
-                /* Make sure we do not have category = 0 = force original filename below */
-                link.setProperty("category", 1);
-            }
-            if (site_originaldate_milliseconds == 0) {
-                final long api_originaldate_milliseconds = TimeFormatter.getMilliSeconds(api_date, "yyyy-MM-dd_HHmm", Locale.GERMAN);
-                link.setProperty("originaldate", api_originaldate_milliseconds);
-            }
-            if (site_site_title == null) {
-                link.setProperty("plainfilename", site_title);
-            }
-
-            link.setProperty("server_filename", api_filename.substring(0, api_filename.lastIndexOf(".")));
-            filesize += " KB";
+            parseFilenameInformation_api(link, br.toString());
             parseQualityTag(link, null);
         } else {
             final String telecast_ID = getTelecastId(link);
@@ -310,8 +247,7 @@ public class SaveTv extends PluginForHost {
             if (data_source == null) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
-            site_title = correctData(getJson(data_source, "STITLE"));
-            siteParseFilenameInformation(link, data_source);
+            parseFilenameInformation_site(link, data_source);
             parseQualityTag(link, br.toString());
         }
         link.setAvailable(true);
@@ -321,18 +257,18 @@ public class SaveTv extends PluginForHost {
         link.setName(null);
         link.setName(availablecheck_filename);
 
-        /* Filesize stuff */
-        /* Download impossible or filesize not given --> No filesize given --> Calculate it over bitrate */
-        /* TODO: Check if this errormessage still exists */
-        if (br.containsHTML(SITE_DL_IMPOSSIBLE) || filesize == null) {
-            if (br.containsHTML(SITE_DL_IMPOSSIBLE)) {
-                link.getLinkStatus().setStatusText(DL_IMPOSSIBLE_USER_TEXT);
-            }
-            link.setDownloadSize(calculateFilesize(getLongProperty(link, "site_runtime_minutes", 0)));
-        } else {
+        if (filesize != null) {
             filesize = filesize.replace(".", "");
             final long page_size = SizeFormatter.getSize(filesize.replace(".", ""));
             link.setDownloadSize(page_size);
+        } else {
+            link.setDownloadSize(calculateFilesize(getLongProperty(link, "site_runtime_minutes", 0)));
+        }
+        /* TODO: Check if this errormessage still exists */
+        if (br.containsHTML(SITE_DL_IMPOSSIBLE)) {
+            if (br.containsHTML(SITE_DL_IMPOSSIBLE)) {
+                link.getLinkStatus().setStatusText(DL_IMPOSSIBLE_USER_TEXT);
+            }
         }
         return AvailableStatus.TRUE;
     }
@@ -384,7 +320,7 @@ public class SaveTv extends PluginForHost {
         return filename;
     }
 
-    public static void siteParseFilenameInformation(final DownloadLink dl, final String source) {
+    public static void parseFilenameInformation_site(final DownloadLink dl, final String source) {
         final String site_title = correctData(getJson(source, "STITLE"));
         long datemilliseconds = 0;
 
@@ -453,6 +389,77 @@ public class SaveTv extends PluginForHost {
         }
         if (producecountry != null) {
             dl.setProperty("producecountry", correctData(producecountry));
+        }
+        dl.setProperty("plain_site_category", category);
+        if (tv_station != null) {
+            dl.setProperty("plain_tv_station", correctData(tv_station));
+        }
+
+        /* Add remaining basic information */
+        dl.setProperty("plainfilename", site_title);
+        dl.setProperty("originaldate", datemilliseconds);
+        dl.setProperty("site_runtime_minutes", site_runtime_minutes);
+    }
+
+    public static void parseFilenameInformation_api(final DownloadLink dl, final String source) {
+        final String site_title = correctData(new Regex(source, "<a:T>([^<>]*?)</a:T>").getMatch(0));
+        long datemilliseconds = 0;
+
+        /* For series only */
+        final String episodenumber = new Regex(source, "<a:Episode>(\\d+)</a:Episode>").getMatch(0);
+        final String episodename = new Regex(source, "<a:ST>([^<>\"]*?)</a:ST>").getMatch(0);
+
+        /* General */
+        final String genre = new Regex(source, "<a:Char>([^<>\"]*?)</a:Char>").getMatch(0);
+
+        String category = new Regex(source, "global/TVCategorie/kat(\\d+)\\.jpg</a:MIP>").getMatch(0);
+        /* Happens in decrypter - errorhandling! */
+        if (category == null && (episodename != null || episodenumber != null)) {
+            category = "2";
+        } else if (category == null) {
+            category = "1";
+        }
+
+        String runtime_start = new Regex(source, "<a:SD>([^<>\"]*?)</a:SD>").getMatch(0);
+        /* For hosterplugin */
+        String runtime_end = new Regex(source, "<a:EndDate>([^<>\"]*?)</a:EndDate>").getMatch(0);
+        runtime_start = runtime_start.replace("T", " ");
+        runtime_end = runtime_end.replace("T", " ");
+        datemilliseconds = TimeFormatter.getMilliSeconds(runtime_start, "yyyy-MM-dd HH:mm:ss", Locale.GERMAN);
+        final long site_runtime_minutes = (TimeFormatter.getMilliSeconds(runtime_end, "yyyy-MM-dd HH:mm:ss", Locale.GERMAN) - datemilliseconds) / 1000 / 60;
+        final String tv_station = getJson(source, "STVSTATIONNAME");
+
+        /* TODO: Add more/all numbers here, improve this! */
+        if (category.equals("2")) {
+            /* For series */
+            dl.setProperty("category", 2);
+        } else if (category.equals("3")) {
+            /* For shows */
+            dl.setProperty("category", 3);
+        } else if (category.equals("7")) {
+            /* For music */
+            dl.setProperty("category", 7);
+        } else if (category.equals("1") || category.equals("6")) {
+            /* For movies and magazines */
+            dl.setProperty("category", 1);
+        } else {
+            /* For everything else - same as movie but separated anyways */
+            dl.setProperty("category", 1);
+            // link.setProperty("category", 0);
+        }
+
+        /* Set properties which are needed for filenames */
+        /* Add series information */
+        if (episodenumber != null) {
+            dl.setProperty("episodenumber", Long.parseLong(episodenumber));
+        }
+        if (episodename != null) {
+            dl.setProperty("episodename", correctData(episodename));
+        }
+
+        /* Add other information */
+        if (genre != null) {
+            dl.setProperty("genre", correctData(genre));
         }
         dl.setProperty("plain_site_category", category);
         if (tv_station != null) {
@@ -543,17 +550,6 @@ public class SaveTv extends PluginForHost {
         requestFileInformation(downloadLink);
 
         if (apiActive()) {
-            if (br.containsHTML(API_DL_IMPOSSIBLE)) {
-                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, DL_IMPOSSIBLE_USER_TEXT, 30 * 60 * 1000l);
-            }
-            // doSoapRequest("http://tempuri.org/ITelecast/GetTelecastDetail",
-            // "<s:Envelope xmlns:s=\"http://schemas.xmlsoap.org/soap/envelope/\"><s:Body><GetTelecastDetail xmlns=\"http://tempuri.org/\"><sessionId>6f33f94f-13bb-4271-ab48-3339d2430d75</sessionId><telecastIds xmlns:a=\"http://schemas.microsoft.com/2003/10/Serialization/Arrays\" xmlns:i=\"http://www.w3.org/2001/XMLSchema-instance\"/><detailLevel>1</detailLevel></GetTelecastDetail></s:Body></s:Envelope>");
-            // try {
-            // doSoapRequest("http://tempuri.org/IDownload/GetSimultaneousDownloadConnectionCount", "<sessionId>" + SESSIONID +
-            // "</sessionId>");
-            // } catch (final BrowserException e) {
-            // logger.warning("FAILED!");
-            // }
             /* Check if ads-free version is available */
             api_doSoapRequest("http://tempuri.org/IVideoArchive/GetAdFreeState", "<sessionId>" + API_SESSIONID + "</sessionId><telecastId i:type=\"d:int\">" + getTelecastId(downloadLink) + "</telecastId><telecastIdSpecified i:type=\"d:boolean\">true</telecastIdSpecified>");
             if (br.containsHTML("<a:IsAdFreeAvailable>false</a:IsAdFreeAvailable>")) {
@@ -613,6 +609,9 @@ public class SaveTv extends PluginForHost {
         if (apiActive()) {
             stv_request_selected_format_value = api_get_format_request_value();
             api_postDownloadPage(downloadLink, stv_request_selected_format_value, downloadWithoutAds_request_value);
+            if (br.containsHTML(API_DL_IMPOSSIBLE)) {
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, DL_IMPOSSIBLE_USER_TEXT, 30 * 60 * 1000l);
+            }
             dllink = br.getRegex("<a:DownloadUrl>(http://[^<>\"]*?)</a").getMatch(0);
         } else {
             stv_request_selected_format_value = site_get_format_request_value();
@@ -706,10 +705,10 @@ public class SaveTv extends PluginForHost {
                 }
             } else {
                 if (cfg.getBooleanProperty(DELETE_TELECAST_ID_AFTER_DOWNLOAD, defaultDeleteTelecastIDAfterDownload)) {
-                    logger.info("Download finished --> User wants telecastID " + getTelecastId(downloadLink) + " deleted");
+                    logger.info("Download finished --> User WANTS telecastID " + getTelecastId(downloadLink) + " deleted");
                     site_killTelecastID(account, downloadLink);
                 } else {
-                    logger.info("Download finished --> User does not want telecastID " + getTelecastId(downloadLink) + " deleted");
+                    logger.info("Download finished --> User does NOT want telecastID " + getTelecastId(downloadLink) + " deleted");
                 }
             }
         } catch (final PluginException e) {
@@ -726,10 +725,10 @@ public class SaveTv extends PluginForHost {
             try {
                 if (e.getLinkStatus() == LinkStatus.ERROR_ALREADYEXISTS) {
                     if (cfg.getBooleanProperty(DELETE_TELECAST_ID_IF_FILE_ALREADY_EXISTS, defaultDeleteTelecastIDIfFileAlreadyExists)) {
-                        logger.info("ERROR_ALREADYEXISTS --> User wants telecastID " + getTelecastId(downloadLink) + " deleted");
+                        logger.info("ERROR_ALREADYEXISTS --> User WANTS telecastID " + getTelecastId(downloadLink) + " deleted");
                         site_killTelecastID(account, downloadLink);
                     } else {
-                        logger.info("ERROR_ALREADYEXISTS --> User does not want telecastID " + getTelecastId(downloadLink) + " deleted");
+                        logger.info("ERROR_ALREADYEXISTS --> User does NOT want telecastID " + getTelecastId(downloadLink) + " deleted");
                     }
                     throw e;
                 }
@@ -1272,9 +1271,18 @@ public class SaveTv extends PluginForHost {
         return new Regex(link.getDownloadURL(), "TelecastID=(\\d+)").getMatch(0);
     }
 
-    private static String getRandomNumber() {
-        final DecimalFormat df = new DecimalFormat("0000");
-        return df.format(new Random().nextInt(10000));
+    /**
+     * @return: Returns a random number for the DownloadLink - uses saved random number if existant - if not, creates random number and
+     *          saves it.
+     */
+    private static String getRandomNumber(final DownloadLink dl) {
+        String randomnumber = dl.getStringProperty("stv_randomnumber", null);
+        if (randomnumber == null) {
+            final DecimalFormat df = new DecimalFormat("0000");
+            randomnumber = df.format(new Random().nextInt(10000));
+            dl.setProperty("stv_randomnumber", randomnumber);
+        }
+        return randomnumber;
     }
 
     public static String getFormattedFilename(final DownloadLink downloadLink) throws ParseException {
@@ -1289,7 +1297,7 @@ public class SaveTv extends PluginForHost {
         final String genre = downloadLink.getStringProperty("genre", customStringForEmptyTags);
         final String producecountry = downloadLink.getStringProperty("producecountry", customStringForEmptyTags);
         final String produceyear = downloadLink.getStringProperty("produceyear", customStringForEmptyTags);
-        final String randomnumber = getRandomNumber();
+        final String randomnumber = getRandomNumber(downloadLink);
         final String telecastid = getTelecastId(downloadLink);
         final String tv_station = downloadLink.getStringProperty("plain_tv_station", customStringForEmptyTags);
         final String site_category = downloadLink.getStringProperty("plain_site_category", customStringForEmptyTags);
@@ -1422,10 +1430,7 @@ public class SaveTv extends PluginForHost {
             time = "0000";
         }
 
-        final DecimalFormat df = new DecimalFormat("0000");
-        final int random = new Random().nextInt(1000);
-        final String random_string = df.format(random);
-        final String acc_username = cfg.getStringProperty("acc_username", random_string);
+        final String acc_username = cfg.getStringProperty("acc_username", getRandomNumber(downloadLink));
         String formattedFilename = downloadLink.getStringProperty("server_filename", null);
         if (formattedFilename != null) {
             /* Server = already original filename - no need to 'fake' anything */
@@ -1462,7 +1467,9 @@ public class SaveTv extends PluginForHost {
         }
     }
 
-    /* Several catregories are internally handled as category movie */
+    /**
+     * @return true: DownloadLink is a series false: DownloadLink is no series based on existing information.
+     */
     private static boolean isSeries(final DownloadLink dl) {
         final SubConfiguration cfg = SubConfiguration.getConfig("save.tv");
         final String customStringForEmptyTags = cfg.getStringProperty(CUSTOM_FILENAME_EMPTY_TAG_STRING, defaultCustomStringForEmptyTags);
@@ -1480,7 +1487,10 @@ public class SaveTv extends PluginForHost {
         return isSeries;
     }
 
-    /* Helps to get good looking original server-filenames, correct things, before corrected by correctData */
+    /**
+     * Helps to get good looking original server-filenames, correct things, before corrected by correctData, in the end data/filename should
+     * be 99% close to the originals.
+     */
     private static String convertNormalDataToServer(String parameter) {
         /* Corrections with spaces */
         parameter = parameter.replace(" - ", "_");
@@ -1503,6 +1513,7 @@ public class SaveTv extends PluginForHost {
         parameter = parameter.replace("&", "");
         parameter = parameter.replace(",", "");
         parameter = parameter.replace(".", "");
+        parameter = parameter.replace("?", "");
         return parameter;
     }
 
