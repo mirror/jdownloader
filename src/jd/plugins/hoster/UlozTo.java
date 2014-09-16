@@ -17,6 +17,7 @@
 package jd.plugins.hoster;
 
 import java.io.IOException;
+import java.util.Locale;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -57,6 +58,7 @@ public class UlozTo extends PluginForHost {
     private static AtomicInteger totalMaxSimultanFreeDownload = new AtomicInteger(20);
     /* don't touch the following! */
     private static AtomicInteger maxFree                      = new AtomicInteger(1);
+    private static Object        CTRLLOCK                     = new Object();
 
     public UlozTo(PluginWrapper wrapper) {
         super(wrapper);
@@ -302,9 +304,12 @@ public class UlozTo extends PluginForHost {
         br.setDebug(true);
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 1);
         if (dl.getConnection().getContentType().contains("html")) {
-            if (dl.getConnection().getResponseCode() == 503) {
-                logger.info("503 server error found...");
-                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error", 10 * 60 * 1000l);
+            if (dl.getConnection().getResponseCode() == 503 && br.getHttpConnection().getHeaderField("server") != null && br.getHttpConnection().getHeaderField("server").toLowerCase(Locale.ENGLISH).contains("nginx")) {
+                // 503 with nginx means no more connections allow, it doesn't mean server error!
+                synchronized (CTRLLOCK) {
+                    totalMaxSimultanFreeDownload.set(Math.min(Math.max(1, maxFree.get() - 1), totalMaxSimultanFreeDownload.get()));
+                    throw new PluginException(LinkStatus.ERROR_RETRY);
+                }
             }
             logger.warning("The finallink doesn't seem to be a file: " + dllink);
             br.followConnection();
@@ -414,20 +419,22 @@ public class UlozTo extends PluginForHost {
     /**
      * Prevents more than one free download from starting at a given time. One step prior to dl.startDownload(), it adds a slot to maxFree
      * which allows the next singleton download to start, or at least try.
-     * 
+     *
      * This is needed because xfileshare(website) only throws errors after a final dllink starts transferring or at a given step within pre
      * download sequence. But this template(XfileSharingProBasic) allows multiple slots(when available) to commence the download sequence,
      * this.setstartintival does not resolve this issue. Which results in x(20) captcha events all at once and only allows one download to
      * start. This prevents wasting peoples time and effort on captcha solving and|or wasting captcha trading credits. Users will experience
      * minimal harm to downloading as slots are freed up soon as current download begins.
-     * 
+     *
      * @param controlFree
      *            (+1|-1)
      */
-    public synchronized void controlFree(final int num) {
-        logger.info("maxFree was = " + maxFree.get());
-        maxFree.set(Math.min(Math.max(1, maxFree.addAndGet(num)), totalMaxSimultanFreeDownload.get()));
-        logger.info("maxFree now = " + maxFree.get());
+    private void controlFree(final int num) {
+        synchronized (CTRLLOCK) {
+            logger.info("maxFree was = " + maxFree.get());
+            maxFree.set(Math.min(Math.max(1, maxFree.addAndGet(num)), totalMaxSimultanFreeDownload.get()));
+            logger.info("maxFree now = " + maxFree.get());
+        }
     }
 
     @Override
