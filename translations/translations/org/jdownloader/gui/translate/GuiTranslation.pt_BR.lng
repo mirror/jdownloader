@@ -1434,6 +1434,7 @@ jd_gui_swing_components_AboutDialog_core=Núcleo:
 jd_gui_swing_components_AboutDialog_forum=Fórum de Suporte
 jd_gui_swing_components_AboutDialog_homepage=Site na Web
 jd_gui_swing_components_AboutDialog_icons=Ícones & arte:
+jd_gui_swing_components_AboutDialog_installdir=Pasta de instalação:
 jd_gui_swing_components_AboutDialog_laf=Tema:
 jd_gui_swing_components_AboutDialog_launcher=Iniciador
 jd_gui_swing_components_AboutDialog_license=Exibir licença
