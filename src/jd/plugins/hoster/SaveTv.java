@@ -85,8 +85,8 @@ public class SaveTv extends PluginForHost {
     private static final String  USEORIGINALFILENAME                       = "USEORIGINALFILENAME";
     private static final String  PREFERADSFREE                             = "PREFERADSFREE";
     private static final String  ADS_FREE_UNAVAILABLE_MAXRETRIES           = "ADS_FREE_UNAVAILABLE_MAXRETRIES";
-    private static final String  FORCE_WITH_ADS_ON_ERROR_HOURS             = "FORCE_WITH_ADS_ON_ERROR_HOURS";
-    private static final String  FORCE_WITH_ADS_ON_ERROR_MAXRETRIES        = "FORCE_WITH_ADS_ON_ERROR_HOURS_MAXRETRIES_2";
+    private static final String  FORCE_WITH_ADS_ON_ERROR_HOURS             = "FORCE_WITH_ADS_ON_ERROR_HOURS_2";
+    private static final String  FORCE_WITH_ADS_ON_ERROR_MAXRETRIES        = "FORCE_WITH_ADS_ON_ERROR_HOURS_MAXRETRIES_3";
     private static final String  ADS_FREE_UNAVAILABLE_HOURS                = "DOWNLOADONLYADSFREE_RETRY_HOURS";
     private final String         ADSFREEAVAILABLETEXT                      = JDL.L("plugins.hoster.SaveTv.AdsFreeAvailable", "Video ist werbefrei verfügbar");
     private final String         ADSFREEANOTVAILABLE                       = JDL.L("plugins.hoster.SaveTv.AdsFreeNotAvailable", "Video ist nicht werbefrei verfügbar");
@@ -1615,11 +1615,11 @@ public class SaveTv extends PluginForHost {
         final ConfigEntry preferAdsFree = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), SaveTv.PREFERADSFREE, JDL.L("plugins.hoster.SaveTv.PreferAdFreeVideos", "Aufnahmen mit angewandter Schnittliste bevorzugen?")).setDefaultValue(true);
         getConfig().addEntry(preferAdsFree);
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_SPINNER, getPluginConfig(), SaveTv.ADS_FREE_UNAVAILABLE_HOURS, JDL.L("plugins.hoster.SaveTv.downloadOnlyAdsFreeRetryHours", "Zeit [in stunden] bis zum Neuversuch für Aufnahmen, die (noch) keine Schnittliste haben.\r\nINFO: Der Standardwert beträgt 12 Stunden, um die Server nicht unnötig zu belasten.\r\n"), 1, 24, 1).setDefaultValue(defaultADS_FREE_UNAVAILABLE_HOURS).setEnabledCondidtion(preferAdsFree, true));
-        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_SPINNER, getPluginConfig(), SaveTv.ADS_FREE_UNAVAILABLE_MAXRETRIES, JDL.L("plugins.hoster.SaveTv.ignoreOnlyAdsFreeAfterRetries_maxRetries", "Max Anzahl Neuversuche bis der Download der Version ohne Schnittliste erzwungen wird [0 = nie erzwingen]:"), 1, 100, 1).setDefaultValue(defaultADS_FREE_UNAVAILABLE_MAXRETRIES).setEnabledCondidtion(preferAdsFree, true));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_SPINNER, getPluginConfig(), SaveTv.ADS_FREE_UNAVAILABLE_MAXRETRIES, JDL.L("plugins.hoster.SaveTv.ignoreOnlyAdsFreeAfterRetries_maxRetries", "Max Anzahl Neuversuche bis der Download der Version ohne Schnittliste erzwungen wird [0 = nie erzwingen]:"), 0, 100, 1).setDefaultValue(defaultADS_FREE_UNAVAILABLE_MAXRETRIES).setEnabledCondidtion(preferAdsFree, true));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_SEPARATOR));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_LABEL, "Einstelungen zur Fehlerbehandlung des Fehlers 'Leider enthält Ihre Aufnahme nur Werbung'."));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_SPINNER, getPluginConfig(), SaveTv.FORCE_WITH_ADS_ON_ERROR_HOURS, JDL.L("plugins.hoster.SaveTv.forceHQHours", "Zeit [in stunden] bis zum Neuversuch für Aufnahmen, die (noch) keine Schnittliste haben.\r\nINFO: Der Standardwert beträgt 12 Stunden, um die Server nicht unnötig zu belasten.\r\n"), 1, 24, 1).setDefaultValue(defaultFORCE_WITH_ADS_ON_ERROR_HOURS).setEnabledCondidtion(preferAdsFree, true));
-        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_SPINNER, getPluginConfig(), SaveTv.FORCE_WITH_ADS_ON_ERROR_MAXRETRIES, JDL.L("plugins.hoster.SaveTv.forceWithoutAdsMaxretries", "Max Anzahl Neuversuche bis der Download der Version ohne Schnittliste erzwungen wird [0 = nie erzwingen]:"), 1, 100, 1).setDefaultValue(defaultFORCE_WITH_ADS_ON_ERROR_maxRetries).setEnabledCondidtion(preferAdsFree, true));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_SPINNER, getPluginConfig(), SaveTv.FORCE_WITH_ADS_ON_ERROR_MAXRETRIES, JDL.L("plugins.hoster.SaveTv.forceWithoutAdsMaxretries", "Max Anzahl Neuversuche bis der Download der Version ohne Schnittliste erzwungen wird [0 = nie erzwingen]:"), 0, 100, 1).setDefaultValue(defaultFORCE_WITH_ADS_ON_ERROR_maxRetries).setEnabledCondidtion(preferAdsFree, true));
 
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_SEPARATOR));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_SEPARATOR));
