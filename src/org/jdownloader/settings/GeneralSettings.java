@@ -134,6 +134,14 @@ public interface GeneralSettings extends ConfigInterface {
     int getDownloadSpeedLimit();
 
     @AboutConfig
+    @DescriptionForConfigEntry("If >0 JD will start addiational downloads as long as the total speed is below this value")
+    @DefaultIntValue(0)
+    @SpinnerValidator(min = 1, max = Integer.MAX_VALUE)
+    int getAutoMaxDownloadsSpeedLimit();
+
+    void setAutoMaxDownloadsSpeedLimit(int speed);
+
+    @AboutConfig
     @DefaultLongValue(30 * 60 * 1000l)
     @DescriptionForConfigEntry("Waittime in ms if a Download Temp Unavailable Failed")
     long getDownloadTempUnavailableRetryWaittime();
@@ -521,4 +529,5 @@ public interface GeneralSettings extends ConfigInterface {
     boolean isFreeDownloadLoadBalancingEnabled();
 
     void setFreeDownloadLoadBalancingEnabled(boolean b);
+
 }
