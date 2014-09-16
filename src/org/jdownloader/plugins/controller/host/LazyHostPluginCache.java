@@ -10,6 +10,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map.Entry;
+import java.util.concurrent.atomic.AtomicLong;
 
 import org.appwork.utils.IO;
 import org.appwork.utils.awfc.AWFCUtils;
@@ -17,9 +18,9 @@ import org.jdownloader.plugins.controller.LazyPluginClass;
 
 public class LazyHostPluginCache {
 
-    private static final int CACHEVERSION = 6;
+    private static final int CACHEVERSION = 7;
 
-    public static List<LazyHostPlugin> read(File file) throws IOException {
+    public static List<LazyHostPlugin> read(File file, final AtomicLong lastModification) throws IOException {
         final ArrayList<LazyHostPlugin> ret = new ArrayList<LazyHostPlugin>(4096);
         if (file.exists()) {
             final InputStream bis = new ByteArrayInputStream(IO.readFile(file));
@@ -27,6 +28,7 @@ public class LazyHostPluginCache {
             if (CACHEVERSION != is.readShort()) {
                 throw new IOException("Outdated CacheVersion");
             }
+            final long lastModified = is.readLong();
             final int lazyPluginClassSize = is.readShort();
             final byte[] sha256 = new byte[32];
             final byte[] stringBuffer = new byte[32767];
@@ -49,11 +51,14 @@ public class LazyHostPluginCache {
                     ret.add(lazyHostPlugin);
                 }
             }
+            if (lastModification != null) {
+                lastModification.set(lastModified);
+            }
         }
         return ret;
     }
 
-    public static void write(List<LazyHostPlugin> lazyPlugins, File file) throws IOException {
+    public static void write(List<LazyHostPlugin> lazyPlugins, File file, final AtomicLong lastModification) throws IOException {
         final HashMap<LazyPluginClass, List<LazyHostPlugin>> lazyPluginsMap = new HashMap<LazyPluginClass, List<LazyHostPlugin>>();
         if (lazyPlugins != null) {
             for (LazyHostPlugin lazyPlugin : lazyPlugins) {
@@ -71,6 +76,8 @@ public class LazyHostPluginCache {
             final BufferedOutputStream bos = new BufferedOutputStream(fos, 32767);
             final AWFCUtils os = new AWFCUtils(bos);
             os.writeShort(CACHEVERSION);
+            final long lastModified = lastModification != null ? lastModification.get() : 0;
+            os.writeLong(lastModified);
             os.writeShort(lazyPluginsMap.size());
             for (final Entry<LazyPluginClass, List<LazyHostPlugin>> lazyPluginMapEntry : lazyPluginsMap.entrySet()) {
                 final LazyPluginClass lazyPluginClass = lazyPluginMapEntry.getKey();

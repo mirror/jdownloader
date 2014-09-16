@@ -4,10 +4,9 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.security.MessageDigest;
-import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
-import java.util.Map;
+import java.util.concurrent.atomic.AtomicLong;
 
 import jd.plugins.Plugin;
 
@@ -26,11 +25,11 @@ public abstract class PluginController<T extends Plugin> {
 
     protected abstract long[] getInfos(Class<T> clazz);
 
-    protected List<PluginInfo<T>> scan(LogSource logger, String hosterpath, Map<LazyPluginClass, ArrayList<LazyPlugin>> pluginCache) throws Exception {
+    protected List<PluginInfo<T>> scan(LogSource logger, String hosterpath, final List<? extends LazyPlugin> pluginCache, final AtomicLong lastFolderModification) throws Exception {
         if (Application.getJavaVersion() >= Application.JAVA17) {
-            return new PluginScannerNIO<T>(this).scan(logger, hosterpath, pluginCache);
+            return new PluginScannerNIO<T>(this).scan(logger, hosterpath, pluginCache, lastFolderModification);
         }
-        return new PluginScannerFiles<T>(this).scan(logger, hosterpath, pluginCache);
+        return new PluginScannerFiles<T>(this).scan(logger, hosterpath, pluginCache, lastFolderModification);
     }
 
     protected static byte[] getFileHashBytes(final File arg, final MessageDigest md, final byte[] mdCache) throws IOException {
