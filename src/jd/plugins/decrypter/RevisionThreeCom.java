@@ -33,7 +33,7 @@ public class RevisionThreeCom extends PluginForDecrypt {
         super(wrapper);
     }
 
-    private static final String INVALIDLINKS  = "http://(www\\.)?revision3\\.com/(blog|api|content|category|search|shows|login|forum|episodes|host|network|hub)/.*?";
+    private static final String INVALIDLINKS  = "http://(www\\.)?revision3\\.com/(blog|api|content|category|search|shows|login|forum|episodes|host|network|hub|sitemap)/.*?";
     private static final String INVALIDLINKS2 = "http://(www\\.)?revision3\\.com/[a-z0-9]+/(feed|about|subscribe|episodes).*?";
 
     private static final String TYPE_NORMAL   = "http://(www\\.)?revision3\\.com/[a-z0-9]+/[a-z0-9\\-_]+";
@@ -68,53 +68,36 @@ public class RevisionThreeCom extends PluginForDecrypt {
         if (fpName != null) {
             fpName = fpName.replace("...", "");
         }
-        // Probably this handling is also good for more links but that's not
-        // tested yet!
-        if (parameter.matches("http://(www\\.)?revision3\\.com/rev3gamesoriginals/[a-z0-9\\-]+")) {
-            final String[] directLinks = br.getRegex("<a class=\"sizename\" href=\"(http://[^<>\"]*?)\"").getColumn(0);
-            if (directLinks == null || directLinks.length == 0) {
-                logger.warning("Decrypter broken for link: " + parameter);
-                return null;
-            }
-            for (final String singleLink : directLinks) {
-                final DownloadLink fina = createDownloadlink("directhttp://" + singleLink);
-                if (fpName != null) {
-                    fina.setFinalFileName(fpName + singleLink.substring(singleLink.length() - 4, singleLink.length()));
+        if (br.containsHTML(">This episode hasn\\'t been published yet")) {
+            logger.info("Link offline: " + parameter);
+            return decryptedLinks;
+        }
+        if (!br.getURL().contains("revision3.com/")) {
+            final DownloadLink fina = createDownloadlink(br.getURL());
+            decryptedLinks.add(fina);
+            return decryptedLinks;
+        }
+        final String videoID = br.getRegex("\\'video_id\\', (\\d+)\\);").getMatch(0);
+        if (videoID == null) {
+            logger.warning("Decrypter broken for link: " + parameter);
+            return null;
+        }
+        br.getPage("http://revision3.com/api/getPlaylist.json?api_key=ba9c741bce1b9d8e3defcc22193f3651b8867e62&codecs=h264,vp8,theora&video_id=" + videoID + "&jsonp=parseResponse&_=" + System.currentTimeMillis());
+        final String[] allLinks = br.getRegex("\"url\":\"(http:[^<>\"]*?)\"").getColumn(0);
+        if (allLinks == null || allLinks.length == 0) {
+            logger.warning("Decrypter broken for link: " + parameter);
+            return null;
+        }
+        for (String finallink : allLinks) {
+            finallink = finallink.replace("\\", "");
+            final DownloadLink fina = createDownloadlink("directhttp://" + finallink);
+            if (fpName != null) {
+                String ext = finallink.substring(finallink.lastIndexOf("."));
+                if (ext != null && ext.length() < 5) {
+                    fina.setFinalFileName(fpName + ext);
                 }
-                decryptedLinks.add(fina);
             }
-        } else {
-            if (br.containsHTML(">This episode hasn\\'t been published yet")) {
-                logger.info("Link offline: " + parameter);
-                return decryptedLinks;
-            }
-            if (!br.getURL().contains("revision3.com/")) {
-                final DownloadLink fina = createDownloadlink(br.getURL());
-                decryptedLinks.add(fina);
-                return decryptedLinks;
-            }
-            final String videoID = br.getRegex("\\'video_id\\', (\\d+)\\);").getMatch(0);
-            if (videoID == null) {
-                logger.warning("Decrypter broken for link: " + parameter);
-                return null;
-            }
-            br.getPage("http://revision3.com/api/getPlaylist.json?api_key=ba9c741bce1b9d8e3defcc22193f3651b8867e62&codecs=h264,vp8,theora&video_id=" + videoID + "&jsonp=parseResponse&_=" + System.currentTimeMillis());
-            final String[] allLinks = br.getRegex("\"url\":\"(http:[^<>\"]*?)\"").getColumn(0);
-            if (allLinks == null || allLinks.length == 0) {
-                logger.warning("Decrypter broken for link: " + parameter);
-                return null;
-            }
-            for (String finallink : allLinks) {
-                finallink = finallink.replace("\\", "");
-                final DownloadLink fina = createDownloadlink("directhttp://" + finallink);
-                if (fpName != null) {
-                    String ext = finallink.substring(finallink.lastIndexOf("."));
-                    if (ext != null && ext.length() < 5) {
-                        fina.setFinalFileName(fpName + ext);
-                    }
-                }
-                decryptedLinks.add(fina);
-            }
+            decryptedLinks.add(fina);
         }
         if (fpName != null) {
             FilePackage fp = FilePackage.getInstance();

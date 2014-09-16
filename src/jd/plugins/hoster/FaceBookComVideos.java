@@ -48,7 +48,7 @@ import jd.plugins.PluginForHost;
 import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "facebook.com" }, urls = { "https?://(www\\.)?facebookdecrypted\\.com/(video\\.php\\?v=|video/embed\\?video_id=|profile\\.php\\?id=\\d+\\&ref=ts#\\!/video/video\\.php\\?v=|(photo/)?photo\\.php\\?v=|photo\\.php\\?fbid=|download/)\\d+" }, flags = { 2 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "facebook.com" }, urls = { "https?://(www\\.)?facebookdecrypted\\.com/((video/)?video\\.php\\?v=|video/embed\\?video_id=|profile\\.php\\?id=\\d+\\&ref=ts#\\!/video/video\\.php\\?v=|(photo/)?photo\\.php\\?v=|photo\\.php\\?fbid=|download/)\\d+" }, flags = { 2 })
 public class FaceBookComVideos extends PluginForHost {
 
     private String              FACEBOOKMAINPAGE           = "http://www.facebook.com";

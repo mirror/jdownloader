@@ -52,6 +52,7 @@ public class FaceBookComGallery extends PluginForDecrypt {
     private static final String   FACEBOOKMAINPAGE               = "http://www.facebook.com";
     private int                   DIALOGRETURN                   = -1;
     private static final String   FASTLINKCHECK_PICTURES         = "FASTLINKCHECK_PICTURES";
+
     private static final String   TYPE_FBSHORTLINK               = "http(s)?://(www\\.)?on\\.fb\\.me/[A-Za-z0-9]+\\+?";
     private static final String   TYPE_PHOTO                     = "http(s)?://(www\\.)?facebook\\.com/photo\\.php\\?fbid=\\d+";
     private static final String   TYPE_VIDEO                     = "https?://(www\\.)?facebook\\.com/(video/video|photo)\\.php\\?v=\\d+";
@@ -83,7 +84,7 @@ public class FaceBookComGallery extends PluginForDecrypt {
         synchronized (LOCK) {
             String parameter = param.toString().replace("#!/", "");
             PARAMETER = parameter;
-            if (PARAMETER.matches("https?://(www\\.)?facebook\\.com/(video\\.php\\?v=|video/embed\\?video_id=|profile\\.php\\?id=\\d+\\&ref=ts#\\!/video/video\\.php\\?v=|(photo/)?photo\\.php\\?v=|photo\\.php\\?fbid=|download/)\\d+")) {
+            if (PARAMETER.matches(TYPE_VIDEO)) {
                 final DownloadLink fina = createDownloadlink(PARAMETER.replace("facebook.com/", "facebookdecrypted.com/"));
                 decryptedLinks.add(fina);
                 return decryptedLinks;
@@ -121,7 +122,7 @@ public class FaceBookComGallery extends PluginForDecrypt {
             } else if (parameter.matches(TYPE_PHOTOS_OF_LINK)) {
                 decryptPhotosOf();
             } else if (parameter.matches(TYPE_PHOTOS_ALL_LINK)) {
-                decryptPicsGeneral("AllPhotosAppCollectionPagelet");
+                decryptPhotosAll();
             } else if (parameter.matches(TYPE_PHOTOS_STREAM_LINK)) {
                 decryptPhotoStreamTimeline();
             } else if (parameter.matches(TYPE_PHOTOS_LINK)) {
@@ -250,6 +251,10 @@ public class FaceBookComGallery extends PluginForDecrypt {
 
     }
 
+    private void decryptPhotosAll() throws Exception {
+        decryptPicsGeneral("AllPhotosAppCollectionPagelet");
+    }
+
     private void decryptPhotosOf() throws Exception {
         logged_in = login();
         if (!logged_in) {
@@ -350,15 +355,16 @@ public class FaceBookComGallery extends PluginForDecrypt {
             logger.info("The link is either offline or an account is needed to grab it: " + PARAMETER);
             return;
         }
-        final String setID = new Regex(PARAMETER, "set=(.+)").getMatch(0);
-        final String profileID = new Regex(PARAMETER, "(\\d+)$").getMatch(0);
+        final String setID = new Regex(PARAMETER, "set=([a-z0-9\\.]+)").getMatch(0);
+        final String profileID = br.getRegex("\"profile_id\":(\\d+)").getMatch(0);
         String fpName = br.getRegex("id=\"pageTitle\">([^<>\"]*?)\\| Facebook</title>").getMatch(0);
         if (fpName == null) {
             fpName = br.getRegex("id=\"pageTitle\">([^<>\"]*?)</title>").getMatch(0);
         }
         final String ajaxpipeToken = getajaxpipeToken();
+        final String collection_token = br.getRegex("\\[\"pagelet_timeline_app_collection_([^<>\"]*?)\"\\]").getMatch(0);
         final String user = getUser();
-        if (ajaxpipeToken == null || user == null) {
+        if (ajaxpipeToken == null || user == null || collection_token == null || profileID == null) {
             logger.warning("Decrypter broken for link: " + PARAMETER);
             throw new DecrypterException("Decrypter broken for link: " + PARAMETER);
         }
@@ -386,13 +392,16 @@ public class FaceBookComGallery extends PluginForDecrypt {
                     logger.info("Cannot find more links, stopping decryption...");
                     break;
                 }
-                final String loadLink = MAINPAGE + "/ajax/pagelet/generic.php/TimelinePhotosAlbumPagelet?ajaxpipe=1&ajaxpipe_token=" + ajaxpipeToken + "&no_script_path=1&data=%7B%22scroll_load%22%3Atrue%2C%22last_fbid%22%3A%22" + currentLastFbid + "%22%2C%22fetch_size%22%3A32%2C%22profile_id%22%3A" + profileID + "%2C%22viewmode%22%3Anull%2C%22set%22%3A%22" + setID + "%22%2C%22type%22%3A%223%22%2C%22pager_fired_on_init%22%3Atrue%7D&__user=" + user + "&__a=1&__dyn=798aD5z5CF-&__req=jsonp_" + i + "&__adt=" + i;
+                /**/
+                String loadLink = MAINPAGE + "/ajax/pagelet/generic.php/TimelinePhotosAlbumPagelet?ajaxpipe=1&ajaxpipe_token=" + ajaxpipeToken + "&no_script_path=1&data=%7B%22scroll_load%22%3Atrue%2C%22last_fbid%22%3A%22" + currentLastFbid + "%22%2C%22fetch_size%22%3A32%2C%22profile_id%22%3A" + profileID + "%2C%22viewmode%22%3Anull%2C%22set%22%3A%22" + setID + "%22%2C%22type%22%3A%223%22%2C%22pager_fired_on_init%22%3Atrue%7D&__user=" + user + "&__a=1&__dyn=798aD5z5CF-&__req=jsonp_" + i + "&__adt=" + i;
+
+                loadLink = "https://www.facebook.com/ajax/pagelet/generic.php/TimelinePhotosAlbumPagelet?ajaxpipe=1&ajaxpipe_token=" + ajaxpipeToken + "&no_script_path=1&data=%7B%22scroll_load%22%3Atrue%2C%22last_fbid%22%3A" + currentLastFbid + "%2C%22fetch_size%22%3A32%2C%22profile_id%22%3A" + profileID + "%2C%22tab_key%22%3A%22media_set%22%2C%22set%22%3A%22" + setID + "%22%2C%22type%22%3A%223%22%2C%22sk%22%3A%22photos%22%2C%22overview%22%3Afalse%2C%22active_collection%22%3A69%2C%22collection_token%22%3A%22" + Encoding.urlEncode(collection_token) + "%22%2C%22cursor%22%3A0%2C%22tab_id%22%3A%22u_0_t%22%2C%22order%22%3Anull%2C%22importer_state%22%3Anull%7D&__user=" + user + "&__a=1&__dyn=7n8ahyngCBDBzpQ9UoGhk4BwzCxO4oKA8ABGfirWo8popyUWdDx24QqUgKm58y&__req=jsonp_" + i + "&__rev=1414761&__adt=" + i;
                 br.getPage(loadLink);
                 links = br.getRegex("ajax\\\\/photos\\\\/hovercard\\.php\\?fbid=(\\d+)\\&").getColumn(0);
                 currentMaxPicCount = 32;
                 dynamicLoadAlreadyDecrypted = true;
             } else {
-                links = br.getRegex("id=\"pic_(\\d+)\"").getColumn(0);
+                links = br.getRegex("hovercard\\.php\\?fbid=(\\d+)").getColumn(0);
             }
             if (links == null || links.length == 0) {
                 logger.warning("Decrypter broken for the following link or account needed: " + PARAMETER);

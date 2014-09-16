@@ -51,7 +51,7 @@ public class AndroidFileHostCom extends PluginForHost {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         br.getPage(link.getDownloadURL());
-        if (br.containsHTML(">file not found")) {
+        if (br.containsHTML(">file not found|404 not found") || br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         final String filename = br.getRegex("id=\"filename\" value=\"([^<>\"]*?)\"").getMatch(0);

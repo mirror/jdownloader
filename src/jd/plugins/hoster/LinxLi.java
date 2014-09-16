@@ -54,7 +54,7 @@ public class LinxLi extends PluginForHost {
         br.getHeaders().put("Accept", "application/json");
         br.setFollowRedirects(true);
         br.getPage(link.getDownloadURL());
-        if (br.getHttpConnection().getResponseCode() == 404) {
+        if (br.getHttpConnection().getResponseCode() == 404 || !br.containsHTML("\"")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         final String filename = getJson("filename");
