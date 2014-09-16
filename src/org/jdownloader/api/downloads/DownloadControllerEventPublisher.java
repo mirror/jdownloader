@@ -68,6 +68,7 @@ public class DownloadControllerEventPublisher implements EventPublisher, Downloa
     public static List<String>                         INTERVAL_EVENT_ID_LIST;
     private ScheduledExecutorService                   executer;
     private EventsAPI                                  eventsAPI;
+    private long                                       backEndChangeID;
     static {
         EVENT_ID_LIST = new ArrayList<String>();
         for (BASIC_EVENT t : BASIC_EVENT.values()) {
@@ -151,37 +152,56 @@ public class DownloadControllerEventPublisher implements EventPublisher, Downloa
     @Override
     public void onDownloadControllerAddedPackage(FilePackage pkg) {
         fire(BASIC_EVENT.ADD_CONTENT.name(), null, null);
-
+        flushBuffer();
     }
 
     @Override
     public void onDownloadControllerStructureRefresh(FilePackage pkg) {
+        long newChange = DownloadController.getInstance().getPackageControllerChanges();
+        if (backEndChangeID == newChange) {
+            // avoid dupe events
+            return;
+        }
+        backEndChangeID = newChange;
         fire(BASIC_EVENT.REFRESH_STRUCTURE.name(), null, null);
+        flushBuffer();
 
     }
 
     @Override
     public void onDownloadControllerStructureRefresh() {
-        fire(BASIC_EVENT.REFRESH_STRUCTURE.name(), BASIC_EVENT.REFRESH_STRUCTURE.name(), null);
-
+        long newChange = DownloadController.getInstance().getPackageControllerChanges();
+        if (backEndChangeID == newChange) {
+            // avoid dupe events
+            return;
+        }
+        backEndChangeID = newChange;
+        fire(BASIC_EVENT.REFRESH_STRUCTURE.name(), null, null);
+        flushBuffer();
     }
 
     @Override
     public void onDownloadControllerStructureRefresh(AbstractNode node, Object param) {
-        fire(BASIC_EVENT.REFRESH_STRUCTURE.name(), BASIC_EVENT.REFRESH_STRUCTURE.name(), null);
-
+        long newChange = DownloadController.getInstance().getPackageControllerChanges();
+        if (backEndChangeID == newChange) {
+            // avoid dupe events
+            return;
+        }
+        backEndChangeID = newChange;
+        fire(BASIC_EVENT.REFRESH_STRUCTURE.name(), null, null);
+        flushBuffer();
     }
 
     @Override
     public void onDownloadControllerRemovedPackage(FilePackage pkg) {
         fire(BASIC_EVENT.REMOVE_CONTENT.name(), null, null);
-
+        flushBuffer();
     }
 
     @Override
     public void onDownloadControllerRemovedLinklist(List<DownloadLink> list) {
         fire(BASIC_EVENT.REMOVE_CONTENT.name(), null, null);
-
+        flushBuffer();
     }
 
     @Override
@@ -333,7 +353,7 @@ public class DownloadControllerEventPublisher implements EventPublisher, Downloa
             }
         }
         fire(BASIC_EVENT.REFRESH_CONTENT.name(), null, null);
-
+        flushBuffer();
     }
 
     private void pushStatus(DownloadLink dl) {
