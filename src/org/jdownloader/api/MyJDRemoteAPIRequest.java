@@ -16,4 +16,9 @@ public class MyJDRemoteAPIRequest extends RemoteAPIRequest {
     public MyJDownloaderRequestInterface getRequest() {
         return (MyJDownloaderRequestInterface) super.getHttpRequest();
     }
+
+    @Override
+    public String toString() {
+        return super.toString();
+    }
 }

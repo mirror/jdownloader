@@ -69,6 +69,7 @@ public class DownloadControllerEventPublisher implements EventPublisher, Downloa
     private ScheduledExecutorService                   executer;
     private EventsAPI                                  eventsAPI;
     private long                                       backEndChangeID;
+    private long                                       contentChangesCounter;
     static {
         EVENT_ID_LIST = new ArrayList<String>();
         for (BASIC_EVENT t : BASIC_EVENT.values()) {
@@ -151,7 +152,7 @@ public class DownloadControllerEventPublisher implements EventPublisher, Downloa
 
     @Override
     public void onDownloadControllerAddedPackage(FilePackage pkg) {
-        fire(BASIC_EVENT.ADD_CONTENT.name(), null, null);
+        fire(BASIC_EVENT.ADD_CONTENT.name(), null, BASIC_EVENT.ADD_CONTENT.name());
         flushBuffer();
     }
 
@@ -163,7 +164,7 @@ public class DownloadControllerEventPublisher implements EventPublisher, Downloa
             return;
         }
         backEndChangeID = newChange;
-        fire(BASIC_EVENT.REFRESH_STRUCTURE.name(), null, null);
+        fire(BASIC_EVENT.REFRESH_STRUCTURE.name(), null, BASIC_EVENT.REFRESH_STRUCTURE.name());
         flushBuffer();
 
     }
@@ -176,7 +177,7 @@ public class DownloadControllerEventPublisher implements EventPublisher, Downloa
             return;
         }
         backEndChangeID = newChange;
-        fire(BASIC_EVENT.REFRESH_STRUCTURE.name(), null, null);
+        fire(BASIC_EVENT.REFRESH_STRUCTURE.name(), null, BASIC_EVENT.REFRESH_STRUCTURE.name());
         flushBuffer();
     }
 
@@ -188,7 +189,7 @@ public class DownloadControllerEventPublisher implements EventPublisher, Downloa
             return;
         }
         backEndChangeID = newChange;
-        fire(BASIC_EVENT.REFRESH_STRUCTURE.name(), null, null);
+        fire(BASIC_EVENT.REFRESH_STRUCTURE.name(), null, BASIC_EVENT.REFRESH_STRUCTURE.name());
         flushBuffer();
     }
 
@@ -213,7 +214,7 @@ public class DownloadControllerEventPublisher implements EventPublisher, Downloa
             // DATA_UPDATE.enabled, DATA_UPDATE.skipped, DATA_UPDATE.running, DATA_UPDATE.bytesLoaded, DATA_UPDATE.eta,
             // DATA_UPDATE.maxResults, DATA_UPDATE.packageUUIDs, DATA_UPDATE.host, DATA_UPDATE.comment, DATA_UPDATE.bytesTotal,
             // DATA_UPDATE.startAt, DATA_UPDATE.status]
-            System.out.println(property.getProperty());
+            System.out.println("Property Change: " + property.getProperty());
             switch (property.getProperty()) {
             case ARCHIVE:
                 break;
@@ -352,7 +353,12 @@ public class DownloadControllerEventPublisher implements EventPublisher, Downloa
 
             }
         }
-        fire(BASIC_EVENT.REFRESH_CONTENT.name(), null, null);
+        long newContentChangesCounter = DownloadController.getInstance().getContentChanges();
+        if (newContentChangesCounter != this.contentChangesCounter) {
+            // avoid dupes
+            this.contentChangesCounter = newContentChangesCounter;
+            fire(BASIC_EVENT.REFRESH_CONTENT.name(), null, BASIC_EVENT.REFRESH_CONTENT.name());
+        }
         flushBuffer();
     }
 
@@ -388,20 +394,11 @@ public class DownloadControllerEventPublisher implements EventPublisher, Downloa
 
     private void fire(String eventID, Object dls, String collapseKey) {
         synchronized (this) {
-            System.out.println(JSonStorage.serializeToJson(dls));
+
             ArrayList<Subscriber> subscribers = eventsAPI.getSubscribers();
             SimpleEventObject eventObject = new SimpleEventObject(this, eventID, dls, collapseKey);
             for (Subscriber subscriber : subscribers) {
-                ChannelCollector col = collectors.get(subscriber.getSubscriptionID());
-                if (dls instanceof HashMap) {
-                    if (col != null) {
-                        HashMap<String, Object> copy = new HashMap<String, Object>((HashMap) dls);
 
-                        if (!col.updateDupeCache(eventID + "." + copy.remove("uuid"), copy)) {
-                            continue;
-                        }
-                    }
-                }
                 pushToBuffer(subscriber, eventObject);
 
             }
@@ -445,7 +442,7 @@ public class DownloadControllerEventPublisher implements EventPublisher, Downloa
             }
         }
 
-        fire(BASIC_EVENT.REFRESH_CONTENT.name(), null, null);
+        fire(BASIC_EVENT.REFRESH_CONTENT.name(), null, BASIC_EVENT.REFRESH_CONTENT.name());
         flushBuffer();
 
     }
@@ -453,13 +450,13 @@ public class DownloadControllerEventPublisher implements EventPublisher, Downloa
     @Override
     public void onDownloadControllerUpdatedData(DownloadLink downloadlink) {
 
-        fire(BASIC_EVENT.REFRESH_CONTENT.name(), null, null);
+        fire(BASIC_EVENT.REFRESH_CONTENT.name(), null, BASIC_EVENT.REFRESH_CONTENT.name());
         flushBuffer();
     }
 
     @Override
     public void onDownloadControllerUpdatedData(FilePackage pkg) {
-        fire(BASIC_EVENT.REFRESH_CONTENT.name(), null, null);
+        fire(BASIC_EVENT.REFRESH_CONTENT.name(), null, BASIC_EVENT.REFRESH_CONTENT.name());
         flushBuffer();
     }
 
@@ -493,26 +490,25 @@ public class DownloadControllerEventPublisher implements EventPublisher, Downloa
                         @Override
                         public void run() {
                             boolean kill = true;
+                            int events = 0;
                             Set<SingleDownloadController> activeDownloads = DownloadWatchDog.getInstance().getRunningDownloadLinks();
 
-                            HashSet<DownloadLink> linksToProcess = new HashSet<DownloadLink>();
-                            HashSet<FilePackage> packagesToProcess = new HashSet<FilePackage>();
-                            for (SingleDownloadController dl : activeDownloads) {
-                                linksToProcess.add(dl.getDownloadLink());
-                            }
-                            for (DownloadLink dl : linksToProcess) {
-                                FilePackage p = dl.getParentNode();
-                                if (p != null) {
-                                    packagesToProcess.add(p);
-                                }
-                            }
-                            linksToProcess.addAll(linksWithPluginProgress.values());
-                            if (linksToProcess.size() > 0 || packagesToProcess.size() > 0) {
+                            HashSet<DownloadLink> linksToProcess = null;
+                            HashSet<FilePackage> packagesToProcess = null;
+
+                            if (true) {
                                 for (Entry<Long, ChannelCollector> es : collectors.entrySet()) {
                                     if (es.getValue().hasIntervalSubscriptions()) {
                                         kill = false;
                                         if (System.currentTimeMillis() - es.getValue().getLastPush() >= es.getValue().getInterval()) {
                                             es.getValue().setLastPush(System.currentTimeMillis());
+                                            if (linksToProcess == null) {
+                                                linksToProcess = new HashSet<DownloadLink>();
+                                                for (SingleDownloadController dl : activeDownloads) {
+                                                    linksToProcess.add(dl.getDownloadLink());
+                                                }
+                                                linksToProcess.addAll(linksWithPluginProgress.values());
+                                            }
                                             for (DownloadLink dl : linksToProcess) {
                                                 HashMap<String, Object> diff = es.getValue().getDiff(dl);
 
@@ -524,8 +520,19 @@ public class DownloadControllerEventPublisher implements EventPublisher, Downloa
                                                     List<Long> publishTo = new ArrayList<Long>();
 
                                                     pushToBuffer(es.getValue().getSubscriber(), eventObject);
-
+                                                    events++;
                                                 }
+                                            }
+                                            if (packagesToProcess == null) {
+                                                packagesToProcess = new HashSet<FilePackage>();
+
+                                                for (DownloadLink dl : linksToProcess) {
+                                                    FilePackage p = dl.getParentNode();
+                                                    if (p != null) {
+                                                        packagesToProcess.add(p);
+                                                    }
+                                                }
+
                                             }
                                             for (FilePackage p : packagesToProcess) {
                                                 HashMap<String, Object> diff = es.getValue().getDiff(p);
@@ -536,13 +543,16 @@ public class DownloadControllerEventPublisher implements EventPublisher, Downloa
                                                     dls.put(entry.getKey(), entry.getValue());
                                                     SimpleEventObject eventObject = new SimpleEventObject(DownloadControllerEventPublisher.this, BASIC_EVENT.PACKAGE_UPDATE.name() + "." + entry.getKey(), dls, BASIC_EVENT.LINK_UPDATE.name() + "." + entry.getKey() + "." + p.getUniqueID().getID() + "");
                                                     pushToBuffer(es.getValue().getSubscriber(), eventObject);
+                                                    events++;
                                                 }
                                             }
                                         }
                                     }
                                 }
                             }
-                            flushBuffer();
+                            if (events > 0) {
+                                flushBuffer();
+                            }
                             if (kill) {
                                 terminationRounds++;
                                 if (terminationRounds > 10) {
@@ -569,6 +579,10 @@ public class DownloadControllerEventPublisher implements EventPublisher, Downloa
 
     protected void flushBuffer() {
         synchronized (buffer) {
+            if (buffer.size() == 0) {
+                return;
+            }
+            System.out.println("Flush Buffer " + buffer.size());
 
             for (Entry<Subscriber, List<EventObject>> es : buffer.entrySet()) {
 
@@ -721,6 +735,25 @@ public class DownloadControllerEventPublisher implements EventPublisher, Downloa
 
     private void pushToBuffer(Subscriber subscriber, EventObject eventObject) {
         synchronized (buffer) {
+
+            ChannelCollector col = collectors.get(subscriber.getSubscriptionID());
+            if (col == null) {
+
+                // Closed channel?
+                return;
+            }
+            Object dls = eventObject.getEventdata();
+            if (dls != null && dls instanceof HashMap) {
+                if (col != null) {
+                    HashMap<String, Object> copy = new HashMap<String, Object>((HashMap) dls);
+
+                    if (!col.updateDupeCache(eventObject.getEventid() + "." + copy.remove("uuid"), copy)) {
+                        return;
+                    }
+                }
+            }
+            System.out.println(getClass().getName() + "FireEvent -> " + subscriber.getSubscriptionID() + " : " + eventObject.getEventid() + " - " + JSonStorage.serializeToJson(dls));
+
             List<EventObject> lst = this.buffer.get(subscriber);
             if (lst == null) {
                 lst = new ArrayList<EventObject>();

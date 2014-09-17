@@ -14,4 +14,10 @@ public interface MyJDownloaderRequestInterface {
     public String getJqueryCallback();
 
     public int getApiVersion();
+
+    public long getDiffKeepAlive() throws IOException;
+
+    public String getDiffID() throws IOException;
+
+    public String getDiffType() throws IOException;
 }

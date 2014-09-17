@@ -34,6 +34,14 @@ public class MyJDownloaderPostRequest extends PostRequest implements MyJDownload
 
     }
 
+    @Override
+    public String toString() {
+        if (jsonRequest == null) {
+            return "Non JSonRequest\r\n" + super.toString();
+        }
+        return "RID: " + jsonRequest.getRid() + "\r\nAPIVersion: " + jsonRequest.getApiVer() + "\r\n" + super.toString();
+    }
+
     private GetData requestProperties = GetData.EMPTY;
 
     @Override
@@ -45,13 +53,17 @@ public class MyJDownloaderPostRequest extends PostRequest implements MyJDownload
     }
 
     public int getApiVersion() {
-        if (requestProperties.apiVersion >= 0) { return requestProperties.apiVersion; }
+        if (requestProperties.apiVersion >= 0) {
+            return requestProperties.apiVersion;
+        }
         JSonRequest jsonr;
 
         try {
             jsonr = getJsonRequest();
 
-            if (jsonr != null) { return jsonr.getApiVer(); }
+            if (jsonr != null) {
+                return jsonr.getApiVer();
+            }
         } catch (IOException e) {
             e.printStackTrace();
         }
@@ -79,7 +91,9 @@ public class MyJDownloaderPostRequest extends PostRequest implements MyJDownload
     }
 
     public synchronized List<KeyValuePair> getPostParameter() throws IOException {
-        if (postParameterParsed) { return postParameters; }
+        if (postParameterParsed) {
+            return postParameters;
+        }
 
         postParameters = new LinkedList<KeyValuePair>();
         Object[] params = getJsonRequest().getParams();
@@ -115,6 +129,12 @@ public class MyJDownloaderPostRequest extends PostRequest implements MyJDownload
                 } else if (MyJDownloaderGetRequest.API_VERSION.equalsIgnoreCase(param.key)) {
                     requestProperties.apiVersion = Integer.parseInt(param.value);
                     continue;
+                } else if (MyJDownloaderGetRequest.DIFF_KEEPALIVE.equalsIgnoreCase(param.key)) {
+                    requestProperties.diffKeepalive = Long.parseLong(param.value);
+                    continue;
+                } else if (MyJDownloaderGetRequest.DIFF_ID.equalsIgnoreCase(param.key)) {
+                    requestProperties.diffID = param.value;
+                    continue;
                 }
 
             }
@@ -124,22 +144,29 @@ public class MyJDownloaderPostRequest extends PostRequest implements MyJDownload
 
     @Override
     public long getRid() throws IOException {
-        if (requestProperties.rid >= 0) { return requestProperties.rid; }
+        if (requestProperties.rid >= 0) {
+            return requestProperties.rid;
+        }
         JSonRequest jsonr;
 
         jsonr = getJsonRequest();
 
         if (jsonr != null) {
 
-        return jsonr.getRid(); }
+            return jsonr.getRid();
+        }
         return -1;
 
     }
 
     public JSonRequest getJsonRequest() throws IOException {
-        if (jsonRequest != null) { return jsonRequest; }
+        if (jsonRequest != null) {
+            return jsonRequest;
+        }
         synchronized (this) {
-            if (jsonRequest != null) { return jsonRequest; }
+            if (jsonRequest != null) {
+                return jsonRequest;
+            }
 
             final byte[] jsonBytes = IO.readStream(-1, getInputStream());
             final String json = new String(jsonBytes, "UTF-8");
@@ -170,4 +197,51 @@ public class MyJDownloaderPostRequest extends PostRequest implements MyJDownload
 
     }
 
+    @Override
+    public long getDiffKeepAlive() throws IOException {
+        if (requestProperties.diffKeepalive >= 0) {
+            return requestProperties.diffKeepalive;
+        }
+        JSonRequest jsonr;
+
+        jsonr = getJsonRequest();
+
+        if (jsonr != null) {
+
+            return jsonr.getDiffKA();
+        }
+        return 0;
+    }
+
+    @Override
+    public String getDiffID() throws IOException {
+        if (requestProperties.diffID != null) {
+            return requestProperties.diffID;
+        }
+        JSonRequest jsonr;
+
+        jsonr = getJsonRequest();
+
+        if (jsonr != null) {
+
+            return jsonr.getDiffID();
+        }
+        return null;
+    }
+
+    @Override
+    public String getDiffType() throws IOException {
+        if (requestProperties.diffType != null) {
+            return requestProperties.diffType;
+        }
+        JSonRequest jsonr;
+
+        jsonr = getJsonRequest();
+
+        if (jsonr != null) {
+
+            return jsonr.getDiffType();
+        }
+        return null;
+    }
 }

@@ -15,6 +15,7 @@ public class MovePluginProgress extends PluginProgress {
     public MovePluginProgress() {
         super(-1, 100, null);
         setIcon(new AbstractIcon(IconKey.ICON_SAVETO, 18));
+        msg = _JDT._.MovePluginProgress_nodest();
     }
 
     @Override

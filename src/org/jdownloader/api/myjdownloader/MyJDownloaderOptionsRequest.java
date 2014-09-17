@@ -39,6 +39,11 @@ public class MyJDownloaderOptionsRequest extends OptionsRequest implements MyJDo
     }
 
     @Override
+    public String getDiffType() throws IOException {
+        return requestProperties.diffType;
+    }
+
+    @Override
     public String getJqueryCallback() {
         return requestProperties.callback;
     }
@@ -52,4 +57,13 @@ public class MyJDownloaderOptionsRequest extends OptionsRequest implements MyJDo
         return (MyJDownloaderHttpConnection) super.getConnection();
     }
 
+    @Override
+    public long getDiffKeepAlive() {
+        return requestProperties.diffKeepalive;
+    }
+
+    @Override
+    public String getDiffID() {
+        return requestProperties.diffID;
+    }
 }
