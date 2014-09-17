@@ -56,8 +56,9 @@ public class FaceBookComVideos extends PluginForHost {
     private static Object       LOCK                       = new Object();
     public static String        Agent                      = "Mozilla/5.0 (Windows NT 6.1; WOW64; rv:27.0) Gecko/20100101 Firefox/27.0";
     private boolean             pluginloaded               = false;
-    private static final String TYPE_PHOTO                 = "https?://(www\\.)?facebook\\.com/photo\\.php\\?fbid=\\d+";
-    private static final String TYPE_VIDEO                 = "https?://(www\\.)?facebook\\.com/(video|photo)\\.php\\?v=\\d+";
+    private static final String TYPE_SINGLE_PHOTO          = "https?://(www\\.)?facebook\\.com/photo\\.php\\?fbid=\\d+";
+    private static final String TYPE_SINGLE_VIDEO_ALL      = "https?://(www\\.)?facebook\\.com/(video/video|photo|video)\\.php\\?v=\\d+";
+    private static final String TYPE_SINGLE_VIDEO_MAIN     = "https?://(www\\.)?facebook\\.com/video\\.php\\?v=\\d+";
     private static final String TYPE_DOWNLOAD              = "https?://(www\\.)?facebook\\.com/download/\\d+";
     private String              DLLINK                     = null;
     private boolean             loggedIN                   = false;
@@ -75,7 +76,7 @@ public class FaceBookComVideos extends PluginForHost {
     public void correctDownloadLink(DownloadLink link) {
         link.setUrlDownload(link.getDownloadURL().replace("facebookdecrypted.com/", "facebook.com/"));
         String thislink = link.getDownloadURL().replace("https://", "http://");
-        String videoID = new Regex(thislink, "facebook\\.com/(ts#\\!/video\\.php\\?v=|video\\.php\\?v=|photo\\.php\\?v=|video/embed\\?video_id=)(\\d+)").getMatch(1);
+        String videoID = new Regex(thislink, "facebook\\.com/(ts#\\!/video\\.php\\?v=|video\\.php\\?v=|photo\\.php\\?v=|video/embed\\?video_id=|video/video\\.php\\?v=)(\\d+)").getMatch(1);
         if (videoID != null) {
             thislink = "http://facebook.com/video.php?v=" + videoID;
         }
@@ -151,7 +152,7 @@ public class FaceBookComVideos extends PluginForHost {
             }
             filename = Encoding.htmlDecode(filename.trim());
 
-            if (link.getDownloadURL().matches(TYPE_PHOTO)) {
+            if (link.getDownloadURL().matches(TYPE_SINGLE_PHOTO)) {
                 // Try if a downloadlink is available
                 DLLINK = br.getRegex("class=\"fbPhotosPhotoActionsItem\" href=\"(https?://[^<>\"]*?\\?dl=1)\"").getMatch(0);
                 // Try to find original quality link
@@ -277,7 +278,7 @@ public class FaceBookComVideos extends PluginForHost {
     private boolean accountNeeded(final DownloadLink dl) {
         boolean login_needed = !dl.getBooleanProperty("nologin", false);
         if (login_needed) {
-            login_needed = !dl.getDownloadURL().matches(TYPE_VIDEO);
+            login_needed = !dl.getDownloadURL().matches(TYPE_SINGLE_VIDEO_MAIN);
         }
         return login_needed;
     }

@@ -61,7 +61,7 @@ public class UpfileMobi extends PluginForHost {
             return AvailableStatus.UNCHECKABLE;
         }
         final String filename = br.getRegex("property=\"og:title\" content=\"([^<>\"]*?)\"").getMatch(0);
-        final String filesize = br.getRegex(">Download (File)?</a> \\(([^<>\"]*?)\\)").getMatch(1);
+        final String filesize = br.getRegex("Download (File)?(</a>)?[\t\n\r ]+\\(([^<>\"]*?)\\)").getMatch(2);
         if (filename == null || filesize == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
@@ -110,15 +110,11 @@ public class UpfileMobi extends PluginForHost {
         if (ad_sht != null) {
             br.cloneBrowser().openGetConnection("http://upfile.mobi/" + ad_sht);
         }
-        String dllink = br.getRegex("\"(index\\.php\\?page=download[^<>\"]*?)\"").getMatch(0);
-        if (dllink == null) {
-            dllink = br.getRegex("href=\"(index[^<>\"]*?)\">Download File</a>").getMatch(0);
-        }
+        String dllink = br.getRegex("\"(https?://(www\\.)?upfile\\.mobi/download/[^<>\"]*?)\"").getMatch(0);
         if (dllink == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
 
-        dllink = "http://upfile.mobi/" + dllink;
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 0);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
