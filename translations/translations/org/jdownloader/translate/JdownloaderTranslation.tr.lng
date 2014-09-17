@@ -65,6 +65,7 @@ Main_run_autostart_=İndirmeler başlatılıyor
 Main_run_autostart_msg=İndirmeler birkaç saniyeye kadar başlayacak...
 Mainstart_now=HEMEN Başlat!
 MovePluginProgress=Dosya %s1 konumuna taşınıyor
+MovePluginProgress_nodest=Dosya taşınıyor...
 MyJDownloaderController_onError_account_unconfirmed='JDownloader'ım' epostanız henüz onaylanmadı.\nLütfen epostalarınızı kontrol edin ve onaylama Bağlantısına tıklayın
 MyJDownloaderController_onError_badlogins='JDownloader'ım' oturum açma bilgileriniz doğru değil.\nLütfen kullanıcı adı/eposta ve parolanızı kontrol edin!
 MyJDownloaderController_onError_outdated=JDownloader, JDownloader'ım hizmetine bağlanamadı. Lütfen JDownloader'ınızı güncelleyin!
