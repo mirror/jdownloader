@@ -72,6 +72,7 @@ public class SpankBangCom extends PluginForDecrypt {
         final boolean fastcheck = cfg.getBooleanProperty(FASTLINKCHECK, false);
         PARAMETER = param.toString().replaceAll("http://(www\\.)?([a-z]{2}\\.)?spankbang\\.com/", "http://spankbang.com/");
         br.setFollowRedirects(true);
+        br.setCookie("http://spankbang.com/", "country", "GB");
         br.getHeaders().put("Accept-Language", "en");
         synchronized (ctrlLock) {
             if (!pluginLoaded.get()) {
