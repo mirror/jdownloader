@@ -114,7 +114,7 @@ public class SaveTvDecrypter extends PluginForDecrypt {
 
         try {
             try {
-                if (cfg.getBooleanProperty(USEAPI, false)) {
+                if (api_enabled) {
                     api_decrypt_All();
                 } else {
                     site_decrypt_All();
