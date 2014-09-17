@@ -81,10 +81,10 @@ public class SaveTvDecrypter extends PluginForDecrypt {
     private int                    requestCount             = 1;
     private long                   time_crawl_started       = 0;
     private boolean                decryptAborted           = false;
-
     private Account                acc                      = null;
+
     /* If this != null, API can be used */
-    private String                 API_SESSIONID            = null;
+    private boolean                api_enabled              = false;
     private String                 parameter                = null;
 
     /**
@@ -97,6 +97,7 @@ public class SaveTvDecrypter extends PluginForDecrypt {
     @SuppressWarnings("deprecation")
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         parameter = param.toString();
+        api_enabled = cfg.getBooleanProperty(USEAPI, false);
         this.br.setFollowRedirects(true);
         if (!cfg.getBooleanProperty(CRAWLER_ACTIVATE, false)) {
             logger.info("save.tv: Decrypting save.tv archives is disabled, doing nothing...");
@@ -113,11 +114,7 @@ public class SaveTvDecrypter extends PluginForDecrypt {
 
         try {
             try {
-                if (cfg.getBooleanProperty(USEAPI, false) && API_SESSIONID != null) {
-                    /*
-                     * TODO: Validate API_SESSIONID or at least refresh if it expired - or always perform a full API login (includes
-                     * API_SESSIONID refresh) to keep it fresh.
-                     */
+                if (cfg.getBooleanProperty(USEAPI, false)) {
                     api_decrypt_All();
                 } else {
                     site_decrypt_All();
@@ -191,6 +188,81 @@ public class SaveTvDecrypter extends PluginForDecrypt {
         return decryptedLinks;
     }
 
+    /** This will first grab alle IDs, then their details as the 2nd used request returns more information than the first one. */
+    private void api_decrypt_All() throws Exception {
+        final ArrayList<String> temp_telecastIDs = new ArrayList<String>();
+        int offset = 0;
+        while (true) {
+            try {
+                if (this.isAbort()) {
+                    decryptAborted = true;
+                    throw new DecrypterException("Decrypt aborted!");
+                }
+            } catch (final DecrypterException e) {
+                // Not available in old 0.9.581 Stable
+                if (decryptAborted) {
+                    throw e;
+                }
+            }
+            jd.plugins.hoster.SaveTv.api_doSoapRequestSafe(this.br, acc, "http://tempuri.org/IVideoArchive/SimpleParamsGetVideoArchiveList", "<channelId>0</channelId><filterType>0</filterType><recordingState>0</recordingState><tvCategoryId>0</tvCategoryId><tvSubCategoryId>0</tvSubCategoryId><textSearchType>0</textSearchType><from>" + offset + "</from><count>" + (offset + ENTRIES_PER_REQUEST) + "</count>");
+            final String[] telecastIDs = br.getRegex("Stv\\.Api\\.Contract\\.Telecast\">(\\d+)</Id>").getColumn(0);
+            for (final String telecastID : telecastIDs) {
+                temp_telecastIDs.add(telecastID);
+                offset++;
+            }
+            logger.info("Found " + temp_telecastIDs.size() + " RAW telecastIDs so far");
+            if (telecastIDs.length < ENTRIES_PER_REQUEST) {
+                logger.info("Seems like we found all telecastIDs --> Getting further information");
+                break;
+            }
+        }
+
+        /* Save on account to display in account information */
+        totalLinksNum = temp_telecastIDs.size();
+        acc.setProperty("acc_count_telecast_ids", Integer.toString(totalLinksNum));
+        final BigDecimal bd = new BigDecimal((double) totalLinksNum / ENTRIES_PER_REQUEST);
+        requestCount = bd.setScale(0, BigDecimal.ROUND_UP).intValue();
+
+        offset = 0;
+        int request_num = 1;
+        while (true) {
+            try {
+                if (this.isAbort()) {
+                    decryptAborted = true;
+                    throw new DecrypterException("Decrypt aborted!");
+                }
+            } catch (final DecrypterException e) {
+                // Not available in old 0.9.581 Stable
+                if (decryptAborted) {
+                    throw e;
+                }
+            }
+            String telecastid_post_data = "";
+            for (int i = 0; i <= ENTRIES_PER_REQUEST - 1; i++) {
+                if (offset >= totalLinksNum) {
+                    break;
+                }
+                telecastid_post_data += "<a:int>" + temp_telecastIDs.get(offset) + "</a:int>";
+                offset++;
+            }
+            logger.info("save.tv: Decrypting request " + request_num + " of " + requestCount);
+            jd.plugins.hoster.SaveTv.api_doSoapRequestSafe(this.br, acc, "http://tempuri.org/ITelecast/GetTelecastDetail", "<telecastIds xmlns:a=\"http://schemas.microsoft.com/2003/10/Serialization/Arrays\" xmlns:i=\"http://www.w3.org/2001/XMLSchema-instance\">" + telecastid_post_data + "</telecastIds><detailLevel>2</detailLevel>");
+            final String[] entries = br.getRegex("<a:TelecastDetail>(.*?)</a:TelecastDetail>").getColumn(0);
+            if (entries == null || entries.length == 0) {
+                logger.info("save.tv. Can't find entries, stopping at request: " + request_num + " of " + requestCount);
+                break;
+            }
+            for (final String entry : entries) {
+                addID_api(entry);
+            }
+            if (offset >= totalLinksNum) {
+                logger.info("Seems like decryption is complete --> Stopping!");
+                break;
+            }
+            request_num++;
+        }
+    }
+
     private void site_decrypt_All() throws Exception {
         boolean is_groups_enabled = !br.containsHTML("\"IRECORDINGFORMATID\"");
         final boolean groups_enabled_by_user = is_groups_enabled;
@@ -255,81 +327,6 @@ public class SaveTvDecrypter extends PluginForDecrypt {
             }
         } catch (final Throwable settingfail) {
             logger.info("Failed to re-enable groups setting");
-        }
-    }
-
-    /** This will first grab alle IDs, then their details as the 2nd used request returns more information than the first one. */
-    private void api_decrypt_All() throws Exception {
-        final ArrayList<String> temp_telecastIDs = new ArrayList<String>();
-        int offset = 0;
-        while (true) {
-            try {
-                if (this.isAbort()) {
-                    decryptAborted = true;
-                    throw new DecrypterException("Decrypt aborted!");
-                }
-            } catch (final DecrypterException e) {
-                // Not available in old 0.9.581 Stable
-                if (decryptAborted) {
-                    throw e;
-                }
-            }
-            api_doSoapRequest("http://tempuri.org/IVideoArchive/SimpleParamsGetVideoArchiveList", "<sessionId i:type=\"d:string\">" + API_SESSIONID + "</sessionId><channelId>0</channelId><filterType>0</filterType><recordingState>0</recordingState><tvCategoryId>0</tvCategoryId><tvSubCategoryId>0</tvSubCategoryId><textSearchType>0</textSearchType><from>" + offset + "</from><count>" + (offset + ENTRIES_PER_REQUEST) + "</count>");
-            final String[] telecastIDs = br.getRegex("Stv\\.Api\\.Contract\\.Telecast\">(\\d+)</Id>").getColumn(0);
-            for (final String telecastID : telecastIDs) {
-                temp_telecastIDs.add(telecastID);
-                offset++;
-            }
-            logger.info("Found " + temp_telecastIDs.size() + " RAW telecastIDs so far");
-            if (telecastIDs.length < ENTRIES_PER_REQUEST) {
-                logger.info("Seems like we found all telecastIDs --> Getting further information");
-                break;
-            }
-        }
-
-        /* Save on account to display in account information */
-        totalLinksNum = temp_telecastIDs.size();
-        acc.setProperty("acc_count_telecast_ids", Integer.toString(totalLinksNum));
-        final BigDecimal bd = new BigDecimal((double) totalLinksNum / ENTRIES_PER_REQUEST);
-        requestCount = bd.setScale(0, BigDecimal.ROUND_UP).intValue();
-
-        offset = 0;
-        int request_num = 1;
-        while (true) {
-            try {
-                if (this.isAbort()) {
-                    decryptAborted = true;
-                    throw new DecrypterException("Decrypt aborted!");
-                }
-            } catch (final DecrypterException e) {
-                // Not available in old 0.9.581 Stable
-                if (decryptAborted) {
-                    throw e;
-                }
-            }
-            String telecastid_post_data = "";
-            for (int i = 0; i <= ENTRIES_PER_REQUEST - 1; i++) {
-                if (offset >= totalLinksNum) {
-                    break;
-                }
-                telecastid_post_data += "<a:int>" + temp_telecastIDs.get(offset) + "</a:int>";
-                offset++;
-            }
-            logger.info("save.tv: Decrypting request " + request_num + " of " + requestCount);
-            api_doSoapRequest("http://tempuri.org/ITelecast/GetTelecastDetail", "<sessionId i:type=\"d:string\">" + API_SESSIONID + "</sessionId><telecastIds xmlns:a=\"http://schemas.microsoft.com/2003/10/Serialization/Arrays\" xmlns:i=\"http://www.w3.org/2001/XMLSchema-instance\">" + telecastid_post_data + "</telecastIds><detailLevel>2</detailLevel>");
-            final String[] entries = br.getRegex("<a:TelecastDetail>(.*?)</a:TelecastDetail>").getColumn(0);
-            if (entries == null || entries.length == 0) {
-                logger.info("save.tv. Can't find entries, stopping at request: " + request_num + " of " + requestCount);
-                break;
-            }
-            for (final String entry : entries) {
-                addID_api(entry);
-            }
-            if (offset >= totalLinksNum) {
-                logger.info("Seems like decryption is complete --> Stopping!");
-                break;
-            }
-            request_num++;
         }
     }
 
@@ -403,12 +400,15 @@ public class SaveTvDecrypter extends PluginForDecrypt {
             return false;
         }
         try {
-            jd.plugins.hoster.SaveTv.site_login(this.br, acc, force);
+            if (api_enabled) {
+                jd.plugins.hoster.SaveTv.api_login(this.br, acc, force);
+            } else {
+                jd.plugins.hoster.SaveTv.site_login(this.br, acc, force);
+            }
         } catch (final PluginException e) {
             acc.setValid(false);
             return false;
         }
-        API_SESSIONID = acc.getStringProperty("sessionid", null);
         return true;
     }
 
