@@ -621,4 +621,7 @@ public interface JdownloaderTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "Extract Audio Stream" })
     String GenericVariants_DEMUX_GENERIC_AUDIO();
 
+    @Default(lngs = { "en" }, values = { "Moving file..." })
+    String MovePluginProgress_nodest();
+
 }

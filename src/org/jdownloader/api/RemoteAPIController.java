@@ -1,13 +1,19 @@
 package org.jdownloader.api;
 
+import java.io.File;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map.Entry;
+
+import jd.nutils.DiffMatchPatch;
+import jd.nutils.DiffMatchPatch.Diff;
+import jd.nutils.DiffMatchPatch.Patch;
 
 import org.appwork.exceptions.WTFException;
 import org.appwork.net.protocol.http.HTTPConstants.ResponseCode;
@@ -23,13 +29,14 @@ import org.appwork.remoteapi.events.EventsAPI;
 import org.appwork.remoteapi.events.EventsAPIInterface;
 import org.appwork.remoteapi.events.json.EventObjectStorable;
 import org.appwork.remoteapi.exceptions.BasicRemoteAPIException;
-import org.appwork.remoteapi.responsewrapper.DataObject;
 import org.appwork.storage.JSonStorage;
 import org.appwork.storage.Storable;
 import org.appwork.storage.TypeRef;
 import org.appwork.storage.config.JsonConfig;
 import org.appwork.uio.UIOManager;
 import org.appwork.utils.Application;
+import org.appwork.utils.Hash;
+import org.appwork.utils.IO;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.logging2.LogSource;
 import org.appwork.utils.net.httpserver.handler.HttpRequestHandler;
@@ -72,6 +79,7 @@ import org.jdownloader.myjdownloader.client.bindings.events.json.MyJDEvent;
 import org.jdownloader.myjdownloader.client.bindings.interfaces.EventsInterface;
 import org.jdownloader.myjdownloader.client.bindings.interfaces.Linkable;
 import org.jdownloader.myjdownloader.client.json.AbstractJsonData;
+import org.jdownloader.myjdownloader.client.json.ObjectData;
 
 public class RemoteAPIController {
 
@@ -137,18 +145,71 @@ public class RemoteAPIController {
             @Override
             public void sendText(RemoteAPIRequest request, RemoteAPIResponse response, String text) throws UnsupportedEncodingException, IOException {
                 try {
+
+                    if (!isJared) {
+                        logger.info("\r\n===========API Call Result:==============\r\n" + request.toString() + "\r\nResponse:\r\n" + text + "\r\n" + "=========================================");
+                    }
                     if (request instanceof SessionRemoteAPIRequest) {
                         if (((SessionRemoteAPIRequest) request).getApiRequest() instanceof DeprecatedRemoteAPIRequest) {
                             //
-                            super.sendText(request, response, JSonStorage.serializeToJson(new DataObject(JSonStorage.restoreFromString(text, new TypeRef<Object>() {
+                            super.sendText(request, response, JSonStorage.serializeToJson(new ObjectData(JSonStorage.restoreFromString(text, new TypeRef<Object>() {
                             }, null), -1)));
                             return;
 
                         }
                         MyJDownloaderRequestInterface ri = ((MyJDRemoteAPIRequest) ((SessionRemoteAPIRequest) request).getApiRequest()).getRequest();
                         if (ri.getApiVersion() > 0) {
-                            super.sendText(request, response, JSonStorage.serializeToJson(new DataObject(JSonStorage.restoreFromString(text, new TypeRef<Object>() {
-                            }, null), ri.getRid())));
+
+                            long dka = ri.getDiffKeepAlive();
+                            String type = ri.getDiffType();
+                            if (dka > 0 && type != null) {
+                                String diffID = ri.getDiffID();
+
+                                String old = null;
+                                if (StringUtils.isNotEmpty(diffID)) {
+                                    File tmp = Application.getTempResource("apidiffs/" + ri.getDiffID() + ".dat");
+                                    if (tmp.exists()) {
+                                        old = IO.readFileToString(tmp);
+                                    }
+                                }
+                                File tmp = Application.getTempResource("apidiffs/" + Hash.getMD5(text) + ".dat");
+                                IO.secureWrite(tmp, text.getBytes("UTF-8"));
+                                if (old == null) {
+                                    ObjectData od = new ObjectData(text, ri.getRid());
+                                    od.setDiffID(Hash.getMD5(text));
+                                    super.sendText(request, response, JSonStorage.serializeToJson(od));
+
+                                } else if ("patch".equalsIgnoreCase(type)) {
+                                    DiffMatchPatch differ = new DiffMatchPatch();
+                                    LinkedList<Diff> diff = differ.diffMain(old, text);
+                                    differ.diffEditCost = 10;
+                                    differ.diffCleanupEfficiency(diff);
+                                    LinkedList<Patch> patches = differ.patchMake(diff);
+                                    String md5 = Hash.getMD5(text);
+                                    String difftext = differ.patchToText(patches);
+                                    if (difftext.length() >= text.length()) {
+
+                                        // diff longer than the actual content.
+                                        ObjectData od = new ObjectData(text, ri.getRid());
+                                        od.setDiffID(Hash.getMD5(text));
+                                        super.sendText(request, response, JSonStorage.serializeToJson(od));
+
+                                    } else {
+                                        ObjectData od = new ObjectData(difftext, ri.getRid());
+                                        od.setDiffID(md5);
+                                        od.setDiffType("patch");
+                                        super.sendText(request, response, JSonStorage.serializeToJson(od));
+                                    }
+                                } else {
+                                    ObjectData od = new ObjectData(text, ri.getRid());
+                                    od.setDiffID(Hash.getMD5(text));
+                                    super.sendText(request, response, JSonStorage.serializeToJson(od));
+
+                                }
+                            } else {
+                                super.sendText(request, response, JSonStorage.serializeToJson(new ObjectData(JSonStorage.restoreFromString(text, new TypeRef<Object>() {
+                                }, null), ri.getRid())));
+                            }
                         } else {
                             super.sendText(request, response, text);
                         }
@@ -173,6 +234,7 @@ public class RemoteAPIController {
                     return new DeprecatedRemoteAPIRequest(interfaceHandler, methodName, parameters.toArray(new String[] {}), (DeprecatedAPIRequestInterface) request, jqueryCallback);
                     //
                 }
+
                 return new MyJDRemoteAPIRequest(interfaceHandler, methodName, parameters.toArray(new String[] {}), (MyJDownloaderRequestInterface) request);
             }
 
@@ -191,7 +253,7 @@ public class RemoteAPIController {
                             throw new BasicRemoteAPIException("no JSONRequest", ResponseCode.ERROR_BAD_REQUEST);
                         }
                         if (!isJared) {
-                            logger.info(JSonStorage.toString(jsonRequest));
+                            // logger.info(JSonStorage.toString(jsonRequest));
                         }
                         if (StringUtils.isEmpty(jsonRequest.getUrl())) {
                             throw new BasicRemoteAPIException("JSonRequest URL is empty", ResponseCode.ERROR_BAD_REQUEST);

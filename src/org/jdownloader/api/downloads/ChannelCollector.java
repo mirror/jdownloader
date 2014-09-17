@@ -163,9 +163,10 @@ public class ChannelCollector {
 
     public boolean updateDupeCache(String string, HashMap<String, Object> copy) {
         String id = copy == null ? null : Hash.getMD5(JSonStorage.serializeToJson(copy));
-        if (StringUtils.equals(id, dupeCache.put(string, id))) {
+        if (StringUtils.equals(id, dupeCache.get(string))) {
             return false;
         }
+        dupeCache.put(string, id);
         return true;
     }
 

@@ -1114,4 +1114,11 @@ public interface GraphicalUserInterfaceSettings extends ConfigInterface {
 
     void setPriorityColumnAutoShowEnabled(boolean b);
 
+    @AboutConfig
+    @DescriptionForConfigEntry("Shortcut for the  Refresh Button in the captcha dialog")
+    @DefaultStringValue("pressed F5")
+    String getShortcutForCaptchaDialogRefresh();
+
+    void setShortcutForCaptchaDialogRefresh(String b);
+
 }

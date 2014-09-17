@@ -43,6 +43,7 @@ import javax.swing.JLabel;
 import javax.swing.JMenuItem;
 import javax.swing.JPanel;
 import javax.swing.JPopupMenu;
+import javax.swing.KeyStroke;
 import javax.swing.Timer;
 
 import jd.captcha.utils.GifDecoder;
@@ -476,6 +477,7 @@ public abstract class AbstractCaptchaDialog extends AbstractDialog<Object> {
 
     @Override
     protected DefaultButtonPanel getDefaultButtonPanel() {
+
         final DefaultButtonPanel ret = new DefaultButtonPanel("ins 0", "[]", "0[grow,fill]0") {
 
             @Override
@@ -484,6 +486,11 @@ public abstract class AbstractCaptchaDialog extends AbstractDialog<Object> {
                     {
                         setSmallIcon(NewTheme.I().getIcon("refresh", 18));
                         setTooltipText(_GUI._.CaptchaDialog_layoutDialogContent_refresh());
+                        KeyStroke ks = KeyStroke.getKeyStroke(CFG_GUI.CFG.getShortcutForCaptchaDialogRefresh());
+                        if (ks == null) {
+                            ks = KeyStroke.getKeyStroke("pressed F5");
+                        }
+                        setAccelerator(ks);
 
                     }
 
@@ -505,6 +512,7 @@ public abstract class AbstractCaptchaDialog extends AbstractDialog<Object> {
                 refreshBtn.setRolloverEffectEnabled(true);
                 super.add(refreshBtn, "alignx right,width 28!");
                 super.addOKButton(okButton);
+
             }
 
             @Override

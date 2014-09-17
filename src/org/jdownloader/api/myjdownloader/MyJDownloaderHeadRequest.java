@@ -38,6 +38,11 @@ public class MyJDownloaderHeadRequest extends HeadRequest implements MyJDownload
         return requestProperties.callback;
     }
 
+    @Override
+    public String getDiffType() throws IOException {
+        return requestProperties.diffType;
+    }
+
     public MyJDownloaderHeadRequest(MyJDownloaderHttpConnection connection) {
         super(connection);
 
@@ -50,6 +55,16 @@ public class MyJDownloaderHeadRequest extends HeadRequest implements MyJDownload
     @Override
     public MyJDownloaderHttpConnection getConnection() {
         return (MyJDownloaderHttpConnection) super.getConnection();
+    }
+
+    @Override
+    public long getDiffKeepAlive() {
+        return requestProperties.diffKeepalive;
+    }
+
+    @Override
+    public String getDiffID() {
+        return requestProperties.diffID;
     }
 
 }
