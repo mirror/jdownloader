@@ -43,7 +43,7 @@ public class NaughtyBlgOrg extends PluginForDecrypt {
     }
 
     private Category            CATEGORY;
-    private static final String INVALIDLINKS = "http://(www\\.)?naughtyblog\\.org/(category|linkex|feed|\\d{4}|tag|free\\-desktop\\-strippers|list\\-of\\-all\\-.+|contact\\-us|how\\-to\\-download\\-files|siterips)";
+    private static final String INVALIDLINKS = "http://(www\\.)?naughtyblog\\.org/(category|linkex|feed|\\d{4}|tag|free\\-desktop\\-strippers|list\\-of\\-.+|contact\\-us|how\\-to\\-download\\-files|siterips)";
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         CATEGORY = Category.UNDEF;
@@ -53,15 +53,27 @@ public class NaughtyBlgOrg extends PluginForDecrypt {
         br.setFollowRedirects(true);
         if (parameter.matches(INVALIDLINKS)) {
             logger.info("Invalid link: " + parameter);
+            final DownloadLink offline = createDownloadlink("directhttp://" + parameter);
+            offline.setAvailable(false);
+            offline.setProperty("offline", true);
+            decryptedLinks.add(offline);
             return decryptedLinks;
         }
         br.getPage(parameter);
         if (br.getRequest().getHttpConnection().getResponseCode() == 404 || br.containsHTML(">Page not found \\(404\\)<|>403 Forbidden<") || br.containsHTML("No htmlCode read")) {
             logger.info("Link offline: " + parameter);
+            final DownloadLink offline = createDownloadlink("directhttp://" + parameter);
+            offline.setAvailable(false);
+            offline.setProperty("offline", true);
+            decryptedLinks.add(offline);
             return decryptedLinks;
         }
         if (br.containsHTML(">Deleted due DMCA report<")) {
             logger.info("Link offline: " + parameter);
+            final DownloadLink offline = createDownloadlink("directhttp://" + parameter);
+            offline.setAvailable(false);
+            offline.setProperty("offline", true);
+            decryptedLinks.add(offline);
             return decryptedLinks;
         }
 

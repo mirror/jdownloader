@@ -54,8 +54,8 @@ public class FaceBookComGallery extends PluginForDecrypt {
     private static final String   FASTLINKCHECK_PICTURES         = "FASTLINKCHECK_PICTURES";
 
     private static final String   TYPE_FBSHORTLINK               = "http(s)?://(www\\.)?on\\.fb\\.me/[A-Za-z0-9]+\\+?";
-    private static final String   TYPE_PHOTO                     = "http(s)?://(www\\.)?facebook\\.com/photo\\.php\\?fbid=\\d+";
-    private static final String   TYPE_VIDEO                     = "https?://(www\\.)?facebook\\.com/(video/video|photo)\\.php\\?v=\\d+";
+    private static final String   TYPE_SINGLE_PHOTO                     = "http(s)?://(www\\.)?facebook\\.com/photo\\.php\\?fbid=\\d+";
+    private static final String   TYPE_SINGLE_VIDEO_ALL                     = "https?://(www\\.)?facebook\\.com/(video/video|photo|video)\\.php\\?v=\\d+";
     private static final String   TYPE_SET_LINK_PHOTO            = "http(s)?://(www\\.)?facebook\\.com/(media/set/\\?set=|[^<>\"/]*?/media_set\\?set=)o?a[0-9\\.]+";
     private static final String   TYPE_SET_LINK_VIDEO            = "https?://(www\\.)?facebook\\.com/media/set/\\?set=vb\\.\\d+";
     private static final String   TYPE_ALBUMS_LINK               = "https?://(www\\.)?facebook\\.com/[A-Za-z0-9\\.]+/photos_albums";
@@ -84,7 +84,7 @@ public class FaceBookComGallery extends PluginForDecrypt {
         synchronized (LOCK) {
             String parameter = param.toString().replace("#!/", "");
             PARAMETER = parameter;
-            if (PARAMETER.matches(TYPE_VIDEO)) {
+            if (PARAMETER.matches(TYPE_SINGLE_VIDEO_ALL)) {
                 final DownloadLink fina = createDownloadlink(PARAMETER.replace("facebook.com/", "facebookdecrypted.com/"));
                 decryptedLinks.add(fina);
                 return decryptedLinks;
@@ -104,7 +104,7 @@ public class FaceBookComGallery extends PluginForDecrypt {
                     return null;
                 }
                 decryptedLinks.add(createDownloadlink(finallink));
-            } else if (parameter.matches(TYPE_PHOTO)) {
+            } else if (parameter.matches(TYPE_SINGLE_PHOTO)) {
                 br.setFollowRedirects(true);
                 br.getPage(parameter);
                 if (br.containsHTML(CONTENTUNAVAILABLE)) {
@@ -910,9 +910,9 @@ public class FaceBookComGallery extends PluginForDecrypt {
     private String getTemporaryDecryptName(final String input_link) {
         final String lid = new Regex(input_link, "(\\d+)$").getMatch(0);
         String temp_name = lid;
-        if (input_link.matches(TYPE_PHOTO)) {
+        if (input_link.matches(TYPE_SINGLE_PHOTO)) {
             temp_name += ".jpg";
-        } else if (input_link.matches(TYPE_VIDEO)) {
+        } else if (input_link.matches(TYPE_SINGLE_VIDEO_ALL)) {
             temp_name += ".mp4";
         }
         return temp_name;
