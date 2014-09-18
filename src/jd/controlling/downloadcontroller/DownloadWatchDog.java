@@ -28,6 +28,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map.Entry;
 import java.util.Set;
@@ -126,6 +127,8 @@ import org.jdownloader.controlling.FileCreationListener;
 import org.jdownloader.controlling.FileCreationManager;
 import org.jdownloader.controlling.FileCreationManager.DeleteOption;
 import org.jdownloader.controlling.Priority;
+import org.jdownloader.controlling.domainrules.DomainRuleController;
+import org.jdownloader.controlling.domainrules.event.DomainRuleControllerListener;
 import org.jdownloader.controlling.download.DownloadControllerListener;
 import org.jdownloader.controlling.hosterrule.AccountUsageRule;
 import org.jdownloader.controlling.hosterrule.HosterRuleController;
@@ -354,6 +357,25 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
             public void onConfigValidatorError(KeyHandler<Integer> keyHandler, Integer invalidValue, ValidationException validateException) {
             }
         }, false);
+
+        DomainRuleController.getInstance().getEventSender().addListener(new DomainRuleControllerListener() {
+
+            @Override
+            public void onDomainRulesUpdated() {
+                enqueueJob(new DownloadWatchDogJob() {
+
+                    @Override
+                    public void execute(DownloadSession currentSession) {
+
+                        currentSession.refreshCandidates();
+                    }
+
+                    @Override
+                    public void interrupt() {
+                    }
+                });
+            }
+        });
         /* max simultan downloads per host enabled? */
         org.jdownloader.settings.staticreferences.CFG_GENERAL.MAX_DOWNLOADS_PER_HOST_ENABLED.getEventSender().addListener(new GenericConfigEventListener<Boolean>() {
 
@@ -383,6 +405,7 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
         }, false);
         if (org.jdownloader.settings.staticreferences.CFG_GENERAL.MAX_DOWNLOADS_PER_HOST_ENABLED.isEnabled()) {
             initSession.setMaxConcurrentDownloadsPerHost(org.jdownloader.settings.staticreferences.CFG_GENERAL.MAX_SIMULTANE_DOWNLOADS_PER_HOST.getValue());
+
         }
         /* auto reconnect enabled? */
         CFG_RECONNECT.AUTO_RECONNECT_ENABLED.getEventSender().addListener(new GenericConfigEventListener<Boolean>() {
@@ -582,7 +605,7 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
 
             @Override
             public void execute(DownloadSession currentSession) {
-                Set<DownloadLink> oldList = new HashSet<DownloadLink>(currentSession.getForcedLinks());
+                Set<DownloadLink> oldList = new LinkedHashSet<DownloadLink>(currentSession.getForcedLinks());
                 oldList.addAll(linksForce);
                 currentSession.setForcedLinks(new CopyOnWriteArrayList<DownloadLink>(sortActivationRequests(oldList)));
             }
@@ -1375,6 +1398,7 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
                             switch (permission) {
                             case OK:
                             case OK_FORCED:
+                            case OK_SPEED_EXTENSION:
                                 if (selector.validateDownloadLinkCandidate(candidate)) {
                                     nextCandidates.add(candidate);
                                 }
@@ -2000,6 +2024,7 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
         HashSet<DownloadLink> finalLinkStateLinks = finalizeConditionalSkipReasons(session);
         handleFinalLinkStates(finalLinkStateLinks, session, logger, null);
         int maxConcurrentNormal = Math.max(1, config.getMaxSimultaneDownloads());
+        maxConcurrentNormal = Math.max(maxConcurrentNormal, DomainRuleController.getInstance().getMaxSimultanDownloads());
         int maxConcurrentForced = maxConcurrentNormal + Math.max(0, config.getMaxForcedDownloads());
         int loopCounter = 0;
         boolean invalidate = session.setCandidatesRefreshRequired(false);
@@ -2032,22 +2057,28 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
                     }
                 }
             }
-            loopCounter = 0;
+
             selector.setForcedOnly(false);
             /* then process normal activationRequests */
-            while (abort == false && ((getActiveDownloads() < maxConcurrentNormal && loopCounter < maxConcurrentNormal) || checkForAdditionalDownloadSlots(session))) {
-                try {
-                    if (abort || (abort = (!this.newDLStartAllowed(session) || session.isStopMarkReached()))) {
+            boolean canExceed = DomainRuleController.getInstance().getMaxSimultanDownloads() > 0;
+            // heckForAdditionalDownloadSlots(session)
+            while (abort == false) {
+
+                if (!canExceed) {
+                    // no rules that may exceed the global download limits
+                    if (getActiveDownloads() >= maxConcurrentNormal && !checkForAdditionalDownloadSlots(session)) {
                         break;
                     }
-                    DownloadLinkCandidate candidate = this.next(selector);
-                    if (candidate == null) {
-                        break;
-                    }
-                    ret.add(attach(candidate));
-                } finally {
-                    loopCounter++;
                 }
+                if (abort || (abort = (!this.newDLStartAllowed(session) || session.isStopMarkReached()))) {
+                    break;
+                }
+                DownloadLinkCandidate candidate = this.next(selector);
+                if (candidate == null) {
+                    break;
+                }
+                ret.add(attach(candidate));
+
             }
         } finally {
             finalize(selector);
@@ -2055,7 +2086,7 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
         return ret;
     }
 
-    private boolean checkForAdditionalDownloadSlots(DownloadSession session2) {
+    public boolean checkForAdditionalDownloadSlots(DownloadSession session2) {
         try {
             long speed = getDownloadSpeedManager().getSpeedMeter().getSpeedMeter();
             if (speed < config.getAutoMaxDownloadsSpeedLimit()) {

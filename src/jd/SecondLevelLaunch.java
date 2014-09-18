@@ -738,7 +738,7 @@ public class SecondLevelLaunch {
             CFG_SILENTMODE.MANUAL_ENABLED.setValue(false);
         }
         // reset speed limit enabled on start
-        if (!CFG_GENERAL.DOWNLOAD_SPEED_LIMIT_REMEMBERED.isEnabled()) {
+        if (!CFG_GENERAL.DOWNLOAD_SPEED_LIMIT_REMEMBERED_ENABLED.isEnabled()) {
             CFG_GENERAL.DOWNLOAD_SPEED_LIMIT_ENABLED.setValue(false);
         }
         GUI_COMPLETE.executeWhenReached(new Runnable() {
