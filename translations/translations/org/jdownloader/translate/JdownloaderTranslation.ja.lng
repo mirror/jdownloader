@@ -65,6 +65,7 @@ Main_run_autostart_=ダウンロードを開始中
 Main_run_autostart_msg=数秒後にダウンロードが開始されます...
 Mainstart_now=今すぐ開始!
 MovePluginProgress=ファイルを%s1へ移動中
+MovePluginProgress_nodest=ファイルを移動中...
 MyJDownloaderController_onError_account_unconfirmed="My JDownloader"のeメールをまだ確認していません。\neメールを確認して承認リンクをクリックして下さい
 MyJDownloaderController_onError_badlogins="My JDownloader"ログイン情報が無効です。\nユーザー名/eメールとパスワードを確認して下さい!
 MyJDownloaderController_onError_outdated=JDownloaderがMy JDownloaderサービスに接続できませんでした: JDownloaderを更新して下さい
