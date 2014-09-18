@@ -65,6 +65,7 @@ Main_run_autostart_=Avvio download
 Main_run_autostart_msg=I download si avvierrano tra qualche secondo...
 Mainstart_now=Avvia ORA!
 MovePluginProgress=Spostando il file in %s1
+MovePluginProgress_nodest=Spostamento...
 MyJDownloaderController_onError_account_unconfirmed=La tua email 'My.JDownloader' non è stata ancora confermata.\nControlla le email e seleziona il collegamento di conferma.
 MyJDownloaderController_onError_badlogins=Il tuo accesso a 'My.JDownloader' non è corretto.\nVerifica utente/email e password!
 MyJDownloaderController_onError_outdated=JDownloader non riesce a connettersi al servizio My JDownloader. Aggiorna JDownloader!
