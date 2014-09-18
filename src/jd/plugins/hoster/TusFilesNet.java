@@ -348,6 +348,9 @@ public class TusFilesNet extends PluginForHost {
             }
         }
         if (inValidate(fileInfo[1])) {
+            fileInfo[1] = cbr.getRegex(">Size:</th>[\t\n\r ]+<th width=\"\\d+\" align=\"left\" valign=\"middle\">([^<>\"]*?)</th>").getMatch(0);
+        }
+        if (inValidate(fileInfo[1])) {
             fileInfo[1] = cbr.getRegex("\\(([0-9]+ bytes)\\)").getMatch(0);
             if (inValidate(fileInfo[1])) {
                 fileInfo[1] = cbr.getRegex("</font>[ ]+\\(([^<>\"'/]+)\\)(.*?)</font>").getMatch(0);
