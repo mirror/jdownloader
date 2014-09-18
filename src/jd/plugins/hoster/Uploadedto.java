@@ -1118,6 +1118,17 @@ public class Uploadedto extends PluginForHost {
                 } else {
                     getPage(br, baseURL + "file/" + id + "/ddl");
                 }
+                /*
+                 * Initial reason for this code: Uploaded.net site version does (sometimes) not like https and redirects to http - this will
+                 * also avoid further unexpected redirects
+                 */
+                final String redirect = br.getRedirectLocation();
+                if (redirect != null && redirect.matches("https?://uploaded\\.net/file/[a-z0-9]+/ddl")) {
+                    final String ul_forced_protocol = new Regex(redirect, "^(https?://)").getMatch(0);
+                    baseURL = ul_forced_protocol + "uploaded.net/";
+                    logger.info("Changed uploaded.net used protocol from " + getProtocol() + " to " + ul_forced_protocol);
+                    br.getPage(br.getRedirectLocation());
+                }
                 if (br.containsHTML("<title>uploaded.net - Maintenance")) {
                     throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server in maintenance", 20 * 60 * 1000l);
                 }
