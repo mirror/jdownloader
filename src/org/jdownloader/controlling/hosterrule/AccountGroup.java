@@ -10,6 +10,7 @@ public class AccountGroup {
 
     public static enum Rules {
         RANDOM(_GUI._.Rules_random()),
+        BALANCED(_GUI._.Rules_balanced()),
         ORDER(_GUI._.Rules_order());
         private String translation;
 
@@ -26,7 +27,9 @@ public class AccountGroup {
     private Rules                        rule = Rules.RANDOM;
 
     public void setRule(Rules rule) {
-        if (rule == null) rule = Rules.RANDOM;
+        if (rule == null) {
+            rule = Rules.RANDOM;
+        }
         this.rule = rule;
     }
 

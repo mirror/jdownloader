@@ -50,11 +50,11 @@ public class AdvancedConfigManagerAPIImpl implements AdvancedConfigManagerAPI {
                 if (cPat == null || cPat.matcher(key).matches()) {
                     AdvancedConfigAPIEntry acae;
                     ret.add(acae = new AdvancedConfigAPIEntry(entry, returnDescription, returnValues, returnDefaultValues));
-                    if (returnEnumInfo && Clazz.isEnum(entry.getType())) {
+                    if (returnEnumInfo && Clazz.isEnum(entry.getClazz())) {
 
                         ArrayList<EnumOption> enumOptions;
 
-                        enumOptions = listEnumOptions(entry.getType());
+                        enumOptions = listEnumOptions(entry.getClazz());
 
                         String[][] constants = new String[enumOptions.size()][2];
 

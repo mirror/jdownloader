@@ -5182,4 +5182,7 @@ public interface GuiTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "Installation Directory:" })
     String jd_gui_swing_components_AboutDialog_installdir();
 
+    @Default(lngs = { "en" }, values = { "Balanced - use each account equally" })
+    String Rules_balanced();
+
 }

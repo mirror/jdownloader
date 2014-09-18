@@ -13,6 +13,7 @@ import org.appwork.storage.config.annotations.DefaultBooleanValue;
 import org.appwork.storage.config.annotations.DefaultEnumValue;
 import org.appwork.storage.config.annotations.DefaultFactory;
 import org.appwork.storage.config.annotations.DefaultIntValue;
+import org.appwork.storage.config.annotations.DefaultJsonObject;
 import org.appwork.storage.config.annotations.DefaultLongValue;
 import org.appwork.storage.config.annotations.DescriptionForConfigEntry;
 import org.appwork.storage.config.annotations.EnumLabel;
@@ -23,6 +24,7 @@ import org.appwork.storage.config.defaults.AbstractDefaultFactory;
 import org.appwork.utils.Application;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.os.CrossSystem;
+import org.jdownloader.controlling.domainrules.DomainRule;
 import org.jdownloader.gui.translate._GUI;
 
 public interface GeneralSettings extends ConfigInterface {
@@ -529,5 +531,12 @@ public interface GeneralSettings extends ConfigInterface {
     boolean isFreeDownloadLoadBalancingEnabled();
 
     void setFreeDownloadLoadBalancingEnabled(boolean b);
+
+    @AboutConfig
+    @DescriptionForConfigEntry("Setup Rules by Domain. Let us know if you use this feature and require a nicer User Interface")
+    @DefaultJsonObject("[{\"maxSimultanDownloads\":10,\"pattern\":\".*exampledomain\\\\.com\",\"allowToExceedTheGlobalLimit\":false,\"enabled\":false}]")
+    ArrayList<DomainRule> getDomainRules();
+
+    void setDomainRules(ArrayList<DomainRule> e);
 
 }

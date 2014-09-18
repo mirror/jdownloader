@@ -44,20 +44,24 @@ public class AdvancedConfigEntry {
         return keyHandler.getValue();
     }
 
-    public Class<?> getType() {
-        return keyHandler.getRawClass();
+    public Type getType() {
+        return keyHandler.getRawType();
     }
 
     public String getDescription() {
 
         DescriptionForConfigEntry an = keyHandler.getAnnotation(DescriptionForConfigEntry.class);
-        if (an != null) { return an.value(); }
+        if (an != null) {
+            return an.value();
+        }
         return null;
     }
 
     public Validator getValidator() {
         SpinnerValidator an = keyHandler.getAnnotation(SpinnerValidator.class);
-        if (an != null) return new org.jdownloader.settings.advanced.RangeValidator(an.min(), an.max());
+        if (an != null) {
+            return new org.jdownloader.settings.advanced.RangeValidator(an.min(), an.max());
+        }
 
         return null;
     }
@@ -94,9 +98,15 @@ public class AdvancedConfigEntry {
     }
 
     private boolean equals(Object v, Object value) {
-        if (value == null && v == null) return true;
-        if (v == null && value != null) return false;
-        if (value == null && v != null) return false;
+        if (value == null && v == null) {
+            return true;
+        }
+        if (v == null && value != null) {
+            return false;
+        }
+        if (value == null && v != null) {
+            return false;
+        }
 
         return v.equals(value);
 
@@ -124,5 +134,9 @@ public class AdvancedConfigEntry {
 
     public boolean isEditable() {
         return true;
+    }
+
+    public Class<?> getClazz() {
+        return keyHandler.getRawClass();
     }
 }

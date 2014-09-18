@@ -227,7 +227,9 @@ public class AdvancedValueColumn extends ExtCompoundColumn<AdvancedConfigEntry> 
 
             public Color getContrastColor(Color color) {
                 double y = (299 * color.getRed() + 587 * color.getGreen() + 114 * color.getBlue()) / 1000;
-                if (color.getAlpha() < 128) return Color.BLACK;
+                if (color.getAlpha() < 128) {
+                    return Color.BLACK;
+                }
                 return y >= 128 ? Color.black : Color.white;
             }
 
@@ -269,7 +271,9 @@ public class AdvancedValueColumn extends ExtCompoundColumn<AdvancedConfigEntry> 
 
             @Override
             public String getStringValue(AdvancedConfigEntry value) {
-                if (value.getValue() == null || (value.getValue().toString()) == null) { return null; }
+                if (value.getValue() == null || (value.getValue().toString()) == null) {
+                    return null;
+                }
                 return value.getValue() + "";
             }
 
@@ -381,9 +385,9 @@ public class AdvancedValueColumn extends ExtCompoundColumn<AdvancedConfigEntry> 
                             ret.setMinimum((float) ((RangeValidator) value.getValidator()).getMin());
                             ret.setStepSize((float) ((RangeValidator) value.getValidator()).getSteps());
                         } else if (Clazz.isLong(n.getClass())) {
-                            ret.setMaximum((long) ((RangeValidator) value.getValidator()).getMax());
-                            ret.setMinimum((long) ((RangeValidator) value.getValidator()).getMin());
-                            ret.setStepSize((long) ((RangeValidator) value.getValidator()).getSteps());
+                            ret.setMaximum(((RangeValidator) value.getValidator()).getMax());
+                            ret.setMinimum(((RangeValidator) value.getValidator()).getMin());
+                            ret.setStepSize(((RangeValidator) value.getValidator()).getSteps());
                         } else if (Clazz.isInteger(n.getClass())) {
                             ret.setMaximum((int) ((RangeValidator) value.getValidator()).getMax());
                             ret.setMinimum((int) ((RangeValidator) value.getValidator()).getMin());
@@ -457,12 +461,12 @@ public class AdvancedValueColumn extends ExtCompoundColumn<AdvancedConfigEntry> 
 
                 ExtPopupMenu popup = new ExtPopupMenu();
                 try {
-                    Object[] values = (Object[]) value.getType().getMethod("values", new Class[] {}).invoke(null, new Object[] {});
+                    Object[] values = (Object[]) ((Class) value.getClazz()).getMethod("values", new Class[] {}).invoke(null, new Object[] {});
                     for (final Object o : values) {
                         popup.add(new JMenuItem(new AppAction() {
                             {
 
-                                EnumLabel lbl = value.getType().getDeclaredField(o.toString()).getAnnotation(EnumLabel.class);
+                                EnumLabel lbl = value.getClazz().getDeclaredField(o.toString()).getAnnotation(EnumLabel.class);
                                 if (lbl != null) {
                                     setName(lbl.value());
                                 } else {
@@ -510,7 +514,7 @@ public class AdvancedValueColumn extends ExtCompoundColumn<AdvancedConfigEntry> 
 
                 Object[] values;
                 try {
-                    values = (Object[]) object.getType().getMethod("values", new Class[] {}).invoke(null, new Object[] {});
+                    values = (Object[]) object.getClazz().getMethod("values", new Class[] {}).invoke(null, new Object[] {});
                     object.setValue(values[value]);
                     AdvancedValueColumn.this.getModel().getTable().repaint();
                 } catch (IllegalArgumentException e) {
@@ -535,17 +539,24 @@ public class AdvancedValueColumn extends ExtCompoundColumn<AdvancedConfigEntry> 
 
                 try {
 
-                    EnumLabel lbl = value.getType().getDeclaredField(value.getValue().toString()).getAnnotation(EnumLabel.class);
+                    EnumLabel lbl = value.getClazz().getDeclaredField(value.getValue().toString()).getAnnotation(EnumLabel.class);
                     if (lbl != null) {
 
-                    return lbl.value(); }
+                        return lbl.value();
+                    }
 
-                    if (value.getValue() instanceof LabelInterface) { return ((LabelInterface) value.getValue()).getLabel(); }
+                    if (value.getValue() instanceof LabelInterface) {
+                        return ((LabelInterface) value.getValue()).getLabel();
+                    }
 
-                    if (value instanceof LabelInterface) { return ((LabelInterface) value).getLabel(); }
+                    if (value instanceof LabelInterface) {
+                        return ((LabelInterface) value).getLabel();
+                    }
+
                 } catch (Exception e) {
 
                 }
+
                 return value.getValue().toString();
             }
         };
@@ -564,17 +575,21 @@ public class AdvancedValueColumn extends ExtCompoundColumn<AdvancedConfigEntry> 
 
     @Override
     public ExtColumn<AdvancedConfigEntry> selectColumn(AdvancedConfigEntry object) {
-        if (object == null) return defaultColumn;
+        if (object == null) {
+            return defaultColumn;
+        }
         if (object.getKeyHandler().getAnnotation(ActionClass.class) != null) {
             return actionColumn;
         } else if (Clazz.isBoolean(object.getType())) {
             return booleanColumn;
         } else if (object.getType() == String.class) {
-            if (object.getKeyHandler().getAnnotation(HexColorString.class) != null) return colorColumn;
+            if (object.getKeyHandler().getAnnotation(HexColorString.class) != null) {
+                return colorColumn;
+            }
             return stringColumn;
         } else if (Clazz.isDouble(object.getType()) || Clazz.isFloat(object.getType()) || Clazz.isLong(object.getType()) || Clazz.isInteger(object.getType()) || Clazz.isByte(object.getType())) {
             return longColumn;
-        } else if (Enum.class.isAssignableFrom(object.getType())) {
+        } else if (Enum.class.isAssignableFrom(object.getClazz())) {
             return enumColumn;
         } else {
             return defaultColumn;

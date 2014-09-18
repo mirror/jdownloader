@@ -45,7 +45,7 @@ public class HosterRuleController implements AccountControllerListener {
 
     /**
      * get the only existing instance of HosterRuleController. This is a singleton
-     *
+     * 
      * @return
      */
     public static HosterRuleController getInstance() {
@@ -221,11 +221,12 @@ public class HosterRuleController implements AccountControllerListener {
         AccountGroup freeAccountGroup = null;
         AccountGroup onlyMultiAccounts = null;
         AccountReference free = null;
-
+        ArrayList<AccountGroup> toRemove = new ArrayList<AccountGroup>();
         for (Iterator<AccountGroup> it1 = hr.getAccounts().iterator(); it1.hasNext();) {
             AccountGroup ag = it1.next();
             boolean onlyReal = ag.getChildren().size() > 0;
             boolean onlyMulti = ag.getChildren().size() > 0;
+            ArrayList<AccountReference> toRemoveFromChildren = new ArrayList<AccountReference>();
             for (Iterator<AccountReference> it = ag.getChildren().iterator(); it.hasNext();) {
                 AccountReference ar = it.next();
 
@@ -238,7 +239,7 @@ public class HosterRuleController implements AccountControllerListener {
                 }
                 if (ar.getAccount() == null) {
                     logger.info("Removed " + ar + " from " + ag);
-                    it.remove();
+                    toRemoveFromChildren.add(ar);
                 } else {
                     if (StringUtils.equalsIgnoreCase(ar.getAccount().getHoster(), host)) {
                         onlyMulti = false;
@@ -248,9 +249,11 @@ public class HosterRuleController implements AccountControllerListener {
                     accountsInRule.add(ar.getAccount());
                 }
             }
+            ag.getChildren().removeAll(toRemoveFromChildren);
             // remove empty groups
             if (ag.getChildren().size() == 0) {
-                it1.remove();
+                toRemove.add(ag);
+
             }
             if (onlyReal) {
                 onlyRealAccounts = ag;
@@ -259,7 +262,7 @@ public class HosterRuleController implements AccountControllerListener {
                 onlyMultiAccounts = ag;
             }
         }
-
+        hr.getAccounts().removeAll(toRemove);
         HashSet<Account> missingRealAccounts = new HashSet<Account>();
         HashSet<Account> missingMultiAccounts = new HashSet<Account>();
         for (Account acc : AccountController.getInstance().list(host)) {

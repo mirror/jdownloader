@@ -93,11 +93,15 @@ public class SettingsSidebarModel extends DefaultListModel implements GenericCon
     }
 
     private GeneralSettingsConfigPanel getConfigPanelGeneral() {
-        if (cfg != null) return cfg;
+        if (cfg != null) {
+            return cfg;
+        }
 
         return new EDTHelper<GeneralSettingsConfigPanel>() {
             public GeneralSettingsConfigPanel edtRun() {
-                if (cfg != null) return cfg;
+                if (cfg != null) {
+                    return cfg;
+                }
                 cfg = new GeneralSettingsConfigPanel();
                 return cfg;
             }
@@ -105,11 +109,15 @@ public class SettingsSidebarModel extends DefaultListModel implements GenericCon
     }
 
     private ReconnectSettings getReconnectSettings() {
-        if (rcs != null) return rcs;
+        if (rcs != null) {
+            return rcs;
+        }
 
         return new EDTHelper<ReconnectSettings>() {
             public ReconnectSettings edtRun() {
-                if (rcs != null) return rcs;
+                if (rcs != null) {
+                    return rcs;
+                }
                 rcs = new ReconnectSettings();
                 return rcs;
             }
@@ -117,11 +125,15 @@ public class SettingsSidebarModel extends DefaultListModel implements GenericCon
     }
 
     private ProxyConfig getProxyConfig() {
-        if (pc != null) return pc;
+        if (pc != null) {
+            return pc;
+        }
 
         return new EDTHelper<ProxyConfig>() {
             public ProxyConfig edtRun() {
-                if (pc != null) return pc;
+                if (pc != null) {
+                    return pc;
+                }
                 pc = new ProxyConfig();
                 return pc;
             }
@@ -129,11 +141,15 @@ public class SettingsSidebarModel extends DefaultListModel implements GenericCon
     }
 
     private AccountManagerSettings getAccountManagerSettings() {
-        if (ams != null) return ams;
+        if (ams != null) {
+            return ams;
+        }
 
         return new EDTHelper<AccountManagerSettings>() {
             public AccountManagerSettings edtRun() {
-                if (ams != null) return ams;
+                if (ams != null) {
+                    return ams;
+                }
                 ams = new AccountManagerSettings();
                 return ams;
             }
@@ -141,11 +157,15 @@ public class SettingsSidebarModel extends DefaultListModel implements GenericCon
     }
 
     private BasicAuthentication getBasicAuthentication() {
-        if (ba != null) return ba;
+        if (ba != null) {
+            return ba;
+        }
 
         return new EDTHelper<BasicAuthentication>() {
             public BasicAuthentication edtRun() {
-                if (ba != null) return ba;
+                if (ba != null) {
+                    return ba;
+                }
                 ba = new BasicAuthentication();
                 return ba;
             }
@@ -153,11 +173,15 @@ public class SettingsSidebarModel extends DefaultListModel implements GenericCon
     }
 
     private CaptchaConfigPanel getAntiCaptchaConfigPanel() {
-        if (ac != null) return ac;
+        if (ac != null) {
+            return ac;
+        }
 
         return new EDTHelper<CaptchaConfigPanel>() {
             public CaptchaConfigPanel edtRun() {
-                if (ac != null) return ac;
+                if (ac != null) {
+                    return ac;
+                }
                 ac = new CaptchaConfigPanel();
                 return ac;
             }
@@ -165,11 +189,15 @@ public class SettingsSidebarModel extends DefaultListModel implements GenericCon
     }
 
     private PluginSettings getPluginSettings() {
-        if (ps != null) return ps;
+        if (ps != null) {
+            return ps;
+        }
 
         return new EDTHelper<PluginSettings>() {
             public PluginSettings edtRun() {
-                if (ps != null) return ps;
+                if (ps != null) {
+                    return ps;
+                }
                 ps = new PluginSettings();
                 return ps;
             }
@@ -177,11 +205,15 @@ public class SettingsSidebarModel extends DefaultListModel implements GenericCon
     }
 
     private GUISettings getGUISettings() {
-        if (gs != null) return gs;
+        if (gs != null) {
+            return gs;
+        }
 
         return new EDTHelper<GUISettings>() {
             public GUISettings edtRun() {
-                if (gs != null) return gs;
+                if (gs != null) {
+                    return gs;
+                }
                 gs = new GUISettings();
                 return gs;
             }
@@ -189,11 +221,15 @@ public class SettingsSidebarModel extends DefaultListModel implements GenericCon
     }
 
     private BubbleNotifyConfigPanel getNotifierConfigPanel() {
-        if (notifierPanel != null) return notifierPanel;
+        if (notifierPanel != null) {
+            return notifierPanel;
+        }
 
         return new EDTHelper<BubbleNotifyConfigPanel>() {
             public BubbleNotifyConfigPanel edtRun() {
-                if (notifierPanel != null) return notifierPanel;
+                if (notifierPanel != null) {
+                    return notifierPanel;
+                }
                 notifierPanel = BubbleNotify.getInstance().getConfigPanel();
                 return notifierPanel;
             }
@@ -201,11 +237,15 @@ public class SettingsSidebarModel extends DefaultListModel implements GenericCon
     }
 
     private MyJDownloaderSettingsPanel getMyJDownloaderPanel() {
-        if (myJDownloader != null) return myJDownloader;
+        if (myJDownloader != null) {
+            return myJDownloader;
+        }
 
         return new EDTHelper<MyJDownloaderSettingsPanel>() {
             public MyJDownloaderSettingsPanel edtRun() {
-                if (myJDownloader != null) return myJDownloader;
+                if (myJDownloader != null) {
+                    return myJDownloader;
+                }
                 myJDownloader = new MyJDownloaderSettingsPanel();
                 return myJDownloader;
             }
@@ -213,11 +253,15 @@ public class SettingsSidebarModel extends DefaultListModel implements GenericCon
     }
 
     private Packagizer getPackagizer() {
-        if (pz != null) return pz;
+        if (pz != null) {
+            return pz;
+        }
 
         return new EDTHelper<Packagizer>() {
             public Packagizer edtRun() {
-                if (pz != null) return pz;
+                if (pz != null) {
+                    return pz;
+                }
                 pz = new Packagizer();
                 return pz;
             }
@@ -225,11 +269,15 @@ public class SettingsSidebarModel extends DefaultListModel implements GenericCon
     }
 
     private Linkgrabber getLinkgrabber() {
-        if (lg != null) return lg;
+        if (lg != null) {
+            return lg;
+        }
 
         return new EDTHelper<Linkgrabber>() {
             public Linkgrabber edtRun() {
-                if (lg != null) return lg;
+                if (lg != null) {
+                    return lg;
+                }
                 lg = new Linkgrabber();
                 return lg;
             }
@@ -237,11 +285,15 @@ public class SettingsSidebarModel extends DefaultListModel implements GenericCon
     }
 
     private AdvancedSettings getAdvancedSettings() {
-        if (ads != null) return ads;
+        if (ads != null) {
+            return ads;
+        }
 
         return new EDTHelper<AdvancedSettings>() {
             public AdvancedSettings edtRun() {
-                if (ads != null) return ads;
+                if (ads != null) {
+                    return ads;
+                }
                 ads = new AdvancedSettings();
                 return ads;
             }
@@ -249,11 +301,15 @@ public class SettingsSidebarModel extends DefaultListModel implements GenericCon
     }
 
     private ExtensionHeader getExtensionHeader() {
-        if (eh != null) return eh;
+        if (eh != null) {
+            return eh;
+        }
 
         return new EDTHelper<ExtensionHeader>() {
             public ExtensionHeader edtRun() {
-                if (eh != null) return eh;
+                if (eh != null) {
+                    return eh;
+                }
                 eh = new ExtensionHeader();
                 return eh;
             }
@@ -261,7 +317,9 @@ public class SettingsSidebarModel extends DefaultListModel implements GenericCon
     }
 
     private void edtAllElement(final Object element) {
-        if (element == null) return;
+        if (element == null) {
+            return;
+        }
         new EDTRunner() {
 
             @Override
@@ -278,10 +336,14 @@ public class SettingsSidebarModel extends DefaultListModel implements GenericCon
                 try {
                     synchronized (lock) {
                         boolean withExtensions = finalWithExtensions;
-                        if (SecondLevelLaunch.EXTENSIONS_LOADED.isReached()) withExtensions = true;
+                        if (SecondLevelLaunch.EXTENSIONS_LOADED.isReached()) {
+                            withExtensions = true;
+                        }
                         LazyExtension extract = null;
                         try {
-                            if (withExtensions) extract = ExtensionController.getInstance().getExtension("org.jdownloader.extensions.extraction.ExtractionExtension");
+                            if (withExtensions) {
+                                extract = ExtensionController.getInstance().getExtension("org.jdownloader.extensions.extraction.ExtractionExtension");
+                            }
                         } catch (final Throwable e) {
                             /* plugin not loaded yet */
                         }
@@ -294,32 +356,34 @@ public class SettingsSidebarModel extends DefaultListModel implements GenericCon
                             }
                         };
                         final LazyExtension finalExtract = extract;
-                        getConfigPanelGeneral();
+
                         edtAllElement(getConfigPanelGeneral());
-                        getReconnectSettings();
+
                         edtAllElement(getReconnectSettings());
-                        getProxyConfig();
+
                         edtAllElement(getProxyConfig());
-                        getAccountManagerSettings();
+
                         edtAllElement(getAccountManagerSettings());
-                        getBasicAuthentication();
+
                         edtAllElement(getBasicAuthentication());
-                        getPluginSettings();
+
                         edtAllElement(getPluginSettings());
-                        getAntiCaptchaConfigPanel();
+
                         edtAllElement(getAntiCaptchaConfigPanel());
-                        getGUISettings();
+
                         edtAllElement(getGUISettings());
-                        getNotifierConfigPanel();
+
                         edtAllElement(getNotifierConfigPanel());
-                        getMyJDownloaderPanel();
+
                         edtAllElement(getMyJDownloaderPanel());
-                        getLinkgrabber();
+
                         edtAllElement(getLinkgrabber());
-                        getPackagizer();
+
                         edtAllElement(getPackagizer());
-                        getAdvancedSettings();
-                        if (finalExtract != null) edtAllElement(finalExtract);
+
+                        if (finalExtract != null) {
+                            edtAllElement(finalExtract);
+                        }
                         edtAllElement(JDGui.getInstance().getTray());
                         edtAllElement(getAdvancedSettings());
                         if (withExtensions) {
@@ -327,13 +391,25 @@ public class SettingsSidebarModel extends DefaultListModel implements GenericCon
                             List<LazyExtension> pluginsOptional = ExtensionController.getInstance().getExtensions();
                             if (pluginsOptional != null) {
                                 for (final LazyExtension plg : pluginsOptional) {
-                                    if ("org.jdownloader.extensions.extraction.ExtractionExtension".equals(plg.getClassname())) continue;
+                                    if ("org.jdownloader.extensions.extraction.ExtractionExtension".equals(plg.getClassname())) {
+                                        continue;
+                                    }
                                     // avoid that old TrayExtension Jars will get loaded
-                                    if ("org.jdownloader.extensions.jdtrayicon.TrayExtension".equals(plg.getClassname())) continue;
-                                    if (contains(plg)) continue;
-                                    if (CrossSystem.isWindows() && !plg.isWindowsRunnable()) continue;
-                                    if (CrossSystem.isLinux() && !plg.isLinuxRunnable()) continue;
-                                    if (CrossSystem.isMac() && !plg.isMacRunnable()) continue;
+                                    if ("org.jdownloader.extensions.jdtrayicon.TrayExtension".equals(plg.getClassname())) {
+                                        continue;
+                                    }
+                                    if (contains(plg)) {
+                                        continue;
+                                    }
+                                    if (CrossSystem.isWindows() && !plg.isWindowsRunnable()) {
+                                        continue;
+                                    }
+                                    if (CrossSystem.isLinux() && !plg.isLinuxRunnable()) {
+                                        continue;
+                                    }
+                                    if (CrossSystem.isMac() && !plg.isMacRunnable()) {
+                                        continue;
+                                    }
                                     plg._getSettings()._getStorageHandler().getEventSender().addListener(SettingsSidebarModel.this, true);
                                     new EDTRunner() {
 
@@ -355,7 +431,9 @@ public class SettingsSidebarModel extends DefaultListModel implements GenericCon
 
                         @Override
                         protected void runInEDT() {
-                            if (list != null) list.repaint();
+                            if (list != null) {
+                                list.repaint();
+                            }
                         }
                     };
                     TREE_COMPLETE.setReached();
@@ -368,7 +446,9 @@ public class SettingsSidebarModel extends DefaultListModel implements GenericCon
     }
 
     public void onUpdated() {
-        if (!JsonConfig.create(GraphicalUserInterfaceSettings.class).isConfigViewVisible()) return;
+        if (!JsonConfig.create(GraphicalUserInterfaceSettings.class).isConfigViewVisible()) {
+            return;
+        }
         fill(true);
     }
 
