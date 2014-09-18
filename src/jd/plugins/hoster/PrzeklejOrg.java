@@ -51,9 +51,9 @@ public class PrzeklejOrg extends PluginForHost {
         br.setFollowRedirects(true);
         br.setCustomCharset("utf-8");
         br.getPage(link.getDownloadURL());
-        // if (br.containsHTML("")) {
-        // throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        // }
+        if (br.containsHTML("Wygląda na to, że wybrany plik został skasowany")) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
         final String jsredirect = br.getRegex("<script>location\\.href=\"(https?://(www\\.)?przeklej\\.org/file/[^<>\"]*?)\"</script>").getMatch(0);
         if (jsredirect != null) {
             br.getPage(jsredirect);
