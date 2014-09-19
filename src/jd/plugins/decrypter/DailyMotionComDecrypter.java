@@ -56,19 +56,19 @@ public class DailyMotionComDecrypter extends PluginForDecrypt {
     private String                          VIDEOSOURCE    = null;
     /**
      * @ 1hd1080URL or stream_h264_hd1080_url [1920x1080]
-     *
+     * 
      * @ 2 hd720URL or stream_h264_hd_url [1280x720]
-     *
+     * 
      * @ 3 hqURL or stream_h264_hq_url [848x480]
-     *
+     * 
      * @ 4 sdURL or stream_h264_url [512x384]
-     *
+     * 
      * @ 5 ldURL or video_url or stream_h264_ld_url [320x240]
-     *
+     * 
      * @ 6 video_url or rtmp
-     *
+     * 
      * @ 7 hds
-     *
+     * 
      * @String[] = {"Direct download url", "filename, if available before quality selection"}
      */
     private LinkedHashMap<String, String[]> FOUNDQUALITIES = new LinkedHashMap<String, String[]>();
@@ -381,6 +381,7 @@ public class DailyMotionComDecrypter extends PluginForDecrypt {
             decryptedLinks.add(createDownloadlink(externID));
             return;
         }
+
         /** Decrypt external links END */
         /** Find videolinks START */
         VIDEOID = new Regex(PARAMETER, "dailymotion\\.com/video/([a-z0-9]+)").getMatch(0);
@@ -578,7 +579,14 @@ public class DailyMotionComDecrypter extends PluginForDecrypt {
 
             // Try to avoid HDS
             br.getPage("http://www.dailymotion.com/embed/video/" + new Regex(parameter, "([A-Za-z0-9\\-_]+)$").getMatch(0));
-            videosource = br.getRegex("var info = \\{(.*?)\\},").getMatch(0);
+
+            // 19.09.2014
+            videosource = br.getRegex("(\"stream_.*)\"swf_url\":").getMatch(0);
+            if (videosource == null) {
+                // old version. did not work for me today (19.09.2014)
+                videosource = br.getRegex("var info = \\{(.*?)\\},").getMatch(0);
+
+            }
             if (videosource != null) {
                 videosource = Encoding.htmlDecode(videosource).replace("\\", "");
                 final String[][] embedQualities = { { "stream_h264_ld_url", "5" }, { "stream_h264_url", "4" }, { "stream_h264_hq_url", "3" }, { "stream_h264_hd_url", "2" }, { "stream_h264_hd1080_url", "1" } };
