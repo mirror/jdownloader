@@ -184,9 +184,11 @@ public class DailyMotionCom extends PluginForHost {
             getRTMPlink();
         } else if (isSubtitle(downloadLink)) {
             dllink = downloadLink.getStringProperty("directlink", null);
+
             if (!checkDirectLink(downloadLink) || dllink == null) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
+
         } else {
             dllink = downloadLink.getStringProperty("directlink", null);
             if (dllink == null) {
@@ -194,6 +196,7 @@ public class DailyMotionCom extends PluginForHost {
             } else {
                 System.out.println("DLink FOund");
             }
+
             if (!checkDirectLink(downloadLink) || dllink == null) {
                 dllink = findFreshDirectlink(downloadLink);
                 if (dllink == null) {
@@ -204,6 +207,7 @@ public class DailyMotionCom extends PluginForHost {
                     throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
                 }
             }
+
         }
         downloadLink.setFinalFileName(getFormattedFilename(downloadLink));
         return AvailableStatus.TRUE;
@@ -287,7 +291,7 @@ public class DailyMotionCom extends PluginForHost {
         return ai;
     }
 
-    protected boolean checkDirectLink(final DownloadLink downloadLink) {
+    protected boolean checkDirectLink(final DownloadLink downloadLink) throws PluginException {
         if (dllink != null) {
             br.setFollowRedirects(false);
             try {
