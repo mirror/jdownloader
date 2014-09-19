@@ -53,6 +53,7 @@ public class DailyMotionComV2 extends DailyMotionCom {
     // public boolean hasVariantToChooseFrom(DownloadLink downloadLink) {
     // return downloadLink.getProperty("VARIANTS") != null;
     //
+    //
     // }
 
     public List<? extends LinkVariant> getVariantsByLink(DownloadLink downloadLink) {
