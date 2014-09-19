@@ -65,6 +65,7 @@ Main_run_autostart_=Spouštění stahování
 Main_run_autostart_msg=Stahování začne za několik sekund...
 Mainstart_now=Spustit NYNÍ!
 MovePluginProgress=Přesouvání souboru do %s1
+MovePluginProgress_nodest=Přesouvání souboru...
 MyJDownloaderController_onError_account_unconfirmed=Váš e-mail pro 'My JDownloader' nebyl ještě potvrzen.\nZkontrolujte své e-maily a klikněte na potvrzovací odkaz.
 MyJDownloaderController_onError_badlogins=Vaše přihlašovací údaje k 'My JDownloader' nejsou správné.\nZkontrolujte uživatelské jméno nebo e-mail a heslo!
 MyJDownloaderController_onError_outdated=JDownloader se nemohl připojit ke službě My JDownloader. Aktualizujte JDownloader!
