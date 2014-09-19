@@ -644,7 +644,11 @@ public class FourSharedCom extends PluginForHost {
                 if (filename == null) {
                     filename = br.getRegex("filename:\\'([^<>\"]*?)\\'\\}\\);").getMatch(0);
                 }
-                /* Get filename out of forum code - seems like the best way so far */
+                /* Get filename out of forum img code - seems like the best way so far */
+                if (filename == null) {
+                    filename = br.getRegex("value=\"\\[URL=https?://(www\\.)?4shared(\\-china)?\\.com/[^<>\"]*?\\.html\\]\\[IMG\\]http://dc\\d+\\.4shared(\\-china)?\\.com/img/[A-Za-z0-9]+/[A-Za-z0-9]+/([^<>\"]*?)\\[/IMG\\]\\[/URL\\]\" readonly=\"readonly\"").getMatch(3);
+                }
+                /* Get filename out of forum url code - seems like the best way so far */
                 if (filename == null) {
                     filename = br.getRegex("value=\"\\[URL=https?://(www\\.)?4shared(\\-china)?\\.com/[^<>\"]*?\\.html\\]([^<>\"]*?)\\[/URL\\]\" readonly=\"readonly\"").getMatch(2);
                 }

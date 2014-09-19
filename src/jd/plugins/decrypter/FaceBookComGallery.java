@@ -88,7 +88,7 @@ public class FaceBookComGallery extends PluginForDecrypt {
         synchronized (LOCK) {
             String parameter = param.toString().replace("#!/", "");
             PARAMETER = parameter;
-            if (PARAMETER.matches(TYPE_SINGLE_VIDEO_ALL)) {
+            if (PARAMETER.matches(TYPE_SINGLE_VIDEO_ALL) || PARAMETER.matches(TYPE_SINGLE_PHOTO)) {
                 final DownloadLink fina = createDownloadlink(PARAMETER.replace("facebook.com/", "facebookdecrypted.com/"));
                 decryptedLinks.add(fina);
                 return decryptedLinks;
@@ -108,33 +108,27 @@ public class FaceBookComGallery extends PluginForDecrypt {
                     return null;
                 }
                 decryptedLinks.add(createDownloadlink(finallink));
-            } else if (parameter.matches(TYPE_SINGLE_PHOTO)) {
-                br.setFollowRedirects(true);
-                br.getPage(parameter);
-                if (br.containsHTML(CONTENTUNAVAILABLE)) {
-                    logger.info("Link offline: " + parameter);
-                    return decryptedLinks;
-                }
-                final String finallink = br.getRegex("id=\"fbPhotoImage\" src=\"(https?://[^<>\"]*?)\"").getMatch(0);
-                if (finallink == null) {
-                    logger.warning("Decrypter broken for link: " + parameter);
-                    return null;
-                }
-                decryptedLinks.add(createDownloadlink("directhttp://" + finallink));
-            } else if (parameter.matches(TYPE_ALBUMS_LINK)) {
+                return decryptedLinks;
+            }
+            logged_in = login();
+            getpagefirsttime(PARAMETER);
+
+            if (PARAMETER.matches(TYPE_ALBUMS_LINK)) {
                 decryptAlbums();
-            } else if (parameter.matches(TYPE_PHOTOS_OF_LINK)) {
+            } else if (PARAMETER.matches(TYPE_PHOTOS_OF_LINK)) {
                 decryptPhotosOf();
-            } else if (parameter.matches(TYPE_PHOTOS_ALL_LINK)) {
+            } else if (PARAMETER.matches(TYPE_PHOTOS_ALL_LINK)) {
                 decryptPhotosAll();
-            } else if (parameter.matches(TYPE_PHOTOS_STREAM_LINK)) {
+            } else if (PARAMETER.matches(TYPE_PHOTOS_STREAM_LINK)) {
                 decryptPhotoStreamTimeline();
-            } else if (parameter.matches(TYPE_PHOTOS_LINK)) {
+            } else if (PARAMETER.matches(TYPE_PHOTOS_LINK)) {
                 // Old handling removed 05.12.13 in rev 23262
                 decryptPicsGeneral(null);
-            } else if (parameter.matches(TYPE_SET_LINK_PHOTO) || parameter.contains("set=a.")) {
+            } else if (br.getURL().contains("profile.php?id=")) {
+                decryptPicsProfile();
+            } else if (PARAMETER.matches(TYPE_SET_LINK_PHOTO)) {
                 decryptSetLinkPhoto();
-            } else if (parameter.matches(TYPE_SET_LINK_VIDEO)) {
+            } else if (PARAMETER.matches(TYPE_SET_LINK_VIDEO)) {
                 logged_in = login();
                 if (!logged_in) {
                     logger.info("Decrypting photo album without login: " + parameter);
@@ -156,37 +150,33 @@ public class FaceBookComGallery extends PluginForDecrypt {
                     fp.setName(Encoding.htmlDecode(fpName.trim()));
                     fp.addLinks(decryptedLinks);
                 }
-            } else if (parameter.matches(TYPE_PROFILE_PHOTOS)) {
-                decryptPicsProfile();
             } else if (parameter.matches(TYPE_GROUPS_PHOTOS)) {
                 decryptGroupsPhotos();
             } else {
                 // Should never happen
-                logger.info("Unsupported linktype: " + parameter);
-                final DownloadLink offline = createDownloadlink("directhttp://" + parameter);
+                logger.info("Unsupported linktype: " + PARAMETER);
+                final DownloadLink offline = createDownloadlink("directhttp://" + PARAMETER);
                 offline.setAvailable(false);
                 offline.setProperty("offline", true);
                 decryptedLinks.add(offline);
                 return decryptedLinks;
             }
-            if (decryptedLinks == null) {
-                logger.warning("Decrypter broken for link: " + PARAMETER);
-                return null;
-            } else if (decryptedLinks.size() == 0) {
-                logger.info("Link offline: " + parameter);
-                return decryptedLinks;
-            }
+        }
+        if (decryptedLinks == null) {
+            logger.warning("Decrypter broken for link: " + PARAMETER);
+            return null;
+        } else if (decryptedLinks.size() == 0) {
+            logger.info("Link offline: " + PARAMETER);
             return decryptedLinks;
         }
+        return decryptedLinks;
     }
 
     private void decryptAlbums() throws Exception {
-        logged_in = login();
         if (!logged_in) {
             logger.info("Cannot decrypt link without valid account: " + PARAMETER);
             return;
         }
-        getpagefirsttime(PARAMETER);
         br.getRequest().setHtmlCode(br.toString().replace("\\", ""));
         String fpName = br.getRegex("<title id=\"pageTitle\">([^<>\"]*?)\\- Photos \\| Facebook</title>").getMatch(0);
         final String profileID = getProfileID();
@@ -260,12 +250,10 @@ public class FaceBookComGallery extends PluginForDecrypt {
     }
 
     private void decryptPhotosOf() throws Exception {
-        logged_in = login();
         if (!logged_in) {
             logger.info("Cannot decrypt link without valid account: " + PARAMETER);
             return;
         }
-        getpagefirsttime(PARAMETER);
         if (br.containsHTML(">Dieser Inhalt ist derzeit nicht verfügbar</")) {
             logger.info("The link is either offline or an account is needed to grab it: " + PARAMETER);
             return;
@@ -348,142 +336,37 @@ public class FaceBookComGallery extends PluginForDecrypt {
 
     }
 
-    private void decryptSetLinkPhoto() throws Exception {
-        logged_in = login();
-        if (!logged_in) {
-            logger.info("Cannot decrypt link without valid account: " + PARAMETER);
-            return;
-        }
-        getpagefirsttime(PARAMETER);
-        if (br.containsHTML(">Dieser Inhalt ist derzeit nicht verfügbar</")) {
-            logger.info("The link is either offline or an account is needed to grab it: " + PARAMETER);
-            return;
-        }
-        final boolean profilelink = br.getURL().contains("facebook.com/profile.php");
-        String type;
-        String collection_token;
-        String profileID;
-        String setID;
-        if (profilelink) {
-            profileID = new Regex(br.getURL(), "profile\\.php\\?id=(\\d+)\\&").getMatch(0);
-            collection_token = new Regex(br.getURL(), "collection_token=([^<>\"]*?)\\&").getMatch(0);
-            type = new Regex(br.getURL(), "type=(\\d+)").getMatch(0);
-            setID = new Regex(br.getURL(), "set=([a-z0-9\\.]+)").getMatch(0);
-        } else {
-            profileID = br.getRegex("\"profile_id\":(\\d+)").getMatch(0);
-            if (profileID == null) {
-                profileID = br.getRegex("follow_profile\\.php\\?profile_id=(\\d+)").getMatch(0);
-            }
-            collection_token = br.getRegex("\\[\"pagelet_timeline_app_collection_([^<>\"]*?)\"\\]").getMatch(0);
-            type = "3";
-            setID = new Regex(PARAMETER, "set=([a-z0-9\\.]+)").getMatch(0);
-        }
-        String fpName = br.getRegex("id=\"pageTitle\">([^<>\"]*?)\\| Facebook</title>").getMatch(0);
-        if (fpName == null) {
-            fpName = br.getRegex("id=\"pageTitle\">([^<>\"]*?)</title>").getMatch(0);
-        }
-        final String ajaxpipeToken = getajaxpipeToken();
-        final String user = getUser();
-        if (ajaxpipeToken == null || user == null || collection_token == null || profileID == null || type == null || setID == null) {
-            logger.warning("Decrypter broken for link: " + PARAMETER);
-            throw new DecrypterException("Decrypter broken for link: " + PARAMETER);
-        }
-        collection_token = Encoding.htmlDecode(collection_token);
-        if (fpName == null) {
-            fpName = "Facebook_album_of_user_" + user;
-        }
-        fpName = Encoding.htmlDecode(fpName.trim());
-        final FilePackage fp = FilePackage.getInstance();
-        fp.setName(fpName.trim());
-        boolean dynamicLoadAlreadyDecrypted = false;
-        String lastfirstID = "";
-        String additionalPostData = "";
-        if (profilelink) {
-            additionalPostData = "%2C%22tab_key%22%3A%22photos%22%2C%22id%22%3A%22" + profileID + "%22%2C%22sk%22%3A%22photos%22%2C%22collection_token%22%3A%22" + Encoding.urlEncode(collection_token) + "%22%2C%22set%22%3A%22a.105710356156348.9064.100001521531810%22%2C%22type%22%3A%22" + type;
-        } else {
-            additionalPostData = "%2C%22tab_key%22%3A%22media_set%22%2C%22set%22%3A%22" + setID + "%22%2C%22type%22%3A%22" + type + "%22%2C%22sk%22%3A%22photos";
-        }
-
-        for (int i = 1; i <= MAX_LOOPS_GENERAL; i++) {
-            int currentMaxPicCount = 28;
-
-            String[] links;
-            if (i > 1) {
-                final String currentLastFbid = getLastFBID();
-                // If we have exactly currentMaxPicCount pictures then we reload one
-                // time and got all, 2nd time will then be 0 more links
-                // -> Stop
-                if (currentLastFbid == null && dynamicLoadAlreadyDecrypted) {
-                    break;
-                } else if (currentLastFbid == null) {
-                    logger.info("Cannot find more links, stopping decryption...");
-                    break;
-                }
-                /**/
-                String loadLink = MAINPAGE + "/ajax/pagelet/generic.php/TimelinePhotosAlbumPagelet?ajaxpipe=1&ajaxpipe_token=" + ajaxpipeToken + "&no_script_path=1&data=%7B%22scroll_load%22%3Atrue%2C%22last_fbid%22%3A%22" + currentLastFbid + "%22%2C%22fetch_size%22%3A32%2C%22profile_id%22%3A" + profileID + "%2C%22viewmode%22%3Anull%2C%22set%22%3A%22" + setID + "%22%2C%22type%22%3A%223%22%2C%22pager_fired_on_init%22%3Atrue%7D&__user=" + user + "&__a=1&__dyn=798aD5z5CF-&__req=jsonp_" + i + "&__adt=" + i;
-                loadLink = "https://www.facebook.com/ajax/pagelet/generic.php/TimelinePhotosAlbumPagelet?ajaxpipe=1&ajaxpipe_token=" + ajaxpipeToken + "&no_script_path=1&data=%7B%22scroll_load%22%3Atrue%2C%22last_fbid%22%3A" + currentLastFbid + "%2C%22fetch_size%22%3A32%2C%22profile_id%22%3A" + profileID + "" + additionalPostData + "%22%2C%22overview%22%3Afalse%2C%22active_collection%22%3A69%2C%22collection_token%22%3A%22" + Encoding.urlEncode(collection_token) + "%22%2C%22cursor%22%3A0%2C%22tab_id%22%3A%22u_0_t%22%2C%22order%22%3Anull%2C%22importer_state%22%3Anull%7D&__user=" + user + "&__a=1&__dyn=7n8ahyngCBDBzpQ9UoGhk4BwzCxO4oKA8ABGfirWo8popyUWdDx24QqUgKm58y&__req=jsonp_" + i + "&__rev=1414761&__adt=" + i;
-                br.getPage(loadLink);
-                links = br.getRegex("ajax\\\\/photos\\\\/hovercard\\.php\\?fbid=(\\d+)\\&").getColumn(0);
-                currentMaxPicCount = 32;
-                dynamicLoadAlreadyDecrypted = true;
-            } else {
-                if (profilelink) {
-                    links = br.getRegex("facebook\\.com/photo\\.php\\?fbid=(\\d+)").getColumn(0);
-                } else {
-                    links = br.getRegex("hovercard\\.php\\?fbid=(\\d+)").getColumn(0);
-                }
-                links = br.getRegex("hovercard\\.php\\?fbid=(\\d+)").getColumn(0);
-            }
-            if (links == null || links.length == 0) {
-                logger.warning("Decrypter broken for the following link or account needed: " + PARAMETER);
-                throw new DecrypterException("Decrypter broken for link: " + PARAMETER);
-            }
-            boolean stop = false;
-            logger.info("Decrypting page " + i + " of ??");
-            for (final String picID : links) {
-                // Another fail safe to prevent loops
-                if (picID.equals(lastfirstID)) {
-                    stop = true;
-                }
-                final DownloadLink dl = createPicDownloadlink(picID);
-                fp.add(dl);
-                try {
-                    distribute(dl);
-                } catch (final Throwable e) {
-                    // Not supported in old 0.9.581 Stable
-                }
-                decryptedLinks.add(dl);
-            }
-            // currentMaxPicCount = max number of links per segment
-            if (links.length < currentMaxPicCount || profileID == null) {
-                stop = true;
-            }
-            if (stop) {
-                logger.info("Seems like we're done and decrypted all links, stopping at page: " + i);
-                break;
-            }
-        }
-        fp.addLinks(decryptedLinks);
-    }
-
     private void decryptPicsProfile() throws Exception {
-        logged_in = login();
         if (!logged_in) {
             logger.info("Cannot decrypt link without valid account: " + PARAMETER);
             return;
         }
-        getpagefirsttime(PARAMETER);
         /* temporarily unavailable || empty album (link) */
         if (br.containsHTML(">Dieser Inhalt ist derzeit nicht verfügbar</") || br.containsHTML("class=\"fbStarGridBlankContent\"")) {
             logger.info("The link is either offline or an account is needed to grab it: " + PARAMETER);
             return;
         }
         String fpName = getPageTitle();
+        final boolean profile_setlink = br.getURL().contains("&set=");
+        boolean dynamicLoadAlreadyDecrypted = false;
+        String type;
+        String collection_token = null;
+        String profileID;
+        String setID;
+        String additionalPostData = null;
+        final String ajaxpipeToken = getajaxpipeToken();
+        if (profile_setlink) {
+            profileID = new Regex(br.getURL(), "profile\\.php\\?id=(\\d+)\\&").getMatch(0);
+            collection_token = new Regex(br.getURL(), "collection_token=([^<>\"]*?)\\&").getMatch(0);
+            type = new Regex(br.getURL(), "type=(\\d+)").getMatch(0);
+            setID = new Regex(br.getURL(), "set=([a-z0-9\\.]+)").getMatch(0);
+            additionalPostData = "%2C%22tab_key%22%3A%22photos%22%2C%22id%22%3A%22" + profileID + "%22%2C%22sk%22%3A%22photos%22%2C%22collection_token%22%3A%22" + Encoding.urlEncode(collection_token) + "%22%2C%22set%22%3A%22" + setID + "%22%2C%22type%22%3A%22" + type;
+        } else {
+            profileID = getProfileID();
+        }
         final String user = getUser();
-        final String appcollection = br.getRegex("\"pagelet_timeline_app_collection_(\\d+:\\d+)(:\\d+)?\"").getMatch(0);
-        final String profileID = getProfileID();
         final String totalPicCount = br.getRegex("data-medley-id=\"pagelet_timeline_medley_photos\">Photos<span class=\"_gs6\">(\\d+((,|\\.)\\d+)?)</span>").getMatch(0);
-        if (user == null || profileID == null || appcollection == null) {
+        if (user == null || profileID == null || ajaxpipeToken == null) {
             logger.warning("Decrypter broken for link: " + PARAMETER);
             return;
         }
@@ -518,43 +401,27 @@ public class FaceBookComGallery extends PluginForDecrypt {
 
             String[] links;
             if (i > 1) {
-                /* TODO: Implement this case */
-                logger.info("Profile photos decrypt: Stopping, case more_than_1_page_ is not defined yet!");
-                break;
-                // if (br.containsHTML("\"TimelineAppCollection\",\"setFullyLoaded\"")) {
-                // logger.info("facebook.com: Server says the set is fully loaded -> Stopping");
-                // break;
-                // }
-                // final String cursor =
-                // br.getRegex("\\[\"pagelet_timeline_app_collection_[^<>\"]*?\",\\{\"[^<>\"]*?\":\"[^<>\"]*?\"\\},\"([^<>\"]*?)\"").getMatch(0);
-                // // If we have exactly currentMaxPicCount pictures then we reload one
-                // // time and got all, 2nd time will then be 0 more links
-                // // -> Stop
-                // if (cursor == null && dynamicLoadAlreadyDecrypted) {
-                // break;
-                // } else if (cursor == null) {
-                // logger.warning("Decrypter maybe broken for link: " + PARAMETER);
-                // logger.info("Returning already decrypted links anyways...");
-                // break;
-                // }
-                // // final String loadLink = MAINPAGE + "/ajax/pagelet/generic.php/" + controller + "?data=%7B%22collection_token%22%3A%22"
-                // +
-                // // Encoding.urlEncode(appcollection) + "%3A5%22%2C%22cursor%22%3A%22" + cursor +
-                // // "%22%2C%22tab_key%22%3A%22photos_all%22%2C%22profile_id%22%3A" + profileowner +
-                // //
-                // "%2C%22overview%22%3Afalse%2C%22ftid%22%3Anull%2C%22order%22%3Anull%2C%22sk%22%3A%22photos%22%2C%22importer_state%22%3Anull%7D&__user="
-                // // + user + "&__a=1&__dyn=7n8apij2qmumdDgDxyIJ3Ga58Ciq2W8GA8ABGeqheCu6po&__req=" + i + "&__rev=1162685";
-                // final String loadLink = MAINPAGE + "/ajax/pagelet/generic.php/" + controller + "?data=%7B%22collection_token%22%3A%22" +
-                // Encoding.urlEncode(appcollection) + "%3A5%22%2C%22cursor%22%3A%22" + cursor +
-                // "%22%2C%22tab_key%22%3A%22photos_all%22%2C%22profile_id%22%3A" + profileID +
-                // "%2C%22overview%22%3Afalse%2C%22ftid%22%3Anull%2C%22order%22%3Anull%2C%22sk%22%3A%22photos%22%2C%22importer_state%22%3Anull%7D&__user="
-                // + user + "&__a=1&__dyn=" + dyn + "&__req=" + i + "&__rev=" + rev;
-                // br.getPage(loadLink);
-                // links = br.getRegex("ajax\\\\/photos\\\\/hovercard\\.php\\?fbid=(\\d+)\\&").getColumn(0);
-                // currentMaxPicCount = 40;
-                // dynamicLoadAlreadyDecrypted = true;
+                final String currentLastFbid = getLastFBID();
+                // If we have exactly currentMaxPicCount pictures then we reload one
+                // time and got all, 2nd time will then be 0 more links
+                // -> Stop
+                if (currentLastFbid == null && dynamicLoadAlreadyDecrypted) {
+                    break;
+                } else if (currentLastFbid == null || additionalPostData == null) {
+                    logger.info("Cannot find more links, stopping decryption...");
+                    break;
+                }
+                String loadLink = "https://www.facebook.com/ajax/pagelet/generic.php/TimelinePhotosAlbumPagelet?ajaxpipe=1&ajaxpipe_token=" + ajaxpipeToken + "&no_script_path=1&data=%7B%22scroll_load%22%3Atrue%2C%22last_fbid%22%3A" + currentLastFbid + "%2C%22fetch_size%22%3A32%2C%22profile_id%22%3A" + profileID + additionalPostData + "%22%2C%22overview%22%3Afalse%2C%22active_collection%22%3A69%2C%22collection_token%22%3A%22" + Encoding.urlEncode(collection_token) + "%22%2C%22cursor%22%3A0%2C%22tab_id%22%3A%22u_0_t%22%2C%22order%22%3Anull%2C%22importer_state%22%3Anull%7D&__user=" + user + "&__a=1&__dyn=7n8ahyngCBDBzpQ9UoGhk4BwzCxO4oKA8ABGfirWo8popyUWdDx24QqUgKm58y&__req=jsonp_" + i + "&__rev=141954&__adt=" + i;
+                br.getPage(loadLink);
+                links = br.getRegex("ajax\\\\/photos\\\\/hovercard\\.php\\?fbid=(\\d+)\\&").getColumn(0);
+                currentMaxPicCount = 32;
+                dynamicLoadAlreadyDecrypted = true;
             } else {
-                links = br.getRegex("class=\"photoTextTitle\" href=\"(https?://(www\\.)?facebook\\.com/media/set/\\?set=(a|vb)\\.[^<>\"]*?)\"").getColumn(0);
+                if (profile_setlink) {
+                    links = br.getRegex("hovercard\\.php\\?fbid=(\\d+)").getColumn(0);
+                } else {
+                    links = br.getRegex("class=\"photoTextTitle\" href=\"(https?://(www\\.)?facebook\\.com/media/set/\\?set=(a|vb)\\.[^<>\"]*?)\"").getColumn(0);
+                }
             }
             if (links == null || links.length == 0) {
                 logger.warning("Decryption done or decrypter broken: " + PARAMETER);
@@ -562,9 +429,14 @@ public class FaceBookComGallery extends PluginForDecrypt {
             }
             boolean stop = false;
             logger.info("Decrypting page " + i + " of ??");
-            for (String setlink : links) {
-                setlink = Encoding.htmlDecode(setlink);
-                final DownloadLink dl = createDownloadlink(setlink);
+            for (String entry : links) {
+                entry = Encoding.htmlDecode(entry);
+                final DownloadLink dl;
+                if (entry.matches("\\d+")) {
+                    dl = createPicDownloadlink(entry);
+                } else {
+                    dl = createDownloadlink(entry);
+                }
                 fp.add(dl);
                 decryptedLinks.add(dl);
                 decryptedPicsNum++;
@@ -600,13 +472,109 @@ public class FaceBookComGallery extends PluginForDecrypt {
         }
     }
 
-    private void decryptPhotoStreamTimeline() throws Exception {
-        logged_in = login();
+    private void decryptSetLinkPhoto() throws Exception {
         if (!logged_in) {
             logger.info("Cannot decrypt link without valid account: " + PARAMETER);
             return;
         }
-        getpagefirsttime(PARAMETER);
+        if (br.containsHTML(">Dieser Inhalt ist derzeit nicht verfügbar</")) {
+            logger.info("The link is either offline or an account is needed to grab it: " + PARAMETER);
+            return;
+        }
+        String type;
+        String collection_token;
+        String profileID;
+        String setID;
+        profileID = br.getRegex("\"profile_id\":(\\d+)").getMatch(0);
+        if (profileID == null) {
+            profileID = br.getRegex("follow_profile\\.php\\?profile_id=(\\d+)").getMatch(0);
+        }
+        collection_token = br.getRegex("\\[\"pagelet_timeline_app_collection_([^<>\"]*?)\"\\]").getMatch(0);
+        type = "3";
+        setID = new Regex(PARAMETER, "set=([a-z0-9\\.]+)").getMatch(0);
+        String fpName = br.getRegex("id=\"pageTitle\">([^<>\"]*?)\\| Facebook</title>").getMatch(0);
+        if (fpName == null) {
+            fpName = br.getRegex("id=\"pageTitle\">([^<>\"]*?)</title>").getMatch(0);
+        }
+        final String ajaxpipeToken = getajaxpipeToken();
+        final String user = getUser();
+        if (ajaxpipeToken == null || user == null || collection_token == null || profileID == null || type == null || setID == null) {
+            logger.warning("Decrypter broken for link: " + PARAMETER);
+            throw new DecrypterException("Decrypter broken for link: " + PARAMETER);
+        }
+        collection_token = Encoding.htmlDecode(collection_token);
+        if (fpName == null) {
+            fpName = "Facebook_album_of_user_" + user;
+        }
+        fpName = Encoding.htmlDecode(fpName.trim());
+        final FilePackage fp = FilePackage.getInstance();
+        fp.setName(fpName.trim());
+        boolean dynamicLoadAlreadyDecrypted = false;
+        String lastfirstID = "";
+        String additionalPostData = "";
+        additionalPostData = "%2C%22tab_key%22%3A%22media_set%22%2C%22set%22%3A%22" + setID + "%22%2C%22type%22%3A%22" + type + "%22%2C%22sk%22%3A%22photos";
+
+        for (int i = 1; i <= MAX_LOOPS_GENERAL; i++) {
+            int currentMaxPicCount = 28;
+
+            String[] links;
+            if (i > 1) {
+                final String currentLastFbid = getLastFBID();
+                // If we have exactly currentMaxPicCount pictures then we reload one
+                // time and got all, 2nd time will then be 0 more links
+                // -> Stop
+                if (currentLastFbid == null && dynamicLoadAlreadyDecrypted) {
+                    break;
+                } else if (currentLastFbid == null) {
+                    logger.info("Cannot find more links, stopping decryption...");
+                    break;
+                }
+                /**/
+                String loadLink = "https://www.facebook.com/ajax/pagelet/generic.php/TimelinePhotosAlbumPagelet?ajaxpipe=1&ajaxpipe_token=" + ajaxpipeToken + "&no_script_path=1&data=%7B%22scroll_load%22%3Atrue%2C%22last_fbid%22%3A" + currentLastFbid + "%2C%22fetch_size%22%3A32%2C%22profile_id%22%3A" + profileID + "" + additionalPostData + "%22%2C%22overview%22%3Afalse%2C%22active_collection%22%3A69%2C%22collection_token%22%3A%22" + Encoding.urlEncode(collection_token) + "%22%2C%22cursor%22%3A0%2C%22tab_id%22%3A%22u_0_t%22%2C%22order%22%3Anull%2C%22importer_state%22%3Anull%7D&__user=" + user + "&__a=1&__dyn=7n8ahyngCBDBzpQ9UoGhk4BwzCxO4oKA8ABGfirWo8popyUWdDx24QqUgKm58y&__req=jsonp_" + i + "&__rev=1414761&__adt=" + i;
+                br.getPage(loadLink);
+                links = br.getRegex("ajax\\\\/photos\\\\/hovercard\\.php\\?fbid=(\\d+)\\&").getColumn(0);
+                currentMaxPicCount = 32;
+                dynamicLoadAlreadyDecrypted = true;
+            } else {
+                links = br.getRegex("hovercard\\.php\\?fbid=(\\d+)").getColumn(0);
+            }
+            if (links == null || links.length == 0) {
+                logger.warning("Decrypter broken for the following link or account needed: " + PARAMETER);
+                throw new DecrypterException("Decrypter broken for link: " + PARAMETER);
+            }
+            boolean stop = false;
+            logger.info("Decrypting page " + i + " of ??");
+            for (final String picID : links) {
+                // Another fail safe to prevent loops
+                if (picID.equals(lastfirstID)) {
+                    stop = true;
+                }
+                final DownloadLink dl = createPicDownloadlink(picID);
+                fp.add(dl);
+                try {
+                    distribute(dl);
+                } catch (final Throwable e) {
+                    // Not supported in old 0.9.581 Stable
+                }
+                decryptedLinks.add(dl);
+            }
+            // currentMaxPicCount = max number of links per segment
+            if (links.length < currentMaxPicCount || profileID == null) {
+                stop = true;
+            }
+            if (stop) {
+                logger.info("Seems like we're done and decrypted all links, stopping at page: " + i);
+                break;
+            }
+        }
+        fp.addLinks(decryptedLinks);
+    }
+
+    private void decryptPhotoStreamTimeline() throws Exception {
+        if (!logged_in) {
+            logger.info("Cannot decrypt link without valid account: " + PARAMETER);
+            return;
+        }
         if (br.containsHTML(">Dieser Inhalt ist derzeit nicht verfügbar</")) {
             logger.info("The link is either offline or an account is needed to grab it: " + PARAMETER);
             return;
@@ -728,12 +696,10 @@ public class FaceBookComGallery extends PluginForDecrypt {
     }
 
     private void decryptGroupsPhotos() throws Exception {
-        logged_in = login();
         if (!logged_in) {
             logger.info("Cannot decrypt link without valid account: " + PARAMETER);
             return;
         }
-        getpagefirsttime(PARAMETER);
         /* temporarily unavailable || empty album (link) */
         if (br.containsHTML(">Dieser Inhalt ist derzeit nicht verfügbar</") || br.containsHTML("class=\"fbStarGridBlankContent\"")) {
             logger.info("The link is either offline or an account is needed to grab it: " + PARAMETER);
@@ -871,12 +837,10 @@ public class FaceBookComGallery extends PluginForDecrypt {
 
     // TODO: Use this everywhere as it should work universal
     private void decryptPicsGeneral(String controller) throws Exception {
-        logged_in = login();
         if (!logged_in) {
             logger.info("Cannot decrypt link without valid account: " + PARAMETER);
             return;
         }
-        getpagefirsttime(PARAMETER);
         /* temporarily unavailable || empty album (link) */
         if (br.containsHTML(">Dieser Inhalt ist derzeit nicht verfügbar</") || br.containsHTML("class=\"fbStarGridBlankContent\"")) {
             logger.info("The link is either offline or an account is needed to grab it: " + PARAMETER);

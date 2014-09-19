@@ -50,7 +50,7 @@ public class LilFileCom extends PluginForHost {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         br.getPage(link.getDownloadURL());
-        if (br.containsHTML("<title> \\- lilFile\\.com</title>")) {
+        if (br.containsHTML("<title> \\- lilFile\\.com</title>") || br.getURL().contains("?") || br.getHttpConnection().getResponseCode() == 403) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         final String filename = br.getRegex("<title>([^<>\"]*?) \\- lilFile\\.com</title>").getMatch(0);
