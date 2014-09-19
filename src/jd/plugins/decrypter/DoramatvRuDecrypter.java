@@ -1,5 +1,5 @@
 /**
- * 
+ *
  */
 package jd.plugins.decrypter;
 
@@ -17,25 +17,24 @@ import java.util.Map;
 import jd.controlling.ProgressController;
 import jd.http.Browser;
 import jd.nutils.encoding.Encoding;
+import jd.parser.Regex;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 
-import org.appwork.utils.Regex;
-
 /**
  * @author Steven Kuenzel
- * 
+ *
  */
 @SuppressWarnings("deprecation")
-@DecrypterPlugin(names = { "doramatv.ru" }, urls = { "http://(www\\.)?doramatv\\.ru/(.)*" }, flags = { 0 }, interfaceVersion = 2, revision = "")
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "doramatv.ru" }, urls = { "http://(www\\.)?doramatv\\.ru/.*" }, flags = { 0 })
 public class DoramatvRuDecrypter extends PluginForDecrypt {
 
     /*
      * (non-Javadoc)
-     * 
+     *
      * @see jd.plugins.PluginForDecrypt#decryptIt(jd.plugins.CryptedLink, jd.controlling.ProgressController)
      */
     // @ whoever did this plugin: You don't need to handle the vkontakte links inside here. JD has direct support for those:
@@ -85,7 +84,7 @@ public class DoramatvRuDecrypter extends PluginForDecrypt {
 
     /**
      * Finds all available download links (-> resolutions) for a specific episode
-     * 
+     *
      * @param url
      *            The URL to the episode
      * @return List of available DownloadLink
@@ -146,13 +145,17 @@ public class DoramatvRuDecrypter extends PluginForDecrypt {
             if (match.contains("vk.com")) {
                 // vk.com
 
-                if (!linkMap.containsKey(match)) linkMap.put(match, false);
+                if (!linkMap.containsKey(match)) {
+                    linkMap.put(match, false);
+                }
             }
 
         }
 
         // nothing was found
-        if (linkMap.size() < 1) return null;
+        if (linkMap.size() < 1) {
+            return null;
+        }
 
         // sort the map containing the links
         linkMap = sortByValue(linkMap);
@@ -221,7 +224,9 @@ public class DoramatvRuDecrypter extends PluginForDecrypt {
                 }
             }
 
-            if (foundResolution[0] & foundResolution[1] & foundResolution[2] & foundResolution[3]) break;
+            if (foundResolution[0] & foundResolution[1] & foundResolution[2] & foundResolution[3]) {
+                break;
+            }
         }
 
         // create a new FilePackage for the episode
@@ -234,7 +239,7 @@ public class DoramatvRuDecrypter extends PluginForDecrypt {
 
     /**
      * Finds the download link for a specific episode in a specific resolution
-     * 
+     *
      * @param regexMatches
      *            The results of the regular expression checking the containing web page
      * @param resolution
@@ -254,7 +259,9 @@ public class DoramatvRuDecrypter extends PluginForDecrypt {
         }
 
         // no download links were found
-        if (finalList.size() < 1) return null;
+        if (finalList.size() < 1) {
+            return null;
+        }
 
         DownloadLink downloadLink = createDownloadlink(finalList.get(0));
 
@@ -280,7 +287,7 @@ public class DoramatvRuDecrypter extends PluginForDecrypt {
 
     /**
      * Converts the title String into a more appropriate one (trivial approach)
-     * 
+     *
      * @param title
      *            The title to convert
      * @return The converted title
@@ -291,7 +298,9 @@ public class DoramatvRuDecrypter extends PluginForDecrypt {
         String[] titleSplit = title.split("_");
 
         for (String s : titleSplit) {
-            if (s.length() < 1) continue;
+            if (s.length() < 1) {
+                continue;
+            }
 
             result += s.substring(0, 1).toUpperCase() + s.substring(1) + "_";
         }
@@ -301,7 +310,7 @@ public class DoramatvRuDecrypter extends PluginForDecrypt {
 
     /**
      * Sorts the given Map<String, Boolean> by its entries values: boolean -> true first
-     * 
+     *
      * @param map
      *            The map to sort
      * @return The sorted map
