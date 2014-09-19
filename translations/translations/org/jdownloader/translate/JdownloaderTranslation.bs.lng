@@ -65,6 +65,7 @@ Main_run_autostart_=Pokretanje Download-a
 Main_run_autostart_msg=Download-i će startati za nekoliko sekundi...
 Mainstart_now=Pokreni SADA!
 MovePluginProgress=Premiještanje dokumenta u %s1
+MovePluginProgress_nodest=Premiještanje dokumenta...
 MyJDownloaderController_onError_account_unconfirmed=Vaš 'My JDownloader' email još nije bio potvrđen. \r\nMolimo provjerite svoje email-ove i kliknite na Link za potvrdu
 MyJDownloaderController_onError_badlogins=Vsaš 'My JDownloader' podaci za logiranje nisu ispravni. \r\nMolimo provjerite korisničko ime/email i šifru!
 MyJDownloaderController_onError_outdated=JDownloader se nije mogao konektovati na My JDownloader servis. Molimo nadgradite svoj JDownloader!
