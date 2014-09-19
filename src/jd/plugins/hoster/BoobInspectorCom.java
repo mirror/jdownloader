@@ -49,11 +49,14 @@ public class BoobInspectorCom extends PluginForHost {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         br.getPage(downloadLink.getDownloadURL());
-        if (br.getHttpConnection().getResponseCode() == 404) {
+        if (br.getHttpConnection() != null && br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         String filename = br.getRegex("<title>([^<>\"]*?)</title>").getMatch(0);
         DLLINK = br.getRegex("\"low\":\"(http://[^<>\"]*?)\"").getMatch(0);
+        if (DLLINK == null) {
+            DLLINK = br.getRegex("\"\\d{3}p\":\"(https?://[^\"]+)\"").getMatch(0);
+        }
         if (filename == null || DLLINK == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
