@@ -145,7 +145,7 @@ public class DailyMotionComV2 extends DailyMotionCom {
 
     }
 
-    protected boolean checkDirectLink(final DownloadLink downloadLink) {
+    protected boolean checkDirectLink(final DownloadLink downloadLink) throws PluginException {
         if (dllink != null) {
             br.setFollowRedirects(false);
             try {
@@ -175,8 +175,13 @@ public class DailyMotionComV2 extends DailyMotionCom {
                                 downloadLink.setProperty("FFP_DURATION", streamInfo.getFormat().getDuration());
                                 downloadLink.setProperty("FFP_V_HEIGHT", streamInfo.getStreams().get(0).getHeight());
                                 downloadLink.setProperty("FFP_V_WIDTH", streamInfo.getStreams().get(0).getWidth());
-                                downloadLink.setProperty("FFP_A_CODEC", streamInfo.getStreams().get(1).getCodec_name());
-                                downloadLink.setProperty("FFP_A_BITRATE", streamInfo.getStreams().get(1).getBit_rate());
+                                if (streamInfo.getStreams().size() > 1) {
+                                    downloadLink.setProperty("FFP_A_CODEC", streamInfo.getStreams().get(1).getCodec_name());
+
+                                    downloadLink.setProperty("FFP_A_BITRATE", streamInfo.getStreams().get(1).getBit_rate());
+                                } else {
+                                    // no Audio
+                                }
 
                             }
                             if (downloadLink.getProperty("FFP_A_BITRATE") != null) {
@@ -189,6 +194,8 @@ public class DailyMotionComV2 extends DailyMotionCom {
                                 var.setqName((Integer.parseInt(downloadLink.getStringProperty("FFP_A_BITRATE")) / 1024) + "kbits");
                                 setActiveVariantByLink(downloadLink, var);
 
+                            } else {
+                                throw new NoAudioException();
                             }
 
                         }
@@ -202,12 +209,24 @@ public class DailyMotionComV2 extends DailyMotionCom {
                     } catch (Throwable e) {
                     }
                 }
+            } catch (final NoAudioException e) {
+                throw e;
             } catch (final Exception e) {
+                getLogger().log(e);
                 return false;
             }
+
             return true;
         }
         return false;
+    }
+
+    public class NoAudioException extends PluginException {
+
+        public NoAudioException() {
+            super(LinkStatus.ERROR_FILE_NOT_FOUND, "No Audio Stream available");
+        }
+
     }
 
     @Override

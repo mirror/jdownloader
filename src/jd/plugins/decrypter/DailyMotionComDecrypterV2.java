@@ -219,7 +219,7 @@ public class DailyMotionComDecrypterV2 extends DailyMotionComDecrypter {
 
             variantLink.setLinkID("dailymotioncom" + variantLink.getStringProperty("plain_videoid") + "_" + bestVi.getqName());
 
-            DownloadLink audio = createDownloadlink(variantLink.getDownloadURL());
+            DownloadLink audio = createDownloadlink(variantLink.getPluginPattern());
             for (Entry<String, Object> es : variantLink.getProperties().entrySet()) {
                 audio.setProperty(es.getKey(), es.getValue());
             }
