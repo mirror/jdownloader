@@ -82,7 +82,9 @@ public class Executer extends Thread implements Runnable {
             this.idle = false;
             for (;;) {
                 int read;
-                if (this.isInterrupted()) { throw new InterruptedException(); }
+                if (this.isInterrupted()) {
+                    throw new InterruptedException();
+                }
                 if ((read = this.reader.read(buffer)) < 0) {
                     this.endOfFileReceived = true;
                     return i;
@@ -90,7 +92,9 @@ public class Executer extends Thread implements Runnable {
                 if (read > 0) {
                     i += read;
                     this.dynbuf.put(buffer, read);
-                    if (buffer[0] == '\b' || buffer[0] == '\r' || buffer[0] == '\n') { return i; }
+                    if (buffer[0] == '\b' || buffer[0] == '\r' || buffer[0] == '\n') {
+                        return i;
+                    }
                     Executer.this.fireEvent(this.dynbuf, read, this == Executer.this.sbeObserver ? Executer.LISTENER_ERRORSTREAM : Executer.LISTENER_STDSTREAM);
                 } else {
                     Thread.sleep(100);
@@ -101,16 +105,18 @@ public class Executer extends Thread implements Runnable {
         public void requestInterrupt() {
             try {
                 /*
-                 * if there is data available to read and we never read any data from stream yet, let the streamobserver read it, because it can be important
-                 * data (eg. it breaks unrar pw finding for fast computers if we dont do this)
+                 * if there is data available to read and we never read any data from stream yet, let the streamobserver read it, because it
+                 * can be important data (eg. it breaks unrar pw finding for fast computers if we dont do this)
                  */
                 /* must be synchronized */
                 synchronized (this.LOCK) {
                     /*
-                     * we never read any data but there is some available, so abort interrupt this time(its the only possible time to abort an interrupt
-                     * request) and read it
+                     * we never read any data but there is some available, so abort interrupt this time(its the only possible time to abort
+                     * an interrupt request) and read it
                      */
-                    if (!this.isClosed && this.idle == true && this.reader.available() > 0) { return; }
+                    if (!this.isClosed && this.idle == true && this.reader.available() > 0) {
+                        return;
+                    }
                 }
                 /* close the stream and interrupt the observer */
                 this.isClosed = true;
@@ -126,11 +132,18 @@ public class Executer extends Thread implements Runnable {
             this.started = true;
             int num;
             try {
+
                 Executer.this.fireEvent(this.dynbuf, 0, this == Executer.this.sbeObserver ? Executer.LISTENER_ERRORSTREAM : Executer.LISTENER_STDSTREAM);
                 /* waitloop until we got interrupt request or data to read */
-                while (this.isInterrupted() || this.reader.available() <= 0) {
-                    if (this.isInterrupted()) { return; }
+                /* to prevent reader.available always returning 0! */
+                int x = 0;
+                Thread.sleep(150);
+                while (this.isInterrupted() || this.reader.available() <= 0 || x == 10) {
+                    if (this.isInterrupted()) {
+                        return;
+                    }
                     Thread.sleep(150);
+                    x++;
                 }
                 /*
                  * this must be synchronized for correct working requestInterrupt()
@@ -185,7 +198,9 @@ public class Executer extends Thread implements Runnable {
         final String os = System.getProperty("os.name").toLowerCase();
         if (os.contains("windows")) {
             return true;
-        } else if (os.contains("nt")) { return true; }
+        } else if (os.contains("nt")) {
+            return true;
+        }
         return false;
     }
 
@@ -234,7 +249,9 @@ public class Executer extends Thread implements Runnable {
     }
 
     public void addParameters(final String[] par) {
-        if (par == null) { return; }
+        if (par == null) {
+            return;
+        }
         for (final String p : par) {
             this.parameter.add(p);
         }
@@ -253,7 +270,9 @@ public class Executer extends Thread implements Runnable {
     }
 
     private void fireEvent(final DynByteBuffer buffer, final int read, final int flag) {
-        if (this.isInterrupted()) { return; }
+        if (this.isInterrupted()) {
+            return;
+        }
         if ((flag & Executer.LISTENER_STDSTREAM) > 0) {
             for (final ProcessListener listener : this.listener) {
                 listener.onBufferChanged(this, buffer, read);
@@ -407,7 +426,9 @@ public class Executer extends Thread implements Runnable {
 
             this.process = pb.start();
 
-            if (this.waitTimeout == 0) { return; }
+            if (this.waitTimeout == 0) {
+                return;
+            }
             this.outputStream = this.process.getOutputStream();
             this.sbeObserver = new StreamObserver(this.process.getErrorStream(), this.errorStreamBuffer);
             this.sbeObserver.setName(this.getName() + " ERRstreamobserver");
@@ -484,7 +505,9 @@ public class Executer extends Thread implements Runnable {
 
                 }
             }
-            if (timeoutThread != null) timeoutThread.interrupt();
+            if (timeoutThread != null) {
+                timeoutThread.interrupt();
+            }
             if (this.logger != null) {
                 this.logger.finer("Stream observer closed");
             }
