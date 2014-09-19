@@ -25,6 +25,7 @@ import javax.swing.SwingUtilities;
 import jd.PluginWrapper;
 import jd.config.SubConfiguration;
 import jd.controlling.ProgressController;
+import jd.http.Browser.BrowserException;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.plugins.CryptedLink;
@@ -94,7 +95,15 @@ public class DevArtCm extends PluginForDecrypt {
         }
         br.setFollowRedirects(true);
         br.setCookiesExclusive(true);
-        br.getPage(PARAMETER);
+        try {
+            br.getPage(PARAMETER);
+        } catch (final BrowserException be) {
+            final DownloadLink offline = createDownloadlink("directhttp://" + PARAMETER);
+            offline.setAvailable(false);
+            offline.setProperty("offline", true);
+            decryptedLinks.add(offline);
+            return decryptedLinks;
+        }
         if (br.containsHTML("The page you were looking for doesn\\'t exist\\.")) {
             final DownloadLink offline = createDownloadlink("directhttp://" + PARAMETER);
             offline.setAvailable(false);

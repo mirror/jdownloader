@@ -62,6 +62,7 @@ public class FaceBookComVideos extends PluginForHost {
     private static final String TYPE_DOWNLOAD              = "https?://(www\\.)?facebook\\.com/download/\\d+";
     private String              DLLINK                     = null;
     private boolean             loggedIN                   = false;
+    private boolean             accountNeeded              = false;
     private static final String FASTLINKCHECK_PICTURES     = "FASTLINKCHECK_PICTURES";
     private static final String USE_ALBUM_NAME_IN_FILENAME = "USE_ALBUM_NAME_IN_FILENAME";
 
@@ -96,14 +97,8 @@ public class FaceBookComVideos extends PluginForHost {
         br.setCookie("http://www.facebook.com", "locale", "en_GB");
         br.setFollowRedirects(true);
         final String lid = new Regex(link.getDownloadURL(), "(\\d+)$").getMatch(0);
-        final boolean accountNeeded = accountNeeded(link);
         final Account aa = AccountController.getInstance().getValidAccount(this);
-        if (accountNeeded || aa != null) {
-            if (aa == null || !aa.isValid()) {
-                link.setName(new Regex(link.getDownloadURL(), "(\\d+)$").getMatch(0));
-                link.getLinkStatus().setStatusText(JDL.L("plugins.hoster.facebookvideos.only4registered", "Links can only be checked if a valid account is entered"));
-                return AvailableStatus.UNCHECKABLE;
-            }
+        if (aa != null && aa.isValid()) {
             login(aa, false, br);
             loggedIN = true;
         }
@@ -128,6 +123,12 @@ public class FaceBookComVideos extends PluginForHost {
             }
         } else {
             br.getPage(link.getDownloadURL());
+            if (!br.containsHTML("class=\"uiStreamPrivacy inlineBlock fbStreamPrivacy fbPrivacyAudienceIndicator\"") && !loggedIN) {
+                accountNeeded = true;
+                link.setName(new Regex(link.getDownloadURL(), "(\\d+)$").getMatch(0));
+                link.getLinkStatus().setStatusText(JDL.L("plugins.hoster.facebookvideos.only4registered", "Links can only be checked if a valid account is entered"));
+                return AvailableStatus.UNCHECKABLE;
+            }
             String getThisPage = br.getRegex("window\\.location\\.replace\\(\"(http:.*?)\"").getMatch(0);
             if (getThisPage != null) {
                 br.getPage(getThisPage.replace("\\", ""));
@@ -136,7 +137,7 @@ public class FaceBookComVideos extends PluginForHost {
                 link.setFinalFileName(link.getDownloadURL());
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
-            if (accountNeeded || loggedIN) {
+            if (loggedIN) {
                 filename = br.getRegex("id=\"pageTitle\">([^<>\"]*?)</title>").getMatch(0);
                 if (filename == null) {
                     filename = br.getRegex("class=\"mtm mbs mrs fsm fwn fcg\">[A-Za-z0-9:]+</span>([^<>\"]*?)</div>").getMatch(0);
@@ -260,7 +261,7 @@ public class FaceBookComVideos extends PluginForHost {
             }
             dl.startDownload();
         } else {
-            if (accountNeeded(downloadLink)) {
+            if (accountNeeded) {
                 try {
                     throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);
                 } catch (final Throwable e) {
@@ -273,14 +274,6 @@ public class FaceBookComVideos extends PluginForHost {
                 handleVideo(downloadLink);
             }
         }
-    }
-
-    private boolean accountNeeded(final DownloadLink dl) {
-        boolean login_needed = !dl.getBooleanProperty("nologin", false);
-        if (login_needed) {
-            login_needed = !dl.getDownloadURL().matches(TYPE_SINGLE_VIDEO_MAIN);
-        }
-        return login_needed;
     }
 
     private String getHigh() {
