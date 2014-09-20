@@ -943,6 +943,7 @@ ResultTableModel_initColumns_rule_=Nome regola corrispondenza
 ResultTableModel_initColumns_ruledesc_=Condizione regola corrispondenza
 ResultTableModel_initColumns_size_=Dimensione file
 ResultTableModel_initColumns_source=Sorgente
+Rules_balanced=Bilanciato - usa equamente ogni account
 Rules_order=Il primo arriva primo - Utilizza l'ordine impostato
 Rules_random=Usa un account casuale per questo gruppo
 SaveAsProxyProfileAction_SaveAsProxyProfileAction_=Esporta impostazioni proxy
