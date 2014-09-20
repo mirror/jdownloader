@@ -21,6 +21,8 @@ import java.io.IOException;
 import java.lang.reflect.Field;
 import java.net.URL;
 import java.net.UnknownHostException;
+import java.nio.charset.CharacterCodingException;
+import java.security.Security;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -33,6 +35,8 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 
+import javax.crypto.Cipher;
+import javax.crypto.spec.SecretKeySpec;
 import javax.script.ScriptEngine;
 import javax.script.ScriptEngineManager;
 import javax.swing.JOptionPane;
@@ -544,22 +548,65 @@ public class VidBullCom extends PluginForHost {
         cleanupBrowser(cbr, toClean);
     }
 
-    private void getDllink() {
+    private void getDllink() throws Exception {
         dllink = br.getRedirectLocation();
         if (inValidate(dllink) || (!inValidate(dllink) && !dllink.matches(dllinkRegex))) {
-            dllink = regexDllink(cbr.toString());
+            // bullshit aes
+            final String js = cbr.getRegex("<script[^>]*>\\s*jwplayer\\(.*?</script>").getMatch(-1);
+            if (!inValidate(js)) {
+                final String file = new Regex(js, "file\\s*:\\s*(\"|')([a-f0-9]+)\\1").getMatch(1);
+                dllink = decrypt(file);
+            }
             if (inValidate(dllink)) {
-                final String cryptedScripts[] = cbr.getRegex("p\\}\\((.*?)\\.split\\('\\|'\\)").getColumn(0);
-                if (cryptedScripts != null && cryptedScripts.length != 0) {
-                    for (String crypted : cryptedScripts) {
-                        decodeDownloadLink(crypted);
-                        if (!inValidate(dllink)) {
-                            break;
+                dllink = regexDllink(cbr.toString());
+                if (inValidate(dllink)) {
+                    final String cryptedScripts[] = cbr.getRegex("p\\}\\((.*?)\\.split\\('\\|'\\)").getColumn(0);
+                    if (cryptedScripts != null && cryptedScripts.length != 0) {
+                        for (String crypted : cryptedScripts) {
+                            decodeDownloadLink(crypted);
+                            if (!inValidate(dllink)) {
+                                break;
+                            }
                         }
+                        // they now place within packed....
+                        final String file = cbr.getRegex("file\\s*:\\s*(\"|')([a-f0-9]+)\\1").getMatch(1);
+                        dllink = decrypt(file);
                     }
                 }
             }
         }
+    }
+
+    /**
+     * supports crypto method within http://vidbull.com/player/obc.swf
+     *
+     * @author raztoki
+     * @param cipherText
+     * @param key
+     * @return
+     */
+    private String decrypt(String cipherText) {
+        // http://www.devkb.org/java/50-AES-256-bits-encrypter-decrypter-Java-source-code
+        if (cipherText == null || System.getProperty("jd.revision.jdownloaderrevision") == null) {
+            return null;
+        }
+        String output = null;
+        try {
+            Security.addProvider(new org.bouncycastle.jce.provider.BouncyCastleProvider());
+            byte[] hexKey = org.appwork.utils.formatter.HexFormatter.hexToByteArray("a949376e37b369f17bc7d3c7a04c5721");
+            byte[] hexCipher = org.appwork.utils.formatter.HexFormatter.hexToByteArray(cipherText);
+            SecretKeySpec local6 = new SecretKeySpec(hexKey, "AES");
+            Cipher cp = Cipher.getInstance("AES/ECB/NoPadding");
+            cp.init(Cipher.DECRYPT_MODE, local6);
+            try {
+                output = new String(cp.doFinal(hexCipher), "UTF-8");
+            } catch (final Throwable e) {
+                e.printStackTrace();
+            }
+        } catch (final Throwable t) {
+            t.printStackTrace();
+        }
+        return output;
     }
 
     private void waitTime(final long timeBefore, final DownloadLink downloadLink) throws PluginException {
@@ -1532,8 +1579,9 @@ public class VidBullCom extends PluginForHost {
      * @param source
      *            String for decoder to process
      * @return String result
+     * @throws CharacterCodingException
      * */
-    private void decodeDownloadLink(final String s) {
+    private void decodeDownloadLink(final String s) throws CharacterCodingException {
         String decoded = null;
 
         try {
@@ -1557,6 +1605,12 @@ public class VidBullCom extends PluginForHost {
 
         if (!inValidate(decoded)) {
             dllink = regexDllink(decoded);
+        }
+        if (!inValidate(decoded) && decoded.contains("jwplayer")) {
+            // because now they place in packed.
+            br.getRequest().setHtmlCode(decoded + "\r\n" + br.getRequest().getHtmlCode());
+            cbr.getRequest().setHtmlCode(decoded + "\r\n" + cbr.getRequest().getHtmlCode());
+
         }
     }
 
