@@ -1276,18 +1276,30 @@ public class YoutubeDashV2 extends PluginForHost {
                 if (new File(getAudioStreamPath(downloadLink)).exists() && !new File(downloadLink.getFileOutput()).exists()) {
                     /* audioStream also finished */
                     /* Do we need an exception here? If a Video is downloaded it is always finished before the audio part. TheCrap */
+
                     if (videoStreamPath != null && new File(videoStreamPath).exists()) {
                         final FFMpegProgress progress = new FFMpegProgress();
                         progress.setProgressSource(this);
                         try {
                             downloadLink.addPluginProgress(progress);
-                            if (ffmpeg.muxToMp4(progress, downloadLink.getFileOutput(), videoStreamPath, getAudioStreamPath(downloadLink))) {
-                                downloadLink.getLinkStatus().setStatus(LinkStatus.FINISHED);
-                                new File(videoStreamPath).delete();
-                                new File(getAudioStreamPath(downloadLink)).delete();
-                            } else {
-                                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, _GUI._.YoutubeDash_handleFree_error_());
+                            if (variant.toString().startsWith("WEBM")) {
+                                if (ffmpeg.muxToWebm(progress, downloadLink.getFileOutput(), videoStreamPath, getAudioStreamPath(downloadLink))) {
+                                    downloadLink.getLinkStatus().setStatus(LinkStatus.FINISHED);
+                                    new File(videoStreamPath).delete();
+                                    new File(getAudioStreamPath(downloadLink)).delete();
+                                } else {
+                                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, _GUI._.YoutubeDash_handleFree_error_());
 
+                                }
+                            } else {
+                                if (ffmpeg.muxToMp4(progress, downloadLink.getFileOutput(), videoStreamPath, getAudioStreamPath(downloadLink))) {
+                                    downloadLink.getLinkStatus().setStatus(LinkStatus.FINISHED);
+                                    new File(videoStreamPath).delete();
+                                    new File(getAudioStreamPath(downloadLink)).delete();
+                                } else {
+                                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, _GUI._.YoutubeDash_handleFree_error_());
+
+                                }
                             }
                         } finally {
                             downloadLink.removePluginProgress(progress);
