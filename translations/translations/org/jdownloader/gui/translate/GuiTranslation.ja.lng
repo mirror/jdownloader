@@ -943,6 +943,7 @@ ResultTableModel_initColumns_rule_=マッチした規則名
 ResultTableModel_initColumns_ruledesc_=マッチした規則条件
 ResultTableModel_initColumns_size_=ファイルサイズ
 ResultTableModel_initColumns_source=ソース
+Rules_balanced=平均 - 各アカウントを等価に使用
 Rules_order=指定順 - 与えられた順番通りに使用
 Rules_random=このグループのアカウントを無作為に使用する
 SaveAsProxyProfileAction_SaveAsProxyProfileAction_=プロキシ設定をエクスポート
