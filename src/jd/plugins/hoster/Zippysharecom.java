@@ -283,6 +283,9 @@ public class Zippysharecom extends PluginForHost {
                 }
             } else {
                 DLLINK = br.getRegex("(document\\.getElementById\\(\\'dlbutton\\'\\)\\.href\\s*= \"/((?!\\s*)|.*?)\";)").getMatch(0);
+                if (DLLINK == null) {
+                    DLLINK = br.getRegex("(document\\.getElementById\\([^\\)]*\\)\\.href\\s*= \"(/d/(?!\\s*)|.*?)\";)").getMatch(0);
+                }
                 String math = br.getRegex("<script type=\"text/javascript\">([^>]+var\\s+\\w+\\s*=\\s*function\\(\\)\\s*\\{.*?" + Pattern.quote(DLLINK) + ".*?\\}[^<]*)</script>").getMatch(0);
                 if (math == null) {
                     // this covers when they drop function and var
