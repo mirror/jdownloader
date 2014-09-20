@@ -606,7 +606,7 @@ public class VidBullCom extends PluginForHost {
         } catch (final Throwable t) {
             t.printStackTrace();
         }
-        return output;
+        return output != null ? output.trim() : null;
     }
 
     private void waitTime(final long timeBefore, final DownloadLink downloadLink) throws PluginException {
