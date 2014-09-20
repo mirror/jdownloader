@@ -114,6 +114,7 @@ public class PluginScannerNIO<T extends Plugin> {
                         if (sha256 == null) {
                             sha256 = getPluginController().getFileHashBytes(path.toFile(), md, mdCache);
                         }
+                        //
                         final LazyPluginClass lazyPluginClass = new LazyPluginClass(className, sha256, pathAttr.lastModifiedTime().toMillis(), (int) infos[0], infos[1]);
                         final PluginInfo<T> pluginInfo = new PluginInfo<T>(lazyPluginClass, pluginClass);
                         // logger.finer("Scaned: " + className + "|" + lazyPluginClass.getRevision());
