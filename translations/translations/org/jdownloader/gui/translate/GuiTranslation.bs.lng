@@ -943,6 +943,7 @@ ResultTableModel_initColumns_rule_=Ime Pravila koje se podudara
 ResultTableModel_initColumns_ruledesc_=Uslov Pravila koje se podudara
 ResultTableModel_initColumns_size_=Veličina dokumenta
 ResultTableModel_initColumns_source=Izvor
+Rules_balanced=Balansirano - koristi svaki nalog jednako
 Rules_order=Prvi ide prvi - Koristi dati redosljijed
 Rules_random=Koristi nalog ove grupe po slučajnom izboru
 SaveAsProxyProfileAction_SaveAsProxyProfileAction_=Eksportuj Podešenje za Proxy
