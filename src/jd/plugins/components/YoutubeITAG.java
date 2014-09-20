@@ -19,6 +19,7 @@ public enum YoutubeITAG {
     DASH_AUDIO_192K_WEBM(172, null, null, "Vorbis", "192kbit", YoutubeITAG.VORBIS_192),
     DASH_AUDIO_256K_AAC(141, null, null, "AAC", "256kbit", YoutubeITAG.AAC_256),
     DASH_AUDIO_48K_AAC(139, null, null, "AAC", "48kbit", YoutubeITAG.AAC_48),
+
     DASH_VIDEO_1080P_H264(137, "H264", "1080p", null, null, 1080.4),
     // http://www.youtube.com/watch?v=gBabKoHSErI
     DASH_VIDEO_1440P_H264(264, "H264", "1440p", null, null, 1440.4),
@@ -29,7 +30,9 @@ public enum YoutubeITAG {
     DASH_VIDEO_480P_H264(135, "H264", "480p", null, null, 480.4),
     DASH_VIDEO_720P_H264(136, "H264", "720p", null, null, 720.4),
     DASH_VIDEO_ORIGINAL_H264(138, "H264", "Original", null, null, 2160.4),
-
+    // https://www.youtube.com/watch?v=kdKgvII-pAg
+    DASH_WEBM_VIDEO_2160P_VP9(272, "VP9", "2160p", null, null, 2160.3),
+    DASH_WEBM_VIDEO_1440P_VP9(271, "VP9", "1440p", null, null, 1440.3),
     DASH_WEBM_VIDEO_1080P_VP9(248, "VP9", "1080p", null, null, 1080.3),
     DASH_WEBM_VIDEO_720P_VP9(247, "VP9", "720p", null, null, 720.3),
     DASH_WEBM_VIDEO_480P_VP9_3(246, "VP9", "480p", null, null, 482.3),
@@ -37,7 +40,7 @@ public enum YoutubeITAG {
     DASH_WEBM_VIDEO_480P_VP9(244, "VP9", "480p", null, null, 480.3),
     DASH_WEBM_VIDEO_360P_VP9(243, "VP9", "360p", null, null, 360.3),
     DASH_WEBM_VIDEO_240P_VP9(242, "VP9", "240p", null, null, 240.3),
-
+    DASH_WEBM_VIDEO_144P_VP9(278, "VP9", "144p", null, null, 144.3),
     FLV_VIDEO_360P_H264_AUDIO_AAC(34, "H264", "360p", "AAC", "128kbit", 360.1d),
     FLV_VIDEO_480P_H264_AUDIO_AAC(35, "H264", "480p", "AAC", "128kbit", 480.1d),
     FLV_VIDEO_HIGH_270P_H263_AUDIO_MP3(6, "Sorenson H.263", "270p", "MP3", "64kbit", 270.11d + YoutubeITAG.MP3_64),
@@ -71,9 +74,6 @@ public enum YoutubeITAG {
 
     THREEGP_VIDEO_240P_H264_AUDIO_AAC(36, "MPEG-4 Visual", "180p", "AAC", "32kbit", 180.01 + YoutubeITAG.AAC32_ESTIMATE),
 
-    // https://www.youtube.com/watch?v=kdKgvII-pAg
-    WEBM_VIDEO_2160P_VP9_AUDIO_VORBIS(272, "VP9", "2160p", "Vorbis", "192kbit", 2160.3 + YoutubeITAG.VORBIS_192),
-    WEBM_VIDEO_1440P_VP9_AUDIO_VORBIS(271, "VP9", "1440p", "Vorbis", "192kbit", 1440.3 + YoutubeITAG.VORBIS_192),
     // not sure - did not find testvideos
     WEBM_VIDEO_1080P_VP8_AUDIO_VORBIS(46, "VP8", "1080p", "Vorbis", "192kbit", 1080.3 + YoutubeITAG.VORBIS_192),
 

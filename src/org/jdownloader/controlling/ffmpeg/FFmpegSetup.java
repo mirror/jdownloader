@@ -69,4 +69,10 @@ public interface FFmpegSetup extends ConfigInterface {
     HashMap<String, String> getExtensionToFormatMap();
 
     void setExtensionToFormatMap(HashMap<String, String> map);
+
+    @AboutConfig
+    @DefaultStringArrayValue({ "-i", "%video", "-i", "%audio", "-map", "0:0", "-c:v", "copy", "-map", "1:0", "-c:a", "copy", "-f", "webm", "%out", "-y" })
+    String[] getMuxToWebmCommand();
+
+    void setMuxToWebmCommand(String[] command);
 }

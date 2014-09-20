@@ -267,4 +267,27 @@ public class FFmpeg extends AbstractFFmpegBinary {
         return codec;
     }
 
+    public boolean muxToWebm(FFMpegProgress progress, String out, String videoIn, String audioIn) throws InterruptedException, IOException, FFMpegException {
+        logger.info("Merging " + videoIn + " + " + audioIn + " = " + out);
+
+        long lastModifiedVideo = new File(videoIn).lastModified();
+        long lastModifiedAudio = new File(audioIn).lastModified();
+
+        ArrayList<String> commandLine = fillCommand(out, videoIn, audioIn, null, config.getMuxToWebmCommand());
+        if (runCommand(progress, commandLine) != null) {
+
+            try {
+
+                if (JsonConfig.create(GeneralSettings.class).isUseOriginalLastModified()) {
+                    new File(out).setLastModified(Math.max(lastModifiedAudio, lastModifiedVideo));
+                }
+            } catch (final Throwable e) {
+                LogSource.exception(logger, e);
+            }
+            return true;
+        }
+        return false;
+
+    }
+
 }
