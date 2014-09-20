@@ -248,38 +248,28 @@ public class OneFichierCom extends PluginForHost {
     }
 
     public void doFree(final DownloadLink downloadLink) throws Exception, PluginException {
-        String dllink = downloadLink.getStringProperty(FREELINK, null);
-        br.setFollowRedirects(false);
-        br.getPage(downloadLink.getDownloadURL());
-        /* Maybe direct link */
-        final String redirect = br.getRedirectLocation();
-        if (redirect != null) {
-            dllink = redirect;
-        }
-        if (dllink != null) {
-            /* try to resume existing file */
-            br.setFollowRedirects(true);
-            // at times the second chunk creates 404 errors!
-            dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 1);
-            if (dl.getConnection().getContentType().contains("html")) {
-                /* could not resume, fetch new link */
-                br.followConnection();
-                downloadLink.setProperty(FREELINK, Property.NULL);
-                dllink = null;
-                br.setFollowRedirects(false);
-                br.setCustomCharset("utf-8");
-            } else {
-                /* resume download */
-                dl.startDownload();
-                downloadLink.setProperty(FREELINK, Property.NULL);
-                return;
-            }
+        // 20140920 - stable needs this, as it seems to behave differently! raztoki
+        String dllink = downloadLink.getStringProperty(FREELINK, downloadLink.getDownloadURL());
+        br.setFollowRedirects(true);
+        // at times the second chunk creates 404 errors!
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 1);
+        if (dl.getConnection().getContentType().contains("html")) {
+            /* could not resume, fetch new link */
+            br.followConnection();
+            downloadLink.setProperty(FREELINK, Property.NULL);
+            dllink = null;
+            br.setFollowRedirects(false);
+            br.setCustomCharset("utf-8");
+        } else {
+            /* resume download */
+            dl.startDownload();
+            downloadLink.setProperty(FREELINK, Property.NULL);
+            return;
         }
         // use the English page, less support required
         boolean retried = false;
         String passCode = null;
         while (true) {
-
             br.setFollowRedirects(true);
             // redirect log 2414663166931
             br.getPage(downloadLink.getDownloadURL() + "/en/index.html");
