@@ -943,6 +943,7 @@ ResultTableModel_initColumns_rule_=Eşleşen Kural Adı
 ResultTableModel_initColumns_ruledesc_=Eşleşen Kural Şartı
 ResultTableModel_initColumns_size_=Dosya Boyutu
 ResultTableModel_initColumns_source=Kaynak
+Rules_balanced=Dengeli - her bir hesabı eşit olarak kullan
 Rules_order=Önce ilk gelen - Verilen sırayı kullanın
 Rules_random=Bu grubun rastgele bir hesabını kullan
 SaveAsProxyProfileAction_SaveAsProxyProfileAction_=Proksi Ayarlamasını Dışa Aktar
