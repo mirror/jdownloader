@@ -137,6 +137,9 @@ public class DropboxCom extends PluginForHost {
 
     @Override
     public void handleFree(DownloadLink link) throws Exception {
+        if (link.getDownloadURL().endsWith("?dl=0") || link.getDownloadURL().endsWith("?dl=1")) {
+            link.setUrlDownload(link.getDownloadURL().substring(0, link.getDownloadURL().length() - 5));
+        }
         String t1 = new Regex(link.getDownloadURL(), "://(.*?):.*?@").getMatch(0);
         String t2 = new Regex(link.getDownloadURL(), "://.*?:(.*?)@").getMatch(0);
         if (t1 != null && t2 != null) {

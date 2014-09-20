@@ -146,7 +146,8 @@ public class DropBoxCom extends PluginForDecrypt {
                         if (link == null || size == null) {
                             continue;
                         }
-                        String filename = new Regex(link, "/([^<>\"/]*?)$").getMatch(0);
+                        String filename = new Regex(link, "/([^<>\"/]*?)(\\?dl=\\d)?$").getMatch(0);
+
                         final DownloadLink dl = createDownloadlink(link.replace("dropbox.com/", "dropboxdecrypted.com/"));
                         filename = Encoding.htmlDecode(filename).trim();
                         dl.setName(filename);
