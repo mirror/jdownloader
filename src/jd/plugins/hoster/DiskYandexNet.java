@@ -155,6 +155,10 @@ public class DiskYandexNet extends PluginForHost {
 
     private void doFree(final DownloadLink downloadLink, boolean resumable, int maxchunks, String ckey) throws Exception, PluginException {
         if (br.containsHTML("class=\"text text_download\\-blocked\"")) {
+            /*
+             * link is only downloadable via account because the public overall download limit (traffic limit) is exceeded. In this case the
+             * user can only download the link by importing it into his account and downloading it "from there".
+             */
             try {
                 throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);
             } catch (final Throwable e) {
@@ -284,6 +288,7 @@ public class DiskYandexNet extends PluginForHost {
         }
     }
 
+    @SuppressWarnings("deprecation")
     @Override
     public AccountInfo fetchAccountInfo(final Account account) throws Exception {
         AccountInfo ai = new AccountInfo();
@@ -331,7 +336,8 @@ public class DiskYandexNet extends PluginForHost {
             }
             /*
              * TODO: Maybe force this handling if a link is only downloadable via account because the public overall download limit (traffic
-             * limit) is exceeded. In this case the user can only download the link by importing it into his account.
+             * limit) is exceeded. In this case the user can only download the link by importing it into his account and downloading it
+             * "from there".
              */
             if (this.getPluginConfig().getBooleanProperty(MOVE_FILES_TO_ACCOUNT, false)) {
                 boolean file_moved = link.getBooleanProperty("file_moved", false);
