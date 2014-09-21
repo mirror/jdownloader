@@ -68,24 +68,33 @@ public class WatTv extends PluginForHost {
         } catch (final BrowserException e) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        if (br.getURL().equals("http://www.wat.tv/") || br.containsHTML("<title> WAT TV, vidéos replay musique et films, votre média vidéo \\– Wat\\.tv </title>")) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
+        if (br.getURL().equals("http://www.wat.tv/") || br.containsHTML("<title> WAT TV, vidéos replay musique et films, votre média vidéo \\– Wat\\.tv </title>")) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
         String filename = br.getRegex("<meta property=\"og:title\" content=\"(.*?)\"").getMatch(0);
         if (filename == null || filename.equals("")) {
             filename = br.getRegex("<meta name=\"name\" content=\"(.*?)\"").getMatch(0);
         }
-        if (filename == null || filename.equals("")) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
+        if (filename == null || filename.equals("")) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
         if (filename.endsWith(" - ")) {
             filename = filename.replaceFirst(" \\- $", "");
         }
-        downloadLink.setName(filename.trim() + ".flv");
+        filename = Encoding.htmlDecode(filename.trim());
+        downloadLink.setName(filename + ".flv");
         return AvailableStatus.TRUE;
     }
 
     public String getFinalLink() throws Exception {
         // 8 digit id, located at the end of some fields
         String videoID = br.getRegex("<meta property=\"og:video(:secure_url)?\" content=\"[^\"]+(\\d{8})\">").getMatch(1);
-        if (videoID == null) videoID = br.getRegex("xtpage = \"[^;]+video\\-(\\d{8})\";").getMatch(0);
-        if (videoID == null) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
+        if (videoID == null) {
+            videoID = br.getRegex("xtpage = \"[^;]+video\\-(\\d{8})\";").getMatch(0);
+        }
+        if (videoID == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
 
         final Browser br2 = br.cloneBrowser();
         String getVideoLink = null;
@@ -108,15 +117,21 @@ public class WatTv extends PluginForHost {
                 }
                 final String token = computeToken(quality + videoID, getTS(System.currentTimeMillis()));
                 br2.getPage("http://www.wat.tv/get" + quality + videoID + "?token=" + token + "&domain=www.wat.tv&refererURL=www.wat.tv&revision=04.00.131%0A&synd=0&helios=1&context=playerWat&pub=5&country=" + country + query + "&lieu=wat&playerContext=CONTEXT_WAT&getURL=1&version=LNX%2011,2,202,291");
-                if (br2.containsHTML("No htmlCode read")) { throw new PluginException(LinkStatus.ERROR_FATAL, "Video not available in your country!"); }
+                if (br2.containsHTML("No htmlCode read")) {
+                    throw new PluginException(LinkStatus.ERROR_FATAL, "Video not available in your country!");
+                }
                 getVideoLink = br2.toString();
             }
         }
-        if (getVideoLink == null || !getVideoLink.startsWith("http") && !getVideoLink.startsWith("rtmp")) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
+        if (getVideoLink == null || !getVideoLink.startsWith("http") && !getVideoLink.startsWith("rtmp")) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         getVideoLink = Encoding.htmlDecode(getVideoLink.trim());
         if (getVideoLink.startsWith("http")) {
             final URLConnectionAdapter con = br2.openGetConnection(getVideoLink);
-            if (con.getResponseCode() == 404 || con.getResponseCode() == 403) { throw new PluginException(LinkStatus.ERROR_FATAL, JDL.L("plugins.hoster.WatTv.CountryBlocked", "This video isn't available in your country!")); }
+            if (con.getResponseCode() == 404 || con.getResponseCode() == 403) {
+                throw new PluginException(LinkStatus.ERROR_FATAL, JDL.L("plugins.hoster.WatTv.CountryBlocked", "This video isn't available in your country!"));
+            }
         }
         return getVideoLink;
     }
@@ -131,12 +146,16 @@ public class WatTv extends PluginForHost {
         requestFileInformation(downloadLink);
         String finallink = getFinalLink();
         if (finallink.startsWith("rtmp")) {
-            if (isStableEnviroment()) { throw new PluginException(LinkStatus.ERROR_FATAL, "JD2 BETA needed!"); }
+            if (isStableEnviroment()) {
+                throw new PluginException(LinkStatus.ERROR_FATAL, "JD2 BETA needed!");
+            }
             /**
              * NOT WORKING IN RTMPDUMP
              */
             final String nw = "rtmpdump";
-            if (nw.equals("rtmpdump")) { throw new PluginException(LinkStatus.ERROR_FATAL, "Not supported yet!"); }
+            if (nw.equals("rtmpdump")) {
+                throw new PluginException(LinkStatus.ERROR_FATAL, "Not supported yet!");
+            }
 
             finallink = finallink.replaceAll("^.*?:", "rtmpe:");
             finallink = finallink.replaceAll("watestreaming/", "watestreaming/#");
@@ -153,7 +172,9 @@ public class WatTv extends PluginForHost {
             ((RTMPDownload) dl).startDownload();
         } else {
             dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, finallink, true, 0);
-            if (dl.getConnection().getContentType().contains("html")) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
+            if (dl.getConnection().getContentType().contains("html")) {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
             dl.startDownload();
         }
     }
@@ -166,7 +187,9 @@ public class WatTv extends PluginForHost {
             prev = prev.replaceAll(",|\\.", "");
         }
         final int rev = Integer.parseInt(prev);
-        if (rev < 10000) { return true; }
+        if (rev < 10000) {
+            return true;
+        }
         return false;
     }
 
