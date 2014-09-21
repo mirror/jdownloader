@@ -67,9 +67,9 @@ public class DiskYandexNet extends PluginForHost {
     private final String        EMPTY_TRASH_AFTER_DOWNLOAD         = "EMPTY_TRASH_AFTER_DOWNLOAD";
     private final String        DOWNLOAD_ZIP                       = "DOWNLOAD_ZIP_2";
 
-    /* Some contants which they used in browser */
-    private final String        CLIENT_ID                          = "24f549192f9f2fac2d80c71dd7969442";
-    private final String        VERSION                            = "1.0.20";
+    /* Some constants which they used in browser */
+    private final String        CLIENT_ID                          = "883aacd8d0b882b2e379506a55fb6b0f";
+    private final String        VERSION                            = "1.16.17-1";
     private static final String STANDARD_FREE_SPEED                = "64 kbit/s";
 
     /* Connection limits */
@@ -154,6 +154,16 @@ public class DiskYandexNet extends PluginForHost {
     }
 
     private void doFree(final DownloadLink downloadLink, boolean resumable, int maxchunks, String ckey) throws Exception, PluginException {
+        if (br.containsHTML("class=\"text text_download\\-blocked\"")) {
+            try {
+                throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);
+            } catch (final Throwable e) {
+                if (e instanceof PluginException) {
+                    throw (PluginException) e;
+                }
+            }
+            throw new PluginException(LinkStatus.ERROR_FATAL, "This file can only be downloaded by premium users");
+        }
         String dllink;
         if (downloadLink.getDownloadURL().matches(TYPE_VIDEO)) {
             final String linkpart = new Regex(downloadLink.getDownloadURL(), "/iframe/(.+)").getMatch(0);
@@ -187,7 +197,10 @@ public class DiskYandexNet extends PluginForHost {
             br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
             br.postPage("https://disk.yandex.com/handlers.jsx", "_ckey=" + ckey + "&_name=getLinkFileDownload&hash=" + Encoding.urlEncode(hash));
             if (br.containsHTML("\"title\":\"invalid ckey\"")) {
-                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error", 5 * 60 * 1000l);
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 'invalid ckey'", 5 * 60 * 1000l);
+            } else if (br.containsHTML("\"code\":69")) {
+                /* Usually this does not happen. Happens also if you actually try to download a "premiumonly" link via this method. */
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             } else if (br.containsHTML("\"code\":88")) {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 88 'Decryption error'", 5 * 60 * 1000l);
             }
@@ -302,6 +315,7 @@ public class DiskYandexNet extends PluginForHost {
 
     @Override
     public void handlePremium(final DownloadLink link, final Account account) throws Exception {
+        ACCOUNT_SK = account.getStringProperty("saved_sk", null);
         requestFileInformation(link);
         login(account, false);
         String dllink = checkDirectLink(link, "directlink_account");
@@ -310,12 +324,15 @@ public class DiskYandexNet extends PluginForHost {
             br.getPage(fixMainlink(link.getStringProperty("mainlink", null)));
             final String hash = link.getStringProperty("hash_plain", null);
             final String ckey = getCkey();
-            ACCOUNT_SK = account.getStringProperty("saved_sk", null);
             /* This should never happen */
             if (ACCOUNT_SK == null) {
                 logger.warning("ACCOUNT_SK is null");
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
+            /*
+             * TODO: Maybe force this handling if a link is only downloadable via account because the public overall download limit (traffic
+             * limit) is exceeded. In this case the user can only download the link by importing it into his account.
+             */
             if (this.getPluginConfig().getBooleanProperty(MOVE_FILES_TO_ACCOUNT, false)) {
                 boolean file_moved = link.getBooleanProperty("file_moved", false);
                 try {
@@ -349,22 +366,11 @@ public class DiskYandexNet extends PluginForHost {
                     }
 
                 } catch (final PluginException e) {
-
                     if (file_moved) {
-                        logger.info("MoveToAccount handling failed -> Deleting moved file and emptying trash, then falling back to free download handling");
+                        logger.info("MoveToAccount download-handling failed (dllink == null) -> Deleting moved file and emptying trash, then falling back to free download handling");
                         moveFileToTrash(link);
                         emptyTrash();
                     }
-
-                    logger.info("MoveToAccount handling failed -> Falling back to free download handling");
-                    doFree(link, ACCOUNT_RESUME, ACCOUNT_MAXCHUNKS, ckey);
-                    return;
-                }
-
-                br.setFollowRedirects(false);
-                br.getPage(dllink);
-                dllink = br.getRedirectLocation();
-                if (dllink == null) {
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 }
             } else {
@@ -397,13 +403,22 @@ public class DiskYandexNet extends PluginForHost {
     }
 
     private String getLinkFromFileInAccount(final DownloadLink dl, final Browser br2) {
+        final String urlencodedfname = Encoding.urlTotalEncode(dl.getName());
         String dllink = null;
         try {
-            br2.postPage("https://beta.disk.yandex.com/models/?_m=do-get-resource-url", "_model.0=do-get-resource-url&id.0=%2Fdisk%2FDownloads%2F" + Encoding.urlEncode(dl.getName()) + "&inline.0=true&idClient=" + CLIENT_ID + "&sk=" + ACCOUNT_SK + "&version=" + VERSION);
-            dllink = parse("file", br2);
+            br.getPage("https://docviewer.yandex.com/?url=ya-disk%3A%2F%2F%2Fdisk%2FDownloads%2F" + urlencodedfname + "&name=" + urlencodedfname);
+            /* This is another sk than the ACCOUNT_SK we have. */
+            final String sk = br.getRegex("sk:\\'([^<>\"]*?)\\'").getMatch(0);
+            final String auth = br.getRegex("auth:\\'([^<>\"]*?)\\'").getMatch(0);
+            if (sk == null || auth == null) {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
+            br.postPage("https://docviewer.yandex.com/download.xml", "sk=" + sk + "&auth=" + auth + "&name=" + urlencodedfname + "&url=ya-disk%3A%2F%2F%2Fdisk%2FDownloads%2F" + urlencodedfname);
+            dllink = parse("url", br);
             /* Fix links - cookies sit on the other domain */
             if (dllink != null) {
                 dllink = dllink.replace("disk.yandex.ru/", "disk.yandex.com/");
+                dllink = dllink.replace("\\", "");
             }
         } catch (final Throwable e) {
         }
@@ -412,7 +427,7 @@ public class DiskYandexNet extends PluginForHost {
 
     private void moveFileToTrash(final DownloadLink dl) {
         try {
-            br.postPage("https://beta.disk.yandex.com/models/?_m=do-resource-delete", "_model.0=do-resource-delete&id.0=%2Fdisk%2FDownloads%2F" + Encoding.urlEncode(dl.getName()) + "&idClient=" + CLIENT_ID + "&sk=" + ACCOUNT_SK + "&version=" + VERSION);
+            br.postPage("https://disk.yandex.com/models/?_m=do-resource-delete", "_model.0=do-resource-delete&id.0=%2Fdisk%2FDownloads%2F" + "_model.0=do-resource-delete&id.0=%2Fdisk%2FDownloads%2F" + Encoding.urlEncode(dl.getName()) + "&idClient=" + CLIENT_ID + "&sk=" + this.ACCOUNT_SK + "&version=" + VERSION);
             logger.info("Successfully moved file to trash");
         } catch (final Throwable e) {
             logger.warning("Failed to move file to trash");
@@ -421,7 +436,7 @@ public class DiskYandexNet extends PluginForHost {
 
     private void emptyTrash() {
         try {
-            br.postPage("https://beta.disk.yandex.com/models/?_m=do-clean-trash", "_model.0=do-clean-trash&idClient=" + CLIENT_ID + "&sk=" + ACCOUNT_SK + "&version=" + VERSION);
+            br.postPage("https://disk.yandex.com/models/?_m=do-clean-trash", "_model.0=do-clean-trash&idClient=" + CLIENT_ID + "&sk=" + this.ACCOUNT_SK + "&version=" + VERSION);
             logger.info("Successfully emptied trash");
         } catch (final Throwable e) {
             logger.warning("Failed to empty trash");
@@ -473,7 +488,7 @@ public class DiskYandexNet extends PluginForHost {
     }
 
     private void setConfigElements() {
-        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), DOWNLOAD_ZIP, JDL.L("plugins.hoster.DiskYandexNet.DownloadZip", "Download .zip file of all files in the folder?")).setDefaultValue(false));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), DOWNLOAD_ZIP, JDL.L("plugins.hoster.DiskYandexNet.DownloadZip", "Folders: Download .zip file of all files in the folder?")).setDefaultValue(false));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_SEPARATOR));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_LABEL, "Account settings:"));
         final ConfigEntry moveFilesToAcc = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), MOVE_FILES_TO_ACCOUNT, JDL.L("plugins.hoster.DiskYandexNet.MoveFilesToAccount", "1. Move files to account before downloading them to get higher download speeds?")).setDefaultValue(false);

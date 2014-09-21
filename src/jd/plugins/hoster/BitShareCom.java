@@ -176,8 +176,8 @@ public class BitShareCom extends PluginForHost {
                 ads.setAllowedResponseCodes(404);
             } catch (Throwable z) {
             }
-            ads.getPage("http://bitshare.com/getads.html");
-            // this injects a cookie in jd and not browser... clone browser shares cookies with parent.. so be aware..
+            /* Old handling can be found in rev: 26896 */
+            ads.getPage("http://bitshare.com/getiframepopup_download.html?anticache=" + System.currentTimeMillis());
         } catch (final Exception e) {
             logger.info("Adv-Speed-gain failed!");
         }
@@ -200,7 +200,7 @@ public class BitShareCom extends PluginForHost {
             logger.warning("fileID or tempID is null");
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        /** Try to find stream links */
+        /* Try to find stream links */
         String dllink = br.getRegex("scaling: \\'fit\\',[\t\n\r ]+url: \\'(http://[^<>\"\\']+)\\'").getMatch(0);
         if (dllink == null) {
             dllink = br.getRegex("\\'(http://s\\d+\\.bitshare\\.com/stream/[^<>\"\\']+)\\'").getMatch(0);
@@ -267,6 +267,9 @@ public class BitShareCom extends PluginForHost {
                 failed = false;
                 break;
             }
+            if (br.getHttpConnection().getResponseCode() == 404) {
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 404", 30 * 60 * 1000l);
+            }
             if (failed) {
                 throw new PluginException(LinkStatus.ERROR_CAPTCHA);
             }
@@ -283,6 +286,9 @@ public class BitShareCom extends PluginForHost {
         if (dllink == null) {
             br2 = ajax.cloneBrowser();
             br2.postPage(ajax_url, "request=getDownloadURL&ajaxid=" + tempID);
+            if (br.getHttpConnection().getResponseCode() == 404) {
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 404", 30 * 60 * 1000l);
+            }
             if (br2.containsHTML("Your Traffic is used up for today")) {
                 throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 60 * 60 * 1000l);
             } else if (br2.containsHTML("Sorry, you cant download more then|You are not able to start a new download right now")) {
