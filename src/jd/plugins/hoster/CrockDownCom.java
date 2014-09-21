@@ -158,6 +158,8 @@ public class CrockDownCom extends PluginForHost {
                     link.setAvailable(true);
                     if (fileInfo[0] != null) {
                         link.setName(Encoding.htmlDecode(fileInfo[0].trim()));
+                    } else {
+                        link.setName(fuid);
                     }
                     if (fileInfo[1] != null) {
                         link.setDownloadSize(SizeFormatter.getSize(fileInfo[1]));

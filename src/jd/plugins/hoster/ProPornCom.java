@@ -61,7 +61,7 @@ public class ProPornCom extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         String filename = br.getRegex("<title>([^<>\"]*?)\\- Free Porn Video").getMatch(0);
-        final String h = br.getRegex("\\'h=([a-z0-9]+)\\'").getMatch(0);
+        final String h = br.getRegex("\\'h=([a-z0-9]+)").getMatch(0);
         final String t = br.getRegex("t=(\\d+)\\'").getMatch(0);
         final String vkey = br.getRegex("vkey=\\' \\+ \\'([a-z0-9]+)\\';").getMatch(0);
         br.getPage("http://www.proporn.com/player_config/?h=" + h + "&t=" + t + "&vkey=" + vkey + "&pkey=" + JDHash.getMD5(vkey + Encoding.Base64Decode(SKEY)) + "&aid=&domain_id=");

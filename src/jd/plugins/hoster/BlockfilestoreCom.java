@@ -59,6 +59,9 @@ public class BlockfilestoreCom extends PluginForHost {
         }
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, br.getURL(), "__EVENTTARGET=&__EVENTARGUMENT=&__VIEWSTATE_KEY=" + Encoding.urlEncode(viewstatekey) + "&__VIEWSTATE=&__EVENTVALIDATION=" + Encoding.urlEncode(eventvalidation) + "&ctl00%24ContentPlaceHolder1%24btn_descarga=Download&ctl00%24txtEmaiLogin=&ctl00%24txtPasswordLogin=&ctl00%24txtEmaiRecovery=", false, 1);
         if (dl.getConnection().getContentType().contains("html")) {
+            if (dl.getConnection().getResponseCode() == 500) {
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 500", 1 * 60 * 60 * 1000l);
+            }
             br.followConnection();
             if (br.containsHTML("<title>Error")) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
