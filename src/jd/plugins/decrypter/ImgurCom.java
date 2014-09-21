@@ -199,66 +199,42 @@ public class ImgurCom extends PluginForDecrypt {
     }
 
     private void site_decrypt() throws DecrypterException {
-        /* Differ between 2 linktypes */
-        if (br.containsHTML("<div id=\"imagelist\">")) {
-            final String jsonarray = br.getRegex("\"items\":\\[(\\{.*?\\})\\]").getMatch(0);
-            String[] items = jsonarray.split("\\},\\{");
-            /* We assume that the API is always working fine */
-            if (items == null || items.length == 0) {
-                logger.info("Empty album: " + PARAMETER);
-                return;
-            }
-            for (final String item : items) {
-                final String directlink;
-                final String title = getJson(item, "title");
-                final String filesize = getJson(item, "size");
-                final String imgUID = getJson(item, "hash");
-                final String ext = getJson(item, "ext");
-                if (imgUID == null || filesize == null || ext == null) {
-                    logger.warning("Decrypter broken for link: " + PARAMETER);
-                    throw new DecrypterException("Decrypter broken for link: " + PARAMETER);
-                }
-                directlink = "http://i.imgur.com/" + imgUID + ext;
-                String filename;
-                if (title != null) {
-                    filename = title + ext;
-                } else {
-                    filename = imgUID + ext;
-                }
-                final DownloadLink dl = createDownloadlink("http://imgurdecrypted.com/download/" + imgUID);
-                dl.setFinalFileName(filename);
-                dl.setDownloadSize(Long.parseLong(filesize));
-                dl.setAvailable(true);
-                dl.setProperty("imgUID", imgUID);
-                dl.setProperty("filetype", ext.replace(".", ""));
-                dl.setProperty("decryptedfinalfilename", filename);
-                dl.setProperty("directlink", directlink);
-                /* No need to hide directlinks */
-                dl.setBrowserUrl("http://imgur.com/download/" + imgUID);
-                decryptedLinks.add(dl);
-            }
-        } else {
-            final String[][] linkinfo = br.getRegex("property=\"og:image\" content=\"https?://i\\.imgur\\.com/([A-Za-z0-9]+)\\.([a-z0-9]+)\"").getMatches();
-            if (linkinfo == null || linkinfo.length == 0) {
+        /* Removed differentiation between two linktypes AFTER revision 26468 */
+        final String jsonarray = br.getRegex("\"items\":\\[(\\{.*?\\})\\]").getMatch(0);
+        String[] items = jsonarray.split("\\},\\{");
+        /* We assume that the API is always working fine */
+        if (items == null || items.length == 0) {
+            logger.info("Empty album: " + PARAMETER);
+            return;
+        }
+        for (final String item : items) {
+            final String directlink;
+            final String title = getJson(item, "title");
+            final String filesize = getJson(item, "size");
+            final String imgUID = getJson(item, "hash");
+            final String ext = getJson(item, "ext");
+            if (imgUID == null || filesize == null || ext == null) {
                 logger.warning("Decrypter broken for link: " + PARAMETER);
                 throw new DecrypterException("Decrypter broken for link: " + PARAMETER);
             }
-            for (final String[] slinkinfo : linkinfo) {
-                final String imgUID = slinkinfo[0];
-                final String filetype = slinkinfo[1];
-                final String finalname = imgUID + "." + filetype;
-                final String directlink = "http://i.imgur.com/" + finalname;
-                final DownloadLink dl = createDownloadlink("http://imgurdecrypted.com/download/" + imgUID);
-                dl.setFinalFileName(finalname);
-                dl.setAvailable(true);
-                dl.setProperty("imgUID", imgUID);
-                dl.setProperty("filetype", filetype);
-                dl.setProperty("decryptedfinalfilename", finalname);
-                dl.setProperty("directlink", directlink);
-                /* No need to hide directlinks */
-                dl.setBrowserUrl("http://imgur.com/download/" + imgUID);
-                decryptedLinks.add(dl);
+            directlink = "http://i.imgur.com/" + imgUID + ext;
+            String filename;
+            if (title == null || title.equals("")) {
+                filename = imgUID + ext;
+            } else {
+                filename = title + ext;
             }
+            final DownloadLink dl = createDownloadlink("http://imgurdecrypted.com/download/" + imgUID);
+            dl.setFinalFileName(filename);
+            dl.setDownloadSize(Long.parseLong(filesize));
+            dl.setAvailable(true);
+            dl.setProperty("imgUID", imgUID);
+            dl.setProperty("filetype", ext.replace(".", ""));
+            dl.setProperty("decryptedfinalfilename", filename);
+            dl.setProperty("directlink", directlink);
+            /* No need to hide directlinks */
+            dl.setBrowserUrl("http://imgur.com/download/" + imgUID);
+            decryptedLinks.add(dl);
         }
     }
 
