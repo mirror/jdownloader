@@ -81,7 +81,7 @@ public class SpankBangCom extends PluginForDecrypt {
                 pluginLoaded.set(true);
             }
             br.getPage(PARAMETER);
-            if (br.getHttpConnection().getResponseCode() == 404 || br.containsHTML(">this video is no longer available.<")) {
+            if (br.getHttpConnection().getResponseCode() == 404 || br.containsHTML(">this video is no longer available.<") || !br.getURL().contains("/video")) {
                 final DownloadLink dl = createDownloadlink("directhttp://" + PARAMETER);
                 dl.setProperty("offline", true);
                 decryptedLinks.add(dl);
