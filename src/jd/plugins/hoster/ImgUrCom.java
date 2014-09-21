@@ -196,7 +196,7 @@ public class ImgUrCom extends PluginForHost {
 
     @Override
     public String getDescription() {
-        return "This Plugin download galleries/albums/images from imgur.com.";
+        return "This Plugin can download galleries/albums/images from imgur.com.";
     }
 
     private final static String defaultClientID = "JDDEFAULT";
