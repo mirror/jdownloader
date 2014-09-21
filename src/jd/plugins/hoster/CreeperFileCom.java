@@ -36,7 +36,7 @@ import jd.utils.JDUtilities;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "creeperfile.com" }, urls = { "http://(www\\.)?creeperfile\\.com/[A-Za-z0-9]+" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "creeperfile.com" }, urls = { "http://(www\\.)?creeperfile\\.(com|net)/[A-Za-z0-9]+" }, flags = { 0 })
 public class CreeperFileCom extends PluginForHost {
 
     public CreeperFileCom(PluginWrapper wrapper) {
@@ -56,7 +56,7 @@ public class CreeperFileCom extends PluginForHost {
     }
 
     /* Other constants */
-    private final String         MAINPAGE                                     = "http://creeperfile.com";
+    private final String         MAINPAGE                                     = "http://creeperfile.net";
     private final String         TYPE                                         = "php";
     private static final String  SIMULTANDLSLIMIT                             = "?e=You+have+reached+the+maximum+concurrent+downloads";
     private static final String  SIMULTANDLSLIMITUSERTEXT                     = "Max. simultan downloads limit reached, wait to start more downloads from this host";
@@ -82,8 +82,13 @@ public class CreeperFileCom extends PluginForHost {
 
     private static AtomicInteger maxPrem                                      = new AtomicInteger(1);
 
+    public void correctDownloadLink(final DownloadLink link) {
+        link.setUrlDownload(link.getDownloadURL().replace("creeperfile.com/", "creeperfile.net/"));
+    }
+
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
+        correctDownloadLink(link);
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         String filename;
