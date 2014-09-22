@@ -168,7 +168,7 @@ public class ImageHosterDecrypter extends PluginForDecrypt {
         } else if (parameter.contains("pimpandhost.com/")) {
             br.setFollowRedirects(true);
             br.getPage(parameter);
-            if (br.containsHTML("This album is private")) {
+            if (br.containsHTML("This album is private|Image was removed")) {
                 final DownloadLink offline = createDownloadlink("directhttp://" + parameter);
                 offline.setAvailable(false);
                 offline.setProperty("offline", true);
