@@ -47,10 +47,14 @@ public class LinksProtectionCom extends PluginForDecrypt {
             return decryptedLinks;
         }
         String fpName = br.getRegex("<meta name=\"title\" content=\"([^<>\"]*?)\"").getMatch(0);
-        if (fpName == null) fpName = new Regex(parameter, "([A-Za-z0-9]+)$").getMatch(0);
+        if (fpName == null) {
+            fpName = new Regex(parameter, "([A-Za-z0-9]+)$").getMatch(0);
+        }
 
-        Form cform = br.getFormbyKey("name", "linkprotect");
-        if (cform == null) cform = br.getForm(2);
+        Form cform = br.getFormbyProperty("name", "linkprotect");
+        if (cform == null) {
+            cform = br.getForm(2);
+        }
         if (cform == null) {
             logger.warning("Decrypter broken for link: " + parameter);
             return null;
@@ -60,17 +64,22 @@ public class LinksProtectionCom extends PluginForDecrypt {
             final String c = getCaptchaCode("http://links-protection.com/captcha/captcha.php", param);
             cform.put("captcha", c);
             br.submitForm(cform);
-            if (!br.containsHTML("\"captcha/captcha\\.php\"")) break;
+            if (!br.containsHTML("\"captcha/captcha\\.php\"")) {
+                break;
+            }
         }
-        if (br.containsHTML("\"captcha/captcha\\.php\"")) throw new DecrypterException(DecrypterException.CAPTCHA);
+        if (br.containsHTML("\"captcha/captcha\\.php\"")) {
+            throw new DecrypterException(DecrypterException.CAPTCHA);
+        }
 
         final String[] links = br.getRegex("href=s=([A-Za-z0-9=]+)\\&ID=[A-Za-z0-9]+ target=_blank").getColumn(0);
         if (links == null || links.length == 0) {
             logger.warning("Decrypter broken for link: " + parameter);
             return null;
         }
-        for (final String singleLink : links)
+        for (final String singleLink : links) {
             decryptedLinks.add(createDownloadlink(Encoding.Base64Decode(singleLink)));
+        }
 
         final FilePackage fp = FilePackage.getInstance();
         fp.setName(Encoding.htmlDecode(fpName.trim()));
