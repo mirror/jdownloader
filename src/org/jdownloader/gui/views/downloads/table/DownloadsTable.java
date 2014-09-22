@@ -325,6 +325,22 @@ public class DownloadsTable extends PackageControllerTable<FilePackage, Download
     }
 
     @Override
+    protected void processMouseEvent(final MouseEvent e) {
+        // a left-click with mouse on empty space under the rows selects last row to improve user experience
+        // like dragging the mouse to select rows
+        if (e.getID() == MouseEvent.MOUSE_PRESSED) {
+            if (SwingUtilities.isLeftMouseButton(e)) {
+                if (rowAtPoint(e.getPoint()) < 0) {
+                    int rowCount = this.getRowCount();
+                    this.getSelectionModel().setSelectionInterval(rowCount - 1, rowCount - 1);
+                    // this.clearSelection(); // not needed because this happens already in super method
+                }
+            }
+        }
+        super.processMouseEvent(e);
+    }
+
+    @Override
     public ExtColumn<AbstractNode> getExpandCollapseColumn() {
         return DownloadsTableModel.getInstance().expandCollapse;
     }
