@@ -64,59 +64,64 @@ public class PluginScannerFiles<T extends Plugin> {
             }
             final File stream[] = folder.listFiles();
             for (final File path : stream) {
-                final String pathFileName = path.getName();
-                if (pathFileName.endsWith(".class")) {
-                    final String className = pathFileName.substring(0, pathFileName.length() - 6);
-                    if (className.indexOf("$") < 0 && !PluginController.IGNORELIST.contains(className)) {
-                        byte[] sha256 = null;
-                        lastModified = path.lastModified();
-                        if (lazyPluginClassMap != null) {
-                            final List<LazyPlugin> lazyPlugins = lazyPluginClassMap.get(className);
-                            if (lazyPlugins != null && lazyPlugins.size() > 0) {
-                                final LazyPluginClass lazyPluginClass = lazyPlugins.get(0).getLazyPluginClass();
-                                if (lazyPluginClass != null && (lazyPluginClass.getLastModified() == lastModified || ((md = MessageDigest.getInstance("SHA-256")) != null && (sha256 = PluginController.getFileHashBytes(path, md, mdCache)) != null && Arrays.equals(sha256, lazyPluginClass.getSha256())))) {
-                                    for (final LazyPlugin lazyPlugin : lazyPlugins) {
-                                        // logger.finer("Cached: " + className + "|" + lazyPlugin.getDisplayName() + "|" +
-                                        // lazyPluginClass.getRevision());
-                                        final PluginInfo<T> pluginInfo = new PluginInfo<T>(lazyPluginClass, null);
-                                        pluginInfo.setLazyPlugin(lazyPlugin);
-                                        ret.add(pluginInfo);
+                try {
+                    final String pathFileName = path.getName();
+                    if (pathFileName.endsWith(".class")) {
+                        final String className = pathFileName.substring(0, pathFileName.length() - 6);
+                        if (className.indexOf("$") < 0 && !PluginController.IGNORELIST.contains(className)) {
+                            byte[] sha256 = null;
+                            lastModified = path.lastModified();
+                            if (lazyPluginClassMap != null) {
+                                final List<LazyPlugin> lazyPlugins = lazyPluginClassMap.get(className);
+                                if (lazyPlugins != null && lazyPlugins.size() > 0) {
+                                    final LazyPluginClass lazyPluginClass = lazyPlugins.get(0).getLazyPluginClass();
+                                    if (lazyPluginClass != null && (lazyPluginClass.getLastModified() == lastModified || ((md = MessageDigest.getInstance("SHA-256")) != null && (sha256 = PluginController.getFileHashBytes(path, md, mdCache)) != null && Arrays.equals(sha256, lazyPluginClass.getSha256())))) {
+                                        for (final LazyPlugin lazyPlugin : lazyPlugins) {
+                                            // logger.finer("Cached: " + className + "|" + lazyPlugin.getDisplayName() + "|" +
+                                            // lazyPluginClass.getRevision());
+                                            final PluginInfo<T> pluginInfo = new PluginInfo<T>(lazyPluginClass, null);
+                                            pluginInfo.setLazyPlugin(lazyPlugin);
+                                            ret.add(pluginInfo);
+                                        }
+                                        continue;
                                     }
-                                    continue;
                                 }
                             }
-                        }
-                        Class<T> pluginClass = null;
-                        long[] infos = null;
-                        try {
-                            if (cl == null) {
-                                cl = PluginClassLoader.getInstance().getChild();
-                            }
-                            if (md == null) {
-                                md = MessageDigest.getInstance("SHA-256");
-                            }
-                            pluginClass = (Class<T>) cl.loadClass(pkg + "." + className);
-                            if (!Modifier.isAbstract(pluginClass.getModifiers()) && Plugin.class.isAssignableFrom(pluginClass)) {
-                                infos = getPluginController().getInfos(pluginClass);
-                                if (infos == null) {
+                            Class<T> pluginClass = null;
+                            long[] infos = null;
+                            try {
+                                if (cl == null) {
+                                    cl = PluginClassLoader.getInstance().getChild();
+                                }
+                                if (md == null) {
+                                    md = MessageDigest.getInstance("SHA-256");
+                                }
+                                pluginClass = (Class<T>) cl.loadClass(pkg + "." + className);
+                                if (!Modifier.isAbstract(pluginClass.getModifiers()) && Plugin.class.isAssignableFrom(pluginClass)) {
+                                    infos = getPluginController().getInfos(pluginClass);
+                                    if (infos == null) {
+                                        continue;
+                                    }
+                                } else {
                                     continue;
                                 }
-                            } else {
+                            } catch (final Throwable e) {
+                                logger.finer("Failed: " + className);
+                                logger.log(e);
                                 continue;
                             }
-                        } catch (final Throwable e) {
-                            logger.finer("Failed: " + className);
-                            logger.log(e);
-                            continue;
+                            if (sha256 == null) {
+                                sha256 = getPluginController().getFileHashBytes(path, md, mdCache);
+                            }
+                            final LazyPluginClass lazyPluginClass = new LazyPluginClass(className, sha256, lastModified, (int) infos[0], infos[1]);
+                            final PluginInfo<T> pluginInfo = new PluginInfo<T>(lazyPluginClass, pluginClass);
+                            // logger.finer("Scaned: " + className + "|" + lazyPluginClass.getRevision());
+                            ret.add(pluginInfo);
                         }
-                        if (sha256 == null) {
-                            sha256 = getPluginController().getFileHashBytes(path, md, mdCache);
-                        }
-                        final LazyPluginClass lazyPluginClass = new LazyPluginClass(className, sha256, lastModified, (int) infos[0], infos[1]);
-                        final PluginInfo<T> pluginInfo = new PluginInfo<T>(lazyPluginClass, pluginClass);
-                        // logger.finer("Scaned: " + className + "|" + lazyPluginClass.getRevision());
-                        ret.add(pluginInfo);
                     }
+                } catch (Throwable e) {
+                    logger.finer("Failed: " + path);
+                    logger.log(e);
                 }
             }
             return ret;
