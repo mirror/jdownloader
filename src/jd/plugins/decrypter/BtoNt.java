@@ -165,7 +165,12 @@ public class BtoNt extends PluginForDecrypt {
                 }
                 String pageNumber = df_page.format(i);
                 // /comics/2014/02/02/1/read52ee48ff90491/img000001.jpg /comics/date/date/date/first[0-z]charof title/read+hash/img\\d+
-                final String[] unformattedSource = br.getRegex("src=\"(http://img\\.(?:batoto\\.net|bato\\.to)/comics/\\d{4}/\\d{1,2}/\\d{1,2}/[a-z0-9]/read[^/]+/[^\"]+(\\.[a-z]+))\"").getRow(0);
+                String[] unformattedSource = br.getRegex("src=\"(https?://img\\.(?:batoto\\.net|bato\\.to)/comics/\\d{4}/\\d{1,2}/\\d{1,2}/[a-z0-9]/read[^/]+/[^\"]+(\\.[a-z]+))\"").getRow(0);
+                if (unformattedSource == null) {
+                    // <img
+                    // src="http://arc.bato.to/comics/t/toloverudarkness/0.5/cxc-scans/English/read4d69e24fa5247/%5BToLoveRuDarkness%5D-ch00_004d69e250dd8a4.jpg"
+                    unformattedSource = br.getRegex("<img[^>]+src=\"(https?://\\w+\\.(?:batoto\\.net|bato\\.to)/comics/(?:[^/]+/){1,}read[^/]+/[^\"]+(\\.[a-z]+))\"").getRow(0);
+                }
                 if (unformattedSource == null || unformattedSource.length == 0) {
                     skippedPics++;
                     if (skippedPics > 5) {
