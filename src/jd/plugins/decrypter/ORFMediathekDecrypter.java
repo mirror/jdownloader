@@ -277,7 +277,7 @@ public class ORFMediathekDecrypter extends PluginForDecrypt {
                         final DownloadLink link = createDownloadlink(data.replace("http://", "decrypted://") + "&quality=" + fmt + "&hash=" + JDHash.getMD5(name));
 
                         link.setFinalFileName(name);
-                        link.setBrowserUrl(data);
+                       try{/*JD2 only*/link.setContentUrl(data);}catch(Throwable e){/*Stable*/ link.setBrowserUrl(data);}
                         link.setProperty("directURL", url);
                         link.setProperty("directName", name);
                         link.setProperty("directQuality", fmt);

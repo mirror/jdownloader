@@ -120,7 +120,7 @@ public class DownloadLinkPropertiesPanel extends AbstractNodePropertiesPanel imp
 
     @Override
     protected String loadDownloadFrom() {
-        String dlLink = currentLink.getDownloadLink().getView().getDownloadUrl();
+        String dlLink = currentLink.getDownloadLink().getView().getDisplayUrl();
         if (dlLink == null) {
             dlLink = "*******************************";
         }

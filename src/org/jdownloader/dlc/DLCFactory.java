@@ -193,7 +193,7 @@ public class DLCFactory extends D {
         java.util.List<CrawledLink> filter = new ArrayList<CrawledLink>();
         // filter
         for (CrawledLink l : links) {
-            String url = l.getDownloadLink().getDownloadURL();
+            String url = l.getDownloadLink().getPluginPattern();
             if (url == null) {
                 continue;
             }
@@ -283,12 +283,12 @@ public class DLCFactory extends D {
                     Element filename = content.createElement("filename");
                     Element size = content.createElement("size");
                     DownloadLink link = tmpLinks.get(x).getDownloadLink();
-                    url.appendChild(content.createTextNode(Encoding.Base64Encode(link.getDownloadURL())));
+                    url.appendChild(content.createTextNode(Encoding.Base64Encode(link.getPluginPattern())));
 
                     // String decoded=JDUtilities.Base64Decode(encode);
 
                     // url.appendChild(content.createTextNode(JDUtilities.
-                    // Base64Encode(tmpLinks.get(x).getDownloadURL())));
+                    // Base64Encode(tmpLinks.get(x).getPluginUrl())));
                     filename.appendChild(content.createTextNode(Encoding.Base64Encode(tmpLinks.get(x).getName())));
 
                     size.appendChild(content.createTextNode(Encoding.Base64Encode(Math.max(0, tmpLinks.get(x).getSize()) + "")));

@@ -133,7 +133,7 @@ public class CNL extends PluginForDecrypt {
         }
         for (final DownloadLink l : links) {
             if (source != null) {
-                l.setBrowserUrl(source);
+               try{/*JD2 only*/l.setContentUrl(source);}catch(Throwable e){/*Stable*/ l.setBrowserUrl(source);}
             }
         }
         return links;

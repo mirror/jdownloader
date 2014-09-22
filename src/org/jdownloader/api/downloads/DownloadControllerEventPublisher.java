@@ -233,11 +233,13 @@ public class DownloadControllerEventPublisher implements EventPublisher, Downloa
                 fire(BASIC_EVENT.LINK_UPDATE.name() + ".comment", dls, BASIC_EVENT.LINK_UPDATE.name() + ".comment." + dl.getUniqueID().getID() + "");
 
                 break;
-            case BROWSER_URL:
-            case DOWNLOAD_URL:
+            case URL_CONTAINER:
+            case URL_ORIGIN:
+            case URL_REFERRER:
+            case URL_CONTENT:
                 dls = new HashMap<String, Object>();
                 dls.put("uuid", dl.getUniqueID().getID());
-                dls.put("url", dl.getView().getDownloadUrl());
+                dls.put("url", dl.getView().getDisplayUrl());
                 fire(BASIC_EVENT.LINK_UPDATE.name() + ".url", dls, BASIC_EVENT.LINK_UPDATE.name() + ".url." + dl.getUniqueID().getID() + "");
 
                 break;

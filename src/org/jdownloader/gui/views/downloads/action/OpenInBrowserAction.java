@@ -53,19 +53,7 @@ public class OpenInBrowserAction extends CustomizableTableContextAppAction<FileP
             return;
         }
         for (DownloadLink link : links) {
-            switch (link.getUrlProtection()) {
-            case PROTECTED_CONTAINER:
-            case PROTECTED_DECRYPTER:
-            case PROTECTED_INTERNAL_URL:
-                if (link.hasBrowserUrl()) {
-                    setEnabled(true);
-                    return;
-                }
-                break;
-            default:
-                setEnabled(true);
-                return;
-            }
+            setEnabled(true);
 
         }
         setEnabled(false);

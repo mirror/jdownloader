@@ -118,11 +118,7 @@ public class VKontakteRu extends PluginForDecrypt {
     @Override
     protected DownloadLink createDownloadlink(String link) {
         DownloadLink ret = super.createDownloadlink(link);
-        try {
-            ret.setUrlProtection(org.jdownloader.controlling.UrlProtection.PROTECTED_INTERNAL_URL);
-        } catch (Throwable e) {
-            // jd09
-        }
+
         return ret;
     }
 
@@ -731,7 +727,13 @@ public class VKontakteRu extends PluginForDecrypt {
             final String finallink = foundQualities.get(selectedQualityValue);
             if (finallink != null) {
                 final DownloadLink dl = createDownloadlink("http://vkontaktedecrypted.ru/videolink/" + System.currentTimeMillis() + new Random().nextInt(1000000));
-                dl.setBrowserUrl("https://vk.com/video" + oid + "_" + id);
+
+                try {/* JD2 only */
+                    dl.setContentUrl("https://vk.com/video" + oid + "_" + id);
+                } catch (Throwable e) {/* Stable */
+                    dl.setBrowserUrl("https://vk.com/video" + oid + "_" + id);
+                }
+
                 String ext = finallink.substring(finallink.lastIndexOf("."));
                 if (ext.length() > 5 && finallink.contains(".mp4")) {
                     ext = ".mp4";
@@ -857,7 +859,13 @@ public class VKontakteRu extends PluginForDecrypt {
         if (fastLinkcheck) {
             dl.setAvailable(true);
         }
-        dl.setBrowserUrl("http://vk.com/photo" + photoID);
+
+        try {/* JD2 only */
+            dl.setContentUrl("http://vk.com/photo" + photoID);
+        } catch (Throwable e) {/* Stable */
+            dl.setBrowserUrl("http://vk.com/photo" + photoID);
+        }
+
         return dl;
     }
 

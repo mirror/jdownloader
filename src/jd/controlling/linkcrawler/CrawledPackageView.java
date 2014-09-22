@@ -129,7 +129,7 @@ public class CrawledPackageView extends ChildrenView<CrawledLink> {
 
     protected void addtoTmp(Temp tmp, CrawledLink link) {
         DownloadLink dlLink = link.getDownloadLink();
-        String sourceUrl = dlLink.getView().getDownloadUrl();
+        String sourceUrl = dlLink.getView().getDisplayUrl();
 
         if (sourceUrl != null) {
             tmp.sameSource = StringUtils.getCommonalities(tmp.sameSource, sourceUrl);

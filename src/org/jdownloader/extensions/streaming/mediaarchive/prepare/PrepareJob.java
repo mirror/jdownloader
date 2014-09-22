@@ -106,19 +106,21 @@ public class PrepareJob extends QueueAction<Void, RuntimeException> {
         HashSet<String> archives = new HashSet<String>();
 
         for (DownloadLink dl : jobEntry.getLinks()) {
-            Boolean streamingWithoutAccount = (Boolean) dl.getBooleanProperty("STREAMING", false);
+            Boolean streamingWithoutAccount = dl.getBooleanProperty("STREAMING", false);
 
             // instanceof may fail due to dynamic plugin loader
             boolean isDirect = "DirectHTTP".equalsIgnoreCase(dl.getHost()) || "http links".equalsIgnoreCase(dl.getHost());
             if (streamingWithoutAccount || AccountController.getInstance().hasAccounts(dl.getHost()) || isDirect) {
-                String url = dl.getDownloadURL();
+                String url = dl.getPluginPattern();
                 String name = dl.getView().getDisplayName();
                 if ("rar".equals(Files.getExtension(name))) {
                     DownloadLinkArchiveFactory lfa = new DownloadLinkArchiveFactory(dl);
                     status = T._.open_rar(dl.getView().getDisplayName());
                     if (extractor.isLinkSupported(lfa)) {
                         String archiveID = extractor.createArchiveID(lfa);
-                        if (archives.contains(archiveID)) continue;
+                        if (archives.contains(archiveID)) {
+                            continue;
+                        }
                         Archive archive = extractor.getArchiveByFactory(lfa);
                         handleArchive(archive);
                         archives.add(archiveID);
@@ -160,7 +162,9 @@ public class PrepareJob extends QueueAction<Void, RuntimeException> {
     }
 
     private List<ProfileMatch> findProfile(MediaItem mediaItem) {
-        if (mediaItem == null) return null;
+        if (mediaItem == null) {
+            return null;
+        }
         ArrayList<ProfileMatch> ret = new ArrayList<ProfileMatch>();
         LOGGER.info("find DLNA Profile: " + mediaItem.getDownloadLink());
         for (Profile p : Profile.ALL_PROFILES) {

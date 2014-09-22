@@ -118,7 +118,7 @@ public class MotherLessCom extends PluginForDecrypt {
                 dlink.setAvailable(false);
             }
             dlink.setProperty("dltype", "video");
-            dlink.setBrowserUrl(parameter);
+           try{/*JD2 only*/dlink.setContentUrl(parameter);}catch(Throwable e){/*Stable*/ dlink.setBrowserUrl(parameter);}
             dlink.setName(new Regex(parameter, "motherless\\.com/(.+)").getMatch(0));
             decryptedLinks.add(dlink);
         } else if (!br.containsHTML("<strong>Uploaded</strong>")) {

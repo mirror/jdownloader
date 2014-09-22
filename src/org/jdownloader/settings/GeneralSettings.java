@@ -539,4 +539,10 @@ public interface GeneralSettings extends ConfigInterface {
 
     void setDomainRules(ArrayList<DomainRule> e);
 
+    @AboutConfig
+    @DescriptionForConfigEntry("Choose which type urls will be used for copy&paste, tables and settings.")
+    UrlDisplayType[] getUrlDisplayOrder();
+
+    void setUrlDisplayOrder(UrlDisplayType[] order);
+
 }

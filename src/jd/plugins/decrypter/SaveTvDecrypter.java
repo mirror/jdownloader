@@ -343,7 +343,7 @@ public class SaveTvDecrypter extends PluginForDecrypt {
         final long current_tdifference = System.currentTimeMillis() - datemilliseconds;
         if (tdifference_milliseconds == 0 || current_tdifference <= tdifference_milliseconds) {
             /* Nothing to hide - Always show original links in JD */
-            dl.setBrowserUrl(telecast_url);
+           try{/*JD2 only*/dl.setContentUrl(telecast_url);}catch(Throwable e){/*Stable*/ dl.setBrowserUrl(telecast_url);}
             dl.setDownloadSize(calculated_filesize);
             if (FAST_LINKCHECK) {
                 dl.setAvailable(true);
@@ -371,7 +371,7 @@ public class SaveTvDecrypter extends PluginForDecrypt {
         final long current_tdifference = System.currentTimeMillis() - datemilliseconds;
         if (tdifference_milliseconds == 0 || current_tdifference <= tdifference_milliseconds) {
             /* Nothing to hide - Always show original links in JD */
-            dl.setBrowserUrl(telecast_url);
+           try{/*JD2 only*/dl.setContentUrl(telecast_url);}catch(Throwable e){/*Stable*/ dl.setBrowserUrl(telecast_url);}
             dl.setDownloadSize(calculated_filesize);
             if (FAST_LINKCHECK) {
                 dl.setAvailable(true);

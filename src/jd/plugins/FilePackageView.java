@@ -347,7 +347,7 @@ public class FilePackageView extends ChildrenView<DownloadLink> {
         if (link.getPriorityEnum().getId() > tmp.priorityHighest.getId()) {
             tmp.priorityHighest = link.getPriorityEnum();
         }
-        String sourceUrl = link.getView().getDownloadUrl();
+        String sourceUrl = link.getView().getDisplayUrl();
 
         if (sourceUrl != null) {
             tmp.sameSource = StringUtils.getCommonalities(tmp.sameSource, sourceUrl);

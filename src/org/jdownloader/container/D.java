@@ -943,7 +943,7 @@ public class D extends PluginsC {
         java.util.List<DownloadLink> filter = new ArrayList<DownloadLink>();
         // filter
         for (DownloadLink l : links) {
-            String url = l.getDownloadURL();
+            String url = l.getPluginPattern();
 
             if (url == null) {
                 continue;
@@ -1026,10 +1026,10 @@ public class D extends PluginsC {
                     Element size = content.createElement("size");
                     DownloadLink link = tmpLinks.get(x);
 
-                    url.appendChild(content.createTextNode(Encoding.Base64Encode(link.getDownloadURL())));
+                    url.appendChild(content.createTextNode(Encoding.Base64Encode(link.getPluginPattern())));
 
                     // url.appendChild(content.createTextNode(JDUtilities.
-                    // Base64Encode(tmpLinks.get(x).getDownloadURL())));
+                    // Base64Encode(tmpLinks.get(x).getPluginUrl())));
 
                     filename.appendChild(content.createTextNode(Encoding.Base64Encode(tmpLinks.get(x).getView().getDisplayName())));
 

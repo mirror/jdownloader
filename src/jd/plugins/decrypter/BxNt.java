@@ -137,7 +137,7 @@ public class BxNt extends PluginForDecrypt {
                         fina.setName(filename);
                         fina.setDownloadSize(Long.parseLong(filesize));
                         fina.setAvailable(true);
-                        fina.setBrowserUrl(finallink);
+                       try{/*JD2 only*/fina.setContentUrl(finallink);}catch(Throwable e){/*Stable*/ fina.setBrowserUrl(finallink);}
                         decryptedLinks.add(fina);
                     }
                 }

@@ -304,7 +304,7 @@ public class TapeTv extends PluginForHost {
                             final DownloadLink link = new DownloadLink(this, title, getHost(), sourceLink.getDownloadURL(), true);
                             link.setAvailable(true);
                             link.setFinalFileName(title);
-                            link.setBrowserUrl(sourceLink.getBrowserUrl());
+                           try{/*JD2 only*/link.setContentUrl(sourceLink.getBrowserUrl());}catch(Throwable e){/*Stable*/ link.setBrowserUrl(sourceLink.getBrowserUrl());}
                             link.setProperty("directURL", streamUrl);
                             link.setProperty("directName", title);
                             link.setProperty("LINKDUPEID", "tapetv" + ID + title + q);

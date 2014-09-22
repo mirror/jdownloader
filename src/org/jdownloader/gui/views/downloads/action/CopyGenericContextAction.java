@@ -104,7 +104,7 @@ public class CopyGenericContextAction extends CustomizableTableContextAppAction 
         StringBuilder sb = new StringBuilder();
         if (isSmartSelection()) {
             for (PackageView<?, ?> pv : getTable().getSelectionInfo().getPackageViews()) {
-                AbstractPackageNode<?, ?> pkg = (AbstractPackageNode<?, ?>) pv.getPackage();
+                AbstractPackageNode<?, ?> pkg = pv.getPackage();
                 add(sb, pkg);
 
                 List<AbstractNode> childs = (List<AbstractNode>) pv.getChildren();
@@ -150,7 +150,7 @@ public class CopyGenericContextAction extends CustomizableTableContextAppAction 
             line = line.replace(PATTERN_MD5, nulltoString(link.getMD5Hash()));
             line = line.replace(PATTERN_NAME, nulltoString(link.getView().getDisplayName()));
             line = line.replace(PATTERN_SHA256, nulltoString(link.getSha1Hash()));
-            line = line.replace(PATTERN_URL, nulltoString(link.getBrowserUrl()));
+            line = line.replace(PATTERN_URL, nulltoString(link.getView().getDisplayUrl()));
 
         } else if (pv instanceof CrawledLink) {
             line = getPatternLinks();
@@ -162,7 +162,7 @@ public class CopyGenericContextAction extends CustomizableTableContextAppAction 
             line = line.replace(PATTERN_MD5, nulltoString(link.getDownloadLink().getMD5Hash()));
             line = line.replace(PATTERN_NAME, nulltoString(link.getDownloadLink().getView().getDisplayName()));
             line = line.replace(PATTERN_SHA256, nulltoString(link.getDownloadLink().getSha1Hash()));
-            line = line.replace(PATTERN_URL, nulltoString(link.getDownloadLink().getBrowserUrl()));
+            line = line.replace(PATTERN_URL, nulltoString(link.getDownloadLink().getView().getDisplayUrl()));
 
         } else if (pv instanceof CrawledPackage) {
             line = getPatternPackages();
@@ -184,7 +184,9 @@ public class CopyGenericContextAction extends CustomizableTableContextAppAction 
             }
         }
         if (StringUtils.isNotEmpty(line)) {
-            if (sb.length() > 0) sb.append("\r\n");
+            if (sb.length() > 0) {
+                sb.append("\r\n");
+            }
             sb.append(line);
         }
     }
@@ -196,7 +198,9 @@ public class CopyGenericContextAction extends CustomizableTableContextAppAction 
     private PackageControllerTable<?, ?> getTable() {
         if (MainTabbedPane.getInstance().isDownloadView()) {
             return DownloadsTable.getInstance();
-        } else if (MainTabbedPane.getInstance().isLinkgrabberView()) { return LinkGrabberTable.getInstance(); }
+        } else if (MainTabbedPane.getInstance().isLinkgrabberView()) {
+            return LinkGrabberTable.getInstance();
+        }
         return null;
     }
 

@@ -64,7 +64,7 @@ import org.appwork.utils.swing.dialog.DialogCanceledException;
 import org.appwork.utils.swing.dialog.DialogClosedException;
 import org.jdownloader.plugins.config.PluginJsonConfig;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "youtube.com", "youtube.com" }, urls = { "https?://([a-z]+\\.)?youtube\\.com/(embed/|.*?watch.*?v(%3D|=)|view_play_list\\?p=|playlist\\?(p|list)=|.*?g/c/|.*?grid/user/|v/|user/|channel/|course\\?list=)[A-Za-z0-9\\-_]+(.*?page=\\d+)?(.*?list=[A-Za-z0-9\\-_]+)?|watch_videos\\?.*?video_ids=.+", "https?://youtube\\.googleapis\\.com/(v/|user/|channel/)[A-Za-z0-9\\-_]+" }, flags = { 0, 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "youtube.com", "youtube.com" }, urls = { "https?://([a-z]+\\.)?youtube\\.com/(embed/|.*?watch.*?v(%3D|=)|view_play_list\\?p=|playlist\\?(p|list)=|.*?g/c/|.*?grid/user/|v/|user/|channel/|course\\?list=)[A-Za-z0-9\\-_]+(.*?page=\\d+)?(.*?list=[A-Za-z0-9\\-_]+)?(\\&variant=[a-z\\_0-9]+)?|watch_videos\\?.*?video_ids=.+", "https?://youtube\\.googleapis\\.com/(v/|user/|channel/)[A-Za-z0-9\\-_]+(\\?variant=[a-z_0.9]+)?" }, flags = { 0, 0 })
 public class TbCmV2 extends PluginForDecrypt {
 
     public TbCmV2(PluginWrapper wrapper) {
@@ -172,6 +172,8 @@ public class TbCmV2 extends PluginForDecrypt {
 
         String cleanedurl = Encoding.urlDecode(param.toString(), false);
         cleanedurl = cleanedurl.replace("youtube.jd", "youtube.com");
+        String requestedVariant = new Regex(cleanedurl, "\\&variant=([a-z\\_0-9]+)").getMatch(0);
+        cleanedurl = cleanedurl.replace("\\&variant=[a-z\\_0-9]+", "");
         String videoID = getVideoIDByUrl(cleanedurl);
 
         // for watch_videos, found within youtube.com music
@@ -309,6 +311,9 @@ public class TbCmV2 extends PluginForDecrypt {
             for (String s : extra) {
                 extraStrings.add(s);
             }
+        }
+        if (requestedVariant != null) {
+            extraStrings.add(requestedVariant);
         }
         for (YoutubeClipData vid : videoIdsToAdd) {
             HashMap<String, List<VariantInfo>> groups = new HashMap<String, List<VariantInfo>>();
@@ -520,126 +525,153 @@ public class TbCmV2 extends PluginForDecrypt {
                 }
             }
 
-            main: for (Entry<String, List<VariantInfo>> e : groups.entrySet()) {
-                if (e.getValue().size() == 0) {
-                    continue;
-                }
-                Collections.sort(e.getValue());
+            if (requestedVariant != null) {
 
-                if (e.getKey().equals(YoutubeVariantInterface.VariantGroup.SUBTITLES.name()) || e.getKey().equalsIgnoreCase("srt")) {
-                    if (cfg.isCreateBestSubtitleVariantLinkEnabled()) {
-                        // special handling for subtitles
+                for (VariantInfo v : allVariants.values()) {
 
-                        String[] keys = cfg.getPreferedSubtitleLanguages();
-                        // first try the users prefered list
-                        if (keys != null) {
-                            for (String locale : keys) {
-                                try {
-                                    for (VariantInfo vi : e.getValue()) {
-                                        if (vi.getIdentifier().toLowerCase().startsWith(locale)) {
-                                            decryptedLinks.add(createLink(vi, e.getValue()));
-                                            continue main;
-                                        }
-                                    }
-                                } catch (Exception e1) {
-                                    getLogger().log(e1);
-                                }
-                            }
-                        }
+                    if (v.variant.getTypeId().equals(requestedVariant)) {
 
-                        try {
-                            // try to find the users locale
-                            String desiredLocale = TranslationFactory.getDesiredLanguage();
-                            for (VariantInfo vi : e.getValue()) {
-                                if (vi.getIdentifier().toLowerCase().startsWith(desiredLocale.toLowerCase())) {
-                                    decryptedLinks.add(createLink(vi, e.getValue()));
-                                    continue main;
-                                }
-                            }
-                        } catch (Exception e1) {
-                            // try english
-                            getLogger().log(e1);
-                            for (VariantInfo vi : e.getValue()) {
-                                if (vi.getIdentifier().toLowerCase().startsWith("en")) {
-                                    decryptedLinks.add(createLink(vi, e.getValue()));
-                                    continue main;
-                                }
-                            }
+                        String groupID = getGroupID(v.variant);
 
-                        }
-                        // fallback: use the first
-                        decryptedLinks.add(createLink(e.getValue().get(0), e.getValue()));
+                        List<VariantInfo> fromGroup = groups.get(groupID);
+
+                        decryptedLinks.add(createLink(v, fromGroup));
+
                     }
-                } else {
-                    if (cfg.getGroupLogic() != GroupLogic.NO_GROUP) {
 
-                        switch (e.getValue().get(0).variant.getGroup()) {
-                        case AUDIO:
-                            if (cfg.isCreateBestAudioVariantLinkEnabled()) {
-                                decryptedLinks.add(createLink(e.getValue().get(0), e.getValue()));
-                            }
-                            break;
+                }
 
-                        case IMAGE:
-                            if (cfg.isCreateBestImageVariantLinkEnabled()) {
-                                decryptedLinks.add(createLink(e.getValue().get(0), e.getValue()));
+                for (VariantInfo vi : allSubtitles) {
+                    if (vi.getIdentifier().equalsIgnoreCase(requestedVariant)) {
+                        decryptedLinks.add(createLink(vi, allSubtitles));
+                    }
+
+                }
+            } else {
+
+                main: for (Entry<String, List<VariantInfo>> e : groups.entrySet()) {
+                    if (e.getValue().size() == 0) {
+                        continue;
+                    }
+                    Collections.sort(e.getValue());
+
+                    if (e.getKey().equals(YoutubeVariantInterface.VariantGroup.SUBTITLES.name()) || e.getKey().equalsIgnoreCase("srt")) {
+                        if (cfg.isCreateBestSubtitleVariantLinkEnabled()) {
+                            // special handling for subtitles
+
+                            String[] keys = cfg.getPreferedSubtitleLanguages();
+                            // first try the users prefered list
+                            if (keys != null) {
+                                for (String locale : keys) {
+                                    try {
+                                        for (VariantInfo vi : e.getValue()) {
+                                            if (vi.getIdentifier().toLowerCase().startsWith(locale)) {
+                                                decryptedLinks.add(createLink(vi, e.getValue()));
+                                                continue main;
+                                            }
+                                        }
+                                    } catch (Exception e1) {
+                                        getLogger().log(e1);
+                                    }
+                                }
                             }
 
-                            break;
-                        case VIDEO:
-                            if (cfg.isCreateBestVideoVariantLinkEnabled()) {
-                                decryptedLinks.add(createLink(e.getValue().get(0), e.getValue()));
-                            }
+                            try {
+                                // try to find the users locale
+                                String desiredLocale = TranslationFactory.getDesiredLanguage();
+                                for (VariantInfo vi : e.getValue()) {
+                                    if (vi.getIdentifier().toLowerCase().startsWith(desiredLocale.toLowerCase())) {
+                                        decryptedLinks.add(createLink(vi, e.getValue()));
+                                        continue main;
+                                    }
+                                }
+                            } catch (Exception e1) {
+                                // try english
+                                getLogger().log(e1);
+                                for (VariantInfo vi : e.getValue()) {
+                                    if (vi.getIdentifier().toLowerCase().startsWith("en")) {
+                                        decryptedLinks.add(createLink(vi, e.getValue()));
+                                        continue main;
+                                    }
+                                }
 
-                            break;
-                        case VIDEO_3D:
-                            if (cfg.isCreateBest3DVariantLinkEnabled()) {
-                                decryptedLinks.add(createLink(e.getValue().get(0), e.getValue()));
                             }
-                            break;
+                            // fallback: use the first
+                            decryptedLinks.add(createLink(e.getValue().get(0), e.getValue()));
                         }
                     } else {
+                        if (cfg.getGroupLogic() != GroupLogic.NO_GROUP) {
 
-                        decryptedLinks.add(createLink(e.getValue().get(0), e.getValue()));
-                    }
-                }
+                            switch (e.getValue().get(0).variant.getGroup()) {
+                            case AUDIO:
+                                if (cfg.isCreateBestAudioVariantLinkEnabled()) {
+                                    decryptedLinks.add(createLink(e.getValue().get(0), e.getValue()));
+                                }
+                                break;
 
-            }
+                            case IMAGE:
+                                if (cfg.isCreateBestImageVariantLinkEnabled()) {
+                                    decryptedLinks.add(createLink(e.getValue().get(0), e.getValue()));
+                                }
 
-            if (extra != null && extra.length > 0) {
-                main: for (VariantInfo v : allVariants.values()) {
-                    for (String s : extra) {
-                        if (v.variant.getTypeId().equals(s)) {
+                                break;
+                            case VIDEO:
+                                if (cfg.isCreateBestVideoVariantLinkEnabled()) {
+                                    decryptedLinks.add(createLink(e.getValue().get(0), e.getValue()));
+                                }
 
-                            String groupID = getGroupID(v.variant);
-
-                            List<VariantInfo> fromGroup = groups.get(groupID);
-
-                            decryptedLinks.add(createLink(v, fromGroup));
-                            continue main;
-
-                        }
-                    }
-                }
-
-            }
-
-            ArrayList<String> extraSubtitles = cfg.getExtraSubtitles();
-            if (extraSubtitles != null) {
-                for (String v : extraSubtitles) {
-                    if (v != null) {
-                        for (VariantInfo vi : allSubtitles) {
-                            if (vi.getIdentifier().equalsIgnoreCase(v)) {
-                                decryptedLinks.add(createLink(vi, allSubtitles));
+                                break;
+                            case VIDEO_3D:
+                                if (cfg.isCreateBest3DVariantLinkEnabled()) {
+                                    decryptedLinks.add(createLink(e.getValue().get(0), e.getValue()));
+                                }
+                                break;
                             }
+                        } else {
 
+                            decryptedLinks.add(createLink(e.getValue().get(0), e.getValue()));
+                        }
+                    }
+
+                }
+
+                if (extra != null && extra.length > 0) {
+                    main: for (VariantInfo v : allVariants.values()) {
+                        for (String s : extra) {
+                            if (v.variant.getTypeId().equals(s)) {
+
+                                String groupID = getGroupID(v.variant);
+
+                                List<VariantInfo> fromGroup = groups.get(groupID);
+
+                                decryptedLinks.add(createLink(v, fromGroup));
+                                continue main;
+
+                            }
+                        }
+                    }
+
+                }
+
+                ArrayList<String> extraSubtitles = cfg.getExtraSubtitles();
+                if (extraSubtitles != null) {
+                    for (String v : extraSubtitles) {
+                        if (v != null) {
+                            for (VariantInfo vi : allSubtitles) {
+                                if (vi.getIdentifier().equalsIgnoreCase(v)) {
+                                    decryptedLinks.add(createLink(vi, allSubtitles));
+                                }
+
+                            }
                         }
                     }
                 }
+
             }
-
         }
-
+        for (DownloadLink dl : decryptedLinks) {
+            dl.setContainerUrl(param.getCryptedUrl());
+        }
         return decryptedLinks;
     }
 
@@ -756,7 +788,11 @@ public class TbCmV2 extends PluginForDecrypt {
 
             // thislink.setAvailable(true);
 
-            thislink.setBrowserUrl(getBase() + "/watch?v=" + clip.videoID);
+            try {/* JD2 only */
+                thislink.setContentUrl(getBase() + "/watch?v=" + clip.videoID + "&variant=" + variantInfo.variant);
+            } catch (Throwable e) {/* Stable */
+                thislink.setBrowserUrl(getBase() + "/watch?v=" + clip.videoID);
+            }
 
             // thislink.setProperty(key, value)
             thislink.setProperty(YoutubeHelper.YT_EXT, variantInfo.variant.getFileExtension());
@@ -842,7 +878,7 @@ public class TbCmV2 extends PluginForDecrypt {
 
     /**
      * Parse a playlist id and return all found video ids
-     *
+     * 
      * @param decryptedLinks
      * @param dupeCheckSet
      * @param base

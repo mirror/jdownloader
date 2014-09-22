@@ -769,7 +769,7 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
                                 logger.log(e);
                             }
                             if (link.getDownloadLink() != null && StringUtils.isNotEmpty(job.getCustomSourceUrl())) {
-                                link.getDownloadLink().setBrowserUrl(job.getCustomSourceUrl());
+                                link.getDownloadLink().setReferrerUrl(job.getCustomSourceUrl());
                             }
                         }
                         if (link.getDownloadLink() != null) {
@@ -2256,10 +2256,12 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
 
     public CrawledLink addAdditional(final CrawledLink link, final LinkVariant o) {
 
-        final DownloadLink dllink = new DownloadLink(link.getDownloadLink().getDefaultPlugin(), link.getDownloadLink().getView().getDisplayName(), link.getDownloadLink().getHost(), link.getDownloadLink().getDownloadURL(), true);
+        final DownloadLink dllink = new DownloadLink(link.getDownloadLink().getDefaultPlugin(), link.getDownloadLink().getView().getDisplayName(), link.getDownloadLink().getHost(), link.getDownloadLink().getPluginPattern(), true);
         dllink.setProperties(link.getDownloadLink().getProperties());
         // so plugins like youtube set inherent browserurl (not the youtubev2:// link)
-        dllink.setBrowserUrl(link.getDownloadLink().getBrowserUrl());
+        dllink.setOriginUrl(link.getDownloadLink().getOriginUrl());
+        dllink.setContentUrl(link.getDownloadLink().getContainerUrl());
+        dllink.setReferrerUrl(link.getDownloadLink().getReferrerUrl());
         final CrawledLink cl = new CrawledLink(dllink);
 
         cl.getDownloadLink().getDefaultPlugin().setActiveVariantByLink(cl.getDownloadLink(), o);

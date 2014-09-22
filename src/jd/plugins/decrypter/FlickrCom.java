@@ -54,17 +54,6 @@ public class FlickrCom extends PluginForDecrypt {
 
     // private boolean USE_API = false;
 
-    @Override
-    protected DownloadLink createDownloadlink(String link) {
-        DownloadLink ret = super.createDownloadlink(link);
-        try {
-            ret.setUrlProtection(org.jdownloader.controlling.UrlProtection.PROTECTED_INTERNAL_URL);
-        } catch (Throwable e) {
-            // jd09
-        }
-        return ret;
-    }
-
     /* TODO: Implement API: https://api.flickr.com/services/rest?photo_id=&extras=can_ ... */
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
@@ -80,11 +69,21 @@ public class FlickrCom extends PluginForDecrypt {
         /* Check if link is for hosterplugin */
         if (parameter.matches("https?://(www\\.)?flickr\\.com/photos/[^<>\"/]+/\\d+")) {
             final DownloadLink dl = createDownloadlink(parameter.replace("flickr.com/", "flickrdecrypted.com/").replace("https://", "http://"));
+            try {
+                dl.setContentUrl(parameter);
+            } catch (Throwable e) {
+
+            }
             decryptedLinks.add(dl);
             return decryptedLinks;
         }
         if (parameter.matches(INVALIDLINKS) || parameter.contains("/map")) {
             final DownloadLink offline = createDownloadlink("http://flickrdecrypted.com/photos/xxoffline/" + System.currentTimeMillis() + new Random().nextInt(10000));
+            try {
+                offline.setContentUrl(parameter);
+            } catch (Throwable e) {
+
+            }
             offline.setName(new Regex(parameter, "flickr\\.com/(.+)").getMatch(0));
             offline.setAvailable(false);
             offline.setProperty("offline", true);
@@ -94,6 +93,11 @@ public class FlickrCom extends PluginForDecrypt {
         br.getPage(parameter);
         if (br.containsHTML("Page Not Found<|>This member is no longer active") || br.getHttpConnection().getResponseCode() == 404) {
             final DownloadLink offline = createDownloadlink("http://flickrdecrypted.com/photos/xxoffline/" + System.currentTimeMillis() + new Random().nextInt(10000));
+            try {
+                offline.setContentUrl(parameter);
+            } catch (Throwable e) {
+
+            }
             offline.setFinalFileName(new Regex(parameter, "flickr\\.com/(.+)").getMatch(0));
             offline.setAvailable(false);
             offline.setProperty("offline", true);
@@ -102,6 +106,11 @@ public class FlickrCom extends PluginForDecrypt {
         } else if (parameter.matches(FAVORITELINK) && br.containsHTML("id=\"no\\-faves\"")) {
             /* Favourite link but user has no favourites */
             final DownloadLink offline = createDownloadlink("http://flickrdecrypted.com/photos/xxoffline/" + System.currentTimeMillis() + new Random().nextInt(10000));
+            try {
+                offline.setContentUrl(parameter);
+            } catch (Throwable e) {
+
+            }
             offline.setName(new Regex(parameter, "flickr\\.com/photos/([^<>\"/]+)/favorites").getMatch(0));
             offline.setAvailable(false);
             offline.setProperty("offline", true);
@@ -110,6 +119,11 @@ public class FlickrCom extends PluginForDecrypt {
         } else if (parameter.matches(PHOTOLINK) && br.containsHTML("class=\"refresh\\-empty\\-state\\-photostream\"")) {
             /* Photos link has no photos */
             final DownloadLink offline = createDownloadlink("http://flickrdecrypted.com/photos/xxoffline/" + System.currentTimeMillis() + new Random().nextInt(10000));
+            try {
+                offline.setContentUrl(parameter);
+            } catch (Throwable e) {
+
+            }
             offline.setName(new Regex(parameter, "flickr\\.com/photos/(.+)").getMatch(0));
             offline.setAvailable(false);
             offline.setProperty("offline", true);
@@ -179,6 +193,11 @@ public class FlickrCom extends PluginForDecrypt {
             /* Check if we have a single link */
             if (br.containsHTML("var photo = \\{")) {
                 final DownloadLink dl = createDownloadlink("http://www.flickrdecrypted.com/" + new Regex(parameter, "flickr\\.com/(.+)").getMatch(0));
+                // try {
+                // dl.setContentUrl(parameter);
+                // } catch (Throwable e) {
+                //
+                // }
                 decryptedLinks.add(dl);
             } else {
                 // Some stuff which is different from link to link
@@ -291,7 +310,11 @@ public class FlickrCom extends PluginForDecrypt {
                     final DownloadLink dl = createDownloadlink("http://www.flickrdecrypted.com" + aLink);
                     dl.setAvailable(true);
                     /* No need to hide decrypted single links */
-                    dl.setBrowserUrl("http://www.flickr.com" + aLink);
+                    try {/* JD2 only */
+                        dl.setContentUrl("http://www.flickr.com" + aLink);
+                    } catch (Throwable e) {/* Stable */
+                        dl.setBrowserUrl("http://www.flickr.com" + aLink);
+                    }
                     try {
                         distribute(dl);
                     } catch (final Throwable e) {

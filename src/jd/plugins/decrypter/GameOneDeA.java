@@ -46,8 +46,12 @@ import org.w3c.dom.Document;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "gameone.de" }, urls = { "https?://((www|m)\\.)?gameone\\.de/(?!playtube/)(tv/\\d+(\\?part=\\d+)?|blog/\\d+/\\d+/.+|playtube/[\\w\\-]+/\\d+(/(sd|hd))?)|http://feedproxy.google.com/~r/mtvgameone/.*\\.mp3" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "gameone.de" }, urls = { "https?://((www|m)\\.)?gameone\\.de/(tv/\\d+(\\?part=\\d+)?|blog/\\d+/\\d+/.+|playtube/[\\d\\w\\-]+/\\d+(/(sd|hd))?)|http://feedproxy.google.com/~r/mtvgameone/.*\\.mp3" }, flags = { 0 })
 public class GameOneDeA extends PluginForDecrypt {
+    public static void main(String[] args) {
+        System.out.println(new Regex("http://www.gameone.de/playtube/final-stand-reveal-trailer-battlefield-4/645443/hd", "https?://((www|m)\\.)?gameone\\.de/(tv/\\d+(\\?part=\\d+)?|blog/\\d+/\\d+/.+|playtube/[\\d\\w\\-]+/\\d+(/(sd|hd))?)|http://feedproxy.google.com/~r/mtvgameone/.*\\.mp3").matches());
+        ;
+    }
 
     public class ReplacerInputStream extends InputStream {
 
@@ -68,7 +72,9 @@ public class GameOneDeA extends PluginForDecrypt {
 
         @Override
         public int read() throws IOException {
-            if (!backBuf.isEmpty()) { return backBuf.pop(); }
+            if (!backBuf.isEmpty()) {
+                return backBuf.pop();
+            }
             int first = in.read();
             if (first == '&') {
                 peekAndReplace();
@@ -142,7 +148,9 @@ public class GameOneDeA extends PluginForDecrypt {
             String fpName = br.getRegex("<title>(.*?)( \\||</title>)").getMatch(0);
             fpName = fpName == null ? br.getRegex("<h2>\n?(.*?)\n?</h2>").getMatch(0) : fpName;
 
-            if (fpName == null) return null;
+            if (fpName == null) {
+                return null;
+            }
 
             fpName = fpName.replaceAll(" (-|~) Teil \\d+", "");
             fpName = fpName.replaceAll("\\.", "/");
@@ -174,6 +182,14 @@ public class GameOneDeA extends PluginForDecrypt {
                 }
                 for (final String ap : pictureOrAudio) {
                     final DownloadLink dlLink = createDownloadlink(ap);
+                    try {
+                        if (pictureOrAudio.length > 1) {
+                            dlLink.setContainerUrl(param.getCryptedUrl());
+                        } else {
+                            dlLink.setContentUrl(param.getCryptedUrl());
+                        }
+                    } catch (Throwable e) {
+                    }
                     if (newEpisode) {
                         dlLink.setAvailable(true);
                     }
@@ -194,7 +210,9 @@ public class GameOneDeA extends PluginForDecrypt {
                     filename = xPath.evaluate("/rss/channel/item/title", doc);
                     expr = xPath.compile("/rss/channel/item/group/content[@type='text/xml']/@url");
                     partList = (NodeList) expr.evaluate(doc, XPathConstants.NODESET);
-                    if (partList == null || partList.getLength() == 0) throw new Exception("PartList empty");
+                    if (partList == null || partList.getLength() == 0) {
+                        throw new Exception("PartList empty");
+                    }
                 } catch (final Throwable e) {
                     return null;
                 }
@@ -202,7 +220,9 @@ public class GameOneDeA extends PluginForDecrypt {
                 for (int i = 0; i < partList.getLength(); ++i) {
                     final Node partNode = partList.item(i);
                     startUrl = partNode.getNodeValue();
-                    if (startUrl == null) continue;
+                    if (startUrl == null) {
+                        continue;
+                    }
                     /* Episode 1 - 101 */
                     startUrl = startUrl.replaceAll("media/mediaGen\\.jhtml\\?uri.*?\\.de:", "flv/flvgen.jhtml?vid=");
 
@@ -210,44 +230,78 @@ public class GameOneDeA extends PluginForDecrypt {
                     try {
                         expr = xPath.compile("/package/video/item/src|//rendition/src");
                         linkList = (NodeList) expr.evaluate(doc, XPathConstants.NODESET);
-                        if (linkList == null || linkList.getLength() == 0) throw new Exception("LinkList empty");
+                        if (linkList == null || linkList.getLength() == 0) {
+                            throw new Exception("LinkList empty");
+                        }
                     } catch (final Throwable e) {
                         continue;
                     }
                     for (int j = 0; j < linkList.getLength(); ++j) {
                         final Node node = linkList.item(j);
                         dllink = node.getTextContent();
-                        if (dllink == null) continue;
+                        if (dllink == null) {
+                            continue;
+                        }
                         String q = new Regex(dllink, "(\\d+)k_").getMatch(0);
-                        if (q == null) q = new Regex(dllink, "_\\d+x(\\d+)_").getMatch(0);
+                        if (q == null) {
+                            q = new Regex(dllink, "_\\d+x(\\d+)_").getMatch(0);
+                        }
                         q = q == null ? "" : quality(Integer.parseInt(q));
                         String ext = dllink.substring(dllink.lastIndexOf("."));
                         ext = ext == null || ext.length() > 4 ? ".flv" : ext;
 
                         DownloadLink dlLink_rtmp = null;
-                        if (dllink.startsWith("rtmp://")) dlLink_rtmp = createDownloadlink(dllink.replace("rtmp", "gameonertmp"));
+                        boolean rtmpe = false;
+                        if (dllink.startsWith("rtmp://")) {
+                            dlLink_rtmp = createDownloadlink(dllink.replace("rtmp", "gameonertmp"));
+                        } else if (dllink.startsWith("rtmpe://")) {
+                            dlLink_rtmp = createDownloadlink(dllink.replace("rtmpe", "gameonertmpe"));
+                            rtmpe = true;
+
+                            dlLink_rtmp.setAvailable(false);
+                            dlLink_rtmp.setProperty("offline", true);
+
+                        }
                         /* Episode > 102 */
                         dllink = dllink.replaceAll("^.*?/r2/", "http://cdn.riptide-mtvn.com/r2/");
                         /* Fallback */
                         dllink = dllink.replace("rtmp", "gameonertmp");
-                        DownloadLink dlLink_http = createDownloadlink(dllink);
-                        if (dllink.startsWith("http://"))
+                        DownloadLink dlLink_http = null;
+                        if (dllink.startsWith("http://")) {
                             dlLink_http = createDownloadlink("directhttp://" + dllink);
-                        else
-                            dlLink_rtmp = createDownloadlink(dllink);
-                        if (!newEpisode) {
-                            if (dlLink_http != null) dlLink_http.setFinalFileName(filename + "_Part_" + df.format(i + 1) + "@" + q + "_http" + ext);
-                            if (dlLink_rtmp != null) dlLink_http.setFinalFileName(filename + "_Part_" + df.format(i + 1) + "@" + q + "_rtmp" + ext);
                         } else {
-                            if (dlLink_http != null) dlLink_http.setFinalFileName(filename + "@" + q + "_http" + ext);
-                            if (dlLink_rtmp != null) dlLink_rtmp.setFinalFileName(filename + "@" + q + "_rtmp" + ext);
+                            dlLink_rtmp = createDownloadlink(dllink);
+                        }
+                        if (!newEpisode) {
+                            if (dlLink_http != null) {
+                                dlLink_http.setFinalFileName(filename + "_Part_" + df.format(i + 1) + "@" + q + "_http" + ext);
+                            }
+                            if (dlLink_rtmp != null) {
+                                dlLink_http.setFinalFileName(filename + "_Part_" + df.format(i + 1) + "@" + q + "_rtmp" + (rtmpe ? "e" : "") + ext);
+                            }
+                        } else {
+                            if (dlLink_http != null) {
+                                dlLink_http.setFinalFileName(filename + "@" + q + "_http" + ext);
+                            }
+                            if (dlLink_rtmp != null) {
+                                dlLink_rtmp.setFinalFileName(filename + "@" + q + "_rtmp" + (rtmpe ? "e" : "") + ext);
+                            }
                         }
                         if (dlLink_http != null) {
                             fp.add(dlLink_http);
+                            try {
+                                dlLink_http.setContainerUrl(parameter);
+                            } catch (Throwable e) {
+                            }
                             decryptedLinks.add(dlLink_http);
                         }
                         if (dlLink_rtmp != null) {
                             fp.add(dlLink_rtmp);
+
+                            try {
+                                dlLink_rtmp.setContainerUrl(parameter);
+                            } catch (Throwable e) {
+                            }
                             decryptedLinks.add(dlLink_rtmp);
                         }
                     }
@@ -262,8 +316,12 @@ public class GameOneDeA extends PluginForDecrypt {
     }
 
     private String quality(final int q) {
-        if (q <= 350) { return "LOW"; }
-        if (q < 720) { return "MEDIUM"; }
+        if (q <= 350) {
+            return "LOW";
+        }
+        if (q < 720) {
+            return "MEDIUM";
+        }
         return "HIGH";
     }
 

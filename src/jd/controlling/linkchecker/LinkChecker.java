@@ -145,7 +145,7 @@ public class LinkChecker<E extends CheckableLink> {
         String host = dlLink.getHost();
         if (Plugin.FTP_HOST.equalsIgnoreCase(host) || Plugin.DIRECT_HTTP_HOST.equalsIgnoreCase(host) || Plugin.HTTP_LINKS_HOST.equalsIgnoreCase(host)) {
             /* direct and ftp links are divided by their hostname */
-            String specialHost = Browser.getHost(dlLink.getDownloadURL());
+            String specialHost = Browser.getHost(dlLink.getPluginPattern());
             if (specialHost != null) {
                 host = host + "_" + specialHost;
             }
@@ -287,7 +287,7 @@ public class LinkChecker<E extends CheckableLink> {
                                                         if (link.linkCheckAllowed()) {
                                                             final DownloadLink dlLink = link.getCheckableLink().getDownloadLink();
                                                             if (dlLink.getAvailableStatus() != AvailableStatus.UNCHECKED) {
-                                                                logger.info("Link " + dlLink.getDownloadURL() + " is(already) " + dlLink.getAvailableStatus());
+                                                                logger.info("Link " + dlLink.getPluginPattern() + " is(already) " + dlLink.getAvailableStatus());
                                                             } else {
                                                                 downloadLinks.add(dlLink);
                                                             }
@@ -434,7 +434,7 @@ public class LinkChecker<E extends CheckableLink> {
 
     private static void updateAvailableStatus(PluginForHost plgToUse, DownloadLink link, LogSource logger) {
         if (link.getAvailableStatus() != AvailableStatus.UNCHECKED) {
-            logger.info("Link " + link.getDownloadURL() + " is(already) " + link.getAvailableStatus());
+            logger.info("Link " + link.getPluginPattern() + " is(already) " + link.getAvailableStatus());
             logger.clear();
             return;
         }
@@ -443,7 +443,7 @@ public class LinkChecker<E extends CheckableLink> {
             logger.clear();
             plgToUse.setBrowser(new Browser());
             plgToUse.reset();
-            logger.info("Check FileInformation: " + link.getDownloadURL());
+            logger.info("Check FileInformation: " + link.getPluginPattern());
             availableStatus = plgToUse.checkLink(link);
         } catch (PluginException e) {
             logger.log(e);
@@ -472,10 +472,10 @@ public class LinkChecker<E extends CheckableLink> {
             availableStatus = AvailableStatus.UNCHECKABLE;
         } finally {
             if (availableStatus == null) {
-                logger.severe("Link " + link.getDownloadURL() + " is broken, status was null");
+                logger.severe("Link " + link.getPluginPattern() + " is broken, status was null");
                 availableStatus = AvailableStatus.UNCHECKABLE;
             }
-            logger.info("Link " + link.getDownloadURL() + " is " + availableStatus);
+            logger.info("Link " + link.getPluginPattern() + " is " + availableStatus);
             switch (availableStatus) {
             case UNCHECKABLE:
                 logger.flush();

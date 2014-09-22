@@ -6,7 +6,6 @@ import java.util.List;
 
 import jd.controlling.linkcrawler.CrawledLink;
 import jd.controlling.linkcrawler.CrawledPackage;
-import jd.plugins.DownloadLink;
 
 import org.appwork.utils.os.CrossSystem;
 import org.appwork.utils.swing.dialog.Dialog;
@@ -50,20 +49,7 @@ public class OpenInBrowserAction extends CustomizableTableContextAppAction<Crawl
         }
 
         for (CrawledLink cl : links) {
-            DownloadLink link = cl.getDownloadLink();
-            switch (link.getUrlProtection()) {
-            case PROTECTED_CONTAINER:
-            case PROTECTED_DECRYPTER:
-            case PROTECTED_INTERNAL_URL:
-                if (link.hasBrowserUrl()) {
-                    setEnabled(true);
-                    return;
-                }
-                break;
-            default:
-                setEnabled(true);
-                return;
-            }
+            setEnabled(true);
         }
 
         setEnabled(false);

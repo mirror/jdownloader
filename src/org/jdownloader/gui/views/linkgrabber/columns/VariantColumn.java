@@ -106,7 +106,7 @@ public class VariantColumn extends ExtComboColumn<AbstractNode, LinkVariant> {
                     private CrawledLink cl;
 
                     {
-                        final DownloadLink dllink = new DownloadLink(link.getDownloadLink().getDefaultPlugin(), link.getDownloadLink().getView().getDisplayName(), link.getDownloadLink().getHost(), link.getDownloadLink().getDownloadURL(), true);
+                        final DownloadLink dllink = new DownloadLink(link.getDownloadLink().getDefaultPlugin(), link.getDownloadLink().getView().getDisplayName(), link.getDownloadLink().getHost(), link.getDownloadLink().getPluginPattern(), true);
                         dllink.setProperties(link.getDownloadLink().getProperties());
                         dllink.setProperty("DUMMY", true);
                         cl = new CrawledLink(dllink);
