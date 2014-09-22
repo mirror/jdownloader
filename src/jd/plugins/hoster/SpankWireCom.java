@@ -54,6 +54,11 @@ public class SpankWireCom extends PluginForHost {
     public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws IOException, PluginException {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
+        br.setCookie("http://spankwire.com/", "performance_timing", "video");
+        br.setCookie("http://spankwire.com/", "Tablet_False", "");
+        br.setCookie("http://spankwire.com/", "init", "Straight^^false^false^^None");
+        br.setCookie("http://spankwire.com/", "adultd", "1");
+
         br.getPage(downloadLink.getDownloadURL());
         // Invalid link
         if (br.getURL().equals("http://www.spankwire.com/") || br.containsHTML("removedCopyright\\.jpg\"") || br.containsHTML("removedTOS\\.jpg\"")) {
@@ -73,7 +78,7 @@ public class SpankWireCom extends PluginForHost {
             if (filename == null) {
                 filename = br.getRegex("<title>(.*?) \\- Spankwire\\.com</title>").getMatch(0);
                 if (filename == null) {
-                    filename = br.getRegex("<meta name=\"Description\" content=\"(.*?)\"").getMatch(0);
+                    filename = br.getRegex("<meta name=\"Description\" content=\"(.*?) on Spankwire now\\!").getMatch(0);
                 }
             }
         } else {
@@ -133,10 +138,10 @@ public class SpankWireCom extends PluginForHost {
     }
 
     private String finddllink() {
-        final String[] qualities = { "720p", "480p", "240p", "180p" };
+        final String[] qualities = { "720", "480", "240", "180" };
         String dllink = null;
         for (final String quality : qualities) {
-            dllink = br.getRegex("flashvars\\.quality_" + quality + " = \"(http[^<>\"]*?)\"").getMatch(0);
+            dllink = br.getRegex("playerData.cdnPath" + quality + " = \"(http[^<>\"]*?)\"").getMatch(0);
             if (dllink != null) {
                 break;
             }

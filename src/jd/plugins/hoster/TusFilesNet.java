@@ -98,6 +98,8 @@ public class TusFilesNet extends PluginForHost {
     private final boolean              waitTimeSkipableKeyCaptcha   = false;
     private final boolean              captchaSkipableSolveMedia    = false;
 
+    private static final int           ACCOUNT_PREMIUM_MAXDOWNLOADS = 10;
+
     // Connection Management
     // note: CAN NOT be negative or zero! (ie. -1 or 0) Otherwise math sections fail. .:. use [1-20]
     private static final AtomicInteger totalMaxSimultanFreeDownload = new AtomicInteger(20);
@@ -118,7 +120,7 @@ public class TusFilesNet extends PluginForHost {
             directlinkproperty = "freelink2";
         } else if (account != null && !account.getBooleanProperty("free")) {
             // prem account
-            chunks = -10; // tested
+            chunks = 1; // max total cons = 10
             resumes = true;
             acctype = "Premium Account";
             directlinkproperty = "premlink";
@@ -128,19 +130,6 @@ public class TusFilesNet extends PluginForHost {
             resumes = true;
             acctype = "Non Account";
             directlinkproperty = "freelink";
-        }
-    }
-
-    private boolean allowsConcurrent(final Account account) {
-        if (account != null && account.getBooleanProperty("free")) {
-            // free account
-            return false;
-        } else if (account != null && !account.getBooleanProperty("free")) {
-            // prem account
-            return true;
-        } else {
-            // non account
-            return false;
         }
     }
 
@@ -169,6 +158,7 @@ public class TusFilesNet extends PluginForHost {
         super(wrapper);
         setConfigElements();
         this.enablePremium(COOKIE_HOST + "/premium.html");
+        this.setStartIntervall(3 * 1000);
     }
 
     /**
@@ -504,8 +494,6 @@ public class TusFilesNet extends PluginForHost {
         if (!inValidate(passCode)) {
             downloadLink.setProperty("pass", passCode);
         }
-        // Process usedHost within hostMap. We do it here so that we can probe if slots are already used before openDownload.
-        controlHost(account, downloadLink, true);
         logger.info("Final downloadlink = " + dllink + " starting the download...");
         try {
             dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, resumes, chunks);
@@ -514,8 +502,6 @@ public class TusFilesNet extends PluginForHost {
 
             // dump the saved host from directlinkproperty
             downloadLink.setProperty(directlinkproperty, Property.NULL);
-            // remove usedHost slot from hostMap
-            controlHost(account, downloadLink, false);
             logger.warning("DNS issue has occured!");
             e.printStackTrace();
             // int value of plugin property, as core error in current JD2 prevents proper retry handling.
@@ -533,8 +519,6 @@ public class TusFilesNet extends PluginForHost {
         if (dl.getConnection().getContentType().contains("html")) {
             if (dl.getConnection().getResponseCode() == 503 && br.getHttpConnection().getHeaderField("server") != null && br.getHttpConnection().getHeaderField("server").toLowerCase(Locale.ENGLISH).contains("nginx")) {
                 controlSimHost(account);
-                controlHost(account, downloadLink, false);
-
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Service unavailable. Try again later.", 15 * 60 * 1000l);
             } else {
                 logger.warning("The final dllink seems not to be a file!");
@@ -554,8 +538,6 @@ public class TusFilesNet extends PluginForHost {
                 // start the dl
                 dl.startDownload();
             } finally {
-                // remove usedHost slot from hostMap
-                controlHost(account, downloadLink, false);
                 // remove download slot
                 controlSlot(-1, account);
             }
@@ -882,7 +864,7 @@ public class TusFilesNet extends PluginForHost {
             } else {
                 expire = expireD;
             }
-            account.setProperty("totalMaxSim", 20);
+            account.setProperty("totalMaxSim", ACCOUNT_PREMIUM_MAXDOWNLOADS);
             ai.setValidUntil(expire);
             ai.setStatus("Premium User");
         }
@@ -1012,8 +994,6 @@ public class TusFilesNet extends PluginForHost {
             if (!inValidate(passCode)) {
                 downloadLink.setProperty("pass", passCode);
             }
-            // Process usedHost within hostMap. We do it here so that we can probe if slots are already used before openDownload.
-            controlHost(account, downloadLink, true);
             logger.info("Final downloadlink = " + dllink + " starting the download...");
             // Try catch required otherwise plugin logic wont work as intended. Also prevents infinite loops when dns record is missing.
             try {
@@ -1021,8 +1001,6 @@ public class TusFilesNet extends PluginForHost {
             } catch (UnknownHostException e) {
                 // dump the saved host from directlinkproperty
                 downloadLink.setProperty(directlinkproperty, Property.NULL);
-                // remove usedHost slot from hostMap
-                controlHost(account, downloadLink, false);
                 logger.warning("DNS issue has occured!");
                 e.printStackTrace();
                 // int value of plugin property, as core error in current JD2 prevents proper retry handling.
@@ -1040,8 +1018,6 @@ public class TusFilesNet extends PluginForHost {
             if (dl.getConnection().getContentType().contains("html")) {
                 if (dl.getConnection().getResponseCode() == 503 && br.getHttpConnection().getHeaderField("server") != null && br.getHttpConnection().getHeaderField("server").toLowerCase(Locale.ENGLISH).contains("nginx")) {
                     controlSimHost(account);
-                    controlHost(account, downloadLink, false);
-
                     throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Service unavailable. Try again later.", 15 * 60 * 1000l);
                 } else {
                     logger.warning("The final dllink seems not to be a file!");
@@ -1061,8 +1037,6 @@ public class TusFilesNet extends PluginForHost {
                     // start the dl
                     dl.startDownload();
                 } finally {
-                    // remove usedHost slot from hostMap
-                    controlHost(account, downloadLink, false);
                     // remove download slot
                     controlSlot(-1, account);
                 }
@@ -1698,113 +1672,6 @@ public class TusFilesNet extends PluginForHost {
     }
 
     /**
-     * This matches dllink against an array of used 'host' servers. Use this when site have multiple download servers and they allow x
-     * connections to ip/host server. Currently JD allows a global connection controller and doesn't allow for handling of different
-     * hosts/IP setup. This will help with those situations by allowing more connection when possible.
-     *
-     * @param Account
-     *            Account that's been used, can be null
-     * @param DownloadLink
-     * @param action
-     *            To add or remove slot, true == adds, false == removes
-     * @throws Exception
-     * */
-    private void controlHost(final Account account, final DownloadLink downloadLink, final boolean action) throws Exception {
-        synchronized (CTRLLOCK) {
-            // xfileshare valid links are either https://((sub.)?domain|IP)(:port)?/blah
-            usedHost = new Regex(dllink, "https?://([^/\\:]+)").getMatch(0);
-            if (inValidate(dllink) || usedHost == null) {
-                if (inValidate(dllink)) {
-                    logger.warning("Invalid URL given to controlHost");
-                } else {
-                    logger.warning("Regex on usedHost failed, Please report this to JDownloader Development Team");
-                }
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            }
-
-            // save finallink and use it for later, this script can determine if it's usable at a later stage. (more for dev purposes)
-            downloadLink.setProperty(directlinkproperty, dllink);
-
-            // place account into a place holder, for later references;
-            Account accHolder = account;
-
-            // allows concurrent logic
-            boolean thisAccount = allowsConcurrent(account);
-            boolean continu = true;
-            if (!hostMap.isEmpty()) {
-                // compare stored values within hashmap, determine if they allow concurrent with current account download request!
-                for (Entry<Account, HashMap<String, Integer>> holder : hostMap.entrySet()) {
-                    if (!allowsConcurrent(holder.getKey())) {
-                        continu = false;
-                    }
-                }
-                if (thisAccount && continu) {
-                    // current account allows concurrent
-                    // hostmap entries c
-                }
-
-            }
-
-            String user = null;
-            Integer simHost;
-            if (accHolder != null) {
-                user = accHolder.getUser();
-                if (accHolder.getBooleanProperty("free")) {
-                    // free account
-                    simHost = maxFreeAccSimDlPerHost.get();
-                } else {
-                    // normal account
-                    simHost = maxPremAccSimDlPerHost.get();
-                }
-            } else {
-                user = "Guest";
-                simHost = maxNonAccSimDlPerHost.get();
-            }
-            user = user + " @ " + acctype;
-
-            if (!action) {
-                // download finished (completed, failed, etc), check for value and remove a value
-                Integer usedSlots = getHashedHashedValue(account);
-                if (usedSlots == null) {
-                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                }
-                setHashedHashKeyValue(account, -1);
-                if (usedSlots.equals(1)) {
-                    logger.info("controlHost = " + user + " -> " + usedHost + " :: No longer used!");
-                } else {
-                    logger.info("controlHost = " + user + " -> " + usedHost + " :: " + getHashedHashedValue(account) + " simulatious connection(s)");
-                }
-            } else {
-                // New download started, check finallink host against hostMap values && max(Free|Prem)SimDlHost!
-
-                /*
-                 * max(Free|Prem)SimDlHost prevents more downloads from starting on a given host! At least until one of the previous
-                 * downloads finishes. This is best practice otherwise you have to use some crude system of waits, but you have no control
-                 * over to reset the count. Highly dependent on how fast or slow the users connections is.
-                 */
-                if (isHashedHashedKey(account, usedHost)) {
-                    Integer usedSlots = getHashedHashedValue(account);
-                    if (usedSlots == null) {
-                        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                    }
-                    if (!usedSlots.equals(simHost)) {
-                        setHashedHashKeyValue(account, 1);
-                        logger.info("controlHost = " + user + " -> " + usedHost + " :: " + getHashedHashedValue(account) + " simulatious connection(s)");
-                    } else {
-                        logger.info("controlHost = " + user + " -> " + usedHost + " :: Too many concurrent connectons. We will try again when next possible.");
-                        controlSlot(-1, accHolder);
-                        throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Too many concurrent connectons. We will try again when next possible.", 10 * 1000);
-                    }
-                } else {
-                    // virgin download for given usedHost.
-                    setHashedHashKeyValue(account, 1);
-                    logger.info("controlHost = " + user + " -> " + usedHost + " :: " + getHashedHashedValue(account) + " simulatious connection(s)");
-                }
-            }
-        }
-    }
-
-    /**
      * Sets Key and Values to respective Account stored within hostMap
      *
      * @param account
@@ -1820,9 +1687,13 @@ public class TusFilesNet extends PluginForHost {
         if (!hostMap.isEmpty()) {
             // load hostMap within holder if not empty
             holder = hostMap.get(account);
-            // remove old hashMap reference, prevents creating duplicate entry of 'account' when returning result.
-            if (holder.containsKey(account)) {
-                hostMap.remove(account);
+            try {
+                // remove old hashMap reference, prevents creating duplicate entry of 'account' when returning result.
+                if (holder.containsKey(account)) {
+                    hostMap.remove(account);
+                }
+            } catch (final Throwable e) {
+                logger.warning("Caught XFS3 bug");
             }
         }
         String currentKey = getHashedHashedKey(account);
