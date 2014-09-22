@@ -427,6 +427,8 @@ public class FilePostCom extends PluginForHost {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
         }
+        /* Wait some more */
+        this.sleep(3 * 1000, downloadLink);
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 1);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
@@ -440,6 +442,8 @@ public class FilePostCom extends PluginForHost {
                 logger.warning("Unhandled error: " + cookieError);
             } else if (br.containsHTML(">403 Forbidden<")) {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error", 60 * 60 * 1000);
+            } else if (br.getURL().equals("http://filepost.com/")) {
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Unknown server error, redirect to mainpage", 5 * 60 * 1000l);
             }
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
