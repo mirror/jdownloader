@@ -104,15 +104,25 @@ public class BrowserAdapter {
                 dl.getConnection().disconnect();
             } catch (Throwable ignore) {
             }
-            // Bitdefender handling
-            if (dl.getConnection() != null && dl.getConnection().getResponseCode() == 403 && "Blocked by Bitdefender".equalsIgnoreCase(dl.getConnection().getResponseMessage())) {
-                throw new PluginException(LinkStatus.ERROR_FATAL, "Blocked by Bitdefender");
+            if (dl.getConnection() != null) {
+                if (dl.getConnection().getResponseCode() == 403 && "Blocked by Bitdefender".equalsIgnoreCase(dl.getConnection().getResponseMessage())) {
+                    // Bitdefender handling
+                    throw new PluginException(LinkStatus.ERROR_FATAL, "Blocked by Bitdefender");
+                } else if (dl.getConnection().getResponseCode() == 403 && "Blocked by ESET Security".equalsIgnoreCase(dl.getConnection().getResponseMessage())) {
+                    // Eset
+                    throw new PluginException(LinkStatus.ERROR_FATAL, "Blocked by ESET");
+                }
             }
             throw forward;
         }
-        // Bitdefender handling
-        if (dl.getConnection() != null && dl.getConnection().getResponseCode() == 403 && "Blocked by Bitdefender".equalsIgnoreCase(dl.getConnection().getResponseMessage())) {
-            throw new PluginException(LinkStatus.ERROR_FATAL, "Blocked by Bitdefender");
+        if (dl.getConnection() != null) {
+            if (dl.getConnection().getResponseCode() == 403 && "Blocked by Bitdefender".equalsIgnoreCase(dl.getConnection().getResponseMessage())) {
+                // Bitdefender handling
+                throw new PluginException(LinkStatus.ERROR_FATAL, "Blocked by Bitdefender");
+            } else if (dl.getConnection().getResponseCode() == 403 && "Blocked by ESET Security".equalsIgnoreCase(dl.getConnection().getResponseMessage())) {
+                // Eset
+                throw new PluginException(LinkStatus.ERROR_FATAL, "Blocked by ESET");
+            }
         }
         return dl;
     }
