@@ -42,11 +42,7 @@ public class AbelhasPtDecrypter extends PluginForDecrypt {
     @Override
     protected DownloadLink createDownloadlink(String link) {
         DownloadLink ret = super.createDownloadlink(link);
-        try {
-            ret.setUrlProtection(org.jdownloader.controlling.UrlProtection.PROTECTED_INTERNAL_URL);
-        } catch (Throwable e) {
-            // jd09
-        }
+
         return ret;
     }
 
@@ -57,6 +53,11 @@ public class AbelhasPtDecrypter extends PluginForDecrypt {
             br.getPage(parameter);
         } catch (final BrowserException e) {
             final DownloadLink dl = createDownloadlink("http://abelhasdecrypted.pt/" + System.currentTimeMillis() + new Random().nextInt(1000000));
+            try {
+                dl.setContentUrl(param.getCryptedUrl());
+            } catch (Throwable e1) {
+                // jd09
+            }
             dl.setFinalFileName(parameter);
             dl.setProperty("mainlink", parameter);
             dl.setProperty("offline", true);
@@ -77,6 +78,16 @@ public class AbelhasPtDecrypter extends PluginForDecrypt {
         /* empty folder | no folder */
         if (br.containsHTML("class=\"noFile\"") || !br.containsHTML("name=\"FolderId\"|id=\"fileDetails\"")) {
             final DownloadLink dl = createDownloadlink("http://abelhasdecrypted.pt/" + System.currentTimeMillis() + new Random().nextInt(1000000));
+            try {
+                dl.setContentUrl(parameter);
+            } catch (Throwable e1) {
+                // jd09
+            }
+            try {
+                dl.setContentUrl(param.getCryptedUrl());
+            } catch (Throwable e1) {
+                // jd09
+            }
             dl.setFinalFileName(parameter);
             dl.setProperty("mainlink", parameter);
             dl.setProperty("offline", true);
@@ -85,6 +96,11 @@ public class AbelhasPtDecrypter extends PluginForDecrypt {
         } else if (br.containsHTML("ico/adult_medium\\.png\"")) {
             /* Adult link */
             final DownloadLink dl = createDownloadlink("http://abelhasdecrypted.pt/" + System.currentTimeMillis() + new Random().nextInt(1000000));
+            try {
+                dl.setContentUrl(param.getCryptedUrl());
+            } catch (Throwable e1) {
+                // jd09
+            }
             dl.setFinalFileName(parameter);
             dl.setProperty("mainlink", parameter);
             dl.setProperty("offline", true);
@@ -93,6 +109,11 @@ public class AbelhasPtDecrypter extends PluginForDecrypt {
         } else if (br.getURL().length() <= 30) {
             /* Link redirected to mainpage or category page --> Offline */
             final DownloadLink dl = createDownloadlink("http://abelhasdecrypted.pt/" + System.currentTimeMillis() + new Random().nextInt(1000000));
+            try {
+                dl.setContentUrl(param.getCryptedUrl());
+            } catch (Throwable e1) {
+                // jd09
+            }
             dl.setFinalFileName(parameter);
             dl.setProperty("mainlink", parameter);
             dl.setProperty("offline", true);
@@ -120,7 +141,11 @@ public class AbelhasPtDecrypter extends PluginForDecrypt {
             }
             filename = Encoding.htmlDecode(filename).trim();
             final DownloadLink dl = createDownloadlink("http://abelhasdecrypted.pt/" + System.currentTimeMillis() + new Random().nextInt(1000000));
-
+            try {
+                dl.setContentUrl(param.getCryptedUrl());
+            } catch (Throwable e1) {
+                // jd09
+            }
             dl.setProperty("plain_filename", filename);
             dl.setProperty("plain_filesize", filesize);
             dl.setProperty("plain_fid", fid);
@@ -194,13 +219,22 @@ public class AbelhasPtDecrypter extends PluginForDecrypt {
                     filename = Encoding.htmlDecode(filename).trim() + Encoding.htmlDecode(ext).trim();
 
                     final DownloadLink dl = createDownloadlink("http://abelhasdecrypted.pt/" + System.currentTimeMillis() + new Random().nextInt(1000000));
-
+                    try {
+                        dl.setContentUrl(mainlink);
+                        dl.setContainerUrl(param.getCryptedUrl());
+                    } catch (Throwable e1) {
+                        // jd09
+                    }
                     dl.setProperty("plain_filename", filename);
                     dl.setProperty("plain_filesize", filesize);
                     dl.setProperty("plain_fid", fid);
                     dl.setProperty("mainlink", mainlink);
                     dl.setProperty("LINKDUPEID", fid + filename);
-                    dl.setBrowserUrl(mainlink);
+                    try {/* JD2 only */
+                        dl.setContentUrl(mainlink);
+                    } catch (Throwable e) {/* Stable */
+                        dl.setBrowserUrl(mainlink);
+                    }
 
                     dl.setName(filename);
                     dl.setDownloadSize(SizeFormatter.getSize(filesize));

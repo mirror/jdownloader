@@ -950,7 +950,7 @@ public class TbCm extends PluginForDecrypt {
                     // not sure about streaming links and '"youtubeJD" it never had it before... -raz
                     final DownloadLink thislink = this.createDownloadlink(info[1]);
                     thislink.setProperty("ALLOW_DUPE", true);
-                    thislink.setBrowserUrl(info[2]);
+                   try{/*JD2 only*/thislink.setContentUrl(info[2]);}catch(Throwable e){/*Stable*/ thislink.setBrowserUrl(info[2]);}
                     thislink.setFinalFileName(info[0]);
                     thislink.setProperty("convertto", info[3]);
 
@@ -1398,7 +1398,7 @@ public class TbCm extends PluginForDecrypt {
                         }
                         DownloadLink dlink = this.createDownloadlink("youtubeJD" + link);
                         dlink.setProperty("ALLOW_DUPE", true);
-                        dlink.setBrowserUrl(currentVideoUrl);
+                       try{/*JD2 only*/dlink.setContentUrl(currentVideoUrl);}catch(Throwable e){/*Stable*/ dlink.setBrowserUrl(currentVideoUrl);}
 
                         /** FILENAME PART3 START */
                         String subtitleName = formattedFilename;
@@ -1502,7 +1502,7 @@ public class TbCm extends PluginForDecrypt {
             }
         }
         thislink.setAvailable(true);
-        thislink.setBrowserUrl(currentVideoURL);
+       try{/*JD2 only*/thislink.setContentUrl(currentVideoURL);}catch(Throwable e){/*Stable*/ thislink.setBrowserUrl(currentVideoURL);}
         /** FILENAME PART2 START */
         String currentFilename = formattedFilename;
         currentFilename = currentFilename.replace("*quality*", desc);
@@ -1584,7 +1584,7 @@ public class TbCm extends PluginForDecrypt {
         DownloadLink dlink = this.createDownloadlink("youtubeJD" + link);
         dlink.setProperty("ALLOW_DUPE", true);
         filePackage.add(dlink);
-        dlink.setBrowserUrl(browserurl);
+       try{/*JD2 only*/dlink.setContentUrl(browserurl);}catch(Throwable e){/*Stable*/ dlink.setBrowserUrl(browserurl);}
 
         dlink.setFinalFileName(name);
         dlink.setProperty("name", name);

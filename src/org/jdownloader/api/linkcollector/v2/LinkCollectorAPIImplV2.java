@@ -599,7 +599,7 @@ public class LinkCollectorAPIImplV2 implements LinkCollectorAPIV2 {
                 }
 
                 // create new downloadlink
-                final DownloadLink dllink = new DownloadLink(link.getDownloadLink().getDefaultPlugin(), link.getDownloadLink().getView().getDisplayName(), link.getDownloadLink().getHost(), link.getDownloadLink().getDownloadURL(), true);
+                final DownloadLink dllink = new DownloadLink(link.getDownloadLink().getDefaultPlugin(), link.getDownloadLink().getView().getDisplayName(), link.getDownloadLink().getHost(), link.getDownloadLink().getPluginPattern(), true);
                 dllink.setProperties(link.getDownloadLink().getProperties());
 
                 // create crawledlink

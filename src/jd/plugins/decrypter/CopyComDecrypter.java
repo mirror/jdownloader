@@ -43,22 +43,16 @@ public class CopyComDecrypter extends PluginForDecrypt {
 
     private static final String  VALID_URL      = "https?://(www\\.)?copy\\.com/s/[A-Za-z0-9]+(/[^<>\"]+)?";
 
-    @Override
-    protected DownloadLink createDownloadlink(String link) {
-        DownloadLink ret = super.createDownloadlink(link);
-        try {
-            ret.setUrlProtection(org.jdownloader.controlling.UrlProtection.PROTECTED_INTERNAL_URL);
-        } catch (Throwable e) {
-            // jd09
-        }
-        return ret;
-    }
-
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         br.setFollowRedirects(false);
         String parameter = Encoding.htmlDecode(param.toString());
         final DownloadLink offline = createDownloadlink("http://copydecrypted.com/" + System.currentTimeMillis() + new Random().nextInt(100000));
+        try {
+            offline.setContentUrl(parameter);
+        } catch (Throwable e) {
+
+        }
         offline.setAvailable(false);
         offline.setProperty("offline", true);
         offline.setName(new Regex(parameter, "copy\\.com/(.+)").getMatch(0));
@@ -74,6 +68,7 @@ public class CopyComDecrypter extends PluginForDecrypt {
                 if (con.isContentDisposition()) {
                     // ddlink!
                     final DownloadLink dl = createDownloadlink(br.getURL().replace("copy.com", "copydecrypted.com"));
+
                     if (dl.getFinalFileName() == null) {
                         dl.setFinalFileName(getFileNameFromHeader(con));
                     }
@@ -140,6 +135,7 @@ public class CopyComDecrypter extends PluginForDecrypt {
                 /* Maybe invalid subfolder that leads to the root --> re-add root */
                 if (br.containsHTML("\"children\":\\[\\]\\},")) {
                     final String public_root = "https://www.copy.com/s/" + new Regex(parameter, "/s/([A-Za-z0-9]+)").getMatch(0) + "/Public";
+
                     decryptedLinks.add(createDownloadlink(public_root));
                     return decryptedLinks;
                 }
@@ -158,6 +154,9 @@ public class CopyComDecrypter extends PluginForDecrypt {
         }
         for (final String singleinfo : links) {
             String name = getJson("name", singleinfo);
+            if (additionalPath.endsWith("/" + Encoding.urlEncode(name))) {
+
+            }
             if (name == null) {
                 logger.warning("Decrypter broken for link: " + parameter);
                 return null;
@@ -165,16 +164,22 @@ public class CopyComDecrypter extends PluginForDecrypt {
             name = Encoding.htmlDecode(name.trim());
             if (!"file".equals(getJson("type", singleinfo))) {
                 final DownloadLink dl = createDownloadlink(parameter + "/" + name);
+
                 decryptedLinks.add(dl);
             } else {
                 final DownloadLink dl = createDownloadlink("http://copydecrypted.com/" + System.currentTimeMillis() + new Random().nextInt(100000));
                 final String filesize = getJson("size", singleinfo);
                 String url = getJson("url", singleinfo);
                 if (filesize == null || url == null) {
-                    logger.warning("Decrypter broken for link: " + parameter);
+                    logger.warning("Decrypter broken for ligetContentUrl:https://copy.com/ZPRER9vmqF93/DSC00243.JPGnk: " + parameter);
                     return null;
                 }
                 url = url.replace("\\", "");
+                try {
+                    dl.setContentUrl(url);
+                } catch (Throwable e) {
+
+                }
                 dl.setDownloadSize(Long.parseLong(filesize));
                 dl.setFinalFileName(name);
                 dl.setProperty("plain_name", name);

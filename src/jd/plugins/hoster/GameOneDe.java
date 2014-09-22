@@ -16,31 +16,19 @@
 
 package jd.plugins.hoster;
 
-import java.util.ArrayList;
-
 import jd.PluginWrapper;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
-import jd.plugins.FilePackage;
 import jd.plugins.HostPlugin;
+import jd.plugins.LinkStatus;
+import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "gameone.de" }, urls = { "gameonertmp://.+" }, flags = { 32 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "gameone.de" }, urls = { "gameonertmpe?://.+" }, flags = { 32 })
 public class GameOneDe extends PluginForHost {
 
     public GameOneDe(final PluginWrapper wrapper) {
         super(wrapper);
-    }
-
-    @Override
-    public ArrayList<DownloadLink> getDownloadLinks(String data, FilePackage fp) {
-        ArrayList<DownloadLink> ret = super.getDownloadLinks(data, fp);
-        try {
-            org.jdownloader.controlling.UrlProtection.PROTECTED_INTERNAL_URL.setTo(ret);
-        } catch (Throwable e) {
-            // jd09
-        }
-        return ret;
     }
 
     @Override
@@ -75,7 +63,10 @@ public class GameOneDe extends PluginForHost {
     }
 
     @Override
-    public AvailableStatus requestFileInformation(final DownloadLink downloadLink) {
+    public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws PluginException {
+        if (downloadLink.getDownloadURL().startsWith("gameonertmpe://")) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND, "RTMPE Video Streams are not supported");
+        }
         return AvailableStatus.TRUE;
     }
 

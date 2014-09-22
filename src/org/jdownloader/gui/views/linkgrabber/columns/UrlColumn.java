@@ -8,22 +8,27 @@ import java.awt.event.ActionEvent;
 import java.awt.event.FocusEvent;
 import java.awt.event.MouseEvent;
 
+import javax.swing.JLabel;
 import javax.swing.JPopupMenu;
 
 import jd.controlling.ClipboardMonitoring;
 import jd.controlling.linkcrawler.CrawledLink;
 import jd.controlling.linkcrawler.CrawledPackage;
 import jd.controlling.packagecontroller.AbstractNode;
+import jd.gui.swing.jdgui.JDGui;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 
 import org.appwork.swing.exttable.columns.ExtTextColumn;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.os.CrossSystem;
+import org.appwork.utils.Application;
+import org.appwork.utils.swing.SwingUtils;
 import org.jdownloader.actions.AppAction;
+import org.jdownloader.controlling.DefaultDownloadLinkViewImpl;
 import org.jdownloader.gui.IconKey;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.gui.views.downloads.columns.FileColumn;
+import org.jdownloader.images.AbstractIcon;
+import org.jdownloader.settings.UrlDisplayType;
 
 public class UrlColumn extends ExtTextColumn<AbstractNode> {
     /**
@@ -106,7 +111,7 @@ public class UrlColumn extends ExtTextColumn<AbstractNode> {
     @Override
     public boolean onDoubleClick(MouseEvent e, final AbstractNode value) {
         final int row = getModel().getTable().rowAtPoint(new Point(e.getX(), e.getY()));
-
+        JDGui.help(_GUI._.UrlColumn_onDoubleClick_help_title(), _GUI._.UrlColumn_onDoubleClick_help_msg(), new AbstractIcon(IconKey.ICON_URL, 32));
         final long timeSinceLastHide = System.currentTimeMillis() - lastHide;
         if (timeSinceLastHide < 250 && editing == value) {
             //
@@ -139,62 +144,63 @@ public class UrlColumn extends ExtTextColumn<AbstractNode> {
 
         try {
             final DownloadLink dlLink = getLink(editing);
-            popup.add(new AppAction() {
-                {
-                    setName(_GUI._.UrlColumn_onDoubleClick_object_copy(shorten(dlLink.getDownloadURL())));
-                    setIconKey(IconKey.ICON_COPY);
-
-                }
-
-                @Override
-                public void actionPerformed(ActionEvent e) {
-                    ClipboardMonitoring.getINSTANCE().setCurrentContent(dlLink.getDownloadURL());
-                }
-
-            });
-            popup.add(new AppAction() {
-                {
-                    setName(_GUI._.UrlColumn_onDoubleClick_object_open(shorten(dlLink.getDownloadURL())));
-                    setIconKey(IconKey.ICON_BROWSE);
-
-                }
-
-                @Override
-                public void actionPerformed(ActionEvent e) {
-
-                    CrossSystem.openURLOrShowMessage(dlLink.getDownloadURL());
-                }
-
-            });
-            if (!StringUtils.equals(dlLink.getDownloadURL(), dlLink.getBrowserUrl())) {
-                popup.add(new AppAction() {
-                    {
-                        setName(_GUI._.UrlColumn_onDoubleClick_object_copy_origin(shorten(dlLink.getBrowserUrl())));
-                        setIconKey(IconKey.ICON_COPY);
-
-                    }
-
-                    @Override
-                    public void actionPerformed(ActionEvent e) {
-                        ClipboardMonitoring.getINSTANCE().setCurrentContent(dlLink.getBrowserUrl());
-                    }
-
-                });
-                popup.add(new AppAction() {
-                    {
-                        setName(_GUI._.UrlColumn_onDoubleClick_object_open_origin(shorten(dlLink.getBrowserUrl())));
-                        setIconKey(IconKey.ICON_BROWSE);
-
-                    }
-
-                    @Override
-                    public void actionPerformed(ActionEvent e) {
-
-                        CrossSystem.openURLOrShowMessage(dlLink.getBrowserUrl());
-                    }
-
-                });
+            if (!Application.isJared(null)) {
+                popup.add(SwingUtils.toBold(new JLabel("Debug View. Jared Version does not show  Identifier, Plugin Pattern & Null Entries")));
             }
+            for (UrlDisplayType dt : DefaultDownloadLinkViewImpl.DISPLAY_URL_TYPE) {
+                if (dt == null) {
+                    continue;
+                }
+                add(popup, dt, DefaultDownloadLinkViewImpl.getUrlByType(dt, dlLink));
+
+            }
+            if (!Application.isJared(null)) {
+                add(popup, null, dlLink.getPluginPattern());
+            }
+
+            // popup.add(new AppAction() {
+            // {
+            // setName(_GUI._.UrlColumn_onDoubleClick_object_open(shorten(dlLink.getPluginPattern())));
+            // setIconKey(IconKey.ICON_BROWSE);
+            //
+            // }
+            //
+            // @Override
+            // public void actionPerformed(ActionEvent e) {
+            //
+            // CrossSystem.openURLOrShowMessage(dlLink.getPluginPattern());
+            // }
+            //
+            // });
+            // if (!StringUtils.equals(dlLink.getPluginPattern(), dlLink.getBrowserUrl())) {
+            // popup.add(new AppAction() {
+            // {
+            // setName(_GUI._.UrlColumn_onDoubleClick_object_copy_origin(shorten(dlLink.getBrowserUrl())));
+            // setIconKey(IconKey.ICON_COPY);
+            //
+            // }
+            //
+            // @Override
+            // public void actionPerformed(ActionEvent e) {
+            // ClipboardMonitoring.getINSTANCE().setCurrentContent(dlLink.getBrowserUrl());
+            // }
+            //
+            // });
+            // popup.add(new AppAction() {
+            // {
+            // setName(_GUI._.UrlColumn_onDoubleClick_object_open_origin(shorten(dlLink.getBrowserUrl())));
+            // setIconKey(IconKey.ICON_BROWSE);
+            //
+            // }
+            //
+            // @Override
+            // public void actionPerformed(ActionEvent e) {
+            //
+            // CrossSystem.openURLOrShowMessage(dlLink.getBrowserUrl());
+            // }
+            //
+            // });
+            // }
 
             final Rectangle bounds = getModel().getTable().getCellRect(row, getIndex(), true);
             final Dimension pref = popup.getPreferredSize();
@@ -206,6 +212,33 @@ public class UrlColumn extends ExtTextColumn<AbstractNode> {
         }
 
         return true;
+    }
+
+    private void add(JPopupMenu popup, final UrlDisplayType dt, final String string) {
+        if (string == null && Application.isJared(null)) {
+            return;
+        }
+        popup.add(new AppAction() {
+            {
+                if (Application.isJared(null)) {
+                    setName(_GUI._.UrlColumn_onDoubleClick_object_copy(shorten(string)));
+                } else if (dt == null) {
+                    setName(_GUI._.UrlColumn_onDoubleClick_object_copy("PLUGIN_PATTERN: " + string));
+                } else {
+
+                    setName(_GUI._.UrlColumn_onDoubleClick_object_copy(dt + ": " + string));
+                }
+
+                setIconKey(IconKey.ICON_COPY);
+
+            }
+
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                ClipboardMonitoring.getINSTANCE().setCurrentContent(string);
+            }
+
+        });
     }
 
     protected String shorten(String browserUrl) {
@@ -231,11 +264,11 @@ public class UrlColumn extends ExtTextColumn<AbstractNode> {
         } else if (value instanceof FilePackage) {
             return ((FilePackage) value).getView().getCommonSourceUrl();
         } else if (value instanceof CrawledLink) {
-            return ((CrawledLink) value).getDownloadLink().getView().getDownloadUrl();
+            return ((CrawledLink) value).getDownloadLink().getView().getDisplayUrl();
 
         } else if (value instanceof DownloadLink) {
 
-            return ((DownloadLink) value).getView().getDownloadUrl();
+            return ((DownloadLink) value).getView().getDisplayUrl();
         }
         return null;
     }

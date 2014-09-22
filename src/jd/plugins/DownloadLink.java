@@ -68,11 +68,13 @@ import org.jdownloader.plugins.SkipReason;
 /**
  * Hier werden alle notwendigen Informationen zu einem einzelnen Download festgehalten. Die Informationen werden dann in einer Tabelle
  * dargestellt
- *
+ * 
  * @author astaldo
  */
 public class DownloadLink extends Property implements Serializable, AbstractPackageChildrenNode<FilePackage>, CheckableLink {
 
+    private static final String URL_CONTAINER   = "URL_CONTAINER";
+    private static final String URL_CONTENT     = "URL_CONTENT";
     private static final String VARIANT_SUPPORT = "VARIANT_SUPPORT";
 
     public static enum AvailableStatus {
@@ -117,6 +119,8 @@ public class DownloadLink extends Property implements Serializable, AbstractPack
 
     private static final String                                 UNKNOWN_FILE_NAME                   = "unknownFileName";
     private static final String                                 PROPERTY_CHUNKS                     = "CHUNKS";
+    private static final String                                 URL_ORIGIN                          = "URL_ORIGIN";
+    private static final String                                 URL_REFERRER                        = "URL_REFERRER";
 
     private transient volatile AvailableStatus                  availableStatus                     = AvailableStatus.UNCHECKED;
 
@@ -161,7 +165,7 @@ public class DownloadLink extends Property implements Serializable, AbstractPack
     private String                                              finalFileName;
 
     /**
-     * /** Von hier soll der Download stattfinden
+     * Do not rename urlDownload. We need this field to restore old downloadlinks from the jd09 database
      */
     private String                                              urlDownload;
 
@@ -198,7 +202,7 @@ public class DownloadLink extends Property implements Serializable, AbstractPack
 
     /**
      * these properties will not be saved/restored
-     *
+     * 
      * @return
      */
     public Property getTempProperties() {
@@ -217,7 +221,7 @@ public class DownloadLink extends Property implements Serializable, AbstractPack
 
     /**
      * Erzeugt einen neuen DownloadLink
-     *
+     * 
      * @param plugin
      *            Das Plugins, das fuer diesen Download zustaendig ist
      * @param name
@@ -229,7 +233,7 @@ public class DownloadLink extends Property implements Serializable, AbstractPack
      * @param isEnabled
      *            Markiert diesen DownloadLink als aktiviert oder deaktiviert
      */
-    public DownloadLink(PluginForHost plugin, String name, String host, String urlDownload, boolean isEnabled) {
+    public DownloadLink(PluginForHost plugin, String name, String host, String pluginPattern, boolean isEnabled) {
         setDefaultPlugin(plugin);
         setView(new DefaultDownloadLinkViewImpl());
         if (name != null) {
@@ -240,8 +244,8 @@ public class DownloadLink extends Property implements Serializable, AbstractPack
         this.isEnabled = isEnabled;
         enabled.set(isEnabled);
         created = System.currentTimeMillis();
-        this.setUrlDownload(urlDownload);
-        if (plugin != null && this.getDownloadURL() != null) {
+        this.setPluginPattern(pluginPattern);
+        if (plugin != null && this.getPluginPattern() != null) {
             try {
                 plugin.correctDownloadLink(this);
             } catch (Throwable e) {
@@ -381,8 +385,8 @@ public class DownloadLink extends Property implements Serializable, AbstractPack
     }
 
     /**
-     *
-     *
+     * 
+     * 
      * @return use {@link #getView()} for external usage
      */
     @Deprecated
@@ -392,7 +396,7 @@ public class DownloadLink extends Property implements Serializable, AbstractPack
 
     /**
      * returns the approximate(live) amount of downloaded bytes
-     *
+     * 
      * @return Anzahl der heruntergeladenen Bytes
      * @deprecated use {@link #getView()} instead
      */
@@ -412,7 +416,7 @@ public class DownloadLink extends Property implements Serializable, AbstractPack
 
     /**
      * returns the exact amount of downloaded bytes (depends on DownloadInterface if this value is updated during download or at the end)
-     *
+     * 
      * @return
      */
     public long getDownloadCurrentRaw() {
@@ -425,7 +429,7 @@ public class DownloadLink extends Property implements Serializable, AbstractPack
 
     /**
      * Die Groesse der Datei
-     *
+     * 
      * @return Die Groesse der Datei
      * @deprecated use {@link #getView()} sintead
      */
@@ -439,7 +443,7 @@ public class DownloadLink extends Property implements Serializable, AbstractPack
 
     /**
      * Gibt die aktuelle Downloadgeschwindigkeit in bytes/sekunde zurueck
-     *
+     * 
      * @return Downloadgeschwindigkeit in bytes/sekunde
      * @deprecated use {@link #getView()}
      */
@@ -469,31 +473,127 @@ public class DownloadLink extends Property implements Serializable, AbstractPack
         return old;
     }
 
+    /**
+     * @deprecated Use #getPluginUrl() instead
+     * @return
+     */
+    @Deprecated
     public String getDownloadURL() {
+        return getPluginPattern();
+    }
+
+    /**
+     * Definition:<br>
+     * The url to the content. if we copy the content url and paste it back to jdownloader, we should get exactly the same download (if
+     * possible). This url should be a valid url for every browser as well. Try to append additional information as get parameters to define
+     * variants. http://svn.jdownloader.org/issues/51004
+     */
+    public String getContentUrl() {
+        return getStringProperty(URL_CONTENT);
+    }
+
+    public void setContentUrl(String url) {
+        if (StringUtils.equals(url, getContentUrl())) {
+            return;
+        }
+        setProperty(URL_CONTENT, url);
+        if (hasNotificationListener()) {
+            notifyChanges(AbstractNodeNotifier.NOTIFY.PROPERTY_CHANCE, new DownloadLinkProperty(this, DownloadLinkProperty.Property.URL_CONTENT, url));
+        }
+    }
+
+    /**
+     * Definition:<br>
+     * The nearest crawler url that does not equal the content url <br>
+     * http://svn.jdownloader.org/issues/51004
+     */
+    public String getContainerUrl() {
+        return getStringProperty(URL_CONTAINER);
+    }
+
+    public void setContainerUrl(String url) {
+        if (StringUtils.equals(url, getContainerUrl())) {
+            return;
+        }
+        setProperty(URL_CONTAINER, url);
+        if (hasNotificationListener()) {
+            notifyChanges(AbstractNodeNotifier.NOTIFY.PROPERTY_CHANCE, new DownloadLinkProperty(this, DownloadLinkProperty.Property.URL_CONTAINER, url));
+        }
+    }
+
+    /**
+     * Definition:<br>
+     * The origin Url. This is the url, that has been entered by the user.<br>
+     * http://svn.jdownloader.org/issues/51004
+     */
+    public String getOriginUrl() {
+        String ret = getStringProperty(URL_ORIGIN);
+        if (ret == null) {
+            return browserurl;
+        }
+        return ret;
+    }
+
+    public void setOriginUrl(String url) {
+        if (StringUtils.equals(url, getOriginUrl())) {
+            return;
+        }
+        setProperty(URL_ORIGIN, url);
+        if (hasNotificationListener()) {
+            notifyChanges(AbstractNodeNotifier.NOTIFY.PROPERTY_CHANCE, new DownloadLinkProperty(this, DownloadLinkProperty.Property.URL_ORIGIN, url));
+        }
+    }
+
+    /**
+     * Definition:<br>
+     * The Referrer Url. In some cases, like CNL, or copy and paste from the browser, we can access the currently loaded page in the
+     * browser. This can be considered as a kind of Referrer. IF available, we should store it here. http://svn.jdownloader.org/issues/51004
+     */
+    public String getReferrerUrl() {
+        return getStringProperty(URL_REFERRER);
+    }
+
+    public void setReferrerUrl(String url) {
+        if (StringUtils.equals(url, getReferrerUrl())) {
+            return;
+        }
+        setProperty(URL_REFERRER, url);
+        if (hasNotificationListener()) {
+            notifyChanges(AbstractNodeNotifier.NOTIFY.PROPERTY_CHANCE, new DownloadLinkProperty(this, DownloadLinkProperty.Property.URL_REFERRER, url));
+        }
+    }
+
+    /**
+     * {@link #setPluginPattern(String)} Definition:<br>
+     * the url or pattern that matches the plugins' regular expresssions. it is generally use by the plugin to download. The PluginPattern
+     * may be an invalid pseudo url, or event no valid url at all. http://svn.jdownloader.org/issues/51004
+     */
+    public String getPluginPattern() {
+
         return urlDownload;
     }
 
+    /**
+     * 
+     * @deprecated use {@link #getOriginUrl()} {@link #getContentUrl()} {@link #getContainerUrl()} {@link #getReferrerUrl()} instead
+     */
+    @Deprecated
     public String getBrowserUrl() {
         final String lBrowserUrl = browserurl;
         if (lBrowserUrl != null) {
             return lBrowserUrl;
         }
-        return getDownloadURL();
+        return getPluginPattern();
     }
 
+    @Deprecated
+    /**
+     * 
+     * @deprecated   {@link #setPluginPattern(String)},{@link #setContentUrl(String)}, {@link #setReferrerUrl(String)} or {@link #setOriginUrl(String)} instead
+     */
     public void setBrowserUrl(String url) {
-        if (StringUtils.equals(url, browserurl)) {
-            return;
-        }
-        browserurl = url;
+        setOriginUrl(url);
 
-        if (hasNotificationListener()) {
-            notifyChanges(AbstractNodeNotifier.NOTIFY.PROPERTY_CHANCE, new DownloadLinkProperty(this, DownloadLinkProperty.Property.BROWSER_URL, url));
-        }
-    }
-
-    public boolean hasBrowserUrl() {
-        return browserurl != null;
     }
 
     public String getFileOutput() {
@@ -548,7 +648,7 @@ public class DownloadLink extends Property implements Serializable, AbstractPack
 
     /**
      * Use this if we need a tmp filename for downloading. this tmp is internal! The gui will not display it.
-     *
+     * 
      * @since JD2
      */
     public String getInternalTmpFilename() {
@@ -562,7 +662,7 @@ public class DownloadLink extends Property implements Serializable, AbstractPack
 
     /**
      * Use this if we need a tmp filename for downloading. this tmp is internal! The gui will not display it.
-     *
+     * 
      * @since JD2
      */
     public String getInternalTmpFilenameAppend() {
@@ -576,7 +676,7 @@ public class DownloadLink extends Property implements Serializable, AbstractPack
 
     /**
      * Use this if we need a tmp filename for downloading. this tmp is internal! The gui will not display it.
-     *
+     * 
      * @since JD2
      */
     public void setInternalTmpFilename(String fileName) {
@@ -591,7 +691,7 @@ public class DownloadLink extends Property implements Serializable, AbstractPack
 
     /**
      * Use this if we need a tmp filename for downloading. this tmp is internal! The gui will not display it.
-     *
+     * 
      * @since JD2
      */
     public void setInternalTmpFilenameAppend(String fileName) {
@@ -606,7 +706,7 @@ public class DownloadLink extends Property implements Serializable, AbstractPack
 
     /**
      * return the FilePackage that contains this DownloadLink, if none is set it will return defaultFilePackage
-     *
+     * 
      * @return
      */
     public FilePackage getFilePackage() {
@@ -619,7 +719,7 @@ public class DownloadLink extends Property implements Serializable, AbstractPack
 
     /**
      * Gibt den Hoster dieses Links azurueck.
-     *
+     * 
      * @return Der Hoster, auf dem dieser Link verweist
      */
     public String getHost() {
@@ -667,14 +767,14 @@ public class DownloadLink extends Property implements Serializable, AbstractPack
     }
 
     /**
-     *
-     *
+     * 
+     * 
      * priority of returned fileName<br />
      * 0.) tmpAsynchRenameFilename (e.g. renamed in downloadlist)<br />
      * 1.) forcedFileName (eg manually set)<br />
      * 2.) finalFileName (eg set by plugin where the final is 100% safe, eg API)<br />
      * 3.) unsafeFileName (eg set by plugin when no api is available, or no filename provided)<br />
-     *
+     * 
      * @param ignoreUnsafe
      * @param ignoreForcedFilename
      *            TODO
@@ -708,7 +808,7 @@ public class DownloadLink extends Property implements Serializable, AbstractPack
                 setCachedName(ignoreUnsafe, ignoreForcedFilename, ret);
                 return ret;
             }
-            final String url = this.getDownloadURL();
+            final String url = this.getPluginPattern();
             if (StringUtils.isNotEmpty(url)) {
                 final String urlName = Plugin.extractFileNameFromURL(url);
                 if (StringUtils.isNotEmpty(urlName)) {
@@ -784,7 +884,7 @@ public class DownloadLink extends Property implements Serializable, AbstractPack
 
     /**
      * returns fileName set by plugin (setFinalFileName)
-     *
+     * 
      * @return
      */
     public String getNameSetbyPlugin() {
@@ -797,7 +897,7 @@ public class DownloadLink extends Property implements Serializable, AbstractPack
 
     /**
      * Liefert das Plugin zurueck, dass diesen DownloadLink handhabt
-     *
+     * 
      * @return Das Plugin
      */
     public PluginForHost getDefaultPlugin() {
@@ -824,7 +924,7 @@ public class DownloadLink extends Property implements Serializable, AbstractPack
     /**
      * Gibt den Finalen Downloadnamen zurueck. Wird null zurueckgegeben, so wird der dateiname von den jeweiligen plugins automatisch
      * ermittelt.
-     *
+     * 
      * @return Statischer Dateiname
      */
     public String getFinalFileName() {
@@ -852,14 +952,14 @@ public class DownloadLink extends Property implements Serializable, AbstractPack
     public String getLinkID() {
         final String linkID = getSetLinkID();
         if (StringUtils.isEmpty(linkID)) {
-            return getDownloadURL();
+            return getPluginPattern();
         }
         return linkID;
     }
 
     /**
      * Sets DownloadLinks Unquie ID
-     *
+     * 
      * @param id
      * @since JD2
      */
@@ -883,7 +983,7 @@ public class DownloadLink extends Property implements Serializable, AbstractPack
 
     /**
      * Returns if the downloadLInk is available
-     *
+     * 
      * @return true/false
      */
     public boolean isAvailable() {
@@ -1013,7 +1113,7 @@ public class DownloadLink extends Property implements Serializable, AbstractPack
 
     /**
      * do not use this method, only kept for compatibility reasons and some plugins need it
-     *
+     * 
      * @param is
      */
     @Deprecated
@@ -1023,10 +1123,10 @@ public class DownloadLink extends Property implements Serializable, AbstractPack
 
     /**
      * Setzt die Anzahl der heruntergeladenen Bytes fest und aktualisiert die Fortschrittsanzeige
-     *
+     * 
      * @param downloadedCurrent
      *            Anzahl der heruntergeladenen Bytes
-     *
+     * 
      */
     public void setDownloadCurrent(long downloadedCurrent) {
         if (getDownloadCurrentRaw() == downloadedCurrent) {
@@ -1049,7 +1149,7 @@ public class DownloadLink extends Property implements Serializable, AbstractPack
 
     /**
      * do not call this method. Only The Downloadwatchdog queue is allowed to call this method
-     *
+     * 
      * @param downloadLinkController
      */
     public void setDownloadLinkController(SingleDownloadController downloadLinkController) {
@@ -1068,7 +1168,7 @@ public class DownloadLink extends Property implements Serializable, AbstractPack
 
     /**
      * Setzt die Groesse der herunterzuladenden Datei
-     *
+     * 
      * @param downloadMax
      *            Die Groesse der Datei
      */
@@ -1084,7 +1184,7 @@ public class DownloadLink extends Property implements Serializable, AbstractPack
 
     /**
      * Zeigt, ob dieser Download aktiviert ist
-     *
+     * 
      * @return wahr, falls dieser DownloadLink aktiviert ist
      */
     public boolean isEnabled() {
@@ -1111,7 +1211,7 @@ public class DownloadLink extends Property implements Serializable, AbstractPack
 
     /**
      * Zeigt, ob dieser Download aktiviert ist
-     *
+     * 
      * @return wahr, falls dieser DownloadLink aktiviert ist
      */
     public boolean isSkipped() {
@@ -1199,7 +1299,7 @@ public class DownloadLink extends Property implements Serializable, AbstractPack
 
     /**
      * Setzt nachtraeglich das Plugin. Wird nur zum Laden der Liste benoetigt
-     *
+     * 
      * @param plugin
      *            Das fuer diesen Download zustaendige Plugin
      */
@@ -1220,18 +1320,18 @@ public class DownloadLink extends Property implements Serializable, AbstractPack
 
     /**
      * Setzt den Namen des Downloads neu
-     *
+     * 
      * @param name
      *            Neuer Name des Downloads
      */
     public void setName(String name) {
         String oldName = getName();
         if (StringUtils.isEmpty(name)) {
-            name = Plugin.extractFileNameFromURL(getDownloadURL());
+            name = Plugin.extractFileNameFromURL(getPluginPattern());
         }
         if (!StringUtils.isEmpty(name)) {
             name = CrossSystem.alleviatePathParts(name);
-            }
+        }
         if (StringUtils.isEmpty(name)) {
             name = UNKNOWN_FILE_NAME;
         }
@@ -1245,7 +1345,7 @@ public class DownloadLink extends Property implements Serializable, AbstractPack
     }
 
     /**
-     *
+     * 
      * use this function to force a name, it has highest priority
      */
     public void setForcedFileName(String name) {
@@ -1281,7 +1381,7 @@ public class DownloadLink extends Property implements Serializable, AbstractPack
 
     /**
      * WARNING: DO NOT use in 09581 stable!
-     *
+     * 
      * @since JD2
      */
     public void setComment(String comment) {
@@ -1310,7 +1410,7 @@ public class DownloadLink extends Property implements Serializable, AbstractPack
 
     /**
      * Filename Setter for Plugins if the plugin is 100% sure that this is the correct filename
-     *
+     * 
      * @param newfinalFileName
      */
     public void setFinalFileName(String newfinalFileName) {
@@ -1338,27 +1438,31 @@ public class DownloadLink extends Property implements Serializable, AbstractPack
     }
 
     /**
-     * Setzt die URL, von der heruntergeladen werden soll
-     *
+     * @deprecated use {@link #setPluginPattern(String)}
      * @param urlDownload
-     *            Die URL von der heruntergeladen werden soll
      */
+    @Deprecated
     public void setUrlDownload(String urlDownload) {
-        final String previousURLDownload = getDownloadURL();
+        setPluginPattern(urlDownload);
+
+    }
+
+    public void setPluginPattern(String pluginPattern) {
+        final String previousURLDownload = getPluginPattern();
         final String previousLinkID = getLinkID();
-        if (urlDownload != null) {
-            if (previousURLDownload != null && previousURLDownload.equals(urlDownload)) {
+        if (pluginPattern != null) {
+            if (previousURLDownload != null && previousURLDownload.equals(pluginPattern)) {
                 return;
             }
-            this.urlDownload = new String(urlDownload.trim());
+            this.urlDownload = new String(pluginPattern.trim());
         } else {
             this.urlDownload = null;
         }
         cachedName = null;
         if (hasNotificationListener()) {
-            notifyChanges(AbstractNodeNotifier.NOTIFY.PROPERTY_CHANCE, new DownloadLinkProperty(this, DownloadLinkProperty.Property.DOWNLOAD_URL, urlDownload));
+            notifyChanges(AbstractNodeNotifier.NOTIFY.PROPERTY_CHANCE, new DownloadLinkProperty(this, DownloadLinkProperty.Property.URL_CONTENT, pluginPattern));
         }
-        if (previousLinkID == null && previousURLDownload != null && !previousURLDownload.equals(urlDownload)) {
+        if (previousLinkID == null && previousURLDownload != null && !previousURLDownload.equals(pluginPattern)) {
             /* downloadURL changed, so set original one as linkID, so all dupemaps still work */
             setLinkID(previousURLDownload);
         }
@@ -1382,7 +1486,7 @@ public class DownloadLink extends Property implements Serializable, AbstractPack
 
     /**
      * returns real downloadMAx Value. use #getDownloadSize if you are not sure
-     *
+     * 
      * @return use {@link #getView()} for external handling
      */
     public long getKnownDownloadSize() {
@@ -1395,7 +1499,7 @@ public class DownloadLink extends Property implements Serializable, AbstractPack
 
     /**
      * DO NOT USE in 09581 Stable
-     *
+     * 
      * @return
      * @since JD2
      */
@@ -1405,7 +1509,7 @@ public class DownloadLink extends Property implements Serializable, AbstractPack
 
     /**
      * DO NOT USE in 09581 Stable
-     *
+     * 
      * @return
      * @since JD2
      */
@@ -1541,7 +1645,7 @@ public class DownloadLink extends Property implements Serializable, AbstractPack
 
     /**
      * Do not use in Plugins for old Stable, or use try/catch or set property manually
-     *
+     * 
      * @param size
      */
     public void setVerifiedFileSize(long size) {
@@ -1561,7 +1665,7 @@ public class DownloadLink extends Property implements Serializable, AbstractPack
 
     /**
      * use {@link #getView()} for external handling
-     *
+     * 
      * @return
      */
     public long getVerifiedFileSize() {
@@ -1570,7 +1674,7 @@ public class DownloadLink extends Property implements Serializable, AbstractPack
 
     /**
      * Do not use in Plugins for old Stable, or use try/catch or set property manually
-     *
+     * 
      * @param size
      */
     public void setResumeable(boolean b) {
@@ -1616,7 +1720,7 @@ public class DownloadLink extends Property implements Serializable, AbstractPack
 
     /**
      * set the FilePackage that contains this DownloadLink, DO NOT USE this if you want to add this DownloadLink to a FilePackage
-     *
+     * 
      * @param filePackage
      */
     public synchronized void _setFilePackage(FilePackage filePackage) {
@@ -2040,6 +2144,10 @@ public class DownloadLink extends Property implements Serializable, AbstractPack
 
     public String getCustomExtension() {
         return getStringProperty("EXTENSION");
+    }
+
+    public boolean hasBrowserUrl() {
+        return browserurl != null;
     }
 
 }

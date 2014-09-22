@@ -86,9 +86,9 @@ public class DummyCNL extends PluginForDecrypt {
             if (getCurrentLink().getSourceLink().getSourceUrls() != null) {
                 // if link origin comes from decrypter, and we don't set a BrowserUrl, it will be set to it's set to param.toString() and
                 // not getOriginLink().getURL().
-                dl.setBrowserUrl(getCurrentLink().getSourceLink().getOriginLink().getURL());
+                //try{/*JD2 only*/dl.setContentUrl(getCurrentLink().getSourceLink().getOriginLink().getURL());}catch(Throwable e){/*Stable*/ dl.setBrowserUrl(getCurrentLink().getSourceLink().getOriginLink().getURL());}
             } else if (source != null) {
-                dl.setBrowserUrl(source);
+                dl.setContainerUrl(source);
             }
             if (fp != null) {
                 fp.add(dl);

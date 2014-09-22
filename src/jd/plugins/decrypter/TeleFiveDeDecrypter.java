@@ -250,7 +250,7 @@ public class TeleFiveDeDecrypter extends PluginForDecrypt {
                 final DownloadLink link = createDownloadlink(parameter.replace("http://", "decrypted://") + "&quality=" + KalturaFlavorAsset.get("bitrate") + "&vId=" + KalturaFlavorAsset.get("id"));
                 link.setAvailable(true);
                 link.setFinalFileName(filename);
-                link.setBrowserUrl(parameter);
+               try{/*JD2 only*/link.setContentUrl(parameter);}catch(Throwable e){/*Stable*/ link.setBrowserUrl(parameter);}
                 link.setDownloadSize(SizeFormatter.getSize(KalturaFlavorAsset.get("size") + "kb"));
                 link.setProperty("streamerType", v.get("streamerType"));
                 link.setProperty("directURL", dllink);

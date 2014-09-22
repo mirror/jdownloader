@@ -45,6 +45,6 @@ public interface DownloadLinkView {
      * 
      * @return
      */
-    String getDownloadUrl();
+    String getDisplayUrl();
 
 }

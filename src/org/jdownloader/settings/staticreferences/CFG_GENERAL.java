@@ -4,6 +4,7 @@ import org.appwork.storage.config.ConfigUtils;
 import org.appwork.storage.config.JsonConfig;
 import org.appwork.storage.config.handler.BooleanKeyHandler;
 import org.appwork.storage.config.handler.EnumKeyHandler;
+import org.appwork.storage.config.handler.EnumListHandler;
 import org.appwork.storage.config.handler.IntegerKeyHandler;
 import org.appwork.storage.config.handler.LongKeyHandler;
 import org.appwork.storage.config.handler.ObjectKeyHandler;
@@ -244,6 +245,11 @@ public class CFG_GENERAL {
      * If >0, JD will start additional downloads when total speed is below this value
      **/
     public static final IntegerKeyHandler               AUTO_MAX_DOWNLOADS_SPEED_LIMIT                                   = SH.getKeyHandler("AutoMaxDownloadsSpeedLimit", IntegerKeyHandler.class);
+
+    /**
+     * Choose which type urls will be used for copy&paste, tables and settings.
+     **/
+    public static final EnumListHandler                 URL_DISPLAY_ORDER                                                = SH.getKeyHandler("UrlDisplayOrder", EnumListHandler.class);
 
     /**
      * @see AutoStartCountdownSeconds

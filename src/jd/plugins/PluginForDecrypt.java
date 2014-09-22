@@ -258,7 +258,40 @@ public abstract class PluginForDecrypt extends Plugin {
             br.setDebug(true);
             /* now we let the decrypter do its magic */
             tmpLinks = decryptIt(cryptLink, progress);
+            if (tmpLinks != null) {
+                // workaround sets content or container url if the "decrypted.com" workaround is used in the plugin.
+                int decryptedCount = 0;
+                for (DownloadLink s : tmpLinks) {
 
+                    if (s.getPluginPattern().contains("decrypted.com")) {
+                        decryptedCount++;
+                    }
+
+                }
+                if (decryptedCount > 0) {
+                    for (DownloadLink s : tmpLinks) {
+
+                        if (s.getPluginPattern().contains("decrypted.com")) {
+                            if (decryptedCount > 1) {
+
+                                if (s.getContainerUrl() == null) {
+                                    s.setContainerUrl(cryptLink.getCryptedUrl());
+                                }
+
+                            } else {
+
+                                if (s.getContentUrl() == null) {
+                                    s.setContentUrl(cryptLink.getCryptedUrl());
+                                }
+
+                                ;
+                            }
+                        }
+
+                    }
+                }
+
+            }
             validateLastChallengeResponse();
         } catch (InterruptedException e) {
             /* plugin got interrupted, clear log and note what happened */

@@ -14,9 +14,13 @@ public class CaptchaListTest extends Test {
     @Override
     public void run(Storage config, AbstractMyJDClientForDesktopJVM api) throws Exception {
         final DeviceList list = api.listDevices();
-        if (list.getList().size() == 0) { throw new RuntimeException("No Device Connected"); }
+        if (list.getList().size() == 0) {
+            throw new RuntimeException("No Device Connected");
+        }
         final int device = Dialog.getInstance().showComboDialog(0, "Choose Device", "Choose Device", list.getList().toArray(new DeviceData[] {}), 0, null, null, null, null);
         final ArrayList uptime = api.callAction(list.getList().get(device).getId(), "/captcha/list", ArrayList.class);
+
+        Dialog.getInstance().showMessageDialog("Uptime: " + uptime);
         Dialog.getInstance().showMessageDialog("Uptime: " + uptime);
     }
 

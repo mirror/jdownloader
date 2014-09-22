@@ -6,7 +6,6 @@ import java.util.ArrayList;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
-import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
@@ -15,7 +14,7 @@ import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "mangastream.com" }, urls = { "http://(www\\.)?(mangastream|readms)\\.com/(read|r)/([a-z0-9\\-_%]+/){2}\\d+" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "mangastream.com" }, urls = { "http://(www\\.)?(mangastream|readms)\\.com/(read|r)/([a-z0-9\\-_%]+/){2}\\d+(\\?page=\\d+)?" }, flags = { 0 })
 public class MngStrm extends PluginForDecrypt {
 
     public MngStrm(PluginWrapper wrapper) {
@@ -26,7 +25,12 @@ public class MngStrm extends PluginForDecrypt {
     public ArrayList<DownloadLink> decryptIt(CryptedLink parameter, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         br.setFollowRedirects(true);
-        String url = Encoding.htmlDecode(parameter.toString()).replace("readms.com/", "mangastream.com/");
+
+        String part = new Regex(parameter.getCryptedUrl(), "\\?page=(\\d+)").getMatch(0);
+        int requestedPage = part == null ? -1 : Integer.parseInt(part);
+        String url = parameter.toString().replace("readms.com/", "mangastream.com/");
+
+        url = url.replaceAll("\\?page=\\d+$", "");
         url = url.replace("/r/", "/read/");
         if (!parameter.equals(url)) {
             parameter.setCryptedUrl(url);
@@ -50,7 +54,16 @@ public class MngStrm extends PluginForDecrypt {
         NumberFormat formatter = new DecimalFormat("00");
         String urlPart = new Regex(url, "mangastream\\.com(/read/.+)").getMatch(0);
         for (int i = 1; i <= lastPage; i++) {
+            if (requestedPage > 0 && i != requestedPage) {
+                continue;
+            }
             DownloadLink link = createDownloadlink("mangastream://" + urlPart + "/" + i);
+            try {
+                link.setContentUrl(url + "?page=" + i);
+                link.setContainerUrl(url);
+            } catch (Throwable e) {
+
+            }
             link.setAvailableStatus(AvailableStatus.TRUE);
             link.setFinalFileName(title.trim() + " – page " + formatter.format(i) + ".png");
             decryptedLinks.add(link);

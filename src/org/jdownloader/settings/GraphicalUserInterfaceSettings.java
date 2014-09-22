@@ -1096,13 +1096,6 @@ public interface GraphicalUserInterfaceSettings extends ConfigInterface {
     void setTwoStepCtrlASelectionEnabled(boolean b);
 
     @AboutConfig
-    @DescriptionForConfigEntry("Show the links origin if possible in all tables and copy features")
-    @DefaultBooleanValue(false)
-    boolean isAlwaysShowLinkOriginInsteadOfDownloadUrl();
-
-    void setAlwaysShowLinkOriginInsteadOfDownloadUrl(boolean b);
-
-    @AboutConfig
     @DefaultBooleanValue(true)
     boolean isDownloadControlColumnAutoShowEnabled();
 

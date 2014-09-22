@@ -147,10 +147,10 @@ public class DownloadLinkStorable implements Storable {
 
     public String getURL() {
         if (crypt()) {
-            byte[] crypted = JDCrypt.encrypt(link.getDownloadURL(), KEY);
+            byte[] crypted = JDCrypt.encrypt(link.getPluginPattern(), KEY);
             return CRYPTED + Base64.encodeToString(crypted, false);
         } else {
-            return link.getDownloadURL();
+            return link.getPluginPattern();
         }
     }
 
@@ -158,9 +158,9 @@ public class DownloadLinkStorable implements Storable {
         if (url.startsWith(CRYPTED)) {
             byte[] bytes = Base64.decodeFast(url.substring(CRYPTED.length()));
             String url2 = JDCrypt.decrypt(bytes, KEY);
-            link.setUrlDownload(url2);
+            link.setPluginPattern(url2);
         } else {
-            link.setUrlDownload(url);
+            link.setPluginPattern(url);
         }
     }
 
@@ -172,15 +172,8 @@ public class DownloadLinkStorable implements Storable {
         link.setHost(host);
     }
 
-    public String getBrowserURL() {
-        if (!link.hasBrowserUrl()) {
-            return null;
-        }
-        return link.getBrowserUrl();
-    }
-
     public void setBrowserURL(String url) {
-        link.setBrowserUrl(url);
+        link.setOriginUrl(url);
     }
 
     public long[] getChunkProgress() {

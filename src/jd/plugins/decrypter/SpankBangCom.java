@@ -33,7 +33,7 @@ import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 import jd.utils.JDUtilities;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "spankbang.com" }, urls = { "http://(www\\.)?([a-z]{2}\\.)?spankbang\\.com/[a-z0-9]+/video/" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "spankbang.com" }, urls = { "http://(www\\.)?([a-z]{2}\\.)?spankbang\\.com/([a-z0-9]+/video/\\?quality=[\\w\\d]+|[a-z0-9]+/video/)" }, flags = { 0 })
 public class SpankBangCom extends PluginForDecrypt {
 
     public SpankBangCom(PluginWrapper wrapper) {
@@ -58,11 +58,7 @@ public class SpankBangCom extends PluginForDecrypt {
     @Override
     protected DownloadLink createDownloadlink(String link) {
         DownloadLink ret = super.createDownloadlink(link);
-        try {
-            ret.setUrlProtection(org.jdownloader.controlling.UrlProtection.PROTECTED_INTERNAL_URL);
-        } catch (Throwable e) {
-            // jd09
-        }
+
         return ret;
     }
 
@@ -83,6 +79,10 @@ public class SpankBangCom extends PluginForDecrypt {
             br.getPage(PARAMETER);
             if (br.getHttpConnection().getResponseCode() == 404 || br.containsHTML(">this video is no longer available.<") || !br.getURL().contains("/video")) {
                 final DownloadLink dl = createDownloadlink("directhttp://" + PARAMETER);
+                try {
+                    dl.setContentUrl(PARAMETER);
+                } catch (Throwable e) {
+                }
                 dl.setProperty("offline", true);
                 decryptedLinks.add(dl);
                 return decryptedLinks;
@@ -141,12 +141,23 @@ public class SpankBangCom extends PluginForDecrypt {
                     selectedQualities.add("720p");
                 }
             }
+            String predefinedVariant = new Regex(param.getCryptedUrl(), "\\?quality=([\\w\\d]+)").getMatch(0);
             for (final String selectedQualityValue : selectedQualities) {
+                // if quality marker is in the url. skip all others
+                if (predefinedVariant != null && !predefinedVariant.equalsIgnoreCase(selectedQualityValue)) {
+                    continue;
+                }
                 final String directlink = FOUNDQUALITIES.get(selectedQualityValue);
                 if (directlink != null) {
                     final String finalname = title + "_" + selectedQualityValue + ".mp4";
                     final DownloadLink dl = createDownloadlink("http://spankbangdecrypted.com/" + System.currentTimeMillis() + new Random().nextInt(100000));
                     dl.setFinalFileName(finalname);
+                    try {
+                        dl.setContentUrl("http://spankbang.com/" + fid + "/video/?quality=" + selectedQualityValue);
+
+                    } catch (Throwable e) {
+                        // jd09
+                    }
                     if (fastcheck) {
                         dl.setAvailable(true);
                     }

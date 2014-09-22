@@ -15,21 +15,24 @@ public class DownloadLinkProperty {
         EXTRACTION_STATUS,
         LINKSTATUS,
         ARCHIVE_ID,
-        BROWSER_URL,
+
         CHUNKS,
         SPEED_LIMIT,
         DOWNLOAD_PASSWORD,
         MD5,
         RESUMABLE,
         SHA1,
-        DOWNLOAD_URL,
+        URL_CONTENT,
         URL_PROTECTION,
         VARIANT,
         VARIANTS,
         VARIANTS_ENABLED,
         DOWNLOADSIZE_VERIFIED,
         DOWNLOADSIZE,
-        COMMENT;
+        COMMENT,
+        URL_CONTAINER,
+        URL_ORIGIN,
+        URL_REFERRER;
     }
 
     private final Object       value;

@@ -349,7 +349,7 @@ public class DownloadsAPIV2Impl implements DownloadsAPIV2 {
             dls.setSkipped(dl.isSkipped());
         }
         if (queryParams.isUrl()) {
-            dls.setUrl(dl.getView().getDownloadUrl());
+            dls.setUrl(dl.getView().getDisplayUrl());
         }
         if (queryParams.isEnabled()) {
             dls.setEnabled(dl.isEnabled());

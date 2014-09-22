@@ -187,7 +187,7 @@ public class ZDFMediathekDecrypter extends PluginForDecrypt {
                         final DownloadLink link = createDownloadlink(data.replace("http://", "decrypted://") + "&quality=" + fmt);
                         link.setAvailable(true);
                         link.setFinalFileName(name);
-                        link.setBrowserUrl(data);
+                       try{/*JD2 only*/link.setContentUrl(data);}catch(Throwable e){/*Stable*/ link.setBrowserUrl(data);}
                         link.setProperty("directURL", url);
                         link.setProperty("directName", name);
                         link.setProperty("directQuality", stream[0]);

@@ -790,7 +790,7 @@ public class FaceBookComGallery extends PluginForDecrypt {
                     if (FASTLINKCHECK_PICTURES_ENABLED) {
                         dl.setAvailable(true);
                     }
-                    dl.setBrowserUrl(single_link);
+                   try{/*JD2 only*/dl.setContentUrl(single_link);}catch(Throwable e){/*Stable*/ dl.setBrowserUrl(single_link);}
                     // Set temp name, correct name will be set in hosterplugin later
                     dl.setName(getTemporaryDecryptName(single_link));
                     fp.add(dl);
@@ -1003,7 +1003,7 @@ public class FaceBookComGallery extends PluginForDecrypt {
         if (FASTLINKCHECK_PICTURES_ENABLED) {
             dl.setAvailable(true);
         }
-        dl.setBrowserUrl(final_link);
+       try{/*JD2 only*/dl.setContentUrl(final_link);}catch(Throwable e){/*Stable*/ dl.setBrowserUrl(final_link);}
         // Set temp name, correct name will be set in hosterplugin later
         dl.setName(getTemporaryDecryptName(final_link));
         return dl;

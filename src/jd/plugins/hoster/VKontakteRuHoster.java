@@ -17,7 +17,6 @@
 package jd.plugins.hoster;
 
 import java.io.IOException;
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.Map;
@@ -38,7 +37,6 @@ import jd.plugins.Account;
 import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
-import jd.plugins.FilePackage;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.Plugin;
@@ -85,17 +83,6 @@ public class VKontakteRuHoster extends PluginForHost {
 
     public boolean allowHandle(final DownloadLink downloadLink, final PluginForHost plugin) {
         return downloadLink.getHost().equalsIgnoreCase(plugin.getHost());
-    }
-
-    @Override
-    public ArrayList<DownloadLink> getDownloadLinks(String data, FilePackage fp) {
-        ArrayList<DownloadLink> ret = super.getDownloadLinks(data, fp);
-        try {
-            org.jdownloader.controlling.UrlProtection.PROTECTED_INTERNAL_URL.setTo(ret);
-        } catch (Throwable e) {
-            // jd09
-        }
-        return ret;
     }
 
     public void doFree(final DownloadLink downloadLink) throws Exception, PluginException {
@@ -365,11 +352,7 @@ public class VKontakteRuHoster extends PluginForHost {
         if (link.getBooleanProperty("offline", false)) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        try {
-            org.jdownloader.controlling.UrlProtection.PROTECTED_INTERNAL_URL.setTo(link);
-        } catch (Throwable e) {
-            // jd09
-        }
+
         this.FINALLINK = null;
         this.setBrowserExclusive();
 
@@ -510,7 +493,7 @@ public class VKontakteRuHoster extends PluginForHost {
     /**
      * Try to get best quality and test links till a working link is found as it can happen that the found link is offline but others are
      * online
-     *
+     * 
      * @throws IOException
      */
     private void getHighestQualityPic(final DownloadLink dl, String source) throws Exception {

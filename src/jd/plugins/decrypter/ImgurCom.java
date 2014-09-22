@@ -193,7 +193,11 @@ public class ImgurCom extends PluginForDecrypt {
             dl.setProperty("decryptedfinalfilename", filename);
             dl.setProperty("directlink", directlink);
             /* No need to hide directlinks */
-            dl.setBrowserUrl("http://imgur.com/download/" + imgUID);
+            try {/* JD2 only */
+                dl.setContentUrl("http://imgur.com/download/" + imgUID);
+            } catch (Throwable e) {/* Stable */
+                dl.setBrowserUrl("http://imgur.com/download/" + imgUID);
+            }
             decryptedLinks.add(dl);
         }
     }
@@ -233,7 +237,11 @@ public class ImgurCom extends PluginForDecrypt {
             dl.setProperty("decryptedfinalfilename", filename);
             dl.setProperty("directlink", directlink);
             /* No need to hide directlinks */
-            dl.setBrowserUrl("http://imgur.com/download/" + imgUID);
+            try {/* JD2 only */
+                dl.setContentUrl("http://imgur.com/download/" + imgUID);
+            } catch (Throwable e) {/* Stable */
+                dl.setBrowserUrl("http://imgur.com/download/" + imgUID);
+            }
             decryptedLinks.add(dl);
         }
     }

@@ -178,7 +178,7 @@ public class DevArtCm extends PluginForDecrypt {
                     dl.setAvailable(true);
                 }
                 /* No reason to hide their single links */
-                dl.setBrowserUrl(link);
+               try{/*JD2 only*/dl.setContentUrl(link);}catch(Throwable e){/*Stable*/ dl.setBrowserUrl(link);}
                 dl.setName(urltitle + ".html");
                 dl._setFilePackage(fp);
                 try {
@@ -317,7 +317,7 @@ public class DevArtCm extends PluginForDecrypt {
                         fina.setAvailable(true);
                     }
                     /* No reason to hide their single links */
-                    fina.setBrowserUrl(artlink);
+                   try{/*JD2 only*/fina.setContentUrl(artlink);}catch(Throwable e){/*Stable*/ fina.setBrowserUrl(artlink);}
                     if (fp != null) {
                         fp.add(fina);
                     }

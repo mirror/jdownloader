@@ -5185,4 +5185,9 @@ public interface GuiTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "Balanced - use each account equally" })
     String Rules_balanced();
 
+    @Default(lngs = { "en" }, values = { "Display or copy Url types" })
+    String UrlColumn_onDoubleClick_help_title();
+
+    @Default(lngs = { "en" }, values = { "JDownloader knows several Url types. It's up to you which address is shown, and which will be copied to the clipboard.\r\nYou can set up the display order in      Settings -> Advanced -> GeneralSettings: Url Display Order" })
+    String UrlColumn_onDoubleClick_help_msg();
 }

@@ -14,7 +14,6 @@ import jd.controlling.linkcollector.LinkCollectorListener;
 import jd.controlling.linkcrawler.CrawledLink;
 import jd.controlling.linkcrawler.CrawledPackage;
 
-import org.appwork.utils.ImageProvider.ImageProvider;
 import org.appwork.utils.swing.EDTRunner;
 import org.jdownloader.controlling.Priority;
 import org.jdownloader.controlling.UniqueAlltimeID;
@@ -77,7 +76,7 @@ public class LinkPropertiesPanel extends AbstractNodePropertiesPanel implements 
 
     @Override
     protected Icon getHighestPackagePriorityIcon() {
-        return   org.jdownloader.images.NewTheme.I().getDisabledIcon(currentPackage.getView().getHighestPriority().loadIcon(18));
+        return org.jdownloader.images.NewTheme.I().getDisabledIcon(currentPackage.getView().getHighestPriority().loadIcon(18));
     }
 
     @Override
@@ -133,7 +132,7 @@ public class LinkPropertiesPanel extends AbstractNodePropertiesPanel implements 
 
     @Override
     protected String loadDownloadFrom() {
-        String dlLink = currentLink.getDownloadLink().getView().getDownloadUrl();
+        String dlLink = currentLink.getDownloadLink().getView().getDisplayUrl();
         if (dlLink == null) {
             dlLink = "*******************************";
         }

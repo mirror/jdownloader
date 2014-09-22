@@ -239,10 +239,10 @@ public class RuleWrapper<T extends FilterRule> {
             switch (getHosterRule().getMatchType()) {
             case CONTAINS:
             case EQUALS:
-                return getHosterRule().matches(dlLink.getHost()) || getHosterRule().matches(dlLink.getDownloadURL());
+                return getHosterRule().matches(dlLink.getHost()) || getHosterRule().matches(dlLink.getPluginPattern());
             case CONTAINS_NOT:
             case EQUALS_NOT:
-                return getHosterRule().matches(dlLink.getHost()) && getHosterRule().matches(dlLink.getDownloadURL());
+                return getHosterRule().matches(dlLink.getHost()) && getHosterRule().matches(dlLink.getPluginPattern());
             }
         }
         return true;

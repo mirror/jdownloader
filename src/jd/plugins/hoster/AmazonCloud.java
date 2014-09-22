@@ -17,13 +17,12 @@
 package jd.plugins.hoster;
 
 import java.io.IOException;
-import java.util.ArrayList;
 
 import jd.PluginWrapper;
 import jd.nutils.encoding.Encoding;
+import jd.parser.Regex;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
-import jd.plugins.FilePackage;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
@@ -41,25 +40,36 @@ public class AmazonCloud extends PluginForHost {
         return "https://www.amazon.de/gp/help/customer/display.html/ref=ap_footer_condition_of_use?ie=UTF8&nodeId=505048&pop-up=1";
     }
 
-    @Override
-    public ArrayList<DownloadLink> getDownloadLinks(String data, FilePackage fp) {
-        ArrayList<DownloadLink> ret = super.getDownloadLinks(data, fp);
-        try {
-            org.jdownloader.controlling.UrlProtection.PROTECTED_INTERNAL_URL.setTo(ret);
-        } catch (Throwable e) {
-            // jd09
+    public AvailableStatus requestFileInformationOld(final DownloadLink link) throws IOException, PluginException {
+        this.setBrowserExclusive();
+        br.setFollowRedirects(true);
+        String url = "https://www.amazon.com/clouddrive/share?s=" + link.getStringProperty("plain_folder_id");
+        br.getPage(url);
+        if (br.containsHTML("id=\"error_page\"")) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        return ret;
+        final String filename = br.getRegex("fileName = \"([^<>\"]*?)\"").getMatch(0);
+        final String filesize = br.getRegex("fSize = \"(\\d+)\"").getMatch(0);
+        if (filename == null || filesize == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        link.setName(Encoding.htmlDecode(filename.trim()));
+        link.setDownloadSize(Long.parseLong(filesize));
+        return AvailableStatus.TRUE;
     }
 
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
+        if ("old20140922".equals(link.getStringProperty("type"))) {
+            return requestFileInformationOld(link);
+        }
         if (link.getBooleanProperty("offline", false)) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         } else if (!link.getDownloadURL().matches("https://amazondecrypted\\.com/\\d+")) {
             /* Check if user still has old links in his list --> Invalid */
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
+
         this.setBrowserExclusive();
         prepBR();
         final String plain_folder_id = link.getStringProperty("plain_folder_id", null);
@@ -75,8 +85,35 @@ public class AmazonCloud extends PluginForHost {
         return AvailableStatus.TRUE;
     }
 
+    public void handleFreeOld(final DownloadLink downloadLink) throws Exception, PluginException {
+        requestFileInformationOld(downloadLink);
+        final String deviceserial = br.getRegex("sNum = \"([^<>\"]*?)\"").getMatch(0);
+        if (deviceserial == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        final String domain = new Regex(br.getURL(), "(amazon\\.[a-z]+)/").getMatch(0);
+        final String shareid = downloadLink.getStringProperty("plain_folder_id");
+        final String getlink = "http://www." + domain + "/gp/drive/share/downloadFile.html?_=" + System.currentTimeMillis() + "&sharedId=" + Encoding.urlEncode(shareid) + "&download=TRUE&deviceType=ubid&deviceSerialNumber=" + deviceserial;
+        br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
+        br.getPage(getlink);
+        final String dllink = br.getRegex("\"url\":\"(http[^<>\"]*?)\"").getMatch(0);
+        if (dllink == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 0);
+        if (dl.getConnection().getContentType().contains("html")) {
+            br.followConnection();
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        dl.startDownload();
+    }
+
     @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception, PluginException {
+        if ("old20140922".equals(downloadLink.getStringProperty("type"))) {
+            handleFreeOld(downloadLink);
+            return;
+        }
         requestFileInformation(downloadLink);
         final String dllink = downloadLink.getStringProperty("plain_directlink", null);
         if (dllink == null) {

@@ -295,7 +295,11 @@ public class ArteMediathekDecrypter extends PluginForDecrypt {
                 }
 
                 link.setFinalFileName(name);
-                link.setBrowserUrl(parameter);
+                try {/* JD2 only */
+                    link.setContentUrl(parameter);
+                } catch (Throwable e) {/* Stable */
+                    link.setBrowserUrl(parameter);
+                }
                 link.setProperty("directURL", url);
                 link.setProperty("directName", name);
                 link.setProperty("tvguideUrl", tvguideUrl);

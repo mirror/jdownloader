@@ -9,12 +9,7 @@ public enum UrlProtection {
     PROTECTED_CONTAINER,
     /* internal urls not visible to the user, because the origin is a link decrypter */
     PROTECTED_DECRYPTER,
-    UNSET,
-    /*
-     * internal urls not visible to the user, because it is not a real url, and/or for intermaö plugin usage only. show browser url if
-     * available
-     */
-    PROTECTED_INTERNAL_URL;
+    UNSET;
 
     public void setTo(ArrayList<DownloadLink> ret) {
         if (ret != null) {
@@ -30,4 +25,5 @@ public enum UrlProtection {
 
         }
     }
+
 }

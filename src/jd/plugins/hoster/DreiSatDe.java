@@ -179,7 +179,7 @@ public class DreiSatDe extends PluginForHost {
                         final DownloadLink link = new DownloadLink(this, name, getHost(), sourceLink.getDownloadURL(), true);
                         link.setAvailable(true);
                         link.setFinalFileName(name);
-                        link.setBrowserUrl(sourceLink.getBrowserUrl());
+                       try{/*JD2 only*/link.setContentUrl(sourceLink.getBrowserUrl());}catch(Throwable e){/*Stable*/ link.setBrowserUrl(sourceLink.getBrowserUrl());}
                         link.setProperty("directURL", url);
                         link.setProperty("directName", name);
                         link.setProperty("directQuality", fmt);

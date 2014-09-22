@@ -90,7 +90,6 @@ import org.appwork.utils.swing.EDTRunner;
 import org.jdownloader.DomainInfo;
 import org.jdownloader.controlling.DefaultDownloadLinkViewImpl;
 import org.jdownloader.controlling.DownloadLinkView;
-import org.jdownloader.controlling.UrlProtection;
 import org.jdownloader.controlling.ffmpeg.FFMpegProgress;
 import org.jdownloader.controlling.ffmpeg.FFmpeg;
 import org.jdownloader.controlling.linkcrawler.LinkVariant;
@@ -132,22 +131,6 @@ public class YoutubeDashV2 extends PluginForHost {
     @Override
     public Class<? extends ConfigInterface> getConfigInterface() {
         return YoutubeConfig.class;
-    }
-
-    @Override
-    public ArrayList<DownloadLink> getDownloadLinks(String data, FilePackage fp) {
-        ArrayList<DownloadLink> ret = super.getDownloadLinks(data, fp);
-        if (ret != null) {
-            for (DownloadLink link : ret) {
-                try {
-                    link.setUrlProtection(UrlProtection.PROTECTED_INTERNAL_URL);
-                } catch (Throwable e) {
-
-                }
-            }
-        }
-
-        return ret;
     }
 
     @Override
@@ -494,7 +477,7 @@ public class YoutubeDashV2 extends PluginForHost {
     @Override
     public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws Exception {
         cfg = PluginJsonConfig.get(YoutubeConfig.class);
-        downloadLink.setUrlProtection(UrlProtection.PROTECTED_INTERNAL_URL);
+
         YoutubeProperties data = downloadLink.bindData(YoutubeProperties.class);
         if (!downloadLink.getDownloadURL().startsWith("youtubev2://")) {
             convertOldLink(downloadLink);
@@ -1854,6 +1837,8 @@ public class YoutubeDashV2 extends PluginForHost {
 
     @Override
     public void setActiveVariantByLink(DownloadLink downloadLink, LinkVariant variant) {
+        YoutubeConfig cfg = PluginJsonConfig.get(YoutubeConfig.class);
+        boolean prefers = cfg.isPreferHttpsEnabled();
 
         if (variant == null) {
             return;
@@ -1871,7 +1856,15 @@ public class YoutubeDashV2 extends PluginForHost {
             downloadLink.setProperty(YoutubeHelper.YT_SUBTITLE_CODE, ((SubtitleVariant) variant).code);
             String filename;
             downloadLink.setFinalFileName(filename = getCachedHelper().createFilename(downloadLink));
-            downloadLink.setUrlDownload("youtubev2://" + YoutubeVariant.SUBTITLES + "/" + downloadLink.getStringProperty(YoutubeHelper.YT_ID) + "/");
+            downloadLink.setPluginPattern("youtubev2://" + YoutubeVariant.SUBTITLES + "/" + downloadLink.getStringProperty(YoutubeHelper.YT_ID) + "/");
+
+            if (prefers) {
+                downloadLink.setContentUrl("https://www.youtube.com" + "/watch?v=" + downloadLink.getStringProperty(YoutubeHelper.YT_ID) + "&variant=" + variant);
+            } else {
+                downloadLink.setContentUrl("http://www.youtube.com" + "/watch?v=" + downloadLink.getStringProperty(YoutubeHelper.YT_ID) + "&variant=" + variant);
+
+            }
+
             try {
 
                 downloadLink.setLinkID("youtubev2://" + YoutubeVariant.SUBTITLES + "/" + downloadLink.getStringProperty(YoutubeHelper.YT_ID) + "/" + URLEncode.encodeRFC2396(filename));
@@ -1891,7 +1884,13 @@ public class YoutubeDashV2 extends PluginForHost {
             downloadLink.setProperty(YoutubeHelper.YT_EXT, v.getFileExtension());
             String filename;
             downloadLink.setFinalFileName(filename = getCachedHelper().createFilename(downloadLink));
-            downloadLink.setUrlDownload("youtubev2://" + v._getUniqueId() + "/" + downloadLink.getStringProperty(YoutubeHelper.YT_ID) + "/");
+            downloadLink.setPluginPattern("youtubev2://" + v._getUniqueId() + "/" + downloadLink.getStringProperty(YoutubeHelper.YT_ID) + "/");
+            if (prefers) {
+                downloadLink.setContentUrl("https://www.youtube.com" + "/watch?v=" + downloadLink.getStringProperty(YoutubeHelper.YT_ID) + "&variant=" + variant);
+            } else {
+                downloadLink.setContentUrl("http://www.youtube.com" + "/watch?v=" + downloadLink.getStringProperty(YoutubeHelper.YT_ID) + "&variant=" + variant);
+
+            }
             try {
                 downloadLink.setLinkID("youtubev2://" + v._getUniqueId() + "/" + downloadLink.getStringProperty(YoutubeHelper.YT_ID) + "/" + URLEncode.encodeRFC2396(filename));
             } catch (UnsupportedEncodingException e) {
