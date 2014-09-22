@@ -56,7 +56,7 @@ public class FaceBookComGallery extends PluginForDecrypt {
     private static final String   TYPE_FBSHORTLINK               = "http(s)?://(www\\.)?on\\.fb\\.me/[A-Za-z0-9]+\\+?";
     private static final String   TYPE_SINGLE_PHOTO              = "http(s)?://(www\\.)?facebook\\.com/photo\\.php\\?fbid=\\d+";
     private static final String   TYPE_SINGLE_VIDEO_ALL          = "https?://(www\\.)?facebook\\.com/(video/video|photo|video)\\.php\\?v=\\d+";
-    private static final String   TYPE_SET_LINK_PHOTO            = "http(s)?://(www\\.)?facebook\\.com/(media/set/\\?set=|[^<>\"/]*?/media_set\\?set=)o?a[0-9\\.]+";
+    private static final String   TYPE_SET_LINK_PHOTO            = "http(s)?://(www\\.)?facebook\\.com/(media/set/\\?set=|[^<>\"/]*?/media_set\\?set=)o?a[0-9\\.]+(\\&type=\\d+)?";
     private static final String   TYPE_SET_LINK_VIDEO            = "https?://(www\\.)?facebook\\.com/media/set/\\?set=vb\\.\\d+";
     private static final String   TYPE_ALBUMS_LINK               = "https?://(www\\.)?facebook\\.com/[A-Za-z0-9\\.]+/photos_albums";
     private static final String   TYPE_PHOTOS_OF_LINK            = "https?://(www\\.)?facebook\\.com/[A-Za-z0-9\\.]+/photos_of";
@@ -509,7 +509,6 @@ public class FaceBookComGallery extends PluginForDecrypt {
         fpName = Encoding.htmlDecode(fpName.trim());
         final FilePackage fp = FilePackage.getInstance();
         fp.setName(fpName.trim());
-        boolean dynamicLoadAlreadyDecrypted = false;
         String lastfirstID = "";
         String additionalPostData = "";
         additionalPostData = "%2C%22tab_key%22%3A%22media_set%22%2C%22set%22%3A%22" + setID + "%22%2C%22type%22%3A%22" + type + "%22%2C%22sk%22%3A%22photos";
@@ -520,12 +519,7 @@ public class FaceBookComGallery extends PluginForDecrypt {
             String[] links;
             if (i > 1) {
                 final String currentLastFbid = getLastFBID();
-                // If we have exactly currentMaxPicCount pictures then we reload one
-                // time and got all, 2nd time will then be 0 more links
-                // -> Stop
-                if (currentLastFbid == null && dynamicLoadAlreadyDecrypted) {
-                    break;
-                } else if (currentLastFbid == null) {
+                if (currentLastFbid == null) {
                     logger.info("Cannot find more links, stopping decryption...");
                     break;
                 }
@@ -534,7 +528,6 @@ public class FaceBookComGallery extends PluginForDecrypt {
                 br.getPage(loadLink);
                 links = br.getRegex("ajax\\\\/photos\\\\/hovercard\\.php\\?fbid=(\\d+)\\&").getColumn(0);
                 currentMaxPicCount = 32;
-                dynamicLoadAlreadyDecrypted = true;
             } else {
                 links = br.getRegex("hovercard\\.php\\?fbid=(\\d+)").getColumn(0);
             }
@@ -1037,6 +1030,9 @@ public class FaceBookComGallery extends PluginForDecrypt {
         String currentLastFbid = br.getRegex("\"last_fbid\\\\\":\\\\\"(\\d+)\\\\\\\"").getMatch(0);
         if (currentLastFbid == null) {
             currentLastFbid = br.getRegex("\"last_fbid\\\\\":(\\d+)").getMatch(0);
+        }
+        if (currentLastFbid == null) {
+            currentLastFbid = br.getRegex("\"last_fbid\":(\\d+)").getMatch(0);
         }
         return currentLastFbid;
     }

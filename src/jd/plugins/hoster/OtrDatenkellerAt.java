@@ -44,7 +44,7 @@ public class OtrDatenkellerAt extends PluginForHost {
     public OtrDatenkellerAt(PluginWrapper wrapper) {
         super(wrapper);
         this.enablePremium();
-        this.setStartIntervall(60 * 1000l);
+        // this.setStartIntervall(60 * 1000l);
     }
 
     public void correctDownloadLink(final DownloadLink link) {
@@ -114,7 +114,7 @@ public class OtrDatenkellerAt extends PluginForHost {
                         dllink.setAvailable(true);
                         dllink.setDownloadSize(Long.parseLong(filesize));
                     }
-                    dllink.setName(Encoding.htmlDecode(current_filename));
+                    dllink.setFinalFileName(Encoding.htmlDecode(current_filename));
                 }
                 if (index == urls.length) {
                     break;
@@ -153,27 +153,58 @@ public class OtrDatenkellerAt extends PluginForHost {
         getPage(this.br, dlPage);
         String dllink = null;
         String lowSpeedLink;
+        final String finalfilenameurlencoded = Encoding.urlEncode(downloadLink.getFinalFileName());
+        final String otrUID = br.getRegex("waitaws\\.lastverteiler\\.net/([^<>\"]*?)/").getMatch(0);
+        final String waitaws_url = "https://waitaws.lastverteiler.net/" + otrUID + "/" + finalfilenameurlencoded;
         final Browser br2 = br.cloneBrowser();
         if (br.containsHTML(DOWNLOADAVAILABLE)) {
             dllink = getDllink();
         } else {
+            final boolean pluginBroken = true;
+            if (pluginBroken) {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
+            lowSpeedLink = br.getRegex("\"(\\?lowSpeed=[^<>\\'\"]+)\"").getMatch(0);
+            if (otrUID == null || lowSpeedLink == null) {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
+            br2.getPage("https://staticaws.lastverteiler.net/images/style.css");
+            br2.getPage("https://staticaws.lastverteiler.net/otrfuncs/countMe.js");
+
+            br.getPage(waitaws_url);
+            br.getHeaders().put("Accept", "application/json, text/javascript, */*; q=0.01");
+            br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
+            br.postPage("https://waitaws.lastverteiler.net/api.php", "action=validate&otrUID=" + otrUID + "&file=" + finalfilenameurlencoded);
+            br.postPage("https://waitaws.lastverteiler.net/api.php", "action=wait&status=ok&valid=ok&file=" + finalfilenameurlencoded + "&otrUID=" + otrUID);
             /* Workaround-try */
             final boolean force_lowspeed = true;
             downloadLink.getLinkStatus().setStatusText("Waiting for ticket...");
             for (int i = 0; i <= 410; i++) {
-                getPage(this.br, dlPage);
-                String countMe = br.getRegex("\"(otrfuncs/countMe\\.js\\?r=\\d+)\"").getMatch(0);
-                if (countMe != null) {
-                    countMe = "https://staticaws.lastverteiler.net/" + countMe;
-                } else {
-                    countMe = "https://staticaws.lastverteiler.net/otrfuncs/countMe.js";
+                String postData = "";
+                String[] params = br.toString().split(",");
+                for (final String postPair : params) {
+                    final String key = new Regex(postPair, "\"([^<>\"]*?)\"").getMatch(0);
+                    String value = new Regex(postPair, "\"([^<>\"]*?)\":\"([^<>\"]*?)\"").getMatch(1);
+                    if (value == null) {
+                        value = new Regex(postPair, "\"([^<>\"]*?)\":(null|true|false|\\d+)").getMatch(1);
+                    }
+                    postData += key + "=" + Encoding.urlEncode(value) + "&";
                 }
-                br2.getPage("https://staticaws.lastverteiler.net/images/style.css");
+                br.getHeaders().put("Referer", waitaws_url);
+                br.postPage("https://waitaws.lastverteiler.net/api.php", postData);
+                /* Not needed, also their limits are based on cookies only */
+                // if (br.containsHTML(">Du kannst höchstens \\d+ Download Links pro Stunde anfordern")) {
+                // final String waitUntil = br.getRegex("bitte warte bis (\\d{1,2}:\\d{1,2}) zum nächsten Download").getMatch(0);
+                // if (waitUntil != null) {
+                // final long wtime = TimeFormatter.getMilliSeconds(waitUntil, "HH:mm", Locale.GERMANY);
+                // throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, wtime);
+                // }
+                // throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 30 * 60 * 1000l);
+                // }
                 br2.getPage("https://waitaws.lastverteiler.net/style2.css");
                 br2.getPage("https://waitaws.lastverteiler.net/functions.js");
-                br2.getPage(countMe);
                 sleep(27 * 1000l, downloadLink);
-                String position = br.getRegex("document\\.title = \"(\\d+/\\d+)").getMatch(0);
+                String position = br.getRegex("\"wait_pos\":\"(\\d+)\"").getMatch(0);
                 if (position == null) {
                     position = br.getRegex("<td>Deine Position in der Warteschlange: </td><td>~(\\d+)</td></tr>").getMatch(0);
                 }
@@ -185,7 +216,6 @@ public class OtrDatenkellerAt extends PluginForHost {
                     dllink = getDllink();
                     break;
                 }
-                lowSpeedLink = br.getRegex("\"(\\?lowSpeed=[^<>\\'\"]+)\"").getMatch(0);
                 if (i > 400 && lowSpeedLink != null || force_lowspeed) {
                     getPage(br2, "https://otr.datenkeller.net/" + lowSpeedLink);
                     dllink = br2.getRegex(">Dein Download Link:<br>[\t\n\r ]+<a href=\"(http://[^<>\\'\"]+)\"").getMatch(0);
