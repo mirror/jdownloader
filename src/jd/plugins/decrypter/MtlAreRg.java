@@ -54,12 +54,15 @@ public class MtlAreRg extends PluginForDecrypt {
         }
         // Filter links in hide(s)
         String pagepieces[] = br.getRegex("<\\!\\-\\-HideBegin\\-\\->(.*?)<\\!\\-\\-HideEnd\\-\\->").getColumn(0);
-        if (pagepieces == null || pagepieces.length == 0) return null;
+        if (pagepieces == null || pagepieces.length == 0) {
+            return null;
+        }
         for (String pagepiece : pagepieces) {
             String[] links = HTMLParser.getHttpLinks(pagepiece, "");
             if (links != null && links.length != 0) {
-                for (String link : links)
+                for (String link : links) {
                     decryptedLinks.add(createDownloadlink(link));
+                }
 
             }
         }
@@ -68,31 +71,37 @@ public class MtlAreRg extends PluginForDecrypt {
     }
 
     private boolean getUserLogin(String url) throws IOException, DecrypterException {
-        String username = null;
-        String password = null;
         synchronized (LOCK) {
-            username = this.getPluginConfig().getStringProperty("user", null);
-            password = this.getPluginConfig().getStringProperty("pass", null);
-            if (username != null && password != null) {
-                br.postPage("http://metalarea.org/forum/index.php?act=Login&CODE=01", "UserName=" + Encoding.urlEncode(username) + "&PassWord=" + Encoding.urlEncode(password) + "&CookieDate=1");
-            }
-            br.getPage(url);
+            String username = this.getPluginConfig().getStringProperty("user", null);
+            String password = this.getPluginConfig().getStringProperty("pass", null);
             for (int i = 0; i < 3; i++) {
+                if (username != null && password != null) {
+                    br.postPage("https://metalarea.org/forum/index.php?act=Login&CODE=01", "UserName=" + Encoding.urlEncode(username) + "&PassWord=" + Encoding.urlEncode(password) + "&CookieDate=1");
+                }
                 if (br.getCookie(HOST, "ma_tr_pass") == null || br.getCookie(HOST, "ma_tr_uid") == null) {
                     this.getPluginConfig().setProperty("user", Property.NULL);
                     this.getPluginConfig().setProperty("pass", Property.NULL);
                     username = UserIO.getInstance().requestInputDialog("Enter Loginname for metalarea.org :");
-                    if (username == null) return false;
+                    if (username == null) {
+                        return false;
+                    }
                     password = UserIO.getInstance().requestInputDialog("Enter password for metalarea.org :");
-                    if (password == null) return false;
-                    br.postPage("http://metalarea.org/forum/index.php?act=Login&CODE=01", "UserName=" + Encoding.urlEncode(username) + "&PassWord=" + Encoding.urlEncode(password) + "&CookieDate=1");
-                } else {
+                    if (password == null) {
+                        return false;
+                    }
+                    br.postPage("https://metalarea.org/forum/index.php?act=Login&CODE=01", "UserName=" + Encoding.urlEncode(username) + "&PassWord=" + Encoding.urlEncode(password) + "&CookieDate=1");
+                }
+                if (br.getCookie(HOST, "ma_tr_pass") != null || br.getCookie(HOST, "ma_tr_uid") != null) {
                     this.getPluginConfig().setProperty("user", username);
                     this.getPluginConfig().setProperty("pass", password);
                     this.getPluginConfig().save();
+                    br.getPage(url);
                     return true;
+                } else {
+                    username = null;
+                    password = null;
+                    continue;
                 }
-
             }
         }
         return false;
