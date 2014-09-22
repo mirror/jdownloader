@@ -22,10 +22,12 @@ import javax.crypto.spec.SecretKeySpec;
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
+import jd.config.Property;
 import jd.http.Browser;
 import jd.http.Request;
 import jd.nutils.encoding.Base64;
 import jd.parser.Regex;
+import jd.plugins.Account;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
@@ -38,6 +40,7 @@ import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
 
 import org.appwork.utils.Exceptions;
+import org.appwork.utils.StringUtils;
 import org.jdownloader.images.NewTheme;
 import org.jdownloader.plugins.PluginTaskID;
 
@@ -61,6 +64,16 @@ public class MegaConz extends PluginForHost {
     @Override
     public void correctDownloadLink(final DownloadLink link) {
         link.setUrlDownload(link.getDownloadURL().replaceAll("%21", "!"));
+    }
+
+    @Override
+    public boolean canHandle(DownloadLink downloadLink, Account account) {
+        if (downloadLink != null) {
+            if (!StringUtils.equals((String) downloadLink.getProperty("usedPlugin", getHost()), getHost())) {
+                return false;
+            }
+        }
+        return super.canHandle(downloadLink, account);
     }
 
     @Override
@@ -203,6 +216,7 @@ public class MegaConz extends PluginForHost {
                 br.followConnection();
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
+            link.setProperty("usedPlugin", getHost());
             if (dl.startDownload()) {
                 if (link.getLinkStatus().hasStatus(LinkStatus.FINISHED) && link.getDownloadCurrent() > 0) {
                     decrypt(link, keyString);
@@ -540,6 +554,7 @@ public class MegaConz extends PluginForHost {
 
     @Override
     public void resetDownloadlink(DownloadLink link) {
+        link.setProperty("usedPlugin", Property.NULL);
     }
 
 }
