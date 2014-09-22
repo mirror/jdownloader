@@ -148,6 +148,7 @@ public class ArteMediathekDecrypter extends PluginForDecrypt {
                 title = br.getRegex("\"VTI\":\"([^<>\"]*?)\"").getMatch(0);
                 br.getRequest().setHtmlCode(br.toString().replace("\\", ""));
             } else {
+                title = getTitle(br);
                 String ID = new Regex(parameter, "/guide/\\w+/([0-9\\-]+)/").getMatch(0);
                 if (ID == null || lang == null) {
                     return ret;
@@ -165,7 +166,6 @@ public class ArteMediathekDecrypter extends PluginForDecrypt {
                     valRegex = "\"([^\"]+)\":\"([^\"]+)\"";
                 }
                 br.getPage(tvguideUrl);
-                title = getTitle(br);
             }
             if (br.containsHTML("<statuscode>wrongParameter</statuscode>")) {
                 return ret;

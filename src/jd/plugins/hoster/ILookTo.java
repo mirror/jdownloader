@@ -50,7 +50,8 @@ public class ILookTo extends PluginForHost {
     // limit-info:
     // protocol: no https
     // captchatype: null
-    // other: using available_CHECK_OVER_INFO_PAGE
+    // other: using available_CHECK_OVER_INFO_PAGE, They have an API but seems like it has no functions to use in JD:
+    // https://api.ilook.to/documentation
 
     @Override
     public String getAGBLink() {

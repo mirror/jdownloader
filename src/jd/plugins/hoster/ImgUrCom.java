@@ -122,18 +122,20 @@ public class ImgUrCom extends PluginForHost {
                  * reached: http://imgur.com/download/ + imgUID This code should never be reached!
                  */
                 if (imgUID == null || filetype == null) {
-                    DL_IMPOSSIBLE_APILIMIT_REACHED = true;
-                    return AvailableStatus.UNCHECKABLE;
+                    DLLINK = "http://imgur.com/download/" + imgUID;
+                } else {
+                    DLLINK = "http://i.imgur.com/" + imgUID + "." + filetype;
                 }
                 br.clearCookies("http://imgur.com/");
                 br.getHeaders().put("Referer", null);
                 br.getHeaders().put("Authorization", null);
                 try {
-                    DLLINK = "http://i.imgur.com/" + imgUID + "." + filetype;
                     con = br.openGetConnection(DLLINK);
-                    if (!con.getContentType().contains("html")) {
+                    if (con.getContentType().contains("image")) {
                         if (finalfilename == null) {
                             finalfilename = Encoding.htmlDecode(getFileNameFromHeader(con));
+                            /* Host tags filenames, remove tags here */
+                            finalfilename = finalfilename.replace(" - Imgur", "");
                         }
                         link.setDownloadSize(con.getLongContentLength());
                     } else {

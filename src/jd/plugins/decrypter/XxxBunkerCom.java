@@ -64,16 +64,17 @@ public class XxxBunkerCom extends PluginForDecrypt {
         if (br.containsHTML(">FILE NOT FOUND<")) {
             logger.info("Link offline: " + parameter);
             return decryptedLinks;
-        }
-        if (br.getURL().equals("http://xxxbunker.com/")) {
+        } else if (br.getURL().equals("http://xxxbunker.com/")) {
             logger.info("Link offline: " + parameter);
+            return decryptedLinks;
+        } else if (br.containsHTML(">your video is being loaded, please wait")) {
+            logger.info("Link offline: " + parameter);
+            return decryptedLinks;
+        } else if (br.containsHTML("<strong>SITE MAINTENANCE</strong>")) {
+            logger.info("Site maintenance, cannot decrypt link: " + parameter);
             return decryptedLinks;
         }
         br.setFollowRedirects(false);
-        if (br.containsHTML(">your video is being loaded, please wait")) {
-            logger.info("Link offline: " + parameter);
-            return decryptedLinks;
-        }
         String filename = br.getRegex("property=\"og:title\" content=\"([^<>\"]*?)\"").getMatch(0);
         if (filename == null) {
             filename = br.getRegex("class=vpVideoTitle><h1 itemprop=\"name\">([^<>\"]*?)</h1>").getMatch(0);
