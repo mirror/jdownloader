@@ -244,8 +244,8 @@ public class DownloadLink extends Property implements Serializable, AbstractPack
         this.isEnabled = isEnabled;
         enabled.set(isEnabled);
         created = System.currentTimeMillis();
-        this.setPluginPattern(pluginPattern);
-        if (plugin != null && this.getPluginPattern() != null) {
+        this.setPluginPatternMatcher(pluginPattern);
+        if (plugin != null && this.getPluginPatternMatcher() != null) {
             try {
                 plugin.correctDownloadLink(this);
             } catch (Throwable e) {
@@ -479,7 +479,7 @@ public class DownloadLink extends Property implements Serializable, AbstractPack
      */
     @Deprecated
     public String getDownloadURL() {
-        return getPluginPattern();
+        return getPluginPatternMatcher();
     }
 
     /**
@@ -564,11 +564,11 @@ public class DownloadLink extends Property implements Serializable, AbstractPack
     }
 
     /**
-     * {@link #setPluginPattern(String)} Definition:<br>
+     * {@link #setPluginPatternMatcher(String)} Definition:<br>
      * the url or pattern that matches the plugins' regular expresssions. it is generally use by the plugin to download. The PluginPattern
      * may be an invalid pseudo url, or event no valid url at all. http://svn.jdownloader.org/issues/51004
      */
-    public String getPluginPattern() {
+    public String getPluginPatternMatcher() {
 
         return urlDownload;
     }
@@ -583,7 +583,7 @@ public class DownloadLink extends Property implements Serializable, AbstractPack
         if (lBrowserUrl != null) {
             return lBrowserUrl;
         }
-        return getPluginPattern();
+        return getPluginPatternMatcher();
     }
 
     @Deprecated
@@ -808,7 +808,7 @@ public class DownloadLink extends Property implements Serializable, AbstractPack
                 setCachedName(ignoreUnsafe, ignoreForcedFilename, ret);
                 return ret;
             }
-            final String url = this.getPluginPattern();
+            final String url = this.getPluginPatternMatcher();
             if (StringUtils.isNotEmpty(url)) {
                 final String urlName = Plugin.extractFileNameFromURL(url);
                 if (StringUtils.isNotEmpty(urlName)) {
@@ -952,7 +952,7 @@ public class DownloadLink extends Property implements Serializable, AbstractPack
     public String getLinkID() {
         final String linkID = getSetLinkID();
         if (StringUtils.isEmpty(linkID)) {
-            return getPluginPattern();
+            return getPluginPatternMatcher();
         }
         return linkID;
     }
@@ -1327,7 +1327,7 @@ public class DownloadLink extends Property implements Serializable, AbstractPack
     public void setName(String name) {
         String oldName = getName();
         if (StringUtils.isEmpty(name)) {
-            name = Plugin.extractFileNameFromURL(getPluginPattern());
+            name = Plugin.extractFileNameFromURL(getPluginPatternMatcher());
         }
         if (!StringUtils.isEmpty(name)) {
             name = CrossSystem.alleviatePathParts(name);
@@ -1438,17 +1438,17 @@ public class DownloadLink extends Property implements Serializable, AbstractPack
     }
 
     /**
-     * @deprecated use {@link #setPluginPattern(String)}
+     * @deprecated use {@link #setPluginPatternMatcher(String)}
      * @param urlDownload
      */
     @Deprecated
     public void setUrlDownload(String urlDownload) {
-        setPluginPattern(urlDownload);
+        setPluginPatternMatcher(urlDownload);
 
     }
 
-    public void setPluginPattern(String pluginPattern) {
-        final String previousURLDownload = getPluginPattern();
+    public void setPluginPatternMatcher(String pluginPattern) {
+        final String previousURLDownload = getPluginPatternMatcher();
         final String previousLinkID = getLinkID();
         if (pluginPattern != null) {
             if (previousURLDownload != null && previousURLDownload.equals(pluginPattern)) {

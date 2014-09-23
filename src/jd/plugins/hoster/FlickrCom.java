@@ -65,7 +65,7 @@ public class FlickrCom extends PluginForHost {
             if (link.getContainerUrl() == null) {
                 link.setContainerUrl(link.getContentUrl());
             }
-            link.setContentUrl(link.getPluginPattern());
+            link.setContentUrl(link.getPluginPatternMatcher());
         } catch (Throwable e) {
             // jd09
         }

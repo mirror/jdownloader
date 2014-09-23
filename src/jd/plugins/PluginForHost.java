@@ -182,7 +182,7 @@ public abstract class PluginForHost extends Plugin {
         try {
             errlogger.severe("HosterPlugin out of date: " + this + " :" + getVersion());
 
-            errlogger.severe("URL:" + link.getPluginPattern() + "|ContentUrl:" + link.getContentUrl() + "|ContainerUrl:" + link.getContainerUrl() + "|OriginUrl:" + link.getOriginUrl() + "|ReferrerUrl:" + link.getReferrerUrl());
+            errlogger.severe("URL:" + link.getPluginPatternMatcher() + "|ContentUrl:" + link.getContentUrl() + "|ContainerUrl:" + link.getContainerUrl() + "|OriginUrl:" + link.getOriginUrl() + "|ReferrerUrl:" + link.getReferrerUrl());
 
             if (e != null) {
                 errlogger.log(e);

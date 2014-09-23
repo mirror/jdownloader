@@ -1496,8 +1496,8 @@ public class LinkCrawler {
                             String[] sources = link.getSourceUrls();
                             HashSet<String> set = new HashSet<String>();
 
-                            set.add(dl.getPluginPattern());
-                            if (StringUtils.equals(dl.getPluginPattern(), dl.getContentUrl())) {
+                            set.add(dl.getPluginPatternMatcher());
+                            if (StringUtils.equals(dl.getPluginPatternMatcher(), dl.getContentUrl())) {
                                 dl.setContentUrl(null);
                             }
                             if (dl != null) {
@@ -1557,7 +1557,7 @@ public class LinkCrawler {
                                         String origin = null;
                                         for (int i = sources.length - 1; i > 1; i--) {
                                             origin = clean(sources[i]);
-                                            if (StringUtils.equals(dl.getContentUrl(), origin) || StringUtils.equals(dl.getPluginPattern(), origin)) {
+                                            if (StringUtils.equals(dl.getContentUrl(), origin) || StringUtils.equals(dl.getPluginPatternMatcher(), origin)) {
                                                 break;
                                             }
                                             if (StringUtils.equals(referrer, origin)) {

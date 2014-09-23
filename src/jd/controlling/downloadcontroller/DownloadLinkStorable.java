@@ -147,10 +147,10 @@ public class DownloadLinkStorable implements Storable {
 
     public String getURL() {
         if (crypt()) {
-            byte[] crypted = JDCrypt.encrypt(link.getPluginPattern(), KEY);
+            byte[] crypted = JDCrypt.encrypt(link.getPluginPatternMatcher(), KEY);
             return CRYPTED + Base64.encodeToString(crypted, false);
         } else {
-            return link.getPluginPattern();
+            return link.getPluginPatternMatcher();
         }
     }
 
@@ -158,9 +158,9 @@ public class DownloadLinkStorable implements Storable {
         if (url.startsWith(CRYPTED)) {
             byte[] bytes = Base64.decodeFast(url.substring(CRYPTED.length()));
             String url2 = JDCrypt.decrypt(bytes, KEY);
-            link.setPluginPattern(url2);
+            link.setPluginPatternMatcher(url2);
         } else {
-            link.setPluginPattern(url);
+            link.setPluginPatternMatcher(url);
         }
     }
 
