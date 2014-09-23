@@ -37,23 +37,24 @@ public class OpenInBrowserAction extends CustomizableTableContextAppAction<Crawl
             setEnabled(false);
             return;
         }
-        SelectionInfo<CrawledPackage, CrawledLink> lselection = getSelection();
+        final SelectionInfo<CrawledPackage, CrawledLink> lselection = getSelection();
         if (lselection == null) {
             setEnabled(false);
             return;
         }
-        List<CrawledLink> links = lselection.getChildren();
+        final List<CrawledLink> links = lselection.getChildren();
         if (links.size() > 50) {
             setEnabled(false);
             return;
         }
 
-        for (CrawledLink cl : links) {
-            setEnabled(true);
+        for (final CrawledLink cl : links) {
+            if (cl.getDownloadLink().getView().getDisplayUrl() != null) {
+                setEnabled(true);
+                return;
+            }
         }
-
         setEnabled(false);
-
     }
 
     public void actionPerformed(ActionEvent e) {

@@ -21,7 +21,6 @@ public class CaptchaListTest extends Test {
         final ArrayList uptime = api.callAction(list.getList().get(device).getId(), "/captcha/list", ArrayList.class);
 
         Dialog.getInstance().showMessageDialog("Uptime: " + uptime);
-        Dialog.getInstance().showMessageDialog("Uptime: " + uptime);
     }
 
 }

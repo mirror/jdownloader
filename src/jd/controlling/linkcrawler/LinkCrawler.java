@@ -1492,105 +1492,8 @@ public class LinkCrawler {
                             if (parentLinkModifier != null) {
                                 parentLinkModifier.modifyCrawledLink(link);
                             }
-                            DownloadLink dl = link.getDownloadLink();
-                            String[] sources = link.getSourceUrls();
-                            HashSet<String> set = new HashSet<String>();
-
-                            set.add(dl.getPluginPatternMatcher());
-                            if (StringUtils.equals(dl.getPluginPatternMatcher(), dl.getContentUrl())) {
-                                dl.setContentUrl(null);
-                            }
-                            if (dl != null) {
-                                if (sources != null) {
-                                    int containerIndex = 0;
-                                    if (sources.length > 1) {
-                                        if (sources[0].startsWith("httpviajd")) {
-                                            String clean = clean(sources[0]);
-                                            if (StringUtils.equals(clean, sources[1])) {
-                                                containerIndex++;
-                                            }
-                                        }
-                                    }
-                                    if (sources.length > containerIndex && StringUtils.isEmpty(dl.getContentUrl())) {
-                                        String cUrl = clean(sources[containerIndex]);
-
-                                        if (set.add(cUrl)) {
-                                            dl.setContentUrl(cUrl);
-
-                                        }
-                                    } else if (StringUtils.isNotEmpty(dl.getContentUrl())) {
-                                        set.add(dl.getContentUrl());
-
-                                        // if content url is set, then
-                                        // sources[0] is usually the pluginpattern,
-                                        // sources[1] is usually the contentURL without variant information
-                                        // if contentURL and patternurl do not equal, the container url is probably shifted
-                                        // containerIndex++;
-
-                                    }
-                                    containerIndex++;
-                                    String container = null;
-                                    if (StringUtils.isEmpty(dl.getContainerUrl())) {
-                                        for (int i = containerIndex; i < sources.length; i++) {
-                                            container = clean(sources[i]);
-                                            containerIndex = i;
-                                            if (container != null && container.startsWith("http://dummycnl.jdownloader.org")) {
-                                                // try to avoid dummycnl as containerurl;
-                                                continue;
-                                            }
-                                            break;
-                                        }
-                                        if (container != null) {
-                                            if (set.add(container)) {
-                                                dl.setContainerUrl(container);
-
-                                            }
-                                        }
-                                    } else {
-                                        set.add(dl.getContainerUrl());
-                                    }
-                                    String referrer = dl.getReferrerUrl();
-                                    if (LinkCrawler.this instanceof JobLinkCrawler) {
-                                        referrer = ((JobLinkCrawler) LinkCrawler.this).getJob().getCustomSourceUrl();
-                                    }
-                                    if (StringUtils.isEmpty(dl.getOriginUrl())) {
-                                        String origin = null;
-                                        for (int i = sources.length - 1; i > 1; i--) {
-                                            origin = clean(sources[i]);
-                                            if (StringUtils.equals(dl.getContentUrl(), origin) || StringUtils.equals(dl.getPluginPatternMatcher(), origin)) {
-                                                break;
-                                            }
-                                            if (StringUtils.equals(referrer, origin)) {
-                                                origin = null;
-                                                continue;
-                                            }
-                                            break;
-
-                                        }
-
-                                        if (origin != null && (set.add(origin) || StringUtils.equals(origin, dl.getContainerUrl()))) {
-
-                                            dl.setOriginUrl(origin);
-
-                                            if (StringUtils.equals(origin, dl.getContainerUrl())) {
-                                                dl.setContainerUrl(null);
-                                            }
-
-                                        }
-
-                                    }
-                                }
-                                // if(dl.getOriginUrl())
-                                // dl.setBrowserUrl(cryptedLink.getURL());
-                            }
                         }
 
-                        private String clean(String cUrl) {
-                            if (cUrl.startsWith(HTTPVIAJD)) {
-                                cUrl = "http" + cUrl.substring(HTTPVIAJD.length());
-                            }
-                            return cUrl;
-                        }
                     };
                     wplg.setDistributer(dist = new LinkCrawlerDistributer() {
 
@@ -1724,10 +1627,112 @@ public class LinkCrawler {
         getHandler().handleUnHandledLink(link);
     }
 
+    protected void bla(CrawledLink link) {
+        final DownloadLink dl = link.getDownloadLink();
+        if (dl != null) {
+            final String[] sources = link.getSourceUrls();
+            final HashSet<String> set = new HashSet<String>();
+
+            // if (dl.getPluginPatternMatcher().contains("decrypted.com")) {
+            // /**
+            // * example box.com -> boxdecrypted.com
+            // */
+            // if (dl.getContainerUrl() == null) {
+            // dl.setContainerUrl(cryptedLink.getCryptedLink().getCryptedUrl());
+            // }
+            // }
+
+            set.add(dl.getPluginPatternMatcher());
+            if (StringUtils.equals(dl.getPluginPatternMatcher(), dl.getContentUrl())) {
+                dl.setContentUrl(null);
+            }
+            if (sources != null) {
+                int containerIndex = 0;
+                if (sources.length > 1) {
+                    if (sources[0].startsWith(HTTPVIAJD)) {
+                        final String clean = clean(sources[0]);
+                        if (StringUtils.equals(clean, sources[1])) {
+                            containerIndex++;
+                        }
+                    }
+                }
+                if (sources.length > containerIndex && StringUtils.isEmpty(dl.getContentUrl())) {
+                    final String cUrl = clean(sources[containerIndex]);
+                    if (set.add(cUrl)) {
+                        dl.setContentUrl(cUrl);
+                    }
+                } else if (StringUtils.isNotEmpty(dl.getContentUrl())) {
+                    set.add(dl.getContentUrl());
+                    // if content url is set, then
+                    // sources[0] is usually the pluginpattern,
+                    // sources[1] is usually the contentURL without variant information
+                    // if contentURL and patternurl do not equal, the container url is probably shifted
+                    // containerIndex++;
+
+                }
+                containerIndex++;
+                String container = null;
+                if (StringUtils.isEmpty(dl.getContainerUrl())) {
+                    for (int i = containerIndex; i < sources.length; i++) {
+                        container = clean(sources[i]);
+                        containerIndex = i;
+                        if (container != null && container.startsWith("http://dummycnl.jdownloader.org")) {
+                            // try to avoid dummycnl as containerurl;
+                            continue;
+                        }
+                        break;
+                    }
+                    if (container != null) {
+                        if (set.add(container)) {
+                            dl.setContainerUrl(container);
+                        }
+                    }
+                } else {
+                    set.add(dl.getContainerUrl());
+                }
+                String referrer = dl.getReferrerUrl();
+                if (referrer != null && LinkCrawler.this instanceof JobLinkCrawler) {
+                    referrer = ((JobLinkCrawler) LinkCrawler.this).getJob().getCustomSourceUrl();
+                }
+                if (StringUtils.isEmpty(dl.getOriginUrl())) {
+                    String origin = null;
+                    for (int i = sources.length - 1; i > 1; i--) {
+                        origin = clean(sources[i]);
+                        if (StringUtils.equals(dl.getContentUrl(), origin) || StringUtils.equals(dl.getPluginPatternMatcher(), origin)) {
+                            break;
+                        }
+                        if (StringUtils.equals(referrer, origin)) {
+                            origin = null;
+                            continue;
+                        }
+                        break;
+                    }
+                    if (origin != null && (set.add(origin) || StringUtils.equals(origin, dl.getContainerUrl()))) {
+                        dl.setOriginUrl(origin);
+                        if (StringUtils.equals(origin, dl.getContainerUrl())) {
+                            dl.setContainerUrl(null);
+                        }
+                    }
+                }
+                if (referrer != null && set.add(referrer)) {
+                    dl.setReferrerUrl(referrer);
+                }
+            }
+        }
+    }
+
+    private String clean(String cUrl) {
+        if (cUrl != null && cUrl.startsWith(HTTPVIAJD)) {
+            cUrl = "http" + cUrl.substring(HTTPVIAJD.length());
+        }
+        return cUrl;
+    }
+
     protected void handleFinalCrawledLink(CrawledLink link) {
         if (link == null) {
             return;
         }
+        bla(link);
         link.setCreated(getCreated());
         CrawledLink origin = link.getOriginLink();
         CrawledLinkModifier customModifier = link.getCustomCrawledLinkModifier();

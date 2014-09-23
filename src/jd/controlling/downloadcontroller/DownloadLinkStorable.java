@@ -11,6 +11,7 @@ import jd.plugins.LinkStatus;
 import org.appwork.storage.JSonStorage;
 import org.appwork.storage.Storable;
 import org.appwork.storage.TypeRef;
+import org.appwork.utils.StringUtils;
 import org.appwork.utils.encoding.Base64;
 import org.appwork.utils.logging.Log;
 import org.jdownloader.controlling.UrlProtection;
@@ -173,7 +174,12 @@ public class DownloadLinkStorable implements Storable {
     }
 
     public void setBrowserURL(String url) {
-        link.setOriginUrl(url);
+        if (!StringUtils.isEmpty(url)) {
+            /**
+             * for conversion from own key to property system
+             */
+            link.setOriginUrl(url);
+        }
     }
 
     public long[] getChunkProgress() {
