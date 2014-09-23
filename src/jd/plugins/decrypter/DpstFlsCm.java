@@ -49,7 +49,7 @@ public class DpstFlsCm extends PluginForDecrypt {
             final PluginForHost depositfilesPlugin = JDUtilities.getPluginForHost("depositfiles.com");
             ((jd.plugins.hoster.DepositFiles) depositfilesPlugin).setMainpage();
 
-            MAINPAGE = jd.plugins.hoster.DepositFiles.MAINPAGE.string;
+            MAINPAGE = jd.plugins.hoster.DepositFiles.MAINPAGE.get();
             DOMAINS = jd.plugins.hoster.DepositFiles.DOMAINS;
             if (MAINPAGE == null || DOMAINS == null) {
                 logger.warning("Contant setters failed.");
@@ -62,13 +62,18 @@ public class DpstFlsCm extends PluginForDecrypt {
         String id = new Regex(url, "folders/(.+)").getMatch(0);
         url = MAINPAGE + "/de/folders/" + id;
         // Get Pagecount //
-        if (url.contains("page")) url = url.split("\\?")[0];
+        if (url.contains("page")) {
+            url = url.split("\\?")[0];
+        }
         br.getPage(url);
         if (br.containsHTML("\\&gt;\\&gt;\\&gt;")) {
             final String[] pages = br.getRegex("\\?page=(\\d+)\">\\d+</a>").getColumn(0);
             if (pages != null && pages.length != 0) {
-                for (final String currentPage : pages)
-                    if (Integer.parseInt(currentPage) > pagecount) pagecount = Integer.parseInt(currentPage);
+                for (final String currentPage : pages) {
+                    if (Integer.parseInt(currentPage) > pagecount) {
+                        pagecount = Integer.parseInt(currentPage);
+                    }
+                }
             }
         }
         new Regex("", "");

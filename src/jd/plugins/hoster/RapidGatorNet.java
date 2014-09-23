@@ -32,6 +32,7 @@ import java.util.Map;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.regex.Pattern;
 
 import javax.script.ScriptEngine;
@@ -78,26 +79,22 @@ public class RapidGatorNet extends PluginForHost {
         this.setConfigElements();
     }
 
-    public static class StringContainer {
-        public String string = null;
-    }
+    private static final String            MAINPAGE             = "http://rapidgator.net/";
+    private static Object                  LOCK                 = new Object();
+    private static AtomicReference<String> agent                = new AtomicReference<String>();
+    private static final String            PREMIUMONLYTEXT      = "This file can be downloaded by premium only</div>";
+    private static final String            PREMIUMONLYUSERTEXT  = JDL.L("plugins.hoster.rapidgatornet.only4premium", "Only downloadable for premium users!");
+    private static AtomicBoolean           hasDled              = new AtomicBoolean(false);
+    private static AtomicLong              timeBefore           = new AtomicLong(0);
+    private final String                   LASTIP               = "LASTIP";
+    private static AtomicReference<String> lastIP               = new AtomicReference<String>();
+    private final Pattern                  IPREGEX              = Pattern.compile("(([1-2])?([0-9])?([0-9])\\.([1-2])?([0-9])?([0-9])\\.([1-2])?([0-9])?([0-9])\\.([1-2])?([0-9])?([0-9]))", Pattern.CASE_INSENSITIVE);
+    private final String                   EXPERIMENTALHANDLING = "EXPERIMENTALHANDLING";
+    private final String                   DISABLE_API_PREMIUM  = "DISABLE_API_PREMIUM";
 
-    private static final String    MAINPAGE             = "http://rapidgator.net/";
-    private static Object          LOCK                 = new Object();
-    private static StringContainer agent                = new StringContainer();
-    private static final String    PREMIUMONLYTEXT      = "This file can be downloaded by premium only</div>";
-    private static final String    PREMIUMONLYUSERTEXT  = JDL.L("plugins.hoster.rapidgatornet.only4premium", "Only downloadable for premium users!");
-    private static AtomicBoolean   hasDled              = new AtomicBoolean(false);
-    private static AtomicLong      timeBefore           = new AtomicLong(0);
-    private final String           LASTIP               = "LASTIP";
-    private static StringContainer lastIP               = new StringContainer();
-    private final Pattern          IPREGEX              = Pattern.compile("(([1-2])?([0-9])?([0-9])\\.([1-2])?([0-9])?([0-9])\\.([1-2])?([0-9])?([0-9])\\.([1-2])?([0-9])?([0-9]))", Pattern.CASE_INSENSITIVE);
-    private final String           EXPERIMENTALHANDLING = "EXPERIMENTALHANDLING";
-    private final String           DISABLE_API_PREMIUM  = "DISABLE_API_PREMIUM";
+    private final String                   apiURL               = "https://rapidgator.net/api/";
 
-    private final String           apiURL               = "https://rapidgator.net/api/";
-
-    private final String[]         IPCHECK              = new String[] { "http://ipcheck0.jdownloader.org", "http://ipcheck1.jdownloader.org", "http://ipcheck2.jdownloader.org", "http://ipcheck3.jdownloader.org" };
+    private final String[]                 IPCHECK              = new String[] { "http://ipcheck0.jdownloader.org", "http://ipcheck1.jdownloader.org", "http://ipcheck2.jdownloader.org", "http://ipcheck3.jdownloader.org" };
 
     @Override
     public String getAGBLink() {
@@ -136,13 +133,12 @@ public class RapidGatorNet extends PluginForHost {
         if (prepBr == null) {
             return prepBr;
         }
-        if (RapidGatorNet.agent.string == null) {
+        if (agent.get() == null) {
             /* we first have to load the plugin, before we can reference it */
-            JDUtilities.getPluginForHost("mediafire.com");
-            RapidGatorNet.agent.string = jd.plugins.hoster.MediafireCom.stringUserAgent();
+            agent.set(jd.plugins.hoster.MediafireCom.stringUserAgent());
         }
         prepBr.setRequestIntervalLimit("http://rapidgator.net/", 319 * (int) Math.round(Math.random() * 3 + Math.random() * 3));
-        prepBr.getHeaders().put("User-Agent", RapidGatorNet.agent.string);
+        prepBr.getHeaders().put("User-Agent", RapidGatorNet.agent.get());
         prepBr.getHeaders().put("Accept-Charset", "ISO-8859-1,utf-8;q=0.7,*;q=0.3");
         prepBr.getHeaders().put("Accept-Language", "en-US,en;q=0.8");
         prepBr.getHeaders().put("Cache-Control", null);
@@ -1201,7 +1197,7 @@ public class RapidGatorNet extends PluginForHost {
         }
         String lastIP = link.getStringProperty(this.LASTIP, null);
         if (lastIP == null) {
-            lastIP = RapidGatorNet.lastIP.string;
+            lastIP = RapidGatorNet.lastIP.get();
         }
         return !currentIP.equals(lastIP);
     }
@@ -1218,7 +1214,7 @@ public class RapidGatorNet extends PluginForHost {
             } else {
                 final String lastIP = IP;
                 link.setProperty(this.LASTIP, lastIP);
-                RapidGatorNet.lastIP.string = lastIP;
+                RapidGatorNet.lastIP.set(lastIP);
                 this.logger.info("LastIP = " + lastIP);
                 return true;
             }

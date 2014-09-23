@@ -18,6 +18,7 @@ package jd.plugins.hoster;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.concurrent.atomic.AtomicReference;
 
 import jd.PluginWrapper;
 import jd.http.RandomUserAgent;
@@ -41,24 +42,11 @@ import org.appwork.utils.formatter.TimeFormatter;
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "jumbofiles.com" }, urls = { "http://(www\\.)?jumbofiles\\.com/[0-9a-z]{12}" }, flags = { 2 })
 public class JumboFilesCom extends PluginForHost {
 
-    private String                 BRBEFORE    = "";
-    private static final String    COOKIE_HOST = "http://jumbofiles.com";
-    private static final String    NOCHUNKS    = "NOCHUNKS";
-    private static final String    NORESUME    = "NORESUME";
-    private static StringContainer UA          = new StringContainer(RandomUserAgent.generate());
-
-    public static class StringContainer {
-        public String string = null;
-
-        public StringContainer(String string) {
-            this.string = string;
-        }
-
-        @Override
-        public String toString() {
-            return string;
-        }
-    }
+    private String                         BRBEFORE    = "";
+    private static final String            COOKIE_HOST = "http://jumbofiles.com";
+    private static final String            NOCHUNKS    = "NOCHUNKS";
+    private static final String            NORESUME    = "NORESUME";
+    private static AtomicReference<String> UA          = new AtomicReference<String>(RandomUserAgent.generate());
 
     public JumboFilesCom(final PluginWrapper wrapper) {
         super(wrapper);
@@ -79,15 +67,29 @@ public class JumboFilesCom extends PluginForHost {
         String filesize = new Regex(BRBEFORE, "Filesize:.*?</TD><TD>(.*?)</TD>").getMatch(0);
         // They got different pages for stream, normal and pw-protected files so
         // we need special handling
-        if (filesize == null) filesize = new Regex(BRBEFORE, "<small>\\((.*?)\\)</small>").getMatch(0);
-        if (filesize == null) filesize = new Regex(BRBEFORE, "F<TD><center>.*?<br>(.*?)<br>").getMatch(0);
-        if (filesize == null) filesize = new Regex(BRBEFORE, "You have requested.*?>http.*?font> \\((.*?)\\)").getMatch(0);
+        if (filesize == null) {
+            filesize = new Regex(BRBEFORE, "<small>\\((.*?)\\)</small>").getMatch(0);
+        }
+        if (filesize == null) {
+            filesize = new Regex(BRBEFORE, "F<TD><center>.*?<br>(.*?)<br>").getMatch(0);
+        }
+        if (filesize == null) {
+            filesize = new Regex(BRBEFORE, "You have requested.*?>http.*?font> \\((.*?)\\)").getMatch(0);
+        }
 
-        if (filename == null) filename = new Regex(BRBEFORE, "down_direct\" value=.*?<input type=\"image\" src=.*?</TD></TR>.*?<TR><TD>(.*?)<small").getMatch(0);
-        if (filename == null) filename = new Regex(BRBEFORE, "<TD><center>(.*?)<br>").getMatch(0);
-        if (filename == null) filename = new Regex(BRBEFORE, "fname\" value=\"(.*?)\"").getMatch(0);
+        if (filename == null) {
+            filename = new Regex(BRBEFORE, "down_direct\" value=.*?<input type=\"image\" src=.*?</TD></TR>.*?<TR><TD>(.*?)<small").getMatch(0);
+        }
+        if (filename == null) {
+            filename = new Regex(BRBEFORE, "<TD><center>(.*?)<br>").getMatch(0);
+        }
+        if (filename == null) {
+            filename = new Regex(BRBEFORE, "fname\" value=\"(.*?)\"").getMatch(0);
+        }
 
-        if (filename == null) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
+        if (filename == null) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
         filename = filename.replace("&nbsp;", "");
         filename = filename.trim();
         link.setName(filename);
@@ -170,7 +172,9 @@ public class JumboFilesCom extends PluginForHost {
         String dllink = null;
         // Form um auf "Datei herunterladen" zu klicken
         Form dlForm = br.getForm(0);
-        if (dlForm == null) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
+        if (dlForm == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         for (int i = 0; i <= 5; i++) {
             String passCode = null;
             if (BRBEFORE.contains("<b>Password:</b>")) {
@@ -210,7 +214,9 @@ public class JumboFilesCom extends PluginForHost {
         jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, chunks);
         if (!this.dl.startDownload()) {
             try {
-                if (dl.externalDownloadStop()) return;
+                if (dl.externalDownloadStop()) {
+                    return;
+                }
             } catch (final Throwable e) {
             }
             /* unknown error, we disable multiple chunks */
@@ -231,7 +237,9 @@ public class JumboFilesCom extends PluginForHost {
         String dllink = br.getRedirectLocation();
         if (dllink == null) {
             Form DLForm = br.getFormbyProperty("name", "F1");
-            if (DLForm == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            if (DLForm == null) {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
             if (br.containsHTML("(<b>Passwort:</b>|<b>Password:</b>)")) {
                 logger.info("The downloadlink seems to be password protected.");
                 if (downloadLink.getStringProperty("pass", null) == null) {
@@ -250,7 +258,9 @@ public class JumboFilesCom extends PluginForHost {
                 throw new PluginException(LinkStatus.ERROR_RETRY);
             }
             dllink = br.getRedirectLocation();
-            if (dllink == null) dllink = getDllink();
+            if (dllink == null) {
+                dllink = getDllink();
+            }
         }
         if (dllink == null) {
             handleErrors();
@@ -274,7 +284,9 @@ public class JumboFilesCom extends PluginForHost {
         }
         if (!this.dl.startDownload()) {
             try {
-                if (dl.externalDownloadStop()) return;
+                if (dl.externalDownloadStop()) {
+                    return;
+                }
             } catch (final Throwable e) {
             }
             if (downloadLink.getLinkStatus().getErrorMessage() != null && downloadLink.getLinkStatus().getErrorMessage().startsWith(JDL.L("download.error.message.rangeheaders", "Server does not support chunkload"))) {
@@ -294,24 +306,30 @@ public class JumboFilesCom extends PluginForHost {
     }
 
     private void handleErrors() throws PluginException {
-        if (br.containsHTML(">Error happened when generating Download Link.<br>Please try again or Contact administrator")) { throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error", 10 * 60 * 1000l); }
+        if (br.containsHTML(">Error happened when generating Download Link.<br>Please try again or Contact administrator")) {
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error", 10 * 60 * 1000l);
+        }
     }
 
     private void login(final Account account) throws Exception {
         setBrowserExclusive();
         br.setFollowRedirects(true);
-        br.getHeaders().put("User-Agent", UA.toString());
+        br.getHeaders().put("User-Agent", UA.get());
         br.setCookie(COOKIE_HOST, "lang", "english");
         br.getPage(COOKIE_HOST + "/login.html");
         Form loginform = br.getForm(0);
-        if (loginform == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (loginform == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         loginform.put("login", Encoding.urlEncode(account.getUser()));
         loginform.put("password", Encoding.urlEncode(account.getPass()));
         loginform.put("x", String.valueOf((int) (Math.random() * 57)));
         loginform.put("y", String.valueOf((int) (Math.random() * 21)));
         br.submitForm(loginform);
         br.getPage(COOKIE_HOST + "/?op=my_account");
-        if (br.getCookie(COOKIE_HOST, "login") == null || br.getCookie(COOKIE_HOST, "xfss") == null) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+        if (br.getCookie(COOKIE_HOST, "login") == null || br.getCookie(COOKIE_HOST, "xfss") == null) {
+            throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+        }
     }
 
     @Override

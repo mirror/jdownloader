@@ -36,6 +36,7 @@ import java.util.Map;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
+import java.util.concurrent.atomic.AtomicReference;
 
 import javax.crypto.Cipher;
 import javax.crypto.CipherInputStream;
@@ -91,45 +92,41 @@ import org.xml.sax.SAXException;
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "oceanus.ch" }, urls = { "oceanus://\\d+,\\d+,[0-9a-zA-Z\\-]*" }, flags = { 2 })
 public class Oceanus extends PluginForHost {
 
-    private final String           DOWNLOAD_PREPARE_MSG  = "Preparing to download...";
-    private final String           CON_DL_REQ            = "MaxConcurrentDownloadsReq";
-    private final String           LOGIN_REQ             = "loginReq";
-    private final String           STATUS                = "Status";
-    private final String           FREE_CNT              = "freeCount";
-    private final String           PREM_CNT              = "premiumCount";
-    public final String            DOWNLOAD_INVALID      = "DownloadInvalid";
-    private final String           DOWN_INVALID_MSG      = "InvalidDownload";
-    private final String           REG_FREE_USER         = "Registered (free) User";
-    private final String           PREM_USER             = "Premium User";
-    private final String           PREP_DOWN_ERR         = "PrepareDownloadError";
-    private final String           PREP_DOWN             = "PrepareDownload";
-    private final String           LNK_INVALID           = "link_invalid";
-    private final String           PRE_DOWN_REQ          = "PrepareDownloadReq";
-    private final String           UPLOAD_ID_LST         = "uploadIDList";
-    private final String           CON_REQ               = "connectReq";
-    private final String           VERIFY_CAPTCHA        = "verifyCaptcha";
-    private final String           CAPTCHA_VERIFIED      = "captchaVerified";
-    private final String           WAIT_TIME             = "waitTime";
-    private final String           USER_NAME             = "UserName";
-    private final String           PASSWORD              = "Password";
-    private final String           USERID                = "userID";
-    private final String           AVAIL_BYTES           = "availableBytes";
-    private final String           PREM_EXPIRE           = "PremiumExpires";
-    private final String           OK_STR                = "OK";
-    private final String           HTTP                  = "http://";
-    private final String           SERVER_ADDR           = ":8080/OceanusManagementSystemServerWeb/jd?action=";
-    private final String           OCEANUS_PREM_LNK      = "http://www.oceanus.ch/premiumcustomer.html";
+    private final String                   DOWNLOAD_PREPARE_MSG  = "Preparing to download...";
+    private final String                   CON_DL_REQ            = "MaxConcurrentDownloadsReq";
+    private final String                   LOGIN_REQ             = "loginReq";
+    private final String                   STATUS                = "Status";
+    private final String                   FREE_CNT              = "freeCount";
+    private final String                   PREM_CNT              = "premiumCount";
+    public final String                    DOWNLOAD_INVALID      = "DownloadInvalid";
+    private final String                   DOWN_INVALID_MSG      = "InvalidDownload";
+    private final String                   REG_FREE_USER         = "Registered (free) User";
+    private final String                   PREM_USER             = "Premium User";
+    private final String                   PREP_DOWN_ERR         = "PrepareDownloadError";
+    private final String                   PREP_DOWN             = "PrepareDownload";
+    private final String                   LNK_INVALID           = "link_invalid";
+    private final String                   PRE_DOWN_REQ          = "PrepareDownloadReq";
+    private final String                   UPLOAD_ID_LST         = "uploadIDList";
+    private final String                   CON_REQ               = "connectReq";
+    private final String                   VERIFY_CAPTCHA        = "verifyCaptcha";
+    private final String                   CAPTCHA_VERIFIED      = "captchaVerified";
+    private final String                   WAIT_TIME             = "waitTime";
+    private final String                   USER_NAME             = "UserName";
+    private final String                   PASSWORD              = "Password";
+    private final String                   USERID                = "userID";
+    private final String                   AVAIL_BYTES           = "availableBytes";
+    private final String                   PREM_EXPIRE           = "PremiumExpires";
+    private final String                   OK_STR                = "OK";
+    private final String                   HTTP                  = "http://";
+    private final String                   SERVER_ADDR           = ":8080/OceanusManagementSystemServerWeb/jd?action=";
+    private final String                   OCEANUS_PREM_LNK      = "http://www.oceanus.ch/premiumcustomer.html";
 
-    private AtomicInteger          CON_FREE_DL           = new AtomicInteger(1);
-    private AtomicInteger          CON_PREM_DL           = new AtomicInteger(5);
-    private AtomicBoolean          CON_DL_UPDATED        = new AtomicBoolean(false);
-    public final String            DEFAULT_RELAY_NODES[] = new String[] { "http://001webhoster.com/relay.xml", "http://wp11077166.wp374.webpack.hosteurope.de/relay.xml" };
+    private AtomicInteger                  CON_FREE_DL           = new AtomicInteger(1);
+    private AtomicInteger                  CON_PREM_DL           = new AtomicInteger(5);
+    private AtomicBoolean                  CON_DL_UPDATED        = new AtomicBoolean(false);
+    public final String                    DEFAULT_RELAY_NODES[] = new String[] { "http://001webhoster.com/relay.xml", "http://wp11077166.wp374.webpack.hosteurope.de/relay.xml" };
 
-    private static StringContainer SERVERIP              = new StringContainer();
-
-    public static class StringContainer {
-        public String string = null;
-    }
+    private static AtomicReference<String> SERVERIP              = new AtomicReference<String>();
 
     public Oceanus(PluginWrapper wrapper) throws PluginException {
         super(wrapper);
@@ -137,18 +134,18 @@ public class Oceanus extends PluginForHost {
     }
 
     private String getSERVERIP() throws Exception {
-        if (!StringUtils.isEmpty(SERVERIP.string)) {
-            return SERVERIP.string;
+        if (!StringUtils.isEmpty(SERVERIP.get())) {
+            return SERVERIP.get();
         }
         synchronized (SERVERIP) {
-            if (!StringUtils.isEmpty(SERVERIP.string)) {
-                return SERVERIP.string;
+            if (!StringUtils.isEmpty(SERVERIP.get())) {
+                return SERVERIP.get();
             }
             for (ManagementSystemEntry ms : new OceanusResolver(DEFAULT_RELAY_NODES).getManagementSystems()) {
                 try {
                     if (sendConnectReq(ms.getIpAddress())) {
-                        SERVERIP.string = ms.getIpAddress();
-                        return SERVERIP.string;
+                        SERVERIP.set(ms.getIpAddress());
+                        return SERVERIP.get();
                     }
                 } catch (final Throwable e) {
                     LogSource.exception(logger, e);

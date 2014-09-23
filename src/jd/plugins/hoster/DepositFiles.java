@@ -27,6 +27,7 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.regex.Pattern;
 
 import javax.swing.JOptionPane;
@@ -65,34 +66,25 @@ import org.appwork.utils.os.CrossSystem;
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "depositfiles.com" }, urls = { "https?://(www\\.)?(depositfiles\\.(com|org)|dfiles\\.(eu|ru))(/\\w{1,3})?/files/[\\w]+" }, flags = { 2 })
 public class DepositFiles extends PluginForHost {
 
-    public static class StringContainer {
-        public String string = null;
+    private final String                  UA                       = "Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/28.0.1500.72 Safari/537.36";
+    private final String                  FILE_NOT_FOUND           = "Dieser File existiert nicht|Entweder existiert diese Datei nicht oder sie wurde";
+    private final String                  PATTERN_PREMIUM_FINALURL = "<div id=\"download_url\".*?<a href=\"(.*?)\"";
+    public static AtomicReference<String> MAINPAGE                 = new AtomicReference<String>();
+    public static final String            DOMAINS                  = "(depositfiles\\.(com|org)|dfiles\\.(eu|ru))";
 
-        @Override
-        public String toString() {
-            return string;
-        }
-    }
+    private String                        protocol                 = null;
 
-    private final String          UA                       = "Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/28.0.1500.72 Safari/537.36";
-    private final String          FILE_NOT_FOUND           = "Dieser File existiert nicht|Entweder existiert diese Datei nicht oder sie wurde";
-    private final String          PATTERN_PREMIUM_FINALURL = "<div id=\"download_url\".*?<a href=\"(.*?)\"";
-    public static StringContainer MAINPAGE                 = new StringContainer();
-    public static final String    DOMAINS                  = "(depositfiles\\.(com|org)|dfiles\\.(eu|ru))";
+    public String                         DLLINKREGEX2             = "<div id=\"download_url\" style=\"display:none;\">.*?<form action=\"(.*?)\" method=\"get";
+    private final Pattern                 FILE_INFO_NAME           = Pattern.compile("(?s)Dateiname: <b title=\"(.*?)\">.*?</b>", Pattern.CASE_INSENSITIVE);
+    private final Pattern                 FILE_INFO_SIZE           = Pattern.compile(">Datei Gr.*?sse: <b>([^<>\"]*?)</b>");
 
-    private String                protocol                 = null;
+    private static Object                 PREMLOCK                 = new Object();
+    private static Object                 LOCK                     = new Object();
 
-    public String                 DLLINKREGEX2             = "<div id=\"download_url\" style=\"display:none;\">.*?<form action=\"(.*?)\" method=\"get";
-    private final Pattern         FILE_INFO_NAME           = Pattern.compile("(?s)Dateiname: <b title=\"(.*?)\">.*?</b>", Pattern.CASE_INSENSITIVE);
-    private final Pattern         FILE_INFO_SIZE           = Pattern.compile(">Datei Gr.*?sse: <b>([^<>\"]*?)</b>");
+    private static AtomicInteger          simultanpremium          = new AtomicInteger(1);
+    private static AtomicBoolean          useAPI                   = new AtomicBoolean(true);
 
-    private static Object         PREMLOCK                 = new Object();
-    private static Object         LOCK                     = new Object();
-
-    private static AtomicInteger  simultanpremium          = new AtomicInteger(1);
-    private static AtomicBoolean  useAPI                   = new AtomicBoolean(true);
-
-    private final String          SSL_CONNECTION           = "SSL_CONNECTION";
+    private final String                  SSL_CONNECTION           = "SSL_CONNECTION";
 
     public DepositFiles(final PluginWrapper wrapper) {
         super(wrapper);
@@ -101,27 +93,23 @@ public class DepositFiles extends PluginForHost {
     }
 
     public void setMainpage() {
-        if (MAINPAGE == null || MAINPAGE.string == null || userChangedSslSetting()) {
+        if (MAINPAGE.get() == null || userChangedSslSetting()) {
             try {
                 Browser testBr = new Browser();
                 testBr.setFollowRedirects(true);
                 // NOTE: https requests do not trigger redirects
                 testBr.getPage(fixLinkSSL("http://depositfiles.com"));
                 String baseURL = new Regex(testBr.getURL(), "(https?://[^/]+)").getMatch(0);
-                StringContainer main = new StringContainer();
-                main.string = baseURL;
                 if (baseURL != null) {
-                    MAINPAGE = main;
+                    MAINPAGE.set(baseURL);
                 }
-                System.out.println("depositfiles setter MAINPAGE = " + MAINPAGE.string);
+                System.out.println("depositfiles setter MAINPAGE = " + MAINPAGE.get());
             } catch (Throwable e) {
                 e.printStackTrace();
                 try {
                     System.out.println("despostfiles setter failed, setting failover");
-                    StringContainer main = new StringContainer();
-                    main.string = fixLinkSSL("http://depositfiles.com");
-                    MAINPAGE = main;
-                    System.out.println("depositfiles setter MAINPAGE = " + MAINPAGE.string);
+                    MAINPAGE.set(fixLinkSSL("http://depositfiles.com"));
+                    System.out.println("depositfiles setter MAINPAGE = " + MAINPAGE.get());
                 } catch (final Throwable e2) {
                     e2.printStackTrace();
                 }
@@ -150,7 +138,7 @@ public class DepositFiles extends PluginForHost {
     @Override
     public void correctDownloadLink(final DownloadLink link) {
         setMainpage();
-        final String newLink = link.getDownloadURL().replaceAll(DOMAINS + "(/.*?)?/files", MAINPAGE.string.replaceAll("https?://(www\\.)?", "") + "/de/files");
+        final String newLink = link.getDownloadURL().replaceAll(DOMAINS + "(/.*?)?/files", MAINPAGE.get().replaceAll("https?://(www\\.)?", "") + "/de/files");
         link.setUrlDownload(fixLinkSSL(newLink));
     }
 
@@ -357,7 +345,7 @@ public class DepositFiles extends PluginForHost {
             final String[] lol = HTMLParser.getHttpLinks(crap, "");
             if (lol == null || lol.length == 0) {
                 if (!crap.contains("depositfiles") && crap.contains("php?")) {
-                    return MAINPAGE.string + crap;
+                    return MAINPAGE.get() + crap;
                 } else {
                     return null;
                 }
@@ -366,7 +354,7 @@ public class DepositFiles extends PluginForHost {
         } else {
             String fid = br.getRegex("var fid = '(.*?)'").getMatch(0);
             if (fid != null) {
-                return MAINPAGE.string + "/get_file.php?fid=" + fid;
+                return MAINPAGE.get() + "/get_file.php?fid=" + fid;
             }
         }
         return null;
@@ -439,10 +427,10 @@ public class DepositFiles extends PluginForHost {
                 if (keks != null) {
                     final String[] Keks = keks.split("=");
                     if (Keks.length == 1) {
-                        br.setCookie(MAINPAGE.string, Keks[0], "");
+                        br.setCookie(MAINPAGE.get(), Keks[0], "");
                     }
                     if (Keks.length == 2) {
-                        br.setCookie(MAINPAGE.string, Keks[0], Keks[1]);
+                        br.setCookie(MAINPAGE.get(), Keks[0], Keks[1]);
                     }
                 }
                 br.submitForm(form);
@@ -584,7 +572,7 @@ public class DepositFiles extends PluginForHost {
             }
             setLangtoGer();
             if (!br.getURL().contains("/gold/")) {
-                br.getPage(MAINPAGE.string + "/de/gold/");
+                br.getPage(MAINPAGE.get() + "/de/gold/");
             }
             boolean ret = false;
             if (br.containsHTML("Ihre aktuelle Status: Frei - Mitglied</div>")) {
@@ -700,7 +688,7 @@ public class DepositFiles extends PluginForHost {
                         for (final Map.Entry<String, String> cookieEntry : cookies.entrySet()) {
                             final String key = cookieEntry.getKey();
                             final String value = cookieEntry.getValue();
-                            br.setCookie(MAINPAGE.string, key, value);
+                            br.setCookie(MAINPAGE.get(), key, value);
                         }
                         return;
                     }
@@ -709,12 +697,12 @@ public class DepositFiles extends PluginForHost {
                 logger.info("Depositfiles website login method!");
                 String uprand = account.getStringProperty("uprand", null);
                 if (uprand != null) {
-                    br.setCookie(MAINPAGE.string, "uprand", uprand);
+                    br.setCookie(MAINPAGE.get(), "uprand", uprand);
                 }
                 br.setReadTimeout(3 * 60 * 1000);
                 br.getHeaders().put("User-Agent", UA);
                 br.setFollowRedirects(true);
-                br.getPage(MAINPAGE.string + "/login.php?return=%2Fde%2F");
+                br.getPage(MAINPAGE.get() + "/login.php?return=%2Fde%2F");
                 String captchaJs = br.getRegex("(http[^\"']+js/base2\\.js)").getMatch(0);
                 Browser br2 = br.cloneBrowser();
                 String cid = null;
@@ -728,7 +716,7 @@ public class DepositFiles extends PluginForHost {
                     logger.warning("Couldn't find login form");
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 }
-                login.setAction(MAINPAGE.string + "/api/user/login");
+                login.setAction(MAINPAGE.get() + "/api/user/login");
                 login.put("login", Encoding.urlEncode(account.getUser()));
                 login.put("password", Encoding.urlEncode(account.getPass()));
                 br2 = br.cloneBrowser();
@@ -754,10 +742,10 @@ public class DepositFiles extends PluginForHost {
                     }
                 }
                 br = br2.cloneBrowser();
-                if (br.getCookie(MAINPAGE.string, "autologin") == null && br.containsHTML("\"error\":\"InvalidLogIn\"")) {
+                if (br.getCookie(MAINPAGE.get(), "autologin") == null && br.containsHTML("\"error\":\"InvalidLogIn\"")) {
                     logger.info("Invalid login criteria");
                     throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
-                } else if (br.getCookie(MAINPAGE.string, "autologin") == null && !br.containsHTML("\"error\":\"InvalidLogIn\"")) {
+                } else if (br.getCookie(MAINPAGE.get(), "autologin") == null && !br.containsHTML("\"error\":\"InvalidLogIn\"")) {
                     logger.info("Depositfiles website login method  == failed! Possible plugin error, please report this to JDownloader Development Team");
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 } else {
@@ -767,14 +755,14 @@ public class DepositFiles extends PluginForHost {
 
                 /** Save cookies */
                 final HashMap<String, String> cookies = new HashMap<String, String>();
-                final Cookies add = br.getCookies(MAINPAGE.string);
+                final Cookies add = br.getCookies(MAINPAGE.get());
                 for (final Cookie c : add.getCookies()) {
                     cookies.put(c.getKey(), c.getValue());
                 }
                 account.setProperty("name", Encoding.urlEncode(account.getUser()));
                 account.setProperty("pass", Encoding.urlEncode(account.getPass()));
                 account.setProperty("cookies", cookies);
-                account.setProperty("uprand", br.getCookie(MAINPAGE.string, "uprand"));
+                account.setProperty("uprand", br.getCookie(MAINPAGE.get(), "uprand"));
             } catch (final PluginException e) {
                 account.setProperty("free", Property.NULL);
                 account.setProperty("cookies", Property.NULL);
@@ -960,7 +948,7 @@ public class DepositFiles extends PluginForHost {
 
     /**
      * new AccountInfo method for /api/
-     *
+     * 
      * @author raztoki
      */
     private AccountInfo apiFetchAccountInfo(final Account account) throws Exception {
@@ -973,7 +961,7 @@ public class DepositFiles extends PluginForHost {
             getPage("http://depositfiles.com/api/user/login?" + "login=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()) + "&" + apiKeyVal());
             if (br.containsHTML("\"error\":\"CaptchaRequired\"")) {
                 for (int i = 0; i <= 2; i++) {
-                    DownloadLink dummyLink = new DownloadLink(null, "Account", this.getHost(), MAINPAGE.string, true);
+                    DownloadLink dummyLink = new DownloadLink(null, "Account", this.getHost(), MAINPAGE.get(), true);
                     PluginForHost recplug = JDUtilities.getPluginForHost("DirectHTTP");
                     jd.plugins.hoster.DirectHTTP.Recaptcha rc = ((DirectHTTP) recplug).getReCaptcha(br);
                     rc.setId("6LdRTL8SAAAAAE9UOdWZ4d0Ky-aeA7XfSqyWDM2m");
@@ -1039,7 +1027,7 @@ public class DepositFiles extends PluginForHost {
                 br.setFollowRedirects(true);
                 // we need to save cookies from browser into mainpage, otherwise cookies session wont send with request!
                 mainpageCookies(br);
-                br.getPage(MAINPAGE.string + "/de/gold/");
+                br.getPage(MAINPAGE.get() + "/de/gold/");
                 String expire = br.getRegex("Gold-Zugriff: <b>(.*?)</b></div>").getMatch(0);
                 if (expire == null) {
                     expire = br.getRegex("Gold Zugriff bis: <b>(.*?)</b></div>").getMatch(0);
@@ -1221,7 +1209,7 @@ public class DepositFiles extends PluginForHost {
         /** Save cookies */
         final Cookies add = ibr.getCookies(current_host);
         for (final Cookie c : add.getCookies()) {
-            br.setCookie(MAINPAGE.string, c.getKey(), c.getValue());
+            br.setCookie(MAINPAGE.get(), c.getKey(), c.getValue());
         }
     }
 
@@ -1245,7 +1233,7 @@ public class DepositFiles extends PluginForHost {
     }
 
     private boolean userChangedSslSetting() {
-        if (MAINPAGE != null && MAINPAGE.string != null && (checkSsl() && MAINPAGE.string.startsWith("http://")) || (!checkSsl() && MAINPAGE.string.startsWith("https://"))) {
+        if (MAINPAGE != null && MAINPAGE.get() != null && (checkSsl() && MAINPAGE.get().startsWith("http://")) || (!checkSsl() && MAINPAGE.get().startsWith("https://"))) {
             return true;
         } else {
             return false;
@@ -1350,13 +1338,13 @@ public class DepositFiles extends PluginForHost {
     }
 
     public void setLangtoGer() throws IOException {
-        br.setCookie(MAINPAGE.string, "lang_current", "de");
+        br.setCookie(MAINPAGE.get(), "lang_current", "de");
     }
 
     @Override
     public String getAGBLink() {
         setMainpage();
-        return MAINPAGE.string + "/en/agreem.html";
+        return MAINPAGE.get() + "/en/agreem.html";
     }
 
 }

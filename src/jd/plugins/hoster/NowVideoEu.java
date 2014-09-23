@@ -21,6 +21,7 @@ import java.util.HashMap;
 import java.util.Locale;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.logging.Level;
 
 import javax.script.ScriptEngine;
@@ -41,7 +42,6 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-import jd.utils.JDUtilities;
 
 import org.appwork.utils.formatter.TimeFormatter;
 
@@ -50,25 +50,12 @@ public class NowVideoEu extends PluginForHost {
 
     public NowVideoEu(PluginWrapper wrapper) {
         super(wrapper);
-        this.enablePremium(MAINPAGE.string + "/premium.php");
+        this.enablePremium(MAINPAGE.get() + "/premium.php");
     }
 
     @Override
     public String getAGBLink() {
-        return MAINPAGE.string + "/terms.php";
-    }
-
-    public static class StringContainer {
-        public String string = null;
-
-        public StringContainer(String string) {
-            this.string = string;
-        }
-
-        @Override
-        public String toString() {
-            return string;
-        }
+        return MAINPAGE.get() + "/terms.php";
     }
 
     public Boolean rewriteHost(final DownloadLink link) {
@@ -94,7 +81,7 @@ public class NowVideoEu extends PluginForHost {
     }
 
     public void correctDownloadLink(DownloadLink link) {
-        link.setUrlDownload(MAINPAGE.string + "/player.php?v=" + new Regex(link.getDownloadURL(), "([a-z0-9]+)$").getMatch(0));
+        link.setUrlDownload(MAINPAGE.get() + "/player.php?v=" + new Regex(link.getDownloadURL(), "([a-z0-9]+)$").getMatch(0));
     }
 
     private static void workAroundTimeOut(final Browser br) {
@@ -118,9 +105,9 @@ public class NowVideoEu extends PluginForHost {
 
                     String CCtld = validateHost();
                     if (CCtld != null) {
-                        ccTLD.string = CCtld;
+                        ccTLD.set(CCtld);
                     }
-                    MAINPAGE.string = "http://www.nowvideo." + CCtld;
+                    MAINPAGE.set("http://www.nowvideo." + CCtld);
                     this.enablePremium(MAINPAGE.toString() + "/premium.php");
                     AVAILABLE_PRECHECK.set(true);
                 }
@@ -140,10 +127,11 @@ public class NowVideoEu extends PluginForHost {
                 br.getPage("http://www.nowvideo." + CCtld);
                 String redirect = br.getRedirectLocation();
                 br = null;
-                if (redirect != null)
+                if (redirect != null) {
                     return new Regex(redirect, domains).getMatch(0);
-                else
+                } else {
                     return CCtld;
+                }
             } catch (Exception e) {
                 logger.warning("nowvideo." + CCtld + " seems to be offline...");
             }
@@ -151,21 +139,22 @@ public class NowVideoEu extends PluginForHost {
         return null;
     }
 
-    private static Object          LOCK               = new Object();
-    private static StringContainer MAINPAGE           = new StringContainer("http://www.nowvideo.sx");
-    private static StringContainer ccTLD              = new StringContainer("sx");
-    private final String           ISBEINGCONVERTED   = ">The file is being converted.";
-    private final String           domains            = "nowvideo\\.(sx|eu|co|ch|ag|at)";
-    private static AtomicBoolean   AVAILABLE_PRECHECK = new AtomicBoolean(false);
-    private static StringContainer agent              = new StringContainer(null);
+    private static Object                  LOCK               = new Object();
+
+    private static AtomicReference<String> MAINPAGE           = new AtomicReference<String>("http://www.nowvideo.sx");
+    private static AtomicReference<String> ccTLD              = new AtomicReference<String>("sx");
+    private final String                   ISBEINGCONVERTED   = ">The file is being converted.";
+    private final String                   domains            = "nowvideo\\.(sx|eu|co|ch|ag|at)";
+    private static AtomicBoolean           AVAILABLE_PRECHECK = new AtomicBoolean(false);
+
+    private static AtomicReference<String> agent              = new AtomicReference<String>("http://www.nowvideo.sx");
 
     private Browser prepBrowser(Browser prepBr) {
-        if (agent.string == null) {
+        if (agent.get() == null) {
             /* we first have to load the plugin, before we can reference it */
-            JDUtilities.getPluginForHost("mediafire.com");
-            agent.string = jd.plugins.hoster.MediafireCom.stringUserAgent();
+            agent.set(jd.plugins.hoster.MediafireCom.stringUserAgent());
         }
-        prepBr.getHeaders().put("User-Agent", agent.string);
+        prepBr.getHeaders().put("User-Agent", agent.get());
         return prepBr;
     }
 
@@ -177,16 +166,22 @@ public class NowVideoEu extends PluginForHost {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         br.getPage(link.getDownloadURL());
-        if (br.containsHTML("(>This file no longer exists on our servers|>Possible reasons:)")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (br.containsHTML("(>This file no longer exists on our servers|>Possible reasons:)")) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
         if (br.containsHTML(ISBEINGCONVERTED)) {
             link.getLinkStatus().setStatusText("This file is being converted!");
             link.setName(new Regex(link.getDownloadURL(), "([a-z0-9]+)$").getMatch(0) + ".flv");
             return AvailableStatus.TRUE;
         }
         String filename = br.getRegex("<div class=\"video_details radius\\d+\" style=\"height:125px;position:relative;\">[\t\n\r ]+<h4>([^<>\"]*?)</h4>").getMatch(0);
-        if (filename == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (filename == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         String id = new Regex(link.getDownloadURL(), "([a-z0-9]+)$").getMatch(0);
-        if (id != null) filename = filename.trim() + "(" + id + ")";
+        if (id != null) {
+            filename = filename.trim() + "(" + id + ")";
+        }
         link.setFinalFileName(Encoding.htmlDecode(filename.trim()) + ".flv");
         return AvailableStatus.TRUE;
     }
@@ -198,19 +193,31 @@ public class NowVideoEu extends PluginForHost {
     }
 
     private void doFree(final DownloadLink downloadLink, final Account account) throws Exception {
-        if (br.containsHTML(ISBEINGCONVERTED)) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "This file is being converted!", 2 * 60 * 60 * 1000l);
+        if (br.containsHTML(ISBEINGCONVERTED)) {
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "This file is being converted!", 2 * 60 * 60 * 1000l);
+        }
         String fKey = br.getRegex("flashvars\\.filekey=\"([^<>\"]*)\"").getMatch(0);
-        if (fKey == null) fKey = br.getRegex("var fkzd=\"([^<>\"]*)\"").getMatch(0);
+        if (fKey == null) {
+            fKey = br.getRegex("var fkzd=\"([^<>\"]*)\"").getMatch(0);
+        }
         if (fKey == null && br.containsHTML("w,i,s,e")) {
             String result = unWise();
             fKey = new Regex(result, "(\"\\d+{1,3}\\.\\d+{1,3}\\.\\d+{1,3}\\.\\d+{1,3}-[a-f0-9]{32})\"").getMatch(0);
         }
-        if (fKey == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        br.getPage(MAINPAGE.string + "/api/player.api.php?pass=undefined&user=undefined&codes=undefined&file=" + new Regex(downloadLink.getDownloadURL(), "([a-z0-9]+)$").getMatch(0) + "&key=" + Encoding.urlEncode(fKey));
-        if (br.containsHTML("The video is being transfered")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error: The video is being transfered", 30 * 60 * 1000l);
-        if (br.containsHTML("error=1&error_msg=The video is converting")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Hoster Issue: Video still Converting", 30 * 60 * 1000);
+        if (fKey == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        br.getPage(MAINPAGE.get() + "/api/player.api.php?pass=undefined&user=undefined&codes=undefined&file=" + new Regex(downloadLink.getDownloadURL(), "([a-z0-9]+)$").getMatch(0) + "&key=" + Encoding.urlEncode(fKey));
+        if (br.containsHTML("The video is being transfered")) {
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error: The video is being transfered", 30 * 60 * 1000l);
+        }
+        if (br.containsHTML("error=1&error_msg=The video is converting")) {
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Hoster Issue: Video still Converting", 30 * 60 * 1000);
+        }
         String dllink = br.getRegex("url=(http://[^<>\"]*?\\.flv)\\&title").getMatch(0);
-        if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (dllink == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 0);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
@@ -222,7 +229,9 @@ public class NowVideoEu extends PluginForHost {
     private String unWise() {
         String result = null;
         String fn = br.getRegex("eval\\((function\\(.*?\'\\))\\);").getMatch(0);
-        if (fn == null) return null;
+        if (fn == null) {
+            return null;
+        }
         final ScriptEngineManager manager = jd.plugins.hoster.DummyScriptEnginePlugin.getScriptEngineManager(this);
         final ScriptEngine engine = manager.getEngineByName("javascript");
         try {
@@ -264,21 +273,25 @@ public class NowVideoEu extends PluginForHost {
                 br.setCookiesExclusive(true);
                 final Object ret = account.getProperty("cookies", null);
                 boolean acmatch = Encoding.urlEncode(account.getUser()).equals(account.getStringProperty("name", Encoding.urlEncode(account.getUser())));
-                if (acmatch) acmatch = Encoding.urlEncode(account.getPass()).equals(account.getStringProperty("pass", Encoding.urlEncode(account.getPass())));
+                if (acmatch) {
+                    acmatch = Encoding.urlEncode(account.getPass()).equals(account.getStringProperty("pass", Encoding.urlEncode(account.getPass())));
+                }
                 if (acmatch && ret != null && ret instanceof HashMap<?, ?> && !force) {
                     final HashMap<String, String> cookies = (HashMap<String, String>) ret;
                     if (account.isValid()) {
                         for (final Map.Entry<String, String> cookieEntry : cookies.entrySet()) {
                             final String key = cookieEntry.getKey();
                             final String value = cookieEntry.getValue();
-                            this.br.setCookie(MAINPAGE.string, key, value);
+                            this.br.setCookie(MAINPAGE.get(), key, value);
                         }
                         return;
                     }
                 }
                 br.setFollowRedirects(true);
-                br.postPage(MAINPAGE.string + "/login.php?return=", "register=Login&user=" + Encoding.urlEncode(account.getUser()) + "&pass=" + Encoding.urlEncode(account.getPass()));
-                if (br.getURL().contains("login.php?e=1") || !br.getURL().contains("panel.php?login=1")) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+                br.postPage(MAINPAGE.get() + "/login.php?return=", "register=Login&user=" + Encoding.urlEncode(account.getUser()) + "&pass=" + Encoding.urlEncode(account.getPass()));
+                if (br.getURL().contains("login.php?e=1") || !br.getURL().contains("panel.php?login=1")) {
+                    throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+                }
                 // free vs premium ?? unknown!
                 br.getPage("/premium.php");
                 if (br.containsHTML(expire)) {
@@ -288,7 +301,7 @@ public class NowVideoEu extends PluginForHost {
                 }
                 // Save cookies
                 final HashMap<String, String> cookies = new HashMap<String, String>();
-                final Cookies add = this.br.getCookies(MAINPAGE.string);
+                final Cookies add = this.br.getCookies(MAINPAGE.get());
                 for (final Cookie c : add.getCookies()) {
                     cookies.put(c.getKey(), c.getValue());
                 }
@@ -318,7 +331,9 @@ public class NowVideoEu extends PluginForHost {
         } else {
             String expire_time = br.getRegex(expire).getMatch(0);
             // 2014-Mar-22.
-            if (expire_time != null) ai.setValidUntil(TimeFormatter.getMilliSeconds(expire, "yyyy-MMM-d", Locale.UK));
+            if (expire_time != null) {
+                ai.setValidUntil(TimeFormatter.getMilliSeconds(expire, "yyyy-MMM-d", Locale.UK));
+            }
             ai.setStatus("Premium Account");
         }
         ai.setUnlimitedTraffic();

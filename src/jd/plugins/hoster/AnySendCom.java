@@ -19,6 +19,7 @@ package jd.plugins.hoster;
 import java.io.File;
 import java.io.IOException;
 import java.util.Random;
+import java.util.concurrent.atomic.AtomicReference;
 
 import javax.script.ScriptEngine;
 import javax.script.ScriptEngineManager;
@@ -52,22 +53,18 @@ public class AnySendCom extends PluginForHost {
         return "http://www.anysend.com/terms.html";
     }
 
-    private static StringContainer agent    = new StringContainer();
-    private final String           NOSLOTS  = ">No slow download slots available";
-    private static final String    MAINPAGE = "<div class=\"download\\-description\">";
-
-    public static class StringContainer {
-        public String string = null;
-    }
+    private static AtomicReference<String> agent    = new AtomicReference<String>();
+    private final String                   NOSLOTS  = ">No slow download slots available";
+    private static final String            MAINPAGE = "<div class=\"download\\-description\">";
 
     private Browser prepBrowser(Browser prepBr) {
-        if (agent.string == null) {
+        if (agent.get() == null) {
             /* we first have to load the plugin, before we can reference it */
-            JDUtilities.getPluginForHost("mediafire.com");
-            while (agent.string == null || agent.string.contains("MSIE"))
-                agent.string = jd.plugins.hoster.MediafireCom.stringUserAgent();
+            while (agent.get() == null || agent.get().contains("MSIE")) {
+                agent.set(jd.plugins.hoster.MediafireCom.stringUserAgent());
+            }
         }
-        prepBr.getHeaders().put("User-Agent", agent.string);
+        prepBr.getHeaders().put("User-Agent", agent.get());
         prepBr.getHeaders().put("Accept-Language", "en-gb, en;q=0.9");
         prepBr.setFollowRedirects(true);
         return prepBr;
@@ -84,7 +81,9 @@ public class AnySendCom extends PluginForHost {
         this.setBrowserExclusive();
         prepBrowser(br);
         br.getPage(link.getDownloadURL());
-        if (br.containsHTML("<title>Removed download \\| AnySend</title>")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (br.containsHTML("<title>Removed download \\| AnySend</title>")) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
         final Browser XMLBR = br.cloneBrowser();
         prepXML(XMLBR);
         String visitorid = br.getCookie("http://www.anysend.com/", "PAPVisitorId");
@@ -96,9 +95,13 @@ public class AnySendCom extends PluginForHost {
             br.setCookie("http://www.anysend.com/", "PAPVisitorId", visitorid);
             continuelink += visitorid;
             br.getPage(continuelink);
-            if (br.containsHTML(">Your download is no longer available|>Your file is not ready for download yet")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            if (br.containsHTML(">Your download is no longer available|>Your file is not ready for download yet")) {
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            }
             // Check if we're on the mainpage
-            if (br.containsHTML(MAINPAGE)) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            if (br.containsHTML(MAINPAGE)) {
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            }
             filename = br.getRegex("class=\"filename\">([^<>\"]+)</h1>").getMatch(0);
             if (filename == null) {
                 filename = br.getRegex(">File Name: (.*?)<").getMatch(0);
@@ -121,37 +124,57 @@ public class AnySendCom extends PluginForHost {
             }
         } else {
             // Check if we're on the mainpage
-            if (br.containsHTML(MAINPAGE)) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            if (br.containsHTML(MAINPAGE)) {
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            }
             filename = br.getRegex("<title>([^<>\"]*?)download \\| AnySend</title>").getMatch(0);
         }
-        if (filename == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (filename == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         link.setName(Encoding.htmlDecode(filename.trim()));
-        if (filesize != null) link.setDownloadSize(SizeFormatter.getSize(filesize.trim().replace(",", ".")));
-        if (br.containsHTML(NOSLOTS)) link.getLinkStatus().setStatusText("No free slots available");
+        if (filesize != null) {
+            link.setDownloadSize(SizeFormatter.getSize(filesize.trim().replace(",", ".")));
+        }
+        if (br.containsHTML(NOSLOTS)) {
+            link.getLinkStatus().setStatusText("No free slots available");
+        }
         return AvailableStatus.TRUE;
     }
 
     @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
-        if (br.containsHTML(NOSLOTS)) throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "No free slots available", 5 * 60 * 1000l);
+        if (br.containsHTML(NOSLOTS)) {
+            throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "No free slots available", 5 * 60 * 1000l);
+        }
         String dllink = checkDirectLink(downloadLink, "directlink");
-        if (dllink == null) dllink = "http://50.7.55.162/anysend/download/" + new Regex(downloadLink.getDownloadURL(), "([A-Z0-9]+)$").getMatch(0) + "/" + Encoding.urlEncode(downloadLink.getName());
+        if (dllink == null) {
+            dllink = "http://50.7.55.162/anysend/download/" + new Regex(downloadLink.getDownloadURL(), "([A-Z0-9]+)$").getMatch(0) + "/" + Encoding.urlEncode(downloadLink.getName());
+        }
         if (dllink == null) {
             final String a = br.getRegex("a:'([A-Za-z0-9]+)'").getMatch(0);
             final String v = br.getRegex("v:'([A-Za-z0-9]+)'").getMatch(0);
             final String key = new Regex(br.getURL(), "\\?key=([A-Z0-9]+)\\&").getMatch(0);
-            if (v == null || key == null || a == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            if (v == null || key == null || a == null) {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
             String code = br.getRegex("var dlcode=md5\\('([A-Za-z0-9]+)'").getMatch(0);
-            if (code == null) code = jsUnCrush();
-            if (code == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            if (code == null) {
+                code = jsUnCrush();
+            }
+            if (code == null) {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
             Browser XMLBR = br.cloneBrowser();
             prepXML(XMLBR);
             final long systime = System.currentTimeMillis();
             final String random = (String.valueOf(new Random().nextLong()).replace("-", "") + String.valueOf(new Random().nextLong()).replace("-", "")).substring(5, 26);
             XMLBR.getPage("http://im.anysend.com/check_file.php?key=" + key + "&callback=jQuery" + random + "_" + systime + "&_=" + (systime - 1));
             final String ip = XMLBR.getRegex("\\d+\\(\"([0-9\\.]*?)\"\\);").getMatch(0);
-            if (ip == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            if (ip == null) {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
             XMLBR = br.cloneBrowser();
             prepXML(XMLBR);
 
@@ -167,17 +190,23 @@ public class AnySendCom extends PluginForHost {
                 XMLBR.getPage("http://download.anysend.com/download/getcode.php?a=" + a + "&v=" + v + "&key=" + key + "&code=" + code);
             }
 
-            if ("true".equalsIgnoreCase(getResult(XMLBR, "isRecaptchaError")) && "Incorrect response".equalsIgnoreCase(getResult(XMLBR, "recaptchaMessage")))
+            if ("true".equalsIgnoreCase(getResult(XMLBR, "isRecaptchaError")) && "Incorrect response".equalsIgnoreCase(getResult(XMLBR, "recaptchaMessage"))) {
                 throw new PluginException(LinkStatus.ERROR_CAPTCHA);
-            else if ("true".equalsIgnoreCase(getResult(XMLBR, "isError")) && "Not authorized".equalsIgnoreCase(getResult(XMLBR, "error"))) throw new PluginException(LinkStatus.ERROR_RETRY);
+            } else if ("true".equalsIgnoreCase(getResult(XMLBR, "isError")) && "Not authorized".equalsIgnoreCase(getResult(XMLBR, "error"))) {
+                throw new PluginException(LinkStatus.ERROR_RETRY);
+            }
             final String dlkey = XMLBR.getRegex("\"dlkey\":\"([A-Za-z0-9]+)\"").getMatch(0);
-            if (dlkey == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            if (dlkey == null) {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
             XMLBR.getPage("http://" + ip + "/anysend/info/" + key + "?callback=jQuery" + System.currentTimeMillis() + "_" + random + "&_=" + System.currentTimeMillis());
             dllink = "http://" + ip + "/anysend/download/" + dlkey + "/" + Encoding.urlEncode(downloadLink.getName());
         }
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 0);
         if (dl.getConnection().getContentType().contains("html")) {
-            if (br.getHttpConnection().getResponseCode() == 502) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error!", 30 * 60 * 1000l);
+            if (br.getHttpConnection().getResponseCode() == 502) {
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error!", 30 * 60 * 1000l);
+            }
             br.followConnection();
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
@@ -186,9 +215,13 @@ public class AnySendCom extends PluginForHost {
     }
 
     private String getResult(Browser ibr, String key) {
-        if (key == null) return null;
+        if (key == null) {
+            return null;
+        }
         String result = ibr.getRegex("\"" + key + "\":\"([^\"]+)\"").getMatch(0);
-        if (result == null) result = ibr.getRegex("\"" + key + "\":(true|false)").getMatch(0);
+        if (result == null) {
+            result = ibr.getRegex("\"" + key + "\":(true|false)").getMatch(0);
+        }
         return result;
     }
 
@@ -218,7 +251,9 @@ public class AnySendCom extends PluginForHost {
     private String jsUnCrush() {
         /* compressed with JSCrush */
         String code[] = br.getRegex("code:eval\\((.*?)\\)(\\(.*?\\))").getRow(0);
-        if (code == null || code.length < 2) return null;
+        if (code == null || code.length < 2) {
+            return null;
+        }
         String result = null;
         final ScriptEngineManager manager = jd.plugins.hoster.DummyScriptEnginePlugin.getScriptEngineManager(this);
         final ScriptEngine engine = manager.getEngineByName("javascript");
@@ -239,14 +274,18 @@ public class AnySendCom extends PluginForHost {
                 if (result == null) {
                     result = (String) engine.get("f");
                     engine.put("f", null);
-                    if (result == null) result = (String) engine.eval("a" + code[1]);
+                    if (result == null) {
+                        result = (String) engine.eval("a" + code[1]);
+                    }
                 }
             }
         } catch (final Throwable e) {
             e.printStackTrace();
             return null;
         }
-        if (result == null || result.trim().length() == 0 || !result.matches("[0-9a-f]+")) return null;
+        if (result == null || result.trim().length() == 0 || !result.matches("[0-9a-f]+")) {
+            return null;
+        }
         return result;
     }
 
@@ -263,9 +302,8 @@ public class AnySendCom extends PluginForHost {
     public void resetDownloadlink(final DownloadLink link) {
     }
 
-
-/* NO OVERRIDE!! We need to stay 0.9*compatible */
-public boolean hasCaptcha(DownloadLink link, jd.plugins.Account acc) {
-return true;
-}
+    /* NO OVERRIDE!! We need to stay 0.9*compatible */
+    public boolean hasCaptcha(DownloadLink link, jd.plugins.Account acc) {
+        return true;
+    }
 }

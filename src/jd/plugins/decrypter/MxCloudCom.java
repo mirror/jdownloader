@@ -18,6 +18,7 @@ package jd.plugins.decrypter;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.concurrent.atomic.AtomicReference;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
@@ -29,9 +30,7 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
-import jd.plugins.decrypter.AniLinkzCom.StringContainer;
 import jd.utils.JDHexUtils;
-import jd.utils.JDUtilities;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "mixcloud.com" }, urls = { "http://(www\\.)?mixcloud\\.com/[A-Za-z0-9\\-_]+/[A-Za-z0-9\\-_%]+/" }, flags = { 0 })
 public class MxCloudCom extends PluginForDecrypt {
@@ -40,8 +39,8 @@ public class MxCloudCom extends PluginForDecrypt {
         super(wrapper);
     }
 
-    private static final String    INVALIDLINKS = "http://(www\\.)?mixcloud\\.com/((developers|categories|media|competitions|tag)/.+|[\\w\\-]+/(playlists|activity|followers|following|listens|favourites).+)";
-    private static StringContainer agent        = new StringContainer();
+    private static final String            INVALIDLINKS = "http://(www\\.)?mixcloud\\.com/((developers|categories|media|competitions|tag)/.+|[\\w\\-]+/(playlists|activity|followers|following|listens|favourites).+)";
+    private static AtomicReference<String> agent        = new AtomicReference<String>();
 
     @Override
     public ArrayList<DownloadLink> decryptIt(final CryptedLink param, final ProgressController progress) throws Exception {
@@ -50,16 +49,15 @@ public class MxCloudCom extends PluginForDecrypt {
         final String parameter = param.toString();
         br.setReadTimeout(3 * 60 * 1000);
         if (parameter.matches(INVALIDLINKS)) {
-            logger.info("Link invalid: " + parameter);
+            logger.info(" Link invalid: " + parameter);
             return decryptedLinks;
         }
 
-        if (agent.string == null) {
+        if (agent.get() == null) {
             /* we first have to load the plugin, before we can reference it */
-            JDUtilities.getPluginForHost("mediafire.com");
-            agent.string = jd.plugins.hoster.MediafireCom.stringUserAgent();
+            agent.set(jd.plugins.hoster.MediafireCom.stringUserAgent());
         }
-        br.getHeaders().put("User-Agent", agent.string);
+        br.getHeaders().put("User-Agent", agent.get());
         br.getPage(parameter);
         if (br.getRedirectLocation() != null) {
             logger.info("Unsupported or offline link: " + parameter);

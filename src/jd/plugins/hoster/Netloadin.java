@@ -24,6 +24,7 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.regex.Pattern;
 
 import javax.swing.JOptionPane;
@@ -70,25 +71,15 @@ public class Netloadin extends PluginForHost {
         return id;
     }
 
-    private boolean                showDialog      = false;
-    private final String           RECONNECTALWAYS = "RECONNECTALWAYS";
-    private Pattern                IPREGEX         = Pattern.compile("(([1-2])?([0-9])?([0-9])\\.([1-2])?([0-9])?([0-9])\\.([1-2])?([0-9])?([0-9])\\.([1-2])?([0-9])?([0-9]))", Pattern.CASE_INSENSITIVE);
-    private static AtomicBoolean   hasDled         = new AtomicBoolean(false);
-    private static AtomicLong      timeBefore      = new AtomicLong(0);
-    private String                 LASTIP          = "LASTIP";
-    private static StringContainer lastIP          = new StringContainer();
-    private static final long      RECONNECTWAIT   = 600000;
-    private static String[]        IPCHECK         = new String[] { "http://ipcheck0.jdownloader.org", "http://ipcheck1.jdownloader.org", "http://ipcheck2.jdownloader.org", "http://ipcheck3.jdownloader.org" };
-
-    public static class StringContainer {
-        //
-        public String string = null;
-
-        @Override
-        public String toString() {
-            return string;
-        }
-    }
+    private boolean                        showDialog      = false;
+    private final String                   RECONNECTALWAYS = "RECONNECTALWAYS";
+    private Pattern                        IPREGEX         = Pattern.compile("(([1-2])?([0-9])?([0-9])\\.([1-2])?([0-9])?([0-9])\\.([1-2])?([0-9])?([0-9])\\.([1-2])?([0-9])?([0-9]))", Pattern.CASE_INSENSITIVE);
+    private static AtomicBoolean           hasDled         = new AtomicBoolean(false);
+    private static AtomicLong              timeBefore      = new AtomicLong(0);
+    private String                         LASTIP          = "LASTIP";
+    private static AtomicReference<String> lastIP          = new AtomicReference<String>();
+    private static final long              RECONNECTWAIT   = 600000;
+    private static String[]                IPCHECK         = new String[] { "http://ipcheck0.jdownloader.org", "http://ipcheck1.jdownloader.org", "http://ipcheck2.jdownloader.org", "http://ipcheck3.jdownloader.org" };
 
     public Netloadin(PluginWrapper wrapper) {
         super(wrapper);
@@ -667,7 +658,7 @@ public class Netloadin extends PluginForHost {
             } else {
                 String lastIP = IP;
                 link.setProperty(LASTIP, lastIP);
-                Netloadin.lastIP.string = lastIP;
+                Netloadin.lastIP.set(lastIP);
                 logger.info("LastIP = " + lastIP);
                 return true;
             }
@@ -686,7 +677,7 @@ public class Netloadin extends PluginForHost {
         }
         String lastIP = link.getStringProperty(LASTIP, null);
         if (lastIP == null) {
-            lastIP = Netloadin.lastIP.string;
+            lastIP = Netloadin.lastIP.get();
         }
         return !currentIP.equals(lastIP);
     }

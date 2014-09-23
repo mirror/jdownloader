@@ -22,6 +22,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicReference;
 
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
@@ -62,31 +63,14 @@ public class LuckyShareNet extends PluginForHost {
         return "http://luckyshare.net/termsofservice";
     }
 
-    private final String           MAINPAGE       = "http://luckyshare.net/";
-    private static Object          LOCK           = new Object();
-    private static StringContainer AGENT          = new StringContainer(null);
-    private static AtomicBoolean   FAILED409      = new AtomicBoolean(false);
-    private final String           ONLYBETAERROR  = "Downloading from luckyshare.net is only possible with the JDownloader 2 BETA";
-    private static AtomicInteger   maxPrem        = new AtomicInteger(1);
+    private final String                   MAINPAGE       = "http://luckyshare.net/";
+    private static Object                  LOCK           = new Object();
+    private static AtomicReference<String> agent          = new AtomicReference<String>();
+    private static AtomicBoolean           FAILED409      = new AtomicBoolean(false);
+    private final String                   ONLYBETAERROR  = "Downloading from luckyshare.net is only possible with the JDownloader 2 BETA";
+    private static AtomicInteger           maxPrem        = new AtomicInteger(1);
 
-    private final String           SSL_CONNECTION = "SSL_CONNECTION";
-
-    public static class StringContainer {
-        public String string = null;
-
-        public StringContainer(String string) {
-            this.string = string;
-        }
-
-        public void set(String string) {
-            this.string = string;
-        }
-
-        @Override
-        public String toString() {
-            return string;
-        }
-    }
+    private final String                   SSL_CONNECTION = "SSL_CONNECTION";
 
     /**
      * JD2 CODE. DO NOT USE OVERRIDE FOR JD=) COMPATIBILITY REASONS!
@@ -267,14 +251,11 @@ public class LuckyShareNet extends PluginForHost {
     }
 
     private void prepBrowser(final Browser b) {
-        if (AGENT.string == null) {
-            synchronized (AGENT) {
-                /* we first have to load the plugin, before we can reference it */
-                JDUtilities.getPluginForHost("mediafire.com");
-                AGENT.set(jd.plugins.hoster.MediafireCom.stringUserAgent());
-            }
+        if (agent.get() == null) {
+            /* we first have to load the plugin, before we can reference it */
+            agent.set(jd.plugins.hoster.MediafireCom.stringUserAgent());
         }
-        b.getHeaders().put("User-Agent", AGENT.toString());
+        b.getHeaders().put("User-Agent", agent.get());
         b.getHeaders().put("Accept-Language", "en-gb, en;q=0.9");
         b.setReadTimeout(3 * 60 * 1000);
         b.setConnectTimeout(3 * 60 * 1000);

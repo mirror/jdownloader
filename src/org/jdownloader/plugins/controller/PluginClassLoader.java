@@ -208,7 +208,7 @@ public class PluginClassLoader extends URLClassLoader {
                     return super.loadClass(name);
                 }
                 Class<?> c = null;
-                boolean sharedClass = name.endsWith("StringContainer");
+                final boolean sharedClass = false;
                 if (sharedClass) {
                     c = findSharedClass(name);
                 } else {

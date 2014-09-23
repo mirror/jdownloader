@@ -23,6 +23,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Random;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.logging.Level;
 import java.util.regex.Pattern;
 
@@ -65,7 +66,7 @@ public class MediafireCom extends PluginForHost {
     /**
      * Returns a random User-Agent String (common browsers) of specified array. This array contains current user agents gathered from httpd
      * access logs. Benefits over RandomUserAgent.* are: versions and respective release dates are valid.
-     *
+     * 
      * @return eg. "Opera/9.80 (X11; Linux i686; U; en) Presto/2.6.30 Version/10.63"
      */
     public static String stringUserAgent() {
@@ -162,7 +163,7 @@ public class MediafireCom extends PluginForHost {
     /**
      * Returns a random User-Agent String (from a portable device) of specified array. This array contains current user agents gathered from
      * httpd access logs. Benefits over RandomUserAgent.* are: versions and respective release dates are valid.
-     *
+     * 
      * @return eg. "Opera/9.80 (Android 4.0.3; Linux; Opera Mobi/ADR-1205181138; U; en) Presto/2.10.254 Version/12.00"
      */
     public static String portableUserAgent() {
@@ -286,37 +287,20 @@ public class MediafireCom extends PluginForHost {
         }
     }
 
-    private static StringContainer agent             = new StringContainer(stringUserAgent());
+    private static AtomicReference<String> agent             = new AtomicReference<String>(stringUserAgent());
 
-    static private final String    offlinelink       = "tos_aup_violation";
+    static private final String            offlinelink       = "tos_aup_violation";
 
     /** The name of the error page used by MediaFire */
-    private static final String    ERROR_PAGE        = "error.php";
+    private static final String            ERROR_PAGE        = "error.php";
     /**
      * The number of retries to be performed in order to determine if a file is available
      */
-    private int                    NUMBER_OF_RETRIES = 3;
+    private int                            NUMBER_OF_RETRIES = 3;
 
-    private String                 fileID;
+    private String                         fileID;
 
-    private String                 dlURL;
-
-    public static class StringContainer {
-        public String string = null;
-
-        public StringContainer(String string) {
-            this.string = string;
-        }
-
-        public void set(String string) {
-            this.string = string;
-        }
-
-        @Override
-        public String toString() {
-            return string;
-        }
-    }
+    private String                         dlURL;
 
     public MediafireCom(final PluginWrapper wrapper) {
         super(wrapper);
@@ -408,7 +392,7 @@ public class MediafireCom extends PluginForHost {
         String url = null;
         boolean captchaCorrect = false;
         if (account == null) {
-            this.br.getHeaders().put("User-Agent", MediafireCom.agent.toString());
+            this.br.getHeaders().put("User-Agent", MediafireCom.agent.get());
         }
         for (int i = 0; i < NUMBER_OF_RETRIES; i++) {
             if (url != null) {

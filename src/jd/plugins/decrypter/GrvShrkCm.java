@@ -66,7 +66,9 @@ public class GrvShrkCm extends PluginForDecrypt {
 
     private boolean exists(DownloadLink dl) {
         for (DownloadLink dLink : decryptedLinks) {
-            if (dl.getDownloadURL().equals(dLink.getDownloadURL())) return true;
+            if (dl.getDownloadURL().equals(dLink.getDownloadURL())) {
+                return true;
+            }
         }
         return false;
     }
@@ -150,13 +152,17 @@ public class GrvShrkCm extends PluginForDecrypt {
         }
 
         if (decryptedLinks.size() == 1) {
-            if (decryptedLinks.get(0).getBooleanProperty("SONGCOUNTEQUALNULL", false)) return decryptedLinks;
+            if (decryptedLinks.get(0).getBooleanProperty("SONGCOUNTEQUALNULL", false)) {
+                return decryptedLinks;
+            }
         }
         if (getPluginConfig().getBooleanProperty("TITLENUMBERING")) {
             String format = "%0" + String.valueOf(decryptedLinks.size()).length() + "d";
             for (DownloadLink dl : decryptedLinks) {
                 String trackNumber = dl.getStringProperty("TrackNum");
-                if (!trackNumber.matches("\\d+")) trackNumber = null;
+                if (!trackNumber.matches("\\d+")) {
+                    trackNumber = null;
+                }
                 dl.setName(String.format(format, isEmpty(trackNumber) ? decryptedLinks.indexOf(dl) + 1 : Integer.parseInt(trackNumber)) + "." + dl.getName());
             }
         }
@@ -200,14 +206,18 @@ public class GrvShrkCm extends PluginForDecrypt {
 
                     if (j == 0 && br.containsHTML(jd.plugins.hoster.GrooveShark.INVALIDTOKEN)) {
                         logger.warning("Existing keys are old, looking for new keys.");
-                        if (!jd.plugins.hoster.GrooveShark.fetchingKeys(br)) break;
+                        if (!jd.plugins.hoster.GrooveShark.fetchingKeys(br)) {
+                            break;
+                        }
                         rawPost = getPostParameterString(parameter, method);
                         logger.info("Found new keys. Retrying...");
                     } else {
                         break;
                     }
                 }
-                if (br.containsHTML(jd.plugins.hoster.GrooveShark.INVALIDTOKEN)) { return; }
+                if (br.containsHTML(jd.plugins.hoster.GrooveShark.INVALIDTOKEN)) {
+                    return;
+                }
 
                 if (type) {
                     // Regex broken?
@@ -256,7 +266,9 @@ public class GrvShrkCm extends PluginForDecrypt {
                     fpName = "Grooveshark daily popular";
                 }
                 fpName = fpName.trim();
-                if (fixedFpName == null) fixedFpName = fpName;
+                if (fixedFpName == null) {
+                    fixedFpName = fpName;
+                }
                 FilePackage fp = fpMap.get(fpName != fixedFpName ? fixedFpName : fpName);
                 if (fp == null) {
                     fp = FilePackage.getInstance();
@@ -285,13 +297,17 @@ public class GrvShrkCm extends PluginForDecrypt {
 
             if (j == 0 && br.containsHTML(jd.plugins.hoster.GrooveShark.INVALIDTOKEN)) {
                 logger.warning("Existing keys are old, looking for new keys.");
-                if (!jd.plugins.hoster.GrooveShark.fetchingKeys(br)) break;
+                if (!jd.plugins.hoster.GrooveShark.fetchingKeys(br)) {
+                    break;
+                }
                 logger.info("Found new keys. Retrying...");
             } else {
                 break;
             }
         }
-        if (br.containsHTML(jd.plugins.hoster.GrooveShark.INVALIDTOKEN)) { return; }
+        if (br.containsHTML(jd.plugins.hoster.GrooveShark.INVALIDTOKEN)) {
+            return;
+        }
 
         String result = br.getRegex("\"result\"\\:\\[(.*)\\]").getMatch(0);
         String[][] songs = new Regex(result, "\\{.*?\\}").getMatches();
@@ -333,13 +349,17 @@ public class GrvShrkCm extends PluginForDecrypt {
 
             if (j == 0 && br.containsHTML(jd.plugins.hoster.GrooveShark.INVALIDTOKEN)) {
                 logger.warning("Existing keys are old, looking for new keys.");
-                if (!jd.plugins.hoster.GrooveShark.fetchingKeys(br)) break;
+                if (!jd.plugins.hoster.GrooveShark.fetchingKeys(br)) {
+                    break;
+                }
                 logger.info("Found new keys. Retrying...");
             } else {
                 break;
             }
         }
-        if (br.containsHTML(jd.plugins.hoster.GrooveShark.INVALIDTOKEN)) { return; }
+        if (br.containsHTML(jd.plugins.hoster.GrooveShark.INVALIDTOKEN)) {
+            return;
+        }
 
         String result = br.getRegex("\"result\"\\:.*?\\[(.*)\\]").getMatch(0);
         String[][] songs = new Regex(result, "\\{.*?\\}").getMatches();
@@ -363,7 +383,9 @@ public class GrvShrkCm extends PluginForDecrypt {
         progress.increase(1);
         for (String[] s : songs) {
             HashMap<String, String> ret = new HashMap<String, String>();
-            if (!s[0].endsWith(",")) s[0] = s[0].concat(",");
+            if (!s[0].endsWith(",")) {
+                s[0] = s[0].concat(",");
+            }
             for (String[] ss : new Regex(s[0], "\"(.*?)\":\"?(.*?)\"?,").getMatches()) {
                 ret.put(ss[0], ss[1]);
             }
@@ -389,14 +411,16 @@ public class GrvShrkCm extends PluginForDecrypt {
         br.getHeaders().put("Content-Type", "application/json");
         br.getHeaders().put("Referer", parameter);
         String sid = br.getCookie(parameter, "PHPSESSID");
-        if (sid == null) return null;
+        if (sid == null) {
+            return null;
+        }
         String secretKey = getSecretKey(br, sid);
-        return "{\"header\":{\"client\":\"htmlshark\",\"clientRevision\":\"" + jd.plugins.hoster.GrooveShark.CLIENTREVISION.string + "\",\"privacy\":0," + jd.plugins.hoster.GrooveShark.COUNTRY.string + ",\"uuid\":\"" + USERUID + "\",\"session\":\"" + sid + "\",\"token\":\"" + getToken(method, secretKey) + "\"},\"method\":\"" + method + "\",";
+        return "{\"header\":{\"client\":\"htmlshark\",\"clientRevision\":\"" + jd.plugins.hoster.GrooveShark.CLIENTREVISION.get() + "\",\"privacy\":0," + jd.plugins.hoster.GrooveShark.COUNTRY.get() + ",\"uuid\":\"" + USERUID + "\",\"session\":\"" + sid + "\",\"token\":\"" + getToken(method, secretKey) + "\"},\"method\":\"" + method + "\",";
     }
 
     private String getSecretKey(Browser ajax, String sid) throws IOException {
         try {
-            ajax.postPageRaw("https://grooveshark.com/" + "more.php?getCommunicationToken", "{\"parameters\":{\"secretKey\":\"" + JDHash.getMD5(sid) + "\"},\"header\":{\"client\":\"htmlshark\",\"clientRevision\":\"" + jd.plugins.hoster.GrooveShark.CLIENTREVISION.string + "\",\"session\":\"" + sid + "\",\"uuid\":\"" + USERUID + "\"},\"method\":\"getCommunicationToken\"}");
+            ajax.postPageRaw("https://grooveshark.com/" + "more.php?getCommunicationToken", "{\"parameters\":{\"secretKey\":\"" + JDHash.getMD5(sid) + "\"},\"header\":{\"client\":\"htmlshark\",\"clientRevision\":\"" + jd.plugins.hoster.GrooveShark.CLIENTREVISION.get() + "\",\"session\":\"" + sid + "\",\"uuid\":\"" + USERUID + "\"},\"method\":\"getCommunicationToken\"}");
         } catch (Throwable e) {
             try {
                 org.appwork.utils.logging2.LogSource.exception(logger, e);
@@ -424,7 +448,9 @@ public class GrvShrkCm extends PluginForDecrypt {
         if (getPluginConfig().getBooleanProperty("STATUS")) {
             String server = getPluginConfig().getStringProperty("PROXYSERVER", null);
             int port = getPluginConfig().getIntegerProperty("PROXYPORT", -1);
-            if (isEmpty(server) || port < 0) return;
+            if (isEmpty(server) || port < 0) {
+                return;
+            }
             server = new Regex(server, "^[0-9a-zA-Z]+://").matches() ? server : "http://" + server;
             org.appwork.utils.net.httpconnection.HTTPProxy proxy = org.appwork.utils.net.httpconnection.HTTPProxy.parseHTTPProxy(server + ":" + port);
             if (b && proxy != null && proxy.getHost() != null) {

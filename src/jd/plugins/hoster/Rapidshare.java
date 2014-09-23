@@ -27,6 +27,7 @@ import java.util.Map.Entry;
 import java.util.Random;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.logging.Level;
 
 import jd.PluginWrapper;
@@ -139,45 +140,32 @@ public class Rapidshare extends PluginForHost {
 
     }
 
-    private String                 WAIT_HOSTERFULL   = "WAIT_HOSTERFULL";
+    private String                         WAIT_HOSTERFULL   = "WAIT_HOSTERFULL";
 
-    private String                 SSL_CONNECTION    = "SSL_CONNECTION2";
+    private String                         SSL_CONNECTION    = "SSL_CONNECTION2";
 
-    private String                 HTTPS_WORKAROUND  = "HTTPS_WORKAROUND";
+    private String                         HTTPS_WORKAROUND  = "HTTPS_WORKAROUND";
 
-    private static Object          LOCK              = new Object();
+    private static Object                  LOCK              = new Object();
 
-    private static AtomicLong      RS_API_WAIT       = new AtomicLong(0);
+    private static AtomicLong              RS_API_WAIT       = new AtomicLong(0);
 
-    private String                 COOKIEPROP        = "cookiesv2";
-    private String                 COOKIEPROPENC     = "cookiesv2enc";
+    private String                         COOKIEPROP        = "cookiesv2";
+    private String                         COOKIEPROPENC     = "cookiesv2enc";
 
-    private static Account         dummyAccount      = new Account("TRAFSHARE", "TRAFSHARE");
+    private static Account                 dummyAccount      = new Account("TRAFSHARE", "TRAFSHARE");
 
-    private String                 PRE_RESOLVE       = "PRE_RESOLVE2";
+    private String                         PRE_RESOLVE       = "PRE_RESOLVE2";
 
-    private static StringContainer UA                = new StringContainer(RandomUserAgent.generate());
+    private static AtomicReference<String> UA                = new AtomicReference<String>(RandomUserAgent.generate());
 
-    private char[]                 FILENAMEREPLACES  = new char[] { '_', ' ' };
+    private char[]                         FILENAMEREPLACES  = new char[] { '_', ' ' };
 
-    private static AtomicBoolean   ReadTimeoutHotFix = new AtomicBoolean(false);
+    private static AtomicBoolean           ReadTimeoutHotFix = new AtomicBoolean(false);
 
-    private String                 dllink            = null;
+    private String                         dllink            = null;
 
-    private static final String    LINKTYPE_DOWNLOAD = "https?://(www\\.)?rapidshare\\.com/(desktop/)?download/\\d+p\\d+/\\d+/[A-Za-z0-9=]+/\\d+/\\d+/\\d+/\\d+/[A-Z0-9]{32}/refer";
-
-    public static class StringContainer {
-        public String string = null;
-
-        public StringContainer(String string) {
-            this.string = string;
-        }
-
-        @Override
-        public String toString() {
-            return string;
-        }
-    }
+    private static final String            LINKTYPE_DOWNLOAD = "https?://(www\\.)?rapidshare\\.com/(desktop/)?download/\\d+p\\d+/\\d+/[A-Za-z0-9=]+/\\d+/\\d+/\\d+/\\d+/[A-Z0-9]{32}/refer";
 
     /* returns file id of link */
     private static String getID(final String link) {
@@ -1035,7 +1023,7 @@ public class Rapidshare extends PluginForHost {
         final boolean follow = br.isFollowingRedirects();
         try {
             br.getHeaders().put("Accept-Language", "de-DE,de;q=0.8,en-US;q=0.6,en;q=0.4");
-            br.getHeaders().put("User-Agent", Rapidshare.UA.toString());
+            br.getHeaders().put("User-Agent", Rapidshare.UA.get());
             br.setFollowRedirects(true);
             br.getPage(req);
         } catch (final BrowserException e) {
