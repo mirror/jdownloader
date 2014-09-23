@@ -154,7 +154,7 @@ public class NowVideoEu extends PluginForHost {
             /* we first have to load the plugin, before we can reference it */
             agent.set(jd.plugins.hoster.MediafireCom.stringUserAgent());
         }
-        prepBr.getHeaders().put("User-Agent", agent.get());
+        prepBr.getHeaders().put("User-Agent", "Mozilla/5.0 (Windows NT 6.1; WOW64; rv:32.0) Gecko/20100101 Firefox/32.0");
         return prepBr;
     }
 
@@ -175,6 +175,9 @@ public class NowVideoEu extends PluginForHost {
             return AvailableStatus.TRUE;
         }
         String filename = br.getRegex("<div class=\"video_details radius\\d+\" style=\"height:125px;position:relative;\">[\t\n\r ]+<h4>([^<>\"]*?)</h4>").getMatch(0);
+        if (filename == null) {
+            filename = br.getRegex("\\&title=([^<>\"]*?)\"").getMatch(0);
+        }
         if (filename == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }

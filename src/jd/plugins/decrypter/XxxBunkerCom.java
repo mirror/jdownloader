@@ -129,6 +129,9 @@ public class XxxBunkerCom extends PluginForDecrypt {
         }
         final Browser br2 = br.cloneBrowser();
         externID = br.getRegex("%26amp%3Bpostbackurl%3D([^<>\"]*?)%26amp%3Brelayurl").getMatch(0);
+        if (externID == null) {
+            externID = br.getRegex("%26amp%3Bfile%3D(http[^<>\"]*?)%26amp").getMatch(0);
+        }
         if (externID != null) {
             externID = Encoding.deepHtmlDecode(externID);
             externID = Encoding.Base64Decode(externID);

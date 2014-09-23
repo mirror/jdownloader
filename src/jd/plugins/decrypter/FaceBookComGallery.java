@@ -496,6 +496,9 @@ public class FaceBookComGallery extends PluginForDecrypt {
         if (fpName == null) {
             fpName = br.getRegex("id=\"pageTitle\">([^<>\"]*?)</title>").getMatch(0);
         }
+        if (fpName == null) {
+            fpName = br.getRegex("class=\"fbPhotoAlbumTitle\">([^<>\"]*?)</h1>").getMatch(0);
+        }
         final String ajaxpipeToken = getajaxpipeToken();
         final String user = getUser();
         if (ajaxpipeToken == null || user == null || collection_token == null || profileID == null || type == null || setID == null) {
@@ -506,7 +509,7 @@ public class FaceBookComGallery extends PluginForDecrypt {
         if (fpName == null) {
             fpName = "Facebook_album_of_user_" + user;
         }
-        fpName = Encoding.htmlDecode(fpName.trim());
+        fpName = Encoding.htmlDecode(fpName.trim()) + " - " + setID;
         final FilePackage fp = FilePackage.getInstance();
         fp.setName(fpName.trim());
         String lastfirstID = "";
@@ -783,7 +786,11 @@ public class FaceBookComGallery extends PluginForDecrypt {
                     if (FASTLINKCHECK_PICTURES_ENABLED) {
                         dl.setAvailable(true);
                     }
-                   try{/*JD2 only*/dl.setContentUrl(single_link);}catch(Throwable e){/*Stable*/ dl.setBrowserUrl(single_link);}
+                    try {/* JD2 only */
+                        dl.setContentUrl(single_link);
+                    } catch (Throwable e) {/* Stable */
+                        dl.setBrowserUrl(single_link);
+                    }
                     // Set temp name, correct name will be set in hosterplugin later
                     dl.setName(getTemporaryDecryptName(single_link));
                     fp.add(dl);
@@ -996,7 +1003,11 @@ public class FaceBookComGallery extends PluginForDecrypt {
         if (FASTLINKCHECK_PICTURES_ENABLED) {
             dl.setAvailable(true);
         }
-       try{/*JD2 only*/dl.setContentUrl(final_link);}catch(Throwable e){/*Stable*/ dl.setBrowserUrl(final_link);}
+        try {/* JD2 only */
+            dl.setContentUrl(final_link);
+        } catch (Throwable e) {/* Stable */
+            dl.setBrowserUrl(final_link);
+        }
         // Set temp name, correct name will be set in hosterplugin later
         dl.setName(getTemporaryDecryptName(final_link));
         return dl;
