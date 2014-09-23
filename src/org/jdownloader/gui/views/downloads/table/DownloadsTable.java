@@ -331,9 +331,11 @@ public class DownloadsTable extends PackageControllerTable<FilePackage, Download
         if (e.getID() == MouseEvent.MOUSE_PRESSED) {
             if (SwingUtilities.isLeftMouseButton(e)) {
                 if (rowAtPoint(e.getPoint()) < 0) {
-                    int rowCount = this.getRowCount();
-                    this.getSelectionModel().setSelectionInterval(rowCount - 1, rowCount - 1);
-                    // this.clearSelection(); // not needed because this happens already in super method
+                    final int rowCount = this.getRowCount();
+                    if (rowCount > 0) {
+                        this.getSelectionModel().setAnchorSelectionIndex(rowCount - 1);
+                        // this.clearSelection(); // not needed because this happens already in super method
+                    }
                 }
             }
         }
