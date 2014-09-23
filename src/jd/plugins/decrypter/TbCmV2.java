@@ -173,6 +173,9 @@ public class TbCmV2 extends PluginForDecrypt {
         String cleanedurl = Encoding.urlDecode(param.toString(), false);
         cleanedurl = cleanedurl.replace("youtube.jd", "youtube.com");
         String requestedVariant = new Regex(cleanedurl, "\\&variant=([a-z\\_0-9]+)").getMatch(0);
+        if (requestedVariant != null) {
+            requestedVariant = Encoding.urlDecode(requestedVariant, false);
+        }
         cleanedurl = cleanedurl.replace("\\&variant=[a-z\\_0-9]+", "");
         String videoID = getVideoIDByUrl(cleanedurl);
 
@@ -789,7 +792,7 @@ public class TbCmV2 extends PluginForDecrypt {
             // thislink.setAvailable(true);
 
             try {/* JD2 only */
-                thislink.setContentUrl(getBase() + "/watch?v=" + clip.videoID + "&variant=" + variantInfo.variant);
+                thislink.setContentUrl(getBase() + "/watch?v=" + clip.videoID + "&variant=" + Encoding.urlEncode(variantInfo.variant.getTypeId()));
             } catch (Throwable e) {/* Stable */
                 thislink.setBrowserUrl(getBase() + "/watch?v=" + clip.videoID);
             }
