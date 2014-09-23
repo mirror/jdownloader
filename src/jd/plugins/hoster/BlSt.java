@@ -921,9 +921,9 @@ public class BlSt extends PluginForHost {
             expire_milliseconds = TimeFormatter.getMilliSeconds(expire, "dd MMMM yyyy", Locale.ENGLISH);
         }
         if (account.getBooleanProperty("nopremium") && (expire_milliseconds - System.currentTimeMillis()) <= 0) {
+            maxPrem.set(ACCOUNT_FREE_MAXDOWNLOADS);
             try {
                 account.setType(AccountType.FREE);
-                maxPrem.set(ACCOUNT_FREE_MAXDOWNLOADS);
                 /* free accounts can still have captcha */
                 totalMaxSimultanFreeDownload.set(maxPrem.get());
                 account.setMaxSimultanDownloads(maxPrem.get());
@@ -934,9 +934,9 @@ public class BlSt extends PluginForHost {
             ai.setStatus("Registered (free) user");
         } else {
             ai.setValidUntil(expire_milliseconds);
+            maxPrem.set(ACCOUNT_PREMIUM_MAXDOWNLOADS);
             try {
                 account.setType(AccountType.PREMIUM);
-                maxPrem.set(ACCOUNT_PREMIUM_MAXDOWNLOADS);
                 account.setMaxSimultanDownloads(maxPrem.get());
                 account.setConcurrentUsePossible(true);
             } catch (final Throwable e) {

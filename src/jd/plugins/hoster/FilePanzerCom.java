@@ -267,9 +267,9 @@ public class FilePanzerCom extends PluginForHost {
         ai.setFilesNum(Long.parseLong(filesnum));
         ai.setUnlimitedTraffic();
         if (account.getBooleanProperty("free", false)) {
+            maxPrem.set(ACCOUNT_FREE_MAXDOWNLOADS);
             try {
                 account.setType(AccountType.FREE);
-                maxPrem.set(ACCOUNT_FREE_MAXDOWNLOADS);
                 /* free accounts can still have captcha */
                 totalMaxSimultanFreeDownload.set(maxPrem.get());
                 account.setMaxSimultanDownloads(maxPrem.get());
@@ -291,9 +291,9 @@ public class FilePanzerCom extends PluginForHost {
             } else {
                 ai.setValidUntil(TimeFormatter.getMilliSeconds(expire, "dd MMMM yyyy", Locale.ENGLISH));
             }
+            maxPrem.set(ACCOUNT_PREMIUM_MAXDOWNLOADS);
             try {
                 account.setType(AccountType.PREMIUM);
-                maxPrem.set(ACCOUNT_PREMIUM_MAXDOWNLOADS);
                 account.setMaxSimultanDownloads(maxPrem.get());
                 account.setConcurrentUsePossible(true);
             } catch (final Throwable e) {

@@ -368,9 +368,9 @@ public class HdStreamTo extends PluginForHost {
              * advantages, not related to downloading links of others so it's all fine.
              */
             account.setProperty("free", true);
+            maxPrem.set(ACCOUNT_FREE_MAXDOWNLOADS);
             try {
                 account.setType(AccountType.FREE);
-                maxPrem.set(ACCOUNT_FREE_MAXDOWNLOADS);
                 /* free accounts can still have captcha */
                 account.setMaxSimultanDownloads(maxPrem.get());
                 account.setConcurrentUsePossible(false);

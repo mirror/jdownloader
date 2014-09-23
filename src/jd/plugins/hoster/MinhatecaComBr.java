@@ -223,9 +223,9 @@ public class MinhatecaComBr extends PluginForHost {
         ai.setUnlimitedTraffic();
         /* Only premium accounts are supported so far */
         if (account.getBooleanProperty("free", false)) {
+            maxPrem.set(ACCOUNT_FREE_MAXDOWNLOADS);
             try {
                 account.setType(AccountType.FREE);
-                maxPrem.set(ACCOUNT_FREE_MAXDOWNLOADS);
                 /* free accounts can still have captcha */
                 totalMaxSimultanFreeDownload.set(maxPrem.get());
                 account.setMaxSimultanDownloads(maxPrem.get());
@@ -235,9 +235,9 @@ public class MinhatecaComBr extends PluginForHost {
             }
             ai.setStatus("Registered (free) user");
         } else {
+            maxPrem.set(ACCOUNT_PREMIUM_MAXDOWNLOADS);
             try {
                 account.setType(AccountType.PREMIUM);
-                maxPrem.set(ACCOUNT_PREMIUM_MAXDOWNLOADS);
                 account.setMaxSimultanDownloads(maxPrem.get());
                 account.setConcurrentUsePossible(true);
             } catch (final Throwable e) {
