@@ -157,13 +157,14 @@ public class LinkGrabberTable extends PackageControllerTable<CrawledPackage, Cra
         if (e.getID() == MouseEvent.MOUSE_PRESSED) {
             if (SwingUtilities.isLeftMouseButton(e)) {
                 if (rowAtPoint(e.getPoint()) < 0) {
-                    int rowCount = this.getRowCount();
-                    this.getSelectionModel().setSelectionInterval(rowCount - 1, rowCount - 1);
-                    // this.clearSelection(); // not needed because this happens already in super method
+                    final int rowCount = this.getRowCount();
+                    if (rowCount > 0) {
+                        this.getSelectionModel().setAnchorSelectionIndex(rowCount - 1);
+                        // this.clearSelection(); // not needed because this happens already in super method
+                    }
                 }
             }
-        }
-        if (e.getID() == MouseEvent.MOUSE_RELEASED) {
+        } else if (e.getID() == MouseEvent.MOUSE_RELEASED) {
             if (e.getButton() == MouseEvent.BUTTON2) {
                 if ((e.getModifiers() & InputEvent.CTRL_MASK) == 0) {
                     if ((e.getModifiers() & InputEvent.SHIFT_MASK) == 0) {
