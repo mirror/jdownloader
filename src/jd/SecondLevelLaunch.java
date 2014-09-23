@@ -312,7 +312,7 @@ public class SecondLevelLaunch {
         System.setProperty("ftpStyle", "new");
         /* random number: eg used for cnl2 without asking dialog */
         System.setProperty("jd.randomNumber", "" + (System.currentTimeMillis() + new Random().nextLong()));
-        // System.setProperty("file.encoding", "UTF-8");
+        System.setProperty("file.encoding", "UTF-8");
         System.setProperty("sun.swing.enableImprovedDragGesture", "true");
         try {
             System.setProperty("org.jdownloader.revision", "JDownloader2(Beta)");
