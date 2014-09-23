@@ -34,27 +34,25 @@ public class OpenInBrowserAction extends CustomizableTableContextAppAction<FileP
     @Override
     public void requestUpdate(Object requestor) {
         super.requestUpdate(requestor);
-        selection = getSelection();
-
         if (!CrossSystem.isOpenBrowserSupported()) {
-
             setEnabled(false);
             return;
         }
+        selection = getSelection();
         if (!hasSelection(selection)) {
-
             setEnabled(false);
             return;
         }
-        List<DownloadLink> links = selection.getChildren();
+        final List<DownloadLink> links = selection.getChildren();
         if (links.size() > 50) {
-
             setEnabled(false);
             return;
         }
-        for (DownloadLink link : links) {
-            setEnabled(true);
-
+        for (final DownloadLink link : links) {
+            if (link.getView().getDisplayUrl() != null) {
+                setEnabled(true);
+                return;
+            }
         }
         setEnabled(false);
     }

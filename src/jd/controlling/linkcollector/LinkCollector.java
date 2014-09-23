@@ -768,9 +768,6 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
                             } catch (final Throwable e) {
                                 logger.log(e);
                             }
-                            if (link.getDownloadLink() != null && StringUtils.isNotEmpty(job.getCustomSourceUrl())) {
-                                link.getDownloadLink().setReferrerUrl(job.getCustomSourceUrl());
-                            }
                         }
                         if (link.getDownloadLink() != null) {
                             /* set CrawledLink as changeListener to its DownloadLink */

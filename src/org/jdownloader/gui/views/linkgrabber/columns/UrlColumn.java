@@ -157,51 +157,6 @@ public class UrlColumn extends ExtTextColumn<AbstractNode> {
             if (!Application.isJared(null)) {
                 add(popup, null, dlLink.getPluginPatternMatcher());
             }
-
-            // popup.add(new AppAction() {
-            // {
-            // setName(_GUI._.UrlColumn_onDoubleClick_object_open(shorten(dlLink.getPluginPattern())));
-            // setIconKey(IconKey.ICON_BROWSE);
-            //
-            // }
-            //
-            // @Override
-            // public void actionPerformed(ActionEvent e) {
-            //
-            // CrossSystem.openURLOrShowMessage(dlLink.getPluginPattern());
-            // }
-            //
-            // });
-            // if (!StringUtils.equals(dlLink.getPluginPattern(), dlLink.getBrowserUrl())) {
-            // popup.add(new AppAction() {
-            // {
-            // setName(_GUI._.UrlColumn_onDoubleClick_object_copy_origin(shorten(dlLink.getBrowserUrl())));
-            // setIconKey(IconKey.ICON_COPY);
-            //
-            // }
-            //
-            // @Override
-            // public void actionPerformed(ActionEvent e) {
-            // ClipboardMonitoring.getINSTANCE().setCurrentContent(dlLink.getBrowserUrl());
-            // }
-            //
-            // });
-            // popup.add(new AppAction() {
-            // {
-            // setName(_GUI._.UrlColumn_onDoubleClick_object_open_origin(shorten(dlLink.getBrowserUrl())));
-            // setIconKey(IconKey.ICON_BROWSE);
-            //
-            // }
-            //
-            // @Override
-            // public void actionPerformed(ActionEvent e) {
-            //
-            // CrossSystem.openURLOrShowMessage(dlLink.getBrowserUrl());
-            // }
-            //
-            // });
-            // }
-
             final Rectangle bounds = getModel().getTable().getCellRect(row, getIndex(), true);
             final Dimension pref = popup.getPreferredSize();
             popup.setPreferredSize(new Dimension(Math.max(pref.width, bounds.width), pref.height));
@@ -265,9 +220,7 @@ public class UrlColumn extends ExtTextColumn<AbstractNode> {
             return ((FilePackage) value).getView().getCommonSourceUrl();
         } else if (value instanceof CrawledLink) {
             return ((CrawledLink) value).getDownloadLink().getView().getDisplayUrl();
-
         } else if (value instanceof DownloadLink) {
-
             return ((DownloadLink) value).getView().getDisplayUrl();
         }
         return null;
