@@ -25,6 +25,7 @@ import java.io.FileFilter;
 import java.io.IOException;
 import java.lang.Thread.UncaughtExceptionHandler;
 import java.lang.reflect.Field;
+import java.net.URL;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
 import java.text.SimpleDateFormat;
@@ -125,6 +126,8 @@ import org.jdownloader.translate._JDT;
 import org.jdownloader.updatev2.InternetConnectionSettings;
 import org.jdownloader.updatev2.RestartController;
 import org.jdownloader.updatev2.gui.LAFOptions;
+
+import com.sun.jna.Platform;
 
 public class SecondLevelLaunch {
     static {
@@ -640,8 +643,33 @@ public class SecondLevelLaunch {
                     logger.close();
                 }
             });
-        } catch (final Throwable e) {
-            LOG.log(e);
+        } catch (final Throwable e1) {
+            LOG.log(e1);
+            try {
+                System.setProperty("jna.debug_load", "true");
+                System.setProperty("jna.debug_load.jna", "true");
+                System.setProperty("jna.nosystrue", "true");
+                String libName = "com/sun/jna/" + Platform.RESOURCE_PREFIX + "/" + System.mapLibraryName("jnidispatch").replace(".dylib", ".jnilib");
+                URL file = Application.getRessourceURL(libName, true);
+                LOG.info("URL: " + file);
+                File dll = Application.getResource("tmp/jna/" + System.currentTimeMillis() + "/jnidispatch.dll");
+                dll.deleteOnExit();
+                IO.secureWrite(dll, IO.readURL(file));
+
+                LOG.info("JNA DLL: " + dll.getParentFile().getCanonicalPath());
+                System.setProperty("jna.boot.library.path", dll.getParentFile().getCanonicalPath());
+                com.sun.jna.Native.setCallbackExceptionHandler(new com.sun.jna.Callback.UncaughtExceptionHandler() {
+                    @Override
+                    public void uncaughtException(com.sun.jna.Callback arg0, Throwable arg1) {
+                        LogSource logger = LogController.getInstance().getLogger("NativeExceptionHandler");
+                        logger.log(arg1);
+                        logger.close();
+                    }
+                });
+            } catch (final Throwable e) {
+                LOG.log(e);
+
+            }
         }
         LogSource edtLogger = LogController.getInstance().getLogger("BlockingEDT");
         edtLogger.setInstantFlush(true);
