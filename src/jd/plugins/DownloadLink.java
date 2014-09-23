@@ -356,6 +356,8 @@ public class DownloadLink extends Property implements Serializable, AbstractPack
         } else {
             setProperty(PROPERTY_CHUNKS, chunks);
         }
+        SingleDownloadController dlc = getDownloadLinkController();
+        DownloadInterface dli = null;
 
         if (hasNotificationListener()) {
             notifyChanges(AbstractNodeNotifier.NOTIFY.PROPERTY_CHANCE, new DownloadLinkProperty(this, DownloadLinkProperty.Property.CHUNKS, chunks));
@@ -492,13 +494,16 @@ public class DownloadLink extends Property implements Serializable, AbstractPack
         return getStringProperty(URL_CONTENT);
     }
 
-    public void setContentUrl(String url) {
-        if (StringUtils.equals(url, getContentUrl())) {
-            return;
-        }
-        setProperty(URL_CONTENT, url);
-        if (hasNotificationListener()) {
-            notifyChanges(AbstractNodeNotifier.NOTIFY.PROPERTY_CHANCE, new DownloadLinkProperty(this, DownloadLinkProperty.Property.URL_CONTENT, url));
+    public void setContentUrl(final String url) {
+        if (!StringUtils.equals(url, getContentUrl())) {
+            if (StringUtils.isEmpty(url)) {
+                setProperty(URL_CONTENT, Property.NULL);
+            } else {
+                setProperty(URL_CONTENT, url);
+            }
+            if (hasNotificationListener()) {
+                notifyChanges(AbstractNodeNotifier.NOTIFY.PROPERTY_CHANCE, new DownloadLinkProperty(this, DownloadLinkProperty.Property.URL_CONTENT, url));
+            }
         }
     }
 
@@ -511,13 +516,16 @@ public class DownloadLink extends Property implements Serializable, AbstractPack
         return getStringProperty(URL_CONTAINER);
     }
 
-    public void setContainerUrl(String url) {
-        if (StringUtils.equals(url, getContainerUrl())) {
-            return;
-        }
-        setProperty(URL_CONTAINER, url);
-        if (hasNotificationListener()) {
-            notifyChanges(AbstractNodeNotifier.NOTIFY.PROPERTY_CHANCE, new DownloadLinkProperty(this, DownloadLinkProperty.Property.URL_CONTAINER, url));
+    public void setContainerUrl(final String url) {
+        if (!StringUtils.equals(url, getContainerUrl())) {
+            if (StringUtils.isEmpty(url)) {
+                setProperty(URL_CONTAINER, Property.NULL);
+            } else {
+                setProperty(URL_CONTAINER, url);
+            }
+            if (hasNotificationListener()) {
+                notifyChanges(AbstractNodeNotifier.NOTIFY.PROPERTY_CHANCE, new DownloadLinkProperty(this, DownloadLinkProperty.Property.URL_CONTAINER, url));
+            }
         }
     }
 
@@ -527,20 +535,23 @@ public class DownloadLink extends Property implements Serializable, AbstractPack
      * http://svn.jdownloader.org/issues/51004
      */
     public String getOriginUrl() {
-        String ret = getStringProperty(URL_ORIGIN);
-        if (ret == null) {
+        final String ret = getStringProperty(URL_ORIGIN);
+        if (StringUtils.isEmpty(ret)) {
             return browserurl;
         }
         return ret;
     }
 
-    public void setOriginUrl(String url) {
-        if (StringUtils.equals(url, getOriginUrl())) {
-            return;
-        }
-        setProperty(URL_ORIGIN, url);
-        if (hasNotificationListener()) {
-            notifyChanges(AbstractNodeNotifier.NOTIFY.PROPERTY_CHANCE, new DownloadLinkProperty(this, DownloadLinkProperty.Property.URL_ORIGIN, url));
+    public void setOriginUrl(final String url) {
+        if (!StringUtils.equals(url, getOriginUrl())) {
+            if (StringUtils.isEmpty(url)) {
+                setProperty(URL_ORIGIN, Property.NULL);
+            } else {
+                setProperty(URL_ORIGIN, url);
+            }
+            if (hasNotificationListener()) {
+                notifyChanges(AbstractNodeNotifier.NOTIFY.PROPERTY_CHANCE, new DownloadLinkProperty(this, DownloadLinkProperty.Property.URL_ORIGIN, url));
+            }
         }
     }
 
@@ -553,13 +564,16 @@ public class DownloadLink extends Property implements Serializable, AbstractPack
         return getStringProperty(URL_REFERRER);
     }
 
-    public void setReferrerUrl(String url) {
-        if (StringUtils.equals(url, getReferrerUrl())) {
-            return;
-        }
-        setProperty(URL_REFERRER, url);
-        if (hasNotificationListener()) {
-            notifyChanges(AbstractNodeNotifier.NOTIFY.PROPERTY_CHANCE, new DownloadLinkProperty(this, DownloadLinkProperty.Property.URL_REFERRER, url));
+    public void setReferrerUrl(final String url) {
+        if (!StringUtils.equals(url, getReferrerUrl())) {
+            if (StringUtils.isEmpty(url)) {
+                setProperty(URL_REFERRER, Property.NULL);
+            } else {
+                setProperty(URL_REFERRER, url);
+            }
+            if (hasNotificationListener()) {
+                notifyChanges(AbstractNodeNotifier.NOTIFY.PROPERTY_CHANCE, new DownloadLinkProperty(this, DownloadLinkProperty.Property.URL_REFERRER, url));
+            }
         }
     }
 
@@ -569,7 +583,6 @@ public class DownloadLink extends Property implements Serializable, AbstractPack
      * may be an invalid pseudo url, or event no valid url at all. http://svn.jdownloader.org/issues/51004
      */
     public String getPluginPatternMatcher() {
-
         return urlDownload;
     }
 
@@ -593,11 +606,9 @@ public class DownloadLink extends Property implements Serializable, AbstractPack
      */
     public void setBrowserUrl(String url) {
         setOriginUrl(url);
-
     }
 
     public String getFileOutput() {
-
         return getFileOutput(false, false);
     }
 
@@ -608,7 +619,6 @@ public class DownloadLink extends Property implements Serializable, AbstractPack
         } else {
             return con.getFileOutput(ignoreUnsafe, ignoreCustom).getAbsolutePath();
         }
-
     }
 
     public String getFileOutput(boolean ignoreUnsafe, boolean ignoreCustom) {
@@ -1077,6 +1087,7 @@ public class DownloadLink extends Property implements Serializable, AbstractPack
         setEnabled(true);
         setLinkInfo(null);
         setExtractionStatus(null);
+
         if (resetPlugins != null) {
             for (PluginForHost resetPlugin : resetPlugins) {
                 try {
@@ -1447,7 +1458,7 @@ public class DownloadLink extends Property implements Serializable, AbstractPack
 
     }
 
-    public void setPluginPatternMatcher(String pluginPattern) {
+    public void setPluginPatternMatcher(final String pluginPattern) {
         final String previousURLDownload = getPluginPatternMatcher();
         final String previousLinkID = getLinkID();
         if (pluginPattern != null) {
