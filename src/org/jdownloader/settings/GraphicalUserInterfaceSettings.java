@@ -49,7 +49,7 @@ public interface GraphicalUserInterfaceSettings extends ConfigInterface {
 
     /**
      * How many ms the speedmeter shall show/record. Please note that big Timeframes and high fps values may cause high CPU usage
-     * 
+     *
      * @return
      */
     @AboutConfig
@@ -60,7 +60,7 @@ public interface GraphicalUserInterfaceSettings extends ConfigInterface {
 
     /**
      * How many refreshes and datasamples the speedmeter uses. Please note that big Timeframes and high fps values may cause high CPU usage
-     * 
+     *
      * @return
      */
     @AboutConfig
@@ -1087,6 +1087,7 @@ public interface GraphicalUserInterfaceSettings extends ConfigInterface {
     void setTableWrapAroundEnabled(boolean b);
 
     @AboutConfig
+    @DescriptionForConfigEntry("The last used the Regex option for 'Rename Filename/Packagename' Dialog")
     @DefaultBooleanValue(false)
     boolean isRenameActionRegexEnabled();
 
