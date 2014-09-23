@@ -20,6 +20,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Locale;
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicReference;
 
 import javax.script.ScriptEngine;
 import javax.script.ScriptEngineManager;
@@ -41,7 +42,6 @@ import jd.plugins.FilePackage;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
-import jd.utils.JDUtilities;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "anilinkz.com" }, urls = { "http://(www\\.)?anilinkz\\.com/[^<>\"/]+(/[^<>\"/]+)?" }, flags = { 0 })
 @SuppressWarnings("deprecation")
@@ -65,11 +65,7 @@ public class AniLinkzCom extends PluginForDecrypt {
         super(wrapper);
     }
 
-    private static StringContainer agent = new StringContainer();
-
-    public static class StringContainer {
-        public String string = null;
-    }
+    private static AtomicReference<String> agent = new AtomicReference<String>(null);
 
     private Browser prepBrowser(Browser prepBr) {
         HashMap<String, String> map = null;
@@ -83,12 +79,11 @@ public class AniLinkzCom extends PluginForDecrypt {
                 prepBr.setCookie(this.getHost(), key, value);
             }
         }
-        if (agent.string == null) {
+        if (agent.get() == null) {
             /* we first have to load the plugin, before we can reference it */
-            JDUtilities.getPluginForHost("mediafire.com");
-            agent.string = jd.plugins.hoster.MediafireCom.stringUserAgent();
+            agent.set(jd.plugins.hoster.MediafireCom.stringUserAgent());
         }
-        prepBr.getHeaders().put("User-Agent", agent.string);
+        prepBr.getHeaders().put("User-Agent", agent.get());
         prepBr.getHeaders().put("Referer", null);
         return prepBr;
     }

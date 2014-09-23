@@ -22,6 +22,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Random;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.regex.Pattern;
 
 import javax.swing.JOptionPane;
@@ -46,7 +47,6 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
 
 import org.appwork.utils.formatter.SizeFormatter;
@@ -58,13 +58,13 @@ public class FourSharedCom extends PluginForHost {
     // DEV NOTES:
     // old versions of JDownloader can have troubles with Java7+ with HTTPS posts.
 
-    public final String            PLUGINS_HOSTER_FOURSHAREDCOM_ONLY4PREMIUM = "plugins.hoster.foursharedcom.only4premium";
-    private static StringContainer agent                                     = new StringContainer();
-    private final String           PASSWORDTEXT                              = "enter a password to access";
-    private static Object          LOCK                                      = new Object();
-    private final String           COOKIE_HOST                               = "http://4shared.com";
+    public final String                    PLUGINS_HOSTER_FOURSHAREDCOM_ONLY4PREMIUM = "plugins.hoster.foursharedcom.only4premium";
+    private static AtomicReference<String> agent                                     = new AtomicReference<String>();
+    private final String                   PASSWORDTEXT                              = "enter a password to access";
+    private static Object                  LOCK                                      = new Object();
+    private final String                   COOKIE_HOST                               = "http://4shared.com";
 
-    private static final boolean   TRY_FAST_FREE                             = true;
+    private static final boolean           TRY_FAST_FREE                             = true;
 
     public FourSharedCom(final PluginWrapper wrapper) {
         super(wrapper);
@@ -81,19 +81,12 @@ public class FourSharedCom extends PluginForHost {
     private static final String DOWNLOADSTREAMSERRORHANDLING = "DOWNLOADSTREAMSERRORHANDLING";
     private static final String NOCHUNKS                     = "NOCHUNKS";
 
-    public static class StringContainer {
-        public String string = null;
-    }
-
     private Browser prepBrowser(Browser prepBr) {
-        if (agent.string == null) {
-            /*
-             * we first have to load the plugin, before we can reference it
-             */
-            JDUtilities.getPluginForHost("mediafire.com");
-            agent.string = jd.plugins.hoster.MediafireCom.stringUserAgent();
+        if (agent.get() == null) {
+            /* we first have to load the plugin, before we can reference it */
+            agent.set(jd.plugins.hoster.MediafireCom.stringUserAgent());
         }
-        prepBr.getHeaders().put("User-Agent", agent.string);
+        prepBr.getHeaders().put("User-Agent", agent.get());
         prepBr.getHeaders().put("Accept-Language", "en-gb, en;q=0.8");
         prepBr.setCookie("http://www.4shared.com", "4langcookie", "en");
         return prepBr;

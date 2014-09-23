@@ -29,6 +29,7 @@ import java.util.Map;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.regex.Pattern;
 
 import javax.crypto.Cipher;
@@ -74,32 +75,27 @@ public class Uploadedto extends PluginForHost {
     // other: respects https in download methods, even though final download
     // link isn't https (free tested).
 
-    public static class StringContainer {
-        //
-        public String string = null;
-    }
+    private static AtomicInteger           maxPrem                      = new AtomicInteger(1);
+    private char[]                         FILENAMEREPLACES             = new char[] { '_', '[', ']' };
+    private final String                   ACTIVATEACCOUNTERRORHANDLING = "ACTIVATEACCOUNTERRORHANDLING";
+    private final String                   EXPERIMENTALHANDLING         = "EXPERIMENTALHANDLING";
+    private Pattern                        IPREGEX                      = Pattern.compile("(([1-2])?([0-9])?([0-9])\\.([1-2])?([0-9])?([0-9])\\.([1-2])?([0-9])?([0-9])\\.([1-2])?([0-9])?([0-9]))", Pattern.CASE_INSENSITIVE);
+    private static AtomicBoolean           hasDled                      = new AtomicBoolean(false);
+    private static AtomicLong              timeBefore                   = new AtomicLong(0);
+    private String                         LASTIP                       = "LASTIP";
+    private static AtomicReference<String> lastIP                       = new AtomicReference<String>();
+    private static AtomicBoolean           usePremiumAPI                = new AtomicBoolean(true);
+    private boolean                        usePremiumDownloadAPI        = true;
+    private static final long              RECONNECTWAIT                = 10802000;
+    private static final String            NOCHUNKS                     = "NOCHUNKS";
+    private static final String            NORESUME                     = "NORESUME";
+    private static final String            SSL_CONNECTION               = "SSL_CONNECTION";
+    private static final String            PREFER_PREMIUM_DOWNLOAD_API  = "PREFER_PREMIUM_DOWNLOAD_API_V2";
+    private static final String            DOWNLOAD_ABUSED              = "DOWNLOAD_ABUSED";
+    private boolean                        PREFERSSL                    = true;
+    private boolean                        avoidHTTPS                   = false;
 
-    private static AtomicInteger   maxPrem                      = new AtomicInteger(1);
-    private char[]                 FILENAMEREPLACES             = new char[] { '_', '[', ']' };
-    private final String           ACTIVATEACCOUNTERRORHANDLING = "ACTIVATEACCOUNTERRORHANDLING";
-    private final String           EXPERIMENTALHANDLING         = "EXPERIMENTALHANDLING";
-    private Pattern                IPREGEX                      = Pattern.compile("(([1-2])?([0-9])?([0-9])\\.([1-2])?([0-9])?([0-9])\\.([1-2])?([0-9])?([0-9])\\.([1-2])?([0-9])?([0-9]))", Pattern.CASE_INSENSITIVE);
-    private static AtomicBoolean   hasDled                      = new AtomicBoolean(false);
-    private static AtomicLong      timeBefore                   = new AtomicLong(0);
-    private String                 LASTIP                       = "LASTIP";
-    private static StringContainer lastIP                       = new StringContainer();
-    private static AtomicBoolean   usePremiumAPI                = new AtomicBoolean(true);
-    private boolean                usePremiumDownloadAPI        = true;
-    private static final long      RECONNECTWAIT                = 10802000;
-    private static final String    NOCHUNKS                     = "NOCHUNKS";
-    private static final String    NORESUME                     = "NORESUME";
-    private static final String    SSL_CONNECTION               = "SSL_CONNECTION";
-    private static final String    PREFER_PREMIUM_DOWNLOAD_API  = "PREFER_PREMIUM_DOWNLOAD_API_V2";
-    private static final String    DOWNLOAD_ABUSED              = "DOWNLOAD_ABUSED";
-    private boolean                PREFERSSL                    = true;
-    private boolean                avoidHTTPS                   = false;
-
-    private static final String    CURRENT_DOMAIN               = "http://uploaded.net/";
+    private static final String            CURRENT_DOMAIN               = "http://uploaded.net/";
 
     private String getProtocol() {
         if (avoidHTTPS) {
@@ -1552,7 +1548,7 @@ public class Uploadedto extends PluginForHost {
             } else {
                 String lastIP = IP;
                 link.setProperty(LASTIP, lastIP);
-                Uploadedto.lastIP.string = lastIP;
+                Uploadedto.lastIP.set(lastIP);
                 logger.info("LastIP = " + lastIP);
                 return true;
             }
@@ -1571,7 +1567,7 @@ public class Uploadedto extends PluginForHost {
         }
         String lastIP = link.getStringProperty(LASTIP, null);
         if (lastIP == null) {
-            lastIP = Uploadedto.lastIP.string;
+            lastIP = Uploadedto.lastIP.get();
         }
         return !currentIP.equals(lastIP);
     }

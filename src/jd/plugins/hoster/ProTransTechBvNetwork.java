@@ -17,6 +17,7 @@
 package jd.plugins.hoster;
 
 import java.io.IOException;
+import java.util.concurrent.atomic.AtomicReference;
 
 import jd.PluginWrapper;
 import jd.http.Browser;
@@ -28,7 +29,6 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-import jd.utils.JDUtilities;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2,
 
@@ -216,22 +216,17 @@ public class ProTransTechBvNetwork extends PluginForHost {
         return "http://www.wankz.com/cimages/legal/2257.html";
     }
 
-    private static StringContainer agent = new StringContainer();
-
-    public static class StringContainer {
-        public String string = null;
-    }
+    private static AtomicReference<String> agent = new AtomicReference<String>();
 
     /**
      * defines custom browser requirements.
      * */
     private Browser prepBrowser(final Browser prepBr) {
-        if (agent.string == null) {
+        if (agent.get() == null) {
             /* we first have to load the plugin, before we can reference it */
-            JDUtilities.getPluginForHost("mediafire.com");
-            agent.string = jd.plugins.hoster.MediafireCom.stringUserAgent();
+            agent.set(jd.plugins.hoster.MediafireCom.stringUserAgent());
         }
-        prepBr.getHeaders().put("User-Agent", agent.string);
+        prepBr.getHeaders().put("User-Agent", agent.get());
         prepBr.getHeaders().put("Accept-Language", "en-gb, en;q=0.8");
         prepBr.setFollowRedirects(true);
         return prepBr;
@@ -240,17 +235,23 @@ public class ProTransTechBvNetwork extends PluginForHost {
     public String extFromLink(String ext) {
         // Trimming query_string
         int extEnd = ext.indexOf("?");
-        if (extEnd > 0) ext = ext.substring(0, extEnd);
+        if (extEnd > 0) {
+            ext = ext.substring(0, extEnd);
+        }
         // Trimming fragment_id
         extEnd = ext.indexOf("#");
-        if (extEnd > 0) ext = ext.substring(0, extEnd);
+        if (extEnd > 0) {
+            ext = ext.substring(0, extEnd);
+        }
         // Trimming main part
         ext = ext.substring(ext.lastIndexOf("."));
         // Trimming whitespace
         ext = ext.trim();
         // Checking resulting length
         int resultLength = ext.length();
-        if (resultLength < 2 || resultLength > 5) ext = null;
+        if (resultLength < 2 || resultLength > 5) {
+            ext = null;
+        }
         return ext;
     }
 
@@ -260,20 +261,32 @@ public class ProTransTechBvNetwork extends PluginForHost {
         prepBrowser(br);
         br.getPage(downloadLink.getDownloadURL());
         // 404 on desktop page
-        if (br.containsHTML("was not found on this server, please try a") || br.getHttpConnection().getResponseCode() == 404) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (br.containsHTML("was not found on this server, please try a") || br.getHttpConnection().getResponseCode() == 404) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
         // 404 on mobile page
-        if (br.containsHTML("<a href=\"#sorting\">")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (br.containsHTML("<a href=\"#sorting\">")) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
         String filename = br.getRegex("<title>([^<>\"]*?) \\- ([^<>\"]*?)</title>").getMatch(0);
-        if (filename == null) filename = br.getRegex("<h1>([^<>\"]*?)</h1>").getMatch(0);
+        if (filename == null) {
+            filename = br.getRegex("<h1>([^<>\"]*?)</h1>").getMatch(0);
+        }
         // DLLINK on desktop page
         DLLINK = br.getRegex("\"low\":\"(http://[^<>\"]*?)\"").getMatch(0);
         // DLLINK on mobile page
-        if (DLLINK == null) DLLINK = br.getRegex("\"(http://[a-z0-9\\-\\.]+movies\\.hostedtube\\.com/[^<>\"]*?)\"").getMatch(0);
-        if (filename == null || DLLINK == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (DLLINK == null) {
+            DLLINK = br.getRegex("\"(http://[a-z0-9\\-\\.]+movies\\.hostedtube\\.com/[^<>\"]*?)\"").getMatch(0);
+        }
+        if (filename == null || DLLINK == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         DLLINK = Encoding.htmlDecode(DLLINK);
         filename = filename.trim();
         String ext = extFromLink(DLLINK);
-        if (ext == null) ext = ".mp4";
+        if (ext == null) {
+            ext = ".mp4";
+        }
         downloadLink.setFinalFileName(Encoding.htmlDecode(filename) + ext);
         final Browser br2 = br.cloneBrowser();
         // In case the link redirects to the finallink
@@ -281,10 +294,11 @@ public class ProTransTechBvNetwork extends PluginForHost {
         URLConnectionAdapter con = null;
         try {
             con = br2.openGetConnection(DLLINK);
-            if (!con.getContentType().contains("html"))
+            if (!con.getContentType().contains("html")) {
                 downloadLink.setDownloadSize(con.getLongContentLength());
-            else
+            } else {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            }
             return AvailableStatus.TRUE;
         } finally {
             try {

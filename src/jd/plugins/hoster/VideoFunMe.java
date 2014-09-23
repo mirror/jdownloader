@@ -16,6 +16,8 @@
 
 package jd.plugins.hoster;
 
+import java.util.concurrent.atomic.AtomicReference;
+
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
@@ -26,20 +28,15 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-import jd.utils.JDUtilities;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "videofun.me" }, urls = { "http://(www\\.)?videofun\\.me/(embed/[a-f0-9]{32}|embed\\?.+)" }, flags = { 0 })
 public class VideoFunMe extends PluginForHost {
 
     // raztoki embed video player template.
 
-    private String                 dllink = null;
+    private String                         dllink = null;
 
-    private static StringContainer agent  = new StringContainer();
-
-    public static class StringContainer {
-        public String string = null;
-    }
+    private static AtomicReference<String> agent  = new AtomicReference<String>();
 
     public VideoFunMe(PluginWrapper wrapper) {
         super(wrapper);
@@ -56,12 +53,11 @@ public class VideoFunMe extends PluginForHost {
     }
 
     private Browser prepBrowser(Browser prepBr) {
-        if (agent.string == null) {
+        if (agent.get() == null) {
             /* we first have to load the plugin, before we can reference it */
-            JDUtilities.getPluginForHost("mediafire.com");
-            agent.string = jd.plugins.hoster.MediafireCom.stringUserAgent();
+            agent.set(jd.plugins.hoster.MediafireCom.stringUserAgent());
         }
-        prepBr.getHeaders().put("User-Agent", agent.string);
+        prepBr.getHeaders().put("User-Agent", agent.get());
         return prepBr;
     }
 
@@ -77,9 +73,13 @@ public class VideoFunMe extends PluginForHost {
         this.setBrowserExclusive();
         prepBrowser(br);
         br.getPage(downloadLink.getDownloadURL());
-        if (br.containsHTML(">Error 404")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (br.containsHTML(">Error 404")) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
         dllink = br.getRegex("url: \"(http[^\"]+videofun\\.me%2Fvideos[^\"]+)").getMatch(0);
-        if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (dllink == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         dllink = Encoding.urlDecode(dllink, false);
         Browser br2 = br.cloneBrowser();
         // In case the link redirects to the finallink
@@ -87,12 +87,15 @@ public class VideoFunMe extends PluginForHost {
         URLConnectionAdapter con = null;
         try {
             con = br2.openGetConnection(dllink);
-            if (con.getResponseCode() == 404) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            if (con.getResponseCode() == 404) {
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            }
             if (!con.getContentType().contains("html")) {
                 downloadLink.setFinalFileName(getFileNameFromHeader(con));
                 downloadLink.setDownloadSize(con.getLongContentLength());
-            } else
+            } else {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            }
             return AvailableStatus.TRUE;
         } finally {
             try {

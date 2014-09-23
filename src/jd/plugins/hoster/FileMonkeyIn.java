@@ -25,6 +25,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicReference;
 
 import javax.swing.JOptionPane;
 import javax.swing.SwingUtilities;
@@ -54,18 +55,14 @@ import org.appwork.utils.os.CrossSystem;
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "filemonkey.in" }, urls = { "https?://(www\\.)?filemonkey\\.in/file/[a-z0-9]+" }, flags = { 2 })
 public class FileMonkeyIn extends PluginForHost {
 
-    public static class StringContainer {
-        public String string = null;
-    }
-
-    private static final String    mainURL             = "https://www.filemonkey.in";
-    private final String           apiURL              = "https://www.filemonkey.in/api/v1";
-    private static Object          LOCK                = new Object();
-    private static StringContainer agent               = new StringContainer();
-    private static AtomicBoolean   useAPI              = new AtomicBoolean(true);
-    private final boolean          supportsHTTPS       = true;
-    private final boolean          enforcesHTTPS       = true;
-    private static final short     MAXSIM_FREE_ACCOUNT = 1;
+    private static final String            mainURL             = "https://www.filemonkey.in";
+    private final String                   apiURL              = "https://www.filemonkey.in/api/v1";
+    private static Object                  LOCK                = new Object();
+    private static AtomicReference<String> agent               = new AtomicReference<String>();
+    private static AtomicBoolean           useAPI              = new AtomicBoolean(true);
+    private final boolean                  supportsHTTPS       = true;
+    private final boolean                  enforcesHTTPS       = true;
+    private static final short             MAXSIM_FREE_ACCOUNT = 1;
 
     public FileMonkeyIn(PluginWrapper wrapper) {
         super(wrapper);
@@ -95,12 +92,11 @@ public class FileMonkeyIn extends PluginForHost {
     }
 
     public static Browser prepareBrowser(Browser prepBr) {
-        if (agent.string == null) {
+        if (agent.get() == null) {
             /* we first have to load the plugin, before we can reference it */
-            JDUtilities.getPluginForHost("mediafire.com");
-            agent.string = jd.plugins.hoster.MediafireCom.stringUserAgent();
+            agent.set(jd.plugins.hoster.MediafireCom.stringUserAgent());
         }
-        prepBr.getHeaders().put("User-Agent", agent.string);
+        prepBr.getHeaders().put("User-Agent", agent.get());
         return prepBr;
     }
 
@@ -108,7 +104,7 @@ public class FileMonkeyIn extends PluginForHost {
      * Corrects downloadLink.urlDownload().<br/>
      * <br/>
      * The following code respect the hoster supported protocols via plugin boolean settings and users config preference
-     *
+     * 
      * @author raztoki
      * */
     @SuppressWarnings("unused")

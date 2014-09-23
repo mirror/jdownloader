@@ -17,6 +17,7 @@
 package jd.plugins.hoster;
 
 import java.io.IOException;
+import java.util.concurrent.atomic.AtomicReference;
 
 import jd.PluginWrapper;
 import jd.http.Browser;
@@ -28,7 +29,6 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-import jd.utils.JDUtilities;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "romhustler.net" }, urls = { "http://(www\\.)?romhustler\\.net/file/\\d+/[A-Za-z0-9/\\+=%]+" }, flags = { 0 })
 public class RomHustlerNet extends PluginForHost {
@@ -45,19 +45,14 @@ public class RomHustlerNet extends PluginForHost {
         return 1;
     }
 
-    private static StringContainer agent = new StringContainer();
-
-    public static class StringContainer {
-        public String string = null;
-    }
+    private static AtomicReference<String> agent = new AtomicReference<String>();
 
     public Browser prepBrowser(Browser prepBr) {
-        if (agent.string == null) {
+        if (agent.get() == null) {
             /* we first have to load the plugin, before we can reference it */
-            JDUtilities.getPluginForHost("mediafire.com");
-            agent.string = jd.plugins.hoster.MediafireCom.stringUserAgent();
+            agent.set(jd.plugins.hoster.MediafireCom.stringUserAgent());
         }
-        prepBr.getHeaders().put("User-Agent", agent.string);
+        prepBr.getHeaders().put("User-Agent", agent.get());
         prepBr.getHeaders().put("Accept-Language", "en-gb, en;q=0.9");
         prepBr.getHeaders().put("Accept", "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8");
         prepBr.setCustomCharset("utf-8");

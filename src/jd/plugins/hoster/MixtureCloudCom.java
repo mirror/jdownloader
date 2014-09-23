@@ -19,6 +19,7 @@ package jd.plugins.hoster;
 import java.io.File;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicReference;
 
 import jd.PluginWrapper;
 import jd.config.Property;
@@ -93,20 +94,15 @@ public class MixtureCloudCom extends PluginForHost {
         return -1;
     }
 
-    private static StringContainer agent = new StringContainer();
-
-    public static class StringContainer {
-        public String string = null;
-    }
+    private static AtomicReference<String> agent = new AtomicReference<String>();
 
     private Browser prepBrowser(final Browser prepBr) {
         // define custom browser headers and language settings.
-        if (agent.string == null) {
+        if (agent.get() == null) {
             /* we first have to load the plugin, before we can reference it */
-            JDUtilities.getPluginForHost("mediafire.com");
-            agent.string = jd.plugins.hoster.MediafireCom.stringUserAgent();
+            agent.set(jd.plugins.hoster.MediafireCom.stringUserAgent());
         }
-        prepBr.getHeaders().put("User-Agent", agent.string);
+        prepBr.getHeaders().put("User-Agent", agent.get());
         prepBr.getHeaders().put("Accept-Language", "en-gb, en;q=0.8");
         prepBr.getHeaders().put("Accept-Charset", null);
         prepBr.getHeaders().put("Pragma", null);

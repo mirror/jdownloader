@@ -21,6 +21,7 @@ import java.util.HashMap;
 import java.util.Locale;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicReference;
 
 import jd.PluginWrapper;
 import jd.http.Browser;
@@ -38,7 +39,6 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-import jd.utils.JDUtilities;
 
 import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.formatter.TimeFormatter;
@@ -46,14 +46,10 @@ import org.appwork.utils.formatter.TimeFormatter;
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "yunfile.com" }, urls = { "http://(www|(page\\d)\\.)?(yunfile|filemarkets|yfdisk)\\.com/(file/(down/)?[a-z0-9]+/[a-z0-9]+|fs/[a-z0-9]+/)" }, flags = { 2 })
 public class YunFileCom extends PluginForHost {
 
-    private static final String    MAINPAGE = "http://yunfile.com/";
-    private static Object          LOCK     = new Object();
-    private static StringContainer agent    = new StringContainer();
-    private static AtomicInteger   maxPrem  = new AtomicInteger(1);
-
-    public static class StringContainer {
-        public String string = null;
-    }
+    private static final String            MAINPAGE = "http://yunfile.com/";
+    private static Object                  LOCK     = new Object();
+    private static AtomicReference<String> agent    = new AtomicReference<String>();
+    private static AtomicInteger           maxPrem  = new AtomicInteger(1);
 
     // Works like HowFileCom
     public YunFileCom(PluginWrapper wrapper) {
@@ -64,12 +60,11 @@ public class YunFileCom extends PluginForHost {
 
     private Browser prepBrowser(final Browser prepBr) {
         // define custom browser headers and language settings.
-        if (agent.string == null) {
+        if (agent.get() == null) {
             /* we first have to load the plugin, before we can reference it */
-            JDUtilities.getPluginForHost("mediafire.com");
-            agent.string = jd.plugins.hoster.MediafireCom.stringUserAgent();
+            agent.set(jd.plugins.hoster.MediafireCom.stringUserAgent());
         }
-        prepBr.getHeaders().put("User-Agent", agent.string);
+        prepBr.getHeaders().put("User-Agent", agent.get());
         prepBr.getHeaders().put("Accept-Language", "de,en-us;q=0.7,en;q=0.3");
         prepBr.getHeaders().put("Accept", "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8");
         prepBr.setCookie("http://yunfile.com", "language", "en_us");

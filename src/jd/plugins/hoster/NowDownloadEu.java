@@ -21,6 +21,7 @@ import java.util.HashMap;
 import java.util.Locale;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.logging.Level;
 
 import javax.script.ScriptEngine;
@@ -52,7 +53,7 @@ public class NowDownloadEu extends PluginForHost {
 
     public NowDownloadEu(PluginWrapper wrapper) {
         super(wrapper);
-        this.enablePremium(MAINPAGE.string + "/premium.php");
+        this.enablePremium(MAINPAGE.get() + "/premium.php");
     }
 
     public Boolean rewriteHost(DownloadLink link) {
@@ -73,30 +74,18 @@ public class NowDownloadEu extends PluginForHost {
 
     @Override
     public String getAGBLink() {
-        return MAINPAGE.string + "/terms.php";
+        return MAINPAGE.get() + "/terms.php";
     }
 
-    public static class StringContainer {
-        public String string = null;
+    private static AtomicReference<String> MAINPAGE                = new AtomicReference<String>("http://www.nowdownload.sx");
 
-        public StringContainer(String string) {
-            this.string = string;
-        }
-
-        @Override
-        public String toString() {
-            return string;
-        }
-    }
-
-    private static StringContainer MAINPAGE                = new StringContainer("http://www.nowdownload.sx");
-    private static StringContainer DOMAIN                  = new StringContainer("sx");
-    private static AtomicBoolean   AVAILABLE_PRECHECK      = new AtomicBoolean(false);
-    private static StringContainer ua                      = new StringContainer(RandomUserAgent.generate());
-    private static Object          LOCK                    = new Object();
-    private final String           TEMPUNAVAILABLE         = ">The file is being transfered\\. Please wait";
-    private final String           TEMPUNAVAILABLEUSERTEXT = "Host says: 'The file is being transfered. Please wait!'";
-    private final String           domains                 = "nowdownload\\.(eu|co|ch|sx|ag|at)";
+    private static AtomicReference<String> DOMAIN                  = new AtomicReference<String>("sx");
+    private static AtomicBoolean           AVAILABLE_PRECHECK      = new AtomicBoolean(false);
+    private static AtomicReference<String> ua                      = new AtomicReference<String>(RandomUserAgent.generate());
+    private static Object                  LOCK                    = new Object();
+    private final String                   TEMPUNAVAILABLE         = ">The file is being transfered\\. Please wait";
+    private final String                   TEMPUNAVAILABLEUSERTEXT = "Host says: 'The file is being transfered. Please wait!'";
+    private final String                   domains                 = "nowdownload\\.(eu|co|ch|sx|ag|at)";
 
     public void correctDownloadLink(DownloadLink link) {
         if (link.getDownloadURL().contains("likeupload.")) {
@@ -113,16 +102,16 @@ public class NowDownloadEu extends PluginForHost {
                 if (AVAILABLE_PRECHECK.get() == false) {
                     /*
                      * == Fix original link ==
-                     *
+                     * 
                      * For example .eu domain is blocked from some italian ISP, and .co from others, so we have to test all domains before
                      * proceed, to select one available.
                      */
 
                     String newDomain = validateHost();
                     if (newDomain != null) {
-                        DOMAIN.string = newDomain;
+                        DOMAIN.set(newDomain);
                     }
-                    MAINPAGE.string = "http://www.nowdownload." + newDomain;
+                    MAINPAGE.set("http://www.nowdownload." + newDomain);
                     this.enablePremium(MAINPAGE.toString() + "/premium.php");
                     AVAILABLE_PRECHECK.set(true);
                 }
@@ -135,7 +124,7 @@ public class NowDownloadEu extends PluginForHost {
         correctCurrentDomain();
         this.setBrowserExclusive();
         correctDownloadLink(link);
-        br.getHeaders().put("User-Agent", ua.string);
+        br.getHeaders().put("User-Agent", ua.get());
         br.setFollowRedirects(true);
         br.getPage(link.getDownloadURL());
         if (br.containsHTML(">This file does not exist")) {
@@ -201,9 +190,9 @@ public class NowDownloadEu extends PluginForHost {
             }
             Browser br2 = br.cloneBrowser();
             br2.getHeaders().put("X-Requested-With", "XMLHttpRequest");
-            br2.getPage(MAINPAGE.string + tokenPage);
+            br2.getPage(MAINPAGE.get() + tokenPage);
             sleep(wait * 1001l, downloadLink);
-            br.getPage(MAINPAGE.string + continuePage);
+            br.getPage(MAINPAGE.get() + continuePage);
             if (br.containsHTML(">You need Premium Membership to download this file")) {
                 try {
                     throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);
@@ -350,13 +339,13 @@ public class NowDownloadEu extends PluginForHost {
                         for (final Map.Entry<String, String> cookieEntry : cookies.entrySet()) {
                             final String key = cookieEntry.getKey();
                             final String value = cookieEntry.getValue();
-                            this.br.setCookie(MAINPAGE.string, key, value);
+                            this.br.setCookie(MAINPAGE.get(), key, value);
                         }
                         return;
                     }
                 }
                 br.setFollowRedirects(true);
-                br.postPage(MAINPAGE.string + "/login.php", "user=" + Encoding.urlEncode(account.getUser()) + "&pass=" + Encoding.urlEncode(account.getPass()));
+                br.postPage(MAINPAGE.get() + "/login.php", "user=" + Encoding.urlEncode(account.getUser()) + "&pass=" + Encoding.urlEncode(account.getPass()));
                 if (br.getURL().contains("login.php?e=1") || !br.getURL().contains("panel.php?logged=1")) {
                     throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
                 }
@@ -369,7 +358,7 @@ public class NowDownloadEu extends PluginForHost {
                 }
                 // Save cookies
                 final HashMap<String, String> cookies = new HashMap<String, String>();
-                final Cookies add = this.br.getCookies(MAINPAGE.string);
+                final Cookies add = this.br.getCookies(MAINPAGE.get());
                 for (final Cookie c : add.getCookies()) {
                     cookies.put(c.getKey(), c.getValue());
                 }

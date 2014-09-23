@@ -22,6 +22,7 @@ import java.net.URL;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.regex.Pattern;
 
 import javax.script.ScriptEngine;
@@ -64,30 +65,13 @@ public class ShareOnlineBiz extends PluginForHost {
     private long                                             server               = -1;
     private long                                             waitNoFreeSlot       = 10 * 60 * 1000l;
     private long                                             waitOverloadedServer = 5 * 60 * 1000l;
-    private static StringContainer                           UA                   = new StringContainer(RandomUserAgent.generate());
+    private static AtomicReference<String>                   UA                   = new AtomicReference<String>(RandomUserAgent.generate());
     private boolean                                          hideID               = true;
     private static AtomicInteger                             maxChunksnew         = new AtomicInteger(-2);
     private char[]                                           FILENAMEREPLACES     = new char[] { '_', '&', 'ü' };
     private final String                                     SHARED_IP_WORKAROUND = "SHARED_IP_WORKAROUND";
     private final String                                     TRAFFIC_WORKAROUND   = "TRAFFIC_WORKAROUND";
     private final String                                     PREFER_HTTPS         = "PREFER_HTTPS";
-
-    public static class StringContainer {
-        public String string = null;
-
-        public StringContainer(String string) {
-            this.string = string;
-        }
-
-        public void set(String string) {
-            this.string = string;
-        }
-
-        @Override
-        public String toString() {
-            return string;
-        }
-    }
 
     public ShareOnlineBiz(PluginWrapper wrapper) {
         super(wrapper);
@@ -541,7 +525,7 @@ public class ShareOnlineBiz extends PluginForHost {
             }
         }
         this.setBrowserExclusive();
-        br.getHeaders().put("User-Agent", UA.toString());
+        br.getHeaders().put("User-Agent", UA.get());
         br.getHeaders().put("Accept", "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8");
         br.getHeaders().put("Accept-Language", "en-us,de;q=0.7,en;q=0.3");
         br.getHeaders().put("Pragma", null);
