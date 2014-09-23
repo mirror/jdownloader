@@ -184,12 +184,12 @@ public class AboutDialog extends AbstractDialog<Integer> {
         contentpane.add(stats, "pushx,growx,spanx");
 
         stats.add(new JLabel(_GUI._.jd_gui_swing_components_AboutDialog_core()), "");
-        stats.add(disable("Copyright \u00A9 2009-2013 AppWork GmbH"));
+        stats.add(disable("Copyright \u00A9 2009-2014 AppWork GmbH"));
         stats.add(new JLabel(_GUI._.jd_gui_swing_components_AboutDialog_plugins()), "");
-        stats.add(disable("Copyright \u00A9 2009-2013 JDownloader Community"));
+        stats.add(disable("Copyright \u00A9 2009-2014 JDownloader Community"));
 
         stats.add(new JLabel(_GUI._.jd_gui_swing_components_AboutDialog_translations()), "");
-        stats.add(disable("Copyright \u00A9 2009-2013 JDownloader Community"));
+        stats.add(disable("Copyright \u00A9 2009-2014 JDownloader Community"));
         try {
             stats.add(new JLabel("Java:"), "");
             java.lang.management.MemoryUsage memory = java.lang.management.ManagementFactory.getMemoryMXBean().getHeapMemoryUsage();
