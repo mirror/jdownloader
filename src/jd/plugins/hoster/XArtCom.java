@@ -43,7 +43,7 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.utils.JDUtilities;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "x-art.com" }, urls = { "https?://(x-art\\.com/members/videos/.+|([a-z0-9]+\\.)?x-art\\.com/.+\\.(mov|mp4|wmv).+)" }, flags = { 2 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "x-art.com" }, urls = { "https?://(www\\.)?(x-art(decrypted)?\\.com/(members/)?(videos|galleries)/.+|([a-z0-9]+\\.)?x-art(decrypted)?\\.com/.+\\.(mov|mp4|wmv|zip).*)" }, flags = { 2 })
 public class XArtCom extends PluginForHost {
 
     // DEVNOTES
@@ -52,19 +52,24 @@ public class XArtCom extends PluginForHost {
     private static Object LOCK   = new Object();
     private boolean       useRUA = true;
 
+    @Override
+    public void correctDownloadLink(DownloadLink link) throws Exception {
+        link.setUrlDownload(link.getDownloadURL().replaceAll("decrypted\\.com", ".com"));
+    }
+
     public XArtCom(PluginWrapper wrapper) {
         super(wrapper);
-        this.enablePremium("http://x-art.com/join/");
+        this.enablePremium("http://www.x-art.com/join/");
     }
 
     @Override
     public String getAGBLink() {
-        return "http://x-art.com/legal/";
+        return "http://www.x-art.com/legal/";
     }
 
     @Override
     public AvailableStatus requestFileInformation(DownloadLink parameter) throws Exception {
-
+        correctDownloadLink(parameter);
         String name = new Regex(parameter.getDownloadURL(), "([^/]+\\.(mov|mp4|wmv))").getMatch(0);
         if (name == null) {
             name = new Regex(parameter.getDownloadURL(), "x\\-art.com/(.+)").getMatch(0);
@@ -196,7 +201,7 @@ public class XArtCom extends PluginForHost {
                 }
                 prepBrowser(lbr);
                 lbr.setFollowRedirects(true);
-                lbr.getPage("http://x-art.com/members/");
+                lbr.getPage("http://www.x-art.com/members/");
                 Form loginform = br.getForm(0);
                 if (loginform == null) {
                     String lang = System.getProperty("user.language");
