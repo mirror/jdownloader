@@ -635,6 +635,15 @@ public class SecondLevelLaunch {
             System.setProperty("jna.debug_load", "true");
             System.setProperty("jna.debug_load.jna", "true");
             System.setProperty("jna.nosystrue", "true");
+            String libName = "com/sun/jna/" + Platform.RESOURCE_PREFIX + "/" + System.mapLibraryName("jnidispatch").replace(".dylib", ".jnilib");
+            URL file = Application.getRessourceURL(libName, true);
+            LOG.info("URL: " + file);
+            File dll = Application.getResource("tmp/jna/" + System.currentTimeMillis() + "/jnidispatch.dll");
+            dll.deleteOnExit();
+            IO.secureWrite(dll, IO.readURL(file));
+
+            LOG.info("JNA DLL: " + dll.getParentFile().getCanonicalPath());
+            System.setProperty("jna.boot.library.path", dll.getParentFile().getCanonicalPath());
             com.sun.jna.Native.setCallbackExceptionHandler(new com.sun.jna.Callback.UncaughtExceptionHandler() {
                 @Override
                 public void uncaughtException(com.sun.jna.Callback arg0, Throwable arg1) {
@@ -645,31 +654,12 @@ public class SecondLevelLaunch {
             });
         } catch (final Throwable e1) {
             LOG.log(e1);
-            try {
-                System.setProperty("jna.debug_load", "true");
-                System.setProperty("jna.debug_load.jna", "true");
-                System.setProperty("jna.nosystrue", "true");
-                String libName = "com/sun/jna/" + Platform.RESOURCE_PREFIX + "/" + System.mapLibraryName("jnidispatch").replace(".dylib", ".jnilib");
-                URL file = Application.getRessourceURL(libName, true);
-                LOG.info("URL: " + file);
-                File dll = Application.getResource("tmp/jna/" + System.currentTimeMillis() + "/jnidispatch.dll");
-                dll.deleteOnExit();
-                IO.secureWrite(dll, IO.readURL(file));
-
-                LOG.info("JNA DLL: " + dll.getParentFile().getCanonicalPath());
-                System.setProperty("jna.boot.library.path", dll.getParentFile().getCanonicalPath());
-                com.sun.jna.Native.setCallbackExceptionHandler(new com.sun.jna.Callback.UncaughtExceptionHandler() {
-                    @Override
-                    public void uncaughtException(com.sun.jna.Callback arg0, Throwable arg1) {
-                        LogSource logger = LogController.getInstance().getLogger("NativeExceptionHandler");
-                        logger.log(arg1);
-                        logger.close();
-                    }
-                });
-            } catch (final Throwable e) {
-                LOG.log(e);
-
-            }
+            // try {
+            //
+            // } catch (final Throwable e) {
+            // LOG.log(e);
+            //
+            // }
         }
         LogSource edtLogger = LogController.getInstance().getLogger("BlockingEDT");
         edtLogger.setInstantFlush(true);
