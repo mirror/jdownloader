@@ -467,9 +467,9 @@ public class LinkCrawler {
         return false;
     }
 
-    protected void crawlDeeper(CrawledLink source) {
+    protected void crawlDeeper(final CrawledLink source) {
         source.setCustomCrawledLinkModifier(null);
-        getAndClearSourceURLs(source);
+        final String[] sourceURLs = getAndClearSourceURLs(source);
         source.setBrokenCrawlerHandler(null);
         if (source == null || source.getURL() == null || duplicateFinderDeep.putIfAbsent(source.getURL(), this) != null || this.isCrawledLinkFiltered(source)) {
             return;
@@ -512,6 +512,9 @@ public class LinkCrawler {
                          */
                         possibleCryptedLinks = _crawl("directhttp://" + url, null, false);
                         if (possibleCryptedLinks != null && possibleCryptedLinks.size() >= 0) {
+                            for (final CrawledLink possibleCryptedLink : possibleCryptedLinks) {
+                                forwardCrawledLinkInfos(source, possibleCryptedLink, null, sourceURLs);
+                            }
                             crawl(possibleCryptedLinks);
                         }
                     } else {
@@ -525,6 +528,9 @@ public class LinkCrawler {
                         final String browserContent = br.toString();
                         possibleCryptedLinks = _crawl(url, null, false);
                         if (possibleCryptedLinks != null) {
+                            for (final CrawledLink possibleCryptedLink : possibleCryptedLinks) {
+                                forwardCrawledLinkInfos(source, possibleCryptedLink, null, sourceURLs);
+                            }
                             if (possibleCryptedLinks.size() == 1) {
                                 /* first check if the url itself can be handled */
                                 CrawledLink link = possibleCryptedLinks.get(0);
@@ -535,6 +541,9 @@ public class LinkCrawler {
                                         /* unhandled url, lets parse the content on it */
                                         List<CrawledLink> possibleCryptedLinks2 = lc._crawl(browserContent, finalBaseUrl, false);
                                         if (possibleCryptedLinks2 != null && possibleCryptedLinks2.size() > 0) {
+                                            for (final CrawledLink possibleCryptedLink : possibleCryptedLinks2) {
+                                                forwardCrawledLinkInfos(source, possibleCryptedLink, null, sourceURLs);
+                                            }
                                             lc.crawl(possibleCryptedLinks2);
                                         }
                                     }
