@@ -489,7 +489,7 @@ public class SingleDownloadController extends BrowserSettingsThread implements D
                 logID = logID + "_" + candidate.getCachedAccount().getPlugin().getHost();
             }
             downloadLogger = LogController.getFastPluginLogger(logID);
-            downloadLogger.info("Start Download of " + downloadLink.getPluginPattern());
+            downloadLogger.info("Start Download of " + downloadLink.getPluginPatternMatcher());
             super.setLogger(downloadLogger);
             try {
                 watchDog.getEventSender().fireEvent(new DownloadWatchdogEvent(this, DownloadWatchdogEvent.Type.LINK_STARTED, this, candidate));

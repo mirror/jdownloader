@@ -155,7 +155,7 @@ public class UrlColumn extends ExtTextColumn<AbstractNode> {
 
             }
             if (!Application.isJared(null)) {
-                add(popup, null, dlLink.getPluginPattern());
+                add(popup, null, dlLink.getPluginPatternMatcher());
             }
 
             // popup.add(new AppAction() {

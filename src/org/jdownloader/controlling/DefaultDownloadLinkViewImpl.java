@@ -177,7 +177,7 @@ public class DefaultDownloadLinkViewImpl implements DownloadLinkView {
                 if (link.getContentUrl() != null) {
                     return link.getContentUrl();
                 }
-                return link.getPluginPattern();
+                return link.getPluginPatternMatcher();
             }
         }
         return null;

@@ -50,7 +50,7 @@ public class StreamingProvider {
                         /* this method should be called within our VLCStreamingThread */
                         try {
                             List<Account> accounts = AccountController.getInstance().getValidAccounts(remoteLink.getHost());
-                            final DownloadLink mirror = new DownloadLink(remoteLink.getDefaultPlugin(), remoteLink.getName(), remoteLink.getHost(), remoteLink.getPluginPattern(), true);
+                            final DownloadLink mirror = new DownloadLink(remoteLink.getDefaultPlugin(), remoteLink.getName(), remoteLink.getHost(), remoteLink.getPluginPatternMatcher(), true);
                             mirror.setProperties(remoteLink.getProperties());
                             PluginClassLoaderChild cl = PluginClassLoader.getInstance().getChild();
                             final PluginForHost plugin = remoteLink.getDefaultPlugin().getLazyP().newInstance(cl);

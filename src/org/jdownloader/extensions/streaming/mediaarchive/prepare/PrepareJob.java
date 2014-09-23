@@ -111,7 +111,7 @@ public class PrepareJob extends QueueAction<Void, RuntimeException> {
             // instanceof may fail due to dynamic plugin loader
             boolean isDirect = "DirectHTTP".equalsIgnoreCase(dl.getHost()) || "http links".equalsIgnoreCase(dl.getHost());
             if (streamingWithoutAccount || AccountController.getInstance().hasAccounts(dl.getHost()) || isDirect) {
-                String url = dl.getPluginPattern();
+                String url = dl.getPluginPatternMatcher();
                 String name = dl.getView().getDisplayName();
                 if ("rar".equals(Files.getExtension(name))) {
                     DownloadLinkArchiveFactory lfa = new DownloadLinkArchiveFactory(dl);

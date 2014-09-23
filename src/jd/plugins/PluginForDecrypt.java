@@ -263,7 +263,7 @@ public abstract class PluginForDecrypt extends Plugin {
                 int decryptedCount = 0;
                 for (DownloadLink s : tmpLinks) {
 
-                    if (s.getPluginPattern().contains("decrypted.com")) {
+                    if (s.getPluginPatternMatcher().contains("decrypted.com")) {
                         decryptedCount++;
                     }
 
@@ -271,7 +271,7 @@ public abstract class PluginForDecrypt extends Plugin {
                 if (decryptedCount > 0) {
                     for (DownloadLink s : tmpLinks) {
 
-                        if (s.getPluginPattern().contains("decrypted.com")) {
+                        if (s.getPluginPatternMatcher().contains("decrypted.com")) {
                             if (decryptedCount > 1) {
 
                                 if (s.getContainerUrl() == null) {

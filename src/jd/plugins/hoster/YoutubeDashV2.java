@@ -1856,7 +1856,7 @@ public class YoutubeDashV2 extends PluginForHost {
             downloadLink.setProperty(YoutubeHelper.YT_SUBTITLE_CODE, ((SubtitleVariant) variant).code);
             String filename;
             downloadLink.setFinalFileName(filename = getCachedHelper().createFilename(downloadLink));
-            downloadLink.setPluginPattern("youtubev2://" + YoutubeVariant.SUBTITLES + "/" + downloadLink.getStringProperty(YoutubeHelper.YT_ID) + "/");
+            downloadLink.setPluginPatternMatcher("youtubev2://" + YoutubeVariant.SUBTITLES + "/" + downloadLink.getStringProperty(YoutubeHelper.YT_ID) + "/");
 
             if (prefers) {
                 downloadLink.setContentUrl("https://www.youtube.com" + "/watch?v=" + downloadLink.getStringProperty(YoutubeHelper.YT_ID) + "&variant=" + variant);
@@ -1884,7 +1884,7 @@ public class YoutubeDashV2 extends PluginForHost {
             downloadLink.setProperty(YoutubeHelper.YT_EXT, v.getFileExtension());
             String filename;
             downloadLink.setFinalFileName(filename = getCachedHelper().createFilename(downloadLink));
-            downloadLink.setPluginPattern("youtubev2://" + v._getUniqueId() + "/" + downloadLink.getStringProperty(YoutubeHelper.YT_ID) + "/");
+            downloadLink.setPluginPatternMatcher("youtubev2://" + v._getUniqueId() + "/" + downloadLink.getStringProperty(YoutubeHelper.YT_ID) + "/");
             if (prefers) {
                 downloadLink.setContentUrl("https://www.youtube.com" + "/watch?v=" + downloadLink.getStringProperty(YoutubeHelper.YT_ID) + "&variant=" + variant);
             } else {

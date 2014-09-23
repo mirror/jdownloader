@@ -383,7 +383,7 @@ public class DownloadController extends PackageController<FilePackage, DownloadL
                 boolean readL2 = fp.getModifyLock().readLock();
                 try {
                     for (DownloadLink dl : fp.getChildren()) {
-                        if (correctUrl.equalsIgnoreCase(dl.getPluginPattern())) {
+                        if (correctUrl.equalsIgnoreCase(dl.getPluginPatternMatcher())) {
                             return true;
                         }
                     }

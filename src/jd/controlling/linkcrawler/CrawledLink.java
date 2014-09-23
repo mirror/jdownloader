@@ -305,7 +305,7 @@ public class CrawledLink implements AbstractPackageChildrenNode<CrawledPackage>,
         final Object llink = link;
         if (llink != null) {
             if (llink instanceof DownloadLink) {
-                return ((DownloadLink) llink).getPluginPattern();
+                return ((DownloadLink) llink).getPluginPatternMatcher();
             } else if (llink instanceof CryptedLink) {
                 return ((CryptedLink) llink).getCryptedUrl();
             } else {
@@ -326,7 +326,7 @@ public class CrawledLink implements AbstractPackageChildrenNode<CrawledPackage>,
         final Object llink = link;
         if (llink != null) {
             if (llink instanceof DownloadLink) {
-                sb.append("DLLink:" + ((DownloadLink) llink).getPluginPattern());
+                sb.append("DLLink:" + ((DownloadLink) llink).getPluginPatternMatcher());
             } else if (llink instanceof CryptedLink) {
                 sb.append("CLink:" + ((CryptedLink) llink).getCryptedUrl());
             } else {
