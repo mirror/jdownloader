@@ -510,12 +510,15 @@ public interface GraphicalUserInterfaceSettings extends ConfigInterface {
 
     // org.jdownloader.gui.laf.jddefault.JDDefaultLookAndFeel
     public static enum LookAndFeelType {
+        ALU_OXIDE("de.javasoft.plaf.synthetica.SyntheticaAluOxideLookAndFeel"),
         BLACK_EYE("de.javasoft.plaf.synthetica.SyntheticaBlackEyeLookAndFeel"),
         BLACK_MOON("de.javasoft.plaf.synthetica.SyntheticaBlackMoonLookAndFeel"),
         BLACK_STAR("de.javasoft.plaf.synthetica.SyntheticaBlackStarLookAndFeel"),
         BLUE_ICE("de.javasoft.plaf.synthetica.SyntheticaBlueIceLookAndFeel"),
+        BLUE_LIGHT("de.javasoft.plaf.synthetica.SyntheticaBlueLightLookAndFeel"),
         BLUE_MOON("de.javasoft.plaf.synthetica.SyntheticaBlueMoonLookAndFeel"),
         BLUE_STEEL("de.javasoft.plaf.synthetica.SyntheticaBlueSteelLookAndFeel"),
+        CLASSY("de.javasoft.plaf.synthetica.SyntheticaClassyLookAndFeel"),
         GREEN_DREAM("de.javasoft.plaf.synthetica.SyntheticaGreenDreamLookAndFeel"),
         MAUVE_METALLIC("de.javasoft.plaf.synthetica.SyntheticaMauveMetallicLookAndFeel"),
         ORANGE_METALLIC("de.javasoft.plaf.synthetica.SyntheticaOrangeMetallicLookAndFeel"),
@@ -529,6 +532,7 @@ public interface GraphicalUserInterfaceSettings extends ConfigInterface {
         private String clazz;
 
         public String getClazz() {
+
             return clazz;
         }
 

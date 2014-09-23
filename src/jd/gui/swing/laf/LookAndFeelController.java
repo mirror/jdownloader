@@ -25,27 +25,34 @@ import javax.swing.UIManager;
 import javax.swing.UnsupportedLookAndFeelException;
 import javax.swing.plaf.metal.MetalLookAndFeel;
 
+import jd.SecondLevelLaunch;
+
 import org.appwork.storage.config.JsonConfig;
 import org.appwork.storage.config.ValidationException;
 import org.appwork.storage.config.events.GenericConfigEventListener;
 import org.appwork.storage.config.handler.KeyHandler;
 import org.appwork.swing.components.tooltips.ExtTooltip;
 import org.appwork.swing.synthetica.SyntheticaHelper;
+import org.appwork.uio.UIOManager;
 import org.appwork.utils.Application;
 import org.appwork.utils.IO;
 import org.appwork.utils.StringUtils;
+import org.appwork.utils.logging.Log;
 import org.appwork.utils.logging2.LogSource;
 import org.appwork.utils.os.CrossSystem;
 import org.appwork.utils.swing.dialog.Dialog;
 import org.appwork.utils.swing.dialog.LAFManagerInterface;
 import org.appwork.utils.swing.windowmanager.WindowManager;
 import org.appwork.utils.swing.windowmanager.WindowsWindowManager;
+import org.jdownloader.gui.IconKey;
 import org.jdownloader.gui.laf.jddefault.JDDefaultLookAndFeel;
 import org.jdownloader.gui.translate._GUI;
+import org.jdownloader.images.AbstractIcon;
 import org.jdownloader.logging.LogController;
 import org.jdownloader.settings.GraphicalUserInterfaceSettings;
 import org.jdownloader.settings.GraphicalUserInterfaceSettings.LookAndFeelType;
 import org.jdownloader.settings.staticreferences.CFG_GUI;
+import org.jdownloader.updatev2.UpdateController;
 import org.jdownloader.updatev2.gui.LAFOptions;
 
 public class LookAndFeelController implements LAFManagerInterface {
@@ -72,6 +79,66 @@ public class LookAndFeelController implements LAFManagerInterface {
     private LookAndFeelController() {
         config = JsonConfig.create(GraphicalUserInterfaceSettings.class);
         logger = LogController.getInstance().getLogger(getClass().getName());
+
+        SecondLevelLaunch.UPDATE_HANDLER_SET.executeWhenReached(new Runnable() {
+
+            @Override
+            public void run() {
+                CFG_GUI.LOOK_AND_FEEL_THEME.getEventSender().addListener(new GenericConfigEventListener<Enum>() {
+
+                    @Override
+                    public void onConfigValueModified(KeyHandler<Enum> keyHandler, Enum newValue) {
+                        handleThemesInstallation();
+                    }
+
+                    @Override
+                    public void onConfigValidatorError(KeyHandler<Enum> keyHandler, Enum invalidValue, ValidationException validateException) {
+                    }
+                });
+                handleThemesInstallation();
+            }
+        });
+    }
+
+    protected void handleThemesInstallation() {
+        if (UpdateController.getInstance().getHandler() == null) {
+
+            return;
+        }
+        if (CFG_GUI.CFG.getLookAndFeelTheme() == LookAndFeelType.DEFAULT) {
+            return;
+        }
+        if (UpdateController.getInstance().isExtensionInstalled("synthetica-themes")) {
+            return;
+        }
+        if (UIOManager.I().showConfirmDialog(0, _GUI._.LookAndFeelController_handleThemesInstallation_title_(), _GUI._.LookAndFeelController_handleThemesInstallation_message_(CFG_GUI.CFG.getLookAndFeelTheme().name()), new AbstractIcon(IconKey.ICON_UPDATERICON0, 64), null, null)) {
+
+            new Thread("Install Extension") {
+                public void run() {
+                    try {
+
+                        UpdateController.getInstance().setGuiVisible(true);
+                        UpdateController.getInstance().runExtensionInstallation("synthetica-themes");
+
+                        while (true) {
+                            Thread.sleep(500);
+                            if (!UpdateController.getInstance().isRunning()) {
+                                break;
+                            }
+                            UpdateController.getInstance().waitForUpdate();
+
+                        }
+                    } catch (Exception e) {
+                        Log.exception(e);
+                    } finally {
+
+                    }
+                }
+            }.start();
+        } else {
+            CFG_GUI.CFG.setLookAndFeelTheme(LookAndFeelType.DEFAULT);
+        }
+
     }
 
     /**
@@ -85,7 +152,9 @@ public class LookAndFeelController implements LAFManagerInterface {
      * setups the correct Look and Feel
      */
     public synchronized void setUIManager() {
-        if (uiInitated) return;
+        if (uiInitated) {
+            return;
+        }
         uiInitated = true;
         initWindowManager();
         long t = System.currentTimeMillis();
@@ -138,7 +207,9 @@ public class LookAndFeelController implements LAFManagerInterface {
                                         JarEntry je = jf.getJarEntry("cfg/synthetica-license.key");
                                         liz = IO.readInputStreamToString(jf.getInputStream(je));
                                     } finally {
-                                        if (jf != null) jf.close();
+                                        if (jf != null) {
+                                            jf.close();
+                                        }
                                     }
                                 }
                             }
@@ -153,7 +224,9 @@ public class LookAndFeelController implements LAFManagerInterface {
                                         JarEntry je = jf.getJarEntry("cfg/synthetica-license.key");
                                         liz = IO.readInputStreamToString(jf.getInputStream(je));
                                     } finally {
-                                        if (jf != null) jf.close();
+                                        if (jf != null) {
+                                            jf.close();
+                                        }
                                     }
                                 }
                             }

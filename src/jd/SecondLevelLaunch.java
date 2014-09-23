@@ -132,7 +132,7 @@ public class SecondLevelLaunch {
     }
 
     private static LogSource                 LOG;
-
+    public final static SingleReachableState UPDATE_HANDLER_SET    = new SingleReachableState("UPDATE_HANDLER_SET");
     public final static SingleReachableState INIT_COMPLETE         = new SingleReachableState("INIT_COMPLETE");
     public final static SingleReachableState GUI_COMPLETE          = new SingleReachableState("GUI_COMPLETE");
     public final static SingleReachableState HOST_PLUGINS_COMPLETE = new SingleReachableState("HOST_PLG_COMPLETE");
