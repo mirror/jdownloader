@@ -5190,4 +5190,10 @@ public interface GuiTranslation extends TranslateInterface {
 
     @Default(lngs = { "en" }, values = { "JDownloader knows several Url types. It's up to you which address is shown, and which will be copied to the clipboard.\r\nYou can set up the display order in      Settings -> Advanced -> GeneralSettings: Url Display Order" })
     String UrlColumn_onDoubleClick_help_msg();
+
+    @Default(lngs = { "en" }, values = { "JDownloader Look And Feel Update" })
+    String LookAndFeelController_handleThemesInstallation_title_();
+
+    @Default(lngs = { "en" }, values = { "You changed the JDownloader Look&Feel to %s1. This Look&Feel is not installed. Do you want to install it now? \r\n\r\nPlease note, \r\nthat you may have to change several colors in the Advanced Settings to make JDownloader look good after the Look&Feel change.\r\nPlease press [OK] to continue the Look&Feel Installation, or [CANCEL] to reset the Look&Feel to default. " })
+    String LookAndFeelController_handleThemesInstallation_message_(String type);
 }

@@ -86,5 +86,8 @@
 	<classpathentry kind="lib" path="ressourcen/libs/savemytube.jar"/>
 	<classpathentry kind="lib" path="ressourcen/libs/htmlunit-core-js.jar"/>
 	<classpathentry kind="lib" path="ressourcen/libs/js.jar"/>
+	<classpathentry kind="lib" path="ressourcen/libs/laf/syntheticaAluOxide.jar"/>
+	<classpathentry kind="lib" path="ressourcen/libs/laf/syntheticaBlueLight.jar"/>
+	<classpathentry kind="lib" path="ressourcen/libs/laf/syntheticaClassy.jar"/>
 	<classpathentry kind="output" path="bin"/>
 </classpath>

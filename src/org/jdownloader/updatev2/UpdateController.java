@@ -1,7 +1,6 @@
 package org.jdownloader.updatev2;
 
 import java.awt.Color;
-import java.awt.GraphicsEnvironment;
 import java.awt.Window;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
@@ -103,6 +102,11 @@ public class UpdateController implements UpdateCallbackInterface {
         this.appid = appid;
         this.updaterid = updaterid;
         handler.startIntervalChecker();
+        try {
+            jd.SecondLevelLaunch.UPDATE_HANDLER_SET.setReached();
+        } catch (Throwable e) {
+
+        }
         // UpdateAction.getInstance().setEnabled(true);
 
     }
