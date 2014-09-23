@@ -59,6 +59,8 @@ public class UberShaRe extends PluginForHost {
     private static final String SIMULTANDLSLIMIT_USERTEXT                    = "Max. simultan downloads limit reached, wait to start more downloads from this host";
     private static final String WAIT_BETWEEN_DOWNLOADS_LIMIT                 = "e=You+must+wait+";
     private static final String WAIT_BETWEEN_DOWNLOADS_LIMIT_USERTEXT        = "You must wait between downloads!";
+    private static final String WAIT_RECONNECT_LIMIT                         = "e=You+have+reached+the+maximum+permitted+downloads";
+    private static final String WAIT_RECONNECT_LIMIT_USERTEXT                = "Limit reached";
     private static final int    WAIT_BETWEEN_DOWNLOADS_LIMIT_MINUTES_DEFAULT = 10;
     private static final String SERVERERROR                                  = "e=Error%3A+Could+not+open+file+for+reading.";
     private static final String SERVERERRORUSERTEXT                          = "Server error";
@@ -84,6 +86,10 @@ public class UberShaRe extends PluginForHost {
         } else if (br.getURL().contains(SERVERERROR)) {
             link.setName(new Regex(link.getDownloadURL(), "([A-Za-z0-9]+)$").getMatch(0));
             link.getLinkStatus().setStatusText(SERVERERRORUSERTEXT);
+            return AvailableStatus.TRUE;
+        } else if (br.getURL().contains(WAIT_RECONNECT_LIMIT)) {
+            link.setName(new Regex(link.getDownloadURL(), "([A-Za-z0-9]+)$").getMatch(0));
+            link.getLinkStatus().setStatusText(WAIT_RECONNECT_LIMIT_USERTEXT);
             return AvailableStatus.TRUE;
         }
         if (br.getURL().contains("/error." + TYPE) || br.getURL().contains("/index." + TYPE) || !br.containsHTML("class=\"downloadPageTable\"")) {
@@ -114,6 +120,8 @@ public class UberShaRe extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, WAIT_BETWEEN_DOWNLOADS_LIMIT_USERTEXT, WAIT_BETWEEN_DOWNLOADS_LIMIT_MINUTES_DEFAULT * 60 * 1001l);
         } else if (br.getURL().contains(SERVERERROR)) {
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, SERVERERRORUSERTEXT, 5 * 60 * 1000l);
+        } else if (br.getURL().contains(WAIT_RECONNECT_LIMIT)) {
+            throw new PluginException(LinkStatus.ERROR_IP_BLOCKED);
         }
         final String waittime = br.getRegex("\\$\\(\\'\\.download\\-timer\\-seconds\\'\\)\\.html\\((\\d+)\\);").getMatch(0);
         if (waittime != null) {

@@ -143,9 +143,13 @@ public class DocsGoogleCom extends PluginForHost {
         }
 
         br.getPage("https://docs.google.com/uc?id=" + getID(downloadLink) + "&export=download");
-        if (br.containsHTML("error\\-subcaption\">Too many users have viewed or downloaded this file recently\\. Please try accessing the file again later\\.|<title>Google Drive - (Quota|Cuota|Kuota|La quota)")) {
+        final String fsize = br.getRegex("\\((\\d+M)\\)</span>").getMatch(0);
+        if (fsize != null) {
+            downloadLink.setDownloadSize(SizeFormatter.getSize(fsize + "b"));
+        }
+        if (br.containsHTML("error\\-subcaption\">Too many users have viewed or downloaded this file recently\\. Please try accessing the file again later\\.|<title>Google Drive – (Quota|Cuota|Kuota|La quota|Quote)")) {
             // so its not possible to download at this time.
-            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Download not possible at this point in time.", 60 * 60 * 1000);
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Download not possible at this point in time - wait or try with your google account!", 60 * 60 * 1000);
         }
         if (br.containsHTML("<TITLE>Not Found</TITLE>")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
