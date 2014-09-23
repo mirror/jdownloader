@@ -143,7 +143,7 @@ public class DocsGoogleCom extends PluginForHost {
         }
 
         br.getPage("https://docs.google.com/uc?id=" + getID(downloadLink) + "&export=download");
-        if (br.containsHTML("error\\-subcaption\">Too many users have viewed or downloaded this file recently\\. Please try accessing the file again later\\.|<title>Google Drive - (Quota|Cuota|Kuota)")) {
+        if (br.containsHTML("error\\-subcaption\">Too many users have viewed or downloaded this file recently\\. Please try accessing the file again later\\.|<title>Google Drive - (Quota|Cuota|Kuota|La quota)")) {
             // so its not possible to download at this time.
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Download not possible at this point in time.", 60 * 60 * 1000);
         }
