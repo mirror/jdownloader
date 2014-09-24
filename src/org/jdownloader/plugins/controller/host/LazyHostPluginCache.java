@@ -18,7 +18,7 @@ import org.jdownloader.plugins.controller.LazyPluginClass;
 
 public class LazyHostPluginCache {
 
-    private static final int CACHEVERSION = 7;
+    private static final int CACHEVERSION = 8;
 
     public static List<LazyHostPlugin> read(File file, final AtomicLong lastModification) throws IOException {
         final ArrayList<LazyHostPlugin> ret = new ArrayList<LazyHostPlugin>(4096);
@@ -37,6 +37,7 @@ public class LazyHostPluginCache {
                 final int lazyHostPluginSize = is.readShort();
                 for (int lazyHostPluginIndex = 0; lazyHostPluginIndex < lazyHostPluginSize; lazyHostPluginIndex++) {
                     final LazyHostPlugin lazyHostPlugin = new LazyHostPlugin(lazyPluginClass, is.readString(stringBuffer), is.readString(stringBuffer), null, null);
+                    lazyHostPlugin.setPluginUsage(is.readLongOptimized());
                     final int flags = is.ensureRead();
                     lazyHostPlugin.setPremium((flags & (1 << 0)) != 0);
                     lazyHostPlugin.setHasConfig((flags & (1 << 1)) != 0);
@@ -92,6 +93,7 @@ public class LazyHostPluginCache {
                 for (final LazyHostPlugin plugin : plugins) {
                     os.writeString(plugin.getPatternSource());
                     os.writeString(plugin.getDisplayName());
+                    os.writeLongOptimized(plugin.getPluginUsage());
                     byte flags = 0;
                     if (plugin.isPremium()) {
                         flags |= (1 << 0);

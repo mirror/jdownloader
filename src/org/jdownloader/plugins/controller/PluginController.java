@@ -25,7 +25,7 @@ public abstract class PluginController<T extends Plugin> {
 
     protected abstract long[] getInfos(Class<T> clazz);
 
-    protected List<PluginInfo<T>> scan(LogSource logger, String hosterpath, final List<? extends LazyPlugin> pluginCache, final AtomicLong lastFolderModification) throws Exception {
+    protected List<PluginInfo<T>> scan(LogSource logger, String hosterpath, final List<? extends LazyPlugin<T>> pluginCache, final AtomicLong lastFolderModification) throws Exception {
         if (Application.getJavaVersion() >= Application.JAVA17) {
             return new PluginScannerNIO<T>(this).scan(logger, hosterpath, pluginCache, lastFolderModification);
         }

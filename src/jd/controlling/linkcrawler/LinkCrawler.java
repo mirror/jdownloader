@@ -264,23 +264,6 @@ public class LinkCrawler {
             parentCrawler = null;
             classLoader = PluginClassLoader.getInstance().getChild();
             pHosts = new ArrayList<LazyHostPlugin>(HostPluginController.getInstance().list());
-            /* sort pHosts according to their usage */
-            try {
-                Collections.sort(pHosts, new Comparator<LazyHostPlugin>() {
-
-                    public int compare(long x, long y) {
-                        return (x < y) ? 1 : ((x == y) ? 0 : -1);
-                    }
-
-                    @Override
-                    public int compare(LazyHostPlugin o1, LazyHostPlugin o2) {
-                        return compare(o1.getParsesCounter(), o2.getParsesCounter());
-                    }
-
-                });
-            } catch (final Throwable e) {
-                LogController.CL(true).log(e);
-            }
             for (LazyHostPlugin pHost : pHosts) {
                 if (directHTTP == null && HTTP_LINKS.equals(pHost.getDisplayName())) {
                     /* for direct access to the directhttp plugin */
@@ -288,9 +271,7 @@ public class LinkCrawler {
                     // the one we found here listens to "https?viajd://[\\w\\.:\\-@]*/.*\\.(jdeatme|3gp|7zip|7z|abr...
                     // the other listens to directhttp://.+
                     directHTTP = pHost;
-                }
-
-                if (ftp == null && "ftp".equals(pHost.getDisplayName())) {
+                } else if (ftp == null && "ftp".equals(pHost.getDisplayName())) {
                     /* for generic ftp sites */
                     ftp = pHost;
                 }
@@ -629,6 +610,43 @@ public class LinkCrawler {
         return crawledLink != null && crawledLink.gethPlugin() == null;
     }
 
+    protected Boolean distributePluginForHost(final LazyHostPlugin pluginForHost, final int generation, final String url, final CrawledLink link) {
+        if (pluginForHost.canHandle(url)) {
+            if (!isBlacklisted(pluginForHost)) {
+                if (insideCrawlerPlugin()) {
+                    if (generation != this.getCrawlerGeneration(false) || !isCrawlingAllowed()) {
+                        /* LinkCrawler got aborted! */
+                        return false;
+                    }
+                    processHostPlugin(pluginForHost, link);
+                } else {
+                    if (checkStartNotify()) {
+                        threadPool.execute(new LinkCrawlerRunnable(LinkCrawler.this, generation) {
+                            @Override
+                            public long getAverageRuntime() {
+                                final Long ret = getDefaultAverageRuntime();
+                                if (ret != null) {
+                                    return ret;
+                                }
+                                return pluginForHost.getAverageParseRuntime();
+                            }
+
+                            @Override
+                            void crawling() {
+                                processHostPlugin(pluginForHost, link);
+                            }
+                        });
+                    } else {
+                        /* LinkCrawler got aborted! */
+                        return false;
+                    }
+                }
+            }
+            return true;
+        }
+        return null;
+    }
+
     protected void distribute(java.util.List<CrawledLink> possibleCryptedLinks) {
         if (possibleCryptedLinks == null || possibleCryptedLinks.size() == 0) {
             return;
@@ -793,36 +811,10 @@ public class LinkCrawler {
                             if (!isDirectHttpEnabled() && (pHost.getDisplayName().equals(DIRECT_HTTP) || pHost.getDisplayName().equals(HTTP_LINKS))) {
                                 continue;
                             }
-                            if (pHost.canHandle(url)) {
-                                if (!isBlacklisted(pHost)) {
-                                    if (insideCrawlerPlugin()) {
-                                        if (generation != this.getCrawlerGeneration(false) || !isCrawlingAllowed()) {
-                                            /* LinkCrawler got aborted! */
-                                            return;
-                                        }
-                                        processHostPlugin(pHost, possibleCryptedLink);
-                                    } else {
-                                        if (checkStartNotify()) {
-                                            threadPool.execute(new LinkCrawlerRunnable(LinkCrawler.this, generation) {
-                                                @Override
-                                                public long getAverageRuntime() {
-                                                    final Long ret = getDefaultAverageRuntime();
-                                                    if (ret != null) {
-                                                        return ret;
-                                                    }
-                                                    return pHost.getAverageParseRuntime();
-                                                }
-
-                                                @Override
-                                                void crawling() {
-                                                    processHostPlugin(pHost, possibleCryptedLink);
-                                                }
-                                            });
-                                        } else {
-                                            return;
-                                        }
-                                    }
-                                }
+                            final Boolean ret = distributePluginForHost(pHost, generation, url, possibleCryptedLink);
+                            if (Boolean.FALSE.equals(ret)) {
+                                return;
+                            } else if (Boolean.TRUE.equals(ret)) {
                                 continue mainloop;
                             }
                         }
@@ -840,8 +832,7 @@ public class LinkCrawler {
                             continue mainloopretry;
                         }
                         /* now we will check for normal http links */
-
-                        if (directHTTP != null && isDirectHttpEnabled() && !isBlacklisted(directHTTP)) {
+                        if (!url.startsWith("ftp") && directHTTP != null && isDirectHttpEnabled() && !isBlacklisted(directHTTP)) {
                             url = url.replaceFirst("http://", "httpviajd://");
                             url = url.replaceFirst("https://", "httpsviajd://");
                             /* create new CrawledLink that holds the modified CrawledLink */
@@ -860,68 +851,24 @@ public class LinkCrawler {
                                 modifiedPossibleCryptedLink = new CrawledLink(url);
                             }
                             forwardCrawledLinkInfos(possibleCryptedLink, modifiedPossibleCryptedLink, parentLinkModifier, sourceURLs);
-                            if (directHTTP.canHandle(url)) {
-                                if (insideCrawlerPlugin()) {
-                                    if (generation != this.getCrawlerGeneration(false) || !isCrawlingAllowed()) {
-                                        /* LinkCrawler got aborted! */
-                                        return;
-                                    }
-                                    processHostPlugin(directHTTP, modifiedPossibleCryptedLink);
-                                } else {
-                                    if (checkStartNotify()) {
-                                        threadPool.execute(new LinkCrawlerRunnable(LinkCrawler.this, generation) {
-                                            @Override
-                                            public long getAverageRuntime() {
-                                                final Long ret = getDefaultAverageRuntime();
-                                                if (ret != null) {
-                                                    return ret;
-                                                }
-                                                return directHTTP.getAverageParseRuntime();
-                                            }
-
-                                            @Override
-                                            void crawling() {
-                                                processHostPlugin(directHTTP, modifiedPossibleCryptedLink);
-                                            }
-                                        });
-                                    } else {
-                                        return;
-                                    }
-                                }
+                            final Boolean ret = distributePluginForHost(directHTTP, generation, url, modifiedPossibleCryptedLink);
+                            if (Boolean.FALSE.equals(ret)) {
+                                return;
+                            } else if (Boolean.TRUE.equals(ret)) {
                                 continue mainloop;
                             }
                         }
                         /* now we will check for generic ftp links */
-                        if (ftp != null) {
-                            if (ftp.canHandle(url)) {
-                                if (insideCrawlerPlugin()) {
-                                    if (generation != this.getCrawlerGeneration(false) || !isCrawlingAllowed()) {
-                                        /* LinkCrawler got aborted! */
-                                        return;
-                                    }
-                                    processHostPlugin(ftp, possibleCryptedLink);
-                                } else {
-                                    if (checkStartNotify()) {
-                                        threadPool.execute(new LinkCrawlerRunnable(LinkCrawler.this, generation) {
-
-                                            @Override
-                                            public long getAverageRuntime() {
-                                                final Long ret = getDefaultAverageRuntime();
-                                                if (ret != null) {
-                                                    return ret;
-                                                }
-                                                return ftp.getAverageParseRuntime();
-                                            }
-
-                                            @Override
-                                            void crawling() {
-                                                processHostPlugin(ftp, possibleCryptedLink);
-                                            }
-                                        });
-                                    } else {
-                                        return;
-                                    }
-                                }
+                        if (url.startsWith("ftp") && ftp != null && !isBlacklisted(ftp)) {
+                            final Boolean ret = distributePluginForHost(ftp, generation, url, possibleCryptedLink);
+                            if (Boolean.FALSE.equals(ret)) {
+                                return;
+                            } else if (Boolean.TRUE.equals(ret)) {
+                                continue mainloop;
+                            }
+                            if (Boolean.FALSE.equals(ret)) {
+                                return;
+                            } else if (Boolean.TRUE.equals(ret)) {
                                 continue mainloop;
                             }
                         }
@@ -967,21 +914,57 @@ public class LinkCrawler {
         }
     }
 
-    public List<LazyCrawlerPlugin> getCrawlerPlugins() {
-        if (cHosts != null) {
-            return cHosts;
-        }
+    protected List<LazyCrawlerPlugin> getCrawlerPlugins() {
         if (parentCrawler != null) {
-            cHosts = parentCrawler.getCrawlerPlugins();
+            final List<LazyCrawlerPlugin> ret = parentCrawler.getCrawlerPlugins();
+            if (ret != null) {
+                return ret;
+            }
         }
         if (cHosts == null) {
             cHosts = CrawlerPluginController.getInstance().list();
         }
-        return cHosts;
+        /* sort cHosts according to their usage */
+        final ArrayList<LazyCrawlerPlugin> ret = new ArrayList<LazyCrawlerPlugin>(cHosts);
+        try {
+            Collections.sort(ret, new Comparator<LazyCrawlerPlugin>() {
+
+                public final int compare(long x, long y) {
+                    return (x < y) ? 1 : ((x == y) ? 0 : -1);
+                }
+
+                @Override
+                public final int compare(LazyCrawlerPlugin o1, LazyCrawlerPlugin o2) {
+                    return compare(o1.getPluginUsage(), o2.getPluginUsage());
+                }
+
+            });
+        } catch (final Throwable e) {
+            LogController.CL(true).log(e);
+        }
+        return ret;
     }
 
-    public List<LazyHostPlugin> getHosterPlugins() {
-        return pHosts;
+    protected List<LazyHostPlugin> getHosterPlugins() {
+        /* sort pHosts according to their usage */
+        final ArrayList<LazyHostPlugin> ret = new ArrayList<LazyHostPlugin>(pHosts);
+        try {
+            Collections.sort(ret, new Comparator<LazyHostPlugin>() {
+
+                public final int compare(long x, long y) {
+                    return (x < y) ? 1 : ((x == y) ? 0 : -1);
+                }
+
+                @Override
+                public final int compare(LazyHostPlugin o1, LazyHostPlugin o2) {
+                    return compare(o1.getPluginUsage(), o2.getPluginUsage());
+                }
+
+            });
+        } catch (final Throwable e) {
+            LogController.CL(true).log(e);
+        }
+        return ret;
     }
 
     public boolean isDirectHttpEnabled() {
@@ -1160,7 +1143,6 @@ public class LinkCrawler {
             source = source.getSourceLink();
         }
         link.setSourceUrls(null);
-
         if (link.getSourceJob() != null) {
             String cust = link.getSourceJob().getCustomSourceUrl();
             if (cust != null) {
@@ -1565,15 +1547,19 @@ public class LinkCrawler {
                     };
                     wplg.setDistributer(dist = new LinkCrawlerDistributer() {
 
-                        public void distribute(DownloadLink... links) {
+                        final HashSet<DownloadLink> fastDuplicateDetector = new HashSet<DownloadLink>();
+
+                        public synchronized void distribute(DownloadLink... links) {
                             if (links == null || links.length == 0) {
                                 return;
                             }
-                            final java.util.List<CrawledLink> possibleCryptedLinks = new ArrayList<CrawledLink>(links.length);
+                            final List<CrawledLink> possibleCryptedLinks = new ArrayList<CrawledLink>(links.length);
                             for (DownloadLink link : links) {
-                                CrawledLink ret;
-                                possibleCryptedLinks.add(ret = new CrawledLink(link));
-                                forwardCrawledLinkInfos(cryptedLink, ret, lm, sourceURLs);
+                                if (fastDuplicateDetector.add(link)) {
+                                    CrawledLink ret = new CrawledLink(link);
+                                    possibleCryptedLinks.add(ret);
+                                    forwardCrawledLinkInfos(cryptedLink, ret, lm, sourceURLs);
+                                }
                             }
                             if (useDelay) {
                                 /* we delay the distribute */

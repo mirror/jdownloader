@@ -155,7 +155,6 @@ public class CrawlerPluginController extends PluginController<PluginForDecrypt> 
                     logger.info("@CrawlerPluginController: sort took " + (System.currentTimeMillis() - timeStamp) + "ms for " + plugins.size());
                 }
                 finalPlugins = plugins;
-
                 for (LazyCrawlerPlugin plugin : plugins) {
                     plugin.setPluginClass(null);
                     plugin.setClassLoader(null);

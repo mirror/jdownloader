@@ -26,7 +26,7 @@ public class PluginScannerFiles<T extends Plugin> {
         this.pluginController = pluginController;
     }
 
-    protected List<PluginInfo<T>> scan(LogSource logger, String hosterpath, final List<? extends LazyPlugin> pluginCache, final AtomicLong lastFolderModification) throws Exception {
+    protected List<PluginInfo<T>> scan(LogSource logger, String hosterpath, final List<? extends LazyPlugin<T>> pluginCache, final AtomicLong lastFolderModification) throws Exception {
         final ArrayList<PluginInfo<T>> ret = new ArrayList<PluginInfo<T>>();
         final long timeStamp = System.currentTimeMillis();
         try {
@@ -34,7 +34,7 @@ public class PluginScannerFiles<T extends Plugin> {
             final File folder = Application.getRootByClass(jd.SecondLevelLaunch.class, hosterpath);
             final long lastFolderModified = folder.lastModified();
             if (lastModified > 0 && lastFolderModified == lastModified && pluginCache != null && pluginCache.size() > 0) {
-                for (final LazyPlugin lazyPlugin : pluginCache) {
+                for (final LazyPlugin<T> lazyPlugin : pluginCache) {
                     final PluginInfo<T> pluginInfo = new PluginInfo<T>(lazyPlugin.getLazyPluginClass(), null);
                     pluginInfo.setLazyPlugin(lazyPlugin);
                     ret.add(pluginInfo);
@@ -45,13 +45,13 @@ public class PluginScannerFiles<T extends Plugin> {
             final String pkg = hosterpath.replace("/", ".");
             MessageDigest md = null;
             final byte[] mdCache = new byte[32767];
-            final HashMap<String, List<LazyPlugin>> lazyPluginClassMap;
+            final HashMap<String, List<LazyPlugin<T>>> lazyPluginClassMap;
             if (pluginCache != null && pluginCache.size() > 0) {
-                lazyPluginClassMap = new HashMap<String, List<LazyPlugin>>();
-                for (final LazyPlugin lazyPlugin : pluginCache) {
-                    List<LazyPlugin> list = lazyPluginClassMap.get(lazyPlugin.getLazyPluginClass().getClassName());
+                lazyPluginClassMap = new HashMap<String, List<LazyPlugin<T>>>();
+                for (final LazyPlugin<T> lazyPlugin : pluginCache) {
+                    List<LazyPlugin<T>> list = lazyPluginClassMap.get(lazyPlugin.getLazyPluginClass().getClassName());
                     if (list == null) {
-                        list = new ArrayList<LazyPlugin>();
+                        list = new ArrayList<LazyPlugin<T>>();
                         lazyPluginClassMap.put(lazyPlugin.getLazyPluginClass().getClassName(), list);
                     }
                     list.add(lazyPlugin);
@@ -72,11 +72,11 @@ public class PluginScannerFiles<T extends Plugin> {
                             byte[] sha256 = null;
                             lastModified = path.lastModified();
                             if (lazyPluginClassMap != null) {
-                                final List<LazyPlugin> lazyPlugins = lazyPluginClassMap.get(className);
+                                final List<LazyPlugin<T>> lazyPlugins = lazyPluginClassMap.get(className);
                                 if (lazyPlugins != null && lazyPlugins.size() > 0) {
                                     final LazyPluginClass lazyPluginClass = lazyPlugins.get(0).getLazyPluginClass();
                                     if (lazyPluginClass != null && (lazyPluginClass.getLastModified() == lastModified || ((md = MessageDigest.getInstance("SHA-256")) != null && (sha256 = PluginController.getFileHashBytes(path, md, mdCache)) != null && Arrays.equals(sha256, lazyPluginClass.getSha256())))) {
-                                        for (final LazyPlugin lazyPlugin : lazyPlugins) {
+                                        for (final LazyPlugin<T> lazyPlugin : lazyPlugins) {
                                             // logger.finer("Cached: " + className + "|" + lazyPlugin.getDisplayName() + "|" +
                                             // lazyPluginClass.getRevision());
                                             final PluginInfo<T> pluginInfo = new PluginInfo<T>(lazyPluginClass, null);
@@ -111,7 +111,7 @@ public class PluginScannerFiles<T extends Plugin> {
                                 continue;
                             }
                             if (sha256 == null) {
-                                sha256 = getPluginController().getFileHashBytes(path, md, mdCache);
+                                sha256 = PluginController.getFileHashBytes(path, md, mdCache);
                             }
                             final LazyPluginClass lazyPluginClass = new LazyPluginClass(className, sha256, lastModified, (int) infos[0], infos[1]);
                             final PluginInfo<T> pluginInfo = new PluginInfo<T>(lazyPluginClass, pluginClass);

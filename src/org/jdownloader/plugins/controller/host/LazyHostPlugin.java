@@ -13,35 +13,37 @@ public class LazyHostPlugin extends LazyPlugin<PluginForHost> {
     private boolean        hasConfig      = false;
     private LazyHostPlugin fallBackPlugin = null;
 
-    private volatile long  parses         = 0;
-    private volatile long  parsesRuntime  = 0;
+    private volatile long  parsesLifetime = 0;
+
+    public long getPluginUsage() {
+        return parsesLifetime + parses;
+    }
+
+    public void setPluginUsage(long pluginUsage) {
+        this.parsesLifetime = Math.max(0, pluginUsage);
+    }
+
+    private volatile long parses         = 0;
+    private volatile long parsesRuntime  = 0;
+    private volatile long averageRuntime = 0;
 
     public long getAverageParseRuntime() {
-        synchronized (this) {
-            if (parses == 0 || parsesRuntime == 0) {
-                return 0;
-            }
-            final long ret = parsesRuntime / parses;
-            return ret;
-        }
+        return averageRuntime;
     }
 
     public void updateParseRuntime(long r) {
         synchronized (this) {
+            parses++;
             if (r >= 0) {
-                parses++;
                 parsesRuntime += r;
             }
+            averageRuntime = parsesRuntime / parses;
         }
     }
 
     @Override
     public String getClassName() {
-        return "jd.plugins.hoster." + getLazyPluginClass().getClassName();
-    }
-
-    public long getParsesCounter() {
-        return parses;
+        return "jd.plugins.hoster.".concat(getLazyPluginClass().getClassName());
     }
 
     public boolean isHasConfig() {

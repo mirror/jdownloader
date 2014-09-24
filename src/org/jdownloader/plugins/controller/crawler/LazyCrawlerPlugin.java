@@ -15,9 +15,19 @@ public class LazyCrawlerPlugin extends LazyPlugin<PluginForDecrypt> {
 
     private volatile long decrypts               = 0;
     private volatile long decryptsRuntime        = 0;
+    private volatile long averageRuntime         = 0;
+    private volatile long pluginUsage            = 0;
     private int           maxConcurrentInstances = Integer.MAX_VALUE;
     private boolean       hasConfig              = false;
     private String        configInterface        = null;
+
+    public long getPluginUsage() {
+        return decrypts + pluginUsage;
+    }
+
+    public void setPluginUsage(long pluginUsage) {
+        this.pluginUsage = Math.max(0, pluginUsage);
+    }
 
     public boolean isHasConfig() {
         return hasConfig;
@@ -25,7 +35,7 @@ public class LazyCrawlerPlugin extends LazyPlugin<PluginForDecrypt> {
 
     @Override
     public String getClassName() {
-        return "jd.plugins.decrypter." + getLazyPluginClass().getClassName();
+        return "jd.plugins.decrypter.".concat(getLazyPluginClass().getClassName());
     }
 
     protected void setHasConfig(boolean hasConfig) {
@@ -41,21 +51,16 @@ public class LazyCrawlerPlugin extends LazyPlugin<PluginForDecrypt> {
     }
 
     public long getAverageCrawlRuntime() {
-        synchronized (this) {
-            if (decrypts == 0 || decryptsRuntime == 0) {
-                return 0;
-            }
-            long ret = decryptsRuntime / decrypts;
-            return ret;
-        }
+        return averageRuntime;
     }
 
     public void updateCrawlRuntime(long r) {
         synchronized (this) {
+            decrypts++;
             if (r >= 0) {
-                decrypts++;
                 decryptsRuntime += r;
             }
+            averageRuntime = decryptsRuntime / decrypts;
         }
     }
 
