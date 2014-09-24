@@ -19,6 +19,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.logging.Logger;
 import java.util.regex.Pattern;
 
+import jd.controlling.linkcollector.LinkCollectingJob;
 import jd.controlling.linkcollector.LinkCollector.JobLinkCrawler;
 import jd.controlling.linkcollector.LinknameCleaner;
 import jd.http.Browser;
@@ -1743,7 +1744,13 @@ public class LinkCrawler {
                 }
                 String referrerURL = dl.getReferrerUrl();
                 if (referrerURL == null && LinkCrawler.this instanceof JobLinkCrawler) {
-                    referrerURL = ((JobLinkCrawler) LinkCrawler.this).getJob().getCustomSourceUrl();
+                    final LinkCollectingJob job = ((JobLinkCrawler) LinkCrawler.this).getJob();
+                    if (job != null) {
+                        /**
+                         * restored links no longer have reference to job
+                         */
+                        referrerURL = job.getCustomSourceUrl();
+                    }
                 }
                 if (StringUtils.isEmpty(dl.getOriginUrl())) {
                     String originURL = null;
