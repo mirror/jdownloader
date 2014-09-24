@@ -5,7 +5,7 @@ import jd.plugins.Plugin;
 public class PluginInfo<T extends Plugin> {
 
     private final Class<T>        clazz;
-    private LazyPlugin            lazyPlugin = null;
+    private LazyPlugin<T>         lazyPlugin = null;
     private final LazyPluginClass lazyPluginClass;
 
     public final LazyPluginClass getLazyPluginClass() {
@@ -21,11 +21,11 @@ public class PluginInfo<T extends Plugin> {
         return clazz;
     }
 
-    public LazyPlugin getLazyPlugin() {
+    public LazyPlugin<T> getLazyPlugin() {
         return lazyPlugin;
     }
 
-    public void setLazyPlugin(LazyPlugin lazyPlugin) {
+    public void setLazyPlugin(LazyPlugin<T> lazyPlugin) {
         this.lazyPlugin = lazyPlugin;
     }
 
