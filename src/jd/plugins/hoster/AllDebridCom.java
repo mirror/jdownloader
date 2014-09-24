@@ -57,13 +57,7 @@ public class AllDebridCom extends PluginForHost {
         HashMap<String, String> accDetails = new HashMap<String, String>();
         AccountInfo ac = new AccountInfo();
         br.getPage("http://www.alldebrid.com/api.php?action=info_user&login=" + Encoding.urlEncode(account.getUser()) + "&pw=" + Encoding.urlEncode(account.getPass()));
-        if ("login fail".equals(br.toString())) {
-            throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nWrong User Password", PluginException.VALUE_ID_PREMIUM_DISABLE);
-        } else if ("too mutch fail, blocked for 6 hour".equals(br.toString())) {
-            throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nToo many incorrect attempts at login!\r\nYou've been blocked for 6 hours", PluginException.VALUE_ID_PREMIUM_DISABLE);
-        } else if (hash1.equalsIgnoreCase(JDHash.getMD5(br.toString()))) {
-            throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nYou've been blocked from the API!", PluginException.VALUE_ID_PREMIUM_DISABLE);
-        }
+        handleErrors();
 
         /* parse api response in easy2handle hashmap */
         String info[][] = br.getRegex("<([^<>]*?)>([^<]*?)</.*?>").getMatches();
@@ -139,6 +133,16 @@ public class AllDebridCom extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nNormal accounts are not supported!", PluginException.VALUE_ID_PREMIUM_DISABLE);
         }
         return ac;
+    }
+
+    private void handleErrors() throws PluginException {
+        if ("login fail".equals(br.toString())) {
+            throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nWrong User Password", PluginException.VALUE_ID_PREMIUM_DISABLE);
+        } else if ("too mutch fail, blocked for 6 hour".equals(br.toString())) {
+            throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nToo many incorrect attempts at login!\r\nYou've been blocked for 6 hours", PluginException.VALUE_ID_PREMIUM_DISABLE);
+        } else if (hash1.equalsIgnoreCase(JDHash.getMD5(br.toString()))) {
+            throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nYou've been blocked from the API!", PluginException.VALUE_ID_PREMIUM_DISABLE);
+        }
     }
 
     @Override
@@ -233,9 +237,8 @@ public class AllDebridCom extends PluginForHost {
 
         if (genlink == null || !genlink.matches("https?://.+")) {
             logger.severe("Error: " + genlink);
-            if (hash1.equalsIgnoreCase(JDHash.getMD5(br.toString()))) {
-                throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nYou've been blocked from the API!", PluginException.VALUE_ID_PREMIUM_DISABLE);
-            } else if (genlink.contains("Hoster unsupported or under maintenance.")) {
+            handleErrors();
+            if (genlink.contains("Hoster unsupported or under maintenance.")) {
                 // disable host for 4h
                 tempUnavailableHoster(acc, link, 4 * 60 * 60 * 1000l);
             } else if (genlink.contains("_limit")) {
