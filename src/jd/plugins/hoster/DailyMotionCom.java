@@ -223,25 +223,30 @@ public class DailyMotionCom extends PluginForHost {
             setupRTMPConnection(stream, dl);
             ((RTMPDownload) dl).startDownload();
         } else {
-            /* Workaround for old downloadcore bug that can lead to incomplete files */
-            br.getHeaders().put("Accept-Encoding", "identity");
-            downloadLink.setFinalFileName(getFormattedFilename(downloadLink));
-            /*
-             * They do allow resume and unlimited chunks but resuming or using more than 1 chunk causes problems, the file will then be
-             * corrupted!
-             */
-            dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, false, 1);
-            /* Their servers usually return a valid size - if not, it's probably a server error */
-            final long contentlength = dl.getConnection().getLongContentLength();
-            if (contentlength == -1) {
-                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error", 30 * 60 * 1000l);
-            }
-            if (dl.getConnection().getContentType().contains("html")) {
-                br.followConnection();
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            }
-            dl.startDownload();
+            downloadDirect(downloadLink);
         }
+    }
+
+    protected void downloadDirect(DownloadLink downloadLink) throws Exception {
+
+        /* Workaround for old downloadcore bug that can lead to incomplete files */
+        br.getHeaders().put("Accept-Encoding", "identity");
+        downloadLink.setFinalFileName(getFormattedFilename(downloadLink));
+        /*
+         * They do allow resume and unlimited chunks but resuming or using more than 1 chunk causes problems, the file will then be
+         * corrupted!
+         */
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, false, 1);
+        /* Their servers usually return a valid size - if not, it's probably a server error */
+        final long contentlength = dl.getConnection().getLongContentLength();
+        if (contentlength == -1) {
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error", 30 * 60 * 1000l);
+        }
+        if (dl.getConnection().getContentType().contains("html")) {
+            br.followConnection();
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        dl.startDownload();
     }
 
     private String findFreshDirectlink(final DownloadLink dl) throws IOException {
