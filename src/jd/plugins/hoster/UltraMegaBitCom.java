@@ -356,45 +356,41 @@ public class UltraMegaBitCom extends PluginForHost {
         }
         if (expire == null && !ispremium) {
             // "Member"
+            maxPrem.set(1);
+            account.setProperty("free", true);
             try {
                 account.setType(AccountType.FREE);
-                maxPrem.set(1);
-                /* free accounts can still have captcha */
                 account.setMaxSimultanDownloads(maxPrem.get());
                 account.setConcurrentUsePossible(false);
             } catch (final Throwable e) {
                 /* not available in old Stable 0.9.581 */
             }
             ai.setStatus("Registered (free) user");
-
-            account.setProperty("free", true);
             account.setValid(true);
             return ai;
         } else if (expire != null) {
             ai.setValidUntil(TimeFormatter.getMilliSeconds(expire, "h:mma dd/MM/yyyy", Locale.ENGLISH));
             if (ai.isExpired()) {
                 ai.setValidUntil(-1);
+                maxPrem.set(1);
+                account.setProperty("free", true);
                 try {
                     account.setType(AccountType.FREE);
-                    maxPrem.set(1);
-                    /* free accounts can still have captcha */
                     account.setMaxSimultanDownloads(maxPrem.get());
                     account.setConcurrentUsePossible(false);
                 } catch (final Throwable e) {
                     /* not available in old Stable 0.9.581 */
                 }
                 ai.setStatus("Registered (free) user");
-
-                account.setProperty("free", true);
                 account.setValid(true);
                 return ai;
             }
         }
         account.setProperty("free", false);
         account.setValid(true);
+        maxPrem.set(20);
         try {
             account.setType(AccountType.PREMIUM);
-            maxPrem.set(20);
             account.setMaxSimultanDownloads(maxPrem.get());
             account.setConcurrentUsePossible(true);
         } catch (final Throwable e) {

@@ -919,8 +919,6 @@ public class UsersFilesCom extends PluginForHost {
         if (account.getBooleanProperty("nopremium") && (expiretime - System.currentTimeMillis()) <= 0) {
             try {
                 maxPrem.set(ACCOUNT_FREE_MAXDOWNLOADS);
-                /* free accounts can still have captcha */
-                totalMaxSimultanFreeDownload.set(maxPrem.get());
                 account.setMaxSimultanDownloads(maxPrem.get());
                 account.setConcurrentUsePossible(false);
             } catch (final Throwable e) {
