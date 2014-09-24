@@ -22,6 +22,7 @@ import java.io.IOException;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
@@ -144,8 +145,8 @@ public class NCryptIn extends PluginForDecrypt {
                             } catch (final Throwable e) {
                             }
                         }
-                        break;
-                    }
+                            break;
+                        }
                     if (password && new Regex(aBrowser, PASSWORDFAILED).matches()) {
                         throw new DecrypterException(DecrypterException.PASSWORD);
                     }
@@ -192,8 +193,8 @@ public class NCryptIn extends PluginForDecrypt {
                             } catch (final Throwable e) {
                             }
                         }
-                        break;
-                    }
+                            break;
+                        }
                     if (password && new Regex(aBrowser, PASSWORDFAILED).matches()) {
                         throw new DecrypterException(DecrypterException.PASSWORD);
                     }
@@ -234,8 +235,8 @@ public class NCryptIn extends PluginForDecrypt {
                             } catch (final Throwable e) {
                             }
                         }
-                        break;
-                    }
+                            break;
+                        }
                     if (password && new Regex(aBrowser, PASSWORDFAILED).matches()) {
                         throw new DecrypterException(DecrypterException.PASSWORD);
                     }
@@ -270,10 +271,23 @@ public class NCryptIn extends PluginForDecrypt {
             }
 
             // Container handling
-            final String[] containerIDs = br.getRegex("(/container/(dlc|rsdf|ccf)/([a-z0-9]+)\\.(dlc|rsdf|ccf))").getColumn(0);
+            final String containerRegex = "/container/(?:dlc|rsdf|ccf)/([a-z0-9]+)\\.(dlc|rsdf|ccf)";
+            final HashSet<String> dupeContainers = new HashSet<String>();
+            final String[] containerIDs = br.getRegex(containerRegex).getColumn(-1);
             if (containerIDs != null && containerIDs.length != 0) {
                 for (final String containerLink : containerIDs) {
-                    decryptedLinks = loadcontainer(containerLink);
+                    // they can have multiple contains for given link, one for each hoster and files can be split up differently for each
+                    // hoster (guess this depends on uploader). Load all containers with unique id.
+                    final String containerHash = new Regex(containerLink, containerRegex).getMatch(0);
+                    if (!dupeContainers.contains(containerHash)) {
+                        // need to find a container with a result first.
+                        ArrayList<DownloadLink> links = new ArrayList<DownloadLink>();
+                        links.addAll(loadcontainer(containerLink));
+                        if (!links.isEmpty()) {
+                            decryptedLinks.addAll(links);
+                            dupeContainers.add(containerHash);
+                        }
+                    }
                 }
             }
             if (decryptedLinks == null || (containerIDs == null || containerIDs.length == 0)) {
@@ -354,17 +368,15 @@ public class NCryptIn extends PluginForDecrypt {
     }
 
     @SuppressWarnings("deprecation")
-    private ArrayList<DownloadLink> loadcontainer(String theLink) throws IOException, PluginException {
-        ArrayList<DownloadLink> decryptedLinks = null;
+    private ArrayList<DownloadLink> loadcontainer(final String theLink) throws IOException, PluginException {
+        ArrayList<DownloadLink> links = new ArrayList<DownloadLink>();
         final Browser brc = br.cloneBrowser();
-        final String theID = theLink;
-        theLink = "http://ncrypt.in" + theLink;
         File file = null;
         URLConnectionAdapter con = null;
         try {
             con = brc.openGetConnection(theLink);
             if (con.getResponseCode() == 200) {
-                file = JDUtilities.getResourceFile("tmp/ncryptin/" + theID);
+                file = JDUtilities.getResourceFile("tmp/ncryptin/" + theLink);
                 if (file == null) {
                     return null;
                 }
@@ -372,10 +384,11 @@ public class NCryptIn extends PluginForDecrypt {
                 file.deleteOnExit();
                 brc.downloadConnection(file, con);
                 if (file != null && file.exists() && file.length() > 100) {
-                    decryptedLinks = JDUtilities.getController().getContainerLinks(file);
-                    return decryptedLinks;
+                    links.addAll(JDUtilities.getController().getContainerLinks(file));
                 }
             }
+        } catch (Throwable e) {
+
         } finally {
             try {
                 con.disconnect();
@@ -384,11 +397,9 @@ public class NCryptIn extends PluginForDecrypt {
             if (file.exists()) {
                 file.delete();
             }
+
         }
-        if (decryptedLinks != null && decryptedLinks.size() > 0) {
-            return decryptedLinks;
-        }
-        return null;
+        return links;
     }
 
     /* NO OVERRIDE!! */
