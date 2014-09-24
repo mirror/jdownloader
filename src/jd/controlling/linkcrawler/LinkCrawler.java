@@ -1636,7 +1636,7 @@ public class LinkCrawler {
         getHandler().handleUnHandledLink(link);
     }
 
-    protected void bla(CrawledLink link) {
+    protected void postprocessFinalCrawledLink(CrawledLink link) {
         final DownloadLink dl = link.getDownloadLink();
         if (dl != null) {
             final String[] sources = link.getSourceUrls();
@@ -1656,18 +1656,16 @@ public class LinkCrawler {
                 dl.setContentUrl(null);
             }
             if (sources != null) {
-                int containerIndex = 0;
+                int sourceIndex = 0;
                 if (sources.length > 1) {
-                    if (sources[0].startsWith(HTTPVIAJD)) {
-                        final String clean = clean(sources[0]);
-                        if (StringUtils.equals(clean, sources[1])) {
-                            containerIndex++;
-                        }
+                    final String clean = cleanURL(sources[0]);
+                    if (StringUtils.equals(clean, sources[1])) {
+                        sourceIndex++;
                     }
                 }
-                if (sources.length > containerIndex && StringUtils.isEmpty(dl.getContentUrl())) {
-                    final String cUrl = clean(sources[containerIndex]);
-                    if (set.add(cUrl)) {
+                if (sources.length > sourceIndex && StringUtils.isEmpty(dl.getContentUrl())) {
+                    final String cUrl = cleanURL(sources[sourceIndex]);
+                    if (cUrl != null && set.add(cUrl)) {
                         dl.setContentUrl(cUrl);
                     }
                 } else if (StringUtils.isNotEmpty(dl.getContentUrl())) {
@@ -1679,70 +1677,79 @@ public class LinkCrawler {
                     // containerIndex++;
 
                 }
-                containerIndex++;
-                String container = null;
+                sourceIndex++;
                 if (StringUtils.isEmpty(dl.getContainerUrl())) {
-                    for (int i = containerIndex; i < sources.length; i++) {
-                        container = clean(sources[i]);
-                        containerIndex = i;
-                        if (container != null && container.startsWith("http://dummycnl.jdownloader.org")) {
-                            // try to avoid dummycnl as containerurl;
-                            continue;
+                    for (int i = sourceIndex; i < sources.length; i++) {
+                        sourceIndex = i;
+                        final String containerURL = cleanURL(sources[i]);
+                        if (containerURL != null) {
+                            if (containerURL.startsWith("http://dummycnl.jdownloader.org")) {
+                                // try to avoid dummycnl as containerurl;
+                                continue;
+                            }
+                            if (set.add(containerURL)) {
+                                dl.setContainerUrl(containerURL);
+                            }
                         }
                         break;
-                    }
-                    if (container != null) {
-                        if (set.add(container)) {
-                            dl.setContainerUrl(container);
-                        }
                     }
                 } else {
                     set.add(dl.getContainerUrl());
                 }
-                String referrer = dl.getReferrerUrl();
-                if (referrer != null && LinkCrawler.this instanceof JobLinkCrawler) {
-                    referrer = ((JobLinkCrawler) LinkCrawler.this).getJob().getCustomSourceUrl();
+                String referrerURL = dl.getReferrerUrl();
+                if (referrerURL == null && LinkCrawler.this instanceof JobLinkCrawler) {
+                    referrerURL = ((JobLinkCrawler) LinkCrawler.this).getJob().getCustomSourceUrl();
                 }
                 if (StringUtils.isEmpty(dl.getOriginUrl())) {
-                    String origin = null;
+                    String originURL = null;
                     for (int i = sources.length - 1; i > 1; i--) {
-                        origin = clean(sources[i]);
-                        if (StringUtils.equals(dl.getContentUrl(), origin) || StringUtils.equals(dl.getPluginPatternMatcher(), origin)) {
+                        originURL = cleanURL(sources[i]);
+                        if (StringUtils.equals(dl.getContentUrl(), originURL) || StringUtils.equals(dl.getPluginPatternMatcher(), originURL)) {
                             break;
                         }
-                        if (StringUtils.equals(referrer, origin)) {
-                            origin = null;
+                        if (StringUtils.equals(referrerURL, originURL)) {
+                            originURL = null;
                             continue;
                         }
                         break;
                     }
-                    if (origin != null && (set.add(origin) || StringUtils.equals(origin, dl.getContainerUrl()))) {
-                        dl.setOriginUrl(origin);
-                        if (StringUtils.equals(origin, dl.getContainerUrl())) {
+                    if (originURL != null && (set.add(originURL) || StringUtils.equals(originURL, dl.getContainerUrl()))) {
+                        dl.setOriginUrl(originURL);
+                        if (StringUtils.equals(originURL, dl.getContainerUrl())) {
                             dl.setContainerUrl(null);
                         }
                     }
                 }
-                if (referrer != null && set.add(referrer)) {
-                    dl.setReferrerUrl(referrer);
+                if (referrerURL != null && set.add(referrerURL)) {
+                    dl.setReferrerUrl(referrerURL);
                 }
             }
         }
     }
 
-    private String clean(String cUrl) {
-        if (cUrl != null && cUrl.startsWith(HTTPVIAJD)) {
-            cUrl = "http" + cUrl.substring(HTTPVIAJD.length());
+    protected void preprocessFinalCrawledLink(CrawledLink link) {
+    }
+
+    protected String cleanURL(String cUrl) {
+        String protocol = HTMLParser.getProtocol(cUrl);
+        if (protocol != null) {
+            if (StringUtils.containsIgnoreCase(protocol, "viajd")) {
+                return cUrl.replaceFirst("viajd", "");
+            } else if (StringUtils.containsIgnoreCase(protocol, "directhttp")) {
+                return cUrl.replaceFirst("directhttp://", "");
+            } else if (protocol.startsWith("http")) {
+                return cUrl;
+            }
         }
-        return cUrl;
+        return null;
     }
 
     protected void handleFinalCrawledLink(CrawledLink link) {
         if (link == null) {
             return;
         }
-        bla(link);
         link.setCreated(getCreated());
+        preprocessFinalCrawledLink(link);
         CrawledLink origin = link.getOriginLink();
         CrawledLinkModifier customModifier = link.getCustomCrawledLinkModifier();
         link.setCustomCrawledLinkModifier(null);
@@ -1753,6 +1760,7 @@ public class LinkCrawler {
                 LogController.CL().log(e);
             }
         }
+        postprocessFinalCrawledLink(link);
         /* clean up some references */
         link.setBrokenCrawlerHandler(null);
         link.setUnknownHandler(null);
