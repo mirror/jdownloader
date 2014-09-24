@@ -21,7 +21,7 @@ public class ExceptionFilter extends Filter {
             setIcon(NewTheme.I().getIcon(rule.getRule().getIconKey(), 16));
         }
         id = "Custom_" + Hash.getMD5(rule.getName() + ":" + getDescription());
-        enabled = CONFIG.get(getID(), true);
+        enabled = Boolean.TRUE.equals(CONFIG.get(getID(), true));
         description = rule.getRule().toString();
     }
 
