@@ -885,6 +885,7 @@ public class LnkCrptWs extends PluginForDecrypt {
                 mmUrlReq = mmUrlReq + "&mms=" + Math.random() + "&r=" + Math.random();
 
                 if (!isStableEnviroment()) {
+                    System.out.println("Url =" + mmUrlReq);
                     final KeyCaptchaDialog vC = new KeyCaptchaDialog(0, "KeyCaptcha - " + br.getHost(), new String[] { stImgs[1], sscStc[1] }, fmsImg, null, rcBr, mmUrlReq);
 
                     // avoid imports here
@@ -899,8 +900,18 @@ public class LnkCrptWs extends PluginForDecrypt {
                     }
                     if (vC.getReturnmask() == 4) {
                         out = "CANCEL";
-                    }
-                    marray.addAll(vC.mouseArray);
+                    }x
+                    rcBr.getPage(mmUrlReq);
+                    // Thread.sleep(5000);
+                    // http://linkcrypt.ws/dir/llj2rw6g117f1jqThread.sleep(5000);
+
+                    KeyCaptchaSolver kcSolver = new KeyCaptchaSolver();
+                    out = kcSolver.solve(vC.getKeyCaptchaImage());
+
+                    System.out.println("ROUT1: " + out);
+                    // System.out.println("ROUT2: " + out2);
+                    marray.addAll(kcSolver.getMouseArray());
+                    // marray.addAll(vC.mouseArray);
 
                 } else {
                     final KeyCaptchaDialogForStable vC = new KeyCaptchaDialogForStable("KeyCaptcha - " + br.getHost(), new String[] { stImgs[1], sscStc[1] }, fmsImg, rcBr, mmUrlReq);
@@ -909,12 +920,12 @@ public class LnkCrptWs extends PluginForDecrypt {
                         try {
                             LOCK.wait();
                         } catch (final InterruptedException e) {
-                            // TODO Auto-generated catch block
                             e.printStackTrace();
                         }
                     }
                     out = vC.POSITION;
                 }
+
                 if (out == null) {
                     return null;
                 }
@@ -1159,6 +1170,8 @@ public class LnkCrptWs extends PluginForDecrypt {
         private Browser                            kc;
         private String                             url;
 
+        private KeyCaptchaImages                   keyCaptchaImage;
+
         public KeyCaptchaDialog(final int flag, final String title, final String[] imageUrl, final LinkedHashMap<String, int[]> coordinates, final String cancelOption, Browser br, String url) {
             super(flag | Dialog.STYLE_HIDE_ICON | UIOManager.LOGIC_COUNTDOWN, title, null, null, null);
             setCountdownTime(120);
@@ -1177,10 +1190,15 @@ public class LnkCrptWs extends PluginForDecrypt {
             return null;
         }
 
+        public KeyCaptchaImages getKeyCaptchaImage() {
+            return this.keyCaptchaImage;
+        }
+
         private String getPosition(final JLayeredPane drawPanel) {
             int i = 0;
             String positions = "";
             final Component[] comp = drawPanel.getComponents();
+
             for (int c = comp.length - 1; c >= 0; c--) {
                 if (comp[c].getMouseListeners().length == 0) {
                     continue;
@@ -1217,17 +1235,21 @@ public class LnkCrptWs extends PluginForDecrypt {
             drawPanel.add(new KeyCaptchaDrawBackgroundPanel(kcImages[0]), new Integer(JLayeredPane.DEFAULT_LAYER), new Integer(JLayeredPane.DEFAULT_LAYER));
 
             mouseArray = new ArrayList<Integer>();
-
+            BufferedImage sampleImge = null;
+            LinkedList<BufferedImage> pieces = new LinkedList<BufferedImage>();
             for (int i = 1; i < kcImages.length; i++) {
                 if (kcImages[i] == null) {
                     continue;
                 } else if (i == kcSampleImg) {
                     sampleImg = true;
+                    sampleImge = kcImages[i];
                 } else {
                     sampleImg = false;
+                    pieces.add(kcImages[i]);
                 }
                 drawPanel.add(new KeyCaptchaDragPieces(kcImages[i], offset, sampleImg, mouseArray, kc, url), new Integer(JLayeredPane.DEFAULT_LAYER) + i, new Integer(JLayeredPane.DEFAULT_LAYER) + i);
 
+                keyCaptchaImage = new KeyCaptchaImages(kcImages[0], sampleImge, pieces);
                 offset += 4;
             }
 
@@ -2304,7 +2326,7 @@ public class LnkCrptWs extends PluginForDecrypt {
 
             String positions = "";
             int i = 0;
-            for (int c = piecesOld.size() - 1; c >= 0; c--) {
+            for (int c = 0; c < piecesOld.size(); c++) {
                 BufferedImage image = piecesOld.get(c);
                 // for (BufferedImage image : imgPosition.keySet()) {
                 final Point p = imgPosition.get(image);
