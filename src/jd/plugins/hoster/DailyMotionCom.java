@@ -248,7 +248,7 @@ public class DailyMotionCom extends PluginForHost {
             br.followConnection();
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        dl.startDownload();
+        // dl.startDownload();
     }
 
     private String findFreshDirectlink(final DownloadLink dl) throws IOException {
