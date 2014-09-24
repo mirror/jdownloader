@@ -41,6 +41,8 @@ public class OtrDatenkellerAt extends PluginForHost {
     private final String DOWNLOADAVAILABLE = "onclick=\"startCount";
     private final String MAINPAGE          = "http://otr.datenkeller.net";
 
+    private String       api_waitaws_url   = null;
+
     public OtrDatenkellerAt(PluginWrapper wrapper) {
         super(wrapper);
         this.enablePremium();
@@ -146,9 +148,10 @@ public class OtrDatenkellerAt extends PluginForHost {
 
     @SuppressWarnings("deprecation")
     @Override
-    public void handleFree(DownloadLink downloadLink) throws Exception, PluginException {
+    public void handleFree(final DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
         /* Use random UA again here because we do not use the same API as in linkcheck for free downloads */
+        br.setFollowRedirects(true);
         br.clearCookies("http://otr.datenkeller.net/");
         br.getHeaders().put("User-Agent", agent);
         final String dlPage = getDlpage(downloadLink);
@@ -166,8 +169,7 @@ public class OtrDatenkellerAt extends PluginForHost {
         String dllink = null;
         String site_lowSpeedLink;
         Browser br2 = br.cloneBrowser();
-        String api_waitaws_url = null;
-        String otrUID = null;
+        String api_otrUID = null;
         final String finalfilenameurlencoded = Encoding.urlEncode(downloadLink.getFinalFileName());
         boolean api_otrUID_used = false;
         if (br.containsHTML(DOWNLOADAVAILABLE)) {
@@ -182,28 +184,55 @@ public class OtrDatenkellerAt extends PluginForHost {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
             br2.getPage("https://staticaws.lastverteiler.net/images/style.css");
+            br2.getPage("https://staticaws.lastverteiler.net/otrfuncs/combo.js?r300613");
+            br2.getPage("https://otr.datenkeller.net/otrfuncs/xajax_js/xajax_core.js");
+
+            br2.getPage("https://staticaws.lastverteiler.net/otrfuncs/jquery-ui-1.8.16.custom.min.js");
+            br2.getPage("https://staticaws.lastverteiler.net/otrfuncs/jquery.jmNotify.js");
+            br2.getPage("https://staticaws.lastverteiler.net/otrfuncs/jquery.cookie.js");
+            br2.openGetConnection("https://staticaws.lastverteiler.net/images/favicon.ico");
+            br2.openGetConnection("https://otr.datenkeller.net/images/de.gif");
+
             br2.getPage("https://staticaws.lastverteiler.net/otrfuncs/countMe.js");
-            br2.getPage("https://waitaws.lastverteiler.net/style2.css");
-            br2.getPage("https://waitaws.lastverteiler.net/functions.js");
             downloadLink.getLinkStatus().setStatusText("Waiting for ticket...");
             final int maxloops = 410;
-            for (int i = 0; i <= maxloops; i++) {
+            for (int i = 1; i <= maxloops; i++) {
                 br2 = br.cloneBrowser();
+
                 /* Whenever we got an otrUID the first time, we can use it for the whole process */
-                if (otrUID == null) {
-                    otrUID = br.getRegex("waitaws\\.lastverteiler\\.net/([^<>\"]*?)/").getMatch(0);
+                if (api_otrUID == null) {
+                    api_otrUID = br.getRegex("waitaws\\.lastverteiler\\.net/([^<>\"]*?)/").getMatch(0);
                 }
-                if (otrUID != null) {
+                if (api_otrUID == null) {
+                    /* Basically the same/not relevant */
+                    api_otrUID = br.getCookie("http://otr.datenkeller.net/", "otrUID");
+                }
+
+                if (api_otrUID != null) {
                     logger.info("Newway: New way active");
-                    br.getHeaders().put("Accept", "application/json, text/javascript, */*; q=0.01");
-                    br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
                     if (!api_otrUID_used) {
                         api_otrUID_used = true;
-                        logger.info("Using free API the first time...");
-                        api_waitaws_url = "https://waitaws.lastverteiler.net/" + otrUID + "/" + finalfilenameurlencoded;
-                        br.getPage(api_waitaws_url);
-                        br.postPage("https://waitaws.lastverteiler.net/api.php", "action=validate&otrUID=" + otrUID + "&file=" + finalfilenameurlencoded);
-                        br.postPage("https://waitaws.lastverteiler.net/api.php", "action=wait&status=ok&valid=ok&file=" + finalfilenameurlencoded + "&otrUID=" + otrUID);
+                        logger.info("NewwayUsing free API the first time...");
+                        api_waitaws_url = "https://waitaws.lastverteiler.net/" + api_otrUID + "/" + finalfilenameurlencoded;
+                        getPage(this.br, api_waitaws_url);
+                        br2.getPage("https://waitaws.lastverteiler.net/style2.css");
+                        br2.getPage("https://waitaws.lastverteiler.net/functions.js");
+                        api_postPage(this.br, "https://waitaws.lastverteiler.net/api.php", "action=validate&otrUID=" + api_otrUID + "&file=" + finalfilenameurlencoded);
+                        if (br.containsHTML("\"status\":\"fail\",\"reason\":\"user\"")) {
+                            if (i > 1) {
+                                /* This should never happen */
+                                throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "FATAL API failure", 30 * 60 * 1000l);
+                            }
+                            logger.info("Newway: Failed to start queue - refreshing api_otrUID");
+                            br.clearCookies("http://otr.datenkeller.net/");
+                            br.getPage("https://otr.datenkeller.net/");
+                            br.getPage(downloadLink.getDownloadURL());
+                            br.getPage(dlPage);
+                            api_otrUID_used = false;
+                            api_otrUID = null;
+                            continue;
+                        }
+                        api_postPage(this.br, "https://waitaws.lastverteiler.net/api.php", "action=wait&status=ok&valid=ok&file=" + finalfilenameurlencoded + "&otrUID=" + api_otrUID);
                     }
                     sleep(16 * 1000l, downloadLink);
                     String postData = "";
@@ -220,8 +249,7 @@ public class OtrDatenkellerAt extends PluginForHost {
                         }
                         postData += key + "=" + Encoding.urlEncode(value) + "&";
                     }
-                    br.getHeaders().put("Referer", api_waitaws_url);
-                    br.postPage("https://waitaws.lastverteiler.net/api.php", postData);
+                    api_postPage(this.br, "https://waitaws.lastverteiler.net/api.php", postData);
                     position = br.getRegex("\"wait_pos\":\"(\\d+)\"").getMatch(0);
                     dllink = br.getRegex("\"link\":\"(http:[^<>\"]*?)\"").getMatch(0);
                 } else {
@@ -360,6 +388,14 @@ public class OtrDatenkellerAt extends PluginForHost {
         br.setCustomCharset("utf-8");
     }
 
+    private void api_Free_prepBrowser(final Browser br) {
+        br.getHeaders().put("Referer", api_waitaws_url);
+        br.getHeaders().put("Accept", "application/json, text/javascript, */*; q=0.01");
+        br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
+        br.getHeaders().put("Content-Type", "application/x-www-form-urlencoded; charset=UTF-8");
+        br.getHeaders().put("Accept-Charset", null);
+    }
+
     @SuppressWarnings("deprecation")
     final String getFname(final DownloadLink link) {
         return new Regex(link.getDownloadURL(), "otr\\.datenkeller\\.net/\\?file=(.+)").getMatch(0);
@@ -391,6 +427,11 @@ public class OtrDatenkellerAt extends PluginForHost {
     private void postPage(final Browser br, final String url, final String data) throws IOException {
         br.postPage(url, data);
         // correctBR(br);
+    }
+
+    private void api_postPage(final Browser br, final String url, final String data) throws IOException {
+        this.api_Free_prepBrowser(br);
+        br.postPage(url, data);
     }
 
     // private void correctBR(final Browser br) {

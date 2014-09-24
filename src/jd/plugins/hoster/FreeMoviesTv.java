@@ -48,6 +48,7 @@ public class FreeMoviesTv extends PluginForHost {
         return "http://www.freemovies.tv/disclaimer/";
     }
 
+    @SuppressWarnings("deprecation")
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws IOException, PluginException {
         this.setBrowserExclusive();
@@ -60,6 +61,17 @@ public class FreeMoviesTv extends PluginForHost {
         if (filename == null) {
             filename = br.getRegex("content=\"([^<>\"]*?)\" property=\"og:title\"/>").getMatch(0);
         }
+        if (filename == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        filename = Encoding.htmlDecode(filename);
+        filename = filename.trim();
+        filename = encodeUnicode(filename);
+        if (br.containsHTML("=\\'/images/404\\-")) {
+            downloadLink.setName(filename + default_Extension);
+            downloadLink.getLinkStatus().setStatusText("Video is temporarily unavailable");
+            return AvailableStatus.TRUE;
+        }
         DLLINK = checkDirectLink(downloadLink, "directlink");
         if (DLLINK == null) {
             DLLINK = br.getRegex("url: \\'(http://[^<>\"\\']*?\\.flv)\\'").getMatch(0);
@@ -68,9 +80,6 @@ public class FreeMoviesTv extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         DLLINK = Encoding.htmlDecode(DLLINK);
-        filename = Encoding.htmlDecode(filename);
-        filename = filename.trim();
-        filename = encodeUnicode(filename);
         String ext = DLLINK.substring(DLLINK.lastIndexOf("."));
         /* Make sure that we get a correct extension */
         if (ext == null || !ext.matches("\\.[A-Za-z0-9]{3,5}")) {
@@ -108,6 +117,9 @@ public class FreeMoviesTv extends PluginForHost {
     @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
+        if (br.containsHTML("=\\'/images/404\\-")) {
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 404", 30 * 60 * 1000l);
+        }
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, DLLINK, true, 0);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
