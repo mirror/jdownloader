@@ -203,7 +203,7 @@ public class TestWaitDialog extends AbstractDialog<List<CrawledLink>> {
         p.add(new JScrollPane(new ResultTable(this, model = createTableModel())), "spanx,pushx,growx,newline");
         recThread = new Thread("LinkFilterTesting") {
 
-            private LinkCrawler              lc  = new LinkCrawler() {
+            private LinkCrawler              lc  = new LinkCrawler(true, true) {
                                                      @Override
                                                      protected Long getDefaultAverageRuntime() {
                                                          return -100l;

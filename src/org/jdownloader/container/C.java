@@ -133,7 +133,7 @@ public class C extends PluginsC {
             if (dlc != null) {
                 lc = new File(lc.getAbsolutePath().substring(0, lc.getAbsolutePath().length() - 3) + "dlc");
                 JDIO.writeLocalFile(lc, dlc);
-                LinkCrawler lcr = new LinkCrawler();
+                final LinkCrawler lcr = LinkCrawler.newInstance();
                 lcr.crawl("file://" + lc.getAbsolutePath());
                 lcr.waitForCrawling();
                 cls = new ArrayList<CrawledLink>();
