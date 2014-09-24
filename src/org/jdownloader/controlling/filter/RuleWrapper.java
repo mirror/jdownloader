@@ -236,13 +236,14 @@ public class RuleWrapper<T extends FilterRule> {
                 throw new NoDownloadLinkException();
             }
             DownloadLink dlLink = link.getDownloadLink();
+
             switch (getHosterRule().getMatchType()) {
             case CONTAINS:
             case EQUALS:
-                return getHosterRule().matches(dlLink.getHost()) || getHosterRule().matches(dlLink.getPluginPatternMatcher());
+                return getHosterRule().matches(dlLink.getHost()) || getHosterRule().matches(dlLink.getContentUrlOrPatternMatcher());
             case CONTAINS_NOT:
             case EQUALS_NOT:
-                return getHosterRule().matches(dlLink.getHost()) && getHosterRule().matches(dlLink.getPluginPatternMatcher());
+                return getHosterRule().matches(dlLink.getHost()) && getHosterRule().matches(dlLink.getContentUrlOrPatternMatcher());
             }
         }
         return true;

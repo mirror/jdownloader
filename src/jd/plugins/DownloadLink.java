@@ -818,7 +818,7 @@ public class DownloadLink extends Property implements Serializable, AbstractPack
                 setCachedName(ignoreUnsafe, ignoreForcedFilename, ret);
                 return ret;
             }
-            final String url = this.getPluginPatternMatcher();
+            final String url = this.getContentUrlOrPatternMatcher();
             if (StringUtils.isNotEmpty(url)) {
                 final String urlName = Plugin.extractFileNameFromURL(url);
                 if (StringUtils.isNotEmpty(urlName)) {
@@ -1338,7 +1338,7 @@ public class DownloadLink extends Property implements Serializable, AbstractPack
     public void setName(String name) {
         String oldName = getName();
         if (StringUtils.isEmpty(name)) {
-            name = Plugin.extractFileNameFromURL(getPluginPatternMatcher());
+            name = Plugin.extractFileNameFromURL(getContentUrlOrPatternMatcher());
         }
         if (!StringUtils.isEmpty(name)) {
             name = CrossSystem.alleviatePathParts(name);
@@ -2159,6 +2159,14 @@ public class DownloadLink extends Property implements Serializable, AbstractPack
 
     public boolean hasBrowserUrl() {
         return browserurl != null;
+    }
+
+    public String getContentUrlOrPatternMatcher() {
+        String ret = getContentUrl();
+        if (StringUtils.isNotEmpty(ret)) {
+            return ret;
+        }
+        return getPluginPatternMatcher();
     }
 
 }

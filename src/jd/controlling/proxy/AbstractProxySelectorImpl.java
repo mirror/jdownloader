@@ -61,7 +61,7 @@ public abstract class AbstractProxySelectorImpl implements ProxySelectorInterfac
         if (filter == null) {
             return true;
         }
-        return filter.validate(host, acc);
+        return filter.validate(host, acc == null ? null : acc.getUser());
     }
 
     public void setFilter(FilterList filter) {
