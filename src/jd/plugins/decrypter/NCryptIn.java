@@ -145,8 +145,8 @@ public class NCryptIn extends PluginForDecrypt {
                             } catch (final Throwable e) {
                             }
                         }
-                            break;
-                        }
+                        break;
+                    }
                     if (password && new Regex(aBrowser, PASSWORDFAILED).matches()) {
                         throw new DecrypterException(DecrypterException.PASSWORD);
                     }
@@ -193,8 +193,8 @@ public class NCryptIn extends PluginForDecrypt {
                             } catch (final Throwable e) {
                             }
                         }
-                            break;
-                        }
+                        break;
+                    }
                     if (password && new Regex(aBrowser, PASSWORDFAILED).matches()) {
                         throw new DecrypterException(DecrypterException.PASSWORD);
                     }
@@ -235,8 +235,8 @@ public class NCryptIn extends PluginForDecrypt {
                             } catch (final Throwable e) {
                             }
                         }
-                            break;
-                        }
+                        break;
+                    }
                     if (password && new Regex(aBrowser, PASSWORDFAILED).matches()) {
                         throw new DecrypterException(DecrypterException.PASSWORD);
                     }
@@ -271,14 +271,14 @@ public class NCryptIn extends PluginForDecrypt {
             }
 
             // Container handling
-            final String containerRegex = "/container/(?:dlc|rsdf|ccf)/([a-z0-9]+)\\.(dlc|rsdf|ccf)";
+            final String regexContainer = "/container/(?:dlc|rsdf|ccf)/([a-z0-9]+)\\.(dlc|rsdf|ccf)";
             final HashSet<String> dupeContainers = new HashSet<String>();
-            final String[] containerIDs = br.getRegex(containerRegex).getColumn(-1);
+            final String[] containerIDs = br.getRegex(regexContainer).getColumn(-1);
             if (containerIDs != null && containerIDs.length != 0) {
                 for (final String containerLink : containerIDs) {
-                    // they can have multiple contains for given link, one for each hoster and files can be split up differently for each
-                    // hoster (guess this depends on uploader). Load all containers with unique id.
-                    final String containerHash = new Regex(containerLink, containerRegex).getMatch(0);
+                    // they can have multiple containers for given link, one for each hoster and files can be split up differently for each
+                    // hoster (guess this depends on uploader). Load all containers with unique id. http://svn.jdownloader.org/issues/52633
+                    final String containerHash = new Regex(containerLink, regexContainer).getMatch(0);
                     if (!dupeContainers.contains(containerHash)) {
                         // need to find a container with a result first.
                         ArrayList<DownloadLink> links = new ArrayList<DownloadLink>();
