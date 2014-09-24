@@ -56,6 +56,14 @@ public class PacProxySelectorImpl extends AbstractProxySelectorImpl {
 
     @Override
     public List<HTTPProxy> getProxiesByUrl(String urlOrDomain) {
+        List<HTTPProxy> ret = getProxyByUrlInternal(urlOrDomain);
+        for (SelectProxyByUrlHook hook : selectProxyByUrlHooks) {
+            hook.onProxyChoosen(urlOrDomain, ret);
+        }
+        return ret;
+    }
+
+    public List<HTTPProxy> getProxyByUrlInternal(String urlOrDomain) {
         PacProxySelector lSelector = getPacProxySelector();
         if (lSelector == null) {
             return null;

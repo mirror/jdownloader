@@ -12,6 +12,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import jd.controlling.downloadcontroller.SingleDownloadController;
 import jd.http.ProxySelectorInterface;
 import jd.http.Request;
+import jd.plugins.Account;
 import jd.plugins.Plugin;
 
 import org.appwork.utils.net.httpconnection.HTTPProxy;
@@ -56,11 +57,11 @@ public abstract class AbstractProxySelectorImpl implements ProxySelectorInterfac
         return filter;
     }
 
-    public boolean isAllowedByFilter(String host) {
+    public boolean isAllowedByFilter(String host, Account acc) {
         if (filter == null) {
             return true;
         }
-        return filter.validate(host);
+        return filter.validate(host, acc);
     }
 
     public void setFilter(FilterList filter) {
@@ -90,15 +91,17 @@ public abstract class AbstractProxySelectorImpl implements ProxySelectorInterfac
     /*
      * by default a proxy supports resume
      */
-    private boolean                                               resumeIsAllowed                 = true;
+    private boolean                                                           resumeIsAllowed                 = true;
 
-    protected final CopyOnWriteArraySet<SingleDownloadController> activeSingleDownloadControllers = new CopyOnWriteArraySet<SingleDownloadController>();
+    protected final CopyOnWriteArraySet<SingleDownloadController>             activeSingleDownloadControllers = new CopyOnWriteArraySet<SingleDownloadController>();
+    protected CopyOnWriteArrayList<jd.controlling.proxy.SelectProxyByUrlHook> selectProxyByUrlHooks;
 
     public boolean isReconnectSupported() {
         return Type.NONE.equals(getType());
     }
 
     public AbstractProxySelectorImpl() {
+        selectProxyByUrlHooks = new CopyOnWriteArrayList<SelectProxyByUrlHook>();
     }
 
     public boolean add(final SingleDownloadController singleDownloadController) {
@@ -168,5 +171,14 @@ public abstract class AbstractProxySelectorImpl implements ProxySelectorInterfac
             }
         }
         return banned;
+    }
+
+    public void addSelectProxyByUrlHook(SelectProxyByUrlHook selectProxyByUrlHook) {
+        selectProxyByUrlHooks.add(selectProxyByUrlHook);
+
+    }
+
+    public void removeSelectProxyByUrlHook(SelectProxyByUrlHook hook) {
+        selectProxyByUrlHooks.remove(hook);
     }
 }

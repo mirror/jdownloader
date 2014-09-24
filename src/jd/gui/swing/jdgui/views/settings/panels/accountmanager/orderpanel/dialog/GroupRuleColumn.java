@@ -8,6 +8,7 @@ import jd.gui.swing.jdgui.views.settings.panels.accountmanager.orderpanel.Accoun
 import jd.gui.swing.jdgui.views.settings.panels.accountmanager.orderpanel.GroupWrapper;
 
 import org.appwork.swing.exttable.columns.ExtComboColumn;
+import org.appwork.utils.Application;
 import org.appwork.utils.swing.renderer.RendererMigPanel;
 import org.jdownloader.controlling.hosterrule.AccountGroup.Rules;
 import org.jdownloader.gui.translate._GUI;
@@ -16,11 +17,21 @@ public class GroupRuleColumn extends ExtComboColumn<AccountInterface, Rules> {
     private final JComponent empty = new RendererMigPanel("ins 0", "[]", "[]");
 
     public GroupRuleColumn() {
-        super(_GUI._.GroupRuleColumn_GroupRuleColumn_distrubutionrule_(), new DefaultComboBoxModel<Rules>(Rules.values()));
+        super(_GUI._.GroupRuleColumn_GroupRuleColumn_distrubutionrule_(), new DefaultComboBoxModel<Rules>(getRules()));
+    }
+
+    private static Rules[] getRules() {
+        if (Application.isJared(null)) {
+            return new Rules[] { Rules.RANDOM, Rules.ORDER };
+        } else {
+            return new Rules[] { Rules.RANDOM, Rules.BALANCED, Rules.ORDER };
+        }
     }
 
     protected String modelItemToString(final Rules selectedItem) {
-        if (selectedItem == null) return "";
+        if (selectedItem == null) {
+            return "";
+        }
 
         return selectedItem.translate();
 
@@ -37,7 +48,9 @@ public class GroupRuleColumn extends ExtComboColumn<AccountInterface, Rules> {
 
     @Override
     public JComponent getRendererComponent(AccountInterface value, boolean isSelected, boolean hasFocus, int row, int column) {
-        if (value instanceof AccountWrapper) { return empty; }
+        if (value instanceof AccountWrapper) {
+            return empty;
+        }
         JComponent ret = super.getRendererComponent(value, isSelected, hasFocus, row, column);
 
         return ret;

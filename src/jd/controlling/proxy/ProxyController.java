@@ -262,6 +262,8 @@ public class ProxyController implements ProxySelectorInterface {
         final LinkedHashSet<AbstractProxySelectorImpl> ret = new LinkedHashSet<AbstractProxySelectorImpl>();
         try {
             final CachedAccount cachedAccount = downloadLinkCandidate.getCachedAccount();
+            Account acc = cachedAccount.getAccount();
+
             final PluginForHost pluginForHost = cachedAccount.getPlugin();
             final String pluginHost;
             if (isSpecialPlugin(pluginForHost)) {
@@ -277,7 +279,7 @@ public class ProxyController implements ProxySelectorInterface {
             }
             for (final AbstractProxySelectorImpl selector : _getList()) {
                 try {
-                    if (selector.isEnabled() && selector.isAllowedByFilter(pluginHost) && maxResults-- > 0) {
+                    if (selector.isEnabled() && selector.isAllowedByFilter(pluginHost, acc) && maxResults-- > 0) {
                         if (ignoreAllBans || !selector.isSelectorBannedFor(pluginForHost, ignoreConnectBans)) {
                             ret.add(selector);
                         }
@@ -290,6 +292,32 @@ public class ProxyController implements ProxySelectorInterface {
             LogController.getRebirthLogger(logger).log(e);
         }
         return new ArrayList<AbstractProxySelectorImpl>(ret);
+    }
+
+    private Account getAccountFromThread() {
+        Thread thread = Thread.currentThread();
+        if (thread instanceof AccountCheckerThread) {
+            AccountCheckJob job = ((AccountCheckerThread) thread).getJob();
+            if (job != null) {
+                Account account = job.getAccount();
+                return account;
+            }
+        } else if (thread instanceof LinkCheckerThread) {
+            PluginForHost plg = ((LinkCheckerThread) thread).getPlugin();
+            if (plg != null) {
+                // no linkchecker account support yet
+                return null;
+            }
+        } else if (thread instanceof SingleDownloadController) {
+            return ((SingleDownloadController) thread).getDownloadLinkCandidate().getCachedAccount().getAccount();
+        } else if (thread instanceof LinkCrawlerThread) {
+            Object owner = ((LinkCrawlerThread) thread).getCurrentOwner();
+            if (owner instanceof Plugin) {
+                // no linkcrawler account support yet
+                return null;
+            }
+        }
+        return null;
     }
 
     private Plugin getPluginFromThread() {
@@ -940,7 +968,7 @@ public class ProxyController implements ProxySelectorInterface {
             final Plugin plugin = getPluginFromThread();
             for (final AbstractProxySelectorImpl selector : _getList()) {
                 try {
-                    if (selector.isEnabled() && selector.isAllowedByFilter(host)) {
+                    if (selector.isEnabled() && selector.isAllowedByFilter(host, null)) {
                         final List<HTTPProxy> lst = selector.getProxiesByUrl(urlString);
                         if (lst != null) {
                             for (HTTPProxy p : lst) {
@@ -999,6 +1027,7 @@ public class ProxyController implements ProxySelectorInterface {
         final Plugin plugin = getPluginFromThread();
         final boolean proxyRotationEnabled;
         final Thread thread = Thread.currentThread();
+        Account acc = getAccountFromThread();
         if (plugin != null) {
             if (thread instanceof AccountCheckerThread) {
                 proxyRotationEnabled = plugin.isProxyRotationEnabled(true);
@@ -1026,7 +1055,7 @@ public class ProxyController implements ProxySelectorInterface {
             }
             for (final AbstractProxySelectorImpl selector : _getList()) {
                 try {
-                    if (selector.isEnabled() && selector.isAllowedByFilter(plgHost)) {
+                    if (selector.isEnabled() && selector.isAllowedByFilter(plgHost, acc)) {
                         final List<HTTPProxy> lst = selector.getProxiesByUrl(urlString);
                         if (lst != null) {
                             for (HTTPProxy p : lst) {

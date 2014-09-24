@@ -58,12 +58,15 @@ public class TLocale {
 
     @Override
     public boolean equals(Object obj) {
-        if (obj instanceof TLocale) { return ((TLocale) obj).id.equals(id); }
+        if (obj instanceof TLocale) {
+            return ((TLocale) obj).id.equals(id);
+        }
         return false;
 
     }
 
     public String toString() {
+
         boolean hasVariant = locale.getVariant().length() > 0;
         boolean hasCountry = locale.getCountry().length() > 0;
 
@@ -78,7 +81,9 @@ public class TLocale {
         }
 
         if (hasVariant) {
-            if (hasCountry) sb.append(", ");
+            if (hasCountry) {
+                sb.append(", ");
+            }
             sb.append(locale.getDisplayVariant(Locale.ENGLISH));
 
         }
