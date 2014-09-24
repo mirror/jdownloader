@@ -386,7 +386,6 @@ public class FilePostCom extends PluginForHost {
             form.put("code", id);
             form.put("token", token);
             form.put("file_pass", "");
-            form.put("code", id);
             form.setEncoding("application/octet-stream;");
             if (captchaNeeded) {
                 PluginForHost recplug = JDUtilities.getPluginForHost("DirectHTTP");
