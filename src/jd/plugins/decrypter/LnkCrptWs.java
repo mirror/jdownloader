@@ -2289,7 +2289,7 @@ public class LnkCrptWs extends PluginForDecrypt {
             int limit = images.pieces.size();
             save(images);
 
-            LinkedList<BufferedImage> piecesOld = new LinkedList<>(images.pieces);
+            LinkedList<BufferedImage> piecesOld = new LinkedList<BufferedImage>(images.pieces);
 
             for (int i = 0; i < limit; i++) {
                 List<DirectedBorder> borders = getBreakingBordersInImage(images.backgroundImage, borderPixelMin);
@@ -2645,7 +2645,7 @@ public class LnkCrptWs extends PluginForDecrypt {
             makePieces();
             makeBackground();
 
-            LinkedList<BufferedImage> pieces = new LinkedList<>();
+            LinkedList<BufferedImage> pieces = new LinkedList<BufferedImage>();
             BufferedImage sampleImg = null;
 
             for (int i = 1; i < kcImages.length; i++) {
