@@ -27,7 +27,6 @@ import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.JDHash;
 import jd.nutils.encoding.Encoding;
-import jd.parser.Regex;
 import jd.plugins.Account;
 import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
@@ -38,7 +37,7 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.utils.locale.JDL;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "alldebrid.com" }, urls = { "https?://s\\d+.alldebrid\\.com/dl/[a-z0-9]+/.+" }, flags = { 2 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "alldebrid.com" }, urls = { "https?://s\\d+\\.alldebrid\\.com/dl/[a-z0-9]+/.+" }, flags = { 2 })
 public class AllDebridCom extends PluginForHost {
 
     private static HashMap<Account, HashMap<String, Long>> hostUnavailableMap = new HashMap<Account, HashMap<String, Long>>();
@@ -57,20 +56,17 @@ public class AllDebridCom extends PluginForHost {
         prepBrowser(br);
         HashMap<String, String> accDetails = new HashMap<String, String>();
         AccountInfo ac = new AccountInfo();
-        String page = null;
-        String hosts = null;
-        try {
-            page = br.getPage("http://www.alldebrid.com/api.php?action=info_user&login=" + Encoding.urlEncode(account.getUser()) + "&pw=" + Encoding.urlEncode(account.getPass()));
-            hosts = br.getPage("http://www.alldebrid.com/api.php?action=get_host");
-        } catch (Exception e) {
-            throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nServer Error", PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
-        }
-        if (hash1.equalsIgnoreCase(JDHash.getMD5(page))) {
+        br.getPage("http://www.alldebrid.com/api.php?action=info_user&login=" + Encoding.urlEncode(account.getUser()) + "&pw=" + Encoding.urlEncode(account.getPass()));
+        if ("login fail".equals(br.toString())) {
+            throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nWrong User Password", PluginException.VALUE_ID_PREMIUM_DISABLE);
+        } else if ("too mutch fail, blocked for 6 hour".equals(br.toString())) {
+            throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nToo many incorrect attempts at login!\r\nYou've been blocked for 6 hours", PluginException.VALUE_ID_PREMIUM_DISABLE);
+        } else if (hash1.equalsIgnoreCase(JDHash.getMD5(br.toString()))) {
             throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nYou've been blocked from the API!", PluginException.VALUE_ID_PREMIUM_DISABLE);
         }
 
         /* parse api response in easy2handle hashmap */
-        String info[][] = new Regex(page, "<([^<>]*?)>([^<]*?)</.*?>").getMatches();
+        String info[][] = br.getRegex("<([^<>]*?)>([^<]*?)</.*?>").getMatches();
 
         for (String data[] : info) {
             accDetails.put(data[0].toLowerCase(Locale.ENGLISH), data[1].toLowerCase(Locale.ENGLISH));
@@ -79,50 +75,47 @@ public class AllDebridCom extends PluginForHost {
         String type = accDetails.get("type");
         if ("premium".equals(type)) {
             /* only platinium and premium support */
-
-            if (hosts != null) {
-
-                String hoster[] = hosts.split(",\\s*[\r\n]{1,2}\\s*");
-                if (hosts != null) {
-                    /* workaround for buggy getHost call */
-                    supportedHosts.add("tusfiles.net");
-                    for (String host : hoster) {
-                        if (hosts == null || host.length() == 0) {
+            br.getPage("http://www.alldebrid.com/api.php?action=get_host");
+            String hoster[] = br.toString().split(",\\s*[\r\n]{1,2}\\s*");
+            if (hoster != null) {
+                /* workaround for buggy getHost call */
+                supportedHosts.add("tusfiles.net");
+                for (String host : hoster) {
+                    if (host == null || host.length() == 0) {
+                        continue;
+                    }
+                    host = host.trim();
+                    host = host.substring(1, host.length() - 1);
+                    // hosts that returned decrypted finallinks bound to users ip session. Can not use multihosters..
+                    try {
+                        if (host.equals("rapidshare.com") && accDetails.get("limite_rs") != null && Integer.parseInt(accDetails.get("limite_rs")) == 0) {
                             continue;
                         }
-                        host = host.trim();
-                        host = host.substring(1, host.length() - 1);
-                        // hosts that returned decrypted finallinks bound to users ip session. Can not use multihosters..
-                        try {
-                            if (host.equals("rapidshare.com") && accDetails.get("limite_rs") != null && Integer.parseInt(accDetails.get("limite_rs")) == 0) {
-                                continue;
-                            }
-                        } catch (final Throwable e) {
-                            logger.severe(e.toString());
-                        }
-                        try {
-                            if (host.equals("depositfiles.com") && accDetails.get("limite_dp") != null && Integer.parseInt(accDetails.get("limite_dp")) == 0) {
-                                continue;
-                            }
-                        } catch (final Throwable e) {
-                            logger.severe(e.toString());
-                        }
-                        try {
-                            if (host.equals("filefactory.com") && accDetails.get("limite_ff") != null && Integer.parseInt(accDetails.get("limite_ff")) == 0) {
-                                continue;
-                            }
-                        } catch (final Throwable e) {
-                            logger.severe(e.toString());
-                        }
-                        try {
-                            if (host.equals("filesmonster.com") && accDetails.get("limite_fm") != null && Integer.parseInt(accDetails.get("limite_fm")) == 0) {
-                                continue;
-                            }
-                        } catch (final Throwable e) {
-                            logger.severe(e.toString());
-                        }
-                        supportedHosts.add(host);
+                    } catch (final Throwable e) {
+                        logger.severe(e.toString());
                     }
+                    try {
+                        if (host.equals("depositfiles.com") && accDetails.get("limite_dp") != null && Integer.parseInt(accDetails.get("limite_dp")) == 0) {
+                            continue;
+                        }
+                    } catch (final Throwable e) {
+                        logger.severe(e.toString());
+                    }
+                    try {
+                        if (host.equals("filefactory.com") && accDetails.get("limite_ff") != null && Integer.parseInt(accDetails.get("limite_ff")) == 0) {
+                            continue;
+                        }
+                    } catch (final Throwable e) {
+                        logger.severe(e.toString());
+                    }
+                    try {
+                        if (host.equals("filesmonster.com") && accDetails.get("limite_fm") != null && Integer.parseInt(accDetails.get("limite_fm")) == 0) {
+                            continue;
+                        }
+                    } catch (final Throwable e) {
+                        logger.severe(e.toString());
+                    }
+                    supportedHosts.add(host);
                 }
             }
             String daysLeft = accDetails.get("date");
