@@ -347,13 +347,15 @@ public class LinkSnappyCom extends PluginForHost {
             }
         }
 
-        if (dl.getConnection().getResponseCode() == 503) {
+        if (dl.getConnection() != null && dl.getConnection().getResponseCode() == 503) {
             stupidServerError();
-        } else if (dl.getConnection().getResponseCode() == 999) {
+        } else if (dl.getConnection() != null && dl.getConnection().getResponseCode() == 999) {
             br.followConnection();
             dailyLimitReached();
-        } else if (dl.getConnection().getContentType().contains("html")) {
-            br.followConnection();
+        } else if (dl.getConnection() == null || dl.getConnection().getContentType().contains("html")) {
+            if (dl.getConnection() != null) {
+                br.followConnection();
+            }
             logger.info("Unknown download error");
             int timesFailed = link.getIntegerProperty("timesfailedlinksnappycom_unknowndlerror", 0);
             link.getLinkStatus().setRetryCount(0);
@@ -517,7 +519,7 @@ public class LinkSnappyCom extends PluginForHost {
             logger.info("Attempt failed: Got BrowserException for link: " + dllink);
             return false;
         }
-        if (dl.getConnection().getResponseCode() == 503) {
+        if (dl.getConnection() != null && dl.getConnection().getResponseCode() == 503) {
             try {
                 dl.getConnection().disconnect();
             } catch (final Throwable e) {
