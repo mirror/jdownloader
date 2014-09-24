@@ -4,7 +4,6 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import jd.parser.Regex;
-import jd.plugins.Account;
 
 import org.appwork.exceptions.WTFException;
 import org.appwork.storage.Storable;
@@ -85,7 +84,7 @@ public class FilterList implements Storable {
 
     private String[] entries;
 
-    public boolean validate(String host, Account acc) {
+    public boolean validate(String host, String accUser) {
         switch (type) {
         case BLACKLIST:
             for (int i = 0; i < domainPatterns.length; i++) {
@@ -96,7 +95,7 @@ public class FilterList implements Storable {
                 }
                 if (account != null) {
 
-                    if (domain.matcher(host).find() && acc != null && acc.getUser() != null && account.matcher(acc.getUser()).find()) {
+                    if (domain.matcher(host).find() && accUser != null && account.matcher(accUser).find()) {
                         //
                         return false;
                     }
@@ -121,7 +120,7 @@ public class FilterList implements Storable {
                 }
 
                 if (account != null) {
-                    if (domain.matcher(host).find() && acc != null && acc.getUser() != null && account.matcher(acc.getUser()).find()) {
+                    if (domain.matcher(host).find() && accUser != null && account.matcher(accUser).find()) {
                         //
                         return true;
                     }
