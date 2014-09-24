@@ -21,6 +21,7 @@ import java.awt.Color;
 import java.awt.Component;
 import java.awt.Dimension;
 import java.awt.Graphics;
+import java.awt.Graphics2D;
 import java.awt.Image;
 import java.awt.MediaTracker;
 import java.awt.Point;
@@ -38,6 +39,8 @@ import java.net.URL;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
+import java.util.LinkedList;
+import java.util.List;
 import java.util.Map.Entry;
 import java.util.concurrent.locks.ReentrantLock;
 
@@ -67,6 +70,7 @@ import jd.gui.UserIO;
 import jd.gui.swing.jdgui.JDGui;
 import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
+import jd.nutils.Colors;
 import jd.nutils.JDHash;
 import jd.nutils.Screen;
 import jd.nutils.encoding.Encoding;
@@ -1068,6 +1072,77 @@ public class LnkCrptWs extends PluginForDecrypt {
             }
         }
 
+        // ===== BEGIN autosolve stuff
+        public String autoSolve(final String parameter) throws Exception {
+
+            DLURL = parameter;
+            try {
+                parse();
+                load();
+            } catch (final Throwable e) {
+                e.printStackTrace();
+                throw new Exception(e.getMessage());
+            } finally {
+                try {
+                    rcBr.getHttpConnection().disconnect();
+                } catch (final Throwable e) {
+                }
+            }
+
+            /* Bilderdownload und Verarbeitung */
+            sscGetImagest(stImgs[0], stImgs[1], stImgs[2], Boolean.parseBoolean(stImgs[3]));// fragmentierte Puzzleteile
+            sscGetImagest(sscStc[0], sscStc[1], sscStc[2], Boolean.parseBoolean(sscStc[3]));// fragmentiertes Hintergrundbild
+
+            if (sscStc == null || sscStc.length == 0 || stImgs == null || stImgs.length == 0 || fmsImg == null || fmsImg.size() == 0) {
+                return "CANCEL";
+            }
+
+            String out = null;
+            ArrayList<Integer> marray = new ArrayList<Integer>();
+
+            final String pS = sscFsmCheckTwo(PARAMS.get("s_s_c_web_server_sign"), PARAMS.get("s_s_c_web_server_sign") + Encoding.Base64Decode("S2hkMjFNNDc="));
+            String mmUrlReq = SERVERSTRING.replaceAll("cjs\\?pS=\\d+&cOut", "mm\\?pS=" + pS + "&cP");
+            mmUrlReq = mmUrlReq + "&mms=" + Math.random() + "&r=" + Math.random();
+
+            KeyCaptchaImageGetter imgGetter = new KeyCaptchaImageGetter(new String[] { stImgs[1], sscStc[1] }, fmsImg, rcBr, mmUrlReq);
+
+            KeyCaptchaSolver kcSolver = new KeyCaptchaSolver();
+            // Thread.sleep(5000);
+            rcBr.getPage(mmUrlReq);
+
+            out = kcSolver.solve(imgGetter.getKeyCaptchaImage());
+            marray.addAll(kcSolver.getMouseArray());
+            if (out == null) {
+                return null;
+            }
+            if ("CANCEL".equals(out)) {
+                System.out.println("KeyCaptcha: User aborted captcha dialog.");
+                return out;
+            }
+
+            String key = rcBr.getRegex("\\|([0-9a-zA-Z]+)\'\\.split").getMatch(0);
+            if (key == null) {
+                key = Encoding.Base64Decode("OTNodk9FZmhNZGU=");
+            }
+
+            String cOut = "";
+            for (Integer i : marray) {
+                if (cOut.length() > 1) {
+                    cOut += ".";
+                }
+                cOut += String.valueOf(i);
+            }
+
+            SERVERSTRING = SERVERSTRING.replace("cOut=", "cOut=" + sscFsmCheckTwo(out, key) + "..." + cOut + "&cP=");
+            rcBr.clearCookies(rcBr.getHost());
+            out = rcBr.getPage(SERVERSTRING.substring(0, SERVERSTRING.lastIndexOf("%7C")));
+            out = new Regex(out, "s_s_c_setcapvalue\\( \"(.*?)\" \\)").getMatch(0);
+            // validate final response
+            if (!out.matches("[0-9a-f]+\\|[0-9a-f]+\\|http://back\\d+\\.keycaptcha\\.com/swfs/ckc/[0-9a-f-]+\\|[0-9a-f-\\.]+\\|(0|1)")) {
+                return null;
+            }
+            return out;
+        }
     }
 
     private static class KeyCaptchaDialog extends AbstractDialog<String> implements ActionListener {
@@ -1785,6 +1860,23 @@ public class LnkCrptWs extends PluginForDecrypt {
 
         if (br.containsHTML("<\\!\\-\\- KeyCAPTCHA code")) {
             KeyCaptcha kc;
+
+            // START solve keycaptcha automatically
+            for (int i = 0; i <= -1; i++) { // TODO ENABLE HERE
+                kc = new KeyCaptcha(br);
+                final String result = kc.autoSolve(parameter);
+
+                if ("CANCEL".equals(result)) {
+                    throw new DecrypterException(DecrypterException.CAPTCHA);
+                }
+
+                br.postPage(parameter, "capcode=" + Encoding.urlEncode(result));
+                if (!br.containsHTML("<\\!\\-\\- KeyCAPTCHA code")) {
+                    break;
+                }
+            }
+            // START solve keycaptcha automatically
+
             for (int i = 0; i <= 3; i++) {
                 kc = new KeyCaptcha(br);
                 final String result = kc.showDialog(parameter);
@@ -2127,6 +2219,547 @@ public class LnkCrptWs extends PluginForDecrypt {
     /* NO OVERRIDE!! */
     public boolean hasCaptcha(CryptedLink link, jd.plugins.Account acc) {
         return true;
+    }
+
+    // ====== BGEIN KeyCaptcha stuff
+    /**
+     * Solves KeyCaptcha for us
+     * 
+     * @author flubshi
+     * 
+     */
+    private static class KeyCaptchaSolver {
+        // min line length for border detection
+        private final int           borderPixelMin = 15;
+        // threshold for detection similar pixels
+        private final Double        threshold      = 7.0d;
+
+        private LinkedList<Integer> mouseArray     = new LinkedList<Integer>();
+
+        private void save(KeyCaptchaImages images) {
+            String path = "/home/tim/keycaptcha2/" + (int) (Math.random() * 10000) + "/";
+            File of = new File(path + "background.png");
+            of.mkdirs();
+            try {
+                ImageIO.write(images.backgroundImage, "png", of);
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+            File smpl = new File(path + "sample.png");
+            try {
+                ImageIO.write(images.sampleImage, "png", smpl);
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+            for (int i = 0; i < images.pieces.size(); i++) {
+                File f = new File(path + (i + 1) + ".png");
+                try {
+                    ImageIO.write(images.pieces.get(i), "png", f);
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+            }
+        }
+
+        private void marray(Point loc) {
+            if (loc != null) {
+                if (mouseArray.size() == 0) {
+                    mouseArray.add(loc.x + 465);
+                    mouseArray.add(loc.y + 264);
+                }
+                if (mouseArray.get(mouseArray.size() - 2) != loc.x + 465 || mouseArray.get(mouseArray.size() - 1) != loc.y + 264) {
+                    mouseArray.add(loc.x + 465);
+                    mouseArray.add(loc.y + 264);
+                }
+                if (mouseArray.size() > 40) {
+                    ArrayList<Integer> tmpMouseArray = new ArrayList<Integer>();
+                    tmpMouseArray.addAll(mouseArray.subList(2, 40));
+                    mouseArray.clear();
+                    mouseArray.addAll(tmpMouseArray);
+                }
+            }
+        }
+
+        public LinkedList<Integer> getMouseArray() {
+            return mouseArray;
+        }
+
+        public String solve(KeyCaptchaImages images) {
+            HashMap<BufferedImage, Point> imgPosition = new HashMap<BufferedImage, Point>();
+            int limit = images.pieces.size();
+            save(images);
+
+            LinkedList<BufferedImage> piecesOld = new LinkedList<>(images.pieces);
+
+            for (int i = 0; i < limit; i++) {
+                List<DirectedBorder> borders = getBreakingBordersInImage(images.backgroundImage, borderPixelMin);
+                ImageAndPosition imagePos = getBestPosition(images, borders);
+                System.out.println("pos: " + imagePos.position);
+                marray(new Point((int) (Math.random() * imagePos.position.x), (int) (Math.random() * imagePos.position.y)));
+                marray(imagePos.position);
+
+                imgPosition.put(imagePos.image, imagePos.position);
+                images.integratePiece(imagePos.image, imagePos.position);
+            }
+
+            String positions = "";
+            int i = 0;
+            for (int c = piecesOld.size() - 1; c >= 0; c--) {
+                BufferedImage image = piecesOld.get(c);
+                // for (BufferedImage image : imgPosition.keySet()) {
+                final Point p = imgPosition.get(image);
+                positions += (i != 0 ? "." : "") + String.valueOf(p.x) + "." + String.valueOf(p.y);
+                i++;
+            }
+            System.out.println(positions);
+            return positions;
+        }
+
+        /**
+         * Find vertical & horizontal borders within an image
+         * 
+         * @param img
+         *            the image to search in
+         * @param min
+         *            line length for border detection
+         * @return a set of directed borders
+         */
+        private List<DirectedBorder> getBreakingBordersInImage(BufferedImage img, int minPixels) {
+            List<DirectedBorder> triples = new LinkedList<DirectedBorder>();
+            // horizontal
+            for (int y = 0; y < img.getHeight() - 1; y++) {
+                int c = -1;
+                boolean whiteToColor = true;
+                for (int x = 0; x < img.getWidth(); x++) {
+                    if (Colors.getCMYKColorDifference1(img.getRGB(x, y), Color.WHITE.getRGB()) < threshold && Colors.getCMYKColorDifference1(img.getRGB(x, y + 1), Color.WHITE.getRGB()) > threshold) {
+                        if (!whiteToColor) {
+                            whiteToColor = true;
+                            c = -1;
+                        }
+                        c++;
+                        if (c >= minPixels) {
+                            triples.add(new DirectedBorder(new Point(x - c, y + 1), new Point(x, y + 1), Direction.TOPDOWN));
+                            if (c > minPixels) {
+                                triples.remove(triples.size() - 2);
+                            }
+                        }
+                    } else if (Colors.getCMYKColorDifference1(img.getRGB(x, y), Color.WHITE.getRGB()) > threshold && Colors.getCMYKColorDifference1(img.getRGB(x, y + 1), Color.WHITE.getRGB()) < threshold) {
+                        if (whiteToColor) {
+                            whiteToColor = false;
+                            c = -1;
+                        }
+                        c++;
+                        if (c >= minPixels) {
+                            triples.add(new DirectedBorder(new Point(x - c, y), new Point(x, y), Direction.BOTTOMUP));
+                            if (c > minPixels) {
+                                triples.remove(triples.size() - 2);
+                            }
+                        }
+                    } else {
+                        c = -1;
+                    }
+                }
+            }
+            // vertical
+            for (int x = 0; x < img.getWidth() - 1; x++) {
+                int c = -1;
+                boolean whiteToColor = true;
+                for (int y = 0; y < img.getHeight(); y++) {
+
+                    if (Colors.getCMYKColorDifference1(img.getRGB(x, y), Color.WHITE.getRGB()) < threshold && Colors.getCMYKColorDifference1(img.getRGB(x + 1, y), Color.WHITE.getRGB()) > threshold) {
+                        if (!whiteToColor) {
+                            whiteToColor = true;
+                            c = -1;
+                        }
+                        c++;
+                        if (c >= minPixels) {
+                            triples.add(new DirectedBorder(new Point(x + 1, y - c), new Point(x + 1, y), Direction.LEFTRIGHT));
+                            if (c > minPixels) {
+                                triples.remove(triples.size() - 2);
+                            }
+                        }
+                    } else if (Colors.getCMYKColorDifference1(img.getRGB(x, y), Color.WHITE.getRGB()) > threshold && Colors.getCMYKColorDifference1(img.getRGB(x + 1, y), Color.WHITE.getRGB()) < threshold) {
+                        if (whiteToColor) {
+                            whiteToColor = false;
+                            c = -1;
+                        }
+                        c++;
+                        if (c >= minPixels) {
+                            triples.add(new DirectedBorder(new Point(x, y - c), new Point(x, y), Direction.RIGHTLEFT));
+                            if (c > minPixels) {
+                                triples.remove(triples.size() - 2);
+                            }
+                        }
+                    } else {
+                        c = -1;
+                    }
+
+                }
+            }
+            return triples;
+        }
+
+        /**
+         * Gets the image and its position with highest possible probability to be correct for this puzzle piece
+         * 
+         * @param keyCaptchaImages
+         *            all keycaptcha images (background, sample, pieces)
+         * @param borders
+         *            a collection of all borders within the background image
+         * @return one puzzle piece and its position within the puzzle
+         */
+        private ImageAndPosition getBestPosition(KeyCaptchaImages keyCaptchaImages, List<DirectedBorder> borders) {
+            int bestMin = Integer.MAX_VALUE;
+            Point bestPos = new Point();
+            BufferedImage bestPiece = null;
+
+            for (BufferedImage piece : keyCaptchaImages.pieces) {
+                for (DirectedBorder border : borders) {
+                    if (border.direction == Direction.TOPDOWN || border.direction == Direction.BOTTOMUP) {
+                        // horizontal
+                        if ((border.direction == Direction.TOPDOWN && border.p1.y - piece.getHeight() < 0) || (border.direction == Direction.BOTTOMUP && (border.p1.y + piece.getHeight() > keyCaptchaImages.backgroundImage.getHeight()))) {
+                            continue;
+                        }
+
+                        for (int x = Math.max(border.p1.x - piece.getWidth(), 0); x <= Math.min(border.p2.x, keyCaptchaImages.backgroundImage.getWidth() - 1); x++) {
+                            int tmp = rateHorizontalLine(keyCaptchaImages.backgroundImage, piece, new Point(x, border.p1.y), border.direction == Direction.TOPDOWN ? piece.getHeight() - 1 : 0);
+                            tmp /= piece.getWidth();
+                            if (tmp < bestMin) {
+                                bestMin = tmp;
+                                bestPos = new Point(x, border.p1.y + (border.direction == Direction.TOPDOWN ? -piece.getHeight() : 1));
+                                bestPiece = piece;
+                            }
+                        }
+                    } else {
+                        // vertical
+                        if ((border.direction == Direction.LEFTRIGHT && border.p1.x - piece.getWidth() < 0) || (border.direction == Direction.RIGHTLEFT && border.p1.x + piece.getWidth() > keyCaptchaImages.backgroundImage.getWidth())) {
+                            continue;
+                        }
+
+                        for (int y = Math.max(border.p1.y - piece.getHeight(), 0); y <= Math.min(border.p2.y, keyCaptchaImages.backgroundImage.getHeight() - 1); y++) {
+                            int tmp = rateVerticalLine(keyCaptchaImages.backgroundImage, piece, new Point(border.p1.x, y), border.direction == Direction.LEFTRIGHT ? piece.getWidth() - 1 : 0);
+                            tmp /= piece.getHeight();
+                            if (tmp < bestMin) {
+                                bestMin = tmp;
+                                bestPos = new Point(border.p1.x + (border.direction == Direction.LEFTRIGHT ? -piece.getWidth() : 1), y);
+                                bestPiece = piece;
+                            }
+                        }
+                    }
+                }
+            }
+            return new ImageAndPosition(bestPiece, bestPos);
+        }
+
+        /**
+         * Rates probaility the puzzle piece fits horizontal to this position
+         * 
+         * @param background
+         *            the background image
+         * @param piece
+         *            puzzle piece image
+         * @param backgroundPosition
+         *            the position to rate (within background image)
+         * @param pieceY
+         *            the y offset within puzzle to comapre
+         * @return a rating (smaller is better)
+         */
+        private int rateHorizontalLine(BufferedImage background, BufferedImage piece, Point backgroundPosition, int pieceY) {
+            int diff = 0;
+            for (int x = 0; x < piece.getWidth(); x++) {
+                if (backgroundPosition.x + x >= background.getWidth()) {
+                    diff += (backgroundPosition.x + piece.getWidth() - background.getWidth()) * 150;
+                    break;
+                }
+                int bgColor = background.getRGB(backgroundPosition.x + x, backgroundPosition.y);
+                int pColor = piece.getRGB(x, pieceY);
+                diff += Colors.getColorDifference(bgColor, pColor);
+                if (Colors.getCMYKColorDifference1(pColor, Color.WHITE.getRGB()) < threshold) {
+                    diff += 30;
+                }
+            }
+            return diff;
+        }
+
+        /**
+         * Rates probaility the puzzle piece fits vertical to this position
+         * 
+         * @param background
+         *            the background image
+         * @param piece
+         *            puzzle piece image
+         * @param backgroundPosition
+         *            the position to rate (within background image)
+         * @param pieceX
+         *            the x offset within puzzle to comapre
+         * @return a rating (smaller is better)
+         */
+        private int rateVerticalLine(BufferedImage background, BufferedImage piece, Point backgroundPosition, int pieceX) {
+            int diff = 0;
+            for (int y = 0; y < piece.getHeight(); y++) {
+                if (backgroundPosition.y + y >= background.getHeight()) {
+                    diff += (backgroundPosition.y + piece.getHeight() - background.getHeight()) * 150;
+                    break;
+                }
+                int bgColor = background.getRGB(backgroundPosition.x, backgroundPosition.y + y);
+                int pColor = piece.getRGB(pieceX, y);
+                diff += Colors.getColorDifference(bgColor, pColor);
+                if (Colors.getCMYKColorDifference1(pColor, Color.WHITE.getRGB()) < threshold) {
+                    diff += 30;
+                }
+            }
+            return diff;
+        }
+    }
+
+    /**
+     * Represnts a border an the direction of white to 'color'
+     * 
+     * @author flubshi
+     * 
+     */
+    private static class DirectedBorder {
+        public final Point     p1;
+        public final Point     p2;
+        public final Direction direction;
+
+        /**
+         * @param p1
+         *            start of bordering line
+         * @param p2
+         *            end of bordering line
+         * @param direction
+         *            the direction (e.g. TOPDOWN if a horizontal line with white above and color below)
+         */
+        public DirectedBorder(Point p1, Point p2, Direction direction) {
+            this.p1 = p1;
+            this.p2 = p2;
+            this.direction = direction;
+        }
+    }
+
+    /**
+     * represents a direction
+     * 
+     * @author flubshi
+     * 
+     */
+    private enum Direction {
+        TOPDOWN,
+        RIGHTLEFT,
+        BOTTOMUP,
+        LEFTRIGHT
+    }
+
+    /**
+     * Datastructure to assign a position to an image
+     * 
+     * @author flubshi
+     * 
+     */
+    private static class ImageAndPosition {
+        public final BufferedImage image;
+        public final Point         position;
+
+        /**
+         * Assign a position to an image
+         * 
+         * @param image
+         *            the image (usually a puzzle piece for KeyCaptcha)
+         * @param position
+         *            the position to assign to the image
+         */
+        public ImageAndPosition(BufferedImage image, Point position) {
+            this.image = image;
+            this.position = position;
+        }
+    }
+
+    /**
+     * Represents a KeyCaptcha, which consists of a background image, sample image and a few puzzle pieces
+     * 
+     * @author flubshi
+     * 
+     */
+    private static class KeyCaptchaImages implements Cloneable {
+        public BufferedImage             backgroundImage;
+        public BufferedImage             sampleImage;
+        public LinkedList<BufferedImage> pieces;
+
+        /**
+         * Creates an object
+         * 
+         * @param backgroundImage
+         *            The background image of the KeyCaptcha
+         * @param sampleImage
+         *            a smaller, monochrome version of the assembled image
+         * @param pieces
+         *            a collection of puzzle pieces
+         */
+        public KeyCaptchaImages(BufferedImage backgroundImage, BufferedImage sampleImage, LinkedList<BufferedImage> pieces) {
+            this.backgroundImage = backgroundImage;
+            this.sampleImage = sampleImage;
+            this.pieces = pieces;
+        }
+
+        @Override
+        public KeyCaptchaImages clone() {
+            try {
+                return (KeyCaptchaImages) super.clone();
+            } catch (CloneNotSupportedException e) {
+                throw new InternalError();
+            }
+        }
+
+        /**
+         * Integrates a puzzle piece into the puzzle: removes piece from list of puzzle and draws the piece on background
+         * 
+         * @param image
+         *            the puzzle piece image
+         * @param position
+         *            the puzzle piece's position
+         */
+        public void integratePiece(BufferedImage image, Point position) {
+            if (pieces.remove(image)) {
+                Graphics2D g2d = backgroundImage.createGraphics();
+                g2d.drawImage(image, position.x, position.y, null);
+                g2d.dispose();
+            }
+        }
+    }
+
+    private static class KeyCaptchaImageGetter {
+        private Image[]                            IMAGE;
+        private BufferedImage[]                    kcImages;
+        private final LinkedHashMap<String, int[]> coordinates;
+        private Graphics                           go;
+        private int                                kcSampleImg;
+
+        private KeyCaptchaImages                   keyCaptchaImage;
+
+        public KeyCaptchaImageGetter(final String[] imageUrl, final LinkedHashMap<String, int[]> coordinates, Browser br, String url) throws Exception {
+            this.coordinates = coordinates;
+            loadImage(imageUrl);
+            handleCoordinates();
+
+            makePieces();
+            makeBackground();
+
+            LinkedList<BufferedImage> pieces = new LinkedList<>();
+            BufferedImage sampleImg = null;
+
+            for (int i = 1; i < kcImages.length; i++) {
+                if (kcImages[i] == null) {
+                    continue;
+                } else if (i == kcSampleImg) {
+                    sampleImg = kcImages[i];
+                } else {
+                    pieces.add(kcImages[i]);
+                }
+            }
+            keyCaptchaImage = new KeyCaptchaImages(kcImages[0], sampleImg, pieces);
+        }
+
+        public KeyCaptchaImages getKeyCaptchaImage() {
+            return this.keyCaptchaImage;
+        }
+
+        public void handleCoordinates() {
+            kcImages = new BufferedImage[coordinates.size()];
+        }
+
+        public void loadImage(final String[] imagesUrl) {
+            int i = 0;
+            IMAGE = new Image[imagesUrl.length];
+            File fragmentedPic;
+            final Browser dlpic = new Browser();
+            KeyCaptcha.prepareBrowser(dlpic, "image/png,image/*;q=0.8,*/*;q=0.5");
+            final MediaTracker mt = new MediaTracker(new JLabel());
+            for (final String imgUrl : imagesUrl) {
+                try {
+                    // fragmentedPic = Application.getRessource("captchas/" + imgUrl.substring(imgUrl.lastIndexOf("/") + 1));
+                    fragmentedPic = JDUtilities.getResourceFile("captchas/" + imgUrl.substring(imgUrl.lastIndexOf("/") + 1));
+                    fragmentedPic.deleteOnExit();
+                    Browser.download(fragmentedPic, dlpic.openGetConnection(imgUrl));
+                    /* TODO: replace with ImageProvider.read in future */
+                    IMAGE[i] = ImageIO.read(fragmentedPic);
+                    // IMAGE[i] = Toolkit.getDefaultToolkit().getImage(new URL(imgUrl));
+                } catch (final IOException e) {
+                    e.printStackTrace();
+                }
+                mt.addImage(IMAGE[i], i);
+                i++;
+            }
+            try {
+                mt.waitForAll();
+            } catch (final InterruptedException ex) {
+            }
+        }
+
+        private void makeBackground() {
+            int curx = 0;
+            int cik = 0;
+            kcImages[0] = new BufferedImage(450, 160, BufferedImage.TYPE_INT_RGB);
+            go = kcImages[0].getGraphics();
+            go.setColor(Color.WHITE);
+            go.fillRect(0, 0, 450, 160);
+            final int[] bgCoord = coordinates.get("backGroundImage");
+            while (cik < bgCoord.length) {
+                go.drawImage(IMAGE[1], bgCoord[cik], bgCoord[cik + 1], bgCoord[cik] + bgCoord[cik + 2], bgCoord[cik + 1] + bgCoord[cik + 3], curx, 0, curx + bgCoord[cik + 2], bgCoord[cik + 3], null);
+                curx = curx + bgCoord[cik + 2];
+                cik = cik + 4;
+            }
+        }
+
+        private void makePieces() {
+            final Object[] key = coordinates.keySet().toArray();
+            int pieces = 1;
+            for (final Object element : key) {
+                if (element.equals("backGroundImage")) {
+                    continue;
+                }
+                final int[] imgcs = coordinates.get(element);
+                if (imgcs == null | imgcs.length == 0) {
+                    break;
+                }
+                final int w = imgcs[1] + imgcs[5] + imgcs[9];
+                final int h = imgcs[3] + imgcs[15] + imgcs[27];
+                int dX = 0;
+                int dY = 0;
+                kcImages[pieces] = new BufferedImage(w, h, BufferedImage.TYPE_INT_ARGB);
+                go = kcImages[pieces].getGraphics();
+                if (element.equals("kc_sample_image")) {
+                    kcSampleImg = pieces;
+                }
+                int sX = 0, sY = 0, sW = 0, sH = 0;
+                dX = 0;
+                dY = 0;
+                for (int cik2 = 0; cik2 < 36; cik2 += 4) {
+                    sX = imgcs[cik2];
+                    sY = imgcs[cik2 + 2];
+                    sW = imgcs[cik2 + 1];
+                    sH = imgcs[cik2 + 3];
+                    if (sX + sW > IMAGE[0].getWidth(null) || sY + sH > IMAGE[0].getHeight(null)) {
+                        continue;
+                    }
+                    if (dX + sW > w || dY + sH > h) {
+                        continue;
+                    }
+                    if (sW == 0 || sH == 0) {
+                        continue;
+                    }
+                    // Puzzlebild erstellen
+                    go.drawImage(IMAGE[0], dX, dY, dX + sW, dY + sH, sX, sY, sX + sW, sY + sH, null);
+                    dX = dX + sW;
+                    if (dX >= w) {
+                        dY = dY + sH;
+                        dX = 0;
+                    }
+                }
+                pieces += 1;
+            }
+        }
+
     }
 
 }
