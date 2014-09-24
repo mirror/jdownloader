@@ -44,25 +44,29 @@ public class ServePornCom extends PluginForHost {
         return "http://www.serveporn.com/disclamer/";
     }
 
-    public void correctDownloadLink(final DownloadLink link) {
-        link.setUrlDownload("http://www.serveporn.com/videos/" + new Regex(link.getDownloadURL(), "/videos/(.+)").getMatch(0));
-    }
-
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws IOException, PluginException {
         downloadLink.setName(new Regex(downloadLink.getDownloadURL(), "/videos/(.+)/").getMatch(0) + ".flv");
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         br.getPage(downloadLink.getDownloadURL());
-        if (br.getHttpConnection().getResponseCode() == 404) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (br.getHttpConnection().getResponseCode() == 404) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
         String filename = br.getRegex("content=\\'([^<>\"]*?)\\' property=\\'og:title\\'/>").getMatch(0);
         DLLINK = br.getRegex("url: \\'(https?://media(\\d+)?\\.[a-z0-9]+\\.com/videos/[^<>\"]*?)\\'").getMatch(0);
-        if (DLLINK == null) DLLINK = br.getRegex("").getMatch(0);
-        if (filename == null || DLLINK == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (DLLINK == null) {
+            DLLINK = br.getRegex("").getMatch(0);
+        }
+        if (filename == null || DLLINK == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         DLLINK = Encoding.htmlDecode(DLLINK);
         filename = filename.trim();
         String ext = DLLINK.substring(DLLINK.lastIndexOf("."));
-        if (ext == null || ext.length() > 5) ext = ".flv";
+        if (ext == null || ext.length() > 5) {
+            ext = ".flv";
+        }
         downloadLink.setFinalFileName(Encoding.htmlDecode(filename) + ext);
         final Browser br2 = br.cloneBrowser();
         // In case the link redirects to the finallink
@@ -70,10 +74,11 @@ public class ServePornCom extends PluginForHost {
         URLConnectionAdapter con = null;
         try {
             con = br2.openGetConnection(DLLINK);
-            if (!con.getContentType().contains("html"))
+            if (!con.getContentType().contains("html")) {
                 downloadLink.setDownloadSize(con.getLongContentLength());
-            else
+            } else {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            }
             return AvailableStatus.TRUE;
         } finally {
             try {

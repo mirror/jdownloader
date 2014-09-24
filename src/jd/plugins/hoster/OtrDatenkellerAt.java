@@ -20,8 +20,10 @@ import java.io.IOException;
 import java.util.ArrayList;
 
 import jd.PluginWrapper;
+import jd.config.Property;
 import jd.http.Browser;
 import jd.http.RandomUserAgent;
+import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.plugins.Account;
@@ -143,7 +145,7 @@ public class OtrDatenkellerAt extends PluginForHost {
 
     @Override
     public int getMaxSimultanFreeDownloadNum() {
-        return 1;
+        return 2;
     }
 
     @SuppressWarnings("deprecation")
@@ -155,147 +157,171 @@ public class OtrDatenkellerAt extends PluginForHost {
         br.clearCookies("http://otr.datenkeller.net/");
         br.getHeaders().put("User-Agent", agent);
         final String dlPage = getDlpage(downloadLink);
-        getPage(this.br, dlPage);
-        /* Not needed, also their limits are based on cookies only */
-        // if (br.containsHTML(">Du kannst höchstens \\d+ Download Links pro Stunde anfordern")) {
-        // final String waitUntil = br.getRegex("bitte warte bis (\\d{1,2}:\\d{1,2}) zum nächsten Download").getMatch(0);
-        // if (waitUntil != null) {
-        // final long wtime = TimeFormatter.getMilliSeconds(waitUntil, "HH:mm", Locale.GERMANY);
-        // throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, wtime);
-        // }
-        // throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 30 * 60 * 1000l);
-        // }
-        String position;
-        String dllink = null;
-        String site_lowSpeedLink;
-        Browser br2 = br.cloneBrowser();
-        String api_otrUID = null;
-        final String finalfilenameurlencoded = Encoding.urlEncode(downloadLink.getFinalFileName());
-        boolean api_otrUID_used = false;
-        if (br.containsHTML(DOWNLOADAVAILABLE)) {
-            dllink = getDllink();
-        } else {
-            final boolean pluginBroken = true;
-            if (pluginBroken) {
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            }
-            site_lowSpeedLink = br.getRegex("\"(\\?lowSpeed=[^<>\\'\"]+)\"").getMatch(0);
-            if (site_lowSpeedLink == null) {
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            }
-            br2.getPage("https://staticaws.lastverteiler.net/images/style.css");
-            br2.getPage("https://staticaws.lastverteiler.net/otrfuncs/combo.js?r300613");
-            br2.getPage("https://otr.datenkeller.net/otrfuncs/xajax_js/xajax_core.js");
-
-            br2.getPage("https://staticaws.lastverteiler.net/otrfuncs/jquery-ui-1.8.16.custom.min.js");
-            br2.getPage("https://staticaws.lastverteiler.net/otrfuncs/jquery.jmNotify.js");
-            br2.getPage("https://staticaws.lastverteiler.net/otrfuncs/jquery.cookie.js");
-            br2.openGetConnection("https://staticaws.lastverteiler.net/images/favicon.ico");
-            br2.openGetConnection("https://otr.datenkeller.net/images/de.gif");
-
-            br2.getPage("https://staticaws.lastverteiler.net/otrfuncs/countMe.js");
-            downloadLink.getLinkStatus().setStatusText("Waiting for ticket...");
-            final int maxloops = 410;
-            for (int i = 1; i <= maxloops; i++) {
-                br2 = br.cloneBrowser();
-
-                /* Whenever we got an otrUID the first time, we can use it for the whole process */
-                if (api_otrUID == null) {
-                    api_otrUID = br.getRegex("waitaws\\.lastverteiler\\.net/([^<>\"]*?)/").getMatch(0);
+        String dllink = checkDirectLink(downloadLink, "free_finallink");
+        if (dllink == null) {
+            getPage(this.br, dlPage);
+            /* Not needed, also their limits are based on cookies only */
+            // if (br.containsHTML(">Du kannst höchstens \\d+ Download Links pro Stunde anfordern")) {
+            // final String waitUntil = br.getRegex("bitte warte bis (\\d{1,2}:\\d{1,2}) zum nächsten Download").getMatch(0);
+            // if (waitUntil != null) {
+            // final long wtime = TimeFormatter.getMilliSeconds(waitUntil, "HH:mm", Locale.GERMANY);
+            // throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, wtime);
+            // }
+            // throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 30 * 60 * 1000l);
+            // }
+            String position;
+            String site_lowSpeedLink;
+            Browser br2 = br.cloneBrowser();
+            String api_otrUID = null;
+            final String finalfilenameurlencoded = Encoding.urlEncode(downloadLink.getFinalFileName());
+            boolean api_otrUID_used = false;
+            boolean api_failed = false;
+            if (br.containsHTML(DOWNLOADAVAILABLE)) {
+                dllink = getDllink();
+            } else {
+                site_lowSpeedLink = br.getRegex("\"(\\?lowSpeed=[^<>\\'\"]+)\"").getMatch(0);
+                if (site_lowSpeedLink == null) {
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 }
-                if (api_otrUID == null) {
-                    /* Basically the same/not relevant */
-                    api_otrUID = br.getCookie("http://otr.datenkeller.net/", "otrUID");
-                }
+                br2.getPage("https://staticaws.lastverteiler.net/images/style.css");
+                br2.getPage("https://staticaws.lastverteiler.net/otrfuncs/combo.js?r300613");
+                br2.getPage("https://otr.datenkeller.net/otrfuncs/xajax_js/xajax_core.js");
 
-                if (api_otrUID != null) {
-                    logger.info("Newway: New way active");
-                    if (!api_otrUID_used) {
-                        api_otrUID_used = true;
-                        logger.info("NewwayUsing free API the first time...");
-                        api_waitaws_url = "https://waitaws.lastverteiler.net/" + api_otrUID + "/" + finalfilenameurlencoded;
-                        getPage(this.br, api_waitaws_url);
-                        br2.getPage("https://waitaws.lastverteiler.net/style2.css");
-                        br2.getPage("https://waitaws.lastverteiler.net/functions.js");
-                        api_postPage(this.br, "https://waitaws.lastverteiler.net/api.php", "action=validate&otrUID=" + api_otrUID + "&file=" + finalfilenameurlencoded);
-                        if (br.containsHTML("\"status\":\"fail\",\"reason\":\"user\"")) {
-                            if (i > 1) {
-                                /* This should never happen */
-                                throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "FATAL API failure", 30 * 60 * 1000l);
+                br2.getPage("https://staticaws.lastverteiler.net/otrfuncs/jquery-ui-1.8.16.custom.min.js");
+                br2.getPage("https://staticaws.lastverteiler.net/otrfuncs/jquery.jmNotify.js");
+                br2.getPage("https://staticaws.lastverteiler.net/otrfuncs/jquery.cookie.js");
+                br2.openGetConnection("https://staticaws.lastverteiler.net/images/favicon.ico");
+                br2.openGetConnection("https://otr.datenkeller.net/images/de.gif");
+
+                br2.getPage("https://staticaws.lastverteiler.net/otrfuncs/countMe.js");
+                downloadLink.getLinkStatus().setStatusText("Waiting for ticket...");
+                /* Try up to 10 hours */
+                final int maxloops = 2250;
+                for (int i = 1; i <= maxloops; i++) {
+                    br2 = br.cloneBrowser();
+
+                    /* Whenever we got an otrUID the first time, we can use it for the whole process */
+                    if (api_otrUID == null) {
+                        api_otrUID = br.getRegex("waitaws\\.lastverteiler\\.net/([^<>\"]*?)/").getMatch(0);
+                    }
+                    if (api_otrUID == null) {
+                        /* Basically the same/not relevant */
+                        api_otrUID = br.getCookie("http://otr.datenkeller.net/", "otrUID");
+                    }
+
+                    if (api_otrUID != null) {
+                        logger.info("Newway: New way active");
+                        if (!api_otrUID_used) {
+                            api_otrUID_used = true;
+                            logger.info("NewwayUsing free API the first time...");
+                            api_waitaws_url = "https://waitaws.lastverteiler.net/" + api_otrUID + "/" + finalfilenameurlencoded;
+                            getPage(this.br, api_waitaws_url);
+                            br2.getPage("https://waitaws.lastverteiler.net/style2.css");
+                            br2.getPage("https://waitaws.lastverteiler.net/functions.js");
+                            api_postPage(this.br, "https://waitaws.lastverteiler.net/api.php", "action=validate&otrUID=" + api_otrUID + "&file=" + finalfilenameurlencoded);
+                            if (br.containsHTML("\"status\":\"fail\",\"reason\":\"user\"")) {
+                                /* One retry is usually enough if the first attempt to use the API fails! */
+                                if (api_failed) {
+                                    /* This should never happen */
+                                    throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "FATAL API failure", 30 * 60 * 1000l);
+                                }
+                                logger.info("Newway: Failed to start queue - refreshing api_otrUID");
+                                br.clearCookies("http://otr.datenkeller.net/");
+                                br.getPage("https://otr.datenkeller.net/");
+                                br.getPage(downloadLink.getDownloadURL());
+                                br.getPage(dlPage);
+                                api_otrUID_used = false;
+                                api_otrUID = null;
+                                api_failed = true;
+                                continue;
                             }
-                            logger.info("Newway: Failed to start queue - refreshing api_otrUID");
-                            br.clearCookies("http://otr.datenkeller.net/");
-                            br.getPage("https://otr.datenkeller.net/");
-                            br.getPage(downloadLink.getDownloadURL());
-                            br.getPage(dlPage);
-                            api_otrUID_used = false;
-                            api_otrUID = null;
-                            continue;
+                            api_postPage(this.br, "https://waitaws.lastverteiler.net/api.php", "action=wait&status=ok&valid=ok&file=" + finalfilenameurlencoded + "&otrUID=" + api_otrUID);
                         }
-                        api_postPage(this.br, "https://waitaws.lastverteiler.net/api.php", "action=wait&status=ok&valid=ok&file=" + finalfilenameurlencoded + "&otrUID=" + api_otrUID);
-                    }
-                    sleep(16 * 1000l, downloadLink);
-                    String postData = "";
-                    String[] params = br.toString().split(",");
-                    if (params == null || params.length == 0) {
-                        logger.warning("Failed to get API postparameters");
-                        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                    }
-                    for (final String postPair : params) {
-                        final String key = new Regex(postPair, "\"([^<>\"]*?)\"").getMatch(0);
-                        String value = new Regex(postPair, "\"([^<>\"]*?)\":\"([^<>\"]*?)\"").getMatch(1);
-                        if (value == null) {
-                            value = new Regex(postPair, "\"([^<>\"]*?)\":(null|true|false|\\d+)").getMatch(1);
+                        sleep(16 * 1000l, downloadLink);
+                        String postData = "";
+                        String[] params = br.toString().split(",");
+                        if (params == null || params.length == 0) {
+                            logger.warning("Failed to get API postparameters");
+                            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                         }
-                        postData += key + "=" + Encoding.urlEncode(value) + "&";
+                        for (final String postPair : params) {
+                            final String key = new Regex(postPair, "\"([^<>\"]*?)\"").getMatch(0);
+                            String value = new Regex(postPair, "\"([^<>\"]*?)\":\"([^<>\"]*?)\"").getMatch(1);
+                            if (value == null) {
+                                value = new Regex(postPair, "\"([^<>\"]*?)\":(null|true|false|\\d+)").getMatch(1);
+                            }
+                            postData += key + "=" + Encoding.urlEncode(value) + "&";
+                        }
+                        api_postPage(this.br, "https://waitaws.lastverteiler.net/api.php", postData);
+                        position = br.getRegex("\"wait_pos\":\"(\\d+)\"").getMatch(0);
+                        dllink = br.getRegex("\"link\":\"(http:[^<>\"]*?)\"").getMatch(0);
+                    } else {
+                        logger.info("Oldway: Old way active");
+                        sleep(27 * 1000l, downloadLink);
+                        getPage(this.br, dlPage);
+                        position = br.getRegex("Deine Position in der Warteschlange: </td><td>~(\\d+)</td>").getMatch(0);
+                        if (br.containsHTML(DOWNLOADAVAILABLE)) {
+                            logger.info("Oldway: dllink should be available, trying to get it");
+                            dllink = getDllink();
+                            break;
+                        }
                     }
-                    api_postPage(this.br, "https://waitaws.lastverteiler.net/api.php", postData);
-                    position = br.getRegex("\"wait_pos\":\"(\\d+)\"").getMatch(0);
-                    dllink = br.getRegex("\"link\":\"(http:[^<>\"]*?)\"").getMatch(0);
-                } else {
-                    logger.info("Oldway: Old way active");
-                    sleep(27 * 1000l, downloadLink);
-                    getPage(this.br, dlPage);
-                    position = br.getRegex("Deine Position in der Warteschlange: </td><td>~(\\d+)</td>").getMatch(0);
-                    if (br.containsHTML(DOWNLOADAVAILABLE)) {
-                        logger.info("Oldway: dllink should be available, trying to get it");
-                        dllink = getDllink();
-                        break;
-                    }
-                }
-                if (position != null) {
-                    downloadLink.getLinkStatus().setStatusText("Warten auf Ticket...Position in der Warteschlange: " + position);
-                }
-                if (dllink != null) {
-                    logger.info("Found dllink");
-                    break;
-                }
-                if (i > 400 && site_lowSpeedLink != null) {
-                    getPage(br2, "https://otr.datenkeller.net/" + site_lowSpeedLink);
-                    dllink = br2.getRegex(">Dein Download Link:<br>[\t\n\r ]+<a href=\"(http://[^<>\\'\"]+)\"").getMatch(0);
-                    if (dllink == null) {
-                        dllink = br2.getRegex("\"(http://\\d+\\.\\d+\\.\\d+\\.\\d+/low/[a-z0-9]+/[^<>\\'\"]+)\"").getMatch(0);
+                    if (position != null) {
+                        downloadLink.getLinkStatus().setStatusText("Warten auf Ticket...Position in der Warteschlange: " + position);
                     }
                     if (dllink != null) {
-                        logger.info("Using lowspeed link for downloadlink: " + downloadLink.getDownloadURL());
+                        logger.info("Found dllink");
                         break;
-                    } else {
-                        logger.warning("Failed to find low speed link, continuing to look for downloadticket...");
                     }
+                    if (i > 400 && site_lowSpeedLink != null) {
+                        getPage(br2, "https://otr.datenkeller.net/" + site_lowSpeedLink);
+                        dllink = br2.getRegex(">Dein Download Link:<br>[\t\n\r ]+<a href=\"(http://[^<>\\'\"]+)\"").getMatch(0);
+                        if (dllink == null) {
+                            dllink = br2.getRegex("\"(http://\\d+\\.\\d+\\.\\d+\\.\\d+/low/[a-z0-9]+/[^<>\\'\"]+)\"").getMatch(0);
+                        }
+                        if (dllink != null) {
+                            logger.info("Using lowspeed link for downloadlink: " + downloadLink.getDownloadURL());
+                            break;
+                        } else {
+                            logger.warning("Failed to find low speed link, continuing to look for downloadticket...");
+                        }
+                    }
+                    logger.info("Didn't get a ticket on try " + i + "/" + maxloops + ". Retrying...Position: " + position);
                 }
-                logger.info("Didn't get a ticket on try " + i + "/" + maxloops + ". Retrying...Position: " + position);
             }
+            if (dllink == null) {
+                logger.info("Didn't get a ticket --> Wait 30 minutes till next try");
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Didn't get a ticket", 30 * 60 * 1000l);
+            }
+            dllink = dllink.replace("\\", "");
         }
-        if (dllink == null) {
-            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Didn't get a ticket");
-        }
-        dllink = dllink.replace("\\", "");
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 1);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
+        downloadLink.setProperty("free_finallink", dllink);
         dl.startDownload();
+    }
+
+    private String checkDirectLink(final DownloadLink downloadLink, final String property) {
+        String dllink = downloadLink.getStringProperty(property);
+        if (dllink != null) {
+            try {
+                final Browser br2 = br.cloneBrowser();
+                br2.setFollowRedirects(true);
+                URLConnectionAdapter con = br2.openGetConnection(dllink);
+                if (con.getContentType().contains("html") || con.getLongContentLength() == -1) {
+                    downloadLink.setProperty(property, Property.NULL);
+                    dllink = null;
+                }
+                con.disconnect();
+            } catch (final Exception e) {
+                downloadLink.setProperty(property, Property.NULL);
+                dllink = null;
+            }
+        }
+        return dllink;
     }
 
     private void login(Account account, boolean force) throws Exception {

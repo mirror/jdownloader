@@ -86,7 +86,7 @@ public class DevArtCm extends PluginForDecrypt {
         PARAMETER = param.toString();
         if (PARAMETER.matches(LINKTYPE_JOURNAL)) {
             final DownloadLink journal = createDownloadlink(PARAMETER.replace("deviantart.com/", "deviantartdecrypted.com/"));
-            journal.setName("deviantart\\.com/journal/([\\w\\-]+)");
+            journal.setName(new Regex(PARAMETER, "deviantart\\.com/journal/([\\w\\-]+)").getMatch(0));
             if (FASTLINKCHECK) {
                 journal.setAvailable(true);
             }
@@ -178,7 +178,11 @@ public class DevArtCm extends PluginForDecrypt {
                     dl.setAvailable(true);
                 }
                 /* No reason to hide their single links */
-               try{/*JD2 only*/dl.setContentUrl(link);}catch(Throwable e){/*Stable*/ dl.setBrowserUrl(link);}
+                try {/* JD2 only */
+                    dl.setContentUrl(link);
+                } catch (Throwable e) {/* Stable */
+                    dl.setBrowserUrl(link);
+                }
                 dl.setName(urltitle + ".html");
                 dl._setFilePackage(fp);
                 try {
@@ -301,23 +305,27 @@ public class DevArtCm extends PluginForDecrypt {
             }
             final boolean fastcheck = SubConfiguration.getConfig("deviantart.com").getBooleanProperty(FASTLINKCHECK_2, false);
             final String grab = br.getRegex("<smoothie q=(.*?)(class=\"folderview-bottom\"></div>|div id=\"gallery_pager\")").getMatch(0);
-            String[] artlinks = new Regex(grab, "\"(https?://[\\w\\.\\-]*?deviantart\\.com/art/[\\w\\-]+)\"").getColumn(0);
-            if ((artlinks == null || artlinks.length == 0) && counter == 1) {
-                logger.warning("Possible Plugin error, with finding /art/ links: " + PARAMETER);
+            String[] links = new Regex(grab, "\"(https?://[\\w\\.\\-]*?deviantart\\.com/(art|journal)/[\\w\\-]+)\"").getColumn(0);
+            if ((links == null || links.length == 0) && counter == 1) {
+                logger.warning("Possible Plugin error, with finding /(art|journal)/ links: " + PARAMETER);
                 throw new DecrypterException("Decrypter broken for link: " + PARAMETER);
-            } else if (artlinks == null || artlinks.length == 0) {
+            } else if (links == null || links.length == 0) {
                 /* We went too far - we should already have links */
                 logger.info("Current offset contains no links --> Stopping");
                 break;
             }
-            if (artlinks != null && artlinks.length != 0) {
-                for (final String artlink : artlinks) {
+            if (links != null && links.length != 0) {
+                for (final String artlink : links) {
                     final DownloadLink fina = createDownloadlink(artlink);
                     if (fastcheck) {
                         fina.setAvailable(true);
                     }
                     /* No reason to hide their single links */
-                   try{/*JD2 only*/fina.setContentUrl(artlink);}catch(Throwable e){/*Stable*/ fina.setBrowserUrl(artlink);}
+                    try {/* JD2 only */
+                        fina.setContentUrl(artlink);
+                    } catch (Throwable e) {/* Stable */
+                        fina.setBrowserUrl(artlink);
+                    }
                     if (fp != null) {
                         fp.add(fina);
                     }

@@ -58,45 +58,67 @@ public class HardSexTubeCom extends PluginForHost {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         br.getPage(downloadLink.getDownloadURL());
-        if (!br.getURL().contains("/video/")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        String filename = br.getRegex("<title>(.*?)\\- HardSexTube").getMatch(0);
-        if (filename == null) {
-            filename = br.getRegex("<div style=\\'margin\\-top:\\-10px; height:15px\\'> \\&raquo; <b>(.*?)</b>").getMatch(0);
-            if (filename == null) {
-                filename = br.getRegex("<div id=\\'tabdetails\\' style=\" \">.*?<h1>(.*?)</h1>").getMatch(0);
-            }
+        if (!br.getURL().contains("/video/")) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        if (filename == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        String filename = br.getRegex("<meta itemprop=\"name\" content=\"([^<>\"]*?)\"").getMatch(0);
+        if (filename == null) {
+            filename = br.getRegex("<h1 class=\"title-block\">([^<>\"]*?)</h1>").getMatch(0);
+        }
+        if (filename == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         final boolean normalViaSite = false;
         if (normalViaSite) {
-            final String name = br.getRegex("Name=\"FLVServer\" Value=\"(http://[^<>\"]*?)\"").getMatch(0);
-            final String path = br.getRegex("Name=\"FLV\" Value=\"(/[^<>\"]*?)\"").getMatch(0);
-            if (name == null || path == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            final String name = br.getRegex("\\&flvserver=(http://[^<>\"]*?)\\&").getMatch(0);
+            final String path = br.getRegex("\\&flv=(/content[^<>\"]*?)\\&start=").getMatch(0);
+            if (name == null || path == null) {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
             dllink = Encoding.htmlDecode(name + path);
         } else {
             // Via the embedded video stuff we can get the final link without
             // having to decrypt anything
             br.setFollowRedirects(false);
             final String fid = new Regex(downloadLink.getDownloadURL(), "(\\d+)/$").getMatch(0);
-            br.getPage("http://vidii.hardsextube.com/video/" + fid + "/confige.xml");
-            br.getPage("http://www.hardsextube.com/cdnurl.php?eid=" + new Regex(downloadLink.getDownloadURL(), "(\\d+)/$").getMatch(0) + "&start=0");
-            dllink = br.getRedirectLocation();
-            if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            br.getPage("http://www.hardsextube.com/embed/" + fid + "/");
+            final String redirect = br.getRedirectLocation();
+            if (redirect == null) {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
+            final String name = new Regex(redirect, "\\&flvserver=(http://[^<>\"]*?)\\&").getMatch(0);
+            final String path = new Regex(redirect, "\\&flv=(/embed[^<>\"]*?)\\&start=").getMatch(0);
+            if (name == null || path == null) {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
+            dllink = Encoding.htmlDecode(name + path);
+            // br.getPage("http://vidii.hardsextube.com/video/" + fid + "/confige.xml");
+            // final String cdnurl = br.getRegex("\"(/cdnurl\\.php[^<>\"]*?)\"").getMatch(0);
+            // br.getPage("http://www.hardsextube.com" + cdnurl);
+            // br.getPage("http://www.hardsextube.com/cdnurl.php?eid=" + new Regex(downloadLink.getDownloadURL(), "(\\d+)/$").getMatch(0) +
+            // "&start=0");
+            // dllink = br.getRedirectLocation();
+            // if (dllink == null) {
+            // throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            // }
         }
         filename = filename.trim();
         String ext = new Regex(dllink, ".+(\\..*?)$").getMatch(0);
-        if (ext == null)
+        if (ext == null) {
             ext = ".flv";
-        else if (ext.contains(".mp4")) ext = ".mp4";
+        } else if (ext.contains(".mp4")) {
+            ext = ".mp4";
+        }
         downloadLink.setFinalFileName(filename + ext);
 
         URLConnectionAdapter con = null;
         try {
             con = br.openGetConnection(dllink);
-            if (!con.getContentType().contains("html"))
+            if (!con.getContentType().contains("html")) {
                 downloadLink.setDownloadSize(con.getLongContentLength());
-            else
+            } else {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            }
             return AvailableStatus.TRUE;
         } finally {
             try {
