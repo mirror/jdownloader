@@ -242,6 +242,7 @@ public class RuleWrapper<T extends FilterRule> {
             if (dlLink.getPluginPatternMatcher() == null) {
                 throw new NullPointerException("getPluginPatternMatcher is null in DownloadLink");
             }
+            //
             switch (getHosterRule().getMatchType()) {
             case CONTAINS:
             case EQUALS:
