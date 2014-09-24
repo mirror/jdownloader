@@ -135,7 +135,7 @@ public class FilePostCom extends PluginForHost {
 
     /*
      * (non-Javadoc)
-     *
+     * 
      * @see jd.plugins.PluginForHost#correctDownloadLink(jd.plugins.DownloadLink)
      */
     @Override
@@ -383,8 +383,9 @@ public class FilePostCom extends PluginForHost {
             form.setMethod(MethodType.POST);
             form.setAction(action + System.currentTimeMillis() + "-xml");
             // this change not tested, but the rest change from download to token - 20140824 raztoki
+            form.put("code", id);
             form.put("token", token);
-            form.put("file_pass", "undefined");
+            form.put("file_pass", "");
             form.put("code", id);
             form.setEncoding("application/octet-stream;");
             if (captchaNeeded) {
@@ -427,15 +428,16 @@ public class FilePostCom extends PluginForHost {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
         }
-        /* Wait some more */
-        this.sleep(3 * 1000, downloadLink);
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 1);
+        this.sleep(10 * 1000l, downloadLink);
+        dl = jd.plugins.BrowserAdapter.openDownload(brc, downloadLink, dllink, true, 1);
         if (dl.getConnection().getContentType().contains("html")) {
-            br.followConnection();
-            final String cookieError = br.getCookie(MAINPAGE, "error");
+            brc.followConnection();
+            final String cookieError = brc.getCookie(MAINPAGE, "error");
             if (cookieError != null && new Regex(cookieError, "Your%20download%20is%20not%20found%20or%20has%20expired\\.").matches()) {
                 // since the session has just been created we will treat as file not found jdlog://8255413173041 jdlog://6367313173041
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            } else if (cookieError != null && new Regex(cookieError, "You%20still%20need%20to%20wait%20for%20the%20start%20of%20your%20download").matches()) {
+                throw new PluginException(LinkStatus.ERROR_FATAL, "FATAL countdown error");
             } else if (cookieError != null && new Regex(cookieError, "(Sorry%2C%20you%20have%20exceeded%20your%20daily%20download%20limit\\.|%3Cbr%20%2F%3ETry%20again%20tomorrow%20or%20obtain%20a%20premium%20membership\\.)").matches()) {
                 throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, "Daily limit reached", 2 * 60 * 60 * 1000l);
             } else if (cookieError != null) {
