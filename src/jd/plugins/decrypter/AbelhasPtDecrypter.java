@@ -117,7 +117,8 @@ public class AbelhasPtDecrypter extends PluginForDecrypt {
             dl.setFinalFileName(parameter);
             dl.setProperty("mainlink", parameter);
             dl.setProperty("offline", true);
-            decryptedLinks.add(dl);
+            /* its wrong to add offline link and also parse online links! */
+            // decryptedLinks.add(dl);
         }
         /* Password protected link --> Not yet supported --> And this code is not yet tested either :D */
         // if (br.containsHTML(">Digite senha:</label>")) {
