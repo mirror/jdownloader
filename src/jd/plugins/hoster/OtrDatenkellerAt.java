@@ -48,7 +48,7 @@ public class OtrDatenkellerAt extends PluginForHost {
     public OtrDatenkellerAt(PluginWrapper wrapper) {
         super(wrapper);
         this.enablePremium();
-        // this.setStartIntervall(60 * 1000l);
+        this.setStartIntervall(60 * 1000l);
     }
 
     @SuppressWarnings("deprecation")
@@ -145,7 +145,7 @@ public class OtrDatenkellerAt extends PluginForHost {
 
     @Override
     public int getMaxSimultanFreeDownloadNum() {
-        return 2;
+        return 1;
     }
 
     @SuppressWarnings("deprecation")
