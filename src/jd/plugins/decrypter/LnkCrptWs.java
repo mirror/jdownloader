@@ -900,10 +900,10 @@ public class LnkCrptWs extends PluginForDecrypt {
                     }
                     if (vC.getReturnmask() == 4) {
                         out = "CANCEL";
-                    }x
-                    rcBr.getPage(mmUrlReq);
+                    }
+I'm a compile error
+                    rcBr.cloneBrowser().getPage(mmUrlReq);
                     // Thread.sleep(5000);
-                    // http://linkcrypt.ws/dir/llj2rw6g117f1jqThread.sleep(5000);
 
                     KeyCaptchaSolver kcSolver = new KeyCaptchaSolver();
                     out = kcSolver.solve(vC.getKeyCaptchaImage());
@@ -1000,6 +1000,8 @@ public class LnkCrptWs extends PluginForDecrypt {
         }
 
         private String sscFsmCheckTwo(final String arg0, final String arg1) {
+            String out = arg0;
+            String key = arg1;
             try {
                 if (arg1 == null) {
                     return null;
