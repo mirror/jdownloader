@@ -17,7 +17,6 @@
 package jd.controlling.downloadcontroller;
 
 import java.io.File;
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -30,6 +29,7 @@ import jd.controlling.downloadcontroller.DiskSpaceManager.DISKSPACERESERVATIONRE
 import jd.controlling.downloadcontroller.event.DownloadWatchdogEvent;
 import jd.controlling.packagecontroller.AbstractNode;
 import jd.controlling.proxy.AbstractProxySelectorImpl;
+import jd.controlling.proxy.SelectProxyByUrlHook;
 import jd.controlling.reconnect.ipcheck.BalancedWebIPCheck;
 import jd.controlling.reconnect.ipcheck.IPCheckException;
 import jd.controlling.reconnect.ipcheck.OfflineException;
@@ -264,15 +264,7 @@ public class SingleDownloadController extends BrowserSettingsThread implements D
     }
 
     private Browser getPluginBrowser() {
-        return new Browser() {
-
-            @Override
-            protected List<HTTPProxy> selectProxies(String url) throws IOException {
-                final List<HTTPProxy> ret = super.selectProxies(url);
-                usedProxy = ret.get(0);
-                return ret;
-            }
-        };
+        return new Browser();
     }
 
     private SingleDownloadReturnState download(LogSource downloadLogger) {
@@ -483,7 +475,26 @@ public class SingleDownloadController extends BrowserSettingsThread implements D
     public void run() {
         LogSource downloadLogger = null;
         final PluginProgressTask task = new PluginProgressTask(null);
+        SelectProxyByUrlHook hook = null;
+        AbstractProxySelectorImpl ps = getProxySelector();
+        if (ps != null) {
+            ps.addSelectProxyByUrlHook(hook = new SelectProxyByUrlHook() {
+                private Thread th;
+                {
+                    th = Thread.currentThread();
+                }
+
+                @Override
+                public void onProxyChoosen(String urlOrDomain, List<HTTPProxy> ret) {
+                    if (th == Thread.currentThread()) {
+                        usedProxy = ret.get(0);
+                    }
+                }
+
+            });
+        }
         try {
+
             String logID = downloadLink.getDefaultPlugin().getHost();
             if (AccountCache.ACCOUNTTYPE.MULTI.equals(candidate.getCachedAccount().getType())) {
                 logID = logID + "_" + candidate.getCachedAccount().getPlugin().getHost();
@@ -505,6 +516,9 @@ public class SingleDownloadController extends BrowserSettingsThread implements D
             }
             watchDog.detach(this, returnState);
         } finally {
+            if (ps != null && hook != null) {
+                ps.removeSelectProxyByUrlHook(hook);
+            }
             task.reopen();
             task.close();
             finalizeProcessingPlugin();

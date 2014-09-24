@@ -72,6 +72,11 @@ public class SingleBasicProxySelectorImpl extends AbstractProxySelectorImpl {
 
     @Override
     public List<HTTPProxy> getProxiesByUrl(String url) {
+
+        for (SelectProxyByUrlHook hook : selectProxyByUrlHooks) {
+            hook.onProxyChoosen(url, list);
+        }
+
         return list;
     }
 

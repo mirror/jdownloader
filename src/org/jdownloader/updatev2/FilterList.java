@@ -1,6 +1,10 @@
 package org.jdownloader.updatev2;
 
+import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+
+import jd.parser.Regex;
+import jd.plugins.Account;
 
 import org.appwork.exceptions.WTFException;
 import org.appwork.storage.Storable;
@@ -13,8 +17,9 @@ public class FilterList implements Storable {
     }
 
     private Type      type;
-    private Pattern[] patterns;
+    private Pattern[] domainPatterns;
     private int       size;
+    private Pattern[] accountPatterns;
 
     public FilterList(/* Storable */) {
 
@@ -40,17 +45,39 @@ public class FilterList implements Storable {
 
     public void setEntries(String[] entries) {
         this.entries = entries;
-        patterns = new Pattern[entries.length];
+        domainPatterns = new Pattern[entries.length];
+        accountPatterns = new Pattern[entries.length];
         for (int i = 0; i < entries.length; i++) {
             if (entries[i] == null || entries[i].trim().length() == 0 || entries[i].trim().startsWith("//") || entries[i].trim().startsWith("#")) {
-                patterns[i] = null;
+                domainPatterns[i] = null;
+                accountPatterns[i] = null;
             } else {
                 size++;
-                try {
-                    patterns[i] = Pattern.compile(".*" + entries[i] + ".*", Pattern.CASE_INSENSITIVE);
-                } catch (Throwable e) {
+                int index = entries[i].indexOf("@");
+                if (index >= 0) {
+                    String username = entries[i].substring(0, index);
+                    String host = entries[i].substring(index + 1);
 
-                    patterns[i] = Pattern.compile(".*" + Pattern.quote(entries[i]) + ".*", Pattern.CASE_INSENSITIVE);
+                    try {
+                        accountPatterns[i] = Pattern.compile(username, Pattern.CASE_INSENSITIVE);
+                    } catch (Throwable e) {
+
+                        accountPatterns[i] = Pattern.compile(".*" + Pattern.quote(username) + ".*", Pattern.CASE_INSENSITIVE);
+                    }
+                    try {
+                        domainPatterns[i] = Pattern.compile(host, Pattern.CASE_INSENSITIVE);
+                    } catch (Throwable e) {
+
+                        domainPatterns[i] = Pattern.compile(".*" + Pattern.quote(host) + ".*", Pattern.CASE_INSENSITIVE);
+                    }
+                } else {
+                    accountPatterns[i] = null;
+                    try {
+                        domainPatterns[i] = Pattern.compile(entries[i], Pattern.CASE_INSENSITIVE);
+                    } catch (Throwable e) {
+
+                        domainPatterns[i] = Pattern.compile(".*" + Pattern.quote(entries[i]) + ".*", Pattern.CASE_INSENSITIVE);
+                    }
                 }
             }
         }
@@ -58,15 +85,27 @@ public class FilterList implements Storable {
 
     private String[] entries;
 
-    public boolean validate(String host) {
+    public boolean validate(String host, Account acc) {
         switch (type) {
         case BLACKLIST:
-            for (Pattern s : patterns) {
-                if (s == null)
+            for (int i = 0; i < domainPatterns.length; i++) {
+                Pattern domain = domainPatterns[i];
+                Pattern account = accountPatterns[i];
+                if (domain == null) {
                     continue;
-                if (s.matcher(host).find()) {
-                    //
-                    return false;
+                }
+                if (account != null) {
+
+                    if (domain.matcher(host).find() && acc != null && acc.getUser() != null && account.matcher(acc.getUser()).find()) {
+                        //
+                        return false;
+                    }
+                } else {
+
+                    if (domain.matcher(host).find()) {
+                        //
+                        return false;
+                    }
                 }
 
             }
@@ -74,14 +113,26 @@ public class FilterList implements Storable {
 
         case WHITELIST:
 
-            for (Pattern s : patterns) {
-                if (s == null)
+            for (int i = 0; i < domainPatterns.length; i++) {
+                Pattern domain = domainPatterns[i];
+                Pattern account = accountPatterns[i];
+                if (domain == null) {
                     continue;
-                if (s.matcher(host).find()) {
-                    //
-                    return true;
                 }
 
+                if (account != null) {
+                    if (domain.matcher(host).find() && acc != null && acc.getUser() != null && account.matcher(acc.getUser()).find()) {
+                        //
+                        return true;
+                    }
+                } else {
+                    Matcher matcher = domain.matcher(host);
+                    if (matcher.find()) {
+                        //
+                        // String g0 = matcher.group(0);
+                        return true;
+                    }
+                }
             }
 
             return false;
@@ -90,6 +141,11 @@ public class FilterList implements Storable {
             throw new WTFException("Unknown Type: " + type);
         }
 
+    }
+
+    public static void main(String[] args) {
+        String[] matches = new Regex("premiumize.me", "^(?!premiumize).*$").getColumn(-1);
+        System.out.println(1);
     }
 
     public int size() {
