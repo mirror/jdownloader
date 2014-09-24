@@ -17,7 +17,7 @@ public abstract class Filter implements FavIconRequestor {
     protected AtomicInteger        counter = new AtomicInteger(0);
     protected boolean              enabled = false;
     protected static final Storage CONFIG  = JSonStorage.getPlainStorage("quickfilters");
-    {
+    static {
         CONFIG.setAutoPutValues(false);
     }
 
@@ -56,7 +56,7 @@ public abstract class Filter implements FavIconRequestor {
         if (icon != null) {
             this.icon = NewTheme.I().getScaledInstance(icon, 16);
         }
-        enabled = CONFIG.get(getID(), true);
+        enabled = Boolean.TRUE.equals(CONFIG.get(getID(), true));
     }
 
     abstract protected String getID();
