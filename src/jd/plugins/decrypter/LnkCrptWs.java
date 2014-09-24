@@ -885,7 +885,6 @@ public class LnkCrptWs extends PluginForDecrypt {
                 mmUrlReq = mmUrlReq + "&mms=" + Math.random() + "&r=" + Math.random();
 
                 if (!isStableEnviroment()) {
-                    System.out.println("Url =" + mmUrlReq);
                     final KeyCaptchaDialog vC = new KeyCaptchaDialog(0, "KeyCaptcha - " + br.getHost(), new String[] { stImgs[1], sscStc[1] }, fmsImg, null, rcBr, mmUrlReq);
 
                     // avoid imports here
@@ -901,17 +900,7 @@ public class LnkCrptWs extends PluginForDecrypt {
                     if (vC.getReturnmask() == 4) {
                         out = "CANCEL";
                     }
-I'm a compile error
-                    rcBr.cloneBrowser().getPage(mmUrlReq);
-                    // Thread.sleep(5000);
-
-                    KeyCaptchaSolver kcSolver = new KeyCaptchaSolver();
-                    out = kcSolver.solve(vC.getKeyCaptchaImage());
-
-                    System.out.println("ROUT1: " + out);
-                    // System.out.println("ROUT2: " + out2);
-                    marray.addAll(kcSolver.getMouseArray());
-                    // marray.addAll(vC.mouseArray);
+                    marray.addAll(vC.mouseArray);
 
                 } else {
                     final KeyCaptchaDialogForStable vC = new KeyCaptchaDialogForStable("KeyCaptcha - " + br.getHost(), new String[] { stImgs[1], sscStc[1] }, fmsImg, rcBr, mmUrlReq);
@@ -920,12 +909,12 @@ I'm a compile error
                         try {
                             LOCK.wait();
                         } catch (final InterruptedException e) {
+                            // TODO Auto-generated catch block
                             e.printStackTrace();
                         }
                     }
                     out = vC.POSITION;
                 }
-
                 if (out == null) {
                     return null;
                 }
@@ -1000,8 +989,6 @@ I'm a compile error
         }
 
         private String sscFsmCheckTwo(final String arg0, final String arg1) {
-            String out = arg0;
-            String key = arg1;
             try {
                 if (arg1 == null) {
                     return null;
@@ -1120,8 +1107,8 @@ I'm a compile error
             KeyCaptchaImageGetter imgGetter = new KeyCaptchaImageGetter(new String[] { stImgs[1], sscStc[1] }, fmsImg, rcBr, mmUrlReq);
 
             KeyCaptchaSolver kcSolver = new KeyCaptchaSolver();
-            // Thread.sleep(5000);
-            rcBr.getPage(mmUrlReq);
+
+            rcBr.cloneBrowser().getPage(mmUrlReq);
 
             out = kcSolver.solve(imgGetter.getKeyCaptchaImage());
             marray.addAll(kcSolver.getMouseArray());
@@ -1172,8 +1159,6 @@ I'm a compile error
         private Browser                            kc;
         private String                             url;
 
-        private KeyCaptchaImages                   keyCaptchaImage;
-
         public KeyCaptchaDialog(final int flag, final String title, final String[] imageUrl, final LinkedHashMap<String, int[]> coordinates, final String cancelOption, Browser br, String url) {
             super(flag | Dialog.STYLE_HIDE_ICON | UIOManager.LOGIC_COUNTDOWN, title, null, null, null);
             setCountdownTime(120);
@@ -1192,15 +1177,10 @@ I'm a compile error
             return null;
         }
 
-        public KeyCaptchaImages getKeyCaptchaImage() {
-            return this.keyCaptchaImage;
-        }
-
         private String getPosition(final JLayeredPane drawPanel) {
             int i = 0;
             String positions = "";
             final Component[] comp = drawPanel.getComponents();
-
             for (int c = comp.length - 1; c >= 0; c--) {
                 if (comp[c].getMouseListeners().length == 0) {
                     continue;
@@ -1237,21 +1217,17 @@ I'm a compile error
             drawPanel.add(new KeyCaptchaDrawBackgroundPanel(kcImages[0]), new Integer(JLayeredPane.DEFAULT_LAYER), new Integer(JLayeredPane.DEFAULT_LAYER));
 
             mouseArray = new ArrayList<Integer>();
-            BufferedImage sampleImge = null;
-            LinkedList<BufferedImage> pieces = new LinkedList<BufferedImage>();
+
             for (int i = 1; i < kcImages.length; i++) {
                 if (kcImages[i] == null) {
                     continue;
                 } else if (i == kcSampleImg) {
                     sampleImg = true;
-                    sampleImge = kcImages[i];
                 } else {
                     sampleImg = false;
-                    pieces.add(kcImages[i]);
                 }
                 drawPanel.add(new KeyCaptchaDragPieces(kcImages[i], offset, sampleImg, mouseArray, kc, url), new Integer(JLayeredPane.DEFAULT_LAYER) + i, new Integer(JLayeredPane.DEFAULT_LAYER) + i);
 
-                keyCaptchaImage = new KeyCaptchaImages(kcImages[0], sampleImge, pieces);
                 offset += 4;
             }
 
@@ -1881,12 +1857,12 @@ I'm a compile error
 
         // Different captcha types
         boolean valid = true;
-
+        boolean done = false;
         if (br.containsHTML("<\\!\\-\\- KeyCAPTCHA code")) {
             KeyCaptcha kc;
 
             // START solve keycaptcha automatically
-            for (int i = 0; i <= -1; i++) { // TODO ENABLE HERE
+            for (int i = 0; i < 3; i++) { // TODO ENABLE HERE
                 kc = new KeyCaptcha(br);
                 final String result = kc.autoSolve(parameter);
 
@@ -1896,23 +1872,25 @@ I'm a compile error
 
                 br.postPage(parameter, "capcode=" + Encoding.urlEncode(result));
                 if (!br.containsHTML("<\\!\\-\\- KeyCAPTCHA code")) {
+                    done = true;
                     break;
                 }
             }
             // START solve keycaptcha automatically
-
-            for (int i = 0; i <= 3; i++) {
-                kc = new KeyCaptcha(br);
-                final String result = kc.showDialog(parameter);
-                if (result == null) {
-                    continue;
-                }
-                if ("CANCEL".equals(result)) {
-                    throw new DecrypterException(DecrypterException.CAPTCHA);
-                }
-                br.postPage(parameter, "capcode=" + Encoding.urlEncode(result));
-                if (!br.containsHTML("<\\!\\-\\- KeyCAPTCHA code")) {
-                    break;
+            if (!done) {
+                for (int i = 0; i <= 3; i++) {
+                    kc = new KeyCaptcha(br);
+                    final String result = kc.showDialog(parameter);
+                    if (result == null) {
+                        continue;
+                    }
+                    if ("CANCEL".equals(result)) {
+                        throw new DecrypterException(DecrypterException.CAPTCHA);
+                    }
+                    br.postPage(parameter, "capcode=" + Encoding.urlEncode(result));
+                    if (!br.containsHTML("<\\!\\-\\- KeyCAPTCHA code")) {
+                        break;
+                    }
                 }
             }
         }
@@ -2318,7 +2296,6 @@ I'm a compile error
             for (int i = 0; i < limit; i++) {
                 List<DirectedBorder> borders = getBreakingBordersInImage(images.backgroundImage, borderPixelMin);
                 ImageAndPosition imagePos = getBestPosition(images, borders);
-                System.out.println("pos: " + imagePos.position);
                 marray(new Point((int) (Math.random() * imagePos.position.x), (int) (Math.random() * imagePos.position.y)));
                 marray(imagePos.position);
 
@@ -2330,12 +2307,10 @@ I'm a compile error
             int i = 0;
             for (int c = 0; c < piecesOld.size(); c++) {
                 BufferedImage image = piecesOld.get(c);
-                // for (BufferedImage image : imgPosition.keySet()) {
                 final Point p = imgPosition.get(image);
                 positions += (i != 0 ? "." : "") + String.valueOf(p.x) + "." + String.valueOf(p.y);
                 i++;
             }
-            System.out.println(positions);
             return positions;
         }
 
