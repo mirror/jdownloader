@@ -17,9 +17,11 @@ public class ExceptionFilter extends Filter {
     public ExceptionFilter(LinkgrabberFilterRuleWrapper rule) {
         super(rule.getName());
         this.wrapperRule = rule;
-        if (rule.getRule().getIconKey() != null) setIcon(NewTheme.I().getIcon(rule.getRule().getIconKey(), 16));
+        if (rule.getRule().getIconKey() != null) {
+            setIcon(NewTheme.I().getIcon(rule.getRule().getIconKey(), 16));
+        }
         id = "Custom_" + Hash.getMD5(rule.getName() + ":" + getDescription());
-        enabled = filterSubConfig.getBooleanProperty(getID(), true);
+        enabled = CONFIG.get(getID(), true);
         description = rule.getRule().toString();
     }
 
@@ -40,22 +42,40 @@ public class ExceptionFilter extends Filter {
     @Override
     public boolean isFiltered(CrawledLink link) {
         try {
-            if (!wrapperRule.checkHoster(link)) return false;
+            if (!wrapperRule.checkHoster(link)) {
+                return false;
+            }
         } catch (NoDownloadLinkException e) {
             throw new WTFException();
         }
         try {
-            if (!wrapperRule.checkPluginStatus(link)) return false;
+            if (!wrapperRule.checkPluginStatus(link)) {
+                return false;
+            }
         } catch (NoDownloadLinkException e) {
             throw new WTFException();
         }
-        if (!wrapperRule.checkOrigin(link)) return false;
-        if (!wrapperRule.checkOnlineStatus(link)) return false;
-        if (!wrapperRule.checkSource(link)) return false;
-        if (!wrapperRule.checkFileName(link)) return false;
-        if (!wrapperRule.checkPackageName(link)) return false;
-        if (!wrapperRule.checkFileSize(link)) return false;
-        if (!wrapperRule.checkFileType(link)) return false;
+        if (!wrapperRule.checkOrigin(link)) {
+            return false;
+        }
+        if (!wrapperRule.checkOnlineStatus(link)) {
+            return false;
+        }
+        if (!wrapperRule.checkSource(link)) {
+            return false;
+        }
+        if (!wrapperRule.checkFileName(link)) {
+            return false;
+        }
+        if (!wrapperRule.checkPackageName(link)) {
+            return false;
+        }
+        if (!wrapperRule.checkFileSize(link)) {
+            return false;
+        }
+        if (!wrapperRule.checkFileType(link)) {
+            return false;
+        }
         return true;
     }
 

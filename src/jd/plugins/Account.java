@@ -23,6 +23,7 @@ import jd.controlling.AccountController;
 
 import org.appwork.utils.StringUtils;
 import org.jdownloader.controlling.UniqueAlltimeID;
+import org.jdownloader.settings.staticreferences.CFG_GENERAL;
 
 public class Account extends Property {
 
@@ -280,7 +281,7 @@ public class Account extends Property {
         }
         if (this.error != error || !StringUtils.equals(this.errorString, errorString)) {
             if (AccountError.TEMP_DISABLED.equals(error)) {
-                long defaultTmpDisabledTimeOut = 60 * 60 * 1000l;
+                long defaultTmpDisabledTimeOut = CFG_GENERAL.CFG.getAccountTemporarilyDisabledDefaultTimeout();
                 Long timeout = this.getLongProperty(PROPERTY_TEMP_DISABLED_TIMEOUT, defaultTmpDisabledTimeOut);
                 if (timeout == null || timeout <= 0) {
                     timeout = defaultTmpDisabledTimeOut;

@@ -36,6 +36,12 @@ import org.appwork.storage.TypeRef;
 import org.appwork.utils.Application;
 import org.jdownloader.logging.LogController;
 
+@Deprecated
+/**
+ * @deprecated use protected static final Storage CONFIG  = JSonStorage.getPlainStorage("quickfilters"); instead
+ * @author Thomas
+ *
+ */
 public class SubConfiguration extends Property implements Serializable {
 
     private static final long                                   serialVersionUID = 7803718581558607222L;
@@ -57,6 +63,7 @@ public class SubConfiguration extends Property implements Serializable {
                                                                                  };
 
     static {
+
         ShutdownController.getInstance().addShutdownEvent(new ShutdownEvent() {
             @Override
             public String toString() {
@@ -196,7 +203,9 @@ public class SubConfiguration extends Property implements Serializable {
                 synchronized (lock) {
                     /* shared lock to allow parallel creation of new SubConfigurations */
                     ret = SUB_CONFIGS.get(name);
-                    if (ret != null) return ret;
+                    if (ret != null) {
+                        return ret;
+                    }
                     final SubConfiguration cfg = new SubConfiguration(name, importOnly);
                     synchronized (LOCKS) {
                         /* global lock to replace the SUB_CONFIGS */

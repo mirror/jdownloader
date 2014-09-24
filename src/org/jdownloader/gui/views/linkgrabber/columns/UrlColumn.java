@@ -176,12 +176,13 @@ public class UrlColumn extends ExtTextColumn<AbstractNode> {
         popup.add(new AppAction() {
             {
                 if (Application.isJared(null)) {
-                    setName(_GUI._.UrlColumn_onDoubleClick_object_copy(shorten(string)));
+
+                    setName(_GUI._.UrlColumn_onDoubleClick_object_copy(dt.getTranslatedName() + ": " + shorten(string)));
                 } else if (dt == null) {
                     setName(_GUI._.UrlColumn_onDoubleClick_object_copy("PLUGIN_PATTERN: " + string));
                 } else {
 
-                    setName(_GUI._.UrlColumn_onDoubleClick_object_copy(dt + ": " + string));
+                    setName(_GUI._.UrlColumn_onDoubleClick_object_copy(dt.getTranslatedName() + ": " + string));
                 }
 
                 setIconKey(IconKey.ICON_COPY);
