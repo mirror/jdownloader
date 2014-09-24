@@ -546,4 +546,11 @@ public interface GeneralSettings extends ConfigInterface {
 
     void setUrlDisplayOrder(UrlDisplayType[] order);
 
+    @AboutConfig
+    @DefaultLongValue(60 * 60 * 1000l)
+    @DescriptionForConfigEntry("[ms] Define how long an account should stay disabled if a \"temporarily disabled event\" occures (Like Download Quota reached)")
+    long getAccountTemporarilyDisabledDefaultTimeout();
+
+    void setAccountTemporarilyDisabledDefaultTimeout(long ms);
+
 }

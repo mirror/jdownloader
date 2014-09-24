@@ -166,7 +166,7 @@ public class HosterRuleController implements AccountControllerListener {
         });
     }
 
-    public AccountCache getAccountCache(String host, final DownloadSession session) {
+    public AccountCache getAccountCache(final String host, final DownloadSession session) {
         if (StringUtils.isEmpty(host)) {
             return null;
         }
@@ -203,6 +203,8 @@ public class HosterRuleController implements AccountControllerListener {
                                         newCache.add(cachedAccount);
                                         rules.add(ag.getRule());
                                     }
+                                } else if (FreeAccountReference.isFreeAccount(acr)) {
+                                    logger.info("Free Download disabled by Account Rule: " + host);
                                 }
                             }
                         }

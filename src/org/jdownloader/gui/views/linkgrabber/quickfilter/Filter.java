@@ -4,19 +4,22 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 import javax.swing.Icon;
 
-import jd.config.Property;
-import jd.config.SubConfiguration;
 import jd.controlling.faviconcontroller.FavIconRequestor;
 import jd.controlling.linkcrawler.CrawledLink;
 
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.Storage;
 import org.jdownloader.images.NewTheme;
 
 public abstract class Filter implements FavIconRequestor {
 
-    protected Icon                          icon            = null;
-    protected AtomicInteger                 counter         = new AtomicInteger(0);
-    protected boolean                       enabled         = false;
-    protected static final SubConfiguration filterSubConfig = SubConfiguration.getConfig("quickfilters");
+    protected Icon                 icon    = null;
+    protected AtomicInteger        counter = new AtomicInteger(0);
+    protected boolean              enabled = false;
+    protected static final Storage CONFIG  = JSonStorage.getPlainStorage("quickfilters");
+    {
+        CONFIG.setAutoPutValues(false);
+    }
 
     public int getCounter() {
         return counter.get();
@@ -53,7 +56,7 @@ public abstract class Filter implements FavIconRequestor {
         if (icon != null) {
             this.icon = NewTheme.I().getScaledInstance(icon, 16);
         }
-        enabled = filterSubConfig.getBooleanProperty(getID(), true);
+        enabled = CONFIG.get(getID(), true);
     }
 
     abstract protected String getID();
@@ -68,9 +71,9 @@ public abstract class Filter implements FavIconRequestor {
         }
         this.enabled = enabled;
         if (!enabled) {
-            filterSubConfig.setProperty(getID(), false);
+            CONFIG.put(getID(), false);
         } else {
-            filterSubConfig.setProperty(getID(), Property.NULL);
+            CONFIG.remove(getID());
         }
     }
 

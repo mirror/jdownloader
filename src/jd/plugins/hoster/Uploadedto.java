@@ -1094,6 +1094,9 @@ public class Uploadedto extends PluginForHost {
 
     @Override
     public void handlePremium(DownloadLink downloadLink, Account account) throws Exception {
+        if (true) {
+            throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
+        }
         usePremiumDownloadAPI = this.getPluginConfig().getBooleanProperty(PREFER_PREMIUM_DOWNLOAD_API, default_ppda);
         if (usePremiumAPI.get() && usePremiumDownloadAPI && !downloadLink.getBooleanProperty("preDlPass", false)) {
             api_handle_Premium(downloadLink, account);

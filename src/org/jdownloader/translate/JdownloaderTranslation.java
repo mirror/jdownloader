@@ -624,4 +624,16 @@ public interface JdownloaderTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "Moving file..." })
     String MovePluginProgress_nodest();
 
+    @Default(lngs = { "en" }, values = { "Referrer" })
+    String UrlDisplayType_REFERRER();
+
+    @Default(lngs = { "en" }, values = { "Source" })
+    String UrlDisplayType_ORIGIN();
+
+    @Default(lngs = { "en" }, values = { "Container" })
+    String UrlDisplayType_CONTAINER();
+
+    @Default(lngs = { "en" }, values = { "Data" })
+    String UrlDisplayType_CONTENT();
+
 }
