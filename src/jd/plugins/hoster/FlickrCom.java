@@ -58,6 +58,8 @@ public class FlickrCom extends PluginForHost {
     private static final String intl      = "us";
     private static final String lang_post = "en-US";
     private static final String api_key   = "a9823cb30086af802708b39e005668d0";
+    private String              user      = null;
+    private String              id        = null;
 
     public void correctDownloadLink(DownloadLink link) {
         link.setUrlDownload("https://www.flickr.com/" + new Regex(link.getDownloadURL(), "\\.com/(.+)").getMatch(0));
@@ -78,6 +80,7 @@ public class FlickrCom extends PluginForHost {
         return false;
     }
 
+    @SuppressWarnings("deprecation")
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws Exception {
         if (downloadLink.getBooleanProperty("offline", false)) {
@@ -101,7 +104,8 @@ public class FlickrCom extends PluginForHost {
             return AvailableStatus.UNCHECKABLE;
         }
         String filename = getFilename();
-        final String lid = new Regex(downloadLink.getDownloadURL(), "(\\d+)$").getMatch(0);
+        id = new Regex(downloadLink.getDownloadURL(), "(\\d+)$").getMatch(0);
+        user = new Regex(downloadLink.getDownloadURL(), "flickr\\.com/photos/([^<>\"/]+)/").getMatch(0);
         if (filename == null) {
             downloadLink.getLinkStatus().setStatusText("Only downloadable for registered users [Add a flickt account to download such links!]");
             logger.warning("Filename not found, plugin must be broken...");
@@ -115,7 +119,7 @@ public class FlickrCom extends PluginForHost {
              */
             br.clearCookies("htto://flickr.com");
             final String secret = br.getRegex("\"secret\":\"([^<>\"]*)\"").getMatch(0);
-            br.getPage("https://api.flickr.com/services/rest?photo_id=" + lid + "&secret=" + secret + "&method=flickr.video.getStreamInfo&csrf=&api_key=" + api_key + "&format=json&hermes=1&hermesClient=1&reqId=&nojsoncallback=1");
+            br.getPage("https://api.flickr.com/services/rest?photo_id=" + id + "&secret=" + secret + "&method=flickr.video.getStreamInfo&csrf=&api_key=" + api_key + "&format=json&hermes=1&hermesClient=1&reqId=&nojsoncallback=1");
             final String lq = createGuid();
             final String nodeID = br.getRegex("data\\-comment\\-id=\"(\\d+\\-\\d+)\\-").getMatch(0);
             if (secret == null || filename == null) {
@@ -133,7 +137,7 @@ public class FlickrCom extends PluginForHost {
             }
         } else {
             br.getPage(downloadLink.getDownloadURL() + "/in/photostream");
-            DLLINK = getFinalLink(lid);
+            DLLINK = getFinalLink();
             if (DLLINK == null) {
                 DLLINK = br.getRegex("\"(https?://farm\\d+\\.(static\\.flickr|staticflickr)\\.com/\\d+/.*?)\"").getMatch(0);
             }
@@ -391,14 +395,14 @@ public class FlickrCom extends PluginForHost {
         return a;
     }
 
-    private String getFinalLink(final String id) throws IOException {
+    private String getFinalLink() throws IOException {
         final String[] sizes = { "o", "k", "h", "l", "c", "z", "m", "n", "s", "t", "q", "sq" };
         String picSource;
-        final boolean json_active = true;
-        if (json_active) {
-            picSource = br.getRegex("(\"id\":\"" + id + "\".*?\"safetyLevel\")").getMatch(0);
-        } else {
-            /* If ever used, access this site first: flickr.com/photos/xxx/\\d+/sizes/l */
+        boolean json_active = true;
+        picSource = br.getRegex("(\"id\":\"" + id + "\".*?\"safetyLevel\")").getMatch(0);
+        if (picSource == null) {
+            json_active = false;
+            br.getPage("https://www.flickr.com/photos/" + user + "/" + id + "/sizes/l");
             picSource = br.getRegex("<ol class=\"sizes\\-list\">(.*?)<div id=\"allsizes\\-photo\">").getMatch(0);
         }
         // Make sure we get the correct downloadlinks
@@ -422,7 +426,9 @@ public class FlickrCom extends PluginForHost {
         }
         if (finallink != null) {
             finallink = finallink.replace("\\", "");
-            finallink = "https:" + finallink;
+            if (!finallink.startsWith("http")) {
+                finallink = "https:" + finallink;
+            }
         }
         return finallink;
     }

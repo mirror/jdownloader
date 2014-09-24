@@ -117,19 +117,22 @@ public class AbelhasPtDecrypter extends PluginForDecrypt {
             dl.setFinalFileName(parameter);
             dl.setProperty("mainlink", parameter);
             dl.setProperty("offline", true);
-            /* its wrong to add offline link and also parse online links! */
-            // decryptedLinks.add(dl);
+            decryptedLinks.add(dl);
+            return decryptedLinks;
+        } else if (br.containsHTML("id=\"ProtectedFolderChomikLogin\"")) {
+            /* Password protected link --> Not yet supported --> Offline */
+            final DownloadLink dl = createDownloadlink("http://abelhasdecrypted.pt/" + System.currentTimeMillis() + new Random().nextInt(1000000));
+            try {
+                dl.setContentUrl(param.getCryptedUrl());
+            } catch (Throwable e1) {
+                // jd09
+            }
+            dl.setFinalFileName(parameter);
+            dl.setProperty("mainlink", parameter);
+            dl.setProperty("offline", true);
+            decryptedLinks.add(dl);
+            return decryptedLinks;
         }
-        /* Password protected link --> Not yet supported --> And this code is not yet tested either :D */
-        // if (br.containsHTML(">Digite senha:</label>")) {
-        // final DownloadLink dl = createDownloadlink("http://abelhasdecrypted.pt/" + System.currentTimeMillis() + new
-        // Random().nextInt(1000000));
-        // dl.setFinalFileName(parameter);
-        // dl.setProperty("mainlink", parameter);
-        // dl.setProperty("offline", true);
-        // decryptedLinks.add(dl);
-        // return decryptedLinks;
-        // }
 
         /* Differ between single links and folders */
         if (br.containsHTML("id=\"fileDetails\"")) {
