@@ -174,6 +174,65 @@ public class LinkCrawler {
         this(true, true);
     }
 
+    public static LinkCrawler newInstance() {
+        final LinkCrawler lc;
+        if (Thread.currentThread() instanceof LinkCrawlerThread) {
+            final LinkCrawlerThread thread = (LinkCrawlerThread) (Thread.currentThread());
+            Object owner = thread.getCurrentOwner();
+            final CrawledLink source;
+            if (owner instanceof PluginForDecrypt) {
+                source = ((PluginForDecrypt) owner).getCurrentLink();
+            } else {
+                source = null;
+            }
+            final LinkCrawler parent = thread.getCurrentLinkCrawler();
+            lc = new LinkCrawler(false, false) {
+
+                @Override
+                protected CrawledLink crawledLinkFactorybyURL(String url) {
+                    final CrawledLink ret = new CrawledLink(url);
+                    if (source != null) {
+                        ret.setSourceLink(source);
+                    }
+                    return ret;
+                }
+
+                @Override
+                public int getCrawlerGeneration(boolean thisGeneration) {
+                    if (!thisGeneration && parent != null) {
+                        return Math.max(crawlerGeneration.get(), parent.getCrawlerGeneration(false));
+                    }
+                    return crawlerGeneration.get();
+                }
+
+                @Override
+                public List<LazyCrawlerPlugin> getCrawlerPlugins() {
+                    if (parent != null) {
+                        return parent.getCrawlerPlugins();
+                    }
+                    return super.getCrawlerPlugins();
+                }
+
+                @Override
+                protected boolean distributeCrawledLink(CrawledLink crawledLink) {
+                    return crawledLink != null && crawledLink.getSourceUrls() == null;
+                }
+
+                @Override
+                protected void postprocessFinalCrawledLink(CrawledLink link) {
+                }
+
+                @Override
+                protected void preprocessFinalCrawledLink(CrawledLink link) {
+                }
+
+            };
+        } else {
+            lc = new LinkCrawler(true, true);
+        }
+        return lc;
+    }
+
     protected PluginClassLoaderChild getPluginClassLoaderChild() {
         return classLoader;
     }

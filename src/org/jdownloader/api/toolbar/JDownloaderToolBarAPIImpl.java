@@ -434,7 +434,7 @@ public class JDownloaderToolBarAPIImpl implements JDownloaderToolBarAPI {
                     checkSessions.put(checkSession.ID, checkSession);
                 }
                 ret.put("checkid", checkSession.ID);
-                checkSession.linkCrawler = new LinkCrawler();
+                checkSession.linkCrawler = LinkCrawler.newInstance();
                 final LinkCrawlerHandler defaultHandler = checkSession.linkCrawler.getHandler();
                 if (hosterOnly) {
                     checkSession.linkCrawler.setFilter(new LinkCrawlerFilter() {

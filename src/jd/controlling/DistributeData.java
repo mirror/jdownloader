@@ -21,12 +21,8 @@ import java.util.List;
 
 import jd.controlling.linkcrawler.CrawledLink;
 import jd.controlling.linkcrawler.LinkCrawler;
-import jd.controlling.linkcrawler.LinkCrawlerThread;
 import jd.parser.html.HTMLParser;
 import jd.plugins.DownloadLink;
-import jd.plugins.PluginForDecrypt;
-
-import org.jdownloader.plugins.controller.crawler.LazyCrawlerPlugin;
 
 /**
  * Diese Klasse läuft in einem Thread und verteilt den Inhalt der Zwischenablage an (unter Umständen auch mehrere) Plugins Die gefundenen
@@ -67,53 +63,7 @@ public class DistributeData {
     public ArrayList<DownloadLink> findLinks() {
         final ArrayList<String> foundPasswords = new ArrayList<String>();
         foundPasswords.addAll(HTMLParser.findPasswords(data));
-        final LinkCrawler lc;
-        if (Thread.currentThread() instanceof LinkCrawlerThread) {
-            final LinkCrawlerThread thread = (LinkCrawlerThread) (Thread.currentThread());
-            Object owner = thread.getCurrentOwner();
-            final CrawledLink source;
-            if (owner instanceof PluginForDecrypt) {
-                source = ((PluginForDecrypt) owner).getCurrentLink();
-            } else {
-                source = null;
-            }
-            final LinkCrawler parent = thread.getCurrentLinkCrawler();
-            lc = new LinkCrawler(false, false) {
-
-                @Override
-                protected CrawledLink crawledLinkFactorybyURL(String url) {
-                    final CrawledLink ret = new CrawledLink(url);
-                    if (source != null) {
-                        ret.setSourceLink(source);
-                    }
-                    return ret;
-                }
-
-                @Override
-                public int getCrawlerGeneration(boolean thisGeneration) {
-                    if (!thisGeneration && parent != null) {
-                        return Math.max(crawlerGeneration.get(), parent.getCrawlerGeneration(false));
-                    }
-                    return crawlerGeneration.get();
-                }
-
-                @Override
-                public List<LazyCrawlerPlugin> getCrawlerPlugins() {
-                    if (parent != null) {
-                        return parent.getCrawlerPlugins();
-                    }
-                    return super.getCrawlerPlugins();
-                }
-
-                @Override
-                protected boolean distributeCrawledLink(CrawledLink crawledLink) {
-                    return crawledLink != null && crawledLink.getSourceUrls() == null;
-                }
-
-            };
-        } else {
-            lc = new LinkCrawler();
-        }
+        final LinkCrawler lc = LinkCrawler.newInstance();
         lc.crawl(data);
         lc.waitForCrawling();
         ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>(lc.getCrawledLinks().size());
