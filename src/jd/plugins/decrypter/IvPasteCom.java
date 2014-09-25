@@ -45,7 +45,9 @@ public class IvPasteCom extends PluginForDecrypt {
         String parameter = param.toString();
         br.getPage(parameter);
         String ID = new Regex(parameter, "ivpaste\\.com/(v/|view\\.php\\?id=)([A-Za-z0-9]+)").getMatch(1);
-        if (ID == null) return null;
+        if (ID == null) {
+            return null;
+        }
         br.getPage("http://ivpaste.com/v/" + ID);
         if (br.containsHTML("NO Existe\\!")) {
             logger.info("Link offline: " + parameter);
@@ -86,18 +88,30 @@ public class IvPasteCom extends PluginForDecrypt {
                 failed = false;
                 break;
             }
-            if (failed) throw new DecrypterException(DecrypterException.CAPTCHA);
+            if (failed) {
+                throw new DecrypterException(DecrypterException.CAPTCHA);
+            }
         } else if (br.containsHTML("KeyCAPTCHA code")) {
             String result = null;
             final PluginForDecrypt keycplug = JDUtilities.getPluginForDecrypt("linkcrypt.ws");
-            try {
+            for (int i = 0; i < 5; i++) {
                 final jd.plugins.decrypter.LnkCrptWs.KeyCaptcha kc = ((jd.plugins.decrypter.LnkCrptWs) keycplug).getKeyCaptcha(br);
-                result = kc.showDialog(parameter);
-            } catch (final Throwable e) {
-                result = null;
+                if (i < 3) {
+                    result = kc.autoSolve(parameter);
+                } else {
+                    try {
+                        result = kc.showDialog(parameter);
+                    } catch (final Throwable e) {
+                        result = null;
+                    }
+                }
             }
-            if (result == null) throw new DecrypterException(DecrypterException.CAPTCHA);
-            if ("CANCEL".equals(result)) throw new DecrypterException(DecrypterException.CAPTCHA);
+            if (result == null) {
+                throw new DecrypterException(DecrypterException.CAPTCHA);
+            }
+            if ("CANCEL".equals(result)) {
+                throw new DecrypterException(DecrypterException.CAPTCHA);
+            }
             br.postPage(br.getURL(), "capcode=" + Encoding.urlEncode(result) + "&save=&save=");
         }
         final String content = br.getRegex("<td nowrap align.*?pre>(.*?)</pre").getMatch(0);
@@ -112,7 +126,9 @@ public class IvPasteCom extends PluginForDecrypt {
         }
         for (String dl : links) {
             String ID2 = new Regex(dl, "ivpaste\\.com/(v/|view\\.php\\?id=)([A-Za-z0-9]+)").getMatch(1);
-            if (ID.equals(ID2)) continue;
+            if (ID.equals(ID2)) {
+                continue;
+            }
             decryptedLinks.add(createDownloadlink(dl));
         }
         return decryptedLinks;

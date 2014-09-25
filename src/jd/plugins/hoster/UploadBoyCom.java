@@ -371,7 +371,7 @@ public class UploadBoyCom extends PluginForHost {
                     final PluginForDecrypt keycplug = JDUtilities.getPluginForDecrypt("linkcrypt.ws");
                     try {
                         final jd.plugins.decrypter.LnkCrptWs.KeyCaptcha kc = ((jd.plugins.decrypter.LnkCrptWs) keycplug).getKeyCaptcha(br);
-                        result = kc.showDialog(downloadLink.getDownloadURL());
+                        result = kc.handleKeyCaptcha(downloadLink.getDownloadURL(), downloadLink);
                     } catch (final Throwable e) {
                         result = null;
                     }
@@ -1056,7 +1056,7 @@ public class UploadBoyCom extends PluginForHost {
             final Browser captcha = br.cloneBrowser();
             final PluginForDecrypt keycplug = JDUtilities.getPluginForDecrypt("linkcrypt.ws");
             final jd.plugins.decrypter.LnkCrptWs.KeyCaptcha kc = ((jd.plugins.decrypter.LnkCrptWs) keycplug).getKeyCaptcha(captcha);
-            final String result = kc.showDialog(downloadLink.getDownloadURL());
+            final String result = kc.handleKeyCaptcha(downloadLink.getDownloadURL(), downloadLink);
             if (result != null && "CANCEL".equals(result)) {
                 throw new PluginException(LinkStatus.ERROR_FATAL);
             }

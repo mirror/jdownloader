@@ -1490,7 +1490,7 @@ public class VShareEu extends PluginForHost {
             cleanupBrowser(captcha, form.getHtmlCode());
             final PluginForDecrypt keycplug = JDUtilities.getPluginForDecrypt("linkcrypt.ws");
             final jd.plugins.decrypter.LnkCrptWs.KeyCaptcha kc = ((jd.plugins.decrypter.LnkCrptWs) keycplug).getKeyCaptcha(captcha);
-            final String result = kc.showDialog(downloadLink.getDownloadURL());
+            final String result = kc.handleKeyCaptcha(downloadLink.getDownloadURL(), downloadLink);
             if (result != null && "CANCEL".equals(result)) {
                 throw new PluginException(LinkStatus.ERROR_FATAL);
             }
