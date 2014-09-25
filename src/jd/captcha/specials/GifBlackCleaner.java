@@ -57,7 +57,7 @@ public class GifBlackCleaner {
         }
     }
 
-    private static BufferedImage toBufferedImage(InputStream is) throws InterruptedException {
+    public static BufferedImage toBufferedImage(InputStream is) throws InterruptedException {
 
         try {
             JAntiCaptcha jac = new JAntiCaptcha();

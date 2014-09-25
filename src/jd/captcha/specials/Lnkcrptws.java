@@ -16,15 +16,36 @@
 
 package jd.captcha.specials;
 
+import java.awt.image.BufferedImage;
+import java.io.File;
+import java.io.FileInputStream;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.Iterator;
 
+import javax.swing.ImageIcon;
+
+import jd.captcha.JAntiCaptcha;
+import jd.captcha.gui.BasicWindow;
 import jd.captcha.pixelgrid.Captcha;
 import jd.captcha.pixelgrid.Letter;
 import jd.captcha.pixelobject.PixelObject;
 
+import org.appwork.utils.Application;
+import org.appwork.utils.swing.dialog.Dialog;
+
 public class Lnkcrptws {
+
+    public static void main(String[] args) throws Exception {
+        Application.setApplication(".jd_home");
+        JAntiCaptcha jac = new JAntiCaptcha("lnkcrptwsCircles");
+        File file = new File("C:\\Users\\Thomas\\.jd_home\\captchas\\linkcrypt.ws_13.06.2014_17.01.28.384.jpg");
+        BufferedImage image = GifBlackCleaner.toBufferedImage(new FileInputStream(file));
+        Dialog.getInstance().showConfirmDialog(0, "", "", new ImageIcon(image), null, null);
+        Captcha captcha = jac.createCaptcha(image);
+        String result = jac.checkCaptcha(file, captcha);
+        System.out.println(result);
+    }
 
     private static boolean equalElements(int c, int c2) {
         return c == c2;
@@ -46,7 +67,9 @@ public class Lnkcrptws {
         for (int x = 0; x < grid.getWidth(); x++) {
             for (int y = 0; y < grid.getHeight(); y++) {
                 int c = grid.getGrid()[x][y];
-                if (isWhite(c)) continue;
+                if (isWhite(c)) {
+                    continue;
+                }
                 PixelObject n = new PixelObject(grid);
                 n.add(x, y, c);
                 merge = new ArrayList<PixelObject>();
@@ -71,14 +94,20 @@ public class Lnkcrptws {
         return ret;
     }
 
-    public static Letter[] getLetters(Captcha captcha) throws InterruptedException{
+    public static Letter[] getLetters(Captcha captcha) throws InterruptedException {
         java.util.List<PixelObject> ob = getObjects(captcha);
         // delete the lines
+        int i = 0;
         for (Iterator<PixelObject> iterator = ob.iterator(); iterator.hasNext();) {
             PixelObject pixelObject = iterator.next();
             int ratio = pixelObject.getHeight() * 100 / pixelObject.getWidth();
-            if (ratio > 105 || ratio < 95) iterator.remove();
+            if (ratio > 105 || ratio < 95) {
+                iterator.remove();
+            }
+            BasicWindow.showImage(pixelObject.toLetter().getImage(), "Image " + i);
+
         }
+
         Circle circle = new Circle(captcha, ob);
         circle.inBorder = 3;
         circle.outBorder = 2;
@@ -88,8 +117,8 @@ public class Lnkcrptws {
                 return o1.equals(o2) ? 1 : 0;
             }
         };
-        // BasicWindow.showImage(captcha.getImage());
-        // BasicWindow.showImage(circle.getOpenCircle().getImage());
+        BasicWindow.showImage(captcha.getImage());
+        BasicWindow.showImage(circle.getOpenCircle().getImage());
         return circle.getOpenCirclePositionAsLetters();
     }
 }

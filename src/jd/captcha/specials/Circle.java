@@ -21,6 +21,7 @@ import java.util.Comparator;
 import java.util.List;
 
 import jd.captcha.LetterComperator;
+import jd.captcha.gui.BasicWindow;
 import jd.captcha.pixelgrid.Captcha;
 import jd.captcha.pixelgrid.Letter;
 import jd.captcha.pixelobject.PixelObject;
@@ -51,8 +52,12 @@ public class Circle {
                                            public int compare(Integer o1, Integer o2) {
                                                int c = o1;
                                                int c2 = o2;
-                                               if (isBackground(o1) || isBackground(o2)) return 0;
-                                               if (c == 0x000000 || c2 == 0x000000) return c == c2 ? 1 : 0;
+                                               if (isBackground(o1) || isBackground(o2)) {
+                                                   return 0;
+                                               }
+                                               if (c == 0x000000 || c2 == 0x000000) {
+                                                   return c == c2 ? 1 : 0;
+                                               }
                                                int[] hsvC = Colors.rgb2hsv(c);
                                                int[] hsvC2 = Colors.rgb2hsv(c2);
                                                // TODO The "hsvC[1] / hsvC2[2] == 1" is repeated twice
@@ -76,16 +81,22 @@ public class Circle {
         for (int i = -inBorder; i < outBorder / 2; i++) {
             PixelObject n = new PixelObject(captcha);
             ret += circle(x, y, r + i, n);
-            if (n.getSize() > 0) b.add(n);
+            if (n.getSize() > 0) {
+                b.add(n);
+            }
         }
-        if (b.getSize() > 10 && b.getArea() > 30) { return b; }
+        if (b.getSize() > 10 && b.getArea() > 30) {
+            return b;
+        }
         return null;
     }
 
     private int checkBackground(int x, int y, PixelObject n) {
         int c = captcha.getPixelValue(x, y);
         boolean b = isBackground(c);
-        if (!b) n.add(x, y, c);
+        if (!b) {
+            n.add(x, y, c);
+        }
         return b ? 1 : 0;
     }
 
@@ -127,26 +138,37 @@ public class Circle {
     private int plot4points(int cx, int cy, int x, int y, PixelObject n) {
         int ret = 0;
         ret += checkBackground(cx + x, cy + y, n);
-        if (x != 0) ret += checkBackground(cx - x, cy + y, n);
-        if (y != 0) ret += checkBackground(cx + x, cy - y, n);
-        if (x != 0 && y != 0) ret += checkBackground(cx - x, cy - y, n);
+        if (x != 0) {
+            ret += checkBackground(cx - x, cy + y, n);
+        }
+        if (y != 0) {
+            ret += checkBackground(cx + x, cy - y, n);
+        }
+        if (x != 0 && y != 0) {
+            ret += checkBackground(cx - x, cy - y, n);
+        }
         return ret;
     }
 
     /**
-     * returns the Circles Bounds on the Captcha TODO geht nur bei x entlang sollte noch bei y gemacht werden um bessere ergebnisse zu bekommen
+     * returns the Circles Bounds on the Captcha TODO geht nur bei x entlang sollte noch bei y gemacht werden um bessere ergebnisse zu
+     * bekommen
      * 
      * @param pixelObject
      * @param captcha
      * @return
      */
     private int[] getBounds(PixelObject pixelObject) {
-        if (pixelObject.getSize() < 5 || pixelObject.getArea() < minArea) return null;
+        if (pixelObject.getSize() < 5 || pixelObject.getArea() < minArea) {
+            return null;
+        }
         Letter let = pixelObject.toColoredLetter();
         int r = let.getWidth() / 2;
         try {
             int ratio = pixelObject.getHeight() * 100 / pixelObject.getWidth();
-            if ((ratio > 95 && ratio < 105) || equalElements(let.getGrid()[r][0], let.getGrid()[0][r]) || equalElements(let.getGrid()[r][let.getWidth() - 1], let.getGrid()[0][r]) || equalElements(let.getGrid()[r][0], let.getGrid()[let.getWidth() - 1][r]) || equalElements(let.getGrid()[r][let.getWidth() - 1], let.getGrid()[let.getWidth() - 1][r])) return new int[] { let.getLocation()[0] + r, let.getLocation()[1] + let.getWidth() };
+            if ((ratio > 95 && ratio < 105) || equalElements(let.getGrid()[r][0], let.getGrid()[0][r]) || equalElements(let.getGrid()[r][let.getWidth() - 1], let.getGrid()[0][r]) || equalElements(let.getGrid()[r][0], let.getGrid()[let.getWidth() - 1][r]) || equalElements(let.getGrid()[r][let.getWidth() - 1], let.getGrid()[let.getWidth() - 1][r])) {
+                return new int[] { let.getLocation()[0] + r, let.getLocation()[1] + let.getWidth() };
+            }
 
         } catch (Exception e) {
         }
@@ -163,24 +185,36 @@ public class Circle {
 
                 for (; y < h; y++) {
 
-                    if (isBackground(captcha.grid[x][y])) break;
+                    if (isBackground(captcha.grid[x][y])) {
+                        break;
+                    }
                 }
 
                 // if (oldy == y || h < y) continue;
                 int oldy = y;
 
                 for (; y < h; y++) {
-                    if (!isBackground(captcha.grid[x][y]) && equalElements(c, captcha.grid[x][y])) break;
+                    if (!isBackground(captcha.grid[x][y]) && equalElements(c, captcha.grid[x][y])) {
+                        break;
+                    }
                 }
-                if (oldy == y || h < y) continue;
+                if (oldy == y || h < y) {
+                    continue;
+                }
                 oldy = y;
 
                 for (; y < h; y++) {
-                    if (isBackground(captcha.grid[x][y])) break;
+                    if (isBackground(captcha.grid[x][y])) {
+                        break;
+                    }
                 }
 
-                if (oldy == y) continue;
-                if (y == let.getHeight() && Math.abs(let.getHeight() - let.getWidth()) > 15) continue;
+                if (oldy == y) {
+                    continue;
+                }
+                if (y == let.getHeight() && Math.abs(let.getHeight() - let.getWidth()) > 15) {
+                    continue;
+                }
                 if (best.size() > 0) {
                     if (y > best.get(0)[0]) {
                         best = new ArrayList<int[]>();
@@ -193,9 +227,9 @@ public class Circle {
                 }
             }
         }
-        if (best.size() == 0)
+        if (best.size() == 0) {
             return null;
-        else {
+        } else {
             int x = 0;
             for (int[] is : best) {
                 x += is[0];
@@ -205,7 +239,9 @@ public class Circle {
     }
 
     private void addCircles(PixelObject pixelObject, java.util.List<PixelObject> obnew) {
-        if (pixelObject.getArea() < minArea) return;
+        if (pixelObject.getArea() < minArea) {
+            return;
+        }
         int[] bounds = getBounds(pixelObject);
         int r = 0;
         if (bounds != null) {
@@ -227,7 +263,9 @@ public class Circle {
 
                     pixelObject.del(object);
 
-                    if (oldArea != pixelObject.getArea()) addCircles(pixelObject, obnew);
+                    if (oldArea != pixelObject.getArea()) {
+                        addCircles(pixelObject, obnew);
+                    }
                 }
             }
         } else {
@@ -261,7 +299,9 @@ public class Circle {
 
     public Letter[] getOpenCirclePositionAsLetters() {
         openCircle = getOpenCircle();
-        if (openCircle == null) return null;
+        if (openCircle == null) {
+            return null;
+        }
         int x = openCircle.getLocation()[0] + (openCircle.getWidth() / 2);
         int y = openCircle.getLocation()[1] + (openCircle.getHeight() / 2);
         return getPostionLetters(x, y);
@@ -287,7 +327,9 @@ public class Circle {
      * @return
      */
     public Letter getOpenCircle() {
-        if (openCircle != null) return openCircle;
+        if (openCircle != null) {
+            return openCircle;
+        }
         // Graphics g = image.getGraphics();
         // g.setColor(Color.black);
         // g.drawOval(55, 55, 18, 18);
@@ -301,43 +343,46 @@ public class Circle {
 
             for (int x = 0; x < let.getWidth(); x++) {
                 for (int y = 0; y < let.getHeight(); y++) {
-                    if (isBackground(let.getPixelValue(x, y)))
+                    if (isBackground(let.getPixelValue(x, y))) {
                         w++;
-                    else
+                    } else {
                         break;
+                    }
                 }
             }
 
             for (int y = 0; y < let.getHeight(); y++) {
                 for (int x = 0; x < let.getWidth(); x++) {
-                    if (isBackground(let.getPixelValue(x, y)))
+                    if (isBackground(let.getPixelValue(x, y))) {
                         w++;
-                    else
+                    } else {
                         break;
+                    }
                 }
             }
 
             for (int x = 0; x < let.getWidth(); x++) {
                 for (int y = let.getHeight() - 1; y > 0; y--) {
-                    if (isBackground(let.getPixelValue(x, y)))
+                    if (isBackground(let.getPixelValue(x, y))) {
                         w++;
-                    else
+                    } else {
                         break;
+                    }
                 }
             }
 
             for (int y = 0; y < let.getHeight(); y++) {
                 for (int x = let.getWidth() - 1; x > 0; x--) {
-                    if (isBackground(let.getPixelValue(x, y)))
+                    if (isBackground(let.getPixelValue(x, y))) {
                         w++;
-                    else
+                    } else {
                         break;
+                    }
                 }
             }
 
             int wda = w * 100 / let.getArea();
-            // BasicWindow.showImage(pixelObject.toColoredLetter().getImage(),
-            // ""+wda);
+            BasicWindow.showImage(pixelObject.toColoredLetter().getImage(), "" + wda);
             // TODO
             if (wda > bestwda && let.getArea() > minArea) {
 
