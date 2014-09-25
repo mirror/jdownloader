@@ -474,27 +474,23 @@ public class SingleDownloadController extends BrowserSettingsThread implements D
     @Override
     public void run() {
         LogSource downloadLogger = null;
-        final PluginProgressTask task = new PluginProgressTask(null);
         SelectProxyByUrlHook hook = null;
-        AbstractProxySelectorImpl ps = getProxySelector();
-        if (ps != null) {
-            ps.addSelectProxyByUrlHook(hook = new SelectProxyByUrlHook() {
-                private Thread th;
-                {
-                    th = Thread.currentThread();
-                }
-
-                @Override
-                public void onProxyChoosen(String urlOrDomain, List<HTTPProxy> ret) {
-                    if (th == Thread.currentThread()) {
-                        usedProxy = ret.get(0);
-                    }
-                }
-
-            });
-        }
+        final PluginProgressTask task = new PluginProgressTask(null);
+        final AbstractProxySelectorImpl ps = getProxySelector();
         try {
+            if (ps != null) {
+                final Thread currentThread = Thread.currentThread();
+                ps.addSelectProxyByUrlHook(hook = new SelectProxyByUrlHook() {
 
+                    @Override
+                    public void onProxyChoosen(String urlOrDomain, List<HTTPProxy> ret) {
+                        if (currentThread == Thread.currentThread()) {
+                            usedProxy = ret.get(0);
+                        }
+                    }
+
+                });
+            }
             String logID = downloadLink.getDefaultPlugin().getHost();
             if (AccountCache.ACCOUNTTYPE.MULTI.equals(candidate.getCachedAccount().getType())) {
                 logID = logID + "_" + candidate.getCachedAccount().getPlugin().getHost();

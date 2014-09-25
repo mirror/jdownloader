@@ -295,15 +295,15 @@ public class ProxyController implements ProxySelectorInterface {
     }
 
     private Account getAccountFromThread() {
-        Thread thread = Thread.currentThread();
+        final Thread thread = Thread.currentThread();
         if (thread instanceof AccountCheckerThread) {
-            AccountCheckJob job = ((AccountCheckerThread) thread).getJob();
+            final AccountCheckJob job = ((AccountCheckerThread) thread).getJob();
             if (job != null) {
-                Account account = job.getAccount();
+                final Account account = job.getAccount();
                 return account;
             }
         } else if (thread instanceof LinkCheckerThread) {
-            PluginForHost plg = ((LinkCheckerThread) thread).getPlugin();
+            final PluginForHost plg = ((LinkCheckerThread) thread).getPlugin();
             if (plg != null) {
                 // no linkchecker account support yet
                 return null;
@@ -311,7 +311,7 @@ public class ProxyController implements ProxySelectorInterface {
         } else if (thread instanceof SingleDownloadController) {
             return ((SingleDownloadController) thread).getDownloadLinkCandidate().getCachedAccount().getAccount();
         } else if (thread instanceof LinkCrawlerThread) {
-            Object owner = ((LinkCrawlerThread) thread).getCurrentOwner();
+            final Object owner = ((LinkCrawlerThread) thread).getCurrentOwner();
             if (owner instanceof Plugin) {
                 // no linkcrawler account support yet
                 return null;
@@ -321,22 +321,22 @@ public class ProxyController implements ProxySelectorInterface {
     }
 
     private Plugin getPluginFromThread() {
-        Thread thread = Thread.currentThread();
+        final Thread thread = Thread.currentThread();
         if (thread instanceof AccountCheckerThread) {
-            AccountCheckJob job = ((AccountCheckerThread) thread).getJob();
+            final AccountCheckJob job = ((AccountCheckerThread) thread).getJob();
             if (job != null) {
-                Account account = job.getAccount();
+                final Account account = job.getAccount();
                 return account.getPlugin();
             }
         } else if (thread instanceof LinkCheckerThread) {
-            PluginForHost plg = ((LinkCheckerThread) thread).getPlugin();
+            final PluginForHost plg = ((LinkCheckerThread) thread).getPlugin();
             if (plg != null) {
                 return plg;
             }
         } else if (thread instanceof SingleDownloadController) {
             return ((SingleDownloadController) thread).getDownloadLinkCandidate().getCachedAccount().getPlugin();
         } else if (thread instanceof LinkCrawlerThread) {
-            Object owner = ((LinkCrawlerThread) thread).getCurrentOwner();
+            final Object owner = ((LinkCrawlerThread) thread).getCurrentOwner();
             if (owner instanceof Plugin) {
                 return (Plugin) owner;
             }

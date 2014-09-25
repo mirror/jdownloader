@@ -91,17 +91,16 @@ public abstract class AbstractProxySelectorImpl implements ProxySelectorInterfac
     /*
      * by default a proxy supports resume
      */
-    private boolean                                                           resumeIsAllowed                 = true;
+    private boolean                                               resumeIsAllowed                 = true;
 
-    protected final CopyOnWriteArraySet<SingleDownloadController>             activeSingleDownloadControllers = new CopyOnWriteArraySet<SingleDownloadController>();
-    protected CopyOnWriteArrayList<jd.controlling.proxy.SelectProxyByUrlHook> selectProxyByUrlHooks;
+    protected final CopyOnWriteArraySet<SingleDownloadController> activeSingleDownloadControllers = new CopyOnWriteArraySet<SingleDownloadController>();
+    protected final CopyOnWriteArrayList<SelectProxyByUrlHook>    selectProxyByUrlHooks           = new CopyOnWriteArrayList<SelectProxyByUrlHook>();
 
     public boolean isReconnectSupported() {
         return Type.NONE.equals(getType());
     }
 
     public AbstractProxySelectorImpl() {
-        selectProxyByUrlHooks = new CopyOnWriteArrayList<SelectProxyByUrlHook>();
     }
 
     public boolean add(final SingleDownloadController singleDownloadController) {
@@ -174,11 +173,15 @@ public abstract class AbstractProxySelectorImpl implements ProxySelectorInterfac
     }
 
     public void addSelectProxyByUrlHook(SelectProxyByUrlHook selectProxyByUrlHook) {
-        selectProxyByUrlHooks.add(selectProxyByUrlHook);
+        if (selectProxyByUrlHook != null) {
+            selectProxyByUrlHooks.addIfAbsent(selectProxyByUrlHook);
+        }
 
     }
 
     public void removeSelectProxyByUrlHook(SelectProxyByUrlHook hook) {
-        selectProxyByUrlHooks.remove(hook);
+        if (hook != null) {
+            selectProxyByUrlHooks.remove(hook);
+        }
     }
 }
