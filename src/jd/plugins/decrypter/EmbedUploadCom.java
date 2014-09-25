@@ -24,6 +24,7 @@ import jd.controlling.ProgressController;
 import jd.http.Browser;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
+import jd.parser.html.Form;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterException;
 import jd.plugins.DecrypterPlugin;
@@ -39,16 +40,18 @@ public class EmbedUploadCom extends PluginForDecrypt {
         super(wrapper);
     }
 
-    private String        recaptcha = "(api\\.recaptcha\\.net|google\\.com/recaptcha/api/)";
-    private String        fuid      = null;
-    private static Object LOCK      = new Object();
+    private String        recaptcha            = "(api\\.recaptcha\\.net|google\\.com/recaptcha/api/)";
+    private String        captchaSecurityImage = "<img[^>]+src=\"(lib/CaptchaSecurityImages\\.php)\"";
+
+    private String        fuid                 = null;
+    private static Object LOCK                 = new Object();
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         // one thread, will minimise captcha events.
         synchronized (LOCK) {
             ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
             String parameter = param.toString().replace("embedupload.to/", "embedupload.com/");
-            fuid = new Regex(parameter, "(com|to)/\\?([A-Z0-9]{2}|d)=([A-Z0-9]+)").getMatch(2);
+            fuid = new Regex(parameter, "(?:com|to)/\\?(?:[A-Z0-9]{2}|d)=([A-Z0-9]+)").getMatch(0);
             br.getHeaders().put("User-Agent", "Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/32.0.1700.76 Safari/537.36");
             br.setFollowRedirects(false);
             br.getPage(parameter);
@@ -79,19 +82,58 @@ public class EmbedUploadCom extends PluginForDecrypt {
                 if (br.containsHTML(recaptcha)) {
                     throw new DecrypterException(DecrypterException.CAPTCHA);
                 }
+            } else if (br.containsHTML(captchaSecurityImage)) {
+                Form captcha = br.getFormbyKey("capcode");
+                if (captcha == null) {
+                    for (Form f : br.getForms()) {
+                        if (f.containsHTML(captchaSecurityImage)) {
+                            captcha = f;
+                        }
+                    }
+                    if (captcha == null) {
+                        logger.warning("Decrypter broken for link: " + parameter);
+                        logger.warning("captcha form == null");
+                        return null;
+                    }
+                }
+                final String captchaUrl = br.getRegex(captchaSecurityImage).getMatch(0);
+                if (captchaUrl == null) {
+                    logger.warning("Decrypter broken for link: " + parameter);
+                    logger.warning("captchaUrl == null");
+                    return null;
+                }
+                for (int i = 0; i <= 3; i++) {
+                    String code = null;
+                    try {
+                        code = getCaptchaCode(captchaUrl, param);
+                    } catch (final Exception e) {
+                    }
+                    if (code != null && !"".equals(code)) {
+                        captcha.put("capcode", code);
+                        br.submitForm(captcha);
+                    }
+                    if (br.containsHTML(captchaSecurityImage)) {
+                        if (i + 1 == 3) {
+                            throw new DecrypterException(DecrypterException.CAPTCHA);
+                        }
+                        continue;
+                    } else {
+                        break;
+                    }
+                }
             }
 
             if (parameter.matches(".+/\\?d=[A-Za-z0-9]+")) {
-                String embedUploadDirectlink = br.getRegex("div id=\"embedupload\" style=\"padding-left:43px;padding-right:20px;padding-bottom:20px;font-size:17px;font-style:italic\" >[\t\n\r ]+<a href=\"(http://.*?)\"").getMatch(0);
+                String embedUploadDirectlink = br.getRegex("div id=\"embedupload\" style=\"padding-left:43px;padding-right:20px;padding-bottom:20px;font-size:17px;font-style:italic\" >[\t\n\r ]+<a href=\"(https?://.*?)\"").getMatch(0);
                 if (embedUploadDirectlink == null) {
-                    embedUploadDirectlink = br.getRegex("(\"|')(http://(www\\.)?embedupload\\.(com|to)/\\?EU=[A-Z0-9]+&urlkey=[A-Za-z0-9]+)\\1").getMatch(1);
+                    embedUploadDirectlink = br.getRegex("(\"|')(http://(?:www\\.)?embedupload\\.(?:com|to)/\\?EU=[A-Z0-9]+&urlkey=[A-Za-z0-9]+)\\1").getMatch(1);
                 }
                 if (embedUploadDirectlink != null) {
                     decryptedLinks.add(createDownloadlink("directhttp://" + embedUploadDirectlink));
                 }
-                String[] redirectLinks = br.getRegex("style=\"padding-left:43px;padding-right:20px;padding-bottom:20px;font-size:17px;font-style:italic\" >[\t\r\n ]+<a href=\"(http://.*?)\"").getColumn(0);
+                String[] redirectLinks = br.getRegex("style=\"padding-left:43px;padding-right:20px;padding-bottom:20px;font-size:17px;font-style:italic\" >[\t\r\n ]+<a href=\"(https?://.*?)\"").getColumn(0);
                 if (redirectLinks == null || redirectLinks.length == 0) {
-                    redirectLinks = br.getRegex("(\"|')(http://(www\\.)?embedupload\\.(com|to)/\\?[A-Z0-9]{2}=" + fuid + ")\\1").getColumn(1);
+                    redirectLinks = br.getRegex("(\"|')(http://(?:www\\.)?embedupload\\.(?:com|to)/\\?[A-Z0-9]{2}=" + fuid + ")\\1").getColumn(1);
                 }
                 if (redirectLinks == null || redirectLinks.length == 0) {
                     if (br.containsHTML("You can download from these site : ") || br.containsHTML(">The file you are looking for is hosted on these")) {
@@ -135,12 +177,12 @@ public class EmbedUploadCom extends PluginForDecrypt {
     }
 
     private String getSingleLink(Browser ibr) {
-        String link = ibr.getRegex("link on a new browser window : ([^<>\"]*?)</b>").getMatch(0);
+        String link = ibr.getRegex("link on a new browser window : ([^<>\"]+)</b>").getMatch(0);
         if (link == null) {
-            link = ibr.getRegex("You should click on the download link : <a href=\\'(http[^<>\"]*?)\\'").getMatch(0);
+            link = ibr.getRegex("You should click on the download link : <a href='(http[^<>\"]+)\\'").getMatch(0);
         }
         if (link == null) {
-            link = ibr.getRegex("File hosting link:[\t\n\r ]+<b>[\t\n\r ]+<a href=\\'(http[^<>\"]*?)\\'").getMatch(0);
+            link = ibr.getRegex("File hosting link:[\t\n\r ]+<b>[\t\n\r ]+<a href='(http[^<>\"]+)\\'").getMatch(0);
         }
         return link;
     }
