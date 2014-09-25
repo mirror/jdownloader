@@ -60,7 +60,8 @@ public class JACScript {
     private int                       colorFaktor;
 
     /**
-     * Werte-Array Wird gaps != null, so werden die Werte als Trennpositionen für die letter detection verwendet. Alle anderen Erkennungen werden dann ignoriert
+     * Werte-Array Wird gaps != null, so werden die Werte als Trennpositionen für die letter detection verwendet. Alle anderen Erkennungen
+     * werden dann ignoriert
      */
     private int[]                     gaps;
 
@@ -108,6 +109,12 @@ public class JACScript {
         scriptFile = "script.jas";
         parseScriptFile();
         executeParameterCommands();
+    }
+
+    public JACScript(JAntiCaptcha owner) {
+        logger = LogController.CL();
+        init();
+        this.owner = owner;
     }
 
     /**
@@ -405,26 +412,27 @@ public class JACScript {
                                     Class<?> class1 = types[c];
                                     parm[c] = parm[c].trim();
                                     Object d = parm[c];
-                                    if (class1.getName().equals("String"))
+                                    if (class1.getName().equals("String")) {
                                         d = parm[c];
-                                    else if (class1.getName().equals("int"))
+                                    } else if (class1.getName().equals("int")) {
                                         d = Integer.parseInt(parm[c]);
-                                    else if (class1.getName().equals("float"))
+                                    } else if (class1.getName().equals("float")) {
                                         d = Float.parseFloat(parm[c]);
-                                    else if (class1.getName().equals("double"))
+                                    } else if (class1.getName().equals("double")) {
                                         d = Double.parseDouble(parm[c]);
-                                    else if (class1.getName().equals("long"))
+                                    } else if (class1.getName().equals("long")) {
                                         d = Long.parseLong(parm[c]);
-                                    else if (class1.getName().equals("short"))
+                                    } else if (class1.getName().equals("short")) {
                                         d = Short.parseShort(parm[c]);
-                                    else if (class1.getName().equals("byte"))
+                                    } else if (class1.getName().equals("byte")) {
                                         d = Byte.parseByte(parm[c]);
-                                    else if (class1.getName().equals("boolean"))
+                                    } else if (class1.getName().equals("boolean")) {
                                         d = Boolean.parseBoolean(parm[c]);
-                                    else if (class1.getName().equals("char"))
+                                    } else if (class1.getName().equals("char")) {
                                         d = Byte.parseByte(parm[c]);
-                                    else
+                                    } else {
                                         d = class1.cast(d);
+                                    }
                                     paramObj[c] = d;
                                 }
                             }
@@ -722,7 +730,9 @@ public class JACScript {
      */
     public long getLong(String key) {
         Object ret = get(key);
-        if (ret instanceof Long) return (Long) ret;
+        if (ret instanceof Long) {
+            return (Long) ret;
+        }
         if (ret instanceof Integer) {
             logger.severe("Casting Integer to Long");
             return (Integer) ret;
@@ -790,8 +800,8 @@ public class JACScript {
         set("gapWidthAverage", 1);
 
         /**
-         * Parameter: gapAndAverageLogic=true: Es werden Lücken verwendet bei denen Peak und Average detection zusammenfallen (AND) gapAndAverageLogic=false: Es
-         * werden sowohl peak als Auch Average Lücken verwendet (nur in Ausnahmefällen) (OR)
+         * Parameter: gapAndAverageLogic=true: Es werden Lücken verwendet bei denen Peak und Average detection zusammenfallen (AND)
+         * gapAndAverageLogic=false: Es werden sowohl peak als Auch Average Lücken verwendet (nur in Ausnahmefällen) (OR)
          */
         set("gapAndAverageLogic", true);
 
@@ -846,8 +856,8 @@ public class JACScript {
         set("minimumLetterWidth", 0);
 
         /**
-         * Parameter: Wert gibt an um welchen faktor die Fingerprints verkleinert werden. So groß wie möglich, so klein wie nötig Wenn dieser Wert verändert
-         * wird, wrd die MTH File unbrauchbar und muss neu trainiert werden
+         * Parameter: Wert gibt an um welchen faktor die Fingerprints verkleinert werden. So groß wie möglich, so klein wie nötig Wenn
+         * dieser Wert verändert wird, wrd die MTH File unbrauchbar und muss neu trainiert werden
          */
         set("simplifyFaktor", 1.0);
         /*
@@ -866,14 +876,15 @@ public class JACScript {
          */
         set("cancelIfObjectDetectionFailed", false);
         /**
-         * Gewichtung des größenunterschieds Ausschnitt/Originale(Datenbank) Ist ein datebank bcuhstabe nur teilweise auf dem Trefferausschnitt, verschkechtert
-         * das die Wertung
+         * Gewichtung des größenunterschieds Ausschnitt/Originale(Datenbank) Ist ein datebank bcuhstabe nur teilweise auf dem
+         * Trefferausschnitt, verschkechtert das die Wertung
          * 
          */
         set("intersectionDimensionWeight", 0.9);
 
         /**
-         * Gibt an wie viele überlagerungsstörungen ausgefiltert werden sollen -1 :>keine 0: bei 0 Nachbarn 1: bei höchstem einen Nachbarn etc
+         * Gibt an wie viele überlagerungsstörungen ausgefiltert werden sollen -1 :>keine 0: bei 0 Nachbarn 1: bei höchstem einen Nachbarn
+         * etc
          */
         set("overlayNoiseSize", -1);
         /**
@@ -907,8 +918,8 @@ public class JACScript {
         set("preScanFilter", 100);
 
         /**
-         * Schwellwert für den quickscanfilter. Wird dieser emergeny Wert gesetzt, so wird bei Erfolgloser Suche der filter auf diesen wert gesetzt und ein 2.
-         * Lauf gestartet
+         * Schwellwert für den quickscanfilter. Wird dieser emergeny Wert gesetzt, so wird bei Erfolgloser Suche der filter auf diesen wert
+         * gesetzt und ein 2. Lauf gestartet
          */
         set("preScanEmergencyFilter", 0);
         /**
@@ -957,8 +968,8 @@ public class JACScript {
         set("turnDB", false);
 
         /**
-         * Parameter: Scan-Parameter. Gibt an um wieviele Pixel sich Letter und Vergleichsletter unterscheiden dürfen um verglichen zu werden. Hohe Werte machen
-         * das ganze Langsam
+         * Parameter: Scan-Parameter. Gibt an um wieviele Pixel sich Letter und Vergleichsletter unterscheiden dürfen um verglichen zu
+         * werden. Hohe Werte machen das ganze Langsam
          */
         set("borderVarianceX", 0);
         set("borderVarianceY", 0);
@@ -978,25 +989,26 @@ public class JACScript {
         set("prescandivider", 4.0);
         set("divider", 6.0);
         /**
-         * Parameter: Scan-Parameter. Gibt an um wieviele Pixel Letter und Vergleichsletter gegeneinander verschoben werden um die beste Übereinstimung zu
-         * finden. Hohe werte verlangemmen die Erkennung deutlich
+         * Parameter: Scan-Parameter. Gibt an um wieviele Pixel Letter und Vergleichsletter gegeneinander verschoben werden um die beste
+         * Übereinstimung zu finden. Hohe werte verlangemmen die Erkennung deutlich
          */
         set("scanVarianceX", 0);
         set("scanVarianceY", 0);
 
         /**
-         * BestehenBuchstaben aus mehreren getrennten parts, werdens ie durch die object detection getrennt. Dieser wert gibt für ein neues objekt an wie weit
-         * es sich vom mittelpunkt des letzten objekts entfernt aufhalten darf ohne zum letzten gezählt zu werden. beispiel: 7.0: der innere kreis von einer 0
-         * wird zum äußeren gezählt wenn sich der innere nicht weiter als 7 % vom mittelunkte des äußeren befindet.
+         * BestehenBuchstaben aus mehreren getrennten parts, werdens ie durch die object detection getrennt. Dieser wert gibt für ein neues
+         * objekt an wie weit es sich vom mittelpunkt des letzten objekts entfernt aufhalten darf ohne zum letzten gezählt zu werden.
+         * beispiel: 7.0: der innere kreis von einer 0 wird zum äußeren gezählt wenn sich der innere nicht weiter als 7 % vom mittelunkte
+         * des äußeren befindet.
          */
         set("multiplePartMergeMinSize", 0);
 
         set("abortDirectDetectionOnDetectionError", false);
 
         /**
-         * InverseFontWeight Unterschreitet die Pixelanzahl einer Intersection einen gewissen Teil der Intersectionfläche, wird der fehler auf 100% angehoben.
-         * Beispiel: inverseFontWeight=8 Die gemeinsammen Pixel einer 400 px² Intersection betragen nur 20 pixel. 20*8 = 160; 160<400 =>Der Treffer wird nicht
-         * gewertet, da die Intersection zu wenig gemeinsamme Pixel hat.
+         * InverseFontWeight Unterschreitet die Pixelanzahl einer Intersection einen gewissen Teil der Intersectionfläche, wird der fehler
+         * auf 100% angehoben. Beispiel: inverseFontWeight=8 Die gemeinsammen Pixel einer 400 px² Intersection betragen nur 20 pixel. 20*8 =
+         * 160; 160<400 =>Der Treffer wird nicht gewertet, da die Intersection zu wenig gemeinsamme Pixel hat.
          */
         set("inverseFontWeight", 8.0);
 
@@ -1179,11 +1191,21 @@ public class JACScript {
      */
     private Object toType(String arg, String key) {
         Object current = get(key);
-        if (current instanceof String) return arg;
-        if (current instanceof Integer) return Integer.parseInt(arg);
-        if (current instanceof Float) return Float.parseFloat(arg);
-        if (current instanceof Double) return Double.parseDouble(arg);
-        if (current instanceof Boolean) return arg.equalsIgnoreCase("true");
+        if (current instanceof String) {
+            return arg;
+        }
+        if (current instanceof Integer) {
+            return Integer.parseInt(arg);
+        }
+        if (current instanceof Float) {
+            return Float.parseFloat(arg);
+        }
+        if (current instanceof Double) {
+            return Double.parseDouble(arg);
+        }
+        if (current instanceof Boolean) {
+            return arg.equalsIgnoreCase("true");
+        }
 
         if (current == null) {
             logger.severe("Parameter " + key + " ist nicht initialisiert worden!");

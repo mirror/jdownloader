@@ -286,6 +286,18 @@ public class JAntiCaptcha {
         logger.fine("letter DB loaded: Buchstaben: " + letterDB.size());
     }
 
+    public JAntiCaptcha() {
+        logger = LogController.CL();
+        logger.setLevel(Level.OFF);
+        method = null;
+        jas = new JACScript(this);
+        long time = System.currentTimeMillis();
+        loadMTHFile();
+        time = System.currentTimeMillis() - time;
+        logger.fine("LoadTime: " + time);
+        logger.fine("letter DB loaded: Buchstaben: " + letterDB.size());
+    }
+
     /**
      * prüft den übergebenen Captcha und gibt den Code als String zurück. Das lettersarray des Catchas wird dabei bearbeitet. Es werden
      * decoedvalue, avlityvalue und parent gesetzt WICHTIG: Nach dem Decoden eines Captcha herrscht Verwirrung. Es stehen unterschiedliche
@@ -301,7 +313,9 @@ public class JAntiCaptcha {
      * @throws InterruptedException
      */
     public String checkCaptcha(File file, Captcha captcha) throws InterruptedException {
-        if (extern) return callExtern();
+        if (extern) {
+            return callExtern();
+        }
         workingCaptcha = captcha;
         // Führe prepare aus
         jas.executePrepareCommands(file, captcha);
@@ -336,8 +350,12 @@ public class JAntiCaptcha {
             Collections.sort(newLettersVector, new Comparator<LetterComperator>() {
                 public int compare(LetterComperator obj1, LetterComperator obj2) {
 
-                    if (obj1.getValityPercent() < obj2.getValityPercent()) { return -1; }
-                    if (obj1.getValityPercent() > obj2.getValityPercent()) { return 1; }
+                    if (obj1.getValityPercent() < obj2.getValityPercent()) {
+                        return -1;
+                    }
+                    if (obj1.getValityPercent() > obj2.getValityPercent()) {
+                        return 1;
+                    }
                     return 0;
                 }
             });
@@ -355,8 +373,12 @@ public class JAntiCaptcha {
             Collections.sort(newLettersVector, new Comparator<LetterComperator>() {
                 public int compare(LetterComperator obj1, LetterComperator obj2) {
 
-                    if (obj1.getA().getId() < obj2.getA().getId()) { return -1; }
-                    if (obj1.getA().getId() > obj2.getA().getId()) { return 1; }
+                    if (obj1.getA().getId() < obj2.getA().getId()) {
+                        return -1;
+                    }
+                    if (obj1.getA().getId() > obj2.getA().getId()) {
+                        return 1;
+                    }
                     return 0;
                 }
             });
@@ -452,7 +474,9 @@ public class JAntiCaptcha {
     }
 
     private BufferedImage toBufferedImage(Image i) {
-        if (i instanceof BufferedImage) { return (BufferedImage) i; }
+        if (i instanceof BufferedImage) {
+            return (BufferedImage) i;
+        }
         Image img;
         img = new ImageIcon(i).getImage();
         BufferedImage b;
@@ -512,7 +536,9 @@ public class JAntiCaptcha {
 
             String res = JDIO.readFileToString(JDUtilities.getResourceFile(this.dstFile));
             logger.info("returned with: " + res);
-            if (res == null) return null;
+            if (res == null) {
+                return null;
+            }
             return res.trim();
         } finally {
             /* remove lock */
@@ -535,7 +561,9 @@ public class JAntiCaptcha {
         logger.finer("check " + captchafile);
         Image captchaImage = Utilities.loadImage(captchafile);
         Captcha captcha = createCaptcha(captchaImage);
-        if (captcha != null) captcha.setCaptchaFile(captchafile);
+        if (captcha != null) {
+            captcha.setCaptchaFile(captchafile);
+        }
         // captcha.printCaptcha();
         return checkCaptcha(captchafile, captcha);
     }
@@ -550,7 +578,9 @@ public class JAntiCaptcha {
      */
     public Captcha createCaptcha(Image captchaImage) throws InterruptedException {
         this.sourceImage = captchaImage;
-        if (extern) return null;
+        if (extern) {
+            return null;
+        }
         if (captchaImage.getWidth(null) <= 0 || captchaImage.getHeight(null) <= 0) {
 
             logger.severe("Image Dimensionen zu klein. Image hat keinen Inahlt. Pfad/Url prüfen!");
@@ -558,7 +588,9 @@ public class JAntiCaptcha {
             return null;
         }
         Captcha ret = Captcha.getCaptcha(captchaImage, this);
-        if (ret == null) { return null; }
+        if (ret == null) {
+            return null;
+        }
         ret.setOwner(this);
         return ret;
     }
@@ -571,7 +603,9 @@ public class JAntiCaptcha {
         long start1 = System.currentTimeMillis();
         try {
 
-            if (mth == null || mth.getFirstChild() == null) { return; }
+            if (mth == null || mth.getFirstChild() == null) {
+                return;
+            }
             NodeList nl = mth.getFirstChild().getChildNodes();
             Letter tmp;
             for (int i = 0; i < nl.getLength(); i++) {
@@ -671,7 +705,9 @@ public class JAntiCaptcha {
      * Zeigt die Momentane Library an. Buchstaben können gelöscht werden
      */
     public void displayLibrary() {
-        if (letterDB == null || letterDB.size() == 0) { return; }
+        if (letterDB == null || letterDB.size() == 0) {
+            return;
+        }
         // final BasicWindow w = BasicWindow.getWindow("Library: " +
         // letterDB.size() + " Datensätze", 400, 300);
         final JFrame w = new JFrame();
@@ -945,7 +981,9 @@ public class JAntiCaptcha {
                 }
             }
             for (Letter tmp : letterDB) {
-                if (Thread.currentThread().isInterrupted()) throw new InterruptedException();
+                if (Thread.currentThread().isInterrupted()) {
+                    throw new InterruptedException();
+                }
 
                 if (Math.abs(tmp.getHeight() - letter.getHeight()) > bvY || Math.abs(tmp.getWidth() - letter.getWidth()) > bvX) {
                     continue;
@@ -1328,7 +1366,9 @@ public class JAntiCaptcha {
      */
     public void importDB(File path) throws InterruptedException {
         String pattern = JOptionPane.showInputDialog("PATTERN", "\\d+_(.*?)\\.");
-        if (JOptionPane.showConfirmDialog(null, "Delete old db?") == JOptionPane.OK_OPTION) letterDB = new ArrayList<Letter>();
+        if (JOptionPane.showConfirmDialog(null, "Delete old db?") == JOptionPane.OK_OPTION) {
+            letterDB = new ArrayList<Letter>();
+        }
         FileCreationManager.getInstance().delete(getResourceFile("letters.mth"), null);
         System.out.println("LETTERS BEFORE: " + letterDB.size());
         Image image;
@@ -1379,9 +1419,13 @@ public class JAntiCaptcha {
      * @return true/false
      */
     private boolean isCaptchaInMTH(String captchaHash) {
-        if (letterDB == null) return false;
+        if (letterDB == null) {
+            return false;
+        }
         for (Letter letter : letterDB) {
-            if (letter.getSourcehash().equals(captchaHash)) return true;
+            if (letter.getSourcehash().equals(captchaHash)) {
+                return true;
+            }
         }
 
         return false;
@@ -1590,7 +1634,9 @@ public class JAntiCaptcha {
 
         LetterComperator[] lcs = captcha.getLetterComperators();
         for (int i = 0; i < lcs.length; i++) {
-            if (lcs[i] == null) continue;
+            if (lcs[i] == null) {
+                continue;
+            }
 
             bw2.add(new JLabel("Aus Datenbank:"), Utilities.getGBC(0, 6, 2, 2));
             Letter dif = lcs[i].getDifference();
@@ -1657,7 +1703,9 @@ public class JAntiCaptcha {
         int total = 0;
         logger.info("TRain " + path);
         File[] images = getImages(path);
-        if (images == null) { return; }
+        if (images == null) {
+            return;
+        }
         int newLetters;
         for (File element : images) {
 
@@ -1873,7 +1921,9 @@ public class JAntiCaptcha {
                 }
             }
         }
-        if (run.ret == -2) return -2;
+        if (run.ret == -2) {
+            return -2;
+        }
         code = run.code;
         if (code == null) {
             File file = getResourceFile("detectionErrors3/" + System.currentTimeMillis() + "_" + captchafile.getName());
@@ -2029,7 +2079,9 @@ public class JAntiCaptcha {
                 }
             } else {
                 file = new File(path);
-                if (!file.exists()) return "File does not exist";
+                if (!file.exists()) {
+                    return "File does not exist";
+                }
             }
 
             try {
