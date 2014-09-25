@@ -1557,6 +1557,14 @@ public class LinkCrawler {
                             final List<CrawledLink> possibleCryptedLinks = new ArrayList<CrawledLink>(links.length);
                             for (DownloadLink link : links) {
                                 if (fastDuplicateDetector.add(link)) {
+                                    if (link.getPluginPatternMatcher().contains("decrypted.com")) {
+                                        /**
+                                         * some plugins have same regex for hoster/decrypter, so they add decrypted.com at the end
+                                         */
+                                        if (link.getContainerUrl() == null) {
+                                            link.setContainerUrl(cryptedLink.getCryptedLink().getCryptedUrl());
+                                        }
+                                    }
                                     CrawledLink ret = new CrawledLink(link);
                                     possibleCryptedLinks.add(ret);
                                     forwardCrawledLinkInfos(cryptedLink, ret, lm, sourceURLs);
@@ -1687,15 +1695,6 @@ public class LinkCrawler {
         if (dl != null) {
             final String[] sources = link.getSourceUrls();
             final HashSet<String> set = new HashSet<String>();
-
-            // if (dl.getPluginPatternMatcher().contains("decrypted.com")) {
-            // /**
-            // * example box.com -> boxdecrypted.com
-            // */
-            // if (dl.getContainerUrl() == null) {
-            // dl.setContainerUrl(cryptedLink.getCryptedLink().getCryptedUrl());
-            // }
-            // }
 
             set.add(dl.getPluginPatternMatcher());
             if (StringUtils.equals(dl.getPluginPatternMatcher(), dl.getContentUrl())) {
