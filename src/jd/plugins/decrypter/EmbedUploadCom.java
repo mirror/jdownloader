@@ -112,12 +112,13 @@ public class EmbedUploadCom extends PluginForDecrypt {
                         captcha.put("capcode", code);
                         br.submitForm(captcha);
                     }
-                    if (br.containsHTML(captchaSecurityImage)) {
+                    if (br.containsHTML(captchaSecurityImage) && !br.containsHTML("<meta http-equiv=\"refresh\"[^>]+")) {
                         if (i + 1 == 3) {
                             throw new DecrypterException(DecrypterException.CAPTCHA);
                         }
                         continue;
                     } else {
+                        br.getPage(br.getURL());
                         break;
                     }
                 }
