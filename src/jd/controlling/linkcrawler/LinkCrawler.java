@@ -1556,7 +1556,7 @@ public class LinkCrawler {
                             }
                             final List<CrawledLink> possibleCryptedLinks = new ArrayList<CrawledLink>(links.length);
                             for (DownloadLink link : links) {
-                                if (fastDuplicateDetector.add(link)) {
+                                if (link.getPluginPatternMatcher() != null && fastDuplicateDetector.add(link)) {
                                     if (link.getPluginPatternMatcher().contains("decrypted.com")) {
                                         /**
                                          * some plugins have same regex for hoster/decrypter, so they add decrypted.com at the end
