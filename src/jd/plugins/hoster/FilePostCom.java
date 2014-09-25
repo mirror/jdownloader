@@ -24,6 +24,7 @@ import java.net.URL;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Random;
 import java.util.concurrent.atomic.AtomicReference;
 
 import javax.swing.JOptionPane;
@@ -135,7 +136,7 @@ public class FilePostCom extends PluginForHost {
 
     /*
      * (non-Javadoc)
-     * 
+     *
      * @see jd.plugins.PluginForHost#correctDownloadLink(jd.plugins.DownloadLink)
      */
     @Override
@@ -284,9 +285,11 @@ public class FilePostCom extends PluginForHost {
         }
         prepBr.getHeaders().put("User-Agent", agent.get());
         prepBr.setCookie("http://filepost.com", "lang", "1");
+        prepBr.getHeaders().put("Accept-Charset", null);
         prepBr.getHeaders().put("Accept-Language", "en-gb,en;q=0.8");
     }
 
+    @SuppressWarnings("deprecation")
     @Override
     public void handleFree(DownloadLink downloadLink) throws Exception, PluginException {
         br = new Browser();
@@ -330,10 +333,10 @@ public class FilePostCom extends PluginForHost {
         // this was commented out and was download, now token - 20140824 raztoki
         form.put("token", token);
         form.put("code", id);
+        // this might be a problem with stable, it still doesn't post header.
         form.setEncoding("application/octet-stream;");
         /* click on low speed button */
         brc.getHeaders().put("Accept", "*/*");
-        brc.getHeaders().put("Accept-Charset", null);
         brc.submitForm(form);
         final long start = System.currentTimeMillis();
         boolean nextD = false;
@@ -357,13 +360,13 @@ public class FilePostCom extends PluginForHost {
         String dllink = null;
         boolean waitDone = false;
         /** Password handling */
-        if (br.containsHTML("var is_pass_exists = true")) {
+        final boolean passwordNeeded = br.containsHTML("var is_pass_exists = true");
+        if (passwordNeeded) {
             if (passCode == null) {
                 passCode = Plugin.getUserInput("Password?", downloadLink);
             }
             brc = br.cloneBrowser();
             brc.getHeaders().put("Accept", "*/*");
-            brc.getHeaders().put("Accept-Charset", null);
             brc.getHeaders().put("Content-Type", "application/octet-stream");
             if (!waitDone) {
                 waitDone = handleWait(start, wait, downloadLink);
@@ -385,7 +388,9 @@ public class FilePostCom extends PluginForHost {
             // this change not tested, but the rest change from download to token - 20140824 raztoki
             form.put("code", id);
             form.put("token", token);
-            form.put("file_pass", "");
+            if (!passwordNeeded && !captchaNeeded) {
+                form.put("file_pass", "undefined");
+            }
             form.setEncoding("application/octet-stream;");
             if (captchaNeeded) {
                 PluginForHost recplug = JDUtilities.getPluginForHost("DirectHTTP");
@@ -403,7 +408,7 @@ public class FilePostCom extends PluginForHost {
             brc.getHeaders().put("Accept-Charset", null);
             // I assume if there was no password above wait would be here! - 20140824 raztoki
             if (!waitDone) {
-                handleWait(start, wait, downloadLink);
+                waitDone = handleWait(start, wait, downloadLink);
             }
             brc.submitForm(form);
             if (brc.containsHTML("\"file_too_big_for_user\"")) {
@@ -427,7 +432,6 @@ public class FilePostCom extends PluginForHost {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
         }
-        this.sleep(10 * 1000l, downloadLink);
         dl = jd.plugins.BrowserAdapter.openDownload(brc, downloadLink, dllink, true, 1);
         if (dl.getConnection().getContentType().contains("html")) {
             brc.followConnection();
@@ -436,7 +440,9 @@ public class FilePostCom extends PluginForHost {
                 // since the session has just been created we will treat as file not found jdlog://8255413173041 jdlog://6367313173041
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             } else if (cookieError != null && new Regex(cookieError, "You%20still%20need%20to%20wait%20for%20the%20start%20of%20your%20download").matches()) {
-                throw new PluginException(LinkStatus.ERROR_FATAL, "FATAL countdown error");
+                logger.warning("Wait time not respected?");
+                logger.warning("waitDone = " + waitDone);
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, "Multiple concurrent download error!");
             } else if (cookieError != null && new Regex(cookieError, "(Sorry%2C%20you%20have%20exceeded%20your%20daily%20download%20limit\\.|%3Cbr%20%2F%3ETry%20again%20tomorrow%20or%20obtain%20a%20premium%20membership\\.)").matches()) {
                 throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, "Daily limit reached", 2 * 60 * 60 * 1000l);
             } else if (cookieError != null) {
@@ -460,7 +466,11 @@ public class FilePostCom extends PluginForHost {
         final long tt = wait - passedTime;
         logger.info("WaitTime detected: " + wait + " second(s). Elapsed Time: " + (passedTime > 0 ? passedTime : 0) + " second(s). Remaining Time: " + tt + " second(s)");
         if (tt > 0) {
-            sleep(tt * 1000l, downloadLink);
+            long ran = 0;
+            while (ran < 5 && ran > 15) {
+                ran = ran + new Random().nextInt(10);
+            }
+            sleep((tt * 1000l) + ran, downloadLink);
         }
         return true;
     }
