@@ -136,7 +136,7 @@ public class FilePostCom extends PluginForHost {
 
     /*
      * (non-Javadoc)
-     *
+     * 
      * @see jd.plugins.PluginForHost#correctDownloadLink(jd.plugins.DownloadLink)
      */
     @Override
@@ -467,8 +467,8 @@ public class FilePostCom extends PluginForHost {
         logger.info("WaitTime detected: " + wait + " second(s). Elapsed Time: " + (passedTime > 0 ? passedTime : 0) + " second(s). Remaining Time: " + tt + " second(s)");
         if (tt > 0) {
             long ran = 0;
-            while (ran < 5 && ran > 15) {
-                ran = ran + new Random().nextInt(10);
+            while (ran <= 5 && ran >= 15) {
+                ran = new Random().nextInt(20);
             }
             sleep((tt * 1000l) + ran, downloadLink);
         }
