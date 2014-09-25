@@ -120,8 +120,8 @@ public class BtoNt extends PluginForDecrypt {
         } else if (t[2] != null) {
             t[2] = df_title.format(Integer.parseInt(t[2]));
         }
-        if (t[4] != null && (t[4].matches("(\\d+)([\\.v]+\\d+)?([A-Za-z]*)"))) {
-            String[] s = new Regex(t[4], "(\\d+)([\\.v]+\\d+)?([A-Za-z]*)").getRow(0);
+        if (t[4] != null && (t[4].matches("(\\d+)([\\.v\\d]+\\d+)?([A-Za-z]*)"))) {
+            String[] s = new Regex(t[4], "(\\d+)([\\.v\\d]+\\d+)?([A-Za-z]*)").getRow(0);
             t[4] = df_title.format(Integer.parseInt(s[0])) + (s[1] != null ? s[1] : "") + (s[2] != null ? s[2] : "");
         } else if (t[4] != null) {
             t[4] = df_title.format(Integer.parseInt(t[4]));
