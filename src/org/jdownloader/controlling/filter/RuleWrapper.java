@@ -232,7 +232,7 @@ public class RuleWrapper<T extends FilterRule> {
 
     public boolean checkHoster(CrawledLink link) throws NoDownloadLinkException {
         if (getHosterRule() != null) {
-            if (link.getDownloadLink() == null) {
+            if (link.getDownloadLink() == null || link.gethPlugin() == null) {
                 throw new NoDownloadLinkException();
             }
             DownloadLink dlLink = link.getDownloadLink();
@@ -320,7 +320,7 @@ public class RuleWrapper<T extends FilterRule> {
 
     public boolean checkPluginStatus(CrawledLink link) throws NoDownloadLinkException {
         if (getPluginStatusFilter() != null) {
-            if (link.getDownloadLink() == null) {
+            if (link.getDownloadLink() == null || link.gethPlugin() == null) {
                 throw new NoDownloadLinkException();
             }
             return getPluginStatusFilter().matches(link);
