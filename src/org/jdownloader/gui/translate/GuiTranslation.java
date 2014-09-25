@@ -1490,6 +1490,9 @@ public interface GuiTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "a valid Premium Account" })
     String ConditionDialog_layoutDialogContent_premium();
 
+    @Default(lngs = { "en" }, values = { "a valid Account" })
+    String ConditionDialog_layoutDialogContent_account();
+
     @Default(lngs = { "en" }, values = { "Plugin" })
     String FilterRuleDialog_layoutDialogContent_lbl_plugin();
 
@@ -1499,11 +1502,17 @@ public interface GuiTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "Valid Premiumaccount is available" })
     String FilterRule_toString_premium();
 
+    @Default(lngs = { "en" }, values = { "Valid account is available" })
+    String FilterRule_toString_account();
+
     @Default(lngs = { "en" }, values = { "Captchas are solved automatically" })
     String FilterRule_toString_autocaptcha();
 
     @Default(lngs = { "en" }, values = { "No valid Premiumaccount available" })
     String FilterRule_toString_premium_not();
+
+    @Default(lngs = { "en" }, values = { "No valid account available" })
+    String FilterRule_toString_account_not();
 
     @Default(lngs = { "en" }, values = { "Captchas must be entered manually" })
     String FilterRule_toString_autocaptcha_not();

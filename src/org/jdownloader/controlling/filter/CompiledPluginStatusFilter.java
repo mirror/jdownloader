@@ -21,6 +21,8 @@ public class CompiledPluginStatusFilter extends PluginStatusFilter {
             switch (getPluginStatus()) {
             case PREMIUM:
                 return VerifyPremium(link);
+            case ACCOUNT:
+                return VerifyAccount(link);
             case AUTOCAPTCHA:
                 return link.hasAutoCaptcha() || !link.hasCaptcha(null);
             case NO_DIRECT_HTTP:
@@ -31,10 +33,31 @@ public class CompiledPluginStatusFilter extends PluginStatusFilter {
             switch (getPluginStatus()) {
             case PREMIUM:
                 return !VerifyPremium(link);
+            case ACCOUNT:
+                return !VerifyAccount(link);
             case AUTOCAPTCHA:
                 return !link.hasAutoCaptcha() && link.hasCaptcha(null);
             case NO_DIRECT_HTTP:
                 return link.isDirectHTTP();
+            }
+        }
+        return false;
+    }
+
+    private boolean VerifyAccount(CrawledLink link) {
+        if (link.isDirectHTTP() || link.isFTP()) {
+            return true;
+        }
+        if (AccountController.getInstance().hasAccounts(link.getHost())) {
+            final List<Account> accounts = AccountController.getInstance().getValidAccounts(link.getHost());
+            if (accounts != null && accounts.size() > 0) {
+                return true;
+            }
+        }
+        if (AccountController.getInstance().hasMultiHostAccounts(link.getHost())) {
+            final List<Account> accounts = AccountController.getInstance().getMultiHostAccounts(link.getHost());
+            if (accounts != null && accounts.size() > 0) {
+                return true;
             }
         }
         return false;

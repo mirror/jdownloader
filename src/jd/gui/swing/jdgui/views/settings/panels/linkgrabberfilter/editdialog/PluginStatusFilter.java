@@ -31,7 +31,8 @@ public class PluginStatusFilter extends Filter implements Storable {
             switch (getPluginStatus()) {
             case PREMIUM:
                 return _GUI._.FilterRule_toString_premium();
-
+            case ACCOUNT:
+                return _GUI._.FilterRule_toString_account();
             case AUTOCAPTCHA:
                 return _GUI._.FilterRule_toString_autocaptcha();
             case NO_DIRECT_HTTP:
@@ -41,7 +42,8 @@ public class PluginStatusFilter extends Filter implements Storable {
             switch (getPluginStatus()) {
             case PREMIUM:
                 return _GUI._.FilterRule_toString_premium_not();
-
+            case ACCOUNT:
+                return _GUI._.FilterRule_toString_account_not();
             case AUTOCAPTCHA:
                 return _GUI._.FilterRule_toString_autocaptcha_not();
             case NO_DIRECT_HTTP:
@@ -69,6 +71,7 @@ public class PluginStatusFilter extends Filter implements Storable {
 
     public static enum PluginStatus {
         PREMIUM,
+        ACCOUNT,
         AUTOCAPTCHA,
         NO_DIRECT_HTTP
     }
