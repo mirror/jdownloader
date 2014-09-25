@@ -106,7 +106,9 @@ public abstract class ConditionDialog<T> extends AbstractDialog<T> {
     }
 
     public void setFilenameFilter(RegexFilter filter) {
-        if (filter == null) return;
+        if (filter == null) {
+            return;
+        }
         cbFilename.setSelected(filter.isEnabled());
         cobFilename.setSelectedIndex(filter.getMatchType().ordinal());
         txtFilename.setText(filter.getRegex());
@@ -114,7 +116,9 @@ public abstract class ConditionDialog<T> extends AbstractDialog<T> {
     }
 
     public void setPackagenameFilter(RegexFilter filter) {
-        if (filter == null) return;
+        if (filter == null) {
+            return;
+        }
         cbPackage.setSelected(filter.isEnabled());
         cobPackage.setSelectedIndex(filter.getMatchType().ordinal());
         txtPackage.setText(filter.getRegex());
@@ -158,7 +162,9 @@ public abstract class ConditionDialog<T> extends AbstractDialog<T> {
     }
 
     public void setOnlineStatusFilter(OnlineStatusFilter f) {
-        if (f == null) return;
+        if (f == null) {
+            return;
+        }
         cbOnline.setSelected(f.isEnabled());
         cobOnline.setSelectedIndex(f.getMatchType().ordinal());
         cobOnlineOptions.setSelectedIndex(f.getOnlineStatus().ordinal());
@@ -166,7 +172,9 @@ public abstract class ConditionDialog<T> extends AbstractDialog<T> {
     }
 
     public void setPluginStatusFilter(PluginStatusFilter f) {
-        if (f == null) return;
+        if (f == null) {
+            return;
+        }
         cbPlugin.setSelected(f.isEnabled());
         cobPlugin.setSelectedIndex(f.getMatchType().ordinal());
         cobPluginOptions.setSelectedIndex(f.getPluginStatus().ordinal());
@@ -174,7 +182,9 @@ public abstract class ConditionDialog<T> extends AbstractDialog<T> {
     }
 
     public void setFilesizeFilter(FilesizeFilter f) {
-        if (f == null) return;
+        if (f == null) {
+            return;
+        }
         cbSize.setSelected(f.isEnabled());
         cobSize.setSelectedIndex(f.getMatchType().ordinal());
         fromSize.setValue(f.getFrom());
@@ -182,7 +192,9 @@ public abstract class ConditionDialog<T> extends AbstractDialog<T> {
     }
 
     public void setOriginFilter(OriginFilter originFilter) {
-        if (originFilter == null) return;
+        if (originFilter == null) {
+            return;
+        }
         cobCrawlerSource.setSelectedIndex(originFilter.getMatchType().ordinal());
         cbCrawlerSource.setSelected(originFilter.isEnabled());
         cobCrawlerSourceOptions.setSelectedItems(originFilter.getOrigins());
@@ -197,14 +209,26 @@ public abstract class ConditionDialog<T> extends AbstractDialog<T> {
     }
 
     public void setFiletypeFilter(FiletypeFilter f) {
-        if (f == null) return;
+        if (f == null) {
+            return;
+        }
         cbType.setSelected(f.isEnabled());
         ArrayList<FileType> selection = new ArrayList<FileType>();
-        if (f.isAudioFilesEnabled()) selection.add(FileType.AUDIO);
-        if (f.isArchivesEnabled()) selection.add(FileType.ARCHIVE);
-        if (f.isImagesEnabled()) selection.add(FileType.IMAGE);
-        if (f.isVideoFilesEnabled()) selection.add(FileType.VIDEO);
-        if (!StringUtils.isEmpty(f.getCustoms())) selection.add(FileType.CUSTOM);
+        if (f.isAudioFilesEnabled()) {
+            selection.add(FileType.AUDIO);
+        }
+        if (f.isArchivesEnabled()) {
+            selection.add(FileType.ARCHIVE);
+        }
+        if (f.isImagesEnabled()) {
+            selection.add(FileType.IMAGE);
+        }
+        if (f.isVideoFilesEnabled()) {
+            selection.add(FileType.VIDEO);
+        }
+        if (!StringUtils.isEmpty(f.getCustoms())) {
+            selection.add(FileType.CUSTOM);
+        }
         cbTypeSelection.setSelectedItems(selection);
 
         txtCustumMime.setText(f.getCustoms());
@@ -234,7 +258,9 @@ public abstract class ConditionDialog<T> extends AbstractDialog<T> {
     }
 
     public void setSourceFilter(RegexFilter filter) {
-        if (filter == null) return;
+        if (filter == null) {
+            return;
+        }
         cbSource.setSelected(filter.isEnabled());
         cobSource.setSelectedIndex(filter.getMatchType().ordinal());
         txtSource.setText(filter.getRegex());
@@ -246,7 +272,9 @@ public abstract class ConditionDialog<T> extends AbstractDialog<T> {
     }
 
     public void setHosterFilter(RegexFilter filter) {
-        if (filter == null) return;
+        if (filter == null) {
+            return;
+        }
         cbHoster.setSelected(filter.isEnabled());
         cobHoster.setSelectedIndex(filter.getMatchType().ordinal());
         txtHoster.setText(filter.getRegex());
@@ -432,7 +460,9 @@ public abstract class ConditionDialog<T> extends AbstractDialog<T> {
                     list.getSelectionModel().addListSelectionListener(new ListSelectionListener() {
 
                         public void valueChanged(ListSelectionEvent e) {
-                            if (e.getValueIsAdjusting()) return;
+                            if (e.getValueIsAdjusting()) {
+                                return;
+                            }
                             String v = list.getSelectedValue().toString();
 
                             ConditionDialog.this.setIconKey(v.substring(0, v.length() - 4));
@@ -633,7 +663,9 @@ public abstract class ConditionDialog<T> extends AbstractDialog<T> {
 
             @Override
             protected Icon getIcon(List<FileType> list) {
-                if (list.size() == 0) return null;
+                if (list.size() == 0) {
+                    return null;
+                }
                 Icon[] icons = new Icon[list.size()];
                 for (int i = 0; i < icons.length; i++) {
                     icons[i] = getIcon(list.get(i));
@@ -775,7 +807,9 @@ public abstract class ConditionDialog<T> extends AbstractDialog<T> {
 
             @Override
             public void mousePressed(MouseEvent e) {
-                if (cbSource.isEnabled()) cbSource.setSelected(true);
+                if (cbSource.isEnabled()) {
+                    cbSource.setSelected(true);
+                }
 
             }
 
@@ -819,7 +853,9 @@ public abstract class ConditionDialog<T> extends AbstractDialog<T> {
 
             @Override
             public void mousePressed(MouseEvent e) {
-                if (cbCrawlerSource.isEnabled()) cbCrawlerSource.setSelected(true);
+                if (cbCrawlerSource.isEnabled()) {
+                    cbCrawlerSource.setSelected(true);
+                }
 
             }
 
@@ -849,7 +885,9 @@ public abstract class ConditionDialog<T> extends AbstractDialog<T> {
 
             @Override
             public void mousePressed(MouseEvent e) {
-                if (cbOnline.isEnabled()) cbOnline.setSelected(true);
+                if (cbOnline.isEnabled()) {
+                    cbOnline.setSelected(true);
+                }
 
             }
 
@@ -859,7 +897,7 @@ public abstract class ConditionDialog<T> extends AbstractDialog<T> {
 
         // plugin
         cobPlugin = new JComboBox(new String[] { _GUI._.ConditionDialog_layoutDialogContent_online_has_(), _GUI._.ConditionDialog_layoutDialogContent_online_hasnot_() });
-        cobPluginOptions = new JComboBox(new String[] { _GUI._.ConditionDialog_layoutDialogContent_premium(), _GUI._.ConditionDialog_layoutDialogContent_captcha(), _GUI._.ConditionDialog_layoutDialogContent_directhttp() });
+        cobPluginOptions = new JComboBox(new String[] { _GUI._.ConditionDialog_layoutDialogContent_premium(), _GUI._.ConditionDialog_layoutDialogContent_account(), _GUI._.ConditionDialog_layoutDialogContent_captcha(), _GUI._.ConditionDialog_layoutDialogContent_directhttp() });
         cbPlugin = new ExtCheckBox(cobPlugin, cobPluginOptions);
 
         panel.add(cbPlugin);
@@ -870,7 +908,9 @@ public abstract class ConditionDialog<T> extends AbstractDialog<T> {
 
             @Override
             public void mousePressed(MouseEvent e) {
-                if (cbPlugin.isEnabled()) cbPlugin.setSelected(true);
+                if (cbPlugin.isEnabled()) {
+                    cbPlugin.setSelected(true);
+                }
 
             }
 
@@ -986,11 +1026,15 @@ public abstract class ConditionDialog<T> extends AbstractDialog<T> {
         SwingUtilities.invokeLater(new Runnable() {
 
             public void run() {
-                if (cbOnline == null) return;
+                if (cbOnline == null) {
+                    return;
+                }
                 if (cbFilename.isSelected() || cbSize.isSelected() || cbType.isSelected()) {
                     if (!cbOnline.isSelected() || cobOnline.getSelectedIndex() != 0 || cobOnlineOptions.getSelectedIndex() != 1) {
                         autoset = true;
-                        if (cbOnline.isEnabled()) cbOnline.setSelected(true);
+                        if (cbOnline.isEnabled()) {
+                            cbOnline.setSelected(true);
+                        }
                         cobOnline.setSelectedIndex(0);
                         cobOnlineOptions.setSelectedIndex(1);
                         if (JDGui.bugme(WarnLevel.NORMAL)) {
