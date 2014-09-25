@@ -40,6 +40,7 @@ import org.appwork.utils.logging2.LogSource;
 import org.jdownloader.controlling.UniqueAlltimeID;
 import org.jdownloader.controlling.UrlProtection;
 import org.jdownloader.logging.LogController;
+import org.jdownloader.plugins.controller.LazyPluginClass;
 import org.jdownloader.plugins.controller.PluginClassLoader;
 import org.jdownloader.plugins.controller.PluginClassLoader.PluginClassLoaderChild;
 import org.jdownloader.plugins.controller.UpdateRequiredClassNotFoundException;
@@ -52,7 +53,6 @@ import org.jdownloader.settings.GeneralSettings;
 
 public class LinkCrawler {
 
-    private static final String                     HTTPVIAJD                   = "httpviajd";
     private final static String                     DIRECT_HTTP                 = "DirectHTTP";
     private final static String                     HTTP_LINKS                  = "http links";
     private LazyHostPlugin                          directHTTP                  = null;
@@ -450,7 +450,7 @@ public class LinkCrawler {
 
     public static boolean insideCrawlerPlugin() {
         if (Thread.currentThread() instanceof LinkCrawlerThread) {
-            Object owner = ((LinkCrawlerThread) Thread.currentThread()).getCurrentOwner();
+            final Object owner = ((LinkCrawlerThread) Thread.currentThread()).getCurrentOwner();
             if (owner != null && owner instanceof PluginForDecrypt) {
                 return true;
             }
@@ -460,7 +460,7 @@ public class LinkCrawler {
 
     public static boolean insideHosterPlugin() {
         if (Thread.currentThread() instanceof LinkCrawlerThread) {
-            Object owner = ((LinkCrawlerThread) Thread.currentThread()).getCurrentOwner();
+            final Object owner = ((LinkCrawlerThread) Thread.currentThread()).getCurrentOwner();
             if (owner != null && owner instanceof PluginForHost) {
                 return true;
             }
@@ -930,6 +930,21 @@ public class LinkCrawler {
         try {
             Collections.sort(ret, new Comparator<LazyCrawlerPlugin>() {
 
+                @Override
+                public final int compare(LazyCrawlerPlugin o1, LazyCrawlerPlugin o2) {
+                    final LazyPluginClass l1 = o1.getLazyPluginClass();
+                    final LazyPluginClass l2 = o2.getLazyPluginClass();
+                    if (l1.getInterfaceVersion() == l2.getInterfaceVersion()) {
+                        return 0;
+                    }
+                    if (l1.getInterfaceVersion() > l2.getInterfaceVersion()) {
+                        return -1;
+                    }
+                    return 1;
+                }
+
+            });
+            Collections.sort(ret, new Comparator<LazyCrawlerPlugin>() {
                 public final int compare(long x, long y) {
                     return (x < y) ? 1 : ((x == y) ? 0 : -1);
                 }

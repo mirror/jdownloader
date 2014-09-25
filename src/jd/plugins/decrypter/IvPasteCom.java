@@ -122,6 +122,7 @@ public class IvPasteCom extends PluginForDecrypt {
                 if (i >= 5) {
                     throw new DecrypterException(DecrypterException.CAPTCHA);
                 }
+                Form form = br.getForm(0);
                 PluginForDecrypt solveplug = JDUtilities.getPluginForDecrypt("linkcrypt.ws");
                 jd.plugins.decrypter.LnkCrptWs.SolveMedia sm = ((jd.plugins.decrypter.LnkCrptWs) solveplug).getSolveMedia(br);
                 File cf = sm.downloadCaptcha(getLocalCaptchaFile());
@@ -129,7 +130,6 @@ public class IvPasteCom extends PluginForDecrypt {
                 String chid = sm.getChallenge();
                 code = getCaptchaCode(cf, param);
                 chid = sm.getChallenge(code);
-                Form form = br.getForm(0);
                 form.put("adcopy_challenge", chid);
                 form.put("adcopy_response", Encoding.urlEncode(code));
                 br.submitForm(form);

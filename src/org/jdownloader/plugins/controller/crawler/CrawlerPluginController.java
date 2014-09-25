@@ -3,8 +3,6 @@ package org.jdownloader.plugins.controller.crawler;
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.Collections;
-import java.util.Comparator;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
@@ -21,7 +19,6 @@ import org.appwork.utils.ModifyLock;
 import org.appwork.utils.logging2.LogSource;
 import org.jdownloader.controlling.FileCreationManager;
 import org.jdownloader.logging.LogController;
-import org.jdownloader.plugins.controller.LazyPluginClass;
 import org.jdownloader.plugins.controller.PluginClassLoader.PluginClassLoaderChild;
 import org.jdownloader.plugins.controller.PluginController;
 import org.jdownloader.plugins.controller.PluginInfo;
@@ -69,7 +66,13 @@ public class CrawlerPluginController extends PluginController<PluginForDecrypt> 
         return ret;
     }
 
-    private volatile List<LazyCrawlerPlugin> list;
+    @Override
+    protected void finalize() throws Throwable {
+        save(list, lastModification);
+    };
+
+    private volatile List<LazyCrawlerPlugin> list             = null;
+    private final AtomicLong                 lastModification = new AtomicLong(-1l);
 
     private String getCache() {
         return "crawlerCache";
@@ -84,16 +87,14 @@ public class CrawlerPluginController extends PluginController<PluginForDecrypt> 
         list = null;
     }
 
-    public synchronized List<LazyCrawlerPlugin> init() {
+    public List<LazyCrawlerPlugin> init() {
         synchronized (INSTANCELOCK) {
             final LogSource logger = LogController.CL(false);
             logger.info("CrawlerPluginController: init");
             logger.setAllowTimeoutFlush(false);
             logger.setAutoFlushOnThrowable(true);
             LogController.setRebirthLogger(logger);
-            List<LazyCrawlerPlugin> finalPlugins = null;
             final long completeTimeStamp = System.currentTimeMillis();
-            final AtomicLong lastModification = new AtomicLong(-1l);
             try {
                 List<LazyCrawlerPlugin> updateCache = null;
                 /* try to load from cache */
@@ -101,6 +102,9 @@ public class CrawlerPluginController extends PluginController<PluginForDecrypt> 
                 try {
                     updateCache = loadFromCache(lastModification);
                 } catch (Throwable e) {
+                    if (lastModification != null) {
+                        lastModification.set(-1l);
+                    }
                     logger.log(e);
                     logger.severe("@CrawlerPluginController: cache failed!");
                 } finally {
@@ -130,31 +134,6 @@ public class CrawlerPluginController extends PluginController<PluginForDecrypt> 
                     }
                     logger.severe("@CrawlerPluginController: WTF, no plugins!");
                 }
-                timeStamp = System.currentTimeMillis();
-                try {
-                    final Comparator<LazyCrawlerPlugin> comp = new Comparator<LazyCrawlerPlugin>() {
-
-                        @Override
-                        public int compare(LazyCrawlerPlugin o1, LazyCrawlerPlugin o2) {
-                            final LazyPluginClass l1 = o1.getLazyPluginClass();
-                            final LazyPluginClass l2 = o2.getLazyPluginClass();
-                            if (l1.getInterfaceVersion() == l2.getInterfaceVersion()) {
-                                return 0;
-                            }
-                            if (l1.getInterfaceVersion() > l2.getInterfaceVersion()) {
-                                return -1;
-                            }
-                            return 1;
-                        }
-                    };
-                    Collections.sort(plugins, comp);
-                } catch (final Throwable e) {
-                    logger.log(e);
-                    logger.severe("@CrawlerPluginController: sort failed!");
-                } finally {
-                    logger.info("@CrawlerPluginController: sort took " + (System.currentTimeMillis() - timeStamp) + "ms for " + plugins.size());
-                }
-                finalPlugins = plugins;
                 for (LazyCrawlerPlugin plugin : plugins) {
                     plugin.setPluginClass(null);
                     plugin.setClassLoader(null);
@@ -170,11 +149,10 @@ public class CrawlerPluginController extends PluginController<PluginForDecrypt> 
                     logger.info("@CrawlerPluginController: init took " + (System.currentTimeMillis() - completeTimeStamp));
                 }
                 logger.close();
-                if (finalPlugins != null) {
-                    final List<LazyCrawlerPlugin> plugins = finalPlugins;
+                if (list != null) {
                     Thread saveThread = new Thread("@CrawlerPluginController:save") {
                         public void run() {
-                            save(plugins, lastModification);
+                            save(list, lastModification);
                         };
                     };
                     saveThread.setDaemon(true);
@@ -277,16 +255,18 @@ public class CrawlerPluginController extends PluginController<PluginForDecrypt> 
     }
 
     private void save(List<LazyCrawlerPlugin> save, final AtomicLong lastFolderModification) {
-        lock.writeLock();
-        final File cache = Application.getTempResource(getCache());
-        try {
-            LazyCrawlerPluginCache.write(save, cache, lastFolderModification);
-        } catch (final IOException e) {
-            e.printStackTrace();
-            cache.delete();
-        } finally {
-            lock.writeUnlock();
-            FileCreationManager.getInstance().delete(Application.getResource(HostPluginController.TMP_INVALIDPLUGINS), null);
+        if (list != null) {
+            lock.writeLock();
+            final File cache = Application.getTempResource(getCache());
+            try {
+                LazyCrawlerPluginCache.write(save, cache, lastFolderModification);
+            } catch (final IOException e) {
+                e.printStackTrace();
+                cache.delete();
+            } finally {
+                lock.writeUnlock();
+                FileCreationManager.getInstance().delete(Application.getResource(HostPluginController.TMP_INVALIDPLUGINS), null);
+            }
         }
     }
 
