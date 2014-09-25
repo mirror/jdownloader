@@ -28,3 +28,4 @@ popup_reconnect=Reconectar agora
 popup_reconnecttoggle=Auto-reconexão ativada
 popup_update=Verificar Atualizações
 popup_update_install=Instalar última atualização
+popup_update_install_tt=Existem autalizações esperando para serem instaladas. Clique aqui para instalá-las agora!
