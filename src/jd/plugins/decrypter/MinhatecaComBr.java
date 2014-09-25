@@ -160,7 +160,10 @@ public class MinhatecaComBr extends PluginForDecrypt {
                 if (i > 1) {
                     br.postPage("http://minhateca.com.br/action/Files/FilesList", "chomikId=" + chomikid + "&folderId=" + folderid + "&fileListSortType=Date&fileListAscending=False&gallerySortType=Name&galleryAscending=False&pageNr=" + i + "&isGallery=False&requestedFolderMode=&folderChanged=false&__RequestVerificationToken=" + Encoding.urlEncode(reqtoken));
                 }
-                final String[] linkinfo = br.getRegex("<div class=\"fileinfo tab\">(.*?)<span class=\"filedescription\"").getColumn(0);
+                String[] linkinfo = br.getRegex("<div class=\"fileinfo tab\">(.*?)<span class=\"filedescription\"").getColumn(0);
+                if (linkinfo == null || linkinfo.length == 0) {
+                    linkinfo = br.getRegex("<p class=\"filename\">(.*?)class=\"fileActionsFacebookSend\"").getColumn(0);
+                }
                 if (linkinfo == null || linkinfo.length == 0 || fpName == null) {
                     logger.warning("Decrypter broken for link: " + parameter);
                     return null;
@@ -168,15 +171,33 @@ public class MinhatecaComBr extends PluginForDecrypt {
                 for (final String lnkinfo : linkinfo) {
                     final String fid = new Regex(lnkinfo, "rel=\"(\\d+)\"").getMatch(0);
                     final Regex finfo = new Regex(lnkinfo, "<span class=\"bold\">([^<>\"]*?)</span>([^<>\"]*?)</a>");
-                    String filename = finfo.getMatch(0);
-                    final String ext = finfo.getMatch(1);
                     String filesize = new Regex(lnkinfo, "<li><span>([^<>\"]*?)</span></li>").getMatch(0);
-                    if (fid == null || filename == null || ext == null || filesize == null) {
+                    if (filesize == null) {
+                        filesize = new Regex(lnkinfo, "<li>([^<>\"]*?)</li>[\t\n\r ]+<li><span class=\"date\"").getMatch(0);
+                    }
+                    if (fid == null || filesize == null) {
                         logger.warning("Decrypter broken for link: " + parameter);
                         return null;
                     }
                     filesize = Encoding.htmlDecode(filesize).trim();
-                    filename = Encoding.htmlDecode(filename).trim() + Encoding.htmlDecode(ext).trim();
+                    String filename = new Regex(lnkinfo, "/([^<>\"/]*?)\" class=\"downloadAction\"").getMatch(0);
+                    if (filename == null) {
+                        filename = new Regex(lnkinfo, "title=\"([^<>\"]*?)\">").getMatch(0);
+                    }
+                    if (filename != null) {
+                        filename = filename.replace("," + fid, "");
+                        filename = Encoding.htmlDecode(filename);
+                    } else {
+                        if (filename == null) {
+                            filename = finfo.getMatch(0);
+                        }
+                        final String ext = finfo.getMatch(1);
+                        if (ext == null || filename == null) {
+                            logger.warning("Decrypter broken for link: " + parameter);
+                            return null;
+                        }
+                        filename = Encoding.htmlDecode(filename).trim() + Encoding.htmlDecode(ext).trim();
+                    }
 
                     final DownloadLink dl = createDownloadlink("http://minhatecadecrypted.com.br/" + System.currentTimeMillis() + new Random().nextInt(1000000));
 

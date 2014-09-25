@@ -276,11 +276,14 @@ public class DateiTo extends PluginForHost {
             logger.warning("The dllink doesn't seem to be a file...");
             br.followConnection();
             // Shouldn't happen often
-            handleServerErrors();
+            handleGeneralServerErrors();
             if (br.containsHTML("(window\\.location\\.href=\\'http://datei\\.to/login|form id=\"UploadForm\")")) {
                 throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 60 * 60 * 1001l);
+            } else if (br.containsHTML("error/ticketexpired")) {
+                throw new PluginException(LinkStatus.ERROR_RETRY, "Ticket expired");
             }
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            /* We rely on the API so this must be a server error */
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Unknown server error", 5 * 60 * 1000l);
         }
         dl.startDownload();
     }
@@ -406,7 +409,7 @@ public class DateiTo extends PluginForHost {
         }
     }
 
-    private void handleServerErrors() throws PluginException {
+    private void handleGeneralServerErrors() throws PluginException {
         if (br.containsHTML("datei\\.to/error/notfound")) {
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error", 60 * 60 * 1000l);
         }
@@ -617,9 +620,10 @@ public class DateiTo extends PluginForHost {
         br.setFollowRedirects(true);
         if (dl.getConnection() == null || dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
-            handleServerErrors();
+            handleGeneralServerErrors();
             logger.severe("PremiumError: " + br.toString());
-            throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+            /* We rely on the API so this must be a server error */
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Unknown server error", 5 * 60 * 1000l);
         }
         dl.startDownload();
     }
@@ -649,7 +653,7 @@ public class DateiTo extends PluginForHost {
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, ACCOUNT_PREMIUM_RESUME, ACCOUNT_PREMIUM_MAXCHUNKS);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
-            handleServerErrors();
+            handleGeneralServerErrors();
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl.startDownload();
