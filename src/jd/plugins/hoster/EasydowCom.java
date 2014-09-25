@@ -141,7 +141,9 @@ public class EasydowCom extends PluginForHost {
         br.setFollowRedirects(true);
         prepBrowser(br);
         getPage(link.getDownloadURL());
-        if (new Regex(correctedBR, "(No such file|>File Not Found<|>The file was removed by|Reason for deletion:\n)").matches()) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (new Regex(correctedBR, "(No such file|>File Not Found<|>The file was removed by|Reason for deletion:\n)").matches()) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
         if (new Regex(correctedBR, MAINTENANCE).matches()) {
             link.getLinkStatus().setStatusText(MAINTENANCEUSERTEXT);
             return AvailableStatus.TRUE;
@@ -160,10 +162,14 @@ public class EasydowCom extends PluginForHost {
             logger.warning("filename equals null, throwing \"plugin defect\"");
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        if (fileInfo[2] != null && !fileInfo[2].equals("")) link.setMD5Hash(fileInfo[2].trim());
+        if (fileInfo[2] != null && !fileInfo[2].equals("")) {
+            link.setMD5Hash(fileInfo[2].trim());
+        }
         fileInfo[0] = fileInfo[0].replaceAll("(</b>|<b>|\\.html)", "");
         link.setFinalFileName(fileInfo[0].trim());
-        if (fileInfo[1] != null && !fileInfo[1].equals("")) link.setDownloadSize(SizeFormatter.getSize(fileInfo[1]));
+        if (fileInfo[1] != null && !fileInfo[1].equals("")) {
+            link.setDownloadSize(SizeFormatter.getSize(fileInfo[1]));
+        }
         return AvailableStatus.TRUE;
     }
 
@@ -198,13 +204,17 @@ public class EasydowCom extends PluginForHost {
                 }
             }
         }
-        if (fileInfo[2] == null) fileInfo[2] = new Regex(correctedBR, "<b>MD5.*?</b>.*?nowrap>(.*?)<").getMatch(0);
+        if (fileInfo[2] == null) {
+            fileInfo[2] = new Regex(correctedBR, "<b>MD5.*?</b>.*?nowrap>(.*?)<").getMatch(0);
+        }
         return fileInfo;
     }
 
     @Override
     public boolean checkLinks(final DownloadLink[] urls) {
-        if (urls == null || urls.length == 0) { return false; }
+        if (urls == null || urls.length == 0) {
+            return false;
+        }
         try {
             final Browser br = new Browser();
             prepBrowser(br);
@@ -268,7 +278,9 @@ public class EasydowCom extends PluginForHost {
         // First, bring up saved final links
         String dllink = checkDirectLink(downloadLink, directlinkproperty);
         // Second, check for streaming links on the first page
-        if (dllink == null) dllink = getDllink();
+        if (dllink == null) {
+            dllink = getDllink();
+        }
         // Third, do they provide video hosting?
         if (dllink == null && VIDEOHOSTER) {
             final Browser brv = br.cloneBrowser();
@@ -300,7 +312,9 @@ public class EasydowCom extends PluginForHost {
         }
         if (dllink == null) {
             Form dlForm = br.getFormbyProperty("name", "F1");
-            if (dlForm == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            if (dlForm == null) {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
             // how many forms deep do you want to try.
             int repeat = 2;
             for (int i = 0; i <= repeat; i++) {
@@ -315,7 +329,9 @@ public class EasydowCom extends PluginForHost {
                 // md5 can be on the subsequent pages
                 if (downloadLink.getMD5Hash() == null) {
                     String md5hash = new Regex(correctedBR, "<b>MD5.*?</b>.*?nowrap>(.*?)<").getMatch(0);
-                    if (md5hash != null) downloadLink.setMD5Hash(md5hash.trim());
+                    if (md5hash != null) {
+                        downloadLink.setMD5Hash(md5hash.trim());
+                    }
                 }
                 /* Captcha START */
                 if (correctedBR.contains(";background:#ccc;text-align")) {
@@ -362,7 +378,9 @@ public class EasydowCom extends PluginForHost {
                     final PluginForHost recplug = JDUtilities.getPluginForHost("DirectHTTP");
                     final jd.plugins.hoster.DirectHTTP.Recaptcha rc = ((DirectHTTP) recplug).getReCaptcha(br);
                     final String id = new Regex(correctedBR, "\\?k=([A-Za-z0-9%_\\+\\- ]+)\"").getMatch(0);
-                    if (id == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                    if (id == null) {
+                        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                    }
                     rc.setId(id);
                     rc.load();
                     final File cf = rc.downloadCaptcha(getLocalCaptchaFile());
@@ -385,15 +403,21 @@ public class EasydowCom extends PluginForHost {
                     logger.info("Detected captcha method \"keycaptca\"");
                     PluginForDecrypt keycplug = JDUtilities.getPluginForDecrypt("linkcrypt.ws");
                     jd.plugins.decrypter.LnkCrptWs.KeyCaptcha kc = ((jd.plugins.decrypter.LnkCrptWs) keycplug).getKeyCaptcha(br);
-                    final String result = kc.showDialog(downloadLink.getDownloadURL());
-                    if (result != null && "CANCEL".equals(result)) { throw new PluginException(LinkStatus.ERROR_FATAL); }
+                    final String result = kc.handleKeyCaptcha(downloadLink.getDownloadURL(), downloadLink);
+                    if (result != null && "CANCEL".equals(result)) {
+                        throw new PluginException(LinkStatus.ERROR_FATAL);
+                    }
                     dlForm.put("capcode", result);
                     /** wait time is often skippable for reCaptcha handling */
                     skipWaittime = false;
                 }
                 /* Captcha END */
-                if (password) passCode = handlePassword(dlForm, downloadLink);
-                if (!skipWaittime) waitTime(timeBefore, downloadLink);
+                if (password) {
+                    passCode = handlePassword(dlForm, downloadLink);
+                }
+                if (!skipWaittime) {
+                    waitTime(timeBefore, downloadLink);
+                }
                 sendForm(dlForm);
                 logger.info("Submitted DLForm");
                 checkErrors(downloadLink, true);
@@ -412,7 +436,9 @@ public class EasydowCom extends PluginForHost {
         logger.info("Final downloadlink = " + dllink + " starting the download...");
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, resumable, maxchunks);
         if (dl.getConnection().getContentType().contains("html")) {
-            if (dl.getConnection().getResponseCode() == 503) throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Connection limit reached, please contact our support!", 5 * 60 * 1000l);
+            if (dl.getConnection().getResponseCode() == 503) {
+                throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Connection limit reached, please contact our support!", 5 * 60 * 1000l);
+            }
             logger.warning("The final dllink seems not to be a file!");
             br.followConnection();
             correctBR();
@@ -487,7 +513,9 @@ public class EasydowCom extends PluginForHost {
                 if (cryptedScripts != null && cryptedScripts.length != 0) {
                     for (String crypted : cryptedScripts) {
                         dllink = decodeDownloadLink(crypted);
-                        if (dllink != null) break;
+                        if (dllink != null) {
+                            break;
+                        }
                     }
                 }
             }
@@ -508,7 +536,9 @@ public class EasydowCom extends PluginForHost {
 
             while (c != 0) {
                 c--;
-                if (k[c].length() != 0) p = p.replaceAll("\\b" + Integer.toString(c, a) + "\\b", k[c]);
+                if (k[c].length() != 0) {
+                    p = p.replaceAll("\\b" + Integer.toString(c, a) + "\\b", k[c]);
+                }
             }
 
             decoded = p;
@@ -571,7 +601,9 @@ public class EasydowCom extends PluginForHost {
             int tt = Integer.parseInt(ttt);
             tt -= passedTime;
             logger.info("Waittime detected, waiting " + ttt + " - " + passedTime + " seconds from now on...");
-            if (tt > 0) sleep(tt * 1000l, downloadLink);
+            if (tt > 0) {
+                sleep(tt * 1000l, downloadLink);
+            }
         }
     }
 
@@ -590,8 +622,12 @@ public class EasydowCom extends PluginForHost {
             for (Form f : workaround) {
                 for (InputField field : f.getInputFields()) {
                     if (key != null && key.equals(field.getKey())) {
-                        if (value == null && field.getValue() == null) return f;
-                        if (value != null && value.equals(field.getValue())) return f;
+                        if (value == null && field.getValue() == null) {
+                            return f;
+                        }
+                        if (value != null && value.equals(field.getValue())) {
+                            return f;
+                        }
                     }
                 }
             }
@@ -601,7 +637,9 @@ public class EasydowCom extends PluginForHost {
 
     private void fixFilename(final DownloadLink downloadLink) {
         String oldName = downloadLink.getFinalFileName();
-        if (oldName == null) oldName = downloadLink.getName();
+        if (oldName == null) {
+            oldName = downloadLink.getName();
+        }
         final String serverFilename = Encoding.htmlDecode(getFileNameFromHeader(dl.getConnection()));
         String newExtension = null;
         // some streaming sites do not provide proper file.extension within
@@ -617,7 +655,9 @@ public class EasydowCom extends PluginForHost {
         }
         if (newExtension != null && !oldName.endsWith(newExtension)) {
             String oldExtension = null;
-            if (oldName.contains(".")) oldExtension = oldName.substring(oldName.lastIndexOf("."));
+            if (oldName.contains(".")) {
+                oldExtension = oldName.substring(oldName.lastIndexOf("."));
+            }
             if (oldExtension != null && oldExtension.length() <= 5) {
                 downloadLink.setFinalFileName(oldName.replace(oldExtension, newExtension));
             } else {
@@ -627,7 +667,9 @@ public class EasydowCom extends PluginForHost {
     }
 
     private String handlePassword(final Form pwform, final DownloadLink thelink) throws PluginException {
-        if (passCode == null) passCode = Plugin.getUserInput("Password?", thelink);
+        if (passCode == null) {
+            passCode = Plugin.getUserInput("Password?", thelink);
+        }
         if (passCode == null || passCode.equals("")) {
             logger.info("User has entered blank password, exiting handlePassword");
             passCode = null;
@@ -659,16 +701,22 @@ public class EasydowCom extends PluginForHost {
                 logger.warning("Wrong captcha or wrong password!");
                 throw new PluginException(LinkStatus.ERROR_CAPTCHA);
             }
-            if (correctedBR.contains("\">Skipped countdown<")) throw new PluginException(LinkStatus.ERROR_FATAL, "Fatal countdown error (countdown skipped)");
+            if (correctedBR.contains("\">Skipped countdown<")) {
+                throw new PluginException(LinkStatus.ERROR_FATAL, "Fatal countdown error (countdown skipped)");
+            }
         }
         /** Wait time reconnect handling */
         if (new Regex(correctedBR, "(You have reached the download(\\-| )limit|You have to wait)").matches()) {
             // adjust this regex to catch the wait time string for COOKIE_HOST
             String WAIT = new Regex(correctedBR, "((You have reached the download(\\-| )limit|You have to wait)[^<>]+)").getMatch(0);
             String tmphrs = new Regex(WAIT, "\\s+(\\d+)\\s+hours?").getMatch(0);
-            if (tmphrs == null) tmphrs = new Regex(correctedBR, "You have to wait.*?\\s+(\\d+)\\s+hours?").getMatch(0);
+            if (tmphrs == null) {
+                tmphrs = new Regex(correctedBR, "You have to wait.*?\\s+(\\d+)\\s+hours?").getMatch(0);
+            }
             String tmpmin = new Regex(WAIT, "\\s+(\\d+)\\s+minutes?").getMatch(0);
-            if (tmpmin == null) tmpmin = new Regex(correctedBR, "You have to wait.*?\\s+(\\d+)\\s+minutes?").getMatch(0);
+            if (tmpmin == null) {
+                tmpmin = new Regex(correctedBR, "You have to wait.*?\\s+(\\d+)\\s+minutes?").getMatch(0);
+            }
             String tmpsec = new Regex(WAIT, "\\s+(\\d+)\\s+seconds?").getMatch(0);
             String tmpdays = new Regex(WAIT, "\\s+(\\d+)\\s+days?").getMatch(0);
             if (tmphrs == null && tmpmin == null && tmpsec == null && tmpdays == null) {
@@ -676,19 +724,33 @@ public class EasydowCom extends PluginForHost {
                 throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, null, 60 * 60 * 1000l);
             } else {
                 int minutes = 0, seconds = 0, hours = 0, days = 0;
-                if (tmphrs != null) hours = Integer.parseInt(tmphrs);
-                if (tmpmin != null) minutes = Integer.parseInt(tmpmin);
-                if (tmpsec != null) seconds = Integer.parseInt(tmpsec);
-                if (tmpdays != null) days = Integer.parseInt(tmpdays);
+                if (tmphrs != null) {
+                    hours = Integer.parseInt(tmphrs);
+                }
+                if (tmpmin != null) {
+                    minutes = Integer.parseInt(tmpmin);
+                }
+                if (tmpsec != null) {
+                    seconds = Integer.parseInt(tmpsec);
+                }
+                if (tmpdays != null) {
+                    days = Integer.parseInt(tmpdays);
+                }
                 int waittime = ((days * 24 * 3600) + (3600 * hours) + (60 * minutes) + seconds + 1) * 1000;
                 logger.info("Detected waittime #2, waiting " + waittime + "milliseconds");
                 /** Not enough wait time to reconnect->Wait and try again */
-                if (waittime < 180000) { throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, JDL.L("plugins.hoster.xfilesharingprobasic.allwait", ALLWAIT_SHORT), waittime); }
+                if (waittime < 180000) {
+                    throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, JDL.L("plugins.hoster.xfilesharingprobasic.allwait", ALLWAIT_SHORT), waittime);
+                }
                 throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, null, waittime);
             }
         }
-        if (correctedBR.contains("You're using all download slots for IP")) { throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, null, 10 * 60 * 1001l); }
-        if (correctedBR.contains("Error happened when generating Download Link")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error!", 10 * 60 * 1000l);
+        if (correctedBR.contains("You're using all download slots for IP")) {
+            throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, null, 10 * 60 * 1001l);
+        }
+        if (correctedBR.contains("Error happened when generating Download Link")) {
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error!", 10 * 60 * 1000l);
+        }
         /** Error handling for only-premium links */
         if (new Regex(correctedBR, "( can download files up to |Upgrade your account to download bigger files|>Upgrade your account to download larger files|>The file you requested reached max downloads limit for Free Users|Please Buy Premium To download this file<|This file reached max downloads limit)").matches()) {
             String filesizelimit = new Regex(correctedBR, "You can download files up to(.*?)only").getMatch(0);
@@ -698,7 +760,9 @@ public class EasydowCom extends PluginForHost {
                 try {
                     throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);
                 } catch (final Throwable e) {
-                    if (e instanceof PluginException) throw (PluginException) e;
+                    if (e instanceof PluginException) {
+                        throw (PluginException) e;
+                    }
                 }
                 throw new PluginException(LinkStatus.ERROR_FATAL, PREMIUMONLY1 + " " + filesizelimit);
             } else {
@@ -706,7 +770,9 @@ public class EasydowCom extends PluginForHost {
                 try {
                     throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);
                 } catch (final Throwable e) {
-                    if (e instanceof PluginException) throw (PluginException) e;
+                    if (e instanceof PluginException) {
+                        throw (PluginException) e;
+                    }
                 }
                 throw new PluginException(LinkStatus.ERROR_FATAL, PREMIUMONLY2);
             }
@@ -715,12 +781,18 @@ public class EasydowCom extends PluginForHost {
             logger.info("Only downloadable via premium");
             throw new PluginException(LinkStatus.ERROR_FATAL, PREMIUMONLY2);
         }
-        if (new Regex(correctedBR, MAINTENANCE).matches()) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, MAINTENANCEUSERTEXT, 2 * 60 * 60 * 1000l);
+        if (new Regex(correctedBR, MAINTENANCE).matches()) {
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, MAINTENANCEUSERTEXT, 2 * 60 * 60 * 1000l);
+        }
     }
 
     public void checkServerErrors() throws NumberFormatException, PluginException {
-        if (new Regex(correctedBR, Pattern.compile("No file", Pattern.CASE_INSENSITIVE)).matches()) throw new PluginException(LinkStatus.ERROR_FATAL, "Server error");
-        if (new Regex(correctedBR, "(File Not Found|<h1>404 Not Found</h1>)").matches()) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error", 30 * 60 * 1000l);
+        if (new Regex(correctedBR, Pattern.compile("No file", Pattern.CASE_INSENSITIVE)).matches()) {
+            throw new PluginException(LinkStatus.ERROR_FATAL, "Server error");
+        }
+        if (new Regex(correctedBR, "(File Not Found|<h1>404 Not Found</h1>)").matches()) {
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error", 30 * 60 * 1000l);
+        }
     }
 
     @Override
@@ -796,7 +868,9 @@ public class EasydowCom extends PluginForHost {
                 prepBrowser(br);
                 final Object ret = account.getProperty("cookies", null);
                 boolean acmatch = Encoding.urlEncode(account.getUser()).equals(account.getStringProperty("name", Encoding.urlEncode(account.getUser())));
-                if (acmatch) acmatch = Encoding.urlEncode(account.getPass()).equals(account.getStringProperty("pass", Encoding.urlEncode(account.getPass())));
+                if (acmatch) {
+                    acmatch = Encoding.urlEncode(account.getPass()).equals(account.getStringProperty("pass", Encoding.urlEncode(account.getPass())));
+                }
                 if (acmatch && ret != null && ret instanceof HashMap<?, ?> && !force) {
                     final HashMap<String, String> cookies = (HashMap<String, String>) ret;
                     if (account.isValid()) {
@@ -811,11 +885,15 @@ public class EasydowCom extends PluginForHost {
                 br.setFollowRedirects(true);
                 getPage(COOKIE_HOST + "/login.html");
                 final Form loginform = br.getFormbyProperty("name", "FL");
-                if (loginform == null) throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nPlugin broken, please contact the JDownloader Support!\r\nPlugin defekt, bitte den JDownloader Support kontaktieren!", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                if (loginform == null) {
+                    throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nPlugin broken, please contact the JDownloader Support!\r\nPlugin defekt, bitte den JDownloader Support kontaktieren!", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                }
                 loginform.put("login", Encoding.urlEncode(account.getUser()));
                 loginform.put("password", Encoding.urlEncode(account.getPass()));
                 sendForm(loginform);
-                if (br.getCookie(COOKIE_HOST, "login") == null || br.getCookie(COOKIE_HOST, "xfss") == null) throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nInvalid username/password!\r\nUngültiger Benutzername oder ungültiges Passwort!", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                if (br.getCookie(COOKIE_HOST, "login") == null || br.getCookie(COOKIE_HOST, "xfss") == null) {
+                    throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nInvalid username/password!\r\nUngültiger Benutzername oder ungültiges Passwort!", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                }
                 if (!br.getURL().contains("/?op=my_account")) {
                     getPage("/?op=my_account");
                 }
@@ -856,9 +934,13 @@ public class EasydowCom extends PluginForHost {
                 dllink = getDllink();
                 if (dllink == null) {
                     Form dlform = br.getFormbyProperty("name", "F1");
-                    if (dlform != null && new Regex(correctedBR, PASSWORDTEXT).matches()) passCode = handlePassword(dlform, downloadLink);
+                    if (dlform != null && new Regex(correctedBR, PASSWORDTEXT).matches()) {
+                        passCode = handlePassword(dlform, downloadLink);
+                    }
                     checkErrors(downloadLink, true);
-                    if (dlform == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                    if (dlform == null) {
+                        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                    }
                     sendForm(dlform);
                     checkErrors(downloadLink, true);
                     dllink = getDllink();
@@ -871,7 +953,9 @@ public class EasydowCom extends PluginForHost {
             logger.info("Final downloadlink = " + dllink + " starting the download...");
             dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 0);
             if (dl.getConnection().getContentType().contains("html")) {
-                if (dl.getConnection().getResponseCode() == 503) throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Connection limit reached, please contact our support!", 5 * 60 * 1000l);
+                if (dl.getConnection().getResponseCode() == 503) {
+                    throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Connection limit reached, please contact our support!", 5 * 60 * 1000l);
+                }
                 logger.warning("The final dllink seems not to be a file!");
                 br.followConnection();
                 correctBR();

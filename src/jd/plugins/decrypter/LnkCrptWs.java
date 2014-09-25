@@ -852,6 +852,32 @@ public class LnkCrptWs extends PluginForDecrypt {
             }
         }
 
+        /**
+         * Handles a KeyCaptcha by trying to autosolve it first and use a dialog as fallback
+         * 
+         * @param parameter
+         *            the keycaptcha parameter as already used for showDialog
+         * @param downloadLink
+         *            downloadlink (for counting attempts)
+         * @return
+         * @throws Exception
+         */
+        public String handleKeyCaptcha(final String parameter, DownloadLink downloadLink) throws Exception {
+            int attempt = downloadLink.getIntegerProperty("KEYCAPTCHA_ATTEMPT", 0);
+            downloadLink.setProperty("KEYCAPTCHA_ATTEMPT", attempt + 1);
+            if (attempt < 2) {
+                // less than x attempts -> try autosolve
+                return autoSolve(parameter);
+            } else {
+                // shows the dialog
+                return showDialog(parameter);
+            }
+        }
+
+        /**
+         * This methods just displays a dialog. You can use {@link #handleKeyCaptcha(String, DownloadLink) handleKeyCaptcha} instead, which
+         * tries to autosolve it first. Or you can use {@link #autoSolve(String) autosolve}, which tries to solve the captcha directly.
+         */
         public synchronized String showDialog(final String parameter) throws Exception {
             LOCKDIALOG.lock();
             try {
@@ -2238,31 +2264,6 @@ public class LnkCrptWs extends PluginForDecrypt {
 
         private LinkedList<Integer> mouseArray     = new LinkedList<Integer>();
 
-        private void save(KeyCaptchaImages images) {
-            String path = "/home/tim/keycaptcha2/" + (int) (Math.random() * 10000) + "/";
-            File of = new File(path + "background.png");
-            of.mkdirs();
-            try {
-                ImageIO.write(images.backgroundImage, "png", of);
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
-            File smpl = new File(path + "sample.png");
-            try {
-                ImageIO.write(images.sampleImage, "png", smpl);
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
-            for (int i = 0; i < images.pieces.size(); i++) {
-                File f = new File(path + (i + 1) + ".png");
-                try {
-                    ImageIO.write(images.pieces.get(i), "png", f);
-                } catch (IOException e) {
-                    e.printStackTrace();
-                }
-            }
-        }
-
         private void marray(Point loc) {
             if (loc != null) {
                 if (mouseArray.size() == 0) {
@@ -2289,7 +2290,6 @@ public class LnkCrptWs extends PluginForDecrypt {
         public String solve(KeyCaptchaImages images) {
             HashMap<BufferedImage, Point> imgPosition = new HashMap<BufferedImage, Point>();
             int limit = images.pieces.size();
-            save(images);
 
             LinkedList<BufferedImage> piecesOld = new LinkedList<BufferedImage>(images.pieces);
 
@@ -2580,7 +2580,7 @@ public class LnkCrptWs extends PluginForDecrypt {
      * @author flubshi
      * 
      */
-    private static class KeyCaptchaImages implements Cloneable {
+    private static class KeyCaptchaImages {
         public BufferedImage             backgroundImage;
         public BufferedImage             sampleImage;
         public LinkedList<BufferedImage> pieces;
@@ -2599,15 +2599,6 @@ public class LnkCrptWs extends PluginForDecrypt {
             this.backgroundImage = backgroundImage;
             this.sampleImage = sampleImage;
             this.pieces = pieces;
-        }
-
-        @Override
-        public KeyCaptchaImages clone() {
-            try {
-                return (KeyCaptchaImages) super.clone();
-            } catch (CloneNotSupportedException e) {
-                throw new InternalError();
-            }
         }
 
         /**

@@ -360,7 +360,7 @@ public class ModoVideoCom extends PluginForHost {
                     final PluginForDecrypt keycplug = JDUtilities.getPluginForDecrypt("linkcrypt.ws");
                     try {
                         final jd.plugins.decrypter.LnkCrptWs.KeyCaptcha kc = ((jd.plugins.decrypter.LnkCrptWs) keycplug).getKeyCaptcha(br);
-                        result = kc.showDialog(downloadLink.getDownloadURL());
+                        result = kc.handleKeyCaptcha(downloadLink.getDownloadURL(), downloadLink);
                     } catch (final Throwable e) {
                         result = null;
                     }
