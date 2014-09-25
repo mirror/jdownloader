@@ -23,10 +23,13 @@ import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
+import jd.parser.html.Form;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterException;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
+import jd.plugins.LinkStatus;
+import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
 import jd.utils.JDUtilities;
@@ -59,44 +62,50 @@ public class IvPasteCom extends PluginForDecrypt {
             return decryptedLinks;
         }
         // Avoid unsupported captchatype by reloading the page
-        for (int i = 1; i <= 3; i++) {
+        int auto = 0;
+        int i = 0;
+        while (true) {
+            i++;
             if (br.containsHTML("pluscaptcha\\.com/")) {
+                if (i >= 5) {
+                    throw new DecrypterException(DecrypterException.CAPTCHA);
+                }
                 logger.info(i + "/3:Unsupported captchatype: " + parameter);
-                sleep(3000l, param);
-                continue;
-            }
-            break;
-        }
-        if (br.containsHTML("pluscaptcha\\.com/")) {
-            logger.info("Unsupported captchatype: " + parameter);
-            return decryptedLinks;
-        }
-        if (br.containsHTML("api\\.recaptcha\\.net") || br.containsHTML("google\\.com/recaptcha/api/")) {
-            boolean failed = true;
-            for (int i = 0; i <= 5; i++) {
+                sleep(1000l, param);
+                br.getPage("http://ivpaste.com/p/" + ID);
+            } else if (br.containsHTML("api\\.recaptcha\\.net") || br.containsHTML("google\\.com/recaptcha/api/")) {
+                if (i >= 5) {
+                    throw new DecrypterException(DecrypterException.CAPTCHA);
+                }
                 PluginForHost recplug = JDUtilities.getPluginForHost("DirectHTTP");
                 jd.plugins.hoster.DirectHTTP.Recaptcha rc = ((jd.plugins.hoster.DirectHTTP) recplug).getReCaptcha(br);
-                rc.parse();
+                String apiKey = br.getRegex("/recaptcha/api/(?:challenge|noscript)\\?k=([A-Za-z0-9%_\\+\\- ]+)").getMatch(0);
+                if (apiKey == null) {
+                    apiKey = br.getRegex("/recaptcha/api/(?:challenge|noscript)\\?k=([A-Za-z0-9%_\\+\\- ]+)").getMatch(0);
+                    if (apiKey == null) {
+                        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                    }
+                }
+                Form form = br.getForm(0);
+                rc.setForm(form);
+                rc.setId(apiKey);
                 rc.load();
                 File cf = rc.downloadCaptcha(getLocalCaptchaFile());
                 String c = getCaptchaCode(cf, param);
                 rc.setCode(c);
                 if (br.containsHTML(RECAPTCHAFAILED)) {
-                    br.getPage(parameter);
+                    br.getPage("http://ivpaste.com/p/" + ID);
                     continue;
                 }
-                failed = false;
-                break;
-            }
-            if (failed) {
-                throw new DecrypterException(DecrypterException.CAPTCHA);
-            }
-        } else if (br.containsHTML("KeyCAPTCHA code")) {
-            String result = null;
-            final PluginForDecrypt keycplug = JDUtilities.getPluginForDecrypt("linkcrypt.ws");
-            for (int i = 0; i < 5; i++) {
+            } else if (br.containsHTML("KeyCAPTCHA code")) {
+                if (i >= 5) {
+                    throw new DecrypterException(DecrypterException.CAPTCHA);
+                }
+                final PluginForDecrypt keycplug = JDUtilities.getPluginForDecrypt("linkcrypt.ws");
                 final jd.plugins.decrypter.LnkCrptWs.KeyCaptcha kc = ((jd.plugins.decrypter.LnkCrptWs) keycplug).getKeyCaptcha(br);
-                if (i < 3) {
+                String result = null;
+                if (auto < 3) {
+                    auto++;
                     result = kc.autoSolve(parameter);
                 } else {
                     try {
@@ -105,14 +114,28 @@ public class IvPasteCom extends PluginForDecrypt {
                         result = null;
                     }
                 }
+                if (result == null || "CANCEL".equals(result)) {
+                    throw new DecrypterException(DecrypterException.CAPTCHA);
+                }
+                br.postPage(br.getURL(), "capcode=" + Encoding.urlEncode(result) + "&save=&save=");
+            } else if (br.containsHTML("solvemedia.com")) {
+                if (i >= 5) {
+                    throw new DecrypterException(DecrypterException.CAPTCHA);
+                }
+                PluginForDecrypt solveplug = JDUtilities.getPluginForDecrypt("linkcrypt.ws");
+                jd.plugins.decrypter.LnkCrptWs.SolveMedia sm = ((jd.plugins.decrypter.LnkCrptWs) solveplug).getSolveMedia(br);
+                File cf = sm.downloadCaptcha(getLocalCaptchaFile());
+                String code = "";
+                String chid = sm.getChallenge();
+                code = getCaptchaCode(cf, param);
+                chid = sm.getChallenge(code);
+                Form form = br.getForm(0);
+                form.put("adcopy_challenge", chid);
+                form.put("adcopy_response", Encoding.urlEncode(code));
+                br.submitForm(form);
+            } else {
+                break;
             }
-            if (result == null) {
-                throw new DecrypterException(DecrypterException.CAPTCHA);
-            }
-            if ("CANCEL".equals(result)) {
-                throw new DecrypterException(DecrypterException.CAPTCHA);
-            }
-            br.postPage(br.getURL(), "capcode=" + Encoding.urlEncode(result) + "&save=&save=");
         }
         final String content = br.getRegex("<td nowrap align.*?pre>(.*?)</pre").getMatch(0);
         if (content == null) {
