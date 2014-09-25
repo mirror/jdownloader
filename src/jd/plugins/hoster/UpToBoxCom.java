@@ -67,6 +67,7 @@ public class UpToBoxCom extends PluginForHost {
     private static final String  PASSWORDTEXT                 = "<br><b>Passwor(d|t):</b> <input";
     private final String         COOKIE_HOST                  = "http://uptobox.com";
     private static final String  DOMAINS                      = "(uptobox\\.com|uptostream\\.com)";
+    private static final String  regexIpBlock                 = "<center><p><b>Sorry, " + DOMAINS + " is not available in your country</b></p></center>";
     private static final String  MAINTENANCE                  = ">This server is in maintenance mode";
     private static final String  MAINTENANCEUSERTEXT          = JDL.L("hoster.xfilesharingprobasic.errors.undermaintenance", "This server is under Maintenance");
     private static final String  ALLWAIT_SHORT                = JDL.L("hoster.xfilesharingprobasic.errors.waitingfordownloads", "Waiting till new downloads can be started");
@@ -144,14 +145,15 @@ public class UpToBoxCom extends PluginForHost {
         br.setFollowRedirects(true);
         prepBrowser();
         getPage(link.getDownloadURL());
-        if (new Regex(correctedBR, Pattern.compile("(No such file|>File Not Found<|>The file was removed by|Reason (of|for) deletion:\n|>File not found <|>Unfortunately, the file you want is not available)", Pattern.CASE_INSENSITIVE)).matches()) {
+        if (new Regex(correctedBR, regexIpBlock).matches()) {
+            // apparently error fatal will prevent multihoster.
+            return AvailableStatus.UNCHECKABLE;
+        } else if (new Regex(correctedBR, Pattern.compile("(No such file|>File Not Found<|>The file was removed by|Reason (of|for) deletion:\n|>File not found <|>Unfortunately, the file you want is not available)", Pattern.CASE_INSENSITIVE)).matches()) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        }
-        if (correctedBR.contains(MAINTENANCE)) {
+        } else if (correctedBR.contains(MAINTENANCE)) {
             link.getLinkStatus().setStatusText(JDL.L("plugins.hoster.xfilesharingprobasic.undermaintenance", MAINTENANCEUSERTEXT));
             return AvailableStatus.TRUE;
-        }
-        if (correctedBR.contains("No htmlCode read")) {
+        } else if (correctedBR.contains("No htmlCode read")) {
             link.getLinkStatus().setStatusText("Server error -> Can't check status");
             return AvailableStatus.UNCHECKABLE;
         }
@@ -202,6 +204,7 @@ public class UpToBoxCom extends PluginForHost {
     @Override
     public void handleFree(DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
+        ipBlock();
         doFree(downloadLink, true, -2, "freelink");
     }
 
@@ -458,6 +461,13 @@ public class UpToBoxCom extends PluginForHost {
         correctBR();
     }
 
+    private void ipBlock() throws PluginException {
+        if (new Regex(correctedBR, regexIpBlock).matches()) {
+            logger.warning("Country/IP Block issued hoster!");
+            throw new PluginException(LinkStatus.ERROR_FATAL, "Country/IP Block issued hoster!");
+        }
+    }
+
     public void checkErrors(DownloadLink theLink, boolean checkAll, String passCode) throws NumberFormatException, PluginException {
         if (checkAll) {
             if (new Regex(correctedBR, PASSWORDTEXT).matches() || correctedBR.contains("Wrong password")) {
@@ -710,6 +720,7 @@ public class UpToBoxCom extends PluginForHost {
                 }
                 br.setFollowRedirects(true);
                 getPage("https://login.uptobox.com/");
+                ipBlock();
                 // Form loginform = br.getForm(0);
                 Form loginform = br.getFormbyProperty("name", "FL");
                 if (loginform == null) {
@@ -749,6 +760,7 @@ public class UpToBoxCom extends PluginForHost {
     public void handlePremium(DownloadLink link, Account account) throws Exception {
         String passCode = null;
         requestFileInformation(link);
+        ipBlock();
         login(account, false);
         br.setFollowRedirects(false);
         String dllink = null;
