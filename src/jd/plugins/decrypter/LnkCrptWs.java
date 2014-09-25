@@ -32,6 +32,7 @@ import java.awt.event.ContainerListener;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.awt.image.BufferedImage;
+import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
@@ -65,6 +66,9 @@ import javax.swing.event.ChangeListener;
 import javax.swing.event.MouseInputAdapter;
 
 import jd.PluginWrapper;
+import jd.captcha.JAntiCaptcha;
+import jd.captcha.pixelgrid.Captcha;
+import jd.captcha.utils.GifDecoder;
 import jd.controlling.ProgressController;
 import jd.gui.UserIO;
 import jd.gui.swing.jdgui.JDGui;
@@ -99,6 +103,7 @@ import org.appwork.utils.locale._AWU;
 import org.appwork.utils.logging.Log;
 import org.appwork.utils.swing.dialog.AbstractDialog;
 import org.appwork.utils.swing.dialog.Dialog;
+import org.seamless.util.io.IO;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "linkcrypt.ws" }, urls = { "http://[\\w\\.]*?linkcrypt\\.ws/dir/[\\w]+" }, flags = { 0 })
 public class LnkCrptWs extends PluginForDecrypt {
@@ -1939,6 +1944,11 @@ public class LnkCrptWs extends PluginForDecrypt {
                             final String capDescription = captcha.getRegex("<b>(.*?)</b>").getMatch(0);
                             final File file = this.getLocalCaptchaFile();
                             br.cloneBrowser().getDownload(file, url);
+
+                            byte[] bytes = IO.readBytes(file);
+                            BufferedImage image = toBufferedImage(new ByteArrayInputStream(bytes));
+                            ImageIO.write(image, "png", file);
+
                             final Point p = UserIO.getInstance().requestClickPositionDialog(file, "LinkCrypt.ws | " + String.valueOf(max_attempts - attempts), capDescription);
                             if (p == null) {
                                 throw new DecrypterException(DecrypterException.CAPTCHA);
@@ -2214,6 +2224,111 @@ public class LnkCrptWs extends PluginForDecrypt {
 
         }
         return ret;
+    }
+
+    // stuff for cleaning black animations
+    private static void cleanBlack(int x, int y, int[][] grid) {
+        for (int x1 = Math.max(x - 2, 0); x1 < Math.min(x + 2, grid.length); x1++) {
+            for (int y1 = Math.max(y - 2, 0); y1 < Math.min(y + 2, grid[0].length); y1++) {
+                if (grid[x1][y1] == 0x000000) {
+                    grid[x1][y1] = 0xffffff;
+                    cleanBlack(x1, y1, grid);
+                }
+            }
+        }
+    }
+
+    private static BufferedImage toBufferedImage(InputStream is) throws InterruptedException {
+
+        try {
+            JAntiCaptcha jac = new JAntiCaptcha();
+            jac.getJas().setColorType("RGB");
+            GifDecoder d = new GifDecoder();
+            d.read(is);
+            int n = d.getFrameCount();
+            Captcha[] frames = new Captcha[d.getFrameCount()];
+            for (int i = 0; i < n; i++) {
+                BufferedImage frame = d.getFrame(i);
+                frames[i] = jac.createCaptcha(frame);
+
+            }
+            int[][] grid = new int[frames[0].getWidth()][frames[0].getHeight()];
+
+            for (int x = 0; x < grid.length; x++) {
+                for (int y = 0; y < grid[0].length; y++) {
+                    int max = 0;
+                    HashMap<Integer, Integer> colors = new HashMap<Integer, Integer>();
+                    for (int i = 0; i < frames.length; i++) {
+                        float[] hsb = Colors.rgb2hsb(frames[i].getGrid()[x][y]);
+                        int distance = Colors.getRGBDistance(frames[i].getGrid()[x][y]);
+                        if (!colors.containsKey(frames[i].getGrid()[x][y])) {
+                            colors.put(frames[i].getGrid()[x][y], 1);
+                        } else {
+                            colors.put(frames[i].getGrid()[x][y], colors.get(frames[i].getGrid()[x][y]) + 1);
+                        }
+                        if (hsb[2] < 0.2 && distance < 100) {
+                            continue;
+                        }
+
+                        max = Math.max(max, frames[i].getGrid()[x][y]);
+                    }
+                    int mainColor = 0;
+                    int mainCount = 0;
+                    for (Entry<Integer, Integer> col : colors.entrySet()) {
+                        if (col.getValue() > mainCount && col.getKey() > 10) {
+                            mainCount = col.getValue();
+                            mainColor = col.getKey();
+                        }
+                    }
+                    grid[x][y] = mainColor;
+                }
+            }
+            int gl1 = grid[0].length - 1;
+            for (int x = 0; x < grid.length; x++) {
+                int bl1 = 0;
+                int bl2 = 0;
+                for (int i = Math.max(0, x - 6); i < Math.min(grid.length, x + 6); i++) {
+                    if (grid[i][0] == 0x000000) {
+                        bl1++;
+                    }
+                    if (grid[i][gl1] == 0x000000) {
+                        bl2++;
+                    }
+                }
+                if (bl1 == 12) {
+                    cleanBlack(x, 0, grid);
+                }
+                if (bl2 == 12) {
+                    cleanBlack(x, gl1, grid);
+                }
+            }
+            gl1 = grid.length - 1;
+
+            for (int y = 0; y < grid.length; y++) {
+                int bl1 = 0;
+                int bl2 = 0;
+                for (int i = Math.max(0, y - 6); i < Math.min(grid[0].length, y + 6); i++) {
+                    if (grid[0][i] == 0x000000) {
+                        bl1++;
+                    }
+                    if (grid[gl1][i] == 0x000000) {
+                        bl2++;
+                    }
+                }
+                if (bl1 == 12) {
+                    cleanBlack(0, y, grid);
+                }
+                if (bl2 == 12) {
+                    cleanBlack(gl1, y, grid);
+                }
+            }
+            frames[0].setGrid(grid);
+
+            return frames[0].getImage(1);
+
+        } finally {
+
+        }
     }
 
     /**
