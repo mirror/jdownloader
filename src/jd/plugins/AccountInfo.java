@@ -249,6 +249,7 @@ public class AccountInfo extends Property {
             // central place to fix up issues when JD 'names' doesn't match multihoster supported host array or vise versa
 
             if (supportedHostsSet.contains("putlocker.com")) {
+                //
                 supportedHostsSet.add("firedrive.com");
             }
 
