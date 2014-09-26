@@ -428,7 +428,10 @@ public class SoundcloudCom extends PluginForHost {
                     } else {
                         logger.info("Could not find oauth token");
                     }
-                    final String continueLogin = br.getRegex("\"(https://soundcloud\\.com/soundcloud\\-callback\\.html[^<>\"]*?)\"").getMatch(0);
+                    String continueLogin = br.getRegex("\"(https://soundcloud\\.com/soundcloud\\-callback\\.html[^<>\"]*?)\"").getMatch(0);
+                    if (continueLogin == null) {
+                        continueLogin = br.getRedirectLocation();
+                    }
                     if (continueLogin == null || !"free".equals(br.getCookie("https://soundcloud.com/", "c"))) {
                         throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nInvalid username/password!\r\nUngültiger Benutzername oder ungültiges Passwort!", PluginException.VALUE_ID_PREMIUM_DISABLE);
                     }
