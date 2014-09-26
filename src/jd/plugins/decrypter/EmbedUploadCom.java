@@ -180,10 +180,10 @@ public class EmbedUploadCom extends PluginForDecrypt {
     private String getSingleLink(Browser ibr) {
         String link = ibr.getRegex("link on a new browser window : ([^<>\"]+)</b>").getMatch(0);
         if (link == null) {
-            link = ibr.getRegex("You should click on the download link : <a href='(http[^<>\"]+)\\'").getMatch(0);
+            link = ibr.getRegex("You should click on the download link : <a href=('|\")(http.*?)\\1").getMatch(1);
         }
         if (link == null) {
-            link = ibr.getRegex("File hosting link:[\t\n\r ]+<b>[\t\n\r ]+<a href='(http[^<>\"]+)\\'").getMatch(0);
+            link = ibr.getRegex("File hosting link:[\t\n\r ]+<b>[\t\n\r ]+<a href=('|\")(http.*?)\\1").getMatch(1);
         }
         return link;
     }

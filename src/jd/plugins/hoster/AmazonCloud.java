@@ -43,12 +43,13 @@ public class AmazonCloud extends PluginForHost {
     public AvailableStatus requestFileInformationOld(final DownloadLink link) throws IOException, PluginException {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
-        String url = "https://www.amazon.com/clouddrive/share?s=" + link.getStringProperty("plain_folder_id");
+        final String mainlink = link.getStringProperty("mainlink", null);
+        final String url = (mainlink != null && mainlink.contains("/gp/drive/share") ? mainlink : "https://www.amazon.com/clouddrive/share?s=" + link.getStringProperty("plain_folder_id"));
         br.getPage(url);
         if (br.containsHTML("id=\"error_page\"")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        final String filename = br.getRegex("fileName = \"([^<>\"]*?)\"").getMatch(0);
+        final String filename = br.getRegex("fileName = \"([^<>\"]+)\"").getMatch(0);
         final String filesize = br.getRegex("fSize = \"(\\d+)\"").getMatch(0);
         if (filename == null || filesize == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
