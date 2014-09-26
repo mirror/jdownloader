@@ -5205,4 +5205,10 @@ public interface GuiTranslation extends TranslateInterface {
 
     @Default(lngs = { "en" }, values = { "You changed the JDownloader Look&Feel to %s1. This Look&Feel is not installed. Do you want to install it now? \r\n\r\nPlease note, \r\nthat you may have to change several colors in the Advanced Settings to make JDownloader look good after the Look&Feel change.\r\nPlease press [OK] to continue the Look&Feel Installation, or [CANCEL] to reset the Look&Feel to default. " })
     String LookAndFeelController_handleThemesInstallation_message_(String type);
+
+    @Default(lngs = { "en" }, values = { "Click to open the Account Usage Rules Settings Panel" })
+    String action_SettingsAccountUsageRulesAction_menu_tooltip();
+
+    @Default(lngs = { "en" }, values = { "Account Usage Rules" })
+    String action_SettingsAccountUsageRulesAction_menu();
 }

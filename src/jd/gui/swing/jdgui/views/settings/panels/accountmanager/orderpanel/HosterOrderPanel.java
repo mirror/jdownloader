@@ -2,7 +2,6 @@ package jd.gui.swing.jdgui.views.settings.panels.accountmanager.orderpanel;
 
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
-import java.util.ArrayList;
 
 import javax.swing.AbstractAction;
 import javax.swing.JScrollPane;
@@ -147,7 +146,8 @@ public class HosterOrderPanel extends SwitchPanel implements ActionListener, Acc
 
             @Override
             protected void runInEDT() {
-                model._fireTableStructureChanged(new ArrayList<AccountUsageRule>(HosterRuleController.getInstance().list()), true);
+                model.resetData();
+
                 // Object before = searchCombobox.getSelectedItem();
                 // searchCombobox.setList(lst);
                 // if (refreshRequired.get()) {
@@ -187,6 +187,13 @@ public class HosterOrderPanel extends SwitchPanel implements ActionListener, Acc
 
     @Override
     public void onRuleRemoved(AccountUsageRule parameter) {
+        if (isShown()) {
+            updateTable();
+        }
+    }
+
+    @Override
+    public void onRuleStructureUpdate() {
         if (isShown()) {
             updateTable();
         }

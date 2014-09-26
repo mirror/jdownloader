@@ -4,9 +4,12 @@ import java.awt.event.KeyEvent;
 import java.awt.event.MouseEvent;
 import java.util.List;
 
+import javax.swing.DropMode;
+
 import jd.gui.swing.jdgui.BasicJDTable;
 
 import org.appwork.swing.exttable.ExtTableModel;
+import org.appwork.swing.exttable.ExtTransferHandler;
 import org.jdownloader.controlling.hosterrule.AccountUsageRule;
 import org.jdownloader.controlling.hosterrule.HosterRuleController;
 
@@ -14,6 +17,18 @@ public class HosterRuleTable extends BasicJDTable<AccountUsageRule> {
 
     public HosterRuleTable(ExtTableModel<AccountUsageRule> tableModel) {
         super(tableModel);
+        setSearchEnabled(true);
+        this.setDragEnabled(true);
+        this.setDropMode(DropMode.INSERT_ROWS);
+        setTransferHandler(new ExtTransferHandler<AccountUsageRule>() {
+
+            @Override
+            public boolean canImport(TransferSupport support) {
+                return isOriginalOrder() && super.canImport(support);
+            }
+
+        });
+
     }
 
     @Override

@@ -7,7 +7,8 @@ public class HosterRuleControllerEvent extends SimpleEvent<Object, Object, Hoste
     public static enum Type {
         ADDED,
         DATA_UPDATE,
-        REMOVED
+        REMOVED,
+        STRUCTURE_UPDATE
     }
 
     public HosterRuleControllerEvent(Object caller, Type type, Object... parameters) {

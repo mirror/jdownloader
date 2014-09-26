@@ -17,33 +17,35 @@
 package jd.gui.swing.jdgui.menu.actions;
 
 import java.awt.event.ActionEvent;
-import java.awt.event.KeyEvent;
 
 import jd.gui.swing.jdgui.JDGui;
 import jd.gui.swing.jdgui.views.settings.ConfigurationView;
+import jd.gui.swing.jdgui.views.settings.panels.accountmanager.AccountManagerSettings;
 
 import org.appwork.storage.config.JsonConfig;
 import org.jdownloader.controlling.contextmenu.CustomizableAppAction;
+import org.jdownloader.gui.IconKey;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.settings.GraphicalUserInterfaceSettings;
 
-public class SettingsAction extends CustomizableAppAction {
+public class SettingsAccountUsageRulesAction extends CustomizableAppAction {
 
     private static final long serialVersionUID = 2547991585530678706L;
 
-    public SettingsAction() {
-        setIconKey("settings");
-        setTooltipText(_GUI._.action_settings_menu_tooltip());
-        setName(_GUI._.action_settings_menu());
-        setAccelerator(KeyEvent.VK_P);
+    public SettingsAccountUsageRulesAction() {
+        setIconKey(IconKey.ICON_PREMIUM);
+        setTooltipText(_GUI._.action_SettingsAccountUsageRulesAction_menu_tooltip());
+        setName(_GUI._.action_SettingsAccountUsageRulesAction_menu());
 
     }
 
     @Override
     public void actionPerformed(ActionEvent e) {
-        // AccountManagerSettings
+        //
         JsonConfig.create(GraphicalUserInterfaceSettings.class).setConfigViewVisible(true);
         JDGui.getInstance().setContent(ConfigurationView.getInstance(), true);
+        ConfigurationView.getInstance().setSelectedSubPanel(AccountManagerSettings.class);
+        ConfigurationView.getInstance().getSubPanel(AccountManagerSettings.class).getAccountManager().getTabbedPane().setSelectedIndex(1);
     }
 
 }

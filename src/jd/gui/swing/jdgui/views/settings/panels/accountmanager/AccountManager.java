@@ -136,6 +136,10 @@ public class AccountManager extends SwitchPanel implements SettingsComponent {
 
     }
 
+    public JTabbedPane getTabbedPane() {
+        return tab;
+    }
+
     public boolean isShown() {
         return shown;
     }
