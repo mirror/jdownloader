@@ -26,6 +26,7 @@ import java.util.Map.Entry;
 import javax.swing.Icon;
 
 import jd.PluginWrapper;
+import jd.config.SubConfiguration;
 import jd.controlling.ProgressController;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
@@ -218,29 +219,32 @@ public class DailyMotionComDecrypterV2 extends DailyMotionComDecrypter {
             variantLink.setVariantSupport(true);
 
             variantLink.setLinkID("dailymotioncom" + variantLink.getStringProperty("plain_videoid") + "_" + bestVi.getqName());
+            final SubConfiguration cfg = SubConfiguration.getConfig("dailymotion.com");
+            if (cfg.getBooleanProperty(ALLOW_AUDIO, defaultAllowAudio)) {
 
-            DownloadLink audio = createDownloadlink(variantLink.getDownloadURL());
-            for (Entry<String, Object> es : variantLink.getProperties().entrySet()) {
-                audio.setProperty(es.getKey(), es.getValue());
+                DownloadLink audio = createDownloadlink(variantLink.getDownloadURL());
+                for (Entry<String, Object> es : variantLink.getProperties().entrySet()) {
+                    audio.setProperty(es.getKey(), es.getValue());
+                }
+
+                ArrayList<DailyMotionVariant> audioVariants = new ArrayList<DailyMotionVariant>();
+                audioVariants.add(new DailyMotionVariant(bestVi, "aac", "128kbits", "AAC Audio (~128kbit/s)"));
+                DailyMotionVariant mp4;
+                audioVariants.add(mp4 = new DailyMotionVariant(bestVi, "m4a", "128kbits", "M4A Audio (~128kbit/s)"));
+                audio.setVariants(audioVariants);
+
+                audio.setVariant(mp4);
+                audio.setProperty("plain_ext", ".m4a");
+                audio.setVariantSupport(true);
+                // audio.setUrlDownload(audio.getDownloadURL() + );
+                audio.setProperty("qualityname", mp4.getqName());
+
+                audio.setLinkID("dailymotioncom" + variantLink.getStringProperty("plain_videoid") + "_" + mp4.getDisplayName());
+                variantLink.getFilePackage().add(audio);
+                final String formattedFilename = jd.plugins.hoster.DailyMotionCom.getFormattedFilename(audio);
+                audio.setFinalFileName(formattedFilename);
+                ret.add(audio);
             }
-
-            ArrayList<DailyMotionVariant> audioVariants = new ArrayList<DailyMotionVariant>();
-            audioVariants.add(new DailyMotionVariant(bestVi, "aac", "128kbits", "AAC Audio (~128kbit/s)"));
-            DailyMotionVariant mp4;
-            audioVariants.add(mp4 = new DailyMotionVariant(bestVi, "m4a", "128kbits", "M4A Audio (~128kbit/s)"));
-            audio.setVariants(audioVariants);
-
-            audio.setVariant(mp4);
-            audio.setProperty("plain_ext", ".m4a");
-            audio.setVariantSupport(true);
-            // audio.setUrlDownload(audio.getDownloadURL() + );
-            audio.setProperty("qualityname", mp4.getqName());
-
-            audio.setLinkID("dailymotioncom" + variantLink.getStringProperty("plain_videoid") + "_" + mp4.getDisplayName());
-            variantLink.getFilePackage().add(audio);
-            final String formattedFilename = jd.plugins.hoster.DailyMotionCom.getFormattedFilename(audio);
-            audio.setFinalFileName(formattedFilename);
-            ret.add(audio);
         }
         //
 
