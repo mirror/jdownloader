@@ -42,9 +42,11 @@ public class Lnkcrptws {
         File file = new File("C:\\Users\\Thomas\\.jd_home\\captchas\\linkcrypt.ws_13.06.2014_17.01.28.384.jpg");
         BufferedImage image = GifBlackCleaner.toBufferedImage(new FileInputStream(file));
         Dialog.getInstance().showConfirmDialog(0, "", "", new ImageIcon(image), null, null);
-        Captcha captcha = jac.createCaptcha(image);
-        String result = jac.checkCaptcha(file, captcha);
-        System.out.println(result);
+
+        Captcha captcha = Captcha.getCaptcha(image, jac);
+        Letter[] letters = getLetters(captcha);
+        System.out.println("Done");
+
     }
 
     private static boolean equalElements(int c, int c2) {

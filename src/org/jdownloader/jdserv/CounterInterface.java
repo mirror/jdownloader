@@ -1,8 +1,10 @@
 package org.jdownloader.jdserv;
 
-import org.appwork.remotecall.RemoteCallInterface;
+import org.appwork.remoteapi.RemoteAPIInterface;
+import org.appwork.remoteapi.annotations.ApiNamespace;
 
-public interface CounterInterface extends RemoteCallInterface {
+@ApiNamespace("CounterInterface")
+public interface CounterInterface extends RemoteAPIInterface {
     //
 
     // public static CounterInterface INST =
