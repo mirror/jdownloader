@@ -15,7 +15,7 @@ public enum LinktablesSearchCategory implements SearchCatInterface {
     @EnumLabel("Package")
     PACKAGE(_GUI._.searchcategory_package(), "package_open", _GUI._.searchcategory_package_help()),
     @EnumLabel("Comment")
-    COMMENT(_GUI._.searchcategory_comment(), IconKey.ICON_LIST, _GUI._.searchcategory_comment_help()), ;
+    COMMENT(_GUI._.searchcategory_comment(), IconKey.ICON_LIST, _GUI._.searchcategory_comment_help());
 
     private String label;
     private String iconKey;

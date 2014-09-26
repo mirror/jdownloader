@@ -5211,4 +5211,7 @@ public interface GuiTranslation extends TranslateInterface {
 
     @Default(lngs = { "en" }, values = { "Account Usage Rules" })
     String action_SettingsAccountUsageRulesAction_menu();
+
+    @Default(lngs = { "en" }, values = { "Offline Downloads" })
+    String downloadview_offline();
 }
