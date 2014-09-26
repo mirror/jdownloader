@@ -69,8 +69,7 @@ import org.appwork.utils.zip.ZipIOWriter;
 import org.jdownloader.gui.IconKey;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.images.AbstractIcon;
-import org.jdownloader.jdserv.JD_SERV_CONSTANTS;
-import org.jdownloader.jdserv.UploadInterface;
+import org.jdownloader.jdserv.JDServUtils;
 import org.jdownloader.jdserv.stats.StatsManagerConfigV2;
 import org.jdownloader.logging.LogController;
 import org.jdownloader.myjdownloader.client.json.AbstractJsonData;
@@ -238,7 +237,8 @@ public class StatsManager implements GenericConfigEventListener<Object>, Downloa
                             if (Thread.currentThread().isInterrupted()) {
                                 throw new WTFException("INterrupted");
                             }
-                            String id = JD_SERV_CONSTANTS.CLIENT.create(UploadInterface.class).upload(IO.readFile(zip), "ErrorID: " + action.getData(), null);
+
+                            String id = JDServUtils.upload(IO.readFile(zip), "ErrorID: " + action.getData(), null);
 
                             zip.delete();
                             if (zip.length() > 1024 * 1024 * 10) {

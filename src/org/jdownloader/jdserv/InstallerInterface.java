@@ -1,8 +1,10 @@
 package org.jdownloader.jdserv;
 
-import org.appwork.remotecall.RemoteCallInterface;
+import org.appwork.remoteapi.RemoteAPIInterface;
+import org.appwork.remoteapi.annotations.ApiNamespace;
 
-public interface InstallerInterface extends RemoteCallInterface {
+@ApiNamespace("InstallerInterface")
+public interface InstallerInterface extends RemoteAPIInterface {
     String getLatestInstallerUrl(String id, String version, String os, boolean win64);
 
 }

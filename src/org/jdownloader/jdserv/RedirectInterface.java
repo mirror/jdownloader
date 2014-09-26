@@ -1,13 +1,16 @@
 package org.jdownloader.jdserv;
 
-import org.appwork.remotecall.RemoteCallInterface;
+import org.appwork.remoteapi.RemoteAPIInterface;
+import org.appwork.remoteapi.RemoteAPIResponse;
+import org.appwork.remoteapi.annotations.ApiNamespace;
 
-public interface RedirectInterface extends RemoteCallInterface {
+@ApiNamespace("RedirectInterface")
+public interface RedirectInterface extends RemoteAPIInterface {
     //
 
     // public static CounterInterface INST =
     // JD_SERV_CONSTANTS.create(CounterInterface.class);
 
-    void redirect(String url);
+    void redirect(String url, RemoteAPIResponse response);
 
 }

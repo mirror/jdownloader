@@ -21,14 +21,12 @@ import java.io.IOException;
 import java.util.List;
 
 import org.appwork.exceptions.WTFException;
-import org.appwork.utils.IO;
 import org.appwork.utils.logging2.sendlogs.AbstractLogAction;
 import org.appwork.utils.logging2.sendlogs.LogFolder;
 import org.appwork.utils.swing.dialog.Dialog;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.images.NewTheme;
-import org.jdownloader.jdserv.JD_SERV_CONSTANTS;
-import org.jdownloader.jdserv.UploadInterface;
+import org.jdownloader.jdserv.JDServUtils;
 import org.jdownloader.logging.LogController;
 
 public class LogAction extends AbstractLogAction {
@@ -56,9 +54,15 @@ public class LogAction extends AbstractLogAction {
     @Override
     protected void onNewPackage(File zip, String name) throws IOException {
         try {
-            if (Thread.currentThread().isInterrupted()) throw new WTFException("INterrupted");
-            id = JD_SERV_CONSTANTS.CLIENT.create(UploadInterface.class).upload(IO.readFile(zip), "", id);
-            if (Thread.currentThread().isInterrupted()) throw new WTFException("INterrupted");
+            if (Thread.currentThread().isInterrupted()) {
+                throw new WTFException("INterrupted");
+            }
+
+            id = JDServUtils.uploadLog(zip, id);
+
+            if (Thread.currentThread().isInterrupted()) {
+                throw new WTFException("INterrupted");
+            }
 
         } catch (Exception e) {
             Dialog.getInstance().showExceptionDialog("Exception ocurred", e.getMessage(), e);

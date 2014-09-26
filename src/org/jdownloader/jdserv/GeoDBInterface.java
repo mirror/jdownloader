@@ -1,21 +1,24 @@
 package org.jdownloader.jdserv;
 
-import org.appwork.remotecall.RemoteCallInterface;
+import org.appwork.remoteapi.RemoteAPIInterface;
+import org.appwork.remoteapi.RemoteAPIRequest;
+import org.appwork.remoteapi.annotations.ApiNamespace;
 
-public interface GeoDBInterface extends RemoteCallInterface {
+@ApiNamespace("GeoDBInterface")
+public interface GeoDBInterface extends RemoteAPIInterface {
 
-    public String getIP();
+    public String getIP(RemoteAPIRequest request);
 
-    public String getCountryCodebyIP(String ip);
+    public String getCountryCodebyIP(String ip, RemoteAPIRequest request);
 
-    public String getCountryNameByIP(String ip);
+    public String getCountryNameByIP(String ip, RemoteAPIRequest request);
 
-    public String getASNByIP(String ip);
+    public String getASNByIP(String ip, RemoteAPIRequest request);
 
-    public String getCountryCode();
+    public String getCountryCode(RemoteAPIRequest request);
 
-    public String getCountryName();
+    public String getCountryName(RemoteAPIRequest request);
 
-    public String getASN();
+    public String getASN(RemoteAPIRequest request);
 
 }
