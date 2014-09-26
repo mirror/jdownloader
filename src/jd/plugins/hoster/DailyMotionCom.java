@@ -47,9 +47,6 @@ public class DailyMotionCom extends PluginForHost {
         return new Regex(videosource, "\"" + quality + "\":\"(http[^<>\"\\']+)\"").getMatch(0);
     }
 
-    private static String CUSTOM_DATE     = "CUSTOM_DATE";
-    private static String CUSTOM_FILENAME = "CUSTOM_FILENAME";
-
     /* Sync the following functions in hoster- and decrypterplugin */
     public static String getVideosource(final Browser br) {
 
@@ -134,19 +131,26 @@ public class DailyMotionCom extends PluginForHost {
         return QUALITIES;
     }
 
-    public String               dllink                 = null;
-    private static final String MAINPAGE               = "http://www.dailymotion.com/";
-    private static final String REGISTEREDONLYUSERTEXT = "Download only possible for registered users";
-    private static final String COUNTRYBLOCKUSERTEXT   = "This video is not available for your country";
+    public String                dllink                 = null;
+    private static final String  MAINPAGE               = "http://www.dailymotion.com/";
+    private static final String  REGISTEREDONLYUSERTEXT = "Download only possible for registered users";
+    private static final String  COUNTRYBLOCKUSERTEXT   = "This video is not available for your country";
     /** Settings stuff */
-    private static final String ALLOW_BEST             = "ALLOW_BEST";
-    private static final String ALLOW_LQ               = "ALLOW_LQ";
-    private static final String ALLOW_SD               = "ALLOW_SD";
-    private static final String ALLOW_HQ               = "ALLOW_HQ";
-    private static final String ALLOW_720              = "ALLOW_720";
-    private static final String ALLOW_1080             = "ALLOW_1080";
-    private static final String ALLOW_OTHERS           = "ALLOW_OTHERS";
-    private static final String ALLOW_HDS              = "ALLOW_HDS";
+    private static final String  ALLOW_BEST             = "ALLOW_BEST";
+    private static final String  ALLOW_LQ               = "ALLOW_LQ";
+    private static final String  ALLOW_SD               = "ALLOW_SD";
+    private static final String  ALLOW_HQ               = "ALLOW_HQ";
+    private static final String  ALLOW_720              = "ALLOW_720";
+    private static final String  ALLOW_1080             = "ALLOW_1080";
+    private static final String  ALLOW_OTHERS           = "ALLOW_OTHERS";
+    private static final String  ALLOW_AUDIO            = "ALLOW_AUDIO";
+    private static final String  ALLOW_HDS              = "ALLOW_HDS";
+    private static final String  CUSTOM_DATE            = "CUSTOM_DATE";
+    private static final String  CUSTOM_FILENAME        = "CUSTOM_FILENAME";
+
+    private final static String  defaultCustomFilename  = "*videoname*_*quality**ext*";
+    private final static String  defaultCustomDate      = "dd.MM.yyyy";
+    private final static boolean defaultAllowAudio      = true;
 
     public DailyMotionCom(PluginWrapper wrapper) {
         super(wrapper);
@@ -418,10 +422,7 @@ public class DailyMotionCom extends PluginForHost {
         return "JDownloader's DailyMotion plugin helps downloading Videoclips from dailymotion.com. DailyMotion provides different video formats and qualities.";
     }
 
-    final static String[][]     REPLACES              = { { "plain_date", "date", "Date when the video was uploaded" }, { "plain_videoid", "videoid", "ID of the video" }, { "plain_channel", "channelname", "The name of the channel/uploader" }, { "plain_ext", "ext", "Extension of the file (usually .mp4)" }, { "qualityname", "quality", "Quality of the video" }, { "plain_videoname", "videoname", "Name of the video" } };
-
-    private final static String defaultCustomFilename = "*videoname*_*quality**ext*";
-    private final static String defaultCustomDate     = "dd.MM.yyyy";
+    final static String[][] REPLACES = { { "plain_date", "date", "Date when the video was uploaded" }, { "plain_videoid", "videoid", "ID of the video" }, { "plain_channel", "channelname", "The name of the channel/uploader" }, { "plain_ext", "ext", "Extension of the file (usually .mp4)" }, { "qualityname", "quality", "Quality of the video" }, { "plain_videoname", "videoname", "Name of the video" } };
 
     public static String getFormattedFilename(final DownloadLink downloadLink) throws ParseException {
         final SubConfiguration cfg = SubConfiguration.getConfig("dailymotion.com");
@@ -477,6 +478,7 @@ public class DailyMotionCom extends PluginForHost {
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), ALLOW_HQ, JDL.L("plugins.hoster.dailymotioncom.checkHQ", "Grab HQ/HD [848x480]?")).setDefaultValue(true).setEnabledCondidtion(hq, false));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), ALLOW_720, JDL.L("plugins.hoster.dailymotioncom.check720", "Grab [1280x720]?")).setDefaultValue(true).setEnabledCondidtion(hq, false));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), ALLOW_1080, JDL.L("plugins.hoster.dailymotioncom.check1080", "Grab [1920x1080]?")).setDefaultValue(true).setEnabledCondidtion(hq, false));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), ALLOW_AUDIO, JDL.L("plugins.hoster.dailymotioncom.checkaudio", "Allow audio download")).setDefaultValue(defaultAllowAudio));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), ALLOW_OTHERS, JDL.L("plugins.hoster.dailymotioncom.checkother", "Grab other available qualities (RTMP/OTHERS)?")).setDefaultValue(true).setEnabledCondidtion(hq, false));
         addConfigElementHDS(hq);
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_SEPARATOR));
