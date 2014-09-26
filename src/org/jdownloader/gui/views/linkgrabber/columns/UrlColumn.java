@@ -21,6 +21,7 @@ import jd.plugins.FilePackage;
 
 import org.appwork.swing.exttable.columns.ExtTextColumn;
 import org.appwork.utils.Application;
+import org.appwork.utils.StringUtils;
 import org.appwork.utils.swing.SwingUtils;
 import org.jdownloader.actions.AppAction;
 import org.jdownloader.controlling.DefaultDownloadLinkViewImpl;
@@ -151,7 +152,15 @@ public class UrlColumn extends ExtTextColumn<AbstractNode> {
                 if (dt == null) {
                     continue;
                 }
-                add(popup, dt, DefaultDownloadLinkViewImpl.getUrlByType(dt, dlLink));
+                if (dt == UrlDisplayType.CONTENT && !Application.isJared(null)) {
+                    String link = DefaultDownloadLinkViewImpl.getUrlByType(dt, dlLink);
+                    if (StringUtils.equals(link, dlLink.getPluginPatternMatcher())) {
+                        link = null;
+                    }
+                    add(popup, dt, link);
+                } else {
+                    add(popup, dt, DefaultDownloadLinkViewImpl.getUrlByType(dt, dlLink));
+                }
 
             }
             if (!Application.isJared(null)) {
