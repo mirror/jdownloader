@@ -814,6 +814,10 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
                             }
                             if (crawledPackageName != null) {
                                 crawledPackageName = LinknameCleaner.cleanFileName(crawledPackageName, false, false, LinknameCleaner.EXTENSION_SETTINGS.REMOVE_ALL, true);
+                                /**
+                                 * we remove all non words/digits because some hoster replace/remove other chars
+                                 */
+                                crawledPackageName = crawledPackageName.replaceAll("[^a-zA-Z0-9]", "");
                             }
                         }
                         if (crawledPackageName == null) {

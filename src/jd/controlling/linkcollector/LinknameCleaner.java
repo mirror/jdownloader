@@ -105,7 +105,7 @@ public class LinknameCleaner {
             if (extensionStilExists && ffsjPats != null) {
                 /**
                  * FFSJ splitted files
-                 *
+                 * 
                  * */
                 before = name;
                 for (Pattern Pat : ffsjPats) {
@@ -132,10 +132,7 @@ public class LinknameCleaner {
 
         /* remove extension */
         if (EXTENSION_SETTINGS.REMOVE_ALL.equals(extensionSettings) || EXTENSION_SETTINGS.REMOVE_KNOWN.equals(extensionSettings)) {
-            int lastPoint = name.lastIndexOf(".");
-            if (lastPoint <= 0) {
-                lastPoint = name.lastIndexOf("_");
-            }
+            final int lastPoint = name.lastIndexOf(".");
             if (lastPoint > 0) {
                 int extLength = (name.length() - (lastPoint + 1));
                 if (extLength <= 4) {
