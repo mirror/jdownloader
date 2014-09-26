@@ -1346,6 +1346,7 @@ download_stopped=Zastavit
 download_stopped_msg=Všechna stahování byla zastavena nebo dokončena.
 downloadview_all=Všechna stahování
 downloadview_failed=Neúspěšná stahování
+downloadview_offline=Stahování offline
 downloadview_running=Spuštěná stahování
 downloadview_skipped=Přeskočená stahování
 downloadview_successful=Úspěšná stahování
