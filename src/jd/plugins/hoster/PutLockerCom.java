@@ -210,7 +210,12 @@ public class PutLockerCom extends PluginForHost {
             throw e;
         }
         br.getPage("http://www.firedrive.com/my_settings?_=" + System.currentTimeMillis());
-        final String validUntil = br.getRegex("Pro(Lite)? features end on: ([^<>\"]*?)</span>").getMatch(1);
+        String validUntil = br.getRegex("Pro(Lite)? features end on: ([^<>\"]*?)</span>").getMatch(1);
+        if (validUntil == null) {
+            // <span id="acc_type_text">You currently have a Pro 50GB</span> account. Next billing date: October 26, 2014</span>
+            validUntil = br.getRegex("<span id=\"acc_type_text\">You currently have a Pro( \\w+)?</span> account\\. Next billing date: (\\w+ \\d+, \\d{4})</span>").getMatch(1);
+
+        }
         if (validUntil != null || br.containsHTML("id=\\'storage_total\\'>Unlimited remaining</div>")) {
             try {
                 account.setType(AccountType.PREMIUM);
@@ -222,7 +227,7 @@ public class PutLockerCom extends PluginForHost {
                 ai.setValidUntil(TimeFormatter.getMilliSeconds(validUntil, "MMMM dd, yyyy", Locale.ENGLISH));
             }
             account.setProperty("free", false);
-            ai.setStatus("Premium User");
+            ai.setStatus("Premium Account");
         } else {
             try {
                 account.setType(AccountType.FREE);
@@ -231,7 +236,7 @@ public class PutLockerCom extends PluginForHost {
                 /* not available in old Stable 0.9.581 */
             }
             account.setProperty("free", true);
-            ai.setStatus("Registered (free) user");
+            ai.setStatus("Free Account");
         }
         ai.setUnlimitedTraffic();
         account.setValid(true);
