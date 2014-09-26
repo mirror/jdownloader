@@ -158,6 +158,15 @@ public class GeneralMultiuploadDecrypter extends PluginForDecrypt {
             return null;
         }
         logger.info("Found " + redirectLinks.length + " " + host.replaceAll("www\\.", "") + " links to decrypt...");
+        String fileName = null;
+        if (parameter.contains("mirrorcop")) {
+            Browser brc = br.cloneBrowser();
+            brc.getPage(parameter);
+            fileName = brc.getRegex("h3 style=\"color:.*?\">Name :(.*?)</h3").getMatch(0);
+            if (fileName != null) {
+                fileName = fileName.trim();
+            }
+        }
         for (String singleLink : redirectLinks) {
             if (!dupeList.add(singleLink)) {
                 continue;
@@ -183,7 +192,11 @@ public class GeneralMultiuploadDecrypter extends PluginForDecrypt {
             if (dllink.contains("flameupload")) {
                 logger.info("Recursion? " + param.toString() + "->" + dllink);
             }
-            decryptedLinks.add(createDownloadlink(dllink));
+            final DownloadLink link = createDownloadlink(dllink);
+            if (fileName != null) {
+                link.setName(fileName);
+            }
+            decryptedLinks.add(link);
         }
         logger.info("Task Complete! : " + param.toString());
         return decryptedLinks;
