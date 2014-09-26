@@ -55,13 +55,13 @@ import org.appwork.utils.os.CrossSystem;
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "filemonkey.in" }, urls = { "https?://(www\\.)?filemonkey\\.in/file/[a-z0-9]+" }, flags = { 2 })
 public class FileMonkeyIn extends PluginForHost {
 
-    private static final String            mainURL             = "https://www.filemonkey.in";
-    private final String                   apiURL              = "https://www.filemonkey.in/api/v1";
+    private static final String            mainURL             = "http://www.filemonkey.in";
+    private final String                   apiURL              = "http://www.filemonkey.in/api/v1";
     private static Object                  LOCK                = new Object();
     private static AtomicReference<String> agent               = new AtomicReference<String>();
     private static AtomicBoolean           useAPI              = new AtomicBoolean(true);
-    private final boolean                  supportsHTTPS       = true;
-    private final boolean                  enforcesHTTPS       = true;
+    private final boolean                  supportsHTTPS       = false;
+    private final boolean                  enforcesHTTPS       = false;
     private static final short             MAXSIM_FREE_ACCOUNT = 1;
 
     public FileMonkeyIn(PluginWrapper wrapper) {
