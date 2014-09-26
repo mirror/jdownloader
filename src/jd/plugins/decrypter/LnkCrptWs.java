@@ -109,7 +109,6 @@ import org.appwork.utils.locale._AWU;
 import org.appwork.utils.logging.Log;
 import org.appwork.utils.swing.dialog.AbstractDialog;
 import org.appwork.utils.swing.dialog.Dialog;
-import org.jdownloader.logging.LogController;
 import org.seamless.util.io.IO;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "linkcrypt.ws" }, urls = { "http://[\\w\\.]*?linkcrypt\\.ws/dir/[\\w]+" }, flags = { 0 })
@@ -3114,8 +3113,6 @@ public class LnkCrptWs extends PluginForDecrypt {
                         pixelObject.del(object);
                     }
                 }
-            } else {
-                LogController.CL().warning("can not detect circle bounds");
             }
 
         }
