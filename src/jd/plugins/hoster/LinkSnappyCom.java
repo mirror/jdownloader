@@ -155,7 +155,7 @@ public class LinkSnappyCom extends PluginForHost {
         }
 
         /* now it's time to get all supported hosts */
-        getPage("/lseAPI.php?act=FILEHOSTS&username=" + currentAcc.getUser() + "&password=" + JDHash.getMD5(currentAcc.getPass()));
+        getPage("/lseAPI.php?act=FILEHOSTS&username=" + Encoding.urlEncode(currentAcc.getUser()) + "&password=" + JDHash.getMD5(currentAcc.getPass()));
         if (br.containsHTML("\"error\":\"Account has exceeded")) {
             dailyLimitReached();
         }
@@ -309,8 +309,8 @@ public class LinkSnappyCom extends PluginForHost {
         prepBrowser(br);
         setConstants(account, link);
         br.setFollowRedirects(true);
-        dllink = link.getStringProperty("linksnappycomdirectlink", null);
         final boolean use_api = api_active();
+        dllink = link.getStringProperty("linksnappycomdirectlink", null);
         if (dllink != null) {
             dllink = (attemptDownload() ? dllink : null);
         }
@@ -319,7 +319,7 @@ public class LinkSnappyCom extends PluginForHost {
             link.setProperty("linksnappycomdirectlink", Property.NULL);
             if (use_api) {
                 for (i = 1; i <= MAX_DOWNLOAD_ATTEMPTS; i++) {
-                    getPage(HTTP_S + "gen.linksnappy.com/genAPI.php?genLinks=" + encode("{\"link\"+:+\"" + link.getDownloadURL() + "\",+\"username\"+:+\"" + account.getUser() + "\",+\"password\"+:+\"" + account.getPass() + "\"}"));
+                    getPage(HTTP_S + "gen.linksnappy.com/genAPI.php?genLinks=" + encode("{\"link\"+:+\"" + Encoding.urlEncode(link.getDownloadURL()) + "\",+\"username\"+:+\"" + Encoding.urlEncode(account.getUser()) + "\",+\"password\"+:+\"" + Encoding.urlEncode(account.getPass()) + "\"}"));
                     if (!attemptDownload()) {
                         continue;
                     }
@@ -533,7 +533,7 @@ public class LinkSnappyCom extends PluginForHost {
     private boolean api_login(final Account account) throws Exception {
         /** Load cookies */
         br.setCookiesExclusive(true);
-        getPage(HTTP_S + "gen.linksnappy.com/lseAPI.php?act=USERDETAILS&username=" + account.getUser() + "&password=" + JDHash.getMD5(account.getPass()));
+        getPage(HTTP_S + "gen.linksnappy.com/lseAPI.php?act=USERDETAILS&username=" + Encoding.urlEncode(account.getUser()) + "&password=" + JDHash.getMD5(account.getPass()));
         if (br.containsHTML("\"status\":\"ERROR\"")) {
             return false;
         }
