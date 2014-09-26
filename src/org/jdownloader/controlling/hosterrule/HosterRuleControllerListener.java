@@ -10,4 +10,6 @@ public interface HosterRuleControllerListener extends EventListener {
 
     void onRuleRemoved(AccountUsageRule parameter);
 
+    void onRuleStructureUpdate();
+
 }

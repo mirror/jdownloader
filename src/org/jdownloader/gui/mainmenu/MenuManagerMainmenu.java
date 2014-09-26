@@ -8,6 +8,7 @@ import jd.gui.swing.jdgui.menu.actions.ExitAction;
 import jd.gui.swing.jdgui.menu.actions.KnowledgeAction;
 import jd.gui.swing.jdgui.menu.actions.LatestChangesAction;
 import jd.gui.swing.jdgui.menu.actions.RestartAction;
+import jd.gui.swing.jdgui.menu.actions.SettingsAccountUsageRulesAction;
 import jd.gui.swing.jdgui.menu.actions.SettingsAction;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
@@ -50,7 +51,7 @@ public class MenuManagerMainmenu extends ContextMenuManager<FilePackage, Downloa
 
     /**
      * get the only existing instance of DownloadListContextMenuManager. This is a singleton
-     *
+     * 
      * @return
      */
     public static MenuManagerMainmenu getInstance() {
@@ -151,6 +152,7 @@ public class MenuManagerMainmenu extends ContextMenuManager<FilePackage, Downloa
         SettingsMenuContainer ret = new SettingsMenuContainer();
 
         ret.add(SettingsAction.class);
+        ret.add(hide(new MenuItemData(SettingsAccountUsageRulesAction.class)));
         ret.add(new SeparatorData());
         // add(new ChunksEditor());
         // add(new ParalellDownloadsEditor());
@@ -166,6 +168,11 @@ public class MenuManagerMainmenu extends ContextMenuManager<FilePackage, Downloa
             ret.add(new SpeedlimitEditorLink());
         }
         return ret;
+    }
+
+    private MenuItemData hide(MenuItemData menuItemData) {
+        menuItemData.setVisible(false);
+        return menuItemData;
     }
 
     public FileMenuContainer createFileMenu() {

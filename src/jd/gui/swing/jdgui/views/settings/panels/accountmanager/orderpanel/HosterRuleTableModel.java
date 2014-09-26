@@ -4,6 +4,8 @@ import java.awt.Component;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.MouseEvent;
+import java.util.ArrayList;
+import java.util.List;
 
 import javax.swing.Icon;
 import javax.swing.JButton;
@@ -11,7 +13,11 @@ import javax.swing.JComponent;
 import javax.swing.JTable;
 import javax.swing.table.JTableHeader;
 
+import jd.gui.swing.jdgui.TriStateSorterTableModel;
+
+import org.appwork.storage.Storage;
 import org.appwork.swing.MigPanel;
+import org.appwork.swing.exttable.ExtColumn;
 import org.appwork.swing.exttable.ExtTableHeaderRenderer;
 import org.appwork.swing.exttable.ExtTableModel;
 import org.appwork.swing.exttable.columns.ExtCheckColumn;
@@ -23,11 +29,86 @@ import org.jdownloader.controlling.hosterrule.AccountUsageRule;
 import org.jdownloader.controlling.hosterrule.HosterRuleController;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.images.NewTheme;
+import org.jdownloader.logging.LogController;
 
-public class HosterRuleTableModel extends ExtTableModel<AccountUsageRule> {
+public class HosterRuleTableModel extends ExtTableModel<AccountUsageRule> implements TriStateSorterTableModel {
+    private static final String SORT_ORIGINAL = "ORIGINAL";
+    private Storage             storage;
 
     public HosterRuleTableModel() {
         super("HosterRuleTableModel");
+        storage = getStorage();
+        resetSorting();
+    }
+
+    public void resetSorting() {
+        this.sortColumn = null;
+        try {
+            storage.put(ExtTableModel.SORT_ORDER_ID_KEY, (String) null);
+            storage.put(ExtTableModel.SORTCOLUMN_KEY, (String) null);
+        } catch (final Exception e) {
+            LogController.CL(true).log(e);
+        }
+    }
+
+    @Override
+    public boolean move(List<AccountUsageRule> transferData, int dropRow) {
+        try {
+            final java.util.List<AccountUsageRule> newdata = new ArrayList<AccountUsageRule>(this.getTableData().size());
+            final List<AccountUsageRule> before = new ArrayList<AccountUsageRule>(this.getTableData().subList(0, dropRow));
+            final List<AccountUsageRule> after = new ArrayList<AccountUsageRule>(this.getTableData().subList(dropRow, this.getTableData().size()));
+            before.removeAll(transferData);
+            after.removeAll(transferData);
+            newdata.addAll(before);
+            newdata.addAll(transferData);
+            newdata.addAll(after);
+            HosterRuleController.getInstance().setList(newdata);
+
+            return true;
+        } catch (final Throwable t) {
+            t.printStackTrace();
+        }
+        return false;
+    }
+
+    @Override
+    public List<AccountUsageRule> sort(List<AccountUsageRule> data, ExtColumn<AccountUsageRule> column) {
+
+        if (column == null || column.getSortOrderIdentifier() == SORT_ORIGINAL) {
+            resetSorting();
+            // resetData();
+            return new ArrayList<AccountUsageRule>(HosterRuleController.getInstance().list());
+        } else {
+            return super.sort(data, column);
+        }
+    }
+
+    @Override
+    protected void _replaceTableData(List<AccountUsageRule> newtableData, boolean checkEditing) {
+
+        super._replaceTableData(newtableData, checkEditing);
+
+    }
+
+    @Override
+    public String getNextSortIdentifier(String sortOrderIdentifier) {
+
+        if (sortOrderIdentifier == null || sortOrderIdentifier.equals(SORT_ORIGINAL)) {
+            return ExtColumn.SORT_DESC;
+
+        } else if (sortOrderIdentifier.equals(ExtColumn.SORT_DESC)) {
+            return ExtColumn.SORT_ASC;
+        } else {
+            return SORT_ORIGINAL;
+        }
+
+    }
+
+    public Icon getSortIcon(String sortOrderIdentifier) {
+        if (SORT_ORIGINAL.equals(sortOrderIdentifier)) {
+            return null;
+        }
+        return super.getSortIcon(sortOrderIdentifier);
     }
 
     @Override
@@ -271,6 +352,11 @@ public class HosterRuleTableModel extends ExtTableModel<AccountUsageRule> {
 
         });
 
+    }
+
+    public void resetData() {
+        resetSorting();
+        _fireTableStructureChanged(new ArrayList<AccountUsageRule>(HosterRuleController.getInstance().list()), true);
     }
 
 }

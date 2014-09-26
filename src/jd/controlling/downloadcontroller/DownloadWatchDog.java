@@ -3039,6 +3039,11 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
                             removeAccountCache(parameter.getHoster());
                         }
 
+                        @Override
+                        public void onRuleStructureUpdate() {
+                            // nothing internal changed. just order update
+                        }
+
                     }, true);
 
                     AccountController.getInstance().getBroadcaster().addListener(accListener = new AccountControllerListener() {

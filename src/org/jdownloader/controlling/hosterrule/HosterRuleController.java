@@ -53,7 +53,7 @@ public class HosterRuleController implements AccountControllerListener {
     }
 
     private final HosterRuleControllerEventSender eventSender;
-    private final List<AccountUsageRule>          loadedRules;
+    private List<AccountUsageRule>                loadedRules;
     private final DelayedRunnable                 delayedSaver;
     private final File                            configFile;
     private final LogSource                       logger;
@@ -415,6 +415,22 @@ public class HosterRuleController implements AccountControllerListener {
                     delayedSaver.delayedrun();
                     eventSender.fireEvent(new HosterRuleControllerEvent(this, HosterRuleControllerEvent.Type.REMOVED, rule));
                 }
+                return null;
+            }
+        });
+
+    }
+
+    public void setList(final List<AccountUsageRule> list) {
+        queue.add(new QueueAction<Void, RuntimeException>() {
+
+            @Override
+            protected Void run() throws RuntimeException {
+                loadedRules = new CopyOnWriteArrayList<AccountUsageRule>(list);
+                save();
+
+                eventSender.fireEvent(new HosterRuleControllerEvent(this, HosterRuleControllerEvent.Type.STRUCTURE_UPDATE));
+
                 return null;
             }
         });

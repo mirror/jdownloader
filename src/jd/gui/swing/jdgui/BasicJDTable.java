@@ -1,7 +1,11 @@
 package jd.gui.swing.jdgui;
 
+import java.awt.AlphaComposite;
 import java.awt.Color;
+import java.awt.Composite;
 import java.awt.Dimension;
+import java.awt.Graphics;
+import java.awt.Graphics2D;
 import java.awt.Rectangle;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
@@ -28,6 +32,7 @@ public class BasicJDTable<T> extends ExtTable<T> implements GenericConfigEventLi
 
     private static final long serialVersionUID = -9181860215412270250L;
     protected int             mouseOverRow     = -1;
+    private Color             sortNotifyColor;
 
     public BasicJDTable(ExtTableModel<T> tableModel) {
         super(tableModel);
@@ -35,7 +40,7 @@ public class BasicJDTable<T> extends ExtTable<T> implements GenericConfigEventLi
         this.setShowGrid(true);
         this.setShowHorizontalLines(true);
         this.setSelectionMode(ListSelectionModel.MULTIPLE_INTERVAL_SELECTION);
-
+        sortNotifyColor = CFG_GUI.SORT_COLUMN_HIGHLIGHT_ENABLED.getValue() ? (LAFOptions.getInstance().getColorForTableSortedColumnView()) : null;
         Color c = (LAFOptions.getInstance().getColorForPanelHeaderBackground());
 
         this.setBackground((LAFOptions.getInstance().getColorForPanelBackground()));
@@ -52,6 +57,41 @@ public class BasicJDTable<T> extends ExtTable<T> implements GenericConfigEventLi
         this.setIntercellSpacing(new Dimension(0, 0));
         initAlternateRowHighlighter();
 
+    }
+
+    public boolean isOriginalOrder() {
+        return getModel().getSortColumn() == null;
+    }
+
+    @Override
+    public void paintComponent(Graphics g) {
+        super.paintComponent(g);
+
+        if (getModel() instanceof TriStateSorterTableModel) {
+            ExtColumn<T> sortColumn = getModel().getSortColumn();
+            int filteredColumn = -1;
+            if (sortNotifyColor != null && sortColumn != null) {
+                filteredColumn = sortColumn.getIndex();
+            }
+
+            Graphics2D g2 = (Graphics2D) g;
+            Composite comp = g2.getComposite();
+            final Rectangle visibleRect = this.getVisibleRect();
+
+            g2.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, 0.1f));
+
+            if (filteredColumn >= 0) {
+                Rectangle first = this.getCellRect(0, filteredColumn, true);
+
+                int w = getModel().getSortColumn().getWidth() - Math.max(0, visibleRect.x - first.x);
+                if (w > 0) {
+                    g2.setColor(sortNotifyColor);
+                    g2.fillRect(Math.max(first.x, visibleRect.x), visibleRect.y, w, visibleRect.height);
+                }
+            }
+
+            g2.setComposite(comp);
+        }
     }
 
     protected void addSelectionHighlighter() {
@@ -87,8 +127,12 @@ public class BasicJDTable<T> extends ExtTable<T> implements GenericConfigEventLi
                     oldRow = mouseOverRow;
                     mouseOverRow = newRow;
 
-                    if (oldRow >= 0) repaintRow(oldRow);
-                    if (mouseOverRow >= 0) repaintRow(mouseOverRow);
+                    if (oldRow >= 0) {
+                        repaintRow(oldRow);
+                    }
+                    if (mouseOverRow >= 0) {
+                        repaintRow(mouseOverRow);
+                    }
                 }
 
             }
@@ -119,7 +163,9 @@ public class BasicJDTable<T> extends ExtTable<T> implements GenericConfigEventLi
                 oldRow = mouseOverRow;
                 mouseOverRow = newRow;
 
-                if (oldRow >= 0) repaintRow(oldRow);
+                if (oldRow >= 0) {
+                    repaintRow(oldRow);
+                }
 
             }
         });

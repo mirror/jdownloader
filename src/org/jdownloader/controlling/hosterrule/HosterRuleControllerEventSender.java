@@ -16,6 +16,9 @@ public class HosterRuleControllerEventSender extends Eventsender<HosterRuleContr
         case REMOVED:
             listener.onRuleRemoved((AccountUsageRule) event.getParameter());
             break;
+        case STRUCTURE_UPDATE:
+            listener.onRuleStructureUpdate();
+            break;
         // fill
         default:
             System.out.println("Unhandled Event: " + event);

@@ -61,6 +61,10 @@ public class AccountManagerSettings extends AbstractConfigPanel {
 
     }
 
+    public AccountManager getAccountManager() {
+        return acm;
+    }
+
     @Override
     public Icon getIcon() {
         return NewTheme.I().getIcon("premium", 32);
