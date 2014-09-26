@@ -38,7 +38,9 @@ public class QuickFilterMenuItem extends MenuItemData implements MenuLink {
 
                 @Override
                 public FilterCombo edtRun() {
-                    if (INSTANCE != null) return INSTANCE;
+                    if (INSTANCE != null) {
+                        return INSTANCE;
+                    }
                     INSTANCE = new FilterCombo();
                     return INSTANCE;
                 }
@@ -58,7 +60,7 @@ public class QuickFilterMenuItem extends MenuItemData implements MenuLink {
         }
 
         private FilterCombo() {
-            super(new View[] { View.ALL, View.RUNNING, View.FAILED, View.SKIPPED, View.SUCCESSFUL, View.TODO });
+            super(new View[] { View.ALL, View.RUNNING, View.FAILED, View.OFFLINE, View.SKIPPED, View.SUCCESSFUL, View.TODO });
             this.setToolTipText(_GUI._.PseudoCombo_PseudoCombo_tt_());
             this.table = (DownloadsTable) DownloadsTableModel.getInstance().getTable();
             View view = (View) CFG_GUI.DOWNLOAD_VIEW.getValue();
@@ -72,14 +74,20 @@ public class QuickFilterMenuItem extends MenuItemData implements MenuLink {
         public void onChanged(View value) {
             PackageControllerTableModelFilter<FilePackage, DownloadLink> newFilter = getFilter(value);
             PackageControllerTableModelFilter<FilePackage, DownloadLink> oldFilter = appliedFilter.getAndSet(newFilter);
-            if (oldFilter != null) table.getModel().removeFilter(oldFilter);
-            if (newFilter != null) table.getModel().addFilter(newFilter);
+            if (oldFilter != null) {
+                table.getModel().removeFilter(oldFilter);
+            }
+            if (newFilter != null) {
+                table.getModel().addFilter(newFilter);
+            }
             table.getModel().recreateModel(true);
             CFG_GUI.DOWNLOAD_VIEW.setValue(value);
         }
 
         private PackageControllerTableModelFilter<FilePackage, DownloadLink> getFilter(View value) {
-            if (value == null) return null;
+            if (value == null) {
+                return null;
+            }
             switch (value) {
             case ALL:
                 return null;
@@ -127,6 +135,34 @@ public class QuickFilterMenuItem extends MenuItemData implements MenuLink {
                     @Override
                     public boolean isFiltered(DownloadLink v) {
                         return !(FinalLinkState.CheckFailed(v.getFinalLinkState()));
+                    }
+
+                    @Override
+                    public boolean isFiltered(FilePackage e) {
+                        return false;
+                    }
+
+                    @Override
+                    public int getComplexity() {
+                        return 0;
+                    }
+                };
+            case OFFLINE:
+                return new PackageControllerTableModelFilter<FilePackage, DownloadLink>() {
+
+                    @Override
+                    public boolean isFilteringPackageNodes() {
+                        return false;
+                    }
+
+                    @Override
+                    public boolean isFilteringChildrenNodes() {
+                        return true;
+                    }
+
+                    @Override
+                    public boolean isFiltered(DownloadLink v) {
+                        return FinalLinkState.OFFLINE != v.getFinalLinkState();
                     }
 
                     @Override
