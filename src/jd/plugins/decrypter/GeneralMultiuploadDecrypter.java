@@ -38,7 +38,6 @@ urls = { "http://(www\\.)?mirrorcop\\.com/downloads/[A-Z0-9]+", "http://(www\\.)
         "https?://(www\\.)?up4vn\\.com/\\?go=[A-Z0-9]{8}", "http://(www\\.)?nextdown\\.net/files/[0-9A-Z]{8}", "http://(www\\.)?directmirror\\.com/files/[0-9A-Z]{8}", "http://[\\w\\.]*?mirrorafile\\.com/files/[0-9A-Z]{8}", "http://[\\w\\.]*?lougyl\\.com/files/[0-9A-Z]{8}", "http://(www\\.)?neo\\-share\\.com/files/[0-9A-Z]{8}", "http://(www\\.)?qooy\\.com/files/[0-9A-Z]{8,10}", "http://[\\w\\.]*?uploader\\.ro/files/[0-9A-Z]{8}", "http://[\\w\\.]*?uploadmirrors\\.(com|org)/download/[0-9A-Z]{8}", "http://[\\w\\.]*?indirdur\\.net/files/[0-9A-Z]{8}", "http://[\\w\\.]*?megaupper\\.com/files/[0-9A-Z]{8}", "http://[\\w\\.]*?shrta\\.com/files/[0-9A-Z]{8}", "http://[\\w\\.]*?1filesharing\\.com/(mirror|download)/[0-9A-Z]{8}", "http://[\\w\\.]*?mirrorfusion\\.com/files/[0-9A-Z]{8}", "http://(www\\.)?needmirror\\.com/files/[0-9A-Z]{8}" },
 
 flags = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 })
-
 public class GeneralMultiuploadDecrypter extends PluginForDecrypt {
 
     public GeneralMultiuploadDecrypter(PluginWrapper wrapper) {
@@ -201,15 +200,15 @@ public class GeneralMultiuploadDecrypter extends PluginForDecrypt {
         } else if (parameter.contains("go4up.com/")) {
             dllink = brc.getRedirectLocation();
             if (dllink == null) {
-                dllink = brc.getRegex("window\\.location = (\"|\\')(http[^<>\"]*?)(\"|\\')").getMatch(1);
+                dllink = brc.getRegex("window\\.location = (\"|\\')(http.*?)\\1").getMatch(1);
                 if (dllink == null) {
                     dllink = brc.getRegex("<b><a href=\"([^\"]+)").getMatch(0);
                 }
             }
         } else if (parameter.contains("maxmirror.com/")) {
             dllink = brc.getRegex("\"(http[^<>\"]*?)\"><img border=\"0\" src=\"http://(www\\.)?maxmirror\\.com/").getMatch(0);
-        } else if (parameter.matches(".+(qooy\\.com|multfile\\.com)/.+")) {
-            dllink = brc.getRegex("<a style=\"text\\-decoration: none;border:none;\" href=\"(https?://[^<>\"]*?)\"").getMatch(0);
+        } else if (parameter.matches(".+(qooy\\.com|multfile\\.com|mirrorcop\\.com)/.+")) {
+            dllink = brc.getRegex("<a style=\"text-decoration:\\s*none;\\s*border:\\s*none;\\s*\"\\s*href=(\"|')(https?://.*?)\\1").getMatch(1);
         } else if (parameter.contains("exzip.net/")) {
             dllink = brc.getRegex("\"(/down/[A-Z0-9]{8}/\\d+)\"").getMatch(0);
             if (dllink != null) {
