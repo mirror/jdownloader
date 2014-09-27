@@ -46,10 +46,14 @@ public class HqMirrorDe extends PluginForHost {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         br.getPage(link.getDownloadURL());
-        if (br.containsHTML(">Page not found<")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        final String filename = br.getRegex("<tr id=\"file\\-row\\-([^<>\"]*?)\"").getMatch(0);
-        final String filesize = br.getRegex("<td>([^<>\"]*?)</td>[\t\n\r ]+<td style=\"width:266px;\">").getMatch(0);
-        if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (br.containsHTML(">Page not found<")) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
+        final String filename = br.getRegex("title\" content=\"([^<>\"]*?)\"").getMatch(0);
+        final String filesize = br.getRegex("<b>HQ</b> \\(([^<>\"]*?)\\)").getMatch(0);
+        if (filename == null || filesize == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         link.setName(Encoding.htmlDecode(filename.trim()));
         link.setDownloadSize(SizeFormatter.getSize(filesize));
         return AvailableStatus.TRUE;
@@ -59,7 +63,9 @@ public class HqMirrorDe extends PluginForHost {
     public void handleFree(final DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
         String dllink = br.getRegex("\"(/file/download/key/[^<>\"]*?)\"").getMatch(0);
-        if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (dllink == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         dllink = "http://www.hq-mirror.de" + Encoding.htmlDecode(dllink.trim());
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 0);
         if (dl.getConnection().getContentType().contains("html")) {
