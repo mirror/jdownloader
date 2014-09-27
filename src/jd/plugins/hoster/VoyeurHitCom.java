@@ -56,7 +56,7 @@ public class VoyeurHitCom extends PluginForHost {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         br.getPage(downloadLink.getDownloadURL());
-        if (!br.getURL().contains("voyeurhit.com/videos/")) {
+        if (!br.getURL().contains("voyeurhit.com/videos/") || br.containsHTML(">Oops! Page not found")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         String filename = br.getRegex("<title>(.*?)</title>").getMatch(0);
