@@ -45,7 +45,11 @@ public class HqMirrorDe extends PluginForHost {
     public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
-        br.getPage(link.getDownloadURL());
+        try {
+            br.getPage(link.getDownloadURL());
+        } catch (Exception e) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
         if (br.containsHTML(">Page not found<")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }

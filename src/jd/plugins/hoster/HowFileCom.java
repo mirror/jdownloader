@@ -62,7 +62,7 @@ public class HowFileCom extends PluginForHost {
         } catch (Exception e) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        if (br.containsHTML("(File not found or System under maintanence\\.|File Name: <b> </b><br>|File Size: <b>0 B </b><br>|<title> \\- howfile\\.com \\- Free File Hosting and Sharing, Unlimit Download </title>)")) {
+        if (br.containsHTML("(File not found or System under maintanence\\.|File Name: <b> </b><br>|File Size: <b>0 B </b><br>|<title>( - )?howfile\\.com - Free File Hosting and Sharing, Unlimit Download </title>)")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         String filename = br.getRegex("File Name: <b>(.*?) </b><br>").getMatch(0);
