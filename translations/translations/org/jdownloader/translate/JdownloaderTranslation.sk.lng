@@ -6,6 +6,7 @@ AccountController_updateAccountInfo_status_uncheckable=Nemožno skontrolovať ú
 AddContainerAction_delete_container_title=Odstrániť súbory kontejnerov?
 AuthExceptionGenericBan_toString=Chýba overenie pre %s1
 AuthExceptionGenericBan_toString_plugin=%s2: Chýba overenie pre %s1
+ConnectExceptionInPluginBan_plugin=%s2: Pripojenie k %s1 zlyhalo
 DeleteOption_final_delete=Odstrániť súbory z disku
 DeleteOption_no_delete=Neodstraňovať žiadne súbory
 DeleteOption_recycle=Ak je to možné, presunúť súbory do koša
