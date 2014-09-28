@@ -42,7 +42,7 @@ public class MvWrldNt extends PluginForDecrypt {
     }
 
     private static final String redirectLinks            = "http://(www\\.)?mov\\-world\\.net/[a-z]{2}-[a-zA-Z0-9]+/";
-    private static final String UNSUPPORTEDLINKS         = "http://(www\\.)?(xxx\\-4\\-free\\.net|mov\\-world\\.net|chili\\-warez\\.net)//?(news/|topliste/|premium_zugang|suche/|faq|pics/index|clips/index|movies/index|movies/seite|streams/index|stories/index|partner/anmelden|kontakt).*?\\.html";
+    private static final String UNSUPPORTEDLINKS         = "http://(www\\.)?(xxx\\-4\\-free\\.net|mov\\-world\\.net|chili\\-warez\\.net)//?(news/|topliste/|premium_zugang|suche/|faq|pics/index|clips/index|movies/index|movies/seite|streams/index|stories/index|partner/anmelden|kontakt|tv\\-serien/).*?\\.html";
     private static final String SPECIALUNSUPPORTEDLINKS  = "http://(www\\.)?chili\\-warez\\.net//[a-z0-9\\-_]+/[a-z0-9\\-_]+/seite\\-\\d+\\.html";
     private static final String SPECIALUNSUPPORTEDLINKS2 = "http://(www\\.)?xxx\\-4\\-free\\.net/stories/[a-z0-9\\-]+\\.html";
     private static final String XXX4FREESTREAMLINK       = "http://(www\\.)?xxx\\-4\\-free\\.net/streams/[a-z0-9\\-]+\\.html";
@@ -53,6 +53,10 @@ public class MvWrldNt extends PluginForDecrypt {
         final String parameter = param.toString();
         if (parameter.matches(UNSUPPORTEDLINKS) || parameter.matches(SPECIALUNSUPPORTEDLINKS) || parameter.matches(SPECIALUNSUPPORTEDLINKS2)) {
             logger.info("Invalid link: " + parameter);
+            final DownloadLink offline = createDownloadlink("directhttp://" + parameter);
+            offline.setAvailable(false);
+            offline.setProperty("offline", true);
+            decryptedLinks.add(offline);
             return decryptedLinks;
         }
         // redirect links
@@ -60,7 +64,9 @@ public class MvWrldNt extends PluginForDecrypt {
             br.setFollowRedirects(false);
             br.getPage(parameter);
             String rd = br.getRedirectLocation();
-            if (rd != null) decryptedLinks.add(createDownloadlink(rd));
+            if (rd != null) {
+                decryptedLinks.add(createDownloadlink(rd));
+            }
             return decryptedLinks;
         }
         br.setFollowRedirects(true);
@@ -68,16 +74,32 @@ public class MvWrldNt extends PluginForDecrypt {
             br.getPage(parameter);
         } catch (final BrowserException e) {
             logger.info("Link offline (server error): " + parameter);
+            final DownloadLink offline = createDownloadlink("directhttp://" + parameter);
+            offline.setAvailable(false);
+            offline.setProperty("offline", true);
+            decryptedLinks.add(offline);
             return decryptedLinks;
         }
         if (br.containsHTML("<h1>Dieses Release ist nur noch bei <a")) {
             logger.info("Link offline (offline): " + parameter);
+            final DownloadLink offline = createDownloadlink("directhttp://" + parameter);
+            offline.setAvailable(false);
+            offline.setProperty("offline", true);
+            decryptedLinks.add(offline);
             return decryptedLinks;
         } else if (br.getURL().contains("mov-world.net/error.html?error=404") || br.containsHTML(">404 Not Found<")) {
             logger.info("Link offline (error 404): " + parameter);
+            final DownloadLink offline = createDownloadlink("directhttp://" + parameter);
+            offline.setAvailable(false);
+            offline.setProperty("offline", true);
+            decryptedLinks.add(offline);
             return decryptedLinks;
         } else if (br.getURL().equals("http://mov-world.net/")) {
             logger.info("Link offline: " + parameter);
+            final DownloadLink offline = createDownloadlink("directhttp://" + parameter);
+            offline.setAvailable(false);
+            offline.setProperty("offline", true);
+            decryptedLinks.add(offline);
             return decryptedLinks;
         }
 
@@ -107,7 +129,9 @@ public class MvWrldNt extends PluginForDecrypt {
         ArrayList<String> pwList = null;
         String captchaUrl = br.getRegex("\"(/captcha/\\w+\\.gif)\"").getMatch(0);
         final Form captchaForm = br.getForm(0);
-        if (captchaUrl == null && !captchaForm.containsHTML("Captcha")) { return null; }
+        if (captchaUrl == null && !captchaForm.containsHTML("Captcha")) {
+            return null;
+        }
         captchaUrl = captchaForm.getRegex("img src=\"(.*?)\"").getMatch(0);
         Browser brc = br.cloneBrowser();
         captchaUrl = MAINPAGE + captchaUrl;
@@ -128,10 +152,14 @@ public class MvWrldNt extends PluginForDecrypt {
             }
             break;
         }
-        if (br.containsHTML("\"Der Sicherheits Code")) { throw new DecrypterException(DecrypterException.CAPTCHA); }
+        if (br.containsHTML("\"Der Sicherheits Code")) {
+            throw new DecrypterException(DecrypterException.CAPTCHA);
+        }
         /* Base64 Decode */
         final byte[] cDecode = Base64.decodeFast(br.getRegex("html\":\"(.*?)\"").getMatch(0).replace("\\", "").toCharArray());
-        if (cDecode == null || cDecode.length == 0) { return null; }
+        if (cDecode == null || cDecode.length == 0) {
+            return null;
+        }
         final StringBuilder sb = new StringBuilder();
         for (int e : cDecode) {
             // Abweichung vom Standard Base64 Decoder

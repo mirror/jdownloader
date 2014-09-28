@@ -142,9 +142,7 @@ public class XxxBunkerCom extends PluginForDecrypt {
             }
             boolean success = true;
             if (success) {
-                if (externID.contains("youjizz")) {
-                    externID = "directhttp://" + externID;
-                }
+                externID = "directhttp://" + externID;
                 /* Do not use directhttp or jdeatme here, it will fail! */
                 final DownloadLink dl = createDownloadlink(externID);
                 dl.setFinalFileName(Encoding.htmlDecode(filename.trim()) + ".mp4");

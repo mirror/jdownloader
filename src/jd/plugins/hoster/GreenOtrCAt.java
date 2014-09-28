@@ -33,7 +33,7 @@ import jd.plugins.PluginForHost;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "green.otr-c.at" }, urls = { "http://(www\\.)?green\\.otr\\-c\\.at/download/[^<>\"\\']+\\.otrkey" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "green.otr-c.at" }, urls = { "http://(www\\.)?green\\.otr\\-c\\.at/download/[^<>\"\\']+" }, flags = { 0 })
 public class GreenOtrCAt extends PluginForHost {
 
     public GreenOtrCAt(PluginWrapper wrapper) {
@@ -48,10 +48,14 @@ public class GreenOtrCAt extends PluginForHost {
     @SuppressWarnings("deprecation")
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
+        /* Filter invalid links here */
+        if (!link.getDownloadURL().endsWith(".otrkey")) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         br.getPage(link.getDownloadURL());
-        if (br.containsHTML("(>Die Datei befindet sich nicht mehr auf dem Server|<BR>Sorry\\!</B>)")) {
+        if (br.containsHTML("(>Die Datei befindet sich nicht mehr auf dem Server|<BR>Sorry\\!</B>|>Die Datei wurde nicht gefunden)")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         final String filesize = br.getRegex("<p>Dateigröße: ([^<>\"]*?)</p>").getMatch(0);

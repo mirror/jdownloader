@@ -151,21 +151,25 @@ public class DateiTo extends PluginForHost {
                 br.postPage(APIPAGE, sb.toString());
                 for (final DownloadLink dllink : links) {
                     final String fid = getFID(dllink);
-                    final String[] linkInfo = br.getRegex(fid + ";([^;]+);([^<>\"/;]*?);(\\d+)").getRow(0);
-                    if (linkInfo == null) {
-                        logger.warning("Linkchecker for datei.to is broken!");
-                        return false;
-                    }
-                    if (!"online".equalsIgnoreCase(linkInfo[0])) {
+                    if (br.containsHTML(fid + ";offline")) {
                         dllink.setAvailable(false);
                     } else {
-                        dllink.setAvailable(true);
-                    }
-                    if (linkInfo[1] != null) {
-                        dllink.setFinalFileName(Encoding.htmlDecode(linkInfo[1]));
-                    }
-                    if (linkInfo[2] != null) {
-                        dllink.setDownloadSize(Long.parseLong(linkInfo[2]));
+                        final String[] linkInfo = br.getRegex(fid + ";([^;]+);([^<>\"/;]*?);(\\d+)").getRow(0);
+                        if (linkInfo == null) {
+                            logger.warning("Linkchecker for datei.to is broken!");
+                            return false;
+                        }
+                        if (!"online".equalsIgnoreCase(linkInfo[0])) {
+                            dllink.setAvailable(false);
+                        } else {
+                            dllink.setAvailable(true);
+                        }
+                        if (linkInfo[1] != null) {
+                            dllink.setFinalFileName(Encoding.htmlDecode(linkInfo[1]));
+                        }
+                        if (linkInfo[2] != null) {
+                            dllink.setDownloadSize(Long.parseLong(linkInfo[2]));
+                        }
                     }
                 }
                 if (index == urls.length) {

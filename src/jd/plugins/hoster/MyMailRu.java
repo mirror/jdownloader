@@ -60,6 +60,13 @@ public class MyMailRu extends PluginForHost {
     public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
         this.setBrowserExclusive();
         if (link.getDownloadURL().matches(TYPE_VIDEO_ALL)) {
+            br.setFollowRedirects(true);
+            br.getPage(link.getDownloadURL());
+            if (br.containsHTML("class=\"unauthorised\\-user window\\-loading\"")) {
+                link.getLinkStatus().setStatusText("Private video");
+                return AvailableStatus.TRUE;
+            }
+            br.setFollowRedirects(false);
             br.getHeaders().put("Accept", "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8");
             final String urlpart = getUrlpart(link);
             br.getPage("http://my.mail.ru/video/" + urlpart + ".html?ajax=photoitem&ajax_call=1&func_name=&mna=&mnb=&encoding=windows-1251");
@@ -144,8 +151,15 @@ public class MyMailRu extends PluginForHost {
         int maxChunks = 1;
         requestFileInformation(downloadLink);
         if (downloadLink.getDownloadURL().matches(TYPE_VIDEO_ALL)) {
-            if (br.containsHTML("class=\"unauthorised\\-user")) {
-                throw new PluginException(LinkStatus.ERROR_FATAL, "Private video");
+            if (br.containsHTML("class=\"unauthorised\\-user window\\-loading\"")) {
+                try {
+                    throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);
+                } catch (final Throwable e) {
+                    if (e instanceof PluginException) {
+                        throw (PluginException) e;
+                    }
+                }
+                throw new PluginException(LinkStatus.ERROR_FATAL, "Private video!downloaded by premium users");
             }
             maxChunks = 0;
         }

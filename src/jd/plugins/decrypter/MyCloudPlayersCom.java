@@ -34,7 +34,7 @@ public class MyCloudPlayersCom extends PluginForDecrypt {
         super(wrapper);
     }
 
-    private static final String TYPE_SINGLE_SONG = "http://(www\\.)?mycloudplayers\\.com/\\?id=\\d+";
+    private static final String TYPE_SINGLE_SONG = "http://(www\\.)?mycloudplayers\\.com/\\?(id|play)=\\d+";
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
@@ -49,7 +49,7 @@ public class MyCloudPlayersCom extends PluginForDecrypt {
             for (final String singleID : links) {
                 decryptedLinks.add(createDownloadlink("http://api.soundcloud.com/tracks/" + singleID));
             }
-        } else if (parameter.matches(TYPE_SINGLE_SONG)) {
+        } else if (parameter.matches(TYPE_SINGLE_SONG) || true) {
             // br.getPage(parameter);
             // if (br.containsHTML("Track+Not+Found+on")) {
             // logger.info("Link offline: " + parameter);
