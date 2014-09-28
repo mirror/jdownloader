@@ -37,6 +37,7 @@ import jd.gui.swing.jdgui.views.settings.components.Checkbox;
 import jd.gui.swing.jdgui.views.settings.components.ComboBox;
 import jd.gui.swing.jdgui.views.settings.components.SettingsButton;
 import jd.gui.swing.jdgui.views.settings.components.StateUpdateListener;
+import jd.gui.swing.jdgui.views.settings.panels.urlordertable.UrlOrderTable;
 
 import org.appwork.storage.JSonStorage;
 import org.appwork.storage.StorageException;
@@ -391,6 +392,12 @@ public class GUISettings extends AbstractConfigPanel implements StateUpdateListe
         this.addPair(_GUI._.gui_config_language(), null, lng);
         this.addPair(_GUI._.gui_config_dialogs(), null, resetDialogs);
         this.addPair("", null, resetDialogPosition);
+        this.addHeader(_GUI._.GUISettings_GUISettings_object_urls(), NewTheme.I().getIcon(IconKey.ICON_URL, 32));
+        this.addDescription(_GUI._.GUISettings_GUISettings_object_urls_description());
+
+        UrlOrderContainer container = new UrlOrderContainer(new UrlOrderTable());
+        addPair("", null, container);
+
         this.addHeader(_GUI._.gui_config_menumanager_header(), NewTheme.I().getIcon("menu", 32));
 
         this.addDescription(_GUI._.gui_config_menumanager_desc());
@@ -421,6 +428,7 @@ public class GUISettings extends AbstractConfigPanel implements StateUpdateListe
         linkgrabberfocus = new ComboBox<NewLinksInLinkgrabberAction>(new NewLinksInLinkgrabberAction[] { NewLinksInLinkgrabberAction.NOTHING, NewLinksInLinkgrabberAction.TO_FRONT, NewLinksInLinkgrabberAction.FOCUS }, new String[] { _GUI._.GUISettings_GUISettings_newlinks_nothing(), _GUI._.GUISettings_GUISettings_newlinks_front(), _GUI._.GUISettings_GUISettings_newlinks_focus() });
         linkgrabberfocus.addStateUpdateListener(this);
         addPair(_GUI._.GUISettings_GUISettings_dialog_linkgrabber_on_new_links(), null, linkgrabberfocus);
+
     }
 
     @Override

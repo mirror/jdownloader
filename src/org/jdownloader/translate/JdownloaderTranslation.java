@@ -636,4 +636,16 @@ public interface JdownloaderTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "Data" })
     String UrlDisplayType_CONTENT();
 
+    @Default(lngs = { "en" }, values = { "The website where you found the links. Only available if you added through Browser Extensions or Click'n'Load" })
+    String UrlDisplayType_REFERRER_description();
+
+    @Default(lngs = { "en" }, values = { "Your actual input -  what you pasted to JDownloader" })
+    String UrlDisplayType_ORIGIN_description();
+
+    @Default(lngs = { "en" }, values = { "The nearest Linkprotector, or redirection website" })
+    String UrlDisplayType_CONTAINER_description();
+
+    @Default(lngs = { "en" }, values = { "The address to the actual content." })
+    String UrlDisplayType_CONTENT_description();
+
 }
