@@ -542,8 +542,24 @@ public interface GeneralSettings extends ConfigInterface {
 
     @AboutConfig
     @DescriptionForConfigEntry("Choose which type urls will be used for copy&paste, tables and settings.")
+    UrlDisplayEntry[] getUrlOrder();
+
+    void setUrlOrder(UrlDisplayEntry[] order);
+
+    /**
+     * remove on 1.december 2014. We just keep it now to convert to {@link #setUrlOrder(UrlDisplayEntry[])}
+     * 
+     * @return
+     */
+    @Deprecated
     UrlDisplayType[] getUrlDisplayOrder();
 
+    /**
+     * remove on 1.december 2014. We just keep it now to convert to {@link #setUrlOrder(UrlDisplayEntry[])}
+     * 
+     * @return
+     */
+    @Deprecated
     void setUrlDisplayOrder(UrlDisplayType[] order);
 
     @AboutConfig

@@ -5214,4 +5214,16 @@ public interface GuiTranslation extends TranslateInterface {
 
     @Default(lngs = { "en" }, values = { "Offline Downloads" })
     String downloadview_offline();
+
+    @Default(lngs = { "en" }, values = { "Downloadlink address display" })
+    String GUISettings_GUISettings_object_urls();
+
+    @Default(lngs = { "en" }, values = { "When you add links, JDownloader starts a crawling process and tries to find every downloadable content. Each resulting Downloadlink thus may contain several addresses(urls). By ordering the list below, you can tell JDownloader which address to show. Please note that all types except the Data-Address are optional. The first type has the highest priority." })
+    String GUISettings_GUISettings_object_urls_description();
+
+    @Default(lngs = { "en" }, values = { "Address(Url) type" })
+    String UrlOrderTableModel_type();
+
+    @Default(lngs = { "en" }, values = { "Description" })
+    String UrlOrderTableModel_type_desc();
 }

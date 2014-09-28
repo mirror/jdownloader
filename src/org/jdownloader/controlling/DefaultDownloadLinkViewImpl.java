@@ -1,42 +1,83 @@
 package org.jdownloader.controlling;
 
+import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.List;
+
 import jd.plugins.DownloadLink;
 
 import org.appwork.storage.config.ValidationException;
 import org.appwork.storage.config.events.GenericConfigEventListener;
 import org.appwork.storage.config.handler.KeyHandler;
+import org.appwork.utils.logging2.LogSource;
+import org.jdownloader.logging.LogController;
+import org.jdownloader.settings.UrlDisplayEntry;
 import org.jdownloader.settings.UrlDisplayType;
 import org.jdownloader.settings.staticreferences.CFG_GENERAL;
 
 public class DefaultDownloadLinkViewImpl implements DownloadLinkView {
-    private static class ChangeListener implements GenericConfigEventListener<Enum<?>[]> {
-        private boolean enabled = true;
+    private static class ChangeListener implements GenericConfigEventListener<Object> {
+
+        private LogSource logger = LogController.getInstance().getLogger(DefaultDownloadLinkViewImpl.class.getName());
 
         public void update() {
-            if (!enabled) {
-                return;
-            }
-            UrlDisplayType[] newOrder = CFG_GENERAL.CFG.getUrlDisplayOrder();
-            if (newOrder == null || newOrder.length == 0) {
-                newOrder = new UrlDisplayType[] { UrlDisplayType.REFERRER, UrlDisplayType.ORIGIN, UrlDisplayType.CONTAINER, UrlDisplayType.CONTENT };
-                enabled = false;
-                try {
-                    CFG_GENERAL.CFG.setUrlDisplayOrder(newOrder);
-                } finally {
-                    enabled = true;
+
+            List<UrlDisplayType> lst = new ArrayList<UrlDisplayType>();
+            UrlDisplayEntry[] newOrder = CFG_GENERAL.CFG.getUrlOrder();
+            //
+            HashSet<String> dupe = new HashSet<String>();
+            if (newOrder != null) {
+                for (UrlDisplayEntry e : newOrder) {
+                    if (e.isEnabled()) {
+                        try {
+                            if (dupe.add(e.getType())) {
+                                lst.add(UrlDisplayType.valueOf(e.getType()));
+                            }
+                        } catch (Throwable e1) {
+                            logger.log(e1);
+                        }
+                    }
+                }
+
+            } else {
+                // restore old settings
+                UrlDisplayType[] order = CFG_GENERAL.CFG.getUrlDisplayOrder();
+                CFG_GENERAL.CFG.setUrlDisplayOrder(null);
+                if (order != null) {
+                    newOrder = new UrlDisplayEntry[UrlDisplayType.values().length];
+                    int i = 0;
+                    for (UrlDisplayType t : order) {
+                        if (dupe.add(t.name())) {
+                            lst.add(t);
+                            newOrder[i++] = new UrlDisplayEntry(t.name(), true);
+                        }
+                    }
+                    for (UrlDisplayType t : UrlDisplayType.values()) {
+                        if (dupe.add(t.name())) {
+                            lst.add(t);
+                            newOrder[i++] = new UrlDisplayEntry(t.name(), false);
+                        }
+                    }
+                    CFG_GENERAL.CFG.setUrlOrder(newOrder);
+
                 }
 
             }
-            DISPLAY_URL_TYPE = newOrder;
+            for (UrlDisplayType t : UrlDisplayType.values()) {
+                if (dupe.add(t.name())) {
+                    lst.add(t);
+                }
+            }
+            DISPLAY_URL_TYPE = lst.toArray(new UrlDisplayType[] {});
         }
 
         @Override
-        public void onConfigValueModified(KeyHandler<Enum<?>[]> keyHandler, Enum<?>[] newValue) {
+        public void onConfigValueModified(KeyHandler<Object> keyHandler, Object newValue) {
             update();
         }
 
         @Override
-        public void onConfigValidatorError(KeyHandler<Enum<?>[]> keyHandler, Enum<?>[] invalidValue, ValidationException validateException) {
+        public void onConfigValidatorError(KeyHandler<Object> keyHandler, Object invalidValue, ValidationException validateException) {
         }
     };
 
@@ -45,7 +86,7 @@ public class DefaultDownloadLinkViewImpl implements DownloadLinkView {
     static {
 
         CHANGELISTENER = new ChangeListener();
-        CFG_GENERAL.URL_DISPLAY_ORDER.getEventSender().addListener(CHANGELISTENER);
+        CFG_GENERAL.URL_ORDER.getEventSender().addListener(CHANGELISTENER);
         CHANGELISTENER.update();
 
     }
