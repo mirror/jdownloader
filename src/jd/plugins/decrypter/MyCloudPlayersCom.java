@@ -49,7 +49,7 @@ public class MyCloudPlayersCom extends PluginForDecrypt {
             for (final String singleID : links) {
                 decryptedLinks.add(createDownloadlink("http://api.soundcloud.com/tracks/" + singleID));
             }
-        } else if (parameter.matches(TYPE_SINGLE_SONG) || true) {
+        } else if (parameter.matches(TYPE_SINGLE_SONG)) {
             // br.getPage(parameter);
             // if (br.containsHTML("Track+Not+Found+on")) {
             // logger.info("Link offline: " + parameter);
