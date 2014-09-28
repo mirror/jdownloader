@@ -18,9 +18,6 @@ package jd.plugins.hoster;
 
 import java.io.File;
 import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.Locale;
-import java.util.Map;
 import java.util.SortedMap;
 import java.util.TreeMap;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -28,22 +25,14 @@ import java.util.concurrent.atomic.AtomicReference;
 import java.util.regex.Pattern;
 
 import jd.PluginWrapper;
-import jd.config.ConfigContainer;
-import jd.config.ConfigEntry;
 import jd.config.Property;
-import jd.config.SubConfiguration;
 import jd.http.Browser;
-import jd.http.Cookie;
-import jd.http.Cookies;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.parser.html.Form;
 import jd.parser.html.HTMLParser;
 import jd.parser.html.InputField;
-import jd.plugins.Account;
-import jd.plugins.Account.AccountType;
-import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
@@ -56,20 +45,19 @@ import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
 
 import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.formatter.TimeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "filestorm.to" }, urls = { "https?://(www\\.)?(filestorm\\.to|hulkfile\\.eu|hulkfile\\.com)/(vidembed\\-)?[a-z0-9]{12}" }, flags = { 2 })
-public class FileStormTo extends PluginForHost {
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "dogefile.com" }, urls = { "https?://(www\\.)?dogefile\\.com/(vidembed\\-)?[a-z0-9]{12}" }, flags = { 0 })
+public class DogeFileCom extends PluginForHost {
 
     private String                         correctedBR                  = "";
     private String                         passCode                     = null;
     private static final String            PASSWORDTEXT                 = "<br><b>Passwor(d|t):</b> <input";
     /* primary website url, take note of redirects */
-    private static final String            COOKIE_HOST                  = "http://filestorm.to";
+    private static final String            COOKIE_HOST                  = "http://dogefile.com";
     private static final String            NICE_HOST                    = COOKIE_HOST.replaceAll("(https://|http://)", "");
     private static final String            NICE_HOSTproperty            = COOKIE_HOST.replaceAll("(https://|http://|\\.|\\-)", "");
     /* domain names used within download links */
-    private static final String            DOMAINS                      = "(filestorm\\.to|hulkfile\\.eu|hulkfile\\.com)";
+    private static final String            DOMAINS                      = "(dogefile\\.com)";
     private static final String            MAINTENANCE                  = ">This server is in maintenance mode";
     private static final String            MAINTENANCEUSERTEXT          = JDL.L("hoster.xfilesharingprobasic.errors.undermaintenance", "This server is under maintenance");
     private static final String            ALLWAIT_SHORT                = JDL.L("hoster.xfilesharingprobasic.errors.waitingfordownloads", "Waiting till new downloads can be started");
@@ -77,20 +65,20 @@ public class FileStormTo extends PluginForHost {
     private static final String            PREMIUMONLY2                 = JDL.L("hoster.xfilesharingprobasic.errors.premiumonly2", "Only downloadable via premium or registered");
     private static final boolean           VIDEOHOSTER                  = false;
     private static final boolean           VIDEOHOSTER_2                = false;
-    private final static String            SSL_CONNECTION               = "SSL_CONNECTION";
-    private static final boolean           SUPPORTSHTTPS                = true;
+    private static final boolean           SUPPORTSHTTPS                = false;
+    private static final boolean           SUPPORTSHTTPS_FORCED         = false;
     private final boolean                  ENABLE_RANDOM_UA             = false;
     private static AtomicReference<String> agent                        = new AtomicReference<String>(null);
     /* Connection stuff */
     private static final boolean           FREE_RESUME                  = true;
-    private static final int               FREE_MAXCHUNKS               = 1;
-    private static final int               FREE_MAXDOWNLOADS            = 1;
+    private static final int               FREE_MAXCHUNKS               = 0;
+    private static final int               FREE_MAXDOWNLOADS            = 20;
     private static final boolean           ACCOUNT_FREE_RESUME          = true;
-    private static final int               ACCOUNT_FREE_MAXCHUNKS       = 1;
-    private static final int               ACCOUNT_FREE_MAXDOWNLOADS    = 1;
+    private static final int               ACCOUNT_FREE_MAXCHUNKS       = 0;
+    private static final int               ACCOUNT_FREE_MAXDOWNLOADS    = 20;
     private static final boolean           ACCOUNT_PREMIUM_RESUME       = true;
-    private static final int               ACCOUNT_PREMIUM_MAXCHUNKS    = -2;
-    private static final int               ACCOUNT_PREMIUM_MAXDOWNLOADS = 10;
+    private static final int               ACCOUNT_PREMIUM_MAXCHUNKS    = 0;
+    private static final int               ACCOUNT_PREMIUM_MAXDOWNLOADS = 20;
     /* note: CAN NOT be negative or zero! (ie. -1 or 0) Otherwise math sections fail. .:. use [1-20] */
     private static AtomicInteger           totalMaxSimultanFreeDownload = new AtomicInteger(FREE_MAXDOWNLOADS);
     /* don't touch the following! */
@@ -100,21 +88,22 @@ public class FileStormTo extends PluginForHost {
     private String                         fuid                         = null;
 
     /* DEV NOTES */
-    // XfileSharingProBasic Version 2.6.6.1
-    // mods: SSL setting, heavily modified, DO NOT UPGRADE!
-    // limit-info: free account untested, set FREE limits
+    // XfileSharingProBasic Version 2.6.6.4
+    // mods: scanInfo[Added another fsize RegEx], getDllink[Added custom RegEx]
+    // limit-info:
     // protocol: no https
     // captchatype: null
     // other:
 
+    @SuppressWarnings("deprecation")
     @Override
     public void correctDownloadLink(final DownloadLink link) {
-        /* link cleanup, but respect users protocol choosing */
+        /* link cleanup, but respect users protocol choosing or forced protocol */
         if (!SUPPORTSHTTPS) {
             link.setUrlDownload(link.getDownloadURL().replaceFirst("https://", "http://"));
+        } else if (SUPPORTSHTTPS && SUPPORTSHTTPS_FORCED) {
+            link.setUrlDownload(link.getDownloadURL().replaceFirst("http://", "https://"));
         }
-        final String fid = new Regex(link.getDownloadURL(), "([a-z0-9]{12})$").getMatch(0);
-        link.setUrlDownload(COOKIE_HOST + "/" + fid + ".html");
     }
 
     @Override
@@ -122,15 +111,17 @@ public class FileStormTo extends PluginForHost {
         return COOKIE_HOST + "/tos.html";
     }
 
-    public FileStormTo(PluginWrapper wrapper) {
+    public DogeFileCom(PluginWrapper wrapper) {
         super(wrapper);
-        this.setConfigElements();
-        this.enablePremium(COOKIE_HOST + "/premium.html");
+        // this.enablePremium(COOKIE_HOST + "/premium.html");
     }
 
+    @SuppressWarnings("deprecation")
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
+        final Browser altbr = br.cloneBrowser();
         br.setFollowRedirects(true);
+        correctDownloadLink(link);
         prepBrowser(br);
         setFUID(link);
         getPage(link.getDownloadURL());
@@ -141,11 +132,40 @@ public class FileStormTo extends PluginForHost {
             link.getLinkStatus().setStatusText(MAINTENANCEUSERTEXT);
             return AvailableStatus.UNCHECKABLE;
         }
+        final String[] fileInfo = new String[3];
         if (br.getURL().contains("/?op=login&redirect=")) {
+            logger.info("PREMIUMONLY handling: Trying alternative linkcheck");
             link.getLinkStatus().setStatusText(PREMIUMONLY2);
+            try {
+                altbr.getPage("http://" + NICE_HOST + "/?op=report_file&id=" + fuid);
+                if (altbr.containsHTML(">No such file<")) {
+                    throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+                }
+                fileInfo[0] = altbr.getRegex("<b>Filename:</b></td><td>([^<>\"]*?)</td>").getMatch(0);
+                altbr.postPage(COOKIE_HOST + "/?op=checkfiles", "op=checkfiles&process=Check+URLs&list=" + Encoding.urlEncode(link.getDownloadURL()));
+                fileInfo[1] = altbr.getRegex(">" + link.getDownloadURL() + "</td><td style=\"color:green;\">Found</td><td>([^<>\"]*?)</td>").getMatch(0);
+                /* 2nd offline check */
+                if (altbr.containsHTML(">" + link.getDownloadURL() + "</td><td style=\"color:red;\">Not found\\!</td>") && fileInfo[0] == null) {
+                    throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+                } else if (fileInfo[0] != null || fileInfo[1] != null) {
+                    link.setAvailable(true);
+                    if (fileInfo[0] != null) {
+                        link.setName(Encoding.htmlDecode(fileInfo[0].trim()));
+                    } else {
+                        link.setName(fuid);
+                    }
+                    if (fileInfo[1] != null) {
+                        link.setDownloadSize(SizeFormatter.getSize(fileInfo[1]));
+                    }
+                    return AvailableStatus.TRUE;
+                }
+            } catch (final Throwable e) {
+                logger.info("Unknown error occured in alternative linkcheck:");
+                e.printStackTrace();
+            }
+            logger.warning("Alternative linkcheck failed!");
             return AvailableStatus.UNCHECKABLE;
         }
-        final String[] fileInfo = new String[3];
         scanInfo(fileInfo);
         if (fileInfo[0] == null || fileInfo[0].equals("")) {
             if (correctedBR.contains("You have reached the download(\\-| )limit")) {
@@ -160,6 +180,11 @@ public class FileStormTo extends PluginForHost {
         }
         fileInfo[0] = fileInfo[0].replaceAll("(</b>|<b>|\\.html)", "");
         link.setName(fileInfo[0].trim());
+        if (fileInfo[1] == null) {
+            logger.info("Filesize not available, trying altAvailablecheck");
+            altbr.postPage(COOKIE_HOST + "/?op=checkfiles", "op=checkfiles&process=Check+URLs&list=" + Encoding.urlEncode(link.getDownloadURL()));
+            fileInfo[1] = altbr.getRegex(">" + link.getDownloadURL() + "</td><td style=\"color:green;\">Found</td><td>([^<>\"]*?)</td>").getMatch(0);
+        }
         if (fileInfo[1] != null && !fileInfo[1].equals("")) {
             link.setDownloadSize(SizeFormatter.getSize(fileInfo[1]));
         }
@@ -193,6 +218,9 @@ public class FileStormTo extends PluginForHost {
             }
         }
         if (fileInfo[1] == null) {
+            fileInfo[1] = new Regex(correctedBR, "style=\"font-size:12px; color:#4c4c4c;\">([^<>\"]*?)</span>").getMatch(0);
+        }
+        if (fileInfo[1] == null) {
             fileInfo[1] = new Regex(correctedBR, "\\(([0-9]+ bytes)\\)").getMatch(0);
             if (fileInfo[1] == null) {
                 fileInfo[1] = new Regex(correctedBR, "</font>[ ]+\\(([^<>\"\\'/]+)\\)(.*?)</font>").getMatch(0);
@@ -213,7 +241,7 @@ public class FileStormTo extends PluginForHost {
         doFree(downloadLink, FREE_RESUME, FREE_MAXCHUNKS, "freelink");
     }
 
-    @SuppressWarnings("unused")
+    @SuppressWarnings({ "unused", "deprecation" })
     public void doFree(final DownloadLink downloadLink, final boolean resumable, final int maxchunks, final String directlinkproperty) throws Exception, PluginException {
         br.setFollowRedirects(false);
         passCode = downloadLink.getStringProperty("pass");
@@ -231,7 +259,7 @@ public class FileStormTo extends PluginForHost {
                 brv.getPage("/vidembed-" + fuid);
                 dllink = brv.getRedirectLocation();
                 if (dllink == null) {
-                    logger.info("Failed to get link via vidembed");
+                    logger.info("Failed to get link via embed because: " + br.toString());
                 } else {
                     logger.info("Successfully found link via vidembed");
                 }
@@ -243,11 +271,10 @@ public class FileStormTo extends PluginForHost {
             try {
                 logger.info("Trying to get link via embed");
                 final String embed_access = "http://" + COOKIE_HOST.replace("http://", "") + "/embed-" + fuid + ".html";
-                this.postPage(embed_access, "op=video_embed3&usr_login=&id2=" + fuid + "&fname=" + Encoding.urlEncode(downloadLink.getName()) + "&referer=&file_code=" + fuid + "&method_free=Click+here+to+watch+the+Video");
-                // brv.getPage("http://grifthost.com/embed-" + fuid + ".html");
+                getPage(embed_access);
                 dllink = getDllink();
                 if (dllink == null) {
-                    logger.info("Failed to get link via embed");
+                    logger.info("Failed to get link via embed because: " + br.toString());
                 } else {
                     logger.info("Successfully found link via embed");
                 }
@@ -255,6 +282,7 @@ public class FileStormTo extends PluginForHost {
                 logger.info("Failed to get link via embed");
             }
             if (dllink == null) {
+                /* If failed, go back to the beginning */
                 getPage(downloadLink.getDownloadURL());
             }
         }
@@ -304,14 +332,10 @@ public class FileStormTo extends PluginForHost {
                     }
                 }
                 /* Captcha START */
-                if (correctedBR.contains("captchaBG.gif)")) {
+                if (correctedBR.contains(";background:#ccc;text-align")) {
                     logger.info("Detected captcha method \"plaintext captchas\" for this host");
                     /* Captcha method by ManiacMansion */
-                    /*
-                     * position:absolute;padding-left:62px;padding-top:3px;'>&#50;</span><span style='color:#c1d7e7; text-shadow: 2px 2px
-                     * #1a4
-                     */
-                    final String[][] letters = new Regex(br, "position:absolute;padding\\-left:(\\d+)px;padding\\-top:\\d+px;\\'>(&#\\d+;)</span>").getMatches();
+                    final String[][] letters = new Regex(br, "<span style=\\'position:absolute;padding\\-left:(\\d+)px;padding\\-top:\\d+px;\\'>(&#\\d+;)</span>").getMatches();
                     if (letters == null || letters.length == 0) {
                         logger.warning("plaintext captchahandling broken!");
                         throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -451,6 +475,26 @@ public class FileStormTo extends PluginForHost {
         }
     }
 
+    private String checkDirectLink(final DownloadLink downloadLink, final String property) {
+        String dllink = downloadLink.getStringProperty(property);
+        if (dllink != null) {
+            try {
+                final Browser br2 = br.cloneBrowser();
+                br2.setFollowRedirects(true);
+                URLConnectionAdapter con = br2.openGetConnection(dllink);
+                if (con.getContentType().contains("html") || con.getLongContentLength() == -1) {
+                    downloadLink.setProperty(property, Property.NULL);
+                    dllink = null;
+                }
+                con.disconnect();
+            } catch (final Exception e) {
+                downloadLink.setProperty(property, Property.NULL);
+                dllink = null;
+            }
+        }
+        return dllink;
+    }
+
     @Override
     public int getMaxSimultanFreeDownloadNum() {
         return maxFree.get();
@@ -532,7 +576,7 @@ public class FileStormTo extends PluginForHost {
     public String getDllink() {
         String dllink = br.getRedirectLocation();
         if (dllink == null) {
-            dllink = new Regex(correctedBR, "(\"|\\')(https?://(\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}|([\\w\\-\\.]+\\.)?" + DOMAINS + ")(:\\d{1,4})?/(files|d|cgi\\-bin/dl\\.cgi)/(\\d+/)?[a-z0-9]+/[^<>\"/]*?)(\"|\\')").getMatch(1);
+            dllink = new Regex(correctedBR, "(\"|\\')(https?://(\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}|([\\w\\-\\.]+\\.)?" + DOMAINS + ")(:\\d{1,4})?/(files|~dogefile/files|d|cgi\\-bin/dl\\.cgi)/(\\d+/)?[a-z0-9]+/[^<>\"/]*?)(\"|\\')").getMatch(1);
             if (dllink == null) {
                 final String cryptedScripts[] = new Regex(correctedBR, "p\\}\\((.*?)\\.split\\('\\|'\\)").getColumn(0);
                 if (cryptedScripts != null && cryptedScripts.length != 0) {
@@ -578,34 +622,13 @@ public class FileStormTo extends PluginForHost {
         return finallink;
     }
 
-    private String checkDirectLink(final DownloadLink downloadLink, final String property) {
-        String dllink = downloadLink.getStringProperty(property);
-        if (dllink != null) {
-            try {
-                final Browser br2 = br.cloneBrowser();
-                br2.setFollowRedirects(true);
-                URLConnectionAdapter con = br2.openGetConnection(dllink);
-                if (con.getContentType().contains("html") || con.getLongContentLength() == -1) {
-                    downloadLink.setProperty(property, Property.NULL);
-                    dllink = null;
-                }
-                con.disconnect();
-            } catch (final Exception e) {
-                downloadLink.setProperty(property, Property.NULL);
-                dllink = null;
-            }
-        }
-        return dllink;
-    }
-
-    private void getPage(String page) throws Exception {
-        page = fixLinkSSL(page);
+    private void getPage(final String page) throws Exception {
         br.getPage(page);
         correctBR();
     }
 
-    private void postPage(String page, final String postdata) throws Exception {
-        page = fixLinkSSL(page);
+    @SuppressWarnings("unused")
+    private void postPage(final String page, final String postdata) throws Exception {
         br.postPage(page, postdata);
         correctBR();
     }
@@ -617,8 +640,8 @@ public class FileStormTo extends PluginForHost {
 
     private void waitTime(long timeBefore, final DownloadLink downloadLink) throws PluginException {
         int passedTime = (int) ((System.currentTimeMillis() - timeBefore) / 1000) - 1;
-        /* Ticket Time */
-        final String ttt = new Regex(correctedBR, "id=\"countdown_str\" style=\"[^<>\"]+\"><span id=\"[a-z0-9]+\">(\\d+) <br").getMatch(0);
+        /** Ticket Time */
+        final String ttt = new Regex(correctedBR, "id=\"countdown_str\">[^<>\"]+<span id=\"[^<>\"]+\"( class=\"[^<>\"]+\")?>([\n ]+)?(\\d+)([\n ]+)?</span>").getMatch(2);
         if (ttt != null) {
             int wait = Integer.parseInt(ttt);
             wait -= passedTime;
@@ -720,8 +743,9 @@ public class FileStormTo extends PluginForHost {
         downloadLink.setFinalFileName(FFN);
     }
 
+    @SuppressWarnings("deprecation")
     private void setFUID(final DownloadLink dl) {
-        fuid = new Regex(dl.getDownloadURL(), "([a-z0-9]{12})(\\.html)?$").getMatch(0);
+        fuid = new Regex(dl.getDownloadURL(), "([a-z0-9]{12})$").getMatch(0);
     }
 
     private String handlePassword(final Form pwform, final DownloadLink thelink) throws PluginException {
@@ -885,208 +909,6 @@ public class FileStormTo extends PluginForHost {
             logger.info(NICE_HOST + ": " + error + " -> Plugin is broken");
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-    }
-
-    @SuppressWarnings("deprecation")
-    @Override
-    public AccountInfo fetchAccountInfo(final Account account) throws Exception {
-        final AccountInfo ai = new AccountInfo();
-        /* reset maxPrem workaround on every fetchaccount info */
-        maxPrem.set(1);
-        try {
-            login(account, true);
-        } catch (final PluginException e) {
-            account.setValid(false);
-            throw e;
-        }
-        final String space[] = new Regex(correctedBR, ">Used space:</td>.*?<td.*?b>([0-9\\.]+) ?(KB|MB|GB|TB)?</b>").getRow(0);
-        if ((space != null && space.length != 0) && (space[0] != null && space[1] != null)) {
-            /* free users it's provided by default */
-            ai.setUsedSpace(space[0] + " " + space[1]);
-        } else if ((space != null && space.length != 0) && space[0] != null) {
-            /* premium users the Mb value isn't provided for some reason... */
-            ai.setUsedSpace(space[0] + "Mb");
-        }
-        account.setValid(true);
-        final String availabletraffic = new Regex(correctedBR, "Traffic available.*?:</TD><TD><b>([^<>\"\\']+)</b>").getMatch(0);
-        if (availabletraffic != null && !availabletraffic.contains("nlimited") && !availabletraffic.equalsIgnoreCase(" Mb")) {
-            availabletraffic.trim();
-            /* need to set 0 traffic left, as getSize returns positive result, even when negative value supplied. */
-            if (!availabletraffic.startsWith("-")) {
-                ai.setTrafficLeft(SizeFormatter.getSize(availabletraffic));
-            } else {
-                ai.setTrafficLeft(0);
-            }
-        } else {
-            ai.setUnlimitedTraffic();
-        }
-        /* If the premium account is expired we'll simply accept it as a free account. */
-        final String expire = new Regex(correctedBR, "(\\d{1,2} (January|February|March|April|May|June|July|August|September|October|November|December) \\d{4})").getMatch(0);
-        long expire_milliseconds = 0;
-        if (expire != null) {
-            expire_milliseconds = TimeFormatter.getMilliSeconds(expire, "dd MMMM yyyy", Locale.ENGLISH);
-            account.setProperty("nopremium", false);
-        } else {
-            account.setProperty("nopremium", true);
-        }
-        if (account.getBooleanProperty("nopremium") && (expire_milliseconds - System.currentTimeMillis()) <= 0) {
-            maxPrem.set(ACCOUNT_FREE_MAXDOWNLOADS);
-            try {
-                account.setType(AccountType.FREE);
-                account.setMaxSimultanDownloads(maxPrem.get());
-                account.setConcurrentUsePossible(false);
-            } catch (final Throwable e) {
-                /* not available in old Stable 0.9.581 */
-            }
-            ai.setStatus("Registered (free) user");
-        } else {
-            ai.setValidUntil(expire_milliseconds);
-            maxPrem.set(ACCOUNT_PREMIUM_MAXDOWNLOADS);
-            try {
-                account.setType(AccountType.PREMIUM);
-                account.setMaxSimultanDownloads(maxPrem.get());
-                account.setConcurrentUsePossible(true);
-            } catch (final Throwable e) {
-                /* not available in old Stable 0.9.581 */
-            }
-            ai.setStatus("Premium user");
-        }
-        return ai;
-    }
-
-    @SuppressWarnings("unchecked")
-    private void login(final Account account, final boolean force) throws Exception {
-        synchronized (LOCK) {
-            try {
-                /* Load cookies */
-                br.setCookiesExclusive(true);
-                prepBrowser(br);
-                final Object ret = account.getProperty("cookies", null);
-                boolean acmatch = Encoding.urlEncode(account.getUser()).equals(account.getStringProperty("name", Encoding.urlEncode(account.getUser())));
-                if (acmatch) {
-                    acmatch = Encoding.urlEncode(account.getPass()).equals(account.getStringProperty("pass", Encoding.urlEncode(account.getPass())));
-                }
-                if (acmatch && ret != null && ret instanceof HashMap<?, ?> && !force) {
-                    final HashMap<String, String> cookies = (HashMap<String, String>) ret;
-                    if (account.isValid()) {
-                        for (final Map.Entry<String, String> cookieEntry : cookies.entrySet()) {
-                            final String key = cookieEntry.getKey();
-                            final String value = cookieEntry.getValue();
-                            this.br.setCookie(COOKIE_HOST, key, value);
-                        }
-                        return;
-                    }
-                }
-                br.setFollowRedirects(true);
-                getPage(COOKIE_HOST + "/login.html");
-                final Form loginform = br.getFormbyProperty("name", "FL");
-                if (loginform == null) {
-                    if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
-                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nPlugin defekt, bitte den JDownloader Support kontaktieren!", PluginException.VALUE_ID_PREMIUM_DISABLE);
-                    } else {
-                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nPlugin broken, please contact the JDownloader Support!", PluginException.VALUE_ID_PREMIUM_DISABLE);
-                    }
-                }
-                loginform.put("login", Encoding.urlEncode(account.getUser()));
-                loginform.put("password", Encoding.urlEncode(account.getPass()));
-                sendForm(loginform);
-                if (br.getCookie(COOKIE_HOST, "login") == null || br.getCookie(COOKIE_HOST, "xfss") == null) {
-                    if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
-                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUngültiger Benutzername oder ungültiges Passwort!\r\nDu bist dir sicher, dass dein eingegebener Benutzername und Passwort stimmen? Versuche folgendes:\r\n1. Falls dein Passwort Sonderzeichen enthält, ändere es (entferne diese) und versuche es erneut!\r\n2. Gib deine Zugangsdaten per Hand (ohne kopieren/einfügen) ein.", PluginException.VALUE_ID_PREMIUM_DISABLE);
-                    } else {
-                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nInvalid username/password!\r\nYou're sure that the username and password you entered are correct? Some hints:\r\n1. If your password contains special characters, change it (remove them) and try again!\r\n2. Type in your username/password by hand without copy & paste.", PluginException.VALUE_ID_PREMIUM_DISABLE);
-                    }
-                }
-                if (!br.getURL().contains("/account")) {
-                    getPage("/account");
-                }
-                /* Save cookies */
-                final HashMap<String, String> cookies = new HashMap<String, String>();
-                final Cookies add = this.br.getCookies(COOKIE_HOST);
-                for (final Cookie c : add.getCookies()) {
-                    cookies.put(c.getKey(), c.getValue());
-                }
-                account.setProperty("name", Encoding.urlEncode(account.getUser()));
-                account.setProperty("pass", Encoding.urlEncode(account.getPass()));
-                account.setProperty("cookies", cookies);
-            } catch (final PluginException e) {
-                account.setProperty("cookies", Property.NULL);
-                throw e;
-            }
-        }
-    }
-
-    @Override
-    public void handlePremium(final DownloadLink downloadLink, final Account account) throws Exception {
-        passCode = downloadLink.getStringProperty("pass");
-        requestFileInformation(downloadLink);
-        login(account, false);
-        if (account.getBooleanProperty("nopremium")) {
-            requestFileInformation(downloadLink);
-            doFree(downloadLink, ACCOUNT_FREE_RESUME, ACCOUNT_FREE_MAXCHUNKS, "freelink2");
-        } else {
-            String dllink = checkDirectLink(downloadLink, "premlink");
-            if (dllink == null) {
-                br.setFollowRedirects(false);
-                getPage(downloadLink.getDownloadURL());
-                dllink = getDllink();
-                if (dllink == null) {
-                    Form dlform = br.getFormbyProperty("name", "F1");
-                    if (dlform != null && new Regex(correctedBR, PASSWORDTEXT).matches()) {
-                        passCode = handlePassword(dlform, downloadLink);
-                    }
-                    checkErrors(downloadLink, true);
-                    if (dlform == null) {
-                        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                    }
-                    sendForm(dlform);
-                    checkErrors(downloadLink, true);
-                    dllink = getDllink();
-                }
-            }
-            if (dllink == null) {
-                logger.warning("Final downloadlink (String is \"dllink\") regex didn't match!");
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            }
-            logger.info("Final downloadlink = " + dllink + " starting the download...");
-            dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, ACCOUNT_PREMIUM_RESUME, ACCOUNT_PREMIUM_MAXCHUNKS);
-            if (dl.getConnection().getContentType().contains("html")) {
-                if (dl.getConnection().getResponseCode() == 503) {
-                    throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Connection limit reached, please contact our support!", 5 * 60 * 1000l);
-                }
-                logger.warning("The final dllink seems not to be a file!");
-                br.followConnection();
-                correctBR();
-                checkServerErrors();
-                handlePluginBroken(downloadLink, "dllinknofile", 3);
-            }
-            fixFilename(downloadLink);
-            downloadLink.setProperty("premlink", dllink);
-            dl.startDownload();
-        }
-    }
-
-    @Override
-    public int getMaxSimultanPremiumDownloadNum() {
-        /* workaround for free/premium issue on stable 09581 */
-        return maxPrem.get();
-    }
-
-    private static String fixLinkSSL(String link) {
-        if (checkSsl()) {
-            link = link.replace("http://", "https://");
-        } else {
-            link = link.replace("https://", "http://");
-        }
-        return link;
-    }
-
-    private static boolean checkSsl() {
-        return SubConfiguration.getConfig("filestorm.to").getBooleanProperty(SSL_CONNECTION, false);
-    }
-
-    private void setConfigElements() {
-        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, this.getPluginConfig(), SSL_CONNECTION, JDL.L("plugins.hoster.FileStormTo.preferSSL", "Use Secure Communication over SSL (HTTPS://)")).setDefaultValue(false));
     }
 
     @Override

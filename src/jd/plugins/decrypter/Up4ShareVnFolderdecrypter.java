@@ -43,12 +43,15 @@ public class Up4ShareVnFolderdecrypter extends PluginForDecrypt {
             logger.info("Link offline: " + parameter);
             return decryptedLinks;
         }
-        final String[] links = br.getRegex("(http://(up\\.)?4share\\.vn/(d/[a-z0-9]{1,}|f/[a-z0-9]+/[^<>\"]{1,}))").getColumn(0);
+        final String[] links = br.getRegex("((http://(up\\.)?4share\\.vn)?/(d/[a-z0-9]{1,}|f/[a-z0-9]+/[^<>\"]{1,}))").getColumn(0);
         if (links == null || links.length == 0) {
             logger.warning("Decrypter broken for link: " + parameter);
             return null;
         }
         for (String dl : links) {
+            if (!dl.startsWith("http://")) {
+                dl = "http://up.4share.vn" + dl;
+            }
             decryptedLinks.add(createDownloadlink(dl));
         }
 

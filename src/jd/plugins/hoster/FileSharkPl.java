@@ -120,6 +120,8 @@ public class FileSharkPl extends PluginForHost {
         if (br.containsHTML(POLAND_ONLY)) {
             link.getLinkStatus().setStatusText("This service is only available in Poland");
             return AvailableStatus.UNCHECKABLE;
+        } else if (br.getHttpConnection().getResponseCode() == 404) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
 
         String fileName = br.getRegex("<h2[ \n\t\t\f]+class=\"name-file\">([^<>\"]*?)</h2>").getMatch(0);
@@ -368,24 +370,23 @@ public class FileSharkPl extends PluginForHost {
     public void resetDownloadlink(final DownloadLink link) {
     }
 
-
-/* NO OVERRIDE!! We need to stay 0.9*compatible */
-public boolean hasCaptcha(DownloadLink link, jd.plugins.Account acc) {
-if (acc == null) {
-/* no account, yes we can expect captcha */
-return true;
-}
- if (Boolean.TRUE.equals(acc.getBooleanProperty("free"))) {
-/* free accounts also have captchas */
-return true;
-}
- if (Boolean.TRUE.equals(acc.getBooleanProperty("nopremium"))) {
-/* free accounts also have captchas */
-return true;
-}
- if (acc.getStringProperty("session_type")!=null&&!"premium".equalsIgnoreCase(acc.getStringProperty("session_type"))) {
-return true;
-}
-return false;
-}
+    /* NO OVERRIDE!! We need to stay 0.9*compatible */
+    public boolean hasCaptcha(DownloadLink link, jd.plugins.Account acc) {
+        if (acc == null) {
+            /* no account, yes we can expect captcha */
+            return true;
+        }
+        if (Boolean.TRUE.equals(acc.getBooleanProperty("free"))) {
+            /* free accounts also have captchas */
+            return true;
+        }
+        if (Boolean.TRUE.equals(acc.getBooleanProperty("nopremium"))) {
+            /* free accounts also have captchas */
+            return true;
+        }
+        if (acc.getStringProperty("session_type") != null && !"premium".equalsIgnoreCase(acc.getStringProperty("session_type"))) {
+            return true;
+        }
+        return false;
+    }
 }

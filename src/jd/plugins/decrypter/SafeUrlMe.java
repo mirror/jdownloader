@@ -71,9 +71,10 @@ public class SafeUrlMe extends PluginForDecrypt {
         }
 
         br.setFollowRedirects(false);
-        if (parameter.matches("http://(www\\.)?safeurl\\.me/d/[a-z0-9]+")) {
-            br.getPage(parameter);
-            String finallink = br.getRedirectLocation();
+        br.getPage(parameter);
+        final String redirect = br.getRedirectLocation();
+        if (parameter.matches("http://(www\\.)?safeurl\\.me/d/[a-z0-9]+") || (redirect != null && !redirect.contains("safeurl.me/"))) {
+            String finallink = redirect;
             if (finallink == null) {
                 finallink = br.getRegex("location=\"(https?[^\"]+)").getMatch(0);
             }
@@ -86,7 +87,6 @@ public class SafeUrlMe extends PluginForDecrypt {
                 decryptedLinks.add(createDownloadlink(finallink));
             }
         } else {
-            br.getPage(parameter);
             if (br.containsHTML("(\"This link does not exist\\.\"|ERROR \\- this link does not exist|Could not find links based on the given ID</div>)")) {
                 final DownloadLink offline = createDownloadlink("directhttp://" + parameter);
                 offline.setProperty("OFFLINE", true);

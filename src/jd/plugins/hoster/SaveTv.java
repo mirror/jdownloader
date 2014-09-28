@@ -329,7 +329,7 @@ public class SaveTv extends PluginForHost {
         long datemilliseconds = 0;
 
         /* For series only */
-        final String episodenumber = new Regex(source, "\"SFOLGE\":(\\d+)").getMatch(0);
+        final String episodenumber = getJson(source, "SFOLGE");
         final String episodename = getJson(source, "SSUBTITLE");
 
         /* General */
@@ -378,7 +378,7 @@ public class SaveTv extends PluginForHost {
         /* Set properties which are needed for filenames */
         /* Add series information */
         if (episodenumber != null) {
-            dl.setProperty("episodenumber", Long.parseLong(episodenumber));
+            dl.setProperty("episodenumber", correctData(episodenumber));
         }
         if (episodename != null) {
             dl.setProperty("episodename", correctData(episodename));
@@ -410,7 +410,7 @@ public class SaveTv extends PluginForHost {
         long datemilliseconds = 0;
 
         /* For series only */
-        final String episodenumber = new Regex(source, "<a:Episode>(\\d+)</a:Episode>").getMatch(0);
+        final String episodenumber = new Regex(source, "<a:Episode>([^<>\"]*?)</a:Episode>").getMatch(0);
         final String episodename = new Regex(source, "<a:ST>([^<>\"]*?)</a:ST>").getMatch(0);
 
         /* General */
@@ -455,7 +455,7 @@ public class SaveTv extends PluginForHost {
         /* Set properties which are needed for filenames */
         /* Add series information */
         if (episodenumber != null) {
-            dl.setProperty("episodenumber", Long.parseLong(episodenumber));
+            dl.setProperty("episodenumber", correctData(episodenumber));
         }
         if (episodename != null) {
             dl.setProperty("episodename", correctData(episodename));
@@ -1492,11 +1492,16 @@ public class SaveTv extends PluginForHost {
     }
 
     private static String getEpisodeNumber(final DownloadLink dl) {
-        final long episodenumber = getLongProperty(dl, "episodenumber", 0l);
-        if (episodenumber == 0) {
+        /* Old way TODO: Remove after 11.2014 */
+        String episodenumber = Long.toString(getLongProperty(dl, "episodenumber", 0l));
+        if (episodenumber.equals("0")) {
+            /* New way */
+            episodenumber = dl.getStringProperty("episodenumber", null);
+        }
+        if (episodenumber == null) {
             return SubConfiguration.getConfig("save.tv").getStringProperty(CUSTOM_FILENAME_EMPTY_TAG_STRING, defaultCustomStringForEmptyTags);
         } else {
-            return Long.toString(episodenumber);
+            return episodenumber;
         }
     }
 
