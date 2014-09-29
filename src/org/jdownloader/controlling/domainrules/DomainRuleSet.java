@@ -2,7 +2,6 @@ package org.jdownloader.controlling.domainrules;
 
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.Map.Entry;
 import java.util.concurrent.atomic.AtomicInteger;
 
 public class DomainRuleSet extends ArrayList<CompiledDomainRule> {
@@ -12,12 +11,6 @@ public class DomainRuleSet extends ArrayList<CompiledDomainRule> {
     public boolean add(CompiledDomainRule e) {
         counterMap.put(e, new AtomicInteger());
         return super.add(e);
-    }
-
-    public void clearMap() {
-        for (Entry<CompiledDomainRule, AtomicInteger> s : counterMap.entrySet()) {
-            s.getValue().set(0);
-        }
     }
 
     public HashMap<CompiledDomainRule, AtomicInteger> getMap() {

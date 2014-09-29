@@ -157,8 +157,7 @@ public class DownloadLinkCandidateSelector {
         int maxPluginConcurrentHost = cachedAccount.getPlugin().getMaxSimultanDownload(candidateLink, candidateAccount);
         int maxConcurrentHost = session.getMaxConcurrentDownloadsPerHost();
         int maxDownloads = CFG_GENERAL.CFG.getMaxSimultaneDownloads();
-        DomainRuleSet ruleSet = DomainRuleController.getInstance().getRuleSet(cachedAccount.getAccount(), candidateLinkHost);
-        ruleSet.clearMap();
+        DomainRuleSet ruleSet = DomainRuleController.getInstance().createRuleSet(cachedAccount.getAccount(), candidateLinkHost, candidate.getLink().getName());
 
         if (ruleSet.size() == 0 && !candidate.isForced()) {
             if (session.getControllers().size() >= maxDownloads) {
@@ -181,7 +180,7 @@ public class DownloadLinkCandidateSelector {
                 maxConcurrentHost--;
             }
             for (Entry<CompiledDomainRule, AtomicInteger> s : ruleSet.getMap().entrySet()) {
-                if (s.getKey().matches(singleDownloadController.getDownloadLinkCandidate().getCachedAccount().getAccount(), singleDownloadController.getDownloadLink().getDomainInfo().getTld())) {
+                if (s.getKey().matches(singleDownloadController.getDownloadLinkCandidate().getCachedAccount().getAccount(), singleDownloadController.getDownloadLink().getDomainInfo().getTld(), singleDownloadController.getDownloadLink().getName())) {
                     s.getValue().incrementAndGet();
                 }
             }

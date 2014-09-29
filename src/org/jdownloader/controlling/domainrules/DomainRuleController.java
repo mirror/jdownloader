@@ -2,7 +2,6 @@ package org.jdownloader.controlling.domainrules;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.concurrent.ConcurrentHashMap;
 
 import jd.plugins.Account;
 
@@ -12,7 +11,6 @@ import org.appwork.storage.config.events.GenericConfigEventListener;
 import org.appwork.storage.config.handler.KeyHandler;
 import org.appwork.uio.ExceptionDialogInterface;
 import org.appwork.uio.UIOManager;
-import org.appwork.utils.StringUtils;
 import org.appwork.utils.swing.dialog.ExceptionDialog;
 import org.jdownloader.controlling.domainrules.event.DomainRuleControllerEvent;
 import org.jdownloader.controlling.domainrules.event.DomainRuleControllerEventSender;
@@ -66,7 +64,7 @@ public class DomainRuleController implements GenericConfigEventListener<Object> 
         int maxDownloads = 0;
         if (rules != null) {
             for (DomainRule dr : rules) {
-                if (dr != null && dr.isEnabled() && StringUtils.isNotEmpty(dr.getPattern())) {
+                if (dr != null && dr.isEnabled()) {
                     try {
                         newList.add(new CompiledDomainRule(dr));
 
@@ -89,7 +87,7 @@ public class DomainRuleController implements GenericConfigEventListener<Object> 
                 listener.onDomainRulesUpdated();
             }
         });
-        cache = new ConcurrentHashMap<String, DomainRuleSet>();
+
     }
 
     // public int getMaxSimulanDownloadsbyDomain(String candidateLinkHost) {
@@ -105,24 +103,16 @@ public class DomainRuleController implements GenericConfigEventListener<Object> 
         return maxSimultaneDownloads;
     }
 
-    private ConcurrentHashMap<String, DomainRuleSet> cache;
+    public DomainRuleSet createRuleSet(Account account, String domain, String name) {
 
-    public DomainRuleSet getRuleSet(Account account, String domain) {
-
-        DomainRuleSet set = cache.get(account == null ? (domain) : (account.getUser() + "." + domain));
-        if (set != null) {
-            return set;
-        }
-        set = new DomainRuleSet();
+        DomainRuleSet set = new DomainRuleSet();
         for (CompiledDomainRule rule : rules) {
-            if (rule.matches(account, domain)) {
-
+            if (rule.matches(account, domain, name)) {
                 set.add(rule);
             }
 
         }
 
-        cache.put(account == null ? (domain) : (account.getUser() + "." + domain), set);
         return set;
     }
 }
