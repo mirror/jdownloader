@@ -21,8 +21,10 @@ public class PackageNameAction extends CustomizableTableContextAppAction<FilePac
     }
 
     public void actionPerformed(ActionEvent e) {
-        String name = UserIO.getInstance().requestInputDialog(0, _GUI._.gui_linklist_editpackagename_message(), getSelection().getContextPackage().getName());
-        if (name == null) return;
+        String name = UserIO.getInstance().requestInputDialog(0, _GUI._.gui_linklist_editpackagename_message(), getSelection().getFirstPackage().getName());
+        if (name == null) {
+            return;
+        }
 
         for (PackageView<FilePackage, DownloadLink> packagee : getSelection().getPackageViews()) {
             packagee.getPackage().setName(name);

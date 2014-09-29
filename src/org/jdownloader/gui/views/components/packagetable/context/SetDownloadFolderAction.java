@@ -15,7 +15,6 @@ import org.appwork.utils.swing.dialog.DialogClosedException;
 import org.appwork.utils.swing.dialog.DialogNoAnswerException;
 import org.jdownloader.controlling.contextmenu.CustomizableTableContextAppAction;
 import org.jdownloader.gui.translate._GUI;
-import org.jdownloader.gui.views.BadContextException;
 import org.jdownloader.gui.views.DownloadFolderChooserDialog;
 import org.jdownloader.gui.views.SelectionInfo;
 import org.jdownloader.gui.views.SelectionInfo.PackageView;
@@ -40,11 +39,7 @@ public abstract class SetDownloadFolderAction<PackageType extends AbstractPackag
         selection = lselection;
         if (hasSelection(lselection)) {
             PackageType cp = lselection.getFirstPackage();
-            try {
-                cp = lselection.getContextPackage();
-            } catch (BadContextException e) {
-                // happens if we open the contextmenu in the linkgrabber sidebar.
-            }
+
             path = LinkTreeUtils.getRawDownloadDirectory(cp);
             if (path.getName().equals(cp.getName())) {
                 path = new File(path.getParentFile(), DownloadFolderChooserDialog.PACKAGETAG);
@@ -153,7 +148,7 @@ public abstract class SetDownloadFolderAction<PackageType extends AbstractPackag
     abstract protected Queue getQueue();
 
     protected File dialog(File path) throws DialogClosedException, DialogCanceledException {
-        return DownloadFolderChooserDialog.open(path, true, _GUI._.OpenDownloadFolderAction_actionPerformed_object_(getSelection().getContextPackage().getName()));
+        return DownloadFolderChooserDialog.open(path, true, _GUI._.OpenDownloadFolderAction_actionPerformed_object_(getSelection().getFirstPackage().getName()));
     }
 
     abstract protected void move(PackageType pkg, List<ChildrenType> selectedLinksByPackage);

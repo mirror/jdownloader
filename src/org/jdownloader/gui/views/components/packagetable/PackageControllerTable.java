@@ -166,7 +166,7 @@ public abstract class PackageControllerTable<ParentType extends AbstractPackageN
     protected WeakReference<AbstractNode> contextMenuTrigger = null;
 
     protected void processMouseEvent(final MouseEvent e) {
-        if (e.getID() == MouseEvent.MOUSE_RELEASED && CrossSystem.isContextMenuTrigger(e)) {
+        if (e.getID() == MouseEvent.MOUSE_PRESSED) {
             final int row = this.rowAtPoint(e.getPoint());
             final AbstractNode node = this.getModel().getObjectbyRow(row);
             if (contextMenuTrigger == null || contextMenuTrigger.get() != node) {
@@ -211,8 +211,10 @@ public abstract class PackageControllerTable<ParentType extends AbstractPackageN
                         if (cachedSelectionInfo.filteredSelection == null) {
                             if (sm.isSelectionEmpty()) {
                                 cachedSelectionInfo.filteredSelection = new SelectionInfo<ParentType, ChildrenType>(null, null, true);
+
                             } else {
                                 cachedSelectionInfo.filteredSelection = new SelectionInfo<ParentType, ChildrenType>(contextMenuTrigger, getModel().getSelectedObjects(), true);
+
                             }
                         }
                         return cachedSelectionInfo.filteredSelection;
