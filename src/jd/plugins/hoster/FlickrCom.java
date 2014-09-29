@@ -444,6 +444,17 @@ public class FlickrCom extends PluginForHost {
         if (filename == null) {
             filename = br.getRegex("<meta name=\"og:title\" content=\"([^<>\"]*?)\"").getMatch(0);
         }
+
+        // trim
+        while (filename != null) {
+            if (filename.endsWith(".")) {
+                filename = filename.substring(0, filename.length() - 1);
+            } else if (filename.endsWith(" ")) {
+                filename = filename.substring(0, filename.length() - 1);
+            } else {
+                break;
+            }
+        }
         return filename;
     }
 

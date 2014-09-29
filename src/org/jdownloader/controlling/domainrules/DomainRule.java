@@ -6,7 +6,12 @@ import org.appwork.storage.Storable;
 //{"maxSimultanDownloads":10,"pattern":".*dummmydomain.com,"allowToExceedTheGlobalLimit":true,"enabled":false}
 public class DomainRule implements Storable {
     public static void main(String[] args) {
-        System.out.println(JSonStorage.toString(new DomainRule()));
+        DomainRule dr = new DomainRule();
+        dr.setAccountPattern("myUsername");
+        dr.setDomainPattern(".*jdownloader\\.org");
+        dr.setFilenamePattern("\\.png$");
+        dr.setMaxSimultanDownloads(20);
+        System.out.println("[" + JSonStorage.toString(dr).replace("\"", "\\\"") + "]");
     }
 
     public boolean isEnabled() {
@@ -20,7 +25,26 @@ public class DomainRule implements Storable {
         this.enabled = enabled;
     }
 
-    private String pattern;
+    private String domainPattern;
+
+    public String getDomainPattern() {
+        return domainPattern;
+    }
+
+    public void setDomainPattern(String domainPattern) {
+        this.domainPattern = domainPattern;
+    }
+
+    private String filenamePattern;
+
+    public String getFilenamePattern() {
+        return filenamePattern;
+    }
+
+    public void setFilenamePattern(String filenamePattern) {
+        this.filenamePattern = filenamePattern;
+    }
+
     private String accountPattern;
 
     public String getAccountPattern() {
@@ -43,12 +67,12 @@ public class DomainRule implements Storable {
         this.allowToExceedTheGlobalLimit = maxSimultanDownloadsObeysGlobalLimit;
     }
 
-    public String getPattern() {
-        return pattern;
-    }
-
+    /**
+     * @deprecated remove xmas 2014 we keep it to convert settings
+     * @param pattern
+     */
     public void setPattern(String pattern) {
-        this.pattern = pattern;
+        this.domainPattern = pattern;
     }
 
     public int getMaxSimultanDownloads() {

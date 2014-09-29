@@ -535,7 +535,7 @@ public interface GeneralSettings extends ConfigInterface {
 
     @AboutConfig
     @DescriptionForConfigEntry("Setup Rules by Domain. Let us know if you use this feature and require a nicer User Interface")
-    @DefaultJsonObject("[{\"maxSimultanDownloads\":10,\"pattern\":\".*exampledomain\\\\.com\",\"allowToExceedTheGlobalLimit\":false,\"enabled\":false}]")
+    @DefaultJsonObject("[{\"accountPattern\":\"myUsername\",\"domainPattern\":\".*jdownloader\\\\.org\",\"maxSimultanDownloads\":20,\"allowToExceedTheGlobalLimit\":false,\"filenamePattern\":\"\\\\.png$\",\"enabled\":false}]")
     ArrayList<DomainRule> getDomainRules();
 
     void setDomainRules(ArrayList<DomainRule> e);

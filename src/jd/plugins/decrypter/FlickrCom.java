@@ -18,7 +18,9 @@ package jd.plugins.decrypter;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.Random;
+import java.util.regex.Pattern;
 
 import jd.PluginWrapper;
 import jd.controlling.AccountController;
@@ -52,12 +54,43 @@ public class FlickrCom extends PluginForDecrypt {
 
     private static final String api_key      = "44044129d5965db8c39819e54274917b";
 
+    private String getFilename() {
+        String filename = br.getRegex("<meta name=\"title\" content=\"(.*?)\"").getMatch(0);
+        if (filename == null) {
+            filename = br.getRegex("class=\"photo\\-title\">(.*?)</h1").getMatch(0);
+            if (filename == null) {
+                filename = br.getRegex("<title>(.*?) \\| Flickr \\- Photo Sharing\\!</title>").getMatch(0);
+            }
+        }
+        if (filename == null) {
+            filename = br.getRegex("<meta name=\"og:title\" content=\"([^<>\"]*?)\"").getMatch(0);
+        }
+
+        // trim
+        filename = trimFilename(filename);
+        return filename;
+    }
+
+    public String trimFilename(String filename) {
+        while (filename != null) {
+            if (filename.endsWith(".")) {
+                filename = filename.substring(0, filename.length() - 1);
+            } else if (filename.endsWith(" ")) {
+                filename = filename.substring(0, filename.length() - 1);
+            } else {
+                break;
+            }
+        }
+        return filename;
+    }
+
     // private boolean USE_API = false;
 
     /* TODO: Implement API: https://api.flickr.com/services/rest?photo_id=&extras=can_ ... */
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-        ArrayList<String> addLinks = new ArrayList<String>();
+        ArrayList<String[]> addLinks = new ArrayList<String[]>();
+        HashSet<String> dupeCheckMap = new HashSet<String>();
         br.setFollowRedirects(true);
         br.setCookiesExclusive(true);
         br.setCookie(MAINPAGE, "localization", "en-us%3Bus%3Bde");
@@ -124,7 +157,7 @@ public class FlickrCom extends PluginForDecrypt {
             } catch (Throwable e) {
 
             }
-            offline.setName(new Regex(parameter, "flickr\\.com/photos/(.+)").getMatch(0));
+            offline.setName(new Regex(parameter, "flickr\\.com/photos/(.+)").getMatch(0) + ".jpg");
             offline.setAvailable(false);
             offline.setProperty("offline", true);
             decryptedLinks.add(offline);
@@ -193,11 +226,21 @@ public class FlickrCom extends PluginForDecrypt {
             /* Check if we have a single link */
             if (br.containsHTML("var photo = \\{")) {
                 final DownloadLink dl = createDownloadlink("http://www.flickrdecrypted.com/" + new Regex(parameter, "flickr\\.com/(.+)").getMatch(0));
-                // try {
-                // dl.setContentUrl(parameter);
-                // } catch (Throwable e) {
-                //
-                // }
+                try {
+                    String url = br.getRegex("<meta property=\"og\\:url\" content=\"([^\"]+)").getMatch(0);
+                    dl.setContentUrl(url);
+                } catch (Throwable e) {
+                    e.printStackTrace();
+                }
+                try {
+                    String url = br.getRegex("<meta property=\"flickr_photos\\:sets\" content=\"([^\"]+)").getMatch(0);
+                    dl.setContainerUrl(url);
+                } catch (Throwable e) {
+                    e.printStackTrace();
+
+                }
+                dl.setName(getFilename());
+
                 decryptedLinks.add(dl);
             } else {
                 // Some stuff which is different from link to link
@@ -288,8 +331,10 @@ public class FlickrCom extends PluginForDecrypt {
                         if (links != null && links.length != 0) {
                             for (String singleLink : links) {
                                 // Regex catches links twice, correct that here
-                                if (!addLinks.contains(singleLink)) {
-                                    addLinks.add(singleLink);
+                                if (dupeCheckMap.add(singleLink)) {
+                                    String pattern = Pattern.quote(singleLink) + "[^\"]*\"[^>]+title=\"([^\"]+)";
+                                    String name = trimFilename(br.getRegex(pattern).getMatch(0));
+                                    addLinks.add(new String[] { name, singleLink });
                                     addedLinksCounter++;
                                 }
                             }
@@ -306,8 +351,9 @@ public class FlickrCom extends PluginForDecrypt {
                     logger.warning("Decrypter broken for link: " + parameter);
                     return null;
                 }
-                for (final String aLink : addLinks) {
-                    final DownloadLink dl = createDownloadlink("http://www.flickrdecrypted.com" + aLink);
+                for (final String[] aLink : addLinks) {
+                    final DownloadLink dl = createDownloadlink("http://www.flickrdecrypted.com" + aLink[1]);
+                    dl.setName(aLink[0] == null ? null : (aLink[0] + ".jpg"));
                     dl.setAvailable(true);
                     /* No need to hide decrypted single links */
                     try {/* JD2 only */
