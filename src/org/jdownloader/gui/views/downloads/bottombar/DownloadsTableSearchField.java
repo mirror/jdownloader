@@ -8,14 +8,20 @@ import java.util.regex.Pattern;
 
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
+import jd.plugins.PluginProgress;
 
 import org.appwork.storage.config.JsonConfig;
 import org.appwork.utils.swing.EDTHelper;
+import org.jdownloader.extensions.extraction.ExtractionStatus;
+import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.gui.views.components.LinktablesSearchCategory;
 import org.jdownloader.gui.views.components.packagetable.PackageControllerTable;
 import org.jdownloader.gui.views.components.packagetable.PackageControllerTableModelFilter;
 import org.jdownloader.gui.views.components.packagetable.SearchField;
 import org.jdownloader.gui.views.downloads.table.DownloadsTableModel;
+import org.jdownloader.plugins.ConditionalSkipReason;
+import org.jdownloader.plugins.FinalLinkState;
+import org.jdownloader.plugins.SkipReason;
 import org.jdownloader.settings.GraphicalUserInterfaceSettings;
 
 public final class DownloadsTableSearchField extends SearchField<LinktablesSearchCategory, FilePackage, DownloadLink> {
@@ -23,7 +29,7 @@ public final class DownloadsTableSearchField extends SearchField<LinktablesSearc
 
     public DownloadsTableSearchField(PackageControllerTable<FilePackage, DownloadLink> table2Filter, LinktablesSearchCategory defCategory) {
         super(table2Filter, defCategory);
-        setCategories(new LinktablesSearchCategory[] { LinktablesSearchCategory.FILENAME, LinktablesSearchCategory.HOSTER, LinktablesSearchCategory.PACKAGE, LinktablesSearchCategory.COMMENT });
+        setCategories(new LinktablesSearchCategory[] { LinktablesSearchCategory.FILENAME, LinktablesSearchCategory.HOSTER, LinktablesSearchCategory.PACKAGE, LinktablesSearchCategory.COMMENT, LinktablesSearchCategory.STATUS });
         setSelectedCategory(JsonConfig.create(GraphicalUserInterfaceSettings.class).getSelectedDownloadSearchCategory());
 
         addKeyListener(new KeyListener() {
@@ -50,7 +56,9 @@ public final class DownloadsTableSearchField extends SearchField<LinktablesSearc
     }
 
     protected PackageControllerTableModelFilter<FilePackage, DownloadLink> getFilter(final List<Pattern> pattern, LinktablesSearchCategory searchCat) {
-        if (searchCat == null || pattern == null || pattern.size() == 0) return null;
+        if (searchCat == null || pattern == null || pattern.size() == 0) {
+            return null;
+        }
         switch (searchCat) {
         case PACKAGE:
             return new PackageControllerTableModelFilter<FilePackage, DownloadLink>() {
@@ -73,7 +81,9 @@ public final class DownloadsTableSearchField extends SearchField<LinktablesSearc
                 @Override
                 public boolean isFiltered(FilePackage e) {
                     for (Pattern filterPattern : pattern) {
-                        if (filterPattern.matcher(e.getName()).find()) return false;
+                        if (filterPattern.matcher(e.getName()).find()) {
+                            return false;
+                        }
                     }
                     return true;
                 }
@@ -99,7 +109,9 @@ public final class DownloadsTableSearchField extends SearchField<LinktablesSearc
                 @Override
                 public boolean isFiltered(DownloadLink v) {
                     for (Pattern filterPattern : pattern) {
-                        if (filterPattern.matcher(v.getView().getDisplayName()).find()) return false;
+                        if (filterPattern.matcher(v.getView().getDisplayName()).find()) {
+                            return false;
+                        }
                     }
                     return true;
                 }
@@ -130,11 +142,15 @@ public final class DownloadsTableSearchField extends SearchField<LinktablesSearc
                 @Override
                 public boolean isFiltered(DownloadLink v) {
                     for (Pattern filterPattern : pattern) {
-                        if (v.getComment() != null && filterPattern.matcher(v.getComment()).find()) return false;
+                        if (v.getComment() != null && filterPattern.matcher(v.getComment()).find()) {
+                            return false;
+                        }
                     }
 
                     for (Pattern filterPattern : pattern) {
-                        if (v.getParentNode().getComment() != null && filterPattern.matcher(v.getParentNode().getComment()).find()) return false;
+                        if (v.getParentNode().getComment() != null && filterPattern.matcher(v.getParentNode().getComment()).find()) {
+                            return false;
+                        }
                     }
 
                     return true;
@@ -143,7 +159,9 @@ public final class DownloadsTableSearchField extends SearchField<LinktablesSearc
                 @Override
                 public boolean isFiltered(FilePackage fp) {
                     for (Pattern filterPattern : pattern) {
-                        if (fp.getComment() != null && filterPattern.matcher(fp.getComment()).find()) return false;
+                        if (fp.getComment() != null && filterPattern.matcher(fp.getComment()).find()) {
+                            return false;
+                        }
                     }
 
                     boolean readL = fp.getModifyLock().readLock();
@@ -151,7 +169,9 @@ public final class DownloadsTableSearchField extends SearchField<LinktablesSearc
                     try {
                         for (DownloadLink dl : fp.getChildren()) {
                             for (Pattern filterPattern : pattern) {
-                                if (dl.getComment() != null && filterPattern.matcher(dl.getComment()).find()) return false;
+                                if (dl.getComment() != null && filterPattern.matcher(dl.getComment()).find()) {
+                                    return false;
+                                }
                             }
                         }
                     } finally {
@@ -185,7 +205,9 @@ public final class DownloadsTableSearchField extends SearchField<LinktablesSearc
                 public synchronized boolean isFiltered(DownloadLink v) {
                     String host = v.getDomainInfo().getTld();
                     Boolean ret = fastCheck.get(host);
-                    if (ret != null) return ret.booleanValue();
+                    if (ret != null) {
+                        return ret.booleanValue();
+                    }
                     for (Pattern filterPattern : pattern) {
                         if (filterPattern.matcher(host).find()) {
                             fastCheck.put(host, Boolean.FALSE);
@@ -206,6 +228,138 @@ public final class DownloadsTableSearchField extends SearchField<LinktablesSearc
                     return 0;
                 }
             };
+        case STATUS:
+            return new PackageControllerTableModelFilter<FilePackage, DownloadLink>() {
+
+                @Override
+                public boolean isFilteringPackageNodes() {
+                    return false;
+                }
+
+                @Override
+                public boolean isFilteringChildrenNodes() {
+                    return true;
+                }
+
+                @Override
+                public synchronized boolean isFiltered(DownloadLink link) {
+
+                    PluginProgress prog = link.getPluginProgress();
+                    if (prog != null) {
+                        String txt = prog.getMessage(DownloadsTableModel.getInstance().getTaskColumn());
+                        for (Pattern filterPattern : pattern) {
+                            if (filterPattern.matcher(txt).find()) {
+                                return false;
+                            }
+                        }
+                        return true;
+                    }
+                    ConditionalSkipReason conditionalSkipReason = link.getConditionalSkipReason();
+                    if (conditionalSkipReason != null && !conditionalSkipReason.isConditionReached()) {
+
+                        String txt = conditionalSkipReason.getMessage(DownloadsTableModel.getInstance().getTaskColumn(), null);
+                        for (Pattern filterPattern : pattern) {
+                            if (filterPattern.matcher(txt).find()) {
+                                return false;
+                            }
+                        }
+                        return true;
+                    }
+                    SkipReason skipReason = link.getSkipReason();
+                    if (skipReason != null) {
+
+                        String txt = skipReason.getExplanation(DownloadsTableModel.getInstance().getTaskColumn());
+
+                        for (Pattern filterPattern : pattern) {
+                            if (filterPattern.matcher(txt).find()) {
+                                return false;
+                            }
+                        }
+                        return true;
+                    }
+                    final FinalLinkState finalLinkState = link.getFinalLinkState();
+                    if (finalLinkState != null) {
+                        if (FinalLinkState.CheckFailed(finalLinkState)) {
+
+                            String txt = finalLinkState.getExplanation(DownloadsTableModel.getInstance().getTaskColumn(), link);
+
+                            for (Pattern filterPattern : pattern) {
+                                if (filterPattern.matcher(txt).find()) {
+                                    return false;
+                                }
+                            }
+                            return true;
+                        }
+                        ExtractionStatus extractionStatus = link.getExtractionStatus();
+                        if (extractionStatus != null) {
+                            switch (extractionStatus) {
+                            case ERROR:
+                            case ERROR_PW:
+                            case ERROR_CRC:
+                            case ERROR_NOT_ENOUGH_SPACE:
+                            case ERRROR_FILE_NOT_FOUND:
+
+                                String txt = extractionStatus.getExplanation();
+                                for (Pattern filterPattern : pattern) {
+                                    if (filterPattern.matcher(txt).find()) {
+                                        return false;
+                                    }
+                                }
+                                return true;
+                            case SUCCESSFUL:
+
+                                txt = extractionStatus.getExplanation();
+                                for (Pattern filterPattern : pattern) {
+                                    if (filterPattern.matcher(txt).find()) {
+                                        return false;
+                                    }
+                                }
+                                return true;
+                            case RUNNING:
+
+                                txt = extractionStatus.getExplanation();
+                                for (Pattern filterPattern : pattern) {
+                                    if (filterPattern.matcher(txt).find()) {
+                                        return false;
+                                    }
+                                }
+                                return true;
+                            }
+                        }
+
+                        String txt = finalLinkState.getExplanation(this, link);
+                        for (Pattern filterPattern : pattern) {
+                            if (filterPattern.matcher(txt).find()) {
+                                return false;
+                            }
+                        }
+                        return true;
+                    }
+                    if (link.getDownloadLinkController() != null) {
+                        String txt = _GUI._.TaskColumn_fillColumnHelper_starting();
+                        for (Pattern filterPattern : pattern) {
+                            if (filterPattern.matcher(txt).find()) {
+                                return false;
+                            }
+                        }
+                        return true;
+
+                    }
+
+                    return true;
+                }
+
+                @Override
+                public boolean isFiltered(FilePackage e) {
+                    return false;
+                }
+
+                @Override
+                public int getComplexity() {
+                    return 0;
+                }
+            };
+
         }
         return null;
     }
@@ -215,7 +369,9 @@ public final class DownloadsTableSearchField extends SearchField<LinktablesSearc
 
             @Override
             public DownloadsTableSearchField edtRun() {
-                if (INSTANCE != null) return INSTANCE;
+                if (INSTANCE != null) {
+                    return INSTANCE;
+                }
                 INSTANCE = new DownloadsTableSearchField(DownloadsTableModel.getInstance().getTable(), LinktablesSearchCategory.FILENAME);
                 return INSTANCE;
             }
