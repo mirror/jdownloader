@@ -73,12 +73,12 @@ public class NewPackageDialog extends AbstractDialog<Object> {
         if (StringUtils.isNotEmpty(preSet)) {
             fc.setText(preSet);
         } else {
-            if (selection.isLinkContext() || selection.isPackageContext()) {
-                path = LinkTreeUtils.getRawDownloadDirectory(selection.getContextPackage());
-            } else {
-                path = LinkTreeUtils.getRawDownloadDirectory(selection.getFirstPackage());
+
+            path = LinkTreeUtils.getRawDownloadDirectory(selection.getFirstPackage());
+
+            if (path != null) {
+                fc.setText(path.getAbsolutePath());
             }
-            if (path != null) fc.setText(path.getAbsolutePath());
         }
         p.add(fc, "pushx,growx");
         return p;

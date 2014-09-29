@@ -32,13 +32,13 @@ public class OpenDirectoryAction extends CustomizableTableContextAppAction<FileP
         file = null;
         directory = null;
         if (hasSelection()) {
-            this.directory = new File(getSelection().getContextPackage().getView().getDownloadDirectory());
+            this.directory = new File(getSelection().getFirstPackage().getView().getDownloadDirectory());
             if (getSelection().isLinkContext()) {
 
                 this.file = new File(getSelection().getContextLink().getFileOutput());
 
             } else {
-                this.directory = new File(getSelection().getContextPackage().getView().getDownloadDirectory());
+                this.directory = new File(getSelection().getFirstPackage().getView().getDownloadDirectory());
 
             }
         }

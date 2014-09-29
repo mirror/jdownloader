@@ -35,7 +35,7 @@ public class OpenFileAction extends CustomizableTableContextAppAction<FilePackag
                 this.file = getSelection() == null ? null : new File(getSelection().getContextLink().getFileOutput());
 
             } else {
-                this.file = getSelection() == null ? null : new File(getSelection().getContextPackage().getView().getDownloadDirectory());
+                this.file = getSelection() == null ? null : new File(getSelection().getFirstPackage().getView().getDownloadDirectory());
                 // Do not show for packages
                 setVisible(false);
             }

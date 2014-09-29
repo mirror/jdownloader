@@ -39,7 +39,7 @@ public class SetDownloadFolderInLinkgrabberAction extends SetDownloadFolderActio
 
         CrawledPackage cp = getSelection().getFirstPackage();
         try {
-            cp = getSelection().getContextPackage();
+            cp = getSelection().getFirstPackage();
         } catch (BadContextException e) {
             // happens if we open the contextmenu in the linkgrabber sidebar.
         }
