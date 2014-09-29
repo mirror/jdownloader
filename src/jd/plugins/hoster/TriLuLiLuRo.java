@@ -80,11 +80,15 @@ public class TriLuLiLuRo extends PluginForHost {
         try {
             br.getPage(downloadLink.getDownloadURL());
         } catch (final BrowserException e) {
-            if (br.getHttpConnection().getResponseCode() == 500) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            if (br.getHttpConnection().getResponseCode() == 500) {
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            }
             throw e;
         }
         // Link offline
-        if (br.getURL().equals("http://www.trilulilu.ro/") || br.getURL().contains("no_file")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (br.getURL().equals("http://www.trilulilu.ro/") || br.getURL().contains("no_file") || br.getURL().contains("ref=404")) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
         if (br.containsHTML(COUNTRYBLOCK)) {
             // try {
             // localProxy(true);
@@ -94,25 +98,41 @@ public class TriLuLiLuRo extends PluginForHost {
             downloadLink.getLinkStatus().setStatusText(COUNTRYBLOCKUSERTEXT);
             return AvailableStatus.TRUE;
         }
-        if (br.containsHTML("(Fişierul căutat nu există|Contul acestui utilizator a fost dezactivat)")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (br.containsHTML("(Fişierul căutat nu există|Contul acestui utilizator a fost dezactivat)")) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
         // Invalid link
-        if (br.containsHTML(">Trilulilu 404<")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        if (br.containsHTML(LIMITREACHED)) return AvailableStatus.TRUE;
+        if (br.containsHTML(">Trilulilu 404<")) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
+        if (br.containsHTML(LIMITREACHED)) {
+            return AvailableStatus.TRUE;
+        }
         String filename = null;
         if (downloadLink.getDownloadURL().matches(TYPE_IMAGE) || br.getURL().matches(TYPE_IMAGE)) {
             filename = br.getRegex("<title>([^<>\"]*?)\\- Imagini  \\- Trilulilu").getMatch(0);
-            if (filename == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            if (filename == null) {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
             DLLINK = br.getRegex("<div class=\"img_player\">[\t\n\r ]+<img src=\"(http://[^<>\"]*?\\.jpg)\"").getMatch(0);
-            if (DLLINK != null) DLLINK += "?size=original";
+            if (DLLINK != null) {
+                DLLINK += "?size=original";
+            }
             filename = Encoding.htmlDecode(filename.trim()) + ".jpg";
             downloadLink.setFinalFileName(filename);
         } else if (isTypeMusic(downloadLink)) {
             filename = br.getRegex("<meta name=\"title\" content=\"([^<>\"]*?)\\- Muzică.*? \\- Trilulilu\"").getMatch(0);
-            if (filename == null) filename = br.getRegex("<title>(.*?)\\s*-\\s*Muzică\\s*-\\s*Trilulilu</title>").getMatch(0);
-            if (filename == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            if (filename == null) {
+                filename = br.getRegex("<title>(.*?)\\s*-\\s*Muzică\\s*-\\s*Trilulilu</title>").getMatch(0);
+            }
+            if (filename == null) {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
             downloadLink.setFinalFileName(Encoding.htmlDecode(filename.trim()) + ".mp3");
         } else {
-            if (br.containsHTML("<title> \\- Trilulilu</title>")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            if (br.containsHTML("<title> \\- Trilulilu</title>")) {
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            }
             filename = br.getRegex("<div class=\"file_description floatLeft\">[\r\t\n ]+<h1>(.*?)</h1>").getMatch(0);
             if (filename == null) {
                 filename = br.getRegex("<meta name=\"title\" content=\"Trilulilu \\- (.*?) - Muzică Diverse\" />").getMatch(0);
@@ -120,17 +140,24 @@ public class TriLuLiLuRo extends PluginForHost {
                     filename = br.getRegex("<title>Trilulilu \\- (.*?) - Muzică Diverse</title>").getMatch(0);
                     if (filename == null) {
                         filename = br.getRegex("<div class=\"music_demo\">[\n\t\r ]+<h3>(.*?)\\.mp3 \\(demo 30 de secunde\\)</h3").getMatch(0);
-                        if (filename == null) filename = br.getRegex("<div class=\"hentry\">[\t\n\r ]+<h1>(.*?)</h1>").getMatch(0);
+                        if (filename == null) {
+                            filename = br.getRegex("<div class=\"hentry\">[\t\n\r ]+<h1>(.*?)</h1>").getMatch(0);
+                        }
                     }
                 }
             }
-            if (filename == null) filename = br.getRegex("property=\"og:title\"[\t\n\r ]+content=\"([^<>\"]*?)\"").getMatch(0);
-            if (filename == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            if (filename == null) {
+                filename = br.getRegex("property=\"og:title\"[\t\n\r ]+content=\"([^<>\"]*?)\"").getMatch(0);
+            }
+            if (filename == null) {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
             filename = Encoding.htmlDecode(filename.trim());
-            if (br.containsHTML(VIDEOPLAYER))
+            if (br.containsHTML(VIDEOPLAYER)) {
                 downloadLink.setFinalFileName(filename + ".mp4");
-            else
+            } else {
                 downloadLink.setFinalFileName(filename + ".mp3");
+            }
         }
         return AvailableStatus.TRUE;
     }
@@ -197,7 +224,9 @@ public class TriLuLiLuRo extends PluginForHost {
                 md5fn.getPage(ditati == null ? "http://static.trilulilu.ro/compiled/ditati.js" : ditati);
 
                 NONSTANDARDMD5 = md5fn.getRegex("(var hexcase.*?)String\\.prototype\\.htmlentities").getMatch(0);
-                if (n == null || NONSTANDARDMD5 == null) { throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE); }
+                if (n == null || NONSTANDARDMD5 == null) {
+                    throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+                }
 
                 String postdata = "action=login";
                 postdata += "&username=" + u;
@@ -212,7 +241,9 @@ public class TriLuLiLuRo extends PluginForHost {
                 postdata += "&PASSWORD=" + n;
 
                 br.postPage("/login", postdata);
-                if (!br.containsHTML("ok")) { throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE); }
+                if (!br.containsHTML("ok")) {
+                    throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+                }
                 // cookies
                 final HashMap<String, String> cookies = new HashMap<String, String>();
                 final Cookies add = br.getCookies(br.getHost());
@@ -262,7 +293,9 @@ public class TriLuLiLuRo extends PluginForHost {
                 amf.postPageRaw("/amf", createAMFRequest(username, hash));
                 HashMap<String, String> amfResult = new HashMap<String, String>();
                 amfResult = AMFParser(amf);
-                if (amfResult == null) return;
+                if (amfResult == null) {
+                    return;
+                }
                 server = amfResult.get("server");
                 sig = amfResult.get("sig");
                 exp = amfResult.get("exp");
@@ -278,7 +311,9 @@ public class TriLuLiLuRo extends PluginForHost {
                     logger.warning("format is null!");
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 }
-                if (br2.containsHTML("mp4-720p")) format = "mp4-720p";
+                if (br2.containsHTML("mp4-720p")) {
+                    format = "mp4-720p";
+                }
                 DLLINK = "http://fs" + server + ".trilulilu.ro/stream.php?type=video&source=site&hash=" + hash + "&username=" + username + "&key=ministhebest&format=" + format + "y&start=";
             } else {
                 String key = br.getRegex("key=([a-z0-9]+)\"").getMatch(0);
@@ -286,7 +321,9 @@ public class TriLuLiLuRo extends PluginForHost {
                 DLLINK = "http://fs" + server + ".trilulilu.ro/stream.php?type=audio&source=site&hash=" + hash + "&username=" + username + "&key=" + (key == null ? "" : key) + "&sig=" + (sig == null ? "" : sig) + "&exp=" + exp;
             }
         }
-        if (DLLINK != null) DLLINK = Encoding.htmlDecode(DLLINK);
+        if (DLLINK != null) {
+            DLLINK = Encoding.htmlDecode(DLLINK);
+        }
     }
 
     private String createAMFRequest(String arg0, String arg1) {
@@ -314,7 +351,9 @@ public class TriLuLiLuRo extends PluginForHost {
         }
         HashMap<String, String> result = new HashMap<String, String>();
         for (int i = 0; i < content.length; i++) {
-            if (content[i] != 3) continue;// Object 0x03
+            if (content[i] != 3) {
+                continue;// Object 0x03
+            }
             i = i + 2;
             for (int j = i; j < content.length; j++) {
                 int keyLen = content[j];
@@ -333,7 +372,9 @@ public class TriLuLiLuRo extends PluginForHost {
                 if (content[v] == 2) {// String 0x02
                     v = v + 2;
                     int valueLen = content[v];
-                    if (valueLen == 0) value = null;
+                    if (valueLen == 0) {
+                        value = null;
+                    }
                     for (vv = 1; vv <= valueLen; vv++) {
                         value = value + content[v + vv];
                     }
@@ -373,22 +414,34 @@ public class TriLuLiLuRo extends PluginForHost {
     public void handlePremium(final DownloadLink downloadLink, final Account account) throws Exception {
         requestFileInformation(downloadLink);
         login(account, false);
-        if (br.containsHTML(ONLYFORREGISTEREDUSERS)) br.getPage(downloadLink.getDownloadURL());
+        if (br.containsHTML(ONLYFORREGISTEREDUSERS)) {
+            br.getPage(downloadLink.getDownloadURL());
+        }
         doDownload(downloadLink);
     }
 
     private void doDownload(DownloadLink downloadLink) throws Exception {
-        if (br.containsHTML(LIMITREACHED)) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED);
-        if (br.containsHTML(COUNTRYBLOCK)) throw new PluginException(LinkStatus.ERROR_FATAL, COUNTRYBLOCKUSERTEXT);
-        if (br.containsHTML(ONLYFORREGISTEREDUSERS)) throw new PluginException(LinkStatus.ERROR_FATAL, ONLYFORREGISTEREDUSERSTEXT);
+        if (br.containsHTML(LIMITREACHED)) {
+            throw new PluginException(LinkStatus.ERROR_IP_BLOCKED);
+        }
+        if (br.containsHTML(COUNTRYBLOCK)) {
+            throw new PluginException(LinkStatus.ERROR_FATAL, COUNTRYBLOCKUSERTEXT);
+        }
+        if (br.containsHTML(ONLYFORREGISTEREDUSERS)) {
+            throw new PluginException(LinkStatus.ERROR_FATAL, ONLYFORREGISTEREDUSERSTEXT);
+        }
         if (downloadLink.getDownloadURL().matches(TYPE_IMAGE) || br.getURL().matches(TYPE_IMAGE)) {
         } else {
             getDownloadUrl(downloadLink);
         }
-        if (DLLINK == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (DLLINK == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         int maxchunks = -2;
         // Videos have chunk-limits!
-        if (br.containsHTML(VIDEOPLAYER)) maxchunks = 1;
+        if (br.containsHTML(VIDEOPLAYER)) {
+            maxchunks = 1;
+        }
         br.getHeaders().put("Accept-Charset", null);
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, DLLINK, true, maxchunks);
         if (dl.getConnection().getContentType().contains("html")) {
@@ -415,7 +468,9 @@ public class TriLuLiLuRo extends PluginForHost {
         if (getPluginConfig().getBooleanProperty("STATUS")) {
             String server = getPluginConfig().getStringProperty("PROXYSERVER", null);
             int port = getPluginConfig().getIntegerProperty("PROXYPORT", -1);
-            if (isEmpty(server) || port < 0) return;
+            if (isEmpty(server) || port < 0) {
+                return;
+            }
             server = new Regex(server, "^[0-9a-zA-Z]+://").matches() ? server : "http://" + server;
             final org.appwork.utils.net.httpconnection.HTTPProxy proxy = org.appwork.utils.net.httpconnection.HTTPProxy.parseHTTPProxy(server + ":" + port);
             if (b) {

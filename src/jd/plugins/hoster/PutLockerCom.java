@@ -163,6 +163,8 @@ public class PutLockerCom extends PluginForHost {
     // return true;
     // }
 
+    private static final String CAPTCHATEXT = "class=\"cf-section cf-highlight cf-captcha-container\"";
+
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
         correctDownloadLink(link);
@@ -172,9 +174,11 @@ public class PutLockerCom extends PluginForHost {
         // http://svn.jdownloader.org/issues/27819
         if (br.containsHTML("No htmlCode read|This file is temporarily unavailable due to maintenance\\.")) {
             return AvailableStatus.UNCHECKABLE;
-        }
-        if (br.containsHTML("This file might have been moved, replaced or deleted")) {
+        } else if (br.containsHTML("This file might have been moved, replaced or deleted")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        } else if (br.containsHTML(CAPTCHATEXT)) {
+            link.getLinkStatus().setStatusText("Cannot check status while captcha is needed");
+            return AvailableStatus.UNCHECKABLE;
         }
         if (br.containsHTML(PASSWORD_PROTECTED)) {
             link.getLinkStatus().setStatusText("This link is password protected");
@@ -278,6 +282,8 @@ public class PutLockerCom extends PluginForHost {
     public void doFree(final DownloadLink downloadLink) throws Exception, PluginException {
         if (br.containsHTML("This file is private and only viewable by the owner")) {
             throw new PluginException(LinkStatus.ERROR_FATAL, "Private file - only downloadable by the owner");
+        } else if (br.containsHTML(CAPTCHATEXT)) {
+            throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Captchas are not yet supported for this host - please report this!");
         }
         br.setFollowRedirects(false);
         String passCode = null;
@@ -299,7 +305,6 @@ public class PutLockerCom extends PluginForHost {
         if (br.containsHTML("prepare_continue_btn")) {
             sleep(5000, downloadLink, "Prepare File...");
             br.submitForm(freeform);
-
         }
         if (br.containsHTML("prepare_continue_btn")) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
