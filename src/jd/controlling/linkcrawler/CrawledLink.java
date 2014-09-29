@@ -13,6 +13,7 @@ import jd.plugins.CryptedLink;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLinkProperty;
 import jd.plugins.LinkInfo;
+import jd.plugins.Plugin;
 import jd.plugins.PluginForHost;
 
 import org.appwork.utils.NullsafeAtomicReference;
@@ -240,7 +241,12 @@ public class CrawledLink implements AbstractPackageChildrenNode<CrawledPackage>,
         if (dlLink != null) {
             return dlLink.getView().getDisplayName();
         }
-        return "RAWURL:" + getURL();
+        final String url = getURL();
+        final String name = Plugin.extractFileNameFromURL(url);
+        if (name != null) {
+            return name;
+        }
+        return "RAWURL:" + url;
     }
 
     public int getChunks() {

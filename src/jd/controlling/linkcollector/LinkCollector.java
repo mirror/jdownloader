@@ -59,7 +59,6 @@ import org.appwork.storage.TypeRef;
 import org.appwork.storage.config.JsonConfig;
 import org.appwork.uio.UIOManager;
 import org.appwork.utils.Application;
-import org.appwork.utils.Files;
 import org.appwork.utils.IO;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.event.queue.Queue;
@@ -220,7 +219,19 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
 
         private CrawledPackageMappingID(String id, String packageName, String downloadFolder) {
             this.id = id;
+            if (packageName != null) {
+                /**
+                 * we remove all non words/digits because some hoster replace/remove other chars
+                 */
+                packageName = packageName.replaceAll("[^a-zA-Z0-9]", "").toLowerCase(Locale.ENGLISH);
+            }
             this.packageName = packageName;
+            if (CrossSystem.isWindows() && downloadFolder != null) {
+                /**
+                 * windows has case insensitive filesystem
+                 */
+                downloadFolder = downloadFolder.toLowerCase(Locale.ENGLISH);
+            }
             this.downloadFolder = downloadFolder;
             combined = id + "|_|" + packageName + "|_|" + downloadFolder;
         }
@@ -806,24 +817,19 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
                             if (link.isNameSet() || dlLink.isNameSet()) {
                                 crawledPackageName = link.getName();
                             } else {
-                                final String name = link.getName();
-                                final String extension = Files.getExtension(name);
-                                if (extension != null) {
+                                final String name = LinkCrawler.getUnsafeName(link.getName(), null);
+                                if (name != null) {
                                     crawledPackageName = name;
                                 }
                             }
                             if (crawledPackageName != null) {
                                 crawledPackageName = LinknameCleaner.cleanFileName(crawledPackageName, false, false, LinknameCleaner.EXTENSION_SETTINGS.REMOVE_ALL, true);
-                                /**
-                                 * we remove all non words/digits because some hoster replace/remove other chars
-                                 */
-                                crawledPackageName = crawledPackageName.replaceAll("[^a-zA-Z0-9]", "");
                             }
                         }
                         if (crawledPackageName == null) {
-                            final CrawledLinkFactory clf = new CrawledLinkFactory(link);
                             final ExtractionExtension lArchiver = archiver;
                             if (lArchiver != null && org.jdownloader.settings.staticreferences.CFG_LINKGRABBER.ARCHIVE_PACKAGIZER_ENABLED.getValue()) {
+                                final CrawledLinkFactory clf = new CrawledLinkFactory(link);
                                 if (lArchiver.isMultiPartArchive(clf)) {
                                     if (crawledPackageID == null) {
                                         crawledPackageID = lArchiver.createArchiveID(clf);
@@ -832,11 +838,6 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
                                         crawledPackageName = _JDT._.LinkCollector_archiv(LinknameCleaner.cleanFileName(lArchiver.getArchiveName(clf), false, true, LinknameCleaner.EXTENSION_SETTINGS.REMOVE_KNOWN, true));
                                     }
                                 }
-                            }
-                        }
-                        if (CrossSystem.isWindows()) {
-                            if (downloadFolder != null) {
-                                downloadFolder = downloadFolder.toLowerCase(Locale.ENGLISH);
                             }
                         }
                         final CrawledPackageMappingID crawledPackageMapID = new CrawledPackageMappingID(crawledPackageID, crawledPackageName, downloadFolder);
@@ -2194,7 +2195,9 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
         if (item != null) {
             final CrawledLink itemLink = item.get();
             if (itemLink == null || itemLink.getParentNode() == null || itemLink.getParentNode().getControlledBy() == null) {
-                dupeCheckMap.remove(linkID);
+                if (itemLink == null || (itemLink.getParentNode() == null && !filteredStuff.contains(itemLink)) || (itemLink.getParentNode() != null && itemLink.getParentNode().getControlledBy() == null)) {
+                    dupeCheckMap.remove(linkID);
+                }
                 return itemLink;
             } else if (StringUtils.equals(itemLink.getLinkID(), linkID)) {
                 return itemLink;

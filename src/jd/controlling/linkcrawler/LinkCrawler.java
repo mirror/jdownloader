@@ -1117,8 +1117,8 @@ public class LinkCrawler {
                         }
                         if (hosterLinks != null) {
                             forwardDownloadLinkInfos(possibleCryptedLink.getDownloadLink(), hosterLinks);
-                            for (DownloadLink hosterLink : hosterLinks) {
-                                CrawledLink link = new CrawledLink(hosterLink);
+                            for (final DownloadLink hosterLink : hosterLinks) {
+                                final CrawledLink link = new CrawledLink(hosterLink);
                                 /*
                                  * forward important data to new ones
                                  */
@@ -1173,6 +1173,30 @@ public class LinkCrawler {
         return sources.toArray(new String[] {});
     }
 
+    public static String getUnsafeName(String unsafeName, String currentName) {
+        if (unsafeName != null) {
+            String extension = Files.getExtension(unsafeName);
+            if (extension == null && unsafeName.indexOf('.') < 0) {
+                String unsafeSourceModified = null;
+                if (unsafeName.indexOf('_') > 0) {
+                    unsafeSourceModified = unsafeName.replaceAll("_", ".");
+                    extension = Files.getExtension(unsafeSourceModified);
+                }
+                if (extension == null && unsafeName.indexOf('-') > 0) {
+                    unsafeSourceModified = unsafeName.replaceAll("-", ".");
+                    extension = Files.getExtension(unsafeSourceModified);
+                }
+                if (extension != null) {
+                    unsafeName = unsafeSourceModified;
+                }
+            }
+            if (extension != null && !StringUtils.equals(currentName, unsafeName)) {
+                return unsafeName;
+            }
+        }
+        return null;
+    }
+
     private void forwardCrawledLinkInfos(CrawledLink source, CrawledLink dest, final CrawledLinkModifier linkModifier, final String sourceURLs[]) {
         if (source == null || dest == null) {
             return;
@@ -1181,6 +1205,13 @@ public class LinkCrawler {
         dest.setOrigin(source.getOrigin());
         dest.setSourceUrls(sourceURLs);
         dest.setMatchingFilter(source.getMatchingFilter());
+        final DownloadLink dlLink = dest.getDownloadLink();
+        if (dlLink != null && !dlLink.isNameSet()) {
+            final String name = getUnsafeName(source.getName(), dlLink.getName());
+            if (name != null) {
+                dlLink.setName(name);
+            }
+        }
         final CrawledLinkModifier childCustomModifier = dest.getCustomCrawledLinkModifier();
         if (childCustomModifier == null) {
             dest.setCustomCrawledLinkModifier(linkModifier);
@@ -1298,9 +1329,8 @@ public class LinkCrawler {
             if (source.isNameSet()) {
                 dl.setName(source.getName());
             } else {
-                final String name = source.getName();
-                final String extension = Files.getExtension(name);
-                if (extension != null) {
+                final String name = getUnsafeName(source.getName(), dl.getName());
+                if (name != null) {
                     dl.setName(name);
                 }
             }
@@ -1470,7 +1500,7 @@ public class LinkCrawler {
             try {
                 final int generation = this.getCrawlerGeneration(true);
                 processedLinksCounter.incrementAndGet();
-                PluginForDecrypt wplg = null;
+                final PluginForDecrypt wplg;
                 /*
                  * we want a fresh pluginClassLoader here
                  */
@@ -1564,20 +1594,42 @@ public class LinkCrawler {
                     wplg.setDistributer(dist = new LinkCrawlerDistributer() {
 
                         final HashSet<DownloadLink> fastDuplicateDetector = new HashSet<DownloadLink>();
+                        final AtomicInteger         distributed           = new AtomicInteger(0);
+                        final HashSet<DownloadLink> distribute            = new HashSet<DownloadLink>();
 
                         public synchronized void distribute(DownloadLink... links) {
                             if (links == null || links.length == 0) {
                                 return;
                             }
-                            final List<CrawledLink> possibleCryptedLinks = new ArrayList<CrawledLink>(links.length);
+
                             for (DownloadLink link : links) {
+                                if (link.getPluginPatternMatcher() != null && !fastDuplicateDetector.contains(link)) {
+                                    distribute.add(link);
+                                }
+                            }
+                            if (wplg.getDistributer() != null && (distribute.size() + distributed.get()) <= 1) {
+                                /**
+                                 * crawler is still running, wait for finish or multiple distributed
+                                 */
+                                return;
+                            }
+                            final List<CrawledLink> possibleCryptedLinks = new ArrayList<CrawledLink>(distribute.size());
+                            final boolean distributeMultipleLinks = (distribute.size() + distributed.get()) > 1;
+                            for (DownloadLink link : distribute) {
                                 if (link.getPluginPatternMatcher() != null && fastDuplicateDetector.add(link)) {
+                                    distributed.incrementAndGet();
                                     if (link.getPluginPatternMatcher().contains("decrypted.com")) {
                                         /**
                                          * some plugins have same regex for hoster/decrypter, so they add decrypted.com at the end
                                          */
-                                        if (link.getContainerUrl() == null) {
-                                            link.setContainerUrl(cryptedLink.getCryptedLink().getCryptedUrl());
+                                        if (distributeMultipleLinks) {
+                                            if (link.getContainerUrl() == null) {
+                                                link.setContainerUrl(cryptedLink.getCryptedLink().getCryptedUrl());
+                                            }
+                                        } else {
+                                            if (link.getContentUrl() == null) {
+                                                link.setContentUrl(cryptedLink.getCryptedLink().getCryptedUrl());
+                                            }
                                         }
                                     }
                                     CrawledLink ret = new CrawledLink(link);
@@ -1585,6 +1637,7 @@ public class LinkCrawler {
                                     forwardCrawledLinkInfos(cryptedLink, ret, lm, sourceURLs);
                                 }
                             }
+                            distribute.clear();
                             if (useDelay) {
                                 /* we delay the distribute */
                                 synchronized (distributedLinks) {
@@ -1798,7 +1851,7 @@ public class LinkCrawler {
 
     protected String cleanURL(String cUrl) {
         String protocol = HTMLParser.getProtocol(cUrl);
-        if (protocol != null) {
+        if (protocol != null && !StringUtils.contains(cUrl, "decrypted.com/")) {
             if (StringUtils.containsIgnoreCase(protocol, "viajd")) {
                 return cUrl.replaceFirst("viajd", "");
             } else if (StringUtils.containsIgnoreCase(protocol, "directhttp")) {

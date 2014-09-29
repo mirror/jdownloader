@@ -64,7 +64,6 @@ import jd.plugins.download.RAFDownload;
 import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
 
-import org.appwork.utils.formatter.HexFormatter;
 import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.os.CrossSystem;
 
@@ -1018,22 +1017,38 @@ public class Uploadedto extends PluginForHost {
         }
     }
 
+    private static String byteArrayToHex(final byte[] digest) {
+        final StringBuilder ret = new StringBuilder(digest.length * 2);
+        String tmp;
+        for (final byte d : digest) {
+            tmp = Integer.toHexString(d & 0xFF);
+            if (tmp.length() < 2) {
+                ret.append('0');
+            }
+            ret.append(tmp);
+        }
+        return ret.toString();
+    }
+
     public static String getLoginSHA1Hash(String arg) throws PluginException {
         try {
-            arg = arg.replaceAll("(\\\\|\\\"|\0|')", "\\\\$1");
-            arg = URLDecoder.decode(arg, "ISO-8859-1");
-            arg = arg.replaceAll("[ \t\n\r\0\u000B]", "");
-            while (arg.startsWith("%20")) {
-                arg = arg.substring(3);
+            if (arg != null) {
+                arg = arg.replaceAll("(\\\\|\\\"|\0|')", "\\\\$1");
+                arg = URLDecoder.decode(arg, "ISO-8859-1");
+                arg = arg.replaceAll("[ \t\n\r\0\u000B]", "");
+                while (arg.startsWith("%20")) {
+                    arg = arg.substring(3);
+                }
+                while (arg.endsWith("%20")) {
+                    arg = arg.substring(0, arg.length() - 3);
+                }
+                arg = arg.replaceAll("(\\\\|\\\"|\0|')", "\\\\$1");
+                arg = asciiToLower(arg);
+                final MessageDigest md = MessageDigest.getInstance("SHA1");
+                final byte[] digest = md.digest(arg.getBytes("latin1"));
+                return byteArrayToHex(digest);
             }
-            while (arg.endsWith("%20")) {
-                arg = arg.substring(0, arg.length() - 3);
-            }
-            arg = arg.replaceAll("(\\\\|\\\"|\0|')", "\\\\$1");
-            arg = asciiToLower(arg);
-            final MessageDigest md = MessageDigest.getInstance("SHA1");
-            final byte[] digest = md.digest(arg.getBytes("latin1"));
-            return HexFormatter.byteArrayToHex(digest);
+            return null;
         } catch (final Throwable e) {
             e.printStackTrace();
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);

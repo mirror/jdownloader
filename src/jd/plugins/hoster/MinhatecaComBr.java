@@ -81,7 +81,11 @@ public class MinhatecaComBr extends PluginForHost {
         }
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
-        br.getPage(link.getStringProperty("mainlink", null));
+        final String url = link.getStringProperty("mainlink", null);
+        if (url == null) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
+        br.getPage(url);
         if (br.containsHTML("class=\"noFile\"")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
