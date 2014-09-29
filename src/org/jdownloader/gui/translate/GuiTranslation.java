@@ -5226,4 +5226,10 @@ public interface GuiTranslation extends TranslateInterface {
 
     @Default(lngs = { "en" }, values = { "Description" })
     String UrlOrderTableModel_type_desc();
+
+    @Default(lngs = { "en" }, values = { "Active Task" })
+    String searchcategory_status();
+
+    @Default(lngs = { "en" }, values = { "Please enter the Active Task status you are looking for..." })
+    String searchcategory_status_help();
 }
