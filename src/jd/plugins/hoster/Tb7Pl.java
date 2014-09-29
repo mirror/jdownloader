@@ -93,9 +93,7 @@ public class Tb7Pl extends PluginForHost {
 
         // unfortunatelly there is no list with supported hosts anywhere on the page
         // only PNG image at the main page
-        final ArrayList<String> supportedHosts = new ArrayList<String>(Arrays.asList("turbobit.net", "catshare.net", "rapidu.net", "rapidgator.net",
-                "rg.to", "uploaded.to", "uploaded.net", "ul.to", "oboom.com", "fileparadox.in", "netload.in", "bitshare.com", "freakshare.net",
-                "freakshare.com", "filemonkey.in", "uploadable.ch", "lunaticfiles.com", "fileshark.pl"));
+        final ArrayList<String> supportedHosts = new ArrayList<String>(Arrays.asList("turbobit.net", "catshare.net", "rapidu.net", "rapidgator.net", "rg.to", "uploaded.to", "uploaded.net", "ul.to", "oboom.com", "fileparadox.in", "netload.in", "bitshare.com", "freakshare.net", "freakshare.com", "uploadable.ch", "lunaticfiles.com", "fileshark.pl"));
         if (expired) {
             ai.setExpired(true);
             ai.setStatus("Account expired");
@@ -196,13 +194,12 @@ public class Tb7Pl extends PluginForHost {
         int chunks = 0;
 
         // generated fileshark link allows only 1 chunk
-        if (link.getBrowserUrl().contains("fileshark.pl") ||
-            link.getDownloadURL().contains("fileshark.pl")) {
+        if (link.getBrowserUrl().contains("fileshark.pl") || link.getDownloadURL().contains("fileshark.pl")) {
             chunks = 1;
         }
         dl = jd.plugins.BrowserAdapter.openDownload(br, link, generatedLink, true, chunks);
         if (dl.getConnection().getContentType().equalsIgnoreCase("text/html")) // unknown
-        // error
+            // error
         {
             br.followConnection();
             if (br.getBaseURL().contains("notransfer")) {
@@ -285,9 +282,7 @@ public class Tb7Pl extends PluginForHost {
     public void showAccountDetailsDialog(Account account) {
         AccountInfo ai = account.getAccountInfo();
         long otherHostersLimit = Long.parseLong(ai.getProperty("Other hosters traffic").toString(), 10);
-        jd.gui.UserIO.getInstance().requestMessageDialog("Tb7.pl Account",
-                "Account type: Premium\n" + "TurboBit limit: " + ai.getProperty("Turbobit traffic") +
-                        "\nOther hosters limit: " + SizeFormatter.formatBytes(otherHostersLimit));
+        jd.gui.UserIO.getInstance().requestMessageDialog("Tb7.pl Account", "Account type: Premium\n" + "TurboBit limit: " + ai.getProperty("Turbobit traffic") + "\nOther hosters limit: " + SizeFormatter.formatBytes(otherHostersLimit));
     }
 
 }

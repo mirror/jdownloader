@@ -28,7 +28,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "goo.im" }, urls = { "http://(www\\.)?goo\\.im/[^<>\"]+" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "goo.im" }, urls = { "https?://(www\\.)?goo\\.im/[^<>\"]+" }, flags = { 0 })
 public class GooIm extends PluginForHost {
 
     public GooIm(PluginWrapper wrapper) {
@@ -42,6 +42,11 @@ public class GooIm extends PluginForHost {
 
     private String              DLLINK   = null;
     private static final String NOCHUNKS = "NOCHUNKS";
+
+    public void correctDownloadLink(final DownloadLink link) {
+        /* Forced https */
+        link.setUrlDownload(link.getDownloadURL().replace("http://", "https://"));
+    }
 
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
@@ -64,16 +69,27 @@ public class GooIm extends PluginForHost {
             } catch (Throwable e) {
             }
         }
-        if (br.containsHTML(">The file you requested was not found<")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (br.containsHTML(">The file you requested was not found<")) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
         String filename = br.getRegex("<h3>Filename: ([^<>\"]*?)</h3>").getMatch(0);
-        if (filename == null) filename = br.getRegex("<title>Goo\\.im Downloads \\- Downloading ([^<>\"]*?)</title>").getMatch(0);
         if (filename == null) {
-            if (!br.containsHTML(">Please wait while we prepare your download")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            filename = br.getRegex("<title>Goo\\.im Downloads \\- Downloading ([^<>\"]*?)</title>").getMatch(0);
+        }
+        if (filename == null) {
+            filename = br.getRegex("/([^<>\"]*?) in<br><br>").getMatch(0);
+        }
+        if (filename == null) {
+            if (!br.containsHTML(">Please wait while we prepare your download")) {
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            }
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         link.setName(Encoding.htmlDecode(filename.trim()));
         final String md5 = br.getRegex("class=\\'nounderline\\'>MD5sum: ([a-z0-9]{32})</h3>").getMatch(0);
-        if (md5 != null) link.setMD5Hash(md5);
+        if (md5 != null) {
+            link.setMD5Hash(md5);
+        }
         return AvailableStatus.TRUE;
     }
 
@@ -84,7 +100,9 @@ public class GooIm extends PluginForHost {
             DLLINK = br.getURL();
             int wait = 10;
             final String waittime = br.getRegex("countdown\\((\\d+)\\);").getMatch(0);
-            if (waittime != null) wait = Integer.parseInt(waittime);
+            if (waittime != null) {
+                wait = Integer.parseInt(waittime);
+            }
             sleep(wait * 1001l, downloadLink);
         }
         int maxChunks = 0;
@@ -96,10 +114,13 @@ public class GooIm extends PluginForHost {
             br.followConnection();
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
+        downloadLink.setFinalFileName(Encoding.htmlDecode(getFileNameFromHeader(dl.getConnection())));
         try {
             if (!this.dl.startDownload()) {
                 try {
-                    if (dl.externalDownloadStop()) return;
+                    if (dl.externalDownloadStop()) {
+                        return;
+                    }
                 } catch (final Throwable e) {
                 }
                 /* unknown error, we disable multiple chunks */
