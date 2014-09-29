@@ -68,8 +68,11 @@ public class DummyCNL extends PluginForDecrypt {
 
         HashMap<String, String> params = JSonStorage.restoreFromString(new String(HexFormatter.hexToByteArray(hex), "UTF-8"), new TypeRef<HashMap<String, String>>() {
         }, null);
-
-        String decrypted = decrypt(params.get("crypted"), params.get("jk"), params.get("k"));
+        String crypted = params.get("crypted");
+        if (crypted == null || crypted.trim().length() == 0) {
+            return decryptedLinks;
+        }
+        String decrypted = decrypt(crypted, params.get("jk"), params.get("k"));
         String source = params.get("source");
         String packageName = params.get("package");
         FilePackage fp = null;
@@ -86,7 +89,8 @@ public class DummyCNL extends PluginForDecrypt {
             if (getCurrentLink().getSourceLink().getSourceUrls() != null) {
                 // if link origin comes from decrypter, and we don't set a BrowserUrl, it will be set to it's set to param.toString() and
                 // not getOriginLink().getURL().
-                //try{/*JD2 only*/dl.setContentUrl(getCurrentLink().getSourceLink().getOriginLink().getURL());}catch(Throwable e){/*Stable*/ dl.setBrowserUrl(getCurrentLink().getSourceLink().getOriginLink().getURL());}
+                // try{/*JD2 only*/dl.setContentUrl(getCurrentLink().getSourceLink().getOriginLink().getURL());}catch(Throwable
+                // e){/*Stable*/ dl.setBrowserUrl(getCurrentLink().getSourceLink().getOriginLink().getURL());}
             } else if (source != null) {
                 dl.setContainerUrl(source);
             }

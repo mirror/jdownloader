@@ -93,7 +93,7 @@ public abstract class PluginsC {
     private int                      status                  = STATUS_NOTEXTRACTED;
     protected boolean                askFileDeletion         = true;
 
-    public abstract ContainerStatus callDecryption(File file);
+    public abstract ContainerStatus callDecryption(File file) throws Exception;
 
     // @Override
     public synchronized boolean canHandle(final String data) {
