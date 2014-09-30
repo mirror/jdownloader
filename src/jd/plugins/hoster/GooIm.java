@@ -19,6 +19,7 @@ package jd.plugins.hoster;
 import java.io.IOException;
 
 import jd.PluginWrapper;
+import jd.http.Browser.BrowserException;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
 import jd.plugins.DownloadLink;
@@ -61,7 +62,14 @@ public class GooIm extends PluginForHost {
                 DLLINK = link.getDownloadURL();
                 return AvailableStatus.TRUE;
             } else {
-                br.followConnection();
+                try {
+                    br.followConnection();
+                } catch (final BrowserException ebr) {
+                    if (br.getHttpConnection().getResponseCode() == 405) {
+                        throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+                    }
+                    throw ebr;
+                }
             }
         } finally {
             try {
