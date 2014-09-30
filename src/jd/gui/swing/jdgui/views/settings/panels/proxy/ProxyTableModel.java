@@ -441,7 +441,7 @@ public class ProxyTableModel extends ExtTableModel<AbstractProxySelectorImpl> {
 
             {
                 editorBtn = new JButton("");
-                editorBtn.setFocusable(false);
+
                 editorBtn.addActionListener(new ActionListener() {
 
                     @Override
@@ -552,7 +552,6 @@ public class ProxyTableModel extends ExtTableModel<AbstractProxySelectorImpl> {
             {
                 editorBtn = new JButton("");
 
-                editorBtn.setFocusable(false);
                 editorBtn.addActionListener(new ActionListener() {
 
                     @Override
