@@ -137,7 +137,7 @@ public class FoxLeechCom extends PluginForHost {
     /**
      * Is intended to handle out of date errors which might occur seldom by re-tring a couple of times before we temporarily remove the host
      * from the host list.
-     * 
+     *
      * @param dl
      *            : The DownloadLink
      * @param error
@@ -188,7 +188,7 @@ public class FoxLeechCom extends PluginForHost {
                 throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUnsupported account type!\r\nIf you think this message is incorrect or it makes sense to add support for this account type\r\ncontact us via our support forum.", PluginException.VALUE_ID_PREMIUM_DISABLE);
             }
         }
-        final String[] hosts = br.getRegex("class=\"host\\-icon\\-work\" alt=\"([^<>\"]*?)\"").getColumn(0);
+        final String[] hosts = br.getRegex("title=\"([^<>\"]*?)\" data\\-placement=\"bottom\"><img class=\"host\\-cool\"").getColumn(0);
         final ArrayList<String> supportedHosts = new ArrayList<String>();
         for (final String host : hosts) {
             supportedHosts.add(host);

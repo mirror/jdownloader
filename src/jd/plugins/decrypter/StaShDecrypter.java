@@ -19,6 +19,7 @@ package jd.plugins.decrypter;
 import java.util.ArrayList;
 
 import jd.PluginWrapper;
+import jd.config.SubConfiguration;
 import jd.controlling.ProgressController;
 import jd.http.Browser.BrowserException;
 import jd.nutils.encoding.Encoding;
@@ -36,11 +37,14 @@ public class StaShDecrypter extends PluginForDecrypt {
         super(wrapper);
     }
 
-    private final String INVALIDLINKS = "http://(www\\.)?sta\\.sh/(muro|writer|login)";
+    private final String  INVALIDLINKS      = "http://(www\\.)?sta\\.sh/(muro|writer|login)";
+    private static String FORCEHTMLDOWNLOAD = "FORCEHTMLDOWNLOAD";
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         final String parameter = param.toString();
+        final SubConfiguration cfg = SubConfiguration.getConfig("sta.sh");
+        final boolean force_html_dl = cfg.getBooleanProperty(FORCEHTMLDOWNLOAD, false);
         final DownloadLink main = createDownloadlink(parameter.replace("sta.sh/", "stadecrypted.sh/"));
         if (parameter.matches(INVALIDLINKS)) {
             main.setAvailable(false);
@@ -61,21 +65,31 @@ public class StaShDecrypter extends PluginForDecrypt {
         }
 
         String fpName = br.getRegex("name=\"og:title\" content=\"([^<>\"]*?)\"").getMatch(0);
-        if (fpName == null) fpName = new Regex(parameter, "([a-z0-9]+)$").getMatch(0);
+        if (fpName == null) {
+            fpName = new Regex(parameter, "([a-z0-9]+)$").getMatch(0);
+        }
         fpName = Encoding.htmlDecode(fpName.trim());
 
         for (final String singleLinkData[] : picdata) {
             final String url = singleLinkData[0];
             final String name = Encoding.htmlDecode(singleLinkData[2]);
             final DownloadLink dl = createDownloadlink(url.replace("sta.sh/", "stadecrypted.sh/"));
-            dl.setName(name + ".png");
+            if (force_html_dl) {
+                dl.setName(name + ".html");
+            } else {
+                dl.setName(name + ".png");
+            }
             dl.setAvailable(true);
             decryptedLinks.add(dl);
         }
         final String zipLink = br.getRegex("\"(/zip/[a-z0-9]+)\"").getMatch(0);
         if (zipLink != null) {
             final DownloadLink zip = createDownloadlink("http://stadecrypted.sh" + zipLink);
-            zip.setName(fpName + ".zip");
+            if (force_html_dl) {
+                zip.setName(fpName + ".html");
+            } else {
+                zip.setName(fpName + ".zip");
+            }
             zip.setAvailable(true);
             decryptedLinks.add(zip);
         }

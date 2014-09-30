@@ -59,7 +59,7 @@ public class StaSh extends PluginForHost {
     private final String        INVALIDLINKS         = "http://(www\\.)?sta\\.sh/(muro|writer|login)";
     private final String        TYPE_ZIP             = "http://(www\\.)?sta\\.sh/zip/[a-z0-9]+";
 
-    private static final String FORCEHTMLDOWNLOAD    = "FORCEHTMLDOWNLOAD";
+    private static String       FORCEHTMLDOWNLOAD    = "FORCEHTMLDOWNLOAD";
 
     public void correctDownloadLink(final DownloadLink link) {
         link.setUrlDownload(link.getDownloadURL().replace("stadecrypted.sh/", "sta.sh/"));
