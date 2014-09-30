@@ -54,8 +54,8 @@ public class DeviantArtCom extends PluginForHost {
     private final String        INVALIDLINKS                 = "https?://(www\\.)?forum\\.deviantart\\.com/art/general";
     private final String        MATURECONTENTFILTER          = ">Mature Content Filter<";
     private static Object       LOCK                         = new Object();
-    private static final String FASTLINKCHECK_2              = "FASTLINKCHECK_2";
-    private static final String FORCEHTMLDOWNLOAD            = "FORCEHTMLDOWNLOAD";
+    private static String       FASTLINKCHECK_2              = "FASTLINKCHECK_2";
+    private static String       FORCEHTMLDOWNLOAD            = "FORCEHTMLDOWNLOAD";
 
     private static final String GENERALFILENAMEREGEX         = "<title>([^<>\"]*?) on deviantART</title>";
     private static final String DLLINK_REFRESH_NEEDED        = "http://(www\\.)?deviantart\\.com/download/.+";

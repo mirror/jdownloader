@@ -498,6 +498,11 @@ public class VKontakteRu extends PluginForDecrypt {
     }
 
     private void decryptSingleVideo(final String parameter) throws Exception {
+        // Offline0
+        if (br.containsHTML("This video is unavailable due to the age restrictions\\.")) {
+            logger.info("Account needed for age restricted video: " + parameter);
+            throw new DecrypterException(EXCEPTION_LINKOFFLINE);
+        }
         // Offline1
         if (br.containsHTML("(class=\"button_blue\"><button id=\"msg_back_button\">Wr\\&#243;\\&#263;</button>|<div class=\"body\">[\t\n\r ]+Access denied)")) {
             throw new DecrypterException(EXCEPTION_LINKOFFLINE);
