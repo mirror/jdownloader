@@ -46,7 +46,7 @@ public class FlickrCom extends PluginForDecrypt {
 
     private static final String MAINPAGE     = "http://flickr.com/";
     private static final String FAVORITELINK = "https?://(www\\.)?flickr\\.com/photos/[^<>\"/]+/favorites";
-    private static final String GROUPSLINK   = "https?://(www\\.)?flickr\\.com/groups/[^<>\"/]+/[^<>\"/]+(/[^<>\"/]+)?";
+    private static final String GROUPSLINK   = "https?://(www\\.)?flickr\\.com/groups/[^<>\"/]+([^<>\"]+)?";
     private static final String PHOTOLINK    = "https?://(www\\.)?flickr\\.com/photos/.*?";
     private static final String SETLINK      = "https?://(www\\.)?flickr\\.com/photos/[^<>\"/]+/sets/\\d+";
 
@@ -96,7 +96,7 @@ public class FlickrCom extends PluginForDecrypt {
         br.setCookie(MAINPAGE, "localization", "en-us%3Bus%3Bde");
         br.setCookie(MAINPAGE, "fldetectedlang", "en-us");
 
-        final String parameter = correctParameter(param.toString());
+        String parameter = correctParameter(param.toString());
 
         int lastPage = 1;
         /* Check if link is for hosterplugin */
@@ -281,6 +281,11 @@ public class FlickrCom extends PluginForDecrypt {
                 } else if (parameter.matches(FAVORITELINK)) {
                     fpName = br.getRegex("<title>([^<>\"]*?) \\| Flickr</title>").getMatch(0);
                 } else if (parameter.matches(GROUPSLINK)) {
+                    /* Correct groups links as they are sometimes crippled. */
+                    final String better_link = br.getRegex("<meta property=\"og:url\" content=\"(https?://(www\\.)?flickr\\.com/groups/[^<>\"]*?)\"").getMatch(0);
+                    if (better_link != null) {
+                        parameter = better_link;
+                    }
                     if (picCount == null) {
                         picCount = br.getRegex("<h1>(\\d+(,\\d+)?)</h1>[\t\n\r ]+<h2>Photos</h2>").getMatch(0);
                     }
@@ -307,10 +312,10 @@ public class FlickrCom extends PluginForDecrypt {
                 }
 
                 String getPage = parameter + "/page%s";
-                if (parameter.matches(GROUPSLINK)) {
+                if (parameter.matches(GROUPSLINK) && parameter.endsWith("/")) {
                     // Try other way of loading more pictures for groups links
                     br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
-                    getPage = parameter + "/page%s/?fragment=1";
+                    getPage = parameter + "page%s/?fragment=1";
                 }
                 for (int i = 1; i <= lastPage; i++) {
                     try {
