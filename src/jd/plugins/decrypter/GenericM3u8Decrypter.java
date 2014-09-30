@@ -53,6 +53,7 @@ public class GenericM3u8Decrypter extends PluginForDecrypt {
 
             }
         } else {
+            //
             DownloadLink link = createDownloadlink("m3u8" + param.getCryptedUrl().substring(4));
             if (br.containsHTML("EXT-X-KEY")) {
                 link.setProperty("ENCRYPTED", true);

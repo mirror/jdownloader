@@ -132,7 +132,7 @@ public class GenericM3u8 extends PluginForHost {
         }
 
         name += "." + extension;
-        downloadLink.setFinalFileName(name);
+        downloadLink.setName(name);
         return AvailableStatus.TRUE;
     }
 
