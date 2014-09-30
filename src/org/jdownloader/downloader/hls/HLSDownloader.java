@@ -86,18 +86,25 @@ public class HLSDownloader extends DownloadInterface {
         this.m3uUrl = m3uUrl;
         this.br = br2;
         this.link = link;
+        logger = initLogger(link);
+
+    }
+
+    public LogSource initLogger(final DownloadLink link) {
         PluginForHost plg = link.getLivePlugin();
         if (plg == null) {
             plg = link.getDefaultPlugin();
         }
-        logger = plg.getLogger();
 
+        return plg == null ? null : plg.getLogger();
     }
 
     protected void terminate() {
         if (terminated.getAndSet(true) == false) {
             if (!externalDownloadStop()) {
-                logger.severe("A critical Downloaderror occured. Terminate...");
+                if (logger != null) {
+                    logger.severe("A critical Downloaderror occured. Terminate...");
+                }
             }
         }
     }
@@ -170,7 +177,9 @@ public class HLSDownloader extends DownloadInterface {
 
                         }
                     } catch (Throwable e) {
-                        logger.log(e);
+                        if (logger != null) {
+                            logger.log(e);
+                        }
                     }
 
                 };
@@ -264,7 +273,9 @@ public class HLSDownloader extends DownloadInterface {
             @Override
             public boolean onPostRequest(PostRequest request, HttpResponse response) {
                 try {
-                    logger.info(request.toString());
+                    if (logger != null) {
+                        logger.info(request.toString());
+                    }
                     if (processID != Long.parseLong(request.getParameterbyKey("id"))) {
                         return false;
                     }
@@ -295,7 +306,9 @@ public class HLSDownloader extends DownloadInterface {
                     }
 
                 } catch (Exception e) {
-                    logger.log(e);
+                    if (logger != null) {
+                        logger.log(e);
+                    }
                 }
                 return false;
             }
@@ -303,8 +316,12 @@ public class HLSDownloader extends DownloadInterface {
             @Override
             public boolean onGetRequest(GetRequest request, HttpResponse response) {
                 try {
-                    logger.info("START " + request.getRequestedURL());
-                    logger.info(request.toString());
+                    if (logger != null) {
+                        logger.info("START " + request.getRequestedURL());
+                    }
+                    if (logger != null) {
+                        logger.info(request.toString());
+                    }
                     String id = request.getParameterbyKey("id");
                     if (id == null) {
                         System.out.println(1);
@@ -401,7 +418,9 @@ public class HLSDownloader extends DownloadInterface {
                 } catch (IOException e) {
                     e.printStackTrace();
                 } finally {
-                    logger.info("END " + request.getRequestedURL());
+                    if (logger != null) {
+                        logger.info("END " + request.getRequestedURL());
+                    }
                 }
 
                 return true;
@@ -577,7 +596,9 @@ public class HLSDownloader extends DownloadInterface {
     private void createOutputChannel() throws SkipReasonException {
         try {
             String fileOutput = downloadable.getFileOutput();
-            logger.info("createOutputChannel for " + fileOutput);
+            if (logger != null) {
+                logger.info("createOutputChannel for " + fileOutput);
+            }
             String finalFileOutput = downloadable.getFinalFileOutput();
             outputCompleteFile = new File(fileOutput);
             outputFinalCompleteFile = outputCompleteFile;
@@ -600,7 +621,9 @@ public class HLSDownloader extends DownloadInterface {
     @Override
     public void stopDownload() {
         if (abort.getAndSet(true) == false) {
-            logger.info("externalStop recieved");
+            if (logger != null) {
+                logger.info("externalStop recieved");
+            }
             terminate();
         }
     }

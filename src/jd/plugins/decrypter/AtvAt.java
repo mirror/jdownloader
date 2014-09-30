@@ -31,7 +31,12 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "atv.at" }, urls = { "http://(www\\.)?atv\\.at/[a-z0-9\\-_]+/[a-z0-9\\-_]+/d\\d+/" }, flags = { 0 })
+import org.appwork.utils.logging2.LogSource;
+import org.jdownloader.controlling.ffmpeg.json.Stream;
+import org.jdownloader.controlling.ffmpeg.json.StreamInfo;
+import org.jdownloader.downloader.hls.HLSDownloader;
+
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "atv.at" }, urls = { "http://(www\\.)?atv\\.at/[a-z0-9\\-_]+/[a-z0-9\\-_]+/d\\d+/" }, flags = { 0 })
 public class AtvAt extends PluginForDecrypt {
 
     public AtvAt(PluginWrapper wrapper) {
@@ -98,17 +103,60 @@ public class AtvAt extends PluginForDecrypt {
         name = decodeUnicode(name);
         final DecimalFormat df = new DecimalFormat("000");
         final DecimalFormat episodeFormat = new DecimalFormat("00");
+
         int counter = 1;
         for (String singleLink : allLinks) {
-            final DownloadLink dl = createDownloadlink(singleLink.replace("\\", "").replace("http://", "m3u8://"));
-            if (episodeNr != null) {
-                dl.setFinalFileName(name + "_E" + episodeFormat.format(Integer.parseInt(episodeNr)) + "_" + df.format(counter) + ".mp4");
-            } else {
-                dl.setFinalFileName(name + "_part_" + df.format(counter) + ".mp4");
+
+            br.getPage(singleLink.replace("\\", ""));
+            String quality = "360p";
+            if (br.containsHTML("#EXT-X-STREAM-INF")) {
+                for (String line : Regex.getLines(br.toString())) {
+                    if (!line.startsWith("#")) {
+
+                        DownloadLink link = createDownloadlink(br.getBaseURL() + line);
+
+                        link.setContainerUrl(parameter);
+
+                        try {
+                            // try to get the video quality
+                            HLSDownloader downloader = new HLSDownloader(link, br, link.getDownloadURL()) {
+                                @Override
+                                public LogSource initLogger(DownloadLink link) {
+                                    return getLogger();
+                                }
+                            };
+                            StreamInfo streamInfo = downloader.getProbe();
+                            for (Stream s : streamInfo.getStreams()) {
+                                if ("video".equals(s.getCodec_type())) {
+                                    quality = s.getHeight() + "p";
+                                    break;
+                                }
+                            }
+
+                        } catch (Throwable e) {
+                            getLogger().log(e);
+                        }
+                        StringBuilder finalName = new StringBuilder();
+                        if (episodeNr != null) {
+                            finalName.append(name + "_E" + episodeFormat.format(Integer.parseInt(episodeNr)));
+                        } else {
+                            finalName.append(name + "_part");
+                        }
+                        if (quality != null) {
+                            finalName.append("_").append(quality);
+                        }
+                        quality = null;
+                        String n = finalName.toString() + "_" + df.format(counter);
+
+                        link.setFinalFileName(n + ".mp4");
+                        decryptedLinks.add(link);
+                        counter++;
+
+                    }
+
+                }
             }
-            dl.setAvailable(true);
-            decryptedLinks.add(dl);
-            counter++;
+
         }
         final FilePackage fp = FilePackage.getInstance();
         fp.setName(name);

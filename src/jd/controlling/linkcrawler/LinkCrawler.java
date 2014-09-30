@@ -1763,7 +1763,49 @@ public class LinkCrawler {
         if (dl != null) {
             final String[] sources = link.getSourceUrls();
             final HashSet<String> set = new HashSet<String>();
+            ArrayList<DownloadLink> linkChain = new ArrayList<DownloadLink>();
+            HashSet<Object> loopDetector = new HashSet<Object>();
+            CrawledLink runner = link;
+            String preSetContainerUrl = null;
+            String preSetContentUrl = null;
+            String preSetfinalFilename = null;
 
+            // Search through the de cryption chain, and search for preset informations.
+            while (runner != null) {
+                DownloadLink dlink = runner.getDownloadLink();
+                if (!loopDetector.add(runner)) {
+                    break;
+                }
+                if (dlink != null) {
+                    if (!loopDetector.add(dlink)) {
+                        break;
+                    }
+                    if (preSetContainerUrl == null && dlink.getContainerUrl() != null) {
+                        // of a decrypterplugin set the containerurl, we use the nearest container url
+                        preSetContainerUrl = dlink.getContainerUrl();
+                    }
+                    if (dlink.getContentUrl() != null) {
+                        // if a decrypter sets the contenturl, we use the earliest plugin
+                        preSetContentUrl = dlink.getContentUrl();
+                    }
+                    if (dlink.getFinalFileName() != null) {
+                        // if a decrypter sets the final filename, he should be sure. so we use the earliest finalfilename found.
+                        preSetfinalFilename = dlink.getFinalFileName();
+                    }
+                    linkChain.add(dlink);
+                }
+                runner = runner.getSourceLink();
+            }
+            // only set the predefined urls if these fields are not set yet
+            if (preSetContainerUrl != null && dl.getContainerUrl() == null) {
+                dl.setContainerUrl(preSetContainerUrl);
+            }
+            if (preSetContentUrl != null && dl.getContentUrl() == null) {
+                dl.setContentUrl(preSetContentUrl);
+            }
+            if (preSetfinalFilename != null && dl.getFinalFileName() == null) {
+                dl.setFinalFileName(preSetfinalFilename);
+            }
             set.add(dl.getPluginPatternMatcher());
             if (StringUtils.equals(dl.getPluginPatternMatcher(), dl.getContentUrl())) {
                 dl.setContentUrl(null);
