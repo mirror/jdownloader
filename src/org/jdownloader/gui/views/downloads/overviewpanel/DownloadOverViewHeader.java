@@ -44,11 +44,13 @@ public class DownloadOverViewHeader extends AbstractPanelHeader {
         pu.add(selected);
         pu.add(new JSeparator(JSeparator.HORIZONTAL));
         pu.add(new CheckboxMenuItem(_GUI._.OverViewHeader_actionPerformed_quicksettings(), CFG_GUI.DOWNLOAD_PANEL_OVERVIEW_SETTINGS_VISIBLE));
-        for (DataEntry<AggregatedNumbers> de : overView.createDataEntries()) {
-            if (de.getVisibleKeyHandler() != null) {
-                pu.add(new CheckboxMenuItem(de.getPopupLabel(), de.getVisibleKeyHandler()));
-            }
+        if (overView != null) {
+            for (DataEntry<AggregatedNumbers> de : overView.createDataEntries()) {
+                if (de.getVisibleKeyHandler() != null) {
+                    pu.add(new CheckboxMenuItem(de.getPopupLabel(), de.getVisibleKeyHandler()));
+                }
 
+            }
         }
         int[] insets = LAFOptions.getInstance().getPopupBorderInsets();
 

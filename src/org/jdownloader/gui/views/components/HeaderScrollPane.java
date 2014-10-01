@@ -88,7 +88,7 @@ public class HeaderScrollPane extends JScrollPane {
     }
 
     protected int getHeaderHeight() {
-        return getColumnHeader().getHeight();
+        return getColumnHeader() == null ? 0 : getColumnHeader().getHeight();
     }
 
 }

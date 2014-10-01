@@ -603,22 +603,22 @@ public class PremiumAccountTableModel extends ExtTableModel<AccountEntry> implem
         });
 
         this.addColumn(details = new ExtComponentColumn<AccountEntry>(_GUI._.premiumaccounttablemodel_column_info()) {
-            private JButton      button;
-            private MigPanel     panel;
-            private JButton      rbutton;
-            private MigPanel     rpanel;
+            private JButton      rendererButton;
+            private MigPanel     rendererPanel;
+            private JButton      editorButton;
+            private MigPanel     editorPanel;
             private AccountEntry editing;
 
             {
-                button = new JButton(_GUI._.premiumaccounttablemodel_column_info_button());
+                rendererButton = new JButton(_GUI._.premiumaccounttablemodel_column_info_button());
 
-                panel = new RendererMigPanel("ins 2", "[]", "[16!]");
-                panel.add(button);
-                button.setOpaque(false);
+                rendererPanel = new RendererMigPanel("ins 2", "[]", "[16!]");
+                rendererPanel.add(rendererButton);
+                rendererButton.setOpaque(false);
 
-                rbutton = new JButton(_GUI._.premiumaccounttablemodel_column_info_button());
+                editorButton = new JButton(_GUI._.premiumaccounttablemodel_column_info_button());
 
-                rbutton.addActionListener(new ActionListener() {
+                editorButton.addActionListener(new ActionListener() {
 
                     @Override
                     public void actionPerformed(ActionEvent e) {
@@ -628,14 +628,14 @@ public class PremiumAccountTableModel extends ExtTableModel<AccountEntry> implem
                     }
                 });
 
-                rpanel = new MigPanel("ins 2", "[]", "[16!]");
-                rpanel.add(rbutton);
-                rbutton.setOpaque(false);
+                editorPanel = new MigPanel("ins 2", "[]", "[16!]");
+                editorPanel.add(editorButton);
+                editorButton.setOpaque(false);
             }
 
             @Override
             public int getMaxWidth() {
-                return panel.getPreferredSize().width;
+                return rendererPanel.getPreferredSize().width;
             }
 
             @Override
@@ -645,12 +645,12 @@ public class PremiumAccountTableModel extends ExtTableModel<AccountEntry> implem
 
             @Override
             public int getDefaultWidth() {
-                return panel.getPreferredSize().width;
+                return rendererPanel.getPreferredSize().width;
             }
 
             @Override
             public int getMinWidth() {
-                return panel.getPreferredSize().width;
+                return rendererPanel.getPreferredSize().width;
             }
 
             @Override
@@ -665,13 +665,13 @@ public class PremiumAccountTableModel extends ExtTableModel<AccountEntry> implem
 
             @Override
             protected JComponent getInternalEditorComponent(AccountEntry value, boolean isSelected, int row, int column) {
-                return rpanel;
+                return editorPanel;
             }
 
             @Override
             protected JComponent getInternalRendererComponent(AccountEntry value, boolean isSelected, boolean hasFocus, int row, int column) {
 
-                return panel;
+                return rendererPanel;
             }
 
             @Override
@@ -688,14 +688,14 @@ public class PremiumAccountTableModel extends ExtTableModel<AccountEntry> implem
 
             @Override
             public void resetEditor() {
-                rpanel.setBackground(null);
-                rpanel.setOpaque(false);
+                editorPanel.setBackground(null);
+                editorPanel.setOpaque(false);
             }
 
             @Override
             public void resetRenderer() {
-                panel.setBackground(null);
-                panel.setOpaque(false);
+                rendererPanel.setBackground(null);
+                rendererPanel.setOpaque(false);
             }
 
         });
