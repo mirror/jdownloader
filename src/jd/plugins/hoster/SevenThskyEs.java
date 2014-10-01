@@ -55,7 +55,7 @@ public class SevenThskyEs extends PluginForHost {
 
     // For sites which use this script: http://www.yetishare.com/
     // YetiShareBasic Version 0.3.1-psp
-    // mods: fetchAccountInfo[Changerd expire date]
+    // mods: heavily modified, DO NOT UPGRADE!
     // limit-info:
     // protocol: no https
     // captchatype: null
@@ -178,6 +178,9 @@ public class SevenThskyEs extends PluginForHost {
             for (int i = 1; i <= 3; i++) {
                 logger.info("Handling pre-download page #" + i);
                 continue_link = br.getRegex("\\$\\(\\'\\.download\\-timer\\'\\)\\.html\\(\"<a href=\\'(https?://[^<>\"]*?)\\'").getMatch(0);
+                if (continue_link == null) {
+                    continue_link = br.getRegex("class=\\'btn btn\\-free\\' href=\\'(http[^<>\"]*?)\\'>download now</a>").getMatch(0);
+                }
                 if (continue_link == null && i == 0) {
                     continue_link = downloadLink.getDownloadURL() + "?d=1";
                     logger.info("Could not find continue_link --> Using standard continue_link, continuing...");
@@ -318,16 +321,18 @@ public class SevenThskyEs extends PluginForHost {
                     }
                 }
                 br.setFollowRedirects(true);
-                br.postPage("http://" + this.getHost() + "/login." + TYPE, "submit=Login&submitme=1&loginUsername=" + Encoding.urlEncode(account.getUser()) + "&loginPassword=" + Encoding.urlEncode(account.getPass()));
+                br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
+                br.postPage("http://7thsky.es/ajax/_account_login.ajax.php", "username=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()));
                 final String lang = System.getProperty("user.language");
-                if (!br.containsHTML("/logout\\." + TYPE + "\">logout")) {
+                if (!br.containsHTML("\"login_status\":\"success\"")) {
                     if ("de".equalsIgnoreCase(lang)) {
                         throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUngültiger Benutzername oder ungültiges Passwort!\r\nDu bist dir sicher, dass dein eingegebener Benutzername und Passwort stimmen? Versuche folgendes:\r\n1. Falls dein Passwort Sonderzeichen enthält, ändere es (entferne diese) und versuche es erneut!\r\n2. Gib deine Zugangsdaten per Hand (ohne kopieren/einfügen) ein.", PluginException.VALUE_ID_PREMIUM_DISABLE);
                     } else {
                         throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nInvalid username/password!\r\nYou're sure that the username and password you entered are correct? Some hints:\r\n1. If your password contains special characters, change it (remove them) and try again!\r\n2. Type in your username/password by hand without copy & paste.", PluginException.VALUE_ID_PREMIUM_DISABLE);
                     }
                 }
-                if (br.containsHTML("/upgrade\\." + TYPE + "\">upgrade account</a>") || !br.containsHTML("/upgrade\\." + TYPE + "\">extend account</a>")) {
+                br.getPage("http://7thsky.es/account_home.html");
+                if (br.containsHTML("/upgrade\\." + TYPE + "\">upgrade account</a>") || !br.containsHTML("class=\"badge badge\\-success\">PAID USER</span>")) {
                     account.setProperty("free", true);
                 } else {
                     account.setProperty("free", false);
@@ -371,14 +376,18 @@ public class SevenThskyEs extends PluginForHost {
         } else {
             br.getPage("http://" + this.getHost() + "/upgrade." + TYPE);
             /* If the premium account is expired we'll simply accept it as a free account. */
-            final String expire = br.getRegex("Reverts To Free Account:[\t\n\r ]+</td>[\t\n\r ]+<td>[\t\n\r ]+(\\d{2}/\\d{2}/\\d{4} \\d{2}:\\d{2}:\\d{2})").getMatch(0);
+            String expire = br.getRegex("Reverts To Free Account:[\t\n\r ]+</td>[\t\n\r ]+<td>[\t\n\r ]+(\\d{2}/\\d{2}/\\d{4} \\d{2}:\\d{2}:\\d{2})").getMatch(0);
+            if (expire == null) {
+                expire = br.getRegex("Reverts To Free Account:[\t\n\r ]+</td>[\t\n\r ]+<td>[\t\n\r ]+([^<>\"]*?)<").getMatch(0);
+            }
             if (expire == null) {
                 account.setValid(false);
                 return ai;
             }
+            expire = Encoding.htmlDecode(expire).trim();
             long expire_milliseconds = 0;
             expire_milliseconds = TimeFormatter.getMilliSeconds(expire, "dd/MM/yyyy hh:mm:ss", Locale.ENGLISH);
-            if ((expire_milliseconds - System.currentTimeMillis()) <= 0) {
+            if (!expire.equals("Never") && (expire_milliseconds - System.currentTimeMillis()) <= 0) {
                 account.setProperty("free", true);
                 try {
                     account.setType(AccountType.FREE);
@@ -389,7 +398,9 @@ public class SevenThskyEs extends PluginForHost {
                 maxPrem.set(ACCOUNT_FREE_MAXDOWNLOADS);
                 ai.setStatus("Registered (free) user");
             } else {
-                ai.setValidUntil(expire_milliseconds);
+                if (!expire.equals("Never")) {
+                    ai.setValidUntil(expire_milliseconds);
+                }
                 try {
                     account.setType(AccountType.PREMIUM);
                     account.setMaxSimultanDownloads(ACCOUNT_PREMIUM_MAXDOWNLOADS);

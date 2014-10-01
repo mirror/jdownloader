@@ -38,22 +38,27 @@ import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
 import jd.utils.JDUtilities;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "www.arte.tv" }, urls = { "http://((videos|www)\\.)?arte\\.tv/(guide/[a-z]{2}/[0-9\\-]+|[a-z]{2}/videos)/.+|http://concert\\.arte\\.tv/[a-z]{2}/[a-z0-9\\-]+" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "www.arte.tv" }, urls = { "http://((videos|www)\\.)?arte\\.tv/(guide/[a-z]{2}/[0-9\\-]+|[a-z]{2}/videos)/.+|http://concert\\.arte\\.tv/(de|fr)/[a-z0-9\\-]+" }, flags = { 0 })
 public class ArteMediathekDecrypter extends PluginForDecrypt {
 
-    private static final String TYPE_CONCERT = "http://(www\\.)?concert\\.arte\\.tv/[a-z]{2}/[a-z0-9\\-]+";
-    private static final String TYPE_GUIDE   = "http://((videos|www)\\.)?arte\\.tv/(guide/[a-z]{2}/[0-9\\-]+";
+    private static final String TYPE_CONCERT      = "http://(www\\.)?concert\\.arte\\.tv/(de|fr)/[a-z0-9\\-]+";
+    private static final String TYPE_GUIDE        = "http://((videos|www)\\.)?arte\\.tv/guide/[a-z]{2}/[0-9\\-]+";
 
-    private static final String Q_SUBTITLES  = "Q_SUBTITLES";
-    private static final String Q_BEST       = "Q_BEST";
-    private static final String Q_LOW        = "Q_LOW";
-    private static final String Q_HIGH       = "Q_HIGH";
-    private static final String Q_VERYHIGH   = "Q_VERYHIGH";
-    private static final String Q_HD         = "Q_HD";
-    private static final String HBBTV        = "HBBTV";
-    private static final String THUMBNAIL    = "THUMBNAIL";
+    private static final String Q_SUBTITLES       = "Q_SUBTITLES";
+    private static final String Q_BEST            = "Q_BEST";
+    private static final String Q_LOW             = "Q_LOW";
+    private static final String Q_HIGH            = "Q_HIGH";
+    private static final String Q_VERYHIGH        = "Q_VERYHIGH";
+    private static final String Q_HD              = "Q_HD";
+    private static final String HBBTV             = "HBBTV";
+    private static final String THUMBNAIL         = "THUMBNAIL";
 
-    private static boolean      pluginloaded = false;
+    private static final String Q_LOW_INTERN      = "ld|300p";
+    private static final String Q_HIGH_INTERN     = "md|406p";
+    private static final String Q_VERYHIGH_INTERN = "sd|400p";
+    private static final String Q_HD_INTERN       = "hd|720p";
+
+    private static boolean      pluginloaded      = false;
 
     public ArteMediathekDecrypter(final PluginWrapper wrapper) {
         super(wrapper);
@@ -122,6 +127,9 @@ public class ArteMediathekDecrypter extends PluginForDecrypt {
 
         final SubConfiguration cfg = SubConfiguration.getConfig("arte.tv");
         final boolean BEST = cfg.getBooleanProperty(Q_BEST, false);
+        final boolean preferHBBTV = cfg.getBooleanProperty(HBBTV, true);
+
+        boolean hbbtvGRABBED = false;
 
         ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
 
@@ -145,20 +153,19 @@ public class ArteMediathekDecrypter extends PluginForDecrypt {
                     return null;
                 }
                 br.getPage(tvguideUrl);
-                title = br.getRegex("\"VTI\":\"([^<>\"]*?)\"").getMatch(0);
                 br.getRequest().setHtmlCode(br.toString().replace("\\", ""));
             } else {
-                title = getTitle(br);
                 String ID = new Regex(parameter, "/guide/\\w+/([0-9\\-]+)/").getMatch(0);
                 if (ID == null || lang == null) {
                     return ret;
                 }
-                String tv_channel = br.getRegex("<li class=\"video\" data\\-vid=\"" + ID + "(_[A-Za-z0-9_\\-]+)\\-[A-Za-z]+\">").getMatch(0);
+                String tv_channel = br.getRegex("data\\-vid=(\"|\\')" + ID + "(_[A-Za-z0-9_\\-]+)\\-[A-Za-z]+(\"|\\')>").getMatch(1);
                 if (tv_channel == null) {
-                    tv_channel = "_PLUS7";
+                    return null;
                 }
                 tvguideUrl = "http://org-www.arte.tv/papi/tvguide/videos/stream/player/" + lang + "/" + ID + tv_channel + "-" + lang + "/ALL/ALL.json";
-                if (cfg.getBooleanProperty(HBBTV, false)) {
+                if (preferHBBTV) {
+                    hbbtvGRABBED = true;
                     br.getHeaders().put("User-Agent", "HbbTV/1.1.1 (;;;;;) jd-arte.tv-plugin");
                     tvguideUrl = "http://org-www.arte.tv/papi/tvguide/videos/stream/" + lang + "/" + ID + tv_channel + "-" + lang + "/HBBTV/ALL.json";
                     vsrRegex = "\"VSR\":\\[(.*?)\\]";
@@ -167,6 +174,7 @@ public class ArteMediathekDecrypter extends PluginForDecrypt {
                 }
                 br.getPage(tvguideUrl);
             }
+            title = getTitleAPI(br);
             if (br.containsHTML("<statuscode>wrongParameter</statuscode>")) {
                 return ret;
             }
@@ -178,14 +186,20 @@ public class ArteMediathekDecrypter extends PluginForDecrypt {
             String vsr = br.getRegex(vsrRegex).getMatch(0);
             if (vsr == null) {
                 final DownloadLink link = createDownloadlink(parameter.replace("http://", "decrypted://"));
+                link.setFinalFileName(title);
                 link.setAvailable(false);
                 link.setProperty("offline", true);
                 ret.add(link);
                 return ret;
             }
             for (int i = 0; i < 2; i++) {
-                for (String[] ss : new Regex(vsr, strRegex).getMatches()) {
-                    if (!cfg.getBooleanProperty(HBBTV, true)) {
+                final String[][] qualityInfo = new Regex(vsr, strRegex).getMatches();
+                for (String[] ss : qualityInfo) {
+                    if (hbbtvGRABBED) {
+                        String tmp = ss[0];
+                        ss[0] = ss[1];
+                        ss[1] = tmp;
+                    } else {
                         String l = new Regex(ss[1], "\"versionCode\":\"(VO|VF)").getMatch(0);
                         if (l != null) {
                             l = "VO".equals(l) ? "1" : "2";
@@ -199,11 +213,6 @@ public class ArteMediathekDecrypter extends PluginForDecrypt {
                         }
                     }
                     streamValue = new HashMap<String, String>();
-                    if (cfg.getBooleanProperty(HBBTV, false)) {
-                        String tmp = ss[0];
-                        ss[0] = ss[1];
-                        ss[1] = tmp;
-                    }
                     for (String[] peng : new Regex(ss[1], valRegex).getMatches()) {
                         streamValue.put(peng[0], peng[1]);
                     }
@@ -233,7 +242,10 @@ public class ArteMediathekDecrypter extends PluginForDecrypt {
                 if (!streamType.matches("HTTP_REACH_EQ_\\d|SQ|EQ|HQ") && isStableEnviroment()) {
                     continue;
                 }
-
+                /* Do not decrypt hls streams */
+                if (streamType.contains("HLS")) {
+                    continue;
+                }
                 String url = streamValue.get("url");
                 if (url == null) {
                     url = streamValue.get("VUR");
@@ -258,25 +270,25 @@ public class ArteMediathekDecrypter extends PluginForDecrypt {
                 if (fmt != null) {
                     quality = quality.replaceAll("\\s", "");
                     /* best selection is done at the end */
-                    if ("ld".equals(fmt)) {
+                    if (new Regex(fmt, Q_LOW_INTERN).matches()) {
                         if ((cfg.getBooleanProperty(Q_LOW, true) || BEST) == false) {
                             continue;
                         } else {
                             fmt = "ld";
                         }
-                    } else if ("md".equals(fmt)) {
+                    } else if (new Regex(fmt, Q_HIGH_INTERN).matches()) {
                         if ((cfg.getBooleanProperty(Q_HIGH, true) || BEST) == false) {
                             continue;
                         } else {
                             fmt = "md";
                         }
-                    } else if ("sd".equals(fmt)) {
+                    } else if (new Regex(fmt, Q_VERYHIGH_INTERN).matches()) {
                         if ((cfg.getBooleanProperty(Q_VERYHIGH, true) || BEST) == false) {
                             continue;
                         } else {
                             fmt = "sd";
                         }
-                    } else if ("hd".equals(fmt)) {
+                    } else if (new Regex(fmt, Q_HD_INTERN).matches()) {
                         if ((cfg.getBooleanProperty(Q_HD, true) || BEST) == false) {
                             continue;
                         } else {
@@ -306,14 +318,14 @@ public class ArteMediathekDecrypter extends PluginForDecrypt {
                 link.setProperty("VRA", convertDateFormat(VRA));
                 link.setProperty("VRU", convertDateFormat(VRU));
 
-                if (!cfg.getBooleanProperty(HBBTV, true)) {
+                if (hbbtvGRABBED) {
+                    link.setProperty("directQuality", streamValue.get("VQU"));
+                    link.setProperty("streamingType", streamValue.get("VFO"));
+                } else {
                     link.setAvailable(true);
                     link.setProperty("directQuality", streamValue.get("quality"));
                     link.setProperty("streamingType", streamType);
                     link.setProperty("flashplayer", "http://www.arte.tv/player/v2//jwplayer6/mediaplayer.6.3.3242.swf");
-                } else {
-                    link.setProperty("directQuality", streamValue.get("VQU"));
-                    link.setProperty("streamingType", streamValue.get("VFO"));
                 }
 
                 DownloadLink best = bestMap.get(fmt);
@@ -435,7 +447,7 @@ public class ArteMediathekDecrypter extends PluginForDecrypt {
         return s;
     }
 
-    private String getTitle(Browser br) {
+    private String getTitleSITE(final Browser br) {
         String title = br.getRegex("<title>(.*?) \\| ARTE</title>").getMatch(0);
         // what is ut?
         String titleUT = br.getRegex("<span class=\"BoxHeadlineUT\">([^<]+)</").getMatch(0);
@@ -448,6 +460,14 @@ public class ArteMediathekDecrypter extends PluginForDecrypt {
         if (title != null) {
             title = Encoding.htmlDecode(title + (titleUT != null ? "__" + titleUT.replaceAll(":$", "") : "").trim());
         }
+        if (title == null) {
+            title = "UnknownTitle_" + System.currentTimeMillis();
+        }
+        return title;
+    }
+
+    private String getTitleAPI(final Browser br) {
+        String title = br.getRegex("\"VTI\":\"([^<>\"]*?)\"").getMatch(0);
         if (title == null) {
             title = "UnknownTitle_" + System.currentTimeMillis();
         }

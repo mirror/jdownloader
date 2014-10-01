@@ -92,7 +92,9 @@ public class ShareFlareNet extends PluginForHost {
      * */
     @Override
     public boolean checkLinks(final DownloadLink[] urls) {
-        if (urls == null || urls.length == 0) { return false; }
+        if (urls == null || urls.length == 0) {
+            return false;
+        }
         try {
             final Browser br = new Browser();
             prepBrowser(br);
@@ -131,7 +133,9 @@ public class ShareFlareNet extends PluginForHost {
                         dllink.setFinalFileName(Encoding.htmlDecode(fInfo.getMatch(0)));
                         dllink.setDownloadSize(Long.parseLong(fInfo.getMatch(2)));
                         dllink.setAvailable(true);
-                        if (!md5.equals("0")) dllink.setMD5Hash(md5);
+                        if (!md5.equals("0")) {
+                            dllink.setMD5Hash(md5);
+                        }
                     }
                 }
                 if (index == urls.length) {
@@ -147,8 +151,12 @@ public class ShareFlareNet extends PluginForHost {
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws Exception {
         checkLinks(new DownloadLink[] { downloadLink });
-        if (!downloadLink.isAvailabilityStatusChecked()) { return AvailableStatus.UNCHECKED; }
-        if (downloadLink.isAvailabilityStatusChecked() && !downloadLink.isAvailable()) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
+        if (!downloadLink.isAvailabilityStatusChecked()) {
+            return AvailableStatus.UNCHECKED;
+        }
+        if (downloadLink.isAvailabilityStatusChecked() && !downloadLink.isAvailable()) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
         return AvailableStatus.TRUE;
     }
 
@@ -226,7 +234,9 @@ public class ShareFlareNet extends PluginForHost {
                 br.setCookie(COOKIE_HOST, "lang", "en");
                 final Object ret = account.getProperty("cookies", null);
                 boolean acmatch = Encoding.urlEncode(account.getUser()).matches(account.getStringProperty("name", Encoding.urlEncode(account.getUser())));
-                if (acmatch) acmatch = Encoding.urlEncode(account.getPass()).matches(account.getStringProperty("pass", Encoding.urlEncode(account.getPass())));
+                if (acmatch) {
+                    acmatch = Encoding.urlEncode(account.getPass()).matches(account.getStringProperty("pass", Encoding.urlEncode(account.getPass())));
+                }
                 if (acmatch && ret != null && ret instanceof Map<?, ?> && !force) {
                     final Map<String, String> cookies = (Map<String, String>) ret;
                     if (account.isValid()) {
@@ -243,8 +253,12 @@ public class ShareFlareNet extends PluginForHost {
                  */
                 br.postPage(COOKIE_HOST, "login=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()) + "&act=login");
                 String check = br.getCookie(COOKIE_HOST, "log");
-                if (check == null) check = br.getCookie(COOKIE_HOST, "pas");
-                if (check == null) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+                if (check == null) {
+                    check = br.getCookie(COOKIE_HOST, "pas");
+                }
+                if (check == null) {
+                    throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+                }
                 final HashMap<String, String> cookies = new HashMap<String, String>();
                 final Cookies add = this.br.getCookies(COOKIE_HOST);
                 for (final Cookie c : add.getCookies()) {
@@ -282,7 +296,9 @@ public class ShareFlareNet extends PluginForHost {
         int rd = (int) Math.random() * 6 + 1;
         skymonk.postPage("http://api.letitbit.net/internal/index4.php", "action=LINK_GET_DIRECT&link=" + s + "&free_link=1&sh=" + JDHash.getMD5(String.valueOf(Math.random())) + rd + "&sp=" + (49 + rd) + "&appid=" + JDHash.getMD5(String.valueOf(Math.random())) + "&version=2.12");
         String[] result = skymonk.getRegex("([^\r\n]+)").getColumn(0);
-        if (result == null || result.length == 0) return null;
+        if (result == null || result.length == 0) {
+            return null;
+        }
 
         if ("NO".equals(result[0].trim())) {
             if (result.length > 1) {
@@ -298,7 +314,9 @@ public class ShareFlareNet extends PluginForHost {
                 res.add(r);
             }
         }
-        if (res.size() > 1) return res.get(1);
+        if (res.size() > 1) {
+            return res.get(1);
+        }
         return res.size() == 1 ? res.get(0) : null;
     }
 
@@ -306,7 +324,9 @@ public class ShareFlareNet extends PluginForHost {
     public void handleFree(final DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
         maxFree.set(1);
-        if (getPluginConfig().getBooleanProperty(ENABLEUNLIMITEDSIMULTANMAXFREEDLS, false)) maxFree.set(-1);
+        if (getPluginConfig().getBooleanProperty(ENABLEUNLIMITEDSIMULTANMAXFREEDLS, false)) {
+            maxFree.set(-1);
+        }
         String dllink = checkDirectLink(downloadLink, "directlink");
         if (dllink == null) {
             dllink = getLinkViaSkymonkDownloadMethod(downloadLink.getDownloadURL());
@@ -319,13 +339,18 @@ public class ShareFlareNet extends PluginForHost {
         }
 
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 1);
-        URLConnectionAdapter con = dl.getConnection();
+        handleGeneralServerErrors();
+        final URLConnectionAdapter con = dl.getConnection();
         if (con.getContentType().contains("html") && con.getLongContentLength() < (downloadLink.getDownloadSize() / 2)) {
             downloadLink.setProperty("directlink", Property.NULL);
             logger.warning("the dllink doesn't seem to be a file, following the connection...");
             br.followConnection();
-            if (br.containsHTML(">404 Not Found<")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error", 20 * 60 * 1000l);
-            if (br.containsHTML("title>Error</title>")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error", 30 * 60 * 1000l);
+            if (br.containsHTML(">404 Not Found<")) {
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error", 20 * 60 * 1000l);
+            }
+            if (br.containsHTML("title>Error</title>")) {
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error", 30 * 60 * 1000l);
+            }
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         downloadLink.setProperty("directlink", dllink);
@@ -339,14 +364,22 @@ public class ShareFlareNet extends PluginForHost {
         br.setFollowRedirects(false);
         handleNonApiErrors(downloadLink);
         boolean passed = submitFreeForm();
-        if (passed) logger.info("Sent free form #1");
+        if (passed) {
+            logger.info("Sent free form #1");
+        }
         passed = submitFreeForm();
-        if (passed) logger.info("Sent free form #2");
+        if (passed) {
+            logger.info("Sent free form #2");
+        }
         passed = submitFreeForm();
-        if (passed) logger.info("Sent free form #3");
+        if (passed) {
+            logger.info("Sent free form #3");
+        }
 
         String urlPrefix = new Regex(br.getURL(), "http://(www\\.)?([a-z0-9]+\\.)shareflare\\.net/.+").getMatch(1);
-        if (urlPrefix == null) urlPrefix = "";
+        if (urlPrefix == null) {
+            urlPrefix = "";
+        }
         AJAXMAINURL = "http://" + urlPrefix + "shareflare.net";
 
         /** Captcha START */
@@ -374,11 +407,17 @@ public class ShareFlareNet extends PluginForHost {
         if (br.containsHTML("(api\\.recaptcha\\.net|google\\.com/recaptcha/api/)") || FORCERECAPTCHA) {
             dlFunction = br.getRegex("function getLink\\(\\)(.*?)(function|</script>)").getMatch(0);
             String rcID = br.getRegex("challenge\\?k=([^<>\"]*?)\"").getMatch(0);
-            if (rcID == null) rcID = Encoding.Base64Decode(ShareFlareNet.RCKEY);
-            if (dlFunction == null || rcID == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            if (rcID == null) {
+                rcID = Encoding.Base64Decode(ShareFlareNet.RCKEY);
+            }
+            if (dlFunction == null || rcID == null) {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
             final String rcControl = new Regex(dlFunction, "var recaptcha_control_field = \\'([^<>\"]*?)\\'").getMatch(0);
             ajaxPostpage = new Regex(dlFunction, "\\$\\.post\\(\"(/ajax/[^<>\"]*?)\"").getMatch(0);
-            if (ajaxPostpage == null || rcControl == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            if (ajaxPostpage == null || rcControl == null) {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
             ajaxPostpage = AJAXMAINURL + ajaxPostpage;
             final PluginForHost recplug = JDUtilities.getPluginForHost("DirectHTTP");
             jd.plugins.hoster.DirectHTTP.Recaptcha rc = ((DirectHTTP) recplug).getReCaptcha(br);
@@ -397,7 +436,9 @@ public class ShareFlareNet extends PluginForHost {
                 }
                 break;
             }
-            if (ajaxBR.toString().length() < 2 || ajaxBR.toString().contains("error_wrong_captcha")) throw new PluginException(LinkStatus.ERROR_CAPTCHA);
+            if (ajaxBR.toString().length() < 2 || ajaxBR.toString().contains("error_wrong_captcha")) {
+                throw new PluginException(LinkStatus.ERROR_CAPTCHA);
+            }
 
         } else if (br.containsHTML("vc = new videoCaptcha\\(\\$\\(\\'#captchav\\'\\)")) {
             if (ShareFlareNet.TRYTOGETRECAPTCHA) {
@@ -445,22 +486,34 @@ public class ShareFlareNet extends PluginForHost {
         /** Captcha END */
 
         // Downloadlimit is per day so let's just wait 3 hours
-        if (ajaxBR.containsHTML("error_free_download_blocked")) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 3 * 60 * 60 * 1000l);
-        if (ajaxBR.containsHTML("callback_file_unavailable")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "ServerError", 30 * 60 * 1000l);
+        if (ajaxBR.containsHTML("error_free_download_blocked")) {
+            throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 3 * 60 * 60 * 1000l);
+        }
+        if (ajaxBR.containsHTML("callback_file_unavailable")) {
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "ServerError", 30 * 60 * 1000l);
+        }
         LinkedList<String> finallinksx = new LinkedList<String>();
         String[] finallinks = ajaxBR.getRegex("\"(http:[^<>\"]*?)\"").getColumn(0);
         // More comon for shareflare.net
-        if ((finallinks == null || finallinks.length == 0) && ajaxBR.toString().length() < 500) finallinks = ajaxBR.getRegex("(http:[^<>\"].+)").getColumn(0);
-        if (finallinks == null || finallinks.length == 0) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
+        if ((finallinks == null || finallinks.length == 0) && ajaxBR.toString().length() < 500) {
+            finallinks = ajaxBR.getRegex("(http:[^<>\"].+)").getColumn(0);
+        }
+        if (finallinks == null || finallinks.length == 0) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         for (final String finallink : finallinks) {
-            if (!finallinksx.contains(finallink) && finallink.startsWith("http")) finallinksx.add(finallink);
+            if (!finallinksx.contains(finallink) && finallink.startsWith("http")) {
+                finallinksx.add(finallink);
+            }
         }
         // Grab last links, this might changes and has to be fixed if users get
         // "server error" in JD while it's working via browser. If this is
         // changed often we should consider trying the whole list of finallinks.
         final String url = finallinksx.peekLast();
         if (url == null || url.length() > 1000 || !url.startsWith("http")) {
-            if (ajaxBR.containsHTML("error_free_download_blocked")) { throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, "Free download blocked", 2 * 60 * 60 * 1000l); }
+            if (ajaxBR.containsHTML("error_free_download_blocked")) {
+                throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, "Free download blocked", 2 * 60 * 60 * 1000l);
+            }
             logger.warning("url couldn't be found!");
             logger.severe(url);
             logger.severe(ajaxBR.toString());
@@ -475,7 +528,9 @@ public class ShareFlareNet extends PluginForHost {
     private boolean submitFreeForm() throws Exception {
         // this finds the form to "click" on the next "free download" button
         Form[] allforms = br.getForms();
-        if (allforms == null || allforms.length == 0) return false;
+        if (allforms == null || allforms.length == 0) {
+            return false;
+        }
         Form down = null;
         for (Form singleform : allforms) {
             if (singleform.containsHTML("md5crypt") && singleform.getAction() != null && !singleform.containsHTML("/sms/check")) {
@@ -483,7 +538,9 @@ public class ShareFlareNet extends PluginForHost {
                 break;
             }
         }
-        if (down == null) return false;
+        if (down == null) {
+            return false;
+        }
         br.submitForm(down);
         return true;
     }
@@ -498,13 +555,18 @@ public class ShareFlareNet extends PluginForHost {
                 logger.info("Wrong password, disabling the account!");
                 throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
             }
-            if (br.containsHTML("\"data\":\"no mirrors\"")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-            if (br.containsHTML("\"data\":\"file is not found\"")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            if (br.containsHTML("\"data\":\"no mirrors\"")) {
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            }
+            if (br.containsHTML("\"data\":\"file is not found\"")) {
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            }
             dlUrl = br.getRegex("\"(http:[^<>\"]*?)\"").getMatch(0);
-            if (dlUrl != null)
+            if (dlUrl != null) {
                 dlUrl = dlUrl.replace("\\", "");
-            else
+            } else {
                 dlUrl = handleOldPremiumPassWay(account, downloadLink);
+            }
 
         } else {
             login(account, false);
@@ -514,11 +576,19 @@ public class ShareFlareNet extends PluginForHost {
             dlUrl = getPremiumDllink();
         }
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dlUrl, true, 1);
+        handleGeneralServerErrors();
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl.startDownload();
+    }
+
+    private void handleGeneralServerErrors() throws PluginException {
+        if (dl.getConnection().getResponseCode() == 504) {
+            logger.info("Serverside 504 timeout --> Download impossible");
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 504", 30 * 60 * 1000l);
+        }
     }
 
     // NOTE: Old, tested 15.11.12, works!
@@ -530,14 +600,18 @@ public class ShareFlareNet extends PluginForHost {
         handleNonApiErrors(downloadLink);
         Form premForm = null;
         Form allForms[] = br.getForms();
-        if (allForms == null || allForms.length == 0) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (allForms == null || allForms.length == 0) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         for (Form aForm : allForms) {
             if (aForm.containsHTML("\"pass\"")) {
                 premForm = aForm;
                 break;
             }
         }
-        if (premForm == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (premForm == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         premForm.put("pass", Encoding.urlEncode(account.getPass()));
         br.submitForm(premForm);
         if (br.containsHTML("<b>Given password does not exist")) {
@@ -546,7 +620,9 @@ public class ShareFlareNet extends PluginForHost {
         }
         /** 1 point = 1 GB */
         String points = br.getRegex(">Points:</span>([0-9\\.]+)\\&nbsp;").getMatch(0);
-        if (points == null) points = br.getRegex("<p>You have: ([0-9\\.]+) Points</p>").getMatch(0);
+        if (points == null) {
+            points = br.getRegex("<p>You have: ([0-9\\.]+) Points</p>").getMatch(0);
+        }
         if (points != null) {
             AccountInfo ai = account.getAccountInfo();
             if (ai == null) {
@@ -555,7 +631,9 @@ public class ShareFlareNet extends PluginForHost {
             }
             ai.setTrafficLeft(SizeFormatter.getSize(points + "GB"));
         }
-        if (br.containsHTML("(>The file is temporarily unavailable for download|Please try a little bit later\\.<)")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Servererror", 60 * 60 * 1000l);
+        if (br.containsHTML("(>The file is temporarily unavailable for download|Please try a little bit later\\.<)")) {
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Servererror", 60 * 60 * 1000l);
+        }
         String dlUrl = getPremiumDllink();
         if (dlUrl == null) {
             if (br.containsHTML("The premium key you provided does not exist")) {
@@ -572,7 +650,9 @@ public class ShareFlareNet extends PluginForHost {
         final String allLinks = br.getRegex("var direct_links = \\{(.*?)\\};").getMatch(0);
         if (allLinks != null) {
             final String[] theLinks = new Regex(allLinks, "\"(http[^<>\"]*?)\"").getColumn(0);
-            if (theLinks != null && theLinks.length != 0) finallink = theLinks[theLinks.length - 1];
+            if (theLinks != null && theLinks.length != 0) {
+                finallink = theLinks[theLinks.length - 1];
+            }
         }
         return finallink;
     }
@@ -596,7 +676,9 @@ public class ShareFlareNet extends PluginForHost {
         /** Ticket Time */
         int wait = 60;
         String waittime = br.getRegex("id=\"seconds\" style=\"font\\-size:18px\">(\\d+)</span>").getMatch(0);
-        if (waittime == null) waittime = br.getRegex("seconds = (\\d+)").getMatch(0);
+        if (waittime == null) {
+            waittime = br.getRegex("seconds = (\\d+)").getMatch(0);
+        }
         if (waittime != null) {
             logger.info("Waittime found, waittime is " + waittime + " seconds .");
             wait = Integer.parseInt(waittime);
@@ -615,7 +697,9 @@ public class ShareFlareNet extends PluginForHost {
         /* we need to remove the newline in old browser */
         final String resp = br.toString().replaceAll("%0D%0A", "").trim();
         if (!"1".equals(resp)) {
-            if (br.containsHTML("No htmlCode read")) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, "Daily limit reached", 60 * 60 * 1000l);
+            if (br.containsHTML("No htmlCode read")) {
+                throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, "Daily limit reached", 60 * 60 * 1000l);
+            }
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
     }
@@ -643,7 +727,9 @@ public class ShareFlareNet extends PluginForHost {
         /*
          * last time they did not block the useragent, we just need this stuff below ;)
          */
-        if (br == null) { return; }
+        if (br == null) {
+            return;
+        }
         br.getHeaders().put("Accept", "*/*");
         br.getHeaders().put("Pragma", "no-cache");
         br.getHeaders().put("Cache-Control", "no-cache");
@@ -653,7 +739,9 @@ public class ShareFlareNet extends PluginForHost {
 
     private Browser prepBrowser(Browser prepBr) {
         // define custom browser headers and language settings.
-        if (prepBr == null) prepBr = new Browser();
+        if (prepBr == null) {
+            prepBr = new Browser();
+        }
         if (agent == null) {
             /* we first have to load the plugin, before we can reference it */
             JDUtilities.getPluginForHost("mediafire.com");
