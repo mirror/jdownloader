@@ -24,7 +24,7 @@ public class ContainerPluginController {
     }
 
     public void init() {
-        List<PluginsC> plugins = new ArrayList<PluginsC>();
+        final List<PluginsC> plugins = new ArrayList<PluginsC>();
         try {
             plugins.add(new org.jdownloader.container.JD1Import());
         } catch (final Throwable e) {
@@ -69,14 +69,20 @@ public class ContainerPluginController {
     }
 
     public void setList(List<PluginsC> list) {
-        if (list == null) return;
+        if (list == null) {
+            return;
+        }
         this.list = list;
     }
 
     private void lazyInit() {
-        if (list != null) return;
+        if (list != null) {
+            return;
+        }
         synchronized (this) {
-            if (list != null) return;
+            if (list != null) {
+                return;
+            }
             init();
         }
     }
@@ -84,7 +90,9 @@ public class ContainerPluginController {
     public PluginsC get(String displayName) {
         lazyInit();
         for (PluginsC p : list) {
-            if (p.getName().equalsIgnoreCase(displayName)) return p;
+            if (p.getName().equalsIgnoreCase(displayName)) {
+                return p;
+            }
         }
         return null;
     }
@@ -93,10 +101,14 @@ public class ContainerPluginController {
         lazyInit();
         StringBuilder sb = new StringBuilder("");
         for (final PluginsC act : list) {
-            if (filter != null && !new Regex(act.getName(), filter).matches()) continue;
+            if (filter != null && !new Regex(act.getName(), filter).matches()) {
+                continue;
+            }
             String exs[] = new Regex(act.getSupportedLinks().pattern(), "\\.([a-zA-Z0-9]+)").getColumn(0);
             for (String ex : exs) {
-                if (sb.length() > 0) sb.append("|");
+                if (sb.length() > 0) {
+                    sb.append("|");
+                }
                 sb.append(".").append(ex);
             }
         }

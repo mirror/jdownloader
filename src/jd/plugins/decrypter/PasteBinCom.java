@@ -59,8 +59,12 @@ public class PasteBinCom extends PluginForDecrypt {
             return decryptedLinks;
         }
         logger.info("Found " + links.length + " links in total.");
-        for (String dl : links)
-            if (!dl.contains(parameter) && !new Regex(dl, "http://(www\\.)?pastebin\\.com/(raw.*?=)?[0-9A-Za-z]+").matches()) decryptedLinks.add(createDownloadlink(dl));
+        for (String dl : links) {
+            if (!dl.contains(parameter) && !new Regex(dl, "http://(www\\.)?pastebin\\.com/(raw.*?=)?[0-9A-Za-z]+").matches()) {
+                final DownloadLink link = createDownloadlink(dl);
+                decryptedLinks.add(link);
+            }
+        }
 
         return decryptedLinks;
     }

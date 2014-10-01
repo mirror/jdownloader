@@ -31,7 +31,7 @@ import jd.plugins.PluginForDecrypt;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "filer.net" }, urls = { "http://(www\\.)?filer.net/folder/[a-z0-9]+" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "filer.net" }, urls = { "https?://(www\\.)?filer.net/folder/[a-z0-9]+" }, flags = { 0 })
 public class Flr extends PluginForDecrypt {
 
     public Flr(PluginWrapper wrapper) {
@@ -61,13 +61,19 @@ public class Flr extends PluginForDecrypt {
             for (int i = 1; i <= 3; i++) {
                 final String passCode = getUserInput("Password?", param);
                 br.getPage("http://api.filer.net/api/folder/" + folderID + ".json?password=" + Encoding.urlEncode(passCode));
-                if (getJson("code", br.toString()).equals("201")) continue;
+                if (getJson("code", br.toString()).equals("201")) {
+                    continue;
+                }
                 break;
             }
-            if (getJson("code", br.toString()).equals("201")) throw new DecrypterException(DecrypterException.PASSWORD);
+            if (getJson("code", br.toString()).equals("201")) {
+                throw new DecrypterException(DecrypterException.PASSWORD);
+            }
         }
         String fpName = getJson("name", br.toString());
-        if (fpName == null) fpName = "filer.net folder: " + folderID;
+        if (fpName == null) {
+            fpName = "filer.net folder: " + folderID;
+        }
         final String allLinks = br.getRegex("\"files\":\\[(.*?)\\]").getMatch(0);
         final String[] linkInfo = new Regex(allLinks, "\\{(.*?)\\}").getColumn(0);
         if (linkInfo == null || linkInfo.length == 0) {
@@ -90,7 +96,9 @@ public class Flr extends PluginForDecrypt {
 
     private String getJson(final String parameter, final String source) {
         String result = new Regex(source, "\"" + parameter + "\":(\\d+)").getMatch(0);
-        if (result == null) result = new Regex(source, "\"" + parameter + "\":\"([^<>\"]*?)\"").getMatch(0);
+        if (result == null) {
+            result = new Regex(source, "\"" + parameter + "\":\"([^<>\"]*?)\"").getMatch(0);
+        }
         return result;
     }
 
