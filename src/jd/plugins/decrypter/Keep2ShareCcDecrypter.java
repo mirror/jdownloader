@@ -55,7 +55,7 @@ public class Keep2ShareCcDecrypter extends PluginForDecrypt {
             logger.warning("Decrypter broken for link: " + param.toString());
             return null;
         }
-        final String parameter = host + "/file/" + uid;
+        final String parameter = host + "/file/" + uid + "?ajax=yw1&pageSize=10000";
         ((jd.plugins.hoster.Keep2ShareCc) plugin).getPage(parameter);
         // Check if we have a single link or a folder
         if (br.containsHTML("class=\"summary\"")) {
