@@ -3,6 +3,7 @@ package org.jdownloader.extensions.schedulerV2.actions;
 import jd.controlling.reconnect.Reconnecter;
 
 import org.jdownloader.extensions.schedulerV2.helpers.ActionParameter;
+import org.jdownloader.extensions.schedulerV2.translate.T;
 
 public class ReconnectAction implements IScheduleAction {
 
@@ -13,7 +14,7 @@ public class ReconnectAction implements IScheduleAction {
 
     @Override
     public String getReadableName() {
-        return "Reconnect"; // TODO
+        return T._.action_Reconnect();
     }
 
     @Override

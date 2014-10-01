@@ -3,6 +3,7 @@ package org.jdownloader.extensions.schedulerV2.helpers;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.jdownloader.extensions.schedulerV2.actions.DisableSpeedLimitAction;
 import org.jdownloader.extensions.schedulerV2.actions.DisableReconnectAction;
 import org.jdownloader.extensions.schedulerV2.actions.EnableReconnectAction;
 import org.jdownloader.extensions.schedulerV2.actions.IScheduleAction;
@@ -20,14 +21,15 @@ public class ActionHelper {
 
     public static final List<IScheduleAction> ACTIONS = new ArrayList<IScheduleAction>() {
                                                           {
-                                                              add(new ReconnectAction());
                                                               add(new StartDownloadAction());
                                                               add(new StopDownloadAction());
                                                               add(new SetDownloadspeedAction());
+                                                              add(new DisableSpeedLimitAction());
                                                               add(new SetConnectionsAction());
                                                               add(new SetChunksAction());
                                                               add(new PauseDownloadAction());
                                                               add(new UnpauseDownloadAction());
+                                                              add(new ReconnectAction());
                                                               add(new EnableReconnectAction());
                                                               add(new DisableReconnectAction());
                                                           }

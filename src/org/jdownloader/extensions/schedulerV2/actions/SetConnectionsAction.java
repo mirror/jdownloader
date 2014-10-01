@@ -1,17 +1,18 @@
 package org.jdownloader.extensions.schedulerV2.actions;
 
 import org.jdownloader.extensions.schedulerV2.helpers.ActionParameter;
+import org.jdownloader.extensions.schedulerV2.translate.T;
 
 public class SetConnectionsAction implements IScheduleAction {
 
     @Override
     public String getStorableID() {
-        return "SET_CHUNKS";
+        return "SET_CONNECTIONS";
     }
 
     @Override
     public String getReadableName() {
-        return "Set Chunks";
+        return T._.action_setConnections();
     }
 
     @Override

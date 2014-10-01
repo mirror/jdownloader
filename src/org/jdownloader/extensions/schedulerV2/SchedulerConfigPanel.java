@@ -74,24 +74,12 @@ public class SchedulerConfigPanel extends ExtensionConfigPanel<SchedulerExtensio
 
     }
 
-    // @Override
-    // protected Header initHeader(SchedulerExtension plg) {
-    // setLayout(new MigLayout("ins 0, wrap 1", "[][grow,fill]", "[]"));
-    // return super.initHeader(plg);
-    // }
-
     private void initPanel() {
         myContainer.removeAll();
         myContainer.setLayout("ins 0, wrap 1", "[grow]", "[][]");// TODO debug here
         myContainer.add(SwingUtils.toBold(lbl = new JLabel("THIS EXTENSION IS STILL UNDER CONSTRUCTION. Feel free to test it and to give Feedback.")));
         lbl.setForeground(LAFOptions.getInstance().getColorForErrorForeground());
 
-        // myContainer.add(table = new AdvancedTable(model = new AdvancedConfigTableModel("SchedulerExtension") {
-        // @Override
-        // public void refresh(String filterText) {
-        // _fireTableStructureChanged(register(), true);
-        // }
-        // }), "spanx,grow");
         table = new SchedulerTable(new ScheduleTableModel());
         myContainer.add(new JScrollPane(table), "grow");
 

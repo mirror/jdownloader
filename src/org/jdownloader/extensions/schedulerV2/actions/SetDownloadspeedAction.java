@@ -1,17 +1,18 @@
 package org.jdownloader.extensions.schedulerV2.actions;
 
 import org.jdownloader.extensions.schedulerV2.helpers.ActionParameter;
+import org.jdownloader.extensions.schedulerV2.translate.T;
 
 public class SetDownloadspeedAction implements IScheduleAction {
 
     @Override
     public String getStorableID() {
-        return "SET_DOWNLOOADSPEED";
+        return "SET_DOWNLOADSPEED";
     }
 
     @Override
     public String getReadableName() {
-        return "Set Downloadspeed";
+        return T._.action_setDownloadspeed();
     }
 
     @Override

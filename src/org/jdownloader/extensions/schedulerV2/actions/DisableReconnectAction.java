@@ -1,17 +1,18 @@
 package org.jdownloader.extensions.schedulerV2.actions;
 
 import org.jdownloader.extensions.schedulerV2.helpers.ActionParameter;
+import org.jdownloader.extensions.schedulerV2.translate.T;
 
 public class DisableReconnectAction implements IScheduleAction {
 
     @Override
     public String getStorableID() {
-        return "ENABLE_RECONNECT";
+        return "DISABLE_RECONNECT";
     }
 
     @Override
     public String getReadableName() {
-        return "Enable Reconnect";
+        return T._.action_disableReconnect();
     }
 
     @Override
