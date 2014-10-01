@@ -67,13 +67,22 @@ public class AccountAPIImplV2 implements AccountAPIV2 {
             if (queryParams.isTrafficLeft()) {
                 AccountInfo ai = acc.getAccountInfo();
                 if (ai != null) {
-                    accas.setTrafficLeft(ai.getTrafficLeft());
-
+                    if (ai.isUnlimitedTraffic()) {
+                        accas.setTrafficLeft(-1l);
+                    } else {
+                        accas.setTrafficLeft(ai.getTrafficLeft());
+                    }
                 }
             }
             if (queryParams.isTrafficMax()) {
                 AccountInfo ai = acc.getAccountInfo();
-                accas.setTrafficMax(ai.getTrafficMax());
+                if (ai != null) {
+                    if (ai.isUnlimitedTraffic()) {
+                        accas.setTrafficMax(-1l);
+                    } else {
+                        accas.setTrafficMax(ai.getTrafficMax());
+                    }
+                }
 
             }
             if (queryParams.isEnabled()) {
