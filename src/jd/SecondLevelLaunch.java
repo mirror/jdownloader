@@ -107,7 +107,6 @@ import org.jdownloader.controlling.FileCreationManager;
 import org.jdownloader.controlling.packagizer.PackagizerController;
 import org.jdownloader.extensions.ExtensionController;
 import org.jdownloader.extensions.extraction.ArchiveController;
-import org.jdownloader.gui.swt.widgets.NativeUtils;
 import org.jdownloader.images.NewTheme;
 import org.jdownloader.logging.LogController;
 import org.jdownloader.osevents.OperatingSystemEventSender;
@@ -129,10 +128,15 @@ import org.jdownloader.updatev2.gui.LAFOptions;
 
 public class SecondLevelLaunch {
     static {
-        if (System.getProperty("nativeswing") != null) {
-            NativeUtils.init();
+        try {
+            if (!org.appwork.utils.Application.isHeadless() && System.getProperty("nativeswing") != null) {
+                org.jdownloader.gui.swt.widgets.NativeUtils.init();
+            }
+        } catch (final Throwable e) {
+            e.printStackTrace();
+        } finally {
+            statics();
         }
-        statics();
     }
 
     private static LogSource                 LOG;
