@@ -3,6 +3,7 @@ package org.jdownloader.extensions.schedulerV2.actions;
 import jd.controlling.downloadcontroller.DownloadWatchDog;
 
 import org.jdownloader.extensions.schedulerV2.helpers.ActionParameter;
+import org.jdownloader.extensions.schedulerV2.translate.T;
 
 public class StopDownloadAction implements IScheduleAction {
 
@@ -13,7 +14,7 @@ public class StopDownloadAction implements IScheduleAction {
 
     @Override
     public String getReadableName() {
-        return "Stop Download"; // TODO
+        return T._.action_stopDownload();
     }
 
     @Override

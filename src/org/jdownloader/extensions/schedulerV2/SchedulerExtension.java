@@ -52,7 +52,6 @@ public class SchedulerExtension extends AbstractExtension<SchedulerConfig, Sched
     }
 
     public SchedulerConfigPanel getConfigPanel() {
-        boolean b = getSettings().isBlablablaEnabled();
         return configPanel;
     }
 

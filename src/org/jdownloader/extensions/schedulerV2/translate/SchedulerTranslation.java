@@ -66,4 +66,73 @@ public interface SchedulerTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "Hourly, at minute %s1" })
     String timeformat_repeats_hourly(String minute);
 
+    @Default(lngs = { "en" }, values = { "Time / Interval" })
+    String addScheduleEntryDialog_header_time();
+
+    @Default(lngs = { "en" }, values = { "Repeat" })
+    String addScheduleEntryDialog_repeat();
+
+    @Default(lngs = { "en" }, values = { "No parameters to set." })
+    String addScheduleEntryDialog_no_parameter();
+
+    @Default(lngs = { "en" }, values = { "Speed" })
+    String addScheduleEntryDialog_speed();
+
+    @Default(lngs = { "en" }, values = { "Date" })
+    String addScheduleEntryDialog_date();
+
+    @Default(lngs = { "en" }, values = { "Time" })
+    String addScheduleEntryDialog_time();
+
+    @Default(lngs = { "en" }, values = { "Hours" })
+    String addScheduleEntryDialog_hours();
+
+    @Default(lngs = { "en" }, values = { "Minutes" })
+    String addScheduleEntryDialog_minutes();
+
+    @Default(lngs = { "en" }, values = { "Minute" })
+    String addScheduleEntryDialog_minute();
+
+    @Default(lngs = { "en" }, values = { "Number" })
+    String addScheduleEntryDialog_number();
+
+    @Default(lngs = { "en" }, values = { "Action & Parameters" })
+    String addScheduleEntryDialog_actionParameters();
+
+    @Default(lngs = { "en" }, values = { "Schedule" })
+    String addScheduleEntryDialog_defaultScheduleName();
+
+    @Default(lngs = { "en" }, values = { "Set concurrent connections" })
+    String action_setConnections();
+
+    @Default(lngs = { "en" }, values = { "Enable reconnect" })
+    String action_enableReconnect();
+
+    @Default(lngs = { "en" }, values = { "Disable reconnect" })
+    String action_disableReconnect();
+
+    @Default(lngs = { "en" }, values = { "Pause downloads" })
+    String action_pauseDownloads();
+
+    @Default(lngs = { "en" }, values = { "Reconnect" })
+    String action_Reconnect();
+
+    @Default(lngs = { "en" }, values = { "Set downloadspeed" })
+    String action_setDownloadspeed();
+
+    @Default(lngs = { "en" }, values = { "Start download" })
+    String action_startDownload();
+
+    @Default(lngs = { "en" }, values = { "Set chunks per file" })
+    String action_setChunks();
+
+    @Default(lngs = { "en" }, values = { "Stop download" })
+    String action_stopDownload();
+
+    @Default(lngs = { "en" }, values = { "Unpause downloads" })
+    String action_unpauseDownload();
+
+    @Default(lngs = { "en" }, values = { "Disable speed limit" })
+    String action_disableSpeedLimit();
+
 }
