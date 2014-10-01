@@ -19,6 +19,7 @@ package jd.plugins.hoster;
 import java.io.IOException;
 
 import jd.PluginWrapper;
+import jd.http.Browser;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.plugins.DownloadLink;
@@ -35,51 +36,71 @@ public class SoundOwlCom extends PluginForHost {
         super(wrapper);
     }
 
+    private String fuid = null;
+    private String link = null;
+
     @Override
     public String getAGBLink() {
         return "http://soundowl.com/";
     }
 
+    private String getFUID(final DownloadLink downloadLink) {
+        return getFUID(downloadLink.getDownloadURL());
+    }
+
+    private String getFUID(final String link) {
+        String fuid = new Regex(link, "\\.com/track/([^/]+)").getMatch(0);
+        if (fuid == null) {
+            fuid = new Regex(link, "dl\\.soundowl\\.com/([a-z0-9]+)\\.mp3").getMatch(0);
+        }
+        return fuid;
+    }
+
     public void correctDownloadLink(final DownloadLink link) {
         if (link.getDownloadURL().contains("dl.")) {
-            link.setUrlDownload("http://soundowl.com/track/" + new Regex(link.getDownloadURL(), "\\.com/([^<>]+)\\.").getMatch(0));
+            link.setUrlDownload("http://soundowl.com/track/" + getFUID(link));
         }
     }
 
     @Override
-    public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
+    public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws IOException, PluginException {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
-        br.getHeaders().put("User-Agent", "Mozilla/5.0 (X11; U; Linux i686; en-US; rv:1.9.0.10) Gecko/2009042523 Ubuntu/9.04 (jaunty) Firefox/3.0.10");
+        br.getHeaders().put("User-Agent", "Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/37.0.2062.103 Safari/537.36");
         br.getHeaders().put("Accept", "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8");
+        br.getHeaders().put("Accept-Charset", null);
         br.getHeaders().put("Accept-Language", "en-us,en;q=0.5");
-        br.getPage(link.getDownloadURL());
+        link = downloadLink.getDownloadURL();
+        fuid = getFUID(downloadLink);
+        br.getPage(link);
         // Found no offline links yet
         if (br.containsHTML(">This track has been removed")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        String filename = br.getRegex("<title>([^<>\"]*?) download</title>").getMatch(0);
+        String filename = br.getRegex("<title>([^<>\"]+) (?:MP3\\s*)?download</title>").getMatch(0);
         if (filename == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        link.setFinalFileName(Encoding.htmlDecode(filename.trim()) + ".mp3");
+        downloadLink.setFinalFileName(Encoding.htmlDecode(filename.trim()) + ".mp3");
         return AvailableStatus.TRUE;
     }
 
-    @SuppressWarnings("deprecation")
     @Override
     public void handleFree(DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
+        {
+            Browser ajax = br.cloneBrowser();
+            ajax.getHeaders().put("Accept", "*/*");
+            ajax.getPage("/api/search/related/" + fuid);
+        }
         br.setFollowRedirects(false);
-        // br.clearCookies("http://soundowl.com/");
-        // br.getHeaders().put("Accept", "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8");
-        // br.getHeaders().put("Accept-Language", "de,en-us;q=0.7,en;q=0.3");
-        String url = "http://dl.soundowl.com/" + new Regex(downloadLink.getDownloadURL(), "([a-z0-9]+)$").getMatch(0) + ".mp3";
+        String url = "http://dl.soundowl.com/" + fuid + ".mp3";
         br.getPage(url);
         url = br.getRedirectLocation();
         if (url == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
+        br.getHeaders().put("Referer", link);
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, url, true, 0);
         if (dl.getConnection().getContentType().contains("html") && !dl.getConnection().isContentDisposition()) {
             br.followConnection();
