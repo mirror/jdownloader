@@ -107,6 +107,7 @@ import org.jdownloader.controlling.FileCreationManager;
 import org.jdownloader.controlling.packagizer.PackagizerController;
 import org.jdownloader.extensions.ExtensionController;
 import org.jdownloader.extensions.extraction.ArchiveController;
+import org.jdownloader.gui.swt.widgets.NativeUtils;
 import org.jdownloader.images.NewTheme;
 import org.jdownloader.logging.LogController;
 import org.jdownloader.osevents.OperatingSystemEventSender;
@@ -128,6 +129,9 @@ import org.jdownloader.updatev2.gui.LAFOptions;
 
 public class SecondLevelLaunch {
     static {
+        if (System.getProperty("nativeswing") != null) {
+            NativeUtils.init();
+        }
         statics();
     }
 
@@ -138,6 +142,7 @@ public class SecondLevelLaunch {
     public final static SingleReachableState HOST_PLUGINS_COMPLETE = new SingleReachableState("HOST_PLG_COMPLETE");
     public final static SingleReachableState ACCOUNTLIST_LOADED    = new SingleReachableState("ACCOUNTLIST_LOADED");
     public final static SingleReachableState EXTENSIONS_LOADED     = new SingleReachableState("EXTENSIONS_LOADED");
+
     private static File                      FILE;
     public final static long                 startup               = System.currentTimeMillis();
 
@@ -798,6 +803,7 @@ public class SecondLevelLaunch {
                                     SecondLevelLaunch.ACCOUNTLIST_LOADED.setReached();
                                 };
                             }.start();
+
                             /* start downloadwatchdog */
                             Thread.currentThread().setName("ExecuteWhenGuiReachedThread: Init DownloadWatchdog");
                             DownloadWatchDog.getInstance();
