@@ -322,6 +322,9 @@ public class PutLockerCom extends PluginForHost {
             }
         }
         if (dllink == null) {
+            if (br.containsHTML("trans=\\'dl\\'>Download</span>")) {
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Unknown server error", 30 * 60 * 1000l);
+            }
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
 
