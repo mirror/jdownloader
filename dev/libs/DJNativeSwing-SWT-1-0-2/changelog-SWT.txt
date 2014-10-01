@@ -1,0 +1,187 @@
+The DJ project - NativeSwing
+http://djproject.sourceforge.net
+Christopher Deckers (chrriis@nextencia.net)
+Licence terms: LGPL (see licence.txt)
+
+---------------------------------- Change log ----------------------------------
+
+* Version 1.0.2 (November 3, 2013):
+
+- Application quit handler for Mac quit menus on NativeInterface (configurable).
+- Auto-shutdown procedure works for out-process mode.
+- Native Swing is initialized after the SWT initialization to solve Mac issues.
+- JWShellExplorer (win32).
+- Improvements to focus issues on Java 7.
+- Fix in paintComponent.
+- Fixed a freeze when quitting the application on Mac (shutdown hook not added).
+- JHTMLEditor timeout is slightly increased and can be changed.
+- Call to display.dispose() when closing the native interface for better cleanup.
+- TinyMCE upgrade to 3.4.3.2.
+- hasFocus() on native peer can be called from outside the UI thread.
+- Added a system property to change the socket connection timeout to peer VM.
+
+
+* Version 1.0.1 (March 18, 2011):
+
+- Mac OS X is supported, except "constrainVisibility"/"proxyComponentHierarchy".
+- JWebBrowserWindow is now created through a factory to support dialogs.
+- Reparenting accross windows is supported (with destroyOnFinalization option).
+- Possibility to add custom functions to web browser.
+- Web Browser allows passing HTTP headers and POST data.
+- Web Browser allows vetoable disposal with page unloading confirmation dialog.
+- Web Browser type and version are accessible.
+- Mozilla XPCOM in/out parameters support.
+- WebKit rendering support (on Linux).
+- Integration as NetBeans modules.
+- Printing to console from web page with nsConsoleOut(xx) and nsConsoleErr(xx).
+- Bug fix for JWebBrowser.executeJavascriptWithResult() (Firefox 3.6.3).
+- Component listeners are improved for consistency (user code to be adjusted!).
+- HTML Editor tracks dirty state and can notify listeners.
+- HTML Editor options format is changed (cf demo application for new format).
+- HTML Editor has a CKEditor implementation.
+- Commands can be sent from browser using sendNSCommand JS function.
+- Browser/Flash player commands and arguments do not have a size limit.
+- Browser/Flash player commands now take Object[] as params.
+- JWebBrowser.setAuthenticationHandler(handler) is added.
+- JFlashPlayer content can access host files.
+- Browser-based object can have their background set (for transparent content).
+- Native component generated mouse events set the popup trigger flag correctly.
+- Flash/VLC options are not set to null after load to support multiple requests.
+- VLC player now allows VLC options.
+- VLC player has a fix for VLC bug not auto moving to next playlist item.
+- VLC API improved to work with 1.0.0.
+- Mozilla XPCOM missing interface methods are added.
+- XULRunner home can be set after opening the interface.
+- VLC and Flash player do not have a loading message (was causing problems).
+- F5 is blocked for plugin based objects to avoid page reload.
+- Implementation of web browser, flash player and VLC player decorators.
+- JS line comments and escaping are removed for browsers where it is not needed.
+- Resource bundles are loaded without using the package.
+- Browser window size was incorrectly set if JS specified only width or height.
+- Browser windows do not open outside of the screen bounds.
+- Some threading issues are fixed.
+- Failed message results due to disposed control do not throw an exception.
+- Fixed a freeze when AWT required native pumping but SWT was in a sync call. 
+- Native File dialog and Directory dialog are added.
+- Internal web browser commands are not visible from external listeners.
+- Communication interface with peer VM now has 2 modes: process IO and sockets.
+- Exposed System properties are in enum classes. Some system properties changed.
+- NativeInterfaceAppletHandler simplifies integration in applets.
+
+
+* Version 0.9.8 (March 24, 2009):
+
+- Fixed a subtle bug occurring in rare conditions that could cause a freeze.
+- Cookie management is added to the browser.
+- Javascript can be enabled/disabled for subsequently viewed pages.
+- Some clean up is done for WebBrowserObject internal object registry. 
+- Fixed exception when system properties contains non-String objects.
+- JFlashPlayer flashvars are properly encoded.
+- Updated VLC API to latest (0.9.6).
+- Fixed a bug (regression) where native resources were not released properly.
+- Fixed a bug where some key events were not working on Linux.
+- Fixed a bug with status bar messages: state was not restored properly.
+- Fixed a bug (regression) in native interface restart.
+- Fixed native interface lifecycle when in-process.
+
+
+* Version 0.9.7 (November 18, 2008):
+
+- JSyntaxHighlighter is added.
+- TinyMCE HTML editor implementation is added (thanks to Jörn Heid).
+- Fixed queued sync/async calls to respect their sync/async state when played.
+- Fixed JWebBrowser.executeJavascript on Mozilla when script has "%".
+- Play count is added to the JWMediaPlayer settings.
+- HTML editor was not loading files with \n and \r properly.
+- WMediaPlayer throws an exception if a method is not called from the UI thread.
+- XULRUNNER_HOME environment variable is read in addition to the properties.
+- Mozilla XPCOM access is added.
+- Local server sockets don't get the firewall to complain anymore.
+- In-process is added for future platforms that cannot handle out-process.
+- Options can be passed to the JWebBrowserWindow constructor.
+- Fixed a bug where XULRunner option was not propagated to popups.
+- Location of embedded Shell is forced to (0,0).
+- Size of web browser windows is now the inner size and not the outer size.
+
+
+* Version 0.9.6 (August 27, 2008):
+
+- Framework is split from SWT-based implementation.
+- Window opening in web browser is delayed a bit more for slow computers.
+- Charset is forced to UTF-8 in the various HTML components.
+- Libraries are updated: FCKeditor 2.6.3, jna 3.0.5, SWT 3.5M1.
+
+
+* Version 0.9.5 (May 15, 2008):
+
+- More debug system properties.
+- A memory leak is fixed.
+- JHTMLEditor allows custom configuration.
+- Options system for components is in place.
+- JFlashPlayer allows to call Flash functions on the object.
+- Flash demo contributed by Paulus Tuerah (www.goldenstudios.or.id)
+- NativeComponent.setEnabled(b) is added.
+- Javadoc is generated and part of the distribution.
+- Calls to get values from browser are now typed (not just Strings).
+- NativeComponent.createBackBuffer() is added.
+- Peer VM has a proper lifecycle.
+- JMultiMediaPlayer API is completely reviewed. Now JWMediaPlayer.
+- Ole integration is greatly simplified using the OleNativeComponent superclass.
+- Possibility to paint a native component to an image.
+- JFlashPlayer and JVLCPlayer can load files from the classpath.
+- JFlashPlayer.setURL() and JVLCPlayer.setURL() are changed to load().
+- initializeNativePeer() method is exposed.
+- JFlashPlayer allows to add custom JS.
+- Lightweight popups are handled differently.
+- sendCommand supports parameters.
+- Browser-based components have a postCommand() call.
+- Destroying and re-init the native interface is supported.
+- NativeComponent allows to initializeNativePeer().
+- getNativeComponent() returns a NativeComponent.
+
+
+* Version 0.9.4 (March 11, 2008):
+
+- JHTMLEditor is added.
+- JVLCPlayer component is added.
+- Web browser events API is modified to fix window referencing in JS.
+- Closing a browser window now disposes it.
+- Web browser "new window" menu is implemented.
+- Complete change of the internal native communication: dual process.
+- The L&F is not set anymore (use the corresponding method to apply it).
+- Browser components display messages on failure.
+- Flash player uses a proxy for local files to bypass security restrictions.
+- Flash player allows to set parameters and variables.
+
+
+* Version 0.9.3 (February 8, 2008):
+
+- Constraining the visibility of native components is possible (requires JNA).
+- Proxied filiation of native components allows re-parenting and Z-order change.
+- With proxied filiation, a destruction mode allows to destroy on finalization.
+- Explicit dispose() is added, for the finalization mode.
+- Better cleanup at exit time fixes some freezes (observed with Ole).
+- "default" and "next instance" options to tweak native components' behaviors.
+- Web Server is improved.
+- Convenient main is enhanced to use a system property.
+- Default size of native components is fixed.
+
+
+* Version 0.9.2 (January 15, 2008):
+
+- Code cleanup of unused classes.
+- Possibility to clear all web browser session cookies.
+- JFlashPlayer.getVariable(s) now waits for a result (maximum 1 second).
+- Modified resource access to bypass local file restrictions (web server).
+- URLs cannot be null and now throws an exception immediately to say so.
+- Web browser line comments are removed internally to work with Mozilla.
+- A component that is disposed and then recreated throws a meaningful exception.
+
+
+* Version 0.9.1 (January 6, 2008):
+
+- Web browser and Flash Player are implemented.
+- Multi Media Player is implemented on Windows using Ole controls.
+- Utility to access file associations is implemented.
+- All threading and chains of execution (synchronous and asynchronous callbacks)
+  are implemented.

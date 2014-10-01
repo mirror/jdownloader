@@ -1,0 +1,51 @@
+The DJ project - NativeSwing
+http://djproject.sourceforge.net
+Christopher Deckers (chrriis@nextencia.net)
+Licence terms: LGPL (see licence.txt)
+
+---------------------------------- Change log ----------------------------------
+
+* Version 1.0.2 (November 3, 2013):
+
+- JNA updated to 4.0.0. WindowUtils still uses "examples" sub-package for now.
+- IPv6 support in WebServer.
+- Migration to Git.
+- Improvements to focus issues on Java 7.
+- Logic for overlapping components is improved.
+- Proxied paths use Base64url encoding instead of URL encoding.
+- Indexed color model support for component printing.
+
+
+* Version 1.0.1 (March 18, 2011):
+
+- Modality improvements: new windows are not blocked by current modal dialogs.
+- Code that was applying shaping depending on sub-windows is removed.
+- Web server allows to plug content providers.
+- Web server can pass HTTP headers for dynamic content.
+- Relative local files can be loaded by the web server.
+- Fixed a bug in back buffer overlay calculation.
+- Local address resolution is improved.
+- Exposed System properties are in enum classes. Some system properties changed.
+
+
+* Version 0.9.8 (March 24, 2009):
+
+- Default web server can be stopped.
+- Local host address is in Utils (was in WebServer) and is auto-detected.
+
+
+* Version 0.9.7 (November 18, 2008):
+
+- Deadlock when using wrong threads is fixed.
+- Local server sockets don't get the firewall to complain anymore.
+- Fixed visibility calculation bug where invisible component was considered.
+- Debug option to print shape computing is added.
+
+
+* Version 0.9.6 (August 27, 2008):
+
+- Framework is split from SWT-based implementation.
+- WebServer data was cut when content was long. This is fixed.
+- Java 6 modality is implemented.
+- A clipping problem was fixed.
+- Libraries are updated: jna 3.0.5.
