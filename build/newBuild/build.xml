@@ -1,10 +1,8 @@
 <project default="all" basedir=".">
 	<!-- Dependencies -->
 	<property name="dep.awu" value="../AppWorkUtils" />
-	<property name="dep.serveroptions" value="../JDownloaderServerOptions" />
 	<property name="dep.browser" value="../JDBrowser" />
 	<property name="dep.updateclient" value="../UpdateClientV2" />
-	<property name="dep.jdupdateclient" value="../JDownloaderUpdater" />
 	<property name="dep.myjd" value="../MyJDownloaderClient" />
 	<property name="debug" value="true" />
 
@@ -74,10 +72,6 @@
 			<compilerarg line="-proc:none" />
 
 		</javac>
-		<javac srcdir="${dep.jdupdateclient}/src" excludes="" debug="${debug}" destdir="${cls}" encoding="UTF-8" source="1.6" target="1.6" includeantruntime="false">
-			<classpath refid="classpath" />
-
-		</javac>
 		<echo message="Finished." />
 
 
@@ -116,12 +110,6 @@
 
 		<copy todir="${dist}/tools">
 			<fileset dir="${res}/tools" includes="**/*" />
-		</copy>
-		<copy todir="${dist}" overwrite="true">
-			<fileset dir="${dep.serveroptions}">
-				<include name="**/*.serverOptions" />
-				<include name="**/*.clientOptions" />
-			</fileset>
 		</copy>
 		<copy todir="${dist}">
 			<fileset dir="${res}" includes="*.txt, *.exe, *.bat, *.properties" />
@@ -237,7 +225,7 @@
 		<echo message="ClassPath ${class-path}  ${class-path-extensions}" />
 		<manifest file="${dist}/Manifest.MF">
 			<attribute name="Created-By" value="JD-Team and AppWork GmbH" />
-			<attribute name="Main-Class" value="jd.Main" />
+			<attribute name="Main-Class" value="org.jdownloader.startup.Main" />
 			<!-- plugins that serialize own classes have to be put in the classpath -->
 			<attribute name="Class-Path" value="JDownloader.jar ${class-path} ${class-path-extensions}" />
 
@@ -340,10 +328,6 @@
 				<exclude name="org/appwork/update/server/**/*" />
 			</fileset>
 
-			<fileset dir="${dep.jdupdateclient}/src">
-				<include name="cfg/**/*" />
-
-			</fileset>
 
 
 			<fileset dir="themes">
@@ -463,12 +447,6 @@
 			</fileset>
 		</copy>
 
-		<copy todir="${update_2}" overwrite="true">
-			<fileset dir="${dep.serveroptions}">
-				<include name="**/*.serverOptions" />
-				<include name="**/*.clientOptions" />
-			</fileset>
-		</copy>
 	</target>
 
 
