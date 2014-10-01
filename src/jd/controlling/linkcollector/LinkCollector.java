@@ -223,7 +223,11 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
                 /**
                  * we remove all non words/digits because some hoster replace/remove other chars
                  */
-                packageName = packageName.replaceAll("[^a-zA-Z0-9]", "").toLowerCase(Locale.ENGLISH);
+                if (Application.getJavaVersion() >= Application.JAVA17) {
+                    packageName = packageName.replaceAll("(?U)[^\\w]", "").replaceAll("(?U)[_]", "").toLowerCase(Locale.ENGLISH);
+                } else {
+                    packageName = packageName.replaceAll("[^a-zA-Z0-9]", "").toLowerCase(Locale.ENGLISH);
+                }
             }
             this.packageName = packageName;
             if (CrossSystem.isWindows() && downloadFolder != null) {
