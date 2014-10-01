@@ -1,0 +1,66 @@
+Here are the system properties recognized by the DJ Native Swing framework.
+
+Note that most of these properties need to be defined before the classes that
+are using them get loaded.
+
+--------------------------------------------------------------------------------
+
+* nativeswing.localhostAddress
+  = <String> or "_localhost_" (default: auto-detect, usually 127.0.0.1)
+  Set the address that is used as the local host address for all the internal
+  communication channels that require a socket (local web server, etc.).
+
+* nativeswing.localhostAddress.debug.printDetection
+  = true/false (default: false)
+  Set whether to print the steps of local host address detection.
+
+* nativeswing.localhostAddress.debug.print
+  = true/false (default: false)
+  Set whether the address found as the local host address should be printed.
+  
+--------------------------------------------------------------------------------
+
+* nativeswing.webserver.debug.printPort
+  = true/false (default: false)
+  Set whether the port that is used by the embedded web server should be
+  printed.
+  
+* nativeswing.webserver.debug.printRequests
+  = true/false (default: false)
+  Set whether the web server should print the requests it receives, along with
+  the result (200 or 404).
+
+* nativeswing.webserver.debug.printData
+ = true/false/<long> (default: false)
+ Set whether the web server should print the data it sends (or how many bytes to
+ print).
+
+
+--------------------------------------------------------------------------------
+
+* nativeswing.components.debug.printOptions
+  = true/false (default: false)
+  Set whether the options used to create a component should be printed.
+
+* nativeswing.components.debug.printShapeComputing
+  = true/false (default: false)
+  Set whether the computation of the shape applied to the native component (when
+  the visibility constraint option is active) should be printed.
+  
+* nativeswing.components.forceSingleRectangleShapes
+  = true/false (default: false)
+  Certain platforms only support shapes for native components that resolve to
+  single rectangles. Developers who want to develop on a different platform with
+  the same constraint can force that behavior for consistency.
+
+--------------------------------------------------------------------------------
+
+* nativeswing.integration.active
+  = true/false (default: true)
+  Set whether native integration should be active.
+
+--------------------------------------------------------------------------------
+
+* nativeswing.dependencies.checkVersions
+  = true/false (default: true)
+  Set whether the versions of the dependencies should be checked when possible.

@@ -128,15 +128,9 @@ import org.jdownloader.updatev2.gui.LAFOptions;
 
 public class SecondLevelLaunch {
     static {
-        try {
-            if (!org.appwork.utils.Application.isHeadless() && System.getProperty("nativeswing") != null) {
-                org.jdownloader.gui.swt.widgets.NativeUtils.init();
-            }
-        } catch (final Throwable e) {
-            e.printStackTrace();
-        } finally {
-            statics();
-        }
+
+        statics();
+
     }
 
     private static LogSource                 LOG;

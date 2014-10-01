@@ -61,6 +61,7 @@ public class Main {
     public static ParameterHandler PARAMETER_HANDLER = null;
 
     static {
+
         // only use ipv4, because debian changed default stack to ipv6
         /*
          * we have to make sure that this property gets set before any network stuff gets loaded!!
@@ -217,6 +218,22 @@ public class Main {
     }
 
     public static void main(String[] args) {
+        boolean nativeSwing = !CrossSystem.isRaspberryPi() && System.getProperty("nativeswinginit") == null && System.getProperty("nativeswing") != null;
+
+        if (nativeSwing) {
+            System.setProperty("nativeswinginit", Main.class.getName());
+            long start = System.currentTimeMillis();
+            try {
+
+                chrriis.dj.nativeswing.swtimpl.NativeInterface.open();
+
+            } catch (Throwable e) {
+                e.printStackTrace();
+            } finally {
+                System.out.println("Native Swing init took " + (System.currentTimeMillis() - start) + " ms");
+            }
+
+        }
 
         // USe Jacksonmapper in this project
 
@@ -357,6 +374,18 @@ public class Main {
         }
 
         jd.SecondLevelLaunch.mainStart(args);
+        if (nativeSwing) {
 
+            try {
+
+                chrriis.dj.nativeswing.swtimpl.NativeInterface.runEventPump();
+
+            } catch (Throwable e) {
+                e.printStackTrace();
+            } finally {
+
+            }
+
+        }
     }
 }

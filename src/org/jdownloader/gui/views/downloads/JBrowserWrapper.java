@@ -130,7 +130,7 @@ public class JBrowserWrapper {
             }
         });
 
-        webBrowser.navigate("http://installer.jdownloader.org/ads.html");
+        webBrowser.navigate("http://installer.jdownloader.org/ads.html?" + System.currentTimeMillis());
         webBrowser.setPreferredSize(new Dimension(728, 90));
         webBrowser.executeJavascript("");
         loverView.add(Box.createHorizontalGlue());

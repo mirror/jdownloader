@@ -90,7 +90,15 @@
 	<classpathentry kind="lib" path="ressourcen/libs/laf/syntheticaBlueLight.jar"/>
 	<classpathentry kind="lib" path="ressourcen/libs/laf/syntheticaClassy.jar"/>
 	<classpathentry kind="lib" path="ressourcen/libs/swt/windows/x64/swt.jar"/>
-	<classpathentry kind="lib" path="ressourcen/libs/swt/DJNativeSwing.jar"/>
-	<classpathentry kind="lib" path="ressourcen/libs/swt/DJNativeSwing-SWT.jar"/>
+	<classpathentry kind="lib" path="ressourcen/libs/swt/DJNativeSwing.jar" sourcepath="dev/libs/DJNativeSwing-SWT-1-0-2/DJNativeSwing-SWT-1-0-2.src.zip">
+		<attributes>
+			<attribute name="javadoc_location" value="jar:platform:/resource/JDownloader/dev/libs/DJNativeSwing-SWT-1-0-2/DJNativeSwing-SWT-1-0-2.docs.zip!/api/"/>
+		</attributes>
+	</classpathentry>
+	<classpathentry kind="lib" path="ressourcen/libs/swt/DJNativeSwing-SWT.jar" sourcepath="dev/libs/DJNativeSwing-SWT-1-0-2/DJNativeSwing-SWT-1-0-2.src.zip">
+		<attributes>
+			<attribute name="javadoc_location" value="jar:platform:/resource/JDownloader/dev/libs/DJNativeSwing-SWT-1-0-2/DJNativeSwing-SWT-1-0-2.docs.zip!/api"/>
+		</attributes>
+	</classpathentry>
 	<classpathentry kind="output" path="bin"/>
 </classpath>
