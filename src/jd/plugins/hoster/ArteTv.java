@@ -49,24 +49,27 @@ import org.w3c.dom.Document;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "arte.tv", "liveweb.arte.tv", "videos.arte.tv" }, urls = { "http://(www\\.)?arte\\.tv/[a-z]{2}/videos/.+", "http://liveweb\\.arte\\.tv/[a-z]{2}/videos?/.+", "decrypted://(videos|www).arte\\.tv/(guide/[a-z]{2}/[0-9\\-]+|[a-z]{2}/videos)/.+" }, flags = { 32, 32, 32 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "arte.tv", "liveweb.arte.tv", "videos.arte.tv", "concert.arte.tv" }, urls = { "http://(www\\.)?arte\\.tv/[a-z]{2}/videos/.+", "http://liveweb\\.arte\\.tv/[a-z]{2}/videos?/.+", "decrypted://(videos|www)\\.arte\\.tv/(guide/[a-z]{2}/[0-9\\-]+|[a-z]{2}/videos)/.+", "decrypted://concert\\.arte\\.tv/(de|fr)/.+" }, flags = { 32, 32, 32, 32 })
 public class ArteTv extends PluginForHost {
 
-    private String              CLIPURL     = null;
-    private String              EXPIRED     = null;
-    private String              FLASHPLAYER = null;
+    private String              CLIPURL      = null;
+    private String              EXPIRED      = null;
+    private String              FLASHPLAYER  = null;
     private String              clipData;
 
     private Document            doc;
 
-    private static final String Q_SUBTITLES = "Q_SUBTITLES";
-    private static final String Q_BEST      = "Q_BEST";
-    private static final String Q_LOW       = "Q_LOW";
-    private static final String Q_HIGH      = "Q_HIGH";
-    private static final String Q_VERYHIGH  = "Q_VERYHIGH";
-    private static final String Q_HD        = "Q_HD";
-    private static final String HBBTV       = "HBBTV";
-    private static final String THUMBNAIL   = "THUMBNAIL";
+    private static final String Q_SUBTITLES  = "Q_SUBTITLES";
+    private static final String Q_BEST       = "Q_BEST";
+    private static final String Q_LOW        = "Q_LOW";
+    private static final String Q_HIGH       = "Q_HIGH";
+    private static final String Q_VERYHIGH   = "Q_VERYHIGH";
+    private static final String Q_HD         = "Q_HD";
+    private static final String HBBTV        = "HBBTV";
+    private static final String THUMBNAIL    = "THUMBNAIL";
+
+    private static final String TYPE_GUIDE   = "http://((videos|www)\\.)?arte\\.tv/guide/[a-z]{2}/.+";
+    private static final String TYPE_CONCERT = "http://(www\\.)?concert\\.arte\\.tv/.+";
 
     public ArteTv(PluginWrapper wrapper) {
         super(wrapper);
@@ -79,7 +82,9 @@ public class ArteTv extends PluginForHost {
     }
 
     private boolean checkDateExpiration(String s) {
-        if (s == null) return false;
+        if (s == null) {
+            return false;
+        }
         EXPIRED = s;
         SimpleDateFormat df = new SimpleDateFormat("EEE, dd MMM yyyy HH:mm:ss Z", Locale.getDefault());
         try {
@@ -90,7 +95,9 @@ public class ArteTv extends PluginForHost {
                 df = new SimpleDateFormat("EEE, dd MMM yyyy HH:mm:ss Z", Locale.ENGLISH);
                 date = df.parse(s);
             }
-            if (date.getTime() < System.currentTimeMillis()) return true;
+            if (date.getTime() < System.currentTimeMillis()) {
+                return true;
+            }
             SimpleDateFormat dfto = new SimpleDateFormat("dd. MMM yyyy 'ab' HH:mm 'Uhr'");
             EXPIRED = dfto.format(date);
         } catch (Throwable e) {
@@ -147,7 +154,9 @@ public class ArteTv extends PluginForHost {
     }
 
     private void refreshStreamingUrl(String s, DownloadLink d) throws Exception {
-        if (s == null) return;
+        if (s == null) {
+            return;
+        }
         br.getPage(s);
         HashMap<String, HashMap<String, String>> streamValues = new HashMap<String, HashMap<String, String>>();
         HashMap<String, String> streamValue;
@@ -161,11 +170,15 @@ public class ArteTv extends PluginForHost {
                 streamValues.put(ss[0], streamValue);
             }
             String streamingType = d.getStringProperty("streamingType", null);
-            if (streamingType == null) return;
+            if (streamingType == null) {
+                return;
+            }
             if (streamValues.containsKey(streamingType)) {
                 streamValue = new HashMap<String, String>(streamValues.get(streamingType));
                 String url = streamValue.get("url");
-                if (!url.startsWith("mp4:")) url = "mp4:" + url;
+                if (!url.startsWith("mp4:")) {
+                    url = "mp4:" + url;
+                }
                 d.setProperty("directURL", streamValue.get("streamer") + url);
             }
         }
@@ -176,7 +189,9 @@ public class ArteTv extends PluginForHost {
         br.setFollowRedirects(true);
         String link = downloadLink.getDownloadURL();
 
-        if (downloadLink.getBooleanProperty("offline", false)) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (downloadLink.getBooleanProperty("offline", false)) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
 
         String lang = new Regex(link, "http://\\w+.arte.tv/(guide/)?(\\w+)/.+").getMatch(1);
         lang = lang != null && "de".equalsIgnoreCase(lang) ? "De" : lang;
@@ -184,8 +199,12 @@ public class ArteTv extends PluginForHost {
 
         String expiredBefore = null, expiredAfter = null, status = null, fileName = null, ext = "";
         clipData = br.getPage(link);
-        if (br.getURL().contains("method=getHome")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        if (br.containsHTML(">Diese Seite existiert leider nicht mehr")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (br.getURL().contains("method=getHome")) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
+        if (br.containsHTML(">Diese Seite existiert leider nicht mehr")) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
 
         if (!"Error 404".equalsIgnoreCase(getClipData("title")) || lang == null) {
             HashMap<String, String> paras;
@@ -204,7 +223,7 @@ public class ArteTv extends PluginForHost {
                         CLIPURL = paras.get("liveUrl");
                     }
                 }
-            } else if (link.startsWith("http://www.arte.tv/guide/")) {
+            } else if (link.matches(TYPE_GUIDE) || link.matches(TYPE_CONCERT)) {
                 expiredBefore = downloadLink.getStringProperty("VRA", null);
                 expiredAfter = downloadLink.getStringProperty("VRU", null);
                 fileName = downloadLink.getStringProperty("directName", null);
@@ -243,13 +262,17 @@ public class ArteTv extends PluginForHost {
         }
         if (status != null) {
             logger.warning(status);
-            if (fileName != null) downloadLink.setName(fileName);
+            if (fileName != null) {
+                downloadLink.setName(fileName);
+            }
             return AvailableStatus.UNCHECKABLE;
         }
 
-        if (fileName == null || CLIPURL == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (fileName == null || CLIPURL == null) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
 
-        if (!link.startsWith("http://www.arte.tv/guide/")) {
+        if (!link.matches(TYPE_GUIDE) && !link.matches(TYPE_CONCERT)) {
             ext = CLIPURL.substring(CLIPURL.lastIndexOf("."), CLIPURL.length());
             if (ext.length() > 4) {
                 ext = new Regex(ext, Pattern.compile("\\w/(mp4):", Pattern.CASE_INSENSITIVE)).getMatch(0);
@@ -292,7 +315,9 @@ public class ArteTv extends PluginForHost {
         String eventId = br.getRegex("eventId=(\\d+)").getMatch(0);
         FLASHPLAYER = br.getRegex("(http://[^\\?\"]+player\\.swf)").getMatch(0);
         // No player, no video
-        if (FLASHPLAYER == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (FLASHPLAYER == null) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
 
         XPath xPath = xmlParser("http://arte.vo.llnwd.net/o21/liveweb/events/event-" + eventId + ".xml?" + System.currentTimeMillis());
         NodeList modules = (NodeList) xPath.evaluate("//event[@id=" + eventId + "]/*|//event/video[@id]/*", doc, XPathConstants.NODESET);
@@ -304,7 +329,9 @@ public class ArteTv extends PluginForHost {
                     NodeList t = node.getChildNodes();
                     for (int j = 0; j < t.getLength(); j++) {
                         Node g = t.item(j);
-                        if ("#text".equals(g.getNodeName())) continue;
+                        if ("#text".equals(g.getNodeName())) {
+                            continue;
+                        }
                         if ("liveUrl".equals(g.getNodeName())) {
                             paras.put(g.getNodeName(), g.getTextContent());
                         }
@@ -323,7 +350,9 @@ public class ArteTv extends PluginForHost {
         HashMap<String, String> paras = new HashMap<String, String>();
         String tmpUrl = br.getRegex("ajaxUrl:\'([^<>]+view,)").getMatch(0);
         FLASHPLAYER = br.getRegex("<param name=\"movie\" value=\"(.*?)\\?").getMatch(0);
-        if (FLASHPLAYER == null || tmpUrl == null) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
+        if (FLASHPLAYER == null || tmpUrl == null) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
 
         XPath xPath = xmlParser("http://videos.arte.tv" + tmpUrl + "strmVideoAsPlayerXml.xml");
         NodeList modules = (NodeList) xPath.evaluate("/video/*|//urls/*", doc, XPathConstants.NODESET);
