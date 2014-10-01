@@ -295,14 +295,16 @@ public class LinkChecker<E extends CheckableLink> {
                                                     }
                                                     /* try mass link check */
                                                     logger.clear();
-                                                    plg.setBrowser(new Browser());
-                                                    plg.reset();
+                                                    if (downloadLinks.size() > 0) {
+                                                        plg.setBrowser(new Browser());
+                                                        plg.reset();
+                                                    }
                                                     if (downloadLinks.size() == 0 || plg.checkLinks(downloadLinks.toArray(new DownloadLink[downloadLinks.size()]))) {
                                                         for (final InternCheckableLink link : roundSplit) {
                                                             link.getLinkChecker().linkChecked(link);
                                                         }
+                                                        continue;
                                                     }
-                                                    continue;
                                                 } catch (final Throwable e) {
                                                     logger.log(e);
                                                     logger.flush();

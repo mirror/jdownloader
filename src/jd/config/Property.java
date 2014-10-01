@@ -148,8 +148,12 @@ public class Property implements Serializable {
      */
     public Object getProperty(final String key) {
         ConcurrentHashMap<String, Object> lthreadSafeproperties = threadSafeproperties.get();
-        if (lthreadSafeproperties == null) return null;
-        if (key == null) { throw new WTFException("key ==null is forbidden!"); }
+        if (lthreadSafeproperties == null) {
+            return null;
+        }
+        if (key == null) {
+            throw new WTFException("key ==null is forbidden!");
+        }
         return lthreadSafeproperties.get(key);
     }
 
@@ -166,7 +170,9 @@ public class Property implements Serializable {
             /* fix for integer in property map, but long wanted */
             ret = ((Integer) ret).longValue();
         }
-        if (ret == null) { return def; }
+        if (ret == null) {
+            return def;
+        }
         return ret;
     }
 
@@ -192,8 +198,12 @@ public class Property implements Serializable {
 
     public boolean hasProperty(final String key) {
         ConcurrentHashMap<String, Object> lthreadSafeproperties = threadSafeproperties.get();
-        if (lthreadSafeproperties == null) return false;
-        if (key == null) { throw new WTFException("key ==null is forbidden!"); }
+        if (lthreadSafeproperties == null) {
+            return false;
+        }
+        if (key == null) {
+            throw new WTFException("key ==null is forbidden!");
+        }
         return lthreadSafeproperties.containsKey(key);
     }
 
@@ -219,9 +229,13 @@ public class Property implements Serializable {
     private ConcurrentHashMap<String, Object> threadSafeCreateProperties() {
         while (true) {
             ConcurrentHashMap<String, Object> lthreadSafeproperties = threadSafeproperties.get();
-            if (lthreadSafeproperties != null) return lthreadSafeproperties;
+            if (lthreadSafeproperties != null) {
+                return lthreadSafeproperties;
+            }
             lthreadSafeproperties = new ConcurrentHashMap<String, Object>(8, 0.9f, 1);
-            if (threadSafeproperties.compareAndSet(null, lthreadSafeproperties)) { return lthreadSafeproperties; }
+            if (threadSafeproperties.compareAndSet(null, lthreadSafeproperties)) {
+                return lthreadSafeproperties;
+            }
         }
     }
 
@@ -240,19 +254,25 @@ public class Property implements Serializable {
      * @param value
      */
     public boolean setProperty(final String key, final Object value) {
-        if (key == null) { throw new WTFException("key ==null is forbidden!"); }
+        if (key == null) {
+            throw new WTFException("key ==null is forbidden!");
+        }
         ConcurrentHashMap<String, Object> lthreadSafeproperties = threadSafeproperties.get();
         if (value == NULL || value == null) {
             /* null values are not allowed in concurrentHashMaps */
             boolean ret = false;
             if (lthreadSafeproperties != null) {
                 ret = lthreadSafeproperties.remove(key) != null;
-                if (lthreadSafeproperties.isEmpty()) destroyThreadSafeProperties(lthreadSafeproperties);
+                if (lthreadSafeproperties.isEmpty()) {
+                    destroyThreadSafeProperties(lthreadSafeproperties);
+                }
             }
             return ret;
         }
         Object old = threadSafeCreateProperties().put(key, value);
-        if (old == null && value != null) return true;
+        if (old == null && value != null) {
+            return true;
+        }
         return !old.equals(value);
     }
 
@@ -265,7 +285,9 @@ public class Property implements Serializable {
     @Override
     public String toString() {
         ConcurrentHashMap<String, Object> lthreadSafeproperties = threadSafeproperties.get();
-        if (lthreadSafeproperties != null) return (lthreadSafeproperties.size() == 0) ? "" : "Property: " + lthreadSafeproperties;
+        if (lthreadSafeproperties != null) {
+            return (lthreadSafeproperties.size() == 0) ? "" : "Property: " + lthreadSafeproperties;
+        }
         return "no properties set";
     }
 

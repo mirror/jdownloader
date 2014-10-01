@@ -242,8 +242,6 @@ public abstract class PluginForDecrypt extends Plugin {
         if (cryptLink == null) {
             return null;
         }
-        final ProgressController progress = new ProgressController();
-        cryptLink.setProgressController(progress);
         ArrayList<DownloadLink> tmpLinks = null;
         boolean showException = true;
         Throwable exception = null;
@@ -257,7 +255,7 @@ public abstract class PluginForDecrypt extends Plugin {
             br.setVerbose(true);
             br.setDebug(true);
             /* now we let the decrypter do its magic */
-            tmpLinks = decryptIt(cryptLink, progress);
+            tmpLinks = decryptIt(cryptLink, new ProgressController());
             validateLastChallengeResponse();
         } catch (InterruptedException e) {
             /* plugin got interrupted, clear log and note what happened */
