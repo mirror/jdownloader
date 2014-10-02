@@ -101,7 +101,7 @@ public class TeraFileCo extends PluginForHost {
 
     // DEV NOTES
     // XfileSharingProBasic Version 2.6.2.8
-    // mods: antiddos, SSL setting
+    // mods: antiddos, SSL setting, heavily modified, do NOT upgrade!
     // limit-info:
     // protocol: no https
     // captchatype: null
@@ -185,7 +185,7 @@ public class TeraFileCo extends PluginForHost {
         if (new Regex(correctedBR, "(No such file|>File Not Found<|>The file was removed by|Reason for deletion:\n)").matches()) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        if (new Regex(correctedBR, MAINTENANCE).matches()) {
+        if (new Regex(correctedBR, MAINTENANCE).matches() || br.getHttpConnection().getResponseCode() == 502) {
             link.getLinkStatus().setStatusText(MAINTENANCEUSERTEXT);
             return AvailableStatus.UNCHECKABLE;
         }
@@ -903,7 +903,7 @@ public class TeraFileCo extends PluginForHost {
             logger.info("Only downloadable via premium");
             throw new PluginException(LinkStatus.ERROR_FATAL, PREMIUMONLY2);
         }
-        if (new Regex(correctedBR, MAINTENANCE).matches()) {
+        if (new Regex(correctedBR, MAINTENANCE).matches() || br.getHttpConnection().getResponseCode() == 502) {
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, MAINTENANCEUSERTEXT, 2 * 60 * 60 * 1000l);
         }
     }
