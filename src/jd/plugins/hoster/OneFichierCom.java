@@ -248,8 +248,10 @@ public class OneFichierCom extends PluginForHost {
     }
 
     public void doFree(final DownloadLink downloadLink) throws Exception, PluginException {
+        // to prevent wasteful requests.
+        int i = 0;
         // 20140920 - stable needs this, as it seems to behave differently! raztoki
-        String dllink = downloadLink.getStringProperty(FREELINK, downloadLink.getDownloadURL());
+        String dllink = downloadLink.getStringProperty(FREELINK, downloadLink.getDownloadURL() + "/en/index.html");
         br.setFollowRedirects(true);
         // at times the second chunk creates 404 errors!
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 1);
@@ -263,16 +265,20 @@ public class OneFichierCom extends PluginForHost {
         } else {
             /* resume download */
             dl.startDownload();
-            downloadLink.setProperty(FREELINK, Property.NULL);
+            downloadLink.setProperty(FREELINK, dllink);
             return;
         }
         // use the English page, less support required
         boolean retried = false;
         String passCode = null;
         while (true) {
+            i++;
             br.setFollowRedirects(true);
             // redirect log 2414663166931
-            br.getPage(downloadLink.getDownloadURL() + "/en/index.html");
+            if (i != 1) {
+                // no need to do this link twice as it's been done above.
+                br.getPage(downloadLink.getDownloadURL() + "/en/index.html");
+            }
             br.setFollowRedirects(false);
 
             errorHandling(downloadLink, br);
@@ -367,10 +373,12 @@ public class OneFichierCom extends PluginForHost {
 
     private void errorIpBlockedHandling(Browser br) throws PluginException {
 
-        // <div style="text-align:center;margin:auto;color:red">Warning ! Without premium status, you must wait up to 15 minutes between
-        // each downloads<br/>Your last download finished 00 minutes ago</div>
-
+        // <div style="text-align:center;margin:auto;color:red">Warning ! Without premium status, you must wait up to 15 minutes between each downloads<br/>Your last download finished 00 minutes ago</div>
         String waittime = br.getRegex("you must wait (at least|up to) (\\d+) minutes between each downloads").getMatch(1);
+        if (waittime == null) {
+            // <div style="text-align:center;margin:auto;color:red">Warning ! Without premium status, you must wait 15 minutes between each downloads<br/>You must wait 15 minutes to download again or subscribe to a premium offer</div>
+            waittime = br.getRegex(">You must wait (\\d+) minutes to download again or").getMatch(0);
+        }
         boolean isBlocked = waittime != null;
         isBlocked |= br.containsHTML("/>Téléchargements en cours");
         isBlocked |= br.containsHTML("En téléchargement standard, vous ne pouvez télécharger qu\\'un seul fichier");
@@ -380,11 +388,10 @@ public class OneFichierCom extends PluginForHost {
         isBlocked |= br.containsHTML(">Please wait a few seconds before downloading new ones");
         isBlocked |= br.containsHTML(">You must wait for another download");
         isBlocked |= br.containsHTML("Without premium status, you can download only one file at a time");
-        // <div style="text-align:center;margin:auto;color:red">Warning ! Without premium status, you must wait between each
-        // downloads<br/>Your last download finished 05 minutes ago</div>
-
+        // <div style="text-align:center;margin:auto;color:red">Warning ! Without premium status, you must wait between each downloads<br/>Your last download finished 05 minutes ago</div>
         isBlocked |= br.containsHTML("you must wait between each downloads");
-
+        // <div style="text-align:center;margin:auto;color:red">Warning ! Without premium status, you must wait 15 minutes between each downloads<br/>You must wait 15 minutes to download again or subscribe to a premium offer</div>
+        isBlocked |= br.containsHTML("you must wait \\d+ minutes between each downloads<");
         if (isBlocked) {
             final boolean preferReconnect = this.getPluginConfig().getBooleanProperty("PREFER_RECONNECT", false);
 
@@ -463,7 +470,7 @@ public class OneFichierCom extends PluginForHost {
                 /* not finished yet */
                 account.setValid(true);
                 account.setProperty("type", "FREE");
-                ai.setStatus("Free User (Credits available)");
+                ai.setStatus("Free Account (Credits available)");
                 ai.setTrafficLeft(SizeFormatter.getSize(freeCredits + " GB"));
                 try {
                     maxPrem.set(1);
@@ -473,7 +480,7 @@ public class OneFichierCom extends PluginForHost {
                 }
                 account.setProperty("freeAPIdisabled", false);
             } else {
-                ai.setStatus("Free User (No credits left)");
+                ai.setStatus("Free Account (No credits left)");
                 account.setProperty("type", Property.NULL);
                 account.setValid(false);
                 return ai;
@@ -482,7 +489,7 @@ public class OneFichierCom extends PluginForHost {
         } else {
             account.setValid(true);
             account.setProperty("type", "PREMIUM");
-            ai.setStatus("Premium User");
+            ai.setStatus("Premium Account");
             ai.setValidUntil(Long.parseLong(timeStamp) * 1000l + (24 * 60 * 60 * 1000l));
             ai.setUnlimitedTraffic();
             try {
