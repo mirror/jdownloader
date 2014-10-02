@@ -1332,7 +1332,7 @@ public class LinkCrawler {
 
     protected void forwardDownloadLinkInfos(final DownloadLink source, final DownloadLink dest) {
         if (source != null && dest != null && source != dest) {
-            /* create copy of ArrayList */
+            /* create a copy of ArrayList */
             final List<String> srcPWs = source.getSourcePluginPasswordList();
             if (srcPWs != null && srcPWs.size() > 0) {
                 dest.setSourcePluginPasswordList(new ArrayList<String>(srcPWs));
