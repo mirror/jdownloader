@@ -218,9 +218,11 @@ public class Main {
     }
 
     public static void main(String[] args) {
-        final boolean nativeSwing = !CrossSystem.isRaspberryPi() && System.getProperty("nativeswinginit") == null && System.getProperty("nativeswing") != null;
+
+        final boolean nativeSwing = !CrossSystem.isRaspberryPi() && System.getProperty("nativeswing") != null && !Application.isHeadless();
+
         if (nativeSwing) {
-            System.setProperty("nativeswinginit", Main.class.getName());
+
             long start = System.currentTimeMillis();
             try {
                 chrriis.dj.nativeswing.swtimpl.NativeInterface.open();
@@ -372,9 +374,36 @@ public class Main {
         jd.SecondLevelLaunch.mainStart(args);
         if (nativeSwing) {
             try {
-                chrriis.dj.nativeswing.swtimpl.NativeInterface.runEventPump();
-            } catch (Throwable e) {
-                e.printStackTrace();
+
+                Class<?> updaterLauncherClass = Class.forName("org.jdownloader.update.launcher.JDLauncher");
+                Field field = updaterLauncherClass.getField("END_OF_MAIN_HANDLER");
+                field.set(null, new Runnable() {
+
+                    @Override
+                    public void run() {
+                        try {
+
+                            chrriis.dj.nativeswing.swtimpl.NativeInterface.runEventPump();
+
+                        } catch (Throwable e) {
+                            e.printStackTrace();
+                        } finally {
+
+                        }
+                    }
+                });
+            } catch (Throwable e1) {
+                e1.printStackTrace();
+
+                try {
+
+                    chrriis.dj.nativeswing.swtimpl.NativeInterface.runEventPump();
+
+                } catch (Throwable e) {
+                    e.printStackTrace();
+                } finally {
+
+                }
             }
         }
     }
