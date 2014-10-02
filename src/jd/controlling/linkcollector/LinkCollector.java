@@ -2,6 +2,7 @@ package jd.controlling.linkcollector;
 
 import java.awt.Toolkit;
 import java.io.BufferedOutputStream;
+import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
@@ -1580,15 +1581,22 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
                 HashMap<Integer, CrawledPackage> map = new HashMap<Integer, CrawledPackage>();
                 InputStream is = null;
                 LinkCollectorStorable lcs = null;
+                final ByteArrayOutputStream byteBuffer = new ByteArrayOutputStream(32767) {
+                    @Override
+                    public synchronized byte[] toByteArray() {
+                        /* avoid creating new byteArray */
+                        return buf;
+                    }
+                };
                 for (ZipEntry entry : zip.getZipFiles()) {
+                    byteBuffer.reset();
                     String json = null;
                     try {
                         if (entry.getName().matches("^\\d+$")) {
                             int packageIndex = Integer.parseInt(entry.getName());
                             is = zip.getInputStream(entry);
-                            byte[] bytes = IO.readStream((int) entry.getSize(), is);
-                            json = new String(bytes, "UTF-8");
-                            bytes = null;
+                            byte[] bytes = IO.readStream((int) entry.getSize(), is, byteBuffer, true);
+                            json = new String(bytes, 0, byteBuffer.size(), "UTF-8");
                             CrawledPackageStorable storable = JSonStorage.restoreFromString(json, new TypeRef<CrawledPackageStorable>() {
                             }, null);
                             if (storable != null) {
@@ -1601,8 +1609,8 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
                             }
                         } else if ("extraInfo".equalsIgnoreCase(entry.getName())) {
                             is = zip.getInputStream(entry);
-                            byte[] bytes = IO.readStream((int) entry.getSize(), is);
-                            json = new String(bytes, "UTF-8");
+                            byte[] bytes = IO.readStream((int) entry.getSize(), is, byteBuffer, true);
+                            json = new String(bytes, 0, byteBuffer.size(), "UTF-8");
                             bytes = null;
                             lcs = JSonStorage.stringToObject(json, new TypeRef<LinkCollectorStorable>() {
                             }, null);
@@ -1610,7 +1618,11 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
                     } catch (final Throwable e) {
                         logger.log(e);
                         logger.info("String was: " + json);
-                        logger.info("Entry was: " + entry);
+                        if (entry != null) {
+                            logger.info("Entry:" + entry + "|Size:" + entry.getSize() + "|Compressed Size:" + entry.getCompressedSize());
+                        } else {
+                            logger.info("Entry: " + entry);
+                        }
                         throw e;
                     } finally {
                         try {
