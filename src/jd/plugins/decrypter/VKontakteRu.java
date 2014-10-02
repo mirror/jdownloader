@@ -112,6 +112,7 @@ public class VKontakteRu extends PluginForDecrypt {
     private String                  CRYPTEDLINK_FUNCTIONAL               = null;
     private String                  CRYPTEDLINK_ORIGINAL                 = null;
     private CryptedLink             CRYPTEDLINK                          = null;
+    private boolean                 photo_fastcheck                      = false;
 
     private ArrayList<DownloadLink> decryptedLinks2                      = new ArrayList<DownloadLink>();
 
@@ -133,6 +134,7 @@ public class VKontakteRu extends PluginForDecrypt {
         CRYPTEDLINK_FUNCTIONAL = CRYPTEDLINK_ORIGINAL;
         CRYPTEDLINK = param;
         cfg = SubConfiguration.getConfig("vkontakte.ru");
+        photo_fastcheck = cfg.getBooleanProperty(FASTPICTURELINKCHECK, false);
         prepBrowser(br);
         boolean loginrequired = true;
         /* Check/fix links before browser access START */
@@ -364,7 +366,6 @@ public class VKontakteRu extends PluginForDecrypt {
             logger.info("vk.com: Done, decrypted: " + decryptedLinks2.size() + " links!");
         }
         return decryptedLinks2;
-
     }
 
     private void decryptAudioAlbum() throws IOException {
@@ -859,9 +860,8 @@ public class VKontakteRu extends PluginForDecrypt {
     }
 
     private DownloadLink getSinglePhotoDownloadLink(final String photoID) throws IOException {
-        final boolean fastLinkcheck = cfg.getBooleanProperty(FASTPICTURELINKCHECK, false);
         final DownloadLink dl = createDownloadlink("http://vkontaktedecrypted.ru/picturelink/" + photoID);
-        if (fastLinkcheck) {
+        if (photo_fastcheck) {
             dl.setAvailable(true);
         }
         dl.setName(photoID);
