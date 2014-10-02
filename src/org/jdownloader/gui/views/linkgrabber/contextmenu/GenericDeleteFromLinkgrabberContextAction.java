@@ -54,7 +54,14 @@ public class GenericDeleteFromLinkgrabberContextAction extends GenericDeleteFrom
                             setEnabled(false);
                         }
                         break;
-
+                    case ALL:
+                        if (tableContext.isItemVisibleForEmptySelection()) {
+                            setVisible(true);
+                            setEnabled(true);
+                        } else {
+                            setVisible(false);
+                            setEnabled(false);
+                        }
                     case UNSELECTED:
                         setVisible(false);
                         setEnabled(false);
