@@ -84,6 +84,7 @@ SetDownloadFolderAction_yes=Paket
 StartDownloadsAction_createTooltip_=Pokreni preuzimanja
 UrlDisplayType_CONTAINER=Kontejner
 UrlDisplayType_CONTENT=Podaci
+UrlDisplayType_CONTENT_description=Adresa trenutnog sadržaja
 UrlDisplayType_ORIGIN=Izvor
 UrlDisplayType_REFERRER=Preporuka
 YoutubeDash_GroupLogic_BY_FILE_TYPE=Proširenja datoteke (MP4, AAC, MP3, ...
