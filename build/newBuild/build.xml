@@ -96,7 +96,13 @@
 
 
 		<copy todir="${dist}/libs">
-			<fileset dir="${res}/libs" includes="**/*" />
+			<fileset dir="${res}/libs" includes="**/*">
+				<!-- -->
+
+				<exclude name="swt/DJNativeSwing-SWT.jar" />
+				<exclude name="swt/DJNativeSwing.jar" />
+
+			</fileset>
 		</copy>
 		<copy todir="${dist}/libs">
 			<fileset dir="${dep.awu}/libs" includes="**/*.jar">
@@ -249,7 +255,7 @@
 			<fileset dir="${cls}">
 				<include name="**/*.class" />
 				<include name="**/*.txt" />
-			    <include name="**/*.dat" />
+				<include name="**/*.dat" />
 
 				<exclude name="jd/controlling/reconnect/plugins/*/**/*" />
 				<exclude name="jd/captcha/**" />
@@ -324,6 +330,8 @@
 			<zipfileset src="${dep.awu}/libs/miglayout.jar" excludes="META-INF/*" />
 			<zipfileset src="${dep.awu}/libs/proxyVole.jar" excludes="META-INF/*" />
 			<zipfileset src="${dep.updateclient}/libs/xz.jar" excludes="META-INF/*" />
+			<zipfileset src="${res}/libs/swt/DJNativeSwing.jar" excludes="META-INF/*" />
+			<zipfileset src="${res}/libs/swt/DJNativeSwing-SWT.jar" excludes="META-INF/*" />
 			<fileset dir="${working}">
 				<include name="version.nfo" />
 				<include name="classpath" />
