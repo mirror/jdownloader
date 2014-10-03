@@ -185,7 +185,7 @@ public class TeraFileCo extends PluginForHost {
         if (new Regex(correctedBR, "(No such file|>File Not Found<|>The file was removed by|Reason for deletion:\n)").matches()) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        if (new Regex(correctedBR, MAINTENANCE).matches() || br.getHttpConnection().getResponseCode() == 502) {
+        if (new Regex(correctedBR, MAINTENANCE).matches() || br.getHttpConnection().getResponseCode() == 502 || br.getHttpConnection().getResponseCode() == 503) {
             link.getLinkStatus().setStatusText(MAINTENANCEUSERTEXT);
             return AvailableStatus.UNCHECKABLE;
         }
@@ -903,7 +903,7 @@ public class TeraFileCo extends PluginForHost {
             logger.info("Only downloadable via premium");
             throw new PluginException(LinkStatus.ERROR_FATAL, PREMIUMONLY2);
         }
-        if (new Regex(correctedBR, MAINTENANCE).matches() || br.getHttpConnection().getResponseCode() == 502) {
+        if (new Regex(correctedBR, MAINTENANCE).matches() || br.getHttpConnection().getResponseCode() == 502 || br.getHttpConnection().getResponseCode() == 503) {
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, MAINTENANCEUSERTEXT, 2 * 60 * 60 * 1000l);
         }
     }

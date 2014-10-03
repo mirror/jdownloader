@@ -564,7 +564,7 @@ public class LinkSnappyCom extends PluginForHost {
             }
             br.setFollowRedirects(true);
             postPageSecure(HTTP_S + "linksnappy.com/login", "username=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()));
-            if (br.getCookie(COOKIE_HOST, "lseSavePass") == null) {
+            if (br.getCookie(COOKIE_HOST, "lseSavePass") == null || !br.toString().equals("TRUE")) {
                 return false;
             }
             /* Valid account --> Check if the account type is supported */

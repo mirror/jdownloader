@@ -185,6 +185,14 @@ public class PremiumaxNet extends PluginForHost {
             logger.info("Unhandled download error on premiumax.net: " + br.toString());
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
+        /* Workaround for possible double filename bug: http://board.jdownloader.org/showthread.php?t=59540 */
+        String finalname = link.getFinalFileName();
+        if (finalname == null) {
+            finalname = link.getName();
+        }
+        if (finalname != null) {
+            link.setFinalFileName(finalname);
+        }
         link.setProperty("premiumaxnetdirectlink", dllink);
         try {
             if (!this.dl.startDownload()) {
