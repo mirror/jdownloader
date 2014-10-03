@@ -69,6 +69,10 @@ public class VideoFCTwoCom extends PluginForHost {
         link.setUrlDownload("http://video.fc2.com/en/content/" + new Regex(link.getDownloadURL(), "([A-Za-z0-9]+)$").getMatch(0) + "/");
     }
 
+    /*
+     * IMPORTANT NOTE: Free (unregistered) Users can watch (&download) videos up to 2 hours in length - if videos are longer, users can only
+     * watch the first two hours of them - afterwards they will get this message: http://i.snag.gy/FGl1E.jpg
+     */
     private void login(Account account, boolean force) throws Exception {
         synchronized (LOCK) {
             try {

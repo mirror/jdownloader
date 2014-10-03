@@ -57,7 +57,7 @@ public class VidMe extends PluginForHost {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         br.getPage(downloadLink.getDownloadURL());
-        if (br.getHttpConnection().getResponseCode() == 404 || !br.containsHTML("property=\"og:video\"")) {
+        if (br.getHttpConnection().getResponseCode() == 404 || !br.containsHTML("property=\"og:video\"") || br.containsHTML("class=\"note downloading\\-header\"")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         String filename = br.getRegex("property=\"og:title\" content=\"([^<>\"]*?)\"").getMatch(0);

@@ -46,20 +46,21 @@ public class FlickrCom extends PluginForHost {
         this.enablePremium();
     }
 
-    private String DLLINK = null;
-
     @Override
     public String getAGBLink() {
         return "http://flickr.com";
     }
 
-    private static Object       LOCK      = new Object();
-    private static final String MAINPAGE  = "http://flickr.com";
-    private static final String intl      = "us";
-    private static final String lang_post = "en-US";
-    private static final String api_key   = "a9823cb30086af802708b39e005668d0";
-    private String              user      = null;
-    private String              id        = null;
+    private String              DLLINK                   = null;
+
+    private static Object       LOCK                     = new Object();
+    private static final String MAINPAGE                 = "http://flickr.com";
+    private static final String intl                     = "us";
+    private static final String lang_post                = "en-US";
+    private static final String api_key                  = "a9823cb30086af802708b39e005668d0";
+    private String              user                     = null;
+    private String              id                       = null;
+    private String              site_general_photo_regex = "id=\"allsizes\\-photo\">[\t\n\r ]+<img src=\"(http[^<>\"]*?)\"";
 
     public void correctDownloadLink(DownloadLink link) {
         link.setUrlDownload("https://www.flickr.com/" + new Regex(link.getDownloadURL(), "\\.com/(.+)").getMatch(0));
@@ -396,34 +397,46 @@ public class FlickrCom extends PluginForHost {
     }
 
     private String getFinalLink() throws IOException {
+        String finallink = null;
         final String[] sizes = { "o", "k", "h", "l", "c", "z", "m", "n", "s", "t", "q", "sq" };
         String picSource;
         boolean json_active = true;
         picSource = br.getRegex("(\"id\":\"" + id + "\".*?\"safetyLevel\")").getMatch(0);
         if (picSource == null) {
             json_active = false;
-            br.getPage("https://www.flickr.com/photos/" + user + "/" + id + "/sizes/l");
+            br.getPage("https://www.flickr.com/photos/" + user + "/" + id + "/sizes/o");
             picSource = br.getRegex("<ol class=\"sizes\\-list\">(.*?)<div id=\"allsizes\\-photo\">").getMatch(0);
+            /*
+             * Fast way to get finallink via site as we always try to access the "o" (original) quality, page will redirect us to the max
+             * available quality!
+             */
+            final String maxQuality = new Regex(br.getURL(), "/sizes/([a-z0-9]+)/").getMatch(0);
+            if (maxQuality != null) {
+                finallink = br.getRegex("<div id=\"allsizes\\-photo\">[\t\n\r ]+<div class=\"spaceball\" style=\"height:\\d+px; width: \\d+px;\"></div>[\t\n\r ]+<img src=\"(http[^<>\"]*?)\">").getMatch(0);
+            }
         }
-        // Make sure we get the correct downloadlinks
-        if (picSource == null) {
-            return null;
-        }
-        String finallink = null;
-        for (final String size : sizes) {
-            if (json_active) {
-                finallink = new Regex(picSource, "\"" + size + "\":\\{\"displayUrl\":\"([^<>\"]+)\",\"width\":\\d+,\"height\":\\d+,\"url\":\"([^<>\"]*?)\"").getMatch(0);
-            } else {
-                finallink = new Regex(picSource, "\"(/photos/[A-Za-z0-9\\-_]+/\\d+/sizes/" + size + "/)\"").getMatch(0);
+
+        if (finallink == null) {
+            // Make sure we get the correct downloadlinks
+            if (picSource == null) {
+                return null;
+            }
+            for (final String size : sizes) {
+                if (json_active) {
+                    finallink = new Regex(picSource, "\"" + size + "\":\\{\"displayUrl\":\"([^<>\"]+)\",\"width\":\\d+,\"height\":\\d+,\"url\":\"([^<>\"]*?)\"").getMatch(0);
+                } else {
+                    finallink = new Regex(picSource, "\"(/photos/[A-Za-z0-9\\-_]+/\\d+/sizes/" + size + "/)\"").getMatch(0);
+                    if (finallink != null) {
+                        br.getPage("https://www.flickr.com" + finallink);
+                        finallink = br.getRegex(site_general_photo_regex).getMatch(0);
+                    }
+                }
                 if (finallink != null) {
-                    br.getPage("https://www.flickr.com" + finallink);
-                    finallink = br.getRegex("id=\"allsizes\\-photo\">[\t\n\r ]+<img src=\"(http[^<>\"]*?)\"").getMatch(0);
+                    break;
                 }
             }
-            if (finallink != null) {
-                break;
-            }
         }
+
         if (finallink != null) {
             finallink = finallink.replace("\\", "");
             if (!finallink.startsWith("http")) {
