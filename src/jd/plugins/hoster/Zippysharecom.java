@@ -80,6 +80,9 @@ public class Zippysharecom extends PluginForHost {
             filename = null;
         }
         if (filename == null) {
+            filename = br.getRegex("<input value=\"\\[url=[^\\]]+\\](.*?)\\[/url\\]").getMatch(0);
+        }
+        if (filename == null) {
             final String var = br.getRegex("var fulllink.*?'\\+(.*?)\\+'").getMatch(0);
             filename = br.getRegex("'\\+" + var + "\\+'/(.*?)';").getMatch(0);
         }
@@ -91,11 +94,11 @@ public class Zippysharecom extends PluginForHost {
         }
 
         if (filename == null || filename.contains("/fileName?key=")) {
-            String url = br.getRegex("document\\.location = \\'(/d/[^<>\"]*?\\';)").getMatch(0);
+            String url = br.getRegex("document\\.location = '(/d/[^<>\"]+';)").getMatch(0);
             if (url != null) {
-                filename = new Regex(url, "d/\\d+/\\d+/([^<>\"]*?)\\';").getMatch(0);
+                filename = new Regex(url, "d/\\d+/\\d+/([^<>\"]+)';").getMatch(0);
             } else {
-                url = br.getRegex("dlbutton'\\).href.*?=.*?\\+\"/(.*?)\"").getMatch(0);
+                url = br.getRegex("dlbutton'(?:.*?)\"/d/\\d+/.*?/(.*?)\"").getMatch(0);
                 if (url != null) {
                     filename = url;
                 }
@@ -118,7 +121,8 @@ public class Zippysharecom extends PluginForHost {
         return AvailableStatus.TRUE;
     }
 
-    private String execJS(String fun, final boolean fromFlash) throws Exception {
+    private String execJS(final String funny, final boolean fromFlash) throws Exception {
+        String fun = funny;
         Object result = new Object();
         try {
             if (!fromFlash) {
@@ -134,21 +138,23 @@ public class Zippysharecom extends PluginForHost {
                         if (result != null && result instanceof ConsString) {
                             return result.toString();
                         }
+                        // nullify
+                        fun = fun.replace("var " + f + " = function()", "var " + getSoup());
                     }
                 }
-                if (functions == null || functions.length == 0) {
-                    String v = new Regex(fun, "var ([a-z0-9]+) = function").getMatch(0);
-                    if (v == null) {
-                        // prevent null value or static value been used against us.
-                        final Random r = new Random();
-                        final String soup = "abcdefghijklmnopqrstuvwxyz";
-                        v = "";
-                        for (int i = 0; i < 12; i++) {
-                            v = v + soup.charAt(r.nextInt(soup.length()));
-                        }
-                    }
-                    // document.getElementById('id').href
+                result = new Object();
+                String v = new Regex(fun, "var ([a-z0-9]+) = function").getMatch(0);
+                if (v == null) {
+                    // prevent null value or static value been used against us.
+                    v = getSoup();
+                }
+                // document.getElementById('id').href
+                try {
                     result = processJS(v, fun);
+                } catch (final Throwable e) {
+                }
+                if (result != null && result instanceof ConsString) {
+                    return result.toString();
                 }
             } else {
                 final ScriptEngineManager manager = jd.plugins.hoster.DummyScriptEnginePlugin.getScriptEngineManager(this);
@@ -159,6 +165,16 @@ public class Zippysharecom extends PluginForHost {
             throw new Exception("JS Problem in Rev" + getVersion(), e);
         }
         return result == null ? null : result.toString();
+    }
+
+    private String getSoup() {
+        final Random r = new Random();
+        final String soup = "abcdefghijklmnopqrstuvwxyz";
+        String v = "";
+        for (int i = 0; i < 12; i++) {
+            v = v + soup.charAt(r.nextInt(soup.length()));
+        }
+        return v;
     }
 
     private Object processJS(final String v, final String fun) throws Exception {
@@ -282,9 +298,18 @@ public class Zippysharecom extends PluginForHost {
                     DLLINK = DLLINK.replace("'+" + var + "+'", data);
                 }
             } else {
-                DLLINK = br.getRegex("(document\\.getElementById\\(\\'dlbutton\\'\\)\\.href\\s*= \"/((?!\\s*)|.*?)\";)").getMatch(0);
+                DLLINK = br.getRegex("(document\\.getElementById\\(\\'dlbutton\\'\\)\\.href\\s*=\\s*\"/((?!\\s*)|.*?)\";)").getMatch(0);
                 if (DLLINK == null) {
-                    DLLINK = br.getRegex("(document\\.getElementById\\([^\\)]*\\)\\.href\\s*= \"(/d/(?!\\s*)|.*?)\";)").getMatch(0);
+                    DLLINK = br.getRegex("(document\\.getElementById\\([^\\)]*\\)\\.href\\s*=\\s*\"(/d/(?!\\s*)|(?!/i/).*?)\";)").getMatch(0);
+                    if (DLLINK == null) {
+                        DLLINK = br.getRegex(regexLastChance).getMatch(0);
+                        if (DLLINK == null) {
+                            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                        } else {
+                            // some correction required
+                            setCorrection = true;
+                        }
+                    }
                 }
                 String math = br.getRegex("<script type=\"text/javascript\">([^>]+var\\s+\\w+\\s*=\\s*function\\(\\)\\s*\\{.*?" + Pattern.quote(DLLINK) + ".*?\\}[^<]*)</script>").getMatch(0);
                 if (math == null) {
@@ -292,7 +317,11 @@ public class Zippysharecom extends PluginForHost {
                     math = br.getRegex("<script type=\"text/javascript\">(\\s*\\.*?" + Pattern.quote(DLLINK) + ".*?[^<]*)</script>").getMatch(0);
                 }
                 if (DLLINK != null && math != null) {
-                    math = math.replace(DLLINK, "var result = " + DLLINK);
+                    if (setCorrection) {
+                        math = someCorrection(math);
+                    } else {
+                        math = math.replaceAll("\\s*" + Pattern.quote(DLLINK), "\r\n\tvar result = " + DLLINK);
+                    }
                     String data = execJS(math, false);
                     if (data == null) {
                         throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -320,6 +349,21 @@ public class Zippysharecom extends PluginForHost {
             }
             throw e;
         }
+    }
+
+    private String  regexLastChance = "[\r\n]*([^\r\n]*('|\")dlbutton\\2,\\s*('|\")(/d/\\d+/(?!\\s*)|(?!/i/)[^\r\n]*)\\3\\);)";
+
+    private boolean setCorrection   = false;
+
+    private String someCorrection(String math) {
+        String test = new Regex(DLLINK, regexLastChance).getMatch(3);
+        if (test != null) {
+            String cleanup = "document.getElementById('dlbutton').href = \"" + test + "\"";
+            // has to be first
+            math = math.replace(DLLINK, cleanup);
+            DLLINK = cleanup;
+        }
+        return math;
     }
 
     private static AtomicReference<String> agent = new AtomicReference<String>(null);
