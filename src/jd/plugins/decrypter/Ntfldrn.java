@@ -22,6 +22,7 @@ import java.util.regex.Pattern;
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.nutils.encoding.Encoding;
+import jd.nutils.encoding.HTMLEntities;
 import jd.parser.Regex;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
@@ -73,7 +74,7 @@ public class Ntfldrn extends PluginForDecrypt {
                 return null;
             }
             for (final String element : links) {
-                decryptedLinks.add(createDownloadlink("http://netload.in/" + element));
+                decryptedLinks.add(createDownloadlink("http://netload.in/" + HTMLEntities.unhtmlentities(element)));
             }
             if (fpName != null) {
                 final FilePackage fp = FilePackage.getInstance();
