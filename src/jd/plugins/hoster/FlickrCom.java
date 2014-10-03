@@ -51,16 +51,15 @@ public class FlickrCom extends PluginForHost {
         return "http://flickr.com";
     }
 
-    private String              DLLINK                   = null;
+    private String              DLLINK    = null;
 
-    private static Object       LOCK                     = new Object();
-    private static final String MAINPAGE                 = "http://flickr.com";
-    private static final String intl                     = "us";
-    private static final String lang_post                = "en-US";
-    private static final String api_key                  = "a9823cb30086af802708b39e005668d0";
-    private String              user                     = null;
-    private String              id                       = null;
-    private String              site_general_photo_regex = "id=\"allsizes\\-photo\">[\t\n\r ]+<img src=\"(http[^<>\"]*?)\"";
+    private static Object       LOCK      = new Object();
+    private static final String MAINPAGE  = "http://flickr.com";
+    private static final String intl      = "us";
+    private static final String lang_post = "en-US";
+    private static final String api_key   = "a9823cb30086af802708b39e005668d0";
+    private String              user      = null;
+    private String              id        = null;
 
     public void correctDownloadLink(DownloadLink link) {
         link.setUrlDownload("https://www.flickr.com/" + new Regex(link.getDownloadURL(), "\\.com/(.+)").getMatch(0));
@@ -428,7 +427,7 @@ public class FlickrCom extends PluginForHost {
                     finallink = new Regex(picSource, "\"(/photos/[A-Za-z0-9\\-_]+/\\d+/sizes/" + size + "/)\"").getMatch(0);
                     if (finallink != null) {
                         br.getPage("https://www.flickr.com" + finallink);
-                        finallink = br.getRegex(site_general_photo_regex).getMatch(0);
+                        finallink = br.getRegex("id=\"allsizes\\-photo\">[\t\n\r ]+<img src=\"(http[^<>\"]*?)\"").getMatch(0);
                     }
                 }
                 if (finallink != null) {
