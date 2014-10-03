@@ -319,40 +319,50 @@ public class NitroFlareCom extends PluginForHost {
 
     @Override
     public AccountInfo fetchAccountInfo(final Account account) throws Exception {
-        AccountInfo ai = new AccountInfo();
-        br.getPage(apiURL + "/getKeyInfo?" + validateAccount(account));
-        handleApiErrors(account, null);
-        final String expire = getJson("expiryDate");
-        final String status = getJson("status");
-        final String storage = getJson("storeageUsed");
-        if (inValidate(status)) {
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
-        if (!inValidate(expire) && !"0".equalsIgnoreCase(expire)) {
-            ai.setValidUntil(TimeFormatter.getMilliSeconds(expire, "yyyy-MM-dd HH:mm:ss", Locale.ENGLISH));
-        }
-        if ("banned".equalsIgnoreCase(status)) {
-            if ("de".equalsIgnoreCase(language)) {
-                throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nYour account has been banned! (transate me)", PluginException.VALUE_ID_PREMIUM_DISABLE);
-            } else {
-                throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nYour account has been banned!", PluginException.VALUE_ID_PREMIUM_DISABLE);
+        synchronized (LOCK) {
+            AccountInfo ai = new AccountInfo();
+            br.getPage(apiURL + "/getKeyInfo?" + validateAccount(account));
+            handleApiErrors(account, null);
+            final String expire = getJson("expiryDate");
+            final String status = getJson("status");
+            final String storage = getJson("storageUsed");
+            final String trafficLeft = getJson("trafficLeft");
+            final String trafficMax = getJson("trafficMax");
+            if (inValidate(status)) {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
-        } else if ("expired".equalsIgnoreCase(status) || "inactive".equalsIgnoreCase(status) || ai.isExpired()) {
-            // expired(free)? account
-            account.setProperty("free", true);
-            // dont support free account?
-            ai.setStatus("Free Account");
-            ai.setExpired(true);
-        } else if ("active".equalsIgnoreCase(status)) {
-            // premium account
-            account.setProperty("free", false);
-            ai.setStatus("Premium Account");
-            account.setValid(true);
+            if (!inValidate(expire) && !"0".equalsIgnoreCase(expire)) {
+                ai.setValidUntil(TimeFormatter.getMilliSeconds(expire, "yyyy-MM-dd HH:mm:ss", Locale.ENGLISH));
+            }
+            if ("banned".equalsIgnoreCase(status)) {
+                if ("de".equalsIgnoreCase(language)) {
+                    throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nYour account has been banned! (transate me)", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                } else {
+                    throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nYour account has been banned!", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                }
+            } else if ("expired".equalsIgnoreCase(status) || "inactive".equalsIgnoreCase(status) || ai.isExpired()) {
+                // expired(free)? account
+                account.setProperty("free", true);
+                // dont support free account?
+                ai.setStatus("Free Account");
+                ai.setExpired(true);
+            } else if ("active".equalsIgnoreCase(status)) {
+                // premium account
+                account.setProperty("free", false);
+                ai.setStatus("Premium Account");
+                account.setValid(true);
+            }
+            if (!inValidate(storage)) {
+                ai.setUsedSpace(Long.parseLong(storage));
+            }
+            if (!inValidate(trafficLeft)) {
+                ai.setTrafficLeft(Long.parseLong(trafficLeft));
+            }
+            if (!inValidate(trafficMax)) {
+                ai.setTrafficMax(Long.parseLong(trafficMax));
+            }
+            return ai;
         }
-        if (!inValidate(storage)) {
-            ai.setUsedSpace(Long.parseLong(storage));
-        }
-        return ai;
     }
 
     @Override
@@ -428,7 +438,7 @@ public class NitroFlareCom extends PluginForHost {
         dl.startDownload();
     }
 
-    private void handleApiErrors(final Account account, final DownloadLink downloadLink) throws PluginException {
+    private void handleApiErrors(final Account account, final DownloadLink downloadLink) throws Exception {
         // API Error handling codes.
         // 1 => 'Access denied', (banned for trying incorrect x times for y minutes
         // 2 => 'Invalid premium key',
@@ -466,6 +476,13 @@ public class NitroFlareCom extends PluginForHost {
                     throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, (!inValidate(msg) ? msg : "You can't download more than one file within a certain time period in free mode"), 60 * 60 * 1000l);
                 } else if (cde == 8) {
                     throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nIncorrect login attempt!", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                } else if (cde == 9) {
+                    if (account != null) {
+                        account.setAccountInfo(fetchAccountInfo(account));
+                        throw new PluginException(LinkStatus.ERROR_RETRY, (!inValidate(msg) ? msg : null));
+                    } else {
+                        // this shouldn't happen
+                    }
                 }
             } catch (final PluginException p) {
                 if (!inValidate(msg)) {
