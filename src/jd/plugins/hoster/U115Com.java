@@ -192,13 +192,36 @@ public class U115Com extends PluginForHost {
             br.getPage("http://passport.115.com/?ct=login");
             String key = "abcdef0123456789";
             String vcode = key.toUpperCase();
-            final String sh1pw = JDHash.getSHA1(account.getPass());
-            final String sh1user = JDHash.getSHA1(account.getUser());
-            final String step_1 = JDHash.getSHA1(JDHash.getSHA1(toHex(sh1pw.getBytes()) + JDHash.getSHA1(toHex(sh1user.getBytes()))));
-            final String step_2 = JDHash.getMD5(toHex(step_1.getBytes()) + vcode);
-            final String ssopw = toHex(step_2.getBytes());
-            final String post_data = "login[ssoent]=B1&login[version]=2.0&login[ssoext]=" + key + "&login[ssoln]=" + account.getUser() + "&login[ssopw]=" + ssopw + "&login[ssovcode]=" + key + "&login[safe]=1&login[time]=1&login[safe_login]=0&login[goto]=http://www.115.com/";
-            br.postPage("http://passport.115.com/?ct=login&ac=ajax&is_ssl=1", post_data);
+            String sh1pw = JDHash.getSHA1(account.getPass());
+            String sh1user = JDHash.getSHA1(account.getUser());
+
+            String one = JDHash.getSHA1(toHex(sh1pw.getBytes()) + toHex(sh1user.getBytes()));
+            String two = toHex(one.getBytes()) + vcode;
+            String three = JDHash.getSHA1(two);
+            String four = toHex(three.getBytes());
+
+            String post_data = "login[ssoent]=B1&login[version]=2.0&login[ssoext]=" + key + "&login[ssoln]=" + account.getUser() + "&login[ssopw]=" + four + "&login[ssovcode]=" + key + "&login[safe]=1&login[time]=1&login[safe_login]=0&login[goto]=http://www.115.com/";
+            br.postPageRaw("http://passport.115.com/?ct=login&ac=ajax&is_ssl=1", post_data);
+
+            // sh1pw = JDHash.getSHA1(Encoding.UTF8Encode(account.getPass()));
+            // sh1user = JDHash.getSHA1(Encoding.UTF8Encode(account.getUser()));
+            // sh1pw = toHex(sh1pw.getBytes());
+            // sh1user = toHex(sh1user.getBytes());
+            //
+            // one = JDHash.getSHA1(Encoding.UTF8Encode(sh1pw + sh1user));
+            // two = toHex(one.getBytes());
+            // three = JDHash.getSHA1(Encoding.UTF8Encode(two));
+            // four = toHex(three.getBytes());
+            // post_data = "login[ssoent]=A1&login[version]=2.0&login[ssoext]=" + key + "&login[ssoln]=" + account.getUser() +
+            // "&login[ssopw]=" + four + "&login[ssovcode]=" + key +
+            // "&login[safe]=1&login[time]=0&login[safe_login]=0&login[goto]=http://www.115.com/";
+            // br.postPageRaw("http://passport.115.com/?ct=login&ac=ajax&is_ssl=1", post_data);
+            // post_data = "login[ssoent]=A1&login[version]=2.0&login[ssoext]=" + key + "&login[ssoln]=" + account.getUser() +
+            // "&login[ssopw]=" + four + "&login[ssovcode]=" + key +
+            // "&login[safe]=1&login[time]=0&login[safe_login]=0&login[goto]=http://www.115.com/";
+            // br.postPageRaw("http://passport.115.com/?ct=login&ac=ajax&is_ssl=1", post_data);
+            // String wtf = unescape(br.toString());
+
             if (br.getCookie(MAINPAGE, "OOFL") == null || br.containsHTML("\"err_code\":")) {
                 final String lang = System.getProperty("user.language");
                 if ("de".equalsIgnoreCase(lang)) {

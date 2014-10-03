@@ -46,8 +46,12 @@ public class VideoBamCom extends PluginForHost {
 
     private String setFUID(DownloadLink link) throws PluginException {
         FUID = new Regex(link.getDownloadURL(), "widget/([A-Za-z0-9]+)").getMatch(0);
-        if (FUID == null) FUID = new Regex(link.getDownloadURL(), "([A-Za-z0-9]+)$").getMatch(0);
-        if (FUID == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (FUID == null) {
+            FUID = new Regex(link.getDownloadURL(), "([A-Za-z0-9]+)$").getMatch(0);
+        }
+        if (FUID == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         return FUID;
     }
 
@@ -68,10 +72,14 @@ public class VideoBamCom extends PluginForHost {
         br.setCustomCharset("utf-8");
         br.setFollowRedirects(true);
         br.getPage(downloadLink.getDownloadURL());
-        if (br.containsHTML(">404 Page Not Found")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (br.containsHTML(">404 Page Not Found")) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
         final String filename = br.getRegex("File name: ([^<>\"]*?)<br />").getMatch(0);
         final String filesize = br.getRegex("File size: ([^<>\"]*?)</div>").getMatch(0);
-        if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (filename == null || filesize == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         downloadLink.setName(Encoding.htmlDecode(filename));
         downloadLink.setDownloadSize(SizeFormatter.getSize(filesize));
         return AvailableStatus.TRUE;
@@ -83,7 +91,9 @@ public class VideoBamCom extends PluginForHost {
         final boolean resume = true;
         final int chunks = 1;
         final String ajaxDLurl = br.getRegex("\\'(/videos/ajax_download_url/[^<>\"]*?)\\'").getMatch(0);
-        if (ajaxDLurl == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (ajaxDLurl == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
         // Waittime can be skipped
         // int wait = 30;
@@ -96,17 +106,27 @@ public class VideoBamCom extends PluginForHost {
             // Try stream download, only throw exception if that also fails
             br.getPage("http://videobam.com/" + FUID);
             dllink = br.getRegex("\"url\":\"(http:[^<>\"]*?)\"").getMatch(0);
-            if (dllink == null) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 30 * 60 * 1001l);
+            if (dllink == null) {
+                throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 30 * 60 * 1001l);
+            }
         } else {
-            if (br.containsHTML("\"url\":false")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            if (br.containsHTML("\"url\":false")) {
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            }
             dllink = br.getRegex("\"url\":\"(http:[^<>\"]*?)\"").getMatch(0);
         }
-        if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (dllink == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         dllink = dllink.replace("\\", "");
+        /* Workaround for old downloadcore bug that can lead to incomplete files */
+        br.getHeaders().put("Accept-Encoding", "identity");
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, resume, chunks);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
-            if (br.containsHTML("You can not download more than 1 video per 30 minutes")) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 30 * 60 * 1001l);
+            if (br.containsHTML("You can not download more than 1 video per 30 minutes")) {
+                throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 30 * 60 * 1001l);
+            }
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl.startDownload();
