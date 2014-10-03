@@ -41,7 +41,8 @@ import org.mozilla.javascript.ConsString;
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "zippyshare.com" }, urls = { "http://www\\d{0,}\\.zippyshare\\.com/(d/\\d+/\\d+/.|v/\\d+/[^<>\"/]*?\\.html?|.*?key=\\d+|downloadMusic\\?key=\\d+|swf/player_local\\.swf\\?file=\\d+)" }, flags = { 0 })
 public class Zippysharecom extends PluginForHost {
 
-    private String DLLINK = null;
+    private String ddlink = null;
+    private String math   = null;
 
     public Zippysharecom(final PluginWrapper wrapper) {
         super(wrapper);
@@ -121,6 +122,217 @@ public class Zippysharecom extends PluginForHost {
         return AvailableStatus.TRUE;
     }
 
+    @Override
+    public String getAGBLink() {
+        return "http://www.zippyshare.com/terms.html";
+    }
+
+    private int getHashfromFlash(final String flashurl, final int time) throws Exception {
+        final String[] args = { "-abc", flashurl };
+        // disassemble abc
+        final String asasm = flash.swf.tools.SwfxPrinter.main(args);
+        final String doABC = new Regex(asasm, "<doABC2>(.*)</doABC2>").getMatch(0);
+        final String[] methods = new Regex(doABC, "(function.+?Traits Entries)").getColumn(0);
+        String function = null;
+        for (final String method : methods) {
+            if (method.contains(":::break")) {
+                for (final String lines : Regex.getLines(method)) {
+                    if (lines.contains("pushbyte")) {
+                        function = new Regex(lines, "\t(\\d+)").getMatch(0);
+                    } else if (lines.contains("multiply")) {
+                        function += "*" + time + "#";
+                    } else if (lines.contains("pushint")) {
+                        function += new Regex(lines, "\t(\\d+)\t").getMatch(0);
+                    } else if (lines.contains("modulo") && function != null) {
+                        function = function.replace("#", "%");
+                    }
+                }
+                if (function == null) {
+                    return 0;
+                }
+            }
+        }
+        return Integer.parseInt(execJS(function, true));
+    }
+
+    @Override
+    public int getMaxSimultanFreeDownloadNum() {
+        return -1;
+    }
+
+    @Override
+    public void handleFree(final DownloadLink downloadLink) throws Exception {
+        br.setFollowRedirects(true);
+        setBrowserExclusive();
+        requestFileInformation(downloadLink);
+        if (!br.containsHTML("</body>\\s*</html>")) {
+            // page didn't fully load! http://svn.jdownloader.org/issues/50445 jd://0121413173041
+            throw new PluginException(LinkStatus.ERROR_RETRY);
+        }
+        final String mainpage = downloadLink.getDownloadURL().substring(0, downloadLink.getDownloadURL().indexOf(".com/") + 5);
+        // DLLINK via packed JS or Flash App
+        if (br.containsHTML("DownloadButton_v1\\.14s\\.swf")) {
+            final String flashContent = br.getRegex("swfobject.embedSWF\\((.*?)\\)").getMatch(0);
+            final String flashurl = mainpage + "swf/DownloadButton_v1.14s.swf";
+            if (flashContent != null) {
+                ddlink = new Regex(flashContent, "url: '(.*?)'").getMatch(0);
+                final String seed = new Regex(flashContent, "seed: (\\d+)").getMatch(0);
+                if (ddlink == null || seed == null) {
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                }
+                int time = Integer.parseInt(seed);
+                try {
+                    time = getHashfromFlash(flashurl, time);
+                } catch (final Throwable e) {
+                    throw new PluginException(LinkStatus.ERROR_FATAL, "JD2 BETA needed!");
+                }
+                if (time == 0) {
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                }
+                ddlink = ddlink + "&time=" + time;
+                // corrupted files?
+                if (ddlink.startsWith("nulldownload")) {
+                    ddlink = ddlink.replaceAll("null", mainpage);
+                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE);
+                }
+            }
+        } else if (br.containsHTML("Recaptcha\\.create\\(")) {
+            final String rcID = br.getRegex("Recaptcha\\.create\\(\"([^<>\"/]*?)\"").getMatch(0);
+            final String shortenCode = br.getRegex("shortencode: \\'(\\d+)\\'").getMatch(0);
+            if (rcID == null || shortenCode == null) {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
+            final PluginForHost recplug = JDUtilities.getPluginForHost("DirectHTTP");
+            final jd.plugins.hoster.DirectHTTP.Recaptcha rc = ((DirectHTTP) recplug).getReCaptcha(br);
+            rc.setId(rcID);
+            rc.load();
+            br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
+            final String server = new Regex(br.getURL(), "(http://www\\d{0,}\\.zippyshare\\.com/)").getMatch(0);
+            for (int i = 1; i <= 3; i++) {
+                final File cf = rc.downloadCaptcha(getLocalCaptchaFile());
+                final String c = getCaptchaCode(cf, downloadLink);
+                br.postPage(server + "rest/captcha/test", "challenge=" + Encoding.urlEncode(rc.getChallenge()) + "&response=" + Encoding.urlEncode(c) + "&shortencode=" + shortenCode);
+                if (br.toString().trim().equals("false")) {
+                    rc.reload();
+                    continue;
+                }
+                break;
+            }
+            if (br.toString().trim().equals("false")) {
+                throw new PluginException(LinkStatus.ERROR_CAPTCHA);
+            }
+            if (!br.toString().trim().equals("true")) {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
+            ddlink = server + "d/" + getDlCode(downloadLink.getDownloadURL()) + "/" + shortenCode + "/" + Encoding.urlEncode(downloadLink.getName());
+        } else {
+            ddlink = br.getRegex("var fulllink = \\'(.*?)\\';").getMatch(0);
+            if (ddlink != null) {
+                final String var = new Regex(ddlink, "'\\+(.*?)\\+'").getMatch(0);
+                String data = br.getRegex("var " + var + " = (.*?)\r?\n").getMatch(0);
+                data = execJS(data, false);
+                if (ddlink.contains(var)) {
+                    ddlink = ddlink.replace("'+" + var + "+'", data);
+                }
+            } else {
+                handleWeb();
+            }
+        }
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, ddlink, false, 1);
+        if (!dl.getConnection().isContentDisposition()) {
+            br.followConnection();
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        downloadLink.setFinalFileName(Encoding.htmlDecode(getFileNameFromHeader(dl.getConnection())));
+        try {
+            dl.startDownload();
+        } catch (final PluginException e) {
+            if (e.getLinkStatus() != LinkStatus.ERROR_ALREADYEXISTS && downloadLink.getVerifiedFileSize() >= 0 && downloadLink.getDownloadCurrent() == 0) {
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error (server sends empty file)");
+            }
+            throw e;
+        }
+    }
+
+    private void handleWeb() throws Exception {
+        ddlink = br.getRegex("(document\\.getElementById\\(\\'dlbutton\\'\\)\\.href\\s*=\\s*\"/((?!\\s*)|.*?)\";)").getMatch(0);
+        if (ddlink == null) {
+            ddlink = br.getRegex("(document\\.getElementById\\([^\\)]*\\)\\.href\\s*=\\s*\"(/d/(?!\\s*)|(?!/i/).*?)\";)").getMatch(0);
+            if (ddlink == null) {
+                ddlink = br.getRegex(regexLastChance0()).getMatch(0);
+                if (ddlink != null) {
+                    // some correction required
+                    setCorrection0 = true;
+                } else {
+                    ddlink = br.getRegex(regexLastChance1()).getMatch(0);
+                    if (ddlink != null) {
+                        // some correction required
+                        setCorrection1 = true;
+                    } else {
+                        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                    }
+                }
+            }
+        }
+        math = br.getRegex("<script type=\"text/javascript\">([^>]+var\\s+\\w+\\s*=\\s*function\\(\\)\\s*\\{.*?" + Pattern.quote(ddlink) + ".*?\\}[^<]*)</script>").getMatch(0);
+        if (math == null) {
+            // this covers when they drop function and var
+            math = br.getRegex("<script type=\"text/javascript\">(\\s*\\.*?" + Pattern.quote(ddlink) + ".*?[^<]*)</script>").getMatch(0);
+        }
+        if (ddlink != null && math != null) {
+            if (setCorrection0) {
+                math = someCorrection0(math);
+            } else if (setCorrection1) {
+                math = someCorrection1(math);
+            } else {
+                math = math.replaceAll("\\s*" + Pattern.quote(ddlink), "\r\n\tvar result = " + ddlink);
+            }
+            String data = execJS(math, false);
+            if (data == null) {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
+            if (!data.startsWith("/")) {
+                data = "/" + data;
+            }
+            ddlink = data;
+        } else {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+    }
+
+    private String regexLastChance0() {
+        return "[\r\n]*([^\r\n]*('|\")dlbutton\\2,\\s*('|\")(/d/\\d+/(?!\\s*)|(?!/i/)[^\r\n]*)\\3\\);)";
+    }
+
+    private String regexLastChance1() {
+        return "[\r\n]*([^\r\n]*('|\")?dlbutton\\2,\\s*([^\r\n]*('|\")?(?!/i/)[^\r\n]*)\\4\\);)";
+    }
+
+    private boolean setCorrection0 = false;
+    private boolean setCorrection1 = false;
+
+    private String someCorrection0(String math) {
+        String test = new Regex(ddlink, regexLastChance0()).getMatch(3);
+        if (test != null) {
+            String cleanup = "document.getElementById('dlbutton').href = \"" + test + "\"";
+            // has to be first
+            math = math.replace(ddlink, cleanup);
+            ddlink = cleanup;
+        }
+        return math;
+    }
+
+    private String someCorrection1(String math) {
+        String test = new Regex(ddlink, regexLastChance1()).getMatch(2);
+        if (test != null) {
+            String cleanup = "document.getElementById('dlbutton').href = " + test + "\"";
+            // has to be first
+            math = math.replace(ddlink, cleanup);
+            ddlink = cleanup;
+        }
+        return math;
+    }
+
     private String execJS(final String funny, final boolean fromFlash) throws Exception {
         String fun = funny;
         Object result = new Object();
@@ -183,187 +395,6 @@ public class Zippysharecom extends PluginForHost {
         engine.eval("var document = { getElementById: function (a) { if (!this[a]) { this[a] = new Object(); function href() { return a.href; } this[a].href = href(); } return this[a]; }};");
         engine.eval(fun + "if(typeof " + v + "=='function'){" + v + "();}\r\nvar result=document.getElementById('dlbutton').href;");
         return engine.get("result");
-    }
-
-    @Override
-    public String getAGBLink() {
-        return "http://www.zippyshare.com/terms.html";
-    }
-
-    private int getHashfromFlash(final String flashurl, final int time) throws Exception {
-        final String[] args = { "-abc", flashurl };
-        // disassemble abc
-        final String asasm = flash.swf.tools.SwfxPrinter.main(args);
-        final String doABC = new Regex(asasm, "<doABC2>(.*)</doABC2>").getMatch(0);
-        final String[] methods = new Regex(doABC, "(function.+?Traits Entries)").getColumn(0);
-        String function = null;
-        for (final String method : methods) {
-            if (method.contains(":::break")) {
-                for (final String lines : Regex.getLines(method)) {
-                    if (lines.contains("pushbyte")) {
-                        function = new Regex(lines, "\t(\\d+)").getMatch(0);
-                    } else if (lines.contains("multiply")) {
-                        function += "*" + time + "#";
-                    } else if (lines.contains("pushint")) {
-                        function += new Regex(lines, "\t(\\d+)\t").getMatch(0);
-                    } else if (lines.contains("modulo") && function != null) {
-                        function = function.replace("#", "%");
-                    }
-                }
-                if (function == null) {
-                    return 0;
-                }
-            }
-        }
-        return Integer.parseInt(execJS(function, true));
-    }
-
-    @Override
-    public int getMaxSimultanFreeDownloadNum() {
-        return -1;
-    }
-
-    @Override
-    public void handleFree(final DownloadLink downloadLink) throws Exception {
-        br.setFollowRedirects(true);
-        setBrowserExclusive();
-        requestFileInformation(downloadLink);
-        if (!br.containsHTML("</body>\\s*</html>")) {
-            // page didn't fully load! http://svn.jdownloader.org/issues/50445 jd://0121413173041
-            throw new PluginException(LinkStatus.ERROR_RETRY);
-        }
-        final String mainpage = downloadLink.getDownloadURL().substring(0, downloadLink.getDownloadURL().indexOf(".com/") + 5);
-        // DLLINK via packed JS or Flash App
-        if (br.containsHTML("DownloadButton_v1\\.14s\\.swf")) {
-            final String flashContent = br.getRegex("swfobject.embedSWF\\((.*?)\\)").getMatch(0);
-            final String flashurl = mainpage + "swf/DownloadButton_v1.14s.swf";
-            if (flashContent != null) {
-                DLLINK = new Regex(flashContent, "url: '(.*?)'").getMatch(0);
-                final String seed = new Regex(flashContent, "seed: (\\d+)").getMatch(0);
-                if (DLLINK == null || seed == null) {
-                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                }
-                int time = Integer.parseInt(seed);
-                try {
-                    time = getHashfromFlash(flashurl, time);
-                } catch (final Throwable e) {
-                    throw new PluginException(LinkStatus.ERROR_FATAL, "JD2 BETA needed!");
-                }
-                if (time == 0) {
-                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                }
-                DLLINK = DLLINK + "&time=" + time;
-                // corrupted files?
-                if (DLLINK.startsWith("nulldownload")) {
-                    DLLINK = DLLINK.replaceAll("null", mainpage);
-                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE);
-                }
-            }
-        } else if (br.containsHTML("Recaptcha\\.create\\(")) {
-            final String rcID = br.getRegex("Recaptcha\\.create\\(\"([^<>\"/]*?)\"").getMatch(0);
-            final String shortenCode = br.getRegex("shortencode: \\'(\\d+)\\'").getMatch(0);
-            if (rcID == null || shortenCode == null) {
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            }
-            final PluginForHost recplug = JDUtilities.getPluginForHost("DirectHTTP");
-            final jd.plugins.hoster.DirectHTTP.Recaptcha rc = ((DirectHTTP) recplug).getReCaptcha(br);
-            rc.setId(rcID);
-            rc.load();
-            br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
-            final String server = new Regex(br.getURL(), "(http://www\\d{0,}\\.zippyshare\\.com/)").getMatch(0);
-            for (int i = 1; i <= 3; i++) {
-                final File cf = rc.downloadCaptcha(getLocalCaptchaFile());
-                final String c = getCaptchaCode(cf, downloadLink);
-                br.postPage(server + "rest/captcha/test", "challenge=" + Encoding.urlEncode(rc.getChallenge()) + "&response=" + Encoding.urlEncode(c) + "&shortencode=" + shortenCode);
-                if (br.toString().trim().equals("false")) {
-                    rc.reload();
-                    continue;
-                }
-                break;
-            }
-            if (br.toString().trim().equals("false")) {
-                throw new PluginException(LinkStatus.ERROR_CAPTCHA);
-            }
-            if (!br.toString().trim().equals("true")) {
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            }
-            DLLINK = server + "d/" + getDlCode(downloadLink.getDownloadURL()) + "/" + shortenCode + "/" + Encoding.urlEncode(downloadLink.getName());
-        } else {
-            DLLINK = br.getRegex("var fulllink = \\'(.*?)\\';").getMatch(0);
-            if (DLLINK != null) {
-                final String var = new Regex(DLLINK, "'\\+(.*?)\\+'").getMatch(0);
-                String data = br.getRegex("var " + var + " = (.*?)\r?\n").getMatch(0);
-                data = execJS(data, false);
-                if (DLLINK.contains(var)) {
-                    DLLINK = DLLINK.replace("'+" + var + "+'", data);
-                }
-            } else {
-                DLLINK = br.getRegex("(document\\.getElementById\\(\\'dlbutton\\'\\)\\.href\\s*=\\s*\"/((?!\\s*)|.*?)\";)").getMatch(0);
-                if (DLLINK == null) {
-                    DLLINK = br.getRegex("(document\\.getElementById\\([^\\)]*\\)\\.href\\s*=\\s*\"(/d/(?!\\s*)|(?!/i/).*?)\";)").getMatch(0);
-                    if (DLLINK == null) {
-                        DLLINK = br.getRegex(regexLastChance).getMatch(0);
-                        if (DLLINK == null) {
-                            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                        } else {
-                            // some correction required
-                            setCorrection = true;
-                        }
-                    }
-                }
-                String math = br.getRegex("<script type=\"text/javascript\">([^>]+var\\s+\\w+\\s*=\\s*function\\(\\)\\s*\\{.*?" + Pattern.quote(DLLINK) + ".*?\\}[^<]*)</script>").getMatch(0);
-                if (math == null) {
-                    // this covers when they drop function and var
-                    math = br.getRegex("<script type=\"text/javascript\">(\\s*\\.*?" + Pattern.quote(DLLINK) + ".*?[^<]*)</script>").getMatch(0);
-                }
-                if (DLLINK != null && math != null) {
-                    if (setCorrection) {
-                        math = someCorrection(math);
-                    } else {
-                        math = math.replaceAll("\\s*" + Pattern.quote(DLLINK), "\r\n\tvar result = " + DLLINK);
-                    }
-                    String data = execJS(math, false);
-                    if (data == null) {
-                        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                    }
-                    if (!data.startsWith("/")) {
-                        data = "/" + data;
-                    }
-                    DLLINK = data;
-                } else {
-                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                }
-            }
-        }
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, DLLINK, false, 1);
-        if (!dl.getConnection().isContentDisposition()) {
-            br.followConnection();
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
-        downloadLink.setFinalFileName(Encoding.htmlDecode(getFileNameFromHeader(dl.getConnection())));
-        try {
-            dl.startDownload();
-        } catch (final PluginException e) {
-            if (e.getLinkStatus() != LinkStatus.ERROR_ALREADYEXISTS && downloadLink.getVerifiedFileSize() >= 0 && downloadLink.getDownloadCurrent() == 0) {
-                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error (server sends empty file)");
-            }
-            throw e;
-        }
-    }
-
-    private String  regexLastChance = "[\r\n]*([^\r\n]*('|\")dlbutton\\2,\\s*('|\")(/d/\\d+/(?!\\s*)|(?!/i/)[^\r\n]*)\\3\\);)";
-
-    private boolean setCorrection   = false;
-
-    private String someCorrection(String math) {
-        String test = new Regex(DLLINK, regexLastChance).getMatch(3);
-        if (test != null) {
-            String cleanup = "document.getElementById('dlbutton').href = \"" + test + "\"";
-            // has to be first
-            math = math.replace(DLLINK, cleanup);
-            DLLINK = cleanup;
-        }
-        return math;
     }
 
     private static AtomicReference<String> agent = new AtomicReference<String>(null);
