@@ -102,7 +102,7 @@ public class ArteMediathekDecrypter extends PluginForDecrypt {
 
         try {
             decryptedLinks.addAll(getDownloadLinks(parameter, br));
-        } catch (final Throwable e) {
+        } catch (final Exception e) {
             if (e instanceof DecrypterException && e.getMessage().equals(EXCEPTION_LINKOFFLINE)) {
                 final DownloadLink offline = createDownloadlink("directhttp://" + parameter);
                 offline.setAvailable(false);
