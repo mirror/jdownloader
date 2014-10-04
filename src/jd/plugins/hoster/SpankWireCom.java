@@ -141,7 +141,7 @@ public class SpankWireCom extends PluginForHost {
         final String[] qualities = { "720", "480", "240", "180" };
         String dllink = null;
         for (final String quality : qualities) {
-            dllink = br.getRegex("playerData.cdnPath" + quality + " = \"(http[^<>\"]*?)\"").getMatch(0);
+            dllink = br.getRegex("playerData.cdnPath" + quality + "\\s*?= (\"|\')(http[^<>\"]*?)(\"|\')").getMatch(1);
             if (dllink != null) {
                 break;
             }
