@@ -227,7 +227,7 @@ public class YunFileCom extends PluginForHost {
         final String md5 = br.getRegex("name=\"md5\" value=\"([a-z0-9]{32})\"").getMatch(0);
         logger.info("vid = " + vid + " vid1 = " + vid1 + " action = " + action + " md5 = " + md5);
         if (vid == null || action == null || md5 == null || vid1 == null) {
-            if (br.containsHTML("verifyimg/getPcv\\.html")) {
+            if (br.containsHTML("/verifyimg/getPcv/")) {
                 throw new PluginException(LinkStatus.ERROR_CAPTCHA);
             }
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
