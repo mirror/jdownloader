@@ -41,8 +41,9 @@ import org.mozilla.javascript.ConsString;
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "zippyshare.com" }, urls = { "http://www\\d{0,}\\.zippyshare\\.com/(d/\\d+/\\d+/.|v/\\d+/[^<>\"/]*?\\.html?|.*?key=\\d+|downloadMusic\\?key=\\d+|swf/player_local\\.swf\\?file=\\d+)" }, flags = { 0 })
 public class Zippysharecom extends PluginForHost {
 
-    private String ddlink = null;
-    private String math   = null;
+    private String filename = null;
+    private String ddlink   = null;
+    private String math     = null;
 
     public Zippysharecom(final PluginWrapper wrapper) {
         super(wrapper);
@@ -165,6 +166,7 @@ public class Zippysharecom extends PluginForHost {
         br.setFollowRedirects(true);
         setBrowserExclusive();
         requestFileInformation(downloadLink);
+        filename = downloadLink.getName();
         if (!br.containsHTML("</body>\\s*</html>")) {
             // page didn't fully load! http://svn.jdownloader.org/issues/50445 jd://0121413173041
             throw new PluginException(LinkStatus.ERROR_RETRY);
@@ -259,17 +261,23 @@ public class Zippysharecom extends PluginForHost {
         if (ddlink == null) {
             ddlink = br.getRegex("(document\\.getElementById\\([^\\)]*\\)\\.href\\s*=\\s*\"(/d/(?!\\s*)|(?!/i/).*?)\";)").getMatch(0);
             if (ddlink == null) {
-                ddlink = br.getRegex(regexLastChance0()).getMatch(0);
+                ddlink = br.getRegex(regexLastChance2()).getMatch(0);
                 if (ddlink != null) {
                     // some correction required
-                    setCorrection0 = true;
+                    setCorrection2 = true;
                 } else {
                     ddlink = br.getRegex(regexLastChance1()).getMatch(0);
                     if (ddlink != null) {
                         // some correction required
                         setCorrection1 = true;
                     } else {
-                        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                        ddlink = br.getRegex(regexLastChance0()).getMatch(0);
+                        if (ddlink != null) {
+                            // some correction required
+                            setCorrection0 = true;
+                        } else {
+                            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                        }
                     }
                 }
             }
@@ -284,6 +292,8 @@ public class Zippysharecom extends PluginForHost {
                 math = someCorrection0(math);
             } else if (setCorrection1) {
                 math = someCorrection1(math);
+            } else if (setCorrection2) {
+                math = someCorrection2(math);
             } else {
                 math = math.replaceAll("\\s*" + Pattern.quote(ddlink), "\r\n\tvar result = " + ddlink);
             }
@@ -305,11 +315,16 @@ public class Zippysharecom extends PluginForHost {
     }
 
     private String regexLastChance1() {
-        return "[\r\n]*([^\r\n]*('|\")?dlbutton\\2,\\s*([^\r\n]*('|\")?(?!/i/)[^\r\n]*)\\4\\);)";
+        return "[\r\n]*([^\r\n]*('|\")?(?:dlbutton)\\2,\\s*([^\r\n]*('|\")?(?!/i/)[^\r\n]*)\\4\\);)";
+    }
+
+    private String regexLastChance2() {
+        return "(\\s*[\\w+\\.]+\\(\\s*('|\")?(?:\\w+)\\2\\s*,\\s*([^\r\n]*('|\")?(?!/i/)[^\r\n]*" + Pattern.quote(filename) + ")\\4\\);)";
     }
 
     private boolean setCorrection0 = false;
     private boolean setCorrection1 = false;
+    private boolean setCorrection2 = false;
 
     private String someCorrection0(String math) {
         String test = new Regex(ddlink, regexLastChance0()).getMatch(3);
@@ -324,6 +339,17 @@ public class Zippysharecom extends PluginForHost {
 
     private String someCorrection1(String math) {
         String test = new Regex(ddlink, regexLastChance1()).getMatch(2);
+        if (test != null) {
+            String cleanup = "document.getElementById('dlbutton').href = " + test + "\"";
+            // has to be first
+            math = math.replace(ddlink, cleanup);
+            ddlink = cleanup;
+        }
+        return math;
+    }
+
+    private String someCorrection2(String math) {
+        String test = new Regex(ddlink, regexLastChance2()).getMatch(2);
         if (test != null) {
             String cleanup = "document.getElementById('dlbutton').href = " + test + "\"";
             // has to be first
