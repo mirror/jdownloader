@@ -64,9 +64,10 @@ public class YunFileCom extends PluginForHost {
             /* we first have to load the plugin, before we can reference it */
             agent.set(jd.plugins.hoster.MediafireCom.stringUserAgent());
         }
-        prepBr.getHeaders().put("User-Agent", agent.get());
+        prepBr.getHeaders().put("User-Agent", "Mozilla/5.0 (Windows NT 6.1; WOW64; rv:32.0) Gecko/20100101 Firefox/32.0");
         prepBr.getHeaders().put("Accept-Language", "de,en-us;q=0.7,en;q=0.3");
         prepBr.getHeaders().put("Accept", "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8");
+        prepBr.getHeaders().put("Accept-Charset", null);
         prepBr.setCookie("http://yunfile.com", "language", "en_us");
         // br.setCookie(this.getHost(), "language", "en_us");
         prepBr.setReadTimeout(3 * 60 * 1000);
@@ -81,6 +82,8 @@ public class YunFileCom extends PluginForHost {
                 throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, Integer.parseInt(waitMins) * 60 * 1001l);
             }
             throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 60 * 60 * 1001l);
+        } else if (br.containsHTML("class=\"gen\"> Too many connections for file service")) {
+            throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Too many connections - wait before starting new downloads");
         }
     }
 
@@ -179,6 +182,8 @@ public class YunFileCom extends PluginForHost {
         if (domain == null) {
             domain = new Regex(br.getURL(), "(http://.*?\\.?yunfile\\.com)").getMatch(0);
         }
+        br.setCookie("http://yunfile.com/", "validCodeUrl", "\"" + domain + ":8880/view?module=service&action=queryValidCode\"");
+        // br.setCookie("http://yunfile.com/", "lastDownTime", "1412523424380");
         if (freelink != null) {
             freelink = domain + freelink;
         } else {
@@ -194,13 +199,21 @@ public class YunFileCom extends PluginForHost {
             }
         }
         // Check if captcha needed
-        if (br.containsHTML("verifyimg/getPcv\\.html")) {
-            final String code = getCaptchaCode(domain + "/verifyimg/getPcv.html", downloadLink);
+        if (br.containsHTML("/verifyimg/getPcv/")) {
+            final String captchalink = br.getRegex("</script>[\t\n\r ]+<img   src=\"(/verifyimg/[^<>\"]*?)\"").getMatch(0);
+            if (captchalink == null) {
+                logger.warning("captchalink == null");
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
+            final String code = getCaptchaCode(domain + captchalink, downloadLink);
             freelink = freelink.replace(".html", "/" + Encoding.urlEncode(code) + ".html");
         }
-        br.cloneBrowser().getPage("http://www.yunfile.com//counter.jsp?userId=" + userid + "&fileId=" + fileid + "&dr=");
+        try {
+            br.cloneBrowser().getPage("http://www.yunfile.com//counter.jsp?userId=" + userid + "&fileId=" + fileid + "&dr=" + downloadLink.getDownloadURL());
+        } catch (final Throwable e) {
+        }
         int wait = 30;
-        String shortWaittime = br.getRegex("id=wait_span style=\"font\\-size: 28px; color: green;\">(\\d+)</span>").getMatch(0);
+        String shortWaittime = br.getRegex("id=\"wait_input\" style=\"font\\-size:22px; color: green;\">(\\d+)<").getMatch(0);
         if (shortWaittime != null) {
             wait = Integer.parseInt(shortWaittime);
         }

@@ -88,10 +88,15 @@ public class AkatsukiSubsNet extends PluginForHost {
         if (br.containsHTML(SERVEROVERLOADED)) {
             throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Server overloaded", 5 * 60 * 1000l);
         }
+        final boolean plugin_broken = true;
+        if (plugin_broken) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         br.setFollowRedirects(false);
         final PluginForHost recplug = JDUtilities.getPluginForHost("DirectHTTP");
         final jd.plugins.hoster.DirectHTTP.Recaptcha rc = ((DirectHTTP) recplug).getReCaptcha(br);
-        rc.findID();
+        final String rcid = br.getRegex("data\\-sitekey=\"([^<>\"]*?)\"").getMatch(0);
+        rc.setId(rcid);
         rc.load();
         for (int i = 1; i <= 5; i++) {
             final File cf = rc.downloadCaptcha(getLocalCaptchaFile());
@@ -100,14 +105,14 @@ public class AkatsukiSubsNet extends PluginForHost {
             dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, br.getURL(), postData, false, 1);
             if (dl.getConnection().getContentType().contains("html")) {
                 br.followConnection();
-                if (br.containsHTML("(api\\.recaptcha\\.net|google\\.com/recaptcha/api/)")) {
+                if (br.containsHTML("(api\\.recaptcha\\.net|google\\.com/recaptcha/)")) {
                     rc.reload();
                     continue;
                 }
             }
             break;
         }
-        if (br.containsHTML("(api\\.recaptcha\\.net|google\\.com/recaptcha/api/)")) {
+        if (br.containsHTML("(api\\.recaptcha\\.net|google\\.com/recaptcha/)")) {
             throw new PluginException(LinkStatus.ERROR_CAPTCHA);
         }
         if (dl.getConnection().getContentType().contains("html")) {
@@ -127,13 +132,13 @@ public class AkatsukiSubsNet extends PluginForHost {
     /**
      * Prevents more than one free download from starting at a given time. One step prior to dl.startDownload(), it adds a slot to maxFree
      * which allows the next singleton download to start, or at least try.
-     * 
+     *
      * This is needed because xfileshare(website) only throws errors after a final dllink starts transferring or at a given step within pre
      * download sequence. But this template(XfileSharingProBasic) allows multiple slots(when available) to commence the download sequence,
      * this.setstartintival does not resolve this issue. Which results in x(20) captcha events all at once and only allows one download to
      * start. This prevents wasting peoples time and effort on captcha solving and|or wasting captcha trading credits. Users will experience
      * minimal harm to downloading as slots are freed up soon as current download begins.
-     * 
+     *
      * @param controlFree
      *            (+1|-1)
      */

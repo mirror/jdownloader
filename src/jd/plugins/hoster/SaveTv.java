@@ -681,7 +681,7 @@ public class SaveTv extends PluginForHost {
             } else {
                 downloadLink.setProperty(NICE_HOSTproperty + "timesfailed_unknown_dlerror", Property.NULL);
                 logger.info(NICE_HOST + ": timesfailed_unknown_dlerror - disabling current host!");
-                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Unbekannter Serverfehler - bitte dem JDownloader Support mit Log melden!", 60 * 60 * 1000l);
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Unbekannter Serverfehler 1 - bitte dem JDownloader Support mit Log melden!", 60 * 60 * 1000l);
             }
         } else if (dl.getConnection().getLongContentLength() <= 1048576) {
             /* Avoid downloading (too small) trash data */
@@ -720,7 +720,7 @@ public class SaveTv extends PluginForHost {
                 logger.info("ERROR_DOWNLOAD_INCOMPLETE --> Handling it");
                 if (downloadLink.getBooleanProperty(PROPERTY_DOWNLOADLINK_NORESUME, false)) {
                     downloadLink.setProperty(PROPERTY_DOWNLOADLINK_NORESUME, Boolean.valueOf(false));
-                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Unbekannter Serverfehler 2 - bitte dem JDownloader Support mit Log melden!", 30 * 60 * 1000l);
+                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Unbekannter Serverfehler 2", 30 * 60 * 1000l);
                 }
                 downloadLink.setProperty(PROPERTY_DOWNLOADLINK_NORESUME, Boolean.valueOf(true));
                 downloadLink.setChunksProgress(null);
