@@ -397,7 +397,7 @@ public class Zippysharecom extends PluginForHost {
             ddlink = cleanup;
         }
         // other bullshit
-        String[] tt = new Regex(math, "test\\.test[^\r\n]+").getColumn(-1);
+        String[] tt = new Regex(math, "[\r\n]+\\s+test\\.[^\r\n]+").getColumn(-1);
         if (tt != null) {
             for (String t : tt) {
                 math = math.replace(t, "");
