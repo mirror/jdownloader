@@ -347,7 +347,7 @@ public class Zippysharecom extends PluginForHost {
     }
 
     private String regexLastChance3() {
-        return "\\s*[\\w+\\.]+\\(\\s*('|\")?(?:\\w+)\\1\\s*,\\s*([^\r\n]*)\\);";
+        return "\\s*[\\w+\\.]+\\(\\s*('|\")?(?:x)\\1\\s*,\\s*([^\r\n]*)\\);";
     }
 
     private boolean setCorrection0 = false;
@@ -391,10 +391,17 @@ public class Zippysharecom extends PluginForHost {
     private String someCorrection3(String math) {
         String test = new Regex(ddlink, regexLastChance3()).getMatch(1);
         if (test != null) {
-            String cleanup = "document.getElementById('dlbutton').href = " + test;
+            String cleanup = "document.getElementById('dlbutton').href = " + test + ";";
             // has to be first
             math = math.replace(ddlink, cleanup);
             ddlink = cleanup;
+        }
+        // other bullshit
+        String[] tt = new Regex(math, "test\\.test[^\r\n]+").getColumn(-1);
+        if (tt != null) {
+            for (String t : tt) {
+                math = math.replace(t, "");
+            }
         }
         return math;
     }
