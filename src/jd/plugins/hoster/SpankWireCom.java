@@ -65,7 +65,7 @@ public class SpankWireCom extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         // Link offline
-        if (br.containsHTML(">This article has been deleted") | br.containsHTML(">This video has been deleted") || br.containsHTML(">This video has been disabled") || br.containsHTML("id=\"disclaimer_arrow\"")) {
+        if (br.containsHTML(">This (article|video) has been (deleted|disabled)") || br.containsHTML("id=\"disclaimer_arrow\"")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         final String fileID = new Regex(downloadLink.getDownloadURL(), "(\\d+)$").getMatch(0);
@@ -74,11 +74,11 @@ public class SpankWireCom extends PluginForHost {
         }
         String filename = null;
         if (!downloadLink.getDownloadURL().contains("EmbedPlayer.aspx")) {
-            br.getRegex("<h1>(.*?)</h1>").getMatch(0);
+            filename = br.getRegex("<h1>(.*?)</h1>").getMatch(0);
             if (filename == null) {
-                filename = br.getRegex("<title>(.*?) \\- Spankwire\\.com</title>").getMatch(0);
+                filename = br.getRegex("<title>(.*?) \\- Spankwire\\.com\\s*?</title>").getMatch(0);
                 if (filename == null) {
-                    filename = br.getRegex("<meta name=\"Description\" content=\"(.*?) on Spankwire now\\!").getMatch(0);
+                    filename = br.getRegex("<meta name=\"Description\" content=\"Watch (.*?) on Spankwire now\\!").getMatch(0);
                 }
             }
         } else {
@@ -87,8 +87,9 @@ public class SpankWireCom extends PluginForHost {
                 downloadLink.setName(new Regex(downloadLink.getDownloadURL(), "(\\d+)$").getMatch(0));
                 return AvailableStatus.TRUE;
             }
-            filename = br.getRegex("video_title = \"([^\"]+)\";").getMatch(0);
+            filename = br.getRegex("playerData.articleTitle\\s+= \'(([^\']+))\';").getMatch(0);
             if (filename != null) {
+                filename = Encoding.htmlDecode(filename.trim());
                 filename = filename.replaceAll("\\+", " ");
             }
         }
@@ -96,12 +97,12 @@ public class SpankWireCom extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         downloadLink.setName(filename.trim());
+        // File not found can have good name
+        if (br.containsHTML("playerData.videoUnavailable   = \'True\';")) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
         DLLINK = finddllink();
-        if (filename == null || DLLINK == null) {
-            /* If even lowest quality is not available, it must be offline */
-            if (downloadLink.getDownloadURL().contains("EmbedPlayer.aspx") && br.containsHTML("flashvars\\.quality_180p = \"\"")) {
-                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-            }
+        if (DLLINK == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         DLLINK = Encoding.htmlDecode(DLLINK);
