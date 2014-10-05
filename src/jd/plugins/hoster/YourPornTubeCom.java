@@ -1,5 +1,5 @@
 //jDownloader - Downloadmanager
-//Copyright (C) 2009  JD-Team support@jdownloader.org
+//Copyright (C) 2014  JD-Team support@jdownloader.org
 //
 //This program is free software: you can redistribute it and/or modify
 //it under the terms of the GNU General Public License as published by
@@ -29,7 +29,10 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision: 26283 $", interfaceVersion = 2, names = { "yourporntube.com" }, urls = { "^http://www.yourporntube.com/video/.*$" }, flags = { 0 })
+/**
+ * @author telesto
+ */
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "yourporntube.com" }, urls = { "http://(www\\.)?yourporntube\\.com/video/[a-zA-Z0-9\\-]+-\\d+\\.html" }, flags = { 0 })
 public class YourPornTubeCom extends PluginForHost {
 
     private String dllink = null;
