@@ -48,15 +48,25 @@ public class TnaFlixCom extends PluginForHost {
     public void handleFree(DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
         String configLink = br.getRegex("addVariable\\(\\'config\\', \\'(http.*?)\\'").getMatch(0);
-        if (configLink == null) configLink = br.getRegex("flashvars.config.*?escape\\(.*?(http.*?)\"").getMatch(0);
-        if (configLink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (configLink == null) {
+            configLink = br.getRegex("flashvars.config.*?escape\\(.*?(http.*?)\"").getMatch(0);
+        }
+        if (configLink == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         br.getPage(Encoding.htmlDecode(configLink));
         String dllink = br.getRegex("<file>(http://.*?)</file>").getMatch(0);
-        if (dllink == null) dllink = br.getRegex("<videolink>(http://.*?)</videoLink>").getMatch(0);
-        if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (dllink == null) {
+            dllink = br.getRegex("<videolink>(http://.*?)</videoLink>").getMatch(0);
+        }
+        if (dllink == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         dllink = Encoding.htmlDecode(dllink);
+        /* Workaround for old downloadcore bug that can lead to incomplete files */
+        br.getHeaders().put("Accept-Encoding", "identity");
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 0);
-        if ((dl.getConnection().getContentType().contains("html"))) {
+        if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
@@ -70,9 +80,13 @@ public class TnaFlixCom extends PluginForHost {
         br.setCookie("http://tnaflix.com/", "content_filter2", "type%3Dstraight%26filter%3Dcams");
         br.setCookie("http://tnaflix.com/", "content_filter3", "type%3Dstraight%2Ctranny%2Cgay%26filter%3Dcams");
         br.getPage(downloadLink.getDownloadURL());
-        if (br.containsHTML("class=\"errorPage page404\"")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (br.containsHTML("class=\"errorPage page404\"")) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
         if (br.getRedirectLocation() != null) {
-            if (br.getRedirectLocation().contains("errormsg=true")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            if (br.getRedirectLocation().contains("errormsg=true")) {
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            }
             if (downloadLink.getDownloadURL().contains("viewkey=")) {
                 downloadLink.setUrlDownload(br.getRedirectLocation());
                 br.getPage(downloadLink.getDownloadURL());
@@ -87,7 +101,9 @@ public class TnaFlixCom extends PluginForHost {
                 filename = br.getRegex("<meta property=\"og:title\" content=\"([^<>\"]*?)\"").getMatch(0);
             }
         }
-        if (filename == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (filename == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         downloadLink.setFinalFileName(filename.trim() + ".flv");
         return AvailableStatus.TRUE;
     }
