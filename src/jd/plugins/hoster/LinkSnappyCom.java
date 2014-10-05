@@ -223,6 +223,8 @@ public class LinkSnappyCom extends PluginForHost {
             /* Daily total downloadlimit for account is reached */
             final String lang = System.getProperty("user.language");
             logger.info("Daily limit reached");
+            /* Workaround for account overview display bug so users see at least that there is no traffic left */
+            this.currentAcc.getAccountInfo().setTrafficLeft(0);
             if ("de".equalsIgnoreCase(lang)) {
                 throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nTageslimit erreicht!", PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
             } else {
@@ -740,7 +742,7 @@ public class LinkSnappyCom extends PluginForHost {
 
     /**
      * Tries to return value of key from JSon response, from String source.
-     *
+     * 
      * @author raztoki
      * */
     private String getJson(final String source, final String key) {
@@ -756,7 +758,7 @@ public class LinkSnappyCom extends PluginForHost {
 
     /**
      * Tries to return value of key from JSon response, from default 'br' Browser.
-     *
+     * 
      * @author raztoki
      * */
     private String getJson(final String key) {
@@ -765,7 +767,7 @@ public class LinkSnappyCom extends PluginForHost {
 
     /**
      * Tries to return value of key from JSon response, from provided Browser.
-     *
+     * 
      * @author raztoki
      * */
     private String getJson(final Browser ibr, final String key) {

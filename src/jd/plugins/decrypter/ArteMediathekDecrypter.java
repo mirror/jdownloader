@@ -76,6 +76,13 @@ public class ArteMediathekDecrypter extends PluginForDecrypt {
         br.setFollowRedirects(false);
         br.getPage(parameter);
         if (parameter.matches(TYPE_CONCERT)) {
+            if (!br.containsHTML("id=\"section\\-player\"")) {
+                final DownloadLink offline = createDownloadlink("directhttp://" + parameter);
+                offline.setAvailable(false);
+                offline.setProperty("offline", true);
+                decryptedLinks.add(offline);
+                return decryptedLinks;
+            }
         } else {
             int status = br.getHttpConnection().getResponseCode();
             if (!parameter.contains("tv/guide/") && status == 200) {
@@ -92,10 +99,10 @@ public class ArteMediathekDecrypter extends PluginForDecrypt {
                 }
             } else if (status != 200) {
                 // Check...if offline, add to llinkgrabber so user can see it
-                final DownloadLink link = createDownloadlink(parameter.replace("http://", "decrypted://"));
-                link.setAvailable(false);
-                link.setProperty("offline", true);
-                decryptedLinks.add(link);
+                final DownloadLink offline = createDownloadlink("directhttp://" + parameter);
+                offline.setAvailable(false);
+                offline.setProperty("offline", true);
+                decryptedLinks.add(offline);
                 return decryptedLinks;
             }
         }
@@ -201,7 +208,8 @@ public class ArteMediathekDecrypter extends PluginForDecrypt {
         HashMap<String, HashMap<String, String>> streamValues = new HashMap<String, HashMap<String, String>>();
         HashMap<String, String> streamValue;
         String vsr = br.getRegex(vsrRegex).getMatch(0);
-        if (vsr == null) {
+        /* If it's just empty, the video is probably not available in the users' country. */
+        if (vsr == null || vsr.equals("")) {
             final DownloadLink link = createDownloadlink(parameter.replace("http://", "decrypted://"));
             link.setFinalFileName(title);
             link.setAvailable(false);
