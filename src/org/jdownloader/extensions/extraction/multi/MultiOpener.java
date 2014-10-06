@@ -26,6 +26,7 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.concurrent.atomic.AtomicLong;
 
+import net.sf.sevenzipjbinding.IArchiveOpenCallback;
 import net.sf.sevenzipjbinding.IArchiveOpenVolumeCallback;
 import net.sf.sevenzipjbinding.ICryptoGetTextPassword;
 import net.sf.sevenzipjbinding.IInStream;
@@ -39,7 +40,7 @@ import net.sf.sevenzipjbinding.impl.RandomAccessFileInStream;
  * @author botzi
  * 
  */
-class MultiOpener implements IArchiveOpenVolumeCallback, ICryptoGetTextPassword {
+class MultiOpener implements IArchiveOpenVolumeCallback, IArchiveOpenCallback, ICryptoGetTextPassword {
     private Map<String, OpenerAccessTracker> openedRandomAccessFileList = new HashMap<String, OpenerAccessTracker>();
     private final String                     password;
     private final AtomicLong                 accessCounter              = new AtomicLong(0);
@@ -122,5 +123,13 @@ class MultiOpener implements IArchiveOpenVolumeCallback, ICryptoGetTextPassword 
 
     public String cryptoGetTextPassword() throws SevenZipException {
         return password;
+    }
+
+    @Override
+    public void setCompleted(Long arg0, Long arg1) throws SevenZipException {
+    }
+
+    @Override
+    public void setTotal(Long arg0, Long arg1) throws SevenZipException {
     }
 }
