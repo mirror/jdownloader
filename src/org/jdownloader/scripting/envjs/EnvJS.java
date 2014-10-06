@@ -190,10 +190,14 @@ public class EnvJS {
         }
     }
 
+    public Object evalTrusted(String js) {
+        return evaluateTrustedString(cx, scope, js, "eval", 1, null);
+    }
+
     public Object eval(String js) {
 
-        // cx.evaluateString(scope, js, "js", 1, null);
-        return evaluateTrustedString(cx, scope, js, "eval", 1, null);
+        return cx.evaluateString(scope, js, "js", 1, null);
+        //
     }
 
     public void setDocument(String url, String html) {
@@ -207,7 +211,8 @@ public class EnvJS {
     private Object evaluateTrustedString(Context cx2, Global scope2, String js, String string, int i, Object object) {
         scriptStack.add(string);
         try {
-            return cx2.evaluateString(scope, js, string, i, object);
+
+            return JSHtmlUnitPermissionRestricter.evaluateTrustedString(cx2, scope, js, string, i, object);
         } catch (EcmaError e) {
             logger.log(e);
             throw e;
@@ -234,4 +239,9 @@ public class EnvJS {
     public void require(String string) throws IOException {
         JSHtmlUnitPermissionRestricter.evaluateTrustedString(cx, scope, readRequire(string), "setInstance", 1, null);
     }
+
+    public void tick() {
+        evalTrusted("  Envjs.tick();  ");
+    }
+
 }
