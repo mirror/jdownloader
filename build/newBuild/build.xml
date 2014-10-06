@@ -417,12 +417,11 @@
 		<buildAddon package="JDShutdown" include="shutdown" />
 
 
-		<buildAddon package="JDTray" include="jdtrayicon" />
-
+		
 		<buildAddon package="JDGrowl" include="growl" />
 		<buildAddon package="AntiShutdown" include="antistandby" />
 		<buildAddon package="Extraction" include="extraction" />
-		<buildAddon package="Scheduler" include="schedulerv2" />
+		<buildAddon package="Scheduler" include="schedulerV2" />
 
 
 
