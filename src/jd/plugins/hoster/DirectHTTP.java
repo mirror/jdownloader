@@ -33,6 +33,7 @@ import jd.controlling.HTACCESSController;
 import jd.http.Browser;
 import jd.http.Cookies;
 import jd.http.URLConnectionAdapter;
+import jd.http.requests.HeadRequest;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.parser.html.Form;
@@ -49,12 +50,11 @@ import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
 
 import org.appwork.utils.StringUtils;
-import org.appwork.utils.net.httpconnection.HTTPConnection;
 
 /**
  * TODO: Remove after next big update of core to use the public static methods!
  */
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "DirectHTTP", "http links" }, urls = { "directhttp://.+", "https?viajd://[\\w\\.:\\-@]*/.*\\.(jdeatme|3gp|7zip|7z|abr|ac3|aiff|aifc|aif|ai|au|avi|apk|bin|bmp|bat|bz2|cbr|cbz|ccf|chm|cr2|cso|cue|cvd|dta|deb|divx|djvu|dlc|dmg|doc|docx|dot|eps|epub|exe|ff|flv|flac|f4v|gsd|gif|gpg|gz|iwd|idx|iso|ipa|ipsw|java|jar|jpg|jpeg|load|m2ts|m4v|m4a|md5|mkv|mp2|mp3|mp4|mobi|mov|movie|mpeg|mpe|mpg|mpq|msi|msu|msp|mv|mws|nfo|npk|oga|ogg|ogv|otrkey|par2|pkg|png|pdf|pptx|ppt|ppsx|ppsx|ppz|pot|psd|qt|rmvb|rm|rar|ram|ra|rev|rnd|[r-z]\\d{2}|r\\d+|rpm|run|rsdf|reg|rtf|shnf|sh(?!tml)|ssa|smi|sub|srt|snd|sfv|sfx|swf|swc|tar\\.gz|tar\\.bz2|tar\\.xz|tar|tgz|tiff|tif|ts|txt|viv|vivo|vob|vtt|webm|wav|wmv|wma|xla|xls|xpi|zeno|zip|z\\d+|_[_a-z]{2}|\\d+(?=\\?|$|\"|\r|\n))" }, flags = { 2, 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "DirectHTTP", "http links" }, urls = { "directhttp://.+", "https?viajd://[\\w\\.:\\-@]*/.*\\.(jdeatme|3gp|7zip|7z|abr|ac3|aiff|aifc|aif|ai|au|avi|apk|bin|bmp|bat|bz2|cbr|cbz|ccf|chm|cr2|cso|cue|cvd|dta|deb|divx|djvu|dlc|dmg|doc|docx|dot|eps|epub|exe|ff|flv|flac|f4v|gsd|gif|gpg|gz|iwd|idx|iso|ipa|ipsw|java|jar|jpe?g|load|m2ts|m4v|m4a|md5|mkv|mp2|mp3|mp4|mobi|mov|movie|mpeg|mpe|mpg|mpq|msi|msu|msp|mv|mws|nfo|npk|oga|ogg|ogv|otrkey|par2|pkg|png|pdf|pptx?|ppsx?|ppz|pot|psd|qt|rmvb|rm|rar|ram|ra|rev|rnd|[r-z]\\d{2}|rpm|run|rsdf|reg|rtf|shnf|sh(?!tml)|ssa|smi|sub|srt|snd|sfv|sfx|swf|swc|tar\\.(gz|bz2|xz)|tar|tgz|tiff?|ts|txt|viv|vivo|vob|vtt|webm|wav|wmv|wma|xla|xls|xpi|zeno|zip|(z|r)\\d+|_[_a-z]{2}|\\d+(?=\\?|$|\"|\r|\n))" }, flags = { 2, 0 })
 public class DirectHTTP extends PluginForHost {
 
     public static class Recaptcha {
@@ -331,7 +331,7 @@ public class DirectHTTP extends PluginForHost {
 
     private static final String JDL_PREFIX        = "jd.plugins.hoster.DirectHTTP.";
 
-    public static final String  ENDINGS           = "\\.(jdeatme|3gp|7zip|7z|abr|ac3|aiff|aifc|aif|ai|au|avi|apk|bin|bmp|bat|bz2|cbr|cbz|ccf|chm|cr2|cso|cue|cvd|dta|deb|divx|djvu|dlc|dmg|doc|docx|dot|eps|epub|exe|ff|flv|flac|f4v|gsd|gif|gpg|gz|iwd|idx|iso|ipa|ipsw|java|jar|jpg|jpeg|load|m2ts|m4v|m4a|md5|mkv|mp2|mp3|mp4|mobi|mov|movie|mpeg|mpe|mpg|mpq|msi|msu|msp|mv|mws|nfo|npk|oga|ogg|ogv|otrkey|par2|pkg|png|pdf|pptx|ppt|ppsx|ppsx|ppz|pot|psd|qt|rmvb|rm|rar|ram|ra|rev|rnd|[r-z]\\d{2}|r\\d+|rpm|run|rsdf|reg|rtf|shnf|sh(?!tml)|ssa|smi|sub|srt|snd|sfv|sfx|swf|swc|tar\\.gz|tar\\.bz2|tar\\.xz|tar|tgz|tiff|tif|ts|txt|viv|vivo|vob|vtt|webm|wav|wmv|wma|xla|xls|xpi|zeno|zip|z\\d+|_[_a-z]{2}|\\d+)";
+    public static final String  ENDINGS           = "\\.(jdeatme|3gp|7zip|7z|abr|ac3|aiff|aifc|aif|ai|au|avi|apk|bin|bmp|bat|bz2|cbr|cbz|ccf|chm|cr2|cso|cue|cvd|dta|deb|divx|djvu|dlc|dmg|doc|docx|dot|eps|epub|exe|ff|flv|flac|f4v|gsd|gif|gpg|gz|iwd|idx|iso|ipa|ipsw|java|jar|jpe?g|load|m2ts|m4v|m4a|md5|mkv|mp2|mp3|mp4|mobi|mov|movie|mpeg|mpe|mpg|mpq|msi|msu|msp|mv|mws|nfo|npk|oga|ogg|ogv|otrkey|par2|pkg|png|pdf|pptx?|ppsx?|ppz|pot|psd|qt|rmvb|rm|rar|ram|ra|rev|rnd|[r-z]\\d{2}|rpm|run|rsdf|reg|rtf|shnf|sh(?!tml)|ssa|smi|sub|srt|snd|sfv|sfx|swf|swc|tar\\.(gz|bz2|xz)|tar|tgz|tiff?|ts|txt|viv|vivo|vob|vtt|webm|wav|wmv|wma|xla|xls|xpi|zeno|zip|(z|r)\\d+|_[_a-z]{2}|\\d+(?=\\?|$|\"|\r|\n))";
     public static final String  NORESUME          = "nochunkload";
     public static final String  NOCHUNKS          = "nochunk";
     public static final String  FORCE_NORESUME    = "forcenochunkload";
@@ -372,18 +372,24 @@ public class DirectHTTP extends PluginForHost {
     }
 
     @Override
-    public boolean isValidURL(String URL) {
-        URL = URL.toLowerCase(Locale.ENGLISH);
-        if (URL.contains("facebook.com/l.php")) {
-            return false;
+    public boolean isValidURL(String url) {
+        if (url != null) {
+            url = url.toLowerCase(Locale.ENGLISH);
+            if (url.contains("facebook.com/l.php")) {
+                return false;
+            }
+            if (url.contains("facebook.com/ajax/sharer/")) {
+                return false;
+            }
+            if (url.contains("youtube.com/videoplayback") && url.startsWith("http")) {
+                return false;
+            }
+            if (url.matches(".*?://.*?/.*\\?.*\\.\\d+$")) {
+                return false;
+            }
+            return true;
         }
-        if (URL.contains("facebook.com/ajax/sharer/")) {
-            return false;
-        }
-        if (URL.contains("youtube.com/videoplayback") && URL.startsWith("http")) {
-            return false;
-        }
-        return true;
+        return false;
     }
 
     /**
@@ -756,7 +762,7 @@ public class DirectHTTP extends PluginForHost {
             if (this.contentType != null && this.contentType.startsWith("text/html") && urlConnection.isContentDisposition() == false && downloadLink.getBooleanProperty(DirectHTTP.TRY_ALL, false) == false) {
                 /* jd does not want to download html content! */
                 /* if this page does redirect via js/html, try to follow */
-                if (HTTPConnection.RequestMethod.HEAD.equals(urlConnection.getRequestMethod())) {
+                if (urlConnection.getRequest() instanceof HeadRequest) {
                     preferHeadRequest = false;
                     urlConnection.disconnect();
                     return this.requestFileInformation(downloadLink);
