@@ -264,9 +264,11 @@ public class SaveTvDecrypter extends PluginForDecrypt {
     }
 
     private void site_decrypt_All() throws Exception {
-        boolean is_groups_enabled = !br.containsHTML("\"IRECORDINGFORMATID\"");
-        final boolean groups_enabled_by_user = is_groups_enabled;
+        boolean is_groups_enabled = false;
+        boolean groups_enabled_by_user = false;
         getPageSafe("https://www.save.tv/STV/M/obj/archive/JSON/VideoArchiveApi.cfm?iEntriesPerPage=1&iCurrentPage=1");
+        is_groups_enabled = !br.containsHTML("\"IGROUPCOUNT\":1\\.0");
+        groups_enabled_by_user = is_groups_enabled;
         final String totalLinks = getJson(br.toString(), "ITOTALENTRIES");
         if (totalLinks == null) {
             logger.warning("Decrypter broken for link: " + parameter);
@@ -280,53 +282,55 @@ public class SaveTvDecrypter extends PluginForDecrypt {
 
         int added_entries = 0;
 
-        for (int i = 1; i <= requestCount; i++) {
-            try {
-                if (this.isAbort()) {
-                    decryptAborted = true;
-                    throw new DecrypterException("Decrypt aborted!");
-                }
-            } catch (final DecrypterException e) {
-                // Not available in old 0.9.581 Stable
-                if (decryptAborted) {
-                    throw e;
-                }
-            }
-
-            logger.info("save.tv: Decrypting request " + i + " of " + requestCount);
-
-            is_groups_enabled = !br.containsHTML("\"IRECORDINGFORMATID\"");
-            if (is_groups_enabled) {
-                /* Disable stupid groups setting to crawl faster and to make it work anyways */
-                logger.info("Disabling groups setting");
-                postPageSafe(this.br, "https://www.save.tv/STV/M/obj/user/submit/submitVideoArchiveOptions.cfm", "ShowGroupedVideoArchive=false");
-                is_groups_enabled = false;
-            }
-            getPageSafe("https://www.save.tv/STV/M/obj/archive/JSON/VideoArchiveApi.cfm?iEntriesPerPage=" + ENTRIES_PER_REQUEST + "&iCurrentPage=" + i);
-            final String array_text = br.getRegex("\"ARRVIDEOARCHIVEENTRIES\":\\[(\\{.*?\\})\\],\"ENABLEDEFAULTFORMATSETTINGS\"").getMatch(0);
-            final String[] telecast_array = array_text.split("TelecastId=\\d+\"\\}\\},\\{");
-
-            for (final String singleid_information : telecast_array) {
-                addID_site(singleid_information);
-                added_entries++;
-            }
-
-            if (added_entries == 0) {
-                logger.info("save.tv. Can't find entries, stopping at request: " + i + " of " + requestCount);
-                break;
-            }
-            logger.info("Found " + added_entries + " entries in request " + i + " of " + requestCount);
-            continue;
-        }
         try {
-            if (groups_enabled_by_user && !is_groups_enabled) {
-                /* Enable groups setting again because user had it enabled before */
-                logger.info("Enabling groups setting");
-                postPageSafe(this.br, "https://www.save.tv/STV/M/obj/user/submit/submitVideoArchiveOptions.cfm", "ShowGroupedVideoArchive=true");
-                logger.info("Successfully re-enabled groups setting");
+            for (int i = 1; i <= requestCount; i++) {
+                try {
+                    if (this.isAbort()) {
+                        decryptAborted = true;
+                        throw new DecrypterException("Decrypt aborted!");
+                    }
+                } catch (final DecrypterException e) {
+                    // Not available in old 0.9.581 Stable
+                    if (decryptAborted) {
+                        throw e;
+                    }
+                }
+
+                logger.info("save.tv: Decrypting request " + i + " of " + requestCount);
+
+                if (is_groups_enabled) {
+                    /* Disable stupid groups setting to crawl faster and to make it work anyways */
+                    logger.info("Disabling groups setting");
+                    postPageSafe(this.br, "https://www.save.tv/STV/M/obj/user/submit/submitVideoArchiveOptions.cfm", "ShowGroupedVideoArchive=false");
+                    is_groups_enabled = false;
+                }
+                getPageSafe("https://www.save.tv/STV/M/obj/archive/JSON/VideoArchiveApi.cfm?iEntriesPerPage=" + ENTRIES_PER_REQUEST + "&iCurrentPage=" + i);
+                final String array_text = br.getRegex("\"ARRVIDEOARCHIVEENTRIES\":\\[(\\{.*?\\})\\],\"ENABLEDEFAULTFORMATSETTINGS\"").getMatch(0);
+                final String[] telecast_array = array_text.split("TelecastId=\\d+\"\\}\\},\\{");
+
+                for (final String singleid_information : telecast_array) {
+                    addID_site(singleid_information);
+                    added_entries++;
+                }
+
+                if (added_entries == 0) {
+                    logger.info("save.tv. Can't find entries, stopping at request: " + i + " of " + requestCount);
+                    break;
+                }
+                logger.info("Found " + added_entries + " entries in request " + i + " of " + requestCount);
+                continue;
             }
-        } catch (final Throwable settingfail) {
-            logger.info("Failed to re-enable groups setting");
+        } finally {
+            try {
+                if (groups_enabled_by_user && !is_groups_enabled) {
+                    /* Restore users' groups-setting after decryption if changed */
+                    logger.info("Re-enabling groups setting");
+                    postPageSafe(this.br, "https://www.save.tv/STV/M/obj/user/submit/submitVideoArchiveOptions.cfm", "ShowGroupedVideoArchive=true");
+                    logger.info("Successfully re-enabled groups setting");
+                }
+            } catch (final Throwable settingfail) {
+                logger.info("Failed to re-enable groups setting");
+            }
         }
     }
 
@@ -343,7 +347,11 @@ public class SaveTvDecrypter extends PluginForDecrypt {
         final long current_tdifference = System.currentTimeMillis() - datemilliseconds;
         if (tdifference_milliseconds == 0 || current_tdifference <= tdifference_milliseconds) {
             /* Nothing to hide - Always show original links in JD */
-           try{/*JD2 only*/dl.setContentUrl(telecast_url);}catch(Throwable e){/*Stable*/ dl.setBrowserUrl(telecast_url);}
+            try {/* JD2 only */
+                dl.setContentUrl(telecast_url);
+            } catch (Throwable e) {/* Stable */
+                dl.setBrowserUrl(telecast_url);
+            }
             dl.setDownloadSize(calculated_filesize);
             if (FAST_LINKCHECK) {
                 dl.setAvailable(true);
@@ -371,7 +379,11 @@ public class SaveTvDecrypter extends PluginForDecrypt {
         final long current_tdifference = System.currentTimeMillis() - datemilliseconds;
         if (tdifference_milliseconds == 0 || current_tdifference <= tdifference_milliseconds) {
             /* Nothing to hide - Always show original links in JD */
-           try{/*JD2 only*/dl.setContentUrl(telecast_url);}catch(Throwable e){/*Stable*/ dl.setBrowserUrl(telecast_url);}
+            try {/* JD2 only */
+                dl.setContentUrl(telecast_url);
+            } catch (Throwable e) {/* Stable */
+                dl.setBrowserUrl(telecast_url);
+            }
             dl.setDownloadSize(calculated_filesize);
             if (FAST_LINKCHECK) {
                 dl.setAvailable(true);

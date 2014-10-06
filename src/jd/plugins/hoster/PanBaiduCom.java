@@ -222,7 +222,8 @@ public class PanBaiduCom extends PluginForHost {
         if (dl.getConnection().getContentType().contains("html") || dl.getConnection().getResponseCode() == 403) {
             br.followConnection();
             if (br.containsHTML("\"error_code\":31326")) {
-                throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "pan.baidu.com is blocking JDownloader", 10 * 60 * 60 * 1001l);
+                /* Should only happen in case they detect and block us */
+                throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Server error 31326", 30 * 60 * 1000l);
             }
         }
         downloadLink.setFinalFileName(Encoding.htmlDecode(getFileNameFromHeader(dl.getConnection())));
@@ -263,7 +264,7 @@ public class PanBaiduCom extends PluginForHost {
 
     /**
      * Tries to return value of key from JSon response, from String source.
-     * 
+     *
      * @author raztoki
      * */
     private String getJson(final String source, final String key) {
@@ -279,7 +280,7 @@ public class PanBaiduCom extends PluginForHost {
 
     /**
      * Tries to return value of key from JSon response, from default 'br' Browser.
-     * 
+     *
      * @author raztoki
      * */
     private String getJson(final String key) {
@@ -288,7 +289,7 @@ public class PanBaiduCom extends PluginForHost {
 
     /**
      * Tries to return value of key from JSon response, from provided Browser.
-     * 
+     *
      * @author raztoki
      * */
     private String getJson(final Browser ibr, final String key) {
@@ -323,7 +324,7 @@ public class PanBaiduCom extends PluginForHost {
     /**
      * Is intended to handle out of date errors which might occur seldom by re-tring a couple of times before throwing the out of date
      * error.
-     * 
+     *
      * @param dl
      *            : The DownloadLink
      * @param error

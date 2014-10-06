@@ -106,7 +106,7 @@ public class YunFileCom extends PluginForHost {
     // Works like MountFileCom and HowFileCom
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
-        this.setBrowserExclusive();
+        // this.setBrowserExclusive();
         prepBrowser(br);
         br.setFollowRedirects(true);
         final URLConnectionAdapter con = br.openGetConnection(link.getDownloadURL());
@@ -157,83 +157,104 @@ public class YunFileCom extends PluginForHost {
     }
 
     public void doFree(final DownloadLink downloadLink) throws Exception, PluginException {
+        String postData = null;
+        String action = null;
         requestFileInformation(downloadLink);
-        if (br.containsHTML("您需要下载等待 <")) {
-            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Wait before starting new downloads", 1 * 60 * 1001l);
-        }
-        checkErrors();
-        final Regex siteInfo = br.getRegex("<span style=\"font\\-weight:bold;\">\\&nbsp;\\&nbsp;<a href=\"(http://[a-z0-9]+\\.yunfile.com)/ls/([A-Za-z0-9\\-_]+)/\"");
-        String userid = siteInfo.getMatch(1);
-        if (userid == null) {
-            userid = new Regex(downloadLink.getDownloadURL(), "yunfile\\.com/file/(.*?)/").getMatch(0);
-        }
-        String fileid = new Regex(downloadLink.getDownloadURL(), "yunfile\\.com/file/.*?/([a-z0-9]+)").getMatch(0);
-        if (fileid == null) {
-            fileid = new Regex(downloadLink.getDownloadURL(), "yunfile\\.com/file/([A-Za-z0-9]+)/$").getMatch(0);
-        }
-        if (fileid == null) {
-            fileid = br.getRegex("\\&fileId=([A-Za-z0-9]+)\\&").getMatch(0);
-        }
-        if (userid == null || fileid == null) {
+        final boolean pluginbroken = true;
+        if (pluginbroken) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        String freelink = getFreelink();
-        String domain = siteInfo.getMatch(0);
-        if (domain == null) {
-            domain = new Regex(br.getURL(), "(http://.*?\\.?yunfile\\.com)").getMatch(0);
-        }
-        br.setCookie("http://yunfile.com/", "validCodeUrl", "\"" + domain + ":8880/view?module=service&action=queryValidCode\"");
-        // br.setCookie("http://yunfile.com/", "lastDownTime", "1412523424380");
-        if (freelink != null) {
-            freelink = domain + freelink;
-        } else {
-            freelink = domain + "/file/down/" + userid + "/" + fileid + ".html";
-        }
-        if (!br.getURL().contains(domain)) {
-            br.getPage(domain + "/file/" + userid + "/" + fileid + "/");
-            freelink = getFreelink();
+        /* Try multiple times - it will also fail in browser, most times on first attempt because wrong domain is used. */
+        for (int i = 1; i <= 3; i++) {
+            if (br.getHttpConnection().getResponseCode() == 404) {
+                br.getPage(downloadLink.getDownloadURL());
+            }
+            if (br.containsHTML("您需要下载等待 <")) {
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Wait before starting new downloads", 1 * 60 * 1001l);
+            }
+            checkErrors();
+            final Regex siteInfo = br.getRegex("<span style=\"font\\-weight:bold;\">\\&nbsp;\\&nbsp;<a href=\"(http://[a-z0-9]+\\.yunfile.com)/ls/([A-Za-z0-9\\-_]+)/\"");
+            String userid = siteInfo.getMatch(1);
+            if (userid == null) {
+                userid = new Regex(downloadLink.getDownloadURL(), "yunfile\\.com/file/(.*?)/").getMatch(0);
+            }
+            String fileid = new Regex(downloadLink.getDownloadURL(), "yunfile\\.com/file/.*?/([a-z0-9]+)").getMatch(0);
+            if (fileid == null) {
+                fileid = new Regex(downloadLink.getDownloadURL(), "yunfile\\.com/file/([A-Za-z0-9]+)/$").getMatch(0);
+            }
+            if (fileid == null) {
+                fileid = br.getRegex("\\&fileId=([A-Za-z0-9]+)\\&").getMatch(0);
+            }
+            if (userid == null || fileid == null) {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
+            String freelink = getFreelink();
+            String domain = siteInfo.getMatch(0);
+            if (domain == null) {
+                domain = new Regex(br.getURL(), "(http://.*?\\.?yunfile\\.com)").getMatch(0);
+            }
+            if (i == 1) {
+                domain = this.getDomainFromLink(downloadLink.getDownloadURL());
+            }
+            br.setCookie("http://yunfile.com/", "validCodeUrl", "\"" + domain + ":8880/view?module=service&action=queryValidCode\"");
+            br.setCookie("http://yunfile.com/", "lastDownTime", "1412523424380");
             if (freelink != null) {
                 freelink = domain + freelink;
             } else {
                 freelink = domain + "/file/down/" + userid + "/" + fileid + ".html";
             }
-        }
-        // Check if captcha needed
-        if (br.containsHTML("/verifyimg/getPcv/")) {
-            final String captchalink = br.getRegex("</script>[\t\n\r ]+<img   src=\"(/verifyimg/[^<>\"]*?)\"").getMatch(0);
-            if (captchalink == null) {
-                logger.warning("captchalink == null");
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            if (!br.getURL().contains(domain)) {
+                br.getPage(domain + "/file/" + userid + "/" + fileid + "/");
+                freelink = getFreelink();
+                if (freelink != null) {
+                    freelink = domain + freelink;
+                } else {
+                    freelink = domain + "/file/down/" + userid + "/" + fileid + ".html";
+                }
             }
-            final String code = getCaptchaCode(domain + captchalink, downloadLink);
-            freelink = freelink.replace(".html", "/" + Encoding.urlEncode(code) + ".html");
-        }
-        try {
-            br.cloneBrowser().getPage("http://www.yunfile.com//counter.jsp?userId=" + userid + "&fileId=" + fileid + "&dr=" + downloadLink.getDownloadURL());
-        } catch (final Throwable e) {
-        }
-        int wait = 30;
-        String shortWaittime = br.getRegex("id=\"wait_input\" style=\"font\\-size:22px; color: green;\">(\\d+)<").getMatch(0);
-        if (shortWaittime != null) {
-            wait = Integer.parseInt(shortWaittime);
-        }
-        sleep(wait * 1001l, downloadLink);
-        br.getPage(freelink);
-
-        /* Check here if the plugin is broken */
-        final String vid1 = br.getRegex("name=\"vid1\" value=\"([a-z0-9]+)\"").getMatch(0);
-        final String vid = br.getRegex("var vericode = \"([a-z0-9]+)\";").getMatch(0);
-        final String action = br.getRegex("\"(http://dl\\d+\\.yunfile\\.com/view\\?fid=[a-z0-9]+)\"").getMatch(0);
-        final String md5 = br.getRegex("name=\"md5\" value=\"([a-z0-9]{32})\"").getMatch(0);
-        logger.info("vid = " + vid + " vid1 = " + vid1 + " action = " + action + " md5 = " + md5);
-        if (vid == null || action == null || md5 == null || vid1 == null) {
+            // Check if captcha needed
             if (br.containsHTML("/verifyimg/getPcv/")) {
-                throw new PluginException(LinkStatus.ERROR_CAPTCHA);
+                final String captchalink = br.getRegex("</script>[\t\n\r ]+<img   src=\"(/verifyimg/[^<>\"]*?)\"").getMatch(0);
+                if (captchalink == null) {
+                    logger.warning("captchalink == null");
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                }
+                final String code = getCaptchaCode(domain + captchalink, downloadLink);
+                freelink = freelink.replace(".html", "/" + Encoding.urlEncode(code) + ".html");
             }
+            try {
+                br.cloneBrowser().getPage("http://www.yunfile.com//counter.jsp?userId=" + userid + "&fileId=" + fileid + "&dr=" + downloadLink.getDownloadURL());
+            } catch (final Throwable e) {
+            }
+            int wait = 30;
+            String shortWaittime = br.getRegex("id=\"wait_input\" style=\"font\\-size:22px; color: green;\">(\\d+)<").getMatch(0);
+            if (shortWaittime != null) {
+                wait = Integer.parseInt(shortWaittime);
+            }
+            sleep(wait * 1001l, downloadLink);
+            br.getPage(freelink);
+
+            /* Check here if the plugin is broken */
+            final String vid1 = br.getRegex("name=\"vid1\" value=\"([a-z0-9]+)\"").getMatch(0);
+            final String vid = br.getRegex("var vericode = \"([a-z0-9]+)\";").getMatch(0);
+            action = br.getRegex("\"(http://dl\\d+\\.yunfile\\.com/view\\?fid=[a-z0-9]+)\"").getMatch(0);
+            final String md5 = br.getRegex("name=\"md5\" value=\"([a-z0-9]{32})\"").getMatch(0);
+            logger.info("vid = " + vid + " vid1 = " + vid1 + " action = " + action + " md5 = " + md5);
+            if (vid == null || action == null || md5 == null || vid1 == null) {
+                continue;
+                // if (br.containsHTML("/verifyimg/getPcv/")) {
+                // throw new PluginException(LinkStatus.ERROR_CAPTCHA);
+                // }
+                // throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            } else {
+                br.setFollowRedirects(true);
+                postData = "module=fileService&action=downfile&userId=" + userid + "&fileId=" + fileid + "&vid=" + vid + "&vid1=" + vid1 + "&md5=" + md5;
+                break;
+            }
+        }
+        if (action == null || postData == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        br.setFollowRedirects(true);
-        String postData = "module=fileService&action=downfile&userId=" + userid + "&fileId=" + fileid + "&vid=" + vid + "&vid1=" + vid1 + "&md5=" + md5;
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, action, postData, false, 1);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
@@ -244,7 +265,7 @@ public class YunFileCom extends PluginForHost {
     }
 
     private String getFreelink() {
-        String freelink = br.getRegex("\"(/file/down/[^<>\"]*?)\"[\t\n\r ]+id=\"downpage_link\"").getMatch(0);
+        String freelink = br.getRegex("id=\"downpage_link\" href=\"(/file/down/[^<>\"]*?)\"").getMatch(0);
         if (freelink == null) {
             freelink = br.getRegex("\"(/file/down/(?!guest)[^<>\"]*?)\"").getMatch(0);
         }
