@@ -322,7 +322,10 @@ public class AddScheduleEntryDialog extends AbstractDialog<ScheduleEntry> {
     }
 
     protected int getPreferredWidth() {
-        return 400;
+        if (content == null) {
+            return 430;
+        }
+        return (int) content.getMinimumSize().getWidth() + 20;
     }
 
     protected void updatePanel() {
@@ -331,7 +334,6 @@ public class AddScheduleEntryDialog extends AbstractDialog<ScheduleEntry> {
         }
         // TODO check enable "ok" button
         getDialog().pack();
-
     }
 
     private void checkOK() {
