@@ -56,12 +56,15 @@ public class PasteLinksAction extends CustomizableAppAction implements ActionCon
 
     @Override
     public void actionPerformed(ActionEvent e) {
+        System.out.println(1);
         new Thread("Add Links Thread") {
             @Override
             public void run() {
                 ClipboardContent content = ClipboardMonitoring.getINSTANCE().getCurrentContent();
                 final LinkCollectingJob crawljob = new LinkCollectingJob(new LinkOriginDetails(LinkOrigin.PASTE_LINKS_ACTION, null), content != null ? content.getContent() : null);
-                if (content != null) crawljob.setCustomSourceUrl(content.getBrowserURL());
+                if (content != null) {
+                    crawljob.setCustomSourceUrl(content.getBrowserURL());
+                }
                 crawljob.setDeepAnalyse(isDeepDecryptEnabled());
 
                 AddLinksProgress d = new AddLinksProgress(crawljob);

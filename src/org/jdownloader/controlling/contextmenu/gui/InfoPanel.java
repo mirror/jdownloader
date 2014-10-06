@@ -369,7 +369,7 @@ public class InfoPanel extends MigPanel implements ActionListener, Scrollable {
         } else {
             try {
 
-                if (value.getActionData() == null) {
+                if (value.getActionData() == null || (value instanceof MenuLink)) {
                     return;
                 }
                 ActionData actionData = value.getActionData();
@@ -444,10 +444,10 @@ public class InfoPanel extends MigPanel implements ActionListener, Scrollable {
 
         CustomizableAppAction action;
         try {
-            if (mid.getActionData() != null) {
-                shortcutLabel.setVisible(!(mid instanceof MenuLink));
-                shortcut.setVisible(!(mid instanceof MenuLink));
-                shortCutReset.setVisible(!(mid instanceof MenuLink));
+            if (mid.getActionData() != null && !(mid instanceof MenuLink)) {
+                shortcutLabel.setVisible(true);
+                shortcut.setVisible(true);
+                shortCutReset.setVisible(true);
                 action = mid.createAction();
                 name.setText(action.getName());
                 if (StringUtils.isEmpty(action.getName())) {
@@ -507,6 +507,7 @@ public class InfoPanel extends MigPanel implements ActionListener, Scrollable {
                     for (Entry e : lst) {
                         customPanel.add(e.mid.getActionData(), action, e.so, e.gs);
                     }
+
                 }
             } else {
                 shortcut.setText("");
@@ -515,7 +516,14 @@ public class InfoPanel extends MigPanel implements ActionListener, Scrollable {
                 shortcut.setVisible(false);
                 shortCutReset.setVisible(false);
             }
+            if (mid instanceof MenuLink) {
 
+                JComponent panel = ((MenuLink) mid).createSettingsPanel();
+                if (panel != null) {
+                    customPanel.add(panel, "pushx,growx");
+                }
+
+            }
         } catch (Exception e) {
             e.printStackTrace();
         }

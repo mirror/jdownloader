@@ -45,7 +45,9 @@ public class MenuContainerRoot extends MenuContainer implements Storable {
         container._setValidated(true);
         boolean ret = true;
         container._setRoot(_getRoot());
-        if (!container.isVisible() && !full) return true;
+        if (!container.isVisible() && !full) {
+            return true;
+        }
         main: while (true) {
             if (container.getItems() != null) {
 
@@ -54,14 +56,18 @@ public class MenuContainerRoot extends MenuContainer implements Storable {
                 MenuItemData last = null;
                 for (int i = 0; i < container.getItems().size(); i++) {
                     MenuItemData mid = container.getItems().get(i);
-                    if (!mid.isVisible() && !full) continue;
+                    if (!mid.isVisible() && !full) {
+                        continue;
+                    }
                     mid._setValidateException(null);
                     MenuItemData lr = null;
                     try {
                         try {
                             lr = mid.createValidatedItem();
-                            if (!lr.isVisible() && !full) continue;
-                            if (lr.getActionData() != null) {
+                            if (!lr.isVisible() && !full) {
+                                continue;
+                            }
+                            if (lr.getActionData() != null && !(lr instanceof MenuLink)) {
                                 lr.createAction();
                             }
 
@@ -139,9 +145,13 @@ public class MenuContainerRoot extends MenuContainer implements Storable {
 
         } else {
             boolean added = false;
-            if (parent == null) parent = this;
+            if (parent == null) {
+                parent = this;
+            }
             for (MenuItemData mu : parent.getItems()) {
-                if (mu.getActionData() != null) continue;
+                if (mu.getActionData() != null) {
+                    continue;
+                }
                 if (StringUtils.equals(mu.getClassName(), nodeToAdd.getClassName())) {
                     // subfolder found
 
@@ -259,12 +269,16 @@ public class MenuContainerRoot extends MenuContainer implements Storable {
         int bestMatch = Integer.MAX_VALUE;
         int bestIndex = -1;
 
-        if (above.size() == 0 && below.size() == 0) return 0;
+        if (above.size() == 0 && below.size() == 0) {
+            return 0;
+        }
         if (above.size() == 0) {
             for (int b = 0; b < below.size(); b++) {
                 MenuItemData bN = below.get(b);
                 int bIndex = identList.indexOf(bN._getIdentifier());
-                if (bIndex >= 0) { return bIndex; }
+                if (bIndex >= 0) {
+                    return bIndex;
+                }
 
             }
         } else if (below.size() == 0) {
@@ -272,7 +286,9 @@ public class MenuContainerRoot extends MenuContainer implements Storable {
 
                 MenuItemData aN = above.get(a);
                 int aIndex = identList.indexOf(aN._getIdentifier());
-                if (aIndex >= 0) { return aIndex + 1; }
+                if (aIndex >= 0) {
+                    return aIndex + 1;
+                }
 
             }
 
@@ -290,7 +306,9 @@ public class MenuContainerRoot extends MenuContainer implements Storable {
             }
             try {
                 for (int b = 0; b < below.size(); b++) {
-                    if (bestMatch <= 1 + a + b) break main;
+                    if (bestMatch <= 1 + a + b) {
+                        break main;
+                    }
                     MenuItemData bN = below.get(b);
                     if (bN instanceof SeparatorData) {
                         lastBwasSep = true;
@@ -300,8 +318,12 @@ public class MenuContainerRoot extends MenuContainer implements Storable {
                         int aIndex = identList.indexOf(aN._getIdentifier());
 
                         int bIndex = identList.indexOf(bN._getIdentifier());
-                        if (lastAWasSep && aIndex >= 0) aIndex++;
-                        if (lastBwasSep && bIndex > 0) bIndex--;
+                        if (lastAWasSep && aIndex >= 0) {
+                            aIndex++;
+                        }
+                        if (lastBwasSep && bIndex > 0) {
+                            bIndex--;
+                        }
                         if (aIndex >= 0 && bIndex >= 0) {
                             int dist = Math.abs(bIndex - aIndex) + a + b;
 

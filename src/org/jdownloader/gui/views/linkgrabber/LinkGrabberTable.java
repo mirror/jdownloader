@@ -355,6 +355,7 @@ public class LinkGrabberTable extends PackageControllerTable<CrawledPackage, Cra
 
             if (map != null && am != null && isEnabled()) {
                 final Object binding = map.get(stroke);
+
                 final Action action = (binding == null) ? null : am.get(binding);
                 if (action != null) {
                     if (action instanceof CustomizableAppAction) {
@@ -421,6 +422,16 @@ public class LinkGrabberTable extends PackageControllerTable<CrawledPackage, Cra
             } else if (mi instanceof SeparatorData) {
                 continue;
             } else if (mi instanceof MenuLink) {
+                List<AppAction> actionsList = ((MenuLink) mi).createActionsToLink();
+                if (actionsList != null) {
+                    for (AppAction action : actionsList) {
+                        KeyStroke keystroke = (KeyStroke) action.getValue(Action.ACCELERATOR_KEY);
+                        if (keystroke != null) {
+                            linkAction(input, input2, input3, actions, action, keystroke);
+                        }
+
+                    }
+                }
                 continue;
             } else {
                 AppAction action;
@@ -499,6 +510,18 @@ public class LinkGrabberTable extends PackageControllerTable<CrawledPackage, Cra
 
     public static LinkGrabberTable getInstance() {
         return INSTANCE;
+    }
+
+    public void linkAction(AppAction focusAction, KeyStroke ks) {
+        if (focusAction == null) {
+            return;
+        }
+        final InputMap input = getInputMap(JComponent.WHEN_ANCESTOR_OF_FOCUSED_COMPONENT);
+        final InputMap input2 = getInputMap(JComponent.WHEN_FOCUSED);
+        final InputMap input3 = getInputMap(JComponent.WHEN_IN_FOCUSED_WINDOW);
+
+        final ActionMap actions = getActionMap();
+        this.linkAction(input, input2, input3, actions, focusAction, ks);
     }
 
 }

@@ -114,11 +114,11 @@ public class CustomizeableActionBar extends MigPanel implements PropertyChangeLi
                 if (menudata.getType() == org.jdownloader.controlling.contextmenu.MenuItemData.Type.CONTAINER) {
                     addContainer(menudata);
                     continue;
-                } else if (menudata.getActionData() != null) {
-                    addAction(menudata);
-
                 } else if (menudata instanceof MenuLink) {
                     addLink(menudata);
+
+                } else if (menudata.getActionData() != null) {
+                    addAction(menudata);
 
                 }
 

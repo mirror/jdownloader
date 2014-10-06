@@ -27,9 +27,15 @@ public class IncludedSelectionSetup implements ActionContext {
     }
 
     public SelectionType getSelectionType() {
-        if (isIncludeSelectedLinks() && isIncludeUnselectedLinks()) return SelectionType.ALL;
-        if (isIncludeSelectedLinks()) return SelectionType.SELECTED;
-        if (isIncludeUnselectedLinks()) return SelectionType.UNSELECTED;
+        if (isIncludeSelectedLinks() && isIncludeUnselectedLinks()) {
+            return SelectionType.ALL;
+        }
+        if (isIncludeSelectedLinks()) {
+            return SelectionType.SELECTED;
+        }
+        if (isIncludeUnselectedLinks()) {
+            return SelectionType.UNSELECTED;
+        }
         return SelectionType.NONE;
     }
 

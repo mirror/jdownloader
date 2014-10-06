@@ -544,6 +544,74 @@ public class MainToolBar extends JToolBar implements MouseListener, DownloadWatc
                     add(bt, "width 32!,height 32!,hidemode 3");
                     bt.setHideActionText(true);
                     continue;
+
+                } else if (menudata instanceof MenuLink) {
+                    final JComponent item = menudata.createItem();
+                    if (StringUtils.isNotEmpty(menudata.getIconKey())) {
+                        if (item instanceof AbstractButton) {
+                            ((AbstractButton) item).setIcon(NewTheme.I().getIcon(validateIconKey(menudata.getIconKey()), 24));
+                        } else if (item instanceof SetIconInterface) {
+                            ((SetIconInterface) item).setIcon(NewTheme.I().getIcon(validateIconKey(menudata.getIconKey()), 24));
+
+                        }
+                    }
+
+                    if (StringUtils.isNotEmpty(menudata.getName())) {
+                        if (item instanceof SetLabelInterface) {
+                            ((SetLabelInterface) item).setText(menudata.getName());
+
+                        }
+                    }
+
+                    if (item instanceof JMenu) {
+
+                        bt = new ExtButton(new AppAction() {
+                            {
+                                setName(((JMenu) item).getText());
+                                Icon ico = ((JMenu) item).getIcon();
+
+                                if (ico == null || Math.max(ico.getIconHeight(), ico.getIconWidth()) < 24) {
+                                    ico = createDropdownImage("menu");
+                                    putValue(AbstractAction.LARGE_ICON_KEY, ico);
+                                    setSmallIcon(ico);
+                                } else if (ico instanceof ImageIcon) {
+                                    if (Math.max(ico.getIconHeight(), ico.getIconWidth()) != 24) {
+                                        ico = ImageProvider.scaleImageIcon((ImageIcon) ico, 24, 24);
+                                    }
+                                    ico = createDropdownImage(((ImageIcon) ico).getImage());
+                                    putValue(AbstractAction.LARGE_ICON_KEY, ico);
+                                    setSmallIcon(ico);
+                                } else {
+
+                                    putValue(AbstractAction.LARGE_ICON_KEY, ico);
+                                    setSmallIcon(ico);
+                                }
+                            }
+
+                            @Override
+                            public void actionPerformed(ActionEvent e) {
+                                ExtPopupMenu root = new ExtPopupMenu();
+                                for (Component c : ((JMenu) item).getMenuComponents()) {
+                                    root.add(c);
+                                }
+
+                                Object src = e.getSource();
+                                if (e.getSource() instanceof Component) {
+                                    Component button = (Component) e.getSource();
+                                    Dimension prefSize = root.getPreferredSize();
+                                    int[] insets = LAFOptions.getInstance().getPopupBorderInsets();
+                                    root.show(button, -insets[1], button.getHeight() - insets[0]);
+
+                                }
+                            }
+
+                        });
+
+                        add(bt, "width 32!,height 32!,hidemode 3");
+                        bt.setHideActionText(true);
+                    } else {
+                        add(item, "aligny center,hidemode 3");
+                    }
                 } else if (menudata.getActionData() != null) {
 
                     action = menudata.createAction();
@@ -615,73 +683,6 @@ public class MainToolBar extends JToolBar implements MouseListener, DownloadWatc
                     // }
                     //
                     // }
-                } else if (menudata instanceof MenuLink) {
-                    final JComponent item = menudata.createItem();
-                    if (StringUtils.isNotEmpty(menudata.getIconKey())) {
-                        if (item instanceof AbstractButton) {
-                            ((AbstractButton) item).setIcon(NewTheme.I().getIcon(validateIconKey(menudata.getIconKey()), 24));
-                        } else if (item instanceof SetIconInterface) {
-                            ((SetIconInterface) item).setIcon(NewTheme.I().getIcon(validateIconKey(menudata.getIconKey()), 24));
-
-                        }
-                    }
-
-                    if (StringUtils.isNotEmpty(menudata.getName())) {
-                        if (item instanceof SetLabelInterface) {
-                            ((SetLabelInterface) item).setText(menudata.getName());
-
-                        }
-                    }
-
-                    if (item instanceof JMenu) {
-
-                        bt = new ExtButton(new AppAction() {
-                            {
-                                setName(((JMenu) item).getText());
-                                Icon ico = ((JMenu) item).getIcon();
-
-                                if (ico == null || Math.max(ico.getIconHeight(), ico.getIconWidth()) < 24) {
-                                    ico = createDropdownImage("menu");
-                                    putValue(AbstractAction.LARGE_ICON_KEY, ico);
-                                    setSmallIcon(ico);
-                                } else if (ico instanceof ImageIcon) {
-                                    if (Math.max(ico.getIconHeight(), ico.getIconWidth()) != 24) {
-                                        ico = ImageProvider.scaleImageIcon((ImageIcon) ico, 24, 24);
-                                    }
-                                    ico = createDropdownImage(((ImageIcon) ico).getImage());
-                                    putValue(AbstractAction.LARGE_ICON_KEY, ico);
-                                    setSmallIcon(ico);
-                                } else {
-
-                                    putValue(AbstractAction.LARGE_ICON_KEY, ico);
-                                    setSmallIcon(ico);
-                                }
-                            }
-
-                            @Override
-                            public void actionPerformed(ActionEvent e) {
-                                ExtPopupMenu root = new ExtPopupMenu();
-                                for (Component c : ((JMenu) item).getMenuComponents()) {
-                                    root.add(c);
-                                }
-
-                                Object src = e.getSource();
-                                if (e.getSource() instanceof Component) {
-                                    Component button = (Component) e.getSource();
-                                    Dimension prefSize = root.getPreferredSize();
-                                    int[] insets = LAFOptions.getInstance().getPopupBorderInsets();
-                                    root.show(button, -insets[1], button.getHeight() - insets[0]);
-
-                                }
-                            }
-
-                        });
-
-                        add(bt, "width 32!,height 32!,hidemode 3");
-                        bt.setHideActionText(true);
-                    } else {
-                        add(item, "aligny center,hidemode 3");
-                    }
                 }
 
             } catch (Exception e) {

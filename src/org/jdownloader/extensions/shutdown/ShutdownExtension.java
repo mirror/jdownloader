@@ -47,6 +47,7 @@ import org.jdownloader.controlling.contextmenu.ContextMenuManager;
 import org.jdownloader.controlling.contextmenu.MenuContainerRoot;
 import org.jdownloader.controlling.contextmenu.MenuExtenderHandler;
 import org.jdownloader.controlling.contextmenu.MenuItemData;
+import org.jdownloader.controlling.contextmenu.MenuLink;
 import org.jdownloader.extensions.AbstractExtension;
 import org.jdownloader.extensions.ExtensionController;
 import org.jdownloader.extensions.StartException;
@@ -653,7 +654,7 @@ public class ShutdownExtension extends AbstractExtension<ShutdownConfig, Shutdow
             // try to search a toggle action and queue it after it.
             for (int i = mr.getItems().size() - 1; i >= 0; i--) {
                 MenuItemData mid = mr.getItems().get(i);
-                if (mid.getActionData() == null) {
+                if (mid.getActionData() == null || mid instanceof MenuLink) {
                     continue;
                 }
                 boolean val = mid._isValidated();

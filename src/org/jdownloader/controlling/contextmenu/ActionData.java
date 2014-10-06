@@ -27,7 +27,9 @@ public class ActionData extends AbstractJsonData {
     public Class<?> _getClazz() throws ClassNotFoundException, ExtensionNotLoadedException {
 
         if (clazz == null) {
-
+            if (getClazzName() == null) {
+                return null;
+            }
             if (_isExtensionAction()) {
 
                 clazz = ExtensionController.getInstance().loadClass(getClazzName());
@@ -45,6 +47,9 @@ public class ActionData extends AbstractJsonData {
     private boolean _isExtensionAction() {
 
         String cn = getClazzName();
+        if (cn == null) {
+            return false;
+        }
         int i = cn.lastIndexOf(".");
         String pkg = i >= 0 ? cn.substring(0, i) : "";
         boolean ret = pkg.startsWith(PACKAGE_NAME);
@@ -116,7 +121,9 @@ public class ActionData extends AbstractJsonData {
     }
 
     public Object fetchSetup(String name2) {
-        if (setup == null) return null;
+        if (setup == null) {
+            return null;
+        }
 
         return setup.get(name2.toUpperCase(Locale.ENGLISH));
     }

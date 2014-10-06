@@ -43,7 +43,7 @@ public class MenuManagerLinkgrabberTableContext extends ContextMenuManager<Crawl
 
     /**
      * get the only existing instance of DownloadListContextMenuManager. This is a singleton
-     *
+     * 
      * @return
      */
     public static MenuManagerLinkgrabberTableContext getInstance() {
@@ -120,6 +120,7 @@ public class MenuManagerLinkgrabberTableContext extends ContextMenuManager<Crawl
         opt.add(CollapseExpandContextAction.class);
         opt.add(CopyGenericContextAction.class);
         opt.add(ConfirmHashValuesAction.class);
+
         return mr;
     }
 

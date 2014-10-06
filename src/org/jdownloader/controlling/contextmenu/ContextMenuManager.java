@@ -160,10 +160,8 @@ public abstract class ContextMenuManager<PackageType extends AbstractPackageNode
         HashSet<String> unique = new HashSet<String>();
         ArrayList<ActionData> ret = new ArrayList<ActionData>();
         for (MenuItemData mid : setupDefaultStructure().list()) {
-            if (mid.getActionData() != null && unique.add(mid.getActionData().getClazzName())) {
+            if (!(mid instanceof MenuLink) && mid.getActionData() != null && unique.add(mid.getActionData().getClazzName())) {
                 ret.add(mid.getActionData());
-            } else if (mid.getActionData() != null) {
-                System.out.println(1);
             }
         }
         return ret;

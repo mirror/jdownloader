@@ -268,6 +268,15 @@ public final class TrayIconPopup extends ExtJFrame implements MouseListener {
                     content.add(bt);
 
                     continue;
+                } else if (menudata instanceof MenuLink) {
+                    final JComponent item = menudata.createItem();
+                    if (StringUtils.isNotEmpty(menudata.getIconKey())) {
+                        if (item instanceof AbstractButton) {
+                            ((AbstractButton) item).setIcon(MenuItemData.getIcon(menudata.getIconKey(), ICON_SIZE));
+                        }
+                    }
+                    content.add(item, "");
+
                 } else if (menudata.getActionData() != null) {
 
                     action = menudata.createAction();
@@ -281,15 +290,6 @@ public final class TrayIconPopup extends ExtJFrame implements MouseListener {
                     }
                     content.add(getMenuEntry(action));
                     last = menudata;
-
-                } else if (menudata instanceof MenuLink) {
-                    final JComponent item = menudata.createItem();
-                    if (StringUtils.isNotEmpty(menudata.getIconKey())) {
-                        if (item instanceof AbstractButton) {
-                            ((AbstractButton) item).setIcon(MenuItemData.getIcon(menudata.getIconKey(), ICON_SIZE));
-                        }
-                    }
-                    content.add(item, "");
 
                 }
 
@@ -455,7 +455,7 @@ public final class TrayIconPopup extends ExtJFrame implements MouseListener {
     /**
      * When we perform a tray action, we need a away to ask in the silentmode controller (JDGui) is the action has been invoked from the
      * tray
-     *
+     * 
      * @return
      */
     public boolean hasBeenRecentlyActive() {
