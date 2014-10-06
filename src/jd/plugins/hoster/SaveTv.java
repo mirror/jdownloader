@@ -230,7 +230,7 @@ public class SaveTv extends PluginForHost {
         String filesize = null;
 
         if (is_API_enabled()) {
-            api_login(this.br, aa, false);
+            API_SESSIONID = api_login(this.br, aa, false);
             /* Last revision with old filename-convert handling: 26988 */
             api_doSoapRequestSafe(this.br, aa, "http://tempuri.org/ITelecast/GetTelecastDetail", "<telecastIds xmlns:a=\"http://schemas.microsoft.com/2003/10/Serialization/Arrays\" xmlns:i=\"http://www.w3.org/2001/XMLSchema-instance\"><a:int>" + getTelecastId(link) + "</a:int></telecastIds><detailLevel>2</detailLevel>");
             if (!br.containsHTML("<a:TelecastDetail>")) {

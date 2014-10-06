@@ -81,9 +81,9 @@ public class SolidFilesCom extends PluginForHost {
     @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
-        String dllink = br.getRegex("<a id=\"download-button\"[^\r\n]+href=\"(https?://[^\"']+)").getMatch(0);
+        String dllink = br.getRegex("class=\"direct\\-download regular\\-download\"[^\r\n]+href=\"(https?://[^\"']+)").getMatch(0);
         if (dllink == null) {
-            dllink = br.getRegex("(https?://\\w+\\.sfcdn\\.in/[^\"']+)").getMatch(0);
+            dllink = br.getRegex("\"(https?://s\\d+\\.solidfilesusercontent\\.com/[^<>\"]*?)\"").getMatch(0);
         }
         if (dllink == null) {
             logger.warning("Final downloadlink is null");

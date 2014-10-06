@@ -17,6 +17,7 @@
 package jd.plugins.decrypter;
 
 import java.io.IOException;
+import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
@@ -61,6 +62,7 @@ public class ArteMediathekDecrypter extends PluginForDecrypt {
     private static final String Q_HIGH_INTERN         = "md|406p";
     private static final String Q_VERYHIGH_INTERN     = "sd|400p";
     private static final String Q_HD_INTERN           = "hd|720p";
+    private String              VRU                   = null;
 
     private static boolean      pluginloaded          = false;
 
@@ -141,7 +143,7 @@ public class ArteMediathekDecrypter extends PluginForDecrypt {
         return false;
     }
 
-    private ArrayList<DownloadLink> getDownloadLinks(final String parameter, final Browser ibr) throws DecrypterException, IOException {
+    private ArrayList<DownloadLink> getDownloadLinks(final String parameter, final Browser ibr) throws DecrypterException, IOException, ParseException {
         String tvguideUrl;
         String title;
         // this allows drop to frame, and prevents subsequent NPE!
@@ -169,12 +171,11 @@ public class ArteMediathekDecrypter extends PluginForDecrypt {
         String valRegex = "\"(.*?)\"\\s*:\\s*\"?(.*?)\"?,";
 
         if (parameter.matches(TYPE_CONCERT)) {
-            tvguideUrl = br.getRegex("\"(http://concert\\.arte\\.tv/[a-z]{2}/player/\\d+)\"").getMatch(0);
+            tvguideUrl = br.getRegex("\"(http://concert\\.arte\\.tv/[a-z]{2}/player/\\d+)").getMatch(0);
             if (tvguideUrl == null) {
                 return null;
             }
             br.getPage(tvguideUrl);
-            br.getRequest().setHtmlCode(br.toString().replace("\\", ""));
         } else {
             String ID = new Regex(parameter, "/guide/\\w+/([0-9\\-]+)/").getMatch(0);
             if (ID == null || lang == null) {
@@ -199,6 +200,7 @@ public class ArteMediathekDecrypter extends PluginForDecrypt {
             br.getPage(tvguideUrl);
         }
         title = getTitleAPI(br);
+        br.getRequest().setHtmlCode(br.toString().replace("\\", ""));
         if (br.containsHTML("<statuscode>wrongParameter</statuscode>")) {
             return ret;
         }
@@ -249,7 +251,34 @@ public class ArteMediathekDecrypter extends PluginForDecrypt {
             }
         }
         String VRA = br.getRegex("\"VRA\":\"([^\"]+)\"").getMatch(0);
-        String VRU = br.getRegex("\"VRU\":\"([^\"]+)\"").getMatch(0);
+        VRU = br.getRegex("\"VRU\":\"([^\"]+)\"").getMatch(0);
+        if (VRU.matches("\\d+/\\d+/\\d+ \\d+:\\d+:\\d+ \\+\\d+")) {
+            SimpleDateFormat df = new SimpleDateFormat("dd/MM/yyyy HH:mm:ss Z", Locale.getDefault());
+            final Date date = df.parse(VRU);
+            /* Maybe their rights to show the video expired */
+            if (date.getTime() <= System.currentTimeMillis()) {
+                final DownloadLink link = createDownloadlink(parameter.replace("http://", "decrypted://"));
+                link.setFinalFileName(title);
+                link.setAvailable(false);
+                link.setProperty("offline", true);
+                ret.add(link);
+                return ret;
+            }
+            // SimpleDateFormat convdf = new SimpleDateFormat("EEE, dd MMM yyyy HH:mm:ss Z");
+            //
+            // try {
+            // try {
+            // date = df.parse(s);
+            // s = convdf.format(date);
+            // } catch (Throwable e) {
+            // df = new SimpleDateFormat("dd/MM/yyyy HH:mm:ss Z", Locale.ENGLISH);
+            // date = df.parse(s);
+            // s = convdf.format(date);
+            // }
+            // } catch (Throwable e) {
+            // return s;
+            // }
+        }
 
         String extension = ".mp4";
         if (br.getRegex("new MediaCollection\\(\"audio\",").matches()) {

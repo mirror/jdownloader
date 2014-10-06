@@ -1,6 +1,7 @@
 package jd.plugins.hoster;
 
 import jd.PluginWrapper;
+import jd.http.Browser.BrowserException;
 import jd.http.RandomUserAgent;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
@@ -46,23 +47,38 @@ public class RedTubeCom extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         // Offline link
-        if (br.containsHTML("is no longer available") || br.containsHTML(">404 Not Found<")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (br.containsHTML("is no longer available") || br.containsHTML(">404 Not Found<")) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
         // Invalid link
-        if (br.containsHTML(">Error Page Not Found")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (br.containsHTML(">Error Page Not Found")) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
         String fileName = br.getRegex("<h1 class=\"videoTitle[^>]+>(.*?)</h1>").getMatch(0);
-        if (fileName == null) fileName = br.getRegex("<title>(.*?) (-|\\|) RedTube[^<]+</title>").getMatch(0);
+        if (fileName == null) {
+            fileName = br.getRegex("<title>(.*?) (-|\\|) RedTube[^<]+</title>").getMatch(0);
+        }
         br.setFollowRedirects(true);
         dlink = br.getRegex("html5_vid.*?source src=\"(http.*?)(\"|%3D%22)").getMatch(0);
-        if (dlink == null) dlink = br.getRegex("flv_h264_url=(http.*?)(\"|%3D%22)").getMatch(0);
-        if (dlink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (dlink == null) {
+            dlink = br.getRegex("flv_h264_url=(http.*?)(\"|%3D%22)").getMatch(0);
+        }
+        if (dlink == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         dlink = Encoding.urlDecode(dlink, true);
         String ext = new Regex(dlink, "(\\.flv|\\.mp4).+$").getMatch(0);
-        if (fileName != null || ext != null) link.setName(fileName.trim() + ext);
+        if (fileName != null || ext != null) {
+            link.setName(fileName.trim() + ext);
+        }
         try {
-            if (!br.openGetConnection(dlink).getContentType().contains("html")) {
-                link.setDownloadSize(br.getHttpConnection().getLongContentLength());
-
-                return AvailableStatus.TRUE;
+            try {
+                if (!br.openGetConnection(dlink).getContentType().contains("html")) {
+                    link.setDownloadSize(br.getHttpConnection().getLongContentLength());
+                    return AvailableStatus.TRUE;
+                }
+            } catch (final BrowserException e) {
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
         } finally {
             try {
@@ -78,7 +94,9 @@ public class RedTubeCom extends PluginForHost {
     public void handleFree(DownloadLink link) throws Exception {
         this.setBrowserExclusive();
         requestFileInformation(link);
-        if (dlink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (dlink == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         dl = jd.plugins.BrowserAdapter.openDownload(br, link, dlink, true, 0);
         if (dl.getConnection().getContentType().contains("html")) {
             dl.getConnection().disconnect();
