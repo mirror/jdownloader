@@ -163,7 +163,7 @@ public class DrTuberCom extends PluginForHost {
             }
         } else if (downloadLink.getDownloadURL().matches("http://(www\\.)?drtuber\\.com/embed/\\d+")) {
             /* embed v4 */
-            String nextUrl = br.getRegex("flashvars=\"embed=1\\&config=([^\"]+)\"").getMatch(0);
+            String nextUrl = br.getRegex("flashvars=\"embed=1[^\"]*?\\&config=([^\"]+)\"").getMatch(0);
             if (nextUrl == null) {
                 String[] hashEncValues = br.getRegex("flashvars=\"id_video=(\\d+)\\&t=(\\d+)").getRow(0);
                 if (hashEncValues == null) {

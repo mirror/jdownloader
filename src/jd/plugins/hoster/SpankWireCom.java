@@ -61,7 +61,7 @@ public class SpankWireCom extends PluginForHost {
 
         br.getPage(downloadLink.getDownloadURL());
         // Invalid link
-        if (br.getURL().equals("http://www.spankwire.com/") || br.containsHTML("removedCopyright\\.jpg\"") || br.containsHTML("removedTOS\\.jpg\"")) {
+        if (br.getURL().equals("http://www.spankwire.com/") || br.containsHTML("removedCopyright\\.jpg\"") || br.containsHTML("removedTOS\\.jpg\"") || br.containsHTML("removedDefault\\.jpg\"")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         // Link offline
