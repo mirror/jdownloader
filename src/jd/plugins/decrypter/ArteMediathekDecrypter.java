@@ -264,20 +264,6 @@ public class ArteMediathekDecrypter extends PluginForDecrypt {
                 ret.add(link);
                 return ret;
             }
-            // SimpleDateFormat convdf = new SimpleDateFormat("EEE, dd MMM yyyy HH:mm:ss Z");
-            //
-            // try {
-            // try {
-            // date = df.parse(s);
-            // s = convdf.format(date);
-            // } catch (Throwable e) {
-            // df = new SimpleDateFormat("dd/MM/yyyy HH:mm:ss Z", Locale.ENGLISH);
-            // date = df.parse(s);
-            // s = convdf.format(date);
-            // }
-            // } catch (Throwable e) {
-            // return s;
-            // }
         }
 
         String extension = ".mp4";
