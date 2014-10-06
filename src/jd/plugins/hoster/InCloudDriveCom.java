@@ -111,7 +111,7 @@ public class InCloudDriveCom extends PluginForHost {
         if (filesize != null) {
             link.setDownloadSize(SizeFormatter.getSize(filesize));
         }
-        if (ajax.containsHTML(">A Database Error Occurred<|This link has been removed from system.")) {
+        if (ajax.containsHTML(">A Database Error Occurred<|This link has been removed from system\\.|>The requested file isn't anymore!</p>")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         if (filename == null) {
