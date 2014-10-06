@@ -256,7 +256,7 @@
 				<include name="**/*.class" />
 				<include name="**/*.txt" />
 			    <include name="**/*.dat" />
-				<include name="**/*.js" />
+	
 				<exclude name="jd/controlling/reconnect/plugins/*/**/*" />
 				<exclude name="jd/captcha/**" />
 				<exclude name="org/appwork/**/*" />
@@ -281,7 +281,9 @@
 				<exclude name="tests/**" />
 				<exclude name="**/test/**" />
 			</fileset>
-
+			<fileset dir="src">			             
+			                <include name="**/*.js" />			    
+			</fileset>
 			<fileset dir="${cls}">
 				<include name="jd/plugins/hoster/RTMPDownload.class" />
 			</fileset>
