@@ -19,6 +19,8 @@ package jd.plugins.hoster;
 import java.io.IOException;
 
 import jd.PluginWrapper;
+import jd.http.Browser;
+import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
@@ -63,7 +65,13 @@ public class TnaFlixCom extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dllink = Encoding.htmlDecode(dllink);
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 0);
+        Browser brc = br.cloneBrowser();
+        brc.setHeader("Range", "bytes=0-");
+        final URLConnectionAdapter con = brc.openHeadConnection(dllink);
+        final long fileSize = con.getCompleteContentLength();
+        con.disconnect();
+        downloadLink.setVerifiedFileSize(fileSize);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, false, 1);
         if (dl.getConnection().getResponseCode() == 416) {
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 416", 30 * 60 * 1000l);
         }
