@@ -1,13 +1,12 @@
 package org.jdownloader.extensions.schedulerV2.actions;
 
-import org.jdownloader.extensions.schedulerV2.helpers.ActionParameter;
 import org.jdownloader.extensions.schedulerV2.translate.T;
 
-public class DisableSpeedLimitAction implements IScheduleAction {
+@ScheduleActionIDAnnotation("DISABLE_SPEEDLIMIT")
+public class DisableSpeedLimitAction extends AbstractScheduleAction<ScheduleActionEmptyConfig> {
 
-    @Override
-    public String getStorableID() {
-        return "DISABLE_SPEEDLIMIT";
+    public DisableSpeedLimitAction(String configJson) {
+        super(configJson);
     }
 
     @Override
@@ -16,12 +15,7 @@ public class DisableSpeedLimitAction implements IScheduleAction {
     }
 
     @Override
-    public ActionParameter getParameterType() {
-        return ActionParameter.NONE;
-    }
-
-    @Override
-    public void execute(String parameter) {
+    public void execute() {
         org.jdownloader.settings.staticreferences.CFG_GENERAL.DOWNLOAD_SPEED_LIMIT_ENABLED.setValue(false);
     }
 }

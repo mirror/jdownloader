@@ -1,64 +1,79 @@
 package org.jdownloader.extensions.schedulerV2.helpers;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
-import org.jdownloader.extensions.schedulerV2.actions.DisableSpeedLimitAction;
+import org.appwork.utils.StringUtils;
+import org.jdownloader.extensions.schedulerV2.CFG_SCHEDULER;
+import org.jdownloader.extensions.schedulerV2.actions.AbstractScheduleAction;
+import org.jdownloader.extensions.schedulerV2.actions.CaptchaServiceAction;
+import org.jdownloader.extensions.schedulerV2.actions.DebugAction;
 import org.jdownloader.extensions.schedulerV2.actions.DisableReconnectAction;
+import org.jdownloader.extensions.schedulerV2.actions.DisableSpeedLimitAction;
 import org.jdownloader.extensions.schedulerV2.actions.EnableReconnectAction;
-import org.jdownloader.extensions.schedulerV2.actions.IScheduleAction;
 import org.jdownloader.extensions.schedulerV2.actions.PauseDownloadAction;
 import org.jdownloader.extensions.schedulerV2.actions.ReconnectAction;
 import org.jdownloader.extensions.schedulerV2.actions.SetChunksAction;
 import org.jdownloader.extensions.schedulerV2.actions.SetConnectionsAction;
 import org.jdownloader.extensions.schedulerV2.actions.SetDownloadspeedAction;
+import org.jdownloader.extensions.schedulerV2.actions.SetStopMarkAction;
 import org.jdownloader.extensions.schedulerV2.actions.StartDownloadAction;
 import org.jdownloader.extensions.schedulerV2.actions.StopDownloadAction;
 import org.jdownloader.extensions.schedulerV2.actions.UnpauseDownloadAction;
+import org.jdownloader.extensions.schedulerV2.model.ScheduleEntryStorable;
 import org.jdownloader.extensions.schedulerV2.translate.T;
 
 public class ActionHelper {
 
-    public static final List<IScheduleAction> ACTIONS = new ArrayList<IScheduleAction>() {
-                                                          {
-                                                              add(new StartDownloadAction());
-                                                              add(new StopDownloadAction());
-                                                              add(new SetDownloadspeedAction());
-                                                              add(new DisableSpeedLimitAction());
-                                                              add(new SetConnectionsAction());
-                                                              add(new SetChunksAction());
-                                                              add(new PauseDownloadAction());
-                                                              add(new UnpauseDownloadAction());
-                                                              add(new ReconnectAction());
-                                                              add(new EnableReconnectAction());
-                                                              add(new DisableReconnectAction());
-                                                          }
-                                                      };
+    public static final List<AbstractScheduleAction> ACTIONS = Collections.unmodifiableList(new ArrayList<AbstractScheduleAction>() {
+                                                                 {
+                                                                     if (CFG_SCHEDULER.CFG.isDebugMode()) {
+                                                                         add(new DebugAction(null));
+                                                                     }
+                                                                     add(new StartDownloadAction(null));
+                                                                     add(new SetStopMarkAction(null));
+                                                                     add(new StopDownloadAction(null));
+                                                                     add(new SetDownloadspeedAction(null));
+                                                                     add(new DisableSpeedLimitAction(null));
+                                                                     add(new SetConnectionsAction(null));
+                                                                     add(new SetChunksAction(null));
+                                                                     add(new PauseDownloadAction(null));
+                                                                     add(new UnpauseDownloadAction(null));
+                                                                     add(new ReconnectAction(null));
+                                                                     add(new EnableReconnectAction(null));
+                                                                     add(new DisableReconnectAction(null));
+                                                                     add(new CaptchaServiceAction(null));
+                                                                 }
+                                                             });
 
-    public static IScheduleAction getAction(String actionStorableID) {
-        for (IScheduleAction action : ACTIONS) {
-            if (action.getStorableID().equals(actionStorableID)) {
-                return action;
+    public static AbstractScheduleAction newActionInstance(ScheduleEntryStorable actionStorable) throws Exception {
+        for (AbstractScheduleAction action : ACTIONS) {
+            Class<? extends AbstractScheduleAction> actionClass = action.getClass();
+            String actionID = action.getActionID();
+            if (StringUtils.equals(actionID, actionStorable.getActionID())) {
+                return actionClass.getConstructor(String.class).newInstance(actionStorable.getActionConfig());
             }
         }
         return null;
     }
 
-    public static final String[] TIME_OPTIONS = { "ONLYONCE", "HOURLY", "DAILY", "WEEKLY", "CHOOSEINTERVAL" };
+    public static enum TIME_OPTIONS {
+        ONLYONCE(T._.time_option_only_once()),
+        HOURLY(T._.time_option_hourly()),
+        DAILY(T._.time_option_daily()),
+        WEEKLY(T._.time_option_weekly()),
+        CHOOSEINTERVAL(T._.time_option_choose_interval());
 
-    public static String getPrettyTimeOption(String option) {
-        if (option.equals("ONLYONCE")) {
-            return T._.time_option_only_once();
-        } else if (option.equals("HOURLY")) {
-            return T._.time_option_hourly();
-        } else if (option.equals("DAILY")) {
-            return T._.time_option_daily();
-        } else if (option.equals("WEEKLY")) {
-            return T._.time_option_weekly();
-        } else if (option.equals("CHOOSEINTERVAL")) {
-            return T._.time_option_choose_interval();
+        private final String readableName;
+
+        public final String getReadableName() {
+            return readableName;
         }
 
-        return "ERROR: MISSING";
+        private TIME_OPTIONS(String readableName) {
+            this.readableName = readableName;
+        }
     }
+
 }

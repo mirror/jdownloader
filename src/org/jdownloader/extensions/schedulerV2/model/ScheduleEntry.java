@@ -1,21 +1,17 @@
 package org.jdownloader.extensions.schedulerV2.model;
 
-import org.jdownloader.extensions.schedulerV2.actions.IScheduleAction;
+import org.jdownloader.extensions.schedulerV2.actions.AbstractScheduleAction;
 import org.jdownloader.extensions.schedulerV2.helpers.ActionHelper;
-import org.jdownloader.extensions.schedulerV2.helpers.ActionParameter;
+import org.jdownloader.extensions.schedulerV2.helpers.ActionHelper.TIME_OPTIONS;
 
 public class ScheduleEntry {
 
-    private ScheduleEntryStorable storableEntry;
-    private IScheduleAction       action;
+    private final ScheduleEntryStorable  storableEntry;
+    private final AbstractScheduleAction action;
 
-    public ScheduleEntry(ScheduleEntryStorable storableEntry) {
+    public ScheduleEntry(ScheduleEntryStorable storableEntry) throws Exception {
         this.storableEntry = storableEntry;
-        this.action = ActionHelper.getAction(storableEntry.getActionStorageID());
-    }
-
-    public ScheduleEntry() {
-        this.storableEntry = new ScheduleEntryStorable();
+        this.action = ActionHelper.newActionInstance(storableEntry);
     }
 
     public String getName() {
@@ -34,34 +30,20 @@ public class ScheduleEntry {
         return storableEntry.isEnabled();
     }
 
-    public IScheduleAction getAction() {
+    public AbstractScheduleAction getAction() {
         return this.action;
-    }
-
-    public void setAction(IScheduleAction action, String actionParameter) {
-        if (!action.getParameterType().equals(ActionParameter.NONE) && actionParameter == null) {
-            System.err.println("Parameter missing!");// TODO
-            return;
-        }
-        this.action = action;
-        this.storableEntry.setActionParameter(actionParameter);
-        storableEntry.setActionStorageID(action.getStorableID());
     }
 
     public ScheduleEntryStorable getStorable() {
         return this.storableEntry;
     }
 
-    public String getActionParameter() {
-        return storableEntry.getActionParameter();
+    public TIME_OPTIONS getTimeType() {
+        return storableEntry._getTimeType();
     }
 
-    public String getTimeType() {
-        return storableEntry.getTimeType();
-    }
-
-    public void setTimeType(String timeType) {
-        storableEntry.setTimeType(timeType);
+    public void setTimeType(TIME_OPTIONS timeType) {
+        storableEntry._setTimeType(timeType);
     }
 
     public long getTimestamp() {
@@ -72,8 +54,8 @@ public class ScheduleEntry {
         storableEntry.setTimestamp(timestamp);
     }
 
-    public int getIntervalMin() {
-        return storableEntry.getIntervalMin();
+    public int getIntervalMinunte() {
+        return storableEntry.getIntervalMinute();
     }
 
     public void setIntervalMin(int intervalMin) {
@@ -86,5 +68,9 @@ public class ScheduleEntry {
 
     public void setIntervalHour(int intervalHour) {
         storableEntry.setIntervalHour(intervalHour);
+    }
+
+    public long getID() {
+        return storableEntry.getId();
     }
 }
