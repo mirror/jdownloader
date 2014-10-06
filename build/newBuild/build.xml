@@ -422,6 +422,7 @@
 		<buildAddon package="JDGrowl" include="growl" />
 		<buildAddon package="AntiShutdown" include="antistandby" />
 		<buildAddon package="Extraction" include="extraction" />
+		<buildAddon package="Scheduler" include="schedulerv2" />
 
 
 
