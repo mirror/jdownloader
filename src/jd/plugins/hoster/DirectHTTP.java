@@ -49,6 +49,7 @@ import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
 
 import org.appwork.utils.StringUtils;
+import org.appwork.utils.net.httpconnection.HTTPConnection;
 
 /**
  * TODO: Remove after next big update of core to use the public static methods!
@@ -608,9 +609,13 @@ public class DirectHTTP extends PluginForHost {
             urlConnection = br.openPostConnection(downloadLink.getDownloadURL(), downloadLink.getStringProperty("post", null));
         } else {
             try {
-                urlConnection = br.openHeadConnection(downloadLink.getDownloadURL());
-                if (urlConnection.getResponseCode() == 404 && StringUtils.contains(urlConnection.getHeaderField("Cache-Control"), "must-revalidate") && urlConnection.getHeaderField("Via") != null) {
-                    urlConnection.disconnect();
+                if (preferHeadRequest) {
+                    urlConnection = br.openHeadConnection(downloadLink.getDownloadURL());
+                    if (urlConnection.getResponseCode() == 404 && StringUtils.contains(urlConnection.getHeaderField("Cache-Control"), "must-revalidate") && urlConnection.getHeaderField("Via") != null) {
+                        urlConnection.disconnect();
+                        urlConnection = br.openGetConnection(downloadLink.getDownloadURL());
+                    }
+                } else {
                     urlConnection = br.openGetConnection(downloadLink.getDownloadURL());
                 }
             } catch (final IOException e) {
@@ -627,6 +632,8 @@ public class DirectHTTP extends PluginForHost {
     public void handlePremium(final DownloadLink link, final Account account) throws Exception {
         this.handleFree(link);
     }
+
+    private boolean preferHeadRequest = true;
 
     @SuppressWarnings("deprecation")
     @Override
@@ -749,6 +756,11 @@ public class DirectHTTP extends PluginForHost {
             if (this.contentType != null && this.contentType.startsWith("text/html") && urlConnection.isContentDisposition() == false && downloadLink.getBooleanProperty(DirectHTTP.TRY_ALL, false) == false) {
                 /* jd does not want to download html content! */
                 /* if this page does redirect via js/html, try to follow */
+                if (HTTPConnection.RequestMethod.HEAD.equals(urlConnection.getRequestMethod())) {
+                    preferHeadRequest = false;
+                    urlConnection.disconnect();
+                    return this.requestFileInformation(downloadLink);
+                }
                 this.br.followConnection();
                 /* search urls */
                 /*
