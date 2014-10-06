@@ -95,8 +95,16 @@ public class InCloudDriveCom extends PluginForHost {
         } else {
             ajaxPostPage("https://www.inclouddrive.com/index.php/" + hashTag[0] + "/" + hashTag[1], "user_id=");
         }
-        final String filename = ajax.getRegex("class=\"propreties-file-count\">[\t\n\r ]+<b>([^<>\"]+)</b>").getMatch(0);
-        final String filesize = ajax.getRegex(">Total size:</span><span class=\"propreties-dark-txt\">([^<>\"]+)</span>").getMatch(0);
+        String filename = ajax.getRegex("class=\"propreties-file-count\">[\t\n\r ]+<b>([^<>\"]+)</b>").getMatch(0);
+        String filesize = ajax.getRegex(">Total size:</span><span class=\"propreties-dark-txt\">([^<>\"]+)</span>").getMatch(0);
+        // premium only files regex is different!
+        if (filename == null) {
+            filename = ajax.getRegex("<div class=\"name wordwrap\">(.*?)</div>").getMatch(0);
+        }
+        if (filesize == null) {
+            filesize = ajax.getRegex("<div class=\"icddownloadsteptwo-filesize\">(.*?)</div>").getMatch(0);
+        }
+
         if (filename != null) {
             link.setName(encodeUnicode(Encoding.htmlDecode(filename.trim())));
         }
@@ -129,7 +137,10 @@ public class InCloudDriveCom extends PluginForHost {
                 // canHandle for JD2, non JD2 here.
                 premiumDownloadRestriction(downloadLink, downloadLink.getStringProperty("premiumRestrictionMsg", null));
             }
-
+            // premium only check can be done here now (20140610)
+            if (ajax.containsHTML("<p[^>]*>This link only for premium user\\. Wish to remove the restrictions\\?")) {
+                premiumDownloadRestriction(downloadLink, "The requested file is to big! You need premium!");
+            }
             final String uplid = ajax.getRegex("uploader_id=\"(\\d+)\"").getMatch(0);
             final String fileid = ajax.getRegex("file_id=\"(\\d+)\"").getMatch(0);
             final String predlwait = ajax.getRegex("var pre_download_timer_set\\s*=\\s*'(\\d+)';").getMatch(0);
@@ -487,7 +498,7 @@ public class InCloudDriveCom extends PluginForHost {
 
     /**
      * When premium only download restriction (eg. filesize), throws exception with given message
-     * 
+     *
      * @param msg
      * @throws PluginException
      */
@@ -562,7 +573,7 @@ public class InCloudDriveCom extends PluginForHost {
 
     /**
      * Validates string to series of conditions, null, whitespace, or "". This saves effort factor within if/for/while statements
-     * 
+     *
      * @param s
      *            Imported String to match against.
      * @return <b>true</b> on valid rule match. <b>false</b> on invalid rule match.
