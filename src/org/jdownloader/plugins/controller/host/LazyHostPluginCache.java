@@ -2,7 +2,9 @@ package org.jdownloader.plugins.controller.host;
 
 import java.io.BufferedOutputStream;
 import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -20,10 +22,31 @@ public class LazyHostPluginCache {
 
     private static final int CACHEVERSION = 8;
 
+    private static ByteArrayOutputStream readFile(File file) throws IOException {
+        final ByteArrayOutputStream byteBuffer = new ByteArrayOutputStream(32767) {
+            @Override
+            public synchronized byte[] toByteArray() {
+                /* avoid creating new byteArray */
+                return buf;
+            }
+        };
+        FileInputStream fis = null;
+        try {
+            fis = new FileInputStream(file);
+            IO.readStream((int) file.length(), fis, byteBuffer, true);
+            return byteBuffer;
+        } finally {
+            if (fis != null) {
+                fis.close();
+            }
+        }
+    }
+
     public static List<LazyHostPlugin> read(File file, final AtomicLong lastModification) throws IOException {
         final ArrayList<LazyHostPlugin> ret = new ArrayList<LazyHostPlugin>(4096);
         if (file.exists()) {
-            final InputStream bis = new ByteArrayInputStream(IO.readFile(file));
+            final ByteArrayOutputStream byteBuffer = readFile(file);
+            final InputStream bis = new ByteArrayInputStream(byteBuffer.toByteArray(), 0, byteBuffer.size());
             final AWFCUtils is = new AWFCUtils(bis);
             if (CACHEVERSION != is.readShort()) {
                 throw new IOException("Outdated CacheVersion");
