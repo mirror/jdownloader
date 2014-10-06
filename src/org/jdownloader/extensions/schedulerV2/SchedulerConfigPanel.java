@@ -6,8 +6,8 @@ import java.util.HashMap;
 import javax.swing.AbstractAction;
 import javax.swing.JLabel;
 import javax.swing.JScrollPane;
-
-import jd.gui.swing.jdgui.views.settings.panels.advanced.AdvancedConfigTableModel;
+import javax.swing.event.ListSelectionEvent;
+import javax.swing.event.ListSelectionListener;
 
 import org.appwork.storage.config.annotations.AboutConfig;
 import org.appwork.storage.config.annotations.DevConfig;
@@ -20,6 +20,7 @@ import org.appwork.utils.swing.SwingUtils;
 import org.jdownloader.extensions.ExtensionConfigPanel;
 import org.jdownloader.extensions.schedulerV2.gui.ScheduleTableModel;
 import org.jdownloader.extensions.schedulerV2.gui.SchedulerTable;
+import org.jdownloader.extensions.schedulerV2.gui.actions.EditAction;
 import org.jdownloader.extensions.schedulerV2.gui.actions.NewAction;
 import org.jdownloader.extensions.schedulerV2.gui.actions.RemoveAction;
 import org.jdownloader.images.NewTheme;
@@ -31,11 +32,15 @@ public class SchedulerConfigPanel extends ExtensionConfigPanel<SchedulerExtensio
     /**
      * 
      */
-    private static final long        serialVersionUID = 1L;
-    private AdvancedConfigTableModel model;
-    private JLabel                   lbl;
-    private SchedulerTable           table;
-    private MigPanel                 myContainer;
+    private static final long  serialVersionUID = 1L;
+    private JLabel             lbl;
+    private SchedulerTable     table;
+    private MigPanel           myContainer;
+    private ScheduleTableModel tableModel;
+
+    public ScheduleTableModel getTableModel() {
+        return tableModel;
+    }
 
     public ArrayList<AdvancedConfigEntry> register() {
         ArrayList<AdvancedConfigEntry> configInterfaces = new ArrayList<AdvancedConfigEntry>();
@@ -80,25 +85,35 @@ public class SchedulerConfigPanel extends ExtensionConfigPanel<SchedulerExtensio
         myContainer.add(SwingUtils.toBold(lbl = new JLabel("THIS EXTENSION IS STILL UNDER CONSTRUCTION. Feel free to test it and to give Feedback.")));
         lbl.setForeground(LAFOptions.getInstance().getColorForErrorForeground());
 
-        table = new SchedulerTable(new ScheduleTableModel());
+        table = new SchedulerTable(extension, tableModel = new ScheduleTableModel(this.extension));
         myContainer.add(new JScrollPane(table), "grow");
 
         MigPanel bottomMenu = new MigPanel("ins 0", "[]", "[]");
-        bottomMenu.setLayout("ins 0", "[][][fill]", "[]");
+        bottomMenu.setLayout("ins 0", "[][][][fill]", "[]");
         bottomMenu.setOpaque(false);
         myContainer.add(bottomMenu);
 
         NewAction na;
-        ExtButton newButton;
-        bottomMenu.add(newButton = new ExtButton(na = new NewAction()), "sg 1,height 26!");
+        bottomMenu.add(new ExtButton(na = new NewAction(table)), "sg 1,height 26!");
         na.putValue(AbstractAction.SMALL_ICON, NewTheme.I().getIcon("add", 20));
 
         RemoveAction ra;
-        ExtButton removeButton;
-        bottomMenu.add(removeButton = new ExtButton(ra = new RemoveAction(table)), "sg 1,height 26!");
+        bottomMenu.add(new ExtButton(ra = new RemoveAction(table)), "sg 1,height 26!");
 
         table.getSelectionModel().addListSelectionListener(new MinimumSelectionObserver(table, ra, 1));
-        // model.refresh("Scheduler");
+
+        final EditAction ea;
+        bottomMenu.add(new ExtButton(ea = new EditAction(table)), "sg 1,height 26!");
+        ea.setEnabled(table.getSelectedRowCount() == 1);
+        table.getSelectionModel().addListSelectionListener(new ListSelectionListener() {
+
+            @Override
+            public void valueChanged(ListSelectionEvent e) {
+                ea.setEnabled(table.getSelectedRowCount() == 1);
+            }
+        });
+        tableModel.updateDataModel();
+
     }
 
     @Override

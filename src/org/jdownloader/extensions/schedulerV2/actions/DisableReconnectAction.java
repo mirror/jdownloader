@@ -1,13 +1,12 @@
 package org.jdownloader.extensions.schedulerV2.actions;
 
-import org.jdownloader.extensions.schedulerV2.helpers.ActionParameter;
 import org.jdownloader.extensions.schedulerV2.translate.T;
 
-public class DisableReconnectAction implements IScheduleAction {
+@ScheduleActionIDAnnotation("DISABLE_RECONNECT")
+public class DisableReconnectAction extends AbstractScheduleAction<ScheduleActionEmptyConfig> {
 
-    @Override
-    public String getStorableID() {
-        return "DISABLE_RECONNECT";
+    public DisableReconnectAction(String configJson) {
+        super(configJson);
     }
 
     @Override
@@ -16,12 +15,7 @@ public class DisableReconnectAction implements IScheduleAction {
     }
 
     @Override
-    public ActionParameter getParameterType() {
-        return ActionParameter.NONE;
-    }
-
-    @Override
-    public void execute(String parameter) {
+    public void execute() {
         org.jdownloader.settings.staticreferences.CFG_RECONNECT.AUTO_RECONNECT_ENABLED.setValue(false);
     }
 

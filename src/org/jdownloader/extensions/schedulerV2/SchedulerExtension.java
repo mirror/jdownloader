@@ -18,12 +18,17 @@ package org.jdownloader.extensions.schedulerV2;
 
 import java.util.ArrayList;
 import java.util.Calendar;
+import java.util.List;
+import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 
 import jd.plugins.AddonPanel;
 
+import org.appwork.shutdown.ShutdownController;
+import org.appwork.shutdown.ShutdownEvent;
+import org.appwork.shutdown.ShutdownRequest;
 import org.appwork.utils.Application;
 import org.appwork.utils.swing.EDTRunner;
 import org.jdownloader.controlling.contextmenu.ContextMenuManager;
@@ -42,13 +47,29 @@ import org.jdownloader.gui.toolbar.MenuManagerMainToolbar;
 
 public class SchedulerExtension extends AbstractExtension<SchedulerConfig, SchedulerTranslation> implements MenuExtenderHandler, Runnable {
 
-    private SchedulerConfigPanel     configPanel;
-    private ScheduledExecutorService scheduler;
-    private Object                   lock = new Object();
+    private SchedulerConfigPanel                configPanel;
+    private ScheduledExecutorService            scheduler;
+    private Object                              lock            = new Object();
+    private CopyOnWriteArrayList<ScheduleEntry> scheduleEntries = new CopyOnWriteArrayList<ScheduleEntry>();
+    private ShutdownEvent                       shutDownEvent   = new ShutdownEvent() {
+
+                                                                    @Override
+                                                                    public void onShutdown(ShutdownRequest shutdownRequest) {
+                                                                        saveScheduleEntries();
+                                                                    }
+                                                                };
 
     @Override
     public boolean isHeadlessRunnable() {
         return false;
+    }
+
+    public void saveScheduleEntries() {
+        List<ScheduleEntryStorable> scheduleStorables = new ArrayList<ScheduleEntryStorable>();
+        for (ScheduleEntry entry : getScheduleEntries()) {
+            scheduleStorables.add(entry.getStorable());
+        }
+        CFG_SCHEDULER.CFG.setEntryList(scheduleStorables);
     }
 
     public SchedulerConfigPanel getConfigPanel() {
@@ -61,7 +82,10 @@ public class SchedulerExtension extends AbstractExtension<SchedulerConfig, Sched
 
     public SchedulerExtension() throws StartException {
         setTitle(_.title());
+    }
 
+    public List<ScheduleEntry> getScheduleEntries() {
+        return scheduleEntries;
     }
 
     @Override
@@ -71,10 +95,10 @@ public class SchedulerExtension extends AbstractExtension<SchedulerConfig, Sched
 
     @Override
     protected void stop() throws StopException {
-
+        saveScheduleEntries();
         MenuManagerMainToolbar.getInstance().unregisterExtender(this);
         MenuManagerMainmenu.getInstance().unregisterExtender(this);
-
+        ShutdownController.getInstance().removeShutdownEvent(shutDownEvent);
         synchronized (lock) {
             if (scheduler != null) {
                 scheduler.shutdown();
@@ -95,13 +119,59 @@ public class SchedulerExtension extends AbstractExtension<SchedulerConfig, Sched
         // The extension can add items to the main toolbar and the main menu.
         MenuManagerMainToolbar.getInstance().registerExtender(this);
         MenuManagerMainmenu.getInstance().registerExtender(this);
-
+        loadScheduleEntries();
+        ShutdownController.getInstance().addShutdownEvent(shutDownEvent);
         synchronized (lock) {
             scheduler = Executors.newScheduledThreadPool(1);
             // start scheduler and align to second = 0
             scheduler.scheduleAtFixedRate(this, 60 - Calendar.getInstance().get(Calendar.SECOND), 60l, TimeUnit.SECONDS);
         }
 
+    }
+
+    public void replaceScheduleEntry(long oldID, ScheduleEntry newEntry) {
+        if (newEntry != null) {
+            int pos = -1;
+            for (int i = 0; i < scheduleEntries.size(); i++) {
+                if (oldID == scheduleEntries.get(i).getID()) {
+                    pos = i;
+                    break;
+                }
+            }
+
+            if (pos > -1) {
+                scheduleEntries.remove(pos);
+                scheduleEntries.add(pos, newEntry);
+                getConfigPanel().getTableModel().updateDataModel();
+            }
+        }
+    }
+
+    public void removeScheduleEntry(ScheduleEntry entry) {
+        if (entry != null) {
+            scheduleEntries.remove(entry);
+            getConfigPanel().getTableModel().updateDataModel();
+        }
+    }
+
+    public void addScheduleEntry(ScheduleEntry entry) {
+        if (entry != null) {
+            scheduleEntries.addIfAbsent(entry);
+            getConfigPanel().getTableModel().updateDataModel();
+        }
+    }
+
+    private void loadScheduleEntries() {
+        List<ScheduleEntryStorable> scheduleStorables = CFG_SCHEDULER.CFG.getEntryList();
+        CopyOnWriteArrayList<ScheduleEntry> scheduleEntries = new CopyOnWriteArrayList<ScheduleEntry>();
+        for (ScheduleEntryStorable storable : scheduleStorables) {
+            try {
+                scheduleEntries.add(new ScheduleEntry(storable));
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        }
+        this.scheduleEntries = scheduleEntries;
     }
 
     @Override
@@ -134,12 +204,15 @@ public class SchedulerExtension extends AbstractExtension<SchedulerConfig, Sched
         return null;
     }
 
-    private boolean needsRun(ScheduleEntryStorable plan) {
-        String timeType = plan.getTimeType();
+    private boolean needsRun(ScheduleEntry plan) {
+        if (!plan.isEnabled()) {
+            return false;
+        }
+        String timeType = plan.getStorable().getTimeType();
         if (timeType.equals("ONLYONCE")) {
             Calendar c = Calendar.getInstance();
             c.setTimeInMillis(plan.getTimestamp() * 1000l);
-            if (Math.abs(c.getTimeInMillis() - Calendar.getInstance().getTimeInMillis()) < 30 * 1000l - 1) {
+            if (Math.abs(c.getTimeInMillis() - Calendar.getInstance().getTimeInMillis()) < 30 * 1000l) {
                 return true;
             }
         } else if (timeType.equals("HOURLY")) {
@@ -172,7 +245,7 @@ public class SchedulerExtension extends AbstractExtension<SchedulerConfig, Sched
         } else if (timeType.equals("CHOOSEINTERVAL")) {
             long nowMin = Calendar.getInstance().getTimeInMillis() / (60 * 1000);
             long startMin = plan.getTimestamp() / 60;
-            long intervalMin = 60 * plan.getIntervalHour() + plan.getIntervalMin();
+            long intervalMin = 60 * plan.getIntervalHour() + plan.getIntervalMinunte();
             if ((nowMin - startMin) % intervalMin == 0) {
                 return true;
             }
@@ -182,11 +255,13 @@ public class SchedulerExtension extends AbstractExtension<SchedulerConfig, Sched
 
     @Override
     public void run() {
-        ArrayList<ScheduleEntryStorable> plans = CFG_SCHEDULER.CFG.getEntryList();
-        for (ScheduleEntryStorable storableEntry : plans) {
-            if (needsRun(storableEntry)) {
-                ScheduleEntry entry = new ScheduleEntry(storableEntry);
-                entry.getAction().execute(entry.getActionParameter());
+        for (ScheduleEntry entry : getScheduleEntries()) {
+            if (needsRun(entry)) {
+                try {
+                    entry.getAction().execute();
+                } catch (final Throwable e) {
+                    e.printStackTrace();
+                }
             }
         }
     }

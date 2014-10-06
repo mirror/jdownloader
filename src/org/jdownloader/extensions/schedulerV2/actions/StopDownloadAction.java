@@ -2,14 +2,13 @@ package org.jdownloader.extensions.schedulerV2.actions;
 
 import jd.controlling.downloadcontroller.DownloadWatchDog;
 
-import org.jdownloader.extensions.schedulerV2.helpers.ActionParameter;
 import org.jdownloader.extensions.schedulerV2.translate.T;
 
-public class StopDownloadAction implements IScheduleAction {
+@ScheduleActionIDAnnotation("STOP_DOWNLOAD")
+public class StopDownloadAction extends AbstractScheduleAction<ScheduleActionEmptyConfig> {
 
-    @Override
-    public String getStorableID() {
-        return "STOP_DOWNLOAD";
+    public StopDownloadAction(String configJson) {
+        super(configJson);
     }
 
     @Override
@@ -18,12 +17,7 @@ public class StopDownloadAction implements IScheduleAction {
     }
 
     @Override
-    public ActionParameter getParameterType() {
-        return ActionParameter.NONE;
-    }
-
-    @Override
-    public void execute(String parameter) {
+    public void execute() {
         DownloadWatchDog.getInstance().stopDownloads();
     }
 

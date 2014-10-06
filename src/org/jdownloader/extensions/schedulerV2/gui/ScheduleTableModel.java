@@ -1,6 +1,7 @@
 package org.jdownloader.extensions.schedulerV2.gui;
 
 import java.awt.Component;
+import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Calendar;
@@ -8,40 +9,30 @@ import java.util.Calendar;
 import javax.swing.JTable;
 import javax.swing.table.JTableHeader;
 
-import org.appwork.storage.config.ValidationException;
-import org.appwork.storage.config.events.GenericConfigEventListener;
-import org.appwork.storage.config.handler.KeyHandler;
 import org.appwork.swing.exttable.ExtTableHeaderRenderer;
 import org.appwork.swing.exttable.ExtTableModel;
 import org.appwork.swing.exttable.columns.ExtCheckColumn;
 import org.appwork.swing.exttable.columns.ExtTextColumn;
-import org.appwork.utils.formatter.SizeFormatter;
-import org.jdownloader.extensions.schedulerV2.CFG_SCHEDULER;
-import org.jdownloader.extensions.schedulerV2.helpers.ActionHelper;
-import org.jdownloader.extensions.schedulerV2.helpers.ActionParameter;
+import org.jdownloader.extensions.schedulerV2.SchedulerExtension;
+import org.jdownloader.extensions.schedulerV2.helpers.ActionHelper.TIME_OPTIONS;
 import org.jdownloader.extensions.schedulerV2.model.ScheduleEntry;
-import org.jdownloader.extensions.schedulerV2.model.ScheduleEntryStorable;
 import org.jdownloader.extensions.schedulerV2.translate.T;
 import org.jdownloader.images.NewTheme;
 
-public class ScheduleTableModel extends ExtTableModel<ScheduleEntry> implements GenericConfigEventListener<Object> {
+public class ScheduleTableModel extends ExtTableModel<ScheduleEntry> {
 
-    public ScheduleTableModel() {
+    private final SchedulerExtension extension;
+
+    public ScheduleTableModel(SchedulerExtension extension) {
         super("ScheduleTableModel");
-
+        this.extension = extension;
         // List<ScheduleEntry> lst = CFG_SCHEDULER.CFG.getEntryList();
-        CFG_SCHEDULER.ENTRY_LIST.getEventSender().addListener(this, true);
         updateDataModel();
 
     }
 
-    private void updateDataModel() {
-
-        ArrayList<ScheduleEntry> elements = new ArrayList<ScheduleEntry>();
-        for (ScheduleEntryStorable storableEl : CFG_SCHEDULER.CFG.getEntryList()) {
-            elements.add(new ScheduleEntry(storableEl));
-        }
-        _fireTableStructureChanged(elements, true);
+    public void updateDataModel() {
+        _fireTableStructureChanged(new ArrayList<ScheduleEntry>(extension.getScheduleEntries()), true);
     }
 
     /**
@@ -98,7 +89,6 @@ public class ScheduleTableModel extends ExtTableModel<ScheduleEntry> implements 
             @Override
             protected void setBooleanValue(boolean value, ScheduleEntry object) {
                 object.setEnabled(value);
-                save();
             }
         });
 
@@ -112,7 +102,6 @@ public class ScheduleTableModel extends ExtTableModel<ScheduleEntry> implements 
             @Override
             protected void setStringValue(String value, ScheduleEntry object) {
                 object.setName(value);
-                save();
             }
 
             @Override
@@ -125,7 +114,11 @@ public class ScheduleTableModel extends ExtTableModel<ScheduleEntry> implements 
 
             @Override
             public String getStringValue(ScheduleEntry value) {
+                if (value.getAction() == null) {
+                    return "UNKNOWN";
+                }
                 return value.getAction().getReadableName();
+
             }
         });
 
@@ -133,12 +126,10 @@ public class ScheduleTableModel extends ExtTableModel<ScheduleEntry> implements 
 
             @Override
             public String getStringValue(ScheduleEntry value) {
-                if (value.getActionParameter() == null) {
-                    return "";
-                } else if (value.getAction().getParameterType().equals(ActionParameter.SPEED)) {
-                    return SizeFormatter.formatBytes(Long.valueOf(value.getActionParameter())) + "/s";
+                if (value.getAction() == null) {
+                    return "UNKNOWN";
                 }
-                return value.getActionParameter();
+                return value.getAction().getReadableParameter();
             }
         });
 
@@ -146,71 +137,86 @@ public class ScheduleTableModel extends ExtTableModel<ScheduleEntry> implements 
 
             @Override
             public String getStringValue(ScheduleEntry value) {
-                String timeType = value.getTimeType();
-                if (timeType.equals("ONLYONCE")) {
-                    Calendar c = Calendar.getInstance();
-                    c.setTimeInMillis(value.getTimestamp() * 1000l);
+                TIME_OPTIONS timeType = value.getTimeType();
+                Calendar c = Calendar.getInstance();
+                c.setTimeInMillis(value.getTimestamp() * 1000l);
+                switch (timeType) {
+                case ONLYONCE:
                     return SimpleDateFormat.getInstance().format(c.getTime());
-                } else if (timeType.equals("HOURLY")) {
-
-                } else if (timeType.equals("DAILY")) {
-
-                } else if (timeType.equals("WEEKLY")) {
-
-                } else if (timeType.equals("CHOOSEINTERVAL")) {
-
+                case HOURLY: {
+                    Calendar next = Calendar.getInstance();
+                    next.set(Calendar.MINUTE, c.get(Calendar.MINUTE));
+                    if (Calendar.getInstance().getTimeInMillis() > next.getTimeInMillis()) {
+                        // in past
+                        next.add(Calendar.HOUR_OF_DAY, 1);
+                    }
+                    return SimpleDateFormat.getInstance().format(next.getTime());
                 }
-                return "?";
+                case DAILY: {
+                    Calendar next = Calendar.getInstance();
+                    next.set(Calendar.HOUR_OF_DAY, c.get(Calendar.HOUR_OF_DAY));
+                    next.set(Calendar.MINUTE, c.get(Calendar.MINUTE));
+                    if (Calendar.getInstance().getTimeInMillis() > next.getTimeInMillis()) {
+                        // in past
+                        next.add(Calendar.DAY_OF_YEAR, 1);
+                    }
+                    return SimpleDateFormat.getInstance().format(next.getTime());
+                }
+                case WEEKLY:
+                    Calendar next = Calendar.getInstance();
+                    next.set(Calendar.HOUR_OF_DAY, c.get(Calendar.HOUR_OF_DAY));
+                    next.set(Calendar.MINUTE, c.get(Calendar.MINUTE));
+                    next.set(Calendar.DAY_OF_WEEK, c.get(Calendar.DAY_OF_WEEK));
+                    if (Calendar.getInstance().getTimeInMillis() > next.getTimeInMillis()) {
+                        // in past
+                        next.add(Calendar.WEEK_OF_YEAR, 1);
+                    }
+                    return SimpleDateFormat.getInstance().format(next.getTime());
+                case CHOOSEINTERVAL:
+                    long nowS = Calendar.getInstance().getTimeInMillis() / 1000l;
+                    long startS = value.getTimestamp();
+                    long intervalS = 60 * 60 * value.getIntervalHour() + 60 * value.getIntervalMinunte();
+                    long offsetS = (nowS - startS) % intervalS;
+                    return SimpleDateFormat.getInstance().format((nowS - offsetS + intervalS) * 1000l);
+                default:
+                    return "?";
+                }
 
             }
         });
 
         this.addColumn(new ExtTextColumn<ScheduleEntry>(T._.scheduleTable_column_repeats()) {
+            Calendar c = Calendar.getInstance();
 
             @Override
             public String getStringValue(ScheduleEntry value) {
-                String timeType = value.getTimeType();
-                if (timeType.equals("HOURLY")) {
-                    Calendar c = Calendar.getInstance();
+                TIME_OPTIONS timeType = value.getTimeType();
+                switch (timeType) {
+                case HOURLY: {
                     c.setTimeInMillis(value.getTimestamp() * 1000l);
                     String minute = String.valueOf(c.get(Calendar.MINUTE));
                     return T._.timeformat_repeats_hourly(minute);
-                } else if (timeType.equals("DAILY")) {
-                    Calendar c = Calendar.getInstance();
+                }
+                case DAILY: {
                     c.setTimeInMillis(value.getTimestamp() * 1000l);
-                    String time = SimpleDateFormat.getTimeInstance().format(c.getTime());
+                    String time = DateFormat.getTimeInstance(DateFormat.SHORT).format(c.getTime());
                     return T._.timeformat_repeats_daily(time);
-                } else if (timeType.equals("WEEKLY")) {
-                    Calendar c = Calendar.getInstance();
+                }
+                case WEEKLY: {
                     c.setTimeInMillis(value.getTimestamp() * 1000l);
                     String day = (new SimpleDateFormat("EEEE")).format(c.getTime());
-                    String time = SimpleDateFormat.getTimeInstance().format(c.getTime());
+                    String time = DateFormat.getTimeInstance(DateFormat.SHORT).format(c.getTime());
                     return T._.timeformat_repeats_weekly(day, time);
-                } else if (timeType.equals("CHOOSEINTERVAL")) {
+                }
+                case CHOOSEINTERVAL: {
                     String hour = String.valueOf(value.getIntervalHour());
-                    String minute = String.valueOf(value.getIntervalMin());
+                    String minute = String.valueOf(value.getIntervalMinunte());
                     return T._.timeformat_repeats_interval(hour, minute);
                 }
-                return ActionHelper.getPrettyTimeOption(value.getTimeType());
+                default:
+                    return timeType.getReadableName();
+                }
             }
         });
     }
-
-    protected void save() {
-        ArrayList<ScheduleEntryStorable> storables = new ArrayList<ScheduleEntryStorable>(getTableData().size());
-        for (ScheduleEntry entry : getTableData()) {
-            storables.add(entry.getStorable());
-        }
-        CFG_SCHEDULER.CFG.setEntryList(storables);
-    }
-
-    @Override
-    public void onConfigValidatorError(KeyHandler<Object> keyHandler, Object invalidValue, ValidationException validateException) {
-    }
-
-    @Override
-    public void onConfigValueModified(KeyHandler<Object> keyHandler, Object newValue) {
-        updateDataModel();
-    }
-
 }

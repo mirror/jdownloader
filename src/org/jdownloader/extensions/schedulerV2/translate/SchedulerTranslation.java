@@ -36,6 +36,9 @@ public interface SchedulerTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "Create new Schedule Plan" })
     String addScheduleEntryDialog_title();
 
+    @Default(lngs = { "en" }, values = { "Edit Schedule Plan" })
+    String addScheduleEntryDialog_title_edit();
+
     @Default(lngs = { "en" }, values = { "Only once" })
     String time_option_only_once();
 
@@ -102,37 +105,46 @@ public interface SchedulerTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "Schedule" })
     String addScheduleEntryDialog_defaultScheduleName();
 
-    @Default(lngs = { "en" }, values = { "Set concurrent connections" })
+    @Default(lngs = { "en" }, values = { "Set simultaneous Downloads" })
     String action_setConnections();
 
-    @Default(lngs = { "en" }, values = { "Enable reconnect" })
+    @Default(lngs = { "en" }, values = { "Enable Reconnect" })
     String action_enableReconnect();
 
-    @Default(lngs = { "en" }, values = { "Disable reconnect" })
+    @Default(lngs = { "en" }, values = { "Disable Reconnect" })
     String action_disableReconnect();
 
-    @Default(lngs = { "en" }, values = { "Pause downloads" })
+    @Default(lngs = { "en" }, values = { "Pause Downloads" })
     String action_pauseDownloads();
 
     @Default(lngs = { "en" }, values = { "Reconnect" })
     String action_Reconnect();
 
-    @Default(lngs = { "en" }, values = { "Set downloadspeed" })
+    @Default(lngs = { "en" }, values = { "Set Downloadspeed" })
     String action_setDownloadspeed();
 
-    @Default(lngs = { "en" }, values = { "Start download" })
+    @Default(lngs = { "en" }, values = { "Start Downloads" })
     String action_startDownload();
 
-    @Default(lngs = { "en" }, values = { "Set chunks per file" })
+    @Default(lngs = { "en" }, values = { "Set Chunks per File" })
     String action_setChunks();
 
-    @Default(lngs = { "en" }, values = { "Stop download" })
+    @Default(lngs = { "en" }, values = { "Stop Downloads" })
     String action_stopDownload();
 
-    @Default(lngs = { "en" }, values = { "Unpause downloads" })
+    @Default(lngs = { "en" }, values = { "Unpause Downloads" })
     String action_unpauseDownload();
 
-    @Default(lngs = { "en" }, values = { "Disable speed limit" })
+    @Default(lngs = { "en" }, values = { "Disable Speed Limit" })
     String action_disableSpeedLimit();
+
+    @Default(lngs = { "en" }, values = { "Set Stop Mark" })
+    String action_setSopMark();
+
+    @Default(lngs = { "en" }, values = { "Set active Captcha Service" })
+    String action_setCaptchaService();
+
+    @Default(lngs = { "en" }, values = { "None" })
+    String action_captcha_none();
 
 }

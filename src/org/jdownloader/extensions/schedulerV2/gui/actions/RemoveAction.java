@@ -1,16 +1,13 @@
 package org.jdownloader.extensions.schedulerV2.gui.actions;
 
 import java.awt.event.ActionEvent;
-import java.util.ArrayList;
 import java.util.List;
 
 import org.appwork.utils.swing.dialog.Dialog;
 import org.appwork.utils.swing.dialog.DialogNoAnswerException;
 import org.jdownloader.actions.AppAction;
-import org.jdownloader.extensions.schedulerV2.CFG_SCHEDULER;
 import org.jdownloader.extensions.schedulerV2.gui.SchedulerTable;
 import org.jdownloader.extensions.schedulerV2.model.ScheduleEntry;
-import org.jdownloader.extensions.schedulerV2.model.ScheduleEntryStorable;
 import org.jdownloader.extensions.schedulerV2.translate.T;
 import org.jdownloader.gui.IconKey;
 import org.jdownloader.gui.translate._GUI;
@@ -66,13 +63,9 @@ public class RemoveAction extends AppAction {
                 if (!force) {
                     Dialog.getInstance().showConfirmDialog(Dialog.STYLE_LARGE, T._.entry_remove_action_title(finalSelection.size()), T._.entry_remove_action_msg(finalSelection.size() <= 1 ? sb.toString() : "\r\n" + sb.toString()));
                 }
-
-                ArrayList<ScheduleEntryStorable> scheduleRules = CFG_SCHEDULER.CFG.getEntryList();
                 for (ScheduleEntry entry : finalSelection) {
-                    scheduleRules.remove(entry.getStorable());
+                    table.getExtension().removeScheduleEntry(entry);
                 }
-                CFG_SCHEDULER.CFG.setEntryList(new ArrayList<ScheduleEntryStorable>(scheduleRules));
-
             } catch (DialogNoAnswerException e1) {
                 e1.printStackTrace();
             }

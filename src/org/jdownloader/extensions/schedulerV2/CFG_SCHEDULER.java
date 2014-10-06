@@ -18,6 +18,8 @@ public class CFG_SCHEDULER {
     // let's do this mapping here. If we map all methods to static handlers, access is faster, and we get an error on init if mappings are
     // wrong.
 
+    public static final BooleanKeyHandler               DEBUG_MODE    = SH.getKeyHandler("DebugMode", BooleanKeyHandler.class);
+
     public static final ObjectKeyHandler                ENTRY_LIST    = SH.getKeyHandler("EntryList", ObjectKeyHandler.class);
 
     public static final BooleanKeyHandler               FRESH_INSTALL = SH.getKeyHandler("FreshInstall", BooleanKeyHandler.class);

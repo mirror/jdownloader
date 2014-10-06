@@ -2,14 +2,13 @@ package org.jdownloader.extensions.schedulerV2.actions;
 
 import jd.controlling.reconnect.Reconnecter;
 
-import org.jdownloader.extensions.schedulerV2.helpers.ActionParameter;
 import org.jdownloader.extensions.schedulerV2.translate.T;
 
-public class ReconnectAction implements IScheduleAction {
+@ScheduleActionIDAnnotation("RECONNECT")
+public class ReconnectAction extends AbstractScheduleAction<ScheduleActionEmptyConfig> {
 
-    @Override
-    public String getStorableID() {
-        return "RECONNECT";
+    public ReconnectAction(String config) {
+        super(config);
     }
 
     @Override
@@ -18,12 +17,7 @@ public class ReconnectAction implements IScheduleAction {
     }
 
     @Override
-    public ActionParameter getParameterType() {
-        return ActionParameter.NONE;
-    }
-
-    @Override
-    public void execute(String parameter) {
+    public void execute() {
         Reconnecter.getInstance().doReconnect();
     }
 
