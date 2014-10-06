@@ -26,4 +26,11 @@
 		<nature>net.sf.eclipsensis.installoptions.InstallOptionsNature</nature>
 		<nature>net.sourceforge.metrics.nature</nature>
 	</natures>
+	<linkedResources>
+		<link>
+			<name>src-closed</name>
+			<type>2</type>
+			<locationURI>WORKSPACE_LOC/JDClosed/src</locationURI>
+		</link>
+	</linkedResources>
 </projectDescription>
