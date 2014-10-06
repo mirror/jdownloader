@@ -1092,7 +1092,7 @@ public class Multi extends IExtraction {
             } else if (archive.getType() == ArchiveType.MULTI) {
                 multiopener = new MultiOpener(password);
                 IInStream inStream = new VolumedArchiveInStream(archive.getFirstArchiveFile().getFilePath(), multiopener);
-                inArchive = SevenZip.openInArchive(ArchiveFormat.SEVEN_ZIP, inStream);
+                inArchive = SevenZip.openInArchive(ArchiveFormat.SEVEN_ZIP, inStream, multiopener);
             } else if (archive.getType() == ArchiveType.MULTI_RAR) {
                 raropener = new RarOpener(archive, password);
                 raropener.setLogger(logger);
