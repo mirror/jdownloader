@@ -47,6 +47,7 @@ import org.jdownloader.gui.event.GUIListener;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.gui.views.SelectionInfo;
 import org.jdownloader.gui.views.linkgrabber.LinkGrabberTable;
+import org.jdownloader.gui.views.linkgrabber.LinkgrabberSearchField;
 import org.jdownloader.gui.views.linkgrabber.addlinksdialog.LinkgrabberSettings;
 import org.jdownloader.images.NewTheme;
 import org.jdownloader.settings.staticreferences.CFG_GUI;
@@ -98,7 +99,7 @@ public class ConfirmLinksContextAction extends CustomizableTableContextAppAction
         this.assignPriorityEnabled = assignPriorityEnabled;
     }
 
-    private Priority piority = Priority.HIGHEST;
+    private Priority piority = Priority.DEFAULT;
 
     @Customizer(name = "Download Priority:")
     public Priority getPiority() {
@@ -261,6 +262,14 @@ public class ConfirmLinksContextAction extends CustomizableTableContextAppAction
 
                         @Override
                         protected Void run() throws RuntimeException {
+                            new EDTRunner() {
+
+                                @Override
+                                protected void runInEDT() {
+                                    LinkgrabberSearchField.getInstance().setText("");
+                                    LinkgrabberSearchField.getInstance().onChanged();
+                                }
+                            };
                             LinkCollector.getInstance().clear();
                             return null;
                         }

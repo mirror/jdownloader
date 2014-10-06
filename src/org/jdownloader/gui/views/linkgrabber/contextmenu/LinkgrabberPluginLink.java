@@ -7,6 +7,7 @@ import javax.swing.JComponent;
 
 import jd.controlling.linkcrawler.CrawledLink;
 
+import org.jdownloader.actions.AppAction;
 import org.jdownloader.controlling.contextmenu.MenuItemData;
 import org.jdownloader.controlling.contextmenu.MenuLink;
 import org.jdownloader.extensions.ExtensionNotLoadedException;
@@ -25,6 +26,16 @@ public class LinkgrabberPluginLink extends MenuItemData implements MenuLink {
     @Override
     public String getIconKey() {
         return IconKey.ICON_PLUGIN;
+    }
+
+    @Override
+    public List<AppAction> createActionsToLink() {
+        return null;
+    }
+
+    @Override
+    public JComponent createSettingsPanel() {
+        return null;
     }
 
     @Override

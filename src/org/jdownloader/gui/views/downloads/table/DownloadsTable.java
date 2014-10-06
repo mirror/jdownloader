@@ -390,6 +390,16 @@ public class DownloadsTable extends PackageControllerTable<FilePackage, Download
             } else if (mi instanceof SeparatorData) {
                 continue;
             } else if (mi instanceof MenuLink) {
+                List<AppAction> actionsList = ((MenuLink) mi).createActionsToLink();
+                if (actionsList != null) {
+                    for (AppAction action : actionsList) {
+                        KeyStroke keystroke = (KeyStroke) action.getValue(Action.ACCELERATOR_KEY);
+                        if (keystroke != null) {
+                            linkAction(input, input2, input3, actions, action, keystroke);
+                        }
+
+                    }
+                }
                 continue;
             } else {
                 AppAction action;

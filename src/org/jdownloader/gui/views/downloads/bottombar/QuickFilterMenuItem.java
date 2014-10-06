@@ -1,6 +1,7 @@
 package org.jdownloader.gui.views.downloads.bottombar;
 
 import java.lang.reflect.InvocationTargetException;
+import java.util.List;
 
 import javax.swing.Icon;
 import javax.swing.JComponent;
@@ -11,6 +12,7 @@ import jd.plugins.FilePackage;
 import org.appwork.storage.config.JsonConfig;
 import org.appwork.utils.NullsafeAtomicReference;
 import org.appwork.utils.swing.EDTHelper;
+import org.jdownloader.actions.AppAction;
 import org.jdownloader.controlling.contextmenu.MenuItemData;
 import org.jdownloader.controlling.contextmenu.MenuLink;
 import org.jdownloader.extensions.ExtensionNotLoadedException;
@@ -26,6 +28,16 @@ import org.jdownloader.settings.GraphicalUserInterfaceSettings;
 import org.jdownloader.settings.staticreferences.CFG_GUI;
 
 public class QuickFilterMenuItem extends MenuItemData implements MenuLink {
+    @Override
+    public JComponent createSettingsPanel() {
+        return null;
+    }
+
+    @Override
+    public List<AppAction> createActionsToLink() {
+        return null;
+    }
+
     public static final class FilterCombo extends PseudoCombo<View> {
         private final DownloadsTable                                                                  table;
 

@@ -63,6 +63,7 @@ public class SearchField<SearchCat extends SearchCatInterface, PackageType exten
     private boolean                                                                            mouseoverClose   = false;
     private boolean                                                                            closeEnabled     = false;
     private NullsafeAtomicReference<PackageControllerTableModelFilter<PackageType, ChildType>> appliedFilter    = new NullsafeAtomicReference<PackageControllerTableModelFilter<PackageType, ChildType>>(null);
+    private AppAction                                                                          focusAction;
 
     public boolean isEmpty() {
         return appliedFilter.get() == null;
@@ -96,7 +97,19 @@ public class SearchField<SearchCat extends SearchCatInterface, PackageType exten
         setBorder(BorderFactory.createCompoundBorder(orgBorder, BorderFactory.createEmptyBorder(0, 28, 0, 18)));
         addMouseMotionListener(this);
         addMouseListener(this);
-        // setSelectedCategory(defCategory);
+        // setSelectedCategory(defCategory);,
+        focusAction = new AppAction() {
+
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                requestFocus();
+                selectAll();
+            }
+        };
+    }
+
+    public AppAction getFocusAction() {
+        return focusAction;
     }
 
     public Image getPopIcon() {

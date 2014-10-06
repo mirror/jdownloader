@@ -1,10 +1,12 @@
 package org.jdownloader.gui.views.linkgrabber.bottombar;
 
 import java.lang.reflect.InvocationTargetException;
+import java.util.List;
 
 import javax.swing.JComponent;
 
 import org.appwork.utils.swing.EDTRunner;
+import org.jdownloader.actions.AppAction;
 import org.jdownloader.controlling.contextmenu.MenuItemData;
 import org.jdownloader.controlling.contextmenu.MenuLink;
 import org.jdownloader.extensions.ExtensionNotLoadedException;
@@ -17,7 +19,9 @@ public class AutoConfirmMenuLink extends MenuItemData implements MenuLink, SelfL
 
     @Override
     public JComponent createItem() throws InstantiationException, IllegalAccessException, IllegalArgumentException, InvocationTargetException, ClassNotFoundException, NoSuchMethodException, SecurityException, ExtensionNotLoadedException {
-        if (INSTANCE != null) return INSTANCE;
+        if (INSTANCE != null) {
+            return INSTANCE;
+        }
         new EDTRunner() {
 
             @Override
@@ -43,6 +47,16 @@ public class AutoConfirmMenuLink extends MenuItemData implements MenuLink, SelfL
     @Override
     public String createConstraints() {
         return "height 24!,width 24!,hidemode 3,gapright 3";
+    }
+
+    @Override
+    public JComponent createSettingsPanel() {
+        return null;
+    }
+
+    @Override
+    public List<AppAction> createActionsToLink() {
+        return null;
     }
 
 }
