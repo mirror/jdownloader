@@ -256,7 +256,7 @@
 				<include name="**/*.class" />
 				<include name="**/*.txt" />
 			    <include name="**/*.dat" />
-
+				<include name="**/*.js" />
 				<exclude name="jd/controlling/reconnect/plugins/*/**/*" />
 				<exclude name="jd/captcha/**" />
 				<exclude name="org/appwork/**/*" />
