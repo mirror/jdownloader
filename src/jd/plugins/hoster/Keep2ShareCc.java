@@ -81,7 +81,7 @@ public class Keep2ShareCc extends K2SApi {
 
     @Override
     protected Browser prepBrowser(final Browser prepBr) {
-        prepADB(prepBr);
+        super.prepBrowser(prepBr);
         prepBr.setConnectTimeout(90 * 1000);
         return prepBr;
     }

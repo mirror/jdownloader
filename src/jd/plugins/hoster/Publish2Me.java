@@ -82,11 +82,6 @@ public class Publish2Me extends K2SApi {
     }
 
     @Override
-    protected Browser prepBrowser(Browser prepBr) {
-        return prepADB(prepBr);
-    }
-
-    @Override
     protected String getFUID(final DownloadLink downloadLink) {
         return new Regex(downloadLink.getDownloadURL(), "/([a-z0-9]+)/$").getMatch(0);
     }
