@@ -1,6 +1,7 @@
 <project default="all" basedir=".">
 	<!-- Dependencies -->
 	<property name="dep.awu" value="../AppWorkUtils" />
+	<property name="dep.jdc" value="../JDClosed" />
 	<property name="dep.serveroptions" value="../JDownloaderServerOptions" />
 	<property name="dep.browser" value="../JDBrowser" />
 	<property name="dep.updateclient" value="../UpdateClientV2" />
@@ -42,6 +43,8 @@
 	<!-- Compiles the code -->
 	<target name="compile" depends="clean">
 		<mkdir dir="${cls}" />
+		
+		
 
 		<!-- Build dependencies -->
 
@@ -68,7 +71,6 @@
 
 		</javac>
 
-
 		<javac srcdir="src" debug="${debug}" verbose="false" excludes="jd/utils/dev/*,org/jdownloader/extensions/langfileeditor/**/*,org/jdownloader/extensions/remoteserv/**/*" destdir="${cls}" encoding="UTF-8" source="1.6" target="1.6" includeantruntime="false">
 			<classpath refid="classpath" />
 			<compilerarg line="-proc:none" />
@@ -78,6 +80,10 @@
 			<classpath refid="classpath" />
 
 		</javac>
+		
+		  <javac srcdir="${dep.jdc}/src" debug="${debug}" verbose="false" excludes="**/test/**" destdir="${cls}" encoding="UTF-8" source="1.6" target="1.6" includeantruntime="false">
+		            <classpath refid="classpath" />
+		   </javac>
 		<echo message="Finished." />
 
 
