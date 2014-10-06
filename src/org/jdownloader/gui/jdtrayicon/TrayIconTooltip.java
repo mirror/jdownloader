@@ -19,19 +19,16 @@ package org.jdownloader.gui.jdtrayicon;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
 
-import jd.controlling.downloadcontroller.DownloadController;
 import jd.controlling.downloadcontroller.DownloadWatchDog;
 import jd.gui.swing.components.JWindowTooltip;
 import jd.gui.swing.jdgui.components.JDProgressBar;
 import jd.nutils.Formatter;
-import jd.plugins.DownloadLink;
-import jd.plugins.FilePackage;
 import net.miginfocom.swing.MigLayout;
 
 import org.appwork.utils.swing.EDTRunner;
-import org.jdownloader.controlling.DownloadLinkAggregator;
+import org.jdownloader.controlling.AggregatedNumbers;
 import org.jdownloader.gui.jdtrayicon.translate._TRAY;
-import org.jdownloader.gui.views.SelectionInfo;
+import org.jdownloader.gui.views.downloads.table.DownloadsTableModel;
 
 public class TrayIconTooltip extends JWindowTooltip {
 
@@ -63,14 +60,15 @@ public class TrayIconTooltip extends JWindowTooltip {
     @Override
     protected void updateContent() {
         final Thread thread = Thread.currentThread();
-        final DownloadLinkAggregator dla = new DownloadLinkAggregator(new SelectionInfo<FilePackage, DownloadLink>(null, DownloadController.getInstance().getAllChildren(), false));
+        final AggregatedNumbers dla = new AggregatedNumbers(DownloadsTableModel.getInstance().getTable().getSelectionInfo(false, false));
+
         new EDTRunner() {
 
             @Override
             protected void runInEDT() {
                 if (isVisible()) {
                     long totalDl = dla.getTotalBytes();
-                    long curDl = dla.getBytesLoaded();
+                    long curDl = dla.getLoadedBytes();
 
                     lblDlRunning.setText(String.valueOf(DownloadWatchDog.getInstance().getRunningDownloadLinks().size()));
                     lblSpeed.setText(Formatter.formatReadable(DownloadWatchDog.getInstance().getDownloadSpeedManager().getSpeed()) + "/s");
@@ -79,7 +77,7 @@ public class TrayIconTooltip extends JWindowTooltip {
                     prgTotal.setMaximum(totalDl);
                     prgTotal.setValue(curDl);
 
-                    lblETA.setText(Formatter.formatSeconds(dla.getEta()));
+                    lblETA.setText(dla.getEtaString());
                 } else {
                     updater.compareAndSet(thread, null);
                 }
