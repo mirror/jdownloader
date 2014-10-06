@@ -4,7 +4,7 @@ import java.util.HashMap;
 
 import org.appwork.storage.Storable;
 
-class XHRResponse implements Storable {
+public class XHRResponse implements Storable {
 
     public XHRResponse(/* Storable */) {
     }

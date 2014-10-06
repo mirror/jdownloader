@@ -135,7 +135,7 @@ public class JSHtmlUnitPermissionRestricter {
         @Override
         public Scriptable wrapAsJavaObject(Context cx, Scriptable scope, Object javaObject, Class staticType) {
             if (javaObject instanceof EcmaError) {
-                Log.exception((EcmaError) javaObject);
+                // Log.exception((EcmaError) javaObject);
             }
             return new SandboxNativeJavaObject(scope, javaObject, staticType);
         }

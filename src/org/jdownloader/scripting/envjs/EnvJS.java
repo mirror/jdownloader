@@ -13,7 +13,6 @@ import jd.http.Browser;
 import jd.http.Cookies;
 import jd.http.Request;
 import net.sourceforge.htmlunit.corejs.javascript.Context;
-import net.sourceforge.htmlunit.corejs.javascript.ContextFactory;
 import net.sourceforge.htmlunit.corejs.javascript.EcmaError;
 import net.sourceforge.htmlunit.corejs.javascript.tools.shell.Global;
 
@@ -28,7 +27,12 @@ import org.jdownloader.scripting.JSHtmlUnitPermissionRestricter;
 
 public class EnvJS {
     static {
-        JSHtmlUnitPermissionRestricter.init();
+        try {
+            JSHtmlUnitPermissionRestricter.init();
+        } catch (IllegalStateException e) {
+
+            // already set globally
+        }
     }
     private Context                                              cx;
     private Global                                               scope;
@@ -95,12 +99,10 @@ public class EnvJS {
 
     public EnvJS() {
         id = CCOUNTER.incrementAndGet();
-
+        br = createBrowserInstance();
         INSTANCES.put(id, new WeakReference<EnvJS>(this));
         logger = LogController.getInstance().getLogger(EnvJS.class.getName());
-        ContextFactory gs = ContextFactory.getGlobal();
 
-        System.out.println(gs);
     }
 
     public void breakIt() {
@@ -173,8 +175,10 @@ public class EnvJS {
         scope = new Global(cx);
         cx.setOptimizationLevel(-1);
         cx.setLanguageVersion(Context.VERSION_1_5);
-        br = new Browser();
 
+        if (br == null) {
+            throw new NullPointerException("browser is null");
+        }
         // net.sourceforge.htmlunit.corejs.javascript.EcmaError: ReferenceError: "JSON" is not defined. (js#508) exceptions in the log are
         // ok.
         try {
@@ -188,6 +192,10 @@ public class EnvJS {
         } catch (Throwable e) {
             throw new WTFException(e);
         }
+    }
+
+    public Browser createBrowserInstance() {
+        return new Browser();
     }
 
     public Object evalTrusted(String js) {
@@ -242,6 +250,10 @@ public class EnvJS {
 
     public void tick() {
         evalTrusted("  Envjs.tick();  ");
+    }
+
+    public void setUserAgent(String ua) {
+        br.getHeaders().put("User-Agent", ua);
     }
 
 }
