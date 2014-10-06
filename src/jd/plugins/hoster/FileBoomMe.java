@@ -82,11 +82,6 @@ public class FileBoomMe extends K2SApi {
         return (Math.max(super.getVersion(), 0) * 100000) + getAPIRevision();
     }
 
-    @Override
-    protected Browser prepBrowser(Browser prepBr) {
-        return prepADB(prepBr);
-    }
-
     /**
      * easiest way to set variables, without the need for multiple declared references
      *

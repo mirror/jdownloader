@@ -10,7 +10,9 @@ import java.lang.reflect.Field;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -51,9 +53,9 @@ import org.appwork.utils.os.CrossSystem;
 /**
  * Abstract class supporting keep2share/fileboom/publish2<br/>
  * <a href="https://github.com/keep2share/api/">Github documentation</a>
- * 
+ *
  * @author raztoki
- * 
+ *
  */
 public abstract class K2SApi extends PluginForHost {
 
@@ -78,7 +80,7 @@ public abstract class K2SApi extends PluginForHost {
 
     /**
      * sets domain the API will use!
-     * 
+     *
      */
     protected abstract String getDomain();
 
@@ -86,7 +88,7 @@ public abstract class K2SApi extends PluginForHost {
      * Does the site enforce HTTPS? <br />
      * Override this when incorrect<br />
      * <b>NOTE:</b> When setting to true, make sure that supportsHTTPS is also set to true!
-     * 
+     *
      * @return
      */
     protected boolean enforcesHTTPS() {
@@ -95,7 +97,7 @@ public abstract class K2SApi extends PluginForHost {
 
     /**
      * returns API Revision number as long
-     * 
+     *
      * @author Jiaz
      */
     protected long getAPIRevision() {
@@ -104,7 +106,7 @@ public abstract class K2SApi extends PluginForHost {
 
     /**
      * returns String in friendly format, to be used in logger outputs.
-     * 
+     *
      * @author raztoki
      */
     protected String getRevisionInfo() {
@@ -114,7 +116,7 @@ public abstract class K2SApi extends PluginForHost {
     /**
      * Does the site support HTTPS? <br />
      * Override this when incorrect
-     * 
+     *
      * @return
      */
     protected boolean supportsHTTPS() {
@@ -124,7 +126,7 @@ public abstract class K2SApi extends PluginForHost {
     /**
      * useAPI frame work? <br />
      * Override this when incorrect
-     * 
+     *
      * @return
      */
     protected boolean useAPI() {
@@ -142,7 +144,7 @@ public abstract class K2SApi extends PluginForHost {
     /**
      * Returns plugin specific user setting. <br />
      * <b>NOTE:</b> public method, so that the decrypter can use it!
-     * 
+     *
      * @author raztoki
      * @return
      */
@@ -176,7 +178,7 @@ public abstract class K2SApi extends PluginForHost {
     @Override
     public void init() {
         try {
-            if (System.getProperty("org.jdownloader.revision") != null) {
+            if (isNewJD()) {
                 Browser.setRequestIntervalLimitGlobal(getDomain(), 3000, 20, 60000);
             } else {
                 // law of averages, client shouldn't be making a heap of requests every second...
@@ -187,11 +189,13 @@ public abstract class K2SApi extends PluginForHost {
         }
     }
 
-    protected Browser prepADB(final Browser prepBr) {
+    protected Browser prepBrowser(final Browser prepBr) {
         // define custom browser headers and language settings.
         // required for native cloudflare support, without the need to repeat requests.
-        prepBr.addAllowedResponseCodes(new int[] { 503, 522 });
-
+        try {
+            prepBr.addAllowedResponseCodes(new int[] { 429, 503, 520, 522 });
+        } catch (final Throwable t) {
+        }
         synchronized (antiDDoSCookies) {
             if (!antiDDoSCookies.isEmpty()) {
                 for (final Map.Entry<String, String> cookieEntry : antiDDoSCookies.entrySet()) {
@@ -221,15 +225,16 @@ public abstract class K2SApi extends PluginForHost {
         // prep site variables, this links back to prepADB from Override
         prepBrowser(prepBr);
         // api && dl server response codes
-        prepBr.addAllowedResponseCodes(new int[] { 400, 401, 403, 406, 429 });
+        try {
+            prepBr.addAllowedResponseCodes(new int[] { 400, 401, 403, 406 });
+        } catch (final Throwable t) {
+        }
         return prepBr;
     }
 
-    protected abstract Browser prepBrowser(final Browser prepBr);
-
     /**
      * sets DownloadLink LinkID property
-     * 
+     *
      * @param downloadLink
      * @throws PluginException
      */
@@ -441,7 +446,7 @@ public abstract class K2SApi extends PluginForHost {
 
     /**
      * We have to reinvent the wheel. With the help of @Override openPostConnection created us openRequestConnection in postRaw format.
-     * 
+     *
      * @author raztoki
      * @return
      */
@@ -450,7 +455,7 @@ public abstract class K2SApi extends PluginForHost {
 
             /**
              * overrides openPostConnection and turns it into openPostRawConnection
-             * 
+             *
              * @author raztoki
              */
             @Override
@@ -460,7 +465,7 @@ public abstract class K2SApi extends PluginForHost {
 
             /**
              * creates new Post Raw Request! merge components from JD2 Browser stripped of Appwork references.
-             * 
+             *
              * @author raztoki
              * @param url
              * @param post
@@ -494,7 +499,7 @@ public abstract class K2SApi extends PluginForHost {
 
     /**
      * general handling postPage requests! It's stable compliant with various response codes. It then passes to error handling!
-     * 
+     *
      * @param ibr
      * @param url
      * @param arg
@@ -509,14 +514,6 @@ public abstract class K2SApi extends PluginForHost {
                 con = ibr.openPostConnection(getApiUrl() + url, arg);
                 readConnection(con, ibr);
                 antiDDoS(ibr);
-                if (con.getResponseCode() == 429 && ibr.containsHTML("<title>Too Many Requests</title>")) {
-                    // been blocked! need to wait 1min before next request.
-                    Thread.sleep(61000);
-                    // try again!
-                    postPageRaw(ibr, url, arg, account);
-                    // error handling has been done by above re-entry
-                    return;
-                }
                 if (sessionTokenInvalid(account, ibr)) {
                     // we retry once after failure!
                     if (authTokenFail > 1) {
@@ -575,7 +572,7 @@ public abstract class K2SApi extends PluginForHost {
     /**
      * @author razotki
      * @author jiaz
-     * @param es
+     * @param is
      * @return
      * @throws UnsupportedEncodingException
      * @throws IOException
@@ -624,7 +621,7 @@ public abstract class K2SApi extends PluginForHost {
                 if (authToken == null) {
                     // we don't want to pollute this.br
                     Browser auth = prepBrowser(newBrowser());
-                    postPageRaw(auth, "/login", "{\"username\":\"" + account.getUser() + "\",\"password\":\"" + account.getPass() + "\"}", account);
+                    postPageRaw(auth, "/login", "{\"username\":\"" + Encoding.urlEncode(account.getUser()) + "\",\"password\":\"" + Encoding.urlEncode(account.getPass()) + "\"}", account);
                     authToken = getJson(auth, "auth_token");
                     if (authToken == null) {
                         // problemo?
@@ -786,7 +783,7 @@ public abstract class K2SApi extends PluginForHost {
 
     /**
      * Provides translation service
-     * 
+     *
      * @param code
      * @return
      */
@@ -1020,7 +1017,7 @@ public abstract class K2SApi extends PluginForHost {
 
     /**
      * When premium only download restriction (eg. filesize), throws exception with given message
-     * 
+     *
      * @param msg
      * @throws PluginException
      */
@@ -1037,7 +1034,7 @@ public abstract class K2SApi extends PluginForHost {
 
     /**
      * Only the owner of the file can download!
-     * 
+     *
      * @param msg
      * @throws PluginException
      */
@@ -1139,7 +1136,7 @@ public abstract class K2SApi extends PluginForHost {
 
     /**
      * Tries to return value of key from JSon response, from String source.
-     * 
+     *
      * @author raztoki
      * */
     protected String getJson(final String source, final String key) {
@@ -1155,7 +1152,7 @@ public abstract class K2SApi extends PluginForHost {
 
     /**
      * Tries to return value of key from JSon response, from default 'br' Browser.
-     * 
+     *
      * @author raztoki
      * */
     protected String getJson(final String key) {
@@ -1164,7 +1161,7 @@ public abstract class K2SApi extends PluginForHost {
 
     /**
      * Tries to return value of key from JSon response, from provided Browser.
-     * 
+     *
      * @author raztoki
      * */
     protected String getJson(final Browser ibr, final String key) {
@@ -1173,7 +1170,7 @@ public abstract class K2SApi extends PluginForHost {
 
     /**
      * Tries to return value given JSon Array of Key from JSon response provided String source.
-     * 
+     *
      * @author raztoki
      * */
     protected String getJsonArray(final String source, final String key) {
@@ -1186,7 +1183,7 @@ public abstract class K2SApi extends PluginForHost {
 
     /**
      * Tries to return value given JSon Array of Key from JSon response, from default 'br' Browser.
-     * 
+     *
      * @author raztoki
      * */
     protected String getJsonArray(final String key) {
@@ -1195,7 +1192,7 @@ public abstract class K2SApi extends PluginForHost {
 
     /**
      * Validates string to series of conditions, null, whitespace, or "". This saves effort factor within if/for/while statements
-     * 
+     *
      * @param s
      *            Imported String to match against.
      * @return <b>true</b> on valid rule match. <b>false</b> on invalid rule match.
@@ -1235,13 +1232,13 @@ public abstract class K2SApi extends PluginForHost {
     /**
      * Prevents more than one free download from starting at a given time. One step prior to dl.startDownload(), it adds a slot to maxFree
      * which allows the next singleton download to start, or at least try.
-     * 
+     *
      * This is needed because xfileshare(website) only throws errors after a final dllink starts transferring or at a given step within pre
      * download sequence. But this template(XfileSharingProBasic) allows multiple slots(when available) to commence the download sequence,
      * this.setstartintival does not resolve this issue. Which results in x(20) captcha events all at once and only allows one download to
      * start. This prevents wasting peoples time and effort on captcha solving and|or wasting captcha trading credits. Users will experience
      * minimal harm to downloading as slots are freed up soon as current download begins.
-     * 
+     *
      * @param controlSlot
      *            (+1|-1)
      * @author raztoki
@@ -1288,7 +1285,10 @@ public abstract class K2SApi extends PluginForHost {
     }
 
     protected void showFreeDialog(final String domain) {
-        if (System.getProperty("org.jdownloader.revision") != null) { /* JD2 ONLY! */
+        if (domain == null) {
+            return;
+        }
+        if (isNewJD()) { /* JD2 ONLY! */
             super.showFreeDialog(domain);
             return;
         }
@@ -1298,7 +1298,6 @@ public abstract class K2SApi extends PluginForHost {
                 @Override
                 public void run() {
                     try {
-                        String lng = System.getProperty("user.language");
                         String message = null;
                         String title = null;
                         String tab = "                        ";
@@ -1332,7 +1331,7 @@ public abstract class K2SApi extends PluginForHost {
     /**
      * Gets page <br />
      * - natively supports silly cloudflare anti DDoS crapola
-     * 
+     *
      * @author raztoki
      */
     public void getPage(final Browser ibr, final String page) throws Exception {
@@ -1360,9 +1359,9 @@ public abstract class K2SApi extends PluginForHost {
 
     /**
      * Wrapper into getPage(importBrowser, page), where browser = br;
-     * 
+     *
      * @author raztoki
-     * 
+     *
      * */
     public void getPage(final String page) throws Exception {
         getPage(br, page);
@@ -1396,9 +1395,9 @@ public abstract class K2SApi extends PluginForHost {
 
     /**
      * Wrapper into postPage(importBrowser, page, postData), where browser == this.br;
-     * 
+     *
      * @author raztoki
-     * 
+     *
      * */
     public void postPage(String page, final String postData) throws Exception {
         postPage(br, page, postData);
@@ -1459,19 +1458,47 @@ public abstract class K2SApi extends PluginForHost {
 
     /**
      * Wrapper into sendForm(importBrowser, form), where browser == this.br;
-     * 
+     *
      * @author raztoki
-     * 
+     *
      * */
     public void sendForm(final Form form) throws Exception {
         sendForm(br, form);
     }
 
+    protected void sendRequest(final Browser ibr, final Request request) throws Exception {
+        URLConnectionAdapter con = null;
+        try {
+            con = ibr.openRequestConnection(request);
+            readConnection(con, ibr);
+            antiDDoS(ibr);
+        } finally {
+            try {
+                con.disconnect();
+            } catch (Throwable e) {
+            }
+            br.getHeaders().put("Content-Type", null);
+        }
+    }
+
+    /**
+     * Wrapper into sendRequest(importBrowser, form), where browser == this.br;
+     *
+     * @author raztoki
+     *
+     * */
+    protected void sendRequest(final Request request) throws Exception {
+        sendRequest(br, request);
+    }
+
+    private int responseCode429 = 0;
+    private int responseCode52x = 0;
+
     /**
      * Performs Cloudflare and Incapsula requirements.<br />
      * Auto fill out the required fields and updates antiDDoSCookies session.<br />
      * Always called after Browser Request!
-     * 
+     *
      * @version 0.03
      * @author raztoki
      **/
@@ -1482,12 +1509,13 @@ public abstract class K2SApi extends PluginForHost {
         final HashMap<String, String> cookies = new HashMap<String, String>();
         if (ibr.getHttpConnection() != null) {
             final String URL = ibr.getURL();
+            final int responseCode = ibr.getHttpConnection().getResponseCode();
             if (requestHeadersHasKeyNValueContains(ibr, "server", "cloudflare-nginx")) {
                 Form cloudflare = ibr.getFormbyProperty("id", "ChallengeForm");
                 if (cloudflare == null) {
                     cloudflare = ibr.getFormbyProperty("id", "challenge-form");
                 }
-                if (ibr.getHttpConnection().getResponseCode() == 403 && cloudflare != null) {
+                if (responseCode == 403 && cloudflare != null) {
                     // new method seems to be within 403
                     if (cloudflare.hasInputFieldByName("recaptcha_response_field")) {
                         // they seem to add multiple input fields which is most likely meant to be corrected by js ?
@@ -1526,7 +1554,7 @@ public abstract class K2SApi extends PluginForHost {
                             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                         }
                     }
-                } else if (ibr.getHttpConnection().getResponseCode() == 503 && cloudflare != null) {
+                } else if (responseCode == 503 && cloudflare != null) {
                     // 503 response code with javascript math section
                     String host = new Regex(URL, "https?://([^/]+)(:\\d+)?/").getMatch(0);
                     String math = ibr.getRegex("\\$\\('#jschl_answer'\\)\\.val\\(([^\\)]+)\\);").getMatch(0);
@@ -1556,7 +1584,55 @@ public abstract class K2SApi extends PluginForHost {
                         logger.warning("Possible plugin error within cloudflare handling");
                         throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                     }
-                } else if (ibr.containsHTML("<title>Too Many Requests</title>") && ibr.containsHTML("<body>\\s*<h1>Too Many Requests</h1>\\s*You are sending too many requests\\s*</body>")) {
+                } else if (responseCode == 520 || responseCode == 522) {
+                    // HTTP/1.1 520 Origin Error
+                    // HTTP/1.1 522 Origin Connection Time-out
+                    // cache system with possible origin dependency... we will wait and retry
+                    if (responseCode52x == 4) {
+                        throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE);
+                    }
+                    // this html based cookie, set by <meta (for responseCode 522)
+                    // <meta http-equiv="set-cookie" content="cf_use_ob=0; expires=Sat, 14-Jun-14 14:35:38 GMT; path=/">
+                    String[] metaCookies = ibr.getRegex("<meta http-equiv=\"set-cookie\" content=\"(.*?; expries=.*?; path=.*?\";?(?: domain=.*?;?)?)\"").getColumn(0);
+                    if (metaCookies != null && metaCookies.length != 0) {
+                        final List<String> cookieHeaders = Arrays.asList(metaCookies);
+                        final String date = ibr.getHeaders().get("Date");
+                        final String host = Browser.getHost(ibr.getURL());
+                        // get current cookies
+                        final Cookies ckies = ibr.getCookies(host);
+                        // add meta cookies to current previous request cookies
+                        for (int i = 0; i < cookieHeaders.size(); i++) {
+                            final String header = cookieHeaders.get(i);
+                            ckies.add(Cookies.parseCookies(header, host, date));
+                        }
+                        // set ckies as current cookies
+                        ibr.getHttpConnection().getRequest().setCookies(ckies);
+                    }
+
+                    Thread.sleep(2500);
+                    // effectively refresh page!
+                    try {
+                        sendRequest(ibr, ibr.getRequest().cloneRequest());
+                    } catch (final Throwable t) {
+                        throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE);
+                    }
+                    // new sendRequest saves.
+                    return;
+                } else if (responseCode == 429 && ibr.containsHTML("<title>Too Many Requests</title>")) {
+                    if (responseCode429 == 4) {
+                        throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE);
+                    }
+                    responseCode429++;
+                    // been blocked! need to wait 1min before next request. (says k2sadmin, each site could be configured differently)
+                    Thread.sleep(61000);
+                    // try again! -NOTE: this isn't stable compliant-
+                    try {
+                        sendRequest(ibr, ibr.getRequest().cloneRequest());
+                    } catch (final Throwable t) {
+                        throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE);
+                    }
+                    return;
+
                     // new code here...
                     // <script type="text/javascript">
                     // //<![CDATA[
@@ -1565,16 +1641,18 @@ public abstract class K2SApi extends PluginForHost {
                     // //]]>
                     // </script>
 
-                    // nothing wrong, or something wrong (unsupported format)....
-                    // commenting out return prevents caching of cookies per request
-                    // return;
                 } else if (ibr.containsHTML("<p>The owner of this website \\(" + Pattern.quote(getDomain()) + "\\) has banned your IP address") && ibr.containsHTML("<title>Access denied \\| " + Pattern.quote(getDomain()) + " used CloudFlare to restrict access</title>")) {
                     // common when proxies are used?? see keep2share.cc jdlog://5562413173041
                     String ip = ibr.getRegex("your IP address \\((.*?)\\)\\.</p>").getMatch(0);
                     String message = getDomain() + " has banned your IP Address" + (inValidate(ip) ? "!" : "! " + ip);
                     logger.warning(message);
                     throw new PluginException(LinkStatus.ERROR_FATAL, message);
+                } else {
+                    // nothing wrong, or something wrong (unsupported format)....
+                    // commenting out return prevents caching of cookies per request
+                    // return;
                 }
+
                 // get cookies we want/need.
                 // refresh these with every getPage/postPage/submitForm?
                 final Cookies add = ibr.getCookies(this.getHost());
@@ -1593,7 +1671,7 @@ public abstract class K2SApi extends PluginForHost {
     }
 
     /**
-     * 
+     *
      * @author raztoki
      * */
     @SuppressWarnings("unused")
@@ -1608,7 +1686,7 @@ public abstract class K2SApi extends PluginForHost {
     }
 
     /**
-     * 
+     *
      * @author raztoki
      * */
     private boolean requestHeadersHasKeyNValueContains(final Browser ibr, final String k, final String v) {
@@ -1621,75 +1699,80 @@ public abstract class K2SApi extends PluginForHost {
         return false;
     }
 
-    // end of cloudflare module.
-
     // stable browser is shite.
 
-    private static boolean isJava7nJDStable() {
-        if (System.getProperty("jd.revision.jdownloaderrevision") == null && System.getProperty("java.version").matches("1\\.[7-9].+")) {
+    private boolean isJava7nJDStable() {
+        if (!isNewJD() && System.getProperty("java.version").matches("1\\.[7-9].+")) {
             return true;
         } else {
             return false;
         }
     }
 
+    private boolean isNewJD() {
+        return System.getProperty("jd.revision.jdownloaderrevision") != null ? true : false;
+    }
+
+    protected static Object      DIALOGLOCK  = new Object();
+
     private static AtomicBoolean stableSucks = new AtomicBoolean(false);
 
-    public static void showSSLWarning(final String domain) {
-        try {
-            SwingUtilities.invokeAndWait(new Runnable() {
+    public void showSSLWarning(final String domain) {
+        synchronized (DIALOGLOCK) {
+            try {
+                SwingUtilities.invokeAndWait(new Runnable() {
 
-                @Override
-                public void run() {
-                    try {
-                        String lng = System.getProperty("user.language");
-                        String message = null;
-                        String title = null;
-                        boolean xSystem = CrossSystem.isOpenBrowserSupported();
-                        if ("de".equalsIgnoreCase(lng)) {
-                            title = domain + " :: Java 7+ && HTTPS Post Requests.";
-                            message = "Wegen einem Bug in in Java 7+ in dieser JDownloader version koennen wir keine HTTPS Post Requests ausfuehren.\r\n";
-                            message += "Wir haben eine Notloesung ergaenzt durch die man weiterhin diese JDownloader Version nutzen kann.\r\n";
-                            message += "Bitte bedenke, dass HTTPS Post Requests als HTTP gesendet werden. Nutzung auf eigene Gefahr!\r\n";
-                            message += "Falls du keine unverschluesselten Daten versenden willst, update bitte auf JDownloader 2!\r\n";
-                            if (xSystem) {
-                                message += "JDownloader 2 Installationsanleitung und Downloadlink: Klicke -OK- (per Browser oeffnen)\r\n ";
+                    @Override
+                    public void run() {
+                        try {
+                            String message = null;
+                            String title = null;
+                            boolean xSystem = CrossSystem.isOpenBrowserSupported();
+                            if ("de".equalsIgnoreCase(lng)) {
+                                title = domain + " :: Java 7+ && HTTPS Post Requests.";
+                                message = "Wegen einem Bug in in Java 7+ in dieser JDownloader version koennen wir keine HTTPS Post Requests ausfuehren.\r\n";
+                                message += "Wir haben eine Notloesung ergaenzt durch die man weiterhin diese JDownloader Version nutzen kann.\r\n";
+                                message += "Bitte bedenke, dass HTTPS Post Requests als HTTP gesendet werden. Nutzung auf eigene Gefahr!\r\n";
+                                message += "Falls du keine unverschluesselten Daten versenden willst, update bitte auf JDownloader 2!\r\n";
+                                if (xSystem) {
+                                    message += "JDownloader 2 Installationsanleitung und Downloadlink: Klicke -OK- (per Browser oeffnen)\r\n ";
+                                } else {
+                                    message += "JDownloader 2 Installationsanleitung und Downloadlink:\r\n" + new URL("http://board.jdownloader.org/showthread.php?t=37365") + "\r\n";
+                                }
+                            } else if ("es".equalsIgnoreCase(lng)) {
+                                title = domain + " :: Java 7+ && HTTPS Solicitudes Post.";
+                                message = "Debido a un bug en Java 7+, al utilizar esta versión de JDownloader, no se puede enviar correctamente las solicitudes Post en HTTPS\r\n";
+                                message += "Por ello, hemos añadido una solución alternativa para que pueda seguir utilizando esta versión de JDownloader...\r\n";
+                                message += "Tenga en cuenta que las peticiones Post de HTTPS se envían como HTTP. Utilice esto a su propia discreción.\r\n";
+                                message += "Si usted no desea enviar información o datos desencriptados, por favor utilice JDownloader 2!\r\n";
+                                if (xSystem) {
+                                    message += " Las instrucciones para descargar e instalar Jdownloader 2 se muestran a continuación: Hacer Click en -Aceptar- (El navegador de internet se abrirá)\r\n ";
+                                } else {
+                                    message += " Las instrucciones para descargar e instalar Jdownloader 2 se muestran a continuación, enlace :\r\n" + new URL("http://board.jdownloader.org/showthread.php?t=37365") + "\r\n";
+                                }
                             } else {
-                                message += "JDownloader 2 Installationsanleitung und Downloadlink:\r\n" + new URL("http://board.jdownloader.org/showthread.php?t=37365") + "\r\n";
+                                title = domain + " :: Java 7+ && HTTPS Post Requests.";
+                                message = "Due to a bug in Java 7+ when using this version of JDownloader, we can not successfully send HTTPS Post Requests.\r\n";
+                                message += "We have added a work around so you can continue to use this version of JDownloader...\r\n";
+                                message += "Please be aware that HTTPS Post Requests are sent as HTTP. Use at your own discretion.\r\n";
+                                message += "If you do not want to send unecrypted data, please upgrade to JDownloader 2!\r\n";
+                                if (xSystem) {
+                                    message += "Jdownloader 2 install instructions and download link: Click -OK- (open in browser)\r\n ";
+                                } else {
+                                    message += "JDownloader 2 install instructions and download link:\r\n" + new URL("http://board.jdownloader.org/showthread.php?t=37365") + "\r\n";
+                                }
                             }
-                        } else if ("es".equalsIgnoreCase(lng)) {
-                            title = domain + " :: Java 7+ && HTTPS Solicitudes Post.";
-                            message = "Debido a un bug en Java 7+, al utilizar esta versión de JDownloader, no se puede enviar correctamente las solicitudes Post en HTTPS\r\n";
-                            message += "Por ello, hemos añadido una solución alternativa para que pueda seguir utilizando esta versión de JDownloader...\r\n";
-                            message += "Tenga en cuenta que las peticiones Post de HTTPS se envían como HTTP. Utilice esto a su propia discreción.\r\n";
-                            message += "Si usted no desea enviar información o datos desencriptados, por favor utilice JDownloader 2!\r\n";
-                            if (xSystem) {
-                                message += " Las instrucciones para descargar e instalar Jdownloader 2 se muestran a continuación: Hacer Click en -Aceptar- (El navegador de internet se abrirá)\r\n ";
-                            } else {
-                                message += " Las instrucciones para descargar e instalar Jdownloader 2 se muestran a continuación, enlace :\r\n" + new URL("http://board.jdownloader.org/showthread.php?t=37365") + "\r\n";
+                            int result = JOptionPane.showConfirmDialog(jd.gui.swing.jdgui.JDGui.getInstance().getMainFrame(), message, title, JOptionPane.CLOSED_OPTION, JOptionPane.CLOSED_OPTION);
+                            if (xSystem && JOptionPane.OK_OPTION == result) {
+                                CrossSystem.openURL(new URL("http://board.jdownloader.org/showthread.php?t=37365"));
                             }
-                        } else {
-                            title = domain + " :: Java 7+ && HTTPS Post Requests.";
-                            message = "Due to a bug in Java 7+ when using this version of JDownloader, we can not successfully send HTTPS Post Requests.\r\n";
-                            message += "We have added a work around so you can continue to use this version of JDownloader...\r\n";
-                            message += "Please be aware that HTTPS Post Requests are sent as HTTP. Use at your own discretion.\r\n";
-                            message += "If you do not want to send unecrypted data, please upgrade to JDownloader 2!\r\n";
-                            if (xSystem) {
-                                message += "Jdownloader 2 install instructions and download link: Click -OK- (open in browser)\r\n ";
-                            } else {
-                                message += "JDownloader 2 install instructions and download link:\r\n" + new URL("http://board.jdownloader.org/showthread.php?t=37365") + "\r\n";
-                            }
+                            stableSucks.set(true);
+                        } catch (Throwable e) {
                         }
-                        int result = JOptionPane.showConfirmDialog(jd.gui.swing.jdgui.JDGui.getInstance().getMainFrame(), message, title, JOptionPane.CLOSED_OPTION, JOptionPane.CLOSED_OPTION);
-                        if (xSystem && JOptionPane.OK_OPTION == result) {
-                            CrossSystem.openURL(new URL("http://board.jdownloader.org/showthread.php?t=37365"));
-                        }
-                        stableSucks.set(true);
-                    } catch (Throwable e) {
                     }
-                }
-            });
-        } catch (Throwable e) {
+                });
+            } catch (Throwable e) {
+            }
         }
     }
 
