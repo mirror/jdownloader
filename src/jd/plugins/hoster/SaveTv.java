@@ -545,7 +545,6 @@ public class SaveTv extends PluginForHost {
         synchronized (LOCK) {
             checkFeatureDialogAll();
             checkFeatureDialogCrawler();
-            checkFeatureDialogNewFixed();
         }
         final SubConfiguration cfg = SubConfiguration.getConfig("save.tv");
         final boolean preferAdsFree = cfg.getBooleanProperty(PREFERADSFREE, false);
@@ -1858,7 +1857,7 @@ public class SaveTv extends PluginForHost {
                         message += "- Alles unter beachtung der Schnittlisten-Einstellungen und des Formats\r\n";
                         message += "- Und viele mehr...\r\n";
                         message += "\r\n";
-                        message += "Diese einstellungen sind nur in der Version JDownloader 2 BETA verfügbar unter:\r\nEinstellungen -> Plugin Einstellungen -> save.tv";
+                        message += "Diese Einstellungen sind nur in der Version JDownloader 2 BETA verfügbar unter:\r\nEinstellungen -> Plugin Einstellungen -> save.tv";
                         message += getMessageEnd();
                         JOptionPane.showConfirmDialog(jd.gui.swing.jdgui.JDGui.getInstance().getMainFrame(), message, title, JOptionPane.PLAIN_MESSAGE, JOptionPane.INFORMATION_MESSAGE, null);
                     } catch (Throwable e) {
@@ -1869,6 +1868,7 @@ public class SaveTv extends PluginForHost {
         }
     }
 
+    @SuppressWarnings("deprecation")
     private void checkFeatureDialogCrawler() {
         SubConfiguration config = null;
         try {
@@ -1910,57 +1910,6 @@ public class SaveTv extends PluginForHost {
                         message += "- Die Möglichkeit, wahlweise alle oder nur Aufnahmen der letzten X Stunden zu crawlen\r\n";
                         message += "\r\n";
                         message += "Die Crawler Einstellungen sind nur in der Version JDownloader 2 BETA verfügbar unter:\r\nEinstellungen -> Plugin Einstellungen -> save.tv";
-                        message += getMessageEnd();
-                        JOptionPane.showConfirmDialog(jd.gui.swing.jdgui.JDGui.getInstance().getMainFrame(), message, title, JOptionPane.PLAIN_MESSAGE, JOptionPane.INFORMATION_MESSAGE, null);
-                    } catch (Throwable e) {
-                    }
-                }
-            });
-        } catch (Throwable e) {
-        }
-    }
-
-    private void checkFeatureDialogNewFixed() {
-        SubConfiguration config = null;
-        try {
-            config = getPluginConfig();
-            if (config.getBooleanProperty("featuredialog_fullfixednew_Shown", Boolean.FALSE) == false) {
-                if (config.getProperty("featuredialog_fullfixednew_Shown2") == null) {
-                    showFeatureDialogNewFixed();
-                } else {
-                    config = null;
-                }
-            } else {
-                config = null;
-            }
-        } catch (final Throwable e) {
-        } finally {
-            if (config != null) {
-                config.setProperty("featuredialog_fullfixednew_Shown", Boolean.TRUE);
-                config.setProperty("featuredialog_fullfixednew_Shown2", "shown");
-                config.save();
-            }
-        }
-    }
-
-    private static void showFeatureDialogNewFixed() {
-        try {
-            SwingUtilities.invokeAndWait(new Runnable() {
-
-                @Override
-                public void run() {
-                    try {
-                        String message = "";
-                        String title = null;
-                        title = "Save.tv Plugin - 15.07.14 - Anpassung an neues Design fertig";
-                        message += "Hallo lieber save.tv Nutzer/liebe save.tv NutzerIn\r\n";
-                        message += "Beide save.tv Plugins wurden komplett an das neue Design angepasst - dies bringt folgende groben Neuerungen:\r\n";
-                        message += "-Die Nutzung der API schränkt die gewählten Einstellungen nun weniger ein\r\n";
-                        message += "-Serien werden besser erkannt --> Bessere Dateinamen\r\n";
-                        message += "-Alles - vor allem der Crawler sollte schneller funktionieren\r\n";
-                        message += "-Neues Tag für eigene Dateinamen: *quality*\r\n";
-                        message += "-Neues Tag für eigene Dateinamen: *server_dateiname* - damit lassen sich die original Dateinamen nach Belieben erweitern\r\n";
-                        message += "-Viele kleinere Fehlerbehebungen";
                         message += getMessageEnd();
                         JOptionPane.showConfirmDialog(jd.gui.swing.jdgui.JDGui.getInstance().getMainFrame(), message, title, JOptionPane.PLAIN_MESSAGE, JOptionPane.INFORMATION_MESSAGE, null);
                     } catch (Throwable e) {
