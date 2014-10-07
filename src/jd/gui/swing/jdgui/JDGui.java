@@ -1879,4 +1879,8 @@ public class JDGui implements UpdaterListener, OwnerFinder {
     public void onUpdaterStatusUpdate(String label, Icon icon, double progress) {
     }
 
+    public static void executeWhenGuiInitComplete(Runnable runnable) {
+        SecondLevelLaunch.GUI_COMPLETE.executeWhenReached(runnable);
+    }
+
 }

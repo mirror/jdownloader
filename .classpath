@@ -4,18 +4,13 @@
 	<classpathentry kind="src" path="src-closed"/>
 	<classpathentry kind="src" path="translations"/>
 	<classpathentry kind="src" path="themes"/>
-	<classpathentry kind="src" path="tests"/>
+	<classpathentry excluding="org/jdownloader/nativeswing/OptionsAndPlaylistExample.java|org/jdownloader/nativeswing/SimpleVLCPlayerExample.java" kind="src" path="tests"/>
 	<classpathentry kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER">
 		<attributes>
 			<attribute name="org.eclipse.jdt.launching.CLASSPATH_ATTR_LIBRARY_PATH_ENTRY" value="jd/ressourcen/libs/dbus"/>
 		</attributes>
 	</classpathentry>
 	<classpathentry kind="lib" path="ressourcen/libs/irclib.jar"/>
-	<classpathentry kind="lib" path="ressourcen/libs/swingworker.jar" sourcepath="ressourcen/code-ressourcen/swing-worker-src-1.2.zip">
-		<attributes>
-			<attribute name="javadoc_location" value="jar:platform:/resource/jd/ressourcen/code-ressourcen/swing-worker-doc-1.2.zip!/"/>
-		</attributes>
-	</classpathentry>
 	<classpathentry kind="lib" path="ressourcen/libs_ext/mail.jar"/>
 	<classpathentry kind="lib" path="ressourcen/libs_ext/debug-1.0.jar"/>
 	<classpathentry kind="lib" path="ressourcen/libs_ext/jcip-annotations-1.0.jar"/>
@@ -60,7 +55,6 @@
 	<classpathentry combineaccessrules="false" kind="src" path="/JDBrowser"/>
 	<classpathentry combineaccessrules="false" kind="src" path="/AppWorkUtils"/>
 	<classpathentry kind="lib" path="ressourcen/libs/sevenzipjbindingWin.jar"/>
-	<classpathentry kind="lib" path="ressourcen/libs/swingx.jar"/>
 	<classpathentry kind="lib" path="ressourcen/libs_ext/mqtt.jar"/>
 	<classpathentry kind="lib" path="/AppWorkUtils/libs/jackson-core.jar"/>
 	<classpathentry kind="lib" path="/AppWorkUtils/libs/jackson-mapper.jar"/>
@@ -90,16 +84,6 @@
 	<classpathentry kind="lib" path="ressourcen/libs/laf/syntheticaAluOxide.jar"/>
 	<classpathentry kind="lib" path="ressourcen/libs/laf/syntheticaBlueLight.jar"/>
 	<classpathentry kind="lib" path="ressourcen/libs/laf/syntheticaClassy.jar"/>
-	<classpathentry kind="lib" path="ressourcen/libs/swt/windows/x64/swt.jar"/>
-	<classpathentry kind="lib" path="ressourcen/libs/swt/DJNativeSwing.jar" sourcepath="dev/libs/DJNativeSwing-SWT-1-0-2/DJNativeSwing-SWT-1-0-2.src.zip">
-		<attributes>
-			<attribute name="javadoc_location" value="jar:platform:/resource/JDownloader/dev/libs/DJNativeSwing-SWT-1-0-2/DJNativeSwing-SWT-1-0-2.docs.zip!/api/"/>
-		</attributes>
-	</classpathentry>
-	<classpathentry kind="lib" path="ressourcen/libs/swt/DJNativeSwing-SWT.jar" sourcepath="dev/libs/DJNativeSwing-SWT-1-0-2/DJNativeSwing-SWT-1-0-2.src.zip">
-		<attributes>
-			<attribute name="javadoc_location" value="jar:platform:/resource/JDownloader/dev/libs/DJNativeSwing-SWT-1-0-2/DJNativeSwing-SWT-1-0-2.docs.zip!/api"/>
-		</attributes>
-	</classpathentry>
+	<classpathentry kind="lib" path="ressourcen/libs/swt/windows/x64/swt.jar" sourcepath="dev/libs/SWT/src.zip"/>
 	<classpathentry kind="output" path="bin"/>
 </classpath>
