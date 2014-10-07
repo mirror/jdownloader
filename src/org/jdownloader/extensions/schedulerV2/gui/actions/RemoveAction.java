@@ -46,8 +46,6 @@ public class RemoveAction extends AppAction {
         } else {
             finalSelection = null;
         }
-        // to prevent that objects are selected while removing -> would throw error
-        // table.getModel().setSelectedObject(null);
 
         if (finalSelection != null && finalSelection.size() > 0) {
             StringBuilder sb = new StringBuilder();

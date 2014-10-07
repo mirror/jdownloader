@@ -20,6 +20,7 @@ import org.appwork.utils.swing.SwingUtils;
 import org.jdownloader.extensions.ExtensionConfigPanel;
 import org.jdownloader.extensions.schedulerV2.gui.ScheduleTableModel;
 import org.jdownloader.extensions.schedulerV2.gui.SchedulerTable;
+import org.jdownloader.extensions.schedulerV2.gui.actions.CopyAction;
 import org.jdownloader.extensions.schedulerV2.gui.actions.EditAction;
 import org.jdownloader.extensions.schedulerV2.gui.actions.NewAction;
 import org.jdownloader.extensions.schedulerV2.gui.actions.RemoveAction;
@@ -101,6 +102,11 @@ public class SchedulerConfigPanel extends ExtensionConfigPanel<SchedulerExtensio
         bottomMenu.add(new ExtButton(ra = new RemoveAction(table)), "sg 1,height 26!");
 
         table.getSelectionModel().addListSelectionListener(new MinimumSelectionObserver(table, ra, 1));
+
+        CopyAction ca;
+        bottomMenu.add(new ExtButton(ca = new CopyAction(table)), "sg 1,height 26!");
+
+        table.getSelectionModel().addListSelectionListener(new MinimumSelectionObserver(table, ca, 1));
 
         final EditAction ea;
         bottomMenu.add(new ExtButton(ea = new EditAction(table)), "sg 1,height 26!");
