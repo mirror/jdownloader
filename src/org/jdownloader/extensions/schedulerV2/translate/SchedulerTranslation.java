@@ -180,4 +180,7 @@ public interface SchedulerTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "Service" })
     String action_captcha_service();
 
+    @Default(lngs = { "en" }, values = { "Copy" })
+    String lit_copy();
+
 }

@@ -161,7 +161,7 @@ public class ScheduleTableModel extends ExtTableModel<ScheduleEntry> {
                     next.set(Calendar.HOUR_OF_DAY, c.get(Calendar.HOUR_OF_DAY));
                     next.set(Calendar.MINUTE, c.get(Calendar.MINUTE));
                     Calendar now = Calendar.getInstance();
-                    if (next.get(Calendar.HOUR_OF_DAY) * 60 + next.get(Calendar.MINUTE) <= now.get(Calendar.HOUR_OF_DAY) * 60 + now.get(Calendar.MINUTE)) {
+                    if ((next.get(Calendar.HOUR_OF_DAY) * 60 + next.get(Calendar.MINUTE) <= now.get(Calendar.HOUR_OF_DAY) * 60 + now.get(Calendar.MINUTE)) || !value.getSelectedDays().contains(ActionHelper.dayMap.get(next.get(Calendar.DAY_OF_WEEK)))) {
                         // in past
                         do {
                             next.add(Calendar.DAY_OF_WEEK, 1);
