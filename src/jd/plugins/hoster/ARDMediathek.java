@@ -53,7 +53,7 @@ public class ARDMediathek extends PluginForHost {
     private static final String Q_HIGH      = "Q_HIGH";
     private static final String Q_HD        = "Q_HD";
     private static final String Q_BEST      = "Q_BEST";
-    private static final String Q_HTTP_ONLY = "Q_HTTP_ONLY";
+    private static final String Q_HTTP_ONLY = "Q_HTTP_ONLY_2";
     private static final String AUDIO       = "AUDIO";
     private static final String Q_SUBTITLES = "Q_SUBTITLES";
 
@@ -222,7 +222,7 @@ public class ARDMediathek extends PluginForHost {
 
     /**
      * Converts the ARD Closed Captions subtitles to SRT subtitles. It runs after the completed download.
-     * 
+     *
      * @return The success of the conversion.
      */
     public boolean convertSubtitle(final DownloadLink downloadlink) {
