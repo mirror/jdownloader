@@ -403,7 +403,7 @@ public abstract class K2SApi extends PluginForHost {
                     // captcha can't be blank! Why we don't return null I don't know!
                     throw new PluginException(LinkStatus.ERROR_CAPTCHA);
                 }
-                postPageRaw(br, "/geturl", "{\"file_id\":\"" + fuid + "\",\"free_download_key\":null,\"captcha_challenge\":\"" + challenge + "\",\"captcha_response\":\"" + Encoding.urlEncode(code) + "\"}", account);
+                postPageRaw(br, "/geturl", "{\"file_id\":\"" + fuid + "\",\"free_download_key\":null,\"captcha_challenge\":\"" + challenge + "\",\"captcha_response\":\"" + Encoding.UTF8Encode(code) + "\"}", account);
                 final String free_download_key = getJson("free_download_key");
                 if (inValidate(free_download_key)) {
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -485,7 +485,7 @@ public abstract class K2SApi extends PluginForHost {
                     }
                 }
                 if (requestContentType == null) {
-                    requestContentType = "application/x-www-form-urlencoded";
+                    requestContentType = "application/json";
                 }
                 request.setContentType(requestContentType);
                 return request;
@@ -621,7 +621,7 @@ public abstract class K2SApi extends PluginForHost {
                 if (authToken == null) {
                     // we don't want to pollute this.br
                     Browser auth = prepBrowser(newBrowser());
-                    postPageRaw(auth, "/login", "{\"username\":\"" + Encoding.urlEncode(account.getUser()) + "\",\"password\":\"" + Encoding.urlEncode(account.getPass()) + "\"}", account);
+                    postPageRaw(auth, "/login", "{\"username\":\"" + Encoding.UTF8Encode(account.getUser()) + "\",\"password\":\"" + Encoding.UTF8Encode(account.getPass()) + "\"}", account);
                     authToken = getJson(auth, "auth_token");
                     if (authToken == null) {
                         // problemo?
