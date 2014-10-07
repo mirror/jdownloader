@@ -19,11 +19,11 @@ import javax.swing.SpinnerNumberModel;
 
 import jd.gui.UserIO;
 import jd.gui.swing.jdgui.views.settings.components.ComboBox;
-import jd.gui.swing.jdgui.views.settings.components.TextInput;
 import net.miginfocom.swing.MigLayout;
 
 import org.appwork.storage.JSonStorage;
 import org.appwork.swing.MigPanel;
+import org.appwork.swing.components.ExtTextField;
 import org.appwork.uio.CloseReason;
 import org.appwork.utils.swing.SwingUtils;
 import org.appwork.utils.swing.dialog.AbstractDialog;
@@ -39,7 +39,7 @@ import org.jdownloader.gui.translate._GUI;
 public class AddScheduleEntryDialog extends AbstractDialog<ScheduleEntry> {
 
     private JPanel                                                  content;
-    private TextInput                                               scheduleName;
+    private ExtTextField                                            scheduleName;
     private MigPanel                                                timePane;
     private MigPanel                                                timeOptionPaneOnlyOnce;
     private JSpinner                                                timeSpinnerOnce;
@@ -145,14 +145,13 @@ public class AddScheduleEntryDialog extends AbstractDialog<ScheduleEntry> {
     @Override
     public JComponent layoutDialogContent() {
 
-        MigPanel migPanel = new MigPanel("ins 0 10 5 10, wrap 2", "[][grow]", "");
+        MigPanel migPanel = new MigPanel("ins 0 0 5 0, wrap 2", "[][grow]", "");
         migPanel.setOpaque(false);
 
         migPanel.add(new JLabel(T._.scheduleTable_column_name() + ":"), "growx");
-        scheduleName = new TextInput(editEntry != null ? editEntry.getName() : T._.addScheduleEntryDialog_defaultScheduleName());
-        scheduleName.setColumns(1000);
-        migPanel.add(scheduleName, "growx");
 
+        scheduleName = new ExtTextField();
+        migPanel.add(scheduleName, "growx");
         migPanel.add(header(T._.addScheduleEntryDialog_header_time()), "spanx, growx,newline 15");
         migPanel.add(new JLabel(T._.addScheduleEntryDialog_repeat() + ":"));
 
@@ -222,8 +221,17 @@ public class AddScheduleEntryDialog extends AbstractDialog<ScheduleEntry> {
 
         content = migPanel;
         updatePanel();
-
+        loadEntry(editEntry);
         return content;
+    }
+
+    private void loadEntry(ScheduleEntry editEntry) {
+        if (editEntry == null) {
+            scheduleName.setText(T._.addScheduleEntryDialog_defaultScheduleName());
+
+        } else {
+            scheduleName.setText(editEntry.getName());
+        }
     }
 
     private void selectActionConfigPanel(JPanel configPanel) {
