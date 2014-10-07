@@ -80,6 +80,7 @@ public class JBrowserWrapper {
                     jWebBrowser.getEventSender().addListener(new JWebBrowserAdapter() {
                         @Override
                         public void onLoadingComplete(final JWebBrowser jWebBrowser) {
+                            //
                             jWebBrowser.getEventSender().removeListener(this);
                             Object result = jWebBrowser.executeJavaScript("function f(){return swfobject.getFlashPlayerVersion().major;}; return f();");
                             if (result != null) {
