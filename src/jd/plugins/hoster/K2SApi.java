@@ -364,6 +364,7 @@ public abstract class K2SApi extends PluginForHost {
         if (!inValidate(available_traffic)) {
             ai.setTrafficLeft(Long.parseLong(available_traffic));
         }
+        resetAccountProperties(account);
         setAccountLimits(account);
         account.setValid(true);
         return ai;
@@ -372,8 +373,20 @@ public abstract class K2SApi extends PluginForHost {
     protected void setAccountLimits(final Account account) {
     }
 
+    /**
+     * this resets temp values set elsewhere for clean start
+     *
+     * @param account
+     */
+    private void resetAccountProperties(final Account account) {
+        if (account != null) {
+            account.setProperty("PROPERTY_TEMP_DISABLED_TIMEOUT", Property.NULL);
+        }
+    }
+
     public void handleDownload(final DownloadLink downloadLink, final Account account) throws Exception {
         logger.info(getRevisionInfo());
+        resetAccountProperties(account);
         // linkcheck here..
         reqFileInformation(downloadLink);
         String fuid = getFUID(downloadLink);
@@ -403,7 +416,7 @@ public abstract class K2SApi extends PluginForHost {
                     // captcha can't be blank! Why we don't return null I don't know!
                     throw new PluginException(LinkStatus.ERROR_CAPTCHA);
                 }
-                postPageRaw(br, "/geturl", "{\"file_id\":\"" + fuid + "\",\"free_download_key\":null,\"captcha_challenge\":\"" + challenge + "\",\"captcha_response\":\"" + Encoding.UTF8Encode(code) + "\"}", account);
+                postPageRaw(br, "/geturl", "{\"file_id\":\"" + fuid + "\",\"free_download_key\":null,\"captcha_challenge\":\"" + challenge + "\",\"captcha_response\":\"" + JSonUtils.escape(code) + "\"}", account);
                 final String free_download_key = getJson("free_download_key");
                 if (inValidate(free_download_key)) {
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -621,7 +634,7 @@ public abstract class K2SApi extends PluginForHost {
                 if (authToken == null) {
                     // we don't want to pollute this.br
                     Browser auth = prepBrowser(newBrowser());
-                    postPageRaw(auth, "/login", "{\"username\":\"" + Encoding.UTF8Encode(account.getUser()) + "\",\"password\":\"" + Encoding.UTF8Encode(account.getPass()) + "\"}", account);
+                    postPageRaw(auth, "/login", "{\"username\":\"" + JSonUtils.escape(account.getUser()) + "\",\"password\":\"" + JSonUtils.escape(account.getPass()) + "\"}", account);
                     authToken = getJson(auth, "auth_token");
                     if (authToken == null) {
                         // problemo?
@@ -760,6 +773,10 @@ public abstract class K2SApi extends PluginForHost {
                     throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\n" + msg, PluginException.VALUE_ID_PREMIUM_DISABLE);
                 case 71:
                     // ERROR_LOGIN_ATTEMPTS_EXCEEDED = 71;
+                    // This is actually a IP restriction!
+                    // 30min wait time.... since wait time isn't respected (throw new PluginException(LinkStatus.ERROR_PREMIUM, msg, time)),
+                    // we need to set value like this and then throw temp disable.
+                    account.setProperty("PROPERTY_TEMP_DISABLED_TIMEOUT", 31 * 60 * 1000l);
                     throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\n" + msg, PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
                 case 73:
                 case 74:
@@ -1145,7 +1162,7 @@ public abstract class K2SApi extends PluginForHost {
             result = new Regex(source, "\"" + key + "\":\"([^\"]+)\"").getMatch(0);
         }
         if (result != null) {
-            result = result.replaceAll("\\\\/", "/");
+            result = JSonUtils.unescape(result);
         }
         return result;
     }
@@ -1176,7 +1193,7 @@ public abstract class K2SApi extends PluginForHost {
     protected String getJsonArray(final String source, final String key) {
         String result = new Regex(source, "\"" + key + "\":(\\[[^\\]]+\\])").getMatch(0);
         if (result != null) {
-            result = result.replaceAll("\\\\/", "/");
+            result = JSonUtils.unescape(result);
         }
         return result;
     }
@@ -1773,6 +1790,126 @@ public abstract class K2SApi extends PluginForHost {
                 });
             } catch (Throwable e) {
             }
+        }
+    }
+
+    /**
+     * This is Copy&Paste of Appwork class
+     *
+     * @see org.appwork.storage.simplejson.JSonUtils
+     * @author Appwork
+     *
+     */
+    public static class JSonUtils {
+        public static String escape(final String s) {
+            final StringBuilder sb = new StringBuilder();
+            char ch;
+            String ss;
+            for (int i = 0; i < s.length(); i++) {
+                ch = s.charAt(i);
+                switch (ch) {
+                case '"':
+                    sb.append("\\\"");
+                    continue;
+                case '\\':
+                    sb.append("\\\\");
+                    continue;
+                case '\b':
+                    sb.append("\\b");
+                    continue;
+                case '\f':
+                    sb.append("\\f");
+                    continue;
+                case '\n':
+                    sb.append("\\n");
+                    continue;
+                case '\r':
+                    sb.append("\\r");
+                    continue;
+                case '\t':
+                    sb.append("\\t");
+                    continue;
+
+                }
+
+                if (ch >= '\u0000' && ch <= '\u001F' || ch >= '\u007F' && ch <= '\u009F' || ch >= '\u2000' && ch <= '\u20FF') {
+                    ss = Integer.toHexString(ch);
+                    sb.append("\\u");
+                    for (int k = 0; k < 4 - ss.length(); k++) {
+                        sb.append('0');
+                    }
+                    sb.append(ss.toUpperCase(Locale.ENGLISH));
+                    continue;
+                }
+
+                sb.append(ch);
+
+            }
+            return sb.toString();
+        }
+
+        /**
+         * @param string
+         * @return
+         */
+        public static String unescape(final String s) {
+            char ch;
+            final StringBuilder sb = new StringBuilder();
+            final StringBuilder sb2 = new StringBuilder();
+            int ii;
+            int i;
+            for (i = 0; i < s.length(); i++) {
+                ch = s.charAt(i);
+                switch (ch) {
+                case '\\':
+                    ch = s.charAt(++i);
+                    switch (ch) {
+                    case '"':
+                        sb.append('"');
+                        continue;
+                    case '\\':
+                        sb.append('\\');
+                        continue;
+                    case 'r':
+                        sb.append('\r');
+                        continue;
+                    case 'n':
+                        sb.append('\n');
+                        continue;
+                    case 't':
+                        sb.append('\t');
+                        continue;
+                    case 'f':
+                        sb.append('\f');
+                        continue;
+                    case 'b':
+                        sb.append('\b');
+                        continue;
+
+                    case 'u':
+                        sb2.delete(0, sb2.length());
+
+                        i++;
+                        ii = i + 4;
+                        for (; i < ii; i++) {
+                            ch = s.charAt(i);
+                            if (sb2.length() > 0 || ch != '0') {
+                                sb2.append(ch);
+                            }
+                        }
+                        i--;
+                        sb.append((char) Short.parseShort(sb2.toString(), 16));
+                        continue;
+                    default:
+                        sb.append(ch);
+                        continue;
+                    }
+
+                }
+                sb.append(ch);
+            }
+
+            return sb.toString();
         }
     }
 
