@@ -324,7 +324,7 @@ public class AddScheduleEntryDialog extends AbstractDialog<ScheduleEntry> {
         constraints.put(timeOnlyOnceLabel, "gapleft 10,");
         timeOptionPaneOnlyOnce.add(timeSpinnerOnce);
         for (JComponent component : timeOptionPaneOnlyOnce) {
-            panel.add(component, constraints.getOrDefault(component, "") + "hidemode 3");
+            panel.add(component, getOrDefault(constraints, component, "") + "hidemode 3");
             component.setVisible(false);
         }
         /* Hourly */
@@ -337,7 +337,7 @@ public class AddScheduleEntryDialog extends AbstractDialog<ScheduleEntry> {
         constraints.put(timeHourlyLabel, "gapleft 10,");
         timeOptionPaneHourly.add(minuteSpinnerHourly);
         for (JComponent component : timeOptionPaneHourly) {
-            panel.add(component, constraints.getOrDefault(component, "") + "hidemode 3");
+            panel.add(component, getOrDefault(constraints, component, "") + "hidemode 3");
             component.setVisible(false);
         }
         timeOptionPaneHourly.add(emptyLabel);
@@ -367,7 +367,7 @@ public class AddScheduleEntryDialog extends AbstractDialog<ScheduleEntry> {
         constraints.put(specificDaysSubPanel, "gapleft 10,spanx, growx, pushx,");
 
         for (JComponent component : timeOptionPaneSpecificDays) {
-            panel.add(component, constraints.getOrDefault(component, "") + "hidemode 3");
+            panel.add(component, getOrDefault(constraints, component, "") + "hidemode 3");
             component.setVisible(false);
         }
 
@@ -384,11 +384,19 @@ public class AddScheduleEntryDialog extends AbstractDialog<ScheduleEntry> {
         constraints.put(minutesIntervalLabel, "gapleft 10,");
         timeOptionPaneInterval.add(minuteSpinnerInterval);
         for (JComponent component : timeOptionPaneInterval) {
-            panel.add(component, constraints.getOrDefault(component, "") + "hidemode 3");
+            panel.add(component, getOrDefault(constraints, component, "") + "hidemode 3");
             component.setVisible(false);
         }
         panel.add(emptyLabel, "spanx, hidemode 3");
         emptyLabel.setVisible(false);
+    }
+
+    private String getOrDefault(HashMap<JComponent, String> constraints, JComponent component, String defaultValue) {
+        String ret = constraints.get(component);
+        if (ret == null) {
+            ret = defaultValue;
+        }
+        return ret;
     }
 
     private void selectTimeOptionPane(TIME_OPTIONS interval) {
