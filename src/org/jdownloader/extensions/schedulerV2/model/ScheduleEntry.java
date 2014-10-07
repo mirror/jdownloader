@@ -1,8 +1,11 @@
 package org.jdownloader.extensions.schedulerV2.model;
 
+import java.util.List;
+
 import org.jdownloader.extensions.schedulerV2.actions.AbstractScheduleAction;
 import org.jdownloader.extensions.schedulerV2.helpers.ActionHelper;
 import org.jdownloader.extensions.schedulerV2.helpers.ActionHelper.TIME_OPTIONS;
+import org.jdownloader.extensions.schedulerV2.helpers.ActionHelper.WEEKDAY;
 
 public class ScheduleEntry {
 
@@ -72,5 +75,13 @@ public class ScheduleEntry {
 
     public long getID() {
         return storableEntry.getId();
+    }
+
+    public List<WEEKDAY> getSelectedDays() {
+        return storableEntry._getSelectedDays();
+    }
+
+    public void setSelectedDays(List<WEEKDAY> days) {
+        storableEntry._setSelectedDays(days);
     }
 }

@@ -147,4 +147,37 @@ public interface SchedulerTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "None" })
     String action_captcha_none();
 
+    @Default(lngs = { "en" }, values = { "Specific Days" })
+    String time_option_specificDays();
+
+    @Default(lngs = { "en" }, values = { "Days: %s1 at %s2" })
+    String timeformat_repeats_specificDays(String days, String time);
+
+    @Default(lngs = { "en" }, values = { "Never" })
+    String lit_never();
+
+    @Default(lngs = { "en" }, values = { "Mon" })
+    String weekday_short_monday();
+
+    @Default(lngs = { "en" }, values = { "Tue" })
+    String weekday_short_tuesday();
+
+    @Default(lngs = { "en" }, values = { "Wed" })
+    String weekday_short_wednesday();
+
+    @Default(lngs = { "en" }, values = { "Thu" })
+    String weekday_short_thursday();
+
+    @Default(lngs = { "en" }, values = { "Fri" })
+    String weekday_short_friday();
+
+    @Default(lngs = { "en" }, values = { "Sat" })
+    String weekday_short_saturday();
+
+    @Default(lngs = { "en" }, values = { "Sun" })
+    String weekday_short_sunday();
+
+    @Default(lngs = { "en" }, values = { "Service" })
+    String action_captcha_service();
+
 }

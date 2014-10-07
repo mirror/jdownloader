@@ -30,9 +30,9 @@ public class SetDownloadspeedAction extends AbstractScheduleAction<SetDownloadsp
 
     @Override
     public JPanel getConfigPanel() {
-        MigPanel actionParameterPanelSpeed = new MigPanel("ins 0,wrap 2", "", "");
+        MigPanel actionParameterPanelSpeed = new MigPanel("ins 0,wrap 2", "[sg 1][sg 2,grow,fill]", "");
 
-        actionParameterPanelSpeed.add(new JLabel(T._.addScheduleEntryDialog_speed() + ":"), "width 18%,growx");
+        actionParameterPanelSpeed.add(new JLabel(T._.addScheduleEntryDialog_speed() + ":"));
 
         final SpeedSpinner downloadspeedSpinner = new SpeedSpinner(0l, 100 * 1024 * 1024 * 1024l, 1l);
         downloadspeedSpinner.setValue(getConfig().getDownloadspeed());
@@ -46,7 +46,7 @@ public class SetDownloadspeedAction extends AbstractScheduleAction<SetDownloadsp
                 }
             }
         });
-        actionParameterPanelSpeed.add(downloadspeedSpinner, "width 30%,growx");
+        actionParameterPanelSpeed.add(downloadspeedSpinner);
         return actionParameterPanelSpeed;
     }
 
