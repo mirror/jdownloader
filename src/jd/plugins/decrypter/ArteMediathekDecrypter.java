@@ -23,8 +23,6 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Locale;
-import java.util.Map.Entry;
-import java.util.Random;
 
 import jd.PluginWrapper;
 import jd.config.SubConfiguration;
@@ -70,6 +68,7 @@ public class ArteMediathekDecrypter extends PluginForDecrypt {
         super(wrapper);
     }
 
+    /* TODO: Add support for subtitled version + RTMP */
     @Override
     public ArrayList<DownloadLink> decryptIt(final CryptedLink param, final ProgressController progress) throws Exception {
         final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
@@ -143,7 +142,11 @@ public class ArteMediathekDecrypter extends PluginForDecrypt {
         return false;
     }
 
+    @SuppressWarnings("deprecation")
     private ArrayList<DownloadLink> getDownloadLinks(final String parameter, final Browser ibr) throws DecrypterException, IOException, ParseException {
+        ArrayList<DownloadLink> newRet = new ArrayList<DownloadLink>();
+        HashMap<String, DownloadLink> bestMap = new HashMap<String, DownloadLink>();
+        String vsr;
         String tvguideUrl;
         String title;
         // this allows drop to frame, and prevents subsequent NPE!
@@ -151,10 +154,12 @@ public class ArteMediathekDecrypter extends PluginForDecrypt {
 
         final SubConfiguration cfg = SubConfiguration.getConfig("arte.tv");
         final boolean BEST = cfg.getBooleanProperty(Q_BEST, false);
-        final boolean preferHBBTV = cfg.getBooleanProperty(HBBTV, true);
-
-        boolean hbbtvGRABBED = false;
-
+        final boolean preferHBBTV = cfg.getBooleanProperty(HBBTV, false);
+        boolean grabSubtitles = cfg.getBooleanProperty(Q_SUBTITLES, false);
+        /* Subtitled versions are only available in HBBTv */
+        if (!preferHBBTV && grabSubtitles) {
+            grabSubtitles = false;
+        }
         ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
 
         int languageVersion = 1;
@@ -167,8 +172,6 @@ public class ArteMediathekDecrypter extends PluginForDecrypt {
         lang = language(languageVersion);
 
         String vsrRegex = "\"VSR\":\\{(.*?\\})\\}";
-        String strRegex = "\"(.*?)\"\\s*:\\s*\\{(.*?)\\}";
-        String valRegex = "\"(.*?)\"\\s*:\\s*\"?(.*?)\"?,";
 
         if (parameter.matches(TYPE_CONCERT)) {
             tvguideUrl = br.getRegex("\"(http://concert\\.arte\\.tv/[a-z]{2}/player/\\d+)").getMatch(0);
@@ -189,66 +192,18 @@ public class ArteMediathekDecrypter extends PluginForDecrypt {
                 return null;
             }
             tvguideUrl = "http://org-www.arte.tv/papi/tvguide/videos/stream/player/" + lang + "/" + ID + tv_channel + "-" + lang + "/ALL/ALL.json";
-            if (preferHBBTV) {
-                hbbtvGRABBED = true;
-                br.getHeaders().put("User-Agent", "HbbTV/1.1.1 (;;;;;) jd-arte.tv-plugin");
-                tvguideUrl = "http://org-www.arte.tv/papi/tvguide/videos/stream/" + lang + "/" + ID + tv_channel + "-" + lang + "/HBBTV/ALL.json";
-                vsrRegex = "\"VSR\":\\[(.*?)\\]";
-                strRegex = "\\{(.*?\"VQU\":\"([^\"]+)\".*?)\\}";
-                valRegex = "\"([^\"]+)\":\"([^\"]+)\"";
-            }
+            /* Old but useful code */
+            // if (preferHBBTV) {
+            // br.getHeaders().put("User-Agent", "HbbTV/1.1.1 (;;;;;) jd-arte.tv-plugin");
+            // tvguideUrl = "http://org-www.arte.tv/papi/tvguide/videos/stream/" + lang + "/" + ID + tv_channel + "-" + lang +
+            // "/HBBTV/ALL.json";
+            // }
             br.getPage(tvguideUrl);
         }
         title = getTitleAPI(br);
         br.getRequest().setHtmlCode(br.toString().replace("\\", ""));
         if (br.containsHTML("<statuscode>wrongParameter</statuscode>")) {
             return ret;
-        }
-        title = unescape(title);
-
-        /* parsing json */
-        HashMap<String, HashMap<String, String>> streamValues = new HashMap<String, HashMap<String, String>>();
-        HashMap<String, String> streamValue;
-        String vsr = br.getRegex(vsrRegex).getMatch(0);
-        /* If it's just empty, the video is probably not available in the users' country. */
-        if (vsr == null || vsr.equals("")) {
-            final DownloadLink link = createDownloadlink(parameter.replace("http://", "decrypted://"));
-            link.setFinalFileName(title);
-            link.setAvailable(false);
-            link.setProperty("offline", true);
-            ret.add(link);
-            return ret;
-        }
-        for (int i = 0; i < 2; i++) {
-            final String[][] qualityInfo = new Regex(vsr, strRegex).getMatches();
-            for (String[] ss : qualityInfo) {
-                if (hbbtvGRABBED) {
-                    String tmp = ss[0];
-                    ss[0] = ss[1];
-                    ss[1] = tmp;
-                } else {
-                    String l = new Regex(ss[1], "\"versionCode\":\"(VO|VF)").getMatch(0);
-                    if (l != null) {
-                        l = "VO".equals(l) ? "1" : "2";
-                        if (i == 0) {
-                            if (Integer.parseInt(l) != languageVersion) {
-                                continue;
-                            }
-                        } else {
-                            languageVersion = Integer.parseInt(l);
-                        }
-                    }
-                }
-                streamValue = new HashMap<String, String>();
-                for (String[] peng : new Regex(ss[1], valRegex).getMatches()) {
-                    streamValue.put(peng[0], peng[1]);
-                }
-                streamValues.put(ss[0], streamValue);
-            }
-
-            if (streamValues.size() > 0) {
-                break;
-            }
         }
         String VRA = br.getRegex("\"VRA\":\"([^\"]+)\"").getMatch(0);
         VRU = br.getRegex("\"VRU\":\"([^\"]+)\"").getMatch(0);
@@ -265,48 +220,89 @@ public class ArteMediathekDecrypter extends PluginForDecrypt {
                 return ret;
             }
         }
+        title = unescape(title);
 
-        String extension = ".mp4";
-        if (br.getRegex("new MediaCollection\\(\"audio\",").matches()) {
-            extension = ".mp3";
+        vsr = br.getRegex(vsrRegex).getMatch(0);
+        /* If it's just empty, the video is probably not available in the users' country. */
+        if (vsr == null || vsr.equals("")) {
+            final DownloadLink link = createDownloadlink(parameter.replace("http://", "decrypted://"));
+            link.setFinalFileName(title);
+            link.setAvailable(false);
+            link.setProperty("offline", true);
+            ret.add(link);
+            return ret;
         }
 
-        ArrayList<DownloadLink> newRet = new ArrayList<DownloadLink>();
-        HashMap<String, DownloadLink> bestMap = new HashMap<String, DownloadLink>();
-        String lastQualityFMT = null;
+        /* Needed for checks later - only set languageVersion to 3 if we know that it's actually available! */
+        if (vsr.contains("\"versionCode\":\"VOF-STMF\"") && grabSubtitles) {
+            logger.info("Subtitled versions available!");
+            languageVersion = 3;
+        }
 
-        for (Entry<String, HashMap<String, String>> next : streamValues.entrySet()) {
-            streamValue = new HashMap<String, String>(next.getValue());
-            String streamType = next.getKey();
-            /* only http streams for the old stable */
-            if (!streamType.matches("HTTP_REACH_EQ_\\d|SQ|EQ|HQ") && isStableEnviroment()) {
+        final String[][] qualities = new Regex(vsr, "\"([^<>\"/]*?)\":\\{(.*?)\\}").getMatches();
+        String extension = ".mp4";
+        for (final String[] qualinfoy : qualities) {
+            final String info = qualinfoy[1];
+            final String streamType = qualinfoy[0];
+            final String streamer = getJson(info, "streamer");
+            final String original_fmt = getJson(info, "quality");
+            final String videoformat = getJson(info, "videoFormat");
+            String fmt = original_fmt;
+            if (fmt == null) {
+                fmt = getJson(info, "VQU");
+            }
+            String url = getJson(info, "url");
+            if (url == null) {
+                url = getJson(info, "vur");
+            }
+
+            /* Check version/only download selected language-version! */
+            String l = new Regex(info, "\"versionCode\":\"(VO|VF|VOF\\-STMF)\"").getMatch(0);
+            if (l == null) {
                 continue;
             }
+            if ("VO".equals(l)) {
+                l = "1";
+            } else if ("VF".equals(l)) {
+                l = "2";
+            } else {
+                l = "3";
+            }
+            final int langint = Integer.parseInt(l);
+            if (langint != languageVersion) {
+                continue;
+            }
+            /* Language check END */
+
             /* Do not decrypt hls streams */
             if (streamType.contains("HLS")) {
                 continue;
             }
-            String url = streamValue.get("url");
-            if (url == null) {
-                url = streamValue.get("VUR");
+            /* only http streams for the old stable */
+            if (!streamType.matches("HTTP_REACH_EQ_\\d|SQ|EQ|HQ") && isStableEnviroment()) {
+                continue;
             }
-            // this assumes that all non protocol urls belong to rtmp.
+            /* Obey HBBTv setting */
+            if (preferHBBTV && !"HBBTV".equals(videoformat)) {
+                continue;
+            } else if (!preferHBBTV && "HBBTV".equals(videoformat) && !url.matches("rtmp://.+")) {
+                /* No HBBTv preferred and/or no rtmp url available --> Ignore quality */
+                continue;
+            }
+            /* this assumes that all non protocol urls belong to rtmp. */
             if (url != null && !url.matches("(https?|rtmp)://.+")) {
                 if (!url.startsWith("mp4:")) {
                     url = "mp4:" + url;
                 }
-                if (streamValue.get("streamer") != null) {
-                    url = streamValue.get("streamer") + url;
+                if (streamer != null) {
+                    url = streamer + url;
                 }
-            }
-            String fmt = streamValue.get("quality");
-            if (fmt == null) {
-                fmt = hbbtv(streamValue.get("VQU"));
             }
             String quality = fmt;
             if (fmt != null) {
                 fmt = fmt.split("\\-")[0].toLowerCase(Locale.ENGLISH).trim();
             }
+
             if (fmt != null) {
                 quality = quality.replaceAll("\\s", "");
                 /* best selection is done at the end */
@@ -336,7 +332,6 @@ public class ArteMediathekDecrypter extends PluginForDecrypt {
                     }
                 }
             }
-            lastQualityFMT = fmt.toUpperCase(Locale.ENGLISH);
 
             final String name = title + "@" + quality + "_" + language(languageVersion) + extension;
             final DownloadLink link;
@@ -358,59 +353,186 @@ public class ArteMediathekDecrypter extends PluginForDecrypt {
             link.setProperty("VRA", convertDateFormat(VRA));
             link.setProperty("VRU", convertDateFormat(VRU));
 
-            if (hbbtvGRABBED) {
-                link.setProperty("directQuality", streamValue.get("VQU"));
-                link.setProperty("streamingType", streamValue.get("VFO"));
+            if ("HBBTV".equals(videoformat)) {
+                link.setProperty("directQuality", getJson(info, "VQU"));
+                link.setProperty("streamingType", getJson(info, "VFO"));
             } else {
                 link.setAvailable(true);
-                link.setProperty("directQuality", streamValue.get("quality"));
+                link.setProperty("directQuality", original_fmt);
                 link.setProperty("streamingType", streamType);
                 link.setProperty("flashplayer", "http://www.arte.tv/player/v2//jwplayer6/mediaplayer.6.3.3242.swf");
             }
-
-            DownloadLink best = bestMap.get(fmt);
-            if (best == null || link.getDownloadSize() > best.getDownloadSize()) {
-                bestMap.put(fmt, link);
-            }
-            newRet.add(link);
+            ret.add(link);
         }
+        // /* parsing json */
+        // HashMap<String, HashMap<String, String>> streamValues = new HashMap<String, HashMap<String, String>>();
+        // HashMap<String, String> streamValue;
+        // for (int i = 0; i < 2; i++) {
+        // final String[][] qualityInfo = new Regex(vsr, strRegex).getMatches();
+        // for (String[] ss : qualityInfo) {
+        // if (hbbtvGRABBED) {
+        // String tmp = ss[0];
+        // ss[0] = ss[1];
+        // ss[1] = tmp;
+        // } else {
+        // /* Check version/only download selected language, obey subtitle setting! */
+        // String l = new Regex(ss[1], "\"versionCode\":\"(VO|VF|VOF\\-STMF)\"").getMatch(0);
+        // if (l != null) {
+        // if ("VO".equals(l)) {
+        // l = "1";
+        // } else if ("VF".equals(l)) {
+        // l = "2";
+        // } else {
+        // l = "3";
+        // }
+        // if (i == 0) {
+        // if (grabSubtitles && l.equals("3")) {
+        // break;
+        // } else if (Integer.parseInt(l) != languageVersion) {
+        // continue;
+        // }
+        // } else {
+        // languageVersion = Integer.parseInt(l);
+        // }
+        // }
+        // }
+        // streamValue = new HashMap<String, String>();
+        // for (String[] peng : new Regex(ss[1], valRegex).getMatches()) {
+        // streamValue.put(peng[0], peng[1]);
+        // }
+        // streamValues.put(ss[0], streamValue);
+        // }
+        //
+        // if (streamValues.size() > 0) {
+        // break;
+        // }
+        // }
+        //
+        // extension = ".mp4";
+        // if (br.getRegex("new MediaCollection\\(\"audio\",").matches()) {
+        // extension = ".mp3";
+        // }
+        //
+        //
+        // for (Entry<String, HashMap<String, String>> next : streamValues.entrySet()) {
+        // streamValue = new HashMap<String, String>(next.getValue());
+        // String streamType = next.getKey();
+        // /* only http streams for the old stable */
+        // if (!streamType.matches("HTTP_REACH_EQ_\\d|SQ|EQ|HQ") && isStableEnviroment()) {
+        // continue;
+        // }
+        // /* Do not decrypt hls streams */
+        // if (streamType.contains("HLS")) {
+        // continue;
+        // }
+        // String url = streamValue.get("url");
+        // if (url == null) {
+        // url = streamValue.get("VUR");
+        // }
+        // // this assumes that all non protocol urls belong to rtmp.
+        // if (url != null && !url.matches("(https?|rtmp)://.+")) {
+        // if (!url.startsWith("mp4:")) {
+        // url = "mp4:" + url;
+        // }
+        // if (streamValue.get("streamer") != null) {
+        // url = streamValue.get("streamer") + url;
+        // }
+        // }
+        // String fmt = streamValue.get("quality");
+        // if (fmt == null) {
+        // fmt = hbbtv(streamValue.get("VQU"));
+        // }
+        // String quality = fmt;
+        // if (fmt != null) {
+        // fmt = fmt.split("\\-")[0].toLowerCase(Locale.ENGLISH).trim();
+        // }
+        // if (fmt != null) {
+        // quality = quality.replaceAll("\\s", "");
+        // /* best selection is done at the end */
+        // if (new Regex(fmt, Q_LOW_INTERN).matches()) {
+        // if ((cfg.getBooleanProperty(Q_LOW, true) || BEST) == false) {
+        // continue;
+        // } else {
+        // fmt = "ld";
+        // }
+        // } else if (new Regex(fmt, Q_HIGH_INTERN).matches()) {
+        // if ((cfg.getBooleanProperty(Q_HIGH, true) || BEST) == false) {
+        // continue;
+        // } else {
+        // fmt = "md";
+        // }
+        // } else if (new Regex(fmt, Q_VERYHIGH_INTERN).matches()) {
+        // if ((cfg.getBooleanProperty(Q_VERYHIGH, true) || BEST) == false) {
+        // continue;
+        // } else {
+        // fmt = "sd";
+        // }
+        // } else if (new Regex(fmt, Q_HD_INTERN).matches()) {
+        // if ((cfg.getBooleanProperty(Q_HD, true) || BEST) == false) {
+        // continue;
+        // } else {
+        // fmt = "hd";
+        // }
+        // }
+        // }
+        // lastQualityFMT = fmt.toUpperCase(Locale.ENGLISH);
+        //
+        // final String name = title + "@" + quality + "_" + language(languageVersion) + extension;
+        // final DownloadLink link;
+        // if (parameter.contains("?")) {
+        // link = createDownloadlink(parameter.replace("http://", "decrypted://") + "&quality=" + quality);
+        // } else {
+        // link = createDownloadlink(parameter.replace("http://", "decrypted://") + "?quality=" + quality);
+        // }
+        //
+        // link.setFinalFileName(name);
+        // try {/* JD2 only */
+        // link.setContentUrl(parameter);
+        // } catch (Throwable e) {/* Stable */
+        // link.setBrowserUrl(parameter);
+        // }
+        // link.setProperty("directURL", url);
+        // link.setProperty("directName", name);
+        // link.setProperty("tvguideUrl", tvguideUrl);
+        // link.setProperty("VRA", convertDateFormat(VRA));
+        // link.setProperty("VRU", convertDateFormat(VRU));
+        //
+        // if (hbbtvGRABBED) {
+        // link.setProperty("directQuality", streamValue.get("VQU"));
+        // link.setProperty("streamingType", streamValue.get("VFO"));
+        // } else {
+        // link.setAvailable(true);
+        // link.setProperty("directQuality", streamValue.get("quality"));
+        // link.setProperty("streamingType", streamType);
+        // link.setProperty("flashplayer", "http://www.arte.tv/player/v2//jwplayer6/mediaplayer.6.3.3242.swf");
+        // }
+        //
+        // DownloadLink best = bestMap.get(fmt);
+        // if (best == null || link.getDownloadSize() > best.getDownloadSize()) {
+        // bestMap.put(fmt, link);
+        // }
+        // newRet.add(link);
+        // }
 
-        if (newRet.size() > 0) {
+        if (ret.size() > 0) {
             if (BEST) {
                 /* only keep best quality */
                 DownloadLink keep = bestMap.get("hd");
                 if (keep == null) {
-                    lastQualityFMT = "VERYHIGH";
                     keep = bestMap.get("sd");
                 }
                 if (keep == null) {
-                    lastQualityFMT = "HIGH";
                     keep = bestMap.get("md");
                 }
                 if (keep == null) {
-                    lastQualityFMT = "LOW";
                     keep = bestMap.get("ld");
                 }
                 if (keep != null) {
                     newRet.clear();
                     newRet.add(keep);
                 }
-            }
-        }
-        if (cfg.getBooleanProperty(Q_SUBTITLES, false)) {
-            String subtitleInfo = br.getRegex("<caption>(.*?)</caption>").getMatch(0);
-            if (subtitleInfo != null) {
-                String subtitleUrl = new Regex(subtitleInfo, "<url>(http://utstreaming\\.zdf\\.de/tt/\\d{4}/[A-Za-z0-9_\\-]+\\.xml)</url>").getMatch(0);
-                final String startTime = new Regex(subtitleInfo, "<offset>(\\-)?(\\d+)</offset>").getMatch(1);
-                final String name = title + "@" + lastQualityFMT + ".xml";
-                final DownloadLink link = createDownloadlink("decrypted://zdf.de/subtitles/" + System.currentTimeMillis() + new Random().nextInt(1000000));
-                link.setAvailable(true);
-                link.setFinalFileName(name);
-                link.setProperty("directURL", subtitleUrl);
-                link.setProperty("directName", name);
-                link.setProperty("streamingType", "subtitle");
-                link.setProperty("starttime", startTime);
-                newRet.add(link);
+            } else {
+                newRet = ret;
             }
         }
         if (cfg.getBooleanProperty(THUMBNAIL, false)) {
@@ -426,8 +548,7 @@ public class ArteMediathekDecrypter extends PluginForDecrypt {
             fp.setName(title);
             fp.addLinks(newRet);
         }
-        ret = newRet;
-        for (DownloadLink dl : ret) {
+        for (DownloadLink dl : newRet) {
             try {
                 distribute(dl);
             } catch (final Throwable e) {
@@ -435,6 +556,14 @@ public class ArteMediathekDecrypter extends PluginForDecrypt {
             }
         }
         return ret;
+    }
+
+    private String getJson(final String source, final String parameter) {
+        String result = new Regex(source, "\"" + parameter + "\":([\t\n\r ]+)?([0-9\\.]+)").getMatch(1);
+        if (result == null) {
+            result = new Regex(source, "\"" + parameter + "\":([\t\n\r ]+)?\"([^<>\"]*?)\"").getMatch(1);
+        }
+        return result;
     }
 
     private String language(int id) {

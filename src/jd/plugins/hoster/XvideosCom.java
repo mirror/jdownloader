@@ -58,7 +58,9 @@ public class XvideosCom extends PluginForHost {
         if (parameter.getDownloadURL().contains(".com/embedframe/")) {
             String id = new Regex(parameter.getDownloadURL(), "\\.com/embedframe/(\\d+)").getMatch(0);
             br.getPage("http://www.xvideos.com/video" + id);
-            if (br.getRedirectLocation() != null) br.getPage(br.getRedirectLocation());
+            if (br.getRedirectLocation() != null) {
+                br.getPage(br.getRedirectLocation());
+            }
             parameter.setUrlDownload(br.getURL());
         }
         if (br.getRedirectLocation() != null) {
@@ -66,15 +68,25 @@ public class XvideosCom extends PluginForHost {
             parameter.setUrlDownload(br.getRedirectLocation());
             br.getPage(parameter.getDownloadURL());
         }
-        if (br.containsHTML("(This video has been deleted|Page not found|>Sorry, this video is not available\\. Go to X ?Videos for more <)")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (br.containsHTML("(This video has been deleted|Page not found|>Sorry, this video is not available\\.)")) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
         String filename = br.getRegex("<h2>([^<>\"]*?)<span class").getMatch(0);
-        if (filename == null) filename = br.getRegex("<title>([^<>\"]*?)\\- XVIDEOS\\.COM</title>").getMatch(0);
-        if (filename == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (filename == null) {
+            filename = br.getRegex("<title>([^<>\"]*?)\\- XVIDEOS\\.COM</title>").getMatch(0);
+        }
+        if (filename == null) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
         filename = filename.trim() + ".flv";
         parameter.setFinalFileName(Encoding.htmlDecode(filename));
         DLLINK = br.getRegex("flv_url=(.*?)\\&").getMatch(0);
-        if (DLLINK == null) DLLINK = decode(br.getRegex("encoded=(.*?)\\&").getMatch(0));
-        if (DLLINK == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (DLLINK == null) {
+            DLLINK = decode(br.getRegex("encoded=(.*?)\\&").getMatch(0));
+        }
+        if (DLLINK == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         DLLINK = Encoding.htmlDecode(DLLINK);
         URLConnectionAdapter con = null;
         try {
@@ -104,7 +116,9 @@ public class XvideosCom extends PluginForHost {
         dl = jd.plugins.BrowserAdapter.openDownload(br, link, DLLINK, true, chunks);
         if (!this.dl.startDownload()) {
             try {
-                if (dl.externalDownloadStop()) return;
+                if (dl.externalDownloadStop()) {
+                    return;
+                }
             } catch (final Throwable e) {
             }
             /* unknown error, we disable multiple chunks */
@@ -116,7 +130,9 @@ public class XvideosCom extends PluginForHost {
     }
 
     private static String decode(String encoded) {
-        if (encoded == null) return null;
+        if (encoded == null) {
+            return null;
+        }
         /* CHECK: we should always use new String (bytes,charset) to avoid issues with system charset and utf-8 */
         encoded = new String(jd.crypt.Base64.decode(encoded));
         String[] encodArr = encoded.split("-");
@@ -131,7 +147,9 @@ public class XvideosCom extends PluginForHost {
     }
 
     private static String calculate(String src) {
-        if (src == null) return null;
+        if (src == null) {
+            return null;
+        }
         String CHARS = "ABCDEFGHIJKLMNOPQRSTUVWXYZABCDEFGHIJKLMabcdefghijklmnopqrstuvwxyzabcdefghijklm";
         String calculated = "";
         int i = 0;
