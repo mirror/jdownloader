@@ -25,6 +25,7 @@ import java.util.Map;
 import java.util.SortedMap;
 import java.util.TreeMap;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.regex.Pattern;
 
 import javax.script.ScriptEngine;
@@ -150,6 +151,8 @@ public class TeraFileCo extends PluginForHost {
         return false;
     }
 
+    private static final AtomicReference<String> userAgent = new AtomicReference<String>(null);
+
     /**
      * Defines custom browser requirements. Integrates with antiDDoS method
      *
@@ -168,7 +171,12 @@ public class TeraFileCo extends PluginForHost {
         }
         prepBr.getHeaders().put("Accept-Language", "en-gb, en;q=0.8");
         prepBr.setCookie(COOKIE_HOST, "lang", "english");
-        // required for antiDDoS support, without the need to repeat requests.
+        if (userAgent.get() == null) {
+            /* we first have to load the plugin, before we can reference it */
+            JDUtilities.getPluginForHost("mediafire.com");
+            userAgent.set(jd.plugins.hoster.MediafireCom.stringUserAgent());
+        }
+        prepBr.getHeaders().put("User-Agent", userAgent.get());
         try {
             /* not available in old stable */
             prepBr.setAllowedResponseCodes(new int[] { 503 });
