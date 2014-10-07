@@ -1158,28 +1158,55 @@ public class LinkCrawler {
         }
     }
 
-    private String[] getAndClearSourceURLs(CrawledLink link) {
-        final ArrayList<String> sources = new ArrayList<String>();
-        CrawledLink source = link;
-        while (source != null) {
-            if (sources.size() == 0 || !StringUtils.equals(source.getURL(), sources.get(sources.size() - 1))) {
-                sources.add(source.getURL());
-            }
-            source = source.getSourceLink();
-        }
+    private String[] getAndClearSourceURLs(final CrawledLink link) {
+        return getAndClearSourceURLs(link, true);
+    }
+
+    private String[] getAndClearSourceURLs(final CrawledLink link, final boolean includeCustomSourceURL) {
+        final String[] sources = getSourceURLs(link, includeCustomSourceURL, true);
         link.setSourceUrls(null);
-        if (link.getSourceJob() != null) {
-            String cust = link.getSourceJob().getCustomSourceUrl();
-            if (cust != null) {
-                sources.add(cust);
+        return sources;
+    }
+
+    private String[] getSourceURLs(final CrawledLink link, final boolean includeCustomSourceURL, final boolean includeRawURL) {
+        final ArrayList<String> sources = new ArrayList<String>();
+        CrawledLink next = link;
+        while (next != null) {
+            final CrawledLink current = next;
+            next = current.getSourceLink();
+            if (sources.size() == 0) {
+                sources.add(current.getURL());
+            } else if (!StringUtils.equals(current.getURL(), sources.get(sources.size() - 1))) {
+                sources.add(current.getURL());
             }
-        } else if (this instanceof JobLinkCrawler) {
-            String cust = ((JobLinkCrawler) this).getJob().getCustomSourceUrl();
-            if (cust != null) {
-                sources.add(cust);
+            if (includeRawURL && next != null && link.getDownloadLink() != null && next.getDownloadLink() == null && next.getCryptedLink() == null) {
+                /* ignore rawURLs when downloadLink exists */
+                next = next.getSourceLink();
+            }
+        }
+        if (includeCustomSourceURL) {
+            final String customSourceUrl = getCustomSourceUrl(link);
+            if (customSourceUrl != null) {
+                sources.add(customSourceUrl);
             }
         }
         return sources.toArray(new String[] {});
+    }
+
+    private String getCustomSourceUrl(final CrawledLink link) {
+        if (link != null) {
+            if (link.getSourceJob() != null) {
+                final String customSourceUrl = link.getSourceJob().getCustomSourceUrl();
+                return customSourceUrl;
+            } else if (this instanceof JobLinkCrawler) {
+                final LinkCollectingJob job = ((JobLinkCrawler) this).getJob();
+                if (job != null) {
+                    final String customSourceUrl = job.getCustomSourceUrl();
+                    return customSourceUrl;
+                }
+            }
+        }
+        return null;
     }
 
     public static String getUnsafeName(String unsafeName, String currentName) {
@@ -1792,7 +1819,7 @@ public class LinkCrawler {
     protected void postprocessFinalCrawledLink(CrawledLink link) {
         final DownloadLink dl = link.getDownloadLink();
         if (dl != null) {
-            final String[] sources = link.getSourceUrls();
+            final String[] sources = getSourceURLs(link, false, false);
             final HashSet<String> set = new HashSet<String>();
             set.add(dl.getPluginPatternMatcher());
             if (StringUtils.equals(dl.getPluginPatternMatcher(), dl.getContentUrl())) {
@@ -1840,27 +1867,26 @@ public class LinkCrawler {
                     set.add(dl.getContainerUrl());
                 }
                 String referrerURL = dl.getReferrerUrl();
-                if (referrerURL == null && LinkCrawler.this instanceof JobLinkCrawler) {
-                    final LinkCollectingJob job = ((JobLinkCrawler) LinkCrawler.this).getJob();
-                    if (job != null) {
-                        /**
-                         * restored links no longer have reference to job
-                         */
-                        referrerURL = job.getCustomSourceUrl();
-                    }
+                if (referrerURL == null) {
+                    referrerURL = getCustomSourceUrl(link);
                 }
                 if (StringUtils.isEmpty(dl.getOriginUrl())) {
                     String originURL = null;
                     for (int i = sources.length - 1; i > 1; i--) {
                         originURL = cleanURL(sources[i]);
-                        if (StringUtils.equals(dl.getContentUrl(), originURL) || StringUtils.equals(dl.getPluginPatternMatcher(), originURL)) {
-                            break;
+                        if (originURL != null) {
+                            if (StringUtils.equals(referrerURL, originURL)) {
+                                originURL = null;
+                            } else {
+                                break;
+                            }
                         }
-                        if (StringUtils.equals(referrerURL, originURL)) {
-                            originURL = null;
-                            continue;
+                    }
+                    if (originURL == null) {
+                        final CrawledLink originalLink = link.getOriginLink();
+                        if (originalLink != null) {
+                            originURL = cleanURL(originalLink.getURL());
                         }
-                        break;
                     }
                     if (originURL != null && (set.add(originURL) || StringUtils.equals(originURL, dl.getContainerUrl()))) {
                         dl.setOriginUrl(originURL);
@@ -1868,6 +1894,8 @@ public class LinkCrawler {
                             dl.setContainerUrl(null);
                         }
                     }
+                } else {
+                    set.add(dl.getOriginUrl());
                 }
                 if (referrerURL != null && set.add(referrerURL)) {
                     dl.setReferrerUrl(referrerURL);
