@@ -257,7 +257,7 @@ public class ArteMediathekDecrypter extends PluginForDecrypt {
             }
 
             /* Check version/only download selected language-version! */
-            String l = new Regex(info, "\"versionCode\":\"(VO|VF|VOF\\-STMF)\"").getMatch(0);
+            String l = new Regex(info, "\"versionCode\":\"(VO|VF|VOF\\-STMF|VOF\\-STF)\"").getMatch(0);
             if (l == null) {
                 continue;
             }
@@ -265,8 +265,12 @@ public class ArteMediathekDecrypter extends PluginForDecrypt {
                 l = "1";
             } else if ("VF".equals(l)) {
                 l = "2";
-            } else {
+            } else if ("VOF-STMF".equals(l)) {
                 l = "3";
+            } else {
+                /* Unknown - use language inside the link */
+                /* Unknown language Strings so far: VOF-STF */
+                l = Integer.toString(languageVersion);
             }
             final int langint = Integer.parseInt(l);
             if (langint != languageVersion) {
