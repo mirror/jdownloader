@@ -82,7 +82,7 @@ public class JBrowserWrapper {
                         public void onLoadingComplete(final JWebBrowser jWebBrowser) {
                             jWebBrowser.getEventSender().removeListener(this);
                             Object result = jWebBrowser.executeJavaScript("function f(){return swfobject.getFlashPlayerVersion().major;}; return f();");
-                            if (result != null && false) {
+                            if (result != null) {
                                 jWebBrowser.getPage("http://installer.jdownloader.org/flash.html");
                             } else {
                                 jWebBrowser.getPage("http://installer.jdownloader.org/noflash.html");
