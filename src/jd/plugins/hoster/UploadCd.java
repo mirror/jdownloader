@@ -45,7 +45,7 @@ import jd.utils.JDUtilities;
 import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.formatter.TimeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "upload.cd" }, urls = { "http://(www\\.)?upload\\.cd/[a-z0-9]+" }, flags = { 2 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "upload.cd" }, urls = { "http://(www\\.)?upload\\.cd/(files/)?[a-z0-9]+" }, flags = { 2 })
 public class UploadCd extends PluginForHost {
 
     public UploadCd(PluginWrapper wrapper) {
@@ -82,7 +82,7 @@ public class UploadCd extends PluginForHost {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         br.getPage(link.getDownloadURL());
-        if (br.containsHTML(">The requested file does not exist|The requested page does not exist\\.") || !br.containsHTML("class=\"container download\\-page\"")) {
+        if (br.containsHTML(">The requested file does not exist|The requested page does not exist\\.")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         final Regex finfo = br.getRegex("class=\"download\\-file pull\\-left\">[\t\n\r ]+<h3>([^<>\"]*?)</h3><p>([^<>\"]*?)</p>");
@@ -132,6 +132,17 @@ public class UploadCd extends PluginForHost {
     private void doFree(final DownloadLink downloadLink, final boolean resumable, final int maxchunks, final String directlinkproperty) throws Exception, PluginException {
         String dllink = checkDirectLink(downloadLink, "directlink");
         if (dllink == null) {
+            /* Not needed, can still be skipped */
+            // if (br.containsHTML(">This file can be downloaded only by")) {
+            // try {
+            // throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);
+            // } catch (final Throwable e) {
+            // if (e instanceof PluginException) {
+            // throw (PluginException) e;
+            // }
+            // }
+            // throw new PluginException(LinkStatus.ERROR_FATAL, "This file can only be downloaded by premium users");
+            // }
             if (br.containsHTML("<b>Error\\!</b>")) {
                 /** Wait time reconnect handling */
                 /* adjust this regex to catch the wait time string for COOKIE_HOST */
@@ -204,7 +215,7 @@ public class UploadCd extends PluginForHost {
         dl.startDownload();
     }
 
-    private static final String MAINPAGE = "http://examplehoster.com";
+    private static final String MAINPAGE = "http://upload.cd";
     private static Object       LOCK     = new Object();
 
     @SuppressWarnings("unchecked")

@@ -229,7 +229,7 @@ public class RDMdthk extends PluginForDecrypt {
                         network = "default_nonetwork";
                     }
                     final String quality_number = getJson("_quality", qual_info);
-                    final boolean isRTMP = ("akamai".equals(network) || "limelight".equals(network));
+                    final boolean isRTMP = ("akamai".equals(network) || "limelight".equals(network) || server.startsWith("rtmp://"));
                     // rtmp --> hds or rtmp
                     String directlink = null;
                     /* TODO: Add all available streamlinks */
@@ -398,7 +398,11 @@ public class RDMdthk extends PluginForDecrypt {
             link.setAvailable(true);
         }
         link.setFinalFileName(full_name);
-       try{/*JD2 only*/link.setContentUrl(orig_link);}catch(Throwable e){/*Stable*/ link.setBrowserUrl(orig_link);}
+        try {/* JD2 only */
+            link.setContentUrl(orig_link);
+        } catch (Throwable e) {/* Stable */
+            link.setBrowserUrl(orig_link);
+        }
         link.setProperty("directURL", url);
         link.setProperty("directName", full_name);
         link.setProperty("plain_name", plain_name);
@@ -413,7 +417,11 @@ public class RDMdthk extends PluginForDecrypt {
             final String subtitle_filename = plain_name + ".xml";
             final String finallink = "http://www.ardmediathek.de" + subtitleLink + "@" + quality_part;
             final DownloadLink dl_subtitle = createDownloadlink(orig_link.replace("http://", "decrypted://") + "&quality=subtitles" + fmt + "&network=" + network);
-           try{/*JD2 only*/dl_subtitle.setContentUrl(orig_link);}catch(Throwable e){/*Stable*/ dl_subtitle.setBrowserUrl(orig_link);}
+            try {/* JD2 only */
+                dl_subtitle.setContentUrl(orig_link);
+            } catch (Throwable e) {/* Stable */
+                dl_subtitle.setBrowserUrl(orig_link);
+            }
             dl_subtitle.setAvailable(true);
             dl_subtitle.setFinalFileName(subtitle_filename);
             dl_subtitle.setProperty("directURL", finallink);
