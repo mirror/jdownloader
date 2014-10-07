@@ -78,10 +78,10 @@ public class SubyShareCom extends PluginForHost {
     private final boolean                  ENABLE_RANDOM_UA             = false;
     private static AtomicReference<String> agent                        = new AtomicReference<String>(null);
     /* Connection stuff */
-    private static final boolean           FREE_RESUME                  = true;
+    private static final boolean           FREE_RESUME                  = false;
     private static final int               FREE_MAXCHUNKS               = 1;
     private static final int               FREE_MAXDOWNLOADS            = 1;
-    private static final boolean           ACCOUNT_FREE_RESUME          = true;
+    private static final boolean           ACCOUNT_FREE_RESUME          = false;
     private static final int               ACCOUNT_FREE_MAXCHUNKS       = 1;
     private static final int               ACCOUNT_FREE_MAXDOWNLOADS    = 1;
     private static final boolean           ACCOUNT_PREMIUM_RESUME       = true;
