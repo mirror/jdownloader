@@ -5,10 +5,15 @@ import java.awt.event.ActionListener;
 import java.lang.reflect.Array;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Calendar;
 import java.util.Date;
+import java.util.LinkedList;
+import java.util.List;
 
 import javax.swing.BorderFactory;
+import javax.swing.JCheckBox;
 import javax.swing.JComponent;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
@@ -31,6 +36,7 @@ import org.jdownloader.extensions.schedulerV2.actions.AbstractScheduleAction;
 import org.jdownloader.extensions.schedulerV2.actions.IScheduleActionConfig;
 import org.jdownloader.extensions.schedulerV2.helpers.ActionHelper;
 import org.jdownloader.extensions.schedulerV2.helpers.ActionHelper.TIME_OPTIONS;
+import org.jdownloader.extensions.schedulerV2.helpers.ActionHelper.WEEKDAY;
 import org.jdownloader.extensions.schedulerV2.model.ScheduleEntry;
 import org.jdownloader.extensions.schedulerV2.model.ScheduleEntryStorable;
 import org.jdownloader.extensions.schedulerV2.translate.T;
@@ -58,6 +64,15 @@ public class AddScheduleEntryDialog extends AbstractDialog<ScheduleEntry> {
     private MigPanel                                                actionParameterPanel;
 
     private ScheduleEntry                                           editEntry = null;
+    private MigPanel                                                timeOptionPaneSpecificDays;
+    private JCheckBox                                               specificDaysMon;
+    private JCheckBox                                               specificDaysTue;
+    private JCheckBox                                               specificDaysWed;
+    private JCheckBox                                               specificDaysThu;
+    private JCheckBox                                               specificDaysFri;
+    private JCheckBox                                               specificDaysSat;
+    private JCheckBox                                               specificDaysSun;
+    private JSpinner                                                timeSpinnerSpecificDays;
 
     public AddScheduleEntryDialog() {
         super(UserIO.NO_ICON, T._.addScheduleEntryDialog_title(), null, _GUI._.lit_save(), null);
@@ -102,7 +117,39 @@ public class AddScheduleEntryDialog extends AbstractDialog<ScheduleEntry> {
             actionStorable.setTimestamp(timestamp.getTimeInMillis() / 1000l);
         }
             break;
-
+        case SPECIFICDAYS: {
+            Date d = (Date) timeSpinnerSpecificDays.getValue();
+            Calendar timestamp = Calendar.getInstance();
+            timestamp.set(Calendar.SECOND, 0);
+            timestamp.set(Calendar.MINUTE, d.getMinutes());
+            timestamp.set(Calendar.HOUR_OF_DAY, d.getHours());
+            actionStorable.setTimestamp(timestamp.getTimeInMillis() / 1000l);
+            // TODO: Days
+            LinkedList<WEEKDAY> days = new LinkedList<ActionHelper.WEEKDAY>();
+            if (specificDaysMon.isSelected()) {
+                days.add(WEEKDAY.MONDAY);
+            }
+            if (specificDaysTue.isSelected()) {
+                days.add(WEEKDAY.TUESDAY);
+            }
+            if (specificDaysWed.isSelected()) {
+                days.add(WEEKDAY.WEDNESDAY);
+            }
+            if (specificDaysThu.isSelected()) {
+                days.add(WEEKDAY.THURSDAY);
+            }
+            if (specificDaysFri.isSelected()) {
+                days.add(WEEKDAY.FRIDAY);
+            }
+            if (specificDaysSat.isSelected()) {
+                days.add(WEEKDAY.SATURDAY);
+            }
+            if (specificDaysSun.isSelected()) {
+                days.add(WEEKDAY.SUNDAY);
+            }
+            actionStorable._setSelectedDays(days);
+        }
+            break;
         case WEEKLY: {
             Date d = (Date) timeSpinnerWeekly.getValue();
             Calendar timestamp = Calendar.getInstance();
@@ -144,18 +191,23 @@ public class AddScheduleEntryDialog extends AbstractDialog<ScheduleEntry> {
 
     @Override
     public JComponent layoutDialogContent() {
-
-        MigPanel migPanel = new MigPanel("ins 0 0 5 0, wrap 2", "[][grow]", "");
+        MigPanel migPanel = new MigPanel("ins 0 0 5 0, wrap 2", "[][grow,fill]", "[sg name][sg header][sg repeat][sg parameter][sg header][sg action][sg parameter2, 26]");
         migPanel.setOpaque(false);
 
-        migPanel.add(new JLabel(T._.scheduleTable_column_name() + ":"), "growx");
-
+        migPanel.add(new JLabel(T._.scheduleTable_column_name() + ":"));
         scheduleName = new ExtTextField();
-        migPanel.add(scheduleName, "growx");
-        migPanel.add(header(T._.addScheduleEntryDialog_header_time()), "spanx, growx,newline 15");
-        migPanel.add(new JLabel(T._.addScheduleEntryDialog_repeat() + ":"));
+        scheduleName.setText(editEntry != null ? editEntry.getName() : T._.addScheduleEntryDialog_defaultScheduleName());
 
-        intervalBox = new ComboBox<TIME_OPTIONS>(ActionHelper.TIME_OPTIONS.values()) {
+        migPanel.add(scheduleName, "");
+
+        migPanel.add(header(T._.addScheduleEntryDialog_header_time()), "spanx, growx,pushx,newline 15");
+        migPanel.add(new JLabel(T._.addScheduleEntryDialog_repeat() + ":"), "gapleft 10");
+
+        ArrayList<TIME_OPTIONS> values = new ArrayList<ActionHelper.TIME_OPTIONS>(Arrays.asList(ActionHelper.TIME_OPTIONS.values()));
+        values.remove(ActionHelper.TIME_OPTIONS.DAILY);
+        values.remove(ActionHelper.TIME_OPTIONS.WEEKLY);
+        intervalBox = new ComboBox<TIME_OPTIONS>(values.toArray(new ActionHelper.TIME_OPTIONS[values.size()])) {
+
             @Override
             protected String getLabel(int index, TIME_OPTIONS value) {
                 return value.getReadableName();
@@ -176,7 +228,7 @@ public class AddScheduleEntryDialog extends AbstractDialog<ScheduleEntry> {
         } else {
             intervalBox.setSelectedIndex(0);
         }
-        migPanel.add(intervalBox, "alignx right");
+        migPanel.add(intervalBox, "");
 
         // Begin time subpanels
         timePane = new MigPanel("", "", "");
@@ -186,7 +238,7 @@ public class AddScheduleEntryDialog extends AbstractDialog<ScheduleEntry> {
 
         // Begin action area
         migPanel.add(header(T._.addScheduleEntryDialog_actionParameters()), "spanx, growx,newline 15");
-        migPanel.add(new JLabel(T._.scheduleTable_column_action() + ":"));
+        migPanel.add(new JLabel(T._.scheduleTable_column_action() + ":"), "gapleft 10");
 
         AbstractScheduleAction<IScheduleActionConfig>[] array = (AbstractScheduleAction<IScheduleActionConfig>[]) Array.newInstance(AbstractScheduleAction.class, ActionHelper.ACTIONS.size());
         AbstractScheduleAction<IScheduleActionConfig> selectedItem = ActionHelper.ACTIONS.get(0);
@@ -213,7 +265,7 @@ public class AddScheduleEntryDialog extends AbstractDialog<ScheduleEntry> {
             }
         });
 
-        migPanel.add(actionBox, "alignx right");
+        migPanel.add(actionBox);
         actionParameterPanel = new MigPanel("ins 0", "", "");
         migPanel.add(actionParameterPanel, "spanx, growx, pushx");
 
@@ -240,7 +292,7 @@ public class AddScheduleEntryDialog extends AbstractDialog<ScheduleEntry> {
             return;
         }
         actionParameterPanel.removeAll();
-        actionParameterPanel.setLayout(new MigLayout("ins 0 15 0 0", "", ""));
+        actionParameterPanel.setLayout(new MigLayout("ins 0 10 0 0", "", ""));
         if (configPanel != null) {
             actionParameterPanel.add(configPanel, "growx,pushx");
         }
@@ -249,34 +301,55 @@ public class AddScheduleEntryDialog extends AbstractDialog<ScheduleEntry> {
     }
 
     private void setupTimeOptionPanes() {
-        timeOptionPaneOnlyOnce = new MigPanel(new MigLayout("ins 0,wrap 4", "", ""));
+        timeOptionPaneOnlyOnce = new MigPanel(new MigLayout("ins 0,wrap 2", "[sg 1][sg 2,grow,fill]", "[sg 1][sg 1]"));
         dateSpinnerOnce = new JSpinner(new SpinnerDateModel());
         dateSpinnerOnce.setEditor(new DateEditor(dateSpinnerOnce, ((SimpleDateFormat) SimpleDateFormat.getDateInstance()).toPattern()));
         dateSpinnerOnce.setValue(editEntry != null && editEntry.getTimeType().equals(TIME_OPTIONS.ONLYONCE) ? new Date(editEntry.getTimestamp() * 1000l) : new Date());
         timeSpinnerOnce = new JSpinner(new SpinnerDateModel());
         timeSpinnerOnce.setEditor(new DateEditor(timeSpinnerOnce, ((SimpleDateFormat) DateFormat.getTimeInstance(DateFormat.SHORT)).toPattern()));
         timeSpinnerOnce.setValue(editEntry != null && editEntry.getTimeType().equals(TIME_OPTIONS.ONLYONCE) ? new Date(editEntry.getTimestamp() * 1000l) : new Date());
-        timeOptionPaneOnlyOnce.add(new JLabel(T._.addScheduleEntryDialog_date() + ":"), "growx, width 18%");
-        timeOptionPaneOnlyOnce.add(dateSpinnerOnce, "growx, width 30%");
-        timeOptionPaneOnlyOnce.add(new JLabel(T._.addScheduleEntryDialog_time() + ":"), "growx, width 18%,gapleft 4%");
-        timeOptionPaneOnlyOnce.add(timeSpinnerOnce, "growx, width 30%");
+        timeOptionPaneOnlyOnce.add(new JLabel(T._.addScheduleEntryDialog_date() + ":"));
+        timeOptionPaneOnlyOnce.add(dateSpinnerOnce, "");
+        timeOptionPaneOnlyOnce.add(new JLabel(T._.addScheduleEntryDialog_time() + ":"));
+        timeOptionPaneOnlyOnce.add(timeSpinnerOnce, "");
         timeOptionPaneOnlyOnce.setVisible(false);
 
-        timeOptionPaneHourly = new MigPanel(new MigLayout("ins 0,wrap 2", "", ""));
+        timeOptionPaneHourly = new MigPanel(new MigLayout("ins 0,wrap 2", "[sg 1][sg 2,grow,fill]", "[sg 1][sg 1]"));
         minuteSpinnerHourly = new JSpinner(new SpinnerDateModel());
         minuteSpinnerHourly.setEditor(new DateEditor(minuteSpinnerHourly, "mm"));
         minuteSpinnerHourly.setValue(editEntry != null && editEntry.getTimeType().equals(TIME_OPTIONS.HOURLY) ? new Date(editEntry.getTimestamp() * 1000l) : new Date());
-        timeOptionPaneHourly.add(new JLabel(T._.addScheduleEntryDialog_minute() + ":"), "growx, width 18%");
-        timeOptionPaneHourly.add(minuteSpinnerHourly, "growx, width 30%");
+        timeOptionPaneHourly.add(new JLabel(T._.addScheduleEntryDialog_minute() + ":"));
+        timeOptionPaneHourly.add(minuteSpinnerHourly, "");
         timeOptionPaneHourly.setVisible(false);
 
-        timeOptionPaneDaily = new MigPanel(new MigLayout("ins 0,wrap 2", "", ""));
+        timeOptionPaneDaily = new MigPanel(new MigLayout("ins 0,wrap 2", "[sg 1][sg 2,grow,fill]", "[sg 1][sg 1]"));
         timeSpinnerDaily = new JSpinner(new SpinnerDateModel());
         timeSpinnerDaily.setEditor(new DateEditor(timeSpinnerDaily, ((SimpleDateFormat) DateFormat.getTimeInstance(DateFormat.SHORT)).toPattern()));
         timeSpinnerDaily.setValue(editEntry != null && editEntry.getTimeType().equals(TIME_OPTIONS.DAILY) ? new Date(editEntry.getTimestamp() * 1000l) : new Date());
-        timeOptionPaneDaily.add(new JLabel(T._.addScheduleEntryDialog_time() + ":"), "growx, width 18%");
-        timeOptionPaneDaily.add(timeSpinnerDaily, "growx, width 30%");
+        timeOptionPaneDaily.add(new JLabel(T._.addScheduleEntryDialog_time() + ":"));
+        timeOptionPaneDaily.add(timeSpinnerDaily);
         timeOptionPaneDaily.setVisible(false);
+
+        timeOptionPaneSpecificDays = new MigPanel(new MigLayout("ins 0,wrap 7", "[grow]", ""));
+
+        MigPanel specificDaysSubPanel = new MigPanel("ins 0, wrap 2", "[][grow,fill]", "");
+        specificDaysSubPanel.add(new JLabel(T._.addScheduleEntryDialog_time() + ":"));
+        timeSpinnerSpecificDays = new JSpinner(new SpinnerDateModel());
+        timeSpinnerSpecificDays.setEditor(new DateEditor(timeSpinnerSpecificDays, ((SimpleDateFormat) DateFormat.getTimeInstance(DateFormat.SHORT)).toPattern()));
+        timeSpinnerSpecificDays.setValue(editEntry != null && editEntry.getTimeType().equals(TIME_OPTIONS.SPECIFICDAYS) ? new Date(editEntry.getTimestamp() * 1000l) : new Date());
+        specificDaysSubPanel.add(timeSpinnerSpecificDays);
+        timeOptionPaneSpecificDays.add(specificDaysSubPanel, "spanx, growx, pushx");
+
+        List<WEEKDAY> days = (editEntry == null) ? null : editEntry.getSelectedDays();
+        timeOptionPaneSpecificDays.add(specificDaysMon = new JCheckBox(WEEKDAY.MONDAY.getReadableName(), days == null ? true : days.contains(WEEKDAY.MONDAY)));
+        timeOptionPaneSpecificDays.add(specificDaysTue = new JCheckBox(WEEKDAY.TUESDAY.getReadableName(), days == null ? true : days.contains(WEEKDAY.TUESDAY)));
+        timeOptionPaneSpecificDays.add(specificDaysWed = new JCheckBox(WEEKDAY.WEDNESDAY.getReadableName(), days == null ? true : days.contains(WEEKDAY.WEDNESDAY)));
+        timeOptionPaneSpecificDays.add(specificDaysThu = new JCheckBox(WEEKDAY.THURSDAY.getReadableName(), days == null ? true : days.contains(WEEKDAY.THURSDAY)));
+        timeOptionPaneSpecificDays.add(specificDaysFri = new JCheckBox(WEEKDAY.FRIDAY.getReadableName(), days == null ? true : days.contains(WEEKDAY.FRIDAY)));
+        timeOptionPaneSpecificDays.add(specificDaysSat = new JCheckBox(WEEKDAY.SATURDAY.getReadableName(), days == null ? true : days.contains(WEEKDAY.SATURDAY)));
+        timeOptionPaneSpecificDays.add(specificDaysSun = new JCheckBox(WEEKDAY.SUNDAY.getReadableName(), days == null ? true : days.contains(WEEKDAY.SUNDAY)));
+
+        timeOptionPaneSpecificDays.setVisible(false);
 
         timeOptionPaneWeekly = new MigPanel(new MigLayout("ins 0,wrap 2", "", ""));
         timeSpinnerWeekly = new JSpinner(new SpinnerDateModel());
@@ -286,13 +359,13 @@ public class AddScheduleEntryDialog extends AbstractDialog<ScheduleEntry> {
         timeOptionPaneWeekly.add(timeSpinnerWeekly, "growx, width 30%");
         timeOptionPaneWeekly.setVisible(false);
 
-        timeOptionPaneInterval = new MigPanel(new MigLayout("ins 0,wrap 4", "", ""));
+        timeOptionPaneInterval = new MigPanel(new MigLayout("ins 0,wrap 2", "[sg 1][sg 2,grow,fill]", "[sg 1][sg 1]"));
         hourSpinnerInterval = new JSpinner(new SpinnerNumberModel(editEntry != null && editEntry.getTimeType().equals(TIME_OPTIONS.CHOOSEINTERVAL) ? editEntry.getIntervalHour() : 1, 0, 365 * 24, 1));
-        timeOptionPaneInterval.add(new JLabel(T._.addScheduleEntryDialog_hours() + ":"), "growx, width 18%");
-        timeOptionPaneInterval.add(hourSpinnerInterval, "growx, width 30%");
+        timeOptionPaneInterval.add(new JLabel(T._.addScheduleEntryDialog_hours() + ":"), "");
+        timeOptionPaneInterval.add(hourSpinnerInterval);
         minuteSpinnerInterval = new JSpinner(new SpinnerNumberModel(editEntry != null && editEntry.getTimeType().equals(TIME_OPTIONS.CHOOSEINTERVAL) ? editEntry.getIntervalMinunte() : 0, 0, 59, 1));
-        timeOptionPaneInterval.add(new JLabel(T._.addScheduleEntryDialog_minutes() + ":"), "growx, width 18%");
-        timeOptionPaneInterval.add(minuteSpinnerInterval, "growx, width 30%, gapleft 4px");
+        timeOptionPaneInterval.add(new JLabel(T._.addScheduleEntryDialog_minutes() + ":"), "");
+        timeOptionPaneInterval.add(minuteSpinnerInterval, "");
         timeOptionPaneInterval.setVisible(false);
     }
 
@@ -301,7 +374,7 @@ public class AddScheduleEntryDialog extends AbstractDialog<ScheduleEntry> {
             return;
         }
         timePane.removeAll();
-        timePane.setLayout(new MigLayout("ins 0 15 0 0", "", ""));
+        timePane.setLayout(new MigLayout("ins 0 10 0 0", "", ""));
 
         switch (inteval) {
         case HOURLY:
@@ -311,6 +384,10 @@ public class AddScheduleEntryDialog extends AbstractDialog<ScheduleEntry> {
         case DAILY:
             timePane.add(timeOptionPaneDaily, "pushx, growx");
             timeOptionPaneDaily.setVisible(true);
+            break;
+        case SPECIFICDAYS:
+            timePane.add(timeOptionPaneSpecificDays, "pushx, growx");
+            timeOptionPaneSpecificDays.setVisible(true);
             break;
         case WEEKLY:
             timePane.add(timeOptionPaneWeekly, "pushx, growx");
@@ -327,8 +404,10 @@ public class AddScheduleEntryDialog extends AbstractDialog<ScheduleEntry> {
             break;
         }
         timePane.repaint();
+        // updatePanel();
     }
 
+    @Override
     protected int getPreferredWidth() {
         if (content == null) {
             return 430;

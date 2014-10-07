@@ -40,11 +40,11 @@ public class SchedulerTable extends BasicJDTable<ScheduleEntry> {
         return true;
     }
 
-    // @Override
-    // protected boolean onDoubleClick(MouseEvent e, ScheduleEntry obj) {
-    // new EditAction(this).actionPerformed(null);
-    // return true;
-    // }
+    @Override
+    protected boolean onDoubleClick(MouseEvent e, ScheduleEntry obj) {
+        new EditAction(this).actionPerformed(null);
+        return true;
+    }
 
     @Override
     protected JPopupMenu onContextMenu(JPopupMenu popup, ScheduleEntry contextObject, List<ScheduleEntry> selection, ExtColumn<ScheduleEntry> column, MouseEvent mouseEvent) {

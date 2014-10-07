@@ -1,7 +1,9 @@
 package org.jdownloader.extensions.schedulerV2.helpers;
 
 import java.util.ArrayList;
+import java.util.Calendar;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
 
 import org.appwork.utils.StringUtils;
@@ -61,8 +63,9 @@ public class ActionHelper {
     public static enum TIME_OPTIONS {
         ONLYONCE(T._.time_option_only_once()),
         HOURLY(T._.time_option_hourly()),
-        DAILY(T._.time_option_daily()),
-        WEEKLY(T._.time_option_weekly()),
+        DAILY(T._.time_option_daily()), // TODO remove me
+        SPECIFICDAYS(T._.time_option_specificDays()),
+        WEEKLY(T._.time_option_weekly()), // TODO remove me
         CHOOSEINTERVAL(T._.time_option_choose_interval());
 
         private final String readableName;
@@ -75,5 +78,37 @@ public class ActionHelper {
             this.readableName = readableName;
         }
     }
+
+    public static enum WEEKDAY {
+        MONDAY(T._.weekday_short_monday()),
+        TUESDAY(T._.weekday_short_tuesday()),
+        WEDNESDAY(T._.weekday_short_wednesday()),
+        THURSDAY(T._.weekday_short_thursday()),
+        FRIDAY(T._.weekday_short_friday()),
+        SATURDAY(T._.weekday_short_saturday()),
+        SUNDAY(T._.weekday_short_sunday());
+
+        private final String readableName;
+
+        public final String getReadableName() {
+            return readableName;
+        }
+
+        private WEEKDAY(String readableName) {
+            this.readableName = readableName;
+        }
+    }
+
+    public static final HashMap<Integer, WEEKDAY> dayMap = new HashMap<Integer, ActionHelper.WEEKDAY>() {
+                                                             {
+                                                                 put(Calendar.MONDAY, WEEKDAY.MONDAY);
+                                                                 put(Calendar.TUESDAY, WEEKDAY.TUESDAY);
+                                                                 put(Calendar.WEDNESDAY, WEEKDAY.WEDNESDAY);
+                                                                 put(Calendar.THURSDAY, WEEKDAY.THURSDAY);
+                                                                 put(Calendar.FRIDAY, WEEKDAY.FRIDAY);
+                                                                 put(Calendar.SATURDAY, WEEKDAY.SATURDAY);
+                                                                 put(Calendar.SUNDAY, WEEKDAY.SUNDAY);
+                                                             }
+                                                         };
 
 }

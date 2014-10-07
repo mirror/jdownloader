@@ -14,6 +14,7 @@ import org.appwork.swing.exttable.ExtTableModel;
 import org.appwork.swing.exttable.columns.ExtCheckColumn;
 import org.appwork.swing.exttable.columns.ExtTextColumn;
 import org.jdownloader.extensions.schedulerV2.SchedulerExtension;
+import org.jdownloader.extensions.schedulerV2.helpers.ActionHelper;
 import org.jdownloader.extensions.schedulerV2.helpers.ActionHelper.TIME_OPTIONS;
 import org.jdownloader.extensions.schedulerV2.model.ScheduleEntry;
 import org.jdownloader.extensions.schedulerV2.translate.T;
@@ -152,7 +153,23 @@ public class ScheduleTableModel extends ExtTableModel<ScheduleEntry> {
                     }
                     return SimpleDateFormat.getInstance().format(next.getTime());
                 }
-                case DAILY: {
+                case SPECIFICDAYS: {
+                    if (value.getSelectedDays().size() == 0) {
+                        return "";
+                    }
+                    Calendar next = Calendar.getInstance();
+                    next.set(Calendar.HOUR_OF_DAY, c.get(Calendar.HOUR_OF_DAY));
+                    next.set(Calendar.MINUTE, c.get(Calendar.MINUTE));
+                    Calendar now = Calendar.getInstance();
+                    if (next.get(Calendar.HOUR_OF_DAY) * 60 + next.get(Calendar.MINUTE) <= now.get(Calendar.HOUR_OF_DAY) * 60 + now.get(Calendar.MINUTE)) {
+                        // in past
+                        do {
+                            next.add(Calendar.DAY_OF_WEEK, 1);
+                        } while (!value.getSelectedDays().contains(ActionHelper.dayMap.get(next.get(Calendar.DAY_OF_WEEK))));
+                    }
+                    return SimpleDateFormat.getInstance().format(next.getTime());
+                }
+                case DAILY: {// TODO remove me
                     Calendar next = Calendar.getInstance();
                     next.set(Calendar.HOUR_OF_DAY, c.get(Calendar.HOUR_OF_DAY));
                     next.set(Calendar.MINUTE, c.get(Calendar.MINUTE));
@@ -162,7 +179,7 @@ public class ScheduleTableModel extends ExtTableModel<ScheduleEntry> {
                     }
                     return SimpleDateFormat.getInstance().format(next.getTime());
                 }
-                case WEEKLY:
+                case WEEKLY:// TODO remove me
                     Calendar next = Calendar.getInstance();
                     next.set(Calendar.HOUR_OF_DAY, c.get(Calendar.HOUR_OF_DAY));
                     next.set(Calendar.MINUTE, c.get(Calendar.MINUTE));
@@ -201,6 +218,34 @@ public class ScheduleTableModel extends ExtTableModel<ScheduleEntry> {
                     c.setTimeInMillis(value.getTimestamp() * 1000l);
                     String time = DateFormat.getTimeInstance(DateFormat.SHORT).format(c.getTime());
                     return T._.timeformat_repeats_daily(time);
+                }
+                case SPECIFICDAYS: {
+                    if (value.getSelectedDays().size() == 0) {
+                        // Never
+                        return T._.lit_never();
+                    }
+                    c.setTimeInMillis(value.getTimestamp() * 1000l);
+                    String time = DateFormat.getTimeInstance(DateFormat.SHORT).format(c.getTime());
+
+                    if (value.getSelectedDays().size() == 7) {
+                        // Never
+                        return T._.timeformat_repeats_daily(time);
+                    }
+
+                    String days = "";
+                    for (int i = 0; i < value.getSelectedDays().size(); i++) {
+                        if (i != 0) {
+                            days += ", ";
+                        }
+                        days += value.getSelectedDays().get(i).getReadableName();
+                    }
+
+                    if (value.getSelectedDays().size() == 1) {
+                        // Weekly
+                        c.setTimeInMillis(value.getTimestamp() * 1000l);
+                        return T._.timeformat_repeats_weekly(days, time);
+                    }
+                    return T._.timeformat_repeats_specificDays(days, time);
                 }
                 case WEEKLY: {
                     c.setTimeInMillis(value.getTimestamp() * 1000l);

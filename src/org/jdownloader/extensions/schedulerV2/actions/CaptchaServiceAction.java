@@ -70,8 +70,8 @@ public class CaptchaServiceAction extends AbstractScheduleAction<CaptchaServiceA
 
     @Override
     public JPanel getConfigPanel() {
-        MigPanel actionParameterPanelInt = new MigPanel("ins 0,wrap 4", "", "");
-        actionParameterPanelInt.add(new JLabel("Service" + ":"), "growx,width 18%");
+        MigPanel actionParameterPanelInt = new MigPanel("ins 0,wrap 2", "[sg 1][sg 2,grow,fill]", "");
+        actionParameterPanelInt.add(new JLabel(T._.action_captcha_service() + ":"));// TODO
 
         final ComboBox<CAPTCHA_SERVICE> cbService = new ComboBox<CAPTCHA_SERVICE>(CAPTCHA_SERVICE.values()) {
             @Override
@@ -88,7 +88,7 @@ public class CaptchaServiceAction extends AbstractScheduleAction<CaptchaServiceA
             }
         });
 
-        actionParameterPanelInt.add(cbService, "growx, width 30%");
+        actionParameterPanelInt.add(cbService);
         return actionParameterPanelInt;
     }
 

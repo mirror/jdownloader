@@ -28,8 +28,8 @@ public class SetConnectionsAction extends AbstractScheduleAction<SetConnectionsA
     }
 
     public JPanel getConfigPanel() {
-        MigPanel actionParameterPanelInt = new MigPanel("ins 0", "", "");
-        actionParameterPanelInt.add(new JLabel(T._.addScheduleEntryDialog_number() + ":"), "growx,width 18%");
+        MigPanel actionParameterPanelInt = new MigPanel("ins 0,wrap 2", "[sg 1][sg 2,grow,fill]", "");
+        actionParameterPanelInt.add(new JLabel(T._.addScheduleEntryDialog_number() + ":"));
         final SpinnerNumberModel model;
         JSpinner intParameterSpinner = new JSpinner(model = new SpinnerNumberModel(0, 0, 25, 1));
         intParameterSpinner.addChangeListener(new ChangeListener() {
@@ -42,7 +42,7 @@ public class SetConnectionsAction extends AbstractScheduleAction<SetConnectionsA
                 }
             }
         });
-        actionParameterPanelInt.add(intParameterSpinner, "growx, width 30%");
+        actionParameterPanelInt.add(intParameterSpinner);
         return actionParameterPanelInt;
     };
 
