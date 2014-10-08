@@ -15,6 +15,7 @@ import org.appwork.storage.TypeRef;
 import org.appwork.utils.Application;
 import org.appwork.utils.IO;
 import org.appwork.utils.Regex;
+import org.appwork.utils.StringUtils;
 import org.appwork.utils.encoding.Base64;
 import org.appwork.utils.logging2.LogSource;
 import org.appwork.utils.net.Base64InputStream;
@@ -62,24 +63,23 @@ public class MyJDownloaderAPI extends AbstractMyJDClientForDesktopJVM {
         byte[] ret = null;
         try {
             if (keyAndIV != null) {
-                br.putRequestHeader("Accept-Encoding", "gzip_aes");
+                br.putRequestHeader("Accept-Encoding", "gazeisp");
                 final byte[] sendBytes = (object == null ? "" : object).getBytes("UTF-8");
                 final HashMap<String, String> header = new HashMap<String, String>();
                 header.put(HTTPConstants.HEADER_REQUEST_CONTENT_LENGTH, "" + sendBytes.length);
                 con = br.openPostConnection(new URL(this.getServerRoot() + query), null, new ByteArrayInputStream(sendBytes), header);
                 final String content_Encoding = con.getHeaderField(HTTPConstants.HEADER_RESPONSE_CONTENT_ENCODING);
+                final String content_Type = con.getHeaderField(HTTPConstants.HEADER_REQUEST_CONTENT_TYPE);
                 if (con.getResponseCode() == 200) {
-                    if ("gzip_aes".equals(content_Encoding)) {
+                    if (StringUtils.contains(content_Encoding, "gazeisp") || StringUtils.contains(content_Encoding, "gzip_aes")) {
                         final byte[] aes = IO.readStream(-1, con.getInputStream());
                         final byte[] decrypted = this.decrypt(aes, keyAndIV);
-                        ret = IO.readStream(-1, new GZIPInputStream(new ByteArrayInputStream(decrypted)));
-                    } else if (content_Encoding == null) {
-                        return IO.readStream(-1, con.getInputStream());
-                    } else {
+                        return IO.readStream(-1, new GZIPInputStream(new ByteArrayInputStream(decrypted)));
+                    } else if (StringUtils.contains(content_Type, "aesjson-server")) {
                         final byte[] aes = IO.readStream(-1, new Base64InputStream(con.getInputStream()));
-                        final byte[] decrypted = this.decrypt(aes, keyAndIV);
-                        ret = decrypted;
+                        return this.decrypt(aes, keyAndIV);
                     }
+                    return IO.readStream(-1, con.getInputStream());
                 } else {
                     ret = IO.readStream(-1, con.getInputStream());
                 }
@@ -89,7 +89,9 @@ public class MyJDownloaderAPI extends AbstractMyJDClientForDesktopJVM {
                 con = br.getConnection();
             }
             // System.out.println(con);
-            if (con != null && con.getResponseCode() > 0 && con.getResponseCode() != 200) { throw new ExceptionResponse(toString(ret), con.getResponseCode()); }
+            if (con != null && con.getResponseCode() > 0 && con.getResponseCode() != 200) {
+                throw new ExceptionResponse(toString(ret), con.getResponseCode());
+            }
             return ret;
         } catch (final ExceptionResponse e) {
             throw e;
@@ -111,11 +113,15 @@ public class MyJDownloaderAPI extends AbstractMyJDClientForDesktopJVM {
             HashMap<String, Object> map = JSonStorage.restoreFromString(IO.readFileToString(Application.getResource("build.json")), new TypeRef<HashMap<String, Object>>() {
             });
             Object ret = map.get("JDownloaderRevision");
-            if (ret != null) { return "core_" + ret.toString(); }
+            if (ret != null) {
+                return "core_" + ret.toString();
+            }
         } catch (final Throwable e) {
         }
         String revision = new Regex("$Revision$", "Revision:\\s*?(\\d+)").getMatch(0);
-        if (revision == null) return "api_0";
+        if (revision == null) {
+            return "api_0";
+        }
         return "api_" + revision;
     }
 
