@@ -105,7 +105,6 @@ public class DropBoxCom extends PluginForDecrypt {
             } catch (Throwable e) {
             }
         }
-        br.getPage(parameter);
         // Handling for single links
         /* TODO: Fix handling for single links - disabled by now to prevent errors */
         // if (br.containsHTML(new Regex(parameter, ".*?(\\.com/sh/[a-z0-9]+).+").getMatch(0) + "[^<>\"]+" + "dl=1([^<>\"]*?)\"")) {
@@ -143,7 +142,7 @@ public class DropBoxCom extends PluginForDecrypt {
                     } else {
                         /* File */
                         final String size = new Regex(entry, "class=\"size\">([^<>\"]*?)</span>").getMatch(0);
-                        if (link == null || size == null) {
+                        if (link == null) {
                             continue;
                         }
                         String filename = new Regex(link, "/([^<>\"/]*?)(\\?dl=\\d)?$").getMatch(0);
@@ -151,7 +150,9 @@ public class DropBoxCom extends PluginForDecrypt {
                         final DownloadLink dl = createDownloadlink(link.replace("dropbox.com/", "dropboxdecrypted.com/"));
                         filename = Encoding.htmlDecode(filename).trim();
                         dl.setName(filename);
-                        dl.setDownloadSize(SizeFormatter.getSize(size.replace(",", ".")));
+                        if (size != null) {
+                            dl.setDownloadSize(SizeFormatter.getSize(size.replace(",", ".")));
+                        }
                         dl.setProperty("decrypted", true);
                         dl.setAvailable(true);
                         decryptedLinks.add(dl);
