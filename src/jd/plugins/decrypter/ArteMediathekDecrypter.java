@@ -257,19 +257,20 @@ public class ArteMediathekDecrypter extends PluginForDecrypt {
             }
 
             /* Check version/only download selected language-version! */
-            String l = new Regex(info, "\"versionCode\":\"(VO|VF|VOF\\-STMF|VOF\\-STF)\"").getMatch(0);
+            String l = new Regex(info, "\"versionCode\":\"([A-Z\\-]*?)\"").getMatch(0);
             if (l == null) {
                 continue;
             }
-            if ("VO".equals(l)) {
-                l = "1";
-            } else if ("VF".equals(l)) {
-                l = "2";
-            } else if ("VOF-STMF".equals(l)) {
+            if ("VOF-STMF".equals(l)) {
                 l = "3";
+            }
+            if (l.startsWith("VO")) {
+                l = "1";
+            } else if (l.startsWith("VF")) {
+                l = "2";
             } else {
                 /* Unknown - use language inside the link */
-                /* Unknown language Strings so far: VOF-STF */
+                /* Unknown language Strings so far: VOF-STF, VOA */
                 l = Integer.toString(languageVersion);
             }
             final int langint = Integer.parseInt(l);
