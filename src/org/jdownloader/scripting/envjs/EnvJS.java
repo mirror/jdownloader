@@ -14,6 +14,7 @@ import jd.http.Cookies;
 import jd.http.Request;
 import net.sourceforge.htmlunit.corejs.javascript.Context;
 import net.sourceforge.htmlunit.corejs.javascript.EcmaError;
+import net.sourceforge.htmlunit.corejs.javascript.NativeObject;
 import net.sourceforge.htmlunit.corejs.javascript.tools.shell.Global;
 
 import org.appwork.exceptions.WTFException;
@@ -67,6 +68,115 @@ public class EnvJS {
 
     public String readFromFile(String url) {
         return url;
+    }
+
+    // if(script.type){
+    // types = script.type.split(";");
+    // for(i=0;i<types.length;i++){
+    // if(Envjs.scriptTypes[types[i].toLowerCase()]){
+    // //ok this script type is allowed
+    // break;
+    // }
+    // if(i+1 == types.length){
+    // log.debug('wont load script type %s', script.type);
+    // return false;
+    // }
+    // }
+    // }else if(!Envjs.scriptTypes['']){
+    // log.debug('wont load anonymous script type ""');
+    // return false;
+    // }
+    //
+    // try{
+    // if(!script.src.length ){
+    // if(Envjs.scriptTypes[""]){
+    // log.debug('handling inline scripts %s %s', script.src, Envjs.scriptTypes[""] );
+    // Envjs.loadInlineScript(script);
+    // return true;
+    // }else{
+    // return false;
+    // }
+    // }
+    // }catch(e){
+    // log.error("Error loading script. %s", e);
+    // Envjs.onScriptLoadError(script, e);
+    // return false;
+    // }
+    //
+    //
+    // log.debug("loading allowed external script %s", script.src);
+    //
+    // //lets you register a function to execute
+    // //before the script is loaded
+    // if(Envjs.beforeScriptLoad){
+    // for(src in Envjs.beforeScriptLoad){
+    // if(script.src.match(src)){
+    // Envjs.beforeScriptLoad[src](script);
+    // }
+    // }
+    // }
+    // base = "" + script.ownerDocument.location;
+    // //filename = Envjs.uri(script.src.match(/([^\?#]*)/)[1], base );
+    // log.debug('loading script from base %s', base);
+    // filename = Envjs.uri(script.src, base);
+    // try {
+    // xhr = new XMLHttpRequest();
+    // xhr.open("GET", filename, false/*syncronous*/);
+    // log.debug("loading external script %s", filename);
+    // xhr.onreadystatechange = function(){
+    // log.debug("readyState %s", xhr.readyState);
+    // if(xhr.readyState === 4){
+    // Envjs['eval'](
+    // script.ownerDocument.ownerWindow,
+    // xhr.responseText,
+    // filename
+    // );
+    // }
+    // log.debug('finished evaluating %s', filename);
+    // };
+    // xhr.send(null, false);
+    // } catch(ee) {
+    // log.error("could not load script %s \n %s", filename, ee );
+    // Envjs.onScriptLoadError(script, ee);
+    // return false;
+    // }
+    // //lets you register a function to execute
+    // //after the script is loaded
+    // if(Envjs.afterScriptLoad){
+    // for(src in Envjs.afterScriptLoad){
+    // if(script.src.match(src)){
+    // Envjs.afterScriptLoad[src](script);
+    // }
+    // }
+    // }
+    public String modifyInlineScript(String type, String js) throws IOException {
+        return js;
+    }
+
+    public String loadExternalScript(String type, String src, String url, Object window) throws IOException {
+
+        throw new IOException("Script Blocked");
+    }
+
+    private HashMap<Object, Object> toMap(NativeObject obj, HashMap<Object, HashMap<Object, Object>> refMap) {
+        HashMap<Object, Object> ret = new HashMap<Object, Object>();
+        if (refMap == null) {
+            refMap = new HashMap<Object, HashMap<Object, Object>>();
+        }
+        if (refMap.containsKey(obj)) {
+            return null;
+        }
+        refMap.put(obj, ret);
+        for (Entry<Object, Object> e : obj.entrySet()) {
+            Object v = e.getValue();
+            if (v instanceof NativeObject) {
+                ret.put(e.getKey().toString(), toMap((NativeObject) v, refMap));
+            } else {
+                ret.put(e.getKey().toString(), v == null ? null : v.toString());
+            }
+
+        }
+        return ret;
     }
 
     public String xhrRequest(String url, String method, String data, String requestHeaders) throws IOException {
@@ -169,6 +279,24 @@ public class EnvJS {
 
     }
 
+    public static enum DebugLevel {
+        DEBUG,
+        INFO,
+        WARN,
+        ERROR,
+        NONE;
+    }
+
+    private DebugLevel debugLevel = DebugLevel.DEBUG;
+
+    public DebugLevel getDebugLevel() {
+        return debugLevel;
+    }
+
+    public void setDebugLevel(DebugLevel debugLevel) {
+        this.debugLevel = debugLevel;
+    }
+
     public void init() {
         cx = Context.enter();
 
@@ -183,6 +311,8 @@ public class EnvJS {
         // ok.
         try {
             evaluateTrustedString(cx, scope, "var EnvJSinstanceID=" + id + ";", "setInstance", 1, null);
+            evaluateTrustedString(cx, scope, "var DEBUG_LEVEL='" + debugLevel + "';", "setDebugLevel", 1, null);
+
             // evaluateTrustedString(cx, scope, IO.readURLToString(EnvJS.class.getResource("env.rhino.js")), "oldRhino", 1, null);
 
             evaluateTrustedString(cx, scope, readRequire("envjs/rhino"), "setInstance", 1, null);
