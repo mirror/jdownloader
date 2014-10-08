@@ -37,7 +37,7 @@ import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
 import jd.utils.JDUtilities;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "flickr.com" }, urls = { "https?://(www\\.)?flickr\\.com/(photos|groups)/.+" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "flickr.com" }, urls = { "https?://(www\\.)?(secure\\.)?flickr\\.com/(photos|groups)/.+" }, flags = { 0 })
 public class FlickrCom extends PluginForDecrypt {
 
     public FlickrCom(PluginWrapper wrapper) {
@@ -386,6 +386,7 @@ public class FlickrCom extends PluginForDecrypt {
     /** Corrects links added by the user */
     private String correctParameter(String parameter) {
         parameter = Encoding.htmlDecode(parameter).replace("http://", "https://");
+        parameter = parameter.replace("secure.flickr.com/", "flickr.com/");
         String remove_string = new Regex(parameter, "(/player/.+)").getMatch(0);
         if (remove_string != null) {
             parameter = parameter.replace(remove_string, "");
