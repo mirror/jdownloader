@@ -1,4 +1,5 @@
 action_Reconnect=Erneut verbinden
+action_setChunks=Setze Chunks pro Datei
 addScheduleEntryDialog_actionParameters=Aktion & Parameter
 addScheduleEntryDialog_defaultScheduleName=Zeitplan
 addScheduleEntryDialog_header_time=Zeit / Intervall
