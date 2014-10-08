@@ -1,6 +1,6 @@
 // This file is compiled into the jar and executed automatically on startup.
 var __this__ = this;
-javaInstance=Packages.org.jdownloader.scripting.envjs.EnvJS.get(EnvJSinstanceID);
+var javaInstance=Packages.org.jdownloader.scripting.envjs.EnvJS.get(EnvJSinstanceID);
 
    
     
