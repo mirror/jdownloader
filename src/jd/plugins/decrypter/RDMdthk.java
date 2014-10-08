@@ -229,7 +229,6 @@ public class RDMdthk extends PluginForDecrypt {
                         network = "default_nonetwork";
                     }
                     final String quality_number = getJson("_quality", qual_info);
-                    final boolean isRTMP = ("akamai".equals(network) || "limelight".equals(network) || server.startsWith("rtmp://"));
                     // rtmp --> hds or rtmp
                     String directlink = null;
                     /* TODO: Add all available streamlinks */
@@ -256,8 +255,9 @@ public class RDMdthk extends PluginForDecrypt {
                         directlink = getJson("_stream", qual_info);
                     }
                     url = directlink;
+                    final boolean isRTMP = (server != null && !server.equals("") && server.startsWith("rtmp://")) && !url.startsWith("http");
                     /* Skip HDS */
-                    if (isRTMP && url.endsWith("manifest.f4m")) {
+                    if (url.endsWith("manifest.f4m")) {
                         continue;
                     }
                     /* Skip unneeded playlists */
@@ -278,10 +278,8 @@ public class RDMdthk extends PluginForDecrypt {
                     } else {
                         url = fixWDRdirectlink(array_text, url);
                     }
-                    fmt = "hd";
-
                     // only http streams for old stable
-                    if (url.startsWith("rtmp") && isStableEnviroment()) {
+                    if (isRTMP && isStableEnviroment()) {
                         notForStable++;
                         continue;
                     }
@@ -289,6 +287,8 @@ public class RDMdthk extends PluginForDecrypt {
                     if (isRTMP && HTTP_ONLY) {
                         continue;
                     }
+
+                    fmt = "hd";
 
                     switch (Integer.valueOf(quality_number)) {
                     case 0:

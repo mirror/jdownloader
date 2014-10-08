@@ -113,6 +113,7 @@ public class DataFileCom extends PluginForHost {
         if (br.containsHTML("ErrorCode 7: Download file count limit")) {
             return AvailableStatus.UNCHECKABLE;
         }
+        final String decrypterfilename = link.getStringProperty("decrypterfilename", null);
         final String filename = br.getRegex("class=\"file\\-name\">([^<>\"]*?)</div>").getMatch(0);
         filesize = br.getRegex(">Filesize:<span class=\"lime\">([^<>\"]*?)</span>").getMatch(0);
         if (filesize == null) {
@@ -121,7 +122,12 @@ public class DataFileCom extends PluginForHost {
         if (filename == null || filesize == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        link.setFinalFileName(Encoding.htmlDecode(filename.trim()));
+        if (decrypterfilename != null) {
+            /* Folder-filenames are complete - filenames shown when accessing single links are sometimes cut! */
+            link.setName(decrypterfilename);
+        } else {
+            link.setName(Encoding.htmlDecode(filename.trim()));
+        }
         link.setDownloadSize(SizeFormatter.getSize(filesize));
         if (br.containsHTML(PREMIUMONLY)) {
             link.getLinkStatus().setStatusText("This file can only be downloaded by premium users");
@@ -221,12 +227,7 @@ public class DataFileCom extends PluginForHost {
                 br.followConnection();
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
-            String finalname = Encoding.htmlDecode(getFileNameFromHeader(dl.getConnection()));
-            String finalFixedName = new Regex(finalname, "([^<>\"]*?)\"; creation\\-date=").getMatch(0);
-            if (finalFixedName != null) {
-                finalname = finalFixedName;
-            }
-            downloadLink.setFinalFileName(finalFixedName);
+            downloadLink.setFinalFileName(getServerFilename());
             downloadLink.setProperty("directlink", dllink);
             // add download slot
             controlSlot(+1, account);
@@ -401,6 +402,7 @@ public class DataFileCom extends PluginForHost {
                     handleGeneralErrors(account);
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 }
+                downloadLink.setFinalFileName(getServerFilename());
                 // add download slot
                 controlSlot(+1, account);
                 try {
@@ -411,6 +413,15 @@ public class DataFileCom extends PluginForHost {
                 }
             }
         }
+    }
+
+    private String getServerFilename() {
+        String finalname = Encoding.htmlDecode(getFileNameFromHeader(dl.getConnection()));
+        final String finalFixedName = new Regex(finalname, "([^<>\"]*?)\"; creation\\-date=").getMatch(0);
+        if (finalFixedName != null) {
+            finalname = finalFixedName;
+        }
+        return finalname;
     }
 
     private void handleGeneralErrors(final Account account) throws PluginException {
@@ -599,6 +610,7 @@ public class DataFileCom extends PluginForHost {
             handleGeneralErrors(account);
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
+        downloadLink.setFinalFileName(getServerFilename());
         // add download slot
         controlSlot(+1, account);
         try {
