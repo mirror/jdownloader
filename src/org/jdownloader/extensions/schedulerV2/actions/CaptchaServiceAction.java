@@ -4,11 +4,9 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 
 import javax.swing.JLabel;
-import javax.swing.JPanel;
 
 import jd.gui.swing.jdgui.views.settings.components.ComboBox;
 
-import org.appwork.swing.MigPanel;
 import org.jdownloader.extensions.schedulerV2.translate.T;
 
 @ScheduleActionIDAnnotation("SET_CAPTCHASERVICE")
@@ -69,9 +67,8 @@ public class CaptchaServiceAction extends AbstractScheduleAction<CaptchaServiceA
     }
 
     @Override
-    public JPanel getConfigPanel() {
-        MigPanel actionParameterPanelInt = new MigPanel("ins 0,wrap 2", "[sg 1][sg 2,grow,fill]", "");
-        actionParameterPanelInt.add(new JLabel(T._.action_captcha_service() + ":"));// TODO
+    protected void createPanel() {
+        panel.put(new JLabel(T._.action_captcha_service() + ":"), "gapleft 10,");
 
         final ComboBox<CAPTCHA_SERVICE> cbService = new ComboBox<CAPTCHA_SERVICE>(CAPTCHA_SERVICE.values()) {
             @Override
@@ -88,9 +85,8 @@ public class CaptchaServiceAction extends AbstractScheduleAction<CaptchaServiceA
             }
         });
 
-        actionParameterPanelInt.add(cbService);
-        return actionParameterPanelInt;
-    }
+        panel.put(cbService, "");
+    };
 
     @Override
     public String getReadableParameter() {

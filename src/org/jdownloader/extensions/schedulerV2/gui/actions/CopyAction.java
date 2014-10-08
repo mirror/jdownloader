@@ -15,7 +15,6 @@ import org.jdownloader.gui.IconKey;
 public class CopyAction extends AppAction {
 
     private SchedulerTable      table;
-    private boolean             force     = false;
     private List<ScheduleEntry> selection = null;
 
     public CopyAction(SchedulerTable table) {
@@ -24,8 +23,7 @@ public class CopyAction extends AppAction {
         setIconKey(IconKey.ICON_COPY);
     }
 
-    public CopyAction(List<ScheduleEntry> selection2, boolean force) {
-        this.force = force;
+    public CopyAction(List<ScheduleEntry> selection2) {
         this.selection = selection2;
         setName(T._.lit_copy());
         setIconKey(IconKey.ICON_COPY);

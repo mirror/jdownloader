@@ -1,11 +1,9 @@
 package org.jdownloader.extensions.schedulerV2.actions;
 
 import javax.swing.JLabel;
-import javax.swing.JPanel;
 import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
 
-import org.appwork.swing.MigPanel;
 import org.appwork.utils.formatter.SizeFormatter;
 import org.jdownloader.extensions.schedulerV2.gui.SpeedSpinner;
 import org.jdownloader.extensions.schedulerV2.translate.T;
@@ -29,10 +27,9 @@ public class SetDownloadspeedAction extends AbstractScheduleAction<SetDownloadsp
     }
 
     @Override
-    public JPanel getConfigPanel() {
-        MigPanel actionParameterPanelSpeed = new MigPanel("ins 0,wrap 2", "[sg 1][sg 2,grow,fill]", "");
+    protected void createPanel() {
 
-        actionParameterPanelSpeed.add(new JLabel(T._.addScheduleEntryDialog_speed() + ":"));
+        panel.put(new JLabel(T._.addScheduleEntryDialog_speed() + ":"), "gapleft 10,");
 
         final SpeedSpinner downloadspeedSpinner = new SpeedSpinner(0l, 100 * 1024 * 1024 * 1024l, 1l);
         downloadspeedSpinner.setValue(getConfig().getDownloadspeed());
@@ -46,8 +43,7 @@ public class SetDownloadspeedAction extends AbstractScheduleAction<SetDownloadsp
                 }
             }
         });
-        actionParameterPanelSpeed.add(downloadspeedSpinner);
-        return actionParameterPanelSpeed;
+        panel.put(downloadspeedSpinner, "");
     }
 
     @Override

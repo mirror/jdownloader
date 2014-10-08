@@ -183,4 +183,16 @@ public interface SchedulerTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "Copy" })
     String lit_copy();
 
+    @Default(lngs = { "en" }, values = { "Days" })
+    String addScheduleEntryDialog_days();
+
+    @Default(lngs = { "en" }, values = { "Parameter" })
+    String addScheduleEntryDialog_no_parameter_caption();
+
+    @Default(lngs = { "en" }, values = { "Chunks" })
+    String addScheduleEntryDialog_chunks();
+
+    @Default(lngs = { "en" }, values = { "Downloads" })
+    String addScheduleEntryDialog_downloads();
+
 }

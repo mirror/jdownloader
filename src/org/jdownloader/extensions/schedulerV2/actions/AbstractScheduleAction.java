@@ -2,16 +2,18 @@ package org.jdownloader.extensions.schedulerV2.actions;
 
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
+import java.util.LinkedHashMap;
 
+import javax.swing.JComponent;
 import javax.swing.JLabel;
-import javax.swing.JPanel;
 
 import org.appwork.storage.JSonStorage;
 import org.appwork.swing.MigPanel;
 
 public abstract class AbstractScheduleAction<T extends IScheduleActionConfig> {
 
-    private final T config;
+    private final T                             config;
+    protected LinkedHashMap<JComponent, String> panel = new LinkedHashMap<JComponent, String>();
 
     public AbstractScheduleAction(String configJson) {
         T config = null;
@@ -51,13 +53,32 @@ public abstract class AbstractScheduleAction<T extends IScheduleActionConfig> {
 
     public abstract String getReadableName();
 
-    public JPanel getConfigPanel() {
-        MigPanel actionParameterPanelNone = new MigPanel("ins 6 0 0 6", "", "");
+    public final void drawOnPanel(MigPanel realPanel) {
+        if (panel.size() == 0) {
+            createPanel();
+        }
+        for (JComponent comp : panel.keySet()) {
+            realPanel.add(comp, panel.get(comp) + " hidemode 3");
+        }
+    }
+
+    public final void setVisible(boolean aFlag) {
+        for (JComponent component : panel.keySet()) {
+            component.setVisible(aFlag);
+        }
+    }
+
+    /**
+     * Adds all JComponents to KeySet panel, with MigLayout constraints as value. For instance, to add a Label with full width, write:
+     * panel.put(new JLabel("Caption"),"spanx,");
+     */
+    protected void createPanel() {
+        JLabel lblCaption = new JLabel(org.jdownloader.extensions.schedulerV2.translate.T._.addScheduleEntryDialog_no_parameter_caption() + ":");
+        lblCaption.setEnabled(false);
+        panel.put(lblCaption, "gapleft 10,");
         JLabel lbl = new JLabel(org.jdownloader.extensions.schedulerV2.translate.T._.addScheduleEntryDialog_no_parameter());
         lbl.setEnabled(false);
-        actionParameterPanelNone.add(lbl);
-
-        return actionParameterPanelNone;
+        panel.put(lbl, "");
     }
 
     public abstract void execute();
