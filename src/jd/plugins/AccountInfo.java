@@ -249,8 +249,11 @@ public class AccountInfo extends Property {
             // central place to fix up issues when JD 'names' doesn't match multihoster supported host array or vise versa
 
             if (supportedHostsSet.contains("putlocker.com")) {
-                //
                 supportedHostsSet.add("firedrive.com");
+            }
+
+            if (supportedHostsSet.contains("sharerapid.cz") || supportedHostsSet.contains("sharerapid.sk") || supportedHostsSet.contains("megarapid.cz")) {
+                supportedHostsSet.add("share-rapid.cz");
             }
 
             // work around for freakshare.com
@@ -260,34 +263,23 @@ public class AccountInfo extends Property {
             }
             // workaround for uploaded.to
             if (supportedHostsSet.contains("uploaded.net") || supportedHostsSet.contains("ul.to") || supportedHostsSet.contains("uploaded.to")) {
-                supportedHostsSet.add("uploaded.net");
-                supportedHostsSet.add("ul.to");
                 supportedHostsSet.add("uploaded.to");
             }
             // workaround for keep2share.cc, as they keep changing hosts..
             if (supportedHostsSet.contains("keep2share.cc") || supportedHostsSet.contains("k2s.cc") || supportedHostsSet.contains("keep2s.cc") || supportedHostsSet.contains("keep2.cc")) {
                 supportedHostsSet.add("keep2share.cc");
-                supportedHostsSet.add("k2s.cc");
-                supportedHostsSet.add("keep2s.cc");
-                supportedHostsSet.add("keep2.cc");
             }
             // workaround for nowvideo
-            if (supportedHostsSet.contains("nowvideo.eu") || supportedHostsSet.contains("nowvideo.sx") || supportedHostsSet.contains("nowvideo.co") || supportedHostsSet.contains("nowvideo.ch") || supportedHostsSet.contains("nowvideo.at")) {
+            if (supportedHostsSet.contains("nowvideo.eu") || supportedHostsSet.contains("nowvideo.sx") || supportedHostsSet.contains("nowvideo.co") || supportedHostsSet.contains("nowvideo.ch") || supportedHostsSet.contains("nowvideo.at") || supportedHostsSet.contains("nowvideo.ag")) {
                 supportedHostsSet.add("nowvideo.eu");
-                supportedHostsSet.add("nowvideo.sx");
                 supportedHostsSet.add("nowvideo.co");
-                supportedHostsSet.add("nowvideo.ch");
-                supportedHostsSet.add("nowvideo.ag");
-                supportedHostsSet.add("nowvideo.at");
             }
             // workaround for nowdownload
-            if (supportedHostsSet.contains("nowdownload.eu") || supportedHostsSet.contains("nowdownload.sx") || supportedHostsSet.contains("nowdownload.co") || supportedHostsSet.contains("nowdownload.ch") || supportedHostsSet.contains("nowdownload.at")) {
+            if (supportedHostsSet.contains("nowdownload.eu") || supportedHostsSet.contains("nowdownload.sx") || supportedHostsSet.contains("nowdownload.co") || supportedHostsSet.contains("nowdownload.ch") || supportedHostsSet.contains("nowdownload.at") || supportedHostsSet.contains("nowdownload.ag")) {
                 supportedHostsSet.add("nowdownload.eu");
-                supportedHostsSet.add("nowdownload.sx");
-                supportedHostsSet.add("nowdownload.co");
-                supportedHostsSet.add("nowdownload.ch");
-                supportedHostsSet.add("nowdownload.ag");
-                supportedHostsSet.add("nowdownload.at");
+            }
+            if (supportedHostsSet.contains("likeupload.net") || supportedHostsSet.contains("likeupload.org")) {
+                supportedHostsSet.add("likeupload.net");
             }
             supportedHosts = new ArrayList<String>(supportedHostsSet);
         }
