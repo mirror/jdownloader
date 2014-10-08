@@ -1,13 +1,16 @@
 package org.jdownloader.extensions.schedulerV2;
 
+import java.net.MalformedURLException;
+import java.net.URL;
 import java.util.ArrayList;
 import java.util.HashMap;
 
 import javax.swing.AbstractAction;
-import javax.swing.JLabel;
 import javax.swing.JScrollPane;
 import javax.swing.event.ListSelectionEvent;
 import javax.swing.event.ListSelectionListener;
+
+import jd.gui.swing.components.linkbutton.JLink;
 
 import org.appwork.storage.config.annotations.AboutConfig;
 import org.appwork.storage.config.annotations.DevConfig;
@@ -34,7 +37,6 @@ public class SchedulerConfigPanel extends ExtensionConfigPanel<SchedulerExtensio
      * 
      */
     private static final long  serialVersionUID = 1L;
-    private JLabel             lbl;
     private SchedulerTable     table;
     private MigPanel           myContainer;
     private ScheduleTableModel tableModel;
@@ -83,8 +85,16 @@ public class SchedulerConfigPanel extends ExtensionConfigPanel<SchedulerExtensio
     private void initPanel() {
         myContainer.removeAll();
         myContainer.setLayout("ins 0, wrap 1", "[grow]", "[][]");
-        myContainer.add(SwingUtils.toBold(lbl = new JLabel("THIS EXTENSION IS STILL UNDER CONSTRUCTION. Feel free to test it and to give Feedback.")));
-        lbl.setForeground(LAFOptions.getInstance().getColorForErrorForeground());
+        JLink lnk;
+        try {
+            lnk = new JLink("UNDER DEVELOPMENT: Feel free to test this extension. Click here to give Feedback.", NewTheme.I().getIcon("url", 16), new URL("http://board.jdownloader.org/showthread.php?t=59730"));
+        } catch (MalformedURLException e1) {
+            lnk = null;
+        }
+
+        myContainer.add(lnk);
+
+        lnk.setForeground(LAFOptions.getInstance().getColorForErrorForeground());
 
         table = new SchedulerTable(extension, tableModel = new ScheduleTableModel(this.extension));
         myContainer.add(new JScrollPane(table), "grow");
