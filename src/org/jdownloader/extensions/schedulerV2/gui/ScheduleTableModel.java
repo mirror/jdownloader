@@ -142,6 +142,10 @@ public class ScheduleTableModel extends ExtTableModel<ScheduleEntry> {
                 c.setTimeInMillis(value.getTimestamp() * 1000l);
                 switch (timeType) {
                 case ONLYONCE:
+                    if (c.getTimeInMillis() < Calendar.getInstance().getTimeInMillis()) {
+                        // past
+                        return "";
+                    }
                     return SimpleDateFormat.getInstance().format(c.getTime());
                 case HOURLY: {
                     Calendar next = Calendar.getInstance();
