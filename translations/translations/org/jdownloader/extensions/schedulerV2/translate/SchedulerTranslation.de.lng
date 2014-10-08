@@ -1,0 +1,15 @@
+action_Reconnect=Erneut verbinden
+addScheduleEntryDialog_actionParameters=Aktion & Parameter
+addScheduleEntryDialog_defaultScheduleName=Zeitplan
+addScheduleEntryDialog_header_time=Zeit / Intervall
+addScheduleEntryDialog_hours=Stunden
+addScheduleEntryDialog_no_parameter=Keine Parameter vorhanden, die zu setzen sind.
+addScheduleEntryDialog_number=Nummer
+addScheduleEntryDialog_speed=Geschwindigkeit
+addScheduleEntryDialog_title_edit=Ablaufplan bearbeiten
+description=Definiere Zeitpläne, um Aktionen auszuführen, Downloads zu starten, ...
+lit_copy=Kopieren
+lit_never=Nie
+scheduleTable_column_actionparameter=Parameter
+scheduleTable_column_next_execution=Nächste Ausführung
+title=Steuerprogramm
