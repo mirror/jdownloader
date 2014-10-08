@@ -21,6 +21,7 @@ import java.io.IOException;
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.http.Browser;
+import jd.http.Browser.BrowserException;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
@@ -31,7 +32,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "mystream.la" }, urls = { "http://(www\\.)?mystream\\.la/watch/[a-z0-9]{12}" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "mystream.la" }, urls = { "http://(www\\.)?mystream\\.la/(watch|external)/[A-Za-z0-9]{12}" }, flags = { 0 })
 public class MyStreamLa extends PluginForHost {
 
     public MyStreamLa(PluginWrapper wrapper) {
@@ -45,11 +46,22 @@ public class MyStreamLa extends PluginForHost {
         return "http://mystream.la/terms-of-service";
     }
 
+    public void correctDownloadLink(final DownloadLink link) {
+        link.setUrlDownload(link.getDownloadURL().replace("/external/", "/watch/").toLowerCase());
+    }
+
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws IOException, PluginException {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
-        br.getPage(downloadLink.getDownloadURL());
+        try {
+            br.getPage(downloadLink.getDownloadURL());
+        } catch (final BrowserException e) {
+            if (br.getHttpConnection().getResponseCode() == 500) {
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            }
+            throw e;
+        }
         if (!br.containsHTML("class=\"video\\-a\"")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
