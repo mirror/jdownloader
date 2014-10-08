@@ -27,6 +27,7 @@ import org.appwork.storage.Storage;
 import org.appwork.storage.TypeRef;
 import org.appwork.storage.jackson.JacksonMapper;
 import org.appwork.utils.IO;
+import org.appwork.utils.StringUtils;
 import org.appwork.utils.encoding.Base64;
 import org.appwork.utils.logging2.LogInterface;
 import org.appwork.utils.net.Base64InputStream;
@@ -305,7 +306,7 @@ public class TestClient {
 
                 try {
                     if (keyAndIV != null) {
-                        br.putRequestHeader("Accept-Encoding", "gzip_aes");
+                        br.putRequestHeader("Accept-Encoding", "gazeisp");
                         final byte[] sendBytes = (object == null ? "" : object).getBytes("UTF-8");
                         final HashMap<String, String> header = new HashMap<String, String>();
                         header.put(HTTPConstants.HEADER_REQUEST_CONTENT_LENGTH, "" + sendBytes.length);
@@ -319,18 +320,18 @@ public class TestClient {
                         }
                         con = br.openPostConnection(new URL(url), null, new ByteArrayInputStream(sendBytes), header);
                         final String content_Encoding = con.getHeaderField(HTTPConstants.HEADER_RESPONSE_CONTENT_ENCODING);
+                        final String content_Type = con.getHeaderField(HTTPConstants.HEADER_REQUEST_CONTENT_TYPE);
                         if (con.getResponseCode() == 200) {
-                            if ("gzip_aes".equals(content_Encoding)) {
+                            if ("gazeisp".equals(content_Encoding)) {
                                 final byte[] aes = IO.readStream(-1, con.getInputStream());
                                 final byte[] decrypted = decrypt(aes, keyAndIV);
-                                ret = IO.readStream(-1, new GZIPInputStream(new ByteArrayInputStream(decrypted)));
+                                return IO.readStream(-1, new GZIPInputStream(new ByteArrayInputStream(decrypted)));
+                            } else if (StringUtils.contains(content_Type, "aesjson-server")) {
+                                final byte[] aes = IO.readStream(-1, new Base64InputStream(con.getInputStream()));
+                                return this.decrypt(aes, keyAndIV);
                             } else if (content_Encoding == null) {
                                 // not encrypted
-                                ret = IO.readStream(-1, con.getInputStream());
-                            } else {
-                                final byte[] aes = IO.readStream(-1, new Base64InputStream(con.getInputStream()));
-                                final byte[] decrypted = decrypt(aes, keyAndIV);
-                                ret = decrypted;
+                                return IO.readStream(-1, con.getInputStream());
                             }
                         } else {
                             ret = IO.readStream(-1, con.getInputStream());
