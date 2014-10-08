@@ -27,7 +27,6 @@ public class ScheduleTableModel extends ExtTableModel<ScheduleEntry> {
     public ScheduleTableModel(SchedulerExtension extension) {
         super("ScheduleTableModel");
         this.extension = extension;
-        // List<ScheduleEntry> lst = CFG_SCHEDULER.CFG.getEntryList();
         updateDataModel();
 
     }
@@ -169,26 +168,6 @@ public class ScheduleTableModel extends ExtTableModel<ScheduleEntry> {
                     }
                     return SimpleDateFormat.getInstance().format(next.getTime());
                 }
-                case DAILY: {// TODO remove me
-                    Calendar next = Calendar.getInstance();
-                    next.set(Calendar.HOUR_OF_DAY, c.get(Calendar.HOUR_OF_DAY));
-                    next.set(Calendar.MINUTE, c.get(Calendar.MINUTE));
-                    if (Calendar.getInstance().getTimeInMillis() > next.getTimeInMillis()) {
-                        // in past
-                        next.add(Calendar.DAY_OF_YEAR, 1);
-                    }
-                    return SimpleDateFormat.getInstance().format(next.getTime());
-                }
-                case WEEKLY:// TODO remove me
-                    Calendar next = Calendar.getInstance();
-                    next.set(Calendar.HOUR_OF_DAY, c.get(Calendar.HOUR_OF_DAY));
-                    next.set(Calendar.MINUTE, c.get(Calendar.MINUTE));
-                    next.set(Calendar.DAY_OF_WEEK, c.get(Calendar.DAY_OF_WEEK));
-                    if (Calendar.getInstance().getTimeInMillis() > next.getTimeInMillis()) {
-                        // in past
-                        next.add(Calendar.WEEK_OF_YEAR, 1);
-                    }
-                    return SimpleDateFormat.getInstance().format(next.getTime());
                 case CHOOSEINTERVAL:
                     long nowS = Calendar.getInstance().getTimeInMillis() / 1000l;
                     long startS = value.getTimestamp();
@@ -228,7 +207,7 @@ public class ScheduleTableModel extends ExtTableModel<ScheduleEntry> {
                     String time = DateFormat.getTimeInstance(DateFormat.SHORT).format(c.getTime());
 
                     if (value.getSelectedDays().size() == 7) {
-                        // Never
+                        // Daily
                         return T._.timeformat_repeats_daily(time);
                     }
 

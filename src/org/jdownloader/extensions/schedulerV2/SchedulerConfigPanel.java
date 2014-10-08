@@ -82,7 +82,7 @@ public class SchedulerConfigPanel extends ExtensionConfigPanel<SchedulerExtensio
 
     private void initPanel() {
         myContainer.removeAll();
-        myContainer.setLayout("ins 0, wrap 1", "[grow]", "[][]");// TODO debug here
+        myContainer.setLayout("ins 0, wrap 1", "[grow]", "[][]");
         myContainer.add(SwingUtils.toBold(lbl = new JLabel("THIS EXTENSION IS STILL UNDER CONSTRUCTION. Feel free to test it and to give Feedback.")));
         lbl.setForeground(LAFOptions.getInstance().getColorForErrorForeground());
 

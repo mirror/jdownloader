@@ -3,14 +3,15 @@ package org.jdownloader.extensions.schedulerV2.model;
 import java.util.List;
 
 import org.jdownloader.extensions.schedulerV2.actions.AbstractScheduleAction;
+import org.jdownloader.extensions.schedulerV2.actions.IScheduleActionConfig;
 import org.jdownloader.extensions.schedulerV2.helpers.ActionHelper;
 import org.jdownloader.extensions.schedulerV2.helpers.ActionHelper.TIME_OPTIONS;
 import org.jdownloader.extensions.schedulerV2.helpers.ActionHelper.WEEKDAY;
 
 public class ScheduleEntry {
 
-    private final ScheduleEntryStorable  storableEntry;
-    private final AbstractScheduleAction action;
+    private final ScheduleEntryStorable                         storableEntry;
+    private final AbstractScheduleAction<IScheduleActionConfig> action;
 
     public ScheduleEntry(ScheduleEntryStorable storableEntry) throws Exception {
         this.storableEntry = storableEntry;
