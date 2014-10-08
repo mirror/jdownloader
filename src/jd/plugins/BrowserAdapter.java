@@ -34,7 +34,6 @@ public class BrowserAdapter {
     private static DownloadInterface getDownloadInterface(Downloadable downloadable, Request request, boolean resumeEnabled, int chunksCount) throws Exception {
         OldRAFDownload dl = new OldRAFDownload(downloadable, request);
         int chunks = downloadable.getChunks();
-        ;
         if (chunksCount == 0) {
             dl.setChunkNum(chunks <= 0 ? JsonConfig.create(GeneralSettings.class).getMaxChunksPerFile() : chunks);
         } else {
@@ -67,12 +66,21 @@ public class BrowserAdapter {
             } catch (Throwable ignore) {
             }
             if (handle.getValue() == ERROR_REDIRECTED) {
-                int maxRedirects = 10;
-                while (maxRedirects-- > 0) {
+                final int redirect_max = 10;
+                int redirect_count = 0;
+                String lastRedirectUrl = null;
+                while (redirect_count++ < redirect_max) {
                     request = br.createRedirectFollowingRequest(request);
-                    if (request.getUrl() != null && request.getUrl().matches("https?://block\\.malwarebytes\\.org")) {
+                    String redirectUrl = request.getUrl();
+                    if (redirectUrl.matches("https?://block\\.malwarebytes\\.org")) {
                         throw new PluginException(LinkStatus.ERROR_FATAL, "Blocked by Malwarebytes");
                     }
+                    if (lastRedirectUrl != null && redirectUrl.equals(lastRedirectUrl)) {
+                        // some providers don't like fast redirects, as they use this for preparing final file. lets add short wait based on
+                        // retry count
+                        Thread.sleep(redirect_count * 250l);
+                    }
+
                     if (originalUrl != null) {
                         request.getHeaders().put("Referer", originalUrl);
                     }
@@ -87,13 +95,14 @@ public class BrowserAdapter {
                         } catch (Throwable ignore) {
                         }
                         if (handle2.getValue() == ERROR_REDIRECTED) {
+                            lastRedirectUrl = redirectUrl;
                             continue;
                         } else {
                             throw handle2;
                         }
                     }
                 }
-                if (maxRedirects <= 0) {
+                if (redirect_count++ >= redirect_max) {
                     throw new PluginException(LinkStatus.ERROR_FATAL, "Redirectloop");
                 }
             } else {
