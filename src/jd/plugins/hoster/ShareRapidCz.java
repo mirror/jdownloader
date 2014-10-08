@@ -113,7 +113,7 @@ public class ShareRapidCz extends PluginForHost {
         String trafficleft = null;
         /**
          * Expire unlimited -> Unlimited traffic for a specified amount of time Normal expire -> Expire date + trafficleft
-         *
+         * 
          * */
         final String expireUnlimited = br.getRegex("<td>Paušální stahování aktivní\\. Vyprší </td><td><strong>([0-9]{1,2}.[0-9]{1,2}.[0-9]{2,4} - [0-9]{1,2}:[0-9]{1,2})</strong>").getMatch(0);
         if (expireUnlimited != null) {
@@ -214,7 +214,7 @@ public class ShareRapidCz extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "This file isn't uploaded correctly", 60 * 60 * 1000);
         }
         final String dllink = br.getRegex("\"(http://s[0-9]{1,2}\\.(share-rapid\\.com|megarapid\\.cz)/download.*?)\"").getMatch(0);
-        if (dllink == null && br.containsHTML("Stahování je povoleno pouze pro přihlášené uživatele")) {
+        if (dllink == null && br.containsHTML("Stahování je povoleno pouze pro přihlášené uživatele") || br.containsHTML("zadejte své telefonní číslo")) {
             try {
                 throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);
             } catch (final Throwable e) {
