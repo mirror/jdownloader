@@ -13,6 +13,10 @@ public abstract class JWebBrowserAdapter implements JWebBrowserListener {
     }
 
     @Override
+    public void onJavaScriptCallback(JWebBrowser jWebBrowser, String functionName, Object[] arguments) {
+    }
+
+    @Override
     public void onUrlChanged(JWebBrowser jWebBrowser, String location) {
     }
 

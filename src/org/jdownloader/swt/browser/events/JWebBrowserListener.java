@@ -18,4 +18,6 @@ public interface JWebBrowserListener extends EventListener {
 
     void onLoading(JWebBrowser jWebBrowser, double d);
 
+    void onJavaScriptCallback(JWebBrowser jWebBrowser, String functionName, Object[] arguments);
+
 }

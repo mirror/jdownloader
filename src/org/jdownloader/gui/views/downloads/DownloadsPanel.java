@@ -364,19 +364,12 @@ public class DownloadsPanel extends SwitchPanel implements DownloadControllerLis
         if (ret != null) {
             return ret;
         } else {
-            if (System.getProperty("nativeswing") != null) {
-                ret = createInternalBrowserView();
-            } else {
-                ret = createInternalOverview();
-            }
+
+            ret = createInternalOverview();
+
             overViewScrollBar.compareAndSet(null, ret);
         }
         return ret;
-    }
-
-    public HeaderScrollPane createInternalBrowserView() {
-        return org.jdownloader.gui.views.downloads.JBrowserWrapper.createView();
-
     }
 
     public HeaderScrollPane createInternalOverview() {
