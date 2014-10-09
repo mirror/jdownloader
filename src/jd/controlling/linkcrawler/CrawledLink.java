@@ -1,5 +1,6 @@
 package jd.controlling.linkcrawler;
 
+import java.util.Iterator;
 import java.util.List;
 
 import jd.controlling.linkcollector.LinkCollectingInformation;
@@ -27,7 +28,7 @@ import org.jdownloader.controlling.packagizer.PackagizerController;
 import org.jdownloader.extensions.extraction.BooleanStatus;
 import org.jdownloader.myjdownloader.client.json.AvailableLinkState;
 
-public class CrawledLink implements AbstractPackageChildrenNode<CrawledPackage>, CheckableLink, AbstractNodeNotifier {
+public class CrawledLink implements AbstractPackageChildrenNode<CrawledPackage>, CheckableLink, AbstractNodeNotifier, Iterable<CrawledLink> {
 
     private volatile boolean crawlDeep = false;
 
@@ -705,4 +706,32 @@ public class CrawledLink implements AbstractPackageChildrenNode<CrawledPackage>,
     public String getComment() {
         return getDownloadLink().getComment();
     }
+
+    @Override
+    public Iterator<CrawledLink> iterator() {
+        return new Iterator<CrawledLink>() {
+
+            private CrawledLink current = CrawledLink.this;
+
+            @Override
+            public boolean hasNext() {
+                return current != null;
+            }
+
+            @Override
+            public CrawledLink next() {
+                final CrawledLink ret = current;
+                if (current != null) {
+                    current = current.getSourceLink();
+                }
+                return ret;
+            }
+
+            @Override
+            public void remove() {
+                throw new UnsupportedOperationException();
+            }
+        };
+    }
+
 }
