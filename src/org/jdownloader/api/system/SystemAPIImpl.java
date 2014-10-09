@@ -3,6 +3,9 @@ package org.jdownloader.api.system;
 import jd.controlling.downloadcontroller.DownloadWatchDog;
 import jd.controlling.linkcollector.LinkCollector;
 
+import org.appwork.shutdown.ShutdownController;
+import org.appwork.shutdown.ShutdownEvent;
+import org.appwork.shutdown.ShutdownRequest;
 import org.appwork.utils.os.CrossSystem;
 import org.jdownloader.api.RemoteAPIController;
 import org.jdownloader.myjdownloader.client.bindings.interfaces.SystemInterface;
@@ -18,9 +21,20 @@ public class SystemAPIImpl implements SystemAPI {
     }
 
     @Override
-    public void shutdownOS(boolean force) {
+    public void shutdownOS(final boolean force) {
         stopJD();
-        CrossSystem.shutdownSystem(force);
+        ShutdownController.getInstance().addShutdownEvent(new ShutdownEvent() {
+
+            @Override
+            public int getHookPriority() {
+                return Integer.MIN_VALUE;
+            }
+
+            @Override
+            public void onShutdown(ShutdownRequest shutdownRequest) {
+                CrossSystem.shutdownSystem(force);
+            }
+        });
         RestartController.getInstance().exitAsynch(new ForcedShutdown());
     }
 
@@ -39,19 +53,27 @@ public class SystemAPIImpl implements SystemAPI {
     private void stopJD() {
         DownloadWatchDog.getInstance().stopDownloads();
         LinkCollector.getInstance().abort();
+        int maxWait = 5 * 1000;
+        while (DownloadWatchDog.getInstance().isIdle() == false && maxWait >= 0) {
+            try {
+                maxWait -= 500;
+                Thread.sleep(500);
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+                break;
+            }
+        }
     }
 
     @Override
     public void restartJD() {
-        DownloadWatchDog.getInstance().stopDownloads();
-        LinkCollector.getInstance().abort();
+        stopJD();
         RestartController.getInstance().asyncRestart(new SmartRlyRestartRequest());
     }
 
     @Override
     public void exitJD() {
-        DownloadWatchDog.getInstance().stopDownloads();
-        LinkCollector.getInstance().abort();
+        stopJD();
         RestartController.getInstance().exitAsynch(new SmartRlyExitRequest());
     }
 
