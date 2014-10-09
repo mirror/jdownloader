@@ -67,11 +67,13 @@ public class FileniumCom extends PluginForHost {
     }
 
     /** The list of server values displayed to the user */
-    private final String[]                                 domainsList        = new String[] { "filenium.com", "ams.filenium.com", "lon.filenium.com" };
-    private final String                                   domains            = "domains";
-    private String                                         SELECTEDDOMAIN     = domainsList[0];
-    private static HashMap<Account, HashMap<String, Long>> hostUnavailableMap = new HashMap<Account, HashMap<String, Long>>();
-    private static final String                            DLFAILED           = "<title>Error: Cannot get access at this time, check your link or advise us of this error to fix\\.</title>";
+    private final String[]                                 domainsList                    = new String[] { "filenium.com", "ams.filenium.com", "lon.filenium.com" };
+    private final String                                   domains                        = "domains";
+    private String                                         SELECTEDDOMAIN                 = domainsList[0];
+    private static String                                  ENABLE_TRAFFICLIMIT_WORKAROUND = "ENABLE_TRAFFICLIMIT_WORKAROUND";
+
+    private static HashMap<Account, HashMap<String, Long>> hostUnavailableMap             = new HashMap<Account, HashMap<String, Long>>();
+    private static final String                            DLFAILED                       = "<title>Error: Cannot get access at this time, check your link or advise us of this error to fix\\.</title>";
 
     public Browser newBrowser() {
         br = new Browser();
@@ -303,8 +305,13 @@ public class FileniumCom extends PluginForHost {
         final String traffic_max = br.getRegex("<maxdailytraffic>(\\d+)</maxdailytraffic>").getMatch(0);
         final String traffic_left = br.getRegex("<trafficleft>(\\d+)</trafficleft>").getMatch(0);
         final String expire = br.getRegex("(?i)<expiration\\-txt>([^<]+)").getMatch(0);
-        ai.setTrafficMax(Long.parseLong(traffic_max));
-        ai.setTrafficLeft(Long.parseLong(traffic_left));
+        if (this.getPluginConfig().getBooleanProperty(ENABLE_TRAFFICLIMIT_WORKAROUND, false)) {
+            /* Workaround for API bug */
+            ai.setUnlimitedTraffic();
+        } else {
+            ai.setTrafficMax(Long.parseLong(traffic_max));
+            ai.setTrafficLeft(Long.parseLong(traffic_left));
+        }
         if (expire != null) {
             ai.setValidUntil(TimeFormatter.getMilliSeconds(expire, "dd/MM/yyyy hh:mm:ss", Locale.ENGLISH));
         }
@@ -399,6 +406,8 @@ public class FileniumCom extends PluginForHost {
     }
 
     private void setConfigElements() {
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), ENABLE_TRAFFICLIMIT_WORKAROUND, JDL.L("plugins.hoster.FileniumCom.trafficlimit_workaround", "Enable unlimited traffic?\r\n[This will NOT actually get you unlimited traffic, it's only a workaround for the serverside 'ZERO traffic left' bug!]'")).setDefaultValue(false));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_SEPARATOR));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_COMBOBOX_INDEX, getPluginConfig(), domains, domainsList, JDL.L("plugins.host.FileniumCom.domains", "Use this domain:")).setDefaultValue(0));
     }
 
