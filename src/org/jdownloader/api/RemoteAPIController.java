@@ -71,6 +71,7 @@ import org.jdownloader.api.myjdownloader.MyJDownloaderPostRequest;
 import org.jdownloader.api.myjdownloader.MyJDownloaderRequestInterface;
 import org.jdownloader.api.plugins.PluginsAPIImpl;
 import org.jdownloader.api.polling.PollingAPIImpl;
+import org.jdownloader.api.system.SystemAPIImpl;
 import org.jdownloader.api.toolbar.JDownloaderToolBarAPIImpl;
 import org.jdownloader.logging.LogController;
 import org.jdownloader.myjdownloader.client.AbstractMyJDClient;
@@ -311,6 +312,7 @@ public class RemoteAPIController {
         register(new JDownloaderToolBarAPIImpl());
         register(new AccountAPIImpl());
         register(new AccountAPIImplV2());
+        register(new SystemAPIImpl());
         register(new LinkCollectorAPIImpl());
         register(new LinkCollectorAPIImplV2());
         register(new ContentAPIImpl());

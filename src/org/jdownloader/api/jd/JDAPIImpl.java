@@ -12,6 +12,7 @@ import org.appwork.utils.swing.dialog.Dialog;
 import org.jdownloader.plugins.controller.crawler.CrawlerPluginController;
 import org.jdownloader.plugins.controller.host.HostPluginController;
 
+@Deprecated
 public class JDAPIImpl implements JDAPI {
 
     public long uptime() {

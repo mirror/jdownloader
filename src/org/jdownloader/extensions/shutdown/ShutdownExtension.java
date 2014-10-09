@@ -567,12 +567,7 @@ public class ShutdownExtension extends AbstractExtension<ShutdownConfig, Shutdow
     }
 
     protected void doShutdown() {
-        if (shutdown != null) {
-            if (!shutdown.isAlive()) {
-                shutdown = new ShutDown();
-                shutdown.start();
-            }
-        } else {
+        if (shutdown == null || !shutdown.isAlive()) {
             shutdown = new ShutDown();
             shutdown.start();
         }
