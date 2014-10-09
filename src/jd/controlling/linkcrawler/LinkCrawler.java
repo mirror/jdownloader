@@ -1189,6 +1189,7 @@ public class LinkCrawler {
                 sources.add(current.getURL());
             }
         }
+        link.setSourceUrls(null);
         final String customSourceUrl = getReferrerUrl(link);
         if (customSourceUrl != null) {
             sources.add(customSourceUrl);
