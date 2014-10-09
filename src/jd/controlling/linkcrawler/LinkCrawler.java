@@ -5,6 +5,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -510,12 +511,27 @@ public class LinkCrawler {
     }
 
     protected void crawlDeeper(final CrawledLink source) {
+        final CrawledLinkModifier parentLinkModifier = source.getCustomCrawledLinkModifier();
         source.setCustomCrawledLinkModifier(null);
         final String[] sourceURLs = getAndClearSourceURLs(source);
         source.setBrokenCrawlerHandler(null);
         if (source == null || source.getURL() == null || duplicateFinderDeep.putIfAbsent(source.getURL(), this) != null || this.isCrawledLinkFiltered(source)) {
             return;
         }
+        final CrawledLinkModifier lm = new CrawledLinkModifier() {
+            /*
+             * this modifier sets the BrowserURL if not set yet
+             */
+            public void modifyCrawledLink(CrawledLink link) {
+                if (parentLinkModifier != null) {
+                    parentLinkModifier.modifyCrawledLink(link);
+                }
+                if (link.getDownloadLink() != null && link.getDownloadLink().getContainerUrl() == null) {
+                    link.getDownloadLink().setContainerUrl(source.getURL());
+                }
+            }
+
+        };
         if (checkStartNotify()) {
             try {
                 Browser br = null;
@@ -555,7 +571,7 @@ public class LinkCrawler {
                         possibleCryptedLinks = _crawl("directhttp://" + url, null, false);
                         if (possibleCryptedLinks != null && possibleCryptedLinks.size() >= 0) {
                             for (final CrawledLink possibleCryptedLink : possibleCryptedLinks) {
-                                forwardCrawledLinkInfos(source, possibleCryptedLink, null, sourceURLs);
+                                forwardCrawledLinkInfos(source, possibleCryptedLink, lm, sourceURLs);
                             }
                             crawl(possibleCryptedLinks);
                         }
@@ -571,7 +587,7 @@ public class LinkCrawler {
                         possibleCryptedLinks = _crawl(url, null, false);
                         if (possibleCryptedLinks != null) {
                             for (final CrawledLink possibleCryptedLink : possibleCryptedLinks) {
-                                forwardCrawledLinkInfos(source, possibleCryptedLink, null, sourceURLs);
+                                forwardCrawledLinkInfos(source, possibleCryptedLink, lm, sourceURLs);
                             }
                             if (possibleCryptedLinks.size() == 1) {
                                 /* first check if the url itself can be handled */
@@ -584,7 +600,7 @@ public class LinkCrawler {
                                         List<CrawledLink> possibleCryptedLinks2 = lc._crawl(browserContent, finalBaseUrl, false);
                                         if (possibleCryptedLinks2 != null && possibleCryptedLinks2.size() > 0) {
                                             for (final CrawledLink possibleCryptedLink : possibleCryptedLinks2) {
-                                                forwardCrawledLinkInfos(source, possibleCryptedLink, null, sourceURLs);
+                                                forwardCrawledLinkInfos(source, possibleCryptedLink, lm, sourceURLs);
                                             }
                                             lc.crawl(possibleCryptedLinks2);
                                         }
@@ -715,21 +731,24 @@ public class LinkCrawler {
 
     protected Boolean distributePluginC(final PluginsC pluginC, final int generation, final String url, final CrawledLink link) {
         if (pluginC.canHandle(url)) {
-            final java.util.List<CrawledLink> allPossibleCryptedLinks = getCrawlableLinks(pluginC.getSupportedLinks(), link, new CrawledLinkModifier() {
-                /*
-                 * set new LinkModifier, hides the url if needed
-                 */
-                public void modifyCrawledLink(CrawledLink link) {
-                    if (pluginC.hideLinks()) {
+            final CrawledLinkModifier lm;
+            if (pluginC.hideLinks()) {
+                lm = new CrawledLinkModifier() {
+                    /*
+                     * set new LinkModifier, hides the url if needed
+                     */
+                    public void modifyCrawledLink(CrawledLink link) {
                         /* we hide the links */
                         final DownloadLink dl = link.getDownloadLink();
                         if (dl != null) {
                             dl.setUrlProtection(UrlProtection.PROTECTED_CONTAINER);
-
                         }
                     }
-                }
-            });
+                };
+            } else {
+                lm = null;
+            }
+            final java.util.List<CrawledLink> allPossibleCryptedLinks = getCrawlableLinks(pluginC.getSupportedLinks(), link, lm);
             if (allPossibleCryptedLinks != null) {
                 if (insideCrawlerPlugin()) {
                     /*
@@ -1159,16 +1178,6 @@ public class LinkCrawler {
     }
 
     private String[] getAndClearSourceURLs(final CrawledLink link) {
-        return getAndClearSourceURLs(link, true);
-    }
-
-    private String[] getAndClearSourceURLs(final CrawledLink link, final boolean includeCustomSourceURL) {
-        final String[] sources = getSourceURLs(link, includeCustomSourceURL, true);
-        link.setSourceUrls(null);
-        return sources;
-    }
-
-    private String[] getSourceURLs(final CrawledLink link, final boolean includeCustomSourceURL, final boolean includeRawURL) {
         final ArrayList<String> sources = new ArrayList<String>();
         CrawledLink next = link;
         while (next != null) {
@@ -1179,21 +1188,15 @@ public class LinkCrawler {
             } else if (!StringUtils.equals(current.getURL(), sources.get(sources.size() - 1))) {
                 sources.add(current.getURL());
             }
-            if (includeRawURL && next != null && link.getDownloadLink() != null && next.getDownloadLink() == null && next.getCryptedLink() == null) {
-                /* ignore rawURLs when downloadLink exists */
-                next = next.getSourceLink();
-            }
         }
-        if (includeCustomSourceURL) {
-            final String customSourceUrl = getCustomSourceUrl(link);
-            if (customSourceUrl != null) {
-                sources.add(customSourceUrl);
-            }
+        final String customSourceUrl = getReferrerUrl(link);
+        if (customSourceUrl != null) {
+            sources.add(customSourceUrl);
         }
         return sources.toArray(new String[] {});
     }
 
-    private String getCustomSourceUrl(final CrawledLink link) {
+    private String getReferrerUrl(final CrawledLink link) {
         if (link != null) {
             if (link.getSourceJob() != null) {
                 final String customSourceUrl = link.getSourceJob().getCustomSourceUrl();
@@ -1240,9 +1243,9 @@ public class LinkCrawler {
      * @return
      */
     private DownloadLink getLatestDownloadLink(CrawledLink link) {
-        DownloadLink ret = link.getDownloadLink();
+        final DownloadLink ret = link.getDownloadLink();
         if (ret == null && link.getSourceLink() != null) {
-            ret = link.getSourceLink().getDownloadLink();
+            return link.getSourceLink().getDownloadLink();
         }
         return ret;
     }
@@ -1342,7 +1345,7 @@ public class LinkCrawler {
     }
 
     private void permanentOffline(CrawledLink link) {
-        DownloadLink dl = link.getDownloadLink();
+        final DownloadLink dl = link.getDownloadLink();
         try {
             if (dl != null && dl.getDefaultPlugin().getLazyP().getClassName().equals("jd.plugins.hoster.Offline")) {
                 PackageInfo dpi = link.getDesiredPackageInfo();
@@ -1388,7 +1391,7 @@ public class LinkCrawler {
                 dest.setContainerUrl(source.getContainerUrl());
             }
             if (source.getContentUrl() != null && dest.getContentUrl() == null) {
-                dest.setContentUrl(dest.getContentUrl());
+                dest.setContentUrl(source.getContentUrl());
             }
             if (source.getVerifiedFileSize() >= 0 && dest.getVerifiedFileSize() < 0) {
                 dest.setVerifiedFileSize(source.getVerifiedFileSize());
@@ -1406,7 +1409,9 @@ public class LinkCrawler {
                     }
                 }
             }
-            dest.setDownloadSize(source.getView().getBytesTotal());
+            if (source.getView().getBytesTotal() >= 0 && dest.getKnownDownloadSize() < 0) {
+                dest.setDownloadSize(source.getView().getBytesTotal());
+            }
             if (dest.getUrlProtection() == UrlProtection.UNSET && source.getUrlProtection() != UrlProtection.UNSET) {
                 dest.setUrlProtection(source.getUrlProtection());
             }
@@ -1638,17 +1643,6 @@ public class LinkCrawler {
                     /*
                      * set LinkCrawlerDistributer in case the plugin wants to add links in realtime
                      */
-                    final CrawledLinkModifier lm = new CrawledLinkModifier() {
-                        /*
-                         * this modifier sets the BrowserURL if not set yet
-                         */
-                        public void modifyCrawledLink(CrawledLink link) {
-                            if (parentLinkModifier != null) {
-                                parentLinkModifier.modifyCrawledLink(link);
-                            }
-                        }
-
-                    };
                     wplg.setDistributer(dist = new LinkCrawlerDistributer() {
 
                         final HashSet<DownloadLink> fastDuplicateDetector = new HashSet<DownloadLink>();
@@ -1689,10 +1683,17 @@ public class LinkCrawler {
                                                 link.setContentUrl(cryptedLink.getCryptedLink().getCryptedUrl());
                                             }
                                         }
+                                    } else {
+                                        /**
+                                         * this plugin returned multiple links, so we set containerURL (if not set yet)
+                                         */
+                                        if (distributeMultipleLinks && link.getContainerUrl() == null) {
+                                            link.setContainerUrl(cryptedLink.getCryptedLink().getCryptedUrl());
+                                        }
                                     }
-                                    CrawledLink ret = new CrawledLink(link);
-                                    possibleCryptedLinks.add(ret);
-                                    forwardCrawledLinkInfos(cryptedLink, ret, lm, sourceURLs);
+                                    final CrawledLink crawledLink = new CrawledLink(link);
+                                    possibleCryptedLinks.add(crawledLink);
+                                    forwardCrawledLinkInfos(cryptedLink, crawledLink, parentLinkModifier, sourceURLs);
                                 }
                             }
                             distribute.clear();
@@ -1816,89 +1817,94 @@ public class LinkCrawler {
         getHandler().handleUnHandledLink(link);
     }
 
-    protected void postprocessFinalCrawledLink(CrawledLink link) {
-        final DownloadLink dl = link.getDownloadLink();
-        if (dl != null) {
-            final String[] sources = getSourceURLs(link, false, false);
-            final HashSet<String> set = new HashSet<String>();
-            set.add(dl.getPluginPatternMatcher());
-            if (StringUtils.equals(dl.getPluginPatternMatcher(), dl.getContentUrl())) {
-                dl.setContentUrl(null);
+    private String getContentURL(final CrawledLink link) {
+        final DownloadLink downloadLink = link.getDownloadLink();
+        if (downloadLink != null) {
+            final String pluginURL = downloadLink.getPluginPatternMatcher();
+            final Iterator<CrawledLink> it = link.iterator();
+            while (it.hasNext()) {
+                final CrawledLink next = it.next();
+                if (next == link) {
+                    continue;
+                }
+                if (next.getDownloadLink() != null) {
+                    final String nextURL = cleanURL(next.getDownloadLink().getPluginPatternMatcher());
+                    if (nextURL != null && !StringUtils.equals(pluginURL, nextURL)) {
+                        return nextURL;
+                    }
+                } else {
+                    break;
+                }
             }
-            if (sources != null) {
-                int sourceIndex = 0;
-                if (sources.length > 1) {
-                    final String clean = cleanURL(sources[0]);
-                    if (StringUtils.equals(clean, sources[1])) {
-                        sourceIndex++;
-                    }
-                }
-                if (sources.length > sourceIndex && StringUtils.isEmpty(dl.getContentUrl())) {
-                    final String cUrl = cleanURL(sources[sourceIndex]);
-                    if (cUrl != null && set.add(cUrl)) {
-                        dl.setContentUrl(cUrl);
-                    }
-                } else if (StringUtils.isNotEmpty(dl.getContentUrl())) {
-                    set.add(dl.getContentUrl());
-                    // if content url is set, then
-                    // sources[0] is usually the pluginpattern,
-                    // sources[1] is usually the contentURL without variant information
-                    // if contentURL and patternurl do not equal, the container url is probably shifted
-                    // containerIndex++;
+        }
+        return null;
+    }
 
+    private String getOriginURL(final CrawledLink link) {
+        final DownloadLink downloadLink = link.getDownloadLink();
+        if (downloadLink != null) {
+            final String pluginURL = downloadLink.getPluginPatternMatcher();
+            final Iterator<CrawledLink> it = link.iterator();
+            String originURL = null;
+            while (it.hasNext()) {
+                final CrawledLink next = it.next();
+                if (next == link) {
+                    continue;
                 }
-                sourceIndex++;
-                if (StringUtils.isEmpty(dl.getContainerUrl())) {
-                    for (int i = sourceIndex; i < sources.length; i++) {
-                        sourceIndex = i;
-                        final String containerURL = cleanURL(sources[i]);
-                        if (containerURL != null) {
-                            if (containerURL.startsWith("http://dummycnl.jdownloader.org")) {
-                                // try to avoid dummycnl as containerurl;
-                                continue;
-                            }
-                            if (set.add(containerURL)) {
-                                dl.setContainerUrl(containerURL);
-                            }
-                        }
-                        break;
-                    }
-                } else {
-                    set.add(dl.getContainerUrl());
+                final String nextURL = cleanURL(next.getURL());
+                if (nextURL != null && !StringUtils.equals(pluginURL, nextURL)) {
+                    originURL = nextURL;
                 }
-                String referrerURL = dl.getReferrerUrl();
-                if (referrerURL == null) {
-                    referrerURL = getCustomSourceUrl(link);
+            }
+            return originURL;
+        }
+        return null;
+    }
+
+    protected void postprocessFinalCrawledLink(CrawledLink link) {
+        final DownloadLink downloadLink = link.getDownloadLink();
+        if (downloadLink != null) {
+            final HashSet<String> knownURLs = new HashSet<String>();
+            knownURLs.add(downloadLink.getPluginPatternMatcher());
+            if (downloadLink.getContentUrl() != null) {
+                if (StringUtils.equals(downloadLink.getPluginPatternMatcher(), downloadLink.getContentUrl())) {
+                    downloadLink.setContentUrl(null);
                 }
-                if (StringUtils.isEmpty(dl.getOriginUrl())) {
-                    String originURL = null;
-                    for (int i = sources.length - 1; i > 1; i--) {
-                        originURL = cleanURL(sources[i]);
-                        if (originURL != null) {
-                            if (StringUtils.equals(referrerURL, originURL)) {
-                                originURL = null;
-                            } else {
-                                break;
-                            }
-                        }
-                    }
-                    if (originURL == null) {
-                        final CrawledLink originalLink = link.getOriginLink();
-                        if (originalLink != null) {
-                            originURL = cleanURL(originalLink.getURL());
-                        }
-                    }
-                    if (originURL != null && (set.add(originURL) || StringUtils.equals(originURL, dl.getContainerUrl()))) {
-                        dl.setOriginUrl(originURL);
-                        if (StringUtils.equals(originURL, dl.getContainerUrl())) {
-                            dl.setContainerUrl(null);
-                        }
-                    }
-                } else {
-                    set.add(dl.getOriginUrl());
+                knownURLs.add(downloadLink.getContentUrl());
+            } else if (true || downloadLink.getContainerUrl() == null) {
+                /**
+                 * remove true in case we don't want a contentURL when containerURL is already set
+                 */
+                final String contentURL = getContentURL(link);
+                if (contentURL != null && knownURLs.add(contentURL)) {
+                    downloadLink.setContentUrl(contentURL);
                 }
-                if (referrerURL != null && set.add(referrerURL)) {
-                    dl.setReferrerUrl(referrerURL);
+            }
+
+            if (downloadLink.getContainerUrl() != null) {
+                /**
+                 * containerURLs are only set by crawl or crawlDeeper or manually
+                 */
+                knownURLs.add(downloadLink.getContainerUrl());
+            }
+
+            if (downloadLink.getOriginUrl() != null) {
+                knownURLs.add(downloadLink.getOriginUrl());
+            } else {
+                final String originURL = getOriginURL(link);
+                if (originURL != null && knownURLs.add(originURL)) {
+                    downloadLink.setOriginUrl(originURL);
+                }
+            }
+
+            if (StringUtils.equals(downloadLink.getOriginUrl(), downloadLink.getContainerUrl())) {
+                downloadLink.setContainerUrl(null);
+            }
+
+            if (downloadLink.getReferrerUrl() == null) {
+                final String referrerURL = getReferrerUrl(link);
+                if (referrerURL != null && knownURLs.add(referrerURL)) {
+                    downloadLink.setReferrerUrl(referrerURL);
                 }
             }
         }
@@ -1909,12 +1915,12 @@ public class LinkCrawler {
 
     protected String cleanURL(String cUrl) {
         String protocol = HTMLParser.getProtocol(cUrl);
-        if (protocol != null && !StringUtils.contains(cUrl, "decrypted.com/")) {
+        if (protocol != null && !StringUtils.contains(cUrl, "decrypted.com/") && !StringUtils.contains(cUrl, "dummycnl.jdownloader.org")) {
             if (StringUtils.containsIgnoreCase(protocol, "viajd")) {
                 return cUrl.replaceFirst("viajd", "");
             } else if (StringUtils.containsIgnoreCase(protocol, "directhttp")) {
                 return cUrl.replaceFirst("directhttp://", "");
-            } else if (protocol.startsWith("http")) {
+            } else if (protocol.startsWith("http") || protocol.startsWith("ftp")) {
                 return cUrl;
             }
         }
