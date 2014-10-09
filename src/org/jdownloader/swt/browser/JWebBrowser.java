@@ -1,5 +1,7 @@
 package org.jdownloader.swt.browser;
 
+import java.awt.BorderLayout;
+import java.awt.Dimension;
 import java.awt.Graphics;
 import java.awt.Window;
 import java.awt.event.HierarchyBoundsListener;
@@ -8,12 +10,15 @@ import java.awt.event.HierarchyListener;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 
+import javax.swing.JFrame;
+import javax.swing.JPanel;
 import javax.swing.SwingUtilities;
 import javax.swing.event.AncestorEvent;
 import javax.swing.event.AncestorListener;
 
 import org.appwork.scheduler.DelayedRunnable;
 import org.appwork.swing.MigPanel;
+import org.appwork.utils.os.CrossSystem;
 import org.appwork.utils.swing.EDTRunner;
 import org.appwork.utils.swing.SwingUtils;
 import org.eclipse.swt.SWT;
@@ -29,24 +34,78 @@ import org.eclipse.swt.events.DragDetectEvent;
 import org.eclipse.swt.events.DragDetectListener;
 import org.eclipse.swt.events.MenuDetectEvent;
 import org.eclipse.swt.events.MenuDetectListener;
+import org.jdownloader.swt.browser.events.JWebBrowserAdapter;
 import org.jdownloader.swt.browser.events.JWebBrowserEvent;
 import org.jdownloader.swt.browser.events.JWebBrowserEventSender;
 import org.jdownloader.swt.browser.events.JWebBrowserListener;
 
 public class JWebBrowser extends MigPanel implements ProgressListener, LocationListener, OpenWindowListener, VisibilityWindowListener, MenuDetectListener, DragDetectListener {
+    static {
+        if (CrossSystem.isWindows()) {
+            org.eclipse.swt.internal.win32.OS.CoInternetSetFeatureEnabled(org.eclipse.swt.internal.win32.OS.FEATURE_DISABLE_NAVIGATION_SOUNDS, org.eclipse.swt.internal.win32.OS.SET_FEATURE_ON_PROCESS, true);
+        }
+        if (CrossSystem.isLinux()) {
 
-    private SWTBrowser             swtbrowser;
-    private boolean                connected;
-    private Exception              connnectException;
+            System.setProperty("sun.awt.xembedserver", "true");
+        }
+    }
+
     private DelayedRunnable        delayer;
     private JWebBrowserEventSender eventSender;
+    private Browser                swtBrowser;
+    private SwtBrowserCanvas       canvas;
+
+    public static void main(String[] args) throws Exception {
+        // Required for Linux systems
+        System.setProperty("sun.awt.xembedserver", "true");
+        // start Dispatcher
+        SWTDummyDisplayDispatcher.getInstance().start();
+
+        new EDTRunner() {
+
+            @Override
+            protected void runInEDT() {
+                // Create container canvas. Note that the browser
+                // widget JWebBrowser not be created, yet.
+                final JWebBrowser browserCanvas = new JWebBrowser();
+                browserCanvas.getEventSender().addListener(new JWebBrowserAdapter() {
+                    @Override
+                    public void onInitComplete(JWebBrowser jWebBrowser) {
+                        jWebBrowser.getPage("http://installer.jdownloader.org/flash.html");
+                    }
+                });
+
+                browserCanvas.setPreferredSize(new Dimension(800, 600));
+                JPanel panel = new JPanel(new BorderLayout());
+                panel.add(browserCanvas, BorderLayout.CENTER);
+
+                // Add container to Frame
+                JFrame frame = new JFrame("My SWT Browser");
+                frame.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
+                frame.setContentPane(panel);
+
+                frame.pack();
+
+                // This is VERY important: Make the frame visible BEFORE
+                // connecting the SWT Shell and starting the event loop!
+                frame.setVisible(true);
+            }
+        };
+
+    }
+
+    @Override
+    public void addNotify() {
+        super.addNotify();
+
+    }
 
     public JWebBrowser() {
         super("ins 0", "[grow,fill]", "[grow,fill]");
-        swtbrowser = new SWTBrowser();
+        SWTDummyDisplayDispatcher.getInstance().ensureRunning();
+
         SwingUtils.setOpaque(this, false);
-        connected = false;
-        add(swtbrowser);
+
         eventSender = new JWebBrowserEventSender();
         delayer = new DelayedRunnable(250) {
 
@@ -56,22 +115,44 @@ public class JWebBrowser extends MigPanel implements ProgressListener, LocationL
 
                     @Override
                     protected void runInEDT() {
-                        setVisible(true);
+                        canvas.setVisible(true);
                     }
                 };
 
             }
         };
 
-        // connect after the parent window has been set visible
         addHierarchyListener(new HierarchyListener() {
 
             @Override
             public void hierarchyChanged(HierarchyEvent e) {
 
                 Window window = SwingUtilities.getWindowAncestor(JWebBrowser.this);
-                if (window != null) {
-                    connect();
+                if (window != null && window.isVisible()) {
+                    if (canvas == null) {
+                        canvas = SWTDummyDisplayDispatcher.getInstance().createBrowser();
+
+                        add(canvas);
+                        canvas.connect();
+                        swtBrowser = canvas.getBrowser();
+                        initHideOnResizeOrMove();
+                        asyncExec(new Runnable() {
+                            public void run() {
+                                init();
+                                eventSender.fireEvent(new JWebBrowserEvent() {
+
+                                    @Override
+                                    public void sendTo(JWebBrowserListener listener) {
+                                        listener.onInitComplete(JWebBrowser.this);
+                                    }
+
+                                });
+                                onConnected();
+                            }
+
+                        });
+                        initHideOnResizeOrMove();
+                    }
 
                     removeHierarchyListener(this);
 
@@ -79,6 +160,63 @@ public class JWebBrowser extends MigPanel implements ProgressListener, LocationL
             }
         });
 
+    }
+
+    private void initHideOnResizeOrMove() {
+        SwingUtilities.invokeLater(new Runnable() {
+
+            @Override
+            public void run() {
+
+                // Hide Browser on resize
+                addHierarchyBoundsListener(new HierarchyBoundsListener() {
+
+                    @Override
+                    public void ancestorResized(HierarchyEvent e) {
+                        if (e.getChanged() == SwingUtilities.getWindowAncestor(JWebBrowser.this)) {
+                            if (isVisible() || delayer.isDelayerActive()) {
+                                canvas.setVisible(false);
+                                delayer.resetAndStart();
+                            }
+                        }
+                    }
+
+                    @Override
+                    public void ancestorMoved(HierarchyEvent e) {
+                        if (e.getChanged() == SwingUtilities.getWindowAncestor(JWebBrowser.this)) {
+                            if (isVisible() || delayer.isDelayerActive()) {
+                                canvas.setVisible(false);
+                                delayer.resetAndStart();
+                            }
+                        }
+                    }
+                });
+
+                // Hide Browser on resize
+                addAncestorListener(new AncestorListener() {
+
+                    @Override
+                    public void ancestorRemoved(AncestorEvent event) {
+
+                    }
+
+                    @Override
+                    public void ancestorMoved(AncestorEvent e) {
+                        if (e.getAncestor() == SwingUtilities.getWindowAncestor(JWebBrowser.this)) {
+                            if (isVisible() || delayer.isDelayerActive()) {
+                                canvas.setVisible(false);
+                                delayer.resetAndStart();
+                            }
+                        }
+                    }
+
+                    @Override
+                    public void ancestorAdded(AncestorEvent event) {
+
+                    }
+                });
+            }
+        });
     }
 
     public JWebBrowserEventSender getEventSender() {
@@ -99,97 +237,9 @@ public class JWebBrowser extends MigPanel implements ProgressListener, LocationL
         super.paintComponent(g);
     }
 
-    public synchronized void connect() {
-        if (!connected) {
-            connected = true;
-            new Thread("Connect Thread") {
-                @Override
-                public void run() {
-                    try {
-                        swtbrowser.connect();
-                    } catch (Exception e) {
-                        JWebBrowser.this.connnectException = e;
-                    }
-                    SwingUtilities.invokeLater(new Runnable() {
-
-                        @Override
-                        public void run() {
-
-                            // Hide Browser on resize
-                            addHierarchyBoundsListener(new HierarchyBoundsListener() {
-
-                                @Override
-                                public void ancestorResized(HierarchyEvent e) {
-                                    if (e.getChanged() == SwingUtilities.getWindowAncestor(JWebBrowser.this)) {
-                                        if (isVisible() || delayer.isDelayerActive()) {
-                                            setVisible(false);
-                                            delayer.resetAndStart();
-                                        }
-                                    }
-                                }
-
-                                @Override
-                                public void ancestorMoved(HierarchyEvent e) {
-                                    if (e.getChanged() == SwingUtilities.getWindowAncestor(JWebBrowser.this)) {
-                                        if (isVisible() || delayer.isDelayerActive()) {
-                                            setVisible(false);
-                                            delayer.resetAndStart();
-                                        }
-                                    }
-                                }
-                            });
-
-                            // Hide Browser on resize
-                            addAncestorListener(new AncestorListener() {
-
-                                @Override
-                                public void ancestorRemoved(AncestorEvent event) {
-
-                                }
-
-                                @Override
-                                public void ancestorMoved(AncestorEvent e) {
-                                    if (e.getAncestor() == SwingUtilities.getWindowAncestor(JWebBrowser.this)) {
-                                        if (isVisible() || delayer.isDelayerActive()) {
-                                            setVisible(false);
-                                            delayer.resetAndStart();
-                                        }
-                                    }
-                                }
-
-                                @Override
-                                public void ancestorAdded(AncestorEvent event) {
-
-                                }
-                            });
-                        }
-                    });
-
-                    asyncExec(new Runnable() {
-                        public void run() {
-                            init();
-                            eventSender.fireEvent(new JWebBrowserEvent() {
-
-                                @Override
-                                public void sendTo(JWebBrowserListener listener) {
-                                    listener.onInitComplete(JWebBrowser.this);
-                                }
-
-                            });
-                            onConnected();
-                        }
-
-                    });
-
-                }
-            }.start();
-
-        }
-    }
-
     private void init() {
 
-        Browser swtb = swtbrowser.getBrowser();
+        Browser swtb = swtBrowser;
         swtb.addProgressListener(JWebBrowser.this);
         swtb.setJavascriptEnabled(true);
         swtb.addDragDetectListener(this);
@@ -206,7 +256,7 @@ public class JWebBrowser extends MigPanel implements ProgressListener, LocationL
 
             @Override
             public void run() {
-                ref.set(swtbrowser.getBrowser().getUrl());
+                ref.set(swtBrowser.getUrl());
             }
         });
         return ref.get();
@@ -218,7 +268,7 @@ public class JWebBrowser extends MigPanel implements ProgressListener, LocationL
 
             @Override
             public void run() {
-                ref.set(swtbrowser.getBrowser().getText());
+                ref.set(swtBrowser.getText());
             }
         });
         return ref.get();
@@ -231,7 +281,7 @@ public class JWebBrowser extends MigPanel implements ProgressListener, LocationL
             @Override
             public void run() {
 
-                ref.set(swtbrowser.getBrowser().evaluate(js));
+                ref.set(swtBrowser.evaluate(js));
             }
         });
         return ref.get();
@@ -252,14 +302,10 @@ public class JWebBrowser extends MigPanel implements ProgressListener, LocationL
 
             @Override
             public void run() {
-                // swtbrowser.doLayout();
-                swtbrowser.getBrowser().setRedraw(false);
-                swtbrowser.getBrowser().setVisible(false);
-                // swtbrowser.setSize(swtbrowser.getSize());
-                swtbrowser.getBrowser().setUrl(url);
-                swtbrowser.getBrowser().setVisible(true);
-                swtbrowser.getBrowser().setRedraw(true);
 
+                swtBrowser.setUrl(url);
+                canvas.getShell().setFullScreen(true);
+                canvas.getShell().pack();
             }
         });
 
@@ -270,7 +316,7 @@ public class JWebBrowser extends MigPanel implements ProgressListener, LocationL
 
             @Override
             public void run() {
-                swtbrowser.getBrowser().stop();
+                swtBrowser.stop();
             }
         });
     }
@@ -292,7 +338,7 @@ public class JWebBrowser extends MigPanel implements ProgressListener, LocationL
 
             @Override
             public void run() {
-                swtbrowser.getBrowser().setText(html, trusted);
+                swtBrowser.setText(html, trusted);
             }
         });
 
@@ -303,7 +349,7 @@ public class JWebBrowser extends MigPanel implements ProgressListener, LocationL
 
             @Override
             public void run() {
-                swtbrowser.getBrowser().setJavascriptEnabled(b);
+                swtBrowser.setJavascriptEnabled(b);
             }
         });
     }
@@ -314,18 +360,18 @@ public class JWebBrowser extends MigPanel implements ProgressListener, LocationL
 
             @Override
             public void run() {
-                ret.set(swtbrowser.getBrowser().getJavascriptEnabled());
+                ret.set(swtBrowser.getJavascriptEnabled());
             }
         });
         return ret.get();
     }
 
     private void syncExec(Runnable runnable) {
-        swtbrowser.getBrowser().getDisplay().syncExec(runnable);
+        swtBrowser.getDisplay().syncExec(runnable);
     }
 
     private void asyncExec(Runnable runnable) {
-        swtbrowser.getBrowser().getDisplay().asyncExec(runnable);
+        swtBrowser.getDisplay().asyncExec(runnable);
     }
 
     @Override
@@ -379,7 +425,7 @@ public class JWebBrowser extends MigPanel implements ProgressListener, LocationL
 
     @Override
     public void open(final WindowEvent event) {
-        final Browser newBrowser = new Browser(swtbrowser.getBrowser().getParent(), SWT.NONE);
+        final Browser newBrowser = new Browser(swtBrowser.getParent(), SWT.NONE);
 
         newBrowser.addLocationListener(new LocationListener() {
 
@@ -448,4 +494,9 @@ public class JWebBrowser extends MigPanel implements ProgressListener, LocationL
 
     }
 
+    public void runSizeCheck() {
+        System.out.println("This " + getSize());
+        System.out.println("Browser " + getSize());
+
+    }
 }

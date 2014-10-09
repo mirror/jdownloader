@@ -149,7 +149,19 @@ public class JBrowserWrapper {
                     }
 
                 });
+                p.add(new AppAction() {
+                    {
+                        setName("Size");
+                    }
 
+                    @Override
+                    public void actionPerformed(ActionEvent e) {
+
+                        webBrowser.runSizeCheck();
+
+                    }
+
+                });
                 p.show(webBrowser, e.getX(), e.getY());
             }
         });
