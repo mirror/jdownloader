@@ -652,7 +652,7 @@ public class DirectHTTP extends PluginForHost {
         this.setBrowserExclusive();
         /* disable gzip, because current downloadsystem cannot handle it correct */
         // identity can have adverse effects also!
-        // this.br.getHeaders().put("Accept-Encoding", "identity");
+        this.br.getHeaders().put("Accept-Encoding", "identity");
         final String authinURL = new Regex(downloadLink.getDownloadURL(), "https?://(.+)@.*?($|/)").getMatch(0);
         String authSaved = null;
         String authProperty = null;
@@ -698,7 +698,7 @@ public class DirectHTTP extends PluginForHost {
                     this.br.getHeaders().remove("Authorization");
                 }
                 // test, identifying as german will redirect on direct links... http://s7.convert-video-online.com/d/s7akkxicih.mp4
-                br.getHeaders().put("Accept-Language", "en");
+                // br.getHeaders().put("Accept-Language", "en");
                 urlConnection = this.prepareConnection(this.br, downloadLink);
                 String urlParams = null;
                 if ((urlConnection.getResponseCode() == 401 || urlConnection.getResponseCode() == 400 || urlConnection.getResponseCode() == 404 || urlConnection.getResponseCode() == 403) && (urlParams = downloadLink.getStringProperty(DirectHTTP.POSSIBLE_URLPARAM, null)) != null) {
