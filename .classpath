@@ -77,7 +77,7 @@
 	<classpathentry kind="lib" path="ressourcen/libs/UPNP/seamless-http.jar"/>
 	<classpathentry kind="lib" path="ressourcen/libs/UPNP/seamless-util.jar"/>
 	<classpathentry kind="lib" path="ressourcen/libs/UPNP/seamless-xml.jar"/>
-	<classpathentry kind="lib" path="/AppWorkUtils/libs/proxyVole.jar" sourcepath="C:/Users/Thomas/Downloads/proxy-vole_20131209_src.zip"/>
+	<classpathentry kind="lib" path="/AppWorkUtils/libs/proxyVole.jar"/>
 	<classpathentry kind="lib" path="ressourcen/libs/savemytube.jar"/>
 	<classpathentry kind="lib" path="ressourcen/libs/htmlunit-core-js.jar"/>
 	<classpathentry kind="lib" path="ressourcen/libs/js.jar"/>
