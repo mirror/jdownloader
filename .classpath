@@ -84,6 +84,6 @@
 	<classpathentry kind="lib" path="ressourcen/libs/laf/syntheticaAluOxide.jar"/>
 	<classpathentry kind="lib" path="ressourcen/libs/laf/syntheticaBlueLight.jar"/>
 	<classpathentry kind="lib" path="ressourcen/libs/laf/syntheticaClassy.jar"/>
-	<classpathentry kind="lib" path="ressourcen/libs/swt/windows/x64/swt.jar" sourcepath="dev/libs/SWT/src.zip"/>
+	<classpathentry kind="var" path="SWT_PLATFORM/swt.jar" sourcepath="dev/libs/SWT/src.zip"/>
 	<classpathentry kind="output" path="bin"/>
 </classpath>
