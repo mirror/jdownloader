@@ -7,6 +7,7 @@ import java.awt.Window;
 import java.awt.event.HierarchyBoundsListener;
 import java.awt.event.HierarchyEvent;
 import java.awt.event.HierarchyListener;
+import java.lang.reflect.Method;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 
@@ -16,6 +17,7 @@ import javax.swing.SwingUtilities;
 import javax.swing.event.AncestorEvent;
 import javax.swing.event.AncestorListener;
 
+import org.appwork.exceptions.WTFException;
 import org.appwork.scheduler.DelayedRunnable;
 import org.appwork.swing.MigPanel;
 import org.appwork.utils.os.CrossSystem;
@@ -42,7 +44,15 @@ import org.jdownloader.swt.browser.events.JWebBrowserListener;
 public class JWebBrowser extends MigPanel implements ProgressListener, LocationListener, OpenWindowListener, VisibilityWindowListener, MenuDetectListener, DragDetectListener {
     static {
         if (CrossSystem.isWindows()) {
-            org.eclipse.swt.internal.win32.OS.CoInternetSetFeatureEnabled(org.eclipse.swt.internal.win32.OS.FEATURE_DISABLE_NAVIGATION_SOUNDS, org.eclipse.swt.internal.win32.OS.SET_FEATURE_ON_PROCESS, true);
+            Class<?> cls;
+            try {
+                cls = Class.forName("org.eclipse.swt.internal.win32.OS");
+
+                Method method = cls.getMethod("CoInternetSetFeatureEnabled", new Class[] { int.class, int.class, boolean.class });
+                method.invoke(null, org.eclipse.swt.internal.win32.OS.FEATURE_DISABLE_NAVIGATION_SOUNDS, org.eclipse.swt.internal.win32.OS.SET_FEATURE_ON_PROCESS, true);
+            } catch (Throwable e) {
+                throw new WTFException("SWT Library Missing ", e);
+            }
         }
         if (CrossSystem.isLinux()) {
 
