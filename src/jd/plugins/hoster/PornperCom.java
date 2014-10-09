@@ -41,7 +41,7 @@ public class PornperCom extends PluginForHost {
 
     @Override
     public String getAGBLink() {
-        return "http://www.myjizztube.com/tos.php";
+        return "http://www.pornper.com/static/terms";
     }
 
     @Override

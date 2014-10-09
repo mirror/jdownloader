@@ -518,7 +518,6 @@ public class FaceBookComGallery extends PluginForDecrypt {
 
         for (int i = 1; i <= MAX_LOOPS_GENERAL; i++) {
             int currentMaxPicCount = 28;
-
             String[] links;
             if (i > 1) {
                 final String currentLastFbid = getLastFBID();
@@ -1044,6 +1043,9 @@ public class FaceBookComGallery extends PluginForDecrypt {
         }
         if (currentLastFbid == null) {
             currentLastFbid = br.getRegex("\"last_fbid\":(\\d+)").getMatch(0);
+        }
+        if (currentLastFbid == null) {
+            currentLastFbid = br.getRegex("\"last_fbid\":\"(\\d+)\"").getMatch(0);
         }
         return currentLastFbid;
     }
