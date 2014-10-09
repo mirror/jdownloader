@@ -7,7 +7,7 @@ import org.jdownloader.myjdownloader.client.AbstractMyJDClientForDesktopJVM;
 import org.jdownloader.myjdownloader.client.json.DeviceData;
 import org.jdownloader.myjdownloader.client.json.DeviceList;
 
-public class GenericCallTest extends Test {
+public class SystemTest extends Test {
 
     @Override
     public void run(Storage config, AbstractMyJDClientForDesktopJVM api) throws Exception {
@@ -15,12 +15,15 @@ public class GenericCallTest extends Test {
         if (list.getList().size() == 0) {
             throw new RuntimeException("No Device Connected");
         }
+
         final int device = Dialog.getInstance().showComboDialog(0, "Choose Device", "Choose Device", list.getList().toArray(new DeviceData[] {}), 0, null, null, null, null);
-        final String cmd = Dialog.getInstance().showInputDialog(0, "Enter Command", "Enter", config.get("cmd", "/jd/doSomethingCool"), null, null, null);
-        config.put("cmd", cmd);
-        final Object uptime = api.callAction(list.getList().get(device).getId(), cmd, Object.class);
-        Dialog.getInstance().showInputDialog(Dialog.STYLE_LARGE, "Result", "" + uptime);
 
+        String[] options = { "exitJD", "restartJD", "shutdownOS", "hibernateOS", "standbyOS" };
+        String task = (String) Dialog.getInstance().showComboDialog(0, "Test System", "Choose Task", options, options[0], null, null, null, null);
+        if (task.equals("shutdownOS")) {
+            task += "?true";
+        }
+        api.callAction(list.getList().get(device).getId(), "/system/" + task, Object.class);
+        Dialog.getInstance().showMessageDialog("JD should react on action '" + task + "'.");
     }
-
 }
