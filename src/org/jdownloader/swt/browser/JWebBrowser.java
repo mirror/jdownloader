@@ -49,7 +49,11 @@ public class JWebBrowser extends MigPanel implements ProgressListener, LocationL
                 cls = Class.forName("org.eclipse.swt.internal.win32.OS");
 
                 Method method = cls.getMethod("CoInternetSetFeatureEnabled", new Class[] { int.class, int.class, boolean.class });
-                method.invoke(null, org.eclipse.swt.internal.win32.OS.FEATURE_DISABLE_NAVIGATION_SOUNDS, org.eclipse.swt.internal.win32.OS.SET_FEATURE_ON_PROCESS, true);
+                method.invoke(null, /* org.eclipse.swt.internal.win32.OS.FEATURE_DISABLE_NAVIGATION_SOUNDS */32, /*
+                                                                                                                  * org.eclipse.swt.internal.
+                                                                                                                  * win32
+                                                                                                                  * .OS.SET_FEATURE_ON_PROCESS
+                                                                                                                  */2, true);
             } catch (Throwable e) {
                 throw new WTFException("SWT Library Missing ", e);
             }
