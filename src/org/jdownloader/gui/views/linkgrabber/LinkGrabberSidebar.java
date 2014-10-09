@@ -1,5 +1,11 @@
 package org.jdownloader.gui.views.linkgrabber;
 
+import java.io.IOException;
+
+import javax.swing.Box;
+
+import jd.http.Browser;
+
 import org.appwork.storage.config.ValidationException;
 import org.appwork.storage.config.events.GenericConfigEventListener;
 import org.appwork.storage.config.handler.KeyHandler;
@@ -10,6 +16,9 @@ import org.jdownloader.gui.views.linkgrabber.quickfilter.CustomFilterHeader;
 import org.jdownloader.gui.views.linkgrabber.quickfilter.QuickFilterExceptionsTable;
 import org.jdownloader.gui.views.linkgrabber.quickfilter.QuickFilterHosterTable;
 import org.jdownloader.gui.views.linkgrabber.quickfilter.QuickFilterTypeTable;
+import org.jdownloader.updatev2.SimpleHttpInterface;
+import org.jdownloader.updatev2.SimpleHttpResponse;
+import org.jdownloader.updatev2.SponsoringPanelInterface;
 import org.jdownloader.updatev2.gui.LAFOptions;
 
 public class LinkGrabberSidebar extends MigPanel {
@@ -62,6 +71,33 @@ public class LinkGrabberSidebar extends MigPanel {
         add(filetypeFilterTable, "hidemode 3");
         add(hosterFilter, "gaptop 7,hidemode 3");
         add(hosterFilterTable, "hidemode 3");
+
+        if (System.getProperty("nativeswing") != null) {
+            try {
+                SponsoringPanelInterface panel = (SponsoringPanelInterface) Class.forName("org.jdownloader.sponsor.bt.BTSponsoringPanel").newInstance();
+                panel.setHttpClient(new SimpleHttpInterface() {
+
+                    @Override
+                    public SimpleHttpResponse get(final String url) throws IOException {
+                        final String str = new Browser().getPage(url);
+                        return new SimpleHttpResponse() {
+
+                            @Override
+                            public String getHtmlText() {
+
+                                return str;
+
+                            }
+                        };
+                    }
+                });
+                add(Box.createVerticalGlue(), "pushy,growy");
+                add(panel.getPanel(), "hidemode 3");
+                panel.init();
+            } catch (Throwable t) {
+                t.printStackTrace();
+            }
+        }
 
     }
 }

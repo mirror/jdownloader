@@ -7,6 +7,10 @@ import org.appwork.utils.logging2.LogSource;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.awt.SWT_AWT;
 import org.eclipse.swt.browser.Browser;
+import org.eclipse.swt.browser.CloseWindowListener;
+import org.eclipse.swt.browser.VisibilityWindowListener;
+import org.eclipse.swt.browser.WindowEvent;
+import org.eclipse.swt.graphics.Point;
 import org.eclipse.swt.layout.FillLayout;
 import org.eclipse.swt.widgets.Display;
 import org.eclipse.swt.widgets.Shell;
@@ -61,12 +65,40 @@ public class SWTDummyDisplayDispatcher {
                     public void run() {
                         final Shell shell = SWT_AWT.new_Shell(display, canvas);
                         shell.setLayout(new FillLayout());
-                        Browser browser = new Browser(shell, SWT.NONE);
+                        final Browser browser = new Browser(shell, SWT.NONE);
                         browser.setLayout(new FillLayout());
                         setBrowser(browser);
 
                         setShell(shell);
                         shell.open();
+                        browser.addCloseWindowListener(new CloseWindowListener() {
+
+                            @Override
+                            public void close(WindowEvent paramWindowEvent) {
+
+                                shell.close();
+                            }
+                        });
+
+                        browser.addVisibilityWindowListener(new VisibilityWindowListener() {
+
+                            @Override
+                            public void show(WindowEvent event) {
+                                if (event.location != null) {
+                                    shell.setLocation(event.location);
+                                }
+                                if (event.size != null) {
+                                    Point size = event.size;
+                                    shell.setSize(shell.computeSize(size.x, size.y));
+                                }
+                                shell.open();
+                            }
+
+                            @Override
+                            public void hide(WindowEvent paramWindowEvent) {
+                                shell.setVisible(false);
+                            }
+                        });
                     }
                 });
 
@@ -94,6 +126,7 @@ public class SWTDummyDisplayDispatcher {
                         try {
 
                             while (!isInterrupted()) {
+
                                 if (!display.readAndDispatch()) {
                                     display.sleep();
                                 }
