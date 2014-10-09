@@ -173,13 +173,17 @@ public class DocsGoogleCom extends PluginForHost {
         if (dllink == null) {
             dllink = streamLink;
         }
+        boolean resume = false;
         int maxChunks = 0;
-        if (downloadLink.getBooleanProperty(DocsGoogleCom.NOCHUNKS, false)) {
+        if (downloadLink.getBooleanProperty(DocsGoogleCom.NOCHUNKS, false) || !resume) {
             maxChunks = 1;
         }
         br.setFollowRedirects(true);
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, maxChunks);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, resume, maxChunks);
         if (dl.getConnection().getContentType().contains("html")) {
+            if (dl.getConnection().getResponseCode() == 416) {
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 416", 5 * 60 * 1000l);
+            }
             br.followConnection();
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
