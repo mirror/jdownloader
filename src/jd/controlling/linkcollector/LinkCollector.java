@@ -1571,6 +1571,27 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
         }
     }
 
+    private class LoadedPackage {
+        private CrawledPackage                      crawledPackage = null;
+        private final HashMap<Integer, CrawledLink> crawledLinks   = new HashMap<Integer, CrawledLink>();
+
+        private CrawledPackage getLoadedPackage() {
+            if (crawledPackage != null) {
+                if (crawledPackage.getChildren().size() == 0) {
+                    final List<Integer> childIndices = new ArrayList<Integer>(crawledLinks.keySet());
+                    Collections.sort(childIndices);
+                    for (final Integer childIndex : childIndices) {
+                        final CrawledLink child = crawledLinks.get(childIndex);
+                        crawledPackage.getChildren().add(child);
+                        child.setParentNode(crawledPackage);
+                    }
+                }
+                return crawledPackage;
+            }
+            return null;
+        }
+    }
+
     private LinkedList<CrawledPackage> load(File file, HashMap<CrawledPackage, CrawledPackageStorable> restoreMap) {
         LinkedList<CrawledPackage> ret = null;
         if (file != null && file.exists()) {
@@ -1578,7 +1599,7 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
             try {
                 zip = new ZipIOReader(file);
                 /* lets restore the CrawledPackages from Json */
-                HashMap<Integer, CrawledPackage> map = new HashMap<Integer, CrawledPackage>();
+                final HashMap<Integer, LoadedPackage> packageMap = new HashMap<Integer, LoadedPackage>();
                 InputStream is = null;
                 LinkCollectorStorable lcs = null;
                 final ByteArrayOutputStream byteBuffer = new ByteArrayOutputStream(32767) {
@@ -1592,15 +1613,39 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
                     byteBuffer.reset();
                     String json = null;
                     try {
-                        if (entry.getName().matches("^\\d+$")) {
-                            int packageIndex = Integer.parseInt(entry.getName());
+                        if (entry.getName().matches("^\\d+_\\d+$")) {
+                            final String idx[] = entry.getName().split("_");
+                            final Integer packageIndex = Integer.valueOf(idx[0]);
+                            final Integer childIndex = Integer.valueOf(idx[1]);
+                            LoadedPackage loadedPackage = packageMap.get(packageIndex);
+                            if (loadedPackage == null) {
+                                loadedPackage = new LoadedPackage();
+                                packageMap.put(packageIndex, loadedPackage);
+                            }
                             is = zip.getInputStream(entry);
-                            byte[] bytes = IO.readStream((int) entry.getSize(), is, byteBuffer, true);
+                            final byte[] bytes = IO.readStream((int) entry.getSize(), is, byteBuffer, true);
                             json = new String(bytes, 0, byteBuffer.size(), "UTF-8");
-                            CrawledPackageStorable storable = JSonStorage.restoreFromString(json, new TypeRef<CrawledPackageStorable>() {
+                            final CrawledLinkStorable storable = JSonStorage.restoreFromString(json, new TypeRef<CrawledLinkStorable>() {
                             }, null);
                             if (storable != null) {
-                                map.put(packageIndex, storable._getCrawledPackage());
+                                loadedPackage.crawledLinks.put(childIndex, storable._getCrawledLink());
+                            } else {
+                                throw new WTFException("restored a null CrawledLinkStorable");
+                            }
+                        } else if (entry.getName().matches("^\\d+$")) {
+                            final Integer packageIndex = Integer.valueOf(entry.getName());
+                            is = zip.getInputStream(entry);
+                            final byte[] bytes = IO.readStream((int) entry.getSize(), is, byteBuffer, true);
+                            json = new String(bytes, 0, byteBuffer.size(), "UTF-8");
+                            final CrawledPackageStorable storable = JSonStorage.restoreFromString(json, new TypeRef<CrawledPackageStorable>() {
+                            }, null);
+                            if (storable != null) {
+                                LoadedPackage loadedPackage = packageMap.get(packageIndex);
+                                if (loadedPackage == null) {
+                                    loadedPackage = new LoadedPackage();
+                                    packageMap.put(packageIndex, loadedPackage);
+                                }
+                                loadedPackage.crawledPackage = storable._getCrawledPackage();
                                 if (restoreMap != null) {
                                     restoreMap.put(storable._getCrawledPackage(), storable);
                                 }
@@ -1609,9 +1654,8 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
                             }
                         } else if ("extraInfo".equalsIgnoreCase(entry.getName())) {
                             is = zip.getInputStream(entry);
-                            byte[] bytes = IO.readStream((int) entry.getSize(), is, byteBuffer, true);
+                            final byte[] bytes = IO.readStream((int) entry.getSize(), is, byteBuffer, true);
                             json = new String(bytes, 0, byteBuffer.size(), "UTF-8");
-                            bytes = null;
                             lcs = JSonStorage.stringToObject(json, new TypeRef<LinkCollectorStorable>() {
                             }, null);
                         }
@@ -1632,12 +1676,18 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
                     }
                 }
                 /* sort positions */
-                java.util.List<Integer> positions = new ArrayList<Integer>(map.keySet());
-                Collections.sort(positions);
+                final List<Integer> packageIndices = new ArrayList<Integer>(packageMap.keySet());
+                Collections.sort(packageIndices);
                 /* build final ArrayList of CrawledPackage */
-                java.util.List<CrawledPackage> ret2 = new ArrayList<CrawledPackage>(positions.size());
-                for (Integer position : positions) {
-                    ret2.add(map.get(position));
+                final List<CrawledPackage> ret2 = new ArrayList<CrawledPackage>(packageIndices.size());
+                for (final Integer packageIndex : packageIndices) {
+                    final LoadedPackage loadedPackage = packageMap.get(packageIndex);
+                    final CrawledPackage crawledPackage = loadedPackage.getLoadedPackage();
+                    if (crawledPackage != null) {
+                        ret2.add(crawledPackage);
+                    } else {
+                        throw new WTFException("CrawledPackage at Index " + packageIndex + " is missing!");
+                    }
                 }
                 if (lcs != null && JsonConfig.create(GeneralSettings.class).isConvertRelativePathsJDRoot()) {
                     try {
@@ -1668,8 +1718,6 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
                         logger.log(e);
                     }
                 }
-                map = null;
-                positions = null;
                 ret = new LinkedList<CrawledPackage>(ret2);
             } catch (final Throwable e) {
                 try {
@@ -1754,11 +1802,12 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
                                 throw new IOException("Could not create parentFolder for file " + file);
                             }
                         }
-                        int index = 0;
                         /* prepare formatter for package filenames in zipfiles */
-                        String format = "%02d";
+                        final String packageFormat;
                         if (packages.size() >= 10) {
-                            format = String.format("%%0%dd", (int) Math.log10(packages.size()) + 1);
+                            packageFormat = String.format("%%0%dd", (int) Math.log10(packages.size()) + 1);
+                        } else {
+                            packageFormat = "%02d";
                         }
                         fos = new FileOutputStream(file) {
                             @Override
@@ -1770,27 +1819,28 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
                             }
                         };
                         zip = new ZipIOWriter(new BufferedOutputStream(fos, bufferSize));
+                        int packageIndex = 0;
                         for (final CrawledPackage pkg : packages) {
                             /* convert FilePackage to JSon */
-                            final CrawledPackageStorable storable = new CrawledPackageStorable(pkg);
+                            final CrawledPackageStorable packageStorable = new CrawledPackageStorable(pkg);
                             /* save packageID */
                             final CrawledPackageMappingID crawledPackageMappingID = LinkCollector.this.getPackageMapID(pkg);
                             if (crawledPackageMappingID != null) {
-                                storable.setPackageID(crawledPackageMappingID.getCombined());
+                                packageStorable.setPackageID(crawledPackageMappingID.getCombined());
                             }
-                            if (!CrawledPackageStorable.TYPE.NORMAL.equals(storable.getType())) {
-                                if (CrawledPackageStorable.TYPE.VARIOUS.equals(storable.getType())) {
+                            if (!CrawledPackageStorable.TYPE.NORMAL.equals(packageStorable.getType())) {
+                                if (CrawledPackageStorable.TYPE.VARIOUS.equals(packageStorable.getType())) {
                                     /* save ID for variousMap */
-                                    for (CrawledLinkStorable link : storable.getLinks()) {
+                                    for (CrawledLinkStorable link : packageStorable.getLinks()) {
                                         final CrawledLink cLink = link._getCrawledLink();
                                         final CrawledPackageMappingID id = getIDFromMap(variousMap, cLink);
                                         if (id != null) {
                                             link.setID(id.getCombined());
                                         }
                                     }
-                                } else if (CrawledPackageStorable.TYPE.OFFLINE.equals(storable.getType())) {
+                                } else if (CrawledPackageStorable.TYPE.OFFLINE.equals(packageStorable.getType())) {
                                     /* save ID for offlineMap */
-                                    for (CrawledLinkStorable link : storable.getLinks()) {
+                                    for (CrawledLinkStorable link : packageStorable.getLinks()) {
                                         final CrawledLink cLink = link._getCrawledLink();
                                         final CrawledPackageMappingID id = getIDFromMap(offlineMap, cLink);
                                         if (id != null) {
@@ -1799,9 +1849,21 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
                                     }
                                 }
                             }
-                            final String string = JSonStorage.serializeToJson(storable);
-                            byte[] bytes = string.getBytes("UTF-8");
-                            zip.addByteArry(bytes, true, "", String.format(format, (index++)));
+                            final List<CrawledLinkStorable> linkStorables = new ArrayList<CrawledLinkStorable>(packageStorable.getLinks());
+                            packageStorable.getLinks().clear();
+                            final String packageEntryID = String.format(packageFormat, packageIndex++);
+                            zip.addByteArry(JSonStorage.serializeToJson(packageStorable).getBytes("UTF-8"), true, "", packageEntryID);
+                            final String childFormat;
+                            if (linkStorables.size() >= 10) {
+                                childFormat = String.format("%%0%dd", (int) Math.log10(packages.size()) + 1);
+                            } else {
+                                childFormat = "%02d";
+                            }
+                            int childIndex = 0;
+                            for (final CrawledLinkStorable linkStorable : linkStorables) {
+                                final String childEntryID = String.format(childFormat, childIndex++);
+                                zip.addByteArry(JSonStorage.serializeToJson(linkStorable).getBytes("UTF-8"), true, "", packageEntryID + "_" + childEntryID);
+                            }
                         }
                         LinkCollectorStorable lcs = new LinkCollectorStorable();
                         try {

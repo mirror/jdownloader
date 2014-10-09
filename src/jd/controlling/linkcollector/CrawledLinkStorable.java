@@ -55,11 +55,6 @@ public class CrawledLinkStorable implements Storable {
         return link.getSourceUrls();
     }
 
-    public String getOrigin() {
-        if (link.getOrigin() == null) return null;
-        return link.getOrigin().getOrigin().name();
-    }
-
     public static class LinkOriginStorable implements Storable {
         public LinkOriginStorable(/* Storable */) {
         }
@@ -91,21 +86,10 @@ public class CrawledLinkStorable implements Storable {
 
     public LinkOriginStorable getOriginDetails() {
         LinkOriginDetails origin = link.getOrigin();
-        if (origin == null) return null;
-        return new LinkOriginStorable(origin);
-    }
-
-    @Deprecated
-    public void setOrigin(String origin) {
-        if (origin != null) {
-            try {
-                LinkOrigin enu = LinkOrigin.valueOf(origin);
-                link.setOrigin(new LinkOriginDetails(enu, null));
-            } catch (Exception e) {
-                e.printStackTrace();
-            }
+        if (origin == null) {
+            return null;
         }
-
+        return new LinkOriginStorable(origin);
     }
 
     public void setOriginDetails(LinkOriginStorable origin) {
@@ -117,12 +101,13 @@ public class CrawledLinkStorable implements Storable {
                 e.printStackTrace();
             }
         }
-
     }
 
     public long getUID() {
         DownloadLink dll = link.getDownloadLink();
-        if (dll != null) return dll.getUniqueID().getID();
+        if (dll != null) {
+            return dll.getUniqueID().getID();
+        }
         return link.getUniqueID().getID();
     }
 
@@ -156,21 +141,29 @@ public class CrawledLinkStorable implements Storable {
     public CrawledLink _getCrawledLink() {
         DownloadLink dll = link.getDownloadLink();
         if (dll != null) {
-            if (UID != -1) dll.getUniqueID().setID(UID);
+            if (UID != -1) {
+                dll.getUniqueID().setID(UID);
+            }
         }
-        if (UID != -1) link.getUniqueID().setID(UID);
+        if (UID != -1) {
+            link.getUniqueID().setID(UID);
+        }
         return link;
     }
 
     public ArchiveInfoStorable getArchiveInfo() {
-        if (link.hasArchiveInfo()) return new ArchiveInfoStorable(link.getArchiveInfo());
+        if (link.hasArchiveInfo()) {
+            return new ArchiveInfoStorable(link.getArchiveInfo());
+        }
         return null;
     }
 
     public void setArchiveInfo(ArchiveInfoStorable info) {
         if (info != null) {
             boolean setArchiveInfo = !BooleanStatus.UNSET.equals(info.getAutoExtract());
-            if (setArchiveInfo == false) setArchiveInfo = info.getExtractionPasswords() != null && info.getExtractionPasswords().size() > 0;
+            if (setArchiveInfo == false) {
+                setArchiveInfo = info.getExtractionPasswords() != null && info.getExtractionPasswords().size() > 0;
+            }
             if (setArchiveInfo) {
                 link.setArchiveInfo(info._getArchiveInfo());
             }
