@@ -199,6 +199,8 @@ public class TestClient {
 
         register(new GenericCallTest());
 
+        register(new SystemTest());
+
         register(new CaptchaListTest());
 
         register(new WriteSessionTest());
