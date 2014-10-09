@@ -502,6 +502,27 @@ public class DownloadController extends PackageController<FilePackage, DownloadL
         });
     }
 
+    private class LoadedPackage {
+        private FilePackage                          filePackage   = null;
+        private final HashMap<Integer, DownloadLink> downloadLinks = new HashMap<Integer, DownloadLink>();
+
+        private FilePackage getLoadedPackage() {
+            if (filePackage != null) {
+                if (filePackage.getChildren().size() == 0) {
+                    final List<Integer> childIndices = new ArrayList<Integer>(downloadLinks.keySet());
+                    Collections.sort(childIndices);
+                    for (final Integer childIndex : childIndices) {
+                        final DownloadLink child = downloadLinks.get(childIndex);
+                        filePackage.getChildren().add(child);
+                        child.setParentNode(filePackage);
+                    }
+                }
+                return filePackage;
+            }
+            return null;
+        }
+    }
+
     private LinkedList<FilePackage> load(File file) {
         logger.info("Load List: " + file);
         synchronized (SAVELOADLOCK) {
@@ -511,7 +532,7 @@ public class DownloadController extends PackageController<FilePackage, DownloadL
                 try {
                     zip = new ZipIOReader(file);
                     /* lets restore the FilePackages from Json */
-                    HashMap<Integer, FilePackage> map = new HashMap<Integer, FilePackage>();
+                    final HashMap<Integer, LoadedPackage> packageMap = new HashMap<Integer, LoadedPackage>();
                     DownloadControllerStorable dcs = null;
                     InputStream is = null;
                     final ByteArrayOutputStream byteBuffer = new ByteArrayOutputStream(32767) {
@@ -525,21 +546,45 @@ public class DownloadController extends PackageController<FilePackage, DownloadL
                         byteBuffer.reset();
                         String json = null;
                         try {
-                            if (entry.getName().matches("^\\d+$")) {
-                                int packageIndex = Integer.parseInt(entry.getName());
+                            if (entry.getName().matches("^\\d+_\\d+$")) {
+                                final String idx[] = entry.getName().split("_");
+                                final Integer packageIndex = Integer.valueOf(idx[0]);
+                                final Integer childIndex = Integer.valueOf(idx[1]);
+                                LoadedPackage loadedPackage = packageMap.get(packageIndex);
+                                if (loadedPackage == null) {
+                                    loadedPackage = new LoadedPackage();
+                                    packageMap.put(packageIndex, loadedPackage);
+                                }
                                 is = zip.getInputStream(entry);
-                                byte[] bytes = IO.readStream((int) entry.getSize(), is, byteBuffer, true);
+                                final byte[] bytes = IO.readStream((int) entry.getSize(), is, byteBuffer, true);
                                 json = new String(bytes, 0, byteBuffer.size(), "UTF-8");
-                                FilePackageStorable storable = JSonStorage.stringToObject(json, new TypeRef<FilePackageStorable>() {
+                                final DownloadLinkStorable storable = JSonStorage.restoreFromString(json, new TypeRef<DownloadLinkStorable>() {
                                 }, null);
                                 if (storable != null) {
-                                    map.put(packageIndex, storable._getFilePackage());
+                                    loadedPackage.downloadLinks.put(childIndex, storable._getDownloadLink());
+                                } else {
+                                    throw new WTFException("restored a null DownloadLinkLinkStorable");
+                                }
+                            } else if (entry.getName().matches("^\\d+$")) {
+                                final Integer packageIndex = Integer.valueOf(entry.getName());
+                                is = zip.getInputStream(entry);
+                                final byte[] bytes = IO.readStream((int) entry.getSize(), is, byteBuffer, true);
+                                json = new String(bytes, 0, byteBuffer.size(), "UTF-8");
+                                final FilePackageStorable storable = JSonStorage.stringToObject(json, new TypeRef<FilePackageStorable>() {
+                                }, null);
+                                if (storable != null) {
+                                    LoadedPackage loadedPackage = packageMap.get(packageIndex);
+                                    if (loadedPackage == null) {
+                                        loadedPackage = new LoadedPackage();
+                                        packageMap.put(packageIndex, loadedPackage);
+                                    }
+                                    loadedPackage.filePackage = storable._getFilePackage();
                                 } else {
                                     throw new WTFException("restored a null FilePackageStorable");
                                 }
                             } else if ("extraInfo".equalsIgnoreCase(entry.getName())) {
                                 is = zip.getInputStream(entry);
-                                byte[] bytes = IO.readStream((int) entry.getSize(), is, byteBuffer, true);
+                                final byte[] bytes = IO.readStream((int) entry.getSize(), is, byteBuffer, true);
                                 json = new String(bytes, 0, byteBuffer.size(), "UTF-8");
                                 dcs = JSonStorage.stringToObject(json, new TypeRef<DownloadControllerStorable>() {
                                 }, null);
@@ -561,12 +606,18 @@ public class DownloadController extends PackageController<FilePackage, DownloadL
                         }
                     }
                     /* sort positions */
-                    java.util.List<Integer> positions = new ArrayList<Integer>(map.keySet());
-                    Collections.sort(positions);
-                    /* build final ArrayList of FilePackages */
-                    java.util.List<FilePackage> ret2 = new ArrayList<FilePackage>(positions.size());
-                    for (Integer position : positions) {
-                        ret2.add(map.get(position));
+                    final List<Integer> packageIndices = new ArrayList<Integer>(packageMap.keySet());
+                    Collections.sort(packageIndices);
+                    /* build final ArrayList of CrawledPackage */
+                    final List<FilePackage> ret2 = new ArrayList<FilePackage>(packageIndices.size());
+                    for (final Integer packageIndex : packageIndices) {
+                        final LoadedPackage loadedPackage = packageMap.get(packageIndex);
+                        final FilePackage filePackage = loadedPackage.getLoadedPackage();
+                        if (filePackage != null) {
+                            ret2.add(filePackage);
+                        } else {
+                            throw new WTFException("FilePackage at Index " + packageIndex + " is missing!");
+                        }
                     }
                     if (dcs != null && JsonConfig.create(GeneralSettings.class).isConvertRelativePathsJDRoot()) {
                         try {
@@ -597,8 +648,6 @@ public class DownloadController extends PackageController<FilePackage, DownloadL
                             logger.log(e);
                         }
                     }
-                    map = null;
-                    positions = null;
                     ret = new LinkedList<FilePackage>(ret2);
                 } catch (final Throwable e) {
                     try {
@@ -756,9 +805,11 @@ public class DownloadController extends PackageController<FilePackage, DownloadL
                     }
                 }
                 /* prepare formatter(001,0001...) for package filenames in zipfiles */
-                String format = "%02d";
+                final String packageFormat;
                 if (packages.size() >= 10) {
-                    format = String.format("%%0%dd", (int) Math.log10(packages.size()) + 1);
+                    packageFormat = String.format("%%0%dd", (int) Math.log10(packages.size()) + 1);
+                } else {
+                    packageFormat = "%02d";
                 }
                 boolean deleteFile = true;
                 ZipIOWriter zip = null;
@@ -774,15 +825,25 @@ public class DownloadController extends PackageController<FilePackage, DownloadL
                         }
                     };
                     zip = new ZipIOWriter(new BufferedOutputStream(fos, bufferSize));
-                    int index = 0;
+                    int packageIndex = 0;
                     for (FilePackage pkg : packages) {
+                        final String packageEntryID = String.format(packageFormat, packageIndex++);
                         /* convert FilePackage to JSon */
-                        FilePackageStorable storable = new FilePackageStorable(pkg);
-                        String string = JSonStorage.serializeToJson(storable);
-                        storable = null;
-                        byte[] bytes = string.getBytes("UTF-8");
-                        string = null;
-                        zip.addByteArry(bytes, true, "", String.format(format, (index++)));
+                        final FilePackageStorable packageStorable = new FilePackageStorable(pkg);
+                        final List<DownloadLinkStorable> linkStorables = new ArrayList<DownloadLinkStorable>(packageStorable.getLinks());
+                        packageStorable.getLinks().clear();
+                        zip.addByteArry(JSonStorage.serializeToJson(packageStorable).getBytes("UTF-8"), true, "", packageEntryID);
+                        final String childFormat;
+                        if (linkStorables.size() >= 10) {
+                            childFormat = String.format("%%0%dd", (int) Math.log10(packages.size()) + 1);
+                        } else {
+                            childFormat = "%02d";
+                        }
+                        int childIndex = 0;
+                        for (final DownloadLinkStorable linkStorable : linkStorables) {
+                            final String childEntryID = String.format(childFormat, childIndex++);
+                            zip.addByteArry(JSonStorage.serializeToJson(linkStorable).getBytes("UTF-8"), true, "", packageEntryID + "_" + childEntryID);
+                        }
                     }
                     DownloadControllerStorable dcs = new DownloadControllerStorable();
                     try {
