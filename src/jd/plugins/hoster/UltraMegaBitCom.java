@@ -346,7 +346,7 @@ public class UltraMegaBitCom extends PluginForHost {
             ai.setFilesNum(Long.parseLong(filesNum));
         }
         ai.setUnlimitedTraffic();
-        br.getPage("/user/billing");
+        br.getPage("/user/subscription");
 
         final boolean ispremium = (br.containsHTML("\"Premium Member\"") || br.containsHTML("premium subscription</h5>"));
         // some premiums have no expiration date, page shows only: Account status: Premium
@@ -381,7 +381,7 @@ public class UltraMegaBitCom extends PluginForHost {
                 } catch (final Throwable e) {
                     /* not available in old Stable 0.9.581 */
                 }
-                ai.setStatus("Registered (free) user");
+                ai.setStatus("Free Account");
                 account.setValid(true);
                 return ai;
             }
@@ -396,7 +396,7 @@ public class UltraMegaBitCom extends PluginForHost {
         } catch (final Throwable e) {
             /* not available in old Stable 0.9.581 */
         }
-        ai.setStatus("Premium user");
+        ai.setStatus("Premium Account");
         return ai;
     }
 
