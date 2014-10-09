@@ -104,6 +104,7 @@ public class LoadTo extends PluginForHost {
         /* Link holen */
         String linkurl = getLinkurl();
         br.setFollowRedirects(true);
+        boolean captchaFailed = true;
         if (br.containsHTML("(api\\.recaptcha\\.net|google\\.com/recaptcha/api/)")) {
             for (int i = 1; i <= 5; i++) {
                 /* Captcha */
@@ -118,17 +119,18 @@ public class LoadTo extends PluginForHost {
                 dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, linkurl, postData, true, 1);
                 if (dl.getConnection().getContentType().contains("html")) {
                     br.followConnection();
-                    if (br.containsHTML("(api\\.recaptcha\\.net|google\\.com/recaptcha/api/)")) {
-                        br.clearCookies("http://load.to/");
-                        br.getPage(downloadLink.getDownloadURL());
+                    if (br.containsHTML("(api\\.recaptcha\\.net|google\\.com/recaptcha/api/)") || br.getURL().contains("load.to/?e=3")) {
                         /* Try to avoid block (loop) on captcha reload */
+                        br.clearCookies("http://load.to/");
                         br.getHeaders().put("User-Agent", jd.plugins.hoster.MediafireCom.stringUserAgent());
+                        br.getPage(downloadLink.getDownloadURL());
                         continue;
                     }
                 }
+                captchaFailed = false;
                 break;
             }
-            if (br.containsHTML("(api\\.recaptcha\\.net|google\\.com/recaptcha/api/)")) {
+            if (captchaFailed) {
                 throw new PluginException(LinkStatus.ERROR_CAPTCHA);
             }
         } else if (br.containsHTML("solvemedia\\.com/papi/")) {
@@ -152,17 +154,18 @@ public class LoadTo extends PluginForHost {
                 dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, linkurl, postData, true, 1);
                 if (dl.getConnection().getContentType().contains("html")) {
                     br.followConnection();
-                    if (br.containsHTML("solvemedia\\.com/papi/")) {
-                        br.clearCookies("http://load.to/");
-                        br.getPage(downloadLink.getDownloadURL());
+                    if (br.containsHTML("solvemedia\\.com/papi/") || br.getURL().contains("load.to/?e=3")) {
                         /* Try to avoid block (loop) on captcha reload */
+                        br.clearCookies("http://load.to/");
                         br.getHeaders().put("User-Agent", jd.plugins.hoster.MediafireCom.stringUserAgent());
+                        br.getPage(downloadLink.getDownloadURL());
                         continue;
                     }
                 }
+                captchaFailed = false;
                 break;
             }
-            if (br.containsHTML("solvemedia\\.com/papi/")) {
+            if (captchaFailed) {
                 throw new PluginException(LinkStatus.ERROR_CAPTCHA);
             }
         } else {

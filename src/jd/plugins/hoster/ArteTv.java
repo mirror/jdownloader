@@ -187,6 +187,7 @@ public class ArteTv extends PluginForHost {
     @Override
     public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws Exception {
         br.setFollowRedirects(true);
+        final String wtf = downloadLink.getStringProperty("directURL", null);
         String link = downloadLink.getDownloadURL();
 
         if (downloadLink.getBooleanProperty("offline", false)) {
@@ -420,6 +421,7 @@ public class ArteTv extends PluginForHost {
     }
 
     private void setConfigElements() {
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), Q_SUBTITLES, JDL.L("plugins.hoster.arte.subtitles", "Download subtitled version whenever possible")).setDefaultValue(false));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_SEPARATOR));
         final ConfigEntry bestonly = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), Q_BEST, JDL.L("plugins.hoster.arte.best", "Load Best Version ONLY")).setDefaultValue(false);
         getConfig().addEntry(bestonly);
@@ -429,9 +431,7 @@ public class ArteTv extends PluginForHost {
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), Q_VERYHIGH, JDL.L("plugins.hoster.arte.loadveryhigh", "Load veryhigh version")).setDefaultValue(true).setEnabledCondidtion(bestonly, false));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), Q_HD, JDL.L("plugins.hoster.arte.loadhd", "Load HD version")).setDefaultValue(true).setEnabledCondidtion(bestonly, false));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_SEPARATOR));
-        final ConfigEntry preferhbbtv = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), HBBTV, JDL.L("plugins.hoster.arte.usehbbtv", "Load only http streams (HbbTV)")).setDefaultValue(false);
-        getConfig().addEntry(preferhbbtv);
-        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), Q_SUBTITLES, JDL.L("plugins.hoster.arte.subtitles", "Download subtitled version whenever possible")).setDefaultValue(false).setEnabledCondidtion(preferhbbtv, true));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), HBBTV, JDL.L("plugins.hoster.arte.usehbbtv", "Load only http streams (HbbTV)")).setDefaultValue(false));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), THUMBNAIL, JDL.L("plugins.hoster.arte.loadthumbnail", "Load thumbnail")).setDefaultValue(false));
     }
 
