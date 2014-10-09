@@ -17,11 +17,15 @@
 package jd.plugins.hoster;
 
 import java.io.File;
+import java.net.URL;
 import java.util.HashMap;
 import java.util.Locale;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
+
+import javax.swing.JOptionPane;
+import javax.swing.SwingUtilities;
 
 import jd.PluginWrapper;
 import jd.config.Property;
@@ -44,6 +48,7 @@ import jd.utils.JDUtilities;
 
 import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.formatter.TimeFormatter;
+import org.appwork.utils.os.CrossSystem;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "ultramegabit.com" }, urls = { "https?://(www\\.)?(ultramegabit\\.com|uploadto\\.us)/file/details/[A-Za-z0-9\\-_]+" }, flags = { 2 })
 public class UltraMegaBitCom extends PluginForHost {
@@ -325,7 +330,34 @@ public class UltraMegaBitCom extends PluginForHost {
         maxPrem.set(1);
         try {
             if (System.getProperty("jd.revision.jdownloaderrevision") == null && System.getProperty("java.version").matches("1\\.[7-9].+")) {
-                throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nLogin sequence will not work in this version of JDownloader. You will need to use JDownloader 2.\r\nJDownloader 2 install instructions and download link: http://board.jdownloader.org/showthread.php?t=37365", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                try {
+                    SwingUtilities.invokeAndWait(new Runnable() {
+
+                        @Override
+                        public void run() {
+                            try {
+                                String lng = System.getProperty("user.language");
+                                String message = null;
+                                String title = null;
+                                boolean xSystem = CrossSystem.isOpenBrowserSupported();
+                                title = "JDownloader 2 Dependancy";
+                                message = "In order to use this plugin you will need to use JDownloader 2.\r\n";
+                                if (xSystem) {
+                                    message += "JDownloader 2 install instructions and download link: Click -OK- (open in browser)\r\n ";
+                                } else {
+                                    message += "JDownloader 2 install instructions and download link:\r\n" + new URL("http://board.jdownloader.org/showthread.php?t=37365") + "\r\n";
+                                }
+                                int result = JOptionPane.showConfirmDialog(jd.gui.swing.jdgui.JDGui.getInstance().getMainFrame(), message, title, JOptionPane.CLOSED_OPTION, JOptionPane.CLOSED_OPTION);
+                                if (xSystem && JOptionPane.OK_OPTION == result) {
+                                    CrossSystem.openURL(new URL("http://board.jdownloader.org/showthread.php?t=37365"));
+                                }
+                            } catch (Throwable e) {
+                            }
+                        }
+                    });
+                } catch (Throwable e) {
+                }
+                throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
             } else {
                 login(account, true);
             }
