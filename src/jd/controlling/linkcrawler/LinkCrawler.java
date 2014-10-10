@@ -868,15 +868,17 @@ public class LinkCrawler {
                                 }
                             }
                         } else {
-                            /*
-                             * first we will walk through all available decrypter plugins
-                             */
-                            for (final LazyCrawlerPlugin pDecrypt : getCrawlerPlugins()) {
-                                final Boolean ret = distributePluginForDecrypt(pDecrypt, generation, url, possibleCryptedLink);
-                                if (Boolean.FALSE.equals(ret)) {
-                                    return;
-                                } else if (Boolean.TRUE.equals(ret)) {
-                                    continue mainloop;
+                            if (!url.startsWith("directhttp://")) {
+                                /*
+                                 * first we will walk through all available decrypter plugins
+                                 */
+                                for (final LazyCrawlerPlugin pDecrypt : getCrawlerPlugins()) {
+                                    final Boolean ret = distributePluginForDecrypt(pDecrypt, generation, url, possibleCryptedLink);
+                                    if (Boolean.FALSE.equals(ret)) {
+                                        return;
+                                    } else if (Boolean.TRUE.equals(ret)) {
+                                        continue mainloop;
+                                    }
                                 }
                             }
                             /* now we will walk through all available hoster plugins */
@@ -1698,7 +1700,7 @@ public class LinkCrawler {
                                 }
                             }
                             distribute.clear();
-                            if (useDelay) {
+                            if (useDelay && wplg.getDistributer() != null) {
                                 /* we delay the distribute */
                                 synchronized (distributedLinks) {
                                     /* synchronized adding */
