@@ -3,6 +3,7 @@ package org.jdownloader.extensions.schedulerV2.gui.actions;
 import java.awt.event.ActionEvent;
 import java.util.List;
 
+import org.appwork.utils.logging.Log;
 import org.appwork.utils.swing.dialog.Dialog;
 import org.appwork.utils.swing.dialog.DialogNoAnswerException;
 import org.jdownloader.extensions.schedulerV2.gui.AddScheduleEntryDialog;
@@ -33,15 +34,24 @@ public class EditAction extends AbstractAddAction {
         }
         ScheduleEntry toBeEdited = selected.get(0);
         long old = toBeEdited.getID();
-        final AddScheduleEntryDialog dialog = new AddScheduleEntryDialog(toBeEdited);
 
         try {
-            ScheduleEntry entry = Dialog.getInstance().showDialog(dialog);
+            toBeEdited = new ScheduleEntry(toBeEdited.getStorable());
+
+            final AddScheduleEntryDialog dialog = new AddScheduleEntryDialog(toBeEdited);
+
+            ScheduleEntry entry;
+
+            entry = Dialog.getInstance().showDialog(dialog);
+
             if (entry != null) {
                 table.getExtension().replaceScheduleEntry(old, entry);
             }
-        } catch (DialogNoAnswerException e2) {
-            e2.printStackTrace();
+        } catch (DialogNoAnswerException e1) {
+            e1.printStackTrace();
+        } catch (Exception e1) {
+            Log.exception(e1);
         }
+
     }
 }
