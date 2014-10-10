@@ -195,4 +195,16 @@ public interface SchedulerTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "Downloads" })
     String addScheduleEntryDialog_downloads();
 
+    @Default(lngs = { "en" }, values = { "Enable Account" })
+    String action_enableAccount();
+
+    @Default(lngs = { "en" }, values = { "Account" })
+    String addScheduleEntryDialog_account();
+
+    @Default(lngs = { "en" }, values = { "Disable Account" })
+    String action_disableAccount();
+
+    @Default(lngs = { "en" }, values = { "No Accounts available" })
+    String addScheduleEntryDialog_noAccount();
+
 }

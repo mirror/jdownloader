@@ -11,8 +11,10 @@ import org.jdownloader.extensions.schedulerV2.CFG_SCHEDULER;
 import org.jdownloader.extensions.schedulerV2.actions.AbstractScheduleAction;
 import org.jdownloader.extensions.schedulerV2.actions.CaptchaServiceAction;
 import org.jdownloader.extensions.schedulerV2.actions.DebugAction;
+import org.jdownloader.extensions.schedulerV2.actions.DisableAccountAction;
 import org.jdownloader.extensions.schedulerV2.actions.DisableReconnectAction;
 import org.jdownloader.extensions.schedulerV2.actions.DisableSpeedLimitAction;
+import org.jdownloader.extensions.schedulerV2.actions.EnableAccountAction;
 import org.jdownloader.extensions.schedulerV2.actions.EnableReconnectAction;
 import org.jdownloader.extensions.schedulerV2.actions.PauseDownloadAction;
 import org.jdownloader.extensions.schedulerV2.actions.ReconnectAction;
@@ -46,6 +48,8 @@ public class ActionHelper {
                                                                      add(new EnableReconnectAction(null));
                                                                      add(new DisableReconnectAction(null));
                                                                      add(new CaptchaServiceAction(null));
+                                                                     add(new EnableAccountAction(null));
+                                                                     add(new DisableAccountAction(null));
                                                                  }
                                                              });
 
