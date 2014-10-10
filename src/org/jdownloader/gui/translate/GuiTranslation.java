@@ -519,6 +519,9 @@ public interface GuiTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "Status" })
     String StatusColumn_StatusColumn();
 
+    @Default(lngs = { "en" }, values = { "Enabled / Disabled" })
+    String EnabledDisabledColumn_EnabledDisabledColumn();
+
     @Default(lngs = { "en" }, values = { "Download Control" })
     String StopSignColumn_StopSignColumn();
 
