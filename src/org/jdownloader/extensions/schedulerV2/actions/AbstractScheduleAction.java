@@ -62,7 +62,7 @@ public abstract class AbstractScheduleAction<T extends IScheduleActionConfig> {
         }
     }
 
-    public final void setVisible(boolean aFlag) {
+    public void setVisible(boolean aFlag) {
         for (JComponent component : panel.keySet()) {
             component.setVisible(aFlag);
         }

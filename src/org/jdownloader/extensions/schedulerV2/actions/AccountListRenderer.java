@@ -2,7 +2,6 @@ package org.jdownloader.extensions.schedulerV2.actions;
 
 import java.awt.Component;
 
-import javax.swing.DefaultListCellRenderer;
 import javax.swing.JLabel;
 import javax.swing.JList;
 
@@ -10,7 +9,9 @@ import jd.plugins.Account;
 
 import org.jdownloader.DomainInfo;
 
-class AccountListRenderer extends DefaultListCellRenderer {
+import de.javasoft.plaf.synthetica.classy.ComboListCellRenderer;
+
+class AccountListRenderer extends ComboListCellRenderer {
 
     @Override
     public Component getListCellRendererComponent(JList list, Object value, int index, boolean isSelected, boolean cellHasFocus) {
