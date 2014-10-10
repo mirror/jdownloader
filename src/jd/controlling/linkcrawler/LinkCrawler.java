@@ -249,6 +249,7 @@ public class LinkCrawler {
             parentCrawler = thread.getCurrentLinkCrawler();
             classLoader = parentCrawler.getPluginClassLoaderChild();
             this.pHosts = parentCrawler.pHosts;
+            this.directPlugin = parentCrawler.directPlugin;
             this.httpPlugin = parentCrawler.httpPlugin;
             this.ftpPlugin = parentCrawler.ftpPlugin;
             this.directHttpEnabled = parentCrawler.directHttpEnabled;
