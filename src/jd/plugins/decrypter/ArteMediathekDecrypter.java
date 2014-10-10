@@ -259,9 +259,9 @@ public class ArteMediathekDecrypter extends PluginForDecrypt {
             }
             if ("VOF-STMF".equals(versionCode)) {
                 l = "3";
-            } else if (versionCode.startsWith("VO") || versionCode.startsWith("VA")) {
+            } else if (versionCode.equals("VA")) {
                 l = "1";
-            } else if (versionCode.startsWith("VF")) {
+            } else if (versionCode.startsWith("VF") || versionCode.equals("VOF")) {
                 l = "2";
             } else {
                 /* Unknown - use language inside the link */

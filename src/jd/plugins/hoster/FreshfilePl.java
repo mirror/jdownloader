@@ -64,7 +64,9 @@ public class FreshfilePl extends PluginForHost {
 
     @Override
     public boolean checkLinks(final DownloadLink[] urls) {
-        if (urls == null || urls.length == 0) { return false; }
+        if (urls == null || urls.length == 0) {
+            return false;
+        }
 
         // correct link stuff goes here, stable is lame!
         for (DownloadLink link : urls) {
@@ -120,7 +122,11 @@ public class FreshfilePl extends PluginForHost {
                 String response = br.toString();
                 int fileNumber = 0;
                 for (final DownloadLink dllink : links) {
-                    String source = new Regex(response, "\"" + fileNumber + "\":\\{(.+?)\\}").getMatch(0);
+                    final String source = new Regex(response, "\"" + fileNumber + "\":\\{(.+?)\\}").getMatch(0);
+                    if (source == null) {
+                        logger.warning("Availablecheck broken for freshfile.pl");
+                        return false;
+                    }
                     String fileStatus = getJson("status", source);
                     String fileName = getJson("name", source);
                     String fileUrl = getJson("url", source);
@@ -146,7 +152,6 @@ public class FreshfilePl extends PluginForHost {
                         dllink.setAvailable(true);
                     }
                     fileNumber++;
-
                 }
                 if (index == urls.length) {
                     break;
@@ -162,8 +167,12 @@ public class FreshfilePl extends PluginForHost {
     public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws IOException, PluginException {
 
         checkLinks(new DownloadLink[] { downloadLink });
-        if (!downloadLink.isAvailabilityStatusChecked()) { return AvailableStatus.UNCHECKED; }
-        if (downloadLink.isAvailabilityStatusChecked() && !downloadLink.isAvailable()) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
+        if (!downloadLink.isAvailabilityStatusChecked()) {
+            return AvailableStatus.UNCHECKED;
+        }
+        if (downloadLink.isAvailabilityStatusChecked() && !downloadLink.isAvailable()) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
         return AvailableStatus.TRUE;
 
     }
@@ -215,8 +224,7 @@ public class FreshfilePl extends PluginForHost {
 
             if (accountFound) {
                 br.postPage("http://freshfile.pl/api/doDownloadFile/", "login=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()) + "&id=" + downloadLink.getProperty("FILEID"));
-            }
-            else {
+            } else {
                 br.postPage("http://freshfile.pl/api/doDownloadFile/", "login=&password=&id=" + downloadLink.getProperty("FILEID"));
 
             }
@@ -242,7 +250,6 @@ public class FreshfilePl extends PluginForHost {
             dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 1);
         }
         if (dl.getConnection().getContentType().contains("html")) {
-
             logger.warning("The final dllink seems not to be a file!" + "Response: " + dl.getConnection().getResponseMessage() + ", code: " + dl.getConnection().getResponseCode() + "\n" + dl.getConnection().getContentType());
             br.followConnection();
             logger.warning("br returns:" + br.toString());
@@ -470,7 +477,9 @@ public class FreshfilePl extends PluginForHost {
             /* free accounts also have captchas */
             return true;
         }
-        if (acc.getStringProperty("session_type") != null && !"premium".equalsIgnoreCase(acc.getStringProperty("session_type"))) { return true; }
+        if (acc.getStringProperty("session_type") != null && !"premium".equalsIgnoreCase(acc.getStringProperty("session_type"))) {
+            return true;
+        }
         return false;
     }
 }

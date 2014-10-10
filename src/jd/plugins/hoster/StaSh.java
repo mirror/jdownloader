@@ -100,7 +100,7 @@ public class StaSh extends PluginForHost {
             if (this.getPluginConfig().getBooleanProperty(FORCEHTMLDOWNLOAD, false)) {
                 HTMLALLOWED = true;
                 DLLINK = br.getURL();
-                filename = findServerFilename(filename);
+                filename = findServerFilename(this.br, filename);
                 ext = "html";
             } else if (br.containsHTML(">Download File<")) {
                 final Regex fInfo = br.getRegex("<strong>Download File</strong><br/>[\t\n\r ]+<small>([A-Za-z0-9]{1,5}), ([^<>\"]*?)</small>");
@@ -113,7 +113,7 @@ public class StaSh extends PluginForHost {
                 DLLINK = Encoding.htmlDecode(DLLINK.trim());
             } else if (br.containsHTML(TYPE_HTML)) {
                 HTMLALLOWED = true;
-                filename = findServerFilename(filename);
+                filename = findServerFilename(this.br, filename);
                 ext = "html";
             } else {
                 filesize = br.getRegex("<label>Image Size:</label>([^<>\"]*?)<br>").getMatch(0);
@@ -134,16 +134,9 @@ public class StaSh extends PluginForHost {
                     return AvailableStatus.TRUE;
                 }
 
-                ext = br.getRegex("<strong>Download Image</strong><br><small>([A-Za-z0-9]{1,5}),").getMatch(0);
-                if (ext == null) {
-                    ext = new Regex(filename, "\\.([A-Za-z0-9]{1,5})$").getMatch(0);
-                }
-                filename = findServerFilename(filename);
+                filename = findServerFilename(this.br, filename);
                 if (ext == null || ext.length() > 5) {
-                    final String dllink = getCrippledDllink();
-                    if (dllink != null) {
-                        ext = dllink.substring(dllink.lastIndexOf(".") + 1);
-                    }
+                    ext = getFileExt(this.br);
                 }
                 /* Just download the html */
                 if (ext == null) {
@@ -159,7 +152,10 @@ public class StaSh extends PluginForHost {
             final Browser br2 = br.cloneBrowser();
             URLConnectionAdapter con = null;
             try {
-                con = br2.openGetConnection(getDllink());
+                if (DLLINK == null) {
+                    DLLINK = getDllink(this.br);
+                }
+                con = br2.openGetConnection(DLLINK);
                 if (con.getContentType().contains("html") && !HTMLALLOWED) {
                     throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
                 } else {
@@ -183,40 +179,53 @@ public class StaSh extends PluginForHost {
         return AvailableStatus.TRUE;
     }
 
-    private String getDllink() throws PluginException {
-        if (DLLINK == null) {
-            String dllink = null;
-            // Check if it's a video
-            dllink = br.getRegex("\"src\":\"(http:[^<>\"]*?mp4)\"").getMatch(0);
-            // First try to get downloadlink, if that doesn't exist, try to get the
-            // link to the picture which is displayed in browser
-            if (dllink == null) {
-                dllink = br.getRegex("\"(http://(www\\.)?sta\\.sh/download/[^<>\"]*?)\"").getMatch(0);
-            }
-            if (dllink == null) {
-                if (br.containsHTML(">Mature Content</span>")) {
-                    dllink = br.getRegex("data\\-gmiclass=\"ResViewSizer_img\".*?src=\"(http://[^<>\"]*?)\"").getMatch(0);
-                    if (dllink == null) {
-                        dllink = br.getRegex("<img collect_rid=\"\\d+:\\d+\" src=\"(https?://[^\"]+)").getMatch(0);
-                    }
-                } else {
-                    dllink = br.getRegex("(name|property)=\"og:image\" content=\"(http://[^<>\"]*?)\"").getMatch(1);
-                }
-            }
-            if (dllink == null) {
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            }
-            dllink = dllink.replace("\\", "");
-            dllink = Encoding.htmlDecode(dllink);
-            DLLINK = dllink;
+    public static String getFileExt(final Browser br) {
+        String filename = br.getRegex(GENERALFILENAMEREGEX).getMatch(0);
+        String ext = br.getRegex("<strong>Download Image</strong><br><small>([A-Za-z0-9]{1,5}),").getMatch(0);
+        if (ext == null && filename != null) {
+            ext = new Regex(filename, "\\.([A-Za-z0-9]{1,5})$").getMatch(0);
         }
-        return DLLINK;
+        filename = findServerFilename(br, filename);
+        if (ext == null || ext.length() > 5) {
+            final String dllink = getCrippledDllink(br);
+            if (dllink != null) {
+                ext = dllink.substring(dllink.lastIndexOf(".") + 1);
+            }
+        }
+        return ext;
     }
 
-    private String getCrippledDllink() {
+    public static String getDllink(final Browser br) throws PluginException {
+        String dllink = null;
+        // Check if it's a video
+        dllink = br.getRegex("\"src\":\"(http:[^<>\"]*?mp4)\"").getMatch(0);
+        // First try to get downloadlink, if that doesn't exist, try to get the
+        // link to the picture which is displayed in browser
+        if (dllink == null) {
+            dllink = br.getRegex("\"(http://(www\\.)?sta\\.sh/download/[^<>\"]*?)\"").getMatch(0);
+        }
+        if (dllink == null) {
+            if (br.containsHTML(">Mature Content</span>")) {
+                dllink = br.getRegex("data\\-gmiclass=\"ResViewSizer_img\".*?src=\"(http://[^<>\"]*?)\"").getMatch(0);
+                if (dllink == null) {
+                    dllink = br.getRegex("<img collect_rid=\"\\d+:\\d+\" src=\"(https?://[^\"]+)").getMatch(0);
+                }
+            } else {
+                dllink = br.getRegex("(name|property)=\"og:image\" content=\"(http://[^<>\"]*?)\"").getMatch(1);
+            }
+        }
+        if (dllink == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        dllink = dllink.replace("\\", "");
+        dllink = Encoding.htmlDecode(dllink);
+        return dllink;
+    }
+
+    public static String getCrippledDllink(final Browser br) {
         String crippleddllink = null;
         try {
-            final String linkWithExt = getDllink();
+            final String linkWithExt = getDllink(br);
             final String toRemove = new Regex(linkWithExt, "(\\?token=.+)").getMatch(0);
             if (toRemove != null) {
                 crippleddllink = linkWithExt.replace(toRemove, "");
@@ -228,10 +237,10 @@ public class StaSh extends PluginForHost {
         return crippleddllink;
     }
 
-    private String findServerFilename(final String oldfilename) {
+    public static String findServerFilename(final Browser br, final String oldfilename) {
         // Try to get server filename, if not possible, return old one
         String newfilename = null;
-        final String dllink = getCrippledDllink();
+        final String dllink = getCrippledDllink(br);
         if (dllink != null) {
             newfilename = new Regex(dllink, "/([^<>\"/]+)$").getMatch(0);
         } else {
@@ -253,7 +262,9 @@ public class StaSh extends PluginForHost {
             }
             throw new PluginException(LinkStatus.ERROR_FATAL, "Mature content can only be downloaded via account");
         }
-        getDllink();
+        if (DLLINK == null) {
+            DLLINK = getDllink(this.br);
+        }
         boolean resume = true;
         if (isZip(downloadLink)) {
             resume = false;

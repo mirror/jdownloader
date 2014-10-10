@@ -29,6 +29,7 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
+import jd.utils.JDUtilities;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "sta.sh" }, urls = { "http://(www\\.)?sta\\.sh/[a-z0-9]+" }, flags = { 0 })
 public class StaShDecrypter extends PluginForDecrypt {
@@ -43,6 +44,7 @@ public class StaShDecrypter extends PluginForDecrypt {
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         final String parameter = param.toString();
+        JDUtilities.getPluginForHost("sta.sh");
         final SubConfiguration cfg = SubConfiguration.getConfig("sta.sh");
         final boolean force_html_dl = cfg.getBooleanProperty(FORCEHTMLDOWNLOAD, false);
         final DownloadLink main = createDownloadlink(parameter.replace("sta.sh/", "stadecrypted.sh/"));
@@ -76,10 +78,17 @@ public class StaShDecrypter extends PluginForDecrypt {
             final DownloadLink dl = createDownloadlink(url.replace("sta.sh/", "stadecrypted.sh/"));
             if (force_html_dl) {
                 dl.setName(name + ".html");
+                dl.setAvailable(true);
             } else {
-                dl.setName(name + ".png");
+                /* No ext found --> Don't set available, let host plugin perform a full check to find the correct name */
+                final String ext = jd.plugins.hoster.StaSh.getFileExt(this.br);
+                if (ext != null) {
+                    dl.setName(name + "." + ext);
+                    dl.setAvailable(true);
+                } else {
+                    dl.setName(name);
+                }
             }
-            dl.setAvailable(true);
             decryptedLinks.add(dl);
         }
         final String zipLink = br.getRegex("\"(/zip/[a-z0-9]+)\"").getMatch(0);
@@ -98,5 +107,4 @@ public class StaShDecrypter extends PluginForDecrypt {
         fp.addLinks(decryptedLinks);
         return decryptedLinks;
     }
-
 }
