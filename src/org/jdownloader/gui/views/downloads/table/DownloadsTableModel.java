@@ -25,6 +25,7 @@ import org.jdownloader.gui.views.downloads.columns.ProgressColumn;
 import org.jdownloader.gui.views.downloads.columns.RemainingColumn;
 import org.jdownloader.gui.views.downloads.columns.SizeColumn;
 import org.jdownloader.gui.views.downloads.columns.SpeedColumn;
+import org.jdownloader.gui.views.downloads.columns.EnabledDisabledColumn;
 import org.jdownloader.gui.views.downloads.columns.StopSignColumn;
 import org.jdownloader.gui.views.downloads.columns.TaskColumn;
 import org.jdownloader.gui.views.linkgrabber.columns.PartColumn;
@@ -66,6 +67,7 @@ public class DownloadsTableModel extends PackageControllerTableModel<FilePackage
         this.addColumn(new ConnectionColumn());
         this.addColumn(taskColumn = new TaskColumn());
         this.addColumn(new RemainingColumn());
+        this.addColumn(new EnabledDisabledColumn());
 
         this.addColumn(new AddedDateColumn());
         this.addColumn(new FinishedDateColumn());
