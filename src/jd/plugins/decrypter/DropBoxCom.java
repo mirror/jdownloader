@@ -65,6 +65,10 @@ public class DropBoxCom extends PluginForDecrypt {
         }
         br.setFollowRedirects(false);
         br.setCookie("http://dropbox.com", "locale", "en");
+        try {
+            br.setLoadLimit(br.getLoadLimit() * 4);
+        } catch (final Throwable t) {
+        }
         URLConnectionAdapter con = null;
         try {
             con = br.openGetConnection(parameter);

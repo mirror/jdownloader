@@ -49,12 +49,10 @@ public class ProtectIplus4uCom extends PluginForDecrypt {
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         final String parameter = param.toString();
-        final String domain = new Regex(parameter, "http://(www\\.)?([^<>\"/]*?)/").getMatch(1);
-        final String linkid = new Regex(parameter, "([a-z0-9]+)\\.html$").getMatch(0);
+        final String host = new Regex(parameter, "https?://(?:www\\.)?([^/]+)").getMatch(0);
+        final String linkid = new Regex(parameter, host + "/([a-z0-9]+)(?:-.*?)?\\.html$").getMatch(0);
         br.setFollowRedirects(true);
         br.setCustomCharset("utf-8");
-        br.getPage(parameter);
-        /* Prefer reCaptcha */
         br.getPage(parameter);
 
         if (!SKIP_CAPTCHA) {
@@ -71,7 +69,7 @@ public class ProtectIplus4uCom extends PluginForDecrypt {
                 final File cf = rc.downloadCaptcha(getLocalCaptchaFile());
                 final String c = getCaptchaCode(cf, param);
                 final String postData = "recaptcha_challenge_field=" + rc.getChallenge() + "&recaptcha_response_field=" + Encoding.urlEncode(c) + "&x=" + Integer.toString(new Random().nextInt(100)) + "&y=" + Integer.toString(new Random().nextInt(100)) + "&captcha=recaptcha&mon_captcha=" + linkid;
-                br.postPage("http://" + domain + "/showlinks.php", postData);
+                br.postPage("/showlinks.php", postData);
                 if (br.containsHTML(">Captcha erroné vous allez être rediriger")) {
                     /* Prefer reCaptcha */
                     br.getPage(parameter + "&c=1");
@@ -86,7 +84,7 @@ public class ProtectIplus4uCom extends PluginForDecrypt {
         }
 
         if (br.getURL().contains("check.")) {
-            br.postPage("http://" + domain + "/linkid.php", "linkid=" + linkid + "&x=" + Integer.toString(new Random().nextInt(100)) + "&y=" + Integer.toString(new Random().nextInt(100)));
+            br.postPage("/linkid.php", "linkid=" + linkid + "&x=" + Integer.toString(new Random().nextInt(100)) + "&y=" + Integer.toString(new Random().nextInt(100)));
         }
         final String fpName = br.getRegex("font\\-size:90%;font\\-family:Arial,Helvetica,sans\\-serif;'>([^<>\"]*?)</td>").getMatch(0);
         String[] links = br.getRegex("style='font-size:70%;font-family:Arial,Helvetica,sans-serif;'>[\t\n\r ]+<a href=(https?://[^<>\"]*?) target=_blank").getColumn(0);
@@ -99,7 +97,7 @@ public class ProtectIplus4uCom extends PluginForDecrypt {
             return null;
         }
         for (String singleLink : links) {
-            if (!singleLink.contains(domain)) {
+            if (!singleLink.contains(host)) {
                 decryptedLinks.add(createDownloadlink(singleLink));
             }
         }
