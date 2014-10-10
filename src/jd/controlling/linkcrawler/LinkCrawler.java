@@ -58,6 +58,7 @@ public class LinkCrawler {
     private final static String                     DIRECT_HTTP                 = "DirectHTTP";
     private final static String                     HTTP_LINKS                  = "http links";
     private LazyHostPlugin                          httpPlugin                  = null;
+    private LazyHostPlugin                          directPlugin                = null;
     private LazyHostPlugin                          ftpPlugin                   = null;
     private java.util.List<CrawledLink>             crawledLinks                = new ArrayList<CrawledLink>();
     private AtomicInteger                           crawledLinksCounter         = new AtomicInteger(0);
@@ -277,15 +278,21 @@ public class LinkCrawler {
                 } else if (ftpPlugin == null && "ftp".equals(pHost.getDisplayName())) {
                     /* for generic ftp sites */
                     ftpPlugin = pHost;
+                } else if (directPlugin == null && DIRECT_HTTP.equals(pHost.getDisplayName())) {
+                    directPlugin = pHost;
                 }
-                if (ftpPlugin != null && httpPlugin != null) {
+                if (ftpPlugin != null && httpPlugin != null && directPlugin != null) {
                     break;
                 }
             }
             if (ftpPlugin != null) {
-                /* generic ftp handling is done at the end */
-                /* remove from list, then we don't have to compare each single plugin each round */
                 pHosts.remove(ftpPlugin);
+            }
+            if (directPlugin != null) {
+                pHosts.remove(directPlugin);
+            }
+            if (httpPlugin != null) {
+                pHosts.remove(httpPlugin);
             }
         }
         this.created = System.currentTimeMillis();
@@ -629,9 +636,6 @@ public class LinkCrawler {
     }
 
     protected Boolean distributePluginForHost(final LazyHostPlugin pluginForHost, final int generation, final String url, final CrawledLink link) {
-        if (!isDirectHttpEnabled() && (pluginForHost.getDisplayName().equals(DIRECT_HTTP) || pluginForHost.getDisplayName().equals(HTTP_LINKS))) {
-            return null;
-        }
         if (pluginForHost.canHandle(url)) {
             if (!isBlacklisted(pluginForHost)) {
                 if (insideCrawlerPlugin()) {
@@ -868,7 +872,7 @@ public class LinkCrawler {
                                 }
                             }
                         } else {
-                            if (!url.startsWith("directhttp://")) {
+                            if (!url.startsWith("directhttp://") && !url.startsWith("httpviajd://") && !url.startsWith("httpsviajd://")) {
                                 /*
                                  * first we will walk through all available decrypter plugins
                                  */
@@ -880,14 +884,50 @@ public class LinkCrawler {
                                         continue mainloop;
                                     }
                                 }
+                                /* now we will walk through all available hoster plugins */
+                                for (final LazyHostPlugin pHost : getHosterPlugins()) {
+                                    final Boolean ret = distributePluginForHost(pHost, generation, url, possibleCryptedLink);
+                                    if (Boolean.FALSE.equals(ret)) {
+                                        return;
+                                    } else if (Boolean.TRUE.equals(ret)) {
+                                        continue mainloop;
+                                    }
+                                }
                             }
-                            /* now we will walk through all available hoster plugins */
-                            for (final LazyHostPlugin pHost : getHosterPlugins()) {
-                                final Boolean ret = distributePluginForHost(pHost, generation, url, possibleCryptedLink);
+                        }
+                        if (ftpPlugin != null && url.startsWith("ftp://")) {
+                            /* now we will check for generic ftp links */
+                            final Boolean ret = distributePluginForHost(ftpPlugin, generation, url, possibleCryptedLink);
+                            if (Boolean.FALSE.equals(ret)) {
+                                return;
+                            } else if (Boolean.TRUE.equals(ret)) {
+                                continue mainloop;
+                            }
+                        } else if (isDirectHttpEnabled()) {
+                            if (directPlugin != null && url.startsWith("directhttp://")) {
+                                /* now we will check for directPlugin links */
+                                final Boolean ret = distributePluginForHost(directPlugin, generation, url, possibleCryptedLink);
                                 if (Boolean.FALSE.equals(ret)) {
                                     return;
                                 } else if (Boolean.TRUE.equals(ret)) {
                                     continue mainloop;
+                                }
+                            } else if (httpPlugin != null) {
+                                /* now we will check for normal http links */
+                                final String newURL = url.replaceFirst("https?://", (url.matches("https://.+") ? "httpsviajd://" : "httpviajd://"));
+                                if (httpPlugin.canHandle(newURL)) {
+                                    /* create new CrawledLink that holds the modified CrawledLink */
+                                    final CrawledLinkModifier parentLinkModifier = possibleCryptedLink.getCustomCrawledLinkModifier();
+                                    possibleCryptedLink.setCustomCrawledLinkModifier(null);
+                                    final String[] sourceURLs = getAndClearSourceURLs(possibleCryptedLink);
+                                    final CrawledLink modifiedPossibleCryptedLink = new CrawledLink(newURL);
+                                    forwardCrawledLinkInfos(possibleCryptedLink, modifiedPossibleCryptedLink, parentLinkModifier, sourceURLs);
+                                    final Boolean ret = distributePluginForHost(httpPlugin, generation, newURL, modifiedPossibleCryptedLink);
+                                    if (Boolean.FALSE.equals(ret)) {
+                                        return;
+                                    } else if (Boolean.TRUE.equals(ret)) {
+                                        continue mainloop;
+                                    }
                                 }
                             }
                         }
@@ -903,32 +943,6 @@ public class LinkCrawler {
                             }
                             /* lets retry this crawledLink */
                             continue mainloopretry;
-                        }
-                        if (ftpPlugin != null && url.startsWith("ftp")) {
-                            /* now we will check for generic ftp links */
-                            final Boolean ret = distributePluginForHost(ftpPlugin, generation, url, possibleCryptedLink);
-                            if (Boolean.FALSE.equals(ret)) {
-                                return;
-                            } else if (Boolean.TRUE.equals(ret)) {
-                                continue mainloop;
-                            }
-                        } else if (httpPlugin != null && isDirectHttpEnabled() && !url.startsWith("ftp") && !isBlacklisted(httpPlugin)) {
-                            /* now we will check for normal http links */
-                            final String newURL = url.replaceFirst("https?://", (url.matches("https://.+") ? "httpsviajd://" : "httpviajd://"));
-                            if (httpPlugin.canHandle(newURL)) {
-                                /* create new CrawledLink that holds the modified CrawledLink */
-                                final CrawledLinkModifier parentLinkModifier = possibleCryptedLink.getCustomCrawledLinkModifier();
-                                possibleCryptedLink.setCustomCrawledLinkModifier(null);
-                                final String[] sourceURLs = getAndClearSourceURLs(possibleCryptedLink);
-                                final CrawledLink modifiedPossibleCryptedLink = new CrawledLink(newURL);
-                                forwardCrawledLinkInfos(possibleCryptedLink, modifiedPossibleCryptedLink, parentLinkModifier, sourceURLs);
-                                final Boolean ret = distributePluginForHost(httpPlugin, generation, newURL, modifiedPossibleCryptedLink);
-                                if (Boolean.FALSE.equals(ret)) {
-                                    return;
-                                } else if (Boolean.TRUE.equals(ret)) {
-                                    continue mainloop;
-                                }
-                            }
                         }
                         final Boolean ret = distributeDeeper(generation, url, possibleCryptedLink);
                         if (Boolean.FALSE.equals(ret)) {
