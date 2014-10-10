@@ -22,48 +22,42 @@ import org.appwork.utils.logging2.LogSource;
 import org.jdownloader.logging.LogController;
 import org.jdownloader.plugins.controller.crawler.LazyCrawlerPlugin;
 import org.jdownloader.plugins.controller.host.LazyHostPlugin;
+import org.jdownloader.updatev2.ClassLoaderExtension;
 
 public class PluginClassLoader extends URLClassLoader {
-    private static final WeakHashMap<Class<?>, String>                                                    sharedClasses                = new WeakHashMap<Class<?>, String>();
-    private static final WeakHashMap<PluginClassLoaderChild, WeakReference<LazyPlugin<? extends Plugin>>> sharedLazyPluginClassLoader  = new WeakHashMap<PluginClassLoaderChild, WeakReference<LazyPlugin<? extends Plugin>>>();
-    private static final WeakHashMap<PluginClassLoaderChild, String>                                      sharedPluginClassLoader      = new WeakHashMap<PluginClassLoaderChild, String>();
-
-    private static final WeakHashMap<Thread, WeakReference<PluginClassLoaderChild>>                       threadPluginClassLoader      = new WeakHashMap<Thread, WeakReference<PluginClassLoaderChild>>();
-    private static final WeakHashMap<ThreadGroup, WeakReference<PluginClassLoaderChild>>                  threadGroupPluginClassLoader = new WeakHashMap<ThreadGroup, WeakReference<PluginClassLoaderChild>>();
-
-    public static Class<?> findSharedClass(String name) {
-        synchronized (sharedClasses) {
-            Iterator<Entry<Class<?>, String>> it = sharedClasses.entrySet().iterator();
-            while (it.hasNext()) {
-                Entry<Class<?>, String> next = it.next();
-                Class<?> ret = null;
-                if (name.equals(next.getValue()) && (ret = next.getKey()) != null) {
-                    return ret;
-                }
-            }
-        }
-        return null;
-    }
-
     public static class PluginClassLoaderChild extends URLClassLoader {
 
+        private static final byte       _0XCA                    = (byte) 0xca;
+        private static final byte       _0XFE                    = (byte) 0xfe;
+        private static final byte       _0XBA                    = (byte) 0xba;
+        private static final byte       _0XBE                    = (byte) 0xbe;
         private boolean                 createDummyLibs          = true;
         private boolean                 jared                    = Application.isJared(PluginClassLoader.class);
         private final PluginClassLoader parent;
         private boolean                 checkStableCompatibility = false;
         private String                  pluginClass              = null;
 
+        public PluginClassLoaderChild(PluginClassLoader parent) {
+            super(new URL[] { Application.getRootUrlByClass(jd.SecondLevelLaunch.class, null) }, parent);
+            this.parent = parent;
+        }
+
+        /**
+         * @return the pluginClass
+         */
+        public String getPluginClass() {
+            return pluginClass;
+        }
+
         public boolean isCheckStableCompatibility() {
             return checkStableCompatibility;
         }
 
-        public void setCheckStableCompatibility(boolean checkStableCompatibility) {
-            this.checkStableCompatibility = checkStableCompatibility;
-        }
-
-        public PluginClassLoaderChild(PluginClassLoader parent) {
-            super(new URL[] { Application.getRootUrlByClass(jd.SecondLevelLaunch.class, null) }, parent);
-            this.parent = parent;
+        /**
+         * @return the createDummyLibs
+         */
+        public boolean isCreateDummyLibs() {
+            return createDummyLibs;
         }
 
         public boolean isUpdateRequired(String name) {
@@ -105,6 +99,16 @@ public class PluginClassLoader extends URLClassLoader {
             while (true) {
                 try {
                     data = IO.readURL(myUrl);
+                    try {
+
+                        if (_0XCA != data[0] || _0XFE != data[1] || _0XBA != data[2] || _0XBE != data[3]) {
+                            String id = "classloader_" + HexFormatter.byteArrayToHex(new byte[] { data[0], data[1], data[2], data[3] });
+                            String clExtension = System.getProperty("classloader_" + HexFormatter.byteArrayToHex(new byte[] { data[0], data[1], data[2], data[3] }));
+                            data = ((ClassLoaderExtension) Class.forName(clExtension).newInstance()).run(data);
+                        }
+                    } catch (Throwable e) {
+                        new ClassFormatError("No Class File");
+                    }
                     if (parent != null) {
                         return parent.defineClass(name, data, 0, data.length);
                     } else {
@@ -263,11 +267,8 @@ public class PluginClassLoader extends URLClassLoader {
 
         }
 
-        /**
-         * @return the createDummyLibs
-         */
-        public boolean isCreateDummyLibs() {
-            return createDummyLibs;
+        public void setCheckStableCompatibility(boolean checkStableCompatibility) {
+            this.checkStableCompatibility = checkStableCompatibility;
         }
 
         /**
@@ -279,13 +280,6 @@ public class PluginClassLoader extends URLClassLoader {
         }
 
         /**
-         * @return the pluginClass
-         */
-        public String getPluginClass() {
-            return pluginClass;
-        }
-
-        /**
          * @param pluginClass
          *            the pluginClass to set
          */
@@ -293,26 +287,93 @@ public class PluginClassLoader extends URLClassLoader {
             this.pluginClass = pluginClass;
         }
     }
+    private static final WeakHashMap<Class<?>, String>                                                    sharedClasses                = new WeakHashMap<Class<?>, String>();
+    private static final WeakHashMap<PluginClassLoaderChild, WeakReference<LazyPlugin<? extends Plugin>>> sharedLazyPluginClassLoader  = new WeakHashMap<PluginClassLoaderChild, WeakReference<LazyPlugin<? extends Plugin>>>();
+
+    private static final WeakHashMap<PluginClassLoaderChild, String>                                      sharedPluginClassLoader      = new WeakHashMap<PluginClassLoaderChild, String>();
+    private static final WeakHashMap<Thread, WeakReference<PluginClassLoaderChild>>                       threadPluginClassLoader      = new WeakHashMap<Thread, WeakReference<PluginClassLoaderChild>>();
+
+    private static final WeakHashMap<ThreadGroup, WeakReference<PluginClassLoaderChild>>                  threadGroupPluginClassLoader = new WeakHashMap<ThreadGroup, WeakReference<PluginClassLoaderChild>>();
 
     private static final PluginClassLoader       INSTANCE                   = new PluginClassLoader();
+
     private static final HashMap<String, String> DYNAMIC_LOADABLE_LOBRARIES = new HashMap<String, String>();
     static {
         synchronized (DYNAMIC_LOADABLE_LOBRARIES) {
             DYNAMIC_LOADABLE_LOBRARIES.put("org.bouncycastle", "bcprov-jdk15on-147.jar");
         }
     }
+    private synchronized static PluginClassLoaderChild fetchSharedChild(final LazyPlugin<? extends Plugin> lazyPlugin, final PluginClassLoaderChild putIfAbsent) {
+        final Iterator<Entry<PluginClassLoaderChild, WeakReference<LazyPlugin<? extends Plugin>>>> it = sharedLazyPluginClassLoader.entrySet().iterator();
+        while (it.hasNext()) {
+            final Entry<PluginClassLoaderChild, WeakReference<LazyPlugin<? extends Plugin>>> next = it.next();
+            final WeakReference<LazyPlugin<? extends Plugin>> weakPlugin = next.getValue();
+            if (weakPlugin != null) {
+                final LazyPlugin<? extends Plugin> plugin = weakPlugin.get();
+                if (plugin != null && (lazyPlugin == plugin || lazyPlugin.getClassName().equals(plugin.getClassName()) && lazyPlugin.getVersion() == plugin.getVersion() && Arrays.equals(lazyPlugin.getLazyPluginClass().getSha256(), plugin.getLazyPluginClass().getSha256()))) {
+                    final PluginClassLoaderChild ret = next.getKey();
+                    if (ret != null) {
+                        return ret;
+                    }
+                    break;
+                }
+            }
+        }
+        if (putIfAbsent != null) {
+            sharedLazyPluginClassLoader.put(putIfAbsent, new WeakReference<LazyPlugin<? extends Plugin>>(lazyPlugin));
+            return putIfAbsent;
+        }
+        return null;
+    }
+
+    private synchronized static PluginClassLoaderChild fetchSharedChild(final Plugin plugin, final PluginClassLoaderChild putIfAbsent) {
+        final Iterator<Entry<PluginClassLoaderChild, String>> it = sharedPluginClassLoader.entrySet().iterator();
+        final String cacheID = getCacheID(plugin);
+        while (it.hasNext()) {
+            final Entry<PluginClassLoaderChild, String> next = it.next();
+            final String ID = next.getValue();
+            if (ID != null && ID.equals(cacheID)) {
+                final PluginClassLoaderChild ret = next.getKey();
+                if (ret != null) {
+                    return ret;
+                }
+                break;
+            }
+        }
+        if (putIfAbsent != null) {
+            sharedPluginClassLoader.put(putIfAbsent, cacheID);
+            return putIfAbsent;
+        }
+        return null;
+    }
+
+    public static Class<?> findSharedClass(String name) {
+        synchronized (sharedClasses) {
+            Iterator<Entry<Class<?>, String>> it = sharedClasses.entrySet().iterator();
+            while (it.hasNext()) {
+                Entry<Class<?>, String> next = it.next();
+                Class<?> ret = null;
+                if (name.equals(next.getValue()) && (ret = next.getKey()) != null) {
+                    return ret;
+                }
+            }
+        }
+        return null;
+    }
+
+    private static String getCacheID(final Plugin plugin) {
+        if (plugin instanceof PluginForHost) {
+            final LazyHostPlugin lazyP = ((PluginForHost) plugin).getLazyP();
+            return lazyP.getClassName() + lazyP.getVersion() + HexFormatter.byteArrayToHex(lazyP.getLazyPluginClass().getSha256());
+        } else if (plugin instanceof PluginForDecrypt) {
+            final LazyCrawlerPlugin lazyC = ((PluginForDecrypt) plugin).getLazyC();
+            return lazyC.getClassName() + lazyC.getVersion() + HexFormatter.byteArrayToHex(lazyC.getLazyPluginClass().getSha256());
+        }
+        return null;
+    }
 
     public static PluginClassLoader getInstance() {
         return INSTANCE;
-    }
-
-    private PluginClassLoader() {
-        super(new URL[] { Application.getRootUrlByClass(jd.SecondLevelLaunch.class, null) }, PluginClassLoader.class.getClassLoader());
-
-    }
-
-    public PluginClassLoaderChild getChild() {
-        return new PluginClassLoaderChild(this);
     }
 
     public synchronized static PluginClassLoaderChild getSharedChild(LazyPlugin<? extends Plugin> lazyPlugin) {
@@ -342,61 +403,6 @@ public class PluginClassLoader extends URLClassLoader {
                 }
             }
             return ret;
-        }
-        return null;
-    }
-
-    private static String getCacheID(final Plugin plugin) {
-        if (plugin instanceof PluginForHost) {
-            final LazyHostPlugin lazyP = ((PluginForHost) plugin).getLazyP();
-            return lazyP.getClassName() + lazyP.getVersion() + HexFormatter.byteArrayToHex(lazyP.getLazyPluginClass().getSha256());
-        } else if (plugin instanceof PluginForDecrypt) {
-            final LazyCrawlerPlugin lazyC = ((PluginForDecrypt) plugin).getLazyC();
-            return lazyC.getClassName() + lazyC.getVersion() + HexFormatter.byteArrayToHex(lazyC.getLazyPluginClass().getSha256());
-        }
-        return null;
-    }
-
-    private synchronized static PluginClassLoaderChild fetchSharedChild(final Plugin plugin, final PluginClassLoaderChild putIfAbsent) {
-        final Iterator<Entry<PluginClassLoaderChild, String>> it = sharedPluginClassLoader.entrySet().iterator();
-        final String cacheID = getCacheID(plugin);
-        while (it.hasNext()) {
-            final Entry<PluginClassLoaderChild, String> next = it.next();
-            final String ID = next.getValue();
-            if (ID != null && ID.equals(cacheID)) {
-                final PluginClassLoaderChild ret = next.getKey();
-                if (ret != null) {
-                    return ret;
-                }
-                break;
-            }
-        }
-        if (putIfAbsent != null) {
-            sharedPluginClassLoader.put(putIfAbsent, cacheID);
-            return putIfAbsent;
-        }
-        return null;
-    }
-
-    private synchronized static PluginClassLoaderChild fetchSharedChild(final LazyPlugin<? extends Plugin> lazyPlugin, final PluginClassLoaderChild putIfAbsent) {
-        final Iterator<Entry<PluginClassLoaderChild, WeakReference<LazyPlugin<? extends Plugin>>>> it = sharedLazyPluginClassLoader.entrySet().iterator();
-        while (it.hasNext()) {
-            final Entry<PluginClassLoaderChild, WeakReference<LazyPlugin<? extends Plugin>>> next = it.next();
-            final WeakReference<LazyPlugin<? extends Plugin>> weakPlugin = next.getValue();
-            if (weakPlugin != null) {
-                final LazyPlugin<? extends Plugin> plugin = weakPlugin.get();
-                if (plugin != null && (lazyPlugin == plugin || lazyPlugin.getClassName().equals(plugin.getClassName()) && lazyPlugin.getVersion() == plugin.getVersion() && Arrays.equals(lazyPlugin.getLazyPluginClass().getSha256(), plugin.getLazyPluginClass().getSha256()))) {
-                    final PluginClassLoaderChild ret = next.getKey();
-                    if (ret != null) {
-                        return ret;
-                    }
-                    break;
-                }
-            }
-        }
-        if (putIfAbsent != null) {
-            sharedLazyPluginClassLoader.put(putIfAbsent, new WeakReference<LazyPlugin<? extends Plugin>>(lazyPlugin));
-            return putIfAbsent;
         }
         return null;
     }
@@ -439,5 +445,14 @@ public class PluginClassLoader extends URLClassLoader {
             }
         }
 
+    }
+
+    private PluginClassLoader() {
+        super(new URL[] { Application.getRootUrlByClass(jd.SecondLevelLaunch.class, null) }, PluginClassLoader.class.getClassLoader());
+
+    }
+
+    public PluginClassLoaderChild getChild() {
+        return new PluginClassLoaderChild(this);
     }
 }
