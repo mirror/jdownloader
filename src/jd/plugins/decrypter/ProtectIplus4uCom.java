@@ -50,7 +50,10 @@ public class ProtectIplus4uCom extends PluginForDecrypt {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         final String parameter = param.toString();
         final String host = new Regex(parameter, "https?://(?:www\\.)?([^/]+)").getMatch(0);
-        final String linkid = new Regex(parameter, host + "/([a-z0-9]+)(?:-.*?)?\\.html$").getMatch(0);
+        String linkid = new Regex(parameter, host + "/(?:check\\.)([a-z0-9]+)\\.html$").getMatch(0);
+        if (linkid == null) {
+            linkid = new Regex(parameter, host + "/([a-z0-9]+)(?:-.*?)?\\.html$").getMatch(0);
+        }
         br.setFollowRedirects(true);
         br.setCustomCharset("utf-8");
         br.getPage(parameter);
