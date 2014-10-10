@@ -100,14 +100,13 @@ public class PluginClassLoader extends URLClassLoader {
                 try {
                     data = IO.readURL(myUrl);
                     try {
-
                         if (_0XCA != data[0] || _0XFE != data[1] || _0XBA != data[2] || _0XBE != data[3]) {
                             String id = "classloader_" + HexFormatter.byteArrayToHex(new byte[] { data[0], data[1], data[2], data[3] });
                             String clExtension = System.getProperty("classloader_" + HexFormatter.byteArrayToHex(new byte[] { data[0], data[1], data[2], data[3] }));
                             data = ((ClassLoaderExtension) Class.forName(clExtension).newInstance()).run(data);
                         }
                     } catch (Throwable e) {
-                        new ClassFormatError("No Class File");
+                        throw new ClassFormatError("No Class File");
                     }
                     if (parent != null) {
                         return parent.defineClass(name, data, 0, data.length);
@@ -287,6 +286,7 @@ public class PluginClassLoader extends URLClassLoader {
             this.pluginClass = pluginClass;
         }
     }
+
     private static final WeakHashMap<Class<?>, String>                                                    sharedClasses                = new WeakHashMap<Class<?>, String>();
     private static final WeakHashMap<PluginClassLoaderChild, WeakReference<LazyPlugin<? extends Plugin>>> sharedLazyPluginClassLoader  = new WeakHashMap<PluginClassLoaderChild, WeakReference<LazyPlugin<? extends Plugin>>>();
 
@@ -295,14 +295,15 @@ public class PluginClassLoader extends URLClassLoader {
 
     private static final WeakHashMap<ThreadGroup, WeakReference<PluginClassLoaderChild>>                  threadGroupPluginClassLoader = new WeakHashMap<ThreadGroup, WeakReference<PluginClassLoaderChild>>();
 
-    private static final PluginClassLoader       INSTANCE                   = new PluginClassLoader();
+    private static final PluginClassLoader                                                                INSTANCE                     = new PluginClassLoader();
 
-    private static final HashMap<String, String> DYNAMIC_LOADABLE_LOBRARIES = new HashMap<String, String>();
+    private static final HashMap<String, String>                                                          DYNAMIC_LOADABLE_LOBRARIES   = new HashMap<String, String>();
     static {
         synchronized (DYNAMIC_LOADABLE_LOBRARIES) {
             DYNAMIC_LOADABLE_LOBRARIES.put("org.bouncycastle", "bcprov-jdk15on-147.jar");
         }
     }
+
     private synchronized static PluginClassLoaderChild fetchSharedChild(final LazyPlugin<? extends Plugin> lazyPlugin, final PluginClassLoaderChild putIfAbsent) {
         final Iterator<Entry<PluginClassLoaderChild, WeakReference<LazyPlugin<? extends Plugin>>>> it = sharedLazyPluginClassLoader.entrySet().iterator();
         while (it.hasNext()) {
