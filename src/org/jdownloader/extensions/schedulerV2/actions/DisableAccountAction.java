@@ -6,12 +6,14 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicBoolean;
 
+import javax.swing.Icon;
 import javax.swing.JLabel;
 
 import jd.controlling.AccountController;
 import jd.gui.swing.jdgui.views.settings.components.ComboBox;
 import jd.plugins.Account;
 
+import org.jdownloader.DomainInfo;
 import org.jdownloader.extensions.schedulerV2.translate.T;
 
 @ScheduleActionIDAnnotation("DISABLE_ACCOUNT")
@@ -70,7 +72,7 @@ public class DisableAccountAction extends AbstractScheduleAction<AccountActionCo
         if (getConfig() == null) {
             return "?";
         }
-        return getConfig().getHoster() + ": " + getConfig().getUser();
+        return getConfig().getUser();
     }
 
     @Override
@@ -107,5 +109,13 @@ public class DisableAccountAction extends AbstractScheduleAction<AccountActionCo
 
         noAccLabel.setVisible(false);
         cbAccounts.setVisible(true);
+    }
+
+    @Override
+    public Icon getParameterIcon() {
+        if (getConfig() == null) {
+            return null;
+        }
+        return DomainInfo.getInstance(getConfig().getHoster()).getIcon(16);
     }
 }
