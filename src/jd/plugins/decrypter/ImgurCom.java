@@ -102,13 +102,8 @@ public class ImgurCom extends PluginForDecrypt {
                         logger.info("Server problems: " + PARAMETER);
                         return decryptedLinks;
                     }
-                    if (br.containsHTML("class=\"textbox empty\"") || br.getHttpConnection().getResponseCode() == 404) {
-                        final DownloadLink offline = createDownloadlink("directhttp://" + PARAMETER);
-                        offline.setAvailable(false);
-                        offline.setFinalFileName(LID);
-                        offline.setProperty("offline", true);
-                        decryptedLinks.add(offline);
-                        return decryptedLinks;
+                    if (br.getHttpConnection().getResponseCode() == 404 || br.containsHTML("class=\"textbox empty\"|<h1>Zoinks! You've taken a wrong turn\\.</h1>|it's probably been deleted or may not have existed at all\\.</p>")) {
+                        return createOfflineLink(PARAMETER);
                     }
                     fpName = br.getRegex("<title>([^<>\"]*?) \\- Imgur</title>").getMatch(0);
                     if (fpName == null) {
@@ -139,21 +134,15 @@ public class ImgurCom extends PluginForDecrypt {
                 decryptedLinks.add(dl);
                 return;
             }
-            final DownloadLink offline = createDownloadlink("directhttp://" + PARAMETER);
-            offline.setAvailable(false);
-            offline.setProperty("offline", true);
-            decryptedLinks.add(offline);
+            decryptedLinks.addAll(createOfflineLink(PARAMETER));
             return;
         }
         final int imgcount = Integer.parseInt(getJson(br.toString(), "images_count"));
         if (imgcount == 0) {
-            final DownloadLink offline = createDownloadlink("directhttp://" + PARAMETER);
-            offline.setAvailable(false);
-            offline.setFinalFileName(LID);
-            offline.setProperty("offline", true);
-            decryptedLinks.add(offline);
+            decryptedLinks.addAll(createOfflineLink(PARAMETER));
             return;
         }
+
         /*
          * using links (i.imgur.com/imgUID(s)?.extension) seems to be problematic, it can contain 's' (imgUID + s + .extension), but not
          * always! imgUid.endswith("s") is also a valid uid, so you can't strip them!
@@ -252,6 +241,18 @@ public class ImgurCom extends PluginForDecrypt {
             result = new Regex(source, "\"" + parameter + "\":([\t\n\r ]+)?\"([^<>\"]*?)\"").getMatch(1);
         }
         return result;
+    }
+
+    private ArrayList<DownloadLink> createOfflineLink(final String link) {
+        ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
+        final DownloadLink offline = createDownloadlink("directhttp://" + link);
+        offline.setAvailable(false);
+        if (LID != null) {
+            offline.setFinalFileName(LID);
+        }
+        offline.setProperty("OFFLINE", true);
+        decryptedLinks.add(offline);
+        return decryptedLinks;
     }
 
 }
