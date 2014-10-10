@@ -108,7 +108,7 @@ public class RPNetBiz extends PluginForHost {
     @Override
     public void handleFree(DownloadLink downloadLink) throws Exception, PluginException {
         // requestFileInformation(downloadLink);
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, downloadLink.getDownloadURL(), true, 0);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, downloadLink.getDownloadURL(), true, -2);
         URLConnectionAdapter con = dl.getConnection();
         List<Integer> allowedResponseCodes = Arrays.asList(200, 206);
         if (!allowedResponseCodes.contains(con.getResponseCode()) || con.getContentType().contains("html") || con.getResponseMessage().contains("Download doesn't exist for given Hash/ID/Key")) {
@@ -333,7 +333,7 @@ public class RPNetBiz extends PluginForHost {
 
     private void handleDL(DownloadLink link, String dllink) throws Exception {
         /* we want to follow redirects in final stage */
-        dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, true, 0);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, true, -2);
         if (dl.getConnection().isContentDisposition()) {
             link.setProperty("cachedDllink", dllink);
             /* contentdisposition, lets download it */
