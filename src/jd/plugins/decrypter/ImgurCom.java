@@ -102,7 +102,7 @@ public class ImgurCom extends PluginForDecrypt {
                         logger.info("Server problems: " + PARAMETER);
                         return decryptedLinks;
                     }
-                    if (br.containsHTML("class=\"textbox empty\"")) {
+                    if (br.containsHTML("class=\"textbox empty\"") || br.getHttpConnection().getResponseCode() == 404) {
                         final DownloadLink offline = createDownloadlink("directhttp://" + PARAMETER);
                         offline.setAvailable(false);
                         offline.setFinalFileName(LID);
