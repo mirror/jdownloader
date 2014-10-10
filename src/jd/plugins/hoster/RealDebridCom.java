@@ -53,7 +53,7 @@ import jd.utils.JDUtilities;
 import org.appwork.utils.logging2.LogSource;
 import org.appwork.utils.os.CrossSystem;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "real-debrid.com" }, urls = { "https?://\\w+\\.real\\-debrid\\.com/dl/\\w+/.+" }, flags = { 2 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "real-debrid.com" }, urls = { "https?://\\w+\\.(?:real\\-debrid\\.com|rdb\\.so)/dl/\\w+/.+" }, flags = { 2 })
 public class RealDebridCom extends PluginForHost {
 
     // DEV NOTES
@@ -101,6 +101,7 @@ public class RealDebridCom extends PluginForHost {
 
     @Override
     public AvailableStatus requestFileInformation(DownloadLink dl) throws PluginException, IOException {
+        prepBrowser(br);
         URLConnectionAdapter con = null;
         try {
             con = br.openGetConnection(dl.getDownloadURL());
