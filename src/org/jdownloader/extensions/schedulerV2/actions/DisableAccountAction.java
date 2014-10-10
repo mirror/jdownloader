@@ -4,6 +4,7 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 import javax.swing.JLabel;
 
@@ -15,6 +16,11 @@ import org.jdownloader.extensions.schedulerV2.translate.T;
 
 @ScheduleActionIDAnnotation("DISABLE_ACCOUNT")
 public class DisableAccountAction extends AbstractScheduleAction<AccountActionConfig> {
+
+    private final ComboBox<Account> cbAccounts = new ComboBox<Account>();
+    private final JLabel            noAccLabel = new JLabel(T._.addScheduleEntryDialog_noAccount());
+    protected boolean               setBoolean = false;
+    private AtomicBoolean           update     = new AtomicBoolean(false);
 
     public DisableAccountAction(String configJson) {
         super(configJson);
@@ -31,7 +37,7 @@ public class DisableAccountAction extends AbstractScheduleAction<AccountActionCo
         for (Account acc : accounts) {
             if (acc.getUser().equals(getConfig().getUser())) {
                 // we use user and hoster to compare, because if an account is re-added, rule should still be valid
-                acc.setEnabled(false);
+                acc.setEnabled(setBoolean);
             }
         }
     }
@@ -40,17 +46,56 @@ public class DisableAccountAction extends AbstractScheduleAction<AccountActionCo
     protected void createPanel() {
         panel.put(new JLabel(T._.addScheduleEntryDialog_account() + ":"), "gapleft 10,");
 
+        panel.put(cbAccounts, "");
+        panel.put(noAccLabel, "");
+
+        updateAccounts();
+        cbAccounts.setRenderer(new AccountListRenderer());
+        cbAccounts.addActionListener(new ActionListener() {
+
+            @Override
+            public void actionPerformed(ActionEvent e) {
+
+                if (cbAccounts.getSelectedItem() != null && !update.get()) {
+                    getConfig().setHoster(cbAccounts.getSelectedItem().getHoster());
+                    getConfig().setUser(cbAccounts.getSelectedItem().getUser());
+                }
+            }
+        });
+
+    };
+
+    @Override
+    public String getReadableParameter() {
+        if (getConfig() == null) {
+            return "?";
+        }
+        return getConfig().getHoster() + ": " + getConfig().getUser();
+    }
+
+    @Override
+    public void setVisible(boolean aFlag) {
+        super.setVisible(aFlag);
+        if (aFlag) {
+            updateAccounts();
+        }
+    }
+
+    private void updateAccounts() {
+
         List<Account> accs = AccountController.getInstance().list(null);
         if (accs == null || accs.size() == 0) {
-            panel.put(new JLabel(T._.addScheduleEntryDialog_noAccount()), "");
-            return;
+            noAccLabel.setVisible(true);
+            cbAccounts.setVisible(false);
+        }
+        update.set(true);
+        cbAccounts.removeAllItems();
+        for (Account acc : accs) {
+            cbAccounts.addItem(acc);
         }
 
-        final ComboBox<Account> cbAccounts = new ComboBox<Account>(accs.toArray(new Account[accs.size()]));
-
-        cbAccounts.setRenderer(new AccountListRenderer());
-
-        if (getConfig().getHoster().length() > 0) {
+        // set default host
+        if (getConfig() != null && getConfig().getHoster().length() > 0) {
             for (Account acc : accs) {
                 if (acc.getHoster().equals(getConfig().getHoster()) && acc.getUser().equals(getConfig().getUser())) {
                     // we use user and hoster to compare, because if an account is re-added, rule should still be valid
@@ -58,21 +103,9 @@ public class DisableAccountAction extends AbstractScheduleAction<AccountActionCo
                 }
             }
         }
+        update.set(false);
 
-        cbAccounts.addActionListener(new ActionListener() {
-
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                getConfig().setHoster(cbAccounts.getSelectedItem().getHoster());
-                getConfig().setUser(cbAccounts.getSelectedItem().getUser());
-            }
-        });
-
-        panel.put(cbAccounts, "");
-    };
-
-    @Override
-    public String getReadableParameter() {
-        return getConfig().getHoster() + ": " + getConfig().getUser();
+        noAccLabel.setVisible(false);
+        cbAccounts.setVisible(true);
     }
 }
