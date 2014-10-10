@@ -92,7 +92,9 @@ public class LinkGrabberSidebar extends MigPanel {
                     }
                 });
                 add(Box.createVerticalGlue(), "pushy,growy");
+
                 add(panel.getPanel(), "hidemode 3");
+
                 panel.init();
             } catch (Throwable t) {
                 t.printStackTrace();

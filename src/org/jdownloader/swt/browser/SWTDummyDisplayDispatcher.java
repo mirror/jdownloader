@@ -42,6 +42,10 @@ public class SWTDummyDisplayDispatcher {
         synchronized (this) {
             if (thread != null) {
                 thread.interrupt();
+                if (display != null) {
+                    // required to interrupt display.sleep
+                    display.wake();
+                }
                 try {
                     thread.join();
                 } catch (InterruptedException e) {
@@ -128,6 +132,9 @@ public class SWTDummyDisplayDispatcher {
                             while (!isInterrupted()) {
 
                                 if (!display.readAndDispatch()) {
+                                    if (isInterrupted()) {
+                                        break;
+                                    }
                                     display.sleep();
                                 }
                             }

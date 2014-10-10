@@ -451,7 +451,6 @@ public class LinkGrabberPanel extends SwitchPanel implements LinkCollectorListen
                 Dimension ret = super.getPreferredSize();
                 Insets borderInsets = getBorder().getBorderInsets(sidebarScrollPane);
                 ret.width = sidebar.getPreferredSize().width + getVerticalScrollBar().getPreferredSize().width + borderInsets.left + borderInsets.right;
-
                 return ret;
             }
 
