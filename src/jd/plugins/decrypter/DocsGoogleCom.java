@@ -69,8 +69,13 @@ public class DocsGoogleCom extends PluginForDecrypt {
             br.getPage(parameter);
         }
 
-        if (br.containsHTML("<p class=\"errorMessage\" style=\"padding\\-top: 50px\">Sorry, the file you have requested does not exist\\.</p>")) {
-            logger.info("Link is offline or Invalid URL been provided " + parameter);
+        if (br.containsHTML("<p class=\"errorMessage\" style=\"padding\\-top: 50px\">Sorry, the file you have requested does not exist\\.</p>") || br.getHttpConnection().getResponseCode() == 404) {
+            final DownloadLink offline = createDownloadlink
+
+            ("directhttp://" + parameter);
+            offline.setAvailable(false);
+            offline.setProperty("offline", true);
+            decryptedLinks.add(offline);
             return decryptedLinks;
         }
         final String fid = new Regex(parameter, "id=([A-Za-z0-9]+)").getMatch(0);
