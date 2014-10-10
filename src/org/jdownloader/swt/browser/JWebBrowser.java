@@ -45,11 +45,8 @@ import org.jdownloader.swt.browser.events.JWebBrowserListener;
 public class JWebBrowser extends MigPanel implements ProgressListener, LocationListener, OpenWindowListener, MenuDetectListener, DragDetectListener {
     static {
         if (CrossSystem.isWindows()) {
-            Class<?> cls;
             try {
-                cls = Class.forName("org.eclipse.swt.internal.win32.OS");
-                // int test = org.eclipse.swt.internal.win32.OS.FEATURE_DISABLE_NAVIGATION_SOUNDS +
-                // org.eclipse.swt.internal.win32.OS.SET_FEATURE_ON_PROCESS;
+                final Class<?> cls = Class.forName("org.eclipse.swt.internal.win32.OS");
                 Method method = cls.getMethod("CoInternetSetFeatureEnabled", new Class[] { int.class, int.class, boolean.class });
                 method.invoke(null, /* org.eclipse.swt.internal.win32.OS.FEATURE_DISABLE_NAVIGATION_SOUNDS */21, /*
                                                                                                                   * org.eclipse.swt.internal.
@@ -59,9 +56,7 @@ public class JWebBrowser extends MigPanel implements ProgressListener, LocationL
             } catch (Throwable e) {
                 throw new WTFException("SWT Library Missing ", e);
             }
-        }
-        if (CrossSystem.isLinux()) {
-
+        } else if (CrossSystem.isLinux()) {
             System.setProperty("sun.awt.xembedserver", "true");
         }
     }
@@ -77,8 +72,6 @@ public class JWebBrowser extends MigPanel implements ProgressListener, LocationL
     private SwtBrowserCanvas browserCanvas;
 
     public static void main(String[] args) throws Exception {
-        // Required for Linux systems
-        System.setProperty("sun.awt.xembedserver", "true");
         // start Dispatcher
         SWTDummyDisplayDispatcher.getInstance().start();
 
