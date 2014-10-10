@@ -4,6 +4,7 @@ import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
 import java.util.LinkedHashMap;
 
+import javax.swing.Icon;
 import javax.swing.JComponent;
 import javax.swing.JLabel;
 
@@ -90,5 +91,10 @@ public abstract class AbstractScheduleAction<T extends IScheduleActionConfig> {
     public String getReadableParameter() {
         // default: no parameter
         return "";
+    }
+
+    public Icon getParameterIcon() {
+        // default: no icon
+        return null;
     }
 }

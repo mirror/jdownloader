@@ -6,6 +6,7 @@ import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Calendar;
 
+import javax.swing.Icon;
 import javax.swing.JTable;
 import javax.swing.table.JTableHeader;
 
@@ -130,6 +131,14 @@ public class ScheduleTableModel extends ExtTableModel<ScheduleEntry> {
                     return "UNKNOWN";
                 }
                 return value.getAction().getReadableParameter();
+            }
+
+            @Override
+            protected Icon getIcon(ScheduleEntry value) {
+                if (value.getAction() == null) {
+                    return null;
+                }
+                return value.getAction().getParameterIcon();
             }
         });
 
