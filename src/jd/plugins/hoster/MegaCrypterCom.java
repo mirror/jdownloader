@@ -37,6 +37,7 @@ import javax.crypto.spec.SecretKeySpec;
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
+import jd.config.Property;
 import jd.http.Browser;
 import jd.http.Request;
 import jd.nutils.encoding.Base64;
@@ -57,7 +58,7 @@ import org.appwork.utils.formatter.SizeFormatter;
 import org.jdownloader.images.NewTheme;
 import org.jdownloader.plugins.PluginTaskID;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "megacrypter.com" }, urls = { "http://(www\\.)?megacrypter\\.com/\\![A-Za-z0-9\\-_\\!]+" }, flags = { 2 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "megacrypter.com" }, urls = { "https?://(?:www\\.)?megacrypter\\.com/\\![A-Za-z0-9\\-_\\!]+" }, flags = { 2 })
 public class MegaCrypterCom extends PluginForHost {
 
     public MegaCrypterCom(PluginWrapper wrapper) {
@@ -169,12 +170,40 @@ public class MegaCrypterCom extends PluginForHost {
         }
     }
 
+    private final static boolean supportsHTTPS       = true;
+    private final static String  preferHTTPS         = "preferHTTPS";
+    private final static boolean preferHTTPS_default = false;
+    private final static boolean enforcesHTTPS       = true;
+
+    @SuppressWarnings({ "unused", "deprecation" })
+    private void setConfigElements() {
+        if (supportsHTTPS && enforcesHTTPS) {
+            // preferhttps setting isn't needed! lets make sure preferhttps setting removed.
+            getPluginConfig().setProperty(preferHTTPS, Property.NULL);
+            getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_LABEL, "This Host Provider enforces secure communication requests via 'https' over SSL/TLS"));
+        } else if (supportsHTTPS && !enforcesHTTPS) {
+            getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), preferHTTPS, JDL.L("plugins.hoster.xfsCore.preferHTTPS", "Force secure communication requests via 'https' over SSL/TLS")).setDefaultValue(preferHTTPS_default));
+        } else {
+            // lets make sure preferhttps setting removed when hoster or we disable the plugin https ability.
+            getPluginConfig().setProperty(preferHTTPS, Property.NULL);
+        }
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), USE_TMP, JDL.L("plugins.hoster.megacryptercom.usetmp", "Use tmp decrypting file?")).setDefaultValue(false));
+    }
+
+    @SuppressWarnings("unused")
+    private void setUrl() {
+        mcUrl = (enforcesHTTPS || this.getPluginConfig().getBooleanProperty(preferHTTPS, preferHTTPS_default) ? "https" : "http") + "://megacrypter.com/api";
+    }
+
+    private String mcUrl = null;
+
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
         this.setBrowserExclusive();
+        setUrl();
         br.setFollowRedirects(true);
         LINKPART = new Regex(link.getDownloadURL(), "megacrypter\\.com/(.+)").getMatch(0);
-        br.postPageRaw("http://megacrypter.com/api", "{\"m\": \"info\", \"link\":\"" + LINKPART + "\"}");
+        br.postPageRaw(mcUrl, "{\"m\": \"info\", \"link\":\"" + LINKPART + "\"}");
         try {
             checkError(br);
         } catch (final PluginException e) {
@@ -183,7 +212,6 @@ public class MegaCrypterCom extends PluginForHost {
             }
             throw e;
         }
-
         final String filename = br.getRegex("\"name\":\"([^<>\"]*?)\"").getMatch(0);
         final String filesize = br.getRegex("\"size\":(\\d+)").getMatch(0);
         if (filename == null || filesize == null) {
@@ -203,9 +231,9 @@ public class MegaCrypterCom extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         br.getHeaders().put("Content-Type", "application/json");
-        br.postPageRaw("http://megacrypter.com/api", "{\"m\": \"dl\", \"link\":\"" + LINKPART + "\"}");
+        br.postPageRaw(mcUrl, "{\"m\": \"dl\", \"link\":\"" + LINKPART + "\"}");
         checkError(br);
-        String dllink = br.getRegex("\"url\":\"(http:[^<>\"]*?)\"").getMatch(0);
+        String dllink = br.getRegex("\"url\":\"(https?:[^<>\"]*?)\"").getMatch(0);
         if (dllink == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
@@ -301,10 +329,6 @@ public class MegaCrypterCom extends PluginForHost {
             plugin.setDownloadInterface(dl);
         }
         return dl;
-    }
-
-    private void setConfigElements() {
-        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), USE_TMP, JDL.L("plugins.hoster.megacryptercom.usetmp", "Use tmp decrypting file?")).setDefaultValue(false));
     }
 
     private void decrypt(DownloadLink link, String keyString) throws NoSuchAlgorithmException, NoSuchPaddingException, InvalidKeyException, InvalidAlgorithmParameterException, IOException {

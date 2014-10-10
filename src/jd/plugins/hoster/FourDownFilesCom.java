@@ -53,7 +53,7 @@ import jd.utils.locale.JDL;
 import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.formatter.TimeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "4downfiles.com" }, urls = { "https?://(www\\.)?4downfiles\\.(com|net)/(vidembed\\-)?[a-z0-9]{12}" }, flags = { 2 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "4downfiles.com" }, urls = { "https?://(www\\.)?4downfiles\\.(?:com|net)/(vidembed\\-)?[a-z0-9]{12}" }, flags = { 2 })
 public class FourDownFilesCom extends PluginForHost {
 
     private String               correctedBR                  = "";
@@ -64,7 +64,7 @@ public class FourDownFilesCom extends PluginForHost {
     private static final String  NICE_HOST                    = COOKIE_HOST.replaceAll("(https://|http://)", "");
     private static final String  NICE_HOSTproperty            = COOKIE_HOST.replaceAll("(https://|http://|\\.|\\-)", "");
     // domain names used within download links.
-    private static final String  DOMAINS                      = "(4downfiles\\.com)";
+    private static final String  DOMAINS                      = "(4downfiles\\.(?:com|net))";
     private static final String  MAINTENANCE                  = ">This server is in maintenance mode";
     private static final String  MAINTENANCEUSERTEXT          = JDL.L("hoster.xfilesharingprobasic.errors.undermaintenance", "This server is under Maintenance");
     private static final String  ALLWAIT_SHORT                = JDL.L("hoster.xfilesharingprobasic.errors.waitingfordownloads", "Waiting till new downloads can be started");
@@ -463,13 +463,13 @@ public class FourDownFilesCom extends PluginForHost {
     /**
      * Prevents more than one free download from starting at a given time. One step prior to dl.startDownload(), it adds a slot to maxFree
      * which allows the next singleton download to start, or at least try.
-     * 
+     *
      * This is needed because xfileshare(website) only throws errors after a final dllink starts transferring or at a given step within pre
      * download sequence. But this template(XfileSharingProBasic) allows multiple slots(when available) to commence the download sequence,
      * this.setstartintival does not resolve this issue. Which results in x(20) captcha events all at once and only allows one download to
      * start. This prevents wasting peoples time and effort on captcha solving and|or wasting captcha trading credits. Users will experience
      * minimal harm to downloading as slots are freed up soon as current download begins.
-     * 
+     *
      * @param controlFree
      *            (+1|-1)
      */
@@ -607,7 +607,7 @@ public class FourDownFilesCom extends PluginForHost {
     // TODO: remove this when v2 becomes stable. use br.getFormbyKey(String key, String value)
     /**
      * Returns the first form that has a 'key' that equals 'value'.
-     * 
+     *
      * @param key
      * @param value
      * @return
@@ -633,7 +633,7 @@ public class FourDownFilesCom extends PluginForHost {
 
     /**
      * Validates string to series of conditions, null, whitespace, or "". This saves effort factor within if/for/while statements
-     * 
+     *
      * @param s
      *            Imported String to match against.
      * @return <b>true</b> on valid rule match. <b>false</b> on invalid rule match.
@@ -650,7 +650,7 @@ public class FourDownFilesCom extends PluginForHost {
     /**
      * This fixes filenames from all xfs modules: file hoster, audio/video streaming (including transcoded video), or blocked link checking
      * which is based on fuid.
-     * 
+     *
      * @version 0.2
      * @author raztoki
      * */
@@ -867,10 +867,8 @@ public class FourDownFilesCom extends PluginForHost {
             expiretime = TimeFormatter.getMilliSeconds(expire, "dd MMMM yyyy", Locale.ENGLISH);
         }
         if (account.getBooleanProperty("nopremium") && (expiretime - System.currentTimeMillis()) <= 0) {
+            maxPrem.set(ACCOUNT_FREE_MAXDOWNLOADS);
             try {
-                maxPrem.set(ACCOUNT_FREE_MAXDOWNLOADS);
-                // free accounts can still have captcha.
-                totalMaxSimultanFreeDownload.set(maxPrem.get());
                 account.setMaxSimultanDownloads(maxPrem.get());
                 account.setConcurrentUsePossible(false);
             } catch (final Throwable e) {
@@ -879,8 +877,8 @@ public class FourDownFilesCom extends PluginForHost {
             ai.setStatus("Registered (free) user");
         } else {
             ai.setValidUntil(expiretime);
+            maxPrem.set(ACCOUNT_PREMIUM_MAXDOWNLOADS);
             try {
-                maxPrem.set(ACCOUNT_PREMIUM_MAXDOWNLOADS);
                 account.setMaxSimultanDownloads(maxPrem.get());
                 account.setConcurrentUsePossible(true);
             } catch (final Throwable e) {
