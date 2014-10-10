@@ -3,6 +3,7 @@ package org.jdownloader.gui.views.linkgrabber;
 import java.io.IOException;
 
 import javax.swing.Box;
+import javax.swing.JComponent;
 
 import jd.http.Browser;
 
@@ -35,6 +36,10 @@ public class LinkGrabberSidebar extends MigPanel {
 
     private CustomFilterHeader         exceptions;
     private QuickFilterExceptionsTable exceptionsFilterTable;
+
+    private SponsoringPanelInterface   panel;
+
+    private JComponent                 sponsoringPanel;
 
     public LinkGrabberSidebar(LinkGrabberTable table) {
         super("ins 0,wrap 1", "[grow,fill]", "[]");
@@ -74,7 +79,7 @@ public class LinkGrabberSidebar extends MigPanel {
 
         if (System.getProperty("nativeswing") != null) {
             try {
-                SponsoringPanelInterface panel = (SponsoringPanelInterface) Class.forName("org.jdownloader.sponsor.bt.BTSponsoringPanel").newInstance();
+                panel = (SponsoringPanelInterface) Class.forName("org.jdownloader.sponsor.bt.BTSponsoringPanel").newInstance();
                 panel.setHttpClient(new SimpleHttpInterface() {
 
                     @Override
@@ -93,7 +98,7 @@ public class LinkGrabberSidebar extends MigPanel {
                 });
                 add(Box.createVerticalGlue(), "pushy,growy");
 
-                add(panel.getPanel(), "hidemode 3");
+                add(sponsoringPanel = panel.getPanel(), "hidemode 3");
 
                 panel.init();
             } catch (Throwable t) {
@@ -102,4 +107,9 @@ public class LinkGrabberSidebar extends MigPanel {
         }
 
     }
+
+    public JComponent getSponsoringPanel() {
+        return sponsoringPanel;
+    }
+
 }
