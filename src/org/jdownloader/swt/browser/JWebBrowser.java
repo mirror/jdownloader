@@ -126,6 +126,7 @@ public class JWebBrowser extends MigPanel implements ProgressListener, LocationL
 
     public void addJavaScriptEventListener(final String functionName) {
         addJavaScriptEventListener(functionName, null);
+
     }
 
     public void addJavaScriptEventListener(final String functionName, final JavaScriptEventListener callback) {
@@ -163,7 +164,7 @@ public class JWebBrowser extends MigPanel implements ProgressListener, LocationL
         SwingUtils.setOpaque(this, false);
 
         eventSender = new JWebBrowserEventSender();
-        delayer = new DelayedRunnable(250) {
+        delayer = new DelayedRunnable(500) {
 
             @Override
             public void delayedrun() {
@@ -171,7 +172,8 @@ public class JWebBrowser extends MigPanel implements ProgressListener, LocationL
 
                     @Override
                     protected void runInEDT() {
-                        browserCanvas.setVisible(true);
+                        browserCanvas.setVisible(isVisible());
+                        resizing = false;
                     }
                 };
 
@@ -218,6 +220,8 @@ public class JWebBrowser extends MigPanel implements ProgressListener, LocationL
 
     }
 
+    private boolean resizing = false;
+
     private void initHideOnResizeOrMove() {
         SwingUtilities.invokeLater(new Runnable() {
 
@@ -230,9 +234,10 @@ public class JWebBrowser extends MigPanel implements ProgressListener, LocationL
                     @Override
                     public void ancestorResized(HierarchyEvent e) {
                         if (e.getChanged() == SwingUtilities.getWindowAncestor(JWebBrowser.this)) {
-                            if (isVisible() || delayer.isDelayerActive()) {
+                            if (browserCanvas.isVisible() || delayer.isDelayerActive()) {
                                 browserCanvas.setVisible(false);
                                 delayer.resetAndStart();
+                                resizing = true;
                             }
                         }
                     }
@@ -240,8 +245,9 @@ public class JWebBrowser extends MigPanel implements ProgressListener, LocationL
                     @Override
                     public void ancestorMoved(HierarchyEvent e) {
                         if (e.getChanged() == SwingUtilities.getWindowAncestor(JWebBrowser.this)) {
-                            if (isVisible() || delayer.isDelayerActive()) {
+                            if (browserCanvas.isVisible() || delayer.isDelayerActive()) {
                                 browserCanvas.setVisible(false);
+                                resizing = true;
                                 delayer.resetAndStart();
                             }
                         }
@@ -259,8 +265,9 @@ public class JWebBrowser extends MigPanel implements ProgressListener, LocationL
                     @Override
                     public void ancestorMoved(AncestorEvent e) {
                         if (e.getAncestor() == SwingUtilities.getWindowAncestor(JWebBrowser.this)) {
-                            if (isVisible() || delayer.isDelayerActive()) {
+                            if (browserCanvas.isVisible() || delayer.isDelayerActive()) {
                                 browserCanvas.setVisible(false);
+                                resizing = true;
                                 delayer.resetAndStart();
                             }
                         }
@@ -282,6 +289,9 @@ public class JWebBrowser extends MigPanel implements ProgressListener, LocationL
     @Override
     public void setVisible(boolean aFlag) {
         super.setVisible(aFlag);
+        if (!resizing) {
+            browserCanvas.setVisible(aFlag);
+        }
     }
 
     protected void onConnected() {

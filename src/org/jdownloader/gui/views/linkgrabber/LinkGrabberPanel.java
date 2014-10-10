@@ -10,6 +10,8 @@ import java.awt.event.ComponentListener;
 import javax.swing.BorderFactory;
 import javax.swing.JScrollPane;
 import javax.swing.ScrollPaneConstants;
+import javax.swing.event.ChangeEvent;
+import javax.swing.event.ChangeListener;
 import javax.swing.event.ListSelectionEvent;
 import javax.swing.event.ListSelectionListener;
 
@@ -450,7 +452,26 @@ public class LinkGrabberPanel extends SwitchPanel implements LinkCollectorListen
             public Dimension getPreferredSize() {
                 Dimension ret = super.getPreferredSize();
                 Insets borderInsets = getBorder().getBorderInsets(sidebarScrollPane);
-                ret.width = sidebar.getPreferredSize().width + getVerticalScrollBar().getPreferredSize().width + borderInsets.left + borderInsets.right;
+                int scrollbarWidth = getVerticalScrollBar().getPreferredSize().width;
+                if (sidebar.getSponsoringPanel() == null) {
+                    int widthWithout = sidebar.getPreferredSize().width + scrollbarWidth + borderInsets.left + borderInsets.right;
+
+                    ret.width = widthWithout;
+
+                } else {
+
+                    autoHideSponsor();
+                    boolean isVisible = sidebar.getSponsoringPanel().isVisible();
+                    sidebar.getSponsoringPanel().setVisible(true);
+                    int widthWith = sidebar.getPreferredSize().width + borderInsets.left + borderInsets.right;
+
+                    sidebar.getSponsoringPanel().setVisible(false);
+                    int widthWithout = sidebar.getPreferredSize().width + scrollbarWidth + borderInsets.left + borderInsets.right;
+                    sidebar.getSponsoringPanel().setVisible(isVisible);
+                    ret.width = Math.max(widthWith, widthWithout);
+
+                }
+
                 return ret;
             }
 
@@ -470,6 +491,21 @@ public class LinkGrabberPanel extends SwitchPanel implements LinkCollectorListen
             // }
         };
 
+        sidebarScrollPane.getViewport().addChangeListener(new ChangeListener() {
+
+            @Override
+            public void stateChanged(ChangeEvent e) {
+                if (sidebar.getSponsoringPanel() != null) {
+                    autoHideSponsor();
+                }
+
+                // if (sidebarScrollPane.getVerticalScrollBar().isVisible()) {
+                // sidebar.hideNonScrollComponents();
+                // } else {
+                // sidebar.showNonScrollComponents();
+                // }
+            }
+        });
         // ScrollPaneUI udi = sp.getUI();
 
         LAFOptions.getInstance().applyPanelBackground(sidebarScrollPane);
@@ -596,6 +632,25 @@ public class LinkGrabberPanel extends SwitchPanel implements LinkCollectorListen
 
     @Override
     public void onLinkCrawlerStopped(LinkCollectorCrawler parameter) {
+    }
+
+    public void autoHideSponsor() {
+        double viewPortHeight = sidebarScrollPane.getViewportBorderBounds().getHeight();
+
+        int heightWithSponsor = sidebar.getPreferredSize().height;
+        boolean v = sidebar.getSponsoringPanel().isVisible();
+        if (!v) {
+            heightWithSponsor += sidebar.getSponsoringPanel().getPreferredSize().getHeight() + 4;
+        }
+        if (heightWithSponsor > viewPortHeight) {
+            if (v) {
+                sidebar.getSponsoringPanel().setVisible(false);
+            }
+        } else {
+            if (!v) {
+                sidebar.getSponsoringPanel().setVisible(true);
+            }
+        }
     }
 
 }
