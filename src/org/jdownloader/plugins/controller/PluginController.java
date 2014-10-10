@@ -19,20 +19,9 @@ public abstract class PluginController<T extends Plugin> {
     static {
         IGNORELIST.add("YoutubeDashConfigPanel");
         IGNORELIST.add("RTMPDownload");
+
         IGNORELIST.add("YoutubeHelper");
         IGNORELIST.add("K2SApi");
-    }
-
-    protected abstract long[] getInfos(Class<T> clazz);
-
-    protected List<PluginInfo<T>> scan(LogSource logger, String hosterpath, final List<? extends LazyPlugin<T>> pluginCache, final AtomicLong lastFolderModification) throws Exception {
-        if (!Application.isJared(PluginController.class) && lastFolderModification != null) {
-            lastFolderModification.set(-1l);
-        }
-        if (Application.getJavaVersion() >= Application.JAVA17) {
-            return new PluginScannerNIO<T>(this).scan(logger, hosterpath, pluginCache, lastFolderModification);
-        }
-        return new PluginScannerFiles<T>(this).scan(logger, hosterpath, pluginCache, lastFolderModification);
     }
 
     protected static byte[] getFileHashBytes(final File arg, final MessageDigest md, final byte[] mdCache) throws IOException {
@@ -56,5 +45,17 @@ public abstract class PluginController<T extends Plugin> {
             }
         }
         return md.digest();
+    }
+
+    protected abstract long[] getInfos(Class<T> clazz);
+
+    protected List<PluginInfo<T>> scan(LogSource logger, String hosterpath, final List<? extends LazyPlugin<T>> pluginCache, final AtomicLong lastFolderModification) throws Exception {
+        if (!Application.isJared(PluginController.class) && lastFolderModification != null) {
+            lastFolderModification.set(-1l);
+        }
+        if (Application.getJavaVersion() >= Application.JAVA17) {
+            return new PluginScannerNIO<T>(this).scan(logger, hosterpath, pluginCache, lastFolderModification);
+        }
+        return new PluginScannerFiles<T>(this).scan(logger, hosterpath, pluginCache, lastFolderModification);
     }
 }
