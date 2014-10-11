@@ -300,6 +300,7 @@ EnableAction_run_msg_=Vuoi disabilitare e fermare i download in corso?\nPotresti
 EnabledAction_EnabledAction_disable=Disabilita
 EnabledAction_EnabledAction_empty=Abilita/disabilita collegamento
 EnabledAction_EnabledAction_enable=Abilita
+EnabledDisabledColumn_EnabledDisabledColumn=Abilita / Disabilita
 ExceptionsRuleDialog_ExceptionsRuleDialog_title_=Regola eccezione filtro
 ExceptionsRuleDialog_getIfText_=Permetti collegamenti che corrispondo a queste condizioni, e ignora l'elenco filtro
 ExceptionsTableModel_initColumns_condition_=Permetti collegamenti se,
