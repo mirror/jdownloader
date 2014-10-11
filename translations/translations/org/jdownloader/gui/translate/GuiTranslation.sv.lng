@@ -300,6 +300,7 @@ EnableAction_run_msg_=Vill du avaktivera och stoppa pågående nerladdningar?\nD
 EnabledAction_EnabledAction_disable=Avaktivera
 EnabledAction_EnabledAction_empty=Aktivera/Avaktivera länk
 EnabledAction_EnabledAction_enable=Aktivera
+EnabledDisabledColumn_EnabledDisabledColumn=Aktiverad / Avaktiverad
 ExceptionsRuleDialog_ExceptionsRuleDialog_title_=Filter undantagsregel
 ExceptionsRuleDialog_getIfText_=Tillåt alla länkar som uppfyller dessa vilkor och ignorera filter listan
 ExceptionsTableModel_initColumns_condition_=Tillåt länk om,
