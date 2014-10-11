@@ -31,6 +31,7 @@ import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.plugins.Account;
 import jd.plugins.AccountInfo;
+import jd.plugins.CaptchaException;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
@@ -84,16 +85,26 @@ public class UpstoRe extends PluginForHost {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         br.setCookie("http://upstore.net/", "lang", "en");
-        if (link.getDownloadURL().matches(INVALIDLINKS)) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (link.getDownloadURL().matches(INVALIDLINKS)) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
         br.getPage(link.getDownloadURL());
-        if (br.containsHTML(">File not found<|>File was deleted by owner or due to a violation of service rules\\.|not found|>SmartErrors powered by")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (br.containsHTML(">File not found<|>File was deleted by owner or due to a violation of service rules\\.|not found|>SmartErrors powered by")) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
         final Regex fileInfo = br.getRegex("<h2 style=\"margin:0\">([^<>\"]*?)</h2>[\t\n\r ]+<div class=\"comment\">([^<>\"]*?)</div>");
         String filename = fileInfo.getMatch(0);
-        if (filename == null) filename = br.getRegex("<title>Download file ([^<>\"]*?) \\&mdash; Upload, store \\& share your files on").getMatch(0);
+        if (filename == null) {
+            filename = br.getRegex("<title>Download file ([^<>\"]*?) \\&mdash; Upload, store \\& share your files on").getMatch(0);
+        }
         String filesize = fileInfo.getMatch(1);
-        if (filename == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (filename == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         link.setFinalFileName(Encoding.htmlDecode(filename.trim()));
-        if (filesize != null) link.setDownloadSize(SizeFormatter.getSize(filesize));
+        if (filesize != null) {
+            link.setDownloadSize(SizeFormatter.getSize(filesize));
+        }
         return AvailableStatus.TRUE;
     }
 
@@ -108,17 +119,25 @@ public class UpstoRe extends PluginForHost {
                 try {
                     throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);
                 } catch (final Throwable e) {
-                    if (e instanceof PluginException) throw (PluginException) e;
+                    if (e instanceof PluginException) {
+                        throw (PluginException) e;
+                    }
                 }
                 throw new PluginException(LinkStatus.ERROR_FATAL, "This file can only be downloaded by premium users");
             }
-            if (br.containsHTML(">Server for free downloads is overloaded<")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server overloaded", 30 * 60 * 1000l);
+            if (br.containsHTML(">Server for free downloads is overloaded<")) {
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server overloaded", 30 * 60 * 1000l);
+            }
             // Same server error (displayed differently) also exists for premium users
-            if (br.containsHTML(">Server with file not found<")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error", 60 * 60 * 1000l);
+            if (br.containsHTML(">Server with file not found<")) {
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error", 60 * 60 * 1000l);
+            }
             // Waittime can be skipped
             final long timeBefore = System.currentTimeMillis();
             final String rcID = br.getRegex("Recaptcha\\.create\\(\\'([^<>\"]*?)\\'").getMatch(0);
-            if (rcID == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            if (rcID == null) {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
             PluginForHost recplug = JDUtilities.getPluginForHost("DirectHTTP");
             jd.plugins.hoster.DirectHTTP.Recaptcha rc = ((DirectHTTP) recplug).getReCaptcha(br);
             rc.setId(rcID);
@@ -132,18 +151,30 @@ public class UpstoRe extends PluginForHost {
             }
             int wait = 60;
             String waittime = br.getRegex("var sec = (\\d+)").getMatch(0);
-            if (waittime != null) wait = Integer.parseInt(waittime);
+            if (waittime != null) {
+                wait = Integer.parseInt(waittime);
+            }
             int passedTime = (int) ((System.currentTimeMillis() - timeBefore) / 1000) - 1;
             wait -= passedTime;
-            if (wait > 0) sleep(wait * 1000l, downloadLink);
+            if (wait > 0) {
+                sleep(wait * 1000l, downloadLink);
+            }
             br.postPage(downloadLink.getDownloadURL(), "free=Get+download+link&hash=" + fid + "&recaptcha_challenge_field=" + rc.getChallenge() + "&recaptcha_response_field=" + c);
-            if (br.containsHTML("limit for today|several files recently")) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 3 * 60 * 60 * 1000l);
+            if (br.containsHTML("limit for today|several files recently")) {
+                throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 3 * 60 * 60 * 1000l);
+            }
             dllink = br.getRegex("<div style=\"margin: 10px auto 20px\" class=\"center\">[\t\n\r ]+<a href=\"(http://[^<>\"]*?)\"").getMatch(0);
-            if (dllink == null) dllink = br.getRegex("\"(http://d\\d+\\.upstore\\.net/[^<>\"]*?)\"").getMatch(0);
+            if (dllink == null) {
+                dllink = br.getRegex("\"(http://d\\d+\\.upstore\\.net/[^<>\"]*?)\"").getMatch(0);
+            }
             if (dllink == null) {
                 final String reconnectWait = br.getRegex("Please wait (\\d+) minutes before downloading next file").getMatch(0);
-                if (reconnectWait != null) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, Integer.parseInt(reconnectWait) * 60 * 1001l);
-                if (br.containsHTML("(api\\.recaptcha\\.net|google\\.com/recaptcha/api/)")) throw new PluginException(LinkStatus.ERROR_CAPTCHA);
+                if (reconnectWait != null) {
+                    throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, Integer.parseInt(reconnectWait) * 60 * 1001l);
+                }
+                if (br.containsHTML("(api\\.recaptcha\\.net|google\\.com/recaptcha/api/)")) {
+                    throw new PluginException(LinkStatus.ERROR_CAPTCHA);
+                }
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
         } else {
@@ -152,7 +183,9 @@ public class UpstoRe extends PluginForHost {
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, false, 1);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
-            if (br.containsHTML("not found")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error", 30 * 60 * 1000l);
+            if (br.containsHTML("not found")) {
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error", 30 * 60 * 1000l);
+            }
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         downloadLink.setProperty("freelink", dllink);
@@ -167,7 +200,9 @@ public class UpstoRe extends PluginForHost {
                 br.setCookiesExclusive(true);
                 final Object ret = account.getProperty("cookies", null);
                 boolean acmatch = Encoding.urlEncode(account.getUser()).equals(account.getStringProperty("name", Encoding.urlEncode(account.getUser())));
-                if (acmatch) acmatch = Encoding.urlEncode(account.getPass()).equals(account.getStringProperty("pass", Encoding.urlEncode(account.getPass())));
+                if (acmatch) {
+                    acmatch = Encoding.urlEncode(account.getPass()).equals(account.getStringProperty("pass", Encoding.urlEncode(account.getPass())));
+                }
                 if (acmatch && ret != null && ret instanceof HashMap<?, ?> && !force) {
                     final HashMap<String, String> cookies = (HashMap<String, String>) ret;
                     if (account.isValid()) {
@@ -179,10 +214,36 @@ public class UpstoRe extends PluginForHost {
                         return;
                     }
                 }
-                if (!isMail(account.getUser())) { throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nPlease enter your mailadress in the 'username' field!\r\nBitte gib deine E-Mail Adresse in das 'Benutzername' Feld ein!", PluginException.VALUE_ID_PREMIUM_DISABLE); }
+                if (!isMail(account.getUser())) {
+                    throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nPlease enter your mailadress in the 'username' field!\r\nBitte gib deine E-Mail Adresse in das 'Benutzername' Feld ein!", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                }
                 br.setFollowRedirects(true);
                 br.postPage("http://upstore.net/account/login/", "url=http%253A%252F%252Fupstore.net%252F&send=Login&email=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()));
-                if (br.getCookie(MAINPAGE, "usid") == null) throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nInvalid username/password!\r\nUngültiger Benutzername oder ungültiges Passwort!", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                // some times they force captcha
+                final String cap = br.getRegex(regexLoginCaptcha).getMatch(-1);
+                if (cap != null) {
+                    final DownloadLink dummyLink = new DownloadLink(this, "Account", this.getHost(), MAINPAGE, true);
+                    String code = null;
+                    try {
+                        code = getCaptchaCode(cap, dummyLink);
+                    } catch (Throwable e) {
+                        if (e instanceof CaptchaException) {
+                            // JD2 reference to skip button we should abort!
+                            throw (CaptchaException) e;
+                        }
+                    }
+                    if (code == null) {
+                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nCaptcha required and wasn't provided, account disabled!", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                    }
+                    br.postPage(br.getURL(), "url=http%253A%252F%252Fupstore.net%252F&send=sign+in&email=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()) + "&captcha=" + Encoding.urlEncode(code));
+                    if (br.containsHTML(regexLoginCaptcha)) {
+                        // incorrect captcha, or form values changed
+                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nIncorrect catpcha, account disabled!", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                    }
+                }
+                if (br.getCookie(MAINPAGE, "usid") == null) {
+                    throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nInvalid username/password!\r\nUngültiger Benutzername oder ungültiges Passwort!", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                }
                 // Save cookies
                 final HashMap<String, String> cookies = new HashMap<String, String>();
                 final Cookies add = this.br.getCookies(MAINPAGE);
@@ -192,8 +253,10 @@ public class UpstoRe extends PluginForHost {
                 account.setProperty("name", Encoding.urlEncode(account.getUser()));
                 account.setProperty("pass", Encoding.urlEncode(account.getPass()));
                 account.setProperty("cookies", cookies);
+                account.setProperty("lastlogin", System.currentTimeMillis());
             } catch (final PluginException e) {
                 account.setProperty("cookies", Property.NULL);
+                account.setProperty("lastlogin", Property.NULL);
                 throw e;
             }
         }
@@ -203,16 +266,25 @@ public class UpstoRe extends PluginForHost {
         return parameter.matches(".+@.+");
     }
 
+    // please note: this might cause cookies to go out of session and errors else where...
+    // effectively 4 times a day!
+    private final long   useLoginIndividual = 6 * 3480000l;
+    private final String regexLoginCaptcha  = "/captcha/\\?\\d+";
+
     @Override
     public AccountInfo fetchAccountInfo(Account account) throws Exception {
         AccountInfo ai = new AccountInfo();
         try {
-            login(account, true);
+            if (useLoginIndividual >= 1800000 && account.getStringProperty("lastlogin", null) != null && (System.currentTimeMillis() - useLoginIndividual <= Long.parseLong(account.getStringProperty("lastlogin")))) {
+                login(account, false);
+            } else {
+                login(account, true);
+            }
         } catch (PluginException e) {
             throw e;
         }
         // Make sure that the language is correct
-        br.getPage("http://upstore.net/?lang=en");
+        br.getPage((br.getHttpConnection() == null ? MAINPAGE : "") + "/?lang=en");
         ai.setUnlimitedTraffic();
         // Check for never-ending premium accounts
         if (!br.containsHTML("eternal premium")) {
@@ -240,7 +312,9 @@ public class UpstoRe extends PluginForHost {
         synchronized (LOCK) {
             AccountInfo ai = account.getAccountInfo();
             String maxLimit = br.getRegex(premDlLimit + " \\((\\d+ (MB|GB|TB))\\)").getMatch(0);
-            if (maxLimit != null) ai.setTrafficMax(SizeFormatter.getSize(maxLimit));
+            if (maxLimit != null) {
+                ai.setTrafficMax(SizeFormatter.getSize(maxLimit));
+            }
             ai.setTrafficLeft(0);
             account.setAccountInfo(ai);
         }
@@ -253,13 +327,17 @@ public class UpstoRe extends PluginForHost {
         login(account, false);
         br.setFollowRedirects(false);
         br.getPage(link.getDownloadURL());
-        if (br.containsHTML(premDlLimit)) trafficLeft(account);
+        if (br.containsHTML(premDlLimit)) {
+            trafficLeft(account);
+        }
         // Directdownload enabled?
         String dllink = br.getRedirectLocation();
         // No directdownload? Let's "click" on download
         if (dllink == null) {
             br.postPage("http://upstore.net/load/premium/", "js=1&hash=" + new Regex(link.getDownloadURL(), "([A-Za-z0-9]+)$").getMatch(0));
-            if (br.containsHTML(premDlLimit)) trafficLeft(account);
+            if (br.containsHTML(premDlLimit)) {
+                trafficLeft(account);
+            }
             dllink = br.getRegex("\"ok\":\"(http:[^<>\"]*?)\"").getMatch(0);
         }
         if (dllink == null) {
@@ -273,7 +351,9 @@ public class UpstoRe extends PluginForHost {
             br.followConnection();
             // Same server error (displayed differently) also exists for free
             // users
-            if (br.containsHTML("not found")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error", 60 * 60 * 1000l);
+            if (br.containsHTML("not found")) {
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error", 60 * 60 * 1000l);
+            }
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl.startDownload();
