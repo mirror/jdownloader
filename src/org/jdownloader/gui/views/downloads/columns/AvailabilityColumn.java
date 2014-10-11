@@ -25,7 +25,7 @@ public class AvailabilityColumn extends ExtTextColumn<AbstractNode> {
     }
 
     /**
-     * 
+     *
      */
     private static final long serialVersionUID = 1L;
     private String            nothing          = "";
@@ -60,10 +60,16 @@ public class AvailabilityColumn extends ExtTextColumn<AbstractNode> {
                 if (o2s == null) {
                     o2s = "";
                 }
-                if (this.getSortOrderIdentifier() != ExtColumn.SORT_ASC) {
-                    return o1s.compareToIgnoreCase(o2s);
+                if (o1s.matches("[0-9]*\\/[0-9]* .*") && o2s.matches("[0-9]*\\/[0-9]* .*")) {
+                    int o1i = Integer.parseInt(o1s.split("/")[0]);
+                    int o2i = Integer.parseInt(o2s.split("/")[0]);
+                    if (this.getSortOrderIdentifier() != ExtColumn.SORT_ASC) {
+                        return o1i < o2i ? -1 : 1;
+                    } else {
+                        return o1i > o2i ? -1 : 1;
+                    }
                 } else {
-                    return o2s.compareToIgnoreCase(o1s);
+                    return 0;
                 }
 
             }
