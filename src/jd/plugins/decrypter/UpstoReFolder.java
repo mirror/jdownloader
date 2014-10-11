@@ -25,7 +25,7 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "upsto.re" }, urls = { "http://(www\\.)?upsto\\.re/d/[A-Za-z0-9]+" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "upsto.re" }, urls = { "http://(www\\.)?(upsto\\.re|upstore\\.net)/d/[A-Za-z0-9]+" }, flags = { 0 })
 public class UpstoReFolder extends PluginForDecrypt {
 
     public UpstoReFolder(PluginWrapper wrapper) {
@@ -37,7 +37,7 @@ public class UpstoReFolder extends PluginForDecrypt {
         String parameter = param.toString();
         br.setFollowRedirects(true);
         br.getPage(parameter);
-        if (br.getURL().equals("http://upsto.re/")) {
+        if (br.getURL().matches("https?://(www\\.)?(upsto\\.re|upstore\\.net)/")) {
             logger.info("Link offline: " + parameter);
             return decryptedLinks;
         }
@@ -50,8 +50,9 @@ public class UpstoReFolder extends PluginForDecrypt {
             logger.warning("Decrypter broken for link: " + parameter);
             return null;
         }
-        for (String singleLink : links)
+        for (String singleLink : links) {
             decryptedLinks.add(createDownloadlink("http://upsto.re" + singleLink));
+        }
 
         return decryptedLinks;
     }
