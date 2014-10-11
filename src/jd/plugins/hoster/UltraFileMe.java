@@ -94,6 +94,7 @@ public class UltraFileMe extends PluginForHost {
     // protocol: no https
     // captchatype: recaptcha
     // other:
+    // note: using similar obstruction tactics to uploadrocket/kingfiles
 
     @Override
     public void correctDownloadLink(final DownloadLink link) {
@@ -500,8 +501,7 @@ public class UltraFileMe extends PluginForHost {
 
         /* generic cleanup */
         regexStuff.add("<\\!(\\-\\-.*?\\-\\-)>");
-        regexStuff.add("(display: ?none;\">.*?</div>)");
-        regexStuff.add("(visibility:hidden>.*?<)");
+        regexStuff.add("(<\\s*(\\w+)\\s+[^>]*style\\s*=\\s*(\"|')(?:(?:[\\w:;\\s#-]*(visibility\\s*:\\s*hidden;|display\\s*:\\s*none;|font-size\\s*:\\s*0;)[\\w:;\\s#-]*)|font-size\\s*:\\s*0|visibility\\s*:\\s*hidden|display\\s*:\\s*none)\\3[^>]*(>.*?<\\s*/\\2[^>]*>|/\\s*>))");
 
         for (String aRegex : regexStuff) {
             String results[] = new Regex(correctedBR, aRegex).getColumn(0);
