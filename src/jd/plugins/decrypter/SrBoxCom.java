@@ -99,44 +99,55 @@ public class SrBoxCom extends PluginForDecrypt {
         }
 
         // Added Image
+        DownloadLink[] TabImageLink = new DownloadLink[iImage];
         if (TabImage != null) {
-            int iImageIndex = 1;
+            int iImageIndex = 0;
             for (String strImageLink : TabImage) {
                 if (!strImageLink.toLowerCase().contains("foto")) {
                     strImageLink = "http://www.israbox.com/uploads" + strImageLink;
 
                     DownloadLink DLLink = createDownloadlink(strImageLink, false);
                     if (DLLink != null) {
-                        String strExtension = "";
-                        int iIndex = strImageLink.lastIndexOf('.');
-                        if (iIndex > -1) {
-                            strExtension = strImageLink.substring(iIndex);
-                        }
-                        if (strExtension != "") {
-                            if (fpName != null) {
-                                String strName = fpName;
-                                iIndex = fpName.lastIndexOf(')');
-                                if (iIndex == fpName.length() - 1) {
-                                    iIndex = fpName.lastIndexOf(" (");
-                                    if (iIndex == -1) {
-                                        iIndex = fpName.lastIndexOf("(");
-                                    }
-                                    if (iIndex != -1) {
-                                        strName = fpName.substring(0, iIndex);
-                                    }
-                                }
-                                if (TabImage.length > 1) {
-                                    strName += "_" + Integer.toString(iImageIndex);
-                                    iImageIndex++;
-                                }
-                                DLLink.setFinalFileName(strName + strExtension);
-                            }
-                        }
-                        decryptedLinks.add(DLLink);
+                        TabImageLink[iImageIndex++] = DLLink;
                     }
                 }
-                progress.increase(1);
             }
+        }
+
+        if (TabImageLink != null) {
+            int iImageIndex = 0;
+            for (DownloadLink DLLink : TabImageLink) {
+                if (DLLink != null) {
+                    String strExtension = "";
+                    int iIndex = DLLink.getPluginPatternMatcher().lastIndexOf('.');
+                    if (iIndex > -1) {
+                        strExtension = DLLink.getPluginPatternMatcher().substring(iIndex);
+                    }
+
+                    if (strExtension != "") {
+                        if (fpName != null) {
+                            String strName = fpName;
+                            iIndex = fpName.lastIndexOf(')');
+                            if (iIndex == fpName.length() - 1) {
+                                iIndex = fpName.lastIndexOf(" (");
+                                if (iIndex == -1) {
+                                    iIndex = fpName.lastIndexOf("(");
+                                }
+                                if (iIndex != -1) {
+                                    strName = fpName.substring(0, iIndex);
+                                }
+                            }
+                            if (TabImage.length > 1) {
+                                strName += "_" + Integer.toString(iImageIndex);
+                                iImageIndex++;
+                            }
+                            DLLink.setFinalFileName(strName + strExtension);
+                        }
+                    }
+                    decryptedLinks.add(DLLink);
+                }
+            }
+            progress.increase(1);
         }
 
         for (int i = decryptedLinks.size() - 1; i >= 0; i--) {
@@ -189,7 +200,7 @@ public class SrBoxCom extends PluginForDecrypt {
 
     /**
      * Allows to remove some character to have a nice name
-     * 
+     *
      * @param strName
      *            The name of the package
      * @return the name of the package normalized.
@@ -258,7 +269,7 @@ public class SrBoxCom extends PluginForDecrypt {
 
     /**
      * Allows to put a capital letter on each words of the title
-     * 
+     *
      * @param strText
      *            The text that we want to be capitalize
      * @return the text with a capital letter on each words.
@@ -360,7 +371,7 @@ public class SrBoxCom extends PluginForDecrypt {
 
     /**
      * Allows to replace text using a regular expression pattern
-     * 
+     *
      * @param strText
      *            Text to replace
      * @param strPattern
@@ -373,7 +384,7 @@ public class SrBoxCom extends PluginForDecrypt {
 
     /**
      * Allows to replace text using a regular expression pattern
-     * 
+     *
      * @param strText
      *            Text to replace
      * @param strPattern
