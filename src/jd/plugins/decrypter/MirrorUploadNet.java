@@ -20,6 +20,7 @@ import java.util.ArrayList;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
+import jd.http.Browser;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.plugins.CryptedLink;
@@ -49,22 +50,28 @@ public class MirrorUploadNet extends PluginForDecrypt {
         }
 
         String fpName = br.getRegex("<title>MirrorUpload\\.net \\- Download \\- ([^<>\"]*?)</title>").getMatch(0);
-        if (fpName == null) fpName = br.getRegex("<b>File : </b>([^<>\"]*?)<br />").getMatch(0);
-        br.getPage("http://www.mirrorupload.net/status.html?uid=" + new Regex(parameter, "file/([A-Z0-9]{8})").getMatch(0));
-        if (br.containsHTML("<table width=\"800\" style=\"margin\\-left:30px;\"><tr><td class=\"table\\-middle\" width=\"100%\"><table></table>")) {
+        if (fpName == null) {
+            fpName = br.getRegex("<b>File : </b>([^<>\"]*?)<br />").getMatch(0);
+        }
+        Browser br2 = br.cloneBrowser();
+        br2.getPage("http://www.mirrorupload.net/status.html?uid=" + new Regex(parameter, "file/([A-Z0-9]{8})").getMatch(0));
+        if (br2.containsHTML("<table width=\"800\" style=\"margin\\-left:30px;\"><tr><td class=\"table\\-middle\" width=\"100%\"><table></table>")) {
             logger.info("Link offline: " + parameter);
             return decryptedLinks;
         }
 
-        final String[] links = br.getRegex(">(http://(www\\.)?mirrorupload\\.net/host\\-\\d+/[A-Z0-9]{8}/?)<").getColumn(0);
+        final String[] links = br2.getRegex(">(http://(www\\.)?mirrorupload\\.net/host\\-\\d+/[A-Z0-9]{8}/?)<").getColumn(0);
         if (links == null || links.length == 0) {
             logger.warning("Decrypter broken for link: " + parameter);
             return null;
         }
         for (final String singleLink : links) {
-            br.getPage(singleLink);
-            final String finallink = br.getRedirectLocation();
-            if (finallink != null) decryptedLinks.add(createDownloadlink(finallink));
+            br2 = br.cloneBrowser();
+            br2.getPage(singleLink);
+            final String finallink = br2.getRedirectLocation();
+            if (finallink != null && !finallink.contains(parameter)) {
+                decryptedLinks.add(createDownloadlink(finallink));
+            }
         }
         if (decryptedLinks.size() == 0) {
             logger.warning("Decrypter broken for link: " + parameter);
@@ -72,6 +79,8 @@ public class MirrorUploadNet extends PluginForDecrypt {
         }
         if (fpName != null) {
             final FilePackage fp = FilePackage.getInstance();
+            // this provider only returns 1 file, many uploads are zips/rars spanning files, this should allow proper packaging.
+            fp.setProperty("ALLOW_MERGE", true);
             fp.setName(Encoding.htmlDecode(fpName.trim()));
             fp.addLinks(decryptedLinks);
         }
