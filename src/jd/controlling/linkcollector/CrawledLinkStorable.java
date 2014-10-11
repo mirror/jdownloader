@@ -1,8 +1,11 @@
 package jd.controlling.linkcollector;
 
+import java.util.ArrayList;
+
 import jd.controlling.downloadcontroller.DownloadLinkStorable;
 import jd.controlling.linkcrawler.ArchiveInfoStorable;
 import jd.controlling.linkcrawler.CrawledLink;
+import jd.controlling.linkcrawler.LinkCrawler;
 import jd.plugins.DownloadLink;
 
 import org.appwork.storage.Storable;
@@ -48,6 +51,16 @@ public class CrawledLinkStorable implements Storable {
     }
 
     public void setSourceUrls(String[] urls) {
+        if (urls != null) {
+            final ArrayList<String> deDuplicatedURLs = new ArrayList<String>();
+            for (final String url : urls) {
+                final String deDuplicatedURL = DownloadLink.deDuplicateString(LinkCrawler.cleanURL(url));
+                if (deDuplicatedURL != null) {
+                    deDuplicatedURLs.add(deDuplicatedURL);
+                }
+            }
+            urls = deDuplicatedURLs.toArray(new String[deDuplicatedURLs.size()]);
+        }
         link.setSourceUrls(urls);
     }
 
