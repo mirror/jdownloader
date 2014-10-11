@@ -546,6 +546,7 @@ public class DownloadController extends PackageController<FilePackage, DownloadL
                         byteBuffer.reset();
                         String json = null;
                         try {
+                            System.out.println("Load:" + entry.getName());
                             if (entry.getName().matches("^\\d+_\\d+$")) {
                                 final String idx[] = entry.getName().split("_");
                                 final Integer packageIndex = Integer.valueOf(idx[0]);
