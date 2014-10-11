@@ -1954,12 +1954,12 @@ public class LinkCrawler {
         if (protocol != null) {
             final String host = Browser.getHost(cUrl, true);
             if (protocol != null && !StringUtils.containsIgnoreCase(host, "decrypted") && !StringUtils.containsIgnoreCase(host, "dummycnl.jdownloader.org")) {
-                if (StringUtils.containsIgnoreCase(protocol, "viajd")) {
+                if (protocol.startsWith("http") || protocol.startsWith("ftp")) {
+                    return cUrl;
+                } else if (StringUtils.containsIgnoreCase(protocol, "viajd")) {
                     return cUrl.replaceFirst("viajd", "");
                 } else if (StringUtils.containsIgnoreCase(protocol, "directhttp")) {
                     return cUrl.replaceFirst("directhttp://", "");
-                } else if (protocol.startsWith("http") || protocol.startsWith("ftp")) {
-                    return cUrl;
                 }
             }
         }
