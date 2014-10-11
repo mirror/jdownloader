@@ -79,7 +79,7 @@ public class WorldBytezCom extends PluginForHost {
     private static final boolean ACCOUNT_FREE_RESUME          = false;
     private static final int     ACCOUNT_FREE_MAXCHUNKS       = 1;
     private static final int     ACCOUNT_FREE_MAXDOWNLOADS    = 1;
-    private static final boolean ACCOUNT_PREMIUM_RESUME       = false;
+    private static final boolean ACCOUNT_PREMIUM_RESUME       = true;
     private static final int     ACCOUNT_PREMIUM_MAXCHUNKS    = 0;
     private static final int     ACCOUNT_PREMIUM_MAXDOWNLOADS = 20;
     // note: CAN NOT be negative or zero! (ie. -1 or 0) Otherwise math sections fail. .:. use [1-20]
@@ -505,7 +505,7 @@ public class WorldBytezCom extends PluginForHost {
     public String getDllink() {
         String dllink = br.getRedirectLocation();
         if (dllink == null) {
-            dllink = new Regex(correctedBR, "(\"|\\')(https?://(\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}|([\\w\\-]+\\.)?" + DOMAINS + ")(:\\d{1,4})?/(files|d|cgi\\-bin/dl\\.cgi|[a-z0-9\\.]+/dl\\.cgi)/(\\d+/)?[a-z0-9]+/[^<>\"/]*?)(\"|\\')").getMatch(1);
+            dllink = new Regex(correctedBR, "(\"|\\')(https?://(\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}|([\\w\\-]+\\.)?" + DOMAINS + ")(:\\d{1,4})?/(files\\d*|d|cgi\\-bin/dl\\.cgi|[a-z0-9\\.]+/dl\\.cgi)/(\\d+/)?[a-z0-9]+/[^<>\"/]*?)\\1").getMatch(1);
             if (dllink == null) {
                 final String cryptedScripts[] = new Regex(correctedBR, "p\\}\\((.*?)\\.split\\('\\|'\\)").getColumn(0);
                 if (cryptedScripts != null && cryptedScripts.length != 0) {
@@ -980,6 +980,7 @@ public class WorldBytezCom extends PluginForHost {
                     if (dlform == null) {
                         throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                     }
+                    dlform.remove("down_direct");
                     sendForm(dlform);
                     checkErrors(downloadLink, true);
                     dllink = getDllink();
