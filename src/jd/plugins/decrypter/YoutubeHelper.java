@@ -713,12 +713,12 @@ public class YoutubeHelper {
 
     /**
      * *
-     *
+     * 
      * @param html5PlayerJs
      *            TODO
      * @param br
      * @param s
-     *
+     * 
      * @return
      * @throws IOException
      * @throws PluginException
@@ -1007,7 +1007,8 @@ public class YoutubeHelper {
         getAbsolute(base + "/watch?v=" + vid.videoID, null, br);
 
         handleRentalVideos(vid);
-        String html5PlayerJs = this.br.getMatch("\"js\"\\: \"(.+?)\"");
+
+        String html5PlayerJs = this.br.getMatch("\"js\"\\s*:\\s*\"(.+?)\"");
         if (html5PlayerJs != null) {
             html5PlayerJs = html5PlayerJs.replace("\\/", "/");
             html5PlayerJs = "http:" + html5PlayerJs;
