@@ -546,7 +546,7 @@ public class DownloadController extends PackageController<FilePackage, DownloadL
                         byteBuffer.reset();
                         String json = null;
                         try {
-                            System.out.println("Load:" + entry.getName());
+
                             if (entry.getName().matches("^\\d+_\\d+$")) {
                                 final String idx[] = entry.getName().split("_");
                                 final Integer packageIndex = Integer.valueOf(idx[0]);
@@ -557,11 +557,14 @@ public class DownloadController extends PackageController<FilePackage, DownloadL
                                     packageMap.put(packageIndex, loadedPackage);
                                 }
                                 is = zip.getInputStream(entry);
+                                System.out.println("Load:" + entry.getName());
                                 final byte[] bytes = IO.readStream((int) entry.getSize(), is, byteBuffer, true);
                                 json = new String(bytes, 0, byteBuffer.size(), "UTF-8");
+                                System.out.println("Parse:" + entry.getName());
                                 final DownloadLinkStorable storable = JSonStorage.restoreFromString(json, new TypeRef<DownloadLinkStorable>() {
                                 }, null);
                                 if (storable != null) {
+                                    System.out.println("Restore:" + entry.getName());
                                     loadedPackage.downloadLinks.put(childIndex, storable._getDownloadLink());
                                 } else {
                                     throw new WTFException("restored a null DownloadLinkLinkStorable");
