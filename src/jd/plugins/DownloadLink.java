@@ -740,11 +740,14 @@ public class DownloadLink extends Property implements Serializable, AbstractPack
         if (newHost == null) {
             return;
         }
-        if (Application.getJavaVersion() >= Application.JAVA17) {
-            host = newHost.toLowerCase(Locale.ENGLISH).intern();
-        } else {
-            host = newHost;
+        host = deDuplicateString(newHost.toLowerCase(Locale.ENGLISH));
+    }
+
+    public static String deDuplicateString(String string) {
+        if (string != null && Application.getJavaVersion() >= Application.JAVA17) {
+            return string.intern();
         }
+        return string;
     }
 
     public LinkStatus getLinkStatus() {

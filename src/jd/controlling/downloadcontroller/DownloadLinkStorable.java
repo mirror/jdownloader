@@ -3,6 +3,7 @@ package jd.controlling.downloadcontroller;
 import java.util.HashMap;
 import java.util.Map;
 
+import jd.controlling.linkcrawler.LinkCrawler;
 import jd.crypt.JDCrypt;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
@@ -225,7 +226,14 @@ public class DownloadLinkStorable implements Storable {
 
     /* Do Not Serialize */
     public DownloadLink _getDownloadLink() {
-        return link;
+        final DownloadLink lLink = link;
+        if (lLink != null) {
+            lLink.setContainerUrl(DownloadLink.deDuplicateString(LinkCrawler.cleanURL(lLink.getContainerUrl())));
+            lLink.setReferrerUrl(DownloadLink.deDuplicateString(LinkCrawler.cleanURL(lLink.getReferrerUrl())));
+            lLink.setOriginUrl(DownloadLink.deDuplicateString(LinkCrawler.cleanURL(lLink.getOriginUrl())));
+            lLink.setContentUrl(DownloadLink.deDuplicateString(LinkCrawler.cleanURL(lLink.getContentUrl())));
+        }
+        return lLink;
     }
 
     private boolean crypt() {

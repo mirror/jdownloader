@@ -1200,10 +1200,13 @@ public class LinkCrawler {
         while (next != null) {
             final CrawledLink current = next;
             next = current.getSourceLink();
-            if (sources.size() == 0) {
-                sources.add(current.getURL());
-            } else if (!StringUtils.equals(current.getURL(), sources.get(sources.size() - 1))) {
-                sources.add(current.getURL());
+            final String currentURL = cleanURL(current.getURL());
+            if (currentURL != null) {
+                if (sources.size() == 0) {
+                    sources.add(currentURL);
+                } else if (!StringUtils.equals(currentURL, sources.get(sources.size() - 1))) {
+                    sources.add(currentURL);
+                }
             }
         }
         link.setSourceUrls(null);
@@ -1688,25 +1691,28 @@ public class LinkCrawler {
                             for (DownloadLink link : distribute) {
                                 if (link.getPluginPatternMatcher() != null && fastDuplicateDetector.add(link)) {
                                     distributed.incrementAndGet();
-                                    if (link.getPluginPatternMatcher().contains("decrypted.com")) {
-                                        /**
-                                         * some plugins have same regex for hoster/decrypter, so they add decrypted.com at the end
-                                         */
-                                        if (distributeMultipleLinks) {
-                                            if (link.getContainerUrl() == null) {
-                                                link.setContainerUrl(cryptedLink.getCryptedLink().getCryptedUrl());
+                                    final String cleanURL = cleanURL(cryptedLink.getCryptedLink().getCryptedUrl());
+                                    if (cleanURL != null) {
+                                        if (isTempDecryptedURL(link.getPluginPatternMatcher())) {
+                                            /**
+                                             * some plugins have same regex for hoster/decrypter, so they add decrypted.com at the end
+                                             */
+                                            if (distributeMultipleLinks) {
+                                                if (link.getContainerUrl() == null) {
+                                                    link.setContainerUrl(cleanURL);
+                                                }
+                                            } else {
+                                                if (link.getContentUrl() == null) {
+                                                    link.setContentUrl(cleanURL);
+                                                }
                                             }
                                         } else {
-                                            if (link.getContentUrl() == null) {
-                                                link.setContentUrl(cryptedLink.getCryptedLink().getCryptedUrl());
+                                            /**
+                                             * this plugin returned multiple links, so we set containerURL (if not set yet)
+                                             */
+                                            if (distributeMultipleLinks && link.getContainerUrl() == null) {
+                                                link.setContainerUrl(cleanURL);
                                             }
-                                        }
-                                    } else {
-                                        /**
-                                         * this plugin returned multiple links, so we set containerURL (if not set yet)
-                                         */
-                                        if (distributeMultipleLinks && link.getContainerUrl() == null) {
-                                            link.setContainerUrl(cryptedLink.getCryptedLink().getCryptedUrl());
                                         }
                                     }
                                     final CrawledLink crawledLink = new CrawledLink(link);
@@ -1850,7 +1856,11 @@ public class LinkCrawler {
                     if (nextURL != null && !StringUtils.equals(pluginURL, nextURL)) {
                         return nextURL;
                     }
-                } else {
+                } else if (next.getDownloadLink() == null && next.getCryptedLink() == null) {
+                    final String nextURL = cleanURL(next.getURL());
+                    if (nextURL != null && !StringUtils.equals(pluginURL, nextURL)) {
+                        return nextURL;
+                    }
                     break;
                 }
             }
@@ -1931,15 +1941,25 @@ public class LinkCrawler {
     protected void preprocessFinalCrawledLink(CrawledLink link) {
     }
 
-    protected String cleanURL(String cUrl) {
-        String protocol = HTMLParser.getProtocol(cUrl);
-        if (protocol != null && !StringUtils.contains(cUrl, "decrypted.com/") && !StringUtils.contains(cUrl, "dummycnl.jdownloader.org")) {
-            if (StringUtils.containsIgnoreCase(protocol, "viajd")) {
-                return cUrl.replaceFirst("viajd", "");
-            } else if (StringUtils.containsIgnoreCase(protocol, "directhttp")) {
-                return cUrl.replaceFirst("directhttp://", "");
-            } else if (protocol.startsWith("http") || protocol.startsWith("ftp")) {
-                return cUrl;
+    public static boolean isTempDecryptedURL(String url) {
+        if (url != null) {
+            final String host = Browser.getHost(url, true);
+            return StringUtils.containsIgnoreCase(host, "decrypted");
+        }
+        return false;
+    }
+
+    public static String cleanURL(String cUrl) {
+        final String protocol = HTMLParser.getProtocol(cUrl);
+        if (protocol != null) {
+            if (protocol != null && !isTempDecryptedURL(cUrl) && !StringUtils.contains(cUrl, "dummycnl.jdownloader.org")) {
+                if (StringUtils.containsIgnoreCase(protocol, "viajd")) {
+                    return cUrl.replaceFirst("viajd", "");
+                } else if (StringUtils.containsIgnoreCase(protocol, "directhttp")) {
+                    return cUrl.replaceFirst("directhttp://", "");
+                } else if (protocol.startsWith("http") || protocol.startsWith("ftp")) {
+                    return cUrl;
+                }
             }
         }
         return null;
