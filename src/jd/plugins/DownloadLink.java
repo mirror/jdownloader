@@ -744,7 +744,7 @@ public class DownloadLink extends Property implements Serializable, AbstractPack
     }
 
     public static String deDuplicateString(String string) {
-        if (false && string != null && Application.getJavaVersion() >= Application.JAVA17) {
+        if (string != null && Application.getJavaVersion() >= Application.JAVA17) {
             return string.intern();
         }
         return string;

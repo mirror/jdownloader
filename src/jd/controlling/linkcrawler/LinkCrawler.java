@@ -1952,7 +1952,8 @@ public class LinkCrawler {
     public static String cleanURL(String cUrl) {
         final String protocol = HTMLParser.getProtocol(cUrl);
         if (protocol != null) {
-            if (protocol != null && !isTempDecryptedURL(cUrl) && !StringUtils.contains(cUrl, "dummycnl.jdownloader.org")) {
+            final String host = Browser.getHost(cUrl, true);
+            if (protocol != null && !StringUtils.containsIgnoreCase(host, "decrypted") && !StringUtils.containsIgnoreCase(host, "dummycnl.jdownloader.org")) {
                 if (StringUtils.containsIgnoreCase(protocol, "viajd")) {
                     return cUrl.replaceFirst("viajd", "");
                 } else if (StringUtils.containsIgnoreCase(protocol, "directhttp")) {
