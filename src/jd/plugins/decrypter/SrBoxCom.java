@@ -100,6 +100,7 @@ public class SrBoxCom extends PluginForDecrypt {
 
         // Added Image
         DownloadLink[] TabImageLink = new DownloadLink[iImage];
+        int iImageFinal = 0;
         if (TabImage != null) {
             int iImageIndex = 0;
             for (String strImageLink : TabImage) {
@@ -109,13 +110,14 @@ public class SrBoxCom extends PluginForDecrypt {
                     DownloadLink DLLink = createDownloadlink(strImageLink, false);
                     if (DLLink != null) {
                         TabImageLink[iImageIndex++] = DLLink;
+                        iImageFinal++;
                     }
                 }
             }
         }
 
         if (TabImageLink != null) {
-            int iImageIndex = 0;
+            int iImageIndex = 1;
             for (DownloadLink DLLink : TabImageLink) {
                 if (DLLink != null) {
                     String strExtension = "";
@@ -127,17 +129,10 @@ public class SrBoxCom extends PluginForDecrypt {
                     if (strExtension != "") {
                         if (fpName != null) {
                             String strName = fpName;
-                            iIndex = fpName.lastIndexOf(')');
-                            if (iIndex == fpName.length() - 1) {
-                                iIndex = fpName.lastIndexOf(" (");
-                                if (iIndex == -1) {
-                                    iIndex = fpName.lastIndexOf("(");
-                                }
-                                if (iIndex != -1) {
-                                    strName = fpName.substring(0, iIndex);
-                                }
-                            }
-                            if (TabImage.length > 1) {
+
+                            // Delete the end of the filename only if it represents the year in parenthesis
+                            strName = ReplacePattern(strName, "\\([0-9]{4}\\)$").trim();
+                            if (iImageFinal > 1) {
                                 strName += "_" + Integer.toString(iImageIndex);
                                 iImageIndex++;
                             }
@@ -183,6 +178,10 @@ public class SrBoxCom extends PluginForDecrypt {
             return null;
         }
 
+        if (link.toLowerCase().contains("download")) {
+            return null;
+        }
+
         if (link.contains("signup?")) {
             return null;
         }
@@ -224,6 +223,9 @@ public class SrBoxCom extends PluginForDecrypt {
         strName = ReplacePattern(strName, "- [0-9]+ *CD Box Set");
         strName = ReplacePattern(strName, "Box Set");
 
+        // Remove the vinyl digitizing information
+        strName = ReplacePattern(strName, "Vinyl Digitizing");
+
         // Remove the number of CD
         strName = ReplacePattern(strName, "[0-9]+ *CD");
 
@@ -255,6 +257,28 @@ public class SrBoxCom extends PluginForDecrypt {
         strName = strName.trim();
         if (strName.endsWith("320")) {
             strName = strName.substring(0, strName.length() - 3);
+        }
+
+        // Add a dash to collection
+        int iPositionDash = -1;
+        String strPattern = "Collection \\([0-9]{4}[-][0-9]{4}\\)";
+
+        Pattern pattern = Pattern.compile(strPattern, Pattern.CASE_INSENSITIVE);
+        Matcher matcher = pattern.matcher(strName);
+        if (matcher.find()) {
+            iPositionDash = strName.indexOf("Collection");
+        }
+
+        // Add a dash to discography
+        strPattern = "Discography \\([0-9]{4}[-][0-9]{4}\\)";
+        pattern = Pattern.compile(strPattern, Pattern.CASE_INSENSITIVE);
+        matcher = pattern.matcher(strName);
+        if (matcher.matches()) {
+            iPositionDash = strName.indexOf("Discography");
+        }
+
+        if (iPositionDash != -1 && (iPositionDash > 2 && strName.substring(iPositionDash - 2, iPositionDash) != "- ")) {
+            strName = strName.substring(0, iPositionDash).trim() + " - " + strName.substring(iPositionDash, strName.length()).trim();
         }
 
         // Replace brackets with parenthesis
