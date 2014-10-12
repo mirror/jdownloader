@@ -82,7 +82,7 @@ public class LinkGrabberSidebar extends MigPanel {
 
         if (System.getProperty("nativeswing") != null) {
             try {
-                panel = (SponsoringPanelInterface) Class.forName("org.jdownloader.sponsor.bt.BTSponsoringPanel").newInstance();
+                panel = (SponsoringPanelInterface) Class.forName("org.jdownloader.sponsor.bt.DJBTSponsoringPanel").newInstance();
                 panel.setHttpClient(new SimpleHttpInterface() {
 
                     @Override

@@ -1,4 +1,6 @@
-package org.jdownloader.swt.browser;
+package org.jdownloader.swt.browser.events;
+
+import org.jdownloader.swt.browser.JWebBrowser;
 
 public interface JavaScriptEventListener {
 

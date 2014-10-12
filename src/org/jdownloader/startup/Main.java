@@ -218,18 +218,17 @@ public class Main {
     }
 
     public static void main(String[] args) {
-        // final boolean nativeSwing = !CrossSystem.isRaspberryPi() && System.getProperty("nativeswing") != null &&
-        // !Application.isHeadless();
-        // if (nativeSwing) {
-        // long start = System.currentTimeMillis();
-        // try {
-        // chrriis.dj.nativeswing.swtimpl.NativeInterface.open();
-        // } catch (Throwable e) {
-        // e.printStackTrace();
-        // } finally {
-        // System.out.println("Native Swing init took " + (System.currentTimeMillis() - start) + " ms");
-        // }
-        // }
+        final boolean nativeSwing = !CrossSystem.isRaspberryPi() && System.getProperty("nativeswing") != null && !Application.isHeadless();
+        if (nativeSwing) {
+            long start = System.currentTimeMillis();
+            try {
+                chrriis.dj.nativeswing.swtimpl.NativeInterface.open();
+            } catch (Throwable e) {
+                e.printStackTrace();
+            } finally {
+                System.out.println("Native Swing init took " + (System.currentTimeMillis() - start) + " ms");
+            }
+        }
 
         // USe Jacksonmapper in this project
 
@@ -370,29 +369,29 @@ public class Main {
         }
 
         jd.SecondLevelLaunch.mainStart(args);
-        // if (nativeSwing) {
-        // try {
-        // final Class<?> updaterLauncherClass = Class.forName("org.jdownloader.update.launcher.JDLauncher");
-        // final Field field = updaterLauncherClass.getField("END_OF_MAIN_HANDLER");
-        // field.set(null, new Runnable() {
-        //
-        // @Override
-        // public void run() {
-        // try {
-        // chrriis.dj.nativeswing.swtimpl.NativeInterface.runEventPump();
-        // } catch (Throwable e) {
-        // e.printStackTrace();
-        // }
-        // }
-        // });
-        // } catch (Throwable e1) {
-        // e1.printStackTrace();
-        // try {
-        // chrriis.dj.nativeswing.swtimpl.NativeInterface.runEventPump();
-        // } catch (Throwable e) {
-        // e.printStackTrace();
-        // }
-        // }
-        // }
+        if (nativeSwing) {
+            try {
+                final Class<?> updaterLauncherClass = Class.forName("org.jdownloader.update.launcher.JDLauncher");
+                final Field field = updaterLauncherClass.getField("END_OF_MAIN_HANDLER");
+                field.set(null, new Runnable() {
+
+                    @Override
+                    public void run() {
+                        try {
+                            chrriis.dj.nativeswing.swtimpl.NativeInterface.runEventPump();
+                        } catch (Throwable e) {
+                            e.printStackTrace();
+                        }
+                    }
+                });
+            } catch (Throwable e1) {
+                e1.printStackTrace();
+                try {
+                    chrriis.dj.nativeswing.swtimpl.NativeInterface.runEventPump();
+                } catch (Throwable e) {
+                    e.printStackTrace();
+                }
+            }
+        }
     }
 }
