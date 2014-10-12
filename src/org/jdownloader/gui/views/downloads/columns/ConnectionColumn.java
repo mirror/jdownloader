@@ -15,6 +15,7 @@ import jd.controlling.packagecontroller.AbstractNode;
 import jd.controlling.proxy.PacProxySelectorImpl;
 import jd.controlling.proxy.ProxyController;
 import jd.controlling.proxy.SelectedProxy;
+import jd.gui.swing.jdgui.GUIUtils;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.download.DownloadInterface;
@@ -37,7 +38,7 @@ import org.jdownloader.plugins.SkipReason;
 public class ConnectionColumn extends ExtColumn<AbstractNode> {
 
     /**
-     * 
+     *
      */
     private static final long serialVersionUID   = 1L;
 
@@ -264,7 +265,7 @@ public class ConnectionColumn extends ExtColumn<AbstractNode> {
     private class ConnectionTooltip extends ExtTooltip {
 
         /**
-         * 
+         *
          */
         private static final long serialVersionUID = -6581783135666367021L;
 
@@ -321,7 +322,7 @@ public class ConnectionColumn extends ExtColumn<AbstractNode> {
                 if (sdc.getAccount() != null && sdc.getAccount().getPlugin() != null) {
                     /* account in use? */
                     Icon icon = sdc.getAccount().getPlugin().getDomainInfo(link).getFavIcon();
-                    panel.add(lbl = new JLabel(_GUI._.ConnectionColumn_DownloadUsesAccount(sdc.getAccount().getUser()), icon, JLabel.LEADING));
+                    panel.add(lbl = new JLabel(_GUI._.ConnectionColumn_DownloadUsesAccount(GUIUtils.getAccountName(sdc.getAccount().getUser())), icon, JLabel.LEADING));
                     SwingUtils.setOpaque(lbl, false);
                     lbl.setForeground(new Color(this.getConfig().getForegroundColor()));
                 }

@@ -27,6 +27,7 @@ import javax.swing.JFrame;
 
 import org.appwork.storage.JSonStorage;
 import org.appwork.storage.Storage;
+import org.jdownloader.settings.staticreferences.CFG_GUI;
 
 public class GUIUtils {
     public static final Storage STORAGE = JSonStorage.getPlainStorage("gui.windows.dimensionsandlocations");
@@ -41,8 +42,12 @@ public class GUIUtils {
         Integer y = STORAGE.get("dimension." + key + ".height", -1);
 
         if (x >= 0 && y > 0) {
-            if (x > width) x = width;
-            if (y > height) y = height;
+            if (x > width) {
+                x = width;
+            }
+            if (y > height) {
+                y = height;
+            }
 
             return new Dimension(x, y);
         }
@@ -52,7 +57,7 @@ public class GUIUtils {
 
     /**
      * Gets the screen device for absolute point x,y
-     * 
+     *
      * @param x
      * @param y
      * @return
@@ -83,12 +88,27 @@ public class GUIUtils {
         // do not save location if frame is not in normal state
         if (parent instanceof JFrame && ((JFrame) parent).getExtendedState() != JFrame.NORMAL) {
 
-        return; }
+            return;
+        }
         if (parent.isShowing()) {
             STORAGE.put("location." + key + ".x", parent.getLocationOnScreen().x);
             STORAGE.put("location." + key + ".y", parent.getLocationOnScreen().y);
         } else {
             System.out.println("Not showing");
         }
+    }
+
+    public static String getAccountName(final String username) {
+        String output = username;
+        if (CFG_GUI.CFG.isPresentationModeEnabled()) {
+            if (username == null || "".equals(username)) {
+                output = "";
+            } else if (username.length() <= 1) {
+                output = "*********";
+            } else {
+                output = username.substring(0, 2) + "*******";
+            }
+        }
+        return output;
     }
 }

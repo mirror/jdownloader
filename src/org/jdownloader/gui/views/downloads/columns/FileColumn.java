@@ -53,7 +53,7 @@ import sun.swing.SwingUtilities2;
 public class FileColumn extends ExtTextColumn<AbstractNode> implements GenericConfigEventListener<Boolean> {
 
     /**
-     * 
+     *
      */
     private static final long serialVersionUID  = -2963955407564917958L;
     protected Border          leftGapBorder;
@@ -385,7 +385,7 @@ public class FileColumn extends ExtTextColumn<AbstractNode> implements GenericCo
 
     @Override
     public boolean isHidable() {
-        return false;
+        return true;
     }
 
     @Override

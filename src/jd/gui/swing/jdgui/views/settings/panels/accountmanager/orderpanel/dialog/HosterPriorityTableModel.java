@@ -8,6 +8,7 @@ import javax.swing.JComponent;
 
 import jd.controlling.accountchecker.AccountChecker;
 import jd.controlling.accountchecker.AccountCheckerEventListener;
+import jd.gui.swing.jdgui.GUIUtils;
 import jd.gui.swing.jdgui.views.settings.panels.accountmanager.orderpanel.AccountInterface;
 import jd.gui.swing.jdgui.views.settings.panels.accountmanager.orderpanel.AccountWrapper;
 import jd.gui.swing.jdgui.views.settings.panels.accountmanager.orderpanel.GroupWrapper;
@@ -88,9 +89,7 @@ public class HosterPriorityTableModel extends ExtTreeTableModel<AccountInterface
 
             @Override
             public String getStringValue(AccountInterface value) {
-
-                return value.getUser();
-
+                return GUIUtils.getAccountName(value.getUser());
             }
         });
 
@@ -129,13 +128,17 @@ public class HosterPriorityTableModel extends ExtTreeTableModel<AccountInterface
             @Override
             protected String getDateFormatString() {
                 DateFormat sd = SimpleDateFormat.getDateInstance(SimpleDateFormat.SHORT);
-                if (sd instanceof SimpleDateFormat) { return ((SimpleDateFormat) sd).toPattern(); }
+                if (sd instanceof SimpleDateFormat) {
+                    return ((SimpleDateFormat) sd).toPattern();
+                }
                 return _GUI._.PremiumAccountTableModel_getDateFormatString_();
             }
 
             @Override
             protected Date getDate(AccountInterface o2, Date date) {
-                if (o2 instanceof AccountWrapper) { return ((AccountWrapper) o2).getExpireDate(); }
+                if (o2 instanceof AccountWrapper) {
+                    return ((AccountWrapper) o2).getExpireDate();
+                }
                 return null;
 
             }
@@ -164,9 +167,15 @@ public class HosterPriorityTableModel extends ExtTreeTableModel<AccountInterface
                 if (value instanceof AccountWrapper) {
 
                     AccountWrapper aw = (AccountWrapper) value;
-                    if (aw.getAccount() instanceof FreeAccountReference) return false;
-                    if (checkRunning) { return AccountChecker.getInstance().contains(aw.getAccount().getAccount()); }
-                    if (aw.isValid() && aw.getAccount().isEnabled() && aw.isTempDisabled()) return true;
+                    if (aw.getAccount() instanceof FreeAccountReference) {
+                        return false;
+                    }
+                    if (checkRunning) {
+                        return AccountChecker.getInstance().contains(aw.getAccount().getAccount());
+                    }
+                    if (aw.isValid() && aw.getAccount().isEnabled() && aw.isTempDisabled()) {
+                        return true;
+                    }
                 }
 
                 return false;
@@ -175,7 +184,9 @@ public class HosterPriorityTableModel extends ExtTreeTableModel<AccountInterface
 
             @Override
             public JComponent getRendererComponent(AccountInterface value, boolean isSelected, boolean hasFocus, int row, int column) {
-                if (value instanceof GroupWrapper) { return empty; }
+                if (value instanceof GroupWrapper) {
+                    return empty;
+                }
                 JComponent ret = super.getRendererComponent(value, isSelected, hasFocus, row, column);
 
                 return ret;

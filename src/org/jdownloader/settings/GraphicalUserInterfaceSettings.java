@@ -371,6 +371,13 @@ public interface GraphicalUserInterfaceSettings extends ConfigInterface {
 
     void setThemeID(String themeID);
 
+    void setPresentationModeEnabled(boolean b);
+
+    @AboutConfig
+    @DefaultBooleanValue(false)
+    @DescriptionForConfigEntry("Presentation mode peforms tasks like: account username obstruction throughout GUI")
+    boolean isPresentationModeEnabled();
+
     void setTooltipEnabled(boolean b);
 
     @AboutConfig
