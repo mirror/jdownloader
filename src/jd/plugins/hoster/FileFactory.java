@@ -59,7 +59,7 @@ import jd.utils.locale.JDL;
 import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.formatter.TimeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "filefactory.com" }, urls = { "https?://(www\\.)?filefactory\\.com(/|//)(file/[\\w]+/?|(trafficshare|digitalsales)/[a-f0-9]{32}/.+/?)" }, flags = { 2 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "filefactory.com" }, urls = { "https?://(www\\.)?filefactory\\.com(/|//)((?:file|stream)/[\\w]+/?|(trafficshare|digitalsales)/[a-f0-9]{32}/.+/?)" }, flags = { 2 })
 public class FileFactory extends PluginForHost {
 
     // DEV NOTES
@@ -119,10 +119,12 @@ public class FileFactory extends PluginForHost {
         }
         // this should cover error codes jumping to stream links in redirect, since filefactory wont fix this issue, this is my workaround.
         String code = new Regex(br.getURL(), "(?:\\?|&)code=(\\d+)").getMatch(0);
-        final String ref = br.getRequest().getHeaders().get("Referer");
-        if (!inValidate(ref)) {
-            if (br.getURL().contains("/stream/" + fuid)) {
-                code = new Regex(ref, "(?:\\?|&)code=(\\d+)").getMatch(0);
+        final ArrayList<String> redirectUrls = (ArrayList<String>) this.getDownloadLink().getProperty(dlRedirects, null);
+        if (redirectUrls != null && code == null) {
+            for (final String url : redirectUrls) {
+                if (code == null) {
+                    code = new Regex(url, "(?:\\?|&)code=(\\d+)").getMatch(0);
+                }
             }
         }
         final int errTries = 4;
@@ -130,7 +132,7 @@ public class FileFactory extends PluginForHost {
         final String errRetry = "retry_" + errCode;
         final int tri = this.getDownloadLink().getIntegerProperty(errRetry, 0) + 1;
         this.getDownloadLink().setProperty(errRetry, (tri >= errTries ? 0 : tri));
-        final String errMsg = (tri >= errTries ? "Exausted retry count" : "Retrying") + " for, '" + errCode + "' error";
+        final String errMsg = (tri >= errTries ? "Exausted retry count" : "Retrying") + " for '" + errCode + "' error";
 
         if (postDownload && freeDownload) {
             if (br.containsHTML("have exceeded the download limit|Please try again in <span>")) {
@@ -203,9 +205,6 @@ public class FileFactory extends PluginForHost {
             // <p>
             // This file cannot be downloaded at this time. Please let us know about this issue by using the contact link below. </p>
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "This file cannot be downloaded at this time.", 20 * 60 * 1000l);
-        }
-        if (errCode == 275) {
-            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 275", 20 * 60 * 1000l);
         }
         if (br.containsHTML(SERVERFAIL)) {
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error", 20 * 60 * 1000l);
@@ -329,8 +328,9 @@ public class FileFactory extends PluginForHost {
 
     @Override
     public void correctDownloadLink(final DownloadLink link) throws PluginException {
-        link.setUrlDownload(link.getDownloadURL().replaceAll("\\.com//", ".com/"));
-        link.setUrlDownload(link.getDownloadURL().replaceAll("://filefactory", "://www.filefactory"));
+        link.setUrlDownload(link.getDownloadURL().replaceFirst("\\.com//", ".com/"));
+        link.setUrlDownload(link.getDownloadURL().replaceFirst("://filefactory", "://www.filefactory"));
+        link.setUrlDownload(link.getDownloadURL().replaceFirst("/stream/", "/file/"));
         // set trafficshare links like 'normal' links, this allows downloads to continue living if the uploader discontinues trafficshare
         // for that uid. Also re-format premium only links!
         if (link.getDownloadURL().contains(TRAFFICSHARELINK) || link.getDownloadURL().contains("/digitalsales/")) {
@@ -478,6 +478,8 @@ public class FileFactory extends PluginForHost {
 
     @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception {
+        // reset setter
+        downloadLink.setProperty(dlRedirects, Property.NULL);
         if (useAPI.get()) {
             handleDownload_API(downloadLink, null);
         } else {
@@ -606,6 +608,8 @@ public class FileFactory extends PluginForHost {
 
     @Override
     public void handlePremium(final DownloadLink downloadLink, final Account account) throws Exception {
+        // reset setter
+        downloadLink.setProperty(dlRedirects, Property.NULL);
         if (useAPI.get()) {
             handleDownload_API(downloadLink, account);
         } else {
@@ -797,7 +801,12 @@ public class FileFactory extends PluginForHost {
             URLConnectionAdapter con = null;
             try {
                 dlUrl = null;
-                con = br.openGetConnection(downloadLink.getDownloadURL());
+                try {
+                    // @since JD2
+                    con = br.openHeadConnection(downloadLink.getDownloadURL());
+                } catch (final Throwable t) {
+                    con = br.openGetConnection(downloadLink.getDownloadURL());
+                }
                 if (con.isContentDisposition()) {
                     downloadLink.setFinalFileName(Plugin.getFileNameFromHeader(con));
                     downloadLink.setDownloadSize(con.getLongContentLength());
@@ -1126,8 +1135,62 @@ public class FileFactory extends PluginForHost {
             }
         }
         dllink = dllink.replace("\\", "");
+        handleDL(downloadLink, account);
+    }
+
+    private static final String dlRedirects = "dlRedirects";
+
+    private void handleDL(final DownloadLink downloadLink, final Account account) throws Exception {
+        // Since I fixed the download core setting correct redirect referrer I can no longer use redirect header to determine error code for
+        // max connections. This is really only a problem with media files as filefactory redirects to /stream/ directly after code=\d+
+        // which breaks our generic handling. This will fix it!! - raztoki
+        int i = -1;
+        ArrayList<String> urls = new ArrayList<String>();
+        br.setFollowRedirects(false);
+        URLConnectionAdapter con = null;
+        while (i++ < 10) {
+            String url = dllink;
+            if (!urls.isEmpty()) {
+                url = urls.get(urls.size() - 1);
+            }
+            try {
+                try {
+                    // @since JD2
+                    con = br.openHeadConnection(url);
+                } catch (final Throwable t) {
+                    con = br.openGetConnection(url);
+                }
+                if (!con.isContentDisposition() && br.getRedirectLocation() != null) {
+                    // redirect, we want to store and continue down the rabbit hole!
+                    final String redirect = br.getRedirectLocation();
+                    urls.add(redirect);
+                    continue;
+                } else if (!con.isContentDisposition()) {
+                    // error final destination/html
+                    br.followConnection();
+                    break;
+                } else {
+                    // finallink! (usually doesn't container redirects)
+                    dllink = br.getURL();
+                    break;
+                }
+            } finally {
+                try {
+                    con.disconnect();
+                } catch (Throwable e) {
+                }
+            }
+        }
+        if (!urls.isEmpty()) {
+            downloadLink.setProperty(dlRedirects, urls);
+        }
+        if (!con.isContentDisposition()) {
+            checkErrors(isFree, true);
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, resumes, chunks);
         if (!dl.getConnection().isContentDisposition()) {
+            // this shouldn't happen anymore!
             br.followConnection();
             checkErrors(isFree, true);
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
