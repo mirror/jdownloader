@@ -69,10 +69,10 @@ public class DocsGoogleCom extends PluginForDecrypt {
             br.getPage(parameter);
         }
 
-        if (br.containsHTML("<p class=\"errorMessage\" style=\"padding\\-top: 50px\">Sorry, the file you have requested does not exist\\.</p>") || br.getHttpConnection().getResponseCode() == 404) {
-            final DownloadLink offline = createDownloadlink
+        final String count_docs = br.getRegex("class=\"flip-folder-item-count\">(\\d+)").getMatch(0);
 
-            ("directhttp://" + parameter);
+        if (br.containsHTML("<p class=\"errorMessage\" style=\"padding\\-top: 50px\">Sorry, the file you have requested does not exist\\.</p>") || br.getHttpConnection().getResponseCode() == 404 || count_docs == null) {
+            final DownloadLink offline = createDownloadlink("directhttp://" + parameter);
             offline.setAvailable(false);
             offline.setProperty("offline", true);
             decryptedLinks.add(offline);

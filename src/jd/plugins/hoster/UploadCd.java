@@ -82,7 +82,7 @@ public class UploadCd extends PluginForHost {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         br.getPage(link.getDownloadURL());
-        if (br.containsHTML(">The requested file does not exist|The requested page does not exist\\.")) {
+        if (br.containsHTML(">The requested file does not exist|The requested page does not exist\\.") || br.getHttpConnection().getResponseCode() == 404 || !br.containsHTML("class=\"container download\\-page\"")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         final Regex finfo = br.getRegex("class=\"download\\-file pull\\-left\">[\t\n\r ]+<h3>([^<>\"]*?)</h3><p>([^<>\"]*?)</p>");
