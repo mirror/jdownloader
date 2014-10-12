@@ -713,12 +713,12 @@ public class YoutubeHelper {
 
     /**
      * *
-     * 
+     *
      * @param html5PlayerJs
      *            TODO
      * @param br
      * @param s
-     * 
+     *
      * @return
      * @throws IOException
      * @throws PluginException
@@ -739,11 +739,10 @@ public class YoutubeHelper {
             all = cache.get("all");
             descrambler = cache.get("descrambler");
             des = cache.get("des");
-        } else {
-            cache = new HashMap<String, String>();
-            jsContent = getAbsolute(jsUrl, jsUrl, br.cloneBrowser());
         }
         if (all == null || descrambler == null || des == null) {
+            cache = new HashMap<String, String>();
+            jsContent = getAbsolute(jsUrl, jsUrl, br.cloneBrowser());
             descrambler = new Regex(jsContent, "\\w+\\.signature\\=([\\$\\w\\d]+)\\([\\w\\d]+\\)").getMatch(0);
             if (descrambler == null) {
                 return sig;
@@ -808,14 +807,14 @@ public class YoutubeHelper {
     protected void extractData(final YoutubeClipData vid) {
         if (StringUtils.isEmpty(vid.title) && this.br.containsHTML("&title=")) {
             final String match = this.br.getRegex("&title=([^&$]+)").getMatch(0);
-            if (match != null) {
+            if (StringUtils.isNotEmpty(match)) {
                 vid.title = Encoding.htmlDecode(match.replaceAll("\\+", " ").trim());
             }
 
         }
         if (StringUtils.isEmpty(vid.title)) {
             final String match = this.br.getRegex("<title>(.*?) - YouTube</title>").getMatch(0);
-            if (match != null) {
+            if (StringUtils.isNotEmpty(match)) {
                 vid.title = Encoding.htmlDecode(match.replaceAll("\\+", " ").trim());
 
             }
@@ -823,7 +822,7 @@ public class YoutubeHelper {
 
         if (vid.length <= 0) {
             final String match = this.br.getRegex("\"length_seconds\"\\: (\\d+)").getMatch(0);
-            if (match != null) {
+            if (StringUtils.isNotEmpty(match)) {
                 vid.length = Integer.parseInt(match);
 
             }
@@ -831,7 +830,7 @@ public class YoutubeHelper {
 
         if (StringUtils.isEmpty(vid.title)) {
             final String match = this.br.getRegex("<meta name=\"title\" content=\"(.*?)\">").getMatch(0);
-            if (match != null) {
+            if (StringUtils.isNotEmpty(match)) {
                 vid.title = Encoding.htmlDecode(match.trim());
 
             }
@@ -846,7 +845,7 @@ public class YoutubeHelper {
             if (date == null) {
                 formatter = new SimpleDateFormat("dd MMM yyyy", locale);
                 formatter.setTimeZone(TimeZone.getDefault());
-                date = this.br.getRegex("<strong>Published on (\\d{1,2} [A-Za-z]{3} \\d{4})</strong>").getMatch(0);
+                date = this.br.getRegex("<strong[^>]*>Published on (\\d{1,2} [A-Za-z]{3} \\d{4})</strong>").getMatch(0);
             }
 
             if (date != null) {
@@ -864,7 +863,7 @@ public class YoutubeHelper {
             if (StringUtils.isEmpty(match)) {
                 match = this.br.getRegex("<meta itemprop=\"channelId\" content=\"([^\"]+)\">").getMatch(0);
             }
-            if (match != null) {
+            if (StringUtils.isNotEmpty(match)) {
                 vid.channelID = Encoding.htmlDecode(match.trim());
 
             }
@@ -885,7 +884,7 @@ public class YoutubeHelper {
         }
         if (StringUtils.isEmpty(vid.channel)) {
             final String match = this.br.getRegex("data-name=\"watch\">(.*?)</a>").getMatch(0);
-            if (match != null) {
+            if (StringUtils.isNotEmpty(match)) {
                 vid.channel = Encoding.htmlDecode(match.trim());
 
             }
@@ -894,7 +893,7 @@ public class YoutubeHelper {
             final String match = this.br.getRegex("temprop=\"url\" href=\"http://(www\\.)?youtube\\.com/user/([^<>\"]+)\"").getMatch(1);
             // getVideoInfoWorkaroundUsed
             final String vidWorkAround = this.br.getRegex("&author=(.*?)&").getMatch(0);
-            if (match != null) {
+            if (StringUtils.isNotEmpty(match)) {
                 vid.user = Encoding.htmlDecode(match.trim());
             } else if (vid.channel != null) {
                 vid.user = vid.channel;
@@ -1049,13 +1048,13 @@ public class YoutubeHelper {
                 this.br = cw.cloneBrowser();
             }
         }
-        if (unavailableReason != null && !getVideoInfoWorkaroundUsed) {
+        if (unavailableReason != null && unavailableReason.contains("This video is private") && !getVideoInfoWorkaroundUsed) {
             // check if video is private
             String subError = br.getRegex("<div id=\"unavailable-submessage\" class=\"[^\"]*\">(.*?)</div>").getMatch(0);
             if (subError != null && !subError.matches("\\s*")) {
-                logger.warning(subError);
+                logger.warning(unavailableReason.trim() + " :: " + subError.trim());
                 vid.error = Encoding.htmlDecode(unavailableReason.replaceAll("\\+", " ").trim());
-                // return null;
+                return null;
             }
         }
         this.extractData(vid);
@@ -1129,7 +1128,7 @@ public class YoutubeHelper {
                 clone.getPage(dashmpd);
                 String[] repres = clone.getRegex("(<Representation.*?</Representation>)").getColumn(0);
                 for (String r : repres) {
-                    System.out.println(r);
+                    // System.out.println(r);
 
                     String url = Encoding.htmlDecode(new Regex(r, "<BaseURL yt:contentLength=\"\\d+\">(.*?)</BaseURL>").getMatch(0));
                     final LinkedHashMap<String, String> query = Request.parseQuery(url);
@@ -1294,7 +1293,7 @@ public class YoutubeHelper {
             vid.duration = Integer.parseInt(duration);
 
         }
-        System.out.println(1);
+        // System.out.println(1);
 
     }
 
