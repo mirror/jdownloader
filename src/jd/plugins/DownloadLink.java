@@ -68,14 +68,10 @@ import org.jdownloader.plugins.SkipReason;
 /**
  * Hier werden alle notwendigen Informationen zu einem einzelnen Download festgehalten. Die Informationen werden dann in einer Tabelle
  * dargestellt
- * 
+ *
  * @author astaldo
  */
 public class DownloadLink extends Property implements Serializable, AbstractPackageChildrenNode<FilePackage>, CheckableLink {
-
-    private static final String URL_CONTAINER   = "URL_CONTAINER";
-    private static final String URL_CONTENT     = "URL_CONTENT";
-    private static final String VARIANT_SUPPORT = "VARIANT_SUPPORT";
 
     public static enum AvailableStatus {
         UNCHECKED(_GUI._.linkgrabber_onlinestatus_unchecked()),
@@ -121,6 +117,10 @@ public class DownloadLink extends Property implements Serializable, AbstractPack
     private static final String                                 PROPERTY_CHUNKS                     = "CHUNKS";
     private static final String                                 URL_ORIGIN                          = "URL_ORIGIN";
     private static final String                                 URL_REFERRER                        = "URL_REFERRER";
+    private static final String                                 URL_CONTAINER                       = "URL_CONTAINER";
+    private static final String                                 URL_CONTENT                         = "URL_CONTENT";
+    private static final String                                 URL_CUSTOM                          = "URL_CUSTOM";
+    private static final String                                 VARIANT_SUPPORT                     = "VARIANT_SUPPORT";
 
     private transient volatile AvailableStatus                  availableStatus                     = AvailableStatus.UNCHECKED;
 
@@ -202,7 +202,7 @@ public class DownloadLink extends Property implements Serializable, AbstractPack
 
     /**
      * these properties will not be saved/restored
-     * 
+     *
      * @return
      */
     public Property getTempProperties() {
@@ -221,7 +221,7 @@ public class DownloadLink extends Property implements Serializable, AbstractPack
 
     /**
      * Erzeugt einen neuen DownloadLink
-     * 
+     *
      * @param plugin
      *            Das Plugins, das fuer diesen Download zustaendig ist
      * @param name
@@ -387,8 +387,8 @@ public class DownloadLink extends Property implements Serializable, AbstractPack
     }
 
     /**
-     * 
-     * 
+     *
+     *
      * @return use {@link #getView()} for external usage
      */
     @Deprecated
@@ -398,7 +398,7 @@ public class DownloadLink extends Property implements Serializable, AbstractPack
 
     /**
      * returns the approximate(live) amount of downloaded bytes
-     * 
+     *
      * @return Anzahl der heruntergeladenen Bytes
      * @deprecated use {@link #getView()} instead
      */
@@ -418,7 +418,7 @@ public class DownloadLink extends Property implements Serializable, AbstractPack
 
     /**
      * returns the exact amount of downloaded bytes (depends on DownloadInterface if this value is updated during download or at the end)
-     * 
+     *
      * @return
      */
     public long getDownloadCurrentRaw() {
@@ -431,7 +431,7 @@ public class DownloadLink extends Property implements Serializable, AbstractPack
 
     /**
      * Die Groesse der Datei
-     * 
+     *
      * @return Die Groesse der Datei
      * @deprecated use {@link #getView()} sintead
      */
@@ -445,7 +445,7 @@ public class DownloadLink extends Property implements Serializable, AbstractPack
 
     /**
      * Gibt die aktuelle Downloadgeschwindigkeit in bytes/sekunde zurueck
-     * 
+     *
      * @return Downloadgeschwindigkeit in bytes/sekunde
      * @deprecated use {@link #getView()}
      */
@@ -503,6 +503,35 @@ public class DownloadLink extends Property implements Serializable, AbstractPack
             }
             if (hasNotificationListener()) {
                 notifyChanges(AbstractNodeNotifier.NOTIFY.PROPERTY_CHANCE, new DownloadLinkProperty(this, DownloadLinkProperty.Property.URL_CONTENT, url));
+            }
+        }
+    }
+
+    /**
+     * allows for customisation based on plugin source and user plugin setting preferences
+     *
+     * @author raztoki
+     * @return
+     */
+    public String getCustomUrl() {
+        return getStringProperty(URL_CUSTOM);
+    }
+
+    /**
+     * allows for customisation based on plugin source and user plugin setting preferences
+     *
+     * @author raztoki
+     * @param url
+     */
+    public void setCustomURL(final String url) {
+        if (!StringUtils.equals(url, getContainerUrl())) {
+            if (StringUtils.isEmpty(url)) {
+                setProperty(URL_CUSTOM, Property.NULL);
+            } else {
+                setProperty(URL_CUSTOM, url);
+            }
+            if (hasNotificationListener()) {
+                notifyChanges(AbstractNodeNotifier.NOTIFY.PROPERTY_CHANCE, new DownloadLinkProperty(this, DownloadLinkProperty.Property.URL_CUSTOM, url));
             }
         }
     }
@@ -587,7 +616,7 @@ public class DownloadLink extends Property implements Serializable, AbstractPack
     }
 
     /**
-     * 
+     *
      * @deprecated use {@link #getOriginUrl()} {@link #getContentUrl()} {@link #getContainerUrl()} {@link #getReferrerUrl()} instead
      */
     @Deprecated
@@ -601,7 +630,7 @@ public class DownloadLink extends Property implements Serializable, AbstractPack
 
     @Deprecated
     /**
-     * 
+     *
      * @deprecated   {@link #setPluginPattern(String)},{@link #setContentUrl(String)}, {@link #setReferrerUrl(String)} or {@link #setOriginUrl(String)} instead
      */
     public void setBrowserUrl(String url) {
@@ -658,7 +687,7 @@ public class DownloadLink extends Property implements Serializable, AbstractPack
 
     /**
      * Use this if we need a tmp filename for downloading. this tmp is internal! The gui will not display it.
-     * 
+     *
      * @since JD2
      */
     public String getInternalTmpFilename() {
@@ -672,7 +701,7 @@ public class DownloadLink extends Property implements Serializable, AbstractPack
 
     /**
      * Use this if we need a tmp filename for downloading. this tmp is internal! The gui will not display it.
-     * 
+     *
      * @since JD2
      */
     public String getInternalTmpFilenameAppend() {
@@ -686,7 +715,7 @@ public class DownloadLink extends Property implements Serializable, AbstractPack
 
     /**
      * Use this if we need a tmp filename for downloading. this tmp is internal! The gui will not display it.
-     * 
+     *
      * @since JD2
      */
     public void setInternalTmpFilename(String fileName) {
@@ -701,7 +730,7 @@ public class DownloadLink extends Property implements Serializable, AbstractPack
 
     /**
      * Use this if we need a tmp filename for downloading. this tmp is internal! The gui will not display it.
-     * 
+     *
      * @since JD2
      */
     public void setInternalTmpFilenameAppend(String fileName) {
@@ -716,7 +745,7 @@ public class DownloadLink extends Property implements Serializable, AbstractPack
 
     /**
      * return the FilePackage that contains this DownloadLink, if none is set it will return defaultFilePackage
-     * 
+     *
      * @return
      */
     public FilePackage getFilePackage() {
@@ -729,7 +758,7 @@ public class DownloadLink extends Property implements Serializable, AbstractPack
 
     /**
      * Gibt den Hoster dieses Links azurueck.
-     * 
+     *
      * @return Der Hoster, auf dem dieser Link verweist
      */
     public String getHost() {
@@ -780,14 +809,14 @@ public class DownloadLink extends Property implements Serializable, AbstractPack
     }
 
     /**
-     * 
-     * 
+     *
+     *
      * priority of returned fileName<br />
      * 0.) tmpAsynchRenameFilename (e.g. renamed in downloadlist)<br />
      * 1.) forcedFileName (eg manually set)<br />
      * 2.) finalFileName (eg set by plugin where the final is 100% safe, eg API)<br />
      * 3.) unsafeFileName (eg set by plugin when no api is available, or no filename provided)<br />
-     * 
+     *
      * @param ignoreUnsafe
      * @param ignoreForcedFilename
      *            TODO
@@ -897,7 +926,7 @@ public class DownloadLink extends Property implements Serializable, AbstractPack
 
     /**
      * returns fileName set by plugin (setFinalFileName)
-     * 
+     *
      * @return
      */
     public String getNameSetbyPlugin() {
@@ -910,7 +939,7 @@ public class DownloadLink extends Property implements Serializable, AbstractPack
 
     /**
      * Liefert das Plugin zurueck, dass diesen DownloadLink handhabt
-     * 
+     *
      * @return Das Plugin
      */
     public PluginForHost getDefaultPlugin() {
@@ -937,7 +966,7 @@ public class DownloadLink extends Property implements Serializable, AbstractPack
     /**
      * Gibt den Finalen Downloadnamen zurueck. Wird null zurueckgegeben, so wird der dateiname von den jeweiligen plugins automatisch
      * ermittelt.
-     * 
+     *
      * @return Statischer Dateiname
      */
     public String getFinalFileName() {
@@ -972,7 +1001,7 @@ public class DownloadLink extends Property implements Serializable, AbstractPack
 
     /**
      * Sets DownloadLinks Unquie ID
-     * 
+     *
      * @param id
      * @since JD2
      */
@@ -987,7 +1016,7 @@ public class DownloadLink extends Property implements Serializable, AbstractPack
     /*
      * Gibt zurueck ob Dieser Link schon auf verfuegbarkeit getestet wurde.+ Diese FUnktion fuehrt keinen!! Check durch. Sie prueft nur ob
      * schon geprueft worden ist. anschiessend kann mit isAvailable() die verfuegbarkeit ueberprueft werden
-     * 
+     *
      * @return Link wurde schon getestet (true) nicht getestet(false)
      */
     public boolean isAvailabilityStatusChecked() {
@@ -996,7 +1025,7 @@ public class DownloadLink extends Property implements Serializable, AbstractPack
 
     /**
      * Returns if the downloadLInk is available
-     * 
+     *
      * @return true/false
      */
     public boolean isAvailable() {
@@ -1127,7 +1156,7 @@ public class DownloadLink extends Property implements Serializable, AbstractPack
 
     /**
      * do not use this method, only kept for compatibility reasons and some plugins need it
-     * 
+     *
      * @param is
      */
     @Deprecated
@@ -1137,10 +1166,10 @@ public class DownloadLink extends Property implements Serializable, AbstractPack
 
     /**
      * Setzt die Anzahl der heruntergeladenen Bytes fest und aktualisiert die Fortschrittsanzeige
-     * 
+     *
      * @param downloadedCurrent
      *            Anzahl der heruntergeladenen Bytes
-     * 
+     *
      */
     public void setDownloadCurrent(long downloadedCurrent) {
         if (getDownloadCurrentRaw() == downloadedCurrent) {
@@ -1163,7 +1192,7 @@ public class DownloadLink extends Property implements Serializable, AbstractPack
 
     /**
      * do not call this method. Only The Downloadwatchdog queue is allowed to call this method
-     * 
+     *
      * @param downloadLinkController
      */
     public void setDownloadLinkController(SingleDownloadController downloadLinkController) {
@@ -1182,7 +1211,7 @@ public class DownloadLink extends Property implements Serializable, AbstractPack
 
     /**
      * Setzt die Groesse der herunterzuladenden Datei
-     * 
+     *
      * @param downloadMax
      *            Die Groesse der Datei
      */
@@ -1198,7 +1227,7 @@ public class DownloadLink extends Property implements Serializable, AbstractPack
 
     /**
      * Zeigt, ob dieser Download aktiviert ist
-     * 
+     *
      * @return wahr, falls dieser DownloadLink aktiviert ist
      */
     public boolean isEnabled() {
@@ -1225,7 +1254,7 @@ public class DownloadLink extends Property implements Serializable, AbstractPack
 
     /**
      * Zeigt, ob dieser Download aktiviert ist
-     * 
+     *
      * @return wahr, falls dieser DownloadLink aktiviert ist
      */
     public boolean isSkipped() {
@@ -1313,7 +1342,7 @@ public class DownloadLink extends Property implements Serializable, AbstractPack
 
     /**
      * Setzt nachtraeglich das Plugin. Wird nur zum Laden der Liste benoetigt
-     * 
+     *
      * @param plugin
      *            Das fuer diesen Download zustaendige Plugin
      */
@@ -1334,7 +1363,7 @@ public class DownloadLink extends Property implements Serializable, AbstractPack
 
     /**
      * Setzt den Namen des Downloads neu
-     * 
+     *
      * @param name
      *            Neuer Name des Downloads
      */
@@ -1359,7 +1388,7 @@ public class DownloadLink extends Property implements Serializable, AbstractPack
     }
 
     /**
-     * 
+     *
      * use this function to force a name, it has highest priority
      */
     public void setForcedFileName(String name) {
@@ -1395,7 +1424,7 @@ public class DownloadLink extends Property implements Serializable, AbstractPack
 
     /**
      * WARNING: DO NOT use in 09581 stable!
-     * 
+     *
      * @since JD2
      */
     public void setComment(String comment) {
@@ -1424,7 +1453,7 @@ public class DownloadLink extends Property implements Serializable, AbstractPack
 
     /**
      * Filename Setter for Plugins if the plugin is 100% sure that this is the correct filename
-     * 
+     *
      * @param newfinalFileName
      */
     public void setFinalFileName(String newfinalFileName) {
@@ -1500,7 +1529,7 @@ public class DownloadLink extends Property implements Serializable, AbstractPack
 
     /**
      * returns real downloadMAx Value. use #getDownloadSize if you are not sure
-     * 
+     *
      * @return use {@link #getView()} for external handling
      */
     public long getKnownDownloadSize() {
@@ -1513,7 +1542,7 @@ public class DownloadLink extends Property implements Serializable, AbstractPack
 
     /**
      * DO NOT USE in 09581 Stable
-     * 
+     *
      * @return
      * @since JD2
      */
@@ -1523,7 +1552,7 @@ public class DownloadLink extends Property implements Serializable, AbstractPack
 
     /**
      * DO NOT USE in 09581 Stable
-     * 
+     *
      * @return
      * @since JD2
      */
@@ -1659,7 +1688,7 @@ public class DownloadLink extends Property implements Serializable, AbstractPack
 
     /**
      * Do not use in Plugins for old Stable, or use try/catch or set property manually
-     * 
+     *
      * @param size
      */
     public void setVerifiedFileSize(long size) {
@@ -1679,7 +1708,7 @@ public class DownloadLink extends Property implements Serializable, AbstractPack
 
     /**
      * use {@link #getView()} for external handling
-     * 
+     *
      * @return
      */
     public long getVerifiedFileSize() {
@@ -1688,7 +1717,7 @@ public class DownloadLink extends Property implements Serializable, AbstractPack
 
     /**
      * Do not use in Plugins for old Stable, or use try/catch or set property manually
-     * 
+     *
      * @param size
      */
     public void setResumeable(boolean b) {
@@ -1734,7 +1763,7 @@ public class DownloadLink extends Property implements Serializable, AbstractPack
 
     /**
      * set the FilePackage that contains this DownloadLink, DO NOT USE this if you want to add this DownloadLink to a FilePackage
-     * 
+     *
      * @param filePackage
      */
     public synchronized void _setFilePackage(FilePackage filePackage) {

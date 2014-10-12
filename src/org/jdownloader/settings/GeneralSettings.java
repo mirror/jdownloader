@@ -541,14 +541,14 @@ public interface GeneralSettings extends ConfigInterface {
     void setDomainRules(ArrayList<DomainRule> e);
 
     @AboutConfig
-    @DescriptionForConfigEntry("Choose which type urls will be used for copy&paste, tables and settings.")
+    @DescriptionForConfigEntry("Choose which type URLs will be used for 'Copy URL, Browser URL, Tables and Settings'. Valid fields: CONTAINER, CONTENT, CUSTOM, ORIGIN, REFERRER")
     UrlDisplayEntry[] getUrlOrder();
 
     void setUrlOrder(UrlDisplayEntry[] order);
 
     /**
      * remove on 1.december 2014. We just keep it now to convert to {@link #setUrlOrder(UrlDisplayEntry[])}
-     * 
+     *
      * @return
      */
     @Deprecated
@@ -556,7 +556,7 @@ public interface GeneralSettings extends ConfigInterface {
 
     /**
      * remove on 1.december 2014. We just keep it now to convert to {@link #setUrlOrder(UrlDisplayEntry[])}
-     * 
+     *
      * @return
      */
     @Deprecated
