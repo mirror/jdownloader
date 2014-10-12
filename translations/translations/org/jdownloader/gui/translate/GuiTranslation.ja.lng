@@ -300,6 +300,7 @@ EnableAction_run_msg_=実行中のダウンロードを停止して無効にし�
 EnabledAction_EnabledAction_disable=無効
 EnabledAction_EnabledAction_empty=リンクを有効/無効
 EnabledAction_EnabledAction_enable=有効
+EnabledDisabledColumn_EnabledDisabledColumn=有効/無効
 ExceptionsRuleDialog_ExceptionsRuleDialog_title_=フィルタ除外規則
 ExceptionsRuleDialog_getIfText_=フィルタリストを除き、これらの条件にマッチした全てのリンクを許可します
 ExceptionsTableModel_initColumns_condition_=リンクの許可条件
