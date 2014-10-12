@@ -300,6 +300,7 @@ EnableAction_run_msg_=Yürütülen indirmeleri durdurmak ve etkisizleştirmek is
 EnabledAction_EnabledAction_disable=Etkisizleştir
 EnabledAction_EnabledAction_empty=Bağlantıyı Etkinleştir/Etkisizleştir
 EnabledAction_EnabledAction_enable=Etkinleştir
+EnabledDisabledColumn_EnabledDisabledColumn=Etkinleştirildi / Etkisizleştirildi
 ExceptionsRuleDialog_ExceptionsRuleDialog_title_=İstisna Süzme Kuralı
 ExceptionsRuleDialog_getIfText_=Bu koşullarla eşleşen tüm Bağlantılara izin ver, ve Süzgeç Listesini yoksay
 ExceptionsTableModel_initColumns_condition_=Bağlantılara izin ver eğer,
