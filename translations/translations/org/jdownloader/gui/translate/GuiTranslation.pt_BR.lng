@@ -300,6 +300,7 @@ EnableAction_run_msg_=Deseja desativar e parar os downloads em andamento?\r\nVoc
 EnabledAction_EnabledAction_disable=Desativar
 EnabledAction_EnabledAction_empty=Ativar/Desativar Link
 EnabledAction_EnabledAction_enable=Ativar
+EnabledDisabledColumn_EnabledDisabledColumn=Ativado / Desativado
 ExceptionsRuleDialog_ExceptionsRuleDialog_title_=Regra de Exceção de Filtro
 ExceptionsRuleDialog_getIfText_=Permitir todos os Links que correspondam estas condições, e ignorar a Lista de Filtros
 ExceptionsTableModel_initColumns_condition_=Permitir Links se,
