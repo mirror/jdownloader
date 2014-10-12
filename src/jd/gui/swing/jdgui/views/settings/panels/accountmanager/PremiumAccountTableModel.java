@@ -23,6 +23,7 @@ import jd.controlling.AccountControllerEvent;
 import jd.controlling.AccountControllerListener;
 import jd.controlling.accountchecker.AccountChecker;
 import jd.controlling.accountchecker.AccountCheckerEventListener;
+import jd.gui.swing.jdgui.GUIUtils;
 import jd.gui.swing.jdgui.interfaces.SwitchPanelEvent;
 import jd.gui.swing.jdgui.interfaces.SwitchPanelListener;
 import jd.nutils.Formatter;
@@ -235,7 +236,9 @@ public class PremiumAccountTableModel extends ExtTableModel<AccountEntry> implem
             public void configureRendererComponent(AccountEntry value, boolean isSelected, boolean hasFocus, int row, int column) {
                 this.rendererIcon.setIcon(this.getIcon(value));
                 String str = null;
-                if (getWidth() > 60) str = this.getStringValue(value);
+                if (getWidth() > 60) {
+                    str = this.getStringValue(value);
+                }
                 if (str == null) {
                     str = "";
                 }
@@ -292,10 +295,14 @@ public class PremiumAccountTableModel extends ExtTableModel<AccountEntry> implem
 
             @Override
             protected Icon getIcon(AccountEntry value) {
-                if (value.getAccount().isChecking()) { return new AbstractIcon(IconKey.ICON_REFRESH, 16); }
+                if (value.getAccount().isChecking()) {
+                    return new AbstractIcon(IconKey.ICON_REFRESH, 16);
+                }
                 if (value.getAccount().getError() == null) {
 
-                    if (value.getAccount().isTempDisabled()) { return new AbstractIcon(IconKey.ICON_WAIT, 16); }
+                    if (value.getAccount().isTempDisabled()) {
+                        return new AbstractIcon(IconKey.ICON_WAIT, 16);
+                    }
                     return new AbstractIcon(IconKey.ICON_OK, 16);
                 }
                 switch (value.getAccount().getError()) {
@@ -330,20 +337,26 @@ public class PremiumAccountTableModel extends ExtTableModel<AccountEntry> implem
 
             @Override
             public String getStringValue(AccountEntry value) {
-                if (value.getAccount().isChecking()) { return _GUI._.PremiumAccountTableModel_refresh(); }
+                if (value.getAccount().isChecking()) {
+                    return _GUI._.PremiumAccountTableModel_refresh();
+                }
                 if (value.getAccount().getError() == null) {
                     AccountInfo ai = value.getAccount().getAccountInfo();
                     String ret = ai == null ? null : ai.getStatus();
                     if (StringUtils.isEmpty(ret)) {
                         if (value.getAccount().isTempDisabled()) {
-                            if (StringUtils.isNotEmpty(value.getAccount().getErrorString())) { return value.getAccount().getErrorString(); }
+                            if (StringUtils.isNotEmpty(value.getAccount().getErrorString())) {
+                                return value.getAccount().getErrorString();
+                            }
                             ret = _GUI._.PremiumAccountTableModel_getStringValue_temp_disabled();
                         } else {
                             ret = _GUI._.PremiumAccountTableModel_getStringValue_account_ok_();
                         }
                     } else {
                         if (value.getAccount().isTempDisabled()) {
-                            if (StringUtils.isNotEmpty(value.getAccount().getErrorString())) { return value.getAccount().getErrorString(); }
+                            if (StringUtils.isNotEmpty(value.getAccount().getErrorString())) {
+                                return value.getAccount().getErrorString();
+                            }
                             ret = _GUI._.PremiumAccountTableModel_getStringValue_temp_disabled2(ret);
                         } else {
                             ret = _GUI._.PremiumAccountTableModel_getStringValue_account_ok_2(ret);
@@ -352,7 +365,9 @@ public class PremiumAccountTableModel extends ExtTableModel<AccountEntry> implem
                     }
                     return ret;
                 }
-                if (StringUtils.isNotEmpty(value.getAccount().getErrorString())) { return value.getAccount().getErrorString(); }
+                if (StringUtils.isNotEmpty(value.getAccount().getErrorString())) {
+                    return value.getAccount().getErrorString();
+                }
                 switch (value.getAccount().getError()) {
                 case EXPIRED:
                     return _GUI._.PremiumAccountTableModel_getStringValue_status_expired();
@@ -374,7 +389,7 @@ public class PremiumAccountTableModel extends ExtTableModel<AccountEntry> implem
 
             @Override
             public boolean isHidable() {
-                return false;
+                return true;
             }
 
             @Override
@@ -384,11 +399,15 @@ public class PremiumAccountTableModel extends ExtTableModel<AccountEntry> implem
 
             @Override
             public int getMinWidth() {
-                return 100;
+                return 70;
             }
 
             @Override
             public boolean isEditable(AccountEntry obj) {
+                // prevent hash values from been edited...
+                if (CFG_GUI.CFG.isPresentationModeEnabled()) {
+                    return false;
+                }
                 return true;
             }
 
@@ -399,7 +418,7 @@ public class PremiumAccountTableModel extends ExtTableModel<AccountEntry> implem
 
             @Override
             public String getStringValue(AccountEntry value) {
-                return value.getAccount().getUser();
+                return GUIUtils.getAccountName(value.getAccount().getUser());
             }
         });
         this.addColumn(new ExtPasswordEditorColumn<AccountEntry>(_GUI._.premiumaccounttablemodel_column_password()) {
@@ -407,7 +426,7 @@ public class PremiumAccountTableModel extends ExtTableModel<AccountEntry> implem
 
             @Override
             public boolean isHidable() {
-                return false;
+                return true;
             }
 
             @Override
@@ -422,7 +441,7 @@ public class PremiumAccountTableModel extends ExtTableModel<AccountEntry> implem
 
             @Override
             public int getMinWidth() {
-                return 100;
+                return 70;
             }
 
             @Override
@@ -481,9 +500,13 @@ public class PremiumAccountTableModel extends ExtTableModel<AccountEntry> implem
             @Override
             protected String getDateFormatString() {
                 String custom = CFG_GUI.CFG.getDateTimeFormatAccountManagerExpireDateColumn();
-                if (StringUtils.isNotEmpty(custom)) { return custom; }
+                if (StringUtils.isNotEmpty(custom)) {
+                    return custom;
+                }
                 DateFormat sd = SimpleDateFormat.getDateTimeInstance();
-                if (sd instanceof SimpleDateFormat) { return ((SimpleDateFormat) sd).toPattern(); }
+                if (sd instanceof SimpleDateFormat) {
+                    return ((SimpleDateFormat) sd).toPattern();
+                }
                 return _GUI._.PremiumAccountTableModel_getDateFormatString_();
 
             }
@@ -494,7 +517,9 @@ public class PremiumAccountTableModel extends ExtTableModel<AccountEntry> implem
                 if (ai == null) {
                     return null;
                 } else {
-                    if (ai.getValidUntil() <= 0) return null;
+                    if (ai.getValidUntil() <= 0) {
+                        return null;
+                    }
                     return new Date(ai.getValidUntil());
                 }
             }
@@ -515,7 +540,9 @@ public class PremiumAccountTableModel extends ExtTableModel<AccountEntry> implem
                         if (ret == 0) {
                             final long v1 = getValue(o1);
                             final long v2 = getValue(o2);
-                            if (v1 == v2) { return 0; }
+                            if (v1 == v2) {
+                                return 0;
+                            }
                             if (getSortOrderIdentifier() != ExtColumn.SORT_ASC) {
                                 return v1 > v2 ? -1 : 1;
                             } else {
@@ -542,8 +569,12 @@ public class PremiumAccountTableModel extends ExtTableModel<AccountEntry> implem
             }
 
             protected boolean isIndeterminated(final AccountEntry value, final boolean isSelected, final boolean hasFocus, final int row, final int column) {
-                if (checkRunning) { return AccountChecker.getInstance().contains(value.getAccount()); }
-                if (value.getAccount().isValid() && value.getAccount().isEnabled() && value.getAccount().isTempDisabled()) return true;
+                if (checkRunning) {
+                    return AccountChecker.getInstance().contains(value.getAccount());
+                }
+                if (value.getAccount().isValid() && value.getAccount().isEnabled() && value.getAccount().isTempDisabled()) {
+                    return true;
+                }
                 return false;
 
             }
@@ -730,7 +761,9 @@ public class PremiumAccountTableModel extends ExtTableModel<AccountEntry> implem
             if (accs != null) {
                 for (Account acc : accs) {
                     PluginForHost plugin = acc.getPlugin();
-                    if (plugin == null) continue;
+                    if (plugin == null) {
+                        continue;
+                    }
                     AccountEntry ae;
                     newtableData.add(ae = new AccountEntry(acc));
                     if (ae.isDetailsDialogSupported()) {

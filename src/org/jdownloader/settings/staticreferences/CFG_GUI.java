@@ -41,6 +41,8 @@ public class CFG_GUI {
 
     public static final BooleanKeyHandler                              DOWNLOADS_PROPERTIES_PANEL_SAVE_TO_VISIBLE              = SH.getKeyHandler("DownloadsPropertiesPanelSaveToVisible", BooleanKeyHandler.class);
 
+    public static final BooleanKeyHandler                              PRESENTATION_MODE                                       = SH.getKeyHandler("PresentationModeEnabled", BooleanKeyHandler.class);
+
     /**
      * If false, Most of the Tooltips will be disabled
      **/

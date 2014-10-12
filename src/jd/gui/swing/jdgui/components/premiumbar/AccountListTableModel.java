@@ -23,6 +23,7 @@ import jd.controlling.AccountControllerEvent;
 import jd.controlling.AccountControllerListener;
 import jd.controlling.accountchecker.AccountChecker;
 import jd.controlling.accountchecker.AccountCheckerEventListener;
+import jd.gui.swing.jdgui.GUIUtils;
 import jd.gui.swing.jdgui.views.settings.panels.accountmanager.AccountEntry;
 import jd.nutils.Formatter;
 import jd.plugins.AccountInfo;
@@ -224,8 +225,9 @@ public class AccountListTableModel extends ExtTableModel<AccountEntry> implement
             protected Icon getIcon(AccountEntry value) {
                 if (value.getAccount().getPlugin() != null) {
                     return value.getAccount().getPlugin().getDomainInfo(null).getFavIcon();
-                } else
+                } else {
                     return DomainInfo.getInstance(value.getAccount().getHoster()).getFavIcon();
+                }
             }
 
             @Override
@@ -247,7 +249,9 @@ public class AccountListTableModel extends ExtTableModel<AccountEntry> implement
             public void configureRendererComponent(AccountEntry value, boolean isSelected, boolean hasFocus, int row, int column) {
                 this.rendererIcon.setIcon(this.getIcon(value));
                 String str = null;
-                if (getWidth() > 60) str = this.getStringValue(value);
+                if (getWidth() > 60) {
+                    str = this.getStringValue(value);
+                }
                 if (str == null) {
                     str = "";
                 }
@@ -310,7 +314,9 @@ public class AccountListTableModel extends ExtTableModel<AccountEntry> implement
             protected Icon getIcon(AccountEntry value) {
                 if (value.getAccount().getError() == null) {
 
-                    if (value.getAccount().isTempDisabled()) { return new AbstractIcon(IconKey.ICON_WAIT, 16); }
+                    if (value.getAccount().isTempDisabled()) {
+                        return new AbstractIcon(IconKey.ICON_WAIT, 16);
+                    }
                     return new AbstractIcon(IconKey.ICON_OK, 16);
                 }
                 switch (value.getAccount().getError()) {
@@ -348,7 +354,9 @@ public class AccountListTableModel extends ExtTableModel<AccountEntry> implement
                     String ret = ai == null ? null : ai.getStatus();
                     if (StringUtils.isEmpty(ret)) {
                         if (value.getAccount().isTempDisabled()) {
-                            if (StringUtils.isNotEmpty(value.getAccount().getErrorString())) { return value.getAccount().getErrorString(); }
+                            if (StringUtils.isNotEmpty(value.getAccount().getErrorString())) {
+                                return value.getAccount().getErrorString();
+                            }
                             ret = _GUI._.PremiumAccountTableModel_getStringValue_temp_disabled();
                         } else {
                             ret = _GUI._.PremiumAccountTableModel_getStringValue_account_ok_();
@@ -358,7 +366,9 @@ public class AccountListTableModel extends ExtTableModel<AccountEntry> implement
                     }
                     return ret;
                 }
-                if (StringUtils.isNotEmpty(value.getAccount().getErrorString())) { return value.getAccount().getErrorString(); }
+                if (StringUtils.isNotEmpty(value.getAccount().getErrorString())) {
+                    return value.getAccount().getErrorString();
+                }
                 switch (value.getAccount().getError()) {
                 case EXPIRED:
                     return _GUI._.PremiumAccountTableModel_getStringValue_status_expired();
@@ -380,7 +390,7 @@ public class AccountListTableModel extends ExtTableModel<AccountEntry> implement
 
             @Override
             public boolean isHidable() {
-                return false;
+                return true;
             }
 
             @Override
@@ -395,7 +405,7 @@ public class AccountListTableModel extends ExtTableModel<AccountEntry> implement
 
             @Override
             public int getMinWidth() {
-                return 100;
+                return 70;
             }
 
             @Override
@@ -415,7 +425,7 @@ public class AccountListTableModel extends ExtTableModel<AccountEntry> implement
 
             @Override
             public String getStringValue(AccountEntry value) {
-                return value.getAccount().getUser();
+                return GUIUtils.getAccountName(value.getAccount().getUser());
             }
         });
 
@@ -482,7 +492,9 @@ public class AccountListTableModel extends ExtTableModel<AccountEntry> implement
             @Override
             protected String getDateFormatString() {
                 DateFormat sd = SimpleDateFormat.getDateInstance(SimpleDateFormat.SHORT);
-                if (sd instanceof SimpleDateFormat) { return ((SimpleDateFormat) sd).toPattern(); }
+                if (sd instanceof SimpleDateFormat) {
+                    return ((SimpleDateFormat) sd).toPattern();
+                }
                 return _GUI._.PremiumAccountTableModel_getDateFormatString_();
             }
 
@@ -492,7 +504,9 @@ public class AccountListTableModel extends ExtTableModel<AccountEntry> implement
                 if (ai == null) {
                     return null;
                 } else {
-                    if (ai.getValidUntil() <= 0) return null;
+                    if (ai.getValidUntil() <= 0) {
+                        return null;
+                    }
                     return new Date(ai.getValidUntil());
                 }
             }
@@ -540,8 +554,12 @@ public class AccountListTableModel extends ExtTableModel<AccountEntry> implement
             }
 
             protected boolean isIndeterminated(final AccountEntry value, final boolean isSelected, final boolean hasFocus, final int row, final int column) {
-                if (checkRunning) { return AccountChecker.getInstance().contains(value.getAccount()); }
-                if (value.getAccount().isValid() && value.getAccount().isEnabled() && value.getAccount().isTempDisabled()) return true;
+                if (checkRunning) {
+                    return AccountChecker.getInstance().contains(value.getAccount());
+                }
+                if (value.getAccount().isValid() && value.getAccount().isEnabled() && value.getAccount().isTempDisabled()) {
+                    return true;
+                }
                 return false;
 
             }
@@ -732,7 +750,9 @@ public class AccountListTableModel extends ExtTableModel<AccountEntry> implement
 
             }
         }
-        if (details != null) setColumnVisible(details, hasDetailsButton);
+        if (details != null) {
+            setColumnVisible(details, hasDetailsButton);
+        }
         _fireTableStructureChanged(newtableData, true);
     }
 

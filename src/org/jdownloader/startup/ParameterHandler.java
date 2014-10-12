@@ -87,7 +87,7 @@ public class ParameterHandler implements InstanceMessageListener, CommandSwitchL
     private void addCommand(StartupCommand helpCommand) {
         for (String s : helpCommand.getCommandSwitches()) {
             if (commandMap.containsKey(s)) {
-                throw new IllegalStateException("COmmand " + s + " already is used");
+                throw new IllegalStateException("Command " + s + " already is used");
             }
             commandMap.put(s, helpCommand);
         }
