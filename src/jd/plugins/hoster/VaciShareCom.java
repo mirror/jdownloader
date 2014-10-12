@@ -88,6 +88,8 @@ public class VaciShareCom extends PluginForHost {
     private static Object                  LOCK                         = new Object();
     private String                         fuid                         = null;
 
+    private static final String            INVALIDLINKS                 = "https?://(www\\.)?vacishare\\.com/Estadisticas";
+
     /* DEV NOTES */
     // XfileSharingProBasic Version 2.6.6.5
     // mods: scanInfo[Changed one RegEx to Spanish]
@@ -121,6 +123,9 @@ public class VaciShareCom extends PluginForHost {
     @SuppressWarnings("deprecation")
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
+        if (link.getDownloadURL().matches(INVALIDLINKS)) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
         final String[] fileInfo = new String[3];
         final Browser altbr = br.cloneBrowser();
         br.setFollowRedirects(true);

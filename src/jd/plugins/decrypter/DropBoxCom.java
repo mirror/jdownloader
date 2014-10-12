@@ -178,6 +178,16 @@ public class DropBoxCom extends PluginForDecrypt {
                 decryptedLinks.add(dl);
             }
         }
+        final String singlefile = br.getRegex("SharingModel\\.init_file\\(\\)(.*?)\\}\\);</script>").getMatch(0);
+        if (singlefile != null) {
+            final DownloadLink dl = createDownloadlink(parameter.replace("dropbox.com/", "dropboxdecrypted.com/"));
+            if (fpName != null) {
+                dl.setName(fpName);
+            }
+            dl.setProperty("decrypted", true);
+            dl.setAvailable(true);
+            decryptedLinks.add(dl);
+        }
         if (decryptedLinks.size() == 0) {
             logger.info("Found nothing to download: " + parameter);
             final DownloadLink dl = createDownloadlink(parameter.replace("dropbox.com/", "dropboxdecrypted.com/"));

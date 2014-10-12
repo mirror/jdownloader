@@ -97,7 +97,7 @@ public class PrivateFilesCom extends PluginForHost {
 
     /* DEV NOTES */
     // XfileSharingProBasic Version 2.6.6.1
-    // mods: requestFileInformation[Added another FNF text]
+    // mods: requestFileInformation[Added another FNF text], heavily modified, do NOT upgrade!
     // limit-info:
     // protocol: no https
     // captchatype: null
@@ -915,7 +915,7 @@ public class PrivateFilesCom extends PluginForHost {
         if (expire != null) {
             expire_milliseconds = TimeFormatter.getMilliSeconds(expire, "dd MMMM yyyy", Locale.ENGLISH);
         }
-        if (account.getBooleanProperty("nopremium") && (expire_milliseconds - System.currentTimeMillis()) <= 0) {
+        if (!br.containsHTML("type=\"button\" class=\"\" value=\"ACTIVE ") && (expire_milliseconds - System.currentTimeMillis()) <= 0) {
             maxPrem.set(ACCOUNT_FREE_MAXDOWNLOADS);
             try {
                 account.setType(AccountType.FREE);
@@ -925,8 +925,9 @@ public class PrivateFilesCom extends PluginForHost {
                 /* not available in old Stable 0.9.581 */
             }
             ai.setStatus("Registered (free) user");
+            account.setProperty("nopremium", true);
         } else {
-            ai.setValidUntil(expire_milliseconds);
+            // ai.setValidUntil(expire_milliseconds);
             maxPrem.set(ACCOUNT_PREMIUM_MAXDOWNLOADS);
             try {
                 account.setType(AccountType.PREMIUM);
@@ -936,6 +937,7 @@ public class PrivateFilesCom extends PluginForHost {
                 /* not available in old Stable 0.9.581 */
             }
             ai.setStatus("Premium user");
+            account.setProperty("nopremium", false);
         }
         return ai;
     }
@@ -985,11 +987,6 @@ public class PrivateFilesCom extends PluginForHost {
                 }
                 if (!br.getURL().contains("/?op=my_account")) {
                     getPage("/?op=my_account");
-                }
-                if (!new Regex(correctedBR, "(Premium(\\-| )Account expire|>Renew premium<)").matches()) {
-                    account.setProperty("nopremium", true);
-                } else {
-                    account.setProperty("nopremium", false);
                 }
                 /* Save cookies */
                 final HashMap<String, String> cookies = new HashMap<String, String>();
