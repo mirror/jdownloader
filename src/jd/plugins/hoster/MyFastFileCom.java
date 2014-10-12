@@ -133,7 +133,7 @@ public class MyFastFileCom extends PluginForHost {
         String dllink = getJson("link");
         if (inValidate(dllink) || !dllink.matches("https?://.+|/.+")) {
             link.setProperty(sessionRetry, count);
-            if (dllink.contains("Cannot debrid link")) {
+            if (!inValidate(dllink) && dllink.contains("Cannot debrid link")) {
                 logger.severe("Can not debrid link :: " + ec);
                 tempUnavailableHoster(account, link, 20 * 60 * 1000l);
             }
