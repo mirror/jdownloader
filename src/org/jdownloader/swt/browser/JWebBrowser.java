@@ -43,6 +43,7 @@ import org.jdownloader.swt.browser.events.JWebBrowserAdapter;
 import org.jdownloader.swt.browser.events.JWebBrowserEvent;
 import org.jdownloader.swt.browser.events.JWebBrowserEventSender;
 import org.jdownloader.swt.browser.events.JWebBrowserListener;
+import org.jdownloader.swt.browser.events.JavaScriptEventListener;
 
 public class JWebBrowser extends MigPanel implements ProgressListener, LocationListener, OpenWindowListener, MenuDetectListener, DragDetectListener {
     static {
