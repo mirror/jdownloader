@@ -239,6 +239,13 @@ public class YoutubeDashV2 extends PluginForHost {
         void setCreateBestSubtitleVariantLinkEnabled(boolean b);
 
         @DefaultBooleanValue(false)
+        @DescriptionForConfigEntry("sets the CUSTOM 'download from' field to: yourProtocolPreference + \"://www.youtube.com/watch?v=\" + videoID. Useful for when you don't want courselist / playlist / variant information polluting URL.")
+        @AboutConfig
+        boolean isSetCustomUrlEnabled();
+
+        void setSetCustomUrlEnabled(boolean b);
+
+        @DefaultBooleanValue(false)
         @AboutConfig
         boolean isProxyEnabled();
 
@@ -600,7 +607,9 @@ public class YoutubeDashV2 extends PluginForHost {
                     }
 
                 } catch (PluginException e) {
-
+                    if (e.getErrorMessage() != null && e.getErrorMessage().contains("This video is private")) {
+                        throw e;
+                    }
                     List<LinkVariant> alternatives = getVariantsByLink(downloadLink);
                     if (alternatives != null) {
                         for (LinkVariant v : alternatives) {
