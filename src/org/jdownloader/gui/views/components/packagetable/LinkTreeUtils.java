@@ -186,7 +186,12 @@ public class LinkTreeUtils {
                 link = ((CrawledLink) node).getDownloadLink();
             }
             if (link != null) {
-                rawURL = link.getContentUrlOrPatternMatcher();
+                if (link.getCustomUrl() == null) {
+                    rawURL = link.getContentUrlOrPatternMatcher();
+                } else {
+                    // custom is preferable throughout
+                    rawURL = link.getCustomUrl();
+                }
                 urls.add(link.getView().getDisplayUrl());
 
             }

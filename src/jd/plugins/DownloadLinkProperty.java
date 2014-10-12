@@ -32,7 +32,8 @@ public class DownloadLinkProperty {
         COMMENT,
         URL_CONTAINER,
         URL_ORIGIN,
-        URL_REFERRER;
+        URL_REFERRER,
+        URL_CUSTOM;
     }
 
     private final Object       value;

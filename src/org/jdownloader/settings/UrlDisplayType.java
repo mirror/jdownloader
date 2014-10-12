@@ -4,6 +4,15 @@ import org.jdownloader.translate._JDT;
 
 public enum UrlDisplayType {
     // order is important., it is the default order
+    CUSTOM {
+        public String getTranslatedName() {
+            return _JDT._.UrlDisplayType_CUSTOM();
+        }
+
+        public String getTranslatedDescription() {
+            return _JDT._.UrlDisplayType_CUSTOM_description();
+        }
+    },
     REFERRER {
         public String getTranslatedName() {
             return _JDT._.UrlDisplayType_REFERRER();

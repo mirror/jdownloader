@@ -624,6 +624,9 @@ public interface JdownloaderTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "Moving file..." })
     String MovePluginProgress_nodest();
 
+    @Default(lngs = { "en" }, values = { "Custom" })
+    String UrlDisplayType_CUSTOM();
+
     @Default(lngs = { "en" }, values = { "Referrer" })
     String UrlDisplayType_REFERRER();
 
@@ -635,6 +638,9 @@ public interface JdownloaderTranslation extends TranslateInterface {
 
     @Default(lngs = { "en" }, values = { "Data" })
     String UrlDisplayType_CONTENT();
+
+    @Default(lngs = { "en" }, values = { "Provides the ability to custom override. This is based on 'plugin source code' and 'users plugin preferences'. eg, Youtube: Set Custom Url" })
+    String UrlDisplayType_CUSTOM_description();
 
     @Default(lngs = { "en" }, values = { "The website where you found the links. Only available if you added through Browser Extensions or Click'n'Load" })
     String UrlDisplayType_REFERRER_description();

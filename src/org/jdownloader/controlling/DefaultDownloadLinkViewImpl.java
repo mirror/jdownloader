@@ -203,6 +203,9 @@ public class DefaultDownloadLinkViewImpl implements DownloadLinkView {
     public static String getUrlByType(UrlDisplayType dt, DownloadLink link) {
 
         switch (dt) {
+        case CUSTOM:
+            return link.getCustomUrl();
+
         case REFERRER:
             return link.getReferrerUrl();
 
