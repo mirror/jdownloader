@@ -1,6 +1,6 @@
 AccountController_updateAccountInfo_no_gateway=Gateway / Proxy non trovati.
 AccountController_updateAccountInfo_status_logins_wrong=Credenziali errate
-AccountController_updateAccountInfo_status_plugin_defect=Plugin obsoleto
+AccountController_updateAccountInfo_status_plugin_defect=Componente aggiuntivo obsoleto
 AccountController_updateAccountInfo_status_traffic_reached=Traffico insufficiente
 AccountController_updateAccountInfo_status_uncheckable=Impossibile verificare l'account
 AddContainerAction_delete_container_msg=Vuoi veramente eliminare %s1 dopo aver aggiunto i collegamenti a JDownloader?
@@ -126,7 +126,7 @@ download_error_message_outofmemory=Il sistema di download non ha memoria suffici
 download_error_message_rangeheaderparseerror=Formato non previsto intervallo inetstazione::
 download_error_message_rangeheaders=Il server non supporta la gestione dei segmenti
 download_error_message_unavailable=Errore server. Riprova più tardi
-downloadlink_status_error_defect=Plugin obsoleto
+downloadlink_status_error_defect=Componente aggiuntivo obsoleto
 downloadlink_status_error_download_limit=Raggiunto limite di download
 downloadlink_status_error_downloadfailed=Download non riuscito
 downloadlink_status_error_fatal=Errore critico
