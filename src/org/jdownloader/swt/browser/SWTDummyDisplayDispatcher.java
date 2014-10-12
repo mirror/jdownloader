@@ -75,6 +75,7 @@ public class SWTDummyDisplayDispatcher {
 
                         setShell(shell);
                         shell.open();
+
                         browser.addCloseWindowListener(new CloseWindowListener() {
 
                             @Override

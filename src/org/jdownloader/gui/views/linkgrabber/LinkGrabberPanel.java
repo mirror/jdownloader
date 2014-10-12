@@ -22,6 +22,7 @@ import jd.controlling.linkcollector.LinkCollectorHighlightListener;
 import jd.controlling.linkcollector.LinkCollectorListener;
 import jd.controlling.linkcrawler.CrawledLink;
 import jd.gui.swing.jdgui.JDGui;
+import jd.gui.swing.jdgui.MainTabbedPane;
 import jd.gui.swing.jdgui.interfaces.SwitchPanel;
 import net.miginfocom.swing.MigLayout;
 
@@ -453,7 +454,7 @@ public class LinkGrabberPanel extends SwitchPanel implements LinkCollectorListen
                 Dimension ret = super.getPreferredSize();
                 Insets borderInsets = getBorder().getBorderInsets(sidebarScrollPane);
                 int scrollbarWidth = getVerticalScrollBar().getPreferredSize().width;
-                if (sidebar.getSponsoringPanel() == null) {
+                if (sidebar.getSponsoringPanel() == null || !(MainTabbedPane.getInstance().getSelectedView() instanceof LinkGrabberView)) {
                     int widthWithout = sidebar.getPreferredSize().width + scrollbarWidth + borderInsets.left + borderInsets.right;
 
                     ret.width = widthWithout;
@@ -635,6 +636,12 @@ public class LinkGrabberPanel extends SwitchPanel implements LinkCollectorListen
     }
 
     public void autoHideSponsor() {
+        if (!(MainTabbedPane.getInstance().getSelectedView() instanceof LinkGrabberView)) {
+            if (sidebar.getSponsoringPanel().isVisible()) {
+                sidebar.getSponsoringPanel().setVisible(false);
+            }
+            return;
+        }
         double viewPortHeight = sidebarScrollPane.getViewportBorderBounds().getHeight();
 
         int heightWithSponsor = sidebar.getPreferredSize().height;

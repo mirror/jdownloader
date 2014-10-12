@@ -5,12 +5,15 @@ import java.io.IOException;
 import javax.swing.Box;
 import javax.swing.JComponent;
 
+import jd.gui.swing.jdgui.interfaces.View;
 import jd.http.Browser;
 
 import org.appwork.storage.config.ValidationException;
 import org.appwork.storage.config.events.GenericConfigEventListener;
 import org.appwork.storage.config.handler.KeyHandler;
 import org.appwork.swing.MigPanel;
+import org.jdownloader.gui.event.GUIEventSender;
+import org.jdownloader.gui.event.GUIListener;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.gui.views.components.Header;
 import org.jdownloader.gui.views.linkgrabber.quickfilter.CustomFilterHeader;
@@ -99,7 +102,21 @@ public class LinkGrabberSidebar extends MigPanel {
                 add(Box.createVerticalGlue(), "pushy,growy");
 
                 add(sponsoringPanel = panel.getPanel(), "hidemode 3");
+                GUIEventSender.getInstance().addListener(new GUIListener() {
 
+                    @Override
+                    public void onKeyModifier(int parameter) {
+                    }
+
+                    @Override
+                    public void onGuiMainTabSwitch(View oldView, View newView) {
+                        if (newView instanceof LinkGrabberView) {
+                            sponsoringPanel.setVisible(true);
+                        } else {
+                            sponsoringPanel.setVisible(false);
+                        }
+                    }
+                });
                 panel.init();
             } catch (Throwable t) {
                 t.printStackTrace();

@@ -7,6 +7,8 @@ import java.awt.Window;
 import java.awt.event.HierarchyBoundsListener;
 import java.awt.event.HierarchyEvent;
 import java.awt.event.HierarchyListener;
+import java.awt.event.MouseEvent;
+import java.awt.event.MouseMotionListener;
 import java.lang.reflect.Method;
 import java.util.Arrays;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -155,7 +157,7 @@ public class JWebBrowser extends MigPanel implements ProgressListener, LocationL
         SWTDummyDisplayDispatcher.getInstance().ensureRunning();
 
         SwingUtils.setOpaque(this, false);
-
+        setFocusable(false);
         eventSender = new JWebBrowserEventSender();
         delayer = new DelayedRunnable(500) {
 
@@ -172,7 +174,18 @@ public class JWebBrowser extends MigPanel implements ProgressListener, LocationL
 
             }
         };
+        addMouseMotionListener(new MouseMotionListener() {
 
+            @Override
+            public void mouseMoved(MouseEvent e) {
+                System.out.println(e);
+            }
+
+            @Override
+            public void mouseDragged(MouseEvent e) {
+                System.out.println(e);
+            }
+        });
         addHierarchyListener(new HierarchyListener() {
 
             @Override
@@ -189,6 +202,7 @@ public class JWebBrowser extends MigPanel implements ProgressListener, LocationL
                         initHideOnResizeOrMove();
                         asyncExec(new Runnable() {
                             public void run() {
+
                                 init();
                                 eventSender.fireEvent(new JWebBrowserEvent() {
 
@@ -281,6 +295,7 @@ public class JWebBrowser extends MigPanel implements ProgressListener, LocationL
 
     @Override
     public void setVisible(boolean aFlag) {
+        System.out.println("Browser Visible: " + aFlag);
         super.setVisible(aFlag);
         if (!resizing) {
             browserCanvas.setVisible(aFlag);
