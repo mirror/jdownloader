@@ -276,4 +276,24 @@ public class LAFOptions {
     public Color getColorForTableAccountTempErrorRowBackground() {
         return createColor(cfg.getColorForTableAccountTempErrorRowBackground());
     }
+
+    public Color getColorForProgressbar1() {
+        return createColor(cfg.getColorForProgressbarForeground1());
+    }
+
+    public Color getColorForProgressbar2() {
+        return createColor(cfg.getColorForProgressbarForeground2());
+    }
+
+    public Color getColorForProgressbar3() {
+        return createColor(cfg.getColorForProgressbarForeground3());
+    }
+
+    public Color getColorForProgressbar4() {
+        return createColor(cfg.getColorForProgressbarForeground4());
+    }
+
+    public Color getColorForProgressbar5() {
+        return createColor(cfg.getColorForProgressbarForeground5());
+    }
 }
