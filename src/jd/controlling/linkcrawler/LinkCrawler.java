@@ -1844,32 +1844,32 @@ public class LinkCrawler {
         getHandler().handleUnHandledLink(link);
     }
 
-    private String getContentURL(final CrawledLink link) {
-        final DownloadLink downloadLink = link.getDownloadLink();
-        if (downloadLink != null) {
-            final String pluginURL = downloadLink.getPluginPatternMatcher();
-            final Iterator<CrawledLink> it = link.iterator();
-            while (it.hasNext()) {
-                final CrawledLink next = it.next();
-                if (next == link) {
-                    continue;
-                }
-                if (next.getDownloadLink() != null) {
-                    final String nextURL = cleanURL(next.getDownloadLink().getPluginPatternMatcher());
-                    if (nextURL != null && !StringUtils.equals(pluginURL, nextURL)) {
-                        return nextURL;
-                    }
-                } else if (next.getDownloadLink() == null && next.getCryptedLink() == null) {
-                    final String nextURL = cleanURL(next.getURL());
-                    if (nextURL != null && !StringUtils.equals(pluginURL, nextURL)) {
-                        return nextURL;
-                    }
-                    break;
-                }
-            }
-        }
-        return null;
-    }
+    // private String getContentURL(final CrawledLink link) {
+    // final DownloadLink downloadLink = link.getDownloadLink();
+    // if (downloadLink != null) {
+    // final String pluginURL = downloadLink.getPluginPatternMatcher();
+    // final Iterator<CrawledLink> it = link.iterator();
+    // while (it.hasNext()) {
+    // final CrawledLink next = it.next();
+    // if (next == link) {
+    // continue;
+    // }
+    // if (next.getDownloadLink() != null) {
+    // final String nextURL = cleanURL(next.getDownloadLink().getPluginPatternMatcher());
+    // if (nextURL != null && !StringUtils.equals(pluginURL, nextURL)) {
+    // return nextURL;
+    // }
+    // } else if (next.getDownloadLink() == null && next.getCryptedLink() == null) {
+    // final String nextURL = cleanURL(next.getURL());
+    // if (nextURL != null && !StringUtils.equals(pluginURL, nextURL)) {
+    // return nextURL;
+    // }
+    // break;
+    // }
+    // }
+    // }
+    // return null;
+    // }
 
     private String getOriginURL(final CrawledLink link) {
         final DownloadLink downloadLink = link.getDownloadLink();
@@ -1902,15 +1902,21 @@ public class LinkCrawler {
                     downloadLink.setContentUrl(null);
                 }
                 knownURLs.add(downloadLink.getContentUrl());
-            } else if (true || downloadLink.getContainerUrl() == null) {
-                /**
-                 * remove true in case we don't want a contentURL when containerURL is already set
-                 */
-                final String contentURL = getContentURL(link);
-                if (contentURL != null && knownURLs.add(contentURL)) {
-                    downloadLink.setContentUrl(contentURL);
-                }
             }
+
+            // The content url is meant to be set by plugins. Links like http://i.imgbox.com/CHADW2mV.png(dsgjhsd show the wrong url
+            // (http://i.imgbox.com/CHADW2mV.png(dsgjhsd) instead of http://i.imgbox.com/CHADW2mV.png due to this code. And even if we would
+            // set a contenturl here, we would have to ensure, that it is a valid url of ahoster assigned downloadlink.
+            // TODO: discuss with jiaz before removing this code - maybe there was some usecase that required this.
+            // else if (true || downloadLink.getContainerUrl() == null) {
+            // /**
+            // * remove true in case we don't want a contentURL when containerURL is already set
+            // */
+            // final String contentURL = getContentURL(link);
+            // if (contentURL != null && knownURLs.add(contentURL)) {
+            // downloadLink.setContentUrl(contentURL);
+            // }
+            // }
 
             if (downloadLink.getContainerUrl() != null) {
                 /**
