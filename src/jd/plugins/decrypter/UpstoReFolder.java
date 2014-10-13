@@ -41,7 +41,7 @@ public class UpstoReFolder extends PluginForDecrypt {
             logger.info("Link offline: " + parameter);
             return decryptedLinks;
         }
-        if (br.containsHTML(">Folder is empty<")) {
+        if (br.containsHTML(">Folder is empty<|>Folder was deleted<")) {
             logger.info("Folderlink is empty: " + parameter);
             return decryptedLinks;
         }
