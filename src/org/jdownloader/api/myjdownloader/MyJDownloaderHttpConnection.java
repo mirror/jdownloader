@@ -215,7 +215,7 @@ public class MyJDownloaderHttpConnection extends HttpConnection {
                 // "application/aesjson-jd; charset=utf-8"));
                 /* set chunked transfer header */
                 response.getResponseHeaders().add(new HTTPHeader(HTTPConstants.HEADER_RESPONSE_TRANSFER_ENCODING, HTTPConstants.HEADER_RESPONSE_TRANSFER_ENCODING_CHUNKED));
-                if (accept_encoding != null && StringUtils.contains(accept_encoding.getValue(), "gazeisp") || StringUtils.contains(accept_encoding.getValue(), "gzip_aes")) {
+                if (accept_encoding != null && (StringUtils.contains(accept_encoding.getValue(), "gazeisp") || StringUtils.contains(accept_encoding.getValue(), "gzip_aes"))) {
                     /* chunked->gzip->aes */
                     if (StringUtils.contains(accept_encoding.getValue(), "gazeisp")) {
                         response.getResponseHeaders().add(new HTTPHeader(HTTPConstants.HEADER_RESPONSE_CONTENT_ENCODING, "gazeisp"));
