@@ -348,4 +348,43 @@ public interface LAFSettings extends ConfigInterface {
 
     public abstract void setPopupBorderInsets(int[] popupBorderInsets);
 
+    @DescriptionForConfigEntry("Customized Color for the Progressbar 1/5 in aRGB Format (Pure red: #ffFF0000)")
+    @AboutConfig
+    @HexColorString
+    @DefaultStringValue("5F70CCFF")
+    public String getColorForProgressbarForeground1();
+
+    @DescriptionForConfigEntry("Customized Color for the Progressbar 2/5 in aRGB Format (Pure red: #ffFF0000)")
+    @AboutConfig
+    @HexColorString
+    @DefaultStringValue("5F80C7F7")
+    public String getColorForProgressbarForeground2();
+
+    @DescriptionForConfigEntry("Customized Color for the Progressbar 3/5 in aRGB Format (Pure red: #ffFF0000)")
+    @AboutConfig
+    @HexColorString
+    @DefaultStringValue("8078C0EF")
+    public String getColorForProgressbarForeground3();
+
+    @DescriptionForConfigEntry("Customized Color for the Progressbar 4/5 in aRGB Format (Pure red: #ffFF0000)")
+    @AboutConfig
+    @HexColorString
+    @DefaultStringValue("5F80C7F7")
+    public String getColorForProgressbarForeground4();
+
+    @DescriptionForConfigEntry("Customized Color for the Progressbar 5/5 in aRGB Format (Pure red: #ffFF0000)")
+    @AboutConfig
+    @HexColorString
+    @DefaultStringValue("5F70CCFF")
+    public String getColorForProgressbarForeground5();
+
+    public void setColorForProgressbarForeground1(String color);
+
+    public void setColorForProgressbarForeground2(String color);
+
+    public void setColorForProgressbarForeground3(String color);
+
+    public void setColorForProgressbarForeground4(String color);
+
+    public void setColorForProgressbarForeground5(String color);
 }

@@ -6,8 +6,10 @@ import java.awt.Insets;
 import java.awt.Point;
 import java.awt.event.ComponentEvent;
 import java.awt.event.ComponentListener;
+import java.io.IOException;
 
 import javax.swing.BorderFactory;
+import javax.swing.JComponent;
 import javax.swing.JScrollPane;
 import javax.swing.ScrollPaneConstants;
 import javax.swing.event.ChangeEvent;
@@ -24,20 +26,26 @@ import jd.controlling.linkcrawler.CrawledLink;
 import jd.gui.swing.jdgui.JDGui;
 import jd.gui.swing.jdgui.MainTabbedPane;
 import jd.gui.swing.jdgui.interfaces.SwitchPanel;
+import jd.gui.swing.jdgui.interfaces.View;
+import jd.http.Browser;
 import net.miginfocom.swing.MigLayout;
 
 import org.appwork.scheduler.DelayedRunnable;
 import org.appwork.storage.config.ValidationException;
 import org.appwork.storage.config.events.GenericConfigEventListener;
 import org.appwork.storage.config.handler.KeyHandler;
+import org.appwork.swing.MigPanel;
 import org.appwork.utils.NullsafeAtomicReference;
 import org.appwork.utils.event.queue.Queue.QueuePriority;
 import org.appwork.utils.swing.EDTRunner;
+import org.appwork.utils.swing.SwingUtils;
 import org.appwork.utils.swing.dialog.Dialog;
 import org.appwork.utils.swing.windowmanager.WindowManager.FrameState;
 import org.jdownloader.controlling.contextmenu.MenuContainerRoot;
 import org.jdownloader.controlling.contextmenu.MenuItemData;
 import org.jdownloader.gui.components.OverviewHeaderScrollPane;
+import org.jdownloader.gui.event.GUIEventSender;
+import org.jdownloader.gui.event.GUIListener;
 import org.jdownloader.gui.helpdialogs.HelpDialog;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.gui.views.SelectionInfo;
@@ -55,6 +63,9 @@ import org.jdownloader.gui.views.linkgrabber.properties.PropertiesScrollPane;
 import org.jdownloader.images.NewTheme;
 import org.jdownloader.settings.GraphicalUserInterfaceSettings.NewLinksInLinkgrabberAction;
 import org.jdownloader.settings.staticreferences.CFG_GUI;
+import org.jdownloader.updatev2.SimpleHttpInterface;
+import org.jdownloader.updatev2.SimpleHttpResponse;
+import org.jdownloader.updatev2.SponsoringPanelInterface;
 import org.jdownloader.updatev2.gui.LAFOptions;
 
 public class LinkGrabberPanel extends SwitchPanel implements LinkCollectorListener, GenericConfigEventListener<Boolean> {
@@ -80,6 +91,7 @@ public class LinkGrabberPanel extends SwitchPanel implements LinkCollectorListen
     private CustomizeableActionBar                            leftBar;
 
     private PropertiesScrollPane                              propertiesPanel;
+    private MigPanel                                          sidebarContainer;
 
     public void setPropertiesPanelVisible(final boolean propertiesPanelVisible) {
         // if (propertiesPanelVisible == this.propertiesPanelVisible) return;
@@ -365,7 +377,7 @@ public class LinkGrabberPanel extends SwitchPanel implements LinkCollectorListen
         if (CFG_GUI.LINKGRABBER_SIDEBAR_VISIBLE.getValue()) {
             constrains = "";
             this.add(tableScrollPane, "");
-            if (sidebarScrollPane == null) {
+            if (sidebarContainer == null) {
                 createSidebar();
             }
             int height = 1;
@@ -376,7 +388,7 @@ public class LinkGrabberPanel extends SwitchPanel implements LinkCollectorListen
                 height++;
             }
 
-            add(sidebarScrollPane, "spany " + height);
+            add(sidebarContainer, "spany " + height);
         } else {
             this.add(tableScrollPane, "spanx");
         }
@@ -444,7 +456,8 @@ public class LinkGrabberPanel extends SwitchPanel implements LinkCollectorListen
 
     private void createSidebar() {
         sidebar = new LinkGrabberSidebar(table);
-
+        sidebarContainer = new MigPanel("ins 0,wrap 1", "[grow,fill]", "[grow,fill]");
+        SwingUtils.setOpaque(sidebarContainer, false);
         sidebarScrollPane = new HeaderScrollPane(sidebar) {
             {
                 getVerticalScrollBar().setUnitIncrement(24);
@@ -513,20 +526,58 @@ public class LinkGrabberPanel extends SwitchPanel implements LinkCollectorListen
         sidebarScrollPane.setHorizontalScrollBarPolicy(ScrollPaneConstants.HORIZONTAL_SCROLLBAR_NEVER);
         sidebarScrollPane.setVerticalScrollBarPolicy(ScrollPaneConstants.VERTICAL_SCROLLBAR_AS_NEEDED);
         sidebarScrollPane.setColumnHeaderView(new LinkGrabberSideBarHeader(table));
-        // ExtButton bt = new ExtButton(new AppAction() {
-        // {
-        // setSmallIcon(NewTheme.I().getIcon("close", -1));
-        // setToolTipText(_GUI._.LinkGrabberSideBarHeader_LinkGrabberSideBarHeader_object_());
-        // }
-        //
-        // public void actionPerformed(ActionEvent e) {
-        // org.jdownloader.settings.statics.GUI.LINKGRABBER_SIDEBAR_ENABLED.setValue(false);
-        // }
-        // });
-        //
-        // sidebarScrollPane.setCorner(ScrollPaneConstants.UPPER_RIGHT_CORNER,
-        // bt);
 
+        if (false && System.getProperty("nativeswing") != null) {
+            try {
+                SponsoringPanelInterface panel = (SponsoringPanelInterface) Class.forName("org.jdownloader.sponsor.bt.DJBTSponsoringPanel").newInstance();
+                panel.setHttpClient(new SimpleHttpInterface() {
+
+                    @Override
+                    public SimpleHttpResponse get(final String url) throws IOException {
+                        final String str = new Browser().getPage(url);
+                        return new SimpleHttpResponse() {
+
+                            @Override
+                            public String getHtmlText() {
+
+                                return str;
+
+                            }
+                        };
+                    }
+                });
+
+                final JComponent sponsoringPanel = panel.getPanel();
+                GUIEventSender.getInstance().addListener(new GUIListener() {
+
+                    @Override
+                    public void onKeyModifier(int parameter) {
+                    }
+
+                    @Override
+                    public void onGuiMainTabSwitch(View oldView, View newView) {
+                        if (newView instanceof LinkGrabberView) {
+                            sponsoringPanel.setVisible(true);
+                        } else {
+                            sponsoringPanel.setVisible(false);
+                        }
+                    }
+                });
+                panel.init();
+                JScrollPane sp = new JScrollPane(sponsoringPanel);
+                LAFOptions.getInstance().applyPanelBackground(sp);
+
+                sidebarContainer.setLayout("ins 0,wrap 1", "[grow,fill]", "[grow,fill]2[]");
+                sidebarContainer.add(sidebarScrollPane);
+                Insets borderInsets = sp.getBorder().getBorderInsets(sidebarScrollPane);
+                sidebarContainer.add(sp, "width " + (300 + borderInsets.left + borderInsets.right) + "!,height " + (250 + borderInsets.top + borderInsets.bottom) + "!");
+
+                return;
+            } catch (Throwable t) {
+                t.printStackTrace();
+            }
+        }
+        sidebarContainer.add(sidebarScrollPane);
     }
 
     @Override

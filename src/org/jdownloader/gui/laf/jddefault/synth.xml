@@ -816,7 +816,8 @@ ProgressBar
 -->
   <style id="progressBar">
     <insets top="0" left="0" bottom="0" right="0" />
-    <object class="de.javasoft.plaf.synthetica.simple2D.ProgressBarPainter" id="painter"/>
+     <object class="org.jdownloader.gui.laf.jddefault.CustomProgressbarPainter" id="painter"/>
+
     <defaultsProperty key="Synthetica.ProgressBarPainter" type="idref" value="painter"/>
     <painter method="progressBarBackground" idref="syntheticaPainter" />
     <painter method="progressBarBorder" idref="syntheticaPainter" />

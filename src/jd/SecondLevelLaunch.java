@@ -43,7 +43,6 @@ import java.util.logging.LogRecord;
 
 import javax.swing.JDialog;
 import javax.swing.JFrame;
-import javax.swing.JPopupMenu;
 import javax.swing.JWindow;
 
 import jd.controlling.AccountController;
@@ -285,7 +284,7 @@ public class SecondLevelLaunch {
             SecondLevelLaunch.LOG.log(e);
         }
         if (System.getProperty("nativeswing") != null) {
-            JPopupMenu.setDefaultLightWeightPopupEnabled(false);
+            // JPopupMenu.setDefaultLightWeightPopupEnabled(false);
         }
         try {
             JSHtmlUnitPermissionRestricter.init();
