@@ -49,17 +49,18 @@ public class StaSh extends PluginForHost {
     }
 
     /** Code is very similar to DeviantArtCom - keep it updated! */
-    private static final String GENERALFILENAMEREGEX = "name=\"og:title\" content=\"([^<>\"]*?)\"";
-    private static final String TYPE_HTML            = "class=\"text\">HTML download</span>";
-    private boolean             HTMLALLOWED          = false;
-    private final String        COOKIE_HOST          = "http://www.deviantart.com";
-    private String              DLLINK               = null;
-    private final String        MATURECONTENTFILTER  = ">Mature Content Filter<";
+    private static final String GENERALFILENAMEREGEX   = "name=\"og:title\" content=\"([^<>\"]*?)\"";
+    private static final String TYPE_HTML              = "class=\"text\">HTML download</span>";
+    private boolean             HTMLALLOWED            = false;
+    private final String        COOKIE_HOST            = "http://www.deviantart.com";
+    private String              DLLINK                 = null;
+    private final String        MATURECONTENTFILTER    = ">Mature Content Filter<";
 
-    private final String        INVALIDLINKS         = "http://(www\\.)?sta\\.sh/(muro|writer|login)";
-    private final String        TYPE_ZIP             = "http://(www\\.)?sta\\.sh/zip/[a-z0-9]+";
+    private final String        INVALIDLINKS           = "http://(www\\.)?sta\\.sh/(muro|writer|login)";
+    private final String        TYPE_ZIP               = "http://(www\\.)?sta\\.sh/zip/[a-z0-9]+";
 
-    private static String       FORCEHTMLDOWNLOAD    = "FORCEHTMLDOWNLOAD";
+    private static String       FORCEHTMLDOWNLOAD      = "FORCEHTMLDOWNLOAD";
+    private static String       USE_LINKID_AS_FILENAME = "USE_LINKID_AS_FILENAME";
 
     public void correctDownloadLink(final DownloadLink link) {
         link.setUrlDownload(link.getDownloadURL().replace("stadecrypted.sh/", "sta.sh/"));
@@ -172,6 +173,10 @@ public class StaSh extends PluginForHost {
             }
         }
         ext = ext.toLowerCase();
+        /* User wanted link-id as filename - at least when he added the link via decrypter. */
+        if (link.getStringProperty("plain_linkid", null) != null) {
+            filename = link.getStringProperty("plain_linkid", null);
+        }
         if (!filename.endsWith(ext)) {
             filename += "." + ext.trim();
         }
@@ -284,14 +289,18 @@ public class StaSh extends PluginForHost {
     }
 
     public void setConfigElements() {
-        String forcehtmldownloadtext = null;
+        String forcehtmldownloadtext;
+        String set_id_as_filename_text;
         final String lang = System.getProperty("user.language");
         if ("de".equalsIgnoreCase(lang)) {
             forcehtmldownloadtext = "HTML Code statt eigentlichen Inhalt (Dateien/Bilder) laden?";
+            set_id_as_filename_text = "[Nur für enzelne Einträge] Link-ID als Dateiname nutzen (sta.sh/LINKID)?";
         } else {
             forcehtmldownloadtext = "Download html code instead of the media (files/pictures)?";
+            set_id_as_filename_text = "[Only for single entries] Use link-ID as filename (sta.sh/LINKID)?";
         }
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), FORCEHTMLDOWNLOAD, JDL.L("plugins.hoster.StaSh.forceHTMLDownload", forcehtmldownloadtext)).setDefaultValue(false));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), USE_LINKID_AS_FILENAME, JDL.L("plugins.hoster.StaSh.useLinkIDAsFilename", set_id_as_filename_text)).setDefaultValue(false));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_SEPARATOR));
     }
 
