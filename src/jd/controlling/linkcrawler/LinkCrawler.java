@@ -1960,6 +1960,10 @@ public class LinkCrawler {
                     return cUrl.replaceFirst("viajd", "");
                 } else if (StringUtils.containsIgnoreCase(protocol, "directhttp")) {
                     return cUrl.replaceFirst("directhttp://", "");
+                } else if (StringUtils.containsIgnoreCase(protocol, "httpviajd")) {
+                    return cUrl.replaceFirst("httpviajd://", "");
+                } else if (StringUtils.containsIgnoreCase(protocol, "httpsviajd")) {
+                    return cUrl.replaceFirst("httpsviajd://", "");
                 }
             }
         }
