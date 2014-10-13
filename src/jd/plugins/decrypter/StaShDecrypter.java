@@ -38,8 +38,9 @@ public class StaShDecrypter extends PluginForDecrypt {
         super(wrapper);
     }
 
-    private final String  INVALIDLINKS      = "http://(www\\.)?sta\\.sh/(muro|writer|login)";
-    private static String FORCEHTMLDOWNLOAD = "FORCEHTMLDOWNLOAD";
+    private final String  INVALIDLINKS           = "http://(www\\.)?sta\\.sh/(muro|writer|login)";
+    private static String FORCEHTMLDOWNLOAD      = "FORCEHTMLDOWNLOAD";
+    private static String USE_LINKID_AS_FILENAME = "USE_LINKID_AS_FILENAME";
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
@@ -47,7 +48,9 @@ public class StaShDecrypter extends PluginForDecrypt {
         JDUtilities.getPluginForHost("sta.sh");
         final SubConfiguration cfg = SubConfiguration.getConfig("sta.sh");
         final boolean force_html_dl = cfg.getBooleanProperty(FORCEHTMLDOWNLOAD, false);
+        final boolean linkid_as_filename = cfg.getBooleanProperty(USE_LINKID_AS_FILENAME, false);
         final DownloadLink main = createDownloadlink(parameter.replace("sta.sh/", "stadecrypted.sh/"));
+        final String linkid = new Regex(parameter, "sta\\.sh/([a-z0-9]+)").getMatch(0);
         if (parameter.matches(INVALIDLINKS)) {
             main.setAvailable(false);
             decryptedLinks.add(main);
@@ -74,8 +77,13 @@ public class StaShDecrypter extends PluginForDecrypt {
 
         for (final String singleLinkData[] : picdata) {
             final String url = singleLinkData[0];
-            final String name = Encoding.htmlDecode(singleLinkData[2]);
+            String name = Encoding.htmlDecode(singleLinkData[2]);
             final DownloadLink dl = createDownloadlink(url.replace("sta.sh/", "stadecrypted.sh/"));
+            /* Obey user setting */
+            if (linkid_as_filename && picdata.length == 1) {
+                dl.setProperty("plain_linkid", linkid);
+                name = linkid;
+            }
             if (force_html_dl) {
                 dl.setName(name + ".html");
                 dl.setAvailable(true);

@@ -60,13 +60,19 @@ public class ORFMediathek extends PluginForHost {
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
         if (link.getStringProperty("directURL", null) == null) {
-            if (link.getBooleanProperty("offline", false)) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            if (link.getBooleanProperty("offline", false)) {
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            }
             /* fetch fresh directURL */
             this.setBrowserExclusive();
             br.setFollowRedirects(true);
             br.getPage(link.getBrowserUrl());
-            if (br.containsHTML("Keine aktuellen Sendungen vorhanden")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-            if (true) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE);
+            if (br.containsHTML("Keine aktuellen Sendungen vorhanden")) {
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            }
+            if (true) {
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE);
+            }
         } else {
             link.setFinalFileName(link.getStringProperty("directName", null));
         }
@@ -77,12 +83,15 @@ public class ORFMediathek extends PluginForHost {
             URLConnectionAdapter con = null;
             try {
                 final String dllink = link.getStringProperty("directURL", null);
-                if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                if (dllink == null) {
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                }
                 con = br2.openGetConnection(dllink);
-                if (!con.getContentType().contains("html"))
+                if (!con.getContentType().contains("html")) {
                     link.setDownloadSize(con.getLongContentLength());
-                else
+                } else {
                     throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+                }
                 return AvailableStatus.TRUE;
             } finally {
                 try {
@@ -109,14 +118,21 @@ public class ORFMediathek extends PluginForHost {
 
     private void download(final DownloadLink downloadLink) throws Exception {
         final String dllink = downloadLink.getStringProperty("directURL", null);
-        if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        if (dllink.contains("hinweis_fsk")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Nur von 20-06 Uhr verfügbar!", 30 * 60 * 1000l);
+        if (dllink == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        if (dllink.contains("hinweis_fsk")) {
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Nur von 20-06 Uhr verfügbar!", 30 * 60 * 1000l);
+        }
         if (dllink.startsWith("rtmp")) {
             downloadLink.setProperty("FLVFIXER", true);
             dl = new RTMPDownload(this, downloadLink, dllink);
             setupRTMPConnection(dllink, dl);
             ((RTMPDownload) dl).startDownload();
         } else {
+            if (downloadLink.getName().endsWith(".srt")) {
+                br.getHeaders().put("Accept-Encoding", "identity");
+            }
             br.setFollowRedirects(true);
             dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 0);
             if (dl.getConnection().getContentType().contains("html")) {
