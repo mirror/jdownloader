@@ -54,7 +54,7 @@ public class RDMdthk extends PluginForDecrypt {
 
     /* Constants */
     private static final String                 AGE_RESTRICTED   = "(Diese Sendung ist für Jugendliche unter \\d+ Jahren nicht geeignet\\. Der Clip ist deshalb nur von \\d+ bis \\d+ Uhr verfügbar\\.)";
-    private static final String                 UNSUPPORTEDLINKS = "http://(www\\.)?ardmediathek\\.de/(tv/live\\?kanal=\\d+|dossiers/.+)";
+    private static final String                 UNSUPPORTEDLINKS = "http://(www\\.)?ardmediathek\\.de/(tv/live\\?kanal=\\d+|dossiers/.*)";
 
     /* Variables */
 
