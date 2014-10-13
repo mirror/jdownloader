@@ -55,45 +55,48 @@ import org.jdownloader.settings.GeneralSettings;
 
 public class LinkCrawler {
 
-    private final static String                     DIRECT_HTTP                 = "DirectHTTP";
-    private final static String                     HTTP_LINKS                  = "http links";
-    private LazyHostPlugin                          httpPlugin                  = null;
-    private LazyHostPlugin                          directPlugin                = null;
-    private LazyHostPlugin                          ftpPlugin                   = null;
-    private java.util.List<CrawledLink>             crawledLinks                = new ArrayList<CrawledLink>();
-    private AtomicInteger                           crawledLinksCounter         = new AtomicInteger(0);
-    private java.util.List<CrawledLink>             filteredLinks               = new ArrayList<CrawledLink>();
-    private AtomicInteger                           filteredLinksCounter        = new AtomicInteger(0);
-    private java.util.List<CrawledLink>             brokenLinks                 = new ArrayList<CrawledLink>();
-    private AtomicInteger                           brokenLinksCounter          = new AtomicInteger(0);
-    private java.util.List<CrawledLink>             unhandledLinks              = new ArrayList<CrawledLink>();
-    private final AtomicInteger                     unhandledLinksCounter       = new AtomicInteger(0);
-    private final AtomicInteger                     processedLinksCounter       = new AtomicInteger(0);
+    private static final String                     CONSTANT_PROTOCOL_HTTPSVIAJD = "httpsviajd://";
+    private static final String                     CONSTANT_PROTOCOL_HTTPVIAJD  = "httpviajd://";
+    private static final String                     CONSTANT_PROTOCOL_DIRECTHTTP = "directhttp://";
+    private final static String                     DIRECT_HTTP                  = "DirectHTTP";
+    private final static String                     HTTP_LINKS                   = "http links";
+    private LazyHostPlugin                          httpPlugin                   = null;
+    private LazyHostPlugin                          directPlugin                 = null;
+    private LazyHostPlugin                          ftpPlugin                    = null;
+    private java.util.List<CrawledLink>             crawledLinks                 = new ArrayList<CrawledLink>();
+    private AtomicInteger                           crawledLinksCounter          = new AtomicInteger(0);
+    private java.util.List<CrawledLink>             filteredLinks                = new ArrayList<CrawledLink>();
+    private AtomicInteger                           filteredLinksCounter         = new AtomicInteger(0);
+    private java.util.List<CrawledLink>             brokenLinks                  = new ArrayList<CrawledLink>();
+    private AtomicInteger                           brokenLinksCounter           = new AtomicInteger(0);
+    private java.util.List<CrawledLink>             unhandledLinks               = new ArrayList<CrawledLink>();
+    private final AtomicInteger                     unhandledLinksCounter        = new AtomicInteger(0);
+    private final AtomicInteger                     processedLinksCounter        = new AtomicInteger(0);
 
-    private final AtomicInteger                     crawler                     = new AtomicInteger(0);
-    private final static AtomicInteger              CRAWLER                     = new AtomicInteger(0);
+    private final AtomicInteger                     crawler                      = new AtomicInteger(0);
+    private final static AtomicInteger              CRAWLER                      = new AtomicInteger(0);
     private final ConcurrentHashMap<String, Object> duplicateFinderContainer;
     private final ConcurrentHashMap<String, Object> duplicateFinderCrawler;
     private final ConcurrentHashMap<String, Object> duplicateFinderFinal;
     private final ConcurrentHashMap<String, Object> duplicateFinderDeep;
-    private LinkCrawlerHandler                      handler                     = null;
+    private LinkCrawlerHandler                      handler                      = null;
     protected static final ThreadPoolExecutor       threadPool;
 
-    private LinkCrawlerFilter                       filter                      = null;
-    private final AtomicBoolean                     allowCrawling               = new AtomicBoolean(true);
-    protected final AtomicInteger                   crawlerGeneration           = new AtomicInteger(0);
+    private LinkCrawlerFilter                       filter                       = null;
+    private final AtomicBoolean                     allowCrawling                = new AtomicBoolean(true);
+    protected final AtomicInteger                   crawlerGeneration            = new AtomicInteger(0);
     private final LinkCrawler                       parentCrawler;
     private final long                              created;
 
-    public final static String                      PACKAGE_ALLOW_MERGE         = "ALLOW_MERGE";
-    public final static String                      PACKAGE_CLEANUP_NAME        = "CLEANUP_NAME";
-    public final static String                      PACKAGE_IGNORE_VARIOUS      = "PACKAGE_IGNORE_VARIOUS";
-    public static final UniqueAlltimeID             PERMANENT_OFFLINE_ID        = new UniqueAlltimeID();
-    private boolean                                 doDuplicateFinderFinalCheck = true;
+    public final static String                      PACKAGE_ALLOW_MERGE          = "ALLOW_MERGE";
+    public final static String                      PACKAGE_CLEANUP_NAME         = "CLEANUP_NAME";
+    public final static String                      PACKAGE_IGNORE_VARIOUS       = "PACKAGE_IGNORE_VARIOUS";
+    public static final UniqueAlltimeID             PERMANENT_OFFLINE_ID         = new UniqueAlltimeID();
+    private boolean                                 doDuplicateFinderFinalCheck  = true;
     private final List<LazyHostPlugin>              pHosts;
     private List<LazyCrawlerPlugin>                 cHosts;
     protected final PluginClassLoaderChild          classLoader;
-    private boolean                                 directHttpEnabled           = true;
+    private boolean                                 directHttpEnabled            = true;
     private final String                            defaultDownloadFolder;
 
     public void setDirectHttpEnabled(boolean directHttpEnabled) {
@@ -576,7 +579,7 @@ public class LinkCrawler {
                         /*
                          * downloadable content, we use directhttp and distribute the url
                          */
-                        possibleCryptedLinks = _crawl("directhttp://" + url, null, false);
+                        possibleCryptedLinks = _crawl(CONSTANT_PROTOCOL_DIRECTHTTP + url, null, false);
                         if (possibleCryptedLinks != null && possibleCryptedLinks.size() >= 0) {
                             for (final CrawledLink possibleCryptedLink : possibleCryptedLinks) {
                                 forwardCrawledLinkInfos(source, possibleCryptedLink, lm, sourceURLs);
@@ -873,7 +876,7 @@ public class LinkCrawler {
                                 }
                             }
                         } else {
-                            if (!url.startsWith("directhttp://") && !url.startsWith("httpviajd://") && !url.startsWith("httpsviajd://")) {
+                            if (!url.startsWith(CONSTANT_PROTOCOL_DIRECTHTTP) && !url.startsWith(CONSTANT_PROTOCOL_HTTPVIAJD) && !url.startsWith(CONSTANT_PROTOCOL_HTTPSVIAJD)) {
                                 /*
                                  * first we will walk through all available decrypter plugins
                                  */
@@ -905,7 +908,7 @@ public class LinkCrawler {
                                 continue mainloop;
                             }
                         } else if (isDirectHttpEnabled()) {
-                            if (directPlugin != null && url.startsWith("directhttp://")) {
+                            if (directPlugin != null && url.startsWith(CONSTANT_PROTOCOL_DIRECTHTTP)) {
                                 /* now we will check for directPlugin links */
                                 final Boolean ret = distributePluginForHost(directPlugin, generation, url, possibleCryptedLink);
                                 if (Boolean.FALSE.equals(ret)) {
@@ -915,7 +918,7 @@ public class LinkCrawler {
                                 }
                             } else if (httpPlugin != null) {
                                 /* now we will check for normal http links */
-                                final String newURL = url.replaceFirst("https?://", (url.matches("https://.+") ? "httpsviajd://" : "httpviajd://"));
+                                final String newURL = url.replaceFirst("https?://", (url.matches("https://.+") ? CONSTANT_PROTOCOL_HTTPSVIAJD : CONSTANT_PROTOCOL_HTTPVIAJD));
                                 if (httpPlugin.canHandle(newURL)) {
                                     /* create new CrawledLink that holds the modified CrawledLink */
                                     final CrawledLinkModifier parentLinkModifier = possibleCryptedLink.getCustomCrawledLinkModifier();
@@ -1954,16 +1957,18 @@ public class LinkCrawler {
         if (protocol != null) {
             final String host = Browser.getHost(cUrl, true);
             if (protocol != null && !StringUtils.containsIgnoreCase(host, "decrypted") && !StringUtils.containsIgnoreCase(host, "dummycnl.jdownloader.org")) {
-                if (protocol.startsWith("http") || protocol.startsWith("ftp")) {
+
+                if (StringUtils.equalsIgnoreCase(protocol, CONSTANT_PROTOCOL_DIRECTHTTP)) {
+
+                    return "http://" + cUrl.substring(CONSTANT_PROTOCOL_DIRECTHTTP.length());
+                } else if (StringUtils.equalsIgnoreCase(protocol, CONSTANT_PROTOCOL_HTTPVIAJD)) {
+
+                    return "http://" + cUrl.substring(CONSTANT_PROTOCOL_HTTPVIAJD.length());
+                } else if (StringUtils.equalsIgnoreCase(protocol, CONSTANT_PROTOCOL_HTTPSVIAJD)) {
+
+                    return "http://" + cUrl.substring(CONSTANT_PROTOCOL_HTTPSVIAJD.length());
+                } else if (protocol.startsWith("http") || protocol.startsWith("ftp")) {
                     return cUrl;
-                } else if (StringUtils.containsIgnoreCase(protocol, "viajd")) {
-                    return cUrl.replaceFirst("viajd", "");
-                } else if (StringUtils.containsIgnoreCase(protocol, "directhttp")) {
-                    return cUrl.replaceFirst("directhttp://", "");
-                } else if (StringUtils.containsIgnoreCase(protocol, "httpviajd")) {
-                    return cUrl.replaceFirst("httpviajd://", "");
-                } else if (StringUtils.containsIgnoreCase(protocol, "httpsviajd")) {
-                    return cUrl.replaceFirst("httpsviajd://", "");
                 }
             }
         }
