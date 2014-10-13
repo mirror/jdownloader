@@ -1957,18 +1957,14 @@ public class LinkCrawler {
         if (protocol != null) {
             final String host = Browser.getHost(cUrl, true);
             if (protocol != null && !StringUtils.containsIgnoreCase(host, "decrypted") && !StringUtils.containsIgnoreCase(host, "dummycnl.jdownloader.org")) {
-
-                if (StringUtils.equalsIgnoreCase(protocol, CONSTANT_PROTOCOL_DIRECTHTTP)) {
-
-                    return "http://" + cUrl.substring(CONSTANT_PROTOCOL_DIRECTHTTP.length());
+                if (cUrl.startsWith("http://") || cUrl.startsWith("ftp://")) {
+                    return cUrl;
+                } else if (StringUtils.equalsIgnoreCase(protocol, CONSTANT_PROTOCOL_DIRECTHTTP)) {
+                    return cUrl.substring(CONSTANT_PROTOCOL_DIRECTHTTP.length());
                 } else if (StringUtils.equalsIgnoreCase(protocol, CONSTANT_PROTOCOL_HTTPVIAJD)) {
-
                     return "http://" + cUrl.substring(CONSTANT_PROTOCOL_HTTPVIAJD.length());
                 } else if (StringUtils.equalsIgnoreCase(protocol, CONSTANT_PROTOCOL_HTTPSVIAJD)) {
-
-                    return "http://" + cUrl.substring(CONSTANT_PROTOCOL_HTTPSVIAJD.length());
-                } else if (protocol.startsWith("http") || protocol.startsWith("ftp")) {
-                    return cUrl;
+                    return "https://" + cUrl.substring(CONSTANT_PROTOCOL_HTTPSVIAJD.length());
                 }
             }
         }
