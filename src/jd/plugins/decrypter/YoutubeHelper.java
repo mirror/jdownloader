@@ -768,7 +768,9 @@ public class YoutubeHelper {
                 }
             } catch (final Throwable e) {
                 if (e.getMessage() != null) {
-                    final String ee = new Regex(e.getMessage(), "ReferenceError: \"(\\w+)\" is not defined\\.").getMatch(0);
+                    // do not use language components of the error message. Only static identifies, otherwise other languages will fail!
+                    // -raztoki
+                    final String ee = new Regex(e.getMessage(), "ReferenceError: \"(\\w+)\".+<Unknown source>").getMatch(0);
                     // should only be needed on the first entry, then on after 'cache' should get result the first time!
                     if (ee != null) {
                         if (jsContent == null) {
