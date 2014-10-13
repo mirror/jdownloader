@@ -15,8 +15,10 @@ import javax.swing.event.AncestorListener;
 
 import org.appwork.scheduler.DelayedRunnable;
 import org.appwork.swing.MigPanel;
+import org.appwork.utils.logging2.LogSource;
 import org.appwork.utils.swing.EDTRunner;
 import org.appwork.utils.swing.SwingUtils;
+import org.jdownloader.logging.LogController;
 import org.jdownloader.swt.browser.djnativeswing.event.DJWebBrowserAdapter;
 import org.jdownloader.swt.browser.djnativeswing.event.DJWebBrowserEvent;
 import org.jdownloader.swt.browser.djnativeswing.event.DJWebBrowserEventSender;
@@ -38,7 +40,8 @@ public class DJWebBrowser extends MigPanel implements WebBrowserListener {
 
     private DelayedRunnable         delayer;
     private DJWebBrowserEventSender eventSender;
-    private JWebBrowser             browserCanvas;
+    private JWebBrowser             browser;
+    private LogSource               logger;
 
     public void addJavaScriptEventListener(final String functionName) {
         addJavaScriptEventListener(functionName, null);
@@ -46,7 +49,7 @@ public class DJWebBrowser extends MigPanel implements WebBrowserListener {
     }
 
     public void addJavaScriptEventListener(final String functionName, final JavaScriptEventListener callback) {
-        browserCanvas.registerFunction(new WebBrowserFunction(functionName) {
+        browser.registerFunction(new WebBrowserFunction(functionName) {
 
             @Override
             public Object invoke(JWebBrowser webBrowser, final Object... arguments) {
@@ -77,7 +80,7 @@ public class DJWebBrowser extends MigPanel implements WebBrowserListener {
 
     public DJWebBrowser() {
         super("ins 0", "[grow,fill]", "[grow,fill]");
-
+        logger = LogController.getInstance().getLogger(DJWebBrowser.class.getName());
         SwingUtils.setOpaque(this, false);
         setFocusable(false);
         eventSender = new DJWebBrowserEventSender();
@@ -89,15 +92,16 @@ public class DJWebBrowser extends MigPanel implements WebBrowserListener {
 
                     @Override
                     protected void runInEDT() {
-                        browserCanvas.setVisible(isVisible());
+                        browser.setVisible(isVisible());
                         resizing = false;
                     }
                 };
 
             }
         };
-        browserCanvas = new JWebBrowser();
-        add(browserCanvas);
+        browser = new JWebBrowser();
+        browser.setFocusable(false);
+        add(browser);
         initHideOnResizeOrMove();
         init();
 
@@ -117,8 +121,8 @@ public class DJWebBrowser extends MigPanel implements WebBrowserListener {
                     @Override
                     public void ancestorResized(HierarchyEvent e) {
                         if (e.getChanged() == SwingUtilities.getWindowAncestor(DJWebBrowser.this)) {
-                            if (browserCanvas.isVisible() || delayer.isDelayerActive()) {
-                                browserCanvas.setVisible(false);
+                            if (browser.isVisible() || delayer.isDelayerActive()) {
+                                browser.setVisible(false);
                                 delayer.resetAndStart();
                                 resizing = true;
                             }
@@ -128,8 +132,8 @@ public class DJWebBrowser extends MigPanel implements WebBrowserListener {
                     @Override
                     public void ancestorMoved(HierarchyEvent e) {
                         if (e.getChanged() == SwingUtilities.getWindowAncestor(DJWebBrowser.this)) {
-                            if (browserCanvas.isVisible() || delayer.isDelayerActive()) {
-                                browserCanvas.setVisible(false);
+                            if (browser.isVisible() || delayer.isDelayerActive()) {
+                                browser.setVisible(false);
                                 resizing = true;
                                 delayer.resetAndStart();
                             }
@@ -148,8 +152,8 @@ public class DJWebBrowser extends MigPanel implements WebBrowserListener {
                     @Override
                     public void ancestorMoved(AncestorEvent e) {
                         if (e.getAncestor() == SwingUtilities.getWindowAncestor(DJWebBrowser.this)) {
-                            if (browserCanvas.isVisible() || delayer.isDelayerActive()) {
-                                browserCanvas.setVisible(false);
+                            if (browser.isVisible() || delayer.isDelayerActive()) {
+                                browser.setVisible(false);
                                 resizing = true;
                                 delayer.resetAndStart();
                             }
@@ -174,7 +178,7 @@ public class DJWebBrowser extends MigPanel implements WebBrowserListener {
         System.out.println("Browser Visible: " + aFlag);
         super.setVisible(aFlag);
         if (!resizing) {
-            browserCanvas.setVisible(aFlag);
+            browser.setVisible(aFlag);
         }
     }
 
@@ -185,28 +189,28 @@ public class DJWebBrowser extends MigPanel implements WebBrowserListener {
     }
 
     protected void init() {
-        browserCanvas.setBarsVisible(false);
-        browserCanvas.setButtonBarVisible(false);
-        browserCanvas.setDefaultPopupMenuRegistered(false);
-        browserCanvas.setLocationBarVisible(false);
-        browserCanvas.setMenuBarVisible(false);
-        browserCanvas.setStatusBarVisible(false);
+        browser.setBarsVisible(false);
+        browser.setButtonBarVisible(false);
+        browser.setDefaultPopupMenuRegistered(false);
+        browser.setLocationBarVisible(false);
+        browser.setMenuBarVisible(false);
+        browser.setStatusBarVisible(false);
 
-        browserCanvas.addWebBrowserListener(this);
-        browserCanvas.setJavascriptEnabled(true);
+        browser.addWebBrowserListener(this);
+        browser.setJavascriptEnabled(true);
 
     }
 
     public String getUrl() {
-        return browserCanvas.getResourceLocation();
+        return browser.getResourceLocation();
     }
 
     public String getHtmlText() {
-        return browserCanvas.getHTMLContent();
+        return browser.getHTMLContent();
     }
 
     public Object executeJavaScript(final String js) {
-        return browserCanvas.executeJavascriptWithResult(js);
+        return browser.executeJavascriptWithResult(js);
     }
 
     public String getDocument() {
@@ -220,12 +224,12 @@ public class DJWebBrowser extends MigPanel implements WebBrowserListener {
     }
 
     public void getPage(final String url) {
-        browserCanvas.navigate(url);
+        browser.navigate(url);
 
     }
 
     public void stop() {
-        browserCanvas.stopLoading();
+        browser.stopLoading();
     }
 
     public void setCookie(final String url, final String value) {
@@ -235,16 +239,16 @@ public class DJWebBrowser extends MigPanel implements WebBrowserListener {
     }
 
     public void setHtmlText(final String html) {
-        browserCanvas.setHTMLContent(html);
+        browser.setHTMLContent(html);
 
     }
 
     public void setJavaScriptEnabled(final boolean b) {
-        browserCanvas.setJavascriptEnabled(b);
+        browser.setJavascriptEnabled(b);
     }
 
     public boolean isJavaScriptEnabled() {
-        return browserCanvas.isJavascriptEnabled();
+        return browser.isJavascriptEnabled();
     }
 
     private boolean dragAndDropEnabled = false;
@@ -329,7 +333,7 @@ public class DJWebBrowser extends MigPanel implements WebBrowserListener {
     @Override
     public void windowWillOpen(WebBrowserWindowWillOpenEvent e) {
 
-        System.out.println(e);
+        logger.info("Window will Opening");
         // We let the window to be created, but we will check the first location that is set on it.
         e.getNewWebBrowser().addWebBrowserListener(new WebBrowserAdapter() {
             @Override
@@ -360,18 +364,20 @@ public class DJWebBrowser extends MigPanel implements WebBrowserListener {
 
     @Override
     public void windowOpening(WebBrowserWindowOpeningEvent e) {
-        System.out.println(e);
+        logger.info("Window Opening");
 
     }
 
     @Override
     public void windowClosing(WebBrowserEvent e) {
-        System.out.println(e);
+        logger.info("Window closing ");
 
     }
 
     @Override
     public void locationChanging(final WebBrowserNavigationEvent e) {
+
+        logger.info("Location Changing to " + e.getNewResourceLocation());
         eventSender.fireEvent(new DJWebBrowserEvent() {
 
             @Override
@@ -384,27 +390,27 @@ public class DJWebBrowser extends MigPanel implements WebBrowserListener {
 
     @Override
     public void locationChanged(final WebBrowserNavigationEvent e) {
-        System.out.println(e);
+        logger.info("Location changed to " + e.getNewResourceLocation());
     }
 
     @Override
     public void locationChangeCanceled(WebBrowserNavigationEvent e) {
-        System.out.println(e);
+        logger.info("Location Change Canceled");
     }
 
     @Override
     public void loadingProgressChanged(final WebBrowserEvent e) {
-        System.out.println(e);
+        logger.info("Loading Progress: " + browser.getLoadingProgress());
 
         eventSender.fireEvent(new DJWebBrowserEvent() {
 
             @Override
             public void sendTo(DJWebBrowserListener listener) {
-                listener.onLoading(DJWebBrowser.this, browserCanvas.getLoadingProgress() / 100d);
+                listener.onLoading(DJWebBrowser.this, browser.getLoadingProgress() / 100d);
             }
 
         });
-        if (browserCanvas.getLoadingProgress() >= 100) {
+        if (browser.getLoadingProgress() >= 100) {
             eventSender.fireEvent(new DJWebBrowserEvent() {
 
                 @Override
@@ -418,13 +424,19 @@ public class DJWebBrowser extends MigPanel implements WebBrowserListener {
 
     @Override
     public void titleChanged(WebBrowserEvent e) {
+        logger.info("Title: " + e.getWebBrowser().getPageTitle());
     }
 
     @Override
     public void statusChanged(WebBrowserEvent e) {
+        logger.info("Status: " + e.getWebBrowser().getStatusText());
     }
 
     @Override
     public void commandReceived(WebBrowserCommandEvent e) {
+
+        logger.info(e + "");
+        logger.info("Command: " + e.getCommand());
+        logger.info("Paramaters: " + Arrays.toString(e.getParameters()));
     }
 }
