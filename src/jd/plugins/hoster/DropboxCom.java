@@ -153,7 +153,7 @@ public class DropboxCom extends PluginForHost {
             if (link.getStringProperty("directlink", null) == null) {
                 DLLINK = link.getDownloadURL() + "?dl=1";
             }
-            dl = jd.plugins.BrowserAdapter.openDownload(br, link, DLLINK, true, 0);
+            dl = jd.plugins.BrowserAdapter.openDownload(br, link, DLLINK, false, 1);
             if (dl.getConnection().getContentType().contains("html")) {
                 logger.warning("Directlink leads to HTML code...");
                 br.followConnection();
@@ -286,7 +286,7 @@ public class DropboxCom extends PluginForHost {
 
     /**
      * Sign an OAuth GET request with HMAC-SHA1 according to OAuth Core spec 1.0
-     * 
+     *
      * @return new url including signature
      * @throws PluginException
      */

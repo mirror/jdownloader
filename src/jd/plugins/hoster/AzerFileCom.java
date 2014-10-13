@@ -47,33 +47,34 @@ import jd.utils.locale.JDL;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "vacishare.com" }, urls = { "https?://(www\\.)?vacishare\\.com/(vidembed\\-)?[a-z0-9]{12}" }, flags = { 0 })
-public class VaciShareCom extends PluginForHost {
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "azerfile.com" }, urls = { "https?://(www\\.)?azerfile\\.com/(embed\\-)?[a-z0-9]{12}" }, flags = { 0 })
+public class AzerFileCom extends PluginForHost {
 
     private String                         correctedBR                  = "";
     private String                         passCode                     = null;
     private static final String            PASSWORDTEXT                 = "<br><b>Passwor(d|t):</b> <input";
     /* primary website url, take note of redirects */
-    private static final String            COOKIE_HOST                  = "http://vacishare.com";
+    private static final String            COOKIE_HOST                  = "http://azerfile.com";
     private static final String            NICE_HOST                    = COOKIE_HOST.replaceAll("(https://|http://)", "");
     private static final String            NICE_HOSTproperty            = COOKIE_HOST.replaceAll("(https://|http://|\\.|\\-)", "");
     /* domain names used within download links */
-    private static final String            DOMAINS                      = "(vacishare\\.com)";
+    private static final String            DOMAINS                      = "(azerfile\\.com)";
     private static final String            MAINTENANCE                  = ">This server is in maintenance mode";
     private static final String            MAINTENANCEUSERTEXT          = JDL.L("hoster.xfilesharingprobasic.errors.undermaintenance", "This server is under maintenance");
     private static final String            ALLWAIT_SHORT                = JDL.L("hoster.xfilesharingprobasic.errors.waitingfordownloads", "Waiting till new downloads can be started");
     private static final String            PREMIUMONLY1                 = JDL.L("hoster.xfilesharingprobasic.errors.premiumonly1", "Max downloadable filesize for free users:");
     private static final String            PREMIUMONLY2                 = JDL.L("hoster.xfilesharingprobasic.errors.premiumonly2", "Only downloadable via premium or registered");
-    private static final boolean           VIDEOHOSTER                  = false;
-    private static final boolean           VIDEOHOSTER_2                = false;
+    private static final boolean           VIDEOHOSTER                  = true;
+    private static final boolean           VIDEOHOSTER_2                = true;
     private static final boolean           SUPPORTSHTTPS                = false;
     private static final boolean           SUPPORTSHTTPS_FORCED         = false;
+    private static final boolean           SUPPORTS_ALT_AVAILABLECHECK  = true;
     private final boolean                  ENABLE_RANDOM_UA             = false;
     private static AtomicReference<String> agent                        = new AtomicReference<String>(null);
     /* Connection stuff */
-    private static final boolean           FREE_RESUME                  = false;
-    private static final int               FREE_MAXCHUNKS               = 1;
-    private static final int               FREE_MAXDOWNLOADS            = 20;
+    private static final boolean           FREE_RESUME                  = true;
+    private static final int               FREE_MAXCHUNKS               = -2;
+    private static final int               FREE_MAXDOWNLOADS            = 1;
     private static final boolean           ACCOUNT_FREE_RESUME          = true;
     private static final int               ACCOUNT_FREE_MAXCHUNKS       = 0;
     private static final int               ACCOUNT_FREE_MAXDOWNLOADS    = 20;
@@ -88,20 +89,19 @@ public class VaciShareCom extends PluginForHost {
     private static Object                  LOCK                         = new Object();
     private String                         fuid                         = null;
 
-    private static final String            INVALIDLINKS                 = "https?://(www\\.)?vacishare\\.com/Estadisticas";
-
     /* DEV NOTES */
-    // XfileSharingProBasic Version 2.6.6.5
-    // mods: scanInfo[Changed one RegEx to Spanish], requestFileInformation[Added new fnf text]
+    // XfileSharingProBasic Version 2.6.6.6
+    // mods:
     // limit-info:
     // protocol: no https
-    // captchatype: null
+    // captchatype: null 4dignum solvemedia recaptcha
     // other:
     // TODO: Add case maintenance + alternative filesize check
 
     @SuppressWarnings("deprecation")
     @Override
     public void correctDownloadLink(final DownloadLink link) {
+        link.setUrlDownload(link.getDownloadURL().replace("/embed-", "/"));
         /* link cleanup, but respect users protocol choosing or forced protocol */
         if (!SUPPORTSHTTPS) {
             link.setUrlDownload(link.getDownloadURL().replaceFirst("https://", "http://"));
@@ -115,7 +115,7 @@ public class VaciShareCom extends PluginForHost {
         return COOKIE_HOST + "/tos.html";
     }
 
-    public VaciShareCom(PluginWrapper wrapper) {
+    public AzerFileCom(PluginWrapper wrapper) {
         super(wrapper);
         // this.enablePremium(COOKIE_HOST + "/premium.html");
     }
@@ -123,9 +123,6 @@ public class VaciShareCom extends PluginForHost {
     @SuppressWarnings("deprecation")
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
-        if (link.getDownloadURL().matches(INVALIDLINKS)) {
-            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        }
         final String[] fileInfo = new String[3];
         final Browser altbr = br.cloneBrowser();
         br.setFollowRedirects(true);
@@ -133,7 +130,7 @@ public class VaciShareCom extends PluginForHost {
         prepBrowser(br);
         setFUID(link);
         getPage(link.getDownloadURL());
-        if (new Regex(correctedBR, "(No such file|>File Not Found<|>The file was removed by|Reason for deletion:\n|>Archivo no Encontrado)").matches()) {
+        if (new Regex(correctedBR, "(No such file|>File Not Found<|>The file was removed by|Reason for deletion:\n|File Not Found|>The file expired)").matches()) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         if (new Regex(correctedBR, MAINTENANCE).matches()) {
@@ -158,12 +155,15 @@ public class VaciShareCom extends PluginForHost {
                     throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
                 }
                 fileInfo[0] = altbr.getRegex("<b>Filename:</b></td><td>([^<>\"]*?)</td>").getMatch(0);
-                altbr.postPage(COOKIE_HOST + "/?op=checkfiles", "op=checkfiles&process=Check+URLs&list=" + Encoding.urlEncode(link.getDownloadURL()));
-                fileInfo[1] = altbr.getRegex(">" + link.getDownloadURL() + "</td><td style=\"color:green;\">Found</td><td>([^<>\"]*?)</td>").getMatch(0);
+                if (SUPPORTS_ALT_AVAILABLECHECK) {
+                    altbr.postPage(COOKIE_HOST + "/?op=checkfiles", "op=checkfiles&process=Check+URLs&list=" + Encoding.urlEncode(link.getDownloadURL()));
+                    fileInfo[1] = altbr.getRegex(">" + link.getDownloadURL() + "</td><td style=\"color:green;\">Found</td><td>([^<>\"]*?)</td>").getMatch(0);
+                }
                 /* 2nd offline check */
-                if (altbr.containsHTML(">" + link.getDownloadURL() + "</td><td style=\"color:red;\">Not found\\!</td>") && fileInfo[0] == null) {
+                if ((SUPPORTS_ALT_AVAILABLECHECK && altbr.containsHTML("(>" + link.getDownloadURL() + "</td><td style=\"color:red;\">Not found\\!</td>|" + this.fuid + " not found\\!</font>)")) && fileInfo[0] == null) {
                     throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
                 } else if (fileInfo[0] != null || fileInfo[1] != null) {
+                    /* We know the link is online, set all information we got */
                     link.setAvailable(true);
                     if (fileInfo[0] != null) {
                         link.setName(Encoding.htmlDecode(fileInfo[0].trim()));
@@ -196,10 +196,14 @@ public class VaciShareCom extends PluginForHost {
         }
         fileInfo[0] = fileInfo[0].replaceAll("(</b>|<b>|\\.html)", "");
         link.setName(fileInfo[0].trim());
-        if (fileInfo[1] == null) {
+        if (fileInfo[1] == null && SUPPORTS_ALT_AVAILABLECHECK) {
+            /* Do alt availablecheck here but don't check availibility because we already know that the file must be online! */
             logger.info("Filesize not available, trying altAvailablecheck");
-            altbr.postPage(COOKIE_HOST + "/?op=checkfiles", "op=checkfiles&process=Check+URLs&list=" + Encoding.urlEncode(link.getDownloadURL()));
-            fileInfo[1] = altbr.getRegex(">" + link.getDownloadURL() + "</td><td style=\"color:green;\">Found</td><td>([^<>\"]*?)</td>").getMatch(0);
+            try {
+                altbr.postPage(COOKIE_HOST + "/?op=checkfiles", "op=checkfiles&process=Check+URLs&list=" + Encoding.urlEncode(link.getDownloadURL()));
+                fileInfo[1] = altbr.getRegex(">" + link.getDownloadURL() + "</td><td style=\"color:green;\">Found</td><td>([^<>\"]*?)</td>").getMatch(0);
+            } catch (final Throwable e) {
+            }
         }
         if (fileInfo[1] != null && !fileInfo[1].equals("")) {
             link.setDownloadSize(SizeFormatter.getSize(fileInfo[1]));
@@ -217,7 +221,7 @@ public class VaciShareCom extends PluginForHost {
                     fileInfo[0] = new Regex(correctedBR, "<h2>Download File(.*?)</h2>").getMatch(0);
                     /* traits from download1 page below */
                     if (fileInfo[0] == null) {
-                        fileInfo[0] = new Regex(correctedBR, "Nombre:? ?(<[^>]+> ?)+?([^<>\"\\']+)").getMatch(1);
+                        fileInfo[0] = new Regex(correctedBR, "Filename:? ?(<[^>]+> ?)+?([^<>\"\\']+)").getMatch(1);
                         // next two are details from sharing box
                         if (fileInfo[0] == null) {
                             fileInfo[0] = new Regex(correctedBR, "copy\\(this\\);.+>(.+) \\- [\\d\\.]+ (KB|MB|GB)</a></textarea>[\r\n\t ]+</div>").getMatch(0);
