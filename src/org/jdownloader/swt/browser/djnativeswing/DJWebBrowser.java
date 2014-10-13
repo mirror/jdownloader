@@ -175,7 +175,7 @@ public class DJWebBrowser extends MigPanel implements WebBrowserListener {
 
     @Override
     public void setVisible(boolean aFlag) {
-        System.out.println("Browser Visible: " + aFlag);
+
         super.setVisible(aFlag);
         if (!resizing) {
             browser.setVisible(aFlag);
