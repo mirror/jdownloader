@@ -257,7 +257,7 @@ public class FoxLeechCom extends PluginForHost {
                         /* Avoid login captcha on forced login */
                         if (force) {
                             br.getPage("http://www.foxleech.com/downloader");
-                            if (br.containsHTML("title=\"logout\">Logout</a>")) {
+                            if (br.containsHTML("foxleech\\.com/logout\">Logout</a>")) {
                                 return true;
                             } else {
                                 /* Foced login (check) failed - clear cookies and perform a full login! */
@@ -271,11 +271,10 @@ public class FoxLeechCom extends PluginForHost {
                 }
                 br.setFollowRedirects(true);
                 br.getPage("http://www.foxleech.com/login");
-                String postData = "B1=Login&username=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass());
+                String postData = "username=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass());
                 br.postPage("http://www.foxleech.com/login", postData);
                 /* Even if the user entrs valid username/password, captcha may occur... */
                 if (br.getCookie(MAINPAGE, "auth") == null && br.containsHTML("google\\.com/recaptcha/api")) {
-                    /* TODO: Fix login captcha handling - it never works! */
                     final PluginForHost recplug = JDUtilities.getPluginForHost("DirectHTTP");
                     final jd.plugins.hoster.DirectHTTP.Recaptcha rc = ((DirectHTTP) recplug).getReCaptcha(br);
                     rc.findID();
@@ -283,7 +282,7 @@ public class FoxLeechCom extends PluginForHost {
                     final File cf = rc.downloadCaptcha(getLocalCaptchaFile());
                     final DownloadLink dummyLink = new DownloadLink(this, "Account", NICE_HOST, MAINPAGE, true);
                     final String c = getCaptchaCode(cf, dummyLink);
-                    postData += "&recaptcha_challenge_field" + rc.getChallenge() + "&recaptcha_response_field=" + Encoding.urlEncode(c);
+                    postData += "&recaptcha_challenge_field=" + rc.getChallenge() + "&recaptcha_response_field=" + Encoding.urlEncode(c);
                     br.postPage("http://www.foxleech.com/login", postData);
                 }
                 if (br.getCookie(MAINPAGE, "auth") == null) {
@@ -410,7 +409,7 @@ public class FoxLeechCom extends PluginForHost {
     }
 
     private void setConfigElements() {
-        /* No API available yet... */
+        /* No API available yet: http://svn.jdownloader.org/issues/46706 */
         // getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, this.getPluginConfig(), USE_API,
         // JDL.L("plugins.hoster.FoxLeechCom.useAPI", "Use API (recommended!)")).setDefaultValue(default_USE_API));
     }

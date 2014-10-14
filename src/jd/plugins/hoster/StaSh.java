@@ -293,7 +293,7 @@ public class StaSh extends PluginForHost {
         String set_id_as_filename_text;
         final String lang = System.getProperty("user.language");
         if ("de".equalsIgnoreCase(lang)) {
-            forcehtmldownloadtext = "HTML Code statt eigentlichen Inhalt (Dateien/Bilder) laden?";
+            forcehtmldownloadtext = "HTML Code statt dem eigentlichen Inhalt (Dateien/Bilder) laden?";
             set_id_as_filename_text = "[Nur für enzelne Einträge] Link-ID als Dateiname nutzen (sta.sh/LINKID)?";
         } else {
             forcehtmldownloadtext = "Download html code instead of the media (files/pictures)?";

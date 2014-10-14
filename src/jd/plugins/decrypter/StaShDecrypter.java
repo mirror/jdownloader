@@ -49,8 +49,8 @@ public class StaShDecrypter extends PluginForDecrypt {
         final SubConfiguration cfg = SubConfiguration.getConfig("sta.sh");
         final boolean force_html_dl = cfg.getBooleanProperty(FORCEHTMLDOWNLOAD, false);
         final boolean linkid_as_filename = cfg.getBooleanProperty(USE_LINKID_AS_FILENAME, false);
+        final String main_linkid = new Regex(parameter, "sta\\.sh/(.+)").getMatch(0);
         final DownloadLink main = createDownloadlink(parameter.replace("sta.sh/", "stadecrypted.sh/"));
-        final String linkid = new Regex(parameter, "sta\\.sh/([a-z0-9]+)").getMatch(0);
         if (parameter.matches(INVALIDLINKS)) {
             main.setAvailable(false);
             decryptedLinks.add(main);
@@ -77,10 +77,11 @@ public class StaShDecrypter extends PluginForDecrypt {
 
         for (final String singleLinkData[] : picdata) {
             final String url = singleLinkData[0];
+            final String linkid = new Regex(url, "sta\\.sh/(.+)").getMatch(0);
             String name = Encoding.htmlDecode(singleLinkData[2]);
             final DownloadLink dl = createDownloadlink(url.replace("sta.sh/", "stadecrypted.sh/"));
             /* Obey user setting */
-            if (linkid_as_filename && picdata.length == 1) {
+            if (linkid_as_filename) {
                 dl.setProperty("plain_linkid", linkid);
                 name = linkid;
             }
@@ -102,10 +103,17 @@ public class StaShDecrypter extends PluginForDecrypt {
         final String zipLink = br.getRegex("\"(/zip/[a-z0-9]+)\"").getMatch(0);
         if (zipLink != null) {
             final DownloadLink zip = createDownloadlink("http://stadecrypted.sh" + zipLink);
-            if (force_html_dl) {
-                zip.setName(fpName + ".html");
+            String zip_filename;
+            if (linkid_as_filename) {
+                zip.setProperty("plain_linkid", main_linkid);
+                zip_filename = main_linkid;
             } else {
-                zip.setName(fpName + ".zip");
+                zip_filename = fpName;
+            }
+            if (force_html_dl) {
+                zip.setName(zip_filename + ".html");
+            } else {
+                zip.setName(zip_filename + ".zip");
             }
             zip.setAvailable(true);
             decryptedLinks.add(zip);
