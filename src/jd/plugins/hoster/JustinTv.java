@@ -36,16 +36,12 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.utils.locale.JDL;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "justin.tv" }, urls = { "http://.+(justin|twitch)decrypted\\.tv/archives/[^<>\"]*?\\.flv" }, flags = { 2 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "justin.tv" }, urls = { "http://twitchdecrypted\\.tv/\\d+" }, flags = { 2 })
 public class JustinTv extends PluginForHost {
 
     public JustinTv(PluginWrapper wrapper) {
         super(wrapper);
         setConfigElements();
-    }
-
-    public void correctDownloadLink(DownloadLink link) {
-        link.setUrlDownload(link.getDownloadURL().replaceFirst("(justin|twitch)decrypted\\.tv", "justin.tv"));
     }
 
     @Override
@@ -64,16 +60,21 @@ public class JustinTv extends PluginForHost {
     private static final String CUSTOM_FILENAME_3 = "CUSTOM_FILENAME_3";
     private static final String PARTNUMBERFORMAT  = "PARTNUMBERFORMAT";
 
+    private String              dllink            = null;
+
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws IOException, PluginException, ParseException {
-        if (downloadLink.getBooleanProperty("offline", false)) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        dllink = downloadLink.getStringProperty("plain_directlink", null);
+        if (downloadLink.getBooleanProperty("offline", false) || dllink == null) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
         this.setBrowserExclusive();
         URLConnectionAdapter con = null;
         final Browser br2 = br.cloneBrowser();
         // In case the link redirects to the finallink
         br2.setFollowRedirects(true);
         try {
-            con = br2.openGetConnection(downloadLink.getDownloadURL());
+            con = br2.openGetConnection(dllink);
             if (!con.getContentType().contains("html")) {
                 downloadLink.setDownloadSize(con.getLongContentLength());
             } else {
@@ -97,7 +98,7 @@ public class JustinTv extends PluginForHost {
         if (downloadLink.getBooleanProperty(JustinTv.NOCHUNKS, false)) {
             maxChunks = 1;
         }
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, downloadLink.getDownloadURL(), true, maxChunks);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, maxChunks);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
             if (br.containsHTML(">416 Requested Range Not Satisfiable<")) {
@@ -112,7 +113,9 @@ public class JustinTv extends PluginForHost {
         }
         if (!this.dl.startDownload()) {
             try {
-                if (dl.externalDownloadStop()) return;
+                if (dl.externalDownloadStop()) {
+                    return;
+                }
             } catch (final Throwable e) {
             }
             /* unknown error, we disable multiple chunks */
@@ -123,16 +126,22 @@ public class JustinTv extends PluginForHost {
         }
     }
 
-    @SuppressWarnings("static-access")
+    @SuppressWarnings("deprecation")
     public static String getFormattedFilename(final DownloadLink downloadLink) throws ParseException {
         String videoName = downloadLink.getStringProperty("plainfilename", null);
 
         final SubConfiguration cfg = SubConfiguration.getConfig("justin.tv");
         String formattedFilename = cfg.getStringProperty(CUSTOM_FILENAME_3, defaultCustomFilename);
-        if (formattedFilename == null || formattedFilename.equals("")) formattedFilename = defaultCustomFilename;
-        if (!formattedFilename.contains("*videoname") || !formattedFilename.contains("*ext*")) formattedFilename = defaultCustomFilename;
+        if (formattedFilename == null || formattedFilename.equals("")) {
+            formattedFilename = defaultCustomFilename;
+        }
+        if (!formattedFilename.contains("*videoname") || !formattedFilename.contains("*ext*")) {
+            formattedFilename = defaultCustomFilename;
+        }
         String partnumberformat = cfg.getStringProperty(PARTNUMBERFORMAT);
-        if (partnumberformat == null || partnumberformat.equals("")) partnumberformat = "00";
+        if (partnumberformat == null || partnumberformat.equals("")) {
+            partnumberformat = "00";
+        }
 
         final DecimalFormat df = new DecimalFormat(partnumberformat);
         final String date = downloadLink.getStringProperty("originaldate", null);

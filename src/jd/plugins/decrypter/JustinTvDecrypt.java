@@ -33,6 +33,7 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
+import jd.plugins.hoster.JustinTv;
 import jd.utils.JDUtilities;
 
 import org.appwork.utils.logging2.LogSource;
@@ -136,16 +137,15 @@ public class JustinTvDecrypt extends PluginForDecrypt {
                 // returns: 'FgtvLive' from <meta property="og:title" content="FgtvLive"/>
                 // filename = br.getRegex("<meta property=\"og:title\" content=\"([^<>\"]*?)\"").getMatch(0);
             }
+            final String vid = new Regex(parameter, "(\\d+)$").getMatch(0);
             boolean failed = true;
             for (int i = 1; i <= 10; i++) {
                 try {
                     if (parameter.contains("/b/")) {
-                        br.getPage("http://api.justin.tv/api/broadcast/by_archive/" + new Regex(parameter, "(\\d+)$").getMatch(0) + ".xml");
-                        if (filename == null) {
-                            filename = br.getRegex("<title>([^<>\"]*?)</title>").getMatch(0);
-                        }
+                        br.getPage("http://api.twitch.tv/api/videos/a" + vid);
+                        /* Old .xml handling removed AFTER plugin revision XXX */
                     } else {
-                        br.getPage("http://api.justin.tv/api/broadcast/by_chapter/" + new Regex(parameter, "(\\d+)$").getMatch(0) + ".xml");
+                        br.getPage("http://api.justin.tv/api/broadcast/by_chapter/" + vid + ".xml");
                     }
                     failed = false;
                     break;
@@ -161,8 +161,15 @@ public class JustinTvDecrypt extends PluginForDecrypt {
                 decryptedLinks.add(dlink);
                 return decryptedLinks;
             }
-            final String[] links = br.getRegex("<video_file_url>(http://[^<>\"]*?)</video_file_url>").getColumn(0);
-            if (links == null || links.length == 0 || filename == null) {
+            if (filename == null) {
+                filename = vid;
+            }
+            String[] links = br.getRegex("<video_file_url>(http://[^<>\"]*?)</video_file_url>").getColumn(0);
+            /* Maybe json */
+            if (links == null || links.length == 0) {
+                links = br.getRegex("\"url\":\"(https?://[^<>\"]*?)\"").getColumn(0);
+            }
+            if (links == null || links.length == 0) {
                 logger.warning("Decrypter broken: " + parameter);
                 return null;
             }
@@ -171,9 +178,10 @@ public class JustinTvDecrypt extends PluginForDecrypt {
             int counter = 1;
             final PluginForHost hostPlugin = JDUtilities.getPluginForHost("justin.tv");
 
-            for (String dl : links) {
-                final DownloadLink dlink = createDownloadlink(dl.replace("twitch.tv/", "twitchdecrypted.tv/").replace("justin.tv/", "justindecrypted.tv/"));
+            for (final String directlink : links) {
+                final DownloadLink dlink = createDownloadlink("http://twitchdecrypted.tv/" + System.currentTimeMillis() + new Random().nextInt(100000000));
                 dlink.setProperty("directlink", "true");
+                dlink.setProperty("plain_directlink", directlink);
                 dlink.setProperty("plainfilename", filename);
                 dlink.setProperty("partnumber", counter);
                 if (date != null) {
@@ -182,12 +190,18 @@ public class JustinTvDecrypt extends PluginForDecrypt {
                 if (channelName != null) {
                     dlink.setProperty("channel", Encoding.htmlDecode(channelName.trim()));
                 }
+                dlink.setProperty("LINKDUPEID", "justintv" + vid + "_" + counter);
                 /* make sure the plugin is loaded! */
                 JDUtilities.getPluginForHost("justin.tv");
-                final String formattedFilename = ((jd.plugins.hoster.JustinTv) hostPlugin).getFormattedFilename(dlink);
+                final String formattedFilename = JustinTv.getFormattedFilename(dlink);
                 dlink.setName(formattedFilename);
                 if (cfg.getBooleanProperty(FASTLINKCHECK, false)) {
                     dlink.setAvailable(true);
+                }
+                try {
+                    dlink.setContentUrl(parameter);
+                } catch (final Throwable e) {
+                    /* Not available in old 0.9.581 Stable */
                 }
                 decryptedLinks.add(dlink);
                 counter++;

@@ -16,16 +16,28 @@
 
 package jd.plugins.hoster;
 
+import java.io.BufferedWriter;
+import java.io.File;
+import java.io.FileReader;
+import java.io.FileWriter;
+import java.io.IOException;
+import java.text.DecimalFormat;
+import java.util.Scanner;
+import java.util.concurrent.atomic.AtomicBoolean;
+
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
 import jd.http.Browser.BrowserException;
+import jd.nutils.encoding.HTMLEntities;
+import jd.parser.Regex;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "mdr.de" }, urls = { "http://mdrdecrypted\\.de/\\d+" }, flags = { 2 })
@@ -85,13 +97,222 @@ public class MdrDe extends PluginForHost {
     public void handleFree(final DownloadLink link) throws Exception {
         requestFileInformation(link);
         br.setFollowRedirects(true);
+        boolean resume = true;
+        int maxchunks = 0;
+        if ("subtitle".equals(link.getStringProperty("plain_qualityString", null))) {
+            /* Workaround for old downloadcore bug that can lead to incomplete files */
+            br.getHeaders().put("Accept-Encoding", "identity");
+            resume = false;
+            maxchunks = 1;
+        }
         final String dllink = link.getStringProperty("directlink", null);
-        dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, true, 0);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, resume, maxchunks);
         if (dl.getConnection().getContentType().contains("html")) {
             dl.getConnection().disconnect();
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        dl.startDownload();
+        if (this.dl.startDownload()) {
+            this.postprocess(link);
+        }
+    }
+
+    private void postprocess(final DownloadLink downloadLink) {
+        if ("subtitle".equals(downloadLink.getStringProperty("plain_qualityString", null))) {
+            if (!convertSubtitle(downloadLink)) {
+                logger.severe("Subtitle conversion failed!");
+            } else {
+                downloadLink.setFinalFileName(downloadLink.getStringProperty("plain_filename", null).replace(".xml", ".srt"));
+            }
+        }
+    }
+
+    /**
+     * Converts the ARD Closed Captions subtitles to SRT subtitles. It runs after the completed download.
+     * 
+     * @return The success of the conversion.
+     */
+    public boolean convertSubtitle(final DownloadLink downloadlink) {
+        final File source = new File(downloadlink.getFileOutput());
+
+        BufferedWriter dest;
+        try {
+            dest = new BufferedWriter(new FileWriter(new File(source.getAbsolutePath().replace(".xml", ".srt"))));
+        } catch (IOException e1) {
+            return false;
+        }
+
+        final StringBuilder xml = new StringBuilder();
+        int counter = 1;
+        final String lineseparator = System.getProperty("line.separator");
+
+        Scanner in = null;
+        try {
+            in = new Scanner(new FileReader(source));
+            while (in.hasNext()) {
+                xml.append(in.nextLine() + lineseparator);
+            }
+        } catch (Exception e) {
+            return false;
+        } finally {
+            in.close();
+        }
+        final String xmlContent = xml.toString();
+
+        final String[] matches = new Regex(xmlContent, "(<p begin.*?</p>)").getColumn(0);
+        try {
+
+            for (String info : matches) {
+                dest.write(counter++ + lineseparator);
+                final DecimalFormat df = new DecimalFormat("00");
+                final Regex startInfo = new Regex(info, "begin=\"(\\d{2}:\\d{2}:\\d{2}):(\\d{2})\"");
+                final Regex endInfo = new Regex(info, "end=\"(\\d{2}:\\d{2}:\\d{2}):(\\d{2})\"");
+                final String start_1 = startInfo.getMatch(0);
+                final String end_1 = endInfo.getMatch(0);
+
+                final String start = start_1 + "," + getMillisecond(startInfo.getMatch(1));
+                final String end = end_1 + "," + getMillisecond(endInfo.getMatch(1));
+                // final String start = df.format(startHour) + ":" + startInfo.getMatch(1).replace(":", ",");
+                // final String end = df.format(endHour) + ":" + endInfo.getMatch(1).replace(":", ",");
+                dest.write(start + " --> " + end + lineseparator);
+
+                info = info.replaceAll(lineseparator, " ");
+                info = info.replaceAll("<br />", lineseparator);
+                final String[][] color_texts = new Regex(info, "<span style=\"([a-z]+)\">(.*?)</span>").getMatches();
+                String stitle_text = "";
+                for (final String[] style_text : color_texts) {
+                    final String style = style_text[0];
+                    String text = style_text[1];
+                    text = text.replaceAll("&apos;", "\\\\u0027");
+                    text = unescape(text);
+                    text = HTMLEntities.unhtmlentities(text);
+                    text = HTMLEntities.unhtmlAmpersand(text);
+                    text = HTMLEntities.unhtmlAngleBrackets(text);
+                    text = HTMLEntities.unhtmlSingleQuotes(text);
+                    text = HTMLEntities.unhtmlDoubleQuotes(text);
+                    text = text.replaceAll("</?(p|span)>?", "");
+                    text = text.trim();
+
+                    final String color_code = getColorCode(style);
+                    stitle_text += "<font color=#" + color_code + ">" + text + "</font>";
+
+                }
+                dest.write(stitle_text + lineseparator + lineseparator);
+            }
+        } catch (Exception e) {
+            return false;
+        } finally {
+            try {
+                dest.close();
+            } catch (IOException e) {
+            }
+        }
+
+        source.delete();
+
+        return true;
+    }
+
+    private String getMillisecond(final String input) {
+        // Millisecond
+        String millisecond = input;
+        if (millisecond.length() == 1) {
+            millisecond = millisecond + "00";
+        }
+        if (millisecond.length() == 2) {
+            millisecond = millisecond + "0";
+        }
+        if (millisecond.length() > 2) {
+            millisecond = millisecond.substring(0, 3);
+        }
+        return millisecond;
+    }
+
+    private static String getColorCode(final String colorName) {
+        /* Unhandled case/standard = white */
+        String colorCode = "FFFFFF";
+        if (colorName.equals("blue")) {
+            colorCode = "0000FF";
+        } else if (colorName.equals("yellow")) {
+            colorCode = "FFFF00";
+        } else if (colorName.equals("aqua")) {
+            colorCode = "00FFFF";
+        } else if (colorName.equals("lime")) {
+            colorCode = "00FF00";
+        } else if (colorName.equals("fuchsia")) {
+            colorCode = "FF00FF";
+        } else if (colorName.equals("green")) {
+            colorCode = "008000";
+        } else if (colorName.equals("cyan")) {
+            colorCode = "00FFFF";
+        }
+        return colorCode;
+    }
+
+    /**
+     * Converts the the time of the ZDF format to the SRT format.
+     * 
+     * @param time
+     *            . The time from the ZDF XML.
+     * @return The converted time as String.
+     */
+    private static String convertSubtitleTime(Double time) {
+        String hour = "00";
+        String minute = "00";
+        String second = "00";
+        String millisecond = "0";
+
+        Integer itime = Integer.valueOf(time.intValue());
+
+        // Hour
+        Integer timeHour = Integer.valueOf(itime.intValue() / 3600);
+        if (timeHour < 10) {
+            hour = "0" + timeHour.toString();
+        } else {
+            hour = timeHour.toString();
+        }
+
+        // Minute
+        Integer timeMinute = Integer.valueOf((itime.intValue() % 3600) / 60);
+        if (timeMinute < 10) {
+            minute = "0" + timeMinute.toString();
+        } else {
+            minute = timeMinute.toString();
+        }
+
+        // Second
+        Integer timeSecond = Integer.valueOf(itime.intValue() % 60);
+        if (timeSecond < 10) {
+            second = "0" + timeSecond.toString();
+        } else {
+            second = timeSecond.toString();
+        }
+
+        // Millisecond
+        millisecond = String.valueOf(time - itime).split("\\.")[1];
+        if (millisecond.length() == 1) {
+            millisecond = millisecond + "00";
+        }
+        if (millisecond.length() == 2) {
+            millisecond = millisecond + "0";
+        }
+        if (millisecond.length() > 2) {
+            millisecond = millisecond.substring(0, 3);
+        }
+
+        // Result
+        String result = hour + ":" + minute + ":" + second + "," + millisecond;
+
+        return result;
+    }
+
+    private static AtomicBoolean yt_loaded = new AtomicBoolean(false);
+
+    private String unescape(final String s) {
+        /* we have to make sure the youtube plugin is loaded */
+        if (!yt_loaded.getAndSet(true)) {
+            JDUtilities.getPluginForHost("youtube.com");
+        }
+        return jd.plugins.hoster.Youtube.unescape(s);
     }
 
     @Override
@@ -100,7 +321,7 @@ public class MdrDe extends PluginForHost {
     }
 
     private void setConfigElements() {
-        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), ALLOW_SUBTITLES, JDL.L("plugins.hoster.MdrDe.grabsubtitles", "Grab subtitles whenever possible")).setDefaultValue(false).setEnabled(false));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), ALLOW_SUBTITLES, JDL.L("plugins.hoster.MdrDe.grabsubtitles", "Grab subtitles whenever possible")).setDefaultValue(false));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_SEPARATOR));
         final ConfigEntry bestonly = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), ALLOW_BEST, JDL.L("plugins.hoster.MdrDe.best", "Load best version ONLY")).setDefaultValue(false);
         getConfig().addEntry(bestonly);

@@ -131,6 +131,7 @@ public class ORFMediathek extends PluginForHost {
             ((RTMPDownload) dl).startDownload();
         } else {
             if (downloadLink.getName().endsWith(".srt")) {
+                /* Workaround for old downloadcore bug that can lead to incomplete files */
                 br.getHeaders().put("Accept-Encoding", "identity");
             }
             br.setFollowRedirects(true);

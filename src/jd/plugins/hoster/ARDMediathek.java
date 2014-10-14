@@ -222,7 +222,7 @@ public class ARDMediathek extends PluginForHost {
 
     /**
      * Converts the ARD Closed Captions subtitles to SRT subtitles. It runs after the completed download.
-     *
+     * 
      * @return The success of the conversion.
      */
     public boolean convertSubtitle(final DownloadLink downloadlink) {
@@ -324,6 +324,7 @@ public class ARDMediathek extends PluginForHost {
     }
 
     private static String getColorCode(final String colorName) {
+        /* Unhandled case/standard = white */
         String colorCode = "FFFFFF";
         if (colorName.equals("blue")) {
             colorCode = "0000FF";
@@ -335,6 +336,10 @@ public class ARDMediathek extends PluginForHost {
             colorCode = "00FF00";
         } else if (colorName.equals("fuchsia")) {
             colorCode = "FF00FF";
+        } else if (colorName.equals("green")) {
+            colorCode = "008000";
+        } else if (colorName.equals("cyan")) {
+            colorCode = "00FFFF";
         }
         return colorCode;
     }
