@@ -300,6 +300,7 @@ EnableAction_run_msg_=Želite li onemogućiti i zaustaviti pokrenuta preuzimanja
 EnabledAction_EnabledAction_disable=Onemogući
 EnabledAction_EnabledAction_empty=Omogući/Onemogući link
 EnabledAction_EnabledAction_enable=Omogući
+EnabledDisabledColumn_EnabledDisabledColumn=Omogućeno /Onemogućeno
 ExceptionsRuleDialog_ExceptionsRuleDialog_title_=Filter iznimke uvjeta
 ExceptionsRuleDialog_getIfText_=Dopusti sve linkove koji odgovaraju ovim uvjetima, i ignoriraj popis filtera
 ExceptionsTableModel_initColumns_condition_=Dopusti linkove ako,
