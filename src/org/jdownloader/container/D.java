@@ -730,6 +730,16 @@ public class D extends PluginsC {
                                     lsr = HTMLParser.getHttpLinks(sls, null);
                                 }
                             }
+                            // workaround. we accidently stored wrong youtube links (pluginpatternmatcher instead of contentUrl in the dlcs.
+
+                            if (sls.startsWith("youtubev2://")) {
+                                String[] ytInfo = new Regex(sls, "youtubev2\\:\\/\\/(.*?)/(.*?)/").getRow(0);
+                                if (ytInfo != null && ytInfo.length >= 2) {
+                                    // convert to decrypter link
+                                    sls = "http://www.youtube.com/watch?v=" + ytInfo[1] + "&variant=" + ytInfo[0];
+
+                                }
+                            }
                             ls2.add(sls);
                             for (String link : lsr) {
                                 if (!sls.trim().equals(link.trim())) {
@@ -894,8 +904,11 @@ public class D extends PluginsC {
 
     private byte[] gk() {
         try {
-            return (byte[]) getClass().forName(getClass().getPackage().getName() + ".Config").getField("D").get(null);
+            String cfg = getClass().getPackage().getName() + ".Config";
+            Class<?> cls = getClass().forName(cfg);
+            return (byte[]) cls.getField("D").get(null);
         } catch (Throwable e) {
+            e.printStackTrace();
         }
         return null;
     }
