@@ -11,7 +11,7 @@ import org.jdownloader.settings.advanced.AdvancedConfigManager;
 
 public class AdvancedConfigTableModel extends ExtTableModel<AdvancedConfigEntry> {
     private static final long serialVersionUID = 1L;
-    private String            text             = null;
+    private volatile String   text             = null;
 
     public AdvancedConfigTableModel(String id) {
         super(id);
@@ -20,17 +20,17 @@ public class AdvancedConfigTableModel extends ExtTableModel<AdvancedConfigEntry>
 
     @Override
     public void _fireTableStructureChanged(java.util.List<AdvancedConfigEntry> newtableData, boolean refreshSort) {
-        String ltext = text;
+        final String ltext = text;
         if (ltext != null) {
-            ltext = ltext.toLowerCase();
-            AdvancedConfigEntry next;
-            for (Iterator<AdvancedConfigEntry> it = newtableData.iterator(); it.hasNext();) {
-                next = it.next();
-                if (!next.getKey().toLowerCase().contains(ltext)) {
-                    if (next.getDescription() == null || !next.getDescription().toLowerCase(Locale.ENGLISH).contains(ltext)) {
-                        if (!createKeyText(next).toLowerCase(Locale.ENGLISH).contains(ltext)) {
-                            it.remove();
-                        }
+            final String finds[] = ltext.toLowerCase(Locale.ENGLISH).split("\\s");
+            for (final Iterator<AdvancedConfigEntry> it = newtableData.iterator(); it.hasNext();) {
+                final AdvancedConfigEntry next = it.next();
+                for (String find : finds) {
+                    if (next.getKey().toLowerCase().contains(find) || (next.getDescription() != null && next.getDescription().toLowerCase(Locale.ENGLISH).contains(find)) || createKeyText(next).toLowerCase(Locale.ENGLISH).contains(ltext)) {
+                        continue;
+                    } else {
+                        it.remove();
+                        break;
                     }
                 }
             }
