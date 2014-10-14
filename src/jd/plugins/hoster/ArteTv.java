@@ -65,7 +65,7 @@ public class ArteTv extends PluginForHost {
     private static final String Q_HIGH       = "Q_HIGH";
     private static final String Q_VERYHIGH   = "Q_VERYHIGH";
     private static final String Q_HD         = "Q_HD";
-    private static final String HBBTV        = "HBBTV";
+    private static final String HBBTV        = "HBBTV_2";
     private static final String THUMBNAIL    = "THUMBNAIL";
 
     private static final String TYPE_GUIDE   = "http://((videos|www)\\.)?arte\\.tv/guide/[a-z]{2}/.+";
@@ -431,7 +431,7 @@ public class ArteTv extends PluginForHost {
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), Q_VERYHIGH, JDL.L("plugins.hoster.arte.loadveryhigh", "Load veryhigh version")).setDefaultValue(true).setEnabledCondidtion(bestonly, false));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), Q_HD, JDL.L("plugins.hoster.arte.loadhd", "Load HD version")).setDefaultValue(true).setEnabledCondidtion(bestonly, false));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_SEPARATOR));
-        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), HBBTV, JDL.L("plugins.hoster.arte.usehbbtv", "Load only http streams (HbbTV)")).setDefaultValue(false));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), HBBTV, JDL.L("plugins.hoster.arte.usehbbtv", "[Recommended!] Load only http streams (HbbTV)")).setDefaultValue(false));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), THUMBNAIL, JDL.L("plugins.hoster.arte.loadthumbnail", "Load thumbnail")).setDefaultValue(false));
     }
 

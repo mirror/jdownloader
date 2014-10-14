@@ -49,8 +49,8 @@ public class MdrDeDecrypter extends PluginForDecrypt {
     private static final String                 ALLOW_960x544        = "ALLOW_960x544";
     private static final String                 ALLOW_640x360        = "ALLOW_640x360";
     private static final String                 ALLOW_512x288        = "ALLOW_512x288";
-    private static final String                 ALLOW_480x272_higher = "ALLOW_480x272";
-    private static final String                 ALLOW_480x272_lower  = "ALLOW_480x272";
+    private static final String                 ALLOW_480x272_higher = "ALLOW_480x272_higher";
+    private static final String                 ALLOW_480x272_lower  = "ALLOW_480x272_lower";
     private static final String                 ALLOW_256x144        = "ALLOW_256x144";
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
