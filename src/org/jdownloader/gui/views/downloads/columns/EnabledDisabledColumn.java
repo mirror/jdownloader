@@ -8,25 +8,24 @@ import javax.swing.JPopupMenu;
 import javax.swing.JTable;
 import javax.swing.table.JTableHeader;
 
-import jd.controlling.linkcrawler.CrawledLink;
 import jd.controlling.packagecontroller.AbstractNode;
-import jd.plugins.DownloadLink;
-import jd.plugins.FilePackage;
+import jd.controlling.packagecontroller.AbstractPackageNode;
 
 import org.appwork.swing.components.CheckBoxIcon;
 import org.appwork.swing.exttable.ExtColumn;
 import org.appwork.swing.exttable.ExtDefaultRowSorter;
 import org.appwork.swing.exttable.ExtTableHeaderRenderer;
 import org.appwork.swing.exttable.columns.ExtIconColumn;
+import org.appwork.utils.ModifyLock;
 import org.jdownloader.gui.IconKey;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.images.NewTheme;
 
 /**
  * Class giving the implementation details of the enabled / disabled column type
- *
+ * 
  * @author pp_me
- *
+ * 
  */
 public class EnabledDisabledColumn extends ExtIconColumn<AbstractNode> {
 
@@ -45,49 +44,59 @@ public class EnabledDisabledColumn extends ExtIconColumn<AbstractNode> {
          */
         super.setRowSorter(new ExtDefaultRowSorter<AbstractNode>() {
 
-            int h1 = 0;
-            int h2 = 0;
-
             @Override
             public int compare(final AbstractNode o1, final AbstractNode o2) {
-                if (o1 instanceof FilePackage && o2 instanceof FilePackage) {
-                    return sortPackages(o1, o2);
+                if (o1 instanceof AbstractPackageNode && o2 instanceof AbstractPackageNode) {
+                    return sortPackages((AbstractPackageNode) o1, (AbstractPackageNode) o2);
                 } else {
                     return sortLinks(o1, o2);
                 }
-
             }
 
             /**
              * Method used to sort the packages list based on the status of their children
-             *
+             * 
              * @param o1
              *            Cell in download list
              * @param o2
              *            Cell in download list
              * @return 1,0,-1 depending on output of sort
              */
-            private int sortPackages(final AbstractNode o1, final AbstractNode o2) {
-                for (DownloadLink link : ((FilePackage) o1).getChildren()) {
-                    if (!link.isEnabled()) {
-                        h1 = -1;
-                    } else {
-                        h1 = 1;
+            private int sortPackages(final AbstractPackageNode o1, final AbstractPackageNode o2) {
+                int h1 = 0;
+                int h2 = 0;
+                ModifyLock lock = o1.getModifyLock();
+                boolean readL = lock.readLock();
+                try {
+                    for (Object link : o1.getChildren()) {
+                        if (!((AbstractNode) link).isEnabled()) {
+                            h1 = -1;
+                        } else {
+                            h1 = 1;
+                        }
                     }
+                } finally {
+                    lock.readUnlock(readL);
                 }
-                for (DownloadLink link : ((FilePackage) o2).getChildren()) {
-                    if (!link.isEnabled()) {
-                        h2 = -1;
-                    } else {
-                        h2 = 1;
+                lock = o2.getModifyLock();
+                readL = lock.readLock();
+                try {
+                    for (Object link : o2.getChildren()) {
+                        if (!((AbstractNode) link).isEnabled()) {
+                            h2 = -1;
+                        } else {
+                            h2 = 1;
+                        }
                     }
+                } finally {
+                    lock.readUnlock(readL);
                 }
                 return finalDecision(h1, h2);
             }
 
             /**
              * Method for sorting links within packages
-             *
+             * 
              * @param o1
              *            Cell in download list
              * @param o2
@@ -95,16 +104,12 @@ public class EnabledDisabledColumn extends ExtIconColumn<AbstractNode> {
              * @return 1,0,-1 depending on output of sort
              */
             private int sortLinks(final AbstractNode o1, final AbstractNode o2) {
-                final Icon ic1 = getIcon(o1);
-                final Icon ic2 = getIcon(o2);
-                h1 = ic1 == null ? 0 : ic1.hashCode();
-                h2 = ic2 == null ? 0 : ic2.hashCode();
-                return finalDecision(h1, h2);
+                return finalDecision(o1.isEnabled() ? 1 : 0, o1.isEnabled() ? 1 : 0);
             }
 
             /**
              * Method to decide if the sort on this cell will return 1,0,-1
-             *
+             * 
              * @param h1
              * @param h2
              * @return
@@ -193,22 +198,14 @@ public class EnabledDisabledColumn extends ExtIconColumn<AbstractNode> {
     }
 
     @Override
-    protected Icon getIcon(AbstractNode value) {
-        if (value instanceof FilePackage) {
-            FilePackage pack = ((FilePackage) value);
-            return getIconToDisplay(pack.isEnabled());
-        } else if (value instanceof DownloadLink) {
-            DownloadLink dlink = ((DownloadLink) value);
-            return getIconToDisplay(dlink.isEnabled());
-        } else if (value instanceof CrawledLink) {
-            DownloadLink dlink = ((CrawledLink) value).getDownloadLink();
-            return getIconToDisplay(dlink.isEnabled());
-        } else {
-            return null;
+    protected Icon getIcon(final AbstractNode value) {
+        if (value != null) {
+            return getIconToDisplay(value.isEnabled());
         }
+        return null;
     }
 
-    private Icon getIconToDisplay(boolean isEnabled) {
+    private Icon getIconToDisplay(final boolean isEnabled) {
         if (isEnabled) {
             return iconYes;
         } else {

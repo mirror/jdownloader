@@ -20,6 +20,7 @@ import org.jdownloader.gui.views.components.packagetable.columns.FileTypeColumn;
 import org.jdownloader.gui.views.components.packagetable.columns.HasCaptchaColumn;
 import org.jdownloader.gui.views.downloads.columns.AddedDateColumn;
 import org.jdownloader.gui.views.downloads.columns.AvailabilityColumn;
+import org.jdownloader.gui.views.downloads.columns.EnabledDisabledColumn;
 import org.jdownloader.gui.views.downloads.columns.FileColumn;
 import org.jdownloader.gui.views.downloads.columns.HosterColumn;
 import org.jdownloader.gui.views.downloads.columns.PriorityColumn;
@@ -86,7 +87,7 @@ public class LinkGrabberTableModel extends PackageControllerTableModel<CrawledPa
         this.addColumn(new UrlColumn());
         this.addColumn(new DownloadFolderColumn());
         this.addColumn(new DownloadPasswordColumn());
-
+        this.addColumn(new EnabledDisabledColumn());
         this.addColumn(new SizeColumn());
         this.addColumn(new HosterColumn());
         this.addColumn(new AvailabilityColumn() {
