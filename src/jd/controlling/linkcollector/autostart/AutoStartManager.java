@@ -19,7 +19,7 @@ import org.jdownloader.myjdownloader.client.json.AvailableLinkState;
 import org.jdownloader.settings.staticreferences.CFG_LINKGRABBER;
 
 public class AutoStartManager implements GenericConfigEventListener<Boolean> {
-    
+
     private final DelayedRunnable             delayer;
     private volatile boolean                  globalAutoStart;
     private volatile boolean                  globalAutoConfirm;
@@ -27,13 +27,13 @@ public class AutoStartManager implements GenericConfigEventListener<Boolean> {
     private final AutoStartManagerEventSender eventSender;
     private final int                         waittime;
     private long                              lastStarted;
-    
+
     public AutoStartManagerEventSender getEventSender() {
         return eventSender;
     }
-    
+
     public AutoStartManager() {
-        
+
         eventSender = new AutoStartManagerEventSender();
         CFG_LINKGRABBER.LINKGRABBER_AUTO_START_ENABLED.getEventSender().addListener(this, true);
         CFG_LINKGRABBER.LINKGRABBER_AUTO_CONFIRM_ENABLED.getEventSender().addListener(this, true);
@@ -41,46 +41,54 @@ public class AutoStartManager implements GenericConfigEventListener<Boolean> {
         globalAutoConfirm = CFG_LINKGRABBER.LINKGRABBER_AUTO_CONFIRM_ENABLED.isEnabled();
         waittime = CFG_LINKGRABBER.CFG.getAutoConfirmDelay();
         delayer = new DelayedRunnable(waittime, -1) {
-            
+
             @Override
             public String getID() {
                 return "AutoConfirmButton";
             }
-            
+
             @Override
             public void delayedrun() {
                 LinkCollector.getInstance().getQueue().add(new QueueAction<Void, RuntimeException>() {
                     @Override
                     protected Void run() throws RuntimeException {
-                        if (eventSender.hasListener()) eventSender.fireEvent(new AutoStartManagerEvent(this, AutoStartManagerEvent.Type.RUN));
+                        if (eventSender.hasListener()) {
+                            eventSender.fireEvent(new AutoStartManagerEvent(this, AutoStartManagerEvent.Type.RUN));
+                        }
                         boolean autoConfirm = globalAutoConfirm;
                         boolean autoStart = globalAutoStart;
                         java.util.List<AbstractNode> list = new ArrayList<AbstractNode>();
-                        
+
                         SelectionInfo<CrawledPackage, CrawledLink> sel = new SelectionInfo<CrawledPackage, CrawledLink>(null, LinkCollector.getInstance().getPackages(), CFG_LINKGRABBER.CFG.isAutoStartConfirmSidebarFilterEnabled());
-                        
+
                         for (CrawledLink l : sel.getChildren()) {
-                            if (l.getLinkState() == AvailableLinkState.OFFLINE) continue;
-                            
+                            if (l.getLinkState() == AvailableLinkState.OFFLINE) {
+                                continue;
+                            }
+
                             if (l.isAutoConfirmEnabled() || autoConfirm) {
                                 list.add(l);
-                                if (l.isAutoStartEnabled()) autoStart = true;
+                                if (l.isAutoStartEnabled()) {
+                                    autoStart = true;
+                                }
                             }
                         }
-                        
+
                         if (list.size() > 0) {
-                            ConfirmLinksContextAction.confirmSelection(new SelectionInfo<CrawledPackage, CrawledLink>(null, list, false), autoStart, false, false, null, BooleanStatus.UNSET);
+                            ConfirmLinksContextAction.confirmSelection(new SelectionInfo<CrawledPackage, CrawledLink>(null, list, false), autoStart, false, false, null, BooleanStatus.UNSET, CFG_LINKGRABBER.CFG.getDefaultOnAddedOfflineLinksAction());
                         }
-                        
+
                         // lastReset = -1;
-                        if (delayer.isDelayerActive() == false && eventSender.hasListener()) eventSender.fireEvent(new AutoStartManagerEvent(this, AutoStartManagerEvent.Type.DONE));
+                        if (delayer.isDelayerActive() == false && eventSender.hasListener()) {
+                            eventSender.fireEvent(new AutoStartManagerEvent(this, AutoStartManagerEvent.Type.DONE));
+                        }
                         return null;
                     }
                 });
             }
         };
     }
-    
+
     public void onLinkAdded(CrawledLink link) {
         if (globalAutoStart || globalAutoConfirm || link.isAutoConfirmEnabled() || link.isAutoStartEnabled()) {
             if (!delayer.isDelayerActive()) {
@@ -88,29 +96,33 @@ public class AutoStartManager implements GenericConfigEventListener<Boolean> {
             }
             delayer.resetAndStart();
             lastReset = System.currentTimeMillis();
-            if (eventSender.hasListener()) eventSender.fireEvent(new AutoStartManagerEvent(this, AutoStartManagerEvent.Type.RESET));
+            if (eventSender.hasListener()) {
+                eventSender.fireEvent(new AutoStartManagerEvent(this, AutoStartManagerEvent.Type.RESET));
+            }
         }
     }
-    
+
     @Override
     public void onConfigValidatorError(KeyHandler<Boolean> keyHandler, Boolean invalidValue, ValidationException validateException) {
     }
-    
+
     @Override
     public void onConfigValueModified(KeyHandler<Boolean> keyHandler, Boolean newValue) {
         globalAutoStart = CFG_LINKGRABBER.LINKGRABBER_AUTO_START_ENABLED.isEnabled();
         globalAutoConfirm = CFG_LINKGRABBER.LINKGRABBER_AUTO_CONFIRM_ENABLED.isEnabled();
     }
-    
+
     public int getMaximum() {
         return (int) (lastReset + waittime - lastStarted);
     }
-    
+
     public int getValue() {
         return (int) (System.currentTimeMillis() - lastStarted);
     }
-    
+
     public void interrupt() {
-        if (delayer.stop() && eventSender.hasListener()) eventSender.fireEvent(new AutoStartManagerEvent(this, AutoStartManagerEvent.Type.DONE));
+        if (delayer.stop() && eventSender.hasListener()) {
+            eventSender.fireEvent(new AutoStartManagerEvent(this, AutoStartManagerEvent.Type.DONE));
+        }
     }
 }
