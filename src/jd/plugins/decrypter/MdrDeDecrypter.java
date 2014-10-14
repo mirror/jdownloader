@@ -31,7 +31,7 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "mdr.de" }, urls = { "http://(www\\.)?mdr\\.de/[a-z0-9\\-]+/video\\d+\\.html" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "mdr.de" }, urls = { "http://(www\\.)?mdr\\.de/[a-z0-9\\-]+/video\\d+[a-z0-9\\-_]*\\.html" }, flags = { 0 })
 public class MdrDeDecrypter extends PluginForDecrypt {
 
     public MdrDeDecrypter(PluginWrapper wrapper) {
@@ -43,6 +43,7 @@ public class MdrDeDecrypter extends PluginForDecrypt {
 
     private LinkedHashMap<String, DownloadLink> FOUNDQUALITIES       = new LinkedHashMap<String, DownloadLink>();
     /** Settings stuff */
+    private static final String                 ALLOW_SUBTITLES      = "ALLOW_SUBTITLES";
     private static final String                 ALLOW_BEST           = "ALLOW_BEST";
     private static final String                 ALLOW_720x576        = "ALLOW_720x576";
     private static final String                 ALLOW_960x544        = "ALLOW_960x544";
@@ -53,9 +54,12 @@ public class MdrDeDecrypter extends PluginForDecrypt {
     private static final String                 ALLOW_256x144        = "ALLOW_256x144";
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
+        final SubConfiguration cfg = SubConfiguration.getConfig(DOMAIN);
+        final boolean grab_subtitles = cfg.getBooleanProperty(ALLOW_SUBTITLES, false);
+
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String parameter = param.toString();
-        final Regex clipinfo = new Regex(parameter, "mdr\\.de/([a-z0-9\\-]+)/video(\\d+)\\.html");
+        final Regex clipinfo = new Regex(parameter, "mdr\\.de/([a-z0-9\\-]+)/video(\\d+)");
         final String url_clipname = clipinfo.getMatch(0);
         final String clip_id = clipinfo.getMatch(1);
         br.setFollowRedirects(true);
@@ -68,6 +72,7 @@ public class MdrDeDecrypter extends PluginForDecrypt {
             return decryptedLinks;
         }
         final String subtitle_url = br.getRegex("<videoSubtitleUrl>(http://[^<>\"]*?\\.xml)</videoSubtitleUrl>").getMatch(0);
+
         /* Decrypt start */
         String title = br.getRegex("<title>([^<>\"]*?)</title>").getMatch(0);
         if (title == null) {
@@ -75,6 +80,7 @@ public class MdrDeDecrypter extends PluginForDecrypt {
             return null;
         }
         title = Encoding.htmlDecode(title.trim());
+        title = encodeUnicode(title);
         final FilePackage fp = FilePackage.getInstance();
         fp.setName(title);
 
@@ -123,7 +129,6 @@ public class MdrDeDecrypter extends PluginForDecrypt {
         /** Decrypt qualities END */
         /** Decrypt qualities, selected by the user */
         final ArrayList<String> selectedQualities = new ArrayList<String>();
-        final SubConfiguration cfg = SubConfiguration.getConfig(DOMAIN);
         if (cfg.getBooleanProperty(ALLOW_BEST, false)) {
             for (final String quality : QUALITIES) {
                 if (FOUNDQUALITIES.get(quality) != null) {
@@ -175,6 +180,20 @@ public class MdrDeDecrypter extends PluginForDecrypt {
         for (final String selectedQualityValue : selectedQualities) {
             final DownloadLink dl = FOUNDQUALITIES.get(selectedQualityValue);
             if (dl != null) {
+                if (grab_subtitles && subtitle_url != null) {
+                    final DownloadLink stitle_dl = createDownloadlink("http://mdrdecrypted.de/" + System.currentTimeMillis() + new Random().nextInt(10000000));
+                    final String video_qualitystring = dl.getStringProperty("plain_qualityString", null);
+                    final String video_linkdupeid = dl.getStringProperty("LINKDUPEID", null) + "_subtitle";
+                    final String subtitle_filename = title + "_" + video_qualitystring + ".xml";
+                    stitle_dl.setProperty("mainlink", parameter);
+                    stitle_dl.setProperty("directlink", subtitle_url);
+                    stitle_dl.setProperty("LINKDUPEID", video_linkdupeid);
+                    stitle_dl.setProperty("plain_qualityString", "subtitle");
+                    stitle_dl.setProperty("plain_filename", subtitle_filename);
+                    stitle_dl.setProperty("plain_filesize", "0");
+                    fp.add(stitle_dl);
+                    decryptedLinks.add(stitle_dl);
+                }
                 fp.add(dl);
                 decryptedLinks.add(dl);
             }
@@ -188,6 +207,22 @@ public class MdrDeDecrypter extends PluginForDecrypt {
 
     private String getXML(final String source, final String parameter) {
         return new Regex(source, "<" + parameter + "( type=\"[^<>\"/]*?\")?>([^<>]*?)</" + parameter + ">").getMatch(1);
+    }
+
+    /* Avoid chars which are not allowed in filenames under certain OS' */
+    private static String encodeUnicode(final String input) {
+        String output = input;
+        output = output.replace(":", ";");
+        output = output.replace("|", "¦");
+        output = output.replace("<", "[");
+        output = output.replace(">", "]");
+        output = output.replace("/", "⁄");
+        output = output.replace("\\", "∖");
+        output = output.replace("*", "#");
+        output = output.replace("?", "¿");
+        output = output.replace("!", "¡");
+        output = output.replace("\"", "'");
+        return output;
     }
 
     /**

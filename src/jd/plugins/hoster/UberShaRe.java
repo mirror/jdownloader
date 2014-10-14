@@ -92,17 +92,22 @@ public class UberShaRe extends PluginForHost {
             link.getLinkStatus().setStatusText(WAIT_RECONNECT_LIMIT_USERTEXT);
             return AvailableStatus.TRUE;
         }
-        if (br.getURL().contains("/error." + TYPE) || br.getURL().contains("/index." + TYPE) || !br.containsHTML("class=\"downloadPageTable\"")) {
+        if (br.getURL().contains("/error." + TYPE) || br.getURL().contains("/index." + TYPE) || !br.containsHTML("class=\"download\\-table")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        final Regex fInfo = br.getRegex("<th class=\"descr\"([^<>]*?)?>[\t\n\r ]+<strong>([^<>\"]*?) \\((\\d+(,\\d+)?(\\.\\d+)? (KB|MB|GB))\\)<br/>");
-        final String filename = fInfo.getMatch(1);
-        final String filesize = fInfo.getMatch(2);
-        if (filename == null || filesize == null) {
+        final Regex fInfo = br.getRegex("<strong>([^<>\"]*?) \\((\\d+(,\\d+)?(\\.\\d+)? (KB|MB|GB))\\)<br/>");
+        String filename = fInfo.getMatch(0);
+        if (filename == null) {
+            filename = br.getRegex("<title>([^<>\"]*?) \\- Uber Share</title>").getMatch(0);
+        }
+        final String filesize = fInfo.getMatch(1);
+        if (filename == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         link.setName(Encoding.htmlDecode(filename.trim()));
-        link.setDownloadSize(SizeFormatter.getSize(filesize.replace(",", "")));
+        if (filesize != null) {
+            link.setDownloadSize(SizeFormatter.getSize(filesize.replace(",", "")));
+        }
         return AvailableStatus.TRUE;
     }
 
@@ -127,7 +132,7 @@ public class UberShaRe extends PluginForHost {
         if (waittime != null) {
             sleep(Integer.parseInt(waittime) * 1001l, downloadLink);
         }
-        String continue_link = br.getRegex("\\$\\(\\'\\.download\\-timer\\'\\)\\.html\\(\"<a href=\\'(https?://[^<>\"]*?)\\'").getMatch(0);
+        String continue_link = br.getRegex("'btn btn\\-free\\' href=\\'(https?://[^<>\"]*?)\\'").getMatch(0);
         if (continue_link != null) {
             logger.info("Found continue_link");
         } else {
