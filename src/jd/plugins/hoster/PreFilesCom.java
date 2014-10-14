@@ -387,7 +387,7 @@ public class PreFilesCom extends PluginForHost {
         if (dllink == null) {
             dllink = new Regex(correctedBR, "\"(http://srv\\d+\\.prefiles\\.com(:\\d+)?/files/\\d+/[a-z0-9]+/[^<>\"]*?)\"").getMatch(0);
             if (dllink == null) {
-                dllink = new Regex(correctedBR, "\"(http://[0-9\\.]+/(cgi\\-bin/dl\\.cgi/|files/\\d+/[a-z0-9]+/)[^<>\"]*?)\"").getMatch(0);
+                dllink = new Regex(correctedBR, "\"(http://[0-9\\.]+prefil\\.es/(cgi\\-bin/dl\\.cgi/|files/\\d+/[a-z0-9]+/)[^<>\"]*?)\"").getMatch(0);
             }
         }
         return dllink;
