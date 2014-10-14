@@ -266,6 +266,18 @@ public class CrawledPackage implements AbstractPackageNode<CrawledLink, CrawledP
     }
 
     public void setEnabled(boolean b) {
+        ArrayList<CrawledLink> links = null;
+        boolean readL = getModifyLock().readLock();
+        try {
+            links = new ArrayList<CrawledLink>(getChildren());
+        } finally {
+            if (readL) {
+                getModifyLock().readUnlock(readL);
+            }
+        }
+        for (CrawledLink link : links) {
+            link.setEnabled(b);
+        }
     }
 
     public void setExpanded(boolean b) {
