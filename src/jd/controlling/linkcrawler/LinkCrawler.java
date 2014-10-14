@@ -578,8 +578,9 @@ public class LinkCrawler {
                          */
                         possibleCryptedLinks = _crawl("directhttp://" + url, null, false);
                         if (possibleCryptedLinks != null && possibleCryptedLinks.size() >= 0) {
+                            final boolean singleDest = possibleCryptedLinks.size() == 1;
                             for (final CrawledLink possibleCryptedLink : possibleCryptedLinks) {
-                                forwardCrawledLinkInfos(source, possibleCryptedLink, lm, sourceURLs);
+                                forwardCrawledLinkInfos(source, possibleCryptedLink, lm, sourceURLs, singleDest);
                             }
                             crawl(possibleCryptedLinks);
                         }
@@ -594,8 +595,9 @@ public class LinkCrawler {
                         final String browserContent = br.toString();
                         possibleCryptedLinks = _crawl(url, null, false);
                         if (possibleCryptedLinks != null) {
+                            final boolean singleDest = possibleCryptedLinks.size() == 1;
                             for (final CrawledLink possibleCryptedLink : possibleCryptedLinks) {
-                                forwardCrawledLinkInfos(source, possibleCryptedLink, lm, sourceURLs);
+                                forwardCrawledLinkInfos(source, possibleCryptedLink, lm, sourceURLs, singleDest);
                             }
                             if (possibleCryptedLinks.size() == 1) {
                                 /* first check if the url itself can be handled */
@@ -607,8 +609,9 @@ public class LinkCrawler {
                                         /* unhandled url, lets parse the content on it */
                                         List<CrawledLink> possibleCryptedLinks2 = lc._crawl(browserContent, finalBaseUrl, false);
                                         if (possibleCryptedLinks2 != null && possibleCryptedLinks2.size() > 0) {
+                                            final boolean singleDest = possibleCryptedLinks2.size() == 1;
                                             for (final CrawledLink possibleCryptedLink : possibleCryptedLinks2) {
-                                                forwardCrawledLinkInfos(source, possibleCryptedLink, lm, sourceURLs);
+                                                forwardCrawledLinkInfos(source, possibleCryptedLink, lm, sourceURLs, singleDest);
                                             }
                                             lc.crawl(possibleCryptedLinks2);
                                         }
@@ -922,7 +925,7 @@ public class LinkCrawler {
                                     possibleCryptedLink.setCustomCrawledLinkModifier(null);
                                     final String[] sourceURLs = getAndClearSourceURLs(possibleCryptedLink);
                                     final CrawledLink modifiedPossibleCryptedLink = new CrawledLink(newURL);
-                                    forwardCrawledLinkInfos(possibleCryptedLink, modifiedPossibleCryptedLink, parentLinkModifier, sourceURLs);
+                                    forwardCrawledLinkInfos(possibleCryptedLink, modifiedPossibleCryptedLink, parentLinkModifier, sourceURLs, true);
                                     final Boolean ret = distributePluginForHost(httpPlugin, generation, newURL, modifiedPossibleCryptedLink);
                                     if (Boolean.FALSE.equals(ret)) {
                                         return;
@@ -1058,7 +1061,7 @@ public class LinkCrawler {
                 /*
                  * forward important data to new ones
                  */
-                forwardCrawledLinkInfos(source, decryptThis, modifier, null);
+                forwardCrawledLinkInfos(source, decryptThis, modifier, null, null);
                 if (source.getCryptedLink() != null) {
                     /*
                      * source contains CryptedLink, so lets forward important infos
@@ -1163,12 +1166,13 @@ public class LinkCrawler {
                             logger.close();
                         }
                         if (hosterLinks != null) {
+                            final boolean singleDest = hosterLinks.size() == 1;
                             for (final DownloadLink hosterLink : hosterLinks) {
                                 final CrawledLink link = new CrawledLink(hosterLink);
                                 /*
                                  * forward important data to new ones
                                  */
-                                forwardCrawledLinkInfos(possibleCryptedLink, link, parentLinkModifier, sourceURLs);
+                                forwardCrawledLinkInfos(possibleCryptedLink, link, parentLinkModifier, sourceURLs, singleDest);
                                 handleFinalCrawledLink(link);
                             }
                         }
@@ -1271,7 +1275,7 @@ public class LinkCrawler {
         return ret;
     }
 
-    private void forwardCrawledLinkInfos(CrawledLink source, CrawledLink dest, final CrawledLinkModifier linkModifier, final String sourceURLs[]) {
+    private void forwardCrawledLinkInfos(CrawledLink source, CrawledLink dest, final CrawledLinkModifier linkModifier, final String sourceURLs[], final Boolean singleDest) {
         if (source == null || dest == null) {
             return;
         }
@@ -1280,7 +1284,7 @@ public class LinkCrawler {
         dest.setSourceUrls(sourceURLs);
         dest.setMatchingFilter(source.getMatchingFilter());
 
-        forwardDownloadLinkInfos(getLatestDownloadLink(source), dest.getDownloadLink());
+        forwardDownloadLinkInfos(getLatestDownloadLink(source), dest.getDownloadLink(), singleDest);
         final CrawledLinkModifier childCustomModifier = dest.getCustomCrawledLinkModifier();
         if (childCustomModifier == null) {
             dest.setCustomCrawledLinkModifier(linkModifier);
@@ -1296,9 +1300,6 @@ public class LinkCrawler {
                 }
             });
         }
-        if (source.getDownloadLink() != null && dest.getDownloadLink() != null && dest.getDownloadLink().getUrlProtection() == UrlProtection.UNSET) {
-            dest.getDownloadLink().setUrlProtection(source.getDownloadLink().getUrlProtection());
-        }
         // if we decrypted a dlc,source.getDesiredPackageInfo() is null, and dest might already have package infos from the container.
         // maybe it would be even better to merge the packageinfos
         // However. if there are crypted links in the container, it may be up to the decrypterplugin to decide
@@ -1306,7 +1307,6 @@ public class LinkCrawler {
         if (source.getDesiredPackageInfo() != null) {
             dest.setDesiredPackageInfo(source.getDesiredPackageInfo());
         }
-
         ArchiveInfo d = null;
         if (dest.hasArchiveInfo()) {
             d = dest.getArchiveInfo();
@@ -1381,7 +1381,7 @@ public class LinkCrawler {
 
     }
 
-    protected void forwardDownloadLinkInfos(final DownloadLink source, final DownloadLink dest) {
+    protected void forwardDownloadLinkInfos(final DownloadLink source, final DownloadLink dest, final Boolean singleDest) {
         if (source != null && dest != null && source != dest) {
             /* create a copy of ArrayList */
             final List<String> srcPWs = source.getSourcePluginPasswordList();
@@ -1391,7 +1391,7 @@ public class LinkCrawler {
             if (source.getComment() != null && dest.getComment() == null) {
                 dest.setComment(source.getComment());
             }
-            if (!dest.isNameSet()) {
+            if (!dest.isNameSet() && Boolean.TRUE.equals(singleDest)) {
                 if (source.isNameSet()) {
                     dest.setName(source.getName());
                 } else {
@@ -1530,8 +1530,9 @@ public class LinkCrawler {
                         logger.clear();
                         if (decryptedPossibleLinks != null && decryptedPossibleLinks.size() > 0) {
                             /* we found some links, distribute them */
+                            final boolean singleDest = decryptedPossibleLinks.size() == 1;
                             for (CrawledLink decryptedPossibleLink : decryptedPossibleLinks) {
-                                forwardCrawledLinkInfos(cryptedLink, decryptedPossibleLink, parentLinkModifier, sourceURLs);
+                                forwardCrawledLinkInfos(cryptedLink, decryptedPossibleLink, parentLinkModifier, sourceURLs, singleDest);
                             }
                             if (checkStartNotify()) {
                                 /* enqueue distributing of the links */
@@ -1719,7 +1720,7 @@ public class LinkCrawler {
                                     }
                                     final CrawledLink crawledLink = new CrawledLink(link);
                                     possibleCryptedLinks.add(crawledLink);
-                                    forwardCrawledLinkInfos(cryptedLink, crawledLink, parentLinkModifier, sourceURLs);
+                                    forwardCrawledLinkInfos(cryptedLink, crawledLink, parentLinkModifier, sourceURLs, !distributeMultipleLinks);
                                 }
                             }
                             distribute.clear();
