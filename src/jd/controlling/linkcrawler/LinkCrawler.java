@@ -1391,12 +1391,14 @@ public class LinkCrawler {
             if (source.getComment() != null && dest.getComment() == null) {
                 dest.setComment(source.getComment());
             }
-            if (source.isNameSet() && !dest.isNameSet()) {
-                dest.setName(source.getName());
-            } else {
-                final String name = getUnsafeName(source.getName(), dest.getName());
-                if (name != null) {
-                    dest.setName(name);
+            if (!dest.isNameSet()) {
+                if (source.isNameSet()) {
+                    dest.setName(source.getName());
+                } else {
+                    final String name = getUnsafeName(source.getName(), dest.getName());
+                    if (name != null) {
+                        dest.setName(name);
+                    }
                 }
             }
             if (source.getForcedFileName() != null && dest.getForcedFileName() == null) {
