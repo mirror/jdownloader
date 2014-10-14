@@ -35,6 +35,7 @@ import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
 import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
+import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
@@ -383,17 +384,26 @@ public class ArteTv extends PluginForHost {
 
     private void setupRTMPConnection(DownloadInterface dl) {
         jd.network.rtmp.url.RtmpUrlConnection rtmp = ((RTMPDownload) dl).getRtmpConnection();
-        String type = new Regex(CLIPURL, "(?i)/(mp4:(liveweb|geo))").getMatch(0);
-        String[] uri = CLIPURL.split("(?i)/" + type);
-        if (uri != null && uri.length == 2) {
-            rtmp.setPlayPath(type + uri[1]);
-            rtmp.setUrl(uri[0]);
-            rtmp.setApp(new Regex(uri[0], "rtmp.?://[^/]+/(.*?)$").getMatch(0));
-        } else {
-            rtmp.setUrl(CLIPURL);
-        }
-        rtmp.setSwfVfy(FLASHPLAYER);
+
+        setupRtmp(rtmp, CLIPURL);
+
         rtmp.setResume(true);
+    }
+
+    public void setupRtmp(jd.network.rtmp.url.RtmpUrlConnection rtmp, String clipuri) {
+        String app = new Regex(clipuri, "rtmp://[^\\/]+/(.*?)/").getMatch(0);
+        String playPath = new Regex(clipuri, "rtmp://[^\\/]+/(.*?)/(.+)").getMatch(1);
+        String tcUrl = new Regex(clipuri, "(rtmp://[^\\/]+/.*?/)").getMatch(0);
+
+        String arteVpLang = br.getRegex("arte_vp_url=\'(.*?)\'").getMatch(0);
+        String pageUrl = "http://www.arte.tv/player/v2/index.php?json_url=" + Encoding.urlTotalEncode(arteVpLang) + "&lang=de_DE&config=arte_tvguide&rendering_place=" + Encoding.urlTotalEncode(br.getURL());
+
+        rtmp.setSwfVfy("http://www.arte.tv/arte_vp/jwplayer6/6.9.4867/jwplayer.flash.6.9.4867.swf");
+        rtmp.setTcUrl(tcUrl);
+        rtmp.setPageUrl(pageUrl);
+        rtmp.setPlayPath(playPath);
+        rtmp.setApp(app + "/");
+        rtmp.setUrl(clipuri);
     }
 
     private XPath xmlParser(String linkurl) throws Exception {
