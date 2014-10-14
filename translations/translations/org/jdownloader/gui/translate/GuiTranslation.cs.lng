@@ -300,6 +300,7 @@ EnableAction_run_msg_=Chcete zakázat a zastavit spuštěná stahování?\nPři�
 EnabledAction_EnabledAction_disable=Zakázat
 EnabledAction_EnabledAction_empty=Povolit nebo zakázat odkaz
 EnabledAction_EnabledAction_enable=Povolit
+EnabledDisabledColumn_EnabledDisabledColumn=Povoleno / Zakázáno
 ExceptionsRuleDialog_ExceptionsRuleDialog_title_=Pravidlo pro výjimky filtru
 ExceptionsRuleDialog_getIfText_=Povolit všechny odkazy odpovídající těmto podmínám a ignorovat seznam filtrů
 ExceptionsTableModel_initColumns_condition_=Povolit odkazy, pokud
