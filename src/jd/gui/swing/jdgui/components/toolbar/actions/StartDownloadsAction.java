@@ -31,6 +31,7 @@ import org.jdownloader.gui.views.linkgrabber.LinkGrabberView;
 import org.jdownloader.gui.views.linkgrabber.contextmenu.ConfirmLinksContextAction;
 import org.jdownloader.settings.GraphicalUserInterfaceSettings.StartButtonAction;
 import org.jdownloader.settings.staticreferences.CFG_GUI;
+import org.jdownloader.settings.staticreferences.CFG_LINKGRABBER;
 import org.jdownloader.translate._JDT;
 
 public class StartDownloadsAction extends AbstractToolBarAction implements DownloadWatchdogListener, GUIListener, GenericConfigEventListener<Enum>, ActionContext {
@@ -71,7 +72,7 @@ public class StartDownloadsAction extends AbstractToolBarAction implements Downl
                 protected Void run() throws RuntimeException {
                     switch (CFG_GUI.CFG.getStartButtonActionInLinkgrabberContext()) {
                     case ADD_ALL_LINKS_AND_START_DOWNLOADS:
-                        ConfirmLinksContextAction.confirmSelection(LinkGrabberTable.getInstance().getSelectionInfo(false, true), true, false, true, null, BooleanStatus.FALSE);
+                        ConfirmLinksContextAction.confirmSelection(LinkGrabberTable.getInstance().getSelectionInfo(false, true), true, false, true, null, BooleanStatus.FALSE, CFG_LINKGRABBER.CFG.getDefaultOnAddedOfflineLinksAction());
 
                         break;
                     case START_DOWNLOADS_ONLY:

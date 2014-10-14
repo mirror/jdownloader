@@ -5,6 +5,7 @@ import java.util.List;
 import org.appwork.storage.config.ConfigInterface;
 import org.appwork.storage.config.annotations.AboutConfig;
 import org.appwork.storage.config.annotations.DefaultBooleanValue;
+import org.appwork.storage.config.annotations.DefaultEnumValue;
 import org.appwork.storage.config.annotations.DefaultIntValue;
 import org.appwork.storage.config.annotations.DefaultJsonObject;
 import org.appwork.storage.config.annotations.DefaultStringValue;
@@ -13,6 +14,7 @@ import org.appwork.storage.config.annotations.RequiresRestart;
 import org.appwork.storage.config.annotations.SpinnerValidator;
 import org.jdownloader.gui.packagehistorycontroller.DownloadPath;
 import org.jdownloader.gui.packagehistorycontroller.PackageHistoryEntry;
+import org.jdownloader.gui.views.linkgrabber.contextmenu.ConfirmLinksContextAction.OnOfflineLinksAction;
 
 public interface LinkgrabberSettings extends ConfigInterface {
 
@@ -203,4 +205,10 @@ public interface LinkgrabberSettings extends ConfigInterface {
     boolean isAutoStartConfirmSidebarFilterEnabled();
 
     void setAutoStartConfirmSidebarFilterEnabled(boolean b);
+
+    @AboutConfig
+    @DefaultEnumValue("ASK")
+    OnOfflineLinksAction getDefaultOnAddedOfflineLinksAction();
+
+    void setDefaultOnAddedOfflineLinksAction(OnOfflineLinksAction value);
 }

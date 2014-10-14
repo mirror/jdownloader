@@ -1,5 +1,6 @@
 package org.jdownloader.gui.views.linkgrabber.contextmenu;
 
+import java.awt.Component;
 import java.awt.Image;
 import java.awt.event.ActionEvent;
 import java.util.ArrayList;
@@ -7,6 +8,9 @@ import java.util.HashSet;
 
 import javax.swing.ImageIcon;
 import javax.swing.JButton;
+import javax.swing.JLabel;
+import javax.swing.JList;
+import javax.swing.ListCellRenderer;
 
 import jd.controlling.linkcollector.LinkCollector;
 import jd.controlling.linkcrawler.CrawledLink;
@@ -16,11 +20,14 @@ import jd.gui.swing.jdgui.interfaces.View;
 
 import org.appwork.storage.config.JsonConfig;
 import org.appwork.storage.config.annotations.EnumLabel;
+import org.appwork.storage.config.annotations.LabelInterface;
 import org.appwork.swing.MigPanel;
+import org.appwork.uio.UIOManager;
 import org.appwork.utils.ImageProvider.ImageProvider;
 import org.appwork.utils.event.queue.QueueAction;
 import org.appwork.utils.logging.Log;
 import org.appwork.utils.swing.EDTRunner;
+import org.appwork.utils.swing.dialog.ComboBoxDialog;
 import org.appwork.utils.swing.dialog.ConfirmDialog;
 import org.appwork.utils.swing.dialog.DefaultButtonPanel;
 import org.appwork.utils.swing.dialog.Dialog;
@@ -51,10 +58,54 @@ import org.jdownloader.gui.views.linkgrabber.LinkgrabberSearchField;
 import org.jdownloader.gui.views.linkgrabber.addlinksdialog.LinkgrabberSettings;
 import org.jdownloader.images.NewTheme;
 import org.jdownloader.settings.staticreferences.CFG_GUI;
+import org.jdownloader.settings.staticreferences.CFG_LINKGRABBER;
+import org.jdownloader.translate._JDT;
 
 public class ConfirmLinksContextAction extends CustomizableTableContextAppAction<CrawledPackage, CrawledLink> implements GUIListener, ActionContext {
 
     public static final String SELECTION_ONLY = "selectionOnly";
+
+    public static enum OnOfflineLinksAction implements LabelInterface {
+
+        INCLUDE_OFFLINE {
+            @Override
+            public String getLabel() {
+                return _JDT._.ConfirmLinksContextAction_HandleOfflineLinksOptions_INCLUDE_OFFLINE();
+            }
+        },
+
+        EXCLUDE_OFFLINE {
+            @Override
+            public String getLabel() {
+                return _JDT._.ConfirmLinksContextAction_HandleOfflineLinksOptions_EXCLUDE_OFFLINE();
+
+            }
+        },
+
+        EXCLUDE_OFFLINE_AND_REMOVE {
+            @Override
+            public String getLabel() {
+                return _JDT._.ConfirmLinksContextAction_HandleOfflineLinksOptions_EXCLUDE_OFFLINE_AND_REMOVE();
+
+            }
+        },
+
+        ASK {
+            @Override
+            public String getLabel() {
+                return _JDT._.ConfirmLinksContextAction_HandleOfflineLinksOptions_ASK();
+
+            }
+        },
+        GLOBAL {
+            @Override
+            public String getLabel() {
+                return _JDT._.ConfirmLinksContextAction_HandleOfflineLinksOptions_GLOBAL();
+
+            }
+        };
+
+    }
 
     public static enum AutoStartOptions {
         @EnumLabel("Autostart: Automode (Quicksettings)")
@@ -117,10 +168,14 @@ public class ConfirmLinksContextAction extends CustomizableTableContextAppAction
      */
     private static final long  serialVersionUID = -3937346180905569896L;
 
-    public static void confirmSelection(final SelectionInfo<CrawledPackage, CrawledLink> selection, final boolean autoStart, final boolean clearLinkgrabber, final boolean doTabSwitch, final Priority newPriority, final BooleanStatus forcedStart) {
+    public static void confirmSelection(final SelectionInfo<CrawledPackage, CrawledLink> selection, final boolean autoStart, final boolean clearLinkgrabber, final boolean doTabSwitch, final Priority newPriority, final BooleanStatus forcedStart, final OnOfflineLinksAction handleOfflineLinks) {
         Thread thread = new Thread() {
 
             public void run() {
+                OnOfflineLinksAction handleOfflineLoc = handleOfflineLinks;
+                if (handleOfflineLoc == OnOfflineLinksAction.GLOBAL) {
+                    handleOfflineLoc = OnOfflineLinksAction.ASK;
+                }
                 HashSet<CrawledLink> toDelete = new HashSet<CrawledLink>();
                 HashSet<CrawledLink> toKeepInLinkgrabber = new HashSet<CrawledLink>();
                 try {
@@ -218,6 +273,63 @@ public class ConfirmLinksContextAction extends CustomizableTableContextAppAction
                 } catch (Throwable e) {
                     Log.exception(e);
                 }
+                ArrayList<CrawledLink> offline = new ArrayList<CrawledLink>();
+
+                if (handleOfflineLoc != OnOfflineLinksAction.INCLUDE_OFFLINE) {
+
+                    for (CrawledLink cl : selection.getChildren()) {
+                        if (cl.getDownloadLink().isAvailabilityStatusChecked() && !cl.getDownloadLink().isAvailable()) {
+                            offline.add(cl);
+                            if (handleOfflineLoc == OnOfflineLinksAction.ASK) {
+                                OnOfflineLinksAction[] options = new OnOfflineLinksAction[] { OnOfflineLinksAction.INCLUDE_OFFLINE, OnOfflineLinksAction.EXCLUDE_OFFLINE, OnOfflineLinksAction.EXCLUDE_OFFLINE_AND_REMOVE };
+                                ComboBoxDialog combo = new ComboBoxDialog(0, _GUI._.ConfirmLinksContextAction_run_offline_ask_title(), _GUI._.ConfirmLinksContextAction_run_offline_ask_question(), options, 0, null, null, null, null) {
+                                    protected ListCellRenderer getRenderer(final ListCellRenderer orgRenderer) {
+                                        // TODO Auto-generated method stub
+                                        return new ListCellRenderer() {
+
+                                            @Override
+                                            public Component getListCellRendererComponent(JList list, Object value, int index, boolean isSelected, boolean cellHasFocus) {
+                                                if (value == null) {
+                                                    return orgRenderer.getListCellRendererComponent(list, _GUI._.AddActionAction_getListCellRendererComponent_no_action_(), index, isSelected, cellHasFocus);
+                                                }
+                                                switch (((OnOfflineLinksAction) value)) {
+
+                                                case EXCLUDE_OFFLINE:
+                                                    return orgRenderer.getListCellRendererComponent(list, _GUI._.ConfirmLinksContextAction_getListCellRendererComponent_EXCLUDE_OFFLINE(), index, isSelected, cellHasFocus);
+
+                                                case EXCLUDE_OFFLINE_AND_REMOVE:
+                                                    return orgRenderer.getListCellRendererComponent(list, _GUI._.ConfirmLinksContextAction_getListCellRendererComponent_EXCLUDE_OFFLINE_AND_REMOVE(), index, isSelected, cellHasFocus);
+
+                                                case INCLUDE_OFFLINE:
+                                                    return orgRenderer.getListCellRendererComponent(list, _GUI._.ConfirmLinksContextAction_getListCellRendererComponent_INCLUDE_OFFLINE(), index, isSelected, cellHasFocus);
+
+                                                }
+                                                JLabel ret = (JLabel) orgRenderer.getListCellRendererComponent(list, ((OnOfflineLinksAction) value).getLabel(), index, isSelected, cellHasFocus);
+                                                return ret;
+                                            }
+                                        };
+                                    }
+
+                                };
+                                UIOManager.I().show(null, combo);
+
+                                handleOfflineLoc = options[combo.getSelectedIndex()];
+                            }
+                            switch (handleOfflineLoc) {
+
+                            case EXCLUDE_OFFLINE:
+                                toKeepInLinkgrabber.add(cl);
+                                break;
+                            case EXCLUDE_OFFLINE_AND_REMOVE:
+                                toDelete.add(cl);
+                                break;
+                            }
+
+                        }
+                    }
+
+                }
+
                 ArrayList<CrawledLink> toMove = new ArrayList<CrawledLink>();
                 for (CrawledLink cl : selection.getChildren()) {
                     if (toDelete.contains(cl)) {
@@ -296,6 +408,22 @@ public class ConfirmLinksContextAction extends CustomizableTableContextAppAction
 
     }
 
+    private OnOfflineLinksAction handleOffline = OnOfflineLinksAction.GLOBAL;
+
+    @Customizer(name = "If the selection contains offline links...")
+    public OnOfflineLinksAction getHandleOffline() {
+        return handleOffline;
+    }
+
+    public ConfirmLinksContextAction setHandleOffline(OnOfflineLinksAction handleOffline) {
+        if (handleOffline == null) {
+            handleOffline = OnOfflineLinksAction.GLOBAL;
+        }
+        this.handleOffline = handleOffline;
+
+        return this;
+    }
+
     private AutoStartOptions autoStart             = AutoStartOptions.AUTO;
 
     private boolean          clearListAfterConfirm = false;
@@ -318,12 +446,17 @@ public class ConfirmLinksContextAction extends CustomizableTableContextAppAction
         if (!isEnabled()) {
             return;
         }
+        OnOfflineLinksAction handleOffline = getHandleOffline();
+        if (handleOffline == OnOfflineLinksAction.GLOBAL) {
+            handleOffline = CFG_LINKGRABBER.CFG.getDefaultOnAddedOfflineLinksAction();
+        }
+
         if (isSelectionOnly()) {
 
-            confirmSelection(getSelection(), doAutostart(), isClearListAfterConfirm(), JsonConfig.create(LinkgrabberSettings.class).isAutoSwitchToDownloadTableOnConfirmDefaultEnabled(), isAssignPriorityEnabled() ? getPiority() : null, isForceDownloads() ? BooleanStatus.TRUE : BooleanStatus.FALSE);
+            confirmSelection(getSelection(), doAutostart(), isClearListAfterConfirm(), JsonConfig.create(LinkgrabberSettings.class).isAutoSwitchToDownloadTableOnConfirmDefaultEnabled(), isAssignPriorityEnabled() ? getPiority() : null, isForceDownloads() ? BooleanStatus.TRUE : BooleanStatus.FALSE, handleOffline);
 
         } else {
-            confirmSelection(LinkGrabberTable.getInstance().getSelectionInfo(false, true), doAutostart(), isClearListAfterConfirm(), JsonConfig.create(LinkgrabberSettings.class).isAutoSwitchToDownloadTableOnConfirmDefaultEnabled(), isAssignPriorityEnabled() ? getPiority() : null, isForceDownloads() ? BooleanStatus.TRUE : BooleanStatus.FALSE);
+            confirmSelection(LinkGrabberTable.getInstance().getSelectionInfo(false, true), doAutostart(), isClearListAfterConfirm(), JsonConfig.create(LinkgrabberSettings.class).isAutoSwitchToDownloadTableOnConfirmDefaultEnabled(), isAssignPriorityEnabled() ? getPiority() : null, isForceDownloads() ? BooleanStatus.TRUE : BooleanStatus.FALSE, handleOffline);
         }
     }
 

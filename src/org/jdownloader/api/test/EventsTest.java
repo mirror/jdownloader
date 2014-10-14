@@ -65,6 +65,7 @@ public class EventsTest extends Test {
         api.link(DownloadsEventsInterface.class, devID).setStatusEventInterval(ed.getSubscription().getSubscriptionid(), 1000);
         // disable stdout
         Application.STD_OUT.setBufferEnabled(true);
+        ed.setConnectionConfig(60 * 60 * 1000l, 60 * 60 * 1000l);
         ed.run();
 
     }

@@ -654,4 +654,19 @@ public interface JdownloaderTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "The address to the actual content." })
     String UrlDisplayType_CONTENT_description();
 
+    @Default(lngs = { "en" }, values = { "add them, too" })
+    String ConfirmLinksContextAction_HandleOfflineLinksOptions_INCLUDE_OFFLINE();
+
+    @Default(lngs = { "en" }, values = { "do NOT add them" })
+    String ConfirmLinksContextAction_HandleOfflineLinksOptions_EXCLUDE_OFFLINE();
+
+    @Default(lngs = { "en" }, values = { "do NOT add, but remove them from linkgrabber" })
+    String ConfirmLinksContextAction_HandleOfflineLinksOptions_EXCLUDE_OFFLINE_AND_REMOVE();
+
+    @Default(lngs = { "en" }, values = { "ask me every time" })
+    String ConfirmLinksContextAction_HandleOfflineLinksOptions_ASK();
+
+    @Default(lngs = { "en" }, values = { "use global (adv. config) settings" })
+    String ConfirmLinksContextAction_HandleOfflineLinksOptions_GLOBAL();
+
 }

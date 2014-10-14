@@ -5235,4 +5235,19 @@ public interface GuiTranslation extends TranslateInterface {
 
     @Default(lngs = { "en" }, values = { "Please enter the Active Task status you are looking for..." })
     String searchcategory_status_help();
+
+    @Default(lngs = { "en" }, values = { "What about the offline links?" })
+    String ConfirmLinksContextAction_run_offline_ask_title();
+
+    @Default(lngs = { "en" }, values = { "You are trying to add links that are offline and not available any more. Please choose how to continue:" })
+    String ConfirmLinksContextAction_run_offline_ask_question();
+
+    @Default(lngs = { "en" }, values = { "Do not add offline links to the Downloadlist" })
+    String ConfirmLinksContextAction_getListCellRendererComponent_EXCLUDE_OFFLINE();
+
+    @Default(lngs = { "en" }, values = { "Do not add offline links to the Downloadlist but remove the links from the linkgrabber anyway" })
+    String ConfirmLinksContextAction_getListCellRendererComponent_EXCLUDE_OFFLINE_AND_REMOVE();
+
+    @Default(lngs = { "en" }, values = { "Add online & offline links to the Downloadlist" })
+    String ConfirmLinksContextAction_getListCellRendererComponent_INCLUDE_OFFLINE();
 }
