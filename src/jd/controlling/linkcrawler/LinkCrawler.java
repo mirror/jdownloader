@@ -270,7 +270,6 @@ public class LinkCrawler {
             classLoader = PluginClassLoader.getInstance().getChild();
             pHosts = new ArrayList<LazyHostPlugin>(HostPluginController.getInstance().list());
             for (LazyHostPlugin pHost : pHosts) {
-
                 if (httpPlugin == null && HTTP_LINKS.equals(pHost.getDisplayName())) {
                     /* for direct access to the directhttp plugin */
                     // we have at least 2 directHTTP entries in pHost. each one listens to a different regex
@@ -1689,10 +1688,10 @@ public class LinkCrawler {
                             }
                             final List<CrawledLink> possibleCryptedLinks = new ArrayList<CrawledLink>(distribute.size());
                             final boolean distributeMultipleLinks = (distribute.size() + distributed.get()) > 1;
+                            final String cleanURL = cleanURL(cryptedLink.getCryptedLink().getCryptedUrl());
                             for (DownloadLink link : distribute) {
                                 if (link.getPluginPatternMatcher() != null && fastDuplicateDetector.add(link)) {
                                     distributed.incrementAndGet();
-                                    final String cleanURL = cleanURL(cryptedLink.getCryptedLink().getCryptedUrl());
                                     if (cleanURL != null) {
                                         if (isTempDecryptedURL(link.getPluginPatternMatcher())) {
                                             /**
@@ -1844,7 +1843,8 @@ public class LinkCrawler {
 
     private String getContentURL(final CrawledLink link) {
         final DownloadLink downloadLink = link.getDownloadLink();
-        if (downloadLink != null) {
+        final PluginForHost plugin = downloadLink.getDefaultPlugin();
+        if (downloadLink != null && plugin != null) {
             final String pluginURL = downloadLink.getPluginPatternMatcher();
             final Iterator<CrawledLink> it = link.iterator();
             while (it.hasNext()) {
@@ -1852,18 +1852,22 @@ public class LinkCrawler {
                 if (next == link) {
                     continue;
                 }
-                if (next.getDownloadLink() != null) {
-                    final String nextURL = cleanURL(next.getDownloadLink().getPluginPatternMatcher());
-                    if (nextURL != null && !StringUtils.equals(pluginURL, nextURL)) {
-                        return nextURL;
-                    }
-                } else if (next.getDownloadLink() == null && next.getCryptedLink() == null) {
+                if (next.getDownloadLink() != null || next.getCryptedLink() == null) {
                     final String nextURL = cleanURL(next.getURL());
                     if (nextURL != null && !StringUtils.equals(pluginURL, nextURL)) {
-                        return nextURL;
+                        final String[] hits = new Regex(nextURL, plugin.getSupportedLinks()).getColumn(-1);
+                        if (hits != null && hits.length > 0) {
+                            if (hits[0] != null && !StringUtils.equals(pluginURL, hits[0])) {
+                                return hits[0];
+                            }
+                        }
                     }
-                    break;
+                    if (next.getDownloadLink() != null) {
+                        continue;
+                    }
                 }
+                break;
+
             }
         }
         return null;
@@ -1951,35 +1955,18 @@ public class LinkCrawler {
     }
 
     public static String cleanURL(String cUrl) {
-        // final String protocol = HTMLParser.getProtocol(cUrl);
-        // if (protocol != null) {
-        // final String host = Browser.getHost(cUrl, true);
-        // if (protocol != null && !StringUtils.containsIgnoreCase(host, "decrypted") && !StringUtils.containsIgnoreCase(host,
-        // "dummycnl.jdownloader.org")) {
-        // if (protocol.startsWith("http") || protocol.startsWith("ftp")) {
-        // return cUrl;
-        // } else if (StringUtils.containsIgnoreCase(protocol, "viajd")) {
-        // return cUrl.replaceFirst("viajd", "");
-        // } else if (StringUtils.containsIgnoreCase(protocol, "directhttp")) {
-        // return cUrl.replaceFirst("directhttp://", "");
-        // }
-        // }
-        // }
-        // return null;
-
         final String protocol = HTMLParser.getProtocol(cUrl);
         if (protocol != null) {
             final String host = Browser.getHost(cUrl, true);
             if (protocol != null && !StringUtils.containsIgnoreCase(host, "decrypted") && !StringUtils.containsIgnoreCase(host, "dummycnl.jdownloader.org")) {
-                if (cUrl.startsWith("http://") || cUrl.startsWith("ftp://")) {
+                if (cUrl.startsWith("http://") || cUrl.startsWith("https://") || cUrl.startsWith("ftp://")) {
                     return cUrl;
-                } else if (protocol.startsWith("directhttp://")) {
+                } else if (cUrl.startsWith("directhttp://")) {
                     return cUrl.substring("directhttp://".length());
-
-                } else if (StringUtils.equalsIgnoreCase(protocol, "httpviajd://")) {
-                    return "http://" + cUrl.substring("httpviajd://".length());
-                } else if (StringUtils.equalsIgnoreCase(protocol, "httpsviajd://")) {
-                    return "https://" + cUrl.substring("httpsviajd://".length());
+                } else if (cUrl.startsWith("httpviajd://")) {
+                    return "http://".concat(cUrl.substring("httpviajd://".length()));
+                } else if (cUrl.startsWith("httpsviajd://")) {
+                    return "https://".concat(cUrl.substring("httpsviajd://".length()));
                 }
             }
         }

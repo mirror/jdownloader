@@ -39,7 +39,6 @@ public class HashCheckPluginProgress extends PluginProgress {
     public String getMessage(Object requestor) {
         if (requestor instanceof ETAColumn) {
             if (type != null) {
-
                 return TimeFormatter.formatMilliSeconds(getETA(), 0);
             } else {
                 return "";

@@ -450,7 +450,11 @@ public class Account extends Property {
      * @since JD2
      */
     public void setType(AccountType type) {
-        super.setProperty(ACCOUNT_TYPE, type.name());
+        if (type == null) {
+            super.setProperty(ACCOUNT_TYPE, Property.NULL);
+        } else {
+            super.setProperty(ACCOUNT_TYPE, type.name());
+        }
     }
 
     @Override
@@ -488,7 +492,7 @@ public class Account extends Property {
     }
 
     public AccountType getType() {
-        String v = getStringProperty(ACCOUNT_TYPE, null);
+        final String v = getStringProperty(ACCOUNT_TYPE, null);
         if (v != null) {
             try {
                 return AccountType.valueOf(v);

@@ -102,7 +102,7 @@ public class RPNetBiz extends PluginForHost {
 
     @Override
     public void handlePremium(final DownloadLink link, final Account account) throws Exception, PluginException {
-        handleDL(link, link.getDownloadURL());
+        handleDL(link, link.getDownloadURL(), -2);
     }
 
     @Override
@@ -245,6 +245,7 @@ public class RPNetBiz extends PluginForHost {
         }
         prepBrowser();
         String generatedLink = checkDirectLink(link, "cachedDllink");
+        int maxChunks = 0;
         if (generatedLink != null) {
             logger.info("Reusing cached download link");
         } else {
@@ -287,6 +288,13 @@ public class RPNetBiz extends PluginForHost {
                         // download complete?
                         if (progress == 100) {
                             String tmp2 = downloadNode.get("rpnet_link").toString();
+                            final Object max_connections = downloadNode.get("max_connections");
+                            if (max_connections != null) {
+                                final int chunks = Integer.valueOf(max_connections.toString());
+                                if (chunks > 0) {
+                                    maxChunks = -chunks;
+                                }
+                            }
                             generatedLink = tmp2.substring(1, tmp2.length() - 1);
                             break;
                         }
@@ -296,6 +304,13 @@ public class RPNetBiz extends PluginForHost {
                     }
                 } else {
                     String tmp = ((JSonObject) linkNode).get("generated").toString();
+                    final Object max_connections = ((JSonObject) linkNode).get("max_connections");
+                    if (max_connections != null) {
+                        final int chunks = Integer.valueOf(max_connections.toString());
+                        if (chunks > 0) {
+                            maxChunks = -chunks;
+                        }
+                    }
                     generatedLink = tmp.substring(1, tmp.length() - 1);
                     break;
                 }
@@ -304,7 +319,7 @@ public class RPNetBiz extends PluginForHost {
         showMessage(link, "Download begins!");
         if (StringUtils.isNotEmpty(generatedLink)) {
             try {
-                handleDL(link, generatedLink);
+                handleDL(link, generatedLink, maxChunks);
                 return;
             } catch (final PluginException e1) {
                 if (e1.getLinkStatus() == LinkStatus.ERROR_DOWNLOAD_INCOMPLETE) {
@@ -331,9 +346,9 @@ public class RPNetBiz extends PluginForHost {
         }
     }
 
-    private void handleDL(DownloadLink link, String dllink) throws Exception {
+    private void handleDL(DownloadLink link, String dllink, int maxChunks) throws Exception {
         /* we want to follow redirects in final stage */
-        dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, true, -2);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, true, maxChunks);
         if (dl.getConnection().isContentDisposition()) {
             link.setProperty("cachedDllink", dllink);
             /* contentdisposition, lets download it */
