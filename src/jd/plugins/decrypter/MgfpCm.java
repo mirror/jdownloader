@@ -46,6 +46,11 @@ public class MgfpCm extends PluginForDecrypt {
         String parameter = param.toString();
         if (parameter.matches("http://(www\\.)?imagefap\\.com/photo/\\d+")) {
             final DownloadLink link = createDownloadlink("http://imagefap.com/imagedecrypted/" + new Regex(parameter, "(\\d+)$").getMatch(0));
+            try {
+                link.setContentUrl(parameter);
+            } catch (final Throwable e) {
+                /* Not available in old 0.9.581 Stable */
+            }
             decryptedLinks.add(link);
         } else {
             parameter = parameter.replaceAll("view\\=[0-9]+", "view=2");
@@ -146,7 +151,11 @@ public class MgfpCm extends PluginForDecrypt {
                     final String orderID = df.format(counter);
                     final String fid = elements[0];
                     final DownloadLink link = createDownloadlink("http://imagefap.com/imagedecrypted/" + fid);
-                   try{/*JD2 only*/link.setContentUrl("http://www.imagefap.com/photo/" + fid + "/");}catch(Throwable e){/*Stable*/ link.setBrowserUrl("http://www.imagefap.com/photo/" + fid + "/");}
+                    try {/* JD2 only */
+                        link.setContentUrl("http://www.imagefap.com/photo/" + fid + "/");
+                    } catch (Throwable e) {/* Stable */
+                        link.setBrowserUrl("http://www.imagefap.com/photo/" + fid + "/");
+                    }
                     link.setProperty("orderid", orderID);
                     link.setProperty("galleryname", galleryName);
                     link.setProperty("authorsname", authorsName);

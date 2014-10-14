@@ -21,7 +21,6 @@ import java.io.File;
 import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
-import java.text.DecimalFormat;
 import java.util.Scanner;
 import java.util.concurrent.atomic.AtomicBoolean;
 
@@ -50,8 +49,8 @@ public class MdrDe extends PluginForHost {
     private static final String ALLOW_960x544        = "ALLOW_960x544";
     private static final String ALLOW_640x360        = "ALLOW_640x360";
     private static final String ALLOW_512x288        = "ALLOW_512x288";
-    private static final String ALLOW_480x272_higher = "ALLOW_480x272";
-    private static final String ALLOW_480x272_lower  = "ALLOW_480x272";
+    private static final String ALLOW_480x272_higher = "ALLOW_480x272_higher";
+    private static final String ALLOW_480x272_lower  = "ALLOW_480x272_lower";
     private static final String ALLOW_256x144        = "ALLOW_256x144";
 
     public MdrDe(final PluginWrapper wrapper) {
@@ -128,7 +127,7 @@ public class MdrDe extends PluginForHost {
 
     /**
      * Converts the ARD Closed Captions subtitles to SRT subtitles. It runs after the completed download.
-     * 
+     *
      * @return The success of the conversion.
      */
     public boolean convertSubtitle(final DownloadLink downloadlink) {
@@ -163,17 +162,13 @@ public class MdrDe extends PluginForHost {
 
             for (String info : matches) {
                 dest.write(counter++ + lineseparator);
-                final DecimalFormat df = new DecimalFormat("00");
-                final Regex startInfo = new Regex(info, "begin=\"(\\d{2}:\\d{2}:\\d{2}):(\\d{2})\"");
-                final Regex endInfo = new Regex(info, "end=\"(\\d{2}:\\d{2}:\\d{2}):(\\d{2})\"");
-                final String start_1 = startInfo.getMatch(0);
-                final String end_1 = endInfo.getMatch(0);
+                // final DecimalFormat df = new DecimalFormat("00");
+                final Regex startInfo = new Regex(info, "begin=\"(\\d{2}:\\d{2}:\\d{2}:\\d{2})\"");
+                final Regex endInfo = new Regex(info, "end=\"(\\d{2}:\\d{2}:\\d{2}:\\d{2})\"");
 
-                final String start = start_1 + "," + getMillisecond(startInfo.getMatch(1));
-                final String end = end_1 + "," + getMillisecond(endInfo.getMatch(1));
-                // final String start = df.format(startHour) + ":" + startInfo.getMatch(1).replace(":", ",");
-                // final String end = df.format(endHour) + ":" + endInfo.getMatch(1).replace(":", ",");
-                dest.write(start + " --> " + end + lineseparator);
+                final String start = startInfo.getMatch(0);
+                final String end = endInfo.getMatch(0);
+                dest.write(convertSubtitleTime(start) + " --> " + convertSubtitleTime(end) + lineseparator);
 
                 info = info.replaceAll(lineseparator, " ");
                 info = info.replaceAll("<br />", lineseparator);
@@ -212,21 +207,6 @@ public class MdrDe extends PluginForHost {
         return true;
     }
 
-    private String getMillisecond(final String input) {
-        // Millisecond
-        String millisecond = input;
-        if (millisecond.length() == 1) {
-            millisecond = millisecond + "00";
-        }
-        if (millisecond.length() == 2) {
-            millisecond = millisecond + "0";
-        }
-        if (millisecond.length() > 2) {
-            millisecond = millisecond.substring(0, 3);
-        }
-        return millisecond;
-    }
-
     private static String getColorCode(final String colorName) {
         /* Unhandled case/standard = white */
         String colorCode = "FFFFFF";
@@ -250,57 +230,17 @@ public class MdrDe extends PluginForHost {
 
     /**
      * Converts the the time of the ZDF format to the SRT format.
-     * 
+     *
      * @param time
      *            . The time from the ZDF XML.
      * @return The converted time as String.
      */
-    private static String convertSubtitleTime(Double time) {
-        String hour = "00";
-        String minute = "00";
-        String second = "00";
-        String millisecond = "0";
+    private static String convertSubtitleTime(final String input) {
+        final Regex info = new Regex(input, "(\\d{2}):(\\d{2}):(\\d{2}):(\\d{2})");
 
-        Integer itime = Integer.valueOf(time.intValue());
-
-        // Hour
-        Integer timeHour = Integer.valueOf(itime.intValue() / 3600);
-        if (timeHour < 10) {
-            hour = "0" + timeHour.toString();
-        } else {
-            hour = timeHour.toString();
-        }
-
-        // Minute
-        Integer timeMinute = Integer.valueOf((itime.intValue() % 3600) / 60);
-        if (timeMinute < 10) {
-            minute = "0" + timeMinute.toString();
-        } else {
-            minute = timeMinute.toString();
-        }
-
-        // Second
-        Integer timeSecond = Integer.valueOf(itime.intValue() % 60);
-        if (timeSecond < 10) {
-            second = "0" + timeSecond.toString();
-        } else {
-            second = timeSecond.toString();
-        }
-
-        // Millisecond
-        millisecond = String.valueOf(time - itime).split("\\.")[1];
-        if (millisecond.length() == 1) {
-            millisecond = millisecond + "00";
-        }
-        if (millisecond.length() == 2) {
-            millisecond = millisecond + "0";
-        }
-        if (millisecond.length() > 2) {
-            millisecond = millisecond.substring(0, 3);
-        }
-
+        final String milliseconds = info.getMatch(3) + "0";
         // Result
-        String result = hour + ":" + minute + ":" + second + "," + millisecond;
+        String result = info.getMatch(0) + ":" + info.getMatch(1) + ":" + info.getMatch(2) + "," + milliseconds;
 
         return result;
     }

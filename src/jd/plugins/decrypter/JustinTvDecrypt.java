@@ -143,7 +143,7 @@ public class JustinTvDecrypt extends PluginForDecrypt {
                 try {
                     if (parameter.contains("/b/")) {
                         br.getPage("http://api.twitch.tv/api/videos/a" + vid);
-                        /* Old .xml handling removed AFTER plugin revision XXX */
+                        /* Old .xml handling removed AFTER plugin revision 26014 */
                     } else {
                         br.getPage("http://api.justin.tv/api/broadcast/by_chapter/" + vid + ".xml");
                     }
