@@ -154,6 +154,8 @@ public class TbCmV2 extends PluginForDecrypt {
 
     }
 
+    private static Object DIALOGLOCK = new Object();
+
     public ArrayList<DownloadLink> decryptIt(final CryptedLink param, final ProgressController progress) throws Exception {
         cfg = PluginJsonConfig.get(YoutubeConfig.class);
 
@@ -192,81 +194,86 @@ public class TbCmV2 extends PluginForDecrypt {
         YoutubeHelper helper = getCachedHelper();
 
         helper.login(false, false);
+        synchronized (DIALOGLOCK) {
+            if (this.isAbort()) {
+                logger.info("Thread Aborted!");
+                return decryptedLinks;
+            }
+            {
+                // Prevents accidental decrypting of entire Play-List or Channel-List or User-List.
+                IfUrlisAPlaylistAction playListAction = cfg.getLinkIsPlaylistUrlAction();
+                if ((StringUtils.isNotEmpty(playlistID) || StringUtils.isNotEmpty(channelID) || StringUtils.isNotEmpty(userID)) && StringUtils.isEmpty(videoID)) {
 
-        {
-            // Prevents accidental decrypting of entire Play-List or Channel-List or User-List.
-            IfUrlisAPlaylistAction playListAction = cfg.getLinkIsPlaylistUrlAction();
-            if ((StringUtils.isNotEmpty(playlistID) || StringUtils.isNotEmpty(channelID) || StringUtils.isNotEmpty(userID)) && StringUtils.isEmpty(videoID)) {
+                    if (playListAction == IfUrlisAPlaylistAction.ASK) {
+                        ConfirmDialog confirm = new ConfirmDialog(UIOManager.LOGIC_COUNTDOWN, cleanedurl, JDL.L("plugins.host.youtube.isplaylist.question.message", "This link is a Play-List or Channel-List or User-List. What would you like to do?"), null, JDL.L("plugins.host.youtube.isplaylist.question.onlyplaylist", "Process Playlist?"), JDL.L("plugins.host.youtube.isvideoandplaylist.question.nothing", "Do Nothing?")) {
+                            @Override
+                            public ModalityType getModalityType() {
+                                return ModalityType.MODELESS;
+                            }
 
-                if (playListAction == IfUrlisAPlaylistAction.ASK) {
-                    ConfirmDialog confirm = new ConfirmDialog(UIOManager.LOGIC_COUNTDOWN, cleanedurl, JDL.L("plugins.host.youtube.isplaylist.question.message", "This link is a Play-List or Channel-List or User-List. What would you like to do?"), null, JDL.L("plugins.host.youtube.isplaylist.question.onlyplaylist", "Process Playlist?"), JDL.L("plugins.host.youtube.isvideoandplaylist.question.nothing", "Do Nothing?")) {
-                        @Override
-                        public ModalityType getModalityType() {
-                            return ModalityType.MODELESS;
+                            @Override
+                            public boolean isRemoteAPIEnabled() {
+                                return true;
+                            }
+                        };
+                        try {
+                            UIOManager.I().show(ConfirmDialogInterface.class, confirm).throwCloseExceptions();
+                            playListAction = IfUrlisAPlaylistAction.PROCESS;
+                        } catch (DialogCanceledException e) {
+                            playListAction = IfUrlisAPlaylistAction.NOTHING;
+                        } catch (DialogClosedException e) {
+                            playListAction = IfUrlisAPlaylistAction.NOTHING;
                         }
 
-                        @Override
-                        public boolean isRemoteAPIEnabled() {
-                            return true;
-                        }
-                    };
-                    try {
-                        UIOManager.I().show(ConfirmDialogInterface.class, confirm).throwCloseExceptions();
-                        playListAction = IfUrlisAPlaylistAction.PROCESS;
-                    } catch (DialogCanceledException e) {
-                        playListAction = IfUrlisAPlaylistAction.NOTHING;
-                    } catch (DialogClosedException e) {
-                        playListAction = IfUrlisAPlaylistAction.NOTHING;
                     }
-
-                }
-                switch (playListAction) {
-                case PROCESS:
-                    break;
-                case NOTHING:
-                default:
-                    return decryptedLinks;
+                    switch (playListAction) {
+                    case PROCESS:
+                        break;
+                    case NOTHING:
+                    default:
+                        return decryptedLinks;
+                    }
                 }
             }
-        }
-        {
-            // Check if link contains a video and a playlist
-            IfUrlisAVideoAndPlaylistAction PlaylistVideoAction = cfg.getLinkIsVideoAndPlaylistUrlAction();
-            if ((StringUtils.isNotEmpty(playlistID) || StringUtils.isNotEmpty(watch_videos)) && StringUtils.isNotEmpty(videoID)) {
+            {
+                // Check if link contains a video and a playlist
+                IfUrlisAVideoAndPlaylistAction PlaylistVideoAction = cfg.getLinkIsVideoAndPlaylistUrlAction();
+                if ((StringUtils.isNotEmpty(playlistID) || StringUtils.isNotEmpty(watch_videos)) && StringUtils.isNotEmpty(videoID)) {
 
-                if (PlaylistVideoAction == IfUrlisAVideoAndPlaylistAction.ASK) {
-                    ConfirmDialog confirm = new ConfirmDialog(UIOManager.LOGIC_COUNTDOWN, cleanedurl, JDL.L("plugins.host.youtube.isvideoandplaylist.question.message", "The Youtube link contains a video and a playlist. What do you want do download?"), null, JDL.L("plugins.host.youtube.isvideoandplaylist.question.onlyvideo", "Only video"), JDL.L("plugins.host.youtube.isvideoandplaylist.question.playlist", "Complete playlist")) {
-                        @Override
-                        public ModalityType getModalityType() {
-                            return ModalityType.MODELESS;
+                    if (PlaylistVideoAction == IfUrlisAVideoAndPlaylistAction.ASK) {
+                        ConfirmDialog confirm = new ConfirmDialog(UIOManager.LOGIC_COUNTDOWN, cleanedurl, JDL.L("plugins.host.youtube.isvideoandplaylist.question.message", "The Youtube link contains a video and a playlist. What do you want do download?"), null, JDL.L("plugins.host.youtube.isvideoandplaylist.question.onlyvideo", "Only video"), JDL.L("plugins.host.youtube.isvideoandplaylist.question.playlist", "Complete playlist")) {
+                            @Override
+                            public ModalityType getModalityType() {
+                                return ModalityType.MODELESS;
+                            }
+
+                            @Override
+                            public boolean isRemoteAPIEnabled() {
+                                return true;
+                            }
+                        };
+                        try {
+                            UIOManager.I().show(ConfirmDialogInterface.class, confirm).throwCloseExceptions();
+                            PlaylistVideoAction = IfUrlisAVideoAndPlaylistAction.VIDEO_ONLY;
+                        } catch (DialogCanceledException e) {
+                            PlaylistVideoAction = IfUrlisAVideoAndPlaylistAction.PLAYLIST_ONLY;
+                        } catch (DialogClosedException e) {
+                            PlaylistVideoAction = IfUrlisAVideoAndPlaylistAction.NOTHING;
                         }
 
-                        @Override
-                        public boolean isRemoteAPIEnabled() {
-                            return true;
-                        }
-                    };
-                    try {
-                        UIOManager.I().show(ConfirmDialogInterface.class, confirm).throwCloseExceptions();
-                        PlaylistVideoAction = IfUrlisAVideoAndPlaylistAction.VIDEO_ONLY;
-                    } catch (DialogCanceledException e) {
-                        PlaylistVideoAction = IfUrlisAVideoAndPlaylistAction.PLAYLIST_ONLY;
-                    } catch (DialogClosedException e) {
-                        PlaylistVideoAction = IfUrlisAVideoAndPlaylistAction.NOTHING;
                     }
+                    switch (PlaylistVideoAction) {
 
-                }
-                switch (PlaylistVideoAction) {
-
-                case PLAYLIST_ONLY:
-                    // videoID = null;
-                    break;
-                case VIDEO_ONLY:
-                    playlistID = null;
-                    watch_videos = null;
-                    break;
-                default:
-                    return decryptedLinks;
+                    case PLAYLIST_ONLY:
+                        // videoID = null;
+                        break;
+                    case VIDEO_ONLY:
+                        playlistID = null;
+                        watch_videos = null;
+                        break;
+                    default:
+                        return decryptedLinks;
+                    }
                 }
             }
         }
@@ -638,37 +645,37 @@ public class TbCmV2 extends PluginForDecrypt {
 
                 }
 
-            if (extra != null && extra.length > 0) {
-                main: for (VariantInfo v : allVariants.values()) {
-                    for (String s : extra) {
-                        if (v.variant.getTypeId().equals(s)) {
+                if (extra != null && extra.length > 0) {
+                    main: for (VariantInfo v : allVariants.values()) {
+                        for (String s : extra) {
+                            if (v.variant.getTypeId().equals(s)) {
 
-                            String groupID = getGroupID(v.variant);
+                                String groupID = getGroupID(v.variant);
 
-                            List<VariantInfo> fromGroup = groups.get(groupID);
+                                List<VariantInfo> fromGroup = groups.get(groupID);
 
-                            decryptedLinks.add(createLink(v, fromGroup));
-                            continue main;
+                                decryptedLinks.add(createLink(v, fromGroup));
+                                continue main;
 
-                        }
-                    }
-                }
-
-            }
-
-            ArrayList<String> extraSubtitles = cfg.getExtraSubtitles();
-            if (extraSubtitles != null) {
-                for (String v : extraSubtitles) {
-                    if (v != null) {
-                        for (VariantInfo vi : allSubtitles) {
-                            if (vi.getIdentifier().equalsIgnoreCase(v)) {
-                                decryptedLinks.add(createLink(vi, allSubtitles));
                             }
+                        }
+                    }
 
+                }
+
+                ArrayList<String> extraSubtitles = cfg.getExtraSubtitles();
+                if (extraSubtitles != null) {
+                    for (String v : extraSubtitles) {
+                        if (v != null) {
+                            for (VariantInfo vi : allSubtitles) {
+                                if (vi.getIdentifier().equalsIgnoreCase(v)) {
+                                    decryptedLinks.add(createLink(vi, allSubtitles));
+                                }
+
+                            }
                         }
                     }
                 }
-            }
 
             }
         }
