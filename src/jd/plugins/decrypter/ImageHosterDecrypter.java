@@ -18,6 +18,7 @@ package jd.plugins.decrypter;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.HashSet;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
@@ -35,9 +36,9 @@ import jd.plugins.PluginForDecrypt;
 names = { "otofotki.pl", "bigimage.cz", "uploads.ru", "twitpic.com", "imgserve.net", "imgpizza.com", "pic4you.ru", "tuspics.net", "imgjug.com", "pic4free.org", "cocoimage.com", "imagetwist.com", "postimage.org", "pimpandhost.com", "turboimagehost.com", "imagehyper.com", "imagebam.com", "photobucket.com", "freeimagehosting.net", "pixhost.org", "sharenxs.com", "9gag.com" },
 
 urls = { "http://img\\d+\\.otofotki\\.pl/[A-Za-z0-9\\-_]+\\.jpg\\.html", "http://bigimage\\.cz/image/\\d+\\.html", "http://(www\\.)?uploads\\.ru/[A-Za-z0-9]+\\.[a-z]{3,4}", "https?://(www\\.)?twitpic\\.com/show/[a-z]+/[a-z0-9]+", "http://(www\\.)?imgserve\\.net/img\\-[a-z0-9]+\\.html", "http://(www\\.)?imgpizza\\.com/viewer\\.php\\?file=[^<>\"/]+", "http://(www\\.)?pic4you\\.ru/\\d+/\\d+/", "http://(www\\.)?tuspics\\.net/[a-z0-9]{12}", "http://(www\\.)?imgjug\\.com/(i/[A-Za-z0-9]+|\\?v=[A-Za-z0-9]+\\.jpg)", "http://(www\\.)?pic4free\\.org/\\?v=[^<>\"/]+", "http://(www\\.)?img\\d+\\.cocoimage\\.com/img\\.php\\?id=\\d+", "http://(www\\.)?imagetwist\\.com/[a-z0-9]{12}", "http://(www\\.)?postim(age|g)\\.org/image/[a-z0-9]+", "http://(www\\.)?pimpandhost\\.com/image/(show/id/\\d+|\\d+\\-(original|medium|small)\\.html)", "http://(www\\.)?turboimagehost\\.com/p/\\d+/.*?\\.html",
-        "http://(www\\.)?(img\\d+|serve)\\.imagehyper\\.com/img\\.php\\?id=\\d+\\&c=[a-z0-9]+", "http://[\\w\\.]*?imagebam\\.com/(image|gallery)/[a-z0-9]+", "http://(www\\.)?(media\\.photobucket.com/image/.+\\..{3,4}\\?o=[0-9]+|gs\\d+\\.photobucket\\.com/groups/[A-Za-z0-9]+/[A-Za-z0-9]+/\\?action=view\\&current=[^<>\"/]+|s\\d+\\.photobucket\\.com/user/[A-Za-z0-9\\-_]+/media/[A-Za-z0-9\\-_]+/[A-Za-z0-9\\-_]+/[A-Za-z0-9\\-_]+\\.jpg\\.html)", "http://[\\w\\.]*?freeimagehosting\\.net/image\\.php\\?.*?\\..{3,4}", "http://(www\\.)?pixhost\\.org/show/\\d+/.+", "http://(www\\.)?sharenxs\\.com/view/\\?id=[a-z0-9-]+", "https?://(www\\.)?9gag\\.com/gag/\\d+" },
+        "http://(www\\.)?(img\\d+|serve)\\.imagehyper\\.com/img\\.php\\?id=\\d+\\&c=[a-z0-9]+", "http://[\\w\\.]*imagebam\\.com/(image|gallery)/[a-z0-9]+", "http://(www\\.)?(media\\.photobucket.com/image/.+\\..{3,4}\\?o=[0-9]+|gs\\d+\\.photobucket\\.com/groups/[A-Za-z0-9]+/[A-Za-z0-9]+/\\?action=view\\&current=[^<>\"/]+|s\\d+\\.photobucket\\.com/user/[A-Za-z0-9\\-_]+/media/[A-Za-z0-9\\-_]+/[A-Za-z0-9\\-_]+/[A-Za-z0-9\\-_]+\\.jpg\\.html)", "http://[\\w\\.]*?freeimagehosting\\.net/image\\.php\\?.*?\\..{3,4}", "http://(www\\.)?pixhost\\.org/show/\\d+/.+", "http://(www\\.)?sharenxs\\.com/view/\\?id=[a-z0-9-]+", "https?://(www\\.)?9gag\\.com/gag/\\d+" },
 
-flags = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 })
+        flags = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 })
 public class ImageHosterDecrypter extends PluginForDecrypt {
 
     public ImageHosterDecrypter(final PluginWrapper wrapper) {
@@ -63,7 +64,8 @@ public class ImageHosterDecrypter extends PluginForDecrypt {
                 return decryptedLinks;
             }
             if (parameter.contains("/gallery/")) {
-                br.getPage(parameter);
+                // note: you can still get dupes of images (filenames), but they have different download path.
+                final HashSet<String> dupes = new HashSet<String>();
                 String name = new Regex(parameter, "/gallery/(.+)").getMatch(0);
                 if (name == null) {
                     name = "ImageBamGallery";
@@ -79,20 +81,24 @@ public class ImageHosterDecrypter extends PluginForDecrypt {
                         if (br.containsHTML("The gallery you are looking for")) {
                             continue;
                         }
-                        final String links[] = br.getRegex("\\'(http://[\\w\\.]*?imagebam\\.com/image/[a-z0-9]+)\\'").getColumn(0);
+                        final String links[] = br.getRegex("'(https?://[\\w\\.]*imagebam\\.com/image/[a-z0-9]+)'").getColumn(0);
                         for (final String link : links) {
-                            final DownloadLink dl = handleImageBam(br, Encoding.htmlDecode(link), true);
-                            if (dl != null) {
-                                decryptedLinks.add(dl);
+                            if (dupes.add(link)) {
+                                final DownloadLink dl = handleImageBam(br, Encoding.htmlDecode(link), true);
+                                if (dl != null) {
+                                    decryptedLinks.add(dl);
+                                }
                             }
                         }
                     }
                 } else {
-                    final String links[] = br.getRegex("\\'(http://[\\w\\.]*?imagebam\\.com/image/[a-z0-9]+)\\'").getColumn(0);
+                    final String links[] = br.getRegex("'(http://[\\w\\.]*imagebam\\.com/image/[a-z0-9]+)'").getColumn(0);
                     for (final String link : links) {
-                        final DownloadLink dl = handleImageBam(br, Encoding.htmlDecode(link), true);
-                        if (dl != null) {
-                            decryptedLinks.add(dl);
+                        if (dupes.add(link)) {
+                            final DownloadLink dl = handleImageBam(br, Encoding.htmlDecode(link), true);
+                            if (dl != null) {
+                                decryptedLinks.add(dl);
+                            }
                         }
                     }
                 }
@@ -317,16 +323,16 @@ public class ImageHosterDecrypter extends PluginForDecrypt {
             brc = br.cloneBrowser();
             brc.getPage(url);
         }
-        String finallink = brc.getRegex("(\\'|\")(http://\\d+\\.imagebam\\.com/download/.*?)(\\'|\")").getMatch(1);
+        String finallink = brc.getRegex("(\\'|\")(https?://\\d+\\.imagebam\\.com/download/[^<>\\s]+\\.(?:[a-z0-9]{3,4}))\\1").getMatch(1);
         if (finallink == null) {
-            finallink = brc.getRegex("onclick=\"scale\\(this\\);\" src=\"(http://.*?)\"").getMatch(0);
+            finallink = brc.getRegex("onclick=\"scale\\(this\\);\" src=\"(https?://.*?)\"").getMatch(0);
         }
         if (finallink == null) {
             return null;
         }
         finallink = Encoding.htmlDecode(finallink);
         DownloadLink dl = createDownloadlink("directhttp://" + finallink);
-        final String finalfilename = new Regex(finallink, "/([^<>\"/]*?\\.[a-z]*?)$").getMatch(0);
+        final String finalfilename = new Regex(finallink, "/([^/]+\\.[a-z]+)$").getMatch(0);
         if (finalfilename != null) {
             dl.setFinalFileName(Encoding.htmlDecode(finalfilename));
         }
