@@ -63,17 +63,22 @@ public class ImgBoxCom extends PluginForDecrypt {
             }
             String fpName = br.getRegex("<h1 style=\"padding\\-left:15px;\">(.*?)</h1>").getMatch(0);
             if (fpName == null) {
-                fpName = br.getRegex("<h1>([^<>\"]*?)\\- \\d+ images images</h1>").getMatch(0);
+                fpName = br.getRegex("<h1>([^<>\"]+)- \\d+ images(?:\\s+images)?</h1>").getMatch(0);
             }
             if (fpName == null) {
                 fpName = "imgbox.com gallery " + new Regex(parameter, "imgbox\\.com/g/(.+)").getMatch(0);
             }
-            final String[] links = br.getRegex("alt=\"[A-Za-z0-9]+\" src=\"(http://[a-z0-9\\.]+s\\.imgbox.com/[^<>\"]*?)\"").getColumn(0);
-            if (links == null || links.length == 0) {
+            final String[] uids = br.getRegex("<a href=(\"|')/([a-zA-Z0-9]+)\\1><img alt=(\"|')\\2\\3").getColumn(1);
+            if (uids == null || uids.length == 0) {
                 logger.warning("Decrypter broken for link: " + parameter);
                 return null;
             }
-            for (final String singleLink : links) {
+            FilePackage fp = null;
+            if (fpName != null) {
+                fp = FilePackage.getInstance();
+                fp.setName(Encoding.htmlDecode(fpName.trim()));
+            }
+            for (final String uid : uids) {
                 try {
                     if (this.isAbort()) {
                         logger.info("Decryption aborted...");
@@ -82,26 +87,18 @@ public class ImgBoxCom extends PluginForDecrypt {
                 } catch (final Throwable e) {
                     // Not available in old 0.9.581 Stable
                 }
-                final String lid = new Regex(singleLink, "imgbox\\.com/(.+)").getMatch(0);
-                final String finallink = "directhttp://http://i.imgbox.com/" + lid;
+                final String finallink = "directhttp://http://i.imgbox.com/" + uid;
                 final DownloadLink dl = createDownloadlink(finallink);
-                if (dl == null) {
-                    logger.warning("Decrypter broken for link: " + parameter);
-                    logger.warning("Failed on singleLink: " + singleLink);
-                    return null;
-                }
                 dl.setAvailable(true);
+                if (fp != null) {
+                    fp.add(dl);
+                }
                 try {
                     distribute(dl);
                 } catch (final Throwable e) {
                     // Not available in old 0.9.581 Stable
                 }
                 decryptedLinks.add(dl);
-            }
-            if (fpName != null) {
-                FilePackage fp = FilePackage.getInstance();
-                fp.setName(Encoding.htmlDecode(fpName.trim()));
-                fp.addLinks(decryptedLinks);
             }
         } else {
             if (br.containsHTML(PICTUREOFFLINE)) {
