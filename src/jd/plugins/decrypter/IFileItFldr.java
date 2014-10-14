@@ -50,7 +50,7 @@ public class IFileItFldr extends PluginForDecrypt {
     // TODO: Implement API: http://code.google.com/p/filecloud/wiki/FetchTagDetails
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-        String parameter = param.toString().replace("ifile.it/", "filecloud.io/");
+        String parameter = param.toString().replace("ifile.it/", "filecloud.io/").replace("http://", "https://");
         final PluginForHost hostPlugin = JDUtilities.getPluginForHost("filecloud.io");
         final Account aa = AccountController.getInstance().getValidAccount(hostPlugin);
         String fpName = null;

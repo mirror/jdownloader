@@ -56,6 +56,15 @@ public class MinhatecaComBr extends PluginForDecrypt {
             decryptedLinks.add(dl);
             return decryptedLinks;
         }
+        if (br.containsHTML(">Você não tem permissão para ver este arquivo<"))
+        /* No permission to see file/folder */{
+            final DownloadLink dl = createDownloadlink("http://minhatecadecrypted.com.br/" + System.currentTimeMillis() + new Random().nextInt(1000000));
+            dl.setFinalFileName(parameter);
+            dl.setProperty("mainlink", parameter);
+            dl.setProperty("offline", true);
+            decryptedLinks.add(dl);
+            return decryptedLinks;
+        }
         final String chomikid = br.getRegex("type=\"hidden\" name=\"ChomikId\" value=\"(\\d+)\"").getMatch(0);
         final String folderid = br.getRegex("name=\"FolderId\" type=\"hidden\" value=\"(\\d+)\"").getMatch(0);
         final String reqtoken = br.getRegex("name=\"__RequestVerificationToken\" type=\"hidden\" value=\"([^<>\"]*?)\"").getMatch(0);

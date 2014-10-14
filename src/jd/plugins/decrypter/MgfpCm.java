@@ -47,7 +47,7 @@ public class MgfpCm extends PluginForDecrypt {
         if (parameter.matches("http://(www\\.)?imagefap\\.com/photo/\\d+")) {
             final DownloadLink link = createDownloadlink("http://imagefap.com/imagedecrypted/" + new Regex(parameter, "(\\d+)$").getMatch(0));
             try {
-                link.setContentUrl(parameter);
+                link.setContentUrl(parameter + "/");
             } catch (final Throwable e) {
                 /* Not available in old 0.9.581 Stable */
             }

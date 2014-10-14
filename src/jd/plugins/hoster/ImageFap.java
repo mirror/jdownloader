@@ -41,7 +41,13 @@ public class ImageFap extends PluginForHost {
     public void correctDownloadLink(DownloadLink link) {
         final String addedLink = link.getDownloadURL();
         if (addedLink.contains("imagedecrypted/")) {
-            link.setUrlDownload("http://www.imagefap.com/photo/" + new Regex(addedLink, "(\\d+)$").getMatch(0) + "/");
+            final String newurl = "http://www.imagefap.com/photo/" + new Regex(addedLink, "(\\d+)$").getMatch(0) + "/";
+            link.setUrlDownload(newurl);
+            try {
+                link.setContentUrl(newurl);
+            } catch (final Throwable e) {
+                /* Not available in old 0.9.581 Stable */
+            }
         }
     }
 
