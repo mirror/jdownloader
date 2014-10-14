@@ -283,7 +283,12 @@ public class DLCFactory extends D {
                     Element filename = content.createElement("filename");
                     Element size = content.createElement("size");
                     DownloadLink link = tmpLinks.get(x).getDownloadLink();
-                    url.appendChild(content.createTextNode(Encoding.Base64Encode(link.getPluginPatternMatcher())));
+                    // the contenturl always should direct to exactly the downloadlink that is exported.
+                    String linkUrl = link.getContentUrl();
+                    if (linkUrl == null) {
+                        linkUrl = link.getPluginPatternMatcher();
+                    }
+                    url.appendChild(content.createTextNode(Encoding.Base64Encode(linkUrl)));
 
                     // String decoded=JDUtilities.Base64Decode(encode);
 
