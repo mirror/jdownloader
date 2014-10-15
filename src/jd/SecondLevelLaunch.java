@@ -254,6 +254,7 @@ public class SecondLevelLaunch {
         }
         if (Application.isOutdatedJavaVersion(true)) {
             try {
+                SecondLevelLaunch.LOG.severe("BUGGY Java Version detected: " + Application.getJavaVersion());
                 if (CrossSystem.isMac() && Application.getJavaVersion() >= 17005000l && Application.getJavaVersion() <= 17006000l) {
                     /* TODO: remove me after we've upgraded mac installer */
                     return;
