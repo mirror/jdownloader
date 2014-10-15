@@ -182,6 +182,7 @@ public class MenuManagerMainToolbar extends ContextMenuManager<FilePackage, Down
 
         opt.add(CollapseExpandAllAction.class);
         opt.add(ExportMenuItemsAction.class);
+        opt.add(ImportMenuItemsAction.class);
         opt.add(ConvertCLRScriptAction.class);
         return mr;
     }
