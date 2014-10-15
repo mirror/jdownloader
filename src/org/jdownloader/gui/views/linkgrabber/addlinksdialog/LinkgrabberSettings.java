@@ -211,4 +211,13 @@ public interface LinkgrabberSettings extends ConfigInterface {
     OnOfflineLinksAction getDefaultOnAddedOfflineLinksAction();
 
     void setDefaultOnAddedOfflineLinksAction(OnOfflineLinksAction value);
+
+    @AboutConfig
+    @DefaultIntValue(25)
+    @RequiresRestart("A JDownloader Restart is Required")
+    @DescriptionForConfigEntry("How many entries will be in the Packagename quick selection")
+    int getPackageNameHistoryLength();
+
+    void setPackageNameHistoryLength(int i);
+
 }

@@ -25,7 +25,7 @@ public class PackageHistoryManager extends HistoryManager<PackageHistoryEntry> i
      * {@link #getInstance()}.
      */
     private PackageHistoryManager() {
-        super(CFG_LINKGRABBER.CFG.getPackageNameHistory(), 25);
+        super(CFG_LINKGRABBER.CFG.getPackageNameHistory(), CFG_LINKGRABBER.CFG.getPackageNameHistoryLength());
         CFG_LINKGRABBER.PACKAGE_NAME_HISTORY.getEventSender().addListener(this);
 
     }

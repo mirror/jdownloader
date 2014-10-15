@@ -222,6 +222,17 @@ public class Main {
         if (nativeSwing) {
             long start = System.currentTimeMillis();
             try {
+                chrriis.dj.nativeswing.swtimpl.NSSystemPropertySWT.COMPONENTS_DEBUG_PRINTCREATION.set("true");
+                chrriis.dj.nativeswing.swtimpl.NSSystemPropertySWT.COMPONENTS_DEBUG_PRINTDISPOSAL.set("true");
+                chrriis.dj.nativeswing.swtimpl.NSSystemPropertySWT.COMPONENTS_DEBUG_PRINTFAILEDMESSAGES.set("true");
+                chrriis.dj.nativeswing.swtimpl.NSSystemPropertySWT.COMPONENTS_DEBUG_PRINTOPTIONS.set("true");
+                chrriis.dj.nativeswing.swtimpl.NSSystemPropertySWT.COMPONENTS_DEBUG_PRINTSHAPECOMPUTING.set("true");
+                chrriis.dj.nativeswing.swtimpl.NSSystemPropertySWT.INTERFACE_DEBUG_PRINTMESSAGES.set("true");
+                chrriis.dj.nativeswing.swtimpl.NSSystemPropertySWT.PEERVM_DEBUG_PRINTCOMMANDLINE.set("true");
+                chrriis.dj.nativeswing.swtimpl.NSSystemPropertySWT.PEERVM_DEBUG_PRINTSTARTMESSAGE.set("true");
+                chrriis.dj.nativeswing.swtimpl.NSSystemPropertySWT.PEERVM_DEBUG_PRINTSTOPMESSAGE.set("true");
+                chrriis.dj.nativeswing.swtimpl.NSSystemPropertySWT.SWT_DEVICE_DEBUG.set("true");
+                chrriis.dj.nativeswing.swtimpl.NSSystemPropertySWT.SWT_DEVICEDATA_DEBUG.set("true");
                 chrriis.dj.nativeswing.swtimpl.NativeInterface.open();
             } catch (Throwable e) {
                 e.printStackTrace();
