@@ -58,18 +58,12 @@ public class FreeFuckVidzCom extends PluginForHost {
         if (filename == null) {
             filename = br.getRegex("<title>([^<>\"]*?)</title>").getMatch(0);
         }
-        getLink("720p");
-        if (DLLINK == null) {
-            getLink("480p");
-        }
-        if (DLLINK == null) {
-            getLink("360p");
-        }
-        if (DLLINK == null) {
-            getLink("med");
-        }
-        if (DLLINK == null) {
-            getLink("low");
+        final String[] qualities = { "720p", "480p", "360p", "med", "low", "trailer" };
+        for (final String quality : qualities) {
+            getLink(quality);
+            if (DLLINK != null) {
+                break;
+            }
         }
         if (filename == null || DLLINK == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
