@@ -9,7 +9,7 @@ import javax.swing.filechooser.FileFilter;
 
 import jd.gui.UserIO;
 
-import org.appwork.storage.config.annotations.EnumLabel;
+import org.appwork.storage.config.annotations.LabelInterface;
 import org.appwork.swing.components.ExtMergedIcon;
 import org.appwork.uio.UIOManager;
 import org.appwork.utils.swing.dialog.Dialog;
@@ -39,20 +39,45 @@ public class ExtractAction extends AbstractExtractionContextAction {
      */
     private static final long serialVersionUID = 1612595219577059496L;
 
-    public static enum ExtractToPathLogic {
-        @EnumLabel("Ask for every archive")
-        ASK_FOR_FOR_EVERY_ARCHIVE,
-        @EnumLabel("Do not ask. Extract to Archive Location")
-        EXTRACT_TO_ARCHIVE_PARENT,
-        @EnumLabel("Ask once for all archives")
-        ASK_ONCE,
-        @EnumLabel("Use Custom Extraction Path Setup")
-        USE_CUSTOMEXTRACTIONPATH
+    public static enum ExtractToPathLogic implements LabelInterface {
+
+        ASK_FOR_FOR_EVERY_ARCHIVE {
+            @Override
+            public String getLabel() {
+                return T._.EXTRACTTOPATHLOGIC_ASK_FOR_EVERY_ARCHIVE();
+            }
+        },
+
+        EXTRACT_TO_ARCHIVE_PARENT {
+            @Override
+            public String getLabel() {
+                return T._.EXTRACTTOPATHLOGIC_EXTRACT_TO_ARCHIVE_PARENT();
+            }
+        },
+
+        ASK_ONCE {
+            @Override
+            public String getLabel() {
+                return T._.EXTRACTTOPATHLOGIC_ASK_ONCE();
+            }
+        },
+
+        USE_CUSTOMEXTRACTIONPATH {
+            @Override
+            public String getLabel() {
+                return T._.EXTRACTTOPATHLOGIC_USE_CUSTOMEXTRACTIONPATH();
+            }
+        };
+
     }
 
     private ExtractToPathLogic extractToPathLogic = ExtractToPathLogic.EXTRACT_TO_ARCHIVE_PARENT;
 
-    @Customizer(name = "Extract path logic")
+    public static String getTranslationForExtractToPathLogic() {
+        return T._.ExtractAction_getTranslationForExtractToPathLogic();
+    }
+
+    @Customizer(link = "#getTranslationForExtractToPathLogic")
     public ExtractToPathLogic getExtractToPathLogic() {
         return extractToPathLogic;
     }
@@ -85,10 +110,14 @@ public class ExtractAction extends AbstractExtractionContextAction {
                 FileFilter ff = new FileFilter() {
                     @Override
                     public boolean accept(File pathname) {
-                        if (pathname.isDirectory()) return true;
+                        if (pathname.isDirectory()) {
+                            return true;
+                        }
 
                         for (IExtraction extractor : _getExtension().getExtractors()) {
-                            if (extractor.isArchivSupported(new FileArchiveFactory(pathname), false)) { return true; }
+                            if (extractor.isArchivSupported(new FileArchiveFactory(pathname), false)) {
+                                return true;
+                            }
                         }
 
                         return false;
@@ -101,7 +130,9 @@ public class ExtractAction extends AbstractExtractionContextAction {
                 };
 
                 File[] files = UserIO.getInstance().requestFileChooser("_EXTRATION_", null, UserIO.FILES_ONLY, ff, true, null, null);
-                if (files == null || files.length == 0) return;
+                if (files == null || files.length == 0) {
+                    return;
+                }
                 try {
                     File extractTo = null;
                     if (getExtractToPathLogic() == ExtractToPathLogic.ASK_ONCE) {
@@ -199,7 +230,9 @@ public class ExtractAction extends AbstractExtractionContextAction {
 
                                 @Override
                                 public int getProgress() {
-                                    if (controller == null) return 0;
+                                    if (controller == null) {
+                                        return 0;
+                                    }
                                     return Math.min(99, (int) controller.getProgress());
                                 }
 

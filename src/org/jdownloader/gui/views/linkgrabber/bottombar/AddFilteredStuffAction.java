@@ -19,6 +19,7 @@ import org.jdownloader.controlling.contextmenu.Customizer;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.gui.views.downloads.bottombar.SelfComponentFactoryInterface;
 import org.jdownloader.gui.views.downloads.bottombar.SelfLayoutInterface;
+import org.jdownloader.translate._JDT;
 
 public class AddFilteredStuffAction extends CustomizableAppAction implements ActionContext, SelfComponentFactoryInterface, SelfLayoutInterface {
 
@@ -35,7 +36,11 @@ public class AddFilteredStuffAction extends CustomizableAppAction implements Act
 
     }
 
-    @Customizer(name = "Only Visible if there is filtered stuff")
+    public static String getTranslationForOnlyVisibleIfThereIsFilteredStuff() {
+        return _JDT._.AddFilteredStuffAction_getTranslationForOnlyVisibleIfThereIsFilteredStuff();
+    }
+
+    @Customizer(link = "#getTranslationForOnlyVisibleIfThereIsFilteredStuff")
     public boolean isOnlyVisibleIfThereIsFilteredStuff() {
         return onlyVisibleIfThereIsFilteredStuff;
     }

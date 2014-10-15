@@ -11,25 +11,26 @@ import org.jdownloader.controlling.contextmenu.ActionContext;
 import org.jdownloader.controlling.contextmenu.CustomizableSelectionAppAction;
 import org.jdownloader.controlling.contextmenu.Customizer;
 import org.jdownloader.gui.views.SelectionInfo;
+import org.jdownloader.translate._JDT;
 
 public class GenericChunksAction extends CustomizableSelectionAppAction implements ActionContext {
-    
+
     /**
      * 
      */
     private static final long  serialVersionUID = 1L;
     public final static String CHUNKS           = "CHUNKS";
-    
+
     private int                chunks           = 0;
-    
+
     public GenericChunksAction() {
         super();
         setName(Integer.toString(Math.max(0, chunks)));
     }
-    
+
     public void actionPerformed(ActionEvent e) {
         TaskQueue.getQueue().add(new QueueAction<Void, RuntimeException>() {
-            
+
             @Override
             protected Void run() throws RuntimeException {
                 SelectionInfo selectionInfo = getSelection();
@@ -44,26 +45,30 @@ public class GenericChunksAction extends CustomizableSelectionAppAction implemen
             }
         });
     }
-    
+
     public void setChunks(final int chunks) {
         this.chunks = Math.max(0, chunks);
     }
-    
-    @Customizer(name = "Max Chunks")
+
+    public static String getTranslationChunks() {
+        return _JDT._.GenericChunksAction_getTranslationChunks();
+    }
+
+    @Customizer(link = "#getTranslationChunks")
     public int getChunks() {
         return chunks;
     }
-    
+
     @Override
     public void loadContextSetups() {
         super.loadContextSetups();
         new EDTRunner() {
-            
+
             @Override
             protected void runInEDT() {
                 setName(Integer.toString(Math.max(0, chunks)));
             }
         }.start();
     }
-    
+
 }

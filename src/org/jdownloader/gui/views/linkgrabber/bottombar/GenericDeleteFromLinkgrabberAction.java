@@ -32,6 +32,7 @@ import org.jdownloader.gui.views.downloads.action.ByPassDialogSetup;
 import org.jdownloader.gui.views.downloads.action.Modifier;
 import org.jdownloader.gui.views.linkgrabber.LinkGrabberTable;
 import org.jdownloader.gui.views.linkgrabber.LinkGrabberTableModel;
+import org.jdownloader.translate._JDT;
 
 public class GenericDeleteFromLinkgrabberAction extends CustomizableAppAction implements ExtTableListener, ActionContext, ExtTableModelListener {
 
@@ -69,7 +70,11 @@ public class GenericDeleteFromLinkgrabberAction extends CustomizableAppAction im
 
     }
 
-    @Customizer(name = "Cancel all running Crawler Jobs")
+    public static String getTranslationForCancelLinkcrawlerJobs() {
+        return _JDT._.GenericDeleteFromLinkgrabberAction_getTranslationForCancelLinkcrawlerJobs();
+    }
+
+    @Customizer(link = "#getTranslationForCancelLinkcrawlerJobs")
     public boolean isCancelLinkcrawlerJobs() {
 
         return cancelLinkcrawlerJobs;
@@ -79,7 +84,11 @@ public class GenericDeleteFromLinkgrabberAction extends CustomizableAppAction im
         this.cancelLinkcrawlerJobs = cancelLinkcrawlerJobs;
     }
 
-    @Customizer(name = "Reset Table Sorting")
+    public static String getTranslationForResetTableSorter() {
+        return _JDT._.GenericDeleteFromLinkgrabberAction_getTranslationForResetTableSorter();
+    }
+
+    @Customizer(link = "#getTranslationForResetTableSorter")
     public boolean isResetTableSorter() {
 
         return resetTableSorter;
@@ -89,7 +98,11 @@ public class GenericDeleteFromLinkgrabberAction extends CustomizableAppAction im
         this.resetTableSorter = resetTableSorter;
     }
 
-    @Customizer(name = "Clear Searchfield")
+    public static String getTranslationForClearSearchFilter() {
+        return _JDT._.GenericDeleteFromLinkgrabberAction_getTranslationForClearSearchFilter();
+    }
+
+    @Customizer(link = "#getTranslationForClearSearchFilter")
     public boolean isClearSearchFilter() {
 
         return clearSearchFilter;
@@ -99,7 +112,11 @@ public class GenericDeleteFromLinkgrabberAction extends CustomizableAppAction im
         this.clearSearchFilter = clearSearchFilter;
     }
 
-    @Customizer(name = "Clear Filtered Links")
+    public static String getTranslationForClearFilteredLinks() {
+        return _JDT._.GenericDeleteFromLinkgrabberAction_getTranslationForClearFilteredLinks();
+    }
+
+    @Customizer(link = "#getTranslationForClearFilteredLinks")
     public boolean isClearFilteredLinks() {
 
         return clearFilteredLinks;
@@ -340,17 +357,29 @@ public class GenericDeleteFromLinkgrabberAction extends CustomizableAppAction im
         NONE;
     }
 
-    @Customizer(name = "Affected Links: All")
+    public static String getTranslationForDeleteAll() {
+        return _JDT._.GenericDeleteFromLinkgrabberAction_getTranslationForDeleteAll();
+    }
+
+    @Customizer(link = "#getTranslationForDeleteAll")
     public boolean isDeleteAll() {
         return deleteAll;
     }
 
-    @Customizer(name = "Affected Links: Disabled")
+    public static String getTranslationForDeleteDisabled() {
+        return _JDT._.GenericDeleteFromLinkgrabberAction_getTranslationForDeleteDisabled();
+    }
+
+    @Customizer(link = "#getTranslationForDeleteDisabled")
     public boolean isDeleteDisabled() {
         return deleteDisabled;
     }
 
-    @Customizer(name = "Affected Links: Offline")
+    public static String getTranslationForDeleteOffline() {
+        return _JDT._.GenericDeleteFromLinkgrabberAction_getTranslationForDeleteOffline();
+    }
+
+    @Customizer(link = "#getTranslationForDeleteOffline")
     public boolean isDeleteOffline() {
         return deleteOffline;
     }
@@ -360,7 +389,11 @@ public class GenericDeleteFromLinkgrabberAction extends CustomizableAppAction im
         return super.isEnabled();
     }
 
-    @Customizer(name = "Exclude filtered Links")
+    public static String getTranslationForIgnoreFiltered() {
+        return _JDT._.GenericDeleteFromLinkgrabberAction_getTranslationForIgnoreFiltered();
+    }
+
+    @Customizer(link = "#getTranslationForIgnoreFiltered")
     public boolean isIgnoreFiltered() {
         return ignoreFiltered;
     }

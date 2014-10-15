@@ -17,6 +17,7 @@ import org.jdownloader.controlling.contextmenu.ActionContext;
 import org.jdownloader.controlling.contextmenu.Customizer;
 import org.jdownloader.gui.toolbar.action.AbstractToolBarAction;
 import org.jdownloader.gui.translate._GUI;
+import org.jdownloader.translate._JDT;
 
 public class StopDownloadsButFinishRunningOnesAction extends AbstractToolBarAction implements DownloadWatchdogListener, ActionContext {
 
@@ -53,7 +54,12 @@ public class StopDownloadsButFinishRunningOnesAction extends AbstractToolBarActi
     private boolean            hideIfDownloadsAreStopped     = false;
     public static final String HIDE_IF_DOWNLOADS_ARE_STOPPED = "HideIfDownloadsAreStopped";
 
-    @Customizer(name = "Hide if downloads are not running")
+    public static String getHideIfDownloadsAreStoppedTranslation() {
+
+        return _JDT._.PauseDownloadsAction_getHideIfDownloadsAreStoppedTranslation();
+    }
+
+    @Customizer(link = "#getHideIfDownloadsAreStoppedTranslation")
     public boolean isHideIfDownloadsAreStopped() {
         return hideIfDownloadsAreStopped;
     }

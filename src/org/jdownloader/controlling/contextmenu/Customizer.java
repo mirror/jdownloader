@@ -22,6 +22,8 @@ import java.lang.annotation.Target;
 @Target({ ElementType.METHOD })
 public @interface Customizer {
 
-    String name();
+    String name() default "Unset";
+
+    String link() default "";
 
 }

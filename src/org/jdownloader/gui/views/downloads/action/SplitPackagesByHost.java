@@ -40,7 +40,11 @@ public class SplitPackagesByHost extends CustomizableTableContextAppAction<FileP
         setIconKey("split_packages");
     }
 
-    @Customizer(name = "Merge Packages before splitting?")
+    public static String getTranslationForMergePackages() {
+        return _JDT._.SplitPackagesByHost_getTranslationForMergePackages();
+    }
+
+    @Customizer(link = "#getTranslationForMergePackages")
     public boolean isMergePackages() {
         return mergePackages;
     }
@@ -49,7 +53,11 @@ public class SplitPackagesByHost extends CustomizableTableContextAppAction<FileP
         this.mergePackages = mergePackages;
     }
 
-    @Customizer(name = "If Merging, ask for new Downloadfolder and package name?")
+    public static String getTranslationForAskForNewDownloadFolderAndPackageName() {
+        return _JDT._.SplitPackagesByHost_getTranslationForAskForNewDownloadFolderAndPackageName();
+    }
+
+    @Customizer(link = "#getTranslationForAskForNewDownloadFolderAndPackageName")
     public boolean isAskForNewDownloadFolderAndPackageName() {
         return askForNewDownloadFolderAndPackageName;
     }
@@ -62,7 +70,11 @@ public class SplitPackagesByHost extends CustomizableTableContextAppAction<FileP
 
     private LocationInList location                              = LocationInList.AFTER_SELECTION;
 
-    @Customizer(name = "Add package at")
+    public static String getTranslationForLocation() {
+        return _JDT._.SplitPackagesByHost_getTranslationForLocation();
+    }
+
+    @Customizer(link = "#getTranslationForLocation")
     public LocationInList getLocation() {
         return location;
     }

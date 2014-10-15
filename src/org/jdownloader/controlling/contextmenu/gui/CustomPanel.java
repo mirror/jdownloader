@@ -56,7 +56,7 @@ public class CustomPanel extends MigPanel {
 
             if (Clazz.isBoolean(gs.getType())) {
                 JLabel lbl;
-                add(lbl = new JLabel(getNameForCustomizer(action, actionClass, gs)), "pushx");
+                add(lbl = new JLabel(getNameForCustomizer(gs)), "pushx");
                 final JCheckBox jb = new JCheckBox();
                 add(jb, "wrap,alignx right");
                 try {
@@ -138,7 +138,7 @@ public class CustomPanel extends MigPanel {
                     }
 
                 });
-                add(new JLabel(getNameForCustomizer(action, actionClass, gs)), "pushx,growx");
+                add(new JLabel(getNameForCustomizer(gs)), "pushx,growx");
                 add(shortcut, "spanx,width 20:120:n");
             } else if (Clazz.isEnum(gs.getType())) {
 
@@ -232,7 +232,7 @@ public class CustomPanel extends MigPanel {
                     };
                 };
                 cb.setSelectedItem(values[index]);
-                add(new JLabel(getNameForCustomizer(action, actionClass, gs)), "growx,spanx,wrap");
+                add(new JLabel(getNameForCustomizer(gs)), "growx,spanx,wrap");
                 add(cb, "growx,spanx,wrap");
             } else if (gs.getType() == String.class) {
 
@@ -257,7 +257,7 @@ public class CustomPanel extends MigPanel {
                 };
 
                 cb.setText(value);
-                add(new JLabel(getNameForCustomizer(action, actionClass, gs)), "growx,spanx,wrap");
+                add(new JLabel(getNameForCustomizer(gs)), "growx,spanx,wrap");
                 add(cb, "growx,spanx,wrap,pushx,growx");
             } else if (Clazz.isInteger(gs.getType())) {
 
@@ -281,7 +281,7 @@ public class CustomPanel extends MigPanel {
                     }
                 });
 
-                add(new JLabel(getNameForCustomizer(action, actionClass, gs)), "growx,spanx,wrap");
+                add(new JLabel(getNameForCustomizer(gs)), "growx,spanx,wrap");
                 add(spinner, "growx,spanx,wrap,pushx,growx");
             }
         } catch (Exception e) {
@@ -289,30 +289,31 @@ public class CustomPanel extends MigPanel {
         }
     }
 
-    public static String getNameForCustomizer(CustomizableAppAction action, ActionContext actionClass, GetterSetter gs) {
+    public static String getNameForCustomizer(GetterSetter gs) {
         String ret = gs.getAnnotation(Customizer.class).name();
-        try {
-            // resolve the linked static method
-            if (ret.startsWith("@link ")) {
-                ret = ret.substring("@link ".length());
+        String link = gs.getAnnotation(Customizer.class).link();
+
+        // resolve the linked static method
+        if (StringUtils.isNotEmpty(link)) {
+            try {
                 Class<?> cls = gs.getGetter().getDeclaringClass();
-                if (ret.startsWith("#")) {
+                if (link.startsWith("#")) {
                     // relative
-                    ret = ret.substring(1);
+                    link = link.substring(1);
                 } else {
-                    int index = ret.lastIndexOf(".");
-                    cls = Class.forName(ret.substring(0, index));
-                    ret = ret.substring(index + 1);
+                    int index = link.lastIndexOf(".");
+                    cls = Class.forName(link.substring(0, index));
+                    link = link.substring(index + 1);
                 }
-                Method method = cls.getMethod(ret, new Class[] {});
+                Method method = cls.getMethod(link, new Class[] {});
                 Object translation = method.invoke(null, new Object[] {});
                 if (translation != null && translation instanceof String) {
                     return (String) translation;
                 }
+            } catch (Throwable e) {
+                JDGui.getInstance().getLogger().log(e);
+                return link;
             }
-
-        } catch (Throwable e) {
-            JDGui.getInstance().getLogger().log(e);
         }
 
         return ret;

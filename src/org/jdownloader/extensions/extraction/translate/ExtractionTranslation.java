@@ -366,4 +366,19 @@ public interface ExtractionTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "New Name:" })
     String IfFileExistsDialog_layoutDialogContent_newName();
 
+    @Default(lngs = { "en" }, values = { "Extract path logic" })
+    String ExtractAction_getTranslationForExtractToPathLogic();
+
+    @Default(lngs = { "en" }, values = { "Ask for every archive" })
+    String EXTRACTTOPATHLOGIC_ASK_FOR_EVERY_ARCHIVE();
+
+    @Default(lngs = { "en" }, values = { "Do not ask. Extract to Archive Location" })
+    String EXTRACTTOPATHLOGIC_EXTRACT_TO_ARCHIVE_PARENT();
+
+    @Default(lngs = { "en" }, values = { "Ask once for all archives" })
+    String EXTRACTTOPATHLOGIC_ASK_ONCE();
+
+    @Default(lngs = { "en" }, values = { "Use Custom Extraction Path Setup" })
+    String EXTRACTTOPATHLOGIC_USE_CUSTOMEXTRACTIONPATH();
+
 }

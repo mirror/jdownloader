@@ -669,4 +669,226 @@ public interface JdownloaderTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "use global (adv. config) settings" })
     String ConfirmLinksContextAction_HandleOfflineLinksOptions_GLOBAL();
 
+    @Default(lngs = { "en" }, values = { "Hide if downloads are not running" })
+    String PauseDownloadsAction_getHideIfDownloadsAreStoppedTranslation();
+
+    @Default(lngs = { "en" }, values = { "Hide if downloads are running" })
+    String StartDownloadsAction_getHideIfDownloadsAreRunningTranslation_();
+
+    @Default(lngs = { "en" }, values = { "Hide Action on MAC OS" })
+    String ExitAction_getHideOnMacTranslation();
+
+    @Default(lngs = { "en" }, values = { "Item is visible for selected Links" })
+    String TableContext_getTranslationItemVisibleForSelections_();
+
+    @Default(lngs = { "en" }, values = { "Item is visible for empty selections" })
+    String TableContext_getTranslationItemVisibleForEmptySelection();
+
+    @Default(lngs = { "en" }, values = { "Max. autobackup/backup_*.jd2backup files" })
+    String BackupRestoreAction_getTranslationForMaxAutoBackupFiles();
+
+    @Default(lngs = { "en" }, values = { "Max. cfg_backup_* folders..." })
+    String BackupRestoreAction_getTranslationForMaxCFGBackupFolders();
+
+    @Default(lngs = { "en" }, values = { "Key Modifier to toggle 'Delete Files'" })
+    String GenericDeleteFromTableToolbarAction_getTranslationForDeleteFilesToggleModifier();
+
+    @Default(lngs = { "en" }, values = { "Only Selected Links" })
+    String GenericDeleteFromTableToolbarAction_getTranslationForOnlySelectedItems();
+
+    @Default(lngs = { "en" }, values = { "Exclude filtered Links" })
+    String GenericDeleteFromTableToolbarAction_getTranslationForIgnoreFiltered();
+
+    @Default(lngs = { "en" }, values = { "Include Offline Links" })
+    String GenericDeleteFromTableToolbarAction_getTranslationForDeleteOffline();
+
+    @Default(lngs = { "en" }, values = { "Include finished Links" })
+    String GenericDeleteFromTableToolbarAction_getTranslationForDeleteFinished();
+
+    @Default(lngs = { "en" }, values = { "Include failed" })
+    String GenericDeleteFromTableToolbarAction_getTranslationForDeleteFailed();
+
+    @Default(lngs = { "en" }, values = { "Include disabled Links" })
+    String GenericDeleteFromTableToolbarAction_getTranslationForDeleteDisabled();
+
+    @Default(lngs = { "en" }, values = { "Include All Links" })
+    String GenericDeleteFromTableToolbarAction_getTranslationForDeleteAll();
+
+    @Default(lngs = { "en" }, values = { "Delete Mode" })
+    String GenericDeleteFromTableToolbarAction_getTranslationForDeleteMode();
+
+    @Default(lngs = { "en" }, values = { "Show in all Views" })
+    String SelectionBasedToolbarAction_getTranslationForShowInAllViews();
+
+    @Default(lngs = { "en" }, values = { "Show in Download view" })
+    String SelectionBasedToolbarAction_getTranslationForShowInDownloadView();
+
+    @Default(lngs = { "en" }, values = { "Show in Linkgrabber view" })
+    String SelectionBasedToolbarAction_getTranslationForShowInLinkgrabberView();
+
+    @Default(lngs = { "en" }, values = { "Visible in Download Tab" })
+    String ToolbarContext_getTranslationForVisibleInDownloadTab();
+
+    @Default(lngs = { "en" }, values = { "Visible in Linkgrabber Tab" })
+    String ToolbarContext_getTranslationForVisibleInLinkgrabberTab();
+
+    @Default(lngs = { "en" }, values = { "Visible in All Tab" })
+    String ToolbarContext_getTranslationForVisibleInAllTabs();
+
+    @Default(lngs = { "en" }, values = { "Path A to *.jdproxies File" })
+    String SetProxySetupAction_getTranslationForPath();
+
+    @Default(lngs = { "en" }, values = { "Simple single rename (table)" })
+    String RenameAction_getTranslationForSimpleMode();
+
+    @Default(lngs = { "en" }, values = { "Key Modifier to toggle 'Bypass Rly? Dialog'" })
+    String ByPassDialogSetup_getTranslationForByPassDialogToggleModifier();
+
+    @Default(lngs = { "en" }, values = { "Bypass the 'Really?' Dialog" })
+    String ByPassDialogSetup_getTranslationForBypassDialog();
+
+    @Default(lngs = { "en" }, values = { "Add only selected Links" })
+    String CollapseExpandContextAction_getTranslationForSelectionOnly();
+
+    @Default(lngs = { "en" }, values = { "<html>Pattern for the Packages<br><ul><li>{name}</li><li>{comment}</li><li>{filesize}</li><li>{type}</li><li>{path}</li></ul></html>" })
+    String CopyGenericContextAction_getTranslationForPatternPackages();
+
+    @Default(lngs = { "en" }, values = { "<html>Pattern for the Links<br><ul><li>{name}</li><li>{comment}</li><li>{sha256}</li><li>{md5}</li><li>{filesize}</li><li>{url}</li><li>{type}</li><li>{path}</li></ul></html>" })
+    String CopyGenericContextAction_getTranslationForPatternLinks();
+
+    @Default(lngs = { "en" }, values = { "Smart Selection" })
+    String CopyGenericContextAction_getTranslationForSmartSelection();
+
+    @Default(lngs = { "en" }, values = { "Max Chunks" })
+    String GenericChunksAction_getTranslationChunks();
+
+    @Default(lngs = { "en" }, values = { "Key Modifier to toggle 'Delete Files'" })
+    String GenericDeleteFromDownloadlistAction_getTranslationForDeleteFilesToggleModifier();
+
+    @Default(lngs = { "en" }, values = { "Delete Mode" })
+    String GenericDeleteFromDownloadlistAction_getTranslationForDeleteMode();
+
+    @Default(lngs = { "en" }, values = { "Affected Links: All" })
+    String GenericDeleteFromDownloadlistAction_getTranslationForDeleteAll();
+
+    @Default(lngs = { "en" }, values = { "Affected Links: Disabled" })
+    String GenericDeleteFromDownloadlistAction_getTranslationForDeleteDisabled();
+
+    @Default(lngs = { "en" }, values = { "Affected Links: Failed" })
+    String GenericDeleteFromDownloadlistAction_getTranslationForDeleteFailed();
+
+    @Default(lngs = { "en" }, values = { "Affected Links: Finished" })
+    String GenericDeleteFromDownloadlistAction_getTranslationForDeleteFinished();
+
+    @Default(lngs = { "en" }, values = { "Affected Links: Offline" })
+    String GenericDeleteFromDownloadlistAction_getTranslationForDeleteOffline();
+
+    @Default(lngs = { "en" }, values = { "Exclude filtered Links" })
+    String GenericDeleteFromDownloadlistAction_getTranslationForIgnoreFiltered();
+
+    @Default(lngs = { "en" }, values = { "Add package at" })
+    String MergeToPackageAction_getTranslationForLocation();
+
+    @Default(lngs = { "en" }, values = { "Use latest selected path as default one" })
+    String MergeToPackageAction_getTranslationForLastPathDefault();
+
+    @Default(lngs = { "en" }, values = { "Expand the new package after creation" })
+    String MergeToPackageAction_getTranslationForExpandNewPackage();
+
+    @Default(lngs = { "en" }, values = { "Merge Packages before splitting?" })
+    String SplitPackagesByHost_getTranslationForMergePackages();
+
+    @Default(lngs = { "en" }, values = { "If Merging, ask for new Downloadfolder and package name?" })
+    String SplitPackagesByHost_getTranslationForAskForNewDownloadFolderAndPackageName();
+
+    @Default(lngs = { "en" }, values = { "Add package at" })
+    String SplitPackagesByHost_getTranslationForLocation();
+
+    @Default(lngs = { "en" }, values = { "The end of the list" })
+    String LocationInList_getLabel_END_OF_LIST();
+
+    @Default(lngs = { "en" }, values = { "The top of the list" })
+    String LocationInList_getLabel_TOP_OF_LIST();
+
+    @Default(lngs = { "en" }, values = { "After selection" })
+    String LocationInList_getLabel_AFTER_SELECTION();
+
+    @Default(lngs = { "en" }, values = { "Before selection" })
+    String LocationInList_getLabel_BEFORE_SELECTION();
+
+    @Default(lngs = { "en" }, values = { "Only Visible if there is filtered stuff" })
+    String AddFilteredStuffAction_getTranslationForOnlyVisibleIfThereIsFilteredStuff();
+
+    @Default(lngs = { "en" }, values = { "Cancel all running Crawler Jobs" })
+    String GenericDeleteFromLinkgrabberAction_getTranslationForCancelLinkcrawlerJobs();
+
+    @Default(lngs = { "en" }, values = { "Reset Table Sorting" })
+    String GenericDeleteFromLinkgrabberAction_getTranslationForResetTableSorter();
+
+    @Default(lngs = { "en" }, values = { "Clear Searchfield" })
+    String GenericDeleteFromLinkgrabberAction_getTranslationForClearSearchFilter();
+
+    @Default(lngs = { "en" }, values = { "Clear Filtered Links" })
+    String GenericDeleteFromLinkgrabberAction_getTranslationForClearFilteredLinks();
+
+    @Default(lngs = { "en" }, values = { "Affected Links: All" })
+    String GenericDeleteFromLinkgrabberAction_getTranslationForDeleteAll();
+
+    @Default(lngs = { "en" }, values = { "Affected Links: Disabled" })
+    String GenericDeleteFromLinkgrabberAction_getTranslationForDeleteDisabled();
+
+    @Default(lngs = { "en" }, values = { "Affected Links: Offline" })
+    String GenericDeleteFromLinkgrabberAction_getTranslationForDeleteOffline();
+
+    @Default(lngs = { "en" }, values = { "Exclude filtered Links" })
+    String GenericDeleteFromLinkgrabberAction_getTranslationForIgnoreFiltered();
+
+    @Default(lngs = { "en" }, values = { "Include Selected Links" })
+    String IncludedSelectionSetup_getTranslationForIncludeSelectedLinks();
+
+    @Default(lngs = { "en" }, values = { "Include Unselected Links" })
+    String IncludedSelectionSetup_getTranslationForIncludeUnselectedLinks();
+
+    @Default(lngs = { "en" }, values = { "Deep Decrypt" })
+    String PasteLinksAction_getTranslationForDeepDecryptEnabled();
+
+    @Default(lngs = { "en" }, values = { "Hide the Popupmenu after clicking" })
+    String ToggleAppAction_getTranslationForHidePopupOnClick();
+
+    @Default(lngs = { "en" }, values = { "Autostart: Automode (Quicksettings)" })
+    String AutoStartOptions_AUTO();
+
+    @Default(lngs = { "en" }, values = { "Autostart: Never start Downloads" })
+    String AutoStartOptions_DISABLED();
+
+    @Default(lngs = { "en" }, values = { "Autostart: Always start Downloads" })
+    String AutoStartOptions_ENABLED();
+
+    @Default(lngs = { "en" }, values = { "CTRL Toggle Enabled" })
+    String ConfirmLinksContextAction_getTranslationForCtrlToggle();
+
+    @Default(lngs = { "en" }, values = { "Force Downloads" })
+    String ConfirmLinksContextAction_getTranslationForForceDownloads();
+
+    @Default(lngs = { "en" }, values = { "Enabled Prioritychange" })
+    String ConfirmLinksContextAction_getTranslationForAssignPriorityEnabled();
+
+    @Default(lngs = { "en" }, values = { "Download Priority:" })
+    String ConfirmLinksContextAction_getTranslationForPiority();
+
+    @Default(lngs = { "en" }, values = { "If the selection contains offline links..." })
+    String ConfirmLinksContextAction_getTranslationForHandleOffline();
+
+    @Default(lngs = { "en" }, values = { "Clear Linkgrabber after adding links" })
+    String ConfirmLinksContextAction_getTranslationForClearListAfterConfirm();
+
+    @Default(lngs = { "en" }, values = { "Autostart Downloads afterwards" })
+    String ConfirmLinksContextAction_getTranslationForAutoStart();
+
+    @Default(lngs = { "en" }, values = { "Add only selected Links" })
+    String ConfirmLinksContextAction_getTranslationForSelectionOnly();
+
+    @Default(lngs = { "en" }, values = { "Deep Decrypt" })
+    String PasteContextLinksAction_getTranslationForDeepDecryptEnabled();
+
 }

@@ -44,6 +44,7 @@ import org.jdownloader.controlling.contextmenu.CustomizableAppAction;
 import org.jdownloader.controlling.contextmenu.Customizer;
 import org.jdownloader.gui.IconKey;
 import org.jdownloader.gui.translate._GUI;
+import org.jdownloader.translate._JDT;
 import org.jdownloader.updatev2.ForcedRestartRequest;
 import org.jdownloader.updatev2.RestartController;
 
@@ -59,7 +60,15 @@ public class BackupRestoreAction extends CustomizableAppAction implements Action
 
     private int maxAutoBackupFiles = -1;
 
-    @Customizer(name = "Max. autobackup/backup_*.jd2backup files")
+    public static String getTranslationForMaxAutoBackupFiles() {
+        return _JDT._.BackupRestoreAction_getTranslationForMaxAutoBackupFiles();
+    }
+
+    public static String getTranslationForMaxCFGBackupFolders() {
+        return _JDT._.BackupRestoreAction_getTranslationForMaxCFGBackupFolders();
+    }
+
+    @Customizer(link = "#getTranslationForMaxAutoBackupFiles")
     public int getMaxAutoBackupFiles() {
         return maxAutoBackupFiles;
     }
@@ -70,7 +79,7 @@ public class BackupRestoreAction extends CustomizableAppAction implements Action
 
     private int maxCFGBackupFolders = -1;
 
-    @Customizer(name = "Max. cfg_backup_* folders...")
+    @Customizer(link = "#getTranslationForMaxCFGBackupFolders")
     public int getMaxCFGBackupFolders() {
         return maxCFGBackupFolders;
     }

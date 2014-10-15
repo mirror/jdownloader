@@ -17,13 +17,18 @@ import org.jdownloader.controlling.contextmenu.CustomizableAppAction;
 import org.jdownloader.controlling.contextmenu.Customizer;
 import org.jdownloader.controlling.contextmenu.MenuItemData;
 import org.jdownloader.images.NewTheme;
+import org.jdownloader.translate._JDT;
 
 public class ToggleAppAction extends CustomizableAppAction implements ComponentProviderInterface, GenericConfigEventListener<Boolean>, ActionContext {
 
     private BooleanKeyHandler handler;
     private boolean           hidePopupOnClick = false;
 
-    @Customizer(name = "Hide the Popupmenu after clicking")
+    public static String getTranslationForHidePopupOnClick() {
+        return _JDT._.ToggleAppAction_getTranslationForHidePopupOnClick();
+    }
+
+    @Customizer(link = "#getTranslationForHidePopupOnClick")
     public boolean isHidePopupOnClick() {
         return hidePopupOnClick;
     }

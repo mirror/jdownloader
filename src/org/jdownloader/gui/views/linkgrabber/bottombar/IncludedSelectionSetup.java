@@ -7,6 +7,7 @@ import org.jdownloader.controlling.contextmenu.Customizer;
 import org.jdownloader.gui.views.components.packagetable.PackageControllerTable;
 import org.jdownloader.gui.views.components.packagetable.PackageControllerTableModel;
 import org.jdownloader.gui.views.linkgrabber.bottombar.GenericDeleteFromLinkgrabberAction.SelectionType;
+import org.jdownloader.translate._JDT;
 
 public class IncludedSelectionSetup implements ActionContext {
     private boolean                     includeUnselectedLinks   = false;
@@ -60,7 +61,11 @@ public class IncludedSelectionSetup implements ActionContext {
 
     }
 
-    @Customizer(name = "Include Selected Links")
+    public static String getTranslationForIncludeSelectedLinks() {
+        return _JDT._.IncludedSelectionSetup_getTranslationForIncludeSelectedLinks();
+    }
+
+    @Customizer(link = "#getTranslationForIncludeSelectedLinks")
     public boolean isIncludeSelectedLinks() {
         return includeSelectedLinks;
     }
@@ -72,7 +77,11 @@ public class IncludedSelectionSetup implements ActionContext {
 
     }
 
-    @Customizer(name = "Include Unselected Links")
+    public static String getTranslationForIncludeUnselectedLinks() {
+        return _JDT._.IncludedSelectionSetup_getTranslationForIncludeUnselectedLinks();
+    }
+
+    @Customizer(link = "#getTranslationForIncludeUnselectedLinks")
     public boolean isIncludeUnselectedLinks() {
         return includeUnselectedLinks;
     }

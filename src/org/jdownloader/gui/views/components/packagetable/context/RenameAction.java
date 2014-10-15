@@ -22,6 +22,7 @@ import org.jdownloader.gui.views.downloads.table.DownloadsTable;
 import org.jdownloader.gui.views.linkgrabber.LinkGrabberPanel;
 import org.jdownloader.gui.views.linkgrabber.LinkGrabberTable;
 import org.jdownloader.gui.views.linkgrabber.LinkGrabberView;
+import org.jdownloader.translate._JDT;
 
 public class RenameAction extends CustomizableTableContextAppAction implements ActionContext {
 
@@ -37,7 +38,11 @@ public class RenameAction extends CustomizableTableContextAppAction implements A
 
     private boolean simpleMode = false;
 
-    @Customizer(name = "Simple single rename (table)")
+    public static String getTranslationForSimpleMode() {
+        return _JDT._.RenameAction_getTranslationForSimpleMode();
+    }
+
+    @Customizer(link = "#getTranslationForSimpleMode")
     public boolean isSimpleMode() {
         return simpleMode;
     }

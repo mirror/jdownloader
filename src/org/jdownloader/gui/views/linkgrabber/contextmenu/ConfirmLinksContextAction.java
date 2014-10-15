@@ -19,7 +19,6 @@ import jd.gui.swing.jdgui.JDGui;
 import jd.gui.swing.jdgui.interfaces.View;
 
 import org.appwork.storage.config.JsonConfig;
-import org.appwork.storage.config.annotations.EnumLabel;
 import org.appwork.storage.config.annotations.LabelInterface;
 import org.appwork.swing.MigPanel;
 import org.appwork.uio.UIOManager;
@@ -107,19 +106,41 @@ public class ConfirmLinksContextAction extends CustomizableTableContextAppAction
 
     }
 
-    public static enum AutoStartOptions {
-        @EnumLabel("Autostart: Automode (Quicksettings)")
-        AUTO,
-        @EnumLabel("Autostart: Never start Downloads")
-        DISABLED,
-        @EnumLabel("Autostart: Always start Downloads")
-        ENABLED
+    public static enum AutoStartOptions implements LabelInterface {
+
+        AUTO {
+            @Override
+            public String getLabel() {
+                return _JDT._.AutoStartOptions_AUTO();
+
+            }
+        },
+
+        DISABLED {
+            @Override
+            public String getLabel() {
+                return _JDT._.AutoStartOptions_DISABLED();
+
+            }
+        },
+
+        ENABLED {
+            @Override
+            public String getLabel() {
+                return _JDT._.AutoStartOptions_ENABLED();
+
+            }
+        };
 
     }
 
     private boolean ctrlToggle = true;
 
-    @Customizer(name = "CTRL Toggle Enabled")
+    public static String getTranslationForCtrlToggle() {
+        return _JDT._.ConfirmLinksContextAction_getTranslationForCtrlToggle();
+    }
+
+    @Customizer(link = "#getTranslationForCtrlToggle")
     public boolean isCtrlToggle() {
         return ctrlToggle;
     }
@@ -130,7 +151,11 @@ public class ConfirmLinksContextAction extends CustomizableTableContextAppAction
 
     private boolean forceDownloads = false;
 
-    @Customizer(name = "Force Downloads")
+    public static String getTranslationForForceDownloads() {
+        return _JDT._.ConfirmLinksContextAction_getTranslationForForceDownloads();
+    }
+
+    @Customizer(link = "#getTranslationForForceDownloads")
     public boolean isForceDownloads() {
         return forceDownloads;
     }
@@ -141,7 +166,11 @@ public class ConfirmLinksContextAction extends CustomizableTableContextAppAction
 
     private boolean assignPriorityEnabled = false;
 
-    @Customizer(name = "Enabled Prioritychange")
+    public static String getTranslationForAssignPriorityEnabled() {
+        return _JDT._.ConfirmLinksContextAction_getTranslationForAssignPriorityEnabled();
+    }
+
+    @Customizer(link = "#getTranslationForAssignPriorityEnabled")
     public boolean isAssignPriorityEnabled() {
         return assignPriorityEnabled;
     }
@@ -152,7 +181,11 @@ public class ConfirmLinksContextAction extends CustomizableTableContextAppAction
 
     private Priority piority = Priority.DEFAULT;
 
-    @Customizer(name = "Download Priority:")
+    public static String getTranslationForPiority() {
+        return _JDT._.ConfirmLinksContextAction_getTranslationForPiority();
+    }
+
+    @Customizer(link = "#getTranslationForPiority")
     public Priority getPiority() {
         return piority;
     }
@@ -410,7 +443,11 @@ public class ConfirmLinksContextAction extends CustomizableTableContextAppAction
 
     private OnOfflineLinksAction handleOffline = OnOfflineLinksAction.GLOBAL;
 
-    @Customizer(name = "If the selection contains offline links...")
+    public static String getTranslationForHandleOffline() {
+        return _JDT._.ConfirmLinksContextAction_getTranslationForHandleOffline();
+    }
+
+    @Customizer(link = "#getTranslationForHandleOffline")
     public OnOfflineLinksAction getHandleOffline() {
         return handleOffline;
     }
@@ -477,7 +514,11 @@ public class ConfirmLinksContextAction extends CustomizableTableContextAppAction
         setAutoStart(AutoStartOptions.AUTO);
     }
 
-    @Customizer(name = "Clear Linkgrabber after adding links")
+    public static String getTranslationForClearListAfterConfirm() {
+        return _JDT._.ConfirmLinksContextAction_getTranslationForClearListAfterConfirm();
+    }
+
+    @Customizer(link = "#getTranslationForClearListAfterConfirm")
     public boolean isClearListAfterConfirm() {
         return clearListAfterConfirm;
     }
@@ -507,7 +548,11 @@ public class ConfirmLinksContextAction extends CustomizableTableContextAppAction
         updateLabelAndIcon();
     }
 
-    @Customizer(name = "Autostart Downloads afterwards")
+    public static String getTranslationForAutoStart() {
+        return _JDT._.ConfirmLinksContextAction_getTranslationForAutoStart();
+    }
+
+    @Customizer(link = "#getTranslationForAutoStart")
     public ConfirmLinksContextAction setAutoStart(AutoStartOptions autoStart) {
         if (autoStart == null) {
             autoStart = AutoStartOptions.AUTO;
@@ -517,14 +562,17 @@ public class ConfirmLinksContextAction extends CustomizableTableContextAppAction
         return this;
     }
 
-    @Customizer(name = "Clear Linkgrabber after adding links")
     public void setClearListAfterConfirm(boolean clearListAfterConfirm) {
         this.clearListAfterConfirm = clearListAfterConfirm;
     }
 
     private boolean selectionOnly = true;
 
-    @Customizer(name = "Add only selected Links")
+    public static String getTranslationForSelectionOnly() {
+        return _JDT._.ConfirmLinksContextAction_getTranslationForSelectionOnly();
+    }
+
+    @Customizer(link = "#getTranslationForSelectionOnly")
     public boolean isSelectionOnly() {
         return selectionOnly;
 

@@ -15,6 +15,7 @@ import org.jdownloader.gui.views.downloads.table.DownloadsTableModel;
 import org.jdownloader.gui.views.linkgrabber.LinkGrabberTable;
 import org.jdownloader.gui.views.linkgrabber.LinkGrabberTableModel;
 import org.jdownloader.gui.views.linkgrabber.LinkGrabberView;
+import org.jdownloader.translate._JDT;
 
 public abstract class SelectionBasedToolbarAction extends AbstractToolBarAction implements GUIListener, ExtTableListener {
 
@@ -92,17 +93,29 @@ public abstract class SelectionBasedToolbarAction extends AbstractToolBarAction 
 
     private boolean showInLinkgrabberView = true;
 
-    @Customizer(name = "Show in all Views")
+    public static String getTranslationForShowInAllViews() {
+        return _JDT._.SelectionBasedToolbarAction_getTranslationForShowInAllViews();
+    }
+
+    public static String getTranslationForShowInDownloadView() {
+        return _JDT._.SelectionBasedToolbarAction_getTranslationForShowInDownloadView();
+    }
+
+    public static String getTranslationForShowInLinkgrabberView() {
+        return _JDT._.SelectionBasedToolbarAction_getTranslationForShowInLinkgrabberView();
+    }
+
+    @Customizer(link = "#getTranslationForShowInAllViews")
     public boolean isshowInAllViews() {
         return showInAllViews;
     }
 
-    @Customizer(name = "Show in Download view")
+    @Customizer(link = "#getTranslationForShowInDownloadView")
     public boolean isShowInDownloadView() {
         return showInDownloadView;
     }
 
-    @Customizer(name = "Show in Linkgrabber view")
+    @Customizer(link = "#getTranslationForShowInLinkgrabberView")
     public boolean isshowInLinkgrabberView() {
         return showInLinkgrabberView;
     }

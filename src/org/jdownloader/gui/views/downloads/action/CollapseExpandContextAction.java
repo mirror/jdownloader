@@ -16,6 +16,7 @@ import org.jdownloader.gui.views.SelectionInfo.PackageView;
 import org.jdownloader.gui.views.components.packagetable.PackageControllerTable;
 import org.jdownloader.gui.views.downloads.table.DownloadsTable;
 import org.jdownloader.gui.views.linkgrabber.LinkGrabberTable;
+import org.jdownloader.translate._JDT;
 
 public class CollapseExpandContextAction extends CustomizableTableContextAppAction implements ActionContext {
     public CollapseExpandContextAction() {
@@ -48,7 +49,11 @@ public class CollapseExpandContextAction extends CustomizableTableContextAppActi
         updateLabelAndIcon();
     }
 
-    @Customizer(name = "Add only selected Links")
+    public static String getTranslationForSelectionOnly() {
+        return _JDT._.CollapseExpandContextAction_getTranslationForSelectionOnly();
+    }
+
+    @Customizer(link = "#getTranslationForSelectionOnly")
     public boolean isSelectionOnly() {
         return selectionOnly;
 
@@ -87,7 +92,9 @@ public class CollapseExpandContextAction extends CustomizableTableContextAppActi
     private PackageControllerTable<?, ?> getTable() {
         if (MainTabbedPane.getInstance().isDownloadView()) {
             return DownloadsTable.getInstance();
-        } else if (MainTabbedPane.getInstance().isLinkgrabberView()) { return LinkGrabberTable.getInstance(); }
+        } else if (MainTabbedPane.getInstance().isLinkgrabberView()) {
+            return LinkGrabberTable.getInstance();
+        }
         return null;
     }
 
