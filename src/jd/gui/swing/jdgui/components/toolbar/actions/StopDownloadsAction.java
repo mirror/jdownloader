@@ -21,6 +21,7 @@ import org.jdownloader.controlling.contextmenu.Customizer;
 import org.jdownloader.gui.toolbar.action.AbstractToolBarAction;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.images.NewTheme;
+import org.jdownloader.translate._JDT;
 
 public class StopDownloadsAction extends AbstractToolBarAction implements DownloadWatchdogListener, ActionContext {
 
@@ -40,7 +41,9 @@ public class StopDownloadsAction extends AbstractToolBarAction implements Downlo
     }
 
     public void actionPerformed(ActionEvent e) {
-        if (DownloadWatchDog.getInstance().getStateMachine().hasPassed(DownloadWatchDog.STOPPING_STATE)) return;
+        if (DownloadWatchDog.getInstance().getStateMachine().hasPassed(DownloadWatchDog.STOPPING_STATE)) {
+            return;
+        }
         int count = DownloadWatchDog.getInstance().getNonResumableRunningCount();
         if (count > 0) {
             long bytesToLoose = DownloadWatchDog.getInstance().getNonResumableBytes();
@@ -49,7 +52,9 @@ public class StopDownloadsAction extends AbstractToolBarAction implements Downlo
                 level = WarnLevel.SEVERE;
             }
             if (JDGui.bugme(level)) {
-                if (!UIOManager.I().showConfirmDialog(Dialog.STYLE_SHOW_DO_NOT_DISPLAY_AGAIN | UIOManager.LOGIC_DONT_SHOW_AGAIN_IGNORES_CANCEL, _GUI._.lit_are_you_sure(), _GUI._.StopDownloadsAction_run_msg_(SizeFormatter.formatBytes(bytesToLoose), count), NewTheme.I().getIcon("stop", 32), _GUI._.lit_yes(), _GUI._.lit_no())) { return; }
+                if (!UIOManager.I().showConfirmDialog(Dialog.STYLE_SHOW_DO_NOT_DISPLAY_AGAIN | UIOManager.LOGIC_DONT_SHOW_AGAIN_IGNORES_CANCEL, _GUI._.lit_are_you_sure(), _GUI._.StopDownloadsAction_run_msg_(SizeFormatter.formatBytes(bytesToLoose), count), NewTheme.I().getIcon("stop", 32), _GUI._.lit_yes(), _GUI._.lit_no())) {
+                    return;
+                }
             }
         }
         DownloadWatchDog.getInstance().stopDownloads();
@@ -58,7 +63,12 @@ public class StopDownloadsAction extends AbstractToolBarAction implements Downlo
     private boolean            hideIfDownloadsAreStopped     = false;
     public static final String HIDE_IF_DOWNLOADS_ARE_STOPPED = "HideIfDownloadsAreStopped";
 
-    @Customizer(name = "Hide if downloads are not running")
+    public static String getHideIfDownloadsAreStoppedTranslation() {
+
+        return _JDT._.PauseDownloadsAction_getHideIfDownloadsAreStoppedTranslation();
+    }
+
+    @Customizer(link = "#getHideIfDownloadsAreStoppedTranslation")
     public boolean isHideIfDownloadsAreStopped() {
         return hideIfDownloadsAreStopped;
     }

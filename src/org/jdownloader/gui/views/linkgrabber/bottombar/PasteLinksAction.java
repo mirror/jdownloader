@@ -19,13 +19,18 @@ import org.jdownloader.controlling.contextmenu.Customizer;
 import org.jdownloader.gui.IconKey;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.gui.views.linkgrabber.actions.AddLinksProgress;
+import org.jdownloader.translate._JDT;
 
 public class PasteLinksAction extends CustomizableAppAction implements ActionContext {
 
     public static final String DEEP_DECRYPT_ENABLED = "deepDecryptEnabled";
     private boolean            deepDecryptEnabled   = false;
 
-    @Customizer(name = "Deep Decrypt")
+    public static String getTranslationForDeepDecryptEnabled() {
+        return _JDT._.PasteLinksAction_getTranslationForDeepDecryptEnabled();
+    }
+
+    @Customizer(link = "#getTranslationForDeepDecryptEnabled")
     public boolean isDeepDecryptEnabled() {
 
         return deepDecryptEnabled;

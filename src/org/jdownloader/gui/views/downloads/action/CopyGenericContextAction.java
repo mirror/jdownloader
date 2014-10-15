@@ -26,6 +26,7 @@ import org.jdownloader.gui.views.components.packagetable.LinkTreeUtils;
 import org.jdownloader.gui.views.components.packagetable.PackageControllerTable;
 import org.jdownloader.gui.views.downloads.table.DownloadsTable;
 import org.jdownloader.gui.views.linkgrabber.LinkGrabberTable;
+import org.jdownloader.translate._JDT;
 
 public class CopyGenericContextAction extends CustomizableTableContextAppAction implements ActionContext {
     private static final String PATTERN_NAME     = "{name}";
@@ -45,9 +46,21 @@ public class CopyGenericContextAction extends CustomizableTableContextAppAction 
         setAccelerator(KeyEvent.VK_C);
     }
 
+    public static String getTranslationForPatternPackages() {
+        return _JDT._.CopyGenericContextAction_getTranslationForPatternPackages();
+    }
+
+    public static String getTranslationForPatternLinks() {
+        return _JDT._.CopyGenericContextAction_getTranslationForPatternLinks();
+    }
+
+    public static String getTranslationForSmartSelection() {
+        return _JDT._.CopyGenericContextAction_getTranslationForSmartSelection();
+    }
+
     private String patternPackages;
 
-    @Customizer(name = "<html>Pattern for the Packages<br><ul><li>{name}</li><li>{comment}</li><li>{filesize}</li><li>{type}</li><li>{path}</li></ul></html>")
+    @Customizer(link = "#getTranslationForPatternPackages")
     public String getPatternPackages() {
         return patternPackages;
     }
@@ -59,7 +72,7 @@ public class CopyGenericContextAction extends CustomizableTableContextAppAction 
 
     private String patternLinks;
 
-    @Customizer(name = "<html>Pattern for the Links<br><ul><li>{name}</li><li>{comment}</li><li>{sha256}</li><li>{md5}</li><li>{filesize}</li><li>{url}</li><li>{type}</li><li>{path}</li></ul></html>")
+    @Customizer(link = "#getTranslationForPatternLinks")
     public String getPatternLinks() {
         return patternLinks;
     }
@@ -71,7 +84,7 @@ public class CopyGenericContextAction extends CustomizableTableContextAppAction 
 
     private boolean smartSelection;
 
-    @Customizer(name = "Smartselection")
+    @Customizer(link = "#getTranslationForSmartSelection")
     public boolean isSmartSelection() {
         return smartSelection;
     }

@@ -1,5 +1,7 @@
 package org.jdownloader.controlling.contextmenu;
 
+import org.jdownloader.translate._JDT;
+
 public class TableContext implements ActionContext {
     public static final String ITEM_VISIBLE_FOR_SELECTIONS      = "itemVisibleForSelections";
     public static final String ITEM_VISIBLE_FOR_EMPTY_SELECTION = "itemVisibleForEmptySelection";
@@ -7,22 +9,28 @@ public class TableContext implements ActionContext {
     private boolean            itemVisibleForSelections         = true;
     private boolean            itemVisibleForEmptySelection     = false;
 
-    @Customizer(name = "Item is visible for selected Links")
+    public static String getTranslationItemVisibleForSelections() {
+        return _JDT._.TableContext_getTranslationItemVisibleForSelections_();
+    }
+
+    public static String getTranslationItemVisibleForEmptySelection() {
+        return _JDT._.TableContext_getTranslationItemVisibleForEmptySelection();
+    }
+
+    @Customizer(link = "#getTranslationItemVisibleForSelections")
     public boolean isItemVisibleForSelections() {
         return itemVisibleForSelections;
     }
 
-    @Customizer(name = "Item is visible for selected Links")
     public void setItemVisibleForSelections(boolean clearListAfterConfirm) {
         this.itemVisibleForSelections = clearListAfterConfirm;
     }
 
-    @Customizer(name = "Item is visible for empty selections")
+    @Customizer(link = "#getTranslationItemVisibleForEmptySelection")
     public boolean isItemVisibleForEmptySelection() {
         return itemVisibleForEmptySelection;
     }
 
-    @Customizer(name = "Item is visible for empty selections")
     public void setItemVisibleForEmptySelection(boolean clearListAfterConfirm) {
         this.itemVisibleForEmptySelection = clearListAfterConfirm;
     }

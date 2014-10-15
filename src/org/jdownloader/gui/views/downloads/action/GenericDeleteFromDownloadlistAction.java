@@ -35,6 +35,7 @@ import org.jdownloader.gui.views.downloads.table.DownloadsTableModel;
 import org.jdownloader.gui.views.linkgrabber.bottombar.IncludedSelectionSetup;
 import org.jdownloader.plugins.FinalLinkState;
 import org.jdownloader.settings.GraphicalUserInterfaceSettings.DeleteFileOptions;
+import org.jdownloader.translate._JDT;
 
 public class GenericDeleteFromDownloadlistAction extends CustomizableAppAction implements ExtTableListener, ActionContext, DownloadControllerListener, ExtTableModelListener {
 
@@ -67,7 +68,11 @@ public class GenericDeleteFromDownloadlistAction extends CustomizableAppAction i
 
     protected SelectionInfo<FilePackage, DownloadLink> selection;
 
-    @Customizer(name = "Key Modifier to toggle 'Delete Files'")
+    public static String getTranslationForDeleteFilesToggleModifier() {
+        return _JDT._.GenericDeleteFromDownloadlistAction_getTranslationForDeleteFilesToggleModifier();
+    }
+
+    @Customizer(link = "#getTranslationForDeleteFilesToggleModifier")
     public Modifier getDeleteFilesToggleModifier() {
         return deleteFilesToggleModifier;
     }
@@ -83,7 +88,11 @@ public class GenericDeleteFromDownloadlistAction extends CustomizableAppAction i
         includedSelection.setIncludeUnselectedLinks(true);
     }
 
-    @Customizer(name = "Delete Mode")
+    public static String getTranslationForDeleteMode() {
+        return _JDT._.GenericDeleteFromDownloadlistAction_getTranslationForDeleteMode();
+    }
+
+    @Customizer(link = "#getTranslationForDeleteMode")
     public DeleteFileOptions getDeleteMode() {
 
         // Modifier byPassDialog = getByPassDialogToggleModifier();
@@ -341,27 +350,47 @@ public class GenericDeleteFromDownloadlistAction extends CustomizableAppAction i
         return (DownloadsTable) DownloadsTableModel.getInstance().getTable();
     }
 
-    @Customizer(name = "Affected Links: All")
+    public static String getTranslationForDeleteAll() {
+        return _JDT._.GenericDeleteFromDownloadlistAction_getTranslationForDeleteAll();
+    }
+
+    @Customizer(link = "#getTranslationForDeleteAll")
     public boolean isDeleteAll() {
         return deleteAll;
     }
 
-    @Customizer(name = "Affected Links: Disabled")
+    public static String getTranslationForDeleteDisabled() {
+        return _JDT._.GenericDeleteFromDownloadlistAction_getTranslationForDeleteDisabled();
+    }
+
+    @Customizer(link = "#getTranslationForDeleteDisabled")
     public boolean isDeleteDisabled() {
         return deleteDisabled;
     }
 
-    @Customizer(name = "Affected Links: Failed")
+    public static String getTranslationForDeleteFailed() {
+        return _JDT._.GenericDeleteFromDownloadlistAction_getTranslationForDeleteFailed();
+    }
+
+    @Customizer(link = "#getTranslationForDeleteFailed")
     public boolean isDeleteFailed() {
         return deleteFailed;
     }
 
-    @Customizer(name = "Affected Links: Finished")
+    public static String getTranslationForDeleteFinished() {
+        return _JDT._.GenericDeleteFromDownloadlistAction_getTranslationForDeleteFinished();
+    }
+
+    @Customizer(link = "#getTranslationForDeleteFinished")
     public boolean isDeleteFinished() {
         return deleteFinished;
     }
 
-    @Customizer(name = "Affected Links: Offline")
+    public static String getTranslationForDeleteOffline() {
+        return _JDT._.GenericDeleteFromDownloadlistAction_getTranslationForDeleteOffline();
+    }
+
+    @Customizer(link = "#getTranslationForDeleteOffline")
     public boolean isDeleteOffline() {
         return deleteOffline;
     }
@@ -371,7 +400,11 @@ public class GenericDeleteFromDownloadlistAction extends CustomizableAppAction i
         return super.isEnabled();
     }
 
-    @Customizer(name = "Exclude filtered Links")
+    public static String getTranslationForIgnoreFiltered() {
+        return _JDT._.GenericDeleteFromDownloadlistAction_getTranslationForIgnoreFiltered();
+    }
+
+    @Customizer(link = "#getTranslationForIgnoreFiltered")
     public boolean isIgnoreFiltered() {
         return ignoreFiltered;
     }

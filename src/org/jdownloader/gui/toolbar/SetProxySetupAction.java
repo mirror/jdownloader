@@ -14,6 +14,7 @@ import org.jdownloader.controlling.contextmenu.CustomizableAppAction;
 import org.jdownloader.controlling.contextmenu.Customizer;
 import org.jdownloader.gui.IconKey;
 import org.jdownloader.gui.translate._GUI;
+import org.jdownloader.translate._JDT;
 
 public class SetProxySetupAction extends CustomizableAppAction implements ActionContext {
 
@@ -25,7 +26,11 @@ public class SetProxySetupAction extends CustomizableAppAction implements Action
 
     private String path = null;
 
-    @Customizer(name = "Path A to *.jdproxies File")
+    public static String getTranslationForPath() {
+        return _JDT._.SetProxySetupAction_getTranslationForPath();
+    }
+
+    @Customizer(link = "#getTranslationForPath")
     public String getPath() {
         return path;
     }

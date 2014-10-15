@@ -20,6 +20,7 @@ import org.jdownloader.gui.views.SelectionInfo;
 import org.jdownloader.gui.views.SelectionInfo.PackageView;
 import org.jdownloader.gui.views.components.LocationInList;
 import org.jdownloader.gui.views.linkgrabber.contextmenu.NewPackageDialog;
+import org.jdownloader.translate._JDT;
 
 public class MergeToPackageAction extends CustomizableTableContextAppAction<FilePackage, DownloadLink> implements ActionContext {
 
@@ -36,26 +37,11 @@ public class MergeToPackageAction extends CustomizableTableContextAppAction<File
 
     private boolean expandNewPackage = false;
 
-    // public static String getMoveDownloadedFilesEnabledTranslation() {
-    // return _GUI._.MergeToPackageAction_getTranslationForCustomizer_moveDownloadedFilesEnabled();
-    //
-    // }
-    //
-    // /**
-    // * Relative Translation link to {@link #getMoveDownloadedFilesEnabledTranslation()}
-    // *
-    // * @return
-    // */
-    // @Customizer(name = "@link #getMoveDownloadedFilesEnabledTranslation")
-    // public boolean isMoveDownloadedFilesEnabled() {
-    // return movedDownloadedFilesEnabled;
-    // }
-    //
-    // public void setMoveDownloadedFilesEnabled(boolean b) {
-    // this.movedDownloadedFilesEnabled = b;
-    // }
+    public static String getTranslationForExpandNewPackage() {
+        return _JDT._.MergeToPackageAction_getTranslationForExpandNewPackage();
+    }
 
-    @Customizer(name = "Expand the new package after creation")
+    @Customizer(link = "#getTranslationForExpandNewPackage")
     public boolean isExpandNewPackage() {
         return expandNewPackage;
     }
@@ -66,7 +52,11 @@ public class MergeToPackageAction extends CustomizableTableContextAppAction<File
 
     private boolean lastPathDefault = false;
 
-    @Customizer(name = "Use latest selected path as default one")
+    public static String getTranslationForLastPathDefault() {
+        return _JDT._.MergeToPackageAction_getTranslationForLastPathDefault();
+    }
+
+    @Customizer(link = "#getTranslationForLastPathDefault")
     public boolean isLastPathDefault() {
         return lastPathDefault;
     }
@@ -77,7 +67,11 @@ public class MergeToPackageAction extends CustomizableTableContextAppAction<File
 
     private LocationInList location = LocationInList.END_OF_LIST;
 
-    @Customizer(name = "Add package at")
+    public static String getTranslationForLocation() {
+        return _JDT._.MergeToPackageAction_getTranslationForLocation();
+    }
+
+    @Customizer(link = "#getTranslationForLocation")
     public LocationInList getLocation() {
         return location;
     }

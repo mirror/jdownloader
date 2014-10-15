@@ -49,6 +49,7 @@ import org.jdownloader.gui.views.linkgrabber.LinkGrabberTableModel;
 import org.jdownloader.gui.views.linkgrabber.LinkGrabberView;
 import org.jdownloader.plugins.FinalLinkState;
 import org.jdownloader.settings.GraphicalUserInterfaceSettings.DeleteFileOptions;
+import org.jdownloader.translate._JDT;
 
 public class GenericDeleteFromTableToolbarAction extends AbstractToolBarAction implements ExtTableListener, DownloadControllerListener, GUIListener, LinkCollectorListener, ActionContext {
 
@@ -103,7 +104,43 @@ public class GenericDeleteFromTableToolbarAction extends AbstractToolBarAction i
 
     private Modifier deleteFilesToggleModifier = null;
 
-    @Customizer(name = "Key Modifier to toggle 'Delete Files'")
+    public static String getTranslationForDeleteFilesToggleModifier() {
+        return _JDT._.GenericDeleteFromTableToolbarAction_getTranslationForDeleteFilesToggleModifier();
+    }
+
+    public static String getTranslationForDeleteMode() {
+        return _JDT._.GenericDeleteFromTableToolbarAction_getTranslationForDeleteMode();
+    }
+
+    public static String getTranslationForDeleteAll() {
+        return _JDT._.GenericDeleteFromTableToolbarAction_getTranslationForDeleteAll();
+    }
+
+    public static String getTranslationForDeleteDisabled() {
+        return _JDT._.GenericDeleteFromTableToolbarAction_getTranslationForDeleteDisabled();
+    }
+
+    public static String getTranslationForDeleteFailed() {
+        return _JDT._.GenericDeleteFromTableToolbarAction_getTranslationForDeleteFailed();
+    }
+
+    public static String getTranslationForDeleteFinished() {
+        return _JDT._.GenericDeleteFromTableToolbarAction_getTranslationForDeleteFinished();
+    }
+
+    public static String getTranslationForDeleteOffline() {
+        return _JDT._.GenericDeleteFromTableToolbarAction_getTranslationForDeleteOffline();
+    }
+
+    public static String getTranslationForIgnoreFiltered() {
+        return _JDT._.GenericDeleteFromTableToolbarAction_getTranslationForIgnoreFiltered();
+    }
+
+    public static String getTranslationForOnlySelectedItems() {
+        return _JDT._.GenericDeleteFromTableToolbarAction_getTranslationForOnlySelectedItems();
+    }
+
+    @Customizer(link = "#getTranslationForDeleteFilesToggleModifier")
     public Modifier getDeleteFilesToggleModifier() {
         return deleteFilesToggleModifier;
     }
@@ -130,7 +167,7 @@ public class GenericDeleteFromTableToolbarAction extends AbstractToolBarAction i
         return ret;
     }
 
-    @Customizer(name = "Delete Mode")
+    @Customizer(link = "#getTranslationForDeleteMode")
     public DeleteFileOptions getDeleteMode() {
 
         // Modifier byPassDialog = getByPassDialogToggleModifier();
@@ -299,27 +336,27 @@ public class GenericDeleteFromTableToolbarAction extends AbstractToolBarAction i
         return getName();
     }
 
-    @Customizer(name = "Include All Links")
+    @Customizer(link = "#getTranslationForDeleteAll")
     public boolean isDeleteAll() {
         return deleteAll;
     }
 
-    @Customizer(name = "Include disabled Links")
+    @Customizer(link = "#getTranslationForDeleteDisabled")
     public boolean isDeleteDisabled() {
         return deleteDisabled;
     }
 
-    @Customizer(name = "Include failed")
+    @Customizer(link = "#getTranslationForDeleteFailed")
     public boolean isDeleteFailed() {
         return deleteFailed;
     }
 
-    @Customizer(name = "Include finished Links")
+    @Customizer(link = "#getTranslationForDeleteFinished")
     public boolean isDeleteFinished() {
         return deleteFinished;
     }
 
-    @Customizer(name = "Include Offline Links")
+    @Customizer(link = "#getTranslationForDeleteOffline")
     public boolean isDeleteOffline() {
         return deleteOffline;
     }
@@ -329,12 +366,12 @@ public class GenericDeleteFromTableToolbarAction extends AbstractToolBarAction i
         return super.isEnabled();
     }
 
-    @Customizer(name = "Exclude filtered Links")
+    @Customizer(link = "#getTranslationForIgnoreFiltered")
     public boolean isIgnoreFiltered() {
         return ignoreFiltered;
     }
 
-    @Customizer(name = "Only Selected Links")
+    @Customizer(link = "#getTranslationForOnlySelectedItems")
     public boolean isOnlySelectedItems() {
 
         return onlySelectedItems;

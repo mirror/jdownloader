@@ -27,6 +27,7 @@ import org.jdownloader.controlling.contextmenu.ActionContext;
 import org.jdownloader.controlling.contextmenu.CustomizableAppAction;
 import org.jdownloader.controlling.contextmenu.Customizer;
 import org.jdownloader.gui.translate._GUI;
+import org.jdownloader.translate._JDT;
 import org.jdownloader.updatev2.RestartController;
 import org.jdownloader.updatev2.SmartRlyExitRequest;
 
@@ -35,10 +36,15 @@ public class ExitAction extends CustomizableAppAction {
     public static final String HIDE_ON_MAC      = "HideOnMac";
     private static final long  serialVersionUID = -1428029294638573437L;
 
+    public static String getHideOnMacTranslation() {
+        return _JDT._.ExitAction_getHideOnMacTranslation();
+    }
+
     public ExitAction() {
 
         addContextSetup(new ActionContext() {
-            @Customizer(name = "Hide Action on MAC OS")
+
+            @Customizer(link = "jd.gui.swing.jdgui.menu.actions.ExitAction.getHideOnMacTranslation")
             public boolean isHideOnMac() {
 
                 return hideOnMac;
@@ -46,7 +52,9 @@ public class ExitAction extends CustomizableAppAction {
 
             public void setHideOnMac(boolean hideOnMac) {
                 ExitAction.this.hideOnMac = hideOnMac;
-                if (hideOnMac && CrossSystem.isMac()) setVisible(false);
+                if (hideOnMac && CrossSystem.isMac()) {
+                    setVisible(false);
+                }
             }
 
         });
