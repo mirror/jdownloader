@@ -7,12 +7,12 @@ import jd.controlling.reconnect.pluginsinc.liveheader.CLRConverter;
 import org.appwork.utils.swing.dialog.Dialog;
 import org.appwork.utils.swing.dialog.DialogCanceledException;
 import org.appwork.utils.swing.dialog.DialogClosedException;
-import org.jdownloader.actions.AppAction;
+import org.jdownloader.controlling.contextmenu.CustomizableAppAction;
 import org.jdownloader.gui.IconKey;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.translate._JDT;
 
-public class ConvertCLRScriptAction extends AppAction {
+public class ConvertCLRScriptAction extends CustomizableAppAction {
 
     public ConvertCLRScriptAction() {
         setName(_JDT._.convert_CLR_Reconnect_to_jdownloader());

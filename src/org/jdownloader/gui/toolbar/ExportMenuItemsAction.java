@@ -14,7 +14,7 @@ import org.appwork.utils.swing.dialog.DialogClosedException;
 import org.appwork.utils.swing.dialog.ExtFileChooserDialog;
 import org.appwork.utils.swing.dialog.FileChooserSelectionMode;
 import org.appwork.utils.swing.dialog.FileChooserType;
-import org.jdownloader.actions.AppAction;
+import org.jdownloader.controlling.contextmenu.CustomizableAppAction;
 import org.jdownloader.gui.IconKey;
 import org.jdownloader.gui.jdtrayicon.MenuManagerTrayIcon;
 import org.jdownloader.gui.mainmenu.MenuManagerMainmenu;
@@ -24,7 +24,7 @@ import org.jdownloader.gui.views.downloads.contextmenumanager.MenuManagerDownloa
 import org.jdownloader.gui.views.linkgrabber.bottombar.MenuManagerLinkgrabberTabBottombar;
 import org.jdownloader.gui.views.linkgrabber.contextmenu.MenuManagerLinkgrabberTableContext;
 
-public class ExportMenuItemsAction extends AppAction {
+public class ExportMenuItemsAction extends CustomizableAppAction {
     public ExportMenuItemsAction() {
         setName(_GUI._.ExportMenuItemsAction_ExportMenuItemsAction());
         setIconKey(IconKey.ICON_EXPORT);
