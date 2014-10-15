@@ -27,15 +27,19 @@ public class SetExtractToAction extends AbstractExtractionContextAction {
     }
 
     public void actionPerformed(ActionEvent e) {
-        if (!isEnabled()) return;
-        File extractto = _getExtension().getFinalExtractToFolder(archives.get(0));
+        if (!isEnabled()) {
+            return;
+        }
+        File extractto = _getExtension().getFinalExtractToFolder(archives.get(0), true);
 
-        while (extractto != null && !extractto.isDirectory()) {
+        while (extractto != null && !extractto.isDirectory() && !isTag(extractto.getName())) {
             extractto = extractto.getParentFile();
         }
         try {
-            File path = DownloadFolderChooserDialog.open(extractto, false, org.jdownloader.extensions.extraction.translate.T._.extract_to2());
-            if (path == null) return;
+            File path = DownloadFolderChooserDialog.open(extractto, true, org.jdownloader.extensions.extraction.translate.T._.extract_to2());
+            if (path == null) {
+                return;
+            }
             for (Archive archive : archives) {
                 archive.getSettings().setExtractPath(path.getAbsolutePath());
             }
@@ -44,5 +48,9 @@ public class SetExtractToAction extends AbstractExtractionContextAction {
         } catch (DialogCanceledException e1) {
             e1.printStackTrace();
         }
+    }
+
+    private boolean isTag(String name) {
+        return name.matches(".*\\<.+\\>.*");
     }
 }

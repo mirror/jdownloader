@@ -154,7 +154,7 @@ public class ExtractionExtension extends AbstractExtension<ExtractionConfig, Ext
 
     /**
      * Adds an ectraction plugin to the framework.
-     *
+     * 
      * @param extractor
      *            The exractor.
      */
@@ -165,7 +165,7 @@ public class ExtractionExtension extends AbstractExtension<ExtractionConfig, Ext
 
     /**
      * Checks if there is supported extractor.
-     *
+     * 
      * @param file
      *            Path of the packed file
      * @return True if a extractor was found
@@ -194,10 +194,10 @@ public class ExtractionExtension extends AbstractExtension<ExtractionConfig, Ext
 
     /**
      * CReates and returns an id for the archive filenames belongs to.
-     *
+     * 
      * @param factory
      *            TODO
-     *
+     * 
      * @return
      */
     public String createArchiveID(ArchiveFactory factory) {
@@ -294,7 +294,7 @@ public class ExtractionExtension extends AbstractExtension<ExtractionConfig, Ext
 
     /**
      * Builds an archive for an {@link DownloadLink}.
-     *
+     * 
      * @param link
      * @return
      * @throws ArchiveException
@@ -375,7 +375,7 @@ public class ExtractionExtension extends AbstractExtension<ExtractionConfig, Ext
 
     /**
      * Returns the extractor for the {@link DownloadLink}.
-     *
+     * 
      * @param link
      * @return
      */
@@ -398,7 +398,7 @@ public class ExtractionExtension extends AbstractExtension<ExtractionConfig, Ext
 
     /**
      * Finishes the extraction process.
-     *
+     * 
      * @param controller
      */
     void onFinished(ExtractionController controller) {
@@ -408,7 +408,7 @@ public class ExtractionExtension extends AbstractExtension<ExtractionConfig, Ext
 
     /**
      * Removes an {@link Archive} from the list.
-     *
+     * 
      * @param archive
      */
     void removeArchive(Archive archive) {
@@ -708,7 +708,7 @@ public class ExtractionExtension extends AbstractExtension<ExtractionConfig, Ext
 
     /**
      * Cancels a job
-     *
+     * 
      * @param activeValue
      */
     public void cancel(ExtractionController activeValue) {
@@ -848,14 +848,16 @@ public class ExtractionExtension extends AbstractExtension<ExtractionConfig, Ext
 
     }
 
-    public File getFinalExtractToFolder(Archive archive) {
+    public File getFinalExtractToFolder(Archive archive, boolean raw) {
         String path = null;
 
         if (StringUtils.isEmpty(path)) {
             path = archive.getSettings().getExtractPath();
             if (!StringUtils.isEmpty(path)) {
                 /* use customized extracttofolder */
-                path = PackagizerController.replaceDynamicTags(path, ArchiveFactory.PACKAGENAME);
+                if (!raw) {
+                    path = PackagizerController.replaceDynamicTags(path, ArchiveFactory.PACKAGENAME);
+                }
 
                 path = archive.getFactory().createExtractSubPath(path, archive);
                 File ret = new File(path);
@@ -875,7 +877,9 @@ public class ExtractionExtension extends AbstractExtension<ExtractionConfig, Ext
             return null;
         }
 
-        path = PackagizerController.replaceDynamicTags(path, ArchiveFactory.PACKAGENAME);
+        if (!raw) {
+            path = PackagizerController.replaceDynamicTags(path, ArchiveFactory.PACKAGENAME);
+        }
 
         path = archive.getFactory().createExtractSubPath(path, archive);
         File ret = new File(path);
