@@ -8,6 +8,7 @@ import org.appwork.storage.config.events.GenericConfigEventListener;
 import org.appwork.storage.config.handler.KeyHandler;
 import org.appwork.utils.Lists;
 import org.appwork.utils.StringUtils;
+import org.jdownloader.settings.staticreferences.CFG_GENERAL;
 import org.jdownloader.settings.staticreferences.CFG_LINKGRABBER;
 
 public class DownloadPathHistoryManager extends HistoryManager<DownloadPath> implements GenericConfigEventListener<Object> {
@@ -27,7 +28,8 @@ public class DownloadPathHistoryManager extends HistoryManager<DownloadPath> imp
      * {@link #getInstance()}.
      */
     private DownloadPathHistoryManager() {
-        super(CFG_LINKGRABBER.CFG.getDownloadDestinationHistory(), 25);
+        super(CFG_LINKGRABBER.CFG.getDownloadDestinationHistory(), CFG_GENERAL.CFG.getDownloadDestinationHistoryLength());
+
         CFG_LINKGRABBER.DOWNLOAD_DESTINATION_HISTORY.getEventSender().addListener(this);
     }
 

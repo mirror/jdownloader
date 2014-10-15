@@ -257,7 +257,7 @@ public class RuleWrapper<T extends FilterRule> {
             boolean indexed = pattern.matches("^\\-?\\d+\\\\\\. .+");
             boolean inverted = pattern.startsWith("-");
 
-            if (sources == null) {
+            if (sources == null || sources.length == 0) {
                 /* the first link never has sourceURLs */
                 sources = new String[2];
                 sources[0] = link.getURL();

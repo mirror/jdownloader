@@ -122,7 +122,7 @@ public interface GeneralSettings extends ConfigInterface {
     @CustomValueGetter(CustomDownloadFolderGetter.class)
     String getDefaultDownloadFolder();
 
-    ArrayList<String[]> getDownloadFolderHistory();
+    // ArrayList<String[]> getDownloadFolderHistory();
 
     @AboutConfig
     @DefaultLongValue(5 * 60 * 1000l)
@@ -347,7 +347,7 @@ public interface GeneralSettings extends ConfigInterface {
 
     void setDefaultDownloadFolder(String ddl);
 
-    void setDownloadFolderHistory(ArrayList<String[]> history);
+    // void setDownloadFolderHistory(ArrayList<String[]> history);
 
     void setDownloadHashCheckFailedRetryWaittime(long ms);
 
@@ -548,7 +548,7 @@ public interface GeneralSettings extends ConfigInterface {
 
     /**
      * remove on 1.december 2014. We just keep it now to convert to {@link #setUrlOrder(UrlDisplayEntry[])}
-     *
+     * 
      * @return
      */
     @Deprecated
@@ -556,7 +556,7 @@ public interface GeneralSettings extends ConfigInterface {
 
     /**
      * remove on 1.december 2014. We just keep it now to convert to {@link #setUrlOrder(UrlDisplayEntry[])}
-     *
+     * 
      * @return
      */
     @Deprecated
@@ -568,5 +568,13 @@ public interface GeneralSettings extends ConfigInterface {
     long getAccountTemporarilyDisabledDefaultTimeout();
 
     void setAccountTemporarilyDisabledDefaultTimeout(long ms);
+
+    @AboutConfig
+    @RequiresRestart("A JDownloader Restart is Required")
+    @DefaultIntValue(25)
+    @DescriptionForConfigEntry("How many entries will be in the download Destination quick selection")
+    int getDownloadDestinationHistoryLength();
+
+    void setDownloadDestinationHistoryLength(int i);
 
 }

@@ -5,6 +5,7 @@ import java.awt.Dimension;
 import java.awt.Graphics;
 import java.awt.event.HierarchyBoundsListener;
 import java.awt.event.HierarchyEvent;
+import java.lang.reflect.Method;
 import java.util.Arrays;
 
 import javax.swing.JFrame;
@@ -13,9 +14,11 @@ import javax.swing.SwingUtilities;
 import javax.swing.event.AncestorEvent;
 import javax.swing.event.AncestorListener;
 
+import org.appwork.exceptions.WTFException;
 import org.appwork.scheduler.DelayedRunnable;
 import org.appwork.swing.MigPanel;
 import org.appwork.utils.logging2.LogSource;
+import org.appwork.utils.os.CrossSystem;
 import org.appwork.utils.swing.EDTRunner;
 import org.appwork.utils.swing.SwingUtils;
 import org.jdownloader.logging.LogController;
@@ -37,7 +40,24 @@ import chrriis.dj.nativeswing.swtimpl.components.WebBrowserWindowOpeningEvent;
 import chrriis.dj.nativeswing.swtimpl.components.WebBrowserWindowWillOpenEvent;
 
 public class DJWebBrowser extends MigPanel implements WebBrowserListener {
+    static {
 
+        if (CrossSystem.isWindows()) {
+            try {
+                final Class<?> cls = Class.forName("org.eclipse.swt.internal.win32.OS");
+                Method method = cls.getMethod("CoInternetSetFeatureEnabled", new Class[] { int.class, int.class, boolean.class });
+                method.invoke(null, /* org.eclipse.swt.internal.win32.OS.FEATURE_DISABLE_NAVIGATION_SOUNDS */21, /*
+                                                                                                                  * org.eclipse.swt.internal.
+                                                                                                                  * win32
+                                                                                                                  * .OS.SET_FEATURE_ON_PROCESS
+                                                                                                                  */2, true);
+            } catch (Throwable e) {
+                throw new WTFException("SWT Library Missing ", e);
+            }
+        } else if (CrossSystem.isLinux()) {
+            System.setProperty("sun.awt.xembedserver", "true");
+        }
+    }
     private DelayedRunnable         delayer;
     private DJWebBrowserEventSender eventSender;
     private JWebBrowser             browser;
