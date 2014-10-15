@@ -21,6 +21,7 @@ import java.io.IOException;
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
+import jd.http.Browser.BrowserException;
 import jd.parser.Regex;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
@@ -52,7 +53,9 @@ public class SoftPediaCom extends PluginForHost {
 
     public void correctDownloadLink(DownloadLink link) {
         String fileID = new Regex(link.getDownloadURL(), "softpedia\\.com/progDownload/(.*?)-Download-\\d+\\.html").getMatch(0);
-        if (fileID != null) link.setUrlDownload("http://www.softpedia.com/get/Programming/" + fileID + ".shtml");
+        if (fileID != null) {
+            link.setUrlDownload("http://www.softpedia.com/get/Programming/" + fileID + ".shtml");
+        }
     }
 
     @Override
@@ -89,26 +92,31 @@ public class SoftPediaCom extends PluginForHost {
     public void handleFree(DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
         int server = getConfiguredServer();
-        String nextPage = br.getRegex("<div align=\"center\">[\t\n\r ]+<a href=\"(.*?)\"").getMatch(0);
-        if (nextPage == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        String fileID = new Regex(nextPage, "-(\\d+)\\.html$").getMatch(0);
-        if (fileID == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        br.getPage(nextPage);
-        String mirrorPage = null;
-        if (server == 0) {
-            mirrorPage = br.getRegex("\"(http://(www\\.)?softpedia\\.com/dyn-postdownload\\.php\\?p=" + fileID + "\\&t=0\\&i=1)\"").getMatch(0);
-        } else if (server == 1) {
-            mirrorPage = br.getRegex("\"(http://(www\\.)?softpedia\\.com/dyn-postdownload\\.php\\?p=" + fileID + "\\&t=0\\&i=2)\"").getMatch(0);
-        } else if (server == 2) {
-            mirrorPage = br.getRegex("\"(http://(www\\.)?softpedia\\.com/dyn-postdownload\\.php\\?p=" + fileID + "\\&t=4\\&i=1)\"").getMatch(0);
-        } else if (server == 3) {
-            mirrorPage = br.getRegex("\"(http://(www\\.)?softpedia\\.com/dyn-postdownload\\.php\\?p=" + fileID + "\\&t=3\\&i=1)\"").getMatch(0);
+        final String fileID = br.getRegex("var spjs_prog_id=(\\d+);").getMatch(0);
+        if (fileID == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        br.postPage("http://www.softpedia.com/_xaja/dlinfo.php", "t=15&id=" + fileID);
+        String mirrorPage = br.getRegex("\\'(https?://(www\\.)?softpedia\\.com/dyn\\-postdownload\\.php/[^<>\"]*?)\\'").getMatch(0);
+        if (mirrorPage == null) {
+            /* Unmaintained code */
+            if (server == 0) {
+                mirrorPage = br.getRegex("\"(http://(www\\.)?softpedia\\.com/dyn-postdownload\\.php\\?p=" + fileID + "\\&t=0\\&i=1)\"").getMatch(0);
+            } else if (server == 1) {
+                mirrorPage = br.getRegex("\"(http://(www\\.)?softpedia\\.com/dyn-postdownload\\.php\\?p=" + fileID + "\\&t=0\\&i=2)\"").getMatch(0);
+            } else if (server == 2) {
+                mirrorPage = br.getRegex("\"(http://(www\\.)?softpedia\\.com/dyn-postdownload\\.php\\?p=" + fileID + "\\&t=4\\&i=1)\"").getMatch(0);
+            } else if (server == 3) {
+                mirrorPage = br.getRegex("\"(http://(www\\.)?softpedia\\.com/dyn-postdownload\\.php\\?p=" + fileID + "\\&t=3\\&i=1)\"").getMatch(0);
+            }
+            if (mirrorPage == null) {
+                logger.warning("Failed to find the downloadlink for the chosen mirror, trying to find ANY mirror...");
+                mirrorPage = br.getRegex("\"(http://(www\\.)?softpedia\\.com/dyn-postdownload\\.php\\?p=" + fileID + "\\&t=\\d\\&i=\\d)\"").getMatch(0);
+            }
         }
         if (mirrorPage == null) {
-            logger.warning("Failed to find the downloadlink for the chosen mirror, trying to find ANY mirror...");
-            mirrorPage = br.getRegex("\"(http://(www\\.)?softpedia\\.com/dyn-postdownload\\.php\\?p=" + fileID + "\\&t=\\d\\&i=\\d)\"").getMatch(0);
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        if (mirrorPage == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         br.getPage(mirrorPage);
         // They have many mirrors, we just pick a random one here because all
         // downloadlinks look pretty much the same
@@ -119,7 +127,10 @@ public class SoftPediaCom extends PluginForHost {
                 dllink = br.getRegex("\"(http://download.*?\\.softpedia\\.com/dl/[a-z0-9]+/[a-z0-9]+/\\d+/.*?)\"").getMatch(0);
             }
         }
-        if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (dllink == null) {
+            /* Some links simply don't work */
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Unknown server error");
+        }
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 1);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
@@ -132,8 +143,18 @@ public class SoftPediaCom extends PluginForHost {
     @Override
     public AvailableStatus requestFileInformation(DownloadLink link) throws IOException, PluginException {
         this.setBrowserExclusive();
-        br.getPage(link.getDownloadURL());
-        if (br.containsHTML("(>404 \\- page not found</h2>|404error\\.gif\"></td>)")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        br.setFollowRedirects(true);
+        try {
+            br.getPage(link.getDownloadURL());
+        } catch (final BrowserException e) {
+            if (br.getHttpConnection().getResponseCode() == 410) {
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            }
+            throw e;
+        }
+        if (br.getHttpConnection().getResponseCode() == 404) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
         String filename = br.getRegex("google_ad_section_start \\-\\-><h1>(.*?)<br/></h1><").getMatch(0);
         if (filename == null) {
             filename = br.getRegex("style=\"padding\\-top: 15px;\">Softpedia guarantees that <b>(.*?)</b> is <b").getMatch(0);
@@ -147,12 +168,21 @@ public class SoftPediaCom extends PluginForHost {
                 }
             }
         }
+        if (filename == null) {
+            filename = br.getRegex("<title>([^<>\"]*?) Free Download \\- Softpedia</title>").getMatch(0);
+        }
         // For fre trail programms
-        if (filename == null) filename = br.getRegex("<title>Download ([^<>\"]*?)\\- Softpedia</title>").getMatch(0);
+        if (filename == null) {
+            filename = br.getRegex("<title>Download ([^<>\"]*?)\\- Softpedia</title>").getMatch(0);
+        }
         String filesize = br.getRegex("([0-9\\.]+ (MB|KB))").getMatch(0);
-        if (filename == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (filename == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         link.setName(filename.trim());
-        if (filesize != null) link.setDownloadSize(SizeFormatter.getSize(filesize));
+        if (filesize != null) {
+            link.setDownloadSize(SizeFormatter.getSize(filesize));
+        }
         return AvailableStatus.TRUE;
     }
 

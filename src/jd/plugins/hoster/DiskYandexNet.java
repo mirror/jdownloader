@@ -100,6 +100,7 @@ public class DiskYandexNet extends PluginForHost {
     public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
         setBrowserExclusive();
         br.getHeaders().put("Accept-Language", "en-US,en;q=0.5");
+        br.setCookie("http://disk.yandex.com/", "ys", "");
         br.setFollowRedirects(true);
         String filename;
         if (link.getDownloadURL().matches(TYPE_VIDEO)) {
@@ -194,12 +195,15 @@ public class DiskYandexNet extends PluginForHost {
             maxchunks = 0;
         } else {
             final String hash = downloadLink.getStringProperty("hash_plain", null);
-            if (ckey == null) {
-                ckey = getCkey();
-            }
             br.getHeaders().put("Accept", "application/json, text/javascript, */*; q=0.01");
             br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
-            br.postPage("https://disk.yandex.com/handlers.jsx", "_ckey=" + ckey + "&_name=getLinkFileDownload&hash=" + Encoding.urlEncode(hash));
+            br.postPage("https://disk.yandex.com/secret-key.jsx", "");
+            ckey = br.getRegex("\"([a-z0-9]+)\"").getMatch(0);
+            if (ckey == null) {
+                logger.info("Getting ckey via html code --> Could lead to problems");
+                ckey = getCkey();
+            }
+            br.postPage("https://disk.yandex.com/handlers.jsx", "tld=com&_ckey=" + ckey + "&_name=getLinkFileDownload&hash=" + hash);
             if (br.containsHTML("\"title\":\"invalid ckey\"")) {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 'invalid ckey'", 5 * 60 * 1000l);
             } else if (br.containsHTML("\"code\":69")) {

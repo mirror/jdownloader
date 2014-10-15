@@ -25,6 +25,7 @@ import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
 import jd.http.Browser;
+import jd.http.Browser.BrowserException;
 import jd.http.Cookie;
 import jd.http.Cookies;
 import jd.nutils.encoding.Encoding;
@@ -75,18 +76,26 @@ public class ScribdCom extends PluginForHost {
             br.setLoadLimit(br.getLoadLimit() * 2);
         } catch (Throwable e) {
         }
-        br.getPage(downloadLink.getDownloadURL());
-        for (int i = 0; i <= 3; i++) {
-            String newurl = br.getRedirectLocation();
-            if (newurl != null) {
-                if (newurl.contains("/removal/")) {
-                    throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        try {
+            br.getPage(downloadLink.getDownloadURL());
+            for (int i = 0; i <= 3; i++) {
+                String newurl = br.getRedirectLocation();
+                if (newurl != null) {
+                    if (newurl.contains("/removal/")) {
+                        throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+                    }
+                    downloadLink.setUrlDownload(newurl);
+                    br.getPage(downloadLink.getDownloadURL());
+                } else {
+                    break;
                 }
-                downloadLink.setUrlDownload(newurl);
-                br.getPage(downloadLink.getDownloadURL());
-            } else {
-                break;
             }
+        } catch (final BrowserException e) {
+            if (br.getHttpConnection().getResponseCode() == 400) {
+                logger.info("Server returns error 400");
+                return AvailableStatus.UNCHECKABLE;
+            }
+            throw e;
         }
         ORIGURL = br.getURL();
         String filename = br.getRegex("<meta name=\"title\" content=\"(.*?)\"").getMatch(0);
@@ -176,7 +185,6 @@ public class ScribdCom extends PluginForHost {
     @Override
     public void handleFree(DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
-
         sleep(10000, downloadLink, PREMIUMONLY);
         try {
             throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);
@@ -223,7 +231,15 @@ public class ScribdCom extends PluginForHost {
     }
 
     private String[] getDllink(final DownloadLink parameter) throws PluginException, IOException {
-        br.getPage(ORIGURL);
+        try {
+            br.getPage(ORIGURL);
+        } catch (final BrowserException e) {
+            if (br.getHttpConnection().getResponseCode() == 400) {
+                logger.info("Server returns error 400");
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 400");
+            }
+            throw e;
+        }
         String[] dlinfo = new String[2];
         dlinfo[1] = getExtension();
         final String fileId = new Regex(parameter.getDownloadURL(), "scribd\\.com/doc/(\\d+)").getMatch(0);
