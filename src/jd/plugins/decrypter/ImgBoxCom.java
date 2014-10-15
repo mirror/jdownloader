@@ -57,7 +57,7 @@ public class ImgBoxCom extends PluginForDecrypt {
             return decryptedLinks;
         }
         if (parameter.matches(GALLERYLINK)) {
-            if (br.containsHTML("The specified gallery could not be found") || br.containsHTML("0 images</h1>")) {
+            if (br.containsHTML("The specified gallery could not be found") || br.containsHTML("(?!\\d+)0 images</h1>")) {
                 logger.info("Link offline: " + parameter);
                 return decryptedLinks;
             }
