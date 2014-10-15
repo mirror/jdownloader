@@ -1,25 +1,26 @@
-package jd.controlling.reconnect;
+package org.jdownloader.gui.toolbar;
+
+import java.awt.event.ActionEvent;
 
 import jd.controlling.reconnect.pluginsinc.liveheader.CLRConverter;
 
 import org.appwork.utils.swing.dialog.Dialog;
 import org.appwork.utils.swing.dialog.DialogCanceledException;
 import org.appwork.utils.swing.dialog.DialogClosedException;
+import org.jdownloader.actions.AppAction;
+import org.jdownloader.gui.IconKey;
 import org.jdownloader.gui.translate._GUI;
-import org.jdownloader.settings.advanced.AdvancedAction;
 import org.jdownloader.translate._JDT;
 
-public class ConvertCLRAction implements AdvancedAction {
+public class ConvertCLRScriptAction extends AppAction {
 
-    @Override
-    public String getName() {
-        return _JDT._.convert_CLR_Reconnect_to_jdownloader();
+    public ConvertCLRScriptAction() {
+        setName(_JDT._.convert_CLR_Reconnect_to_jdownloader());
+        setIconKey(IconKey.ICON_RUN);
     }
 
     @Override
-    public void actionPerformed() {
-        System.out.println(1);
-
+    public void actionPerformed(ActionEvent event) {
         try {
             String clr = Dialog.getInstance().showInputDialog(Dialog.STYLE_LARGE, _GUI._.ConvertCLRAction_actionPerformed_title(), _GUI._.ConvertCLRAction_actionPerformed_msg(), null, null, _GUI._.lit_continue(), null);
             String[] lh = CLRConverter.createLiveHeader(clr);

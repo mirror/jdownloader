@@ -14,7 +14,7 @@ import org.jdownloader.myjdownloader.client.bindings.AdvancedConfigEntryDataStor
 public class AdvancedConfigAPIEntry extends AdvancedConfigEntryDataStorable implements Storable {
 
     public AdvancedConfigAPIEntry(AdvancedConfigEntry entry, boolean returnDescription, boolean addValue, boolean defaultValues) {
-        KeyHandler<?> kh = ((AdvancedConfigEntry) entry).getKeyHandler();
+        KeyHandler<?> kh = entry.getKeyHandler();
         if (returnDescription && StringUtils.isNotEmpty(entry.getDescription())) {
             setDocs(entry.getDescription());
         }
@@ -24,24 +24,22 @@ public class AdvancedConfigAPIEntry extends AdvancedConfigEntryDataStorable impl
         setInterfaceName(i);
 
         setKey(createKey(kh));
-        if (kh.getAnnotation(ActionClass.class) != null) {
-            setAbstractType(org.jdownloader.myjdownloader.client.bindings.AdvancedConfigEntryDataStorable.AbstractType.ACTION);
-            return;
-        } else {
-            try {
-                AbstractType abstractType = AbstractType.valueOf(kh.getAbstractType().name());
-                setAbstractType(abstractType);
-            } catch (Exception e) {
-                throw new WTFException(e);
 
-            }
+        try {
+            AbstractType abstractType = AbstractType.valueOf(kh.getAbstractType().name());
+            setAbstractType(abstractType);
+        } catch (Exception e) {
+            throw new WTFException(e);
+
         }
 
         File expectedPath = Application.getResource("cfg/" + i);
         String storage = null;
         if (!expectedPath.equals(kh.getStorageHandler().getPath())) {
             storage = Files.getRelativePath(Application.getTemp().getParentFile(), kh.getStorageHandler().getPath());
-            if (StringUtils.isEmpty(storage)) storage = kh.getStorageHandler().getPath().getAbsolutePath();
+            if (StringUtils.isEmpty(storage)) {
+                storage = kh.getStorageHandler().getPath().getAbsolutePath();
+            }
         }
         if (storage != null) {
             setStorage(storage);

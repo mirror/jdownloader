@@ -5253,4 +5253,10 @@ public interface GuiTranslation extends TranslateInterface {
 
     @Default(lngs = { "en" }, values = { "Move already downloaded files" })
     String MergeToPackageAction_getTranslationForCustomizer_moveDownloadedFilesEnabled();
+
+    @Default(lngs = { "en" }, values = { "Export all Menu Settings" })
+    String ExportMenuItemsAction_ExportMenuItemsAction();
+
+    @Default(lngs = { "en" }, values = { "Import all Menu Settings" })
+    String ImportMenuItemsAction();
 }

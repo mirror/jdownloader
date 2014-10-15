@@ -5,15 +5,12 @@ import java.awt.Dimension;
 import java.awt.Point;
 import java.awt.Rectangle;
 import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
 import java.awt.event.MouseEvent;
 import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayList;
 
 import javax.swing.Icon;
-import javax.swing.JButton;
 import javax.swing.JColorChooser;
-import javax.swing.JComponent;
 import javax.swing.JMenuItem;
 import javax.swing.SpinnerNumberModel;
 import javax.swing.SwingConstants;
@@ -25,25 +22,20 @@ import org.appwork.storage.TypeRef;
 import org.appwork.storage.config.annotations.EnumLabel;
 import org.appwork.storage.config.annotations.HexColorString;
 import org.appwork.storage.config.annotations.LabelInterface;
-import org.appwork.swing.MigPanel;
 import org.appwork.swing.components.CheckBoxIcon;
 import org.appwork.swing.exttable.ExtColumn;
 import org.appwork.swing.exttable.columns.ExtCheckColumn;
-import org.appwork.swing.exttable.columns.ExtComponentColumn;
 import org.appwork.swing.exttable.columns.ExtCompoundColumn;
 import org.appwork.swing.exttable.columns.ExtSpinnerColumn;
 import org.appwork.swing.exttable.columns.ExtTextAreaColumn;
 import org.appwork.swing.exttable.columns.ExtTextColumn;
 import org.appwork.utils.reflection.Clazz;
 import org.appwork.utils.swing.dialog.Dialog;
-import org.appwork.utils.swing.renderer.RenderLabel;
-import org.appwork.utils.swing.renderer.RendererMigPanel;
 import org.jdownloader.actions.AppAction;
 import org.jdownloader.controlling.contextmenu.gui.ExtPopupMenu;
 import org.jdownloader.gui.IconKey;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.images.NewTheme;
-import org.jdownloader.settings.advanced.ActionClass;
 import org.jdownloader.settings.advanced.AdvancedConfigEntry;
 import org.jdownloader.settings.advanced.RangeValidator;
 import org.jdownloader.updatev2.gui.LAFOptions;
@@ -60,7 +52,8 @@ public class AdvancedValueColumn extends ExtCompoundColumn<AdvancedConfigEntry> 
     private ExtSpinnerColumn<AdvancedConfigEntry>          longColumn;
     private ExtTextColumn<AdvancedConfigEntry>             enumColumn;
     private ExtTextColumn<AdvancedConfigEntry>             colorColumn;
-    private ExtComponentColumn<AdvancedConfigEntry>        actionColumn;
+
+    // private ExtComponentColumn<AdvancedConfigEntry> actionColumn;
 
     public AdvancedValueColumn() {
         super(_GUI._.AdvancedValueColumn_AdvancedValueColumn_object_());
@@ -79,96 +72,97 @@ public class AdvancedValueColumn extends ExtCompoundColumn<AdvancedConfigEntry> 
     }
 
     private void initColumns() {
-        actionColumn = new ExtComponentColumn<AdvancedConfigEntry>(getName()) {
-            private JButton             editorBtn;
-            private JButton             rendererBtn;
-            private AdvancedConfigEntry editing;
-            protected MigPanel          editor;
-            protected RendererMigPanel  renderer;
-            private RenderLabel         label;
-
-            {
-                editorBtn = new JButton("");
-
-                editorBtn.setFocusable(false);
-                editorBtn.addActionListener(new ActionListener() {
-
-                    @Override
-                    public void actionPerformed(ActionEvent e) {
-                        if (editing != null) {
-                            try {
-                                editing.getKeyHandler().getAnnotation(ActionClass.class).value().newInstance().actionPerformed();
-                            } catch (Exception e1) {
-                                Dialog.getInstance().showExceptionDialog(_GUI._.lit_error_occured(), e1.getMessage(), e1);
-                            }
-                        }
-                    }
-                });
-                label = new RenderLabel();
-                rendererBtn = new JButton("");
-                this.editor = new MigPanel("ins 1", "[grow,fill]", "[18!]") {
-
-                    @Override
-                    public void requestFocus() {
-
-                    }
-
-                };
-                editor.add(editorBtn);
-                this.renderer = new RendererMigPanel("ins 1", "[grow,fill]", "[18!]");
-                renderer.add(rendererBtn);
-                setClickcount(1);
-
-            }
-
-            @Override
-            protected JComponent getInternalEditorComponent(AdvancedConfigEntry value, boolean isSelected, int row, int column) {
-                return editor;
-            }
-
-            @Override
-            public boolean onSingleClick(MouseEvent e, AdvancedConfigEntry obj) {
-                return super.onSingleClick(e, obj);
-            }
-
-            @Override
-            protected JComponent getInternalRendererComponent(AdvancedConfigEntry value, boolean isSelected, boolean hasFocus, int row, int column) {
-                return renderer;
-            }
-
-            @Override
-            public void configureEditorComponent(AdvancedConfigEntry value, boolean isSelected, int row, int column) {
-
-                try {
-                    editing = value;
-                    editorBtn.setText(value.getKeyHandler().getAnnotation(ActionClass.class).value().newInstance().getName());
-                } catch (Exception e) {
-                    editorBtn.setText("Invoke");
-
-                }
-            }
-
-            @Override
-            public void configureRendererComponent(AdvancedConfigEntry value, boolean isSelected, boolean hasFocus, int row, int column) {
-                try {
-                    rendererBtn.setText(value.getKeyHandler().getAnnotation(ActionClass.class).value().newInstance().getName());
-                } catch (Exception e) {
-                    rendererBtn.setText("Invoke");
-
-                }
-            }
-
-            @Override
-            public void resetEditor() {
-            }
-
-            @Override
-            public void resetRenderer() {
-
-            }
-
-        };
-        register(actionColumn);
+        // actionColumn = new ExtComponentColumn<AdvancedConfigEntry>(getName()) {
+        // private JButton editorBtn;
+        // private JButton rendererBtn;
+        // private AdvancedConfigEntry editing;
+        // protected MigPanel editor;
+        // protected RendererMigPanel renderer;
+        // private RenderLabel label;
+        //
+        // {
+        // editorBtn = new JButton("");
+        //
+        // editorBtn.setFocusable(false);
+        // editorBtn.addActionListener(new ActionListener() {
+        //
+        // @Override
+        // public void actionPerformed(ActionEvent e) {
+        // if (editing != null) {
+        // try {
+        // editing.getKeyHandler().getAnnotation(ActionClass.class).value().newInstance().actionPerformed();
+        // } catch (Exception e1) {
+        // Dialog.getInstance().showExceptionDialog(_GUI._.lit_error_occured(), e1.getMessage(), e1);
+        // }
+        // }
+        // }
+        // });
+        // label = new RenderLabel();
+        // rendererBtn = new JButton("");
+        // this.editor = new MigPanel("ins 1", "[grow,fill]", "[18!]") {
+        //
+        // @Override
+        // public void requestFocus() {
+        //
+        // }
+        //
+        // };
+        // editor.add(editorBtn);
+        // this.renderer = new RendererMigPanel("ins 1", "[grow,fill]", "[18!]");
+        // renderer.add(rendererBtn);
+        // setClickcount(1);
+        //
+        // }
+        //
+        // @Override
+        // protected JComponent getInternalEditorComponent(AdvancedConfigEntry value, boolean isSelected, int row, int column) {
+        // return editor;
+        // }
+        //
+        // @Override
+        // public boolean onSingleClick(MouseEvent e, AdvancedConfigEntry obj) {
+        // return super.onSingleClick(e, obj);
+        // }
+        //
+        // @Override
+        // protected JComponent getInternalRendererComponent(AdvancedConfigEntry value, boolean isSelected, boolean hasFocus, int row, int
+        // column) {
+        // return renderer;
+        // }
+        //
+        // @Override
+        // public void configureEditorComponent(AdvancedConfigEntry value, boolean isSelected, int row, int column) {
+        //
+        // try {
+        // editing = value;
+        // editorBtn.setText(value.getKeyHandler().getAnnotation(ActionClass.class).value().newInstance().getName());
+        // } catch (Exception e) {
+        // editorBtn.setText("Invoke");
+        //
+        // }
+        // }
+        //
+        // @Override
+        // public void configureRendererComponent(AdvancedConfigEntry value, boolean isSelected, boolean hasFocus, int row, int column) {
+        // try {
+        // rendererBtn.setText(value.getKeyHandler().getAnnotation(ActionClass.class).value().newInstance().getName());
+        // } catch (Exception e) {
+        // rendererBtn.setText("Invoke");
+        //
+        // }
+        // }
+        //
+        // @Override
+        // public void resetEditor() {
+        // }
+        //
+        // @Override
+        // public void resetRenderer() {
+        //
+        // }
+        //
+        // };
+        // register(actionColumn);
 
         stringColumn = new ExtTextColumn<AdvancedConfigEntry>(getName()) {
             private static final long serialVersionUID = 1L;
@@ -578,9 +572,10 @@ public class AdvancedValueColumn extends ExtCompoundColumn<AdvancedConfigEntry> 
         if (object == null) {
             return defaultColumn;
         }
-        if (object.getKeyHandler().getAnnotation(ActionClass.class) != null) {
-            return actionColumn;
-        } else if (Clazz.isBoolean(object.getType())) {
+        // if (object.getKeyHandler().getAnnotation(ActionClass.class) != null) {
+        // return actionColumn;
+        // } else
+        if (Clazz.isBoolean(object.getType())) {
             return booleanColumn;
         } else if (object.getType() == String.class) {
             if (object.getKeyHandler().getAnnotation(HexColorString.class) != null) {
