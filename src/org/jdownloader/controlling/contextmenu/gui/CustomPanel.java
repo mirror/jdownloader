@@ -5,6 +5,7 @@ import java.awt.event.ActionListener;
 import java.awt.event.KeyEvent;
 import java.awt.event.KeyListener;
 import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
 
 import javax.swing.JCheckBox;
 import javax.swing.JLabel;
@@ -12,6 +13,8 @@ import javax.swing.KeyStroke;
 import javax.swing.SpinnerNumberModel;
 import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
+
+import jd.gui.swing.jdgui.JDGui;
 
 import org.appwork.storage.config.annotations.EnumLabel;
 import org.appwork.storage.config.annotations.LabelInterface;
@@ -53,7 +56,7 @@ public class CustomPanel extends MigPanel {
 
             if (Clazz.isBoolean(gs.getType())) {
                 JLabel lbl;
-                add(lbl = new JLabel(gs.getAnnotation(Customizer.class).name()), "pushx");
+                add(lbl = new JLabel(getNameForCustomizer(action, actionClass, gs)), "pushx");
                 final JCheckBox jb = new JCheckBox();
                 add(jb, "wrap,alignx right");
                 try {
@@ -135,7 +138,7 @@ public class CustomPanel extends MigPanel {
                     }
 
                 });
-                add(new JLabel(gs.getAnnotation(Customizer.class).name()), "pushx,growx");
+                add(new JLabel(getNameForCustomizer(action, actionClass, gs)), "pushx,growx");
                 add(shortcut, "spanx,width 20:120:n");
             } else if (Clazz.isEnum(gs.getType())) {
 
@@ -229,7 +232,7 @@ public class CustomPanel extends MigPanel {
                     };
                 };
                 cb.setSelectedItem(values[index]);
-                add(new JLabel(gs.getAnnotation(Customizer.class).name()), "growx,spanx,wrap");
+                add(new JLabel(getNameForCustomizer(action, actionClass, gs)), "growx,spanx,wrap");
                 add(cb, "growx,spanx,wrap");
             } else if (gs.getType() == String.class) {
 
@@ -254,7 +257,7 @@ public class CustomPanel extends MigPanel {
                 };
 
                 cb.setText(value);
-                add(new JLabel(gs.getAnnotation(Customizer.class).name()), "growx,spanx,wrap");
+                add(new JLabel(getNameForCustomizer(action, actionClass, gs)), "growx,spanx,wrap");
                 add(cb, "growx,spanx,wrap,pushx,growx");
             } else if (Clazz.isInteger(gs.getType())) {
 
@@ -278,11 +281,40 @@ public class CustomPanel extends MigPanel {
                     }
                 });
 
-                add(new JLabel(gs.getAnnotation(Customizer.class).name()), "growx,spanx,wrap");
+                add(new JLabel(getNameForCustomizer(action, actionClass, gs)), "growx,spanx,wrap");
                 add(spinner, "growx,spanx,wrap,pushx,growx");
             }
         } catch (Exception e) {
             logger.log(e);
         }
+    }
+
+    public static String getNameForCustomizer(CustomizableAppAction action, ActionContext actionClass, GetterSetter gs) {
+        String ret = gs.getAnnotation(Customizer.class).name();
+        try {
+            // resolve the linked static method
+            if (ret.startsWith("@link ")) {
+                ret = ret.substring("@link ".length());
+                Class<?> cls = gs.getGetter().getDeclaringClass();
+                if (ret.startsWith("#")) {
+                    // relative
+                    ret = ret.substring(1);
+                } else {
+                    int index = ret.lastIndexOf(".");
+                    cls = Class.forName(ret.substring(0, index));
+                    ret = ret.substring(index + 1);
+                }
+                Method method = cls.getMethod(ret, new Class[] {});
+                Object translation = method.invoke(null, new Object[] {});
+                if (translation != null && translation instanceof String) {
+                    return (String) translation;
+                }
+            }
+
+        } catch (Throwable e) {
+            JDGui.getInstance().getLogger().log(e);
+        }
+
+        return ret;
     }
 }

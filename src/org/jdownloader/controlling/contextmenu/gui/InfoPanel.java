@@ -491,6 +491,7 @@ public class InfoPanel extends MigPanel implements ActionListener, Scrollable {
                                 Customizer oc1 = o1.gs.getAnnotation(Customizer.class);
                                 Customizer oc2 = o2.gs.getAnnotation(Customizer.class);
                                 if (oc1 != null) {
+
                                     lbl1 = oc1.name();
                                 }
                                 if (oc2 != null) {

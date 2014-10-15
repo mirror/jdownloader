@@ -5250,4 +5250,7 @@ public interface GuiTranslation extends TranslateInterface {
 
     @Default(lngs = { "en" }, values = { "Add online & offline links to the Downloadlist" })
     String ConfirmLinksContextAction_getListCellRendererComponent_INCLUDE_OFFLINE();
+
+    @Default(lngs = { "en" }, values = { "Move already downloaded files" })
+    String MergeToPackageAction_getTranslationForCustomizer_moveDownloadedFilesEnabled();
 }

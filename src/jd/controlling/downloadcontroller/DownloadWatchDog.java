@@ -4068,7 +4068,7 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
                     final String old = pkg.getDownloadDirectory();
                     if (!new File(pkg.getDownloadDirectory()).equals(new File(path))) {
                         pkg.setDownloadDirectory(path);
-                        File newFilePath = new File(path);
+
                         boolean readL = pkg.getModifyLock().readLock();
                         try {
                             for (DownloadLink downloadLink : pkg.getChildren()) {
@@ -4094,6 +4094,7 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
 
     protected void move(DownloadLink downloadLink, String oldDir, String oldName, String newDir, String newName) {
         try {
+
             ArrayList<DownloadLinkCandidate> lst = new ArrayList<DownloadLinkCandidate>();
             lst.add(new DownloadLinkCandidate(downloadLink, true));
             if (DISKSPACERESERVATIONRESULT.FAILED.equals(validateDiskFree(lst))) {
@@ -4102,7 +4103,15 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
             }
             logger.info("Move " + downloadLink);
             logger.info("From " + oldDir + "/" + oldName + " to " + newDir + "/" + newName);
+            if (!new File(oldDir).equals(new File(newDir)) && !CFG_GENERAL.CFG.isMoveFilesIfDownloadDestinationChangesEnabled()) {
+                logger.info("Cancel isMoveFilesIfDownloadDestinationChanges is false");
+                return;
+            }
+            if (new File(oldDir).equals(new File(newDir)) && !oldName.equals(newName) && !CFG_GENERAL.CFG.isRenameFilesIfDownloadLinkNameChangesEnabled()) {
+                logger.info("Cancel isRenameFilesIfDownloadLinkNameChangesEnabled is false");
+            }
             downloadLink.getDefaultPlugin().move(downloadLink, oldDir, oldName, newDir, newName);
+            return;
         } catch (Throwable e) {
             logger.log(e);
             UIOManager.I().show(ExceptionDialogInterface.class, new ExceptionDialog(UIOManager.BUTTONS_HIDE_CANCEL, _GUI._.lit_error_occured(), e.getMessage(), e, _GUI._.lit_close(), null));

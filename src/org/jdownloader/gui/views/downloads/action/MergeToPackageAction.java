@@ -36,6 +36,25 @@ public class MergeToPackageAction extends CustomizableTableContextAppAction<File
 
     private boolean expandNewPackage = false;
 
+    // public static String getMoveDownloadedFilesEnabledTranslation() {
+    // return _GUI._.MergeToPackageAction_getTranslationForCustomizer_moveDownloadedFilesEnabled();
+    //
+    // }
+    //
+    // /**
+    // * Relative Translation link to {@link #getMoveDownloadedFilesEnabledTranslation()}
+    // *
+    // * @return
+    // */
+    // @Customizer(name = "@link #getMoveDownloadedFilesEnabledTranslation")
+    // public boolean isMoveDownloadedFilesEnabled() {
+    // return movedDownloadedFilesEnabled;
+    // }
+    //
+    // public void setMoveDownloadedFilesEnabled(boolean b) {
+    // this.movedDownloadedFilesEnabled = b;
+    // }
+
     @Customizer(name = "Expand the new package after creation")
     public boolean isExpandNewPackage() {
         return expandNewPackage;

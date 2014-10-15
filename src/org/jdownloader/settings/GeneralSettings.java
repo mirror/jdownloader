@@ -577,4 +577,17 @@ public interface GeneralSettings extends ConfigInterface {
 
     void setDownloadDestinationHistoryLength(int i);
 
+    @AboutConfig
+    @DefaultBooleanValue(true)
+    @DescriptionForConfigEntry("If the Download Destination of a packages changes (Merge packages, changed destination,...) JD will try to move or rename already downloaded files.")
+    boolean isMoveFilesIfDownloadDestinationChangesEnabled();
+
+    void setMoveFilesIfDownloadDestinationChangesEnabled(boolean b);
+
+    @AboutConfig
+    @DefaultBooleanValue(true)
+    @DescriptionForConfigEntry("If the Download Destination of a packages changes (Merge packages, changed destination,...) JD will try to move or rename already downloaded files.")
+    boolean isRenameFilesIfDownloadLinkNameChangesEnabled();
+
+    void setRenameFilesIfDownloadLinkNameChangesEnabled(boolean b);
 }
