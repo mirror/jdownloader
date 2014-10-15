@@ -611,6 +611,7 @@ MenuManagerDialog_actionPerformed_title=デフォルトにリセットします�
 MenuManagerMainToolbarAction_MenuManagerMainToolbarAction=ツールバー管理を開く
 MergeToPackageAction_MergeToPackageAction_=新しいパッケージへ移動
 MergeToPackageAction_actionPerformed_newpackage_=新しいパッケージ
+MergeToPackageAction_getTranslationForCustomizer_moveDownloadedFilesEnabled=ダウンロード済のファイルを移動
 MoveDownAction_MoveDownAction=下に移動
 MoveToBottomAction_MoveToBottomAction=最下部に移動
 MoveToTopAction_MoveToTopAction=最上部に移動
