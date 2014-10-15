@@ -87,6 +87,7 @@ public class FreeWayMe extends PluginForHost {
     private final String                                   NOTIFY_ON_FULLSPEED_LIMIT_DIALOG    = "NOTIFY_ON_FULLSPEED_LIMIT_DIALOG";
 
     private final String                                   SETTING_2FA_ALIAS                   = "SETTING_2FA_ALIAS";
+    private final String                                   SETTING_SHOW_TRAFFICLEFT            = "SETTING_SHOW_TRAFFICLEFT";
 
     private static final String                            NORESUME                            = "NORESUME";
     private static final String                            PREVENTSPRITUSAGE                   = "PREVENTSPRITUSAGE";
@@ -151,6 +152,10 @@ public class FreeWayMe extends PluginForHost {
             put("SETTING_2FA_ALIAS", "Device name (Two-Factor Authentication)");
             put("POPUP_2FA_TITLE", "Free-Way 2-Factor Authentication");
             put("POPUP_2FA_DESCRIPTION", "Please authenticate this device or disable 2-factor authentication on free-way.me\n\n" + "Device: ");
+            put("SETTING_SHOW_TRAFFICLEFT", "Show remaining fullspeed traffic as 'traffic left'?\r\nNOTE: In case you have less than 10 GB fullspeed traffic left, it will be shown as 'Unlimited' again due to technical reasons!");
+            put("SETTINGSTEXT_SETTINGS_DOWNLOAD", "Download settings:");
+            put("SETTINGSTEXT_SETTINGS_GUI", "User interface settings:");
+            put("SETTINGSTEXT_SETTINGS_ACCOUNT", "Advanced account settings:");
         }
     };
 
@@ -195,6 +200,10 @@ public class FreeWayMe extends PluginForHost {
             put("SETTING_2FA_ALIAS", "Gerätename (Zwei-Faktor Authentifizierung)");
             put("POPUP_2FA_TITLE", "Free-Way 2-Faktor Authentifizierung");
             put("POPUP_2FA_DESCRIPTION", "Bitte autorisiere das folgende Gerät oder deaktiviere die 2-Faktor Authent-\n" + "entifizierung auf der Free-Way Seite.\n\nGerät: ");
+            put("SETTING_SHOW_TRAFFICLEFT", "Zeige verbleibendes Fullspeedvolumen in der Accountübersicht bei 'Downloadtraffic übrig'?\r\nWICHTIG: Solltest du weniger als 10 GB Fullspeedvolumen haben, wird aus technischen Gründen wieder 'Unlimitiert' angezeigt!");
+            put("SETTINGSTEXT_SETTINGS_DOWNLOAD", "Downloadeinstellungen:");
+            put("SETTINGSTEXT_SETTINGS_GUI", "Benutzeroberflächen-Einstellungen:");
+            put("SETTINGSTEXT_SETTINGS_ACCOUNT", "Erweiterte Account Einstellungen:");
         }
     };
 
@@ -280,15 +289,21 @@ public class FreeWayMe extends PluginForHost {
     }
 
     public void setConfigElements() {
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_LABEL, getPhrase("SETTINGSTEXT_SETTINGS_DOWNLOAD")));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), ALLOWRESUME, getPhrase("SETTING_RESUME")).setDefaultValue(true));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), PREVENTSPRITUSAGE, getPhrase("SETTING_SPRITUSAGE")).setDefaultValue(false));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_SEPARATOR));
+
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_LABEL, getPhrase("SETTINGSTEXT_SETTINGS_GUI")));
         /* settings for notification on empty fullspeed traffic */
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), NOTIFY_ON_FULLSPEED_LIMIT_BUBBLE, getPhrase("SETTINGS_FULLSPEED_NOTIFICATION_BUBBLE")).setDefaultValue(false));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), NOTIFY_ON_FULLSPEED_LIMIT_DIALOG, getPhrase("SETTINGS_FULLSPEED_NOTIFICATION_DIALOG")).setDefaultValue(true));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), SETTING_SHOW_TRAFFICLEFT, getPhrase("SETTING_SHOW_TRAFFICLEFT")).setDefaultValue(false));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_SEPARATOR));
 
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_LABEL, getPhrase("SETTINGSTEXT_SETTINGS_ACCOUNT")));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), BETAUSER, getPhrase("SETTING_BETA")).setDefaultValue(false));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_SPINNER, getPluginConfig(), FreeWayMe.MAX_RETRIES_UNKNOWN_ERROR, JDL.L("plugins.hoster.FreeWayMe.maxRetriesOnUnknownErrors", getPhrase("SETTING_MAXRETRIES_UNKNOWN_ERROR")), 3, 50, 1).setDefaultValue(max_retries_unknown_error_default));
-
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_TEXTFIELD, getPluginConfig(), SETTING_2FA_ALIAS, getPhrase("SETTING_2FA_ALIAS")).setDefaultValue("JDownloader - " + System.getProperty("user.name")));
     }
 
@@ -357,18 +372,18 @@ public class FreeWayMe extends PluginForHost {
         String accInfoAPIResp = getPage2FA("https://www.free-way.me/ajax/jd.php?id=4&user=" + username + "&pass=" + pass + "&encoded");
 
         int maxPremi = 1;
-        final String maxPremApi = getJson("parallel", accInfoAPIResp);
+        final String maxPremApi = getJson(accInfoAPIResp, "parallel");
         if (maxPremApi != null) {
             maxPremi = Integer.parseInt(maxPremApi);
         }
         account.setProperty(ACC_PROPERTY_CONNECTIONS, maxPremi);
 
         // get available fullspeed traffic
-        account.setProperty(ACC_PROPERTY_REST_FULLSPEED_TRAFFIC, getJson("restgb", accInfoAPIResp));
+        account.setProperty(ACC_PROPERTY_REST_FULLSPEED_TRAFFIC, this.getJson(accInfoAPIResp, "restgb"));
 
         // get percentage usage of fullspeed traffic
         float trafficPerc = -1f;
-        final String trafficPercApi = getJson("perc", accInfoAPIResp);
+        final String trafficPercApi = getJson(accInfoAPIResp, "perc");
         if (trafficPercApi != null) {
             trafficPerc = Float.parseFloat(trafficPercApi);
 
@@ -425,6 +440,7 @@ public class FreeWayMe extends PluginForHost {
         }
         account.setProperty(ACC_PROPERTY_TRAFFIC_REDUCTION, ((int) trafficPerc * 100));
 
+        /* TODO: Maybe remove this code, not needed anymore?! */
         try {
             Long guthaben = Long.parseLong(getRegexTag(accInfoAPIResp, "guthaben").getMatch(0));
             ac.setTrafficLeft(guthaben * 1024 * 1024);
@@ -438,13 +454,18 @@ public class FreeWayMe extends PluginForHost {
         String accountType = getRegexTag(accInfoAPIResp, "premium").getMatch(0);
         ac.setValidUntil(-1);
         if (accountType != null) {
+            final double remaining_gb = Double.parseDouble(this.getJson(accInfoAPIResp, "restgb"));
             if (accountType.equalsIgnoreCase("Flatrate")) {
                 logger.info("{fetchAccInfo} Flatrate Account");
-                ac.setUnlimitedTraffic();
                 long validUntil = Long.parseLong(getRegexTag(accInfoAPIResp, "Flatrate").getMatch(0));
                 ac.setValidUntil(validUntil * 1000);
             } else if (accountType.equalsIgnoreCase("Spender")) {
                 logger.info("{fetchAccInfo} Spender Account");
+            }
+            /* Obey users' setting */
+            if (this.getPluginConfig().getBooleanProperty(this.SETTING_SHOW_TRAFFICLEFT, false) && remaining_gb > 10) {
+                ac.setTrafficLeft((long) remaining_gb * 1024 * 1024 * 1024);
+            } else {
                 ac.setUnlimitedTraffic();
             }
         }
@@ -472,7 +493,15 @@ public class FreeWayMe extends PluginForHost {
         return ac;
     }
 
-    private String getJson(final String parameter, final String source) {
+    // private String getJson(final String parameter, final String source) {
+    // String result = new Regex(source, "\"" + parameter + "\":([0-9\\.]+)").getMatch(0);
+    // if (result == null) {
+    // result = new Regex(source, "\"" + parameter + "\":\"([^<>\"]*?)\"").getMatch(0);
+    // }
+    // return result;
+    // }
+
+    private String getJson(final String source, final String parameter) {
         String result = new Regex(source, "\"" + parameter + "\":([0-9\\.]+)").getMatch(0);
         if (result == null) {
             result = new Regex(source, "\"" + parameter + "\":\"([^<>\"]*?)\"").getMatch(0);
