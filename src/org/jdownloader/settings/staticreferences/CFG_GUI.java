@@ -41,7 +41,10 @@ public class CFG_GUI {
 
     public static final BooleanKeyHandler                              DOWNLOADS_PROPERTIES_PANEL_SAVE_TO_VISIBLE              = SH.getKeyHandler("DownloadsPropertiesPanelSaveToVisible", BooleanKeyHandler.class);
 
-    public static final BooleanKeyHandler                              PRESENTATION_MODE                                       = SH.getKeyHandler("PresentationModeEnabled", BooleanKeyHandler.class);
+    /**
+     * Presentation mode peforms tasks like: account username obstruction throughout GUI
+     **/
+    public static final BooleanKeyHandler                              PRESENTATION_MODE_ENABLED                               = SH.getKeyHandler("PresentationModeEnabled", BooleanKeyHandler.class);
 
     /**
      * If false, Most of the Tooltips will be disabled
@@ -126,8 +129,6 @@ public class CFG_GUI {
     public static final EnumKeyHandler                                 SELECTED_LINKGRABBER_SEARCH_CATEGORY                    = SH.getKeyHandler("SelectedLinkgrabberSearchCategory", EnumKeyHandler.class);
 
     public static final BooleanKeyHandler                              CAPTCHA_DEBUG_MODE_ENABLED                              = SH.getKeyHandler("CaptchaDebugModeEnabled", BooleanKeyHandler.class);
-
-    public static final BooleanKeyHandler                              EXPORT_ALL_MENUS_ACTION                                 = SH.getKeyHandler("ExportAllMenusAction", BooleanKeyHandler.class);
 
     public static final EnumKeyHandler                                 PREMIUM_STATUS_BAR_DISPLAY                              = SH.getKeyHandler("PremiumStatusBarDisplay", EnumKeyHandler.class);
 
@@ -225,6 +226,9 @@ public class CFG_GUI {
      **/
     public static final StringKeyHandler                               TITLE_PATTERN                                           = SH.getKeyHandler("TitlePattern", StringKeyHandler.class);
 
+    /**
+     * The last used the Regex option for 'Rename Filename/Packagename' Dialog
+     **/
     public static final BooleanKeyHandler                              RENAME_ACTION_REGEX_ENABLED                             = SH.getKeyHandler("RenameActionRegexEnabled", BooleanKeyHandler.class);
 
     public static final EnumKeyHandler                                 LINK_DOUBLE_CLICK_ACTION                                = SH.getKeyHandler("LinkDoubleClickAction", EnumKeyHandler.class);
@@ -262,8 +266,6 @@ public class CFG_GUI {
     public static final EnumKeyHandler                                 CONFIRM_INCOMPLETE_ARCHIVE_ACTION                       = SH.getKeyHandler("ConfirmIncompleteArchiveAction", EnumKeyHandler.class);
 
     public static final EnumKeyHandler                                 LAST_IF_FILE_EXISTS                                     = SH.getKeyHandler("LastIfFileExists", EnumKeyHandler.class);
-
-    public static final BooleanKeyHandler                              IMPORT_ALL_MENUS_ACTION                                 = SH.getKeyHandler("ImportAllMenusAction", BooleanKeyHandler.class);
 
     public static final BooleanKeyHandler                              DOWNLOADS_PROPERTIES_PANEL_ARCHIVEPASSWORD_VISIBLE      = SH.getKeyHandler("DownloadsPropertiesPanelArchivepasswordVisible", BooleanKeyHandler.class);
 
