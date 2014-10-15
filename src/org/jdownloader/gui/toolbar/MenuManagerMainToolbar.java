@@ -65,7 +65,7 @@ public class MenuManagerMainToolbar extends ContextMenuManager<FilePackage, Down
 
     /**
      * get the only existing instance of DownloadListContextMenuManager. This is a singleton
-     *
+     * 
      * @return
      */
     public static MenuManagerMainToolbar getInstance() {
@@ -181,6 +181,8 @@ public class MenuManagerMainToolbar extends ContextMenuManager<FilePackage, Down
         opt.add(createDeleteMenu());
 
         opt.add(CollapseExpandAllAction.class);
+        opt.add(ExportMenuItemsAction.class);
+        opt.add(ConvertCLRScriptAction.class);
         return mr;
     }
 

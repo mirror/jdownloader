@@ -10,7 +10,6 @@ import org.appwork.storage.config.annotations.DefaultStringValue;
 import org.appwork.storage.config.annotations.DescriptionForConfigEntry;
 import org.appwork.storage.config.annotations.PlainStorage;
 import org.appwork.storage.config.annotations.SpinnerValidator;
-import org.jdownloader.settings.advanced.ActionClass;
 
 @PlainStorage
 public interface ReconnectConfig extends ConfigInterface {
@@ -144,11 +143,5 @@ public interface ReconnectConfig extends ConfigInterface {
     void setReconnectAllowedToInterruptResumableDownloads(boolean b);
 
     void setDownloadControllerPrefersReconnectEnabled(boolean b);
-
-    @AboutConfig
-    @ActionClass(ConvertCLRAction.class)
-    boolean getConvertCLRScriptAction();
-
-    void setConvertCLRScriptAction(boolean type);
 
 }

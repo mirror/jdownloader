@@ -26,7 +26,6 @@ import org.appwork.utils.swing.windowmanager.WindowManager.FrameState;
 import org.jdownloader.gui.laf.jddefault.JDDefaultLookAndFeel;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.gui.views.components.LinktablesSearchCategory;
-import org.jdownloader.settings.advanced.ActionClass;
 
 public interface GraphicalUserInterfaceSettings extends ConfigInterface {
 
@@ -49,7 +48,7 @@ public interface GraphicalUserInterfaceSettings extends ConfigInterface {
 
     /**
      * How many ms the speedmeter shall show/record. Please note that big Timeframes and high fps values may cause high CPU usage
-     *
+     * 
      * @return
      */
     @AboutConfig
@@ -60,7 +59,7 @@ public interface GraphicalUserInterfaceSettings extends ConfigInterface {
 
     /**
      * How many refreshes and datasamples the speedmeter uses. Please note that big Timeframes and high fps values may cause high CPU usage
-     *
+     * 
      * @return
      */
     @AboutConfig
@@ -637,18 +636,6 @@ public interface GraphicalUserInterfaceSettings extends ConfigInterface {
         GROUP_BY_SUPPORTED_ACCOUNTS
 
     }
-
-    @AboutConfig
-    @ActionClass(ImportAllMenusAdvancedAction.class)
-    boolean getImportAllMenusAction();
-
-    void setImportAllMenusAction(boolean type);
-
-    @AboutConfig
-    @ActionClass(ExportAllMenusAdvancedAction.class)
-    boolean getExportAllMenusAction();
-
-    void setExportAllMenusAction(boolean type);
 
     @AboutConfig
     @DefaultEnumValue("GROUP_BY_ACCOUNT_TYPE")

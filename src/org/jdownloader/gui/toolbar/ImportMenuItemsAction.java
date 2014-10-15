@@ -1,5 +1,6 @@
-package org.jdownloader.settings;
+package org.jdownloader.gui.toolbar;
 
+import java.awt.event.ActionEvent;
 import java.io.File;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
@@ -12,29 +13,24 @@ import org.appwork.utils.swing.dialog.DialogClosedException;
 import org.appwork.utils.swing.dialog.ExtFileChooserDialog;
 import org.appwork.utils.swing.dialog.FileChooserSelectionMode;
 import org.appwork.utils.swing.dialog.FileChooserType;
+import org.jdownloader.actions.AppAction;
+import org.jdownloader.gui.IconKey;
 import org.jdownloader.gui.jdtrayicon.MenuManagerTrayIcon;
 import org.jdownloader.gui.mainmenu.MenuManagerMainmenu;
-import org.jdownloader.gui.toolbar.MenuManagerMainToolbar;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.gui.views.downloads.MenuManagerDownloadTabBottomBar;
 import org.jdownloader.gui.views.downloads.contextmenumanager.MenuManagerDownloadTableContext;
 import org.jdownloader.gui.views.linkgrabber.bottombar.MenuManagerLinkgrabberTabBottombar;
 import org.jdownloader.gui.views.linkgrabber.contextmenu.MenuManagerLinkgrabberTableContext;
-import org.jdownloader.settings.advanced.AdvancedAction;
 
-public class ImportAllMenusAdvancedAction implements AdvancedAction {
-    public ImportAllMenusAdvancedAction() {
-
+public class ImportMenuItemsAction extends AppAction {
+    public ImportMenuItemsAction() {
+        setName(_GUI._.ImportMenuItemsAction());
+        setIconKey(IconKey.ICON_IMPORT);
     }
 
     @Override
-    public String getName() {
-        return "Import";
-    }
-
-    @Override
-    public void actionPerformed() {
-
+    public void actionPerformed(ActionEvent e) {
         ExtFileChooserDialog d = new ExtFileChooserDialog(0, _GUI._.ImportAllMenusAdvancedAction_actionPerformed(), null, null);
         d.setFileFilter(new FileFilter() {
 
@@ -113,4 +109,5 @@ public class ImportAllMenusAdvancedAction implements AdvancedAction {
             Dialog.getInstance().showExceptionDialog(_GUI._.lit_error_occured(), e1.getMessage(), e1);
         }
     }
+
 }
