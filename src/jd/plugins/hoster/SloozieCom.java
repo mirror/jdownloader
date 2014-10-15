@@ -58,11 +58,11 @@ public class SloozieCom extends PluginForHost {
         final Browser br2 = br.cloneBrowser();
         if (downloadLink.getDownloadURL().matches(PICLINK)) {
             filename = br.getRegex("<title>([^<>\"]*?)</title>").getMatch(0);
-            if (filename == null) {
-                filename = br.getRegex("").getMatch(0);
-            }
             // Try to get better quality first
             DLLINK = br.getRegex("id=\"imgMGZoom\" style=\"visibility: visible\"><a rel=\"shadowbox;options=\\{displayNav:true\\}\" href=\"(http://[^<>\"]*?)\"").getMatch(0);
+            if (DLLINK == null) {
+                DLLINK = br.getRegex("title=\"Show full size\"></div><img src=\"(http://[^<>\"]*?)\"").getMatch(0);
+            }
             // Nothing found? Grab normal quality
             if (DLLINK == null) {
                 DLLINK = br.getRegex("title=\"Show full size\"></div><img pagespeed_lazy_src=\"(http://[^<>\"]*?)\"").getMatch(0);
@@ -71,12 +71,13 @@ public class SloozieCom extends PluginForHost {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
             DLLINK = Encoding.htmlDecode(DLLINK);
+            filename = Encoding.htmlDecode(filename);
             filename = filename.trim();
             String ext = DLLINK.substring(DLLINK.lastIndexOf("."));
             if (ext == null || ext.length() > 5) {
                 ext = ".jpg";
             }
-            filename = Encoding.htmlDecode(filename) + ext;
+            filename += ext;
             // In case the link redirects to the finallink
             br2.setFollowRedirects(true);
             URLConnectionAdapter con = null;

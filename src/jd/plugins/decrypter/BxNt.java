@@ -137,12 +137,23 @@ public class BxNt extends PluginForDecrypt {
                         fina.setName(filename);
                         fina.setDownloadSize(Long.parseLong(filesize));
                         fina.setAvailable(true);
-                       try{/*JD2 only*/fina.setContentUrl(finallink);}catch(Throwable e){/*Stable*/ fina.setBrowserUrl(finallink);}
+                        try {/* JD2 only */
+                            fina.setContentUrl(finallink);
+                        } catch (Throwable e) {/* Stable */
+                            fina.setBrowserUrl(finallink);
+                        }
                         decryptedLinks.add(fina);
                     }
                 }
             }
             if (decryptedLinks.size() == 0) {
+                if (br.containsHTML("class=\"empty_folder\"")) {
+                    final DownloadLink dl = createDownloadlink("directhttp://" + cryptedlink);
+                    dl.setAvailable(false);
+                    dl.setProperty("offline", true);
+                    decryptedLinks.add(dl);
+                    return decryptedLinks;
+                }
                 logger.warning("Decrypt failed for link: " + cryptedlink);
                 return null;
             }
@@ -268,7 +279,7 @@ public class BxNt extends PluginForDecrypt {
 
     /**
      * Extracts the download link from a single file download page.
-     * 
+     *
      * @param cryptedUrl
      *            the url of the download page
      * @return a list that contains the extracted download link, null if the download link couldn't be extracted.
@@ -277,7 +288,7 @@ public class BxNt extends PluginForDecrypt {
 
     /**
      * Extracts download links from a box.net rss feed.
-     * 
+     *
      * @param feedUrl
      *            the url of the rss feed
      * @return a list of decrypted links, null if the links could not be extracted.

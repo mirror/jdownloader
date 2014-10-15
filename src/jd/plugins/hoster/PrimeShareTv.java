@@ -52,11 +52,15 @@ public class PrimeShareTv extends PluginForHost {
         // They tried to block us via useragent
         br.getHeaders().put("User-Agent", AGENT);
         br.getPage(link.getDownloadURL());
-        if (br.containsHTML("(>File not exist<|>The file you have requested does not)")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (br.containsHTML("(>File not exist<|>The file you have requested does not)")) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
         final Regex info = br.getRegex("<h1>(Watch|Download)\\&nbsp;[\t\n\r ]+\\(([^<>\"]*?)(\\[\\.\\.\\.\\])?\\)\\&nbsp;<strong>\\((.*?)\\)</strong></h1>");
         final String filename = info.getMatch(1);
         final String filesize = info.getMatch(3);
-        if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (filename == null || filesize == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         link.setName(Encoding.htmlDecode(filename.trim()));
         link.setDownloadSize(SizeFormatter.getSize(filesize));
         return AvailableStatus.TRUE;
@@ -67,15 +71,23 @@ public class PrimeShareTv extends PluginForHost {
         requestFileInformation(downloadLink);
         int wait = 10;
         final String waittime = br.getRegex("var cWaitTime = (\\d+);").getMatch(0);
-        if (waittime != null) wait = Integer.parseInt(waittime);
+        if (waittime != null) {
+            wait = Integer.parseInt(waittime);
+        }
         sleep((wait + 3) * 1001, downloadLink);
         br.postPage(br.getURL(), "hash=" + new Regex(downloadLink.getDownloadURL(), "([A-Z0-9]+)$").getMatch(0));
-        if (br.containsHTML("files per hour for free users\\.<")) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 60 * 60 * 1000l);
-        String dllink = br.getRegex("(\"|\\')(http://[a-z0-9]+\\.primeshare\\.tv(:\\d+)?/get/[^<>\"]*?)(\"|\\')").getMatch(1);
-        if (dllink == null && br.containsHTML("\\.val \\(\\'Continue\\'\\);")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error", 60 * 60 * 1000l);
+        if (br.containsHTML("files per hour for free users\\.<")) {
+            throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 60 * 60 * 1000l);
+        }
+        String dllink = br.getRegex("(\"|\\')(http://[a-z0-9]+\\.primeshare\\.tv(:\\d+)?(/file)?/get/[^<>\"]*?)(\"|\\')").getMatch(1);
+        if (dllink == null && br.containsHTML("\\.val \\(\\'Continue\\'\\);")) {
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error", 60 * 60 * 1000l);
+        }
         if (dllink == null) {
             // Won't work via browser either
-            if (br.containsHTML("var cWaitTime = ")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error", 30 * 60 * 1000l);
+            if (br.containsHTML("var cWaitTime = ")) {
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error", 30 * 60 * 1000l);
+            }
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         // Chunkload possible but deactivated because of server problems

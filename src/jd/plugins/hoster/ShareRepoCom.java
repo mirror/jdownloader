@@ -67,7 +67,7 @@ public class ShareRepoCom extends PluginForHost {
      * http://somehoster.in/vidembed-
      * */
     // XfileSharingProBasic Version 2.5.6.9
-    // mods: changed filename handling
+    // mods: changed filename handling, heavily modified, do NOT upgrade!
     // non account: 2 * 1
     // free account: chunk * maxdl
     // premium account: chunk * maxdl
@@ -159,6 +159,12 @@ public class ShareRepoCom extends PluginForHost {
         // standard traits from base page
         if (fileInfo[0] == null) {
             fileInfo[0] = new Regex(correctedBR, "f_l_name\">Download File ([^<>]+)\\([^<>]+\\)<").getMatch(0);
+        }
+        if (fileInfo[0] == null) {
+            fileInfo[0] = new Regex(correctedBR, "class=\"title\">([^<>\"]*?)</strong>").getMatch(0);
+        }
+        if (fileInfo[0] == null) {
+            fileInfo[0] = new Regex(correctedBR, "src=\"/a/ext/\\.png\"></span>([^<>\"]*?)</strong>").getMatch(0);
         }
         if (fileInfo[1] == null) {
             fileInfo[1] = new Regex(correctedBR, "\\(([0-9]+ bytes)\\)").getMatch(0);
@@ -335,13 +341,13 @@ public class ShareRepoCom extends PluginForHost {
     /**
      * Prevents more than one free download from starting at a given time. One step prior to dl.startDownload(), it adds a slot to maxFree
      * which allows the next singleton download to start, or at least try.
-     * 
+     *
      * This is needed because xfileshare(website) only throws errors after a final dllink starts transferring or at a given step within pre
      * download sequence. But this template(XfileSharingProBasic) allows multiple slots(when available) to commence the download sequence,
      * this.setstartintival does not resolve this issue. Which results in x(20) captcha events all at once and only allows one download to
      * start. This prevents wasting peoples time and effort on captcha solving and|or wasting captcha trading credits. Users will experience
      * minimal harm to downloading as slots are freed up soon as current download begins.
-     * 
+     *
      * @param controlFree
      *            (+1|-1)
      */
@@ -404,6 +410,9 @@ public class ShareRepoCom extends PluginForHost {
                     }
                 }
             }
+        }
+        if (dllink == null) {
+            dllink = new Regex(correctedBR, "var lnk1 = \\'(http://[^<>\"]*?)\\';").getMatch(0);
         }
         return dllink;
     }
@@ -484,7 +493,7 @@ public class ShareRepoCom extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error!", 10 * 60 * 1000l);
         }
         /** Error handling for only-premium links */
-        if (new Regex(correctedBR, "( can download files up to |Upgrade your account to download bigger files|>Upgrade your account to download larger files|>The file you requested reached max downloads limit for Free Users|Please Buy Premium To download this file<|This file reached max downloads limit)").matches()) {
+        if (new Regex(correctedBR, "( can download files up to |Upgrade your account to download bigger files|>Upgrade your account to download larger files|>The file you requested reached max downloads limit for Free Users|Please Buy Premium To download this file<|This file reached max downloads limit|href=\"/f/download/)").matches()) {
             String filesizelimit = new Regex(correctedBR, "You can download files up to(.*?)only").getMatch(0);
             if (filesizelimit != null) {
                 filesizelimit = filesizelimit.trim();
@@ -618,7 +627,7 @@ public class ShareRepoCom extends PluginForHost {
     // String value)
     /**
      * Returns the first form that has a 'key' that equals 'value'.
-     * 
+     *
      * @param key
      * @param value
      * @return

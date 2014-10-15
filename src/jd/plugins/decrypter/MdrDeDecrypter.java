@@ -65,7 +65,7 @@ public class MdrDeDecrypter extends PluginForDecrypt {
         br.setFollowRedirects(true);
         br.setCustomCharset("utf-8");
         br.getPage("http://www.mdr.de/" + url_clipname + "/video" + clip_id + "-avCustom.xml");
-        if (br.getHttpConnection().getResponseCode() == 404) {
+        if (br.getHttpConnection().getResponseCode() == 404 || !br.getURL().endsWith(".xml")) {
             final DownloadLink dl = createDownloadlink("directhttp://" + parameter);
             dl.setProperty("offline", true);
             decryptedLinks.add(dl);

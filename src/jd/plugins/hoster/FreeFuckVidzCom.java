@@ -60,6 +60,12 @@ public class FreeFuckVidzCom extends PluginForHost {
         }
         getLink("720p");
         if (DLLINK == null) {
+            getLink("480p");
+        }
+        if (DLLINK == null) {
+            getLink("360p");
+        }
+        if (DLLINK == null) {
             getLink("med");
         }
         if (DLLINK == null) {
