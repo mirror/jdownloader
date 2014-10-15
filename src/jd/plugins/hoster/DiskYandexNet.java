@@ -197,8 +197,9 @@ public class DiskYandexNet extends PluginForHost {
             final String hash = downloadLink.getStringProperty("hash_plain", null);
             br.getHeaders().put("Accept", "application/json, text/javascript, */*; q=0.01");
             br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
-            br.postPage("https://disk.yandex.com/secret-key.jsx", "");
-            ckey = br.getRegex("\"([a-z0-9]+)\"").getMatch(0);
+            final Browser br2 = br.cloneBrowser();
+            br2.postPage("https://disk.yandex.com/secret-key.jsx", "");
+            ckey = br2.getRegex("\"([a-z0-9]+)\"").getMatch(0);
             if (ckey == null) {
                 logger.info("Getting ckey via html code --> Could lead to problems");
                 ckey = getCkey();
