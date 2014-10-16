@@ -41,6 +41,7 @@ public class StaShDecrypter extends PluginForDecrypt {
     private final String  INVALIDLINKS           = "http://(www\\.)?sta\\.sh/(muro|writer|login)";
     private static String FORCEHTMLDOWNLOAD      = "FORCEHTMLDOWNLOAD";
     private static String USE_LINKID_AS_FILENAME = "USE_LINKID_AS_FILENAME";
+    private static String DOWNLOAD_ZIP           = "DOWNLOAD_ZIP";
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
@@ -82,7 +83,6 @@ public class StaShDecrypter extends PluginForDecrypt {
             final DownloadLink dl = createDownloadlink(url.replace("sta.sh/", "stadecrypted.sh/"));
             /* Obey user setting */
             if (linkid_as_filename) {
-                dl.setProperty("plain_linkid", linkid);
                 name = linkid;
             }
             if (force_html_dl) {
@@ -101,11 +101,12 @@ public class StaShDecrypter extends PluginForDecrypt {
             decryptedLinks.add(dl);
         }
         final String zipLink = br.getRegex("\"(/zip/[a-z0-9]+)\"").getMatch(0);
-        if (zipLink != null) {
-            final DownloadLink zip = createDownloadlink("http://stadecrypted.sh" + zipLink);
+        if (cfg.getBooleanProperty(DOWNLOAD_ZIP, false) && zipLink != null) {
+            final DownloadLink zip = createDownloadlink(parameter.replace("sta.sh/", "stadecrypted.sh/"));
+            zip.setProperty("iszip", true);
+            zip.setProperty("directlink", zipLink);
             String zip_filename;
             if (linkid_as_filename) {
-                zip.setProperty("plain_linkid", main_linkid);
                 zip_filename = main_linkid;
             } else {
                 zip_filename = fpName;

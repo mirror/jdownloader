@@ -373,10 +373,12 @@ public class OneFichierCom extends PluginForHost {
 
     private void errorIpBlockedHandling(Browser br) throws PluginException {
 
-        // <div style="text-align:center;margin:auto;color:red">Warning ! Without premium status, you must wait up to 15 minutes between each downloads<br/>Your last download finished 00 minutes ago</div>
+        // <div style="text-align:center;margin:auto;color:red">Warning ! Without premium status, you must wait up to 15 minutes between
+        // each downloads<br/>Your last download finished 00 minutes ago</div>
         String waittime = br.getRegex("you must wait (at least|up to) (\\d+) minutes between each downloads").getMatch(1);
         if (waittime == null) {
-            // <div style="text-align:center;margin:auto;color:red">Warning ! Without premium status, you must wait 15 minutes between each downloads<br/>You must wait 15 minutes to download again or subscribe to a premium offer</div>
+            // <div style="text-align:center;margin:auto;color:red">Warning ! Without premium status, you must wait 15 minutes between each
+            // downloads<br/>You must wait 15 minutes to download again or subscribe to a premium offer</div>
             waittime = br.getRegex(">You must wait (\\d+) minutes to download again or").getMatch(0);
         }
         boolean isBlocked = waittime != null;
@@ -388,9 +390,11 @@ public class OneFichierCom extends PluginForHost {
         isBlocked |= br.containsHTML(">Please wait a few seconds before downloading new ones");
         isBlocked |= br.containsHTML(">You must wait for another download");
         isBlocked |= br.containsHTML("Without premium status, you can download only one file at a time");
-        // <div style="text-align:center;margin:auto;color:red">Warning ! Without premium status, you must wait between each downloads<br/>Your last download finished 05 minutes ago</div>
+        // <div style="text-align:center;margin:auto;color:red">Warning ! Without premium status, you must wait between each
+        // downloads<br/>Your last download finished 05 minutes ago</div>
         isBlocked |= br.containsHTML("you must wait between each downloads");
-        // <div style="text-align:center;margin:auto;color:red">Warning ! Without premium status, you must wait 15 minutes between each downloads<br/>You must wait 15 minutes to download again or subscribe to a premium offer</div>
+        // <div style="text-align:center;margin:auto;color:red">Warning ! Without premium status, you must wait 15 minutes between each
+        // downloads<br/>You must wait 15 minutes to download again or subscribe to a premium offer</div>
         isBlocked |= br.containsHTML("you must wait \\d+ minutes between each downloads<");
         if (isBlocked) {
             final boolean preferReconnect = this.getPluginConfig().getBooleanProperty("PREFER_RECONNECT", false);
@@ -466,11 +470,15 @@ public class OneFichierCom extends PluginForHost {
             account.setProperty("freeAPIdisabled", true);
             return ai;
         } else if ("0".equalsIgnoreCase(timeStamp)) {
-            if (freeCredits != null && Float.parseFloat(freeCredits) > 0) {
+            if (freeCredits != null) {
                 /* not finished yet */
                 account.setValid(true);
                 account.setProperty("type", "FREE");
-                ai.setStatus("Free Account (Credits available)");
+                if (Float.parseFloat(freeCredits) > 0) {
+                    ai.setStatus("Free Account (Credits available)");
+                } else {
+                    ai.setStatus("Free Account (No credits available)");
+                }
                 ai.setTrafficLeft(SizeFormatter.getSize(freeCredits + " GB"));
                 try {
                     maxPrem.set(1);
@@ -479,11 +487,6 @@ public class OneFichierCom extends PluginForHost {
                 } catch (final Throwable e) {
                 }
                 account.setProperty("freeAPIdisabled", false);
-            } else {
-                ai.setStatus("Free Account (No credits left)");
-                account.setProperty("type", Property.NULL);
-                account.setValid(false);
-                return ai;
             }
             return ai;
         } else {
