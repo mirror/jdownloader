@@ -50,7 +50,7 @@ import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.formatter.TimeFormatter;
 import org.appwork.utils.os.CrossSystem;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "ultramegabit.com" }, urls = { "https?://(www\\.)?(ultramegabit\\.com|uploadto\\.us)/file/details/[A-Za-z0-9\\-_]+" }, flags = { 2 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "uploadto.us", "ultramegabit.com" }, urls = { "https?://(www\\.)?(ultramegabit\\.com|uploadto\\.us)/file/details/[A-Za-z0-9\\-_]+", "REGEX_NOT_POSSIBLE_RANDOM-asdfasdfsadfsdgfd32423" }, flags = { 2, 2 })
 public class UltraMegaBitCom extends PluginForHost {
 
     public UltraMegaBitCom(PluginWrapper wrapper) {
@@ -65,10 +65,27 @@ public class UltraMegaBitCom extends PluginForHost {
         return "http://uploadto.us/terms";
     }
 
+    @SuppressWarnings("deprecation")
     @Override
     public void correctDownloadLink(final DownloadLink link) throws Exception {
         /* remove www., force https */
         link.setUrlDownload("https://uploadto.us/file/details/" + new Regex(link.getDownloadURL(), "([A-Za-z0-9\\-_]+)$").getMatch(0));
+    }
+
+    public Boolean rewriteHost(DownloadLink link) {
+        if (link != null && "ultramegabit.com".equals(link.getHost())) {
+            link.setHost("uploadto.us");
+            return true;
+        }
+        return false;
+    }
+
+    public Boolean rewriteHost(Account acc) {
+        if (acc != null && "ultramegabit.com".equals(acc.getHoster())) {
+            acc.setHoster("uploadto.us");
+            return true;
+        }
+        return false;
     }
 
     private static AtomicReference<String> agent   = new AtomicReference<String>(null);
