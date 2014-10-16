@@ -119,11 +119,15 @@ public class FileFactory extends PluginForHost {
         }
         // this should cover error codes jumping to stream links in redirect, since filefactory wont fix this issue, this is my workaround.
         String code = new Regex(br.getURL(), "(?:\\?|&)code=(\\d+)").getMatch(0);
-        final ArrayList<String> redirectUrls = (ArrayList<String>) this.getDownloadLink().getProperty(dlRedirects, null);
-        if (redirectUrls != null && code == null) {
-            for (final String url : redirectUrls) {
-                if (code == null) {
+        if (code == null) {
+            @SuppressWarnings("unchecked")
+            final ArrayList<String> redirectUrls = (ArrayList<String>) this.getDownloadLink().getProperty(dlRedirects, null);
+            if (redirectUrls != null) {
+                for (final String url : redirectUrls) {
                     code = new Regex(url, "(?:\\?|&)code=(\\d+)").getMatch(0);
+                    if (code != null) {
+                        break;
+                    }
                 }
             }
         }
@@ -132,7 +136,8 @@ public class FileFactory extends PluginForHost {
         final String errRetry = "retry_" + errCode;
         final int tri = this.getDownloadLink().getIntegerProperty(errRetry, 0) + 1;
         this.getDownloadLink().setProperty(errRetry, (tri >= errTries ? 0 : tri));
-        final String errMsg = (tri >= errTries ? "Exausted retry count" : "Retrying") + " for '" + errCode + "' error";
+        final String errMsg = (tri >= errTries ? "Exausted try count " : "Try count ") + tri + ", for '" + errCode + "' error";
+        logger.warning(errMsg);
 
         if (postDownload && freeDownload) {
             if (br.containsHTML("have exceeded the download limit|Please try again in <span>")) {
@@ -170,7 +175,7 @@ public class FileFactory extends PluginForHost {
                 }
             }
             if (br.containsHTML("You are currently downloading too many files at once") || br.containsHTML(">You have recently started a download") || errCode == 275) {
-                throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 5 * 60 * 1000l);
+                throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, errMsg, 5 * 60 * 1000l);
             }
             if (errCode == 266) {
                 // <strong>Download error (266)</strong><br>This download is not yet ready. Please retry your download and wait for the
@@ -1141,9 +1146,11 @@ public class FileFactory extends PluginForHost {
     private static final String dlRedirects = "dlRedirects";
 
     private void handleDL(final DownloadLink downloadLink, final Account account) throws Exception {
-        // Since I fixed the download core setting correct redirect referrer I can no longer use redirect header to determine error code for
-        // max connections. This is really only a problem with media files as filefactory redirects to /stream/ directly after code=\d+
-        // which breaks our generic handling. This will fix it!! - raztoki
+        /*
+         * Since I fixed the download core setting correct redirect referrer I can no longer use redirect header to determine error code for
+         * max connections. This is really only a problem with media files as filefactory redirects to /stream/ directly after code=\d+
+         * which breaks our generic handling. This will fix it!! - raztoki
+         */
         int i = -1;
         ArrayList<String> urls = new ArrayList<String>();
         br.setFollowRedirects(false);
