@@ -502,9 +502,8 @@ public class VKontakteRuHoster extends PluginForHost {
                     /* Correct links to standard format */
                     final Regex dataregex = new Regex(this.FINALLINK, "(https?://pp\\.vk\\.me/c)(\\d+)/v(\\d+)/");
                     final String serv_id = dataregex.getMatch(1);
-                    final String serv_id_2 = dataregex.getMatch(2);
                     final String oldserver = dataregex.getMatch(0) + serv_id + "/";
-                    if (oldserver != null && serv_id != null && serv_id_2 != null) {
+                    if (oldserver != null && serv_id != null) {
                         final String newserver = "http://cs" + serv_id + ".vk.me/";
                         this.FINALLINK = this.FINALLINK.replace(oldserver, newserver);
                         logger.info("VKPHOTO_CORRECT_FINAL_LINKS DISABLE --> SUCCEEDED to revert corrected finallink");
