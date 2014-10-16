@@ -155,11 +155,10 @@ public class RehostTo extends PluginForHost {
         account.setProperty("long_ses", null);
         login(account);
         // set new value to account property, allowing for parallel downloads from multiple accounts.
-        account.setProperty("long_ses", br.getRegex("long_ses=([a-z0-9]+)").getMatch(0));
         br.getPage(mProt + mName + "/api.php?cmd=get_premium_credits&long_ses=" + account.getStringProperty("long_ses"));
         if (br.getRegex("(\\d+,0)").getMatch(0) != null) {
             // expired account.
-            throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+            throw new PluginException(LinkStatus.ERROR_PREMIUM, "Free accounts are not supported", PluginException.VALUE_ID_PREMIUM_DISABLE);
         }
         // credits_date
         String[][] c_d = br.getRegex("(\\d+),(\\d+)").getMatches();
@@ -173,7 +172,7 @@ public class RehostTo extends PluginForHost {
             ai.setUnlimitedTraffic();
         } else {
             // one of the above fields was null.
-            throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+            throw new PluginException(LinkStatus.ERROR_PREMIUM, "Free accounts are not supported", PluginException.VALUE_ID_PREMIUM_DISABLE);
         }
         ai.setStatus("Premium");
         account.setValid(true);
@@ -195,6 +194,7 @@ public class RehostTo extends PluginForHost {
         if (br.containsHTML("type\":\"free\"")) {
             throw new PluginException(LinkStatus.ERROR_PREMIUM, "Free accounts are not supported", PluginException.VALUE_ID_PREMIUM_DISABLE);
         }
+        account.setProperty("long_ses", br.getRegex("long_ses=([a-z0-9]+)").getMatch(0));
     }
 
     private void showMessage(DownloadLink link, String message) {
