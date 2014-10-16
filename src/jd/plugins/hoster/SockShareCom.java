@@ -404,6 +404,10 @@ public class SockShareCom extends PluginForHost {
             }
         }
         if (dllink == null) {
+            /* Check for putlocker/firedrive/sockshare broken site problem */
+            if (br.containsHTML("class=\"site\\-content\"")) {
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Unknown server error", 30 * 60 * 1000l);
+            }
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         return dllink.replace("&amp;", "&");
@@ -416,6 +420,10 @@ public class SockShareCom extends PluginForHost {
             br.getPage("http://www." + this.getHost() + dllink);
             dllink = br.getRegex("<media:content url=\"(http://[^<>\"]*?)\"").getMatch(0);
             if (dllink == null) {
+                /* Check for putlocker/firedrive/sockshare broken site problem */
+                if (br.containsHTML("<title>Video</title>")) {
+                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Unknown server error", 30 * 60 * 1000l);
+                }
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
             br.setFollowRedirects(true);

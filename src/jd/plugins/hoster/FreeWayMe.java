@@ -464,8 +464,12 @@ public class FreeWayMe extends PluginForHost {
             }
             /* Obey users' setting */
             if (this.getPluginConfig().getBooleanProperty(this.SETTING_SHOW_TRAFFICLEFT, false) && remaining_gb > 10) {
+                logger.info("User has traffic_left in GUI ACTIVE");
+                /* TODO: Use (upcoming) API response for this to make it dynamic */
+                ac.setTrafficMax(Long.parseLong(getJson(accInfoAPIResp, "drossel-max")) * 1024 * 1024 * 1024);
                 ac.setTrafficLeft((long) remaining_gb * 1024 * 1024 * 1024);
             } else {
+                logger.info("User has traffic_left in GUI IN_ACTIVE");
                 ac.setUnlimitedTraffic();
             }
         }

@@ -137,6 +137,7 @@ public class JustinTvDecrypt extends PluginForDecrypt {
                 // returns: 'FgtvLive' from <meta property="og:title" content="FgtvLive"/>
                 // filename = br.getRegex("<meta property=\"og:title\" content=\"([^<>\"]*?)\"").getMatch(0);
             }
+            String failreason = "Unknown server error";
             final String vid = new Regex(parameter, "(\\d+)$").getMatch(0);
             boolean failed = true;
             for (int i = 1; i <= 10; i++) {
@@ -146,6 +147,14 @@ public class JustinTvDecrypt extends PluginForDecrypt {
                         /* Old .xml handling removed AFTER plugin revision 26014 */
                     } else {
                         br.getPage("http://api.justin.tv/api/broadcast/by_chapter/" + vid + ".xml");
+                        if (br.getHttpConnection().getResponseCode() == 404) {
+                            failreason = "Server error 404";
+                            br.getPage("https://api.twitch.tv/api/videos/c" + vid);
+                            if (br.containsHTML("\"restrictions\":\\{\"live\":\"chansub\"")) {
+                                failreason = "Only downloadable for subscribers";
+                            }
+                            break;
+                        }
                     }
                     failed = false;
                     break;
@@ -157,7 +166,7 @@ public class JustinTvDecrypt extends PluginForDecrypt {
                 final DownloadLink dlink = createDownloadlink("http://media" + new Random().nextInt(1000) + ".twitchdecrypted.tv/archives/" + new Regex(parameter, "(\\d+)$").getMatch(0) + ".flv");
                 dlink.setAvailable(false);
                 dlink.setProperty("offline", true);
-                dlink.setName(parameter);
+                dlink.setFinalFileName(vid + "_" + failreason);
                 decryptedLinks.add(dlink);
                 return decryptedLinks;
             }

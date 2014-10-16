@@ -61,6 +61,7 @@ public class StaSh extends PluginForHost {
 
     private static String       FORCEHTMLDOWNLOAD      = "FORCEHTMLDOWNLOAD";
     private static String       USE_LINKID_AS_FILENAME = "USE_LINKID_AS_FILENAME";
+    private static String       DOWNLOAD_ZIP           = "DOWNLOAD_ZIP";
 
     public void correctDownloadLink(final DownloadLink link) {
         link.setUrlDownload(link.getDownloadURL().replace("stadecrypted.sh/", "sta.sh/"));
@@ -76,75 +77,74 @@ public class StaSh extends PluginForHost {
         String ext = null;
         String filesize = null;
         br.setFollowRedirects(true);
-        if (isZip(link)) {
-            DLLINK = link.getDownloadURL();
+        try {
+            br.getPage(link.getDownloadURL());
+        } catch (final IllegalStateException e) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
+        if (br.containsHTML("/error\\-title\\-oops\\.png\\)") || br.containsHTML("The page you wanted to visit doesn't exist")) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
+        final boolean loggedIn = false;
+        // Motionbooks are not supported (yet)
+        if (br.containsHTML(",target: \\'motionbooks/")) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
+        filename = br.getRegex(GENERALFILENAMEREGEX).getMatch(0);
+        if (filename == null) {
+            filename = new Regex(link.getDownloadURL(), "([a-z0-9]+)$").getMatch(0);
+        }
+        filename = Encoding.htmlDecode(filename.trim());
+        if (this.getPluginConfig().getBooleanProperty(FORCEHTMLDOWNLOAD, false)) {
+            HTMLALLOWED = true;
+            DLLINK = br.getURL();
+            filename = findServerFilename(this.br, filename);
+            ext = "html";
+        } else if (isZip(link)) {
+            /* Special case, dllink is already set via decrypter via property */
+            DLLINK = link.getStringProperty("directlink", null);
             ext = "zip";
+        } else if (br.containsHTML(">Download File<")) {
+            final Regex fInfo = br.getRegex("<strong>Download File</strong><br/>[\t\n\r ]+<small>([A-Za-z0-9]{1,5}), ([^<>\"]*?)</small>");
+            ext = fInfo.getMatch(0);
+            filesize = fInfo.getMatch(1);
+            DLLINK = br.getRegex("\"(http://(www\\.)?deviantart\\.com/download/[^<>\"]*?)\"").getMatch(0);
+            if (ext == null || DLLINK == null) {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
+            DLLINK = Encoding.htmlDecode(DLLINK.trim());
+        } else if (br.containsHTML(TYPE_HTML)) {
+            HTMLALLOWED = true;
+            filename = findServerFilename(this.br, filename);
+            ext = "html";
         } else {
-            try {
-                br.getPage(link.getDownloadURL());
-            } catch (final IllegalStateException e) {
-                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            filesize = br.getRegex("<label>Image Size:</label>([^<>\"]*?)<br>").getMatch(0);
+            if (filesize == null) {
+                filesize = br.getRegex("<dt>Image Size</dt><dd>([^<>\"]*?)</dd>").getMatch(0);
             }
-            if (br.containsHTML("/error\\-title\\-oops\\.png\\)") || br.containsHTML("The page you wanted to visit doesn't exist")) {
-                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            // Maybe its a video
+            if (filesize == null) {
+                filesize = br.getRegex("<label>File Size:</label>([^<>\"]*?)<br/>").getMatch(0);
             }
-            final boolean loggedIn = false;
-            // Motionbooks are not supported (yet)
-            if (br.containsHTML(",target: \\'motionbooks/")) {
-                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+
+            if (br.containsHTML(MATURECONTENTFILTER) && !loggedIn) {
+                link.getLinkStatus().setStatusText("Mature content can only be downloaded via account");
+                link.setName(filename);
+                if (filesize != null) {
+                    link.setDownloadSize(SizeFormatter.getSize(filesize.replace(",", "")));
+                }
+                return AvailableStatus.TRUE;
             }
-            filename = br.getRegex(GENERALFILENAMEREGEX).getMatch(0);
-            if (filename == null) {
-                filename = new Regex(link.getDownloadURL(), "([a-z0-9]+)$").getMatch(0);
+
+            filename = findServerFilename(this.br, filename);
+            if (ext == null || ext.length() > 5) {
+                ext = getFileExt(this.br);
             }
-            filename = Encoding.htmlDecode(filename.trim());
-            if (this.getPluginConfig().getBooleanProperty(FORCEHTMLDOWNLOAD, false)) {
+            /* Just download the html */
+            if (ext == null) {
                 HTMLALLOWED = true;
+                ext = "html";
                 DLLINK = br.getURL();
-                filename = findServerFilename(this.br, filename);
-                ext = "html";
-            } else if (br.containsHTML(">Download File<")) {
-                final Regex fInfo = br.getRegex("<strong>Download File</strong><br/>[\t\n\r ]+<small>([A-Za-z0-9]{1,5}), ([^<>\"]*?)</small>");
-                ext = fInfo.getMatch(0);
-                filesize = fInfo.getMatch(1);
-                DLLINK = br.getRegex("\"(http://(www\\.)?deviantart\\.com/download/[^<>\"]*?)\"").getMatch(0);
-                if (ext == null || DLLINK == null) {
-                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                }
-                DLLINK = Encoding.htmlDecode(DLLINK.trim());
-            } else if (br.containsHTML(TYPE_HTML)) {
-                HTMLALLOWED = true;
-                filename = findServerFilename(this.br, filename);
-                ext = "html";
-            } else {
-                filesize = br.getRegex("<label>Image Size:</label>([^<>\"]*?)<br>").getMatch(0);
-                if (filesize == null) {
-                    filesize = br.getRegex("<dt>Image Size</dt><dd>([^<>\"]*?)</dd>").getMatch(0);
-                }
-                // Maybe its a video
-                if (filesize == null) {
-                    filesize = br.getRegex("<label>File Size:</label>([^<>\"]*?)<br/>").getMatch(0);
-                }
-
-                if (br.containsHTML(MATURECONTENTFILTER) && !loggedIn) {
-                    link.getLinkStatus().setStatusText("Mature content can only be downloaded via account");
-                    link.setName(filename);
-                    if (filesize != null) {
-                        link.setDownloadSize(SizeFormatter.getSize(filesize.replace(",", "")));
-                    }
-                    return AvailableStatus.TRUE;
-                }
-
-                filename = findServerFilename(this.br, filename);
-                if (ext == null || ext.length() > 5) {
-                    ext = getFileExt(this.br);
-                }
-                /* Just download the html */
-                if (ext == null) {
-                    HTMLALLOWED = true;
-                    ext = "html";
-                    DLLINK = br.getURL();
-                }
             }
         }
         if (filesize != null) {
@@ -174,8 +174,8 @@ public class StaSh extends PluginForHost {
         }
         ext = ext.toLowerCase();
         /* User wanted link-id as filename - at least when he added the link via decrypter. */
-        if (link.getStringProperty("plain_linkid", null) != null) {
-            filename = link.getStringProperty("plain_linkid", null);
+        if (this.getPluginConfig().getBooleanProperty(USE_LINKID_AS_FILENAME, false)) {
+            filename = new Regex(link.getDownloadURL(), "sta\\.sh(.+)").getMatch(0);
         }
         if (!filename.endsWith(ext)) {
             filename += "." + ext.trim();
@@ -301,11 +301,11 @@ public class StaSh extends PluginForHost {
         }
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), FORCEHTMLDOWNLOAD, JDL.L("plugins.hoster.StaSh.forceHTMLDownload", forcehtmldownloadtext)).setDefaultValue(false));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), USE_LINKID_AS_FILENAME, JDL.L("plugins.hoster.StaSh.useLinkIDAsFilename", set_id_as_filename_text)).setDefaultValue(false));
-        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_SEPARATOR));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), DOWNLOAD_ZIP, JDL.L("plugins.hoster.StaSh.DownloadZip", "Download .zip file of all files in the folder?")).setDefaultValue(true));
     }
 
     private boolean isZip(final DownloadLink dl) {
-        return dl.getDownloadURL().matches(TYPE_ZIP);
+        return dl.getBooleanProperty("iszip", false);
     }
 
     @Override
