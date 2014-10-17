@@ -88,6 +88,17 @@ public class UltraMegaBitCom extends PluginForHost {
         return null;
     }
 
+    public String rewriteHost(String host) {
+        if ("ultramegabit.com".equals(getHost())) {
+            if ("ultramegabit.com".equals(host)) {
+                return "uploadto.us";
+            } else {
+                return null;
+            }
+        }
+        return getHost();
+    }
+
     public Boolean rewriteHost(Account acc) {
         if (isPremiumEnabled()) {
             if (acc != null && "ultramegabit.com".equals(acc.getHoster())) {

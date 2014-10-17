@@ -1098,6 +1098,10 @@ public abstract class PluginForHost extends Plugin {
         return null;
     }
 
+    public String rewriteHost(String host) {
+        return getHost();
+    }
+
     public String getCustomFavIconURL(DownloadLink link) {
         return getHost();
     }
