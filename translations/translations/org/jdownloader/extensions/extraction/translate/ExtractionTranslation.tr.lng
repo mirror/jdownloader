@@ -1,3 +1,8 @@
+EXTRACTTOPATHLOGIC_ASK_FOR_EVERY_ARCHIVE=Her arşiv için sor
+EXTRACTTOPATHLOGIC_ASK_ONCE=Tüm arşivler için bir kez sor
+EXTRACTTOPATHLOGIC_EXTRACT_TO_ARCHIVE_PARENT=Sorma. Arşiv Konumuna çıkart
+EXTRACTTOPATHLOGIC_USE_CUSTOMEXTRACTIONPATH=Özel Çıkartma Yolu Ayarlaması kullan
+ExtractAction_getTranslationForExtractToPathLogic=Yol mantığını çıkart
 IfFileExistsDialog_layoutDialogContent_archive=Arşiv:
 IfFileExistsDialog_layoutDialogContent_newName=Yeni Adı:
 ValidateArchiveAction_ValidateArchiveAction=Doğrula: %s1
@@ -61,7 +66,7 @@ folders=klasör
 hoster=Barındırıcı
 local=Dosya Durumu
 menu_tools_extract_files=Dosyaları çıkart
-name=Arşiv Çıkartıcısı
+name=Arşiv Çıkartıcı
 offline=Dosya çevrimdışı veya kayıp
 offline_tt=Bu paketin içinde bu parça için Bağlantı yok ya da Bağlantı çevrimdışı
 online=Bağlantı mevcut
