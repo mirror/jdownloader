@@ -660,7 +660,7 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
         return dsm;
     }
 
-    public File validateDestination(File file) {
+    public void validateDestination(File file) throws BadDestinationException {
         if (!file.exists()) {
             File checking = null;
             try {
@@ -699,6 +699,7 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
                         // old windows API does not allow paths longer than that (this api is even used in the windows 7 explorer and other
                         // tools like ffmpeg)
                         checking = file;
+                        throw new PathTooLongException(file);
                     } else {
                         folders = CrossSystem.getPathComponents(file);
                         if (folders.length > 0) {
@@ -720,15 +721,17 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
                 if (checking != null && checking.exists() && checking.isDirectory()) {
                     checking = null;
                 }
+            } catch (BadDestinationException e) {
+                throw e;
             } catch (Throwable e) {
                 logger.log(e);
             }
             if (checking != null) {
                 logger.info("DownloadFolderRoot: " + checking + " for " + file + " is invalid! Missing or not a directory!");
-                return checking;
+                throw new BadDestinationException(checking);
             }
         }
-        return null;
+
     }
 
     private DownloadLinkCandidate next(DownloadLinkCandidateSelector selector) {
@@ -1302,10 +1305,22 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
             if (!nextSelectedCandidate.isForced() && selector.isMirrorManagement()) {
                 nextSelectedCandidates.addAll(findDownloadLinkCandidateMirrors(selector, nextSelectedCandidate));
             }
-            if (validateDestination(new File(nextSelectedCandidate.getLink().getFilePackage().getDownloadDirectory())) != null) {
+
+            boolean validationOk = false;
+            try {
+                validateDestination(new File(nextSelectedCandidate.getLink().getFilePackage().getDownloadDirectory()));
+                validationOk = true;
+            } catch (PathTooLongException e) {
                 for (final DownloadLinkCandidate candidate : nextSelectedCandidates) {
                     selector.addExcluded(candidate, new DownloadLinkCandidateResult(SkipReason.INVALID_DESTINATION, null, null));
                 }
+            } catch (BadDestinationException e) {
+                for (final DownloadLinkCandidate candidate : nextSelectedCandidates) {
+                    selector.addExcluded(candidate, new DownloadLinkCandidateResult(SkipReason.INVALID_DESTINATION, null, null));
+                }
+            }
+            if (!validationOk) {
+                //
             } else if (DISKSPACERESERVATIONRESULT.FAILED.equals(validateDiskFree(nextSelectedCandidates))) {
                 for (final DownloadLinkCandidate candidate : nextSelectedCandidates) {
                     selector.addExcluded(candidate, new DownloadLinkCandidateResult(SkipReason.DISK_FULL, null, null));
@@ -3514,10 +3529,16 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
                 boolean fileExists = fileOutput.exists();
                 if (!fileExists) {
                     File path = null;
-                    if ((path = validateDestination(fileOutput)) != null) {
-                        controller.getLogger().severe("not allowed to create path " + path);
+                    try {
+                        validateDestination(fileOutput);
+                    } catch (PathTooLongException e) {
+                        controller.getLogger().severe("not allowed to create path " + e.getFile());
+                        throw new SkipReasonException(SkipReason.INVALID_DESTINATION);
+                    } catch (BadDestinationException e) {
+                        controller.getLogger().severe("not allowed to create path " + e.getFile());
                         throw new SkipReasonException(SkipReason.INVALID_DESTINATION);
                     }
+
                     if (fileOutput.getParentFile() == null) {
                         controller.getLogger().severe("has no parentFile?! " + fileOutput);
                         throw new SkipReasonException(SkipReason.INVALID_DESTINATION);

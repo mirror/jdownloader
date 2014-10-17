@@ -9,7 +9,9 @@ import javax.swing.event.DocumentListener;
 import javax.swing.event.PopupMenuEvent;
 import javax.swing.event.PopupMenuListener;
 
+import jd.controlling.downloadcontroller.BadDestinationException;
 import jd.controlling.downloadcontroller.DownloadWatchDog;
+import jd.controlling.downloadcontroller.PathTooLongException;
 import jd.gui.swing.jdgui.views.settings.panels.packagizer.VariableAction;
 
 import org.appwork.swing.components.ExtTextField;
@@ -151,7 +153,17 @@ public class FolderChooser extends PathChooser implements SettingsComponent {
             checkPath = new File(path);
         }
         File forbidden = null;
-        if ((forbidden = DownloadWatchDog.getInstance().validateDestination(checkPath)) != null) {
+
+        try {
+            DownloadWatchDog.getInstance().validateDestination(checkPath);
+
+        } catch (PathTooLongException e) {
+            forbidden = e.getFile();
+        } catch (BadDestinationException e) {
+            forbidden = e.getFile();
+        }
+
+        if (forbidden != null) {
             UIOManager.I().showErrorMessage(_GUI._.DownloadFolderChooserDialog_handleNonExistingFolders_couldnotcreatefolder(forbidden.getAbsolutePath()));
             return null;
         }

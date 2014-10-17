@@ -6,6 +6,8 @@ import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 
+import org.appwork.utils.StringUtils;
+
 public class MacRestarter extends LinuxRestarter {
     protected File getRunInDirectory(File root) {
         File app = getApp(root);
@@ -36,6 +38,26 @@ public class MacRestarter extends LinuxRestarter {
     }
 
     private File getApp(File root) {
+        File ret;
+        String moduleName = System.getProperty("exe4j.moduleName");
+        if (StringUtils.isNotEmpty(moduleName)) {
+            // folder installer?
+            if (moduleName.endsWith(".app") && (ret = new File(moduleName)).exists()) {
+                getLogger().info("Found Modulename: " + moduleName);
+                return ret;
+            }
+        }
+
+        if ((ret = new File(root, "JDownloader2.app")).exists()) {
+            // folder installer?
+            getLogger().info("Found Launcher " + ret);
+            return ret;
+        }
+        if ((ret = new File(root, "JDownloader 2.app")).exists()) {
+            // folder installer?
+            getLogger().info("Found Launcher " + ret);
+            return ret;
+        }
         String appname = "JDownloader.app";
         File apppath = new File(root, "../../../../");
         try {

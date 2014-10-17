@@ -338,16 +338,18 @@ public class DownloadController extends PackageController<FilePackage, DownloadL
                                     logger.info("Skip folder creation: " + folderFile + " already exists");
                                 } else {
                                     /* folder does not exist */
-                                    File invalidDestination = DownloadWatchDog.getInstance().validateDestination(folderFile);
-                                    if (invalidDestination != null) {
-                                        logger.info("Not allowed to create folder: " + invalidDestination);
-                                    } else {
+
+                                    try {
+                                        DownloadWatchDog.getInstance().validateDestination(folderFile);
                                         if (folderFile.mkdirs()) {
                                             logger.info("Create folder: " + folderFile);
                                         } else {
                                             logger.info("Could not create folder: " + folderFile);
                                         }
+                                    } catch (BadDestinationException e) {
+                                        logger.info("Not allowed to create folder: " + e.getFile());
                                     }
+
                                 }
                             }
                         }

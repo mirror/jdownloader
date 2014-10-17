@@ -661,6 +661,7 @@ public class ExtractionExtension extends AbstractExtension<ExtractionConfig, Ext
                 getSettings().setPasswordList(currentList);
             }
         } catch (final Throwable e) {
+            logger.info("Could not Restore old Database");
             logger.log(e);
         } finally {
             if (oldPWListImported == false) {

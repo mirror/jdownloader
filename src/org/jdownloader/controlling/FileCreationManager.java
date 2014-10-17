@@ -6,7 +6,9 @@ import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 
+import jd.controlling.downloadcontroller.BadDestinationException;
 import jd.controlling.downloadcontroller.DownloadWatchDog;
+import jd.controlling.downloadcontroller.PathTooLongException;
 
 import org.appwork.storage.config.annotations.LabelInterface;
 import org.appwork.utils.Application;
@@ -70,7 +72,9 @@ public class FileCreationManager {
     }
 
     public boolean mkdir(File folder) {
-        if (folder.exists()) return false;
+        if (folder.exists()) {
+            return false;
+        }
 
         List<File> backlog = new ArrayList<File>();
         HashSet<String> loopcheck = new HashSet<String>();
@@ -96,13 +100,25 @@ public class FileCreationManager {
     }
 
     private boolean mkdirInternal(File file) {
-        if (DownloadWatchDog.getInstance().validateDestination(file) != null) return false;
-        return file.mkdir();
+
+        try {
+            DownloadWatchDog.getInstance().validateDestination(file);
+            return file.mkdir();
+        } catch (PathTooLongException e) {
+
+        } catch (BadDestinationException e) {
+        }
+        return false;
+
     }
 
     public boolean delete(File file, DeleteOption deleteTo) {
-        if (deleteTo == null) deleteTo = FileCreationManager.DeleteOption.NULL;
-        if (!file.exists()) return false;
+        if (deleteTo == null) {
+            deleteTo = FileCreationManager.DeleteOption.NULL;
+        }
+        if (!file.exists()) {
+            return false;
+        }
 
         switch (deleteTo) {
         case NULL:
