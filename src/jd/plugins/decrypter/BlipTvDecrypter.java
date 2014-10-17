@@ -24,6 +24,7 @@ import jd.PluginWrapper;
 import jd.config.SubConfiguration;
 import jd.controlling.ProgressController;
 import jd.http.Browser.BrowserException;
+import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
@@ -80,12 +81,14 @@ public class BlipTvDecrypter extends PluginForDecrypt {
             return decryptedLinks;
         }
         /* Decrypt start */
-        String title = br.getRegex("<media:title>([^<>\"]*?)</media:title>").getMatch(0);
+        String title = br.getRegex("<media:title>([^<>]*?)</media:title>").getMatch(0);
         if (title == null) {
             logger.warning("Decrypter broken for link: " + parameter);
             return null;
         }
         final FilePackage fp = FilePackage.getInstance();
+        title = Encoding.htmlDecode(title).trim();
+        title = encodeUnicode(title);
         fp.setName(title);
 
         /** Decrypt qualities START */
@@ -179,6 +182,22 @@ public class BlipTvDecrypter extends PluginForDecrypt {
             return decryptedLinks;
         }
         return decryptedLinks;
+    }
+
+    /* Avoid chars which are not allowed in filenames under certain OS' */
+    private static String encodeUnicode(final String input) {
+        String output = input;
+        output = output.replace(":", ";");
+        output = output.replace("|", "¦");
+        output = output.replace("<", "[");
+        output = output.replace(">", "]");
+        output = output.replace("/", "⁄");
+        output = output.replace("\\", "∖");
+        output = output.replace("*", "#");
+        output = output.replace("?", "¿");
+        output = output.replace("!", "¡");
+        output = output.replace("\"", "'");
+        return output;
     }
 
     /**

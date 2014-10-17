@@ -486,7 +486,7 @@ public class SoundCloudComDecrypter extends PluginForDecrypt {
         if (decrypt500Thumb) {
             try {
                 // Handle thumbnail stuff
-                String artworkurl = new Regex(source, "<artwork\\-url>(https?://[a-z0-9]+\\.sndcdn\\.com/artworks\\-[a-z0-9\\-]+\\-large\\.jpg\\?[a-z0-9]+)</artwork\\-url>").getMatch(0);
+                String artworkurl = new Regex(source, "<artwork\\-url>(https?://[^<>\"]*?\\-large\\.jpg(\\?[a-z0-9]+)?)</artwork\\-url>").getMatch(0);
                 if (artworkurl != null) {
                     artworkurl = artworkurl.replace("-large.jpg", "-t500x500.jpg");
                     thumb = createDownloadlink("directhttp://" + artworkurl);
@@ -514,7 +514,7 @@ public class SoundCloudComDecrypter extends PluginForDecrypt {
         if (decryptOriginalThumb) {
             try {
                 // Handle thumbnail stuff
-                String artworkurl = new Regex(source, "<artwork\\-url>(https?://[a-z0-9]+\\.sndcdn\\.com/artworks\\-[a-z0-9\\-]+\\-large\\.jpg\\?[a-z0-9]+)</artwork\\-url>").getMatch(0);
+                String artworkurl = new Regex(source, "<artwork\\-url>(https?://[^<>\"]*?\\-large\\.jpg(\\?[a-z0-9]+)?)</artwork\\-url>").getMatch(0);
                 if (artworkurl != null) {
                     artworkurl = artworkurl.replace("-large.jpg", "-original.jpg");
                     thumb = createDownloadlink("directhttp://" + artworkurl);

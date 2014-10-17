@@ -81,7 +81,7 @@ public class ScribdCom extends PluginForHost {
             for (int i = 0; i <= 3; i++) {
                 String newurl = br.getRedirectLocation();
                 if (newurl != null) {
-                    if (newurl.contains("/removal/")) {
+                    if (newurl.contains("/removal/") || newurl.contains("/deleted/")) {
                         throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
                     }
                     downloadLink.setUrlDownload(newurl);

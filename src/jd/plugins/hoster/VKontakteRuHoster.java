@@ -56,11 +56,11 @@ public class VKontakteRuHoster extends PluginForHost {
     private static final String DOCLINK                     = "http://vk\\.com/doc\\d+_\\d+(\\?hash=[a-z0-9]+)?";
     private int                 MAXCHUNKS                   = 1;
     private static final String TEMPORARILYBLOCKED          = "You tried to load the same page more than once in one second|Вы попытались загрузить более одной однотипной страницы в секунду|Sie haben versucht die Seite mehrfach innerhalb einer Sekunde zu laden";
-    /** Settings stuff */
-    private final String        USECOOKIELOGIN              = "USECOOKIELOGIN";
-    private final String        FASTLINKCHECK               = "FASTLINKCHECK";
-    private final String        FASTPICTURELINKCHECK        = "FASTPICTURELINKCHECK";
-    private final String        FASTAUDIOLINKCHECK          = "FASTAUDIOLINKCHECK";
+    /* Settings stuff */
+    private static final String USECOOKIELOGIN              = "USECOOKIELOGIN";
+    private static final String FASTLINKCHECK               = "FASTLINKCHECK";
+    private static final String FASTPICTURELINKCHECK        = "FASTPICTURELINKCHECK";
+    private static final String FASTAUDIOLINKCHECK          = "FASTAUDIOLINKCHECK";
     private static final String ALLOW_BEST                  = "ALLOW_BEST";
     private static final String ALLOW_240P                  = "ALLOW_240P";
     private static final String ALLOW_360P                  = "ALLOW_360P";
@@ -158,11 +158,6 @@ public class VKontakteRuHoster extends PluginForHost {
         return "http://vk.com/help.php?page=terms";
     }
 
-    @Override
-    public String getDescription() {
-        return "JDownloader's Vk Plugin helps downloading videoclips from vk.com. Vk provides different video formats and qualities.";
-    }
-
     private String getJson(final String key) {
         return this.br.getRegex("\"" + key + "\":\"(http:[^<>\"]*?)\"").getMatch(0);
     }
@@ -230,9 +225,15 @@ public class VKontakteRuHoster extends PluginForHost {
         return false;
     }
 
+    /**
+     * Checks a given directlink for content.
+     *
+     * @return <b>true</b>: Link is valid and can be downloaded <b>false</b>: Link leads to HTML, times out or other problems occured - link
+     *         is not downloadable!
+     */
     private boolean linkOk(final DownloadLink downloadLink, final String finalfilename) throws IOException {
         final Browser br2 = this.br.cloneBrowser();
-        // In case the link redirects to the finallink
+        /* In case the link redirects to the finallink */
         br2.setFollowRedirects(true);
         URLConnectionAdapter con = null;
         try {
@@ -261,7 +262,7 @@ public class VKontakteRuHoster extends PluginForHost {
     public void login(final Browser br, final Account account, final boolean force) throws Exception {
         synchronized (VKontakteRuHoster.LOCK) {
             try {
-                /** Load cookies */
+                /* Load cookies */
                 br.setCookiesExclusive(true);
                 this.prepBrowser(br);
                 final Object ret = account.getProperty("cookies", null);
@@ -298,7 +299,7 @@ public class VKontakteRuHoster extends PluginForHost {
                     this.logger.info("remixsid cookie is null, marking account as invalid...");
                     throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
                 }
-                // Finish login
+                /* Finish login */
                 final Form lol = br.getFormbyProperty("name", "login");
                 if (lol != null) {
                     lol.put("email", Encoding.urlEncode(account.getUser()));
@@ -306,7 +307,7 @@ public class VKontakteRuHoster extends PluginForHost {
                     lol.put("expire", "0");
                     br.submitForm(lol);
                 }
-                /** Save cookies */
+                /* Save cookies */
                 final HashMap<String, String> cookies = new HashMap<String, String>();
                 final Cookies add = br.getCookies(VKontakteRuHoster.DOMAIN);
                 for (final Cookie c : add.getCookies()) {
@@ -342,7 +343,7 @@ public class VKontakteRuHoster extends PluginForHost {
     }
 
     private void prepBrowser(final Browser br) {
-        br.getHeaders().put("User-Agent", "Mozilla/5.0 (Windows NT 6.1; WOW64; rv:21.0) Gecko/20100101 Firefox/21.0");
+        br.getHeaders().put("User-Agent", "Mozilla/5.0 (Windows NT 6.1; WOW64; rv:33.0) Gecko/20100101 Firefox/33.0");
         // Set english language
         br.setCookie("http://vk.com/", "remixlang", "3");
     }
@@ -350,6 +351,7 @@ public class VKontakteRuHoster extends PluginForHost {
     @SuppressWarnings("deprecation")
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
+        /* Check if offline was set via decrypter */
         if (link.getBooleanProperty("offline", false)) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
@@ -485,32 +487,7 @@ public class VKontakteRuHoster extends PluginForHost {
                     this.logger.warning("vk.com: Finallink is null!");
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 }
-                if (this.getPluginConfig().getBooleanProperty(VKPHOTO_CORRECT_FINAL_LINKS, false)) {
-                    logger.info("VKPHOTO_CORRECT_FINAL_LINKS enabled --> Correcting finallink");
-                    /* Correct server to get files that are otherwise inaccessible */
-                    final String oldserver = new Regex(this.FINALLINK, "(https?://cs\\d+\\.vk\\.me/)").getMatch(0);
-                    final String serv_id = new Regex(this.FINALLINK, "cs(\\d+)\\.vk\\.me/").getMatch(0);
-                    if (oldserver != null && serv_id != null) {
-                        final String newserver = "https://pp.vk.me/c" + serv_id + "/";
-                        this.FINALLINK = this.FINALLINK.replace(oldserver, newserver);
-                        logger.info("VKPHOTO_CORRECT_FINAL_LINKS enabled --> SUCCEEDED to correct finallink");
-                    } else {
-                        logger.warning("VKPHOTO_CORRECT_FINAL_LINKS enabled --> FAILED to correct finallink");
-                    }
-                } else {
-                    logger.info("VKPHOTO_CORRECT_FINAL_LINKS DISABLED --> changing link back to standard");
-                    /* Correct links to standard format */
-                    final Regex dataregex = new Regex(this.FINALLINK, "(https?://pp\\.vk\\.me/c)(\\d+)/v(\\d+)/");
-                    final String serv_id = dataregex.getMatch(1);
-                    final String oldserver = dataregex.getMatch(0) + serv_id + "/";
-                    if (oldserver != null && serv_id != null) {
-                        final String newserver = "http://cs" + serv_id + ".vk.me/";
-                        this.FINALLINK = this.FINALLINK.replace(oldserver, newserver);
-                        logger.info("VKPHOTO_CORRECT_FINAL_LINKS DISABLE --> SUCCEEDED to revert corrected finallink");
-                    } else {
-                        logger.warning("VKPHOTO_CORRECT_FINAL_LINKS enabled --> FAILED to revert corrected finallink");
-                    }
-                }
+                photo_correctLink();
                 link.setProperty("picturedirectlink", this.FINALLINK);
             }
         }
@@ -553,12 +530,50 @@ public class VKontakteRuHoster extends PluginForHost {
         }
     }
 
+    /**
+     * Changes server of picture links if wished by user - if not it will change them back to their "original" format. On error (server does
+     * not match expected) it won't touch the current finallink at all! Only use this for photo links!
+     */
+    private void photo_correctLink() {
+        if (this.getPluginConfig().getBooleanProperty(VKPHOTO_CORRECT_FINAL_LINKS, false)) {
+            logger.info("VKPHOTO_CORRECT_FINAL_LINKS enabled --> Correcting finallink");
+            /* Correct server to get files that are otherwise inaccessible */
+            final String oldserver = new Regex(this.FINALLINK, "(https?://cs\\d+\\.vk\\.me/)").getMatch(0);
+            final String serv_id = new Regex(this.FINALLINK, "cs(\\d+)\\.vk\\.me/").getMatch(0);
+            if (oldserver != null && serv_id != null) {
+                final String newserver = "https://pp.vk.me/c" + serv_id + "/";
+                this.FINALLINK = this.FINALLINK.replace(oldserver, newserver);
+                logger.info("VKPHOTO_CORRECT_FINAL_LINKS enabled --> SUCCEEDED to correct finallink");
+            } else {
+                logger.warning("VKPHOTO_CORRECT_FINAL_LINKS enabled --> FAILED to correct finallink");
+            }
+        } else {
+            logger.info("VKPHOTO_CORRECT_FINAL_LINKS DISABLED --> changing link back to standard");
+            /* Correct links to standard format */
+            final Regex dataregex = new Regex(this.FINALLINK, "(https?://pp\\.vk\\.me/c)(\\d+)/v(\\d+)/");
+            final String serv_id = dataregex.getMatch(1);
+            final String oldserver = dataregex.getMatch(0) + serv_id + "/";
+            if (oldserver != null && serv_id != null) {
+                final String newserver = "http://cs" + serv_id + ".vk.me/";
+                this.FINALLINK = this.FINALLINK.replace(oldserver, newserver);
+                logger.info("VKPHOTO_CORRECT_FINAL_LINKS DISABLE --> SUCCEEDED to revert corrected finallink");
+            } else {
+                logger.warning("VKPHOTO_CORRECT_FINAL_LINKS enabled --> FAILED to revert corrected finallink");
+            }
+        }
+    }
+
     @Override
     public void reset() {
     }
 
     @Override
     public void resetDownloadlink(final DownloadLink link) {
+    }
+
+    @Override
+    public String getDescription() {
+        return "JDownloader's Vk Plugin helps downloading all sorts of media from vk.com.";
     }
 
     public void setConfigElements() {
