@@ -50,7 +50,7 @@ import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.formatter.TimeFormatter;
 import org.appwork.utils.os.CrossSystem;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "uploadto.us", "ultramegabit.com" }, urls = { "https?://(www\\.)?(ultramegabit\\.com|uploadto\\.us)/file/details/[A-Za-z0-9\\-_]+", "REGEX_NOT_POSSIBLE_RANDOM-asdfasdfsadfsdgfd32423" }, flags = { 2, 2 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "uploadto.us", "ultramegabit.com" }, urls = { "https?://(www\\.)?(ultramegabit\\.com|uploadto\\.us)/file/details/[A-Za-z0-9\\-_]+", "REGEX_NOT_POSSIBLE_RANDOM-asdfasdfsadfsdgfd32423" }, flags = { 2, 0 })
 public class UltraMegaBitCom extends PluginForHost {
 
     public UltraMegaBitCom(PluginWrapper wrapper) {
@@ -58,6 +58,11 @@ public class UltraMegaBitCom extends PluginForHost {
         this.enablePremium(MAINPAGE);
         /* Needed for premium, servers are a bit slow */
         this.setStartIntervall(20 * 1000l);
+    }
+
+    @Override
+    public boolean isPremiumEnabled() {
+        return "uploadto.us".equals(getHost());
     }
 
     @Override
@@ -73,19 +78,25 @@ public class UltraMegaBitCom extends PluginForHost {
     }
 
     public Boolean rewriteHost(DownloadLink link) {
-        if (link != null && "ultramegabit.com".equals(link.getHost())) {
-            link.setHost("uploadto.us");
-            return true;
+        if (isPremiumEnabled()) {
+            if (link != null && "ultramegabit.com".equals(link.getHost())) {
+                link.setHost("uploadto.us");
+                return true;
+            }
+            return false;
         }
-        return false;
+        return null;
     }
 
     public Boolean rewriteHost(Account acc) {
-        if (acc != null && "ultramegabit.com".equals(acc.getHoster())) {
-            acc.setHoster("uploadto.us");
-            return true;
+        if (isPremiumEnabled()) {
+            if (acc != null && "ultramegabit.com".equals(acc.getHoster())) {
+                acc.setHoster("uploadto.us");
+                return true;
+            }
+            return false;
         }
-        return false;
+        return null;
     }
 
     private static AtomicReference<String> agent   = new AtomicReference<String>(null);
@@ -233,7 +244,7 @@ public class UltraMegaBitCom extends PluginForHost {
 
     /**
      * Shared server error handling method between free and premium.
-     *
+     * 
      * @throws PluginException
      */
     private void handleServerError() throws PluginException {
@@ -251,7 +262,7 @@ public class UltraMegaBitCom extends PluginForHost {
 
     /**
      * Shared errors handling method between free and premium
-     *
+     * 
      * @param account
      * @throws PluginException
      */
