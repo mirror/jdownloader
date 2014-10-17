@@ -791,8 +791,28 @@ public class FileFactory extends PluginForHost {
         }
     }
 
+    private AvailableStatus reqFileInformation(final DownloadLink link, final Account account) throws Exception {
+        correctDownloadLink(link);
+        if (!checkLinks_API(new DownloadLink[] { link }, account) || !link.isAvailabilityStatusChecked()) {
+            link.setAvailableStatus(AvailableStatus.UNCHECKABLE);
+        } else if (!link.isAvailable()) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
+        return getAvailableStatus(link);
+    }
+
     @Override
-    public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws Exception {
+    public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
+        correctDownloadLink(link);
+        if (!checkLinks_API(new DownloadLink[] { link }, null) || !link.isAvailabilityStatusChecked()) {
+            link.setAvailableStatus(AvailableStatus.UNCHECKABLE);
+        } else if (!link.isAvailable()) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
+        return getAvailableStatus(link);
+    }
+
+    public AvailableStatus requestFileInformation(final Account account, final DownloadLink downloadLink) throws Exception {
         setBrowserExclusive();
         prepBrowser(br);
         fuid = getFUID(downloadLink);
@@ -1335,15 +1355,6 @@ public class FileFactory extends PluginForHost {
             }
         }
         throw new PluginException(LinkStatus.ERROR_FATAL, "This file is only available to Premium Members");
-    }
-
-    private AvailableStatus reqFileInformation(final DownloadLink link, final Account account) throws Exception {
-        if (!checkLinks_API(new DownloadLink[] { link }, account) || !link.isAvailabilityStatusChecked()) {
-            link.setAvailableStatus(AvailableStatus.UNCHECKABLE);
-        } else if (!link.isAvailable()) {
-            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        }
-        return getAvailableStatus(link);
     }
 
     private AvailableStatus getAvailableStatus(DownloadLink link) {
