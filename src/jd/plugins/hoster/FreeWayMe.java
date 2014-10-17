@@ -210,7 +210,7 @@ public class FreeWayMe extends PluginForHost {
     /**
      * Returns a German/English translation of a phrase. We don't use the JDownloader translation framework since we need only German and
      * English.
-     *
+     * 
      * @param key
      * @return
      */
@@ -225,7 +225,7 @@ public class FreeWayMe extends PluginForHost {
 
     /**
      * Gets a unique device id for 2FA (fallback: device alias)
-     *
+     * 
      * @return
      */
     private String get2FADevID() {
@@ -254,7 +254,7 @@ public class FreeWayMe extends PluginForHost {
 
     /**
      * gets a page and shows 2FA input if necessary
-     *
+     * 
      * @param url
      * @return
      * @throws IOException
@@ -535,11 +535,17 @@ public class FreeWayMe extends PluginForHost {
 
         String user = Encoding.urlTotalEncode(acc.getUser().trim());
         String pw = Encoding.urlTotalEncode(acc.getPass().trim());
+        String dlPw = link.getDownloadPassword();
+        if (dlPw != null) {
+            dlPw = Encoding.urlTotalEncode(dlPw);
+        } else {
+            dlPw = "";
+        }
         final String url = Encoding.urlTotalEncode(link.getDownloadURL());
 
         logger.info("{handleMultiHost} Try download with account " + acc.getUser() + " file: " + link.getDownloadURL());
 
-        String dllink = "https://www.free-way.me/load.php?multiget=2&user=" + user + "&pw=" + pw + "&url=" + url + "&encodedJD";
+        String dllink = "https://www.free-way.me/load.php?multiget=2&user=" + user + "&pw=" + pw + "&dl_pw=" + dlPw + "&url=" + url + "&encodedJD";
 
         if (this.getPluginConfig().getBooleanProperty(BETAUSER, false)) {
             dllink += "&beta=1";
@@ -597,6 +603,11 @@ public class FreeWayMe extends PluginForHost {
         }
         if (error == null) {
             errorMagic(acc, link, getPhrase("ERROR_SERVER"), 5);
+        } else if (error.contains("Download password required")) {
+            // file requires pw to download
+            String newDLpw = getUserInput(null, link);
+            link.setDownloadPassword(newDLpw);
+            throw new PluginException(LinkStatus.ERROR_RETRY);
         } else if (error.contains("ltiger Login")) { // Ungü
             acc.setError(AccountError.TEMP_DISABLED, getPhrase("ERROR_INVALID_LOGIN"));
             throw new PluginException(LinkStatus.ERROR_RETRY);
