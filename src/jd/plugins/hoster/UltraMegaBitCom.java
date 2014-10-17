@@ -282,9 +282,15 @@ public class UltraMegaBitCom extends PluginForHost {
     private static Object       LOCK     = new Object();
 
     @SuppressWarnings("unchecked")
-    private void login(final Account account, final boolean force) throws Exception {
+    private AccountInfo login(final Account account, final boolean force, final AccountInfo AI) throws Exception {
+        AccountInfo ai = AI;
+        if (ai == null) {
+            ai = new AccountInfo();
+        }
         synchronized (LOCK) {
             try {
+                // lets try and prevent hoster redirects caused by browser history.
+                br = new Browser();
                 // Load cookies
                 br.setCookiesExclusive(true);
                 prepBrowser(br);
@@ -301,7 +307,7 @@ public class UltraMegaBitCom extends PluginForHost {
                             final String value = cookieEntry.getValue();
                             this.br.setCookie(MAINPAGE, key, value);
                         }
-                        return;
+                        return ai;
                     }
                 }
                 br.setFollowRedirects(true);
@@ -315,7 +321,7 @@ public class UltraMegaBitCom extends PluginForHost {
                         throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nPlugin broken, please contact the JDownloader Support!", PluginException.VALUE_ID_PREMIUM_DISABLE);
                     }
                 }
-                br.postPage("https://uploadto.us/login", "csrf_token=" + token + "&username=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()));
+                br.postPage("/login", "csrf_token=" + token + "&username=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()));
                 if (br.containsHTML(">Form validation errors found<|>Invalid username or password<") || br.getURL().contains("uploadto.us/login")) {
                     if ("de".equalsIgnoreCase(lang)) {
                         throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUngültiger Benutzername oder ungültiges Passwort!\r\nSchnellhilfe: \r\nDu bist dir sicher, dass dein eingegebener Benutzername und Passwort stimmen?\r\nFalls dein Passwort Sonderzeichen enthält, ändere es und versuche es erneut!", PluginException.VALUE_ID_PREMIUM_DISABLE);
@@ -336,13 +342,88 @@ public class UltraMegaBitCom extends PluginForHost {
                 account.setProperty("cookies", Property.NULL);
                 throw e;
             }
+            // need todo this here otherwise login from dl method will not be able to determine "free" status.
+            br.getPage("/user/details");
+            String space = br.getRegex("<span class=\"glyphicon glyphicon-hdd\"></span> ([\\d\\.]+ [A-Za-z]+)").getMatch(0);
+            if (space == null) {
+                space = br.getRegex("<li title=\"Quota\"[^\r\n]+\">([\\d\\.]+ [A-Za-z]+) / [^\r\n]+</li>").getMatch(0);
+            }
+            if (space != null) {
+                ai.setUsedSpace(SizeFormatter.getSize(space));
+            }
+            String filesNum = br.getRegex("<span class=\"glyphicon glyphicon-file\"></span> ([\\d]+)").getMatch(0);
+            if (filesNum != null) {
+                ai.setFilesNum(Long.parseLong(filesNum));
+            }
+            ai.setUnlimitedTraffic();
+            br.getPage("/user/subscription");
+
+            final boolean ispremium = (br.containsHTML("\"Premium Member\"") || br.containsHTML("premium subscription</h5>"));
+            // some premiums have no expiration date, page shows only: Account status: Premium
+            String expire = br.getRegex("<h5>Next rebill at (\\d+:\\d+(am|pm) \\d+/\\d+/\\d+)</h5>").getMatch(0);
+            if (expire == null) {
+                expire = br.getRegex("<h5>Account expires at (\\d+:\\d+(am|pm) \\d+/\\d+/\\d+)</h5>").getMatch(0);
+            }
+            if (expire == null && !ispremium) {
+                // "Member"
+                maxPrem.set(1);
+                account.setProperty("free", true);
+                try {
+                    account.setType(AccountType.FREE);
+                    account.setMaxSimultanDownloads(maxPrem.get());
+                    account.setConcurrentUsePossible(false);
+                } catch (final Throwable e) {
+                    /* not available in old Stable 0.9.581 */
+                }
+                ai.setStatus("Free Account");
+                account.setValid(true);
+                if (AI == null) {
+                    account.setAccountInfo(ai);
+                }
+                return ai;
+            } else if (expire != null) {
+                ai.setValidUntil(TimeFormatter.getMilliSeconds(expire, "h:mma dd/MM/yyyy", Locale.ENGLISH));
+                if (ai.isExpired()) {
+                    ai.setValidUntil(-1);
+                    maxPrem.set(1);
+                    account.setProperty("free", true);
+                    try {
+                        account.setType(AccountType.FREE);
+                        account.setMaxSimultanDownloads(maxPrem.get());
+                        account.setConcurrentUsePossible(false);
+                    } catch (final Throwable e) {
+                        /* not available in old Stable 0.9.581 */
+                    }
+                    ai.setStatus("Free Account");
+                    account.setValid(true);
+                    if (AI == null) {
+                        account.setAccountInfo(ai);
+                    }
+                    return ai;
+                }
+            }
+            account.setProperty("free", false);
+            account.setValid(true);
+            maxPrem.set(20);
+            try {
+                account.setType(AccountType.PREMIUM);
+                account.setMaxSimultanDownloads(maxPrem.get());
+                account.setConcurrentUsePossible(true);
+            } catch (final Throwable e) {
+                /* not available in old Stable 0.9.581 */
+            }
+            ai.setStatus("Premium Account");
+            if (AI == null) {
+                account.setAccountInfo(ai);
+            }
+            return ai;
         }
     }
 
     @SuppressWarnings("deprecation")
     @Override
     public AccountInfo fetchAccountInfo(final Account account) throws Exception {
-        final AccountInfo ai = new AccountInfo();
+        AccountInfo ai = new AccountInfo();
         /* reset maxPrem workaround on every fetchaccount info */
         maxPrem.set(1);
         try {
@@ -376,84 +457,20 @@ public class UltraMegaBitCom extends PluginForHost {
                 }
                 throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
             } else {
-                login(account, true);
+                return login(account, true, ai);
             }
         } catch (PluginException e) {
             account.setValid(false);
             throw e;
         }
-        br.getPage("/user/details");
-        String space = br.getRegex("<span class=\"glyphicon glyphicon-hdd\"></span> ([\\d\\.]+ [A-Za-z]+)").getMatch(0);
-        if (space == null) {
-            space = br.getRegex("<li title=\"Quota\"[^\r\n]+\">([\\d\\.]+ [A-Za-z]+) / [^\r\n]+</li>").getMatch(0);
-        }
-        if (space != null) {
-            ai.setUsedSpace(SizeFormatter.getSize(space));
-        }
-        String filesNum = br.getRegex("<span class=\"glyphicon glyphicon-file\"></span> ([\\d]+)").getMatch(0);
-        if (filesNum != null) {
-            ai.setFilesNum(Long.parseLong(filesNum));
-        }
-        ai.setUnlimitedTraffic();
-        br.getPage("/user/subscription");
 
-        final boolean ispremium = (br.containsHTML("\"Premium Member\"") || br.containsHTML("premium subscription</h5>"));
-        // some premiums have no expiration date, page shows only: Account status: Premium
-        String expire = br.getRegex("<h5>Next rebill at (\\d+:\\d+(am|pm) \\d+/\\d+/\\d+)</h5>").getMatch(0);
-        if (expire == null) {
-            expire = br.getRegex("<h5>Account expires at (\\d+:\\d+(am|pm) \\d+/\\d+/\\d+)</h5>").getMatch(0);
-        }
-        if (expire == null && !ispremium) {
-            // "Member"
-            maxPrem.set(1);
-            account.setProperty("free", true);
-            try {
-                account.setType(AccountType.FREE);
-                account.setMaxSimultanDownloads(maxPrem.get());
-                account.setConcurrentUsePossible(false);
-            } catch (final Throwable e) {
-                /* not available in old Stable 0.9.581 */
-            }
-            ai.setStatus("Registered (free) user");
-            account.setValid(true);
-            return ai;
-        } else if (expire != null) {
-            ai.setValidUntil(TimeFormatter.getMilliSeconds(expire, "h:mma dd/MM/yyyy", Locale.ENGLISH));
-            if (ai.isExpired()) {
-                ai.setValidUntil(-1);
-                maxPrem.set(1);
-                account.setProperty("free", true);
-                try {
-                    account.setType(AccountType.FREE);
-                    account.setMaxSimultanDownloads(maxPrem.get());
-                    account.setConcurrentUsePossible(false);
-                } catch (final Throwable e) {
-                    /* not available in old Stable 0.9.581 */
-                }
-                ai.setStatus("Free Account");
-                account.setValid(true);
-                return ai;
-            }
-        }
-        account.setProperty("free", false);
-        account.setValid(true);
-        maxPrem.set(20);
-        try {
-            account.setType(AccountType.PREMIUM);
-            account.setMaxSimultanDownloads(maxPrem.get());
-            account.setConcurrentUsePossible(true);
-        } catch (final Throwable e) {
-            /* not available in old Stable 0.9.581 */
-        }
-        ai.setStatus("Premium Account");
-        return ai;
     }
 
     @Override
     public void handlePremium(final DownloadLink link, final Account account) throws Exception {
         requestFileInformation(link);
         // Force login or download will fail
-        login(account, true);
+        login(account, true, null);
         if (account.getBooleanProperty("free", false)) {
             br.getPage(link.getDownloadURL());
             doFree(link, account);
