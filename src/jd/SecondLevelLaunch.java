@@ -165,37 +165,49 @@ public class SecondLevelLaunch {
         new Thread() {
             public void run() {
                 try {
-                    File file = Application.getResource("../../Info.plist");
-                    if (file.exists()) {
-                        String cFBundleIdentifier = new Regex(IO.readFileToString(file), "<key>CFBundleIdentifier</key>.*?<string>(.+?)</string>").getMatch(0);
-                        LOG.info("MAC Bundle Identifier: " + cFBundleIdentifier);
-                        if (StringUtils.isNotEmpty(cFBundleIdentifier)) {
-                            ProcessBuilder p = ProcessBuilderFactory.create("defaults", "write", cFBundleIdentifier, "NSAppSleepDisabled", "-bool", "YES");
-                            Process process = null;
+                    LOG.info("Try to disable AppNap");
+
+                    // single bundle installer
+                    File file = getInfoPlistPath();
+                    String cFBundleIdentifier = null;
+                    if (file != null && file.exists()) {
+                        cFBundleIdentifier = new Regex(IO.readFileToString(file), "<key>CFBundleIdentifier</key>.*?<string>(.+?)</string>").getMatch(0);
+
+                    }
+
+                    LOG.info("MAC Bundle Identifier: " + cFBundleIdentifier);
+                    if (cFBundleIdentifier == null) {
+
+                        cFBundleIdentifier = "org.jdownloader.launcher";
+
+                        LOG.info("Use MAC Default Bundle Identifier: " + cFBundleIdentifier);
+                    }
+                    if (StringUtils.isNotEmpty(cFBundleIdentifier)) {
+                        ProcessBuilder p = ProcessBuilderFactory.create("defaults", "write", cFBundleIdentifier, "NSAppSleepDisabled", "-bool", "YES");
+                        Process process = null;
+                        try {
+                            process = p.start();
+                            String ret = IO.readInputStreamToString(process.getInputStream());
+                            LOG.info("Disable App Nap");
+                        } finally {
                             try {
-                                process = p.start();
-                                String ret = IO.readInputStreamToString(process.getInputStream());
-                                LOG.info("Disable App Nap");
-                            } finally {
-                                try {
-                                    if (process != null) {
-                                        process.destroy();
-                                    }
-                                } catch (final Throwable e) {
+                                if (process != null) {
+                                    process.destroy();
                                 }
+                            } catch (final Throwable e) {
                             }
-                            p = ProcessBuilderFactory.create("defaults", "read", cFBundleIdentifier);
+                        }
+                        p = ProcessBuilderFactory.create("defaults", "read", cFBundleIdentifier);
+                        try {
+                            process = p.start();
+                            String ret = IO.readInputStreamToString(process.getInputStream());
+                            LOG.info("App Defaults: \r\n" + ret);
+                        } finally {
                             try {
-                                process = p.start();
-                                String ret = IO.readInputStreamToString(process.getInputStream());
-                                LOG.info("App Defaults: \r\n" + ret);
-                            } finally {
-                                try {
-                                    if (process != null) {
-                                        process.destroy();
-                                    }
-                                } catch (final Throwable e) {
+                                if (process != null) {
+                                    process.destroy();
                                 }
+                            } catch (final Throwable e) {
                             }
                         }
                     }
@@ -224,6 +236,26 @@ public class SecondLevelLaunch {
             SecondLevelLaunch.LOG.log(e);
         }
 
+    }
+
+    protected static File getInfoPlistPath() {
+
+        String ownBundlePath = System.getProperty("i4j.ownBundlePath");
+        if (StringUtils.isNotEmpty(ownBundlePath) && ownBundlePath.endsWith(".app")) {
+
+            // folder installer
+            File file = new File(new File(ownBundlePath), "Contents/Info.plist");
+            if (file.exists()) {
+                return file;
+            }
+        }
+
+        // old singlebundle installer
+        File file = Application.getResource("../../Info.plist");
+        if (file.exists()) {
+            return file;
+        }
+        return null;
     }
 
     public static void statics() {
@@ -464,8 +496,9 @@ public class SecondLevelLaunch {
                         }
                     }
                 } else if (CrossSystem.isMac()) {
-                    File file = Application.getResource("../../Info.plist");
-                    if (file.exists()) {
+                    File file = getInfoPlistPath();
+                    if (file != null && file.exists()) {
+
                         String str = IO.readFileToString(file);
                         boolean writeChanges = false;
                         if (Application.getJavaVersion() >= 17005000l && Application.getJavaVersion() <= 17006000l) {
@@ -486,18 +519,22 @@ public class SecondLevelLaunch {
                         }
                         if (writeChanges) {
                             SecondLevelLaunch.LOG.info("Modify " + file + " because it contains too low Xmx VM arg!");
-                            int i = 1;
-                            File backup = new File(file.getCanonicalPath() + ".backup_" + i);
-                            while (backup.exists() || i == 10) {
-                                i++;
-                                backup = new File(file.getCanonicalPath() + ".backup_" + i);
-                            }
-                            if (backup.exists()) {
-                                backup.delete();
-                            }
-                            IO.copyFile(file, backup);
-                            if (file.exists() == false || file.delete()) {
-                                IO.writeStringToFile(file, str);
+                            if (!isMacLauncherSigned()) {
+                                int i = 1;
+                                File backup = new File(file.getCanonicalPath() + ".backup_" + i);
+                                while (backup.exists() || i == 10) {
+                                    i++;
+                                    backup = new File(file.getCanonicalPath() + ".backup_" + i);
+                                }
+                                if (backup.exists()) {
+                                    backup.delete();
+                                }
+                                IO.copyFile(file, backup);
+                                if (file.exists() == false || file.delete()) {
+                                    IO.writeStringToFile(file, str);
+                                }
+                            } else {
+                                SecondLevelLaunch.LOG.info("Cannot modify, because the Laucher is signed. User has to reinstall.");
                             }
                         } else {
                             SecondLevelLaunch.LOG.info("User needs to modify Pinfo.list to specify higher Xmx vm arg!");
@@ -510,6 +547,19 @@ public class SecondLevelLaunch {
         } finally {
             IO.setErrorHandler(errorHandler);
         }
+    }
+
+    private static boolean isMacLauncherSigned() {
+        String ownBundlePath = System.getProperty("i4j.ownBundlePath");
+        if (StringUtils.isNotEmpty(ownBundlePath) && ownBundlePath.endsWith(".app")) {
+
+            // folder installer
+            File file = new File(new File(ownBundlePath), "Contents/﻿_CodeSignature");
+            if (file.exists()) {
+                return true;
+            }
+        }
+        return false;
     }
 
     private static void preInitChecks() {

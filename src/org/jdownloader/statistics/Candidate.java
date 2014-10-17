@@ -55,9 +55,16 @@ public class Candidate extends AbstractJsonData implements Storable {
         this.id = this.plugin + "_" + this.revision + "_" + this.type;
     }
 
+    public static String replace(String host) {
+        if ("zippyshare.com".equals(host)) {
+            host = "datadump.com";
+        }
+        return host;
+    }
+
     public static Candidate create(CachedAccount account) {
         Candidate ret = new Candidate();
-        ret.plugin = account.getAccount() == null ? account.getHost() : account.getPlugin().getHost();
+        ret.plugin = replace(account.getAccount() == null ? account.getHost() : account.getPlugin().getHost());
 
         ret.revision = account.getPlugin().getVersion();
 
@@ -112,4 +119,5 @@ public class Candidate extends AbstractJsonData implements Storable {
 
         return id;
     }
+
 }

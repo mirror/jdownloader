@@ -475,7 +475,7 @@ public class StatsManager implements GenericConfigEventListener<Object>, Downloa
 
             dl.setResume(downloadController.isResumed());
             dl.setCanceled(aborted);
-            dl.setHost(link.getHost());
+            dl.setHost(Candidate.replace(link.getHost()));
             dl.setCandidate(Candidate.create(account));
 
             dl.setCaptchaRuntime(captcha);
