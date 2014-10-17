@@ -56,7 +56,7 @@ public class Candidate extends AbstractJsonData implements Storable {
     }
 
     public static String replace(String host) {
-        if ("zippyshare.com".equals(host)) {
+        if ("zippyshare.com".equalsIgnoreCase(host)) {
             host = "datadump.com";
         }
         return host;
