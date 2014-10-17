@@ -42,54 +42,54 @@ public class JACScript {
     /**
      * Vector für die Befehle die für die Vorverarbeitung des Captchas verwendet werden. (script.jas)
      */
-    private Vector<String[]>          captchaPrepareCommands;
+    private Vector<String[]>                captchaPrepareCommands;
 
     /**
      * Farbwert für den verwendeten Farbraum. 0: hsb 1: RGB
      */
-    private int                       color;
+    private int                             color;
 
     /**
      * Internes Farbarray. Hier werden die Eingaben über setColorFormat abgelegt
      */
-    private int[]                     colorComponents = { 3, 3, 3 };
+    private int[]                           colorComponents = { 3, 3, 3 };
 
     /**
      * Internet Umrechnungsfaktor. Je nach verwendetem Farbmodell. Wird automatisch gesetzt
      */
-    private int                       colorFaktor;
+    private int                             colorFaktor;
 
     /**
      * Werte-Array Wird gaps != null, so werden die Werte als Trennpositionen für die letter detection verwendet. Alle anderen Erkennungen
      * werden dann ignoriert
      */
-    private int[]                     gaps;
+    private int[]                           gaps;
 
     /**
      * Vector für die Befehle die für die Ekennung allgemein gelten (script.jas)
      */
-    private Vector<String[]>          jacCommands;
-    private Vector<String[]>          letterCommands;
+    private Vector<String[]>                jacCommands;
+    private Vector<String[]>                letterCommands;
 
     /**
      * Methodenname
      */
-    private String                    method;
+    private String                          method;
     /**
      * owner
      */
-    private JAntiCaptcha              owner;
+    private final JAntiCaptcha              owner;
     /**
      * Hashtable für die parameter
      */
-    private Hashtable<String, Object> parameter       = new Hashtable<String, Object>();
+    private final Hashtable<String, Object> parameter       = new Hashtable<String, Object>();
 
     /**
      * Adresse zum Jacscript
      */
-    private String                    scriptFile;
+    private String                          scriptFile;
 
-    private final LogSource           logger;
+    private final LogSource                 logger;
 
     /**
      * @param owner
