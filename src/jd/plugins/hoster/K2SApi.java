@@ -783,6 +783,9 @@ public abstract class K2SApi extends PluginForHost {
                     // ERROR_NO_ALLOW_ACCESS_FROM_NETWORK = 73;
                     // ERROR_UNKNOWN_LOGIN_ERROR = 74;
                     throw new PluginException(LinkStatus.ERROR_FATAL, msg);
+                case 76:
+                    // ERROR_ACCOUNT_STOLEN = 76;
+                    throw new PluginException(LinkStatus.ERROR_PREMIUM, msg, PluginException.VALUE_ID_PREMIUM_DISABLE);
                 default:
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 }
@@ -1027,6 +1030,10 @@ public abstract class K2SApi extends PluginForHost {
                 msg = "You can not access " + getDomain() + " from your current network connection!";
             } else if (code == 74) {
                 msg = "Unknown login error!";
+            } else if (code == 75) {
+                msg = "Illegal IP Session";
+            } else if (code == 76) {
+                msg = "Stolen Account";
             }
         }
         return msg;
