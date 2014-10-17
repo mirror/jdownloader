@@ -372,6 +372,8 @@ public class HostPluginController extends PluginController<PluginForHost> {
                                     final Class<? extends ConfigInterface> configInterface = plg.getConfigInterface();
                                     if (configInterface != null) {
                                         lazyHostPlugin.setConfigInterface(new String(configInterface.getName()));
+                                    } else {
+                                        lazyHostPlugin.setConfigInterface(null);
                                     }
                                     /* set premium */
                                     if (plg.isPremiumEnabled()) {
@@ -381,6 +383,8 @@ public class HostPluginController extends PluginController<PluginForHost> {
                                         if (purl != null) {
                                             lazyHostPlugin.setPremiumUrl(new String(purl));
                                         }
+                                    } else {
+                                        lazyHostPlugin.setPremium(false);
                                     }
                                     /* set hasConfig */
                                     lazyHostPlugin.setHasConfig(plg.hasConfig());
@@ -388,16 +392,24 @@ public class HostPluginController extends PluginController<PluginForHost> {
                                     try {
                                         if (plg.rewriteHost((Account) null) != null) {
                                             lazyHostPlugin.setHasAccountRewrite(true);
+                                        } else {
+                                            lazyHostPlugin.setHasAccountRewrite(false);
                                         }
                                     } catch (Throwable e) {
+                                        logger.log(e);
+                                        lazyHostPlugin.setHasAccountRewrite(false);
                                     }
 
                                     /* set hasLinkRewrite */
                                     try {
                                         if (plg.rewriteHost((DownloadLink) null) != null) {
                                             lazyHostPlugin.setHasLinkRewrite(true);
+                                        } else {
+                                            lazyHostPlugin.setHasLinkRewrite(false);
                                         }
                                     } catch (Throwable e) {
+                                        logger.log(e);
+                                        lazyHostPlugin.setHasLinkRewrite(false);
                                     }
                                 } catch (Throwable e) {
                                     if (e instanceof UpdateRequiredClassNotFoundException) {
