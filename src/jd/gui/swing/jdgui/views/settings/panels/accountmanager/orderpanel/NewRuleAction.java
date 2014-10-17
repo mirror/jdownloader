@@ -58,10 +58,10 @@ public class NewRuleAction extends AbstractAddAction {
 
     private static boolean implementsHandlePremium(PluginForHost plugin) {
         try {
-            if (plugin != null) {
+            if (plugin != null && plugin.isPremiumEnabled()) {
                 final Method method = plugin.getClass().getMethod("handlePremium", new Class[] { DownloadLink.class, Account.class });
-                final boolean hasMassCheck = method.getDeclaringClass() != PluginForHost.class;
-                return hasMassCheck;
+                final boolean implementsHandlePremium = method.getDeclaringClass() != PluginForHost.class;
+                return implementsHandlePremium;
             }
         } catch (Throwable e) {
         }
@@ -78,7 +78,7 @@ public class NewRuleAction extends AbstractAddAction {
                     for (Object supportedHost : (List<?>) supportedHosts) {
                         if (supportedHost != null && supportedHost instanceof String) {
                             final LazyHostPlugin plg = HostPluginController.getInstance().get((String) supportedHost);
-                            if (plg != null) {
+                            if (plg != null && !plg.getClassName().endsWith("r.Offline")) {
                                 domains.add(DomainInfo.getInstance(plg.getHost()));
                             }
                         }
