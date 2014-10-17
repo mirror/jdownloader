@@ -178,9 +178,7 @@ public class RehostTo extends PluginForHost {
         account.setValid(true);
         account.setConcurrentUsePossible(true);
         account.setMaxSimultanDownloads(-1);
-
         hostUpdate(br, account, ai);
-
         return ai;
     }
 

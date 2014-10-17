@@ -23,6 +23,7 @@ import java.io.IOException;
 
 import javax.imageio.ImageIO;
 
+import jd.captcha.JACMethod;
 import jd.captcha.JAntiCaptcha;
 import jd.captcha.pixelgrid.Captcha;
 import jd.captcha.utils.AnimatedGifEncoder;
@@ -49,20 +50,22 @@ public class Ncrypt {
     public static void prepareCaptcha(final File file) {
         FileOutputStream fos = null;
         try {
-            final JAntiCaptcha jac = new JAntiCaptcha("ncrypt.in");
-            jac.getJas().setColorType("RGB");
-            final GifDecoder d = new GifDecoder();
-            d.read(file.getAbsolutePath());
-            final int n = d.getFrameCount();
-            final Captcha[] frames = new Captcha[d.getFrameCount()];
-            for (int i = 0; i < n; i++) {
-                final BufferedImage frame = d.getFrame(i);
-                frames[i] = jac.createCaptcha(frame);
-            }
+            if (JACMethod.hasMethod("ncrypt.in")) {
+                final JAntiCaptcha jac = new JAntiCaptcha("ncrypt.in");
+                jac.getJas().setColorType("RGB");
+                final GifDecoder d = new GifDecoder();
+                d.read(file.getAbsolutePath());
+                final int n = d.getFrameCount();
+                final Captcha[] frames = new Captcha[d.getFrameCount()];
+                for (int i = 0; i < n; i++) {
+                    final BufferedImage frame = d.getFrame(i);
+                    frames[i] = jac.createCaptcha(frame);
+                }
 
-            // BasicWindow.showImage(frames[0].getImage(1));
-            fos = new FileOutputStream(file);
-            ImageIO.write(frames[0].getImage(1), "png", fos);
+                // BasicWindow.showImage(frames[0].getImage(1));
+                fos = new FileOutputStream(file);
+                ImageIO.write(frames[0].getImage(1), "png", fos);
+            }
         } catch (final Throwable e) {
         } finally {
             try {

@@ -70,6 +70,7 @@ import javax.swing.event.ChangeListener;
 import javax.swing.event.MouseInputAdapter;
 
 import jd.PluginWrapper;
+import jd.captcha.JACMethod;
 import jd.captcha.JAntiCaptcha;
 import jd.captcha.pixelgrid.Captcha;
 import jd.captcha.pixelgrid.Letter;
@@ -1958,15 +1959,15 @@ public class LnkCrptWs extends PluginForDecrypt {
                             br.cloneBrowser().getDownload(file, url);
                             // remove black bars
                             Point p = null;
+                            final byte[] bytes = IO.readBytes(file);
                             if (br.containsHTML("CaptX") && attempts < 2) {
                                 // try autosolve
-                                p = CaptXSolver.solveCaptXCaptcha(file);
-                            } else {
+                                p = CaptXSolver.solveCaptXCaptcha(bytes);
+                            }
+                            if (p == null) {
                                 // solve by user
-                                byte[] bytes = IO.readBytes(file);
                                 BufferedImage image = toBufferedImage(new ByteArrayInputStream(bytes));
                                 ImageIO.write(image, "png", file);
-
                                 p = UserIO.getInstance().requestClickPositionDialog(file, "LinkCrypt.ws | " + String.valueOf(max_attempts - attempts), capDescription);
                             }
                             if (p == null) {
@@ -3275,17 +3276,16 @@ public class LnkCrptWs extends PluginForDecrypt {
          * @return coordinates of the circle
          * @throws Exception
          */
-        public static Point solveCaptXCaptcha(File captchaFile) throws Exception {
-            JAntiCaptcha jac = new JAntiCaptcha("lnkcrptwsCircles");
-            byte[] bytes = IO.readBytes(captchaFile);
-            BufferedImage image = toBufferedImage(new ByteArrayInputStream(bytes));
-            Captcha captcha = Captcha.getCaptcha(image, jac);
-            Point point = getOpenCircleCentrePoint(captcha);
-
-            if (point == null) {
-                throw new Exception("Linkcypt CaptX solver Module fails");
+        public static Point solveCaptXCaptcha(byte[] bytes) throws Exception {
+            final String method = "lnkcrptwsCircles";
+            if (JACMethod.hasMethod(method)) {
+                final JAntiCaptcha jac = new JAntiCaptcha(method);
+                final BufferedImage image = toBufferedImage(new ByteArrayInputStream(bytes));
+                final Captcha captcha = Captcha.getCaptcha(image, jac);
+                final Point point = getOpenCircleCentrePoint(captcha);
+                return point;
             }
-            return point;
+            return null;
         }
 
         private static boolean equalElements(int c, int c2) {
