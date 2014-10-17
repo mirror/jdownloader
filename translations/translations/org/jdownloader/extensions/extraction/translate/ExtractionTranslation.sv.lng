@@ -1,3 +1,8 @@
+EXTRACTTOPATHLOGIC_ASK_FOR_EVERY_ARCHIVE=Fråga för varje arkiv
+EXTRACTTOPATHLOGIC_ASK_ONCE=Fråga en gång för alla arkiv
+EXTRACTTOPATHLOGIC_EXTRACT_TO_ARCHIVE_PARENT=Fråga inte. Extrahera till arkivplats
+EXTRACTTOPATHLOGIC_USE_CUSTOMEXTRACTIONPATH=Använd anpassad extraheringssökväg
+ExtractAction_getTranslationForExtractToPathLogic=Extraheringssökvägslogik
 IfFileExistsDialog_layoutDialogContent_archive=Arkiv:
 IfFileExistsDialog_layoutDialogContent_newName=Nytt namn:
 ValidateArchiveAction_ValidateArchiveAction=Validera %s1
