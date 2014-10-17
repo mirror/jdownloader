@@ -1,3 +1,8 @@
+EXTRACTTOPATHLOGIC_ASK_FOR_EVERY_ARCHIVE=Pitaj za svaku arhivu
+EXTRACTTOPATHLOGIC_ASK_ONCE=Pitaj jednom za sve arhive
+EXTRACTTOPATHLOGIC_EXTRACT_TO_ARCHIVE_PARENT=Ne pitaj. Ekstraktuj u Lokaciju Arhive
+EXTRACTTOPATHLOGIC_USE_CUSTOMEXTRACTIONPATH=Koristi podešenje Po želji za Putanju za Ekstrakciju po želji
+ExtractAction_getTranslationForExtractToPathLogic=Logika putanje za ekstrakciju
 IfFileExistsDialog_layoutDialogContent_archive=Arhiva:
 IfFileExistsDialog_layoutDialogContent_newName=Novo Ime:
 ValidateArchiveAction_ValidateArchiveAction=Potvrdi %s1
