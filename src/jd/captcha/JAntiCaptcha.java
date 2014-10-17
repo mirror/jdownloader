@@ -269,33 +269,49 @@ public class JAntiCaptcha {
     public static final HashSet<String> SYNCMAP = new HashSet<String>();
 
     public JAntiCaptcha(String methodName) {
-        logger = LogController.CL();
-        logger.setLevel(Level.OFF);
-        method = JACMethod.forServiceName(methodName);
-        if (method == null) {
-            logger.severe("no such method found! " + methodName);
-            return;
+        final LogSource rebirthLogger = LogController.getRebirthLogger();
+        if (rebirthLogger != null) {
+            logger = LogController.getFastPluginLogger(rebirthLogger.getName());
+        } else {
+            logger = LogController.CL(false);
         }
-        methodDirName = method.getFileName();
-        getJACInfo();
-        jas = new JACScript(this, methodDirName);
-        long time = System.currentTimeMillis();
-        loadMTHFile();
-        time = System.currentTimeMillis() - time;
-        logger.fine("LoadTime: " + time);
-        logger.fine("letter DB loaded: Buchstaben: " + letterDB.size());
+        try {
+            method = JACMethod.forServiceName(methodName);
+            if (method == null) {
+                logger.severe("no such method found! " + methodName);
+                return;
+            }
+            methodDirName = method.getFileName();
+            getJACInfo();
+            jas = new JACScript(this, methodDirName);
+            long time = System.currentTimeMillis();
+            loadMTHFile();
+            time = System.currentTimeMillis() - time;
+            logger.fine("LoadTime: " + time);
+            logger.fine("letter DB loaded: Buchstaben: " + letterDB.size());
+        } finally {
+            logger.setLevel(Level.OFF);
+        }
     }
 
     public JAntiCaptcha() {
-        logger = LogController.CL();
-        logger.setLevel(Level.OFF);
-        method = null;
-        jas = new JACScript(this);
-        long time = System.currentTimeMillis();
-        loadMTHFile();
-        time = System.currentTimeMillis() - time;
-        logger.fine("LoadTime: " + time);
-        logger.fine("letter DB loaded: Buchstaben: " + letterDB.size());
+        final LogSource rebirthLogger = LogController.getRebirthLogger();
+        if (rebirthLogger != null) {
+            logger = LogController.getFastPluginLogger(rebirthLogger.getName());
+        } else {
+            logger = LogController.CL(false);
+        }
+        try {
+            method = null;
+            jas = new JACScript(this);
+            long time = System.currentTimeMillis();
+            loadMTHFile();
+            time = System.currentTimeMillis() - time;
+            logger.fine("LoadTime: " + time);
+            logger.fine("letter DB loaded: Buchstaben: " + letterDB.size());
+        } finally {
+            logger.setLevel(Level.OFF);
+        }
     }
 
     /**
