@@ -208,14 +208,14 @@ public class PluginFinder {
                 }
                 rewriteAccountCache.put(originalHost, pluginForHost);
                 if (pluginForHost != null) {
-                    logger.info("Plugin " + pluginForHost.getHost() + " now handles " + acc.getHoster());
+                    logger.info("Plugin " + pluginForHost.getHost() + " has been renamed, now 'known as/handled by' " + acc.getHoster());
                     return pluginForHost;
                 }
             }
             if (pluginForHost != null) {
                 try {
                     if (pluginForHost.rewriteHost(acc)) {
-                        logger.info("Plugin " + pluginForHost.getHost() + " now handles " + acc.getHoster());
+                        logger.info("Plugin " + pluginForHost.getHost() + " has been renamed, now 'known as/handled by' " + acc.getHoster());
                         return pluginForHost;
                     }
                 } catch (final Throwable e) {
