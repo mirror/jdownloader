@@ -223,6 +223,8 @@ public class CrawlerPluginController extends PluginController<PluginForDecrypt> 
                                     final Class<? extends ConfigInterface> configInterface = plg.getConfigInterface();
                                     if (configInterface != null) {
                                         lazyCrawlerPlugin.setConfigInterface(new String(configInterface.getName()));
+                                    } else {
+                                        lazyCrawlerPlugin.setConfigInterface(null);
                                     }
                                     lazyCrawlerPlugin.setMaxConcurrentInstances(plg.getMaxConcurrentProcessingInstances());
                                     lazyCrawlerPlugin.setHasConfig(plg.hasConfig());

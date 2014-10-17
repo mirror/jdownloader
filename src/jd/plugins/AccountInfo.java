@@ -281,6 +281,10 @@ public class AccountInfo extends Property {
             if (supportedHostsSet.contains("likeupload.net") || supportedHostsSet.contains("likeupload.org")) {
                 supportedHostsSet.add("likeupload.net");
             }
+            if (supportedHostsSet.remove("ultramegabit.com")) {
+                supportedHostsSet.add("uploadto.us");
+            }
+
             supportedHosts = new ArrayList<String>(supportedHostsSet);
         }
         // set array!
