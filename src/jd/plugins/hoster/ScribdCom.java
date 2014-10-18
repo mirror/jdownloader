@@ -64,7 +64,7 @@ public class ScribdCom extends PluginForHost {
     public void correctDownloadLink(DownloadLink link) {
         final String linkPart = new Regex(link.getDownloadURL(), "(scribd\\.com/doc/\\d+)").getMatch(0);
         /* Forced https */
-        link.setUrlDownload("https://www." + linkPart);
+        link.setUrlDownload("https://www." + linkPart.toLowerCase());
     }
 
     @Override
@@ -94,6 +94,8 @@ public class ScribdCom extends PluginForHost {
             if (br.getHttpConnection().getResponseCode() == 400) {
                 logger.info("Server returns error 400");
                 return AvailableStatus.UNCHECKABLE;
+            } else if (br.getHttpConnection().getResponseCode() == 500) {
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
             throw e;
         }
