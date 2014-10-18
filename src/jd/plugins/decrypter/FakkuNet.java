@@ -29,7 +29,7 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "fakku.net" }, urls = { "http://(www\\.)?fakku\\.net/((viewmanga|viewonline)\\.php\\?id=\\d+|[a-z0-9\\-_]+/[a-z0-9\\-_]+/read)" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "fakku.net" }, urls = { "https?://(www\\.)?fakku\\.net/((viewmanga|viewonline)\\.php\\?id=\\d+|[a-z0-9\\-_]+/[a-z0-9\\-_]+/read)" }, flags = { 0 })
 public class FakkuNet extends PluginForDecrypt {
 
     public FakkuNet(PluginWrapper wrapper) {
@@ -38,7 +38,8 @@ public class FakkuNet extends PluginForDecrypt {
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-        String parameter = param.toString();
+        /* Forced HTTPS */
+        String parameter = param.toString().replace("http://", "https://");
         br.setFollowRedirects(true);
         br.getPage(parameter);
         if (br.getHttpConnection().getResponseCode() == 404) {
@@ -51,10 +52,13 @@ public class FakkuNet extends PluginForDecrypt {
         br.getRequest().setHtmlCode(br.toString().replace("\\", ""));
         String fpName = br.getRegex("<title>([^<>\"]*?)</title>").getMatch(0);
         final String json_array = br.getRegex("window\\.params\\.thumbs = \\[(.*?)\\];").getMatch(0);
-        final String main_part = br.getRegex("return \\'(https?://t\\.fakku\\.net/images/[^<>\"]+/images/)\\' \\+ x").getMatch(0);
+        String main_part = br.getRegex("(\\'|\")((https?:)?//t\\.fakku\\.net/images/[^<>\"]+/images/)(\\'|\")").getMatch(1);
         if (json_array == null || main_part == null || fpName == null) {
             logger.warning("Decrypter broken for link: " + parameter);
             return null;
+        }
+        if (!main_part.startsWith("https:")) {
+            main_part = "https:" + main_part;
         }
         fpName = Encoding.htmlDecode(fpName.trim());
         final DecimalFormat df = new DecimalFormat("000");
