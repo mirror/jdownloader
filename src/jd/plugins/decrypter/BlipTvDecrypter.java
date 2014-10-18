@@ -121,6 +121,11 @@ public class BlipTvDecrypter extends PluginForDecrypt {
             fina.setProperty("plain_filename", filename);
             fina.setProperty("plain_filesize", fsize);
             fina.setProperty("LINKDUPEID", "bliptv" + fid + "_" + currentQuality);
+            try {
+                fina.setContentUrl(parameter);
+            } catch (final Throwable e) {
+                /* Not available in 0.9.581 Stable */
+            }
             FOUNDQUALITIES.put(currentQuality, fina);
         }
 
