@@ -547,6 +547,13 @@ public class TurboBitNet extends PluginForHost {
                 }
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
+            if (dl.getConnection().getResponseCode() == 403 || br.getURL().contains("error/download/ip")) {
+                try {
+                    dl.getConnection().disconnect();
+                } catch (final Throwable e) {
+                }
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "You cannot download this file with your current IP", 60 * 60 * 1000l);
+            }
             br.followConnection();
             if (br.containsHTML("Try to download it once again after")) {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error", 20 * 60 * 1000l);
