@@ -1,3 +1,8 @@
+EXTRACTTOPATHLOGIC_ASK_FOR_EVERY_ARCHIVE=Zeptat se na každý archiv
+EXTRACTTOPATHLOGIC_ASK_ONCE=Zeptat se jednou pro všechny archivy
+EXTRACTTOPATHLOGIC_EXTRACT_TO_ARCHIVE_PARENT=Neptat se. Rozbalit do umístění archivu
+EXTRACTTOPATHLOGIC_USE_CUSTOMEXTRACTIONPATH=Použít vlastní nastavení cesty pro rozbalení
+ExtractAction_getTranslationForExtractToPathLogic=Logika cesty pro rozbalení
 IfFileExistsDialog_layoutDialogContent_archive=Archiv:
 IfFileExistsDialog_layoutDialogContent_newName=Nový název:
 ValidateArchiveAction_ValidateArchiveAction=Zkontrolovat %s1
