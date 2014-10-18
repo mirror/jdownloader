@@ -1,3 +1,8 @@
+EXTRACTTOPATHLOGIC_ASK_FOR_EVERY_ARCHIVE=Ερώτηση για κάθε αρχείο
+EXTRACTTOPATHLOGIC_ASK_ONCE=Μια φορά ερώτηση για όλα τα αρχεία
+EXTRACTTOPATHLOGIC_EXTRACT_TO_ARCHIVE_PARENT=Χωρίς ερώτηση. Αποσυμπίεση στην τοποθεσία του αρχείου
+EXTRACTTOPATHLOGIC_USE_CUSTOMEXTRACTIONPATH=Χρήση προσαρμοσμένης διαδρομής αποσυμπίεσης
+ExtractAction_getTranslationForExtractToPathLogic=Λογική διαδρομής αποσυμπίεσης
 IfFileExistsDialog_layoutDialogContent_archive=Αρχείο συμπίεσης:
 IfFileExistsDialog_layoutDialogContent_newName=Νέο όνομα:
 ValidateArchiveAction_ValidateArchiveAction=Επικύρωση του %s1
