@@ -120,11 +120,17 @@ public class DivxDenCom extends PluginForHost {
         if (brbefore.contains("You have to wait")) {
             int minutes = 0, seconds = 0, hours = 0;
             String tmphrs = new Regex(brbefore, "You have to wait.*?\\s+(\\d+)\\s+hours?").getMatch(0);
-            if (tmphrs != null) hours = Integer.parseInt(tmphrs);
+            if (tmphrs != null) {
+                hours = Integer.parseInt(tmphrs);
+            }
             String tmpmin = new Regex(brbefore, "You have to wait.*?\\s+(\\d+)\\s+minutes?").getMatch(0);
-            if (tmpmin != null) minutes = Integer.parseInt(tmpmin);
+            if (tmpmin != null) {
+                minutes = Integer.parseInt(tmpmin);
+            }
             String tmpsec = new Regex(brbefore, "You have to wait.*?\\s+(\\d+)\\s+seconds?").getMatch(0);
-            if (tmpsec != null) seconds = Integer.parseInt(tmpsec);
+            if (tmpsec != null) {
+                seconds = Integer.parseInt(tmpsec);
+            }
             int waittime = ((3600 * hours) + (60 * minutes) + seconds + 1) * 1000;
             if (waittime != 0) {
                 logger.info("Detected waittime #1, waiting " + waittime + " milliseconds");
@@ -143,17 +149,29 @@ public class DivxDenCom extends PluginForHost {
                 throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, null, 60 * 60 * 1000l);
             } else {
                 int minutes = 0, seconds = 0, hours = 0, days = 0;
-                if (tmphrs != null) hours = Integer.parseInt(tmphrs);
-                if (tmpmin != null) minutes = Integer.parseInt(tmpmin);
-                if (tmpsec != null) seconds = Integer.parseInt(tmpsec);
-                if (tmpdays != null) days = Integer.parseInt(tmpdays);
+                if (tmphrs != null) {
+                    hours = Integer.parseInt(tmphrs);
+                }
+                if (tmpmin != null) {
+                    minutes = Integer.parseInt(tmpmin);
+                }
+                if (tmpsec != null) {
+                    seconds = Integer.parseInt(tmpsec);
+                }
+                if (tmpdays != null) {
+                    days = Integer.parseInt(tmpdays);
+                }
                 int waittime = ((days * 24 * 3600) + (3600 * hours) + (60 * minutes) + seconds + 1) * 1000;
                 logger.info("Detected waittime #2, waiting " + waittime + "milliseconds");
                 throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, null, waittime);
             }
         }
-        if (brbefore.contains("You're using all download slots for IP")) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, null, 10 * 60 * 1001l);
-        if (brbefore.contains("Error happened when generating Download Link")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error!", 10 * 60 * 1000l);
+        if (brbefore.contains("You're using all download slots for IP")) {
+            throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, null, 10 * 60 * 1001l);
+        }
+        if (brbefore.contains("Error happened when generating Download Link")) {
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error!", 10 * 60 * 1000l);
+        }
         // Errorhandling for only-premium links
         if (brbefore.contains(" can download files up to ") || brbefore.contains("Upgrade your account to download bigger files") || brbefore.contains("This file reached max downloads") || brbefore.contains(">Upgrade your account to download larger files")) {
             String filesizelimit = new Regex(brbefore, "You can download files up to(.*?)only").getMatch(0);
@@ -163,7 +181,9 @@ public class DivxDenCom extends PluginForHost {
                 try {
                     throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);
                 } catch (final Throwable e) {
-                    if (e instanceof PluginException) throw (PluginException) e;
+                    if (e instanceof PluginException) {
+                        throw (PluginException) e;
+                    }
                 }
                 throw new PluginException(LinkStatus.ERROR_FATAL, "Free users can only download files up to " + filesizelimit);
             } else {
@@ -171,7 +191,9 @@ public class DivxDenCom extends PluginForHost {
                 try {
                     throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);
                 } catch (final Throwable e) {
-                    if (e instanceof PluginException) throw (PluginException) e;
+                    if (e instanceof PluginException) {
+                        throw (PluginException) e;
+                    }
                 }
                 throw new PluginException(LinkStatus.ERROR_FATAL, "Only downloadable via premium");
             }
@@ -179,7 +201,9 @@ public class DivxDenCom extends PluginForHost {
     }
 
     public void checkServerErrors() throws NumberFormatException, PluginException {
-        if (brbefore.contains("No file")) throw new PluginException(LinkStatus.ERROR_FATAL, "Server error");
+        if (brbefore.contains("No file")) {
+            throw new PluginException(LinkStatus.ERROR_FATAL, "Server error");
+        }
         if (brbefore.contains("File Not Found") || brbefore.contains("<h1>404 Not Found</h1>")) {
             logger.warning("Server says link offline, please recheck that!");
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
@@ -203,7 +227,9 @@ public class DivxDenCom extends PluginForHost {
 
             while (c != 0) {
                 c--;
-                if (k[c].length() != 0) p = p.replaceAll("\\b" + Integer.toString(c, a) + "\\b", k[c]);
+                if (k[c].length() != 0) {
+                    p = p.replaceAll("\\b" + Integer.toString(c, a) + "\\b", k[c]);
+                }
             }
 
             decoded = p;
@@ -214,7 +240,9 @@ public class DivxDenCom extends PluginForHost {
             finallink = new Regex(decoded, "name=\"src\"value=\"(.*?)\"").getMatch(0);
             if (finallink == null) {
                 finallink = new Regex(decoded, "type=\"video/divx\"src=\"(.*?)\"").getMatch(0);
-                if (finallink == null) finallink = new Regex(decoded, "s1\\.addVariable\\(\\'file\\',\\'(http://.*?)\\'\\)").getMatch(0);
+                if (finallink == null) {
+                    finallink = new Regex(decoded, "s1\\.addVariable\\(('|\")file\\1,('|\")(http://.*?)\\2\\)").getMatch(2);
+                }
             }
         }
 
@@ -224,11 +252,15 @@ public class DivxDenCom extends PluginForHost {
     public void doFree(final DownloadLink downloadLink) throws Exception, PluginException {
         String dllink = checkDirectLink(downloadLink, "directlink");
         if (dllink == null) {
-            if (brbefore.contains(INMAINTENANCE)) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server is in maintenance mode, try again later.");
+            if (brbefore.contains(INMAINTENANCE)) {
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server is in maintenance mode, try again later.");
+            }
             // If the filesize regex above doesn't match you can copy this part into
             // the available status (and delete it here)
             Form[] allForms = br.getForms();
-            if (allForms == null || allForms.length == 0) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            if (allForms == null || allForms.length == 0) {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
             Form freeform = null;
             for (Form singleForm : allForms) {
                 if (singleForm.containsHTML("download1")) {
@@ -290,7 +322,9 @@ public class DivxDenCom extends PluginForHost {
         if (dl.getConnection().getContentType().contains("html")) {
             logger.warning("The final dllink seems not to be a file!");
             br.followConnection();
-            if (br.containsHTML("No File")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error", 30 * 60 * 1000l);
+            if (br.containsHTML("No File")) {
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error", 30 * 60 * 1000l);
+            }
             checkServerErrors();
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
@@ -334,7 +368,9 @@ public class DivxDenCom extends PluginForHost {
                     dllink = new Regex(brbefore, "Download: <a href=\"(.*?)\"").getMatch(0);
                     if (dllink == null) {
                         String crypted = br.getRegex("p}\\((.*?)\\.split\\('\\|'\\)").getMatch(0);
-                        if (crypted != null) dllink = decodeDownloadLink(crypted);
+                        if (crypted != null) {
+                            dllink = decodeDownloadLink(crypted);
+                        }
                     }
                 }
             }
