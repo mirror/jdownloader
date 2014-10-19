@@ -151,6 +151,7 @@ public class SchedulerExtension extends AbstractExtension<SchedulerConfig, Sched
         getConfigPanel().getTableModel().updateDataModel();
 
         ShutdownController.getInstance().addShutdownEvent(shutDownEvent);
+        getLogger().info("Start SchedulerThreadTimer");
         synchronized (lock) {
             scheduler = Executors.newScheduledThreadPool(1);
             // start scheduler and align to second = 0
@@ -196,9 +197,11 @@ public class SchedulerExtension extends AbstractExtension<SchedulerConfig, Sched
         CopyOnWriteArrayList<ScheduleEntry> scheduleEntries = new CopyOnWriteArrayList<ScheduleEntry>();
         for (ScheduleEntryStorable storable : scheduleStorables) {
             try {
-                scheduleEntries.add(new ScheduleEntry(storable));
+                ScheduleEntry entry = new ScheduleEntry(storable);
+                scheduleEntries.add(entry);
+                getLogger().info("Avaliable rule \"" + entry.getName() + "\" on " + entry.getTimeType().getReadableName() + " >" + entry.getTimestamp() + " achtion: " + entry.getAction().getReadableName());
             } catch (Exception e) {
-                e.printStackTrace();
+                getLogger().log(e);
             }
         }
         this.scheduleEntries = scheduleEntries;
@@ -311,15 +314,16 @@ public class SchedulerExtension extends AbstractExtension<SchedulerConfig, Sched
 
     @Override
     public void run() {
+        getLogger().info("Entries to check: " + getScheduleEntries().size());
         for (ScheduleEntry entry : getScheduleEntries()) {
             if (needsRun(entry)) {
+                getLogger().info("Run action: " + entry.getAction().getReadableName());
                 try {
                     entry.getAction().execute();
                 } catch (final Throwable e) {
-                    e.printStackTrace();
+                    getLogger().log(e);
                 }
             }
         }
     }
-
 }
