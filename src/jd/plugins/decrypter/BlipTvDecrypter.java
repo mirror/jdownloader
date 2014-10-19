@@ -74,7 +74,7 @@ public class BlipTvDecrypter extends PluginForDecrypt {
             }
             throw eb;
         }
-        if (br.getHttpConnection().getResponseCode() == 404) {
+        if (br.getHttpConnection().getResponseCode() == 404 || br.containsHTML("<blip:deleted>1</blip:deleted>")) {
             final DownloadLink dl = createDownloadlink("directhttp://" + parameter);
             dl.setProperty("offline", true);
             decryptedLinks.add(dl);

@@ -97,7 +97,8 @@ public class XerverCo extends PluginForHost {
 
     /* DEV NOTES */
     // XfileSharingProBasic Version 2.6.6.1
-    // mods:scanInfo[Added one filename RegEx, removed filesize because it's not given], waitTime[Changed RegEx]
+    // mods:scanInfo[Added one filename RegEx, removed filesize because it's not given], waitTime[Changed RegEx], heavily modified, do NOT
+    // upgrade!
     // limit-info:
     // protocol: no https
     // captchatype: solvemedia
@@ -129,7 +130,7 @@ public class XerverCo extends PluginForHost {
         prepBrowser(br);
         setFUID(link);
         getPage(link.getDownloadURL());
-        if (new Regex(correctedBR, "(No such file|> ?File Not Found<|>The file was removed by|Reason for deletion:\n)").matches()) {
+        if (new Regex(correctedBR, "(No such file|> ?File Not Found<|>The file was removed by|Reason for deletion:\n|<Title>Download </Title>)").matches()) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         if (new Regex(correctedBR, MAINTENANCE).matches()) {

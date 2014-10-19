@@ -17,9 +17,11 @@
 package jd.plugins.hoster;
 
 import java.io.IOException;
-import java.util.Random;
 
 import jd.PluginWrapper;
+import jd.config.Property;
+import jd.http.Browser;
+import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.plugins.DownloadLink;
@@ -71,41 +73,70 @@ public class AndroidFileHostCom extends PluginForHost {
     @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
-        final String filesize = br.getRegex("name=\"file_size\" id=\"file_size\" value=\"(\\d+)\"").getMatch(0);
-        final String flid = br.getRegex("name=\"flid\" id=\"flid\" value=\"(\\d+)\"").getMatch(0);
-        final String hc = br.getRegex("name=\"hc\" id=\"hc\" value=\"([^<>\"]*?)\"").getMatch(0);
-        final String tid = br.getRegex("name=\"tid\" id=\"tid\" value=\"([^<>\"]*?)\"").getMatch(0);
-        final String download_id = br.getRegex("name=\"download_id\" id=\"download_id\" value=\"([^<>\"]*?)\"").getMatch(0);
-        final String fid = new Regex(downloadLink.getDownloadURL(), "(\\d+)$").getMatch(0);
-        if (filesize == null || flid == null || hc == null || tid == null || download_id == null) {
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        String dllink = checkDirectLink(downloadLink, "directlink");
+        if (dllink == null) {
+            /* Old handling removed AFTER revision 26995 */
+            final String fid = new Regex(downloadLink.getDownloadURL(), "(\\d+)$").getMatch(0);
+            // sleep(10 * 1001l, downloadLink);
+            br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
+            br.postPage("https://www.androidfilehost.com/libs/otf/mirrors.otf.php", "submit=submit&action=getdownloadmirrors&fid=" + fid);
+            final String[] mirrors = br.getRegex("\"url\":\"(http[^<>\"]*?)\"").getColumn(0);
+            if (mirrors == null || mirrors.length == 0) {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
+            URLConnectionAdapter con = null;
+            boolean success = false;
+            for (final String mirror : mirrors) {
+                dllink = mirror.replace("\\", "");
+                try {
+                    con = br.openGetConnection(dllink);
+                    con.disconnect();
+                    if (con.getResponseCode() == 404) {
+                        continue;
+                    }
+                    success = true;
+                    break;
+                } catch (final Exception e) {
+                    dllink = null;
+                }
+            }
+            if (!success) {
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 404", 3 * 60 * 1000l);
+            }
         }
-        // sleep(10 * 1001l, downloadLink);
-        br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
-        br.postPage("https://www.androidfilehost.com/libs/otf/mirrors.otf.php", "submit=submit&action=getdownloadmirrors&fid=" + fid);
-        final String[] adresses = br.getRegex("\"address\":\"([^<>\"]*?)\"").getColumn(0);
-        if (adresses == null || adresses.length == 0) {
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
-        int position = 0;
-        if (adresses.length > 1) {
-            position = new Random().nextInt(adresses.length - 1);
-        }
-        final String adress = adresses[position];
-        if (adress == null) {
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
-        String dllink = "http://" + adress + "/download.php?fid=" + fid + "&registered=0&waittime=10&fid=" + fid + "&flid=" + flid + "&uid=&file_size=" + filesize + "&hc=" + hc + "&tid=" + tid + "&download_id=" + download_id + "&filename=" + downloadLink.getFinalFileName() + "&action=download";
         // Disabled chunks and resume because different downloadserver = different connection limits
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, false, 1);
+
         if (dl.getConnection().getContentType().contains("html")) {
+            /* Check again for server error 404 just to make sure... */
             if (dl.getConnection().getResponseCode() == 404) {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 404", 3 * 60 * 1000l);
             }
             br.followConnection();
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
+        downloadLink.setProperty("directlink", dllink);
         dl.startDownload();
+    }
+
+    private String checkDirectLink(final DownloadLink downloadLink, final String property) {
+        String dllink = downloadLink.getStringProperty(property);
+        if (dllink != null) {
+            try {
+                final Browser br2 = br.cloneBrowser();
+                br2.setFollowRedirects(true);
+                URLConnectionAdapter con = br2.openGetConnection(dllink);
+                if (con.getContentType().contains("html") || con.getLongContentLength() == -1) {
+                    downloadLink.setProperty(property, Property.NULL);
+                    dllink = null;
+                }
+                con.disconnect();
+            } catch (final Exception e) {
+                downloadLink.setProperty(property, Property.NULL);
+                dllink = null;
+            }
+        }
+        return dllink;
     }
 
     @Override

@@ -240,7 +240,6 @@ public class OneFichierCom extends PluginForHost {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "File temporarily not available", 15 * 60 * 1000l);
             case TRUE:
                 doFree(downloadLink);
-
             }
         } else {
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "File temporarily not available", 15 * 60 * 1000l);
@@ -281,7 +280,7 @@ public class OneFichierCom extends PluginForHost {
             }
             br.setFollowRedirects(false);
 
-            errorHandling(downloadLink, br);
+            errorHandling(downloadLink, br, true);
             if (br.containsHTML(PASSWORDTEXT) || pwProtected) {
                 if (downloadLink.getStringProperty("pass", null) == null) {
                     passCode = Plugin.getUserInput("Password?", downloadLink);
@@ -309,7 +308,7 @@ public class OneFichierCom extends PluginForHost {
                 br2.getHeaders().put("Content-Type", "application/x-www-form-urlencoded");
                 sleep(2000, downloadLink);
                 br2.submitForm(a1);
-                errorHandling(downloadLink, br2);
+                errorHandling(downloadLink, br2, true);
                 dllink = br2.getRedirectLocation();
                 if (dllink == null) {
                     sleep(2000, downloadLink);
@@ -321,7 +320,7 @@ public class OneFichierCom extends PluginForHost {
                     br3.getHeaders().put("Content-Type", "application/x-www-form-urlencoded");
                     sleep(2000, downloadLink);
                     br3.submitForm(a2);
-                    errorHandling(downloadLink, br3);
+                    errorHandling(downloadLink, br3, true);
                     if (dllink == null) {
                         dllink = br3.getRedirectLocation();
                     }
@@ -346,15 +345,9 @@ public class OneFichierCom extends PluginForHost {
         br.setFollowRedirects(true);
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 1);
         if (dl.getConnection().getContentType().contains("html")) {
+            logger.warning("The final dllink seems not to be a file!");
             br.followConnection();
-            if (br.getRequest().getHttpConnection().getResponseCode() == 404) {
-
-                // seems to be a temp. server error.
-                // <br/>Non TrouvÃ© (NOT FOUND)
-                // <br/>La ressource demandÃ©e n'a pu Ãªtre trouvÃ©e sur ce serveur.
-
-                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error. Try again later", 15 * 60 * 1000l);
-            }
+            errorHandling(downloadLink, this.br, true);
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         if (passCode != null) {
@@ -364,9 +357,17 @@ public class OneFichierCom extends PluginForHost {
         dl.startDownload();
     }
 
-    private void errorHandling(final DownloadLink downloadLink, final Browser ibr) throws Exception {
-        if (ibr.containsHTML(">Software error:<")) {
-            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error");
+    private void errorHandling(final DownloadLink downloadLink, final Browser ibr, final boolean checkAll) throws Exception {
+        if (br.getHttpConnection().getResponseCode() == 403) {
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403", 15 * 60 * 1000l);
+        } else if (ibr.getHttpConnection().getResponseCode() == 404) {
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 404", 30 * 60 * 1000l);
+        } else if (ibr.containsHTML(">Software error:<")) {
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 'Software error'", 10 * 60 * 1000l);
+        } else if (br.containsHTML(">Connexion à la base de données impossible<")) {
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Internal database error", 5 * 60 * 1000l);
+        } else if (br.containsHTML(">Votre adresse IP ouvre trop de connexions vers le serveur")) {
+            throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Too many connections - wait before starting new downloads", 3 * 60 * 1000l);
         }
         errorIpBlockedHandling(ibr);
     }
@@ -667,6 +668,7 @@ public class OneFichierCom extends PluginForHost {
                     }
                     logger.warning("The final dllink seems not to be a file!");
                     br.followConnection();
+                    errorHandling(link, this.br, false);
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 }
                 if (passCode != null) {

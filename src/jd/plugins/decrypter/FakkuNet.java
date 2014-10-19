@@ -42,7 +42,7 @@ public class FakkuNet extends PluginForDecrypt {
         String parameter = param.toString().replace("http://", "https://");
         br.setFollowRedirects(true);
         br.getPage(parameter);
-        if (br.getHttpConnection().getResponseCode() == 404) {
+        if (br.getHttpConnection().getResponseCode() == 404 || br.containsHTML("id=\"error\"")) {
             final DownloadLink offline = createDownloadlink("directhttp://" + parameter);
             offline.setAvailable(false);
             offline.setProperty("offline", true);
