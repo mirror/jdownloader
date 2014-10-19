@@ -741,7 +741,7 @@ public class ShareOnlineBiz extends PluginForHost {
                 br.setFollowRedirects(true);
                 String page = null;
                 try {
-                    page = br.getPage(userProtocol() + "://api.share-online.biz/cgi-bin?q=userdetails&aux=traffic&username=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()));
+                    page = apiGetPage(userProtocol() + "://api.share-online.biz/cgi-bin?q=userdetails&aux=traffic&username=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()));
                 } finally {
                     br.setFollowRedirects(follow);
                 }
@@ -781,6 +781,15 @@ public class ShareOnlineBiz extends PluginForHost {
             }
             return infos;
         }
+    }
+
+    /* Used for API request - also handles (server) errors */
+    private String apiGetPage(final String link) throws IOException, PluginException {
+        br.getPage(link);
+        if (br.getHttpConnection().getResponseCode() == 404) {
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 404");
+        }
+        return br.toString();
     }
 
     private String execJS(final String fun) throws Exception {

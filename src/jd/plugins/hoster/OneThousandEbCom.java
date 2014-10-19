@@ -66,7 +66,9 @@ public class OneThousandEbCom extends PluginForHost {
         setBrowserExclusive();
         br.setFollowRedirects(true);
         br.getPage(link.getDownloadURL());
-        if (br.getURL().contains("1000eb.com/exception_") || br.containsHTML("你要下载的文件已经不存在</span>")) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
+        if (br.getURL().contains("1000eb.com/exception_") || br.containsHTML("你要下载的文件已经不存在</span>")) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
         String filename = br.getRegex("\" title=\"点击查看 ([^<>\"\\']+) 的访问统计\"").getMatch(0);
         if (filename == null) {
             filename = br.getRegex("\">文件名</div>[\t\n\r ]+<div class=\"infotext singlerow\" title=\"([^<>\"\\']+)\"").getMatch(0);
@@ -75,7 +77,9 @@ public class OneThousandEbCom extends PluginForHost {
             }
         }
         String filesize = br.getRegex("class=\"infotitle\">文件大小</div>[\t\n\r ]+<div class=\"infotext\">([^<>\"\\']+)</div>").getMatch(0);
-        if (filename == null || filesize == null) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
+        if (filename == null || filesize == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         link.setName(Encoding.htmlDecode(filename.trim()));
         filesize = filesize.replace("M", "MB");
         filesize = filesize.replace("K", "KB");
@@ -87,13 +91,19 @@ public class OneThousandEbCom extends PluginForHost {
     public void handleFree(final DownloadLink downloadLink) throws Exception, PluginException {
         JDUtilities.getPluginForDecrypt("linkcrypt.ws");
         requestFileInformation(downloadLink);
-        // final String js =
-        // br.getRegex("src=\"(http://static\\.1000eb\\.com/combo/[^<>]+/file\\.js\\&t=\\d+)\">").getMatch(0);
-        final String dllink = requestDownloadLink("http://static.1000eb.com/www/js/file/base.js?2013042501");
-        if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        final String js = br.getRegex("\"(https?://static\\.1000eb\\.com/www/js/file/base\\.js\\?\\d+)\"").getMatch(0);
+        if (js == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        final String dllink = requestDownloadLink(js);
+        if (dllink == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
 
         int maxChunks = 0;
-        if (downloadLink.getBooleanProperty(NOCHUNKS, false)) maxChunks = 1;
+        if (downloadLink.getBooleanProperty(NOCHUNKS, false)) {
+            maxChunks = 1;
+        }
 
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, maxChunks);
         if (dl.getConnection().getContentType().contains("html")) {
@@ -104,7 +114,9 @@ public class OneThousandEbCom extends PluginForHost {
         try {
             if (!this.dl.startDownload()) {
                 try {
-                    if (dl.externalDownloadStop()) return;
+                    if (dl.externalDownloadStop()) {
+                        return;
+                    }
                 } catch (final Throwable e) {
                 }
                 /* unknown error, we disable multiple chunks */
@@ -143,7 +155,9 @@ public class OneThousandEbCom extends PluginForHost {
     }
 
     private String requestDownloadLink(final String js) throws IOException {
-        if (js == null) { return null; }
+        if (js == null) {
+            return null;
+        }
         final Browser jsBr = br.cloneBrowser();
         // js Funktion vorbereiten. Leider recht statisch.
         final StringBuilder sb = new StringBuilder();
@@ -153,7 +167,9 @@ public class OneThousandEbCom extends PluginForHost {
         jsBr.getPage(js);
         String dlUrl = jsBr.getRegex(fortyTwo(tb(5))).getMatch(0);
         String servUrl = jsBr.getRegex(fortyTwo(tb(6))).getMatch(0);
-        if (servUrl == null || dlUrl == null) { return null; }
+        if (servUrl == null || dlUrl == null) {
+            return null;
+        }
         dlUrl = dlUrl.replaceAll(fortyTwo(tb(7)), "");
         servUrl = servUrl.replaceAll(fortyTwo(tb(7)), "");
         servUrl = servUrl.replaceAll(fortyTwo(tb(8)), fortyTwo(tb(9)));
@@ -165,7 +181,9 @@ public class OneThousandEbCom extends PluginForHost {
 
         // und ausführen ...
         final String result = jsExecute(sb.toString(), true);
-        if (result == null) { return null; }
+        if (result == null) {
+            return null;
+        }
         br.getPage(result);
 
         // weitere Zutaten ...
@@ -173,7 +191,9 @@ public class OneThousandEbCom extends PluginForHost {
         String kugelschreiber = br.getRegex(fortyTwo(tb(16))).getMatch(0);
         final String[] ks = br.getRegex(fortyTwo(tb(17))).getColumn(0);
         kugelschreiber = ks[ks.length - 1];
-        if (kugelschreiber == null) { return null; }
+        if (kugelschreiber == null) {
+            return null;
+        }
         sb.append("var queryString=" + query + ";");
         sb.append(fortyTwo(tb(18)) + kugelschreiber + "\';");
         sb.append(fortyTwo(tb(19)));
