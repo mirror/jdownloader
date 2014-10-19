@@ -1,3 +1,6 @@
+EXTRACTTOPATHLOGIC_ASK_FOR_EVERY_ARCHIVE=Pitaj za svaku arhivu
+EXTRACTTOPATHLOGIC_ASK_ONCE=Pitaj jednom za sve arhive
+EXTRACTTOPATHLOGIC_EXTRACT_TO_ARCHIVE_PARENT=Ne pitaj. Raspakiraj na mjesto arhive
 IfFileExistsDialog_layoutDialogContent_archive=Arhiva:
 IfFileExistsDialog_layoutDialogContent_newName=Novi naziv:
 ValidateArchiveAction_ValidateArchiveAction=Provjera %s1
