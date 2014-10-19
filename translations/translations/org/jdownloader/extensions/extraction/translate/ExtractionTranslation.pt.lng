@@ -1,3 +1,8 @@
+EXTRACTTOPATHLOGIC_ASK_FOR_EVERY_ARCHIVE=Perguntar para cada arquivo
+EXTRACTTOPATHLOGIC_ASK_ONCE=Perguntar uma vez para todos os arquivos
+EXTRACTTOPATHLOGIC_EXTRACT_TO_ARCHIVE_PARENT=Não perguntar. Extrair para arquivar
+EXTRACTTOPATHLOGIC_USE_CUSTOMEXTRACTIONPATH=Utilizar configurações padrão de extração
+ExtractAction_getTranslationForExtractToPathLogic=Caminho de extração
 IfFileExistsDialog_layoutDialogContent_archive=Arquivo:
 IfFileExistsDialog_layoutDialogContent_newName=Novo nome:
 ValidateArchiveAction_ValidateArchiveAction=Validar %s1
@@ -23,7 +28,7 @@ context_password_msg=Definir senha para extrair %s1.
 context_password_msg2=Definir senha para extrair %s1. Sugestão: %s2
 context_password_msg2_multi=Definir senha. Sugestão: %s1
 context_password_msg_multi=Definir senha
-contextmenu_autodeletefiles='Eliminar arquivos' ligado
+contextmenu_autodeletefiles='Eliminar arquivos' ativado
 contextmenu_autodeletelinks='Eliminar ligaçoes da lista de descarga' ligado
 contextmenu_autoextract=Extração automática habilitada
 contextmenu_disable_auto_extract2=Extrair após realizar o download
