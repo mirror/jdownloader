@@ -93,6 +93,7 @@ public class FreeWayMe extends PluginForHost {
     private static final String                            PREVENTSPRITUSAGE                   = "PREVENTSPRITUSAGE";
     private static final String                            MAX_RETRIES_UNKNOWN_ERROR           = "MAX_RETRIES_UNKNOWN_ERROR";
     private static final long                              max_retries_unknown_error_default   = 10;
+    private static final long                              traffic_max_static                  = 5 * 1024 * 1024 * 1024l;
 
     public final String                                    ACC_PROPERTY_CONNECTIONS            = "parallel";
     public final String                                    ACC_PROPERTY_TRAFFIC_REDUCTION      = "ACC_TRAFFIC_REDUCTION";
@@ -451,17 +452,12 @@ public class FreeWayMe extends PluginForHost {
         }
         account.setConcurrentUsePossible(true);
 
-        String accountType = getRegexTag(accInfoAPIResp, "premium").getMatch(0);
-        ac.setValidUntil(-1);
-        if (accountType != null) {
-            final double remaining_gb = Double.parseDouble(this.getJson(accInfoAPIResp, "restgb"));
-            if (accountType.equalsIgnoreCase("Flatrate")) {
-                logger.info("{fetchAccInfo} Flatrate Account");
-                long validUntil = Long.parseLong(getRegexTag(accInfoAPIResp, "Flatrate").getMatch(0));
-                ac.setValidUntil(validUntil * 1000);
-            } else if (accountType.equalsIgnoreCase("Spender")) {
-                logger.info("{fetchAccInfo} Spender Account");
-            }
+        final String accountType = getRegexTag(accInfoAPIResp, "premium").getMatch(0);
+        final double remaining_gb = Double.parseDouble(this.getJson(accInfoAPIResp, "restgb"));
+        if (accountType.equalsIgnoreCase("Flatrate")) {
+            logger.info("{fetchAccInfo} Flatrate Account");
+            long validUntil = Long.parseLong(getRegexTag(accInfoAPIResp, "Flatrate").getMatch(0));
+            ac.setValidUntil(validUntil * 1000);
             /* Obey users' setting */
             if (this.getPluginConfig().getBooleanProperty(this.SETTING_SHOW_TRAFFICLEFT, false) && remaining_gb > 10) {
                 logger.info("User has traffic_left in GUI ACTIVE");
@@ -472,6 +468,19 @@ public class FreeWayMe extends PluginForHost {
                 logger.info("User has traffic_left in GUI IN_ACTIVE");
                 ac.setUnlimitedTraffic();
             }
+        } else if (accountType.equals("Free")) {
+            logger.info("{fetchAccInfo} Free Account");
+            /* Free accounts have a normal trafficlimit - once the traffic is gone, there is no way to continue downloading via free account */
+            final long traffic_left_free = Long.parseLong(getJson(accInfoAPIResp, "guthaben")) * 1024 * 1024l;
+            ac.setTrafficLeft(Long.parseLong(getJson(accInfoAPIResp, "guthaben")) * 1024 * 1024);
+            /* TODO: Ask for a better API-way to get the traffic-max for free accounts */
+            if (traffic_left_free <= traffic_max_static) {
+                ac.setTrafficMax(traffic_max_static);
+            }
+        } else if (accountType.equalsIgnoreCase("Spender")) {
+            logger.info("{fetchAccInfo} Spender Account");
+            /* TODO: Add proper traffic handling for this account type */
+            ac.setUnlimitedTraffic();
         }
         account.setProperty("notifications", (new Regex(accInfoAPIResp, "\"notis\":(\\d+)")).getMatch(0));
         account.setProperty("acctype", accountType);
@@ -712,7 +721,22 @@ public class FreeWayMe extends PluginForHost {
                 final Integer maxSimultanDls = account.getIntegerProperty(ACC_PROPERTY_CONNECTIONS, 1);
                 final String notifications = account.getStringProperty("notifications", "0");
                 final float trafficUsage = account.getIntegerProperty(ACC_PROPERTY_TRAFFIC_REDUCTION, -1) / 100f;
-                final String restFullspeedTraffic = account.getStringProperty(ACC_PROPERTY_REST_FULLSPEED_TRAFFIC, "?");
+                String restFullspeedTraffic = account.getStringProperty(ACC_PROPERTY_REST_FULLSPEED_TRAFFIC, "?");
+
+                /* Make sure to show the correct fullspeed trafficleft for Free accounts */
+                if (accType.equals("Free") && !restFullspeedTraffic.equals("?")) {
+                    final long fullspeedtraffic_long = (long) Double.parseDouble(restFullspeedTraffic) * 1024 * 1024 * 1024l;
+                    final long real_traffic = account.getAccountInfo().getTrafficLeft();
+                    /*
+                     * Show real traffic as fullspeed traffic if we got more fullspeedtraffic than real traffic, else show fullspeed
+                     * traffic.
+                     */
+                    if (fullspeedtraffic_long >= real_traffic) {
+                        restFullspeedTraffic = Double.toString((double) real_traffic / 1024 / 1024 / 1024);
+                        restFullspeedTraffic = String.format("%.2f", (double) real_traffic / 1024 / 1024 / 1024);
+                        restFullspeedTraffic.replace(",", ".");
+                    }
+                }
 
                 Set<MultihostContainer> hostList = new HashSet<MultihostContainer>();
 
