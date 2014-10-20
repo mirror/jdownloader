@@ -72,12 +72,19 @@ public class ScribdCom extends PluginForHost {
         this.setBrowserExclusive();
         br.setFollowRedirects(false);
         try {
-            br.setAllowedResponseCodes(new int[] { 410 });
+            br.setAllowedResponseCodes(new int[] { 400, 410 });
             br.setLoadLimit(br.getLoadLimit() * 2);
         } catch (Throwable e) {
         }
         try {
-            br.getPage(downloadLink.getDownloadURL());
+            for (int i = 0; i <= 3; i++) {
+                br.getPage(downloadLink.getDownloadURL());
+                if (br.getHttpConnection().getResponseCode() == 400) {
+                    logger.info("Server returns error 400 --> Retrying");
+                    continue;
+                }
+                break;
+            }
             for (int i = 0; i <= 3; i++) {
                 String newurl = br.getRedirectLocation();
                 if (newurl != null) {
@@ -91,8 +98,12 @@ public class ScribdCom extends PluginForHost {
                 }
             }
         } catch (final BrowserException e) {
+            /* Stable errorhandling */
             if (br.getHttpConnection().getResponseCode() == 400) {
                 logger.info("Server returns error 400");
+                return AvailableStatus.UNCHECKABLE;
+            } else if (br.getHttpConnection().getResponseCode() == 410) {
+                logger.info("Server returns error 410");
                 return AvailableStatus.UNCHECKABLE;
             } else if (br.getHttpConnection().getResponseCode() == 500) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);

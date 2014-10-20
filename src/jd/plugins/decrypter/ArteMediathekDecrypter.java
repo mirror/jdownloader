@@ -78,10 +78,7 @@ public class ArteMediathekDecrypter extends PluginForDecrypt {
         br.getPage(parameter);
         if (parameter.matches(TYPE_CONCERT)) {
             if (!br.containsHTML("id=\"section\\-player\"")) {
-                final DownloadLink offline = createDownloadlink("directhttp://" + parameter);
-                offline.setAvailable(false);
-                offline.setProperty("offline", true);
-                decryptedLinks.add(offline);
+                decryptedLinks.add(createofflineDownloadLink(parameter));
                 return decryptedLinks;
             }
         } else {
@@ -99,11 +96,7 @@ public class ArteMediathekDecrypter extends PluginForDecrypt {
                     br.getPage(parameter);
                 }
             } else if (status != 200) {
-                // Check...if offline, add to llinkgrabber so user can see it
-                final DownloadLink offline = createDownloadlink("directhttp://" + parameter);
-                offline.setAvailable(false);
-                offline.setProperty("offline", true);
-                decryptedLinks.add(offline);
+                decryptedLinks.add(createofflineDownloadLink(parameter));
                 return decryptedLinks;
             }
         }
@@ -112,10 +105,7 @@ public class ArteMediathekDecrypter extends PluginForDecrypt {
             decryptedLinks.addAll(getDownloadLinks(parameter, br));
         } catch (final Exception e) {
             if (e instanceof DecrypterException && e.getMessage().equals(EXCEPTION_LINKOFFLINE)) {
-                final DownloadLink offline = createDownloadlink("directhttp://" + parameter);
-                offline.setAvailable(false);
-                offline.setProperty("offline", true);
-                decryptedLinks.add(offline);
+                decryptedLinks.add(createofflineDownloadLink(parameter));
                 return decryptedLinks;
             }
             throw e;
@@ -196,10 +186,18 @@ public class ArteMediathekDecrypter extends PluginForDecrypt {
             br.getPage(tvguideUrl);
         }
         title = getTitleAPI(br);
-        br.getRequest().setHtmlCode(br.toString().replace("\\", ""));
-        if (br.containsHTML("<statuscode>wrongParameter</statuscode>")) {
+        String errormessage = br.getRegex("\"msg\":\"([^<>]*?)\"").getMatch(0);
+        if (errormessage != null) {
+            errormessage = Encoding.htmlDecode(errormessage);
+            errormessage = unescape(errormessage);
+            final DownloadLink offline = createofflineDownloadLink(parameter);
+            offline.setFinalFileName(this.getURLFilename(parameter) + errormessage);
+            ret.add(offline);
+            return ret;
+        } else if (br.containsHTML("<statuscode>wrongParameter</statuscode>")) {
             return ret;
         }
+        br.getRequest().setHtmlCode(br.toString().replace("\\", ""));
         String VRA = br.getRegex("\"VRA\":\"([^\"]+)\"").getMatch(0);
         VRU = br.getRegex("\"VRU\":\"([^\"]+)\"").getMatch(0);
         if (VRU.matches("\\d+/\\d+/\\d+ \\d+:\\d+:\\d+ \\+\\d+")) {
@@ -207,11 +205,9 @@ public class ArteMediathekDecrypter extends PluginForDecrypt {
             final Date date = df.parse(VRU);
             /* Maybe their rights to show the video expired */
             if (date.getTime() <= System.currentTimeMillis()) {
-                final DownloadLink link = createDownloadlink(parameter.replace("http://", "decrypted://"));
-                link.setFinalFileName(title);
-                link.setAvailable(false);
-                link.setProperty("offline", true);
-                ret.add(link);
+                final DownloadLink offline = this.createofflineDownloadLink(parameter);
+                offline.setFinalFileName(title);
+                ret.add(offline);
                 return ret;
             }
         }
@@ -220,11 +216,9 @@ public class ArteMediathekDecrypter extends PluginForDecrypt {
         vsr = br.getRegex(vsrRegex).getMatch(0);
         /* If it's just empty, the video is probably not available in the users' country. */
         if (vsr == null || vsr.equals("")) {
-            final DownloadLink link = createDownloadlink(parameter.replace("http://", "decrypted://"));
-            link.setFinalFileName(title);
-            link.setAvailable(false);
-            link.setProperty("offline", true);
-            ret.add(link);
+            final DownloadLink offline = this.createofflineDownloadLink(parameter);
+            offline.setFinalFileName(title);
+            ret.add(offline);
             return ret;
         }
 
@@ -259,7 +253,7 @@ public class ArteMediathekDecrypter extends PluginForDecrypt {
             }
             if ("VOF-STMF".equals(versionCode)) {
                 l = "3";
-            } else if (versionCode.equals("VA")) {
+            } else if (versionCode.equals("VA") || versionCode.equals("VO")) {
                 l = "1";
             } else if (versionCode.startsWith("VF") || versionCode.equals("VOF")) {
                 l = "2";
@@ -283,7 +277,7 @@ public class ArteMediathekDecrypter extends PluginForDecrypt {
                 continue;
             }
             /* Obey HBBTv setting */
-            if (preferHBBTV && !"HBBTV".equals(videoformat)) {
+            if (preferHBBTV && !"HBBTV".equals(videoformat) && !url.startsWith("http")) {
                 continue;
             } else if (!preferHBBTV && "HBBTV".equals(videoformat) && !url.matches("rtmp://.+")) {
                 /* No HBBTv preferred and/or no rtmp url available --> Ignore quality */
@@ -363,6 +357,7 @@ public class ArteMediathekDecrypter extends PluginForDecrypt {
                 link.setProperty("flashplayer", "http://www.arte.tv/player/v2//jwplayer6/mediaplayer.6.3.3242.swf");
             }
             ret.add(link);
+            bestMap.put(fmt, link);
         }
 
         if (ret.size() > 0) {
@@ -399,14 +394,7 @@ public class ArteMediathekDecrypter extends PluginForDecrypt {
             fp.setName(title);
             fp.addLinks(newRet);
         }
-        for (DownloadLink dl : newRet) {
-            try {
-                distribute(dl);
-            } catch (final Throwable e) {
-                /* does not exist in 09581 */
-            }
-        }
-        return ret;
+        return newRet;
     }
 
     private String getJson(final String source, final String parameter) {
@@ -422,6 +410,13 @@ public class ArteMediathekDecrypter extends PluginForDecrypt {
             return "D";
         }
         return "F";
+    }
+
+    private DownloadLink createofflineDownloadLink(final String parameter) {
+        final DownloadLink offline = createDownloadlink("directhttp://" + parameter);
+        offline.setAvailable(false);
+        offline.setProperty("offline", true);
+        return offline;
     }
 
     private String hbbtv(String s) {
@@ -489,6 +484,16 @@ public class ArteMediathekDecrypter extends PluginForDecrypt {
             title = "UnknownTitle_" + System.currentTimeMillis();
         }
         return title;
+    }
+
+    private String getURLFilename(final String parameter) {
+        String urlfilename;
+        if (parameter.matches(TYPE_CONCERT)) {
+            urlfilename = new Regex(parameter, "concert\\.arte\\.tv/(de|fr)/(.+)").getMatch(1);
+        } else {
+            urlfilename = new Regex(parameter, "arte\\.tv/guide/[a-z]{2}/(.+)").getMatch(0);
+        }
+        return urlfilename;
     }
 
     private static synchronized String unescape(final String s) {

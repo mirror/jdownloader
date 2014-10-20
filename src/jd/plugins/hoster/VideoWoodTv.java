@@ -19,6 +19,7 @@ package jd.plugins.hoster;
 import java.io.IOException;
 
 import jd.PluginWrapper;
+import jd.http.Browser.BrowserException;
 import jd.nutils.encoding.Encoding;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
@@ -44,11 +45,22 @@ public class VideoWoodTv extends PluginForHost {
         link.setUrlDownload(link.getDownloadURL().replace("/video/", "/embed/"));
     }
 
+    private boolean cloudflare = false;
+
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
-        br.getPage(link.getDownloadURL());
+        try {
+            br.getPage(link.getDownloadURL());
+        } catch (final BrowserException e) {
+            if (br.getHttpConnection().getResponseCode() == 503) {
+                link.getLinkStatus().setStatusText("Cannot break through cloudflare DDoS protection!");
+                cloudflare = true;
+                return AvailableStatus.UNCHECKABLE;
+            }
+            throw e;
+        }
         if (br.containsHTML(">This video doesn\\'t exist|>Was deleted by user")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         } else if (br.containsHTML("This video is not ready yet")) {
@@ -66,7 +78,9 @@ public class VideoWoodTv extends PluginForHost {
     @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
-        if (br.containsHTML("This video is not ready yet")) {
+        if (cloudflare) {
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Cannot break through cloudflare DDoS protection!", 3 * 60 * 60 * 1000l);
+        } else if (br.containsHTML("This video is not ready yet")) {
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Host says 'This video is not ready yet'", 30 * 60 * 1000l);
         }
         final String dllink = br.getRegex("file: \"(http[^<>\"]*?)\"").getMatch(0);

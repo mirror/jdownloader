@@ -21,6 +21,7 @@ import java.util.ArrayList;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
+import jd.http.Browser.BrowserException;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.plugins.CryptedLink;
@@ -40,10 +41,26 @@ public class FakkuNet extends PluginForDecrypt {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         /* Forced HTTPS */
         String parameter = param.toString().replace("http://", "https://");
+        final String url_filename = new Regex(parameter, "fakku\\.net/manga/([^<>\"]*?)/read").getMatch(0);
         br.setFollowRedirects(true);
-        br.getPage(parameter);
+        try {
+            br.getPage(parameter);
+        } catch (final BrowserException e) {
+            if (br.getHttpConnection().getResponseCode() == 410) {
+                final DownloadLink offline = createDownloadlink("directhttp://" + parameter);
+                if (url_filename != null) {
+                    offline.setFinalFileName(url_filename);
+                }
+                offline.setAvailable(false);
+                offline.setProperty("offline", true);
+                decryptedLinks.add(offline);
+                return decryptedLinks;
+            }
+            throw e;
+        }
         if (br.getHttpConnection().getResponseCode() == 404 || br.containsHTML("id=\"error\"")) {
             final DownloadLink offline = createDownloadlink("directhttp://" + parameter);
+            offline.setFinalFileName(url_filename);
             offline.setAvailable(false);
             offline.setProperty("offline", true);
             decryptedLinks.add(offline);

@@ -38,7 +38,7 @@ names = { "otofotki.pl", "bigimage.cz", "uploads.ru", "twitpic.com", "imgserve.n
 urls = { "http://img\\d+\\.otofotki\\.pl/[A-Za-z0-9\\-_]+\\.jpg\\.html", "http://bigimage\\.cz/image/\\d+\\.html", "http://(www\\.)?uploads\\.ru/[A-Za-z0-9]+\\.[a-z]{3,4}", "https?://(www\\.)?twitpic\\.com/show/[a-z]+/[a-z0-9]+", "http://(www\\.)?imgserve\\.net/img\\-[a-z0-9]+\\.html", "http://(www\\.)?imgpizza\\.com/viewer\\.php\\?file=[^<>\"/]+", "http://(www\\.)?pic4you\\.ru/\\d+/\\d+/", "http://(www\\.)?tuspics\\.net/[a-z0-9]{12}", "http://(www\\.)?imgjug\\.com/(i/[A-Za-z0-9]+|\\?v=[A-Za-z0-9]+\\.jpg)", "http://(www\\.)?pic4free\\.org/\\?v=[^<>\"/]+", "http://(www\\.)?img\\d+\\.cocoimage\\.com/img\\.php\\?id=\\d+", "http://(www\\.)?imagetwist\\.com/[a-z0-9]{12}", "http://(www\\.)?postim(age|g)\\.org/image/[a-z0-9]+", "http://(www\\.)?pimpandhost\\.com/image/(show/id/\\d+|\\d+\\-(original|medium|small)\\.html)", "http://(www\\.)?turboimagehost\\.com/p/\\d+/.*?\\.html",
         "http://(www\\.)?(img\\d+|serve)\\.imagehyper\\.com/img\\.php\\?id=\\d+\\&c=[a-z0-9]+", "http://[\\w\\.]*imagebam\\.com/(image|gallery)/[a-z0-9]+", "http://(www\\.)?(media\\.photobucket.com/image/.+\\..{3,4}\\?o=[0-9]+|gs\\d+\\.photobucket\\.com/groups/[A-Za-z0-9]+/[A-Za-z0-9]+/\\?action=view\\&current=[^<>\"/]+|s\\d+\\.photobucket\\.com/user/[A-Za-z0-9\\-_]+/media/[A-Za-z0-9\\-_]+/[A-Za-z0-9\\-_]+/[A-Za-z0-9\\-_]+\\.jpg\\.html)", "http://[\\w\\.]*?freeimagehosting\\.net/image\\.php\\?.*?\\..{3,4}", "http://(www\\.)?pixhost\\.org/show/\\d+/.+", "http://(www\\.)?sharenxs\\.com/view/\\?id=[a-z0-9-]+", "https?://(www\\.)?9gag\\.com/gag/\\d+" },
 
-        flags = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 })
+flags = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 })
 public class ImageHosterDecrypter extends PluginForDecrypt {
 
     public ImageHosterDecrypter(final PluginWrapper wrapper) {
@@ -249,9 +249,15 @@ public class ImageHosterDecrypter extends PluginForDecrypt {
             finallink = br.getRegex("name=\"twitter:image\" content=\"(http://imgjug\\.com/[^<>\"]*?)\"").getMatch(0);
         } else if (parameter.contains("tuspics.net/")) {
             br.setFollowRedirects(true);
+            /* define custom browser headers and language settings */
+            br.getHeaders().put("Accept-Language", "en-gb, en;q=0.9");
+            br.setCookie("http://tuspics.net/", "lang", "english");
             br.getPage(parameter);
             if (br.containsHTML(">This server is in maintenance mode")) {
                 logger.info("Can't decrypt link, server is currently in maintenance mode: " + parameter);
+                return decryptedLinks;
+            } else if (br.containsHTML("(No such file|>File Not Found<|>The file was removed by|Reason for deletion:\n|File Not Found|>The file expired)")) {
+                decryptedLinks.add(createOfflineLink(parameter));
                 return decryptedLinks;
             }
             finalfilename = br.getRegex("class=\"dotted\\-header\"><span>([^<>\"]*?)</span>").getMatch(0);
@@ -336,6 +342,13 @@ public class ImageHosterDecrypter extends PluginForDecrypt {
         if (finalfilename != null) {
             dl.setFinalFileName(Encoding.htmlDecode(finalfilename));
         }
+        return dl;
+    }
+
+    private DownloadLink createOfflineLink(final String parameter) throws IOException {
+        final DownloadLink dl = createDownloadlink("directhttp://" + parameter);
+        dl.setAvailable(false);
+        dl.setProperty("offline", true);
         return dl;
     }
 
