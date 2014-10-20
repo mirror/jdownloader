@@ -1,3 +1,4 @@
+EXTRACTTOPATHLOGIC_ASK_FOR_EVERY_ARCHIVE=询问每个压缩文档
 IfFileExistsDialog_layoutDialogContent_archive=压缩文档:
 IfFileExistsDialog_layoutDialogContent_newName=新名称：
 ValidateArchiveAction_ValidateArchiveAction=确认 %s1
