@@ -1057,6 +1057,7 @@ public class SecondLevelLaunch {
             }
             JDGui.getInstance().badLaunchCheck();
         }
+
         SecondLevelLaunch.GUI_COMPLETE.setReached();
         SecondLevelLaunch.LOG.info("Initialisation finished");
         SecondLevelLaunch.INIT_COMPLETE.setReached();

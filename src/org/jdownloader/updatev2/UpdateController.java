@@ -83,7 +83,8 @@ public class UpdateController implements UpdateCallbackInterface {
     private UpdaterEventSender eventSender;
     private Icon               statusIcon;
     private String             statusLabel;
-    private double             statusProgress = -1;
+    private double             statusProgress    = -1;
+    private boolean            hasPendingUpdates = false;
 
     public UpdateHandler getHandler() {
         return handler;
@@ -101,12 +102,14 @@ public class UpdateController implements UpdateCallbackInterface {
 
         this.appid = appid;
         this.updaterid = updaterid;
+        hasPendingUpdates = handler.hasPendingUpdates();
         handler.startIntervalChecker();
         try {
             jd.SecondLevelLaunch.UPDATE_HANDLER_SET.setReached();
         } catch (Throwable e) {
 
         }
+
         // UpdateAction.getInstance().setEnabled(true);
 
     }
@@ -463,6 +466,8 @@ public class UpdateController implements UpdateCallbackInterface {
         } catch (DialogNoAnswerException e) {
             logger.log(e);
             handler.setGuiVisible(false, false);
+        } finally {
+
         }
     }
 
@@ -474,7 +479,7 @@ public class UpdateController implements UpdateCallbackInterface {
     // public static final String OK = "OK";
 
     private void fireUpdatesAvailable(boolean self, InstallLog installLog) {
-
+        hasPendingUpdates = handler.hasPendingUpdates();
         eventSender.fireEvent(new UpdaterEvent(this, UpdaterEvent.Type.UPDATES_AVAILABLE, self, installLog));
     }
 
@@ -505,10 +510,8 @@ public class UpdateController implements UpdateCallbackInterface {
     }
 
     public boolean hasPendingUpdates() {
-        if (handler == null) {
-            return false;
-        }
-        return handler.hasPendingUpdates();
+
+        return hasPendingUpdates;
     }
 
     public void installUpdates(InstallLog log) {
