@@ -64,7 +64,7 @@ public class RPNetBiz extends PluginForHost {
 
     @Override
     public Boolean rewriteHost(DownloadLink link) {
-        if ("rpnet.biz".equals(link.getHost())) {
+        if (link != null && "rpnet.biz".equals(link.getHost())) {
             link.setHost("premium.rpnet.biz");
             return true;
         }
@@ -73,7 +73,7 @@ public class RPNetBiz extends PluginForHost {
 
     @Override
     public Boolean rewriteHost(Account acc) {
-        if ("rpnet.biz".equals(acc.getHoster())) {
+        if (acc != null && "rpnet.biz".equals(acc.getHoster())) {
             acc.setHoster("premium.rpnet.biz");
             return true;
         }

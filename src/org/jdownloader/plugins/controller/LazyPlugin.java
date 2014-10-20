@@ -27,11 +27,6 @@ import org.jdownloader.plugins.controller.PluginClassLoader.PluginClassLoaderChi
 
 public abstract class LazyPlugin<T extends Plugin> implements MinTimeWeakReferenceCleanup {
 
-    private class ConstructorInfo<T> {
-        protected Constructor<T> constructor;
-        protected Object[]       constructorParameters;
-    }
-
     private static final class SharedPluginObjects extends HashMap<String, Object> {
         protected final long version;
 
@@ -51,28 +46,26 @@ public abstract class LazyPlugin<T extends Plugin> implements MinTimeWeakReferen
     }
 
     private static final HashMap<String, SharedPluginObjects> sharedPluginObjectsPool = new HashMap<String, SharedPluginObjects>();
-    private static final HashSet<String>                      immutableClasses        = new HashSet<String>();
-    static {
-        immutableClasses.add("java.lang.Boolean");
-        immutableClasses.add("java.lang.Byte");
-        immutableClasses.add("java.lang.String");
-        immutableClasses.add("java.lang.Double");
-        immutableClasses.add("java.lang.Integer");
-        immutableClasses.add("java.lang.Long");
-        immutableClasses.add("java.lang.Float");
-        immutableClasses.add("java.lang.Short");
-        immutableClasses.add("java.math.BigInteger");
-        immutableClasses.add("java.math.BigDecimal");
-    }
+    private static final HashSet<String>                      immutableClasses        = new HashSet<String>() {
+                                                                                          {
+                                                                                              add("java.lang.Boolean");
+                                                                                              add("java.lang.Byte");
+                                                                                              add("java.lang.String");
+                                                                                              add("java.lang.Double");
+                                                                                              add("java.lang.Integer");
+                                                                                              add("java.lang.Long");
+                                                                                              add("java.lang.Float");
+                                                                                              add("java.lang.Short");
+                                                                                              add("java.math.BigInteger");
+                                                                                              add("java.math.BigDecimal");
+                                                                                          }
+                                                                                      };
 
-    private static final Object[]                             EMPTY                   = new Object[] {};
-    private final String                                      pattern;
+    private final byte[]                                      patternBytes;
     private volatile MinTimeWeakReference<Pattern>            compiledPattern         = null;
     private final String                                      displayName;
     protected volatile WeakReference<Class<T>>                pluginClass;
 
-    private final Object[]                                    CONSTRUCTOR;
-    private final PluginWrapper                               pluginWrapper;
     private static final LogSource                            LOGGER                  = LogController.getInstance().getCurrentClassLogger();
 
     protected volatile WeakReference<T>                       prototypeInstance;
@@ -80,7 +73,9 @@ public abstract class LazyPlugin<T extends Plugin> implements MinTimeWeakReferen
     private volatile WeakReference<PluginClassLoaderChild>    classLoader;
 
     public PluginWrapper getPluginWrapper() {
-        return pluginWrapper;
+        return new PluginWrapper(this) {
+            /* workaround for old plugin system */
+        };
     }
 
     private final LazyPluginClass lazyPluginClass;
@@ -90,7 +85,10 @@ public abstract class LazyPlugin<T extends Plugin> implements MinTimeWeakReferen
     }
 
     public LazyPlugin(LazyPluginClass lazyPluginClass, String patternString, String displayName, Class<T> class1, PluginClassLoaderChild classLoader) {
-        pattern = patternString;
+        /**
+         * no charset here as the bytes never leave the vm
+         */
+        patternBytes = patternString.getBytes();
         this.lazyPluginClass = lazyPluginClass;
         if (class1 != null) {
             pluginClass = new WeakReference<Class<T>>(class1);
@@ -103,10 +101,6 @@ public abstract class LazyPlugin<T extends Plugin> implements MinTimeWeakReferen
         if (classLoader != null) {
             this.classLoader = new WeakReference<PluginClassLoaderChild>(classLoader);
         }
-        pluginWrapper = new PluginWrapper(this) {
-            /* workaround for old plugin system */
-        };
-        CONSTRUCTOR = new Object[] { pluginWrapper };
     }
 
     public final long getVersion() {
@@ -157,8 +151,13 @@ public abstract class LazyPlugin<T extends Plugin> implements MinTimeWeakReferen
     public T newInstance(PluginClassLoaderChild classLoader) throws UpdateRequiredClassNotFoundException {
         T ret = null;
         try {
-            ConstructorInfo<T> cons = getConstructor(getPluginClass(classLoader));
-            ret = cons.constructor.newInstance(cons.constructorParameters);
+            final Class<T> clazz = getPluginClass(classLoader);
+            final Constructor<T> cons = getConstructor(clazz);
+            if (cons.getParameterCount() != 0) {
+                ret = cons.newInstance(new Object[] { getPluginWrapper() });
+            } else {
+                ret = cons.newInstance(new Object[0]);
+            }
         } catch (final Throwable e) {
             handleUpdateRequiredClassNotFoundException(e, true);
         }
@@ -287,18 +286,13 @@ public abstract class LazyPlugin<T extends Plugin> implements MinTimeWeakReferen
         return ret;
     }
 
-    private ConstructorInfo<T> getConstructor(Class<T> clazz) throws UpdateRequiredClassNotFoundException {
-        ConstructorInfo<T> ret = new ConstructorInfo<T>();
+    private Constructor<T> getConstructor(Class<T> clazz) throws UpdateRequiredClassNotFoundException {
         try {
-            ret.constructor = clazz.getConstructor(new Class[] { PluginWrapper.class });
-            ret.constructorParameters = CONSTRUCTOR;
-            return ret;
+            return clazz.getConstructor(new Class[] { PluginWrapper.class });
         } catch (Throwable e) {
             handleUpdateRequiredClassNotFoundException(e, false);
             try {
-                ret.constructor = clazz.getConstructor(new Class[] {});
-                ret.constructorParameters = EMPTY;
-                return ret;
+                return clazz.getConstructor(new Class[] {});
             } catch (final Throwable e2) {
                 handleUpdateRequiredClassNotFoundException(e, true);
             }
@@ -360,7 +354,10 @@ public abstract class LazyPlugin<T extends Plugin> implements MinTimeWeakReferen
     }
 
     public final String getPatternSource() {
-        return pattern;
+        /**
+         * no charset here as the bytes never leave the vm
+         */
+        return new String(patternBytes);
     }
 
     public final Pattern getPattern() {
@@ -369,7 +366,7 @@ public abstract class LazyPlugin<T extends Plugin> implements MinTimeWeakReferen
         if (lCompiledPattern != null && (ret = lCompiledPattern.get()) != null) {
             return ret;
         }
-        compiledPattern = new MinTimeWeakReference<Pattern>(ret = Pattern.compile(pattern, Pattern.CASE_INSENSITIVE), 60 * 1000l, displayName, this);
+        compiledPattern = new MinTimeWeakReference<Pattern>(ret = Pattern.compile(getPatternSource(), Pattern.CASE_INSENSITIVE), 60 * 1000l, displayName, this);
         return ret;
     }
 

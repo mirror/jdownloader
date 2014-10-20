@@ -55,6 +55,7 @@ import jd.controlling.linkchecker.LinkChecker;
 import jd.controlling.linkcollector.LinkCollector;
 import jd.controlling.linkcrawler.CheckableLink;
 import jd.controlling.linkcrawler.CrawledLink;
+import jd.controlling.linkcrawler.LinkCrawlerThread;
 import jd.http.Browser;
 import jd.nutils.Formatter;
 import jd.plugins.DownloadLink.AvailableStatus;
@@ -297,6 +298,9 @@ public abstract class PluginForHost extends Plugin {
     }
 
     protected String getCaptchaCode(final String method, File file, final int flag, final DownloadLink link, final String defaultValue, final String explain) throws Exception {
+        if (Thread.currentThread() instanceof LinkCrawlerThread) {
+            logger.severe("PluginForHost.getCaptchaCode inside LinkCrawlerThread!?");
+        }
         final CaptchaStepProgress progress = new CaptchaStepProgress(0, 1, null);
         progress.setProgressSource(this);
         progress.setDisplayInProgressColumnEnabled(false);
@@ -400,6 +404,11 @@ public abstract class PluginForHost extends Plugin {
                 case REFRESH:
                     // we should forward the refresh request to a new pluginstructure soon. For now. the plugin will just retry
                     return "";
+                case STOP_CURRENT_ACTION:
+                    if (Thread.currentThread() instanceof SingleDownloadController) {
+                        DownloadWatchDog.getInstance().stopDownloads();
+                    }
+                    break;
                 }
             }
             throw new CaptchaException(e.getSkipRequest());
@@ -1098,6 +1107,16 @@ public abstract class PluginForHost extends Plugin {
         return null;
     }
 
+    /**
+     * override this if you want to signal domain changes
+     * 
+     * null must always return the original hostname
+     * 
+     * 
+     * 
+     * @param host
+     * @return
+     */
     public String rewriteHost(String host) {
         return getHost();
     }

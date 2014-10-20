@@ -178,11 +178,10 @@ public class AccountTooltip extends PanelToolTip {
 
                         if (supported instanceof ArrayList) {
                             for (String sup : (java.util.List<String>) supported) {
-                                LazyHostPlugin plg = HostPluginController.getInstance().get((String) sup);
+                                LazyHostPlugin plg = HostPluginController.getInstance().get(sup);
                                 if (plg != null) {
                                     domains.add(DomainInfo.getInstance(plg.getHost()));
                                 }
-
                             }
                         }
                     }

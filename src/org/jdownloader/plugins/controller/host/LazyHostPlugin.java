@@ -9,11 +9,19 @@ import org.jdownloader.plugins.controller.UpdateRequiredClassNotFoundException;
 
 public class LazyHostPlugin extends LazyPlugin<PluginForHost> {
 
-    private String         premiumUrl;
-    private boolean        hasConfig      = false;
-    private LazyHostPlugin fallBackPlugin = null;
+    private static enum PROPERTY {
+        CONFIG,
+        PREMIUM,
+        ACCOUNTREWRITE,
+        LINKREWRITE,
+        REWRITE
+    }
 
-    private volatile long  parsesLifetime = 0;
+    private String        premiumUrl;
+
+    private volatile byte properties     = 0;
+
+    private volatile long parsesLifetime = 0;
 
     public long getPluginUsage() {
         return parsesLifetime + parses;
@@ -31,14 +39,12 @@ public class LazyHostPlugin extends LazyPlugin<PluginForHost> {
         return averageRuntime;
     }
 
-    public void updateParseRuntime(long r) {
-        synchronized (this) {
-            parses++;
-            if (r >= 0) {
-                parsesRuntime += r;
-            }
-            averageRuntime = parsesRuntime / parses;
+    public synchronized void updateParseRuntime(long r) {
+        parses++;
+        if (r >= 0) {
+            parsesRuntime += r;
         }
+        averageRuntime = parsesRuntime / parses;
     }
 
     @Override
@@ -47,11 +53,23 @@ public class LazyHostPlugin extends LazyPlugin<PluginForHost> {
     }
 
     public boolean isHasConfig() {
-        return hasConfig;
+        return getProperty(PROPERTY.CONFIG);
     }
 
     protected void setHasConfig(boolean hasConfig) {
-        this.hasConfig = hasConfig;
+        setProperty(hasConfig, PROPERTY.CONFIG);
+    }
+
+    protected synchronized final void setProperty(final boolean b, final PROPERTY property) {
+        if (b) {
+            properties |= 1 << property.ordinal();
+        } else {
+            properties &= ~(1 << property.ordinal());
+        }
+    }
+
+    protected final boolean getProperty(final PROPERTY property) {
+        return (properties & 1 << property.ordinal()) != 0;
     }
 
     public String getHost() {
@@ -67,17 +85,14 @@ public class LazyHostPlugin extends LazyPlugin<PluginForHost> {
     }
 
     public boolean isPremium() {
-        return premium;
+        return getProperty(PROPERTY.PREMIUM);
     }
 
     protected void setPremium(boolean premium) {
-        this.premium = premium;
+        setProperty(premium, PROPERTY.PREMIUM);
     }
 
-    private boolean premium;
-    private boolean hasAccountRewrite;
-    private boolean hasLinkRewrite;
-    private String  configInterface = null;
+    private String configInterface = null;
 
     public LazyHostPlugin(LazyPluginClass lazyPluginClass, String pattern, String displayName, Class<PluginForHost> pluginClass, PluginClassLoaderChild classLoaderChild) {
         super(lazyPluginClass, pattern, displayName, pluginClass, classLoaderChild);
@@ -92,32 +107,39 @@ public class LazyHostPlugin extends LazyPlugin<PluginForHost> {
     }
 
     public boolean isHasAccountRewrite() {
-        return hasAccountRewrite;
+        return getProperty(PROPERTY.ACCOUNTREWRITE);
     }
 
     public void setHasAccountRewrite(boolean hasAccountRewrite) {
-        this.hasAccountRewrite = hasAccountRewrite;
+        setProperty(hasAccountRewrite, PROPERTY.ACCOUNTREWRITE);
     }
 
     public boolean isHasLinkRewrite() {
-        return hasLinkRewrite;
+        return getProperty(PROPERTY.LINKREWRITE);
     }
 
     public void setHasLinkRewrite(boolean hasLinkRewrite) {
-        this.hasLinkRewrite = hasLinkRewrite;
+        setProperty(hasLinkRewrite, PROPERTY.LINKREWRITE);
+    }
+
+    public void setHasRewrite(boolean hasRewrite) {
+        setProperty(hasRewrite, PROPERTY.REWRITE);
+    }
+
+    public boolean isHasRewrite() {
+        return getProperty(PROPERTY.REWRITE);
     }
 
     @Override
     public PluginForHost newInstance(PluginClassLoaderChild classLoader) throws UpdateRequiredClassNotFoundException {
-        PluginForHost ret = null;
         try {
-            ret = super.newInstance(classLoader);
+            final PluginForHost ret = super.newInstance(classLoader);
             ret.setLazyP(this);
             return ret;
         } catch (UpdateRequiredClassNotFoundException e) {
-            final LazyHostPlugin lFallBackPlugin = fallBackPlugin;
+            final LazyHostPlugin lFallBackPlugin = getFallBackPlugin();
             if (lFallBackPlugin != null && lFallBackPlugin != this) {
-                ret = lFallBackPlugin.newInstance(classLoader);
+                final PluginForHost ret = lFallBackPlugin.newInstance(classLoader);
                 if (ret != null) {
                     ret.setLazyP(lFallBackPlugin);
                     return ret;
@@ -126,19 +148,25 @@ public class LazyHostPlugin extends LazyPlugin<PluginForHost> {
             throw e;
 
         }
+    }
+
+    private LazyHostPlugin getFallBackPlugin() {
+        if ("UpdateRequired".equalsIgnoreCase(getDisplayName())) {
+            return null;
+        }
+        return HostPluginController.getInstance().getFallBackPlugin();
     }
 
     @Override
     public PluginForHost getPrototype(PluginClassLoaderChild classLoader) throws UpdateRequiredClassNotFoundException {
-        PluginForHost ret = null;
         try {
-            ret = super.getPrototype(classLoader);
+            final PluginForHost ret = super.getPrototype(classLoader);
             ret.setLazyP(this);
             return ret;
         } catch (UpdateRequiredClassNotFoundException e) {
-            final LazyHostPlugin lFallBackPlugin = fallBackPlugin;
+            final LazyHostPlugin lFallBackPlugin = getFallBackPlugin();
             if (lFallBackPlugin != null && lFallBackPlugin != this) {
-                ret = lFallBackPlugin.getPrototype(classLoader);
+                final PluginForHost ret = lFallBackPlugin.getPrototype(classLoader);
                 if (ret != null) {
                     ret.setLazyP(lFallBackPlugin);
                     return ret;
@@ -146,15 +174,6 @@ public class LazyHostPlugin extends LazyPlugin<PluginForHost> {
             }
             throw e;
         }
-    }
-
-    /**
-     * use fallBackPlugin LazyHostPlugin in case we can't initialize/instance this LazyHostPlugin
-     * 
-     * @param fallBackPlugin
-     */
-    protected void setFallBackPlugin(LazyHostPlugin fallBackPlugin) {
-        this.fallBackPlugin = fallBackPlugin;
     }
 
 }

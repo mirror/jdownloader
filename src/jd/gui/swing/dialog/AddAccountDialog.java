@@ -57,7 +57,6 @@ import org.appwork.utils.swing.dialog.ProgressDialog.ProgressGetter;
 import org.jdownloader.DomainInfo;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.images.NewTheme;
-import org.jdownloader.logging.LogController;
 import org.jdownloader.plugins.accounts.AccountFactory;
 import org.jdownloader.plugins.accounts.EditAccountPanel;
 import org.jdownloader.plugins.accounts.Notifier;
@@ -162,7 +161,7 @@ public class AddAccountDialog extends AbstractDialog<Integer> {
         ProgressDialog pd = new ProgressDialog(new ProgressGetter() {
 
             public void run() throws Exception {
-                PluginForHost hostPlugin = new PluginFinder().assignPlugin(ac, true, LogController.CL());
+                PluginForHost hostPlugin = new PluginFinder().assignPlugin(ac, true);
                 if (hostPlugin != null) {
                     ac.setPlugin(hostPlugin);
                 }

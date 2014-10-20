@@ -20,7 +20,7 @@ import org.jdownloader.plugins.controller.LazyPluginClass;
 
 public class LazyHostPluginCache {
 
-    private static final int CACHEVERSION = 8;
+    private static final int CACHEVERSION = 9;
 
     private static ByteArrayOutputStream readFile(File file) throws IOException {
         final ByteArrayOutputStream byteBuffer = new ByteArrayOutputStream(32767) {
@@ -68,6 +68,9 @@ public class LazyHostPluginCache {
                     lazyHostPlugin.setHasAccountRewrite((flags & (1 << 3)) != 0);
                     if ((flags & (1 << 5)) != 0) {
                         lazyHostPlugin.setPremiumUrl(is.readString(stringBuffer));
+                    }
+                    if ((flags & (1 << 6)) != 0) {
+                        lazyHostPlugin.setHasRewrite(true);
                     }
                     if ((flags & (1 << 4)) != 0) {
                         lazyHostPlugin.setConfigInterface(is.readString(stringBuffer));
@@ -135,6 +138,9 @@ public class LazyHostPluginCache {
                     }
                     if (plugin.isPremium() && plugin.getPremiumUrl() != null) {
                         flags |= (1 << 5);
+                    }
+                    if (plugin.isHasRewrite()) {
+                        flags |= (1 << 6);
                     }
                     bos.write(flags);
                     if (plugin.isPremium() && plugin.getPremiumUrl() != null) {

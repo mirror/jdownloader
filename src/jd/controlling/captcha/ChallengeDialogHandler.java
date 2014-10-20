@@ -7,7 +7,6 @@ import java.util.logging.Logger;
 
 import javax.swing.SwingUtilities;
 
-import jd.controlling.downloadcontroller.DownloadWatchDog;
 import jd.gui.swing.dialog.AbstractCaptchaDialog;
 import jd.gui.swing.dialog.CaptchaDialog;
 import jd.gui.swing.dialog.DialogType;
@@ -143,7 +142,9 @@ public abstract class ChallengeDialogHandler<T extends ImageCaptchaChallenge<?>>
         } else if (captchaChallenge.getPlugin() instanceof PluginForDecrypt) {
             logger = captchaChallenge.getPlugin().getLogger();
         }
-        if (logger == null) logger = LogController.GL;
+        if (logger == null) {
+            logger = LogController.GL;
+        }
         return logger;
     }
 
@@ -169,7 +170,9 @@ public abstract class ChallengeDialogHandler<T extends ImageCaptchaChallenge<?>>
             Image[] images = CaptchaDialog.getGifImages(captchaChallenge.getImageFile().toURI().toURL());
             if (images == null || images.length == 0) {
                 BufferedImage img = IconIO.getImage(captchaChallenge.getImageFile().toURI().toURL(), false);
-                if (img != null) images = new Image[] { img };
+                if (img != null) {
+                    images = new Image[] { img };
+                }
             }
 
             if (images == null || images.length == 0 || images[0] == null) {
@@ -190,9 +193,13 @@ public abstract class ChallengeDialogHandler<T extends ImageCaptchaChallenge<?>>
         } catch (DialogNoAnswerException e) {
 
             /* no external response available */
-            if (e.isCausedByInterrupt()) throw new InterruptedException("Dialog Interrupted");
+            if (e.isCausedByInterrupt()) {
+                throw new InterruptedException("Dialog Interrupted");
+            }
 
-            if (e.isCausedByTimeout()) { throw new SkipException(SkipRequest.TIMEOUT); }
+            if (e.isCausedByTimeout()) {
+                throw new SkipException(SkipRequest.TIMEOUT);
+            }
             throw new SkipException(SkipRequest.SINGLE);
 
         } catch (HideCaptchasByHostException e) {
@@ -204,17 +211,6 @@ public abstract class ChallengeDialogHandler<T extends ImageCaptchaChallenge<?>>
             throw new SkipException(SkipRequest.BLOCK_PACKAGE);
 
         } catch (StopCurrentActionException e) {
-            switch (dialogType) {
-            case CRAWLER:
-
-                break;
-            case HOSTER:
-
-                break;
-            }
-
-            DownloadWatchDog.getInstance().stopDownloads();
-
             throw new SkipException(SkipRequest.STOP_CURRENT_ACTION);
         } catch (HideAllCaptchasException e) {
             throw new SkipException(SkipRequest.BLOCK_ALL_CAPTCHAS);
