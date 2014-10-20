@@ -1030,9 +1030,10 @@ public class Uploadedto extends PluginForHost {
         return ret.toString();
     }
 
-    public static String getLoginSHA1Hash(String arg) throws PluginException {
+    public String getLoginSHA1Hash(String arg) throws PluginException {
         try {
             if (arg != null) {
+                getLogger().info("Input " + arg);
                 arg = arg.replaceAll("(\\\\|\\\"|\0|')", "\\\\$1");
                 arg = URLDecoder.decode(arg, "ISO-8859-1");
                 arg = arg.replaceAll("[ \t\n\r\0\u000B]", "");
@@ -1050,7 +1051,7 @@ public class Uploadedto extends PluginForHost {
             }
             return null;
         } catch (final Throwable e) {
-            e.printStackTrace();
+            getLogger().log(e);
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
     }
