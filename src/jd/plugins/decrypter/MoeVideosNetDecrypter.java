@@ -29,7 +29,7 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "moevideos.net" }, urls = { "http://(www\\.)?moevideos?\\.net/((\\?page=video\\&uid=|video/|video\\.php\\?file=|swf/letplayerflx3\\.swf\\?file=)[0-9a-f\\.]+|online/\\d+)" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "moevideos.net" }, urls = { "http://(www\\.)?(moevideos|videochart)\\.net/((\\?page=video\\&uid=|video/|video\\.php\\?file=|swf/letplayerflx3\\.swf\\?file=)[0-9a-f\\.]+|online/\\d+)" }, flags = { 0 })
 public class MoeVideosNetDecrypter extends PluginForDecrypt {
 
     public MoeVideosNetDecrypter(PluginWrapper wrapper) {
@@ -38,10 +38,12 @@ public class MoeVideosNetDecrypter extends PluginForDecrypt {
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-        final String parameter = param.toString();
+        final String parameter = param.toString().replace("moevideos.net/", "videochart,net/");
         /* uid */
         String uid = new Regex(parameter, "uid=(.*?)$").getMatch(0);
-        if (uid == null) uid = new Regex(parameter, "(video/|file=)(.*?)$").getMatch(1);
+        if (uid == null) {
+            uid = new Regex(parameter, "(video/|file=)(.*?)$").getMatch(1);
+        }
         if (uid == null) {
             br.getPage(parameter);
 
@@ -97,21 +99,30 @@ public class MoeVideosNetDecrypter extends PluginForDecrypt {
                 return null;
             }
             letilink = letilink.replaceAll("\\\\", "");
-            String filename = new Regex(letilink, "/[0-9a-f]+_\\d+_(.*?)\\.flv").getMatch(0);
-            if (filename == null) {
-                logger.warning("Decrypter broken for link: " + parameter);
-                return null;
+            String filename = null;
+            DownloadLink fina;
+            if (letilink.contains("moevideo.net/")) {
+                fina = createDownloadlink("directhttp://" + letilink);
+            } else {
+                filename = new Regex(letilink, "/[0-9a-f]+_\\d+_(.*?)\\.flv").getMatch(0);
+                if (filename == null) {
+                    logger.warning("Decrypter broken for link: " + parameter);
+                    return null;
+                }
+                filename = Encoding.htmlDecode(filename.trim());
+                fina = createDownloadlink("http://letitbit.net/download/" + uid + "/" + filename + ".html");
+                fina.setAvailable(true);
             }
-            filename = Encoding.htmlDecode(filename.trim());
-            final DownloadLink fina = createDownloadlink("http://letitbit.net/download/" + uid + "/" + filename + ".html");
             final String fsize = br.getRegex("\"convert_size\":\"(\\d+)\"").getMatch(0);
-            if (fsize != null) fina.setDownloadSize(Long.parseLong(fsize));
-            fina.setName(filename);
-            fina.setAvailable(true);
+            if (fsize != null) {
+                fina.setDownloadSize(Long.parseLong(fsize));
+            }
+            if (filename != null) {
+                fina.setName(filename);
+            }
             decryptedLinks.add(fina);
             return decryptedLinks;
         }
 
     }
-
 }
