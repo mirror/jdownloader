@@ -440,24 +440,18 @@ public class FreeWayMe extends PluginForHost {
             }
         }
         account.setProperty(ACC_PROPERTY_TRAFFIC_REDUCTION, ((int) trafficPerc * 100));
-
-        /* TODO: Maybe remove this code, not needed anymore?! */
-        try {
-            Long guthaben = Long.parseLong(getRegexTag(accInfoAPIResp, "guthaben").getMatch(0));
-            ac.setTrafficLeft(guthaben * 1024 * 1024);
-            logger.info("{fetchAccInfo} Limited traffic: " + guthaben * 1024 * 1024);
-        } catch (Exception e) {
-            logger.info("{fetchAccInfo} Unlimited traffic, api response: " + accInfoAPIResp);
-            ac.setUnlimitedTraffic(); // workaround
-        }
         account.setConcurrentUsePossible(true);
 
         final String accountType = getRegexTag(accInfoAPIResp, "premium").getMatch(0);
         final double remaining_gb = Double.parseDouble(this.getJson(accInfoAPIResp, "restgb"));
-        if (accountType.equalsIgnoreCase("Flatrate")) {
+        if (accountType.equalsIgnoreCase("Flatrate") || accountType.equalsIgnoreCase("Spender")) {
             logger.info("{fetchAccInfo} Flatrate Account");
-            long validUntil = Long.parseLong(getRegexTag(accInfoAPIResp, "Flatrate").getMatch(0));
-            ac.setValidUntil(validUntil * 1000);
+            /* TODO: Remove if statement in case this works fine for Spender-Accounts */
+            final String expireDate_str = getRegexTag(accInfoAPIResp, "Flatrate").getMatch(0);
+            if (expireDate_str != null) {
+                long validUntil = Long.parseLong(getRegexTag(accInfoAPIResp, "Flatrate").getMatch(0));
+                ac.setValidUntil(validUntil * 1000);
+            }
             /* Obey users' setting */
             if (this.getPluginConfig().getBooleanProperty(this.SETTING_SHOW_TRAFFICLEFT, false) && remaining_gb > 10) {
                 logger.info("User has traffic_left in GUI ACTIVE");
@@ -477,10 +471,6 @@ public class FreeWayMe extends PluginForHost {
             if (traffic_left_free <= traffic_max_static) {
                 ac.setTrafficMax(traffic_max_static);
             }
-        } else if (accountType.equalsIgnoreCase("Spender")) {
-            logger.info("{fetchAccInfo} Spender Account");
-            /* TODO: Add proper traffic handling for this account type */
-            ac.setUnlimitedTraffic();
         }
         account.setProperty("notifications", (new Regex(accInfoAPIResp, "\"notis\":(\\d+)")).getMatch(0));
         account.setProperty("acctype", accountType);
@@ -491,7 +481,6 @@ public class FreeWayMe extends PluginForHost {
             logger.info("{fetchAccInfo} free-way beta account enabled");
         }
 
-        // now let's get a list of all supported hosts:
         getPage2FA(hostsUrl);
         hosts = br.getRegex("\"([^\"]*)\"").getColumn(0);
         ArrayList<String> supportedHosts = new ArrayList<String>();
