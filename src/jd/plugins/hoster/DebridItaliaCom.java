@@ -62,6 +62,7 @@ public class DebridItaliaCom extends PluginForHost {
     // don't touch the following!
     private static AtomicInteger maxPrem                                           = new AtomicInteger(1);
 
+    private static final int     MAXRETRIES_timesfaileddebriditalia_not_available  = 30;
     private static final int     MAXRETRIES_timesfaileddebriditalia_unknowndlerror = 50;
 
     @Override
@@ -113,23 +114,22 @@ public class DebridItaliaCom extends PluginForHost {
 
     /** no override to keep plugin compatible to old stable */
     public void handleMultiHost(final DownloadLink link, final Account acc) throws Exception {
-
         showMessage(link, "Generating link");
         String dllink = checkDirectLink(link, "debriditaliadirectlink");
         if (dllink == null) {
             final String encodedLink = Encoding.urlEncode(link.getDownloadURL());
             br.getPage("http://debriditalia.com/api.php?generate=on&u=" + Encoding.urlEncode(acc.getUser()) + "&p=" + Encoding.urlEncode(acc.getPass()) + "&link=" + encodedLink);
-            // Either server error or the host is broken (we have to find out by retrying)
+            /* Either server error or the host is broken (we have to find out by retrying) */
             if (br.containsHTML("ERROR: not_available")) {
-                int timesFailed = link.getIntegerProperty("timesfaileddebriditalia", 0);
+                int timesFailed = link.getIntegerProperty("timesfaileddebriditalia_not_available", 0);
                 link.getLinkStatus().setRetryCount(0);
-                if (timesFailed <= 2) {
+                if (timesFailed <= MAXRETRIES_timesfaileddebriditalia_not_available) {
                     timesFailed++;
-                    link.setProperty("timesfaileddebriditalia", timesFailed);
+                    link.setProperty("timesfaileddebriditalia_not_available", timesFailed);
                     throw new PluginException(LinkStatus.ERROR_RETRY, "Server error");
                 } else {
-                    link.setProperty("timesfaileddebriditalia", Property.NULL);
-                    tempUnavailableHoster(acc, link, 60 * 60 * 1000l);
+                    link.setProperty("timesfaileddebriditalia_not_available", Property.NULL);
+                    tempUnavailableHoster(acc, link, 15 * 60 * 1000l);
                 }
 
             }
@@ -301,13 +301,13 @@ public class DebridItaliaCom extends PluginForHost {
     /**
      * Prevents more than one free download from starting at a given time. One step prior to dl.startDownload(), it adds a slot to maxFree
      * which allows the next singleton download to start, or at least try.
-     * 
+     *
      * This is needed because xfileshare(website) only throws errors after a final dllink starts transferring or at a given step within pre
      * download sequence. But this template(XfileSharingProBasic) allows multiple slots(when available) to commence the download sequence,
      * this.setstartintival does not resolve this issue. Which results in x(20) captcha events all at once and only allows one download to
      * start. This prevents wasting peoples time and effort on captcha solving and|or wasting captcha trading credits. Users will experience
      * minimal harm to downloading as slots are freed up soon as current download begins.
-     * 
+     *
      * @param controlFree
      *            (+1|-1)
      */
@@ -339,7 +339,7 @@ public class DebridItaliaCom extends PluginForHost {
             /* free accounts also have captchas */
             return true;
         }
-        if (acc.getStringProperty("session_type")!=null&&!"premium".equalsIgnoreCase(acc.getStringProperty("session_type"))) {
+        if (acc.getStringProperty("session_type") != null && !"premium".equalsIgnoreCase(acc.getStringProperty("session_type"))) {
             return true;
         }
         return false;
