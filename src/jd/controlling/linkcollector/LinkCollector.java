@@ -1544,7 +1544,7 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
         CrawledLink localLink = null;
         Iterator<CrawledLink> it;
         CrawledPackage fp;
-        PluginFinder pluginFinder = new PluginFinder();
+        PluginFinder pluginFinder = new PluginFinder(logger);
         while (iterator.hasNext()) {
             fp = iterator.next();
             if (fp.getChildren() != null) {
@@ -1559,7 +1559,7 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
                         continue;
                     }
                     /* assign defaultPlugin matching the hostname */
-                    pluginFinder.assignPlugin(dlLink, true, logger);
+                    pluginFinder.assignPlugin(dlLink, true);
 
                 }
             }

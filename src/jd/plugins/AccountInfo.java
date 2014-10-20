@@ -18,11 +18,12 @@ package jd.plugins;
 
 import java.util.ArrayList;
 import java.util.HashSet;
-import java.util.Locale;
 
 import jd.config.Property;
 
 import org.appwork.utils.formatter.SizeFormatter;
+import org.jdownloader.plugins.controller.host.HostPluginController;
+import org.jdownloader.plugins.controller.host.LazyHostPlugin;
 
 public class AccountInfo extends Property {
 
@@ -234,7 +235,10 @@ public class AccountInfo extends Property {
             final HashSet<String> supportedHostsSet = new HashSet<String>();
             for (final String host : multiHostSupport) {
                 if (host != null) {
-                    supportedHostsSet.add(host.toLowerCase(Locale.ENGLISH));
+                    final LazyHostPlugin plg = HostPluginController.getInstance().get(host);
+                    if (plg != null && !plg.getClassName().endsWith("r.Offline")) {
+                        supportedHostsSet.add(plg.getHost());
+                    }
                 }
             }
 

@@ -15,8 +15,8 @@ import jd.plugins.DownloadLink;
 import org.jdownloader.captcha.v2.Challenge;
 
 public class CaptchaBlackList implements DownloadWatchdogListener {
-    private static final CaptchaBlackList INSTANCE = new CaptchaBlackList();
-    private ArrayList<BlacklistEntry>     entries;
+    private static final CaptchaBlackList   INSTANCE = new CaptchaBlackList();
+    private final ArrayList<BlacklistEntry> entries;
 
     private CaptchaBlackList() {
         entries = new ArrayList<BlacklistEntry>();

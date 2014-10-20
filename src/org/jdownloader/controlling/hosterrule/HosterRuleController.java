@@ -126,14 +126,14 @@ public class HosterRuleController implements AccountControllerListener {
                 }, null);
                 if (loaded != null && loaded.size() > 0) {
                     ArrayList<Account> availableAccounts = AccountController.getInstance().list(null);
-                    final PluginFinder pluginFinder = new PluginFinder();
+                    final PluginFinder pluginFinder = new PluginFinder(logger);
                     List<AccountUsageRule> rules = new ArrayList<AccountUsageRule>();
                     for (AccountRuleStorable ars : loaded) {
                         try {
                             final AccountUsageRule rule = ars.restore(availableAccounts);
                             rule.setOwner(this);
                             final DownloadLink link = new DownloadLink(null, "", rule.getHoster(), "", false);
-                            PluginForHost plugin = pluginFinder.assignPlugin(link, true, logger);
+                            PluginForHost plugin = pluginFinder.assignPlugin(link, true);
                             if (plugin == null) {
                                 rule.setEnabled(false);
                             } else {

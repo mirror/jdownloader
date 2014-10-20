@@ -26,6 +26,7 @@ import jd.config.SubConfiguration;
 import jd.controlling.ProgressController;
 import jd.controlling.captcha.SkipException;
 import jd.controlling.captcha.SkipRequest;
+import jd.controlling.downloadcontroller.SingleDownloadController;
 import jd.controlling.linkcollector.LinkCollector;
 import jd.controlling.linkcrawler.CrawledLink;
 import jd.controlling.linkcrawler.LinkCrawler;
@@ -457,6 +458,9 @@ public abstract class PluginForDecrypt extends Plugin {
      * @throws DecrypterException
      */
     protected String getCaptchaCode(String method, File file, int flag, final CryptedLink link, String defaultValue, String explain) throws Exception {
+        if (Thread.currentThread() instanceof SingleDownloadController) {
+            logger.severe("PluginForDecrypt.getCaptchaCode inside SingleDownloadController!?");
+        }
         String orgCaptchaImage = link.getStringProperty("orgCaptchaFile", null);
         if (orgCaptchaImage != null && new File(orgCaptchaImage).exists()) {
             file = new File(orgCaptchaImage);
@@ -523,9 +527,11 @@ public abstract class PluginForDecrypt extends Plugin {
                 // refresh is not supported from the pluginsystem right now.
                 return "";
             case STOP_CURRENT_ACTION:
-                LinkCollector.getInstance().abort();
-                // Just to be sure
-                CaptchaBlackList.getInstance().add(new BlockAllCrawlerCaptchasEntry(getCrawler()));
+                if (Thread.currentThread() instanceof LinkCrawlerThread) {
+                    LinkCollector.getInstance().abort();
+                    // Just to be sure
+                    CaptchaBlackList.getInstance().add(new BlockAllCrawlerCaptchasEntry(getCrawler()));
+                }
                 break;
             default:
                 break;

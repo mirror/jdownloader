@@ -717,7 +717,7 @@ public class DownloadController extends PackageController<FilePackage, DownloadL
         DownloadLink localLink;
         Iterator<DownloadLink> it;
         FilePackage fp;
-        PluginFinder pluginFinder = new PluginFinder();
+        PluginFinder pluginFinder = new PluginFinder(logger);
         boolean cleanupStartup = allowCleanup && CleanAfterDownloadAction.CLEANUP_ONCE_AT_STARTUP.equals(org.jdownloader.settings.staticreferences.CFG_GENERAL.CFG.getCleanupAfterDownloadAction());
         boolean cleanupFileExists = JsonConfig.create(GeneralSettings.class).getCleanupFileExists();
         while (iterator.hasNext()) {
@@ -742,7 +742,7 @@ public class DownloadController extends PackageController<FilePackage, DownloadL
                      * reset not if already exist, offline or finished. plugin errors will be reset here because plugin can be fixed again
                      */
                     processFinalLinkState(localLink);
-                    pluginFinder.assignPlugin(localLink, true, logger);
+                    pluginFinder.assignPlugin(localLink, true);
                 }
                 if (removeList.size() > 0) {
                     fp.getChildren().removeAll(removeList);

@@ -84,7 +84,7 @@ public class UpdateController implements UpdateCallbackInterface {
     private Icon               statusIcon;
     private String             statusLabel;
     private double             statusProgress    = -1;
-    private boolean            hasPendingUpdates = false;
+    private volatile boolean   hasPendingUpdates = false;
 
     public UpdateHandler getHandler() {
         return handler;
@@ -160,7 +160,7 @@ public class UpdateController implements UpdateCallbackInterface {
     }
 
     public String getAppID() {
-        UpdateHandler lhandler = handler;
+        final UpdateHandler lhandler = handler;
         if (lhandler == null) {
             return "NotConnected";
         }
@@ -168,7 +168,7 @@ public class UpdateController implements UpdateCallbackInterface {
     }
 
     public void runUpdateChecker(boolean manually) {
-        UpdateHandler lhandler = handler;
+        final UpdateHandler lhandler = handler;
         if (lhandler == null) {
             return;
         }
@@ -256,7 +256,7 @@ public class UpdateController implements UpdateCallbackInterface {
     }
 
     public void setGuiVisible(boolean b) {
-        UpdateHandler lhandler = handler;
+        final UpdateHandler lhandler = handler;
         if (lhandler != null) {
             lhandler.setGuiVisible(b, true);
         }
@@ -272,7 +272,7 @@ public class UpdateController implements UpdateCallbackInterface {
 
             @Override
             protected void runInEDT() {
-                UpdateHandler lhandler = handler;
+                final UpdateHandler lhandler = handler;
                 if (lhandler != null && lhandler.isGuiVisible()) {
                     lhandler.setGuiVisible(true, true);
 
@@ -488,22 +488,24 @@ public class UpdateController implements UpdateCallbackInterface {
     }
 
     private void confirm(int flags, String title, String message, String ok, String no) throws DialogCanceledException, DialogClosedException {
-
+        final UpdateHandler lhandler = handler;
         final ConfirmUpdateDialog cd = new ConfirmUpdateDialog(flags, title, message, null, ok, no) {
 
             @Override
             protected Window getDesiredRootFrame() {
-                if (handler == null) {
+                if (lhandler == null) {
                     return null;
                 }
-                return handler.getGuiFrame();
+                return lhandler.getGuiFrame();
             }
 
         };
 
         Dialog.getInstance().showDialog(cd);
         if (cd.isClosedBySkipUntilNextRestart()) {
-            handler.stopIntervalChecker();
+            if (lhandler != null) {
+                lhandler.stopIntervalChecker();
+            }
             throw new DialogCanceledException(0);
         }
 
