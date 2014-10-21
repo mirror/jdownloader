@@ -49,27 +49,43 @@ public class ZaycevNet extends PluginForHost {
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
         this.setBrowserExclusive();
+        br.getHeaders().put("Accept-Charset", null);
+        br.getHeaders().put("User-Agent", "Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/38.0.2125.101 Safari/537.36");
+        br.setCookie(this.getHost(), "mm_cookie", "1");
         br.setFollowRedirects(false);
         br.getPage(link.getDownloadURL());
-        if (br.getRedirectLocation() != null || br.containsHTML("http\\-equiv=\"Refresh\"|>Данная композиция заблокирована, приносим извинения")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        String filename = br.getRegex("text download\\-link\">([^<>\"]*?)</a>").getMatch(0);
-        if (filename == null) filename = br.getRegex("id=\"pages\\-download\\-link\">([^<>\"]*?)</a>").getMatch(0);
-        if (filename == null) filename = br.getRegex("class=\"download\\-title__text\">([^<>\"]*?)</span>").getMatch(0);
+        if (br.getRedirectLocation() != null || br.containsHTML("http\\-equiv=\"Refresh\"|>Данная композиция заблокирована, приносим извинения")) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
+        String filename = br.getRegex("<span itemprop=\"name\">(.*?)\\s*<link").getMatch(0);
+        if (filename == null) {
+            filename = br.getRegex("id=\"pages\\-download\\-link\">([^<>\"]*?)</a>").getMatch(0);
+        }
+        if (filename == null) {
+            filename = br.getRegex("class=\"download\\-title__text\">([^<>\"]*?)</span>").getMatch(0);
+        }
         final String filesize = br.getRegex("Б<meta content=\"(.*?)\" itemprop=\"contentSize\"/>").getMatch(0);
-        if (filename == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        link.setName(Encoding.htmlDecode(filename.trim()) + ".mp3");
+        if (filename == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        link.setFinalFileName(Encoding.htmlDecode(filename.trim().replaceAll("</?span>", "")) + ".mp3");
         link.setDownloadSize(SizeFormatter.getSize(filesize));
         return AvailableStatus.TRUE;
     }
 
     @Override
     public void handleFree(DownloadLink downloadLink) throws Exception, PluginException {
+        br = new Browser();
         requestFileInformation(downloadLink);
-        String finallink = checkDirectLink(downloadLink, "savedlink");
-        if (finallink == null) finallink = br.getRegex("\"(http://dl\\.zaycev\\.net/[^<>\"]*?)\"").getMatch(0);
+        String finallink = null; // checkDirectLink(downloadLink, "savedlink");
+        if (finallink == null) {
+            finallink = br.getRegex("\"(http://dl\\.zaycev\\.net/[^<>\"]*?)\"").getMatch(0);
+        }
         if (finallink == null) {
             String cryptedlink = br.getRegex("\"(/download\\.php\\?id=\\d+\\&ass=[^<>/\"]*?\\.mp3)\"").getMatch(0);
-            if (cryptedlink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            if (cryptedlink == null) {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
             br.getPage(cryptedlink);
             finallink = getDllink();
             if (finallink == null) {
@@ -77,22 +93,70 @@ public class ZaycevNet extends PluginForHost {
                     for (int i = 0; i <= 5; i++) {
                         // Captcha handling
                         String captchaID = getCaptchaID();
-                        if (captchaID == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                        if (captchaID == null) {
+                            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                        }
                         String code = getCaptchaCode("/captcha/" + captchaID + "/", downloadLink);
                         String captchapage = cryptedlink + "&captchaId=" + captchaID + "&text_check=" + code + "&ok=%F1%EA%E0%F7%E0%F2%FC";
                         br.getPage(captchapage);
-                        if (br.containsHTML(CAPTCHATEXT)) continue;
+                        if (br.containsHTML(CAPTCHATEXT)) {
+                            continue;
+                        }
                         break;
                     }
-                    if (br.containsHTML(CAPTCHATEXT)) throw new PluginException(LinkStatus.ERROR_CAPTCHA);
+                    if (br.containsHTML(CAPTCHATEXT)) {
+                        throw new PluginException(LinkStatus.ERROR_CAPTCHA);
+                    }
                 } else {
                     String code = br.getRegex("<label>Ваш IP</label><span class=\"readonly\">[0-9\\.]+</span></div><input value=\"(.*?)\"").getMatch(0);
                     String captchaID = getCaptchaID();
-                    if (code == null || captchaID == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                    if (code == null || captchaID == null) {
+                        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                    }
                     String captchapage = cryptedlink + "&captchaId=" + captchaID + "&text_check=" + code + "&ok=%F1%EA%E0%F7%E0%F2%FC";
                     br.getPage(captchapage);
                 }
                 finallink = getDllink();
+            }
+        }
+
+        // Since I fixed the download core setting correct redirect referrer I can no longer use redirect header to determine error code for
+        // max connections. This is really only a problem with media files as filefactory redirects to /stream/ directly after code=\d+
+        // which breaks our generic handling. This will fix it!! - raztoki
+        int i = -1;
+        br.setFollowRedirects(false);
+        URLConnectionAdapter con = null;
+        int repeatTries = 20;
+        while (i++ < repeatTries) {
+            try {
+                try {
+                    // @since JD2
+                    con = br.openHeadConnection(finallink);
+                } catch (final Throwable t) {
+                    con = br.openGetConnection(finallink);
+                }
+                if (!con.isContentDisposition() && br.getRedirectLocation() != null) {
+                    if (i + 1 >= repeatTries) {
+                        throw new PluginException(LinkStatus.ERROR_FATAL, "RedirectLoop");
+                    }
+                    // redirect, we want to store and continue down the rabbit hole!
+                    finallink = br.getRedirectLocation();
+                    sleep(5000l * i, downloadLink);
+                    continue;
+                } else if (!con.isContentDisposition()) {
+                    // error final destination/html
+                    br.followConnection();
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                } else {
+                    // finallink! (usually doesn't container redirects)
+                    finallink = br.getURL();
+                    break;
+                }
+            } finally {
+                try {
+                    con.disconnect();
+                } catch (Throwable e) {
+                }
             }
         }
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, finallink, true, 0);
@@ -106,7 +170,9 @@ public class ZaycevNet extends PluginForHost {
 
     private String getCaptchaID() {
         String captchaID = br.getRegex("name=\"id\" type=\"hidden\"/><input value=\"(\\d+)\"").getMatch(0);
-        if (captchaID == null) captchaID = br.getRegex("\"/captcha/(\\d+)").getMatch(0);
+        if (captchaID == null) {
+            captchaID = br.getRegex("\"/captcha/(\\d+)").getMatch(0);
+        }
         return captchaID;
     }
 
@@ -133,7 +199,9 @@ public class ZaycevNet extends PluginForHost {
         String finallink = br.getRegex("\\{REFRESH: \\{url: \"(http://dl\\.zaycev\\.net/[^<>\"]*?)\"").getMatch(0);
         if (finallink == null) {
             finallink = br.getRegex("то нажмите на эту <a href=\\'(http.*?)\\'").getMatch(0);
-            if (finallink == null) finallink = br.getRegex("\"(http://dl\\.zaycev\\.net/[a-z0-9\\-]+/\\d+/\\d+/.*?)\"").getMatch(0);
+            if (finallink == null) {
+                finallink = br.getRegex("\"(http://dl\\.zaycev\\.net/[a-z0-9\\-]+/\\d+/\\d+/.*?)\"").getMatch(0);
+            }
         }
         return finallink;
     }
