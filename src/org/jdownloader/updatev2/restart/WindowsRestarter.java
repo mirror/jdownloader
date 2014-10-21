@@ -38,16 +38,6 @@ public class WindowsRestarter extends Restarter {
         }
         if (restartBinary != null) {
             lst.add(restartBinary.getAbsolutePath());
-            if (Application.isHeadless()) {
-                // VM passthrough for install4j and exe4j
-                lst.add("-J-Djava.awt.headless=true");
-            }
-            if (System.getProperty("syserr") != null) {
-                lst.add("-J-Dsyserr=" + System.getProperty("syserr"));
-            }
-            if (System.getProperty("sysout") != null) {
-                lst.add("-J-Dsysout=" + System.getProperty("sysout"));
-            }
         } else {
             getLogger().info("No binary found! Will use JavaBinary!");
             lst.addAll(getJVMApplicationStartCommands(root));
