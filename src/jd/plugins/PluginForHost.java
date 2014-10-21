@@ -806,9 +806,7 @@ public abstract class PluginForHost extends Plugin {
 
     public void handle(final DownloadLink downloadLink, final Account account) throws Exception {
         try {
-
             preHandle(downloadLink, account);
-
             waitForNextStartAllowed(downloadLink, account);
             if (account != null) {
                 /* with account */
@@ -830,30 +828,22 @@ public abstract class PluginForHost extends Plugin {
             } catch (final Throwable e) {
                 e.printStackTrace();
             }
-
         }
     }
 
     private void handlePost(DownloadLink downloadLink, Account account) throws Exception {
         if (downloadLink.getBooleanProperty("GENERIC_VARIANTS", false) && downloadLink.hasVariantSupport()) {
-
             GenericVariants var = downloadLink.getVariant(GenericVariants.class);
-
             var.runPostDownload(this, downloadLink, account);
-
         }
-
     }
 
     public void preHandle(final DownloadLink downloadLink, Account account) throws Exception {
         if (downloadLink.getBooleanProperty("GENERIC_VARIANTS", false) && downloadLink.hasVariantSupport()) {
-
             GenericVariants var = downloadLink.getVariant(GenericVariants.class);
-
             if (var != null) {
                 var.runPreDownload(this, downloadLink, account);
             }
-
         }
     }
 
@@ -943,27 +933,29 @@ public abstract class PluginForHost extends Plugin {
             long waitQueuePosition = -1;
             long waitMax = 0;
             long waitCur = 0;
-            downloadLink.addPluginProgress(progress);
-            while ((waitQueuePosition = queueItem.indexOf(downloadLink)) >= 0 && !downloadLink.getDownloadLinkController().isAborting()) {
-                if (waitQueuePosition != lastQueuePosition) {
-                    waitMax = (queueItem.lastStartTimestamp.get() - System.currentTimeMillis()) + ((waitQueuePosition + 1) * wait);
-                    waitCur = waitMax;
-                    lastQueuePosition = waitQueuePosition;
+            synchronized (queueItem) {
+                if (!queueItem.lastStartTimestamp.compareAndSet(0, System.currentTimeMillis())) {
+                    downloadLink.addPluginProgress(progress);
+                    while ((waitQueuePosition = queueItem.indexOf(downloadLink)) >= 0 && !downloadLink.getDownloadLinkController().isAborting()) {
+                        if (waitQueuePosition != lastQueuePosition) {
+                            waitMax = (queueItem.lastStartTimestamp.get() - System.currentTimeMillis()) + ((waitQueuePosition + 1) * wait);
+                            waitCur = waitMax;
+                            lastQueuePosition = waitQueuePosition;
+                        }
+                        if (waitCur <= 0) {
+                            break;
+                        }
+                        progress.updateValues(waitCur, waitMax);
+                        long wTimeout = Math.min(1000, Math.max(0, waitCur));
+                        queueItem.wait(wTimeout);
+                        waitCur -= wTimeout;
+                    }
+                    if (downloadLink.getDownloadLinkController().isAborting()) {
+                        throw new PluginException(LinkStatus.ERROR_RETRY);
+                    }
                 }
-                if (waitCur <= 0) {
-                    break;
-                }
-                progress.updateValues(waitCur, waitMax);
-                long wTimeout = Math.min(1000, Math.max(0, waitCur));
-                synchronized (this) {
-                    wait(wTimeout);
-                }
-                waitCur -= wTimeout;
+                queueItem.lastStartTimestamp.set(System.currentTimeMillis());
             }
-            if (downloadLink.getDownloadLinkController().isAborting()) {
-                throw new PluginException(LinkStatus.ERROR_RETRY);
-            }
-            queueItem.lastStartTimestamp.set(System.currentTimeMillis());
         } catch (final InterruptedException e) {
             if (downloadLink.getDownloadLinkController().isAborting()) {
                 throw new PluginException(LinkStatus.ERROR_RETRY);
