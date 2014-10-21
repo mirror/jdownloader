@@ -37,6 +37,7 @@ import jd.http.URLConnectionAdapter;
 import jd.nutils.JDHash;
 import jd.parser.Regex;
 import jd.parser.html.Form;
+import jd.plugins.CaptchaException;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterException;
 import jd.plugins.DecrypterPlugin;
@@ -145,6 +146,7 @@ public class DlPrtcCom extends PluginForDecrypt {
                         importantForm.put("pwd", pwd);
                     }
                     if (cbr.containsHTML(CAPTCHATEXT)) {
+                        // this is for all images, matching pattern
                         String[] test = cbr.getRegex("<img[^>]+src=\"(/template/images/[^\"]+)").getColumn(0);
                         if (test != null) {
                             HashSet<String> dupe = new HashSet<String>();
@@ -156,22 +158,32 @@ public class DlPrtcCom extends PluginForDecrypt {
                                 try {
                                     brAds.openGetConnection(t);
                                 } catch (final Exception e) {
+                                } finally {
+                                    try {
+                                        brAds.disconnect();
+                                    } catch (final Throwable tr) {
+                                    }
                                 }
                             }
                         }
-
+                        // captcha stuff
                         String captchaLink = getCaptchaLink(importantForm.getHtmlCode());
                         if (captchaLink == null) {
                             logger.warning("Decrypter broken 2 for link: " + parameter);
                             return null;
                         }
-                        captchaLink = "http://www.dl-protect.com" + captchaLink;
                         String code = null;
                         if (true) {
                             Browser obr = br.cloneBrowser();
                             br.getHeaders().put("Accept", "text/html, application/xml;q=0.9, application/xhtml+xml, image/png, image/webp, image/jpeg, image/gif, image/x-xbitmap, */*;q=0.1");
-                            code = getCaptchaCode(captchaLink, param);
+                            try {
+                                code = getCaptchaCode(captchaLink, param);
+                            } catch (CaptchaException c) {
+                            }
                             br = obr.cloneBrowser();
+                        }
+                        if (code == null || "".equals(code)) {
+                            return decryptedLinks;
                         }
                         br.cloneBrowser().getPage("/pub_footer.html");
                         String formName = "secure";
@@ -310,7 +322,7 @@ public class DlPrtcCom extends PluginForDecrypt {
 
     /**
      * Removes patterns which could break the plugin due to fake/hidden HTML, or false positives caused by HTML comments.
-     * 
+     *
      * @throws Exception
      * @author raztoki
      */
@@ -360,7 +372,7 @@ public class DlPrtcCom extends PluginForDecrypt {
     /**
      * This allows backward compatibility for design flaw in setHtmlCode(), It injects updated html into all browsers that share the same
      * request id. This is needed as request.cloneRequest() was never fully implemented like browser.cloneBrowser().
-     * 
+     *
      * @param ibr
      *            Import Browser
      * @param t
