@@ -444,6 +444,8 @@ public class OBoomCom extends PluginForHost {
         final String ID = getFileID(link);
         br.getPage("https://api.oboom.com/1.0/dl?token=" + usedInfos.get("session") + "&item=" + ID + "&http_errors=0");
         downloadErrorHandling(account);
+        /* Handling for possible error 400 */
+        refreshTokenHandling(usedInfos, account, freshInfos);
         String urlInfos[] = br.getRegex("200,\"(.*?)\",\"(.*?)\"").getRow(0);
         if (urlInfos == null || urlInfos[0] == null || urlInfos[1] == null) {
             if (br.toString().length() > 200) {
