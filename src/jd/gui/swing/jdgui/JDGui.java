@@ -340,7 +340,7 @@ public class JDGui implements UpdaterListener, OwnerFinder {
 
                         @Override
                         public void actionPerformed(ActionEvent e) {
-                            if (speedInTitleUpdater == e.getSource()) {                                S
+                            if (speedInTitleUpdater == e.getSource()) {
                                 final boolean isRunning = DownloadWatchDog.getInstance().isRunning();
                                 if (lastIsRunning != isRunning || isRunning) {
                                     lastIsRunning = isRunning;
