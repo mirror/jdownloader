@@ -28,6 +28,7 @@ public class MacRestarter extends LinuxRestarter {
             lst.add(app.getAbsolutePath());
             lst.add("--args");
             getLogger().info(lst + "");
+
             return lst;
         } else {
             getLogger().warning("MAX " + app + " is missing");
