@@ -12,11 +12,21 @@ import org.jdownloader.updatev2.RestartController;
 public class LinuxRestarter extends Restarter {
     @Override
     protected List<String> getApplicationStartCommands(File root) {
-        ArrayList<String> lst = new ArrayList<String>();
-        // TODO: user start of install4j
-        lst.addAll(getJVMApplicationStartCommands(root));
+        final ArrayList<String> lst = new ArrayList<String>();
+        final String exe4JModuleName = System.getProperty("exe4j.moduleName");
+        if (exe4JModuleName != null && exe4JModuleName.length() > 0) {
+            try {
+                final File exe4JLauncher = new File(exe4JModuleName);
+                if (exe4JLauncher.isFile() && exe4JLauncher.exists() && exe4JLauncher.canExecute() && exe4JLauncher.length() > 0) {
+                    lst.add(exe4JModuleName);
+                }
+            } catch (final Throwable e) {
+                e.printStackTrace();
+            }
+        } else {
+            lst.addAll(getJVMApplicationStartCommands(root));
+        }
         return lst;
-
     }
 
     @Override
@@ -24,7 +34,6 @@ public class LinuxRestarter extends Restarter {
         final java.util.List<String> jvmParameter = new ArrayList<String>();
         jvmParameter.add(CrossSystem.getJavaBinary());
         final List<String> lst = ManagementFactory.getRuntimeMXBean().getInputArguments();
-
         for (final String h : lst) {
             if (h.startsWith("-agentlib:")) {
                 continue;
@@ -37,4 +46,5 @@ public class LinuxRestarter extends Restarter {
         return jvmParameter;
 
     }
+
 }
