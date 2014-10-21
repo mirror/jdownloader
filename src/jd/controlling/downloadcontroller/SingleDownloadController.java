@@ -76,7 +76,7 @@ public class SingleDownloadController extends BrowserSettingsThread implements D
     private final NullsafeAtomicReference<PluginForHost> processingPlugin = new NullsafeAtomicReference<PluginForHost>(null);
 
     public static class WaitingQueueItem {
-        public final AtomicLong                          lastStartTimestamp      = new AtomicLong(System.currentTimeMillis());
+        public final AtomicLong                          lastStartTimestamp      = new AtomicLong(0);
         public final AtomicLong                          lastConnectionTimestamp = new AtomicLong(System.currentTimeMillis());
         private final CopyOnWriteArrayList<DownloadLink> queueLinks              = new CopyOnWriteArrayList<DownloadLink>();
 
