@@ -43,6 +43,7 @@ import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLinkProperty;
 import jd.plugins.FilePackage;
 import jd.plugins.FilePackageProperty;
+import jd.plugins.PluginForHost;
 import jd.utils.JDUtilities;
 
 import org.appwork.controlling.SingleReachableState;
@@ -706,6 +707,87 @@ public class DownloadController extends PackageController<FilePackage, DownloadL
                 localLink.setFinalLinkState(null);
             }
             return;
+        }
+    }
+
+    public void checkPluginUpdates() {
+        if (DOWNLOADLIST_LOADED.isReached()) {
+            DownloadWatchDog.getInstance().enqueueJob(new DownloadWatchDogJob() {
+
+                @Override
+                public void execute(DownloadSession currentSession) {
+                    QUEUE.addWait(new QueueAction<Void, RuntimeException>() {
+                        private final PluginFinder finder = new PluginFinder(logger);
+
+                        @Override
+                        protected Void run() throws RuntimeException {
+                            getChildrenByFilter(new AbstractPackageChildrenNodeFilter<DownloadLink>() {
+
+                                @Override
+                                public int returnMaxResults() {
+                                    return 0;
+                                }
+
+                                private final void updatePluginInstance(DownloadLink link) {
+                                    final long currentDefaultVersion;
+                                    final String currentDefaultHost;
+                                    final PluginForHost defaultPlugin = link.getDefaultPlugin();
+                                    if (defaultPlugin != null) {
+                                        currentDefaultHost = defaultPlugin.getLazyP().getHost();
+                                        currentDefaultVersion = defaultPlugin.getLazyP().getVersion();
+                                    } else {
+                                        currentDefaultHost = null;
+                                        currentDefaultVersion = -1;
+                                    }
+                                    final PluginForHost newDefaultPlugin = finder.assignPlugin(link, true);
+                                    final long newDefaultVersion;
+                                    final String newDefaultHost;
+                                    if (newDefaultPlugin != null) {
+                                        newDefaultVersion = newDefaultPlugin.getLazyP().getVersion();
+                                        newDefaultHost = newDefaultPlugin.getLazyP().getHost();
+                                    } else {
+                                        newDefaultVersion = -1;
+                                        newDefaultHost = null;
+                                    }
+                                    if (newDefaultPlugin != null && (currentDefaultVersion != newDefaultVersion || !StringUtils.equals(currentDefaultHost, newDefaultHost))) {
+                                        logger.info("Update Plugin for: " + link.getName() + ":" + link.getHost() + " to " + newDefaultPlugin.getLazyP().getDisplayName() + ":" + newDefaultPlugin.getLazyP().getVersion());
+                                        link.setDefaultPlugin(newDefaultPlugin);
+                                        if (link.getFinalLinkState() == FinalLinkState.PLUGIN_DEFECT) {
+                                            link.setFinalLinkState(null);
+                                        }
+                                    }
+                                }
+
+                                @Override
+                                public boolean acceptNode(final DownloadLink node) {
+                                    final SingleDownloadController controller = node.getDownloadLinkController();
+                                    if (controller != null) {
+                                        controller.getJobsAfterDetach().add(new DownloadWatchDogJob() {
+
+                                            @Override
+                                            public void execute(DownloadSession currentSession) {
+                                                updatePluginInstance(node);
+                                            }
+
+                                            @Override
+                                            public void interrupt() {
+                                            }
+                                        });
+                                    } else {
+                                        updatePluginInstance(node);
+                                    }
+                                    return false;
+                                }
+                            });
+                            return null;
+                        }
+                    });
+                }
+
+                @Override
+                public void interrupt() {
+                }
+            });
         }
     }
 

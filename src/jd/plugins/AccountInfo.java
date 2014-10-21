@@ -24,6 +24,7 @@ import jd.config.Property;
 import org.appwork.utils.formatter.SizeFormatter;
 import org.jdownloader.plugins.controller.host.HostPluginController;
 import org.jdownloader.plugins.controller.host.LazyHostPlugin;
+import org.jdownloader.plugins.controller.host.PluginFinder;
 
 public class AccountInfo extends Property {
 
@@ -230,72 +231,24 @@ public class AccountInfo extends Property {
      * @since JD2
      * */
     public void setMultiHostSupport(final ArrayList<String> multiHostSupport) {
-        ArrayList<String> supportedHosts = null;
         if (multiHostSupport != null && !multiHostSupport.isEmpty()) {
+            final PluginFinder pluginFinder = new PluginFinder();
             final HashSet<String> supportedHostsSet = new HashSet<String>();
             for (final String host : multiHostSupport) {
-                if (host != null) {
-                    final LazyHostPlugin plg = HostPluginController.getInstance().get(host);
-                    if (plg != null && !plg.getClassName().endsWith("r.Offline")) {
-                        supportedHostsSet.add(plg.getHost());
-                    }
+                final String assignedHost = pluginFinder.assignHost(host);
+                final LazyHostPlugin lazyPlugin = HostPluginController.getInstance().get(assignedHost);
+                if (lazyPlugin != null && !lazyPlugin.getClassName().endsWith("r.Offline")) {
+                    supportedHostsSet.add(lazyPlugin.getHost());
                 }
             }
-
-            // remove forbidden hosts! needed to remove from tooltip
-
-            // change when can construct from plugin cache from canNotMultihost(), doing this manually is pain in the ass and requires core
-            // update each time.
             supportedHostsSet.remove("youtube.com");
             supportedHostsSet.remove("youtu.be");
             supportedHostsSet.remove("vimeo.com");
-
-            // central place to fix up issues when JD 'names' doesn't match multihoster supported host array or vise versa
-
-            if (supportedHostsSet.contains("putlocker.com")) {
-                supportedHostsSet.add("firedrive.com");
+            if (supportedHostsSet.size() > 0) {
+                this.setProperty("multiHostSupport", new ArrayList<String>(supportedHostsSet));
+                return;
             }
-
-            if (supportedHostsSet.contains("sharerapid.cz") || supportedHostsSet.contains("sharerapid.sk") || supportedHostsSet.contains("megarapid.cz")) {
-                supportedHostsSet.add("share-rapid.cz");
-            }
-
-            // work around for freakshare.com
-            if (supportedHostsSet.contains("freakshare.net") || supportedHostsSet.contains("freakshare.com")) {
-                supportedHostsSet.add("freakshare.net");
-                supportedHostsSet.add("freakshare.com");
-            }
-            // workaround for uploaded.to
-            if (supportedHostsSet.contains("uploaded.net") || supportedHostsSet.contains("ul.to") || supportedHostsSet.contains("uploaded.to")) {
-                supportedHostsSet.add("uploaded.to");
-            }
-            // workaround for keep2share.cc, as they keep changing hosts..
-            if (supportedHostsSet.contains("keep2share.cc") || supportedHostsSet.contains("k2s.cc") || supportedHostsSet.contains("keep2s.cc") || supportedHostsSet.contains("keep2.cc")) {
-                supportedHostsSet.add("keep2share.cc");
-            }
-            // workaround for nowvideo
-            if (supportedHostsSet.contains("nowvideo.eu") || supportedHostsSet.contains("nowvideo.sx") || supportedHostsSet.contains("nowvideo.co") || supportedHostsSet.contains("nowvideo.ch") || supportedHostsSet.contains("nowvideo.at") || supportedHostsSet.contains("nowvideo.ag")) {
-                supportedHostsSet.add("nowvideo.eu");
-                supportedHostsSet.add("nowvideo.co");
-            }
-            // workaround for nowdownload
-            if (supportedHostsSet.contains("nowdownload.eu") || supportedHostsSet.contains("nowdownload.sx") || supportedHostsSet.contains("nowdownload.co") || supportedHostsSet.contains("nowdownload.ch") || supportedHostsSet.contains("nowdownload.at") || supportedHostsSet.contains("nowdownload.ag")) {
-                supportedHostsSet.add("nowdownload.eu");
-            }
-            if (supportedHostsSet.contains("likeupload.net") || supportedHostsSet.contains("likeupload.org")) {
-                supportedHostsSet.add("likeupload.net");
-            }
-            if (supportedHostsSet.remove("ultramegabit.com")) {
-                supportedHostsSet.add("uploadto.us");
-            }
-
-            supportedHosts = new ArrayList<String>(supportedHostsSet);
         }
-        // set array!
-        if (supportedHosts == null || supportedHosts.size() == 0) {
-            this.setProperty("multiHostSupport", Property.NULL);
-        } else {
-            this.setProperty("multiHostSupport", supportedHosts);
-        }
+        this.setProperty("multiHostSupport", Property.NULL);
     }
 }

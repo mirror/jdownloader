@@ -22,7 +22,7 @@ public class PluginFinder {
     private volatile ArrayList<PluginForHost>    rewriteAccountPlugins = null;
 
     private final HashMap<String, String>        rewriteHostCache      = new HashMap<String, String>();
-    private volatile ArrayList<PluginForHost>    rewriteHostPlugins    = null;
+    private final HashMap<String, PluginForHost> rewriteHostPlugins    = new HashMap<String, PluginForHost>();
 
     private final LogSource                      logger;
 
@@ -40,37 +40,45 @@ public class PluginFinder {
 
     public synchronized String assignHost(String host) {
         if (!rewriteHostCache.containsKey(host)) {
-            if (rewriteHostPlugins == null) {
-                /* rewrite cache not initialized yet, let's create it */
-                rewriteHostPlugins = new ArrayList<PluginForHost>();
-                for (LazyHostPlugin lazyPlugin : HostPluginController.getInstance().list()) {
-                    if (lazyPlugin.isHasRewrite()) {
-                        try {
-                            final PluginForHost protoType = lazyPlugin.getPrototype(null);
-                            if (!StringUtils.equals(protoType.rewriteHost((String) null), protoType.getHost())) {
-                                rewriteHostPlugins.add(protoType);
-                            }
-                        } catch (final Throwable e) {
-                            logger.log(e);
-                        }
-                    }
-                }
-            }
-            for (PluginForHost plugin : rewriteHostPlugins) {
-                try {
-                    final String assignHost = plugin.rewriteHost(host);
-                    if (StringUtils.isNotEmpty(assignHost)) {
-                        rewriteHostCache.put(host, assignHost);
-                        return assignHost;
-                    }
-                } catch (final Throwable e) {
-                    logger.log(e);
-                }
-            }
             final LazyHostPlugin lazyPlugin = HostPluginController.getInstance().get(host);
             if (lazyPlugin != null) {
-                rewriteHostCache.put(host, lazyPlugin.getHost());
-                return lazyPlugin.getHost();
+                if (!lazyPlugin.isHasRewrite()) {
+                    rewriteHostCache.put(host, lazyPlugin.getHost());
+                    return lazyPlugin.getHost();
+                } else {
+                    try {
+                        PluginForHost plugin = rewriteHostPlugins.get(lazyPlugin.getHost());
+                        if (plugin == null) {
+                            plugin = lazyPlugin.getPrototype(null);
+                            rewriteHostPlugins.put(lazyPlugin.getHost(), plugin);
+                        }
+                        final String assignHost = plugin.rewriteHost(host);
+                        if (StringUtils.isNotEmpty(assignHost)) {
+                            rewriteHostCache.put(host, assignHost);
+                            return assignHost;
+                        }
+                    } catch (final Throwable e) {
+                        logger.log(e);
+                    }
+                }
+            }
+            for (final LazyHostPlugin lazyHostPlugin : HostPluginController.getInstance().list()) {
+                if (lazyHostPlugin.isHasRewrite()) {
+                    try {
+                        PluginForHost plugin = rewriteHostPlugins.get(lazyHostPlugin.getHost());
+                        if (plugin == null) {
+                            plugin = lazyHostPlugin.getPrototype(null);
+                            rewriteHostPlugins.put(lazyHostPlugin.getHost(), plugin);
+                        }
+                        final String assignHost = plugin.rewriteHost(host);
+                        if (StringUtils.isNotEmpty(assignHost)) {
+                            rewriteHostCache.put(host, assignHost);
+                            return assignHost;
+                        }
+                    } catch (final Throwable e) {
+                        logger.log(e);
+                    }
+                }
             }
             rewriteHostCache.put(host, null);
             return null;

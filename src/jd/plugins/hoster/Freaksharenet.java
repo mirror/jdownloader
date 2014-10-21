@@ -59,8 +59,10 @@ public class Freaksharenet extends PluginForHost {
     public Freaksharenet(final PluginWrapper wrapper) {
         super(wrapper);
         setStartIntervall(1000l);
-        this.enablePremium("http://freakshare.com/shop.html");
-        setConfigElements();
+        if ("freakshare.com".equals(getHost())) {
+            this.enablePremium("http://freakshare.com/shop.html");
+            setConfigElements();
+        }
     }
 
     @Override
@@ -68,9 +70,18 @@ public class Freaksharenet extends PluginForHost {
         link.setUrlDownload(link.getDownloadURL().replace("freakshare.net", "freakshare.com"));
     }
 
-    @Override
-    public Boolean rewriteHost(Account acc) {
+    public String rewriteHost(String host) {
         if ("freakshare.net".equals(getHost())) {
+            if ("freakshare.net".equals(host)) {
+                return "freakshare.com";
+            }
+            return null;
+        }
+        return getHost();
+    }
+
+    public Boolean rewriteHost(Account acc) {
+        if (isPremiumEnabled()) {
             if (acc != null && "freakshare.net".equals(acc.getHoster())) {
                 acc.setHoster("freakshare.com");
                 return true;
@@ -81,11 +92,16 @@ public class Freaksharenet extends PluginForHost {
     }
 
     @Override
-    public boolean isPremiumEnabled() {
-        if ("freakshare.com".equals(getHost())) {
-            return true;
+    public Boolean rewriteHost(DownloadLink link) {
+        if (isPremiumEnabled()) {
+            if (link != null && "freakshare.net".equals(link.getHost())) {
+                link.setHost("freakshare.com");
+                correctDownloadLink(link);
+                return true;
+            }
+            return false;
         }
-        return false;
+        return null;
     }
 
     @Override

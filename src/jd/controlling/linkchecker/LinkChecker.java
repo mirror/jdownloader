@@ -1,6 +1,5 @@
 package jd.controlling.linkchecker;
 
-import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -208,18 +207,6 @@ public class LinkChecker<E extends CheckableLink> {
         return isRunning() == false;
     }
 
-    private static boolean supportsCheckLinks(PluginForHost plugin) {
-        try {
-            if (plugin != null) {
-                final Method method = plugin.getClass().getMethod("checkLinks", new DownloadLink[0].getClass());
-                final boolean hasMassCheck = method.getDeclaringClass() != PluginForHost.class;
-                return hasMassCheck;
-            }
-        } catch (Throwable e) {
-        }
-        return false;
-    }
-
     /* start a new linkCheckThread for the given host */
     private static void startNewThread(final String threadHost) {
         synchronized (LOCK) {
@@ -279,7 +266,7 @@ public class LinkChecker<E extends CheckableLink> {
                                         }
                                         this.plugin = plg;
                                         try {
-                                            if (plg != null && supportsCheckLinks(plg)) {
+                                            if (plg != null && PluginForHost.implementsCheckLinks(plg)) {
                                                 logger.info("Check Multiple FileInformation");
                                                 try {
                                                     final HashSet<DownloadLink> downloadLinks = new HashSet<DownloadLink>();

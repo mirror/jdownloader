@@ -74,6 +74,14 @@ public class Keep2ShareCc extends K2SApi {
         return "keep2share.cc";
     }
 
+    public String rewriteHost(String host) {
+        if ("keep2share.cc".equals(host) || "k2s.cc".equals(host) || "keep2s.cc".equals(host) || "keep2.cc".equals(host) || "k2share.cc".equals(host)) {
+            return "keep2share.cc";
+        } else {
+            return null;
+        }
+    }
+
     @Override
     public long getVersion() {
         return (Math.max(super.getVersion(), 0) * 100000) + getAPIRevision();
@@ -88,7 +96,7 @@ public class Keep2ShareCc extends K2SApi {
 
     /**
      * easiest way to set variables, without the need for multiple declared references
-     *
+     * 
      * @param account
      */
     private void setConstants(final Account account) {

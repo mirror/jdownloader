@@ -14,7 +14,8 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
 
 import jd.SecondLevelLaunch;
-import jd.controlling.downloadcontroller.DownloadWatchDog;
+import jd.controlling.downloadcontroller.DownloadController;
+import jd.controlling.linkcollector.LinkCollector;
 import jd.nutils.Formatter;
 import jd.plugins.Account;
 import jd.plugins.DownloadLink;
@@ -28,7 +29,6 @@ import org.appwork.shutdown.ShutdownRequest;
 import org.appwork.storage.config.ConfigInterface;
 import org.appwork.utils.Application;
 import org.appwork.utils.ModifyLock;
-import org.appwork.utils.StringUtils;
 import org.appwork.utils.logging2.LogSource;
 import org.jdownloader.controlling.FileCreationManager;
 import org.jdownloader.logging.LogController;
@@ -217,7 +217,8 @@ public class HostPluginController extends PluginController<PluginForHost> {
 
             @Override
             public void run() {
-                DownloadWatchDog.getInstance().processPluginUpdate();
+                LinkCollector.getInstance().checkPluginUpdates();
+                DownloadController.getInstance().checkPluginUpdates();
             }
         });
         return list;
@@ -313,22 +314,14 @@ public class HostPluginController extends PluginController<PluginForHost> {
                                     lazyHostPlugin.setHasConfig(plg.hasConfig());
                                     /* set hasAccountRewrite */
                                     try {
-                                        if (plg.rewriteHost((Account) null) != null) {
-                                            lazyHostPlugin.setHasAccountRewrite(true);
-                                        } else {
-                                            lazyHostPlugin.setHasAccountRewrite(false);
-                                        }
+                                        lazyHostPlugin.setHasAccountRewrite(PluginForHost.implementsRewriteHost(plg, Account.class));
                                     } catch (Throwable e) {
                                         logger.log(e);
                                         lazyHostPlugin.setHasAccountRewrite(false);
                                     }
 
                                     try {
-                                        if (StringUtils.equals(plg.rewriteHost((String) null), plg.getHost())) {
-                                            lazyHostPlugin.setHasRewrite(false);
-                                        } else {
-                                            lazyHostPlugin.setHasRewrite(true);
-                                        }
+                                        lazyHostPlugin.setHasRewrite(PluginForHost.implementsRewriteHost(plg, String.class));
                                     } catch (Throwable e) {
                                         logger.log(e);
                                         lazyHostPlugin.setHasRewrite(false);
@@ -336,11 +329,7 @@ public class HostPluginController extends PluginController<PluginForHost> {
 
                                     /* set hasLinkRewrite */
                                     try {
-                                        if (plg.rewriteHost((DownloadLink) null) != null) {
-                                            lazyHostPlugin.setHasLinkRewrite(true);
-                                        } else {
-                                            lazyHostPlugin.setHasLinkRewrite(false);
-                                        }
+                                        lazyHostPlugin.setHasLinkRewrite(PluginForHost.implementsRewriteHost(plg, DownloadLink.class));
                                     } catch (Throwable e) {
                                         logger.log(e);
                                         lazyHostPlugin.setHasLinkRewrite(false);
