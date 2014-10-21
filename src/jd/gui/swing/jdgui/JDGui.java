@@ -336,10 +336,19 @@ public class JDGui implements UpdaterListener, OwnerFinder {
                 }
                 if (enabled) {
                     speedInTitleUpdater = new Timer(1000, new ActionListener() {
+                        boolean lastIsRunning = false;
 
                         @Override
                         public void actionPerformed(ActionEvent e) {
-                            updateTitle();
+                            if (speedInTitleUpdater == e.getSource()) {                                S
+                                final boolean isRunning = DownloadWatchDog.getInstance().isRunning();
+                                if (lastIsRunning != isRunning || isRunning) {
+                                    lastIsRunning = isRunning;
+                                    updateTitle();
+                                }
+                            } else {
+                                ((Timer) e.getSource()).stop();
+                            }
                         }
                     });
                     speedInTitleUpdater.setRepeats(true);
@@ -1367,7 +1376,6 @@ public class JDGui implements UpdaterListener, OwnerFinder {
             @Override
             protected void runInEDT() {
                 updateTitle();
-
             }
         };
     }
@@ -1738,7 +1746,6 @@ public class JDGui implements UpdaterListener, OwnerFinder {
     protected void updateTitle() {
         String title = "JDownloader 2 BETA";
         title = generateTitle(title);
-
         getMainFrame().setTitle(title);
     }
 
