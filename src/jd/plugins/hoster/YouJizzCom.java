@@ -62,27 +62,41 @@ public class YouJizzCom extends PluginForHost {
         br.getPage(downloadLink.getDownloadURL());
         // if (!br.containsHTML("flvPlayer\\.swf")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         String filename = br.getRegex("<h2>(.*?)</h2>").getMatch(0);
-        if (filename == null || filename.trim().length() == 0) filename = br.getRegex("<title>(.*?)</title>").getMatch(0);
-        if (filename == null || filename.trim().length() == 0) filename = br.getRegex("title1\">(.*?)</").getMatch(0);
-        if (filename == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (filename == null || filename.trim().length() == 0) {
+            filename = br.getRegex("<title>(.*?)</title>").getMatch(0);
+        }
+        if (filename == null || filename.trim().length() == 0) {
+            filename = br.getRegex("title1\">(.*?)</").getMatch(0);
+        }
+        if (filename == null) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
         filename = filename.trim();
-        final String embed = br.getRegex("src=\\'(http://www.youjizz.com/videos/embed/[0-9]+)\\'").getMatch(0);
-        if (embed == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        final String embed = br.getRegex("src=(\\'|\")(http://www.youjizz.com/videos/embed/[0-9]+)(\\'|\")").getMatch(1);
+        if (embed == null) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
         br.getPage(embed);
         DLLINK = br.getRegex("addVariable\\(\"file\",.*?\"(http://.*?\\.flv(\\?.*?)?)\"").getMatch(0);
         if (DLLINK == null) {
             DLLINK = br.getRegex("\"(http://(mediax|cdn[a-z]\\.videos)\\.youjizz\\.com/[A-Z0-9]+\\.flv(\\?.*?)?)\"").getMatch(0);
             if (DLLINK == null) {
                 String playlist = br.getRegex("so\\.addVariable\\(\"playlist\", \"(https?://(www\\.)?youjizz\\.com/playlist\\.php\\?id=\\d+)").getMatch(0);
-                if (playlist == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                if (playlist == null) {
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                }
                 Browser br2 = br.cloneBrowser();
                 br2.getPage(playlist);
                 // multiple qualities (low|med|high) grab highest for now, decrypter will be needed for others.
                 DLLINK = br2.getRegex("<level bitrate=\"\\d+\" file=\"(https?://(\\w+\\.){1,}youjizz\\.com/[^\"]+)\" ?></level>[\r\n\t ]+</levels>").getMatch(0);
-                if (DLLINK != null) DLLINK = DLLINK.replace("%252", "%2");
+                if (DLLINK != null) {
+                    DLLINK = DLLINK.replace("%252", "%2");
+                }
             }
         }
-        if (filename == null || DLLINK == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (filename == null || DLLINK == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         Browser br2 = br.cloneBrowser();
         // In case the link redirects to the finallink
         br2.setFollowRedirects(true);

@@ -128,6 +128,9 @@ public class SendMyWayCom extends PluginForHost {
             filename = new Regex(correctedBR, "<p class=\"file\\-name\" ><a href=\"https?://(www\\.)?sendmyway\\.com/[a-z0-9]{12}\" style=\"text\\-decoration:none;color: #FFFFFF;\">([^<>\"]*?)</a></p>").getMatch(1);
             if (filename == null) {
                 filename = new Regex(correctedBR, "<b>share:</b>\\&nbsp;\\&nbsp;\\&nbsp;\\&nbsp;([^<>\"]*?)<br/>").getMatch(0);
+                if (filename == null) {
+                    filename = new Regex(correctedBR, "<h3>([^<>\"]*?)</h3>").getMatch(0);
+                }
             }
         }
 
