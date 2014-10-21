@@ -1,7 +1,6 @@
 package jd.gui.swing.jdgui.views.settings.panels.accountmanager.orderpanel;
 
 import java.awt.event.ActionEvent;
-import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
@@ -12,7 +11,6 @@ import jd.config.Property;
 import jd.controlling.AccountController;
 import jd.plugins.Account;
 import jd.plugins.AccountInfo;
-import jd.plugins.DownloadLink;
 import jd.plugins.PluginForHost;
 
 import org.appwork.utils.swing.dialog.Dialog;
@@ -56,18 +54,6 @@ public class NewRuleAction extends AbstractAddAction {
         }
     }
 
-    private static boolean implementsHandlePremium(PluginForHost plugin) {
-        try {
-            if (plugin != null && plugin.isPremiumEnabled()) {
-                final Method method = plugin.getClass().getMethod("handlePremium", new Class[] { DownloadLink.class, Account.class });
-                final boolean implementsHandlePremium = method.getDeclaringClass() != PluginForHost.class;
-                return implementsHandlePremium;
-            }
-        } catch (Throwable e) {
-        }
-        return false;
-    }
-
     protected ArrayList<DomainInfo> getAvailableDomainInfoList() {
         final HashSet<DomainInfo> domains = new HashSet<DomainInfo>();
         for (Account acc : AccountController.getInstance().list()) {
@@ -85,7 +71,7 @@ public class NewRuleAction extends AbstractAddAction {
                     }
                 }
             }
-            if (implementsHandlePremium(acc.getPlugin())) {
+            if (PluginForHost.implementsHandlePremium(acc.getPlugin())) {
                 domains.add(DomainInfo.getInstance(acc.getHoster()));
             }
         }

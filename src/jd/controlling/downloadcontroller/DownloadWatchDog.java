@@ -150,7 +150,6 @@ import org.jdownloader.plugins.WaitWhileWaitingSkipReasonIsSet;
 import org.jdownloader.plugins.WaitingSkipReason;
 import org.jdownloader.plugins.WaitingSkipReason.CAUSE;
 import org.jdownloader.plugins.controller.container.ContainerPluginController;
-import org.jdownloader.plugins.controller.host.PluginFinder;
 import org.jdownloader.settings.CleanAfterDownloadAction;
 import org.jdownloader.settings.GeneralSettings;
 import org.jdownloader.settings.IfFileExistsAction;
@@ -3467,77 +3466,6 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
                 break;
             }
         }
-    }
-
-    public void processPluginUpdate() {
-        DownloadWatchDog.getInstance().enqueueJob(new DownloadWatchDogJob() {
-            private final PluginFinder finder = new PluginFinder(logger);
-
-            @Override
-            public void execute(DownloadSession currentSession) {
-                DownloadController.getInstance().getChildrenByFilter(new AbstractPackageChildrenNodeFilter<DownloadLink>() {
-
-                    @Override
-                    public int returnMaxResults() {
-                        return 0;
-                    }
-
-                    private final void updatePluginInstance(DownloadLink link) {
-                        final long currentDefaultVersion;
-                        final String currentDefaultHost;
-                        final PluginForHost defaultPlugin = link.getDefaultPlugin();
-                        if (defaultPlugin != null) {
-                            currentDefaultHost = defaultPlugin.getLazyP().getHost();
-                            currentDefaultVersion = defaultPlugin.getLazyP().getVersion();
-                        } else {
-                            currentDefaultHost = null;
-                            currentDefaultVersion = -1;
-                        }
-                        final PluginForHost newDefaultPlugin = finder.assignPlugin(link, true);
-                        final long newDefaultVersion;
-                        final String newDefaultHost;
-                        if (newDefaultPlugin != null) {
-                            newDefaultVersion = newDefaultPlugin.getLazyP().getVersion();
-                            newDefaultHost = newDefaultPlugin.getLazyP().getHost();
-                        } else {
-                            newDefaultVersion = -1;
-                            newDefaultHost = null;
-                        }
-                        if (newDefaultPlugin != null && (currentDefaultVersion != newDefaultVersion || !StringUtils.equals(currentDefaultHost, newDefaultHost))) {
-                            logger.info("Update Plugin for: " + link.getName() + ":" + link.getHost() + " to " + newDefaultPlugin.getLazyP().getDisplayName() + ":" + newDefaultPlugin.getLazyP().getVersion());
-                            link.setDefaultPlugin(newDefaultPlugin);
-                            if (link.getFinalLinkState() == FinalLinkState.PLUGIN_DEFECT) {
-                                link.setFinalLinkState(null);
-                            }
-                        }
-                    }
-
-                    @Override
-                    public boolean acceptNode(final DownloadLink node) {
-                        if (node.getDownloadLinkController() != null) {
-                            node.getDownloadLinkController().getJobsAfterDetach().add(new DownloadWatchDogJob() {
-
-                                @Override
-                                public void execute(DownloadSession currentSession) {
-                                    updatePluginInstance(node);
-                                }
-
-                                @Override
-                                public void interrupt() {
-                                }
-                            });
-                        } else {
-                            updatePluginInstance(node);
-                        }
-                        return false;
-                    }
-                });
-            }
-
-            @Override
-            public void interrupt() {
-            }
-        });
     }
 
     public void onNewFile(Object obj, final File[] list) {

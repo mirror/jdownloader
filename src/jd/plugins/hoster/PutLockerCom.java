@@ -67,16 +67,14 @@ public class PutLockerCom extends PluginForHost {
 
     public PutLockerCom(PluginWrapper wrapper) {
         super(wrapper);
-        this.enablePremium("https://auth.firedrive.com/signup");
-        this.setConfigElements();
-    }
-
-    public boolean isPremiumEnabled() {
-        return "firedrive.com".equalsIgnoreCase(getHost());
+        if ("firedrive.com".equalsIgnoreCase(getHost())) {
+            this.enablePremium("https://auth.firedrive.com/signup");
+            this.setConfigElements();
+        }
     }
 
     public Boolean rewriteHost(Account acc) {
-        if ("firedrive.com".equals(getHost())) {
+        if (isPremiumEnabled()) {
             if (acc != null && "putlocker.com".equals(acc.getHoster())) {
                 acc.setHoster("firedrive.com");
                 return true;
@@ -86,8 +84,19 @@ public class PutLockerCom extends PluginForHost {
         return null;
     }
 
+    public String rewriteHost(String host) {
+        if ("putlocker.com".equals(getHost())) {
+            if ("putlocker.com".equals(host)) {
+                return "firedrive.com";
+            } else {
+                return null;
+            }
+        }
+        return getHost();
+    }
+
     public Boolean rewriteHost(DownloadLink link) {
-        if ("firedrive.com".equals(getHost())) {
+        if (isPremiumEnabled()) {
             if (link != null && "putlocker.com".equals(link.getHost())) {
                 link.setHost("firedrive.com");
                 return true;

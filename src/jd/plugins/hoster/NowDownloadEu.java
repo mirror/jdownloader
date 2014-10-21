@@ -48,28 +48,53 @@ import jd.plugins.PluginForHost;
 import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.formatter.TimeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "nowdownload.eu", "likeupload.net" }, urls = { "http://(www\\.)?nowdownload\\.(eu|co|ch|sx|ag|at)/(dl(\\d+)?/|down(load)?\\.php\\?id=)[a-z0-9]+", "https?://(www\\.)?likeupload\\.(net|org)/[a-z0-9]{12}" }, flags = { 2, 2 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "nowdownload.eu", "likeupload.net" }, urls = { "http://(www\\.)?nowdownload\\.(eu|co|ch|sx|ag|at)/(dl(\\d+)?/|down(load)?\\.php\\?id=)[a-z0-9]+", "https?://(www\\.)?likeupload\\.(net|org)/[a-z0-9]{12}" }, flags = { 2, 0 })
 public class NowDownloadEu extends PluginForHost {
 
     public NowDownloadEu(PluginWrapper wrapper) {
         super(wrapper);
-        this.enablePremium(MAINPAGE.get() + "/premium.php");
+        if ("nowdownload.eu".equals(getHost())) {
+            this.enablePremium(MAINPAGE.get() + "/premium.php");
+        }
     }
 
     public Boolean rewriteHost(DownloadLink link) {
-        if (link != null && ("nowdownload.co".equals(link.getHost()) || "nowdownload.ch".equals(link.getHost()) || "nowdownload.sx".equals(link.getHost()) || "nowdownload.ag".equals(link.getHost()) || "nowdownload.at".equals(link.getHost()))) {
-            link.setHost("nowdownload.eu");
-            return true;
+        if (isPremiumEnabled()) {
+            if (link != null && ("nowdownload.co".equals(link.getHost()) || "nowdownload.ch".equals(link.getHost()) || "nowdownload.sx".equals(link.getHost()) || "nowdownload.ag".equals(link.getHost()) || "nowdownload.at".equals(link.getHost()))) {
+                link.setHost("nowdownload.eu");
+                correctDownloadLink(link);
+                return true;
+            }
+            return false;
         }
-        return false;
+        return null;
     }
 
     public Boolean rewriteHost(Account acc) {
-        if (acc != null && ("nowdownload.co".equals(acc.getHoster()) || "nowdownload.ch".equals(acc.getHoster()) || "nowdownload.sx".equals(acc.getHoster()) || "nowdownload.ag".equals(acc.getHoster()) || "nowdownload.at".equals(acc.getHoster()))) {
-            acc.setHoster("nowdownload.eu");
-            return true;
+        if (isPremiumEnabled()) {
+            if (acc != null && ("nowdownload.co".equals(acc.getHoster()) || "nowdownload.ch".equals(acc.getHoster()) || "nowdownload.sx".equals(acc.getHoster()) || "nowdownload.ag".equals(acc.getHoster()) || "nowdownload.at".equals(acc.getHoster()))) {
+                acc.setHoster("nowdownload.eu");
+                return true;
+            }
+            return false;
         }
-        return false;
+        return null;
+    }
+
+    public String rewriteHost(String host) {
+        if ("nowdownload.eu".equals(getHost())) {
+            if (host == null || host.startsWith("nowdownload.")) {
+                return "nowdownload.eu";
+            }
+            return null;
+        }
+        if ("likeupload.net".equals(getHost())) {
+            if (host == null || host.startsWith("likeupload.")) {
+                return "nowdownload.eu";
+            }
+            return null;
+        }
+        return super.rewriteHost(host);
     }
 
     @Override

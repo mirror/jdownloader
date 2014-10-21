@@ -21,6 +21,7 @@ import java.awt.Toolkit;
 import java.awt.event.ActionEvent;
 import java.io.File;
 import java.io.IOException;
+import java.lang.reflect.Method;
 import java.net.URISyntaxException;
 import java.net.URL;
 import java.util.ArrayList;
@@ -1111,6 +1112,42 @@ public abstract class PluginForHost extends Plugin {
      */
     public String rewriteHost(String host) {
         return getHost();
+    }
+
+    public static boolean implementsRewriteHost(PluginForHost plugin, Class<?> clazz) {
+        try {
+            if (plugin != null) {
+                final Method method = plugin.getClass().getMethod("rewriteHost", new Class[] { clazz });
+                final boolean implementsHandlePremium = method.getDeclaringClass() != PluginForHost.class;
+                return implementsHandlePremium;
+            }
+        } catch (Throwable e) {
+        }
+        return false;
+    }
+
+    public static boolean implementsCheckLinks(PluginForHost plugin) {
+        try {
+            if (plugin != null) {
+                final Method method = plugin.getClass().getMethod("checkLinks", new DownloadLink[0].getClass());
+                final boolean hasMassCheck = method.getDeclaringClass() != PluginForHost.class;
+                return hasMassCheck;
+            }
+        } catch (Throwable e) {
+        }
+        return false;
+    }
+
+    public static boolean implementsHandlePremium(PluginForHost plugin) {
+        try {
+            if (plugin != null && plugin.isPremiumEnabled()) {
+                final Method method = plugin.getClass().getMethod("handlePremium", new Class[] { DownloadLink.class, Account.class });
+                final boolean implementsHandlePremium = method.getDeclaringClass() != PluginForHost.class;
+                return implementsHandlePremium;
+            }
+        } catch (Throwable e) {
+        }
+        return false;
     }
 
     public String getCustomFavIconURL(DownloadLink link) {

@@ -107,6 +107,14 @@ public class Uploadedto extends PluginForHost {
         }
     }
 
+    public String rewriteHost(String host) {
+        if (host == null || "uploaded.net".equals(host) || "uploaded.to".equals(host) || "ul.to".equals(host)) {
+            return "uploaded.to";
+        } else {
+            return null;
+        }
+    }
+
     @Override
     public void correctDownloadLink(final DownloadLink link) {
         String protocol = new Regex(link.getDownloadURL(), "(https?)://").getMatch(0);

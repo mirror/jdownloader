@@ -39,12 +39,14 @@ import jd.controlling.linkcrawler.LinkCrawlerFilter;
 import jd.controlling.linkcrawler.LinkCrawlerHandler;
 import jd.controlling.linkcrawler.PackageInfo;
 import jd.controlling.packagecontroller.AbstractNode;
+import jd.controlling.packagecontroller.AbstractPackageChildrenNodeFilter;
 import jd.controlling.packagecontroller.PackageController;
 import jd.gui.swing.jdgui.JDGui;
 import jd.gui.swing.jdgui.WarnLevel;
 import jd.parser.Regex;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
+import jd.plugins.PluginForHost;
 import jd.utils.JDUtilities;
 
 import org.appwork.controlling.SingleReachableState;
@@ -90,6 +92,7 @@ import org.jdownloader.gui.views.linkgrabber.LinkgrabberSearchField;
 import org.jdownloader.gui.views.linkgrabber.contextmenu.MenuManagerLinkgrabberTableContext;
 import org.jdownloader.images.NewTheme;
 import org.jdownloader.myjdownloader.client.json.AvailableLinkState;
+import org.jdownloader.plugins.FinalLinkState;
 import org.jdownloader.plugins.controller.host.LazyHostPlugin;
 import org.jdownloader.plugins.controller.host.PluginFinder;
 import org.jdownloader.settings.GeneralSettings;
@@ -1568,6 +1571,64 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
                 iterator.remove();
                 continue;
             }
+        }
+    }
+
+    public void checkPluginUpdates() {
+        if (CRAWLERLIST_LOADED.isReached()) {
+            QUEUE.add(new QueueAction<Void, RuntimeException>() {
+                private final PluginFinder finder = new PluginFinder(logger);
+
+                @Override
+                protected Void run() throws RuntimeException {
+                    getChildrenByFilter(new AbstractPackageChildrenNodeFilter<CrawledLink>() {
+
+                        @Override
+                        public int returnMaxResults() {
+                            return 0;
+                        }
+
+                        private final void updatePluginInstance(DownloadLink link) {
+                            final long currentDefaultVersion;
+                            final String currentDefaultHost;
+                            final PluginForHost defaultPlugin = link.getDefaultPlugin();
+                            if (defaultPlugin != null) {
+                                currentDefaultHost = defaultPlugin.getLazyP().getHost();
+                                currentDefaultVersion = defaultPlugin.getLazyP().getVersion();
+                            } else {
+                                currentDefaultHost = null;
+                                currentDefaultVersion = -1;
+                            }
+                            final PluginForHost newDefaultPlugin = finder.assignPlugin(link, true);
+                            final long newDefaultVersion;
+                            final String newDefaultHost;
+                            if (newDefaultPlugin != null) {
+                                newDefaultVersion = newDefaultPlugin.getLazyP().getVersion();
+                                newDefaultHost = newDefaultPlugin.getLazyP().getHost();
+                            } else {
+                                newDefaultVersion = -1;
+                                newDefaultHost = null;
+                            }
+                            if (newDefaultPlugin != null && (currentDefaultVersion != newDefaultVersion || !StringUtils.equals(currentDefaultHost, newDefaultHost))) {
+                                logger.info("Update Plugin for: " + link.getName() + ":" + link.getHost() + " to " + newDefaultPlugin.getLazyP().getDisplayName() + ":" + newDefaultPlugin.getLazyP().getVersion());
+                                link.setDefaultPlugin(newDefaultPlugin);
+                                if (link.getFinalLinkState() == FinalLinkState.PLUGIN_DEFECT) {
+                                    link.setFinalLinkState(null);
+                                }
+                            }
+                        }
+
+                        @Override
+                        public boolean acceptNode(final CrawledLink node) {
+                            if (node.getDownloadLink() != null) {
+                                updatePluginInstance(node.getDownloadLink());
+                            }
+                            return false;
+                        }
+                    });
+                    return null;
+                }
+            });
         }
     }
 

@@ -50,7 +50,9 @@ public class NowVideoEu extends PluginForHost {
 
     public NowVideoEu(PluginWrapper wrapper) {
         super(wrapper);
-        this.enablePremium(MAINPAGE.get() + "/premium.php");
+        if ("nowvideo.eu".equals(getHost())) {
+            this.enablePremium(MAINPAGE.get() + "/premium.php");
+        }
     }
 
     @Override
@@ -59,7 +61,7 @@ public class NowVideoEu extends PluginForHost {
     }
 
     public Boolean rewriteHost(final DownloadLink link) {
-        if ("nowvideo.eu".equals(getHost())) {
+        if (isPremiumEnabled()) {
             if (link != null && ("nowvideo.ch".equals(link.getHost()) || "nowvideo.co".equals(link.getHost()) || "nowvideo.sx".equals(link.getHost()) || "nowvideo.ag".equals(link.getHost()) || "nowvideo.at".equals(link.getHost()))) {
                 link.setHost("nowvideo.eu");
                 return true;
@@ -70,12 +72,23 @@ public class NowVideoEu extends PluginForHost {
     }
 
     public Boolean rewriteHost(final Account acc) {
-        if ("nowvideo.eu".equals(getHost())) {
+        if (isPremiumEnabled()) {
             if (acc != null && ("nowvideo.ch".equals(acc.getHoster()) || "nowvideo.co".equals(acc.getHoster()) || "nowvideo.sx".equals(acc.getHoster()) || "nowvideo.ag".equals(acc.getHoster()) || "nowvideo.at".equals(acc.getHoster()))) {
                 acc.setHoster("nowvideo.eu");
                 return true;
             }
             return false;
+        }
+        return null;
+    }
+
+    @Override
+    public String rewriteHost(String host) {
+        if (isPremiumEnabled()) {
+            return super.rewriteHost(host);
+        }
+        if (host == null || host.startsWith("nowvideo.")) {
+            return "nowvideo.eu";
         }
         return null;
     }
