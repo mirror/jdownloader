@@ -49,8 +49,9 @@ public class PCloudComFolder extends PluginForDecrypt {
 
         prepBR();
         br.getPage("http://api.pcloud.com/showpublink?code=" + getFID(parameter));
-        /* 7002 = deleted by the owner */
-        if (br.containsHTML("\"error\": \"Invalid link") || br.containsHTML("\"result\": 7002")) {
+        final String result = br.getRegex("\"result\": (\\d+)").getMatch(0);
+        /* 7002 = deleted by the owner, 7003 = abused */
+        if (br.containsHTML("\"error\": \"Invalid link") || "7002".equals(result) || "7003".equals(result)) {
             main.setFinalFileName(new Regex(parameter, "([A-Za-z0-9]+)$").getMatch(0));
             main.setAvailable(false);
             main.setProperty("offline", true);

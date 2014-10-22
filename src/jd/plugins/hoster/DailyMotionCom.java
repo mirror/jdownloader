@@ -201,14 +201,17 @@ public class DailyMotionCom extends PluginForHost {
                 System.out.println("DLink FOund");
             }
 
-            if (!checkDirectLink(downloadLink) || dllink == null) {
-                dllink = findFreshDirectlink(downloadLink);
-                if (dllink == null) {
-                    logger.warning("dllink is null...");
-                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                }
-                if (!checkDirectLink(downloadLink)) {
-                    throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            /* .m4a links have wrong internal directlinks --> Size check not possible */
+            if (!downloadLink.getName().contains(".m4a")) {
+                if (!checkDirectLink(downloadLink) || dllink == null) {
+                    dllink = findFreshDirectlink(downloadLink);
+                    if (dllink == null) {
+                        logger.warning("dllink is null...");
+                        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                    }
+                    if (!checkDirectLink(downloadLink)) {
+                        throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+                    }
                 }
             }
 

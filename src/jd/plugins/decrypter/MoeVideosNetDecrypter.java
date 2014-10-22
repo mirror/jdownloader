@@ -21,6 +21,7 @@ import java.util.Random;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
+import jd.http.Browser.BrowserException;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.parser.html.Form;
@@ -38,14 +39,23 @@ public class MoeVideosNetDecrypter extends PluginForDecrypt {
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-        final String parameter = param.toString().replace("moevideos.net/", "videochart,net/");
+        final String parameter = param.toString().replace("moevideos.net/", "videochart.net/");
         /* uid */
         String uid = new Regex(parameter, "uid=(.*?)$").getMatch(0);
         if (uid == null) {
             uid = new Regex(parameter, "(video/|file=)(.*?)$").getMatch(1);
         }
         if (uid == null) {
-            br.getPage(parameter);
+            try {
+                br.getPage(parameter);
+            } catch (final BrowserException e) {
+                final DownloadLink offline = createDownloadlink("http://moevideosdecrypted.net/" + System.currentTimeMillis() + new Random().nextInt(100000));
+                offline.setName(new Regex(parameter, "moevideos\\.net/(.+)").getMatch(0));
+                offline.setProperty("offline", true);
+                offline.setAvailable(false);
+                decryptedLinks.add(offline);
+                return decryptedLinks;
+            }
 
             if (br.containsHTML("Vídeo no existe posiblemente")) {
                 final DownloadLink offline = createDownloadlink("http://moevideosdecrypted.net/" + System.currentTimeMillis() + new Random().nextInt(100000));
