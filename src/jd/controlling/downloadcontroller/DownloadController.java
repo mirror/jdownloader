@@ -695,7 +695,15 @@ public class DownloadController extends PackageController<FilePackage, DownloadL
             return null;
         }
         if (obj != null && obj instanceof ArrayList && (((java.util.List<?>) obj).size() == 0 || ((java.util.List<?>) obj).size() > 0 && ((java.util.List<?>) obj).get(0) instanceof FilePackage)) {
-            return new LinkedList<FilePackage>((java.util.List<FilePackage>) obj);
+            final LinkedList<FilePackage> ret = new LinkedList<FilePackage>((java.util.List<FilePackage>) obj);
+            if (ret != null) {
+                for (final FilePackage fp : ret) {
+                    for (final DownloadLink link : fp.getChildren()) {
+                        link.setParentNode(fp);
+                    }
+                }
+            }
+            return ret;
         }
         throw new Exception("Linklist incompatible");
     }

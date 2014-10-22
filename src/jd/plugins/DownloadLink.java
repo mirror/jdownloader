@@ -41,8 +41,6 @@ import jd.controlling.packagecontroller.AbstractNodeNotifier;
 import jd.controlling.packagecontroller.AbstractPackageChildrenNode;
 import jd.plugins.DownloadLinkDatabindingInterface.Key;
 import jd.plugins.download.DownloadInterface;
-import jd.plugins.download.raf.HTTPDownloadHints;
-import jd.plugins.download.raf.HTTPDownloader;
 
 import org.appwork.exceptions.WTFException;
 import org.appwork.storage.JSonStorage;
@@ -363,12 +361,7 @@ public class DownloadLink extends Property implements Serializable, AbstractPack
             setProperty(PROPERTY_CHUNKS, chunks);
         }
         SingleDownloadController dlc = getDownloadLinkController();
-        DownloadInterface dli = null;
-        if (dlc != null && (dli = dlc.getDownloadInstance()) != null) {
-            if (dli instanceof HTTPDownloader) {
-                ((HTTPDownloader) dli).setChunkNum(chunks);
-            }
-        }
+
         if (hasNotificationListener()) {
             notifyChanges(AbstractNodeNotifier.NOTIFY.PROPERTY_CHANCE, new DownloadLinkProperty(this, DownloadLinkProperty.Property.CHUNKS, chunks));
         }
@@ -1131,7 +1124,7 @@ public class DownloadLink extends Property implements Serializable, AbstractPack
         setEnabled(true);
         setLinkInfo(null);
         setExtractionStatus(null);
-        bindData(HTTPDownloadHints.class).reset();
+
         if (resetPlugins != null) {
             for (PluginForHost resetPlugin : resetPlugins) {
                 try {

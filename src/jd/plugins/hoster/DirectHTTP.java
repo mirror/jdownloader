@@ -24,7 +24,6 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
-import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.logging.Level;
 
 import jd.PluginWrapper;
@@ -445,30 +444,12 @@ public class DirectHTTP extends PluginForHost {
         return tmplinks;
     }
 
-    private String               contentType       = "";
+    private String contentType       = "";
 
-    private String               customFavIconHost = null;
-
-    private static AtomicBoolean hotFixSynthethica = new AtomicBoolean(true);
+    private String customFavIconHost = null;
 
     public DirectHTTP(final PluginWrapper wrapper) {
         super(wrapper);
-        if (DirectHTTP.hotFixSynthethica.get()) {
-            try {
-                /*
-                 * hotfix for synthetica license issues, as some java versions have broken aes support
-                 */
-                /*
-                 * NOTE: This Licensee Information may only be used by AppWork UG. If you like to create derived creation based on this
-                 * sourcecode, you have to remove this license key. Instead you may use the FREE Version of synthetica found on javasoft.de
-                 */
-                final String[] li = { "Licensee=AppWork UG", "LicenseRegistrationNumber=289416475", "Product=Synthetica", "LicenseType=Small Business License", "ExpireDate=--.--.----", "MaxVersion=2.999.999" };
-                javax.swing.UIManager.put("Synthetica.license.info", li);
-                javax.swing.UIManager.put("Synthetica.license.key", "C1410294-61B64AAC-4B7D3039-834A82A1-37E5D695");
-            } catch (final Throwable e) {
-            }
-            DirectHTTP.hotFixSynthethica.set(false);
-        }
     }
 
     @Override
