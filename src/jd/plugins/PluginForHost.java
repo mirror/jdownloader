@@ -1111,7 +1111,10 @@ public abstract class PluginForHost extends Plugin {
      * @return
      */
     public String rewriteHost(String host) {
-        return getHost();
+        if (host == null) {
+            return getHost();
+        }
+        return null;
     }
 
     public static boolean implementsRewriteHost(PluginForHost plugin, Class<?> clazz) {

@@ -230,12 +230,21 @@ public class AccountInfo extends Property {
      * @author raztoki
      * @since JD2
      * */
+
     public void setMultiHostSupport(final ArrayList<String> multiHostSupport) {
+        setMultiHostSupport(multiHostSupport, new PluginFinder());
+    }
+
+    public void setMultiHostSupport(final ArrayList<String> multiHostSupport, final PluginFinder pluginFinder) {
         if (multiHostSupport != null && !multiHostSupport.isEmpty()) {
-            final PluginFinder pluginFinder = new PluginFinder();
             final HashSet<String> supportedHostsSet = new HashSet<String>();
             for (final String host : multiHostSupport) {
-                final String assignedHost = pluginFinder.assignHost(host);
+                final String assignedHost;
+                if (pluginFinder == null) {
+                    assignedHost = host;
+                } else {
+                    assignedHost = pluginFinder.assignHost(host);
+                }
                 final LazyHostPlugin lazyPlugin = HostPluginController.getInstance().get(assignedHost);
                 if (lazyPlugin != null && !lazyPlugin.getClassName().endsWith("r.Offline")) {
                     supportedHostsSet.add(lazyPlugin.getHost());
