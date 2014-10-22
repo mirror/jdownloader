@@ -39,7 +39,7 @@ public class MoeVideosNetDecrypter extends PluginForDecrypt {
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-        final String parameter = param.toString().replace("moevideos.net/", "videochart.net/");
+        final String parameter = param.toString();
         /* uid */
         String uid = new Regex(parameter, "uid=(.*?)$").getMatch(0);
         if (uid == null) {
@@ -47,6 +47,7 @@ public class MoeVideosNetDecrypter extends PluginForDecrypt {
         }
         if (uid == null) {
             try {
+                br.setFollowRedirects(true);
                 br.getPage(parameter);
             } catch (final BrowserException e) {
                 final DownloadLink offline = createDownloadlink("http://moevideosdecrypted.net/" + System.currentTimeMillis() + new Random().nextInt(100000));
@@ -89,7 +90,10 @@ public class MoeVideosNetDecrypter extends PluginForDecrypt {
                 decryptedLinks.add(offline);
                 return decryptedLinks;
             }
-
+            final String vidframe = br.getRegex("\"(https?://moevideo\\.net/framevideo[^<>\"]*?)\"").getMatch(0);
+            if (vidframe != null) {
+                br.getPage(vidframe);
+            }
             uid = br.getRegex("file=([0-9a-f\\.]+)(\\&|\"|\\')").getMatch(0);
             if (uid == null) {
                 logger.warning("Decrypter broken for link: " + parameter);
@@ -99,40 +103,39 @@ public class MoeVideosNetDecrypter extends PluginForDecrypt {
         }
         br.postPage("http://api.letitbit.net/", "r=[\"tVL0gjqo5\",[\"preview/flv_image\",{\"uid\":\"" + uid + "\"}],[\"preview/flv_link\",{\"uid\":\"" + uid + "\"}]]");
 
-        if (br.containsHTML("\"not_found\"")) {
+        String letilink = br.getRegex("\"link\":\"([^\"]+)").getMatch(0);
+        if (br.containsHTML("\"not_found\"") && (letilink == null || letilink.equals(""))) {
             logger.info("Link offline: " + parameter);
             return decryptedLinks;
+        }
+        if (letilink == null) {
+            logger.warning("Decrypter broken for link: " + parameter);
+            return null;
+        }
+        letilink = letilink.replaceAll("\\\\", "");
+        String filename = null;
+        DownloadLink fina;
+        if (letilink.contains("moevideo.net/")) {
+            fina = createDownloadlink("directhttp://" + letilink);
         } else {
-            String letilink = br.getRegex("\"link\":\"([^\"]+)").getMatch(0);
-            if (letilink == null) {
+            filename = new Regex(letilink, "/[0-9a-f]+_\\d+_(.*?)\\.flv").getMatch(0);
+            if (filename == null) {
                 logger.warning("Decrypter broken for link: " + parameter);
                 return null;
             }
-            letilink = letilink.replaceAll("\\\\", "");
-            String filename = null;
-            DownloadLink fina;
-            if (letilink.contains("moevideo.net/")) {
-                fina = createDownloadlink("directhttp://" + letilink);
-            } else {
-                filename = new Regex(letilink, "/[0-9a-f]+_\\d+_(.*?)\\.flv").getMatch(0);
-                if (filename == null) {
-                    logger.warning("Decrypter broken for link: " + parameter);
-                    return null;
-                }
-                filename = Encoding.htmlDecode(filename.trim());
-                fina = createDownloadlink("http://letitbit.net/download/" + uid + "/" + filename + ".html");
-                fina.setAvailable(true);
-            }
-            final String fsize = br.getRegex("\"convert_size\":\"(\\d+)\"").getMatch(0);
-            if (fsize != null) {
-                fina.setDownloadSize(Long.parseLong(fsize));
-            }
-            if (filename != null) {
-                fina.setName(filename);
-            }
-            decryptedLinks.add(fina);
-            return decryptedLinks;
+            filename = Encoding.htmlDecode(filename.trim());
+            fina = createDownloadlink("http://letitbit.net/download/" + uid + "/" + filename + ".html");
+            fina.setAvailable(true);
         }
+        final String fsize = br.getRegex("\"convert_size\":\"(\\d+)\"").getMatch(0);
+        if (fsize != null) {
+            fina.setDownloadSize(Long.parseLong(fsize));
+        }
+        if (filename != null) {
+            fina.setName(filename);
+        }
+        decryptedLinks.add(fina);
+        return decryptedLinks;
 
     }
 }

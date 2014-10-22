@@ -29,6 +29,7 @@ import java.util.regex.Pattern;
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.http.Browser;
+import jd.http.Browser.BrowserException;
 import jd.http.Cookie;
 import jd.http.Cookies;
 import jd.http.URLConnectionAdapter;
@@ -76,6 +77,8 @@ public class UploadBoyCom extends PluginForHost {
     private static AtomicInteger maxFree                      = new AtomicInteger(1);
     private static AtomicInteger maxPrem                      = new AtomicInteger(1);
     private static Object        LOCK                         = new Object();
+
+    private boolean              cloudflare_Failed            = false;
 
     // DEV NOTES
     // XfileSharingProBasic Version 2.6.2.5
@@ -157,7 +160,16 @@ public class UploadBoyCom extends PluginForHost {
         br.setFollowRedirects(true);
         prepBrowser(br);
         br.getHeaders().put("Referer", getRef(link));
-        getPage(link.getDownloadURL());
+        try {
+            getPage(link.getDownloadURL());
+        } catch (final BrowserException e) {
+            if (br.getHttpConnection().getResponseCode() == 503) {
+                cloudflare_Failed = true;
+                link.getLinkStatus().setStatusText("503: Cannot break through cloudflare");
+                return AvailableStatus.UNCHECKABLE;
+            }
+            throw e;
+        }
         if (new Regex(correctedBR, "(No such file|>File Not Found<|The file was removed by|Reason for deletion:)").matches()) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
@@ -244,6 +256,9 @@ public class UploadBoyCom extends PluginForHost {
 
     @SuppressWarnings("unused")
     public void doFree(final DownloadLink downloadLink, final boolean resumable, final int maxchunks, final String directlinkproperty) throws Exception, PluginException {
+        if (cloudflare_Failed) {
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "503: Cannot break through cloudflare", 30 * 60 * 1000l);
+        }
         br.setFollowRedirects(false);
         passCode = downloadLink.getStringProperty("pass");
         // First, bring up saved final links
@@ -448,13 +463,13 @@ public class UploadBoyCom extends PluginForHost {
     /**
      * Prevents more than one free download from starting at a given time. One step prior to dl.startDownload(), it adds a slot to maxFree
      * which allows the next singleton download to start, or at least try.
-     * 
+     *
      * This is needed because xfileshare(website) only throws errors after a final dllink starts transferring or at a given step within pre
      * download sequence. But this template(XfileSharingProBasic) allows multiple slots(when available) to commence the download sequence,
      * this.setstartintival does not resolve this issue. Which results in x(20) captcha events all at once and only allows one download to
      * start. This prevents wasting peoples time and effort on captcha solving and|or wasting captcha trading credits. Users will experience
      * minimal harm to downloading as slots are freed up soon as current download begins.
-     * 
+     *
      * @param controlFree
      *            (+1|-1)
      */
@@ -592,7 +607,7 @@ public class UploadBoyCom extends PluginForHost {
     // TODO: remove this when v2 becomes stable. use br.getFormbyKey(String key, String value)
     /**
      * Returns the first form that has a 'key' that equals 'value'.
-     * 
+     *
      * @param key
      * @param value
      * @return
@@ -917,6 +932,9 @@ public class UploadBoyCom extends PluginForHost {
     public void handlePremium(final DownloadLink downloadLink, final Account account) throws Exception {
         passCode = downloadLink.getStringProperty("pass");
         requestFileInformation(downloadLink);
+        if (cloudflare_Failed) {
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "503: Cannot break through cloudflare", 30 * 60 * 1000l);
+        }
         login(account, false);
         if (account.getBooleanProperty("nopremium")) {
             requestFileInformation(downloadLink);
@@ -965,7 +983,7 @@ public class UploadBoyCom extends PluginForHost {
 
     /**
      * captcha processing can be used download/login/anywhere assuming the submit values are the same (they usually are)...
-     * 
+     *
      * @author raztoki
      * */
     private Form captchaForm(DownloadLink downloadLink, Form form) throws Exception {
@@ -1068,7 +1086,7 @@ public class UploadBoyCom extends PluginForHost {
 
     /**
      * Validates string to series of conditions, null, whitespace, or "". This saves effort factor within if/for/while statements
-     * 
+     *
      * @param s
      *            Imported String to match against.
      * @return <b>true</b> on valid rule match. <b>false</b> on invalid rule match.

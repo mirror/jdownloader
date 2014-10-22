@@ -79,10 +79,10 @@ public class XerverCo extends PluginForHost {
     private static AtomicReference<String> agent                        = new AtomicReference<String>(null);
     /* Connection stuff */
     private static final boolean           FREE_RESUME                  = true;
-    private static final int               FREE_MAXCHUNKS               = -2;
+    private static final int               FREE_MAXCHUNKS               = 1;
     private static final int               FREE_MAXDOWNLOADS            = 1;
     private static final boolean           ACCOUNT_FREE_RESUME          = true;
-    private static final int               ACCOUNT_FREE_MAXCHUNKS       = -2;
+    private static final int               ACCOUNT_FREE_MAXCHUNKS       = 1;
     private static final int               ACCOUNT_FREE_MAXDOWNLOADS    = 1;
     private static final boolean           ACCOUNT_PREMIUM_RESUME       = true;
     private static final int               ACCOUNT_PREMIUM_MAXCHUNKS    = 1;
@@ -99,7 +99,7 @@ public class XerverCo extends PluginForHost {
     // XfileSharingProBasic Version 2.6.6.1
     // mods:scanInfo[Added one filename RegEx, removed filesize because it's not given], waitTime[Changed RegEx], heavily modified, do NOT
     // upgrade!
-    // limit-info:
+    // limit-info: free acc untested, set FREE limits
     // protocol: no https
     // captchatype: solvemedia
     // other:
