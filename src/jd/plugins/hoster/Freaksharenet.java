@@ -77,7 +77,7 @@ public class Freaksharenet extends PluginForHost {
             }
             return null;
         }
-        return getHost();
+        return super.getHost();
     }
 
     public Boolean rewriteHost(Account acc) {

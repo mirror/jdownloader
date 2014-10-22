@@ -92,7 +92,7 @@ public class PutLockerCom extends PluginForHost {
                 return null;
             }
         }
-        return getHost();
+        return super.rewriteHost(host);
     }
 
     public Boolean rewriteHost(DownloadLink link) {

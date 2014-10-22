@@ -96,7 +96,7 @@ public class UltraMegaBitCom extends PluginForHost {
                 return null;
             }
         }
-        return getHost();
+        return super.rewriteHost(host);
     }
 
     public Boolean rewriteHost(Account acc) {
