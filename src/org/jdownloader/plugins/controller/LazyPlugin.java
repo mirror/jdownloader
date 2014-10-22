@@ -153,7 +153,7 @@ public abstract class LazyPlugin<T extends Plugin> implements MinTimeWeakReferen
         try {
             final Class<T> clazz = getPluginClass(classLoader);
             final Constructor<T> cons = getConstructor(clazz);
-            if (cons.getParameterCount() != 0) {
+            if (cons.getParameterTypes().length != 0) {
                 ret = cons.newInstance(new Object[] { getPluginWrapper() });
             } else {
                 ret = cons.newInstance(new Object[0]);
