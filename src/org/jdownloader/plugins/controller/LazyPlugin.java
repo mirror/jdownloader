@@ -1,5 +1,6 @@
 package org.jdownloader.plugins.controller;
 
+import java.io.UnsupportedEncodingException;
 import java.lang.ref.WeakReference;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
@@ -85,10 +86,13 @@ public abstract class LazyPlugin<T extends Plugin> implements MinTimeWeakReferen
     }
 
     public LazyPlugin(LazyPluginClass lazyPluginClass, String patternString, String displayName, Class<T> class1, PluginClassLoaderChild classLoader) {
-        /**
-         * no charset here as the bytes never leave the vm
-         */
-        patternBytes = patternString.getBytes();
+        byte[] patternBytes = null;
+        try {
+            patternBytes = patternString.getBytes("UTF-8");
+        } catch (UnsupportedEncodingException e) {
+            patternBytes = patternString.getBytes();
+        }
+        this.patternBytes = patternBytes;
         this.lazyPluginClass = lazyPluginClass;
         if (class1 != null) {
             pluginClass = new WeakReference<Class<T>>(class1);
@@ -354,10 +358,12 @@ public abstract class LazyPlugin<T extends Plugin> implements MinTimeWeakReferen
     }
 
     public final String getPatternSource() {
-        /**
-         * no charset here as the bytes never leave the vm
-         */
-        return new String(patternBytes);
+        try {
+            return new String(patternBytes, "UTF-8");
+        } catch (UnsupportedEncodingException e) {
+            e.printStackTrace();
+            return new String(patternBytes);
+        }
     }
 
     public final Pattern getPattern() {
