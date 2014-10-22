@@ -31,6 +31,8 @@ import javax.swing.JOptionPane;
 import javax.swing.SwingUtilities;
 
 import jd.PluginWrapper;
+import jd.config.ConfigContainer;
+import jd.config.ConfigEntry;
 import jd.config.SubConfiguration;
 import jd.http.Browser;
 import jd.http.Cookie;
@@ -69,6 +71,12 @@ public class FilePostCom extends PluginForHost {
     public FilePostCom(PluginWrapper wrapper) {
         super(wrapper);
         this.enablePremium("http://filepost.com/premium/");
+        setConfigElements();
+    }
+
+    private void setConfigElements() {
+        final ConfigEntry cond = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), "RESUME", JDL.L("plugins.hoster.filepost.allowresume", "Allow Resume")).setDefaultValue(true);
+        getConfig().addEntry(cond);
     }
 
     public boolean checkLinks(DownloadLink[] urls) {
@@ -432,7 +440,9 @@ public class FilePostCom extends PluginForHost {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
         }
-        dl = jd.plugins.BrowserAdapter.openDownload(brc, downloadLink, dllink, true, 1);
+        logger.info("Download Free");
+        final boolean resume = getPluginConfig().getBooleanProperty("RESUME", true);
+        dl = jd.plugins.BrowserAdapter.openDownload(brc, downloadLink, dllink, resume, 1);
         if (dl.getConnection().getContentType().contains("html")) {
             brc.followConnection();
             final String cookieError = brc.getCookie(MAINPAGE, "error");
@@ -553,11 +563,12 @@ public class FilePostCom extends PluginForHost {
         }
         // Connection limit not tested but user said it didn't work with 2 connections
         int chunks = 0;
-        boolean resume = true;
+        boolean resume = getPluginConfig().getBooleanProperty("RESUME", true);
         if (link.getBooleanProperty(FilePostCom.NOCHUNKS, false) || resume == false) {
             chunks = 1;
         }
-        dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, true, chunks);
+        logger.info("Download Premium");
+        dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, resume, chunks);
         if (dl.getConnection().getContentType().contains("html")) {
             logger.warning("The final dllink seems not to be a file!");
             br.followConnection();
