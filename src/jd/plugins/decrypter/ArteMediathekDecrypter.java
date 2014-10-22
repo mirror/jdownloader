@@ -159,6 +159,9 @@ public class ArteMediathekDecrypter extends PluginForDecrypt {
         String vsrRegex = "\"VSR\":\\{(.*?\\})\\}";
 
         if (parameter.matches(TYPE_CONCERT)) {
+            if (!br.containsHTML("class=\"video\\-container\"")) {
+                throw new DecrypterException(EXCEPTION_LINKOFFLINE);
+            }
             tvguideUrl = br.getRegex("\"(http://concert\\.arte\\.tv/[a-z]{2}/player/\\d+)").getMatch(0);
             if (tvguideUrl == null) {
                 return null;
