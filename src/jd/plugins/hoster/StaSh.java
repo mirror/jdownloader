@@ -175,7 +175,7 @@ public class StaSh extends PluginForHost {
         ext = ext.toLowerCase();
         /* User wanted link-id as filename - at least when he added the link via decrypter. */
         if (this.getPluginConfig().getBooleanProperty(USE_LINKID_AS_FILENAME, false)) {
-            filename = new Regex(link.getDownloadURL(), "sta\\.sh(.+)").getMatch(0);
+            filename = new Regex(link.getDownloadURL(), "sta\\.sh/(.+)").getMatch(0);
         }
         if (!filename.endsWith(ext)) {
             filename += "." + ext.trim();
@@ -294,10 +294,10 @@ public class StaSh extends PluginForHost {
         final String lang = System.getProperty("user.language");
         if ("de".equalsIgnoreCase(lang)) {
             forcehtmldownloadtext = "HTML Code statt dem eigentlichen Inhalt (Dateien/Bilder) laden?";
-            set_id_as_filename_text = "[Nur für enzelne Einträge] Link-ID als Dateiname nutzen (sta.sh/LINKID)?";
+            set_id_as_filename_text = "Link-ID als Dateiname nutzen (sta.sh/LINKID)?";
         } else {
             forcehtmldownloadtext = "Download html code instead of the media (files/pictures)?";
-            set_id_as_filename_text = "[Only for single entries] Use link-ID as filename (sta.sh/LINKID)?";
+            set_id_as_filename_text = "Use link-ID as filename (sta.sh/LINKID)?";
         }
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), FORCEHTMLDOWNLOAD, JDL.L("plugins.hoster.StaSh.forceHTMLDownload", forcehtmldownloadtext)).setDefaultValue(false));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), USE_LINKID_AS_FILENAME, JDL.L("plugins.hoster.StaSh.useLinkIDAsFilename", set_id_as_filename_text)).setDefaultValue(false));
