@@ -380,11 +380,17 @@ public class LinkSnappyCom extends PluginForHost {
                     }
                 } catch (final Throwable e) {
                 }
-                /* unknown error, we disable multiple chunks */
-                if (link.getBooleanProperty(LinkSnappyCom.NOCHUNKS, false) == false) {
-                    link.setProperty(LinkSnappyCom.NOCHUNKS, Boolean.valueOf(true));
-                    throw new PluginException(LinkStatus.ERROR_RETRY);
-                }
+                // disabled at the request of linksnappy admin. This shouldn't be needed for misconfiguration of chunks, as they provide
+                // chunk values.
+                // disabling chunks on first error is bad, one could have network issue/or harddrive issue with preallocation of filesize.
+                // It
+                // doesn't justify resetting chunk value on the first error! - raztoki
+                //
+                // /* unknown error, we disable multiple chunks */
+                // if (link.getBooleanProperty(LinkSnappyCom.NOCHUNKS, false) == false) {
+                // link.setProperty(LinkSnappyCom.NOCHUNKS, Boolean.valueOf(true));
+                // throw new PluginException(LinkStatus.ERROR_RETRY);
+                // }
             } else {
                 /*
                  * Check if user wants JD to clear serverside download history in linksnappy account after each download - only possible via
@@ -420,12 +426,12 @@ public class LinkSnappyCom extends PluginForHost {
                     throw new PluginException(LinkStatus.ERROR_FATAL, "Problem with multihoster");
                 }
             }
-            // New V2 errorhandling
-            /* unknown error, we disable multiple chunks */
-            if (e.getLinkStatus() != LinkStatus.ERROR_RETRY && link.getBooleanProperty(LinkSnappyCom.NOCHUNKS, false) == false) {
-                link.setProperty(LinkSnappyCom.NOCHUNKS, Boolean.valueOf(true));
-                throw new PluginException(LinkStatus.ERROR_RETRY);
-            }
+            // // New V2 errorhandling
+            // /* unknown error, we disable multiple chunks */
+            // if (e.getLinkStatus() != LinkStatus.ERROR_RETRY && link.getBooleanProperty(LinkSnappyCom.NOCHUNKS, false) == false) {
+            // link.setProperty(LinkSnappyCom.NOCHUNKS, Boolean.valueOf(true));
+            // throw new PluginException(LinkStatus.ERROR_RETRY);
+            // }
             throw e;
         }
     }
@@ -505,7 +511,7 @@ public class LinkSnappyCom extends PluginForHost {
             }
         }
         // shouldn't be needed! linksnappy now provides chunk values in hostmap.
-        chunks = (currentLink.getBooleanProperty(NOCHUNKS, false) ? 1 : chunks);
+        // chunks = (currentLink.getBooleanProperty(NOCHUNKS, false) ? 1 : chunks);
 
         try {
             dl = jd.plugins.BrowserAdapter.openDownload(br, currentLink, dllink, resumes, chunks);
@@ -742,7 +748,7 @@ public class LinkSnappyCom extends PluginForHost {
 
     /**
      * Tries to return value of key from JSon response, from String source.
-     * 
+     *
      * @author raztoki
      * */
     private String getJson(final String source, final String key) {
@@ -758,7 +764,7 @@ public class LinkSnappyCom extends PluginForHost {
 
     /**
      * Tries to return value of key from JSon response, from default 'br' Browser.
-     * 
+     *
      * @author raztoki
      * */
     private String getJson(final String key) {
@@ -767,7 +773,7 @@ public class LinkSnappyCom extends PluginForHost {
 
     /**
      * Tries to return value of key from JSon response, from provided Browser.
-     * 
+     *
      * @author raztoki
      * */
     private String getJson(final Browser ibr, final String key) {
