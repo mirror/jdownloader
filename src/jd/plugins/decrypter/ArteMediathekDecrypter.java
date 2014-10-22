@@ -148,7 +148,7 @@ public class ArteMediathekDecrypter extends PluginForDecrypt {
         final boolean grabSubtitles = cfg.getBooleanProperty(Q_SUBTITLES, false);
         ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
         int languageVersion = 1;
-        String lang = new Regex(parameter, "/guide/(\\w+)/.+").getMatch(0);
+        String lang = new Regex(parameter, "(concert\\.arte\\.tv|guide)/(\\w+)/.+").getMatch(1);
         if (lang != null) {
             if ("fr".equalsIgnoreCase(lang)) {
                 languageVersion = 2;
@@ -249,7 +249,7 @@ public class ArteMediathekDecrypter extends PluginForDecrypt {
                 url = getJson(info, "vur");
             }
 
-            /* Check version/only download selected language-version! */
+            /* Check version/only download user-selected language-version (simply check lang-string inside the given link)! */
             String l;
             if (versionCode == null) {
                 continue;
