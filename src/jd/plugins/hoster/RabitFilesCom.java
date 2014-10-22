@@ -81,7 +81,7 @@ public class RabitFilesCom extends PluginForHost {
             link.getLinkStatus().setStatusText(SIMULTANDLSLIMITUSERTEXT);
             return AvailableStatus.TRUE;
         }
-        final Regex infoRegex = br.getRegex("<th class=\"descr\">[\t\n\r ]+<strong>([^<>\"]*?) \\((\\d+(\\.\\d+)? [A-Za-z]+)\\)<br/");
+        final Regex infoRegex = br.getRegex("<th class=\"[^<>\"]+\">[\t\n\r ]+<strong>([^<>\"]*?) \\((\\d+(\\.\\d+)? [A-Za-z]+)\\)<br");
         String filename = infoRegex.getMatch(0);
         String filesize = infoRegex.getMatch(1);
         if (filename == null || filesize == null) {
