@@ -313,60 +313,39 @@ public class Main {
 
                 }
 
-                final ProcessBuilder processBuilder = ProcessBuilderFactory.create(CrossSystem.getJavaBinary(), "-jar", jdjar.getName(), "-forceupdate", "guiless", "-exitafterupdate").directory(jdjar.getParentFile());
+                final ProcessBuilder processBuilder = ProcessBuilderFactory.create(CrossSystem.getJavaBinary(), "-Djava.awt.headless=false", "-jar", jdjar.getName(), "-forceupdate", "guiless", "-exitafterupdate").directory(jdjar.getParentFile());
                 new Thread("Updater") {
                     public void run() {
 
                         try {
+                            processBuilder.redirectErrorStream(true);
                             final Process process = processBuilder.start();
-                            final StringBuilder sbe = new StringBuilder();
+
                             final StringBuilder sbs = new StringBuilder();
-                            final Thread reader1 = new Thread("ffmpegReader") {
-                                public void run() {
-                                    try {
-                                        sbs.append(IO.readInputStreamToString(process.getInputStream()));
-                                    } catch (Throwable e) {
-                                        e.printStackTrace();
-                                    }
-                                }
-                            };
-
-                            final Thread reader2 = new Thread("ffmpegReader") {
-                                public void run() {
-                                    try {
-                                        sbe.append(IO.readInputStreamToString(process.getErrorStream()));
-                                    } catch (Throwable e) {
-                                        e.printStackTrace();
-                                    }
-                                }
-                            };
-                            reader1.start();
-                            reader2.start();
-                            while (true) {
-                                try {
-                                    process.exitValue();
-                                    reader1.join();
-                                    reader2.join();
-                                    if (sbe.toString().contains("Write Revision:")) {
-                                        ConfirmDialog d = new ConfirmDialog(UIOManager.LOGIC_COUNTDOWN, "Update Installed to Revision " + new Regex(sbe.toString(), "Write Revision:\\s*(\\d+)").getMatch(0), "Update Installed. Please restart to access new resources like images, translations, ... ", null, "Exit JDownloader", null) {
-                                            public java.awt.Dialog.ModalityType getModalityType() {
-                                                return ModalityType.MODELESS;
-                                            };
-                                        };
-                                        d.setTimeout(5000);
-                                        UIOManager.I().show(null, d);
-                                        d.throwCloseExceptions();
-
-                                        System.out.println("Updates Installed to .jd_home");
-                                        ShutdownController.getInstance().requestShutdown();
-                                    }
-                                    System.out.println("Done");
-                                    return;
-                                } catch (IllegalThreadStateException e) {
-
-                                }
-                                Thread.sleep(500);
+                            try {
+                                sbs.append(IO.readInputStreamToString(process.getInputStream()));
+                            } catch (Throwable e) {
+                                e.printStackTrace();
                             }
+
+                            process.exitValue();
+
+                            if (sbs.toString().contains("Write Revision:")) {
+                                ConfirmDialog d = new ConfirmDialog(UIOManager.LOGIC_COUNTDOWN, "Update Installed to Revision " + new Regex(sbs.toString(), "Write Revision:\\s*(\\d+)").getMatch(0), "Update Installed. Please restart to access new resources like images, translations, ... ", null, "Exit JDownloader", null) {
+                                    public java.awt.Dialog.ModalityType getModalityType() {
+                                        return ModalityType.MODELESS;
+                                    };
+                                };
+                                d.setTimeout(5000);
+                                UIOManager.I().show(null, d);
+                                d.throwCloseExceptions();
+
+                                System.out.println("Updates Installed to .jd_home");
+                                ShutdownController.getInstance().requestShutdown();
+                            }
+                            System.out.println("Done");
+                            return;
+
                         } catch (Exception e1) {
                             e1.printStackTrace();
 
