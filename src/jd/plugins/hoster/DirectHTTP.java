@@ -30,6 +30,7 @@ import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
 import jd.config.Property;
+import jd.config.SubConfiguration;
 import jd.controlling.HTACCESSController;
 import jd.http.Browser;
 import jd.http.Cookies;
@@ -452,7 +453,9 @@ public class DirectHTTP extends PluginForHost {
 
     public DirectHTTP(final PluginWrapper wrapper) {
         super(wrapper);
-        setConfigElements();
+        if ("DirectHTTP".equals(getHost())) {
+            setConfigElements();
+        }
     }
 
     private final String SSLTRUSTALL = "SSLTRUSTALL";
@@ -463,7 +466,7 @@ public class DirectHTTP extends PluginForHost {
     }
 
     private boolean isSSLTrustALL() {
-        return getPluginConfig().getBooleanProperty(SSLTRUSTALL, false);
+        return SubConfiguration.getConfig("DirectHTTP").getBooleanProperty(SSLTRUSTALL, false);
     }
 
     @Override
