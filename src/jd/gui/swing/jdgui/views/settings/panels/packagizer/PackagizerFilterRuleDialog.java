@@ -50,6 +50,8 @@ import org.appwork.utils.swing.SwingUtils;
 import org.appwork.utils.swing.dialog.Dialog;
 import org.appwork.utils.swing.dialog.DialogCanceledException;
 import org.appwork.utils.swing.dialog.DialogClosedException;
+import org.appwork.utils.swing.dialog.dimensor.RememberLastDialogDimension;
+import org.appwork.utils.swing.dialog.locator.RememberAbsoluteDialogLocator;
 import org.appwork.utils.swing.windowmanager.WindowManager;
 import org.appwork.utils.swing.windowmanager.WindowManager.FrameState;
 import org.jdownloader.controlling.Priority;
@@ -229,6 +231,8 @@ public class PackagizerFilterRuleDialog extends ConditionDialog<PackagizerRule> 
     private PackagizerFilterRuleDialog(PackagizerRule filterRule) {
         super();
         this.rule = filterRule;
+        setLocator(new RememberAbsoluteDialogLocator(getClass().getSimpleName()));
+        setDimensor(new RememberLastDialogDimension(getClass().getSimpleName()));
     }
 
     public void addConditionGui(final JComponent panel) {

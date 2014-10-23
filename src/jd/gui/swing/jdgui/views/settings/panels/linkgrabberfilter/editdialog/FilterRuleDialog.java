@@ -18,6 +18,8 @@ import org.appwork.utils.swing.SwingUtils;
 import org.appwork.utils.swing.dialog.Dialog;
 import org.appwork.utils.swing.dialog.DialogCanceledException;
 import org.appwork.utils.swing.dialog.DialogClosedException;
+import org.appwork.utils.swing.dialog.dimensor.RememberLastDialogDimension;
+import org.appwork.utils.swing.dialog.locator.RememberAbsoluteDialogLocator;
 import org.jdownloader.controlling.filter.LinkFilterController;
 import org.jdownloader.controlling.filter.LinkgrabberFilterRule;
 import org.jdownloader.gui.translate._GUI;
@@ -31,7 +33,8 @@ public class FilterRuleDialog extends ConditionDialog<LinkgrabberFilterRule> {
         super();
         this.rule = filterRule;
         setTitle(_GUI._.FilterRuleDialog_FilterRuleDialog_title_());
-
+        setLocator(new RememberAbsoluteDialogLocator(getClass().getSimpleName()));
+        setDimensor(new RememberLastDialogDimension(getClass().getSimpleName()));
     }
 
     protected void runTest(String text) {
