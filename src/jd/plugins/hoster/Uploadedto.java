@@ -443,8 +443,14 @@ public class Uploadedto extends PluginForHost {
     public AccountInfo fetchAccountInfo(final Account account) throws Exception {
         usePremiumDownloadAPI = this.getPluginConfig().getBooleanProperty(PREFER_PREMIUM_DOWNLOAD_API, default_ppda);
         if (usePremiumAPI.get() && usePremiumDownloadAPI) {
-            // This password won't work: FLR&Y$9i,?+yk=Kx08}:PhkmÖ]nmYAr#n6O=xHiZzm,NI&k)Qü
-            return api_Fetch_accountinfo(account);
+            try {
+                // This password won't work: FLR&Y$9i,?+yk=Kx08}:PhkmÖ]nmYAr#n6O=xHiZzm,NI&k)Qü
+                return api_Fetch_accountinfo(account);
+            } catch (Exception e) {
+                // for password that cause getLoginSHA1Hash to fail.
+                getLogger().log(e);
+                return site_Fetch_accountinfo(account);
+            }
         } else {
             return site_Fetch_accountinfo(account);
         }
@@ -494,11 +500,12 @@ public class Uploadedto extends PluginForHost {
                         account.setValid(true);
                     }
                 } else {
-                    usePremiumAPI.set(false);
+
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 }
             }
         } catch (final PluginException e) {
+            usePremiumAPI.set(false);
             account.setProperty("token", null);
             account.setProperty("tokenType", null);
             throw e;
