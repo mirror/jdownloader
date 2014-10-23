@@ -208,11 +208,7 @@ public class CokluindirCom extends PluginForHost {
         login(acc, false);
         showMessage(link, "Task 1: Generating Link");
         /* request Download */
-        if (link.getStringProperty("pass", null) != null) {
-            br.postPage(mProt + mName + "/indir10.php", "link=" + Encoding.urlEncode(link.getDownloadURL()) + "&password=" + Encoding.urlEncode(link.getStringProperty("pass", null)));
-        } else {
-            br.postPage(mProt + mName + "/indir10.php", "link=" + Encoding.urlEncode(link.getDownloadURL()) + "&password=");
-        }
+        br.postPage(mProt + mName + "/indir10.php", "link=" + Encoding.urlEncode(link.getDownloadURL()) + "&password=" + (link.getStringProperty("pass", null) != null ? Encoding.urlEncode(link.getStringProperty("pass", null)) : ""));
         handleErrors(acc, link);
         String dllink = br.getRegex("href=\"(http[^\"]+)").getMatch(0);
         if (dllink == null) {
@@ -319,11 +315,11 @@ public class CokluindirCom extends PluginForHost {
         // begin the error handing..
         String error = null;
         String statusMessage = null;
-        String err = br.getRegex("(.+)").getMatch(0);
+        String err = br.getHttpConnection() != null && br.toString().matches("(\\d+).*?") ? br.toString() : null;
         // errors are shown as numerical text response, but also shared at times with other data.
-        if (err != null && !err.startsWith(new Regex(err, "(\\d+)").getMatch(0))) {
+        if (err == null) {
             return;
-        } else if (err != null && err.startsWith(new Regex(err, "(\\d+)").getMatch(0))) {
+        } else {
             error = new Regex(err, "(\\d+)").getMatch(0);
         }
         try {
