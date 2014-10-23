@@ -97,13 +97,14 @@ public class DlPrtcCom extends PluginForDecrypt {
         prepBr.getHeaders().put("Accept-Language", "en-gb, en;q=0.9");
         prepBr.getHeaders().put("Pragma", null);
         prepBr.getHeaders().put("Accept-Charset", null);
+        prepBr.getHeaders().put("Cache-Control", null);
         prepBr.setRequestIntervalLimit(this.getHost(), 1500);
         return prepBr;
     }
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-        String parameter = param.toString().replaceAll("dl\\-protect\\.com/(en|fr)/", "dl-protect.com/");
+        String parameter = param.toString().replaceAll("dl\\-protect\\.com/(en|fr)/", "dl-protect.com/").replaceFirst("//www\\.", "//");
         if (parameter.endsWith("dl-protect.com/en")) {
             logger.info("Invalid link: " + parameter);
             return decryptedLinks;
@@ -111,6 +112,7 @@ public class DlPrtcCom extends PluginForDecrypt {
         // prevent more than one thread starting across the different versions of JD
         synchronized (ctrlLock) {
             // has to be this side of lock otherwise loading of cookies before lock will always be blank or wrong.
+            br = new Browser();
             prepBrowser(br);
             // little wait between ties?
             if (lastUsed.get() == 0) {
@@ -147,25 +149,7 @@ public class DlPrtcCom extends PluginForDecrypt {
                     }
                     if (cbr.containsHTML(CAPTCHATEXT)) {
                         // this is for all images, matching pattern
-                        String[] test = cbr.getRegex("<img[^>]+src=\"(/template/images/[^\"]+)").getColumn(0);
-                        if (test != null) {
-                            HashSet<String> dupe = new HashSet<String>();
-                            for (final String t : test) {
-                                if (!dupe.add(t)) {
-                                    continue;
-                                }
-                                final Browser brAds = br.cloneBrowser();
-                                try {
-                                    brAds.openGetConnection(t);
-                                } catch (final Exception e) {
-                                } finally {
-                                    try {
-                                        brAds.disconnect();
-                                    } catch (final Throwable tr) {
-                                    }
-                                }
-                            }
-                        }
+                        test(cbr);
                         // captcha stuff
                         String captchaLink = getCaptchaLink(importantForm.getHtmlCode());
                         if (captchaLink == null) {
@@ -211,15 +195,19 @@ public class DlPrtcCom extends PluginForDecrypt {
             // }
 
             if (cbr.containsHTML(SECONDARY)) {
-                br.cloneBrowser().getPage("/pub_footer.html");
+                Browser br2 = br.cloneBrowser();
+                br2.getPage("/pub_footer.html");
+                test(cbr, br2);
                 Form continueForm = getContinueForm();
                 if (continueForm == null) {
                     logger.warning("Decrypter broken 3 for link: " + parameter);
                     return null;
                 }
                 if (coLoaded) {
-                    // continueForm.remove("submitform");
+                    // renames null to ""
                     continueForm.put("submitform", "");
+                    // this should be fine.
+                    // continueForm.put("submitform", "Continue");
                 }
                 sendForm(continueForm);
             }
@@ -227,16 +215,19 @@ public class DlPrtcCom extends PluginForDecrypt {
                 nullSession(parameter);
                 throw new DecrypterException("D-TECTED!");
             }
-            br.cloneBrowser().getPage("/pub_footer.html");
             String linktext = cbr.getRegex("(class=\"divlink link\"\\s*id=\"slinks\"|id=\"slinks\"\\s*class=\"divlink link\")><a(.*?)</table>").getMatch(1);
             if (linktext == null) {
                 if (br.containsHTML(">Your link :</div>")) {
                     logger.info("Link offline: " + parameter);
                     return decryptedLinks;
                 }
+                nullSession(parameter);
                 logger.warning("Decrypter broken 4 for link: " + parameter);
                 return null;
             }
+            Browser br2 = br.cloneBrowser();
+            br2.getPage("/pub_footer.html");
+            test(cbr, br2);
             final String[] links = new Regex(linktext, "href=(\"|')(.*?)\\1").getColumn(1);
             if (links == null || links.length == 0) {
                 logger.warning("Decrypter broken 5 for link: " + parameter);
@@ -271,6 +262,37 @@ public class DlPrtcCom extends PluginForDecrypt {
             }
         }
 
+    }
+
+    private HashSet<String> dupe = new HashSet<String>();
+
+    /**
+     * don't think this is needed, but performs gets to given browser objects.
+     *
+     * @param brs
+     */
+    private void test(final Browser... brs) {
+        for (Browser br : brs) {
+            // this is for all images, matching pattern
+            String[] test = br.getRegex("(/template/images/[^\"]+)").getColumn(0);
+            if (test != null) {
+                for (final String t : test) {
+                    if (!dupe.add(t)) {
+                        continue;
+                    }
+                    final Browser brAds = br.cloneBrowser();
+                    try {
+                        brAds.openGetConnection(t);
+                    } catch (final Exception e) {
+                    } finally {
+                        try {
+                            brAds.disconnect();
+                        } catch (final Throwable tr) {
+                        }
+                    }
+                }
+            }
+        }
     }
 
     private String getCaptchaLink(String source) throws Exception {
