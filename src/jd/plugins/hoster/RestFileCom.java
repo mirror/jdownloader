@@ -44,7 +44,7 @@ import jd.utils.locale.JDL;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "restfilee.com", "restfile.ws", "restfile.com" }, urls = { "https?://(www\\.)?(restfile\\.(ws|ca|co|com)|restfiles\\.net|restfilee\\.com)/[a-z0-9]{12}", "jh045uz609h456t6tjojkhoretkmjpDELETE_MEt45h789hioufdbfhnoui", "jh045uz609h456t6tjojkhoretkmjpDELETE_MEt45h789hioufdbfhnoui" }, flags = { 0, 0, 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "restfilee.com", "restfile.ws", "restfile.com" }, urls = { "https?://(www\\.)?(restfile\\.(ws|ca|co|com|bz|cc|net)|restfiles\\.net|restfilee\\.com)/[a-z0-9]{12}", "jh045uz609h456t6tjojkhoretkmjpDELETE_MEt45h789hioufdbfhnoui", "jh045uz609h456t6tjojkhoretkmjpDELETE_MEt45h789hioufdbfhnoui" }, flags = { 0, 0, 0 })
 public class RestFileCom extends PluginForHost {
 
     private String              correctedBR         = "";
