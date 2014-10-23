@@ -16,6 +16,8 @@ import org.appwork.swing.exttable.ExtTableModel;
 import org.appwork.utils.swing.dialog.Dialog;
 import org.appwork.utils.swing.dialog.DialogCanceledException;
 import org.appwork.utils.swing.dialog.DialogClosedException;
+import org.appwork.utils.swing.dialog.dimensor.RememberLastDialogDimension;
+import org.appwork.utils.swing.dialog.locator.RememberAbsoluteDialogLocator;
 import org.jdownloader.controlling.filter.LinkFilterController;
 import org.jdownloader.controlling.filter.LinkgrabberFilterRule;
 import org.jdownloader.gui.translate._GUI;
@@ -28,7 +30,8 @@ public class ExceptionsRuleDialog extends ConditionDialog<LinkgrabberFilterRule>
         super();
         this.rule = filterRule;
         setTitle(_GUI._.ExceptionsRuleDialog_ExceptionsRuleDialog_title_());
-
+        setLocator(new RememberAbsoluteDialogLocator(getClass().getSimpleName()));
+        setDimensor(new RememberLastDialogDimension(getClass().getSimpleName()));
     }
 
     protected void runTest(String text) {
