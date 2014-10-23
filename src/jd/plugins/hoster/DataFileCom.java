@@ -50,7 +50,7 @@ import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.formatter.TimeFormatter;
 import org.appwork.utils.os.CrossSystem;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "datafile.com" }, urls = { "https?://(www\\.)?datafile\\.com/d/[A-Za-z0-9]+" }, flags = { 2 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "datafile.com" }, urls = { "https?://(www\\.)?datafile\\.com/d/[A-Za-z0-9]+(/[^<>\"/]+)?" }, flags = { 2 })
 public class DataFileCom extends PluginForHost {
 
     public DataFileCom(PluginWrapper wrapper) {
@@ -71,6 +71,15 @@ public class DataFileCom extends PluginForHost {
     // Connection Management
     // note: CAN NOT be negative or zero! (ie. -1 or 0) Otherwise math sections fail. .:. use [1-20]
     private static final AtomicInteger totalMaxSimultanFreeDownload = new AtomicInteger(1);
+
+    public void correctDownloadLink(final DownloadLink link) {
+        final String unneededPart = new Regex(link.getDownloadURL(), "datafile\\.com/d/[A-Za-z0-9]+(/[^<>\"/]+)").getMatch(0);
+        if (unneededPart != null) {
+            final String urlfilename = new Regex(unneededPart, "/([^<>\"/]+)").getMatch(0);
+            link.setUrlDownload(link.getDownloadURL().replace(unneededPart, ""));
+            link.setProperty("urlfilename", Encoding.htmlDecode(urlfilename.trim()));
+        }
+    }
 
     /**
      * They have a linkchecker but it doesn't show filenames if they're not included in the URL: http://www.datafile.com/linkchecker.html
@@ -113,20 +122,25 @@ public class DataFileCom extends PluginForHost {
         if (br.containsHTML("ErrorCode 7: Download file count limit")) {
             return AvailableStatus.UNCHECKABLE;
         }
+        final String urlfilename = link.getStringProperty("urlfilename", null);
         final String decrypterfilename = link.getStringProperty("decrypterfilename", null);
-        final String filename = br.getRegex("class=\"file\\-name\">([^<>\"]*?)</div>").getMatch(0);
+        String sitefilename = br.getRegex("class=\"file\\-name\">([^<>\"]*?)</div>").getMatch(0);
         filesize = br.getRegex(">Filesize:<span class=\"lime\">([^<>\"]*?)</span>").getMatch(0);
         if (filesize == null) {
             filesize = br.getRegex(">Filesize: <span class=\"lime\">([^<>\"]*?)</span>").getMatch(0);
         }
-        if (filename == null || filesize == null) {
+        if (sitefilename == null || filesize == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
+        sitefilename = Encoding.htmlDecode(sitefilename.trim());
         if (decrypterfilename != null) {
             /* Folder-filenames are complete - filenames shown when accessing single links are sometimes cut! */
             link.setName(decrypterfilename);
+        } else if (urlfilename.length() > sitefilename.length()) {
+            /* URL-filenames are complete - filenames shown when accessing single links are sometimes cut! */
+            link.setName(urlfilename);
         } else {
-            link.setName(Encoding.htmlDecode(filename.trim()));
+            link.setName(sitefilename);
         }
         link.setDownloadSize(SizeFormatter.getSize(filesize));
         if (br.containsHTML(PREMIUMONLY)) {
