@@ -669,7 +669,11 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
                 case LINUX:
                     folders = CrossSystem.getPathComponents(file);
                     if (folders.length >= 3) {
-                        if ("media".equals(folders[1])) {
+                        final String userName = System.getProperty("user.name");
+                        if (folders.length >= 4 && "run".equals(folders[1]) && "media".equals(folders[2]) && folders[3].equals(userName)) {
+                            /* 0:/ | 1:run | 2:media | 3:user | 4:mounted volume */
+                            checking = new File("/run/media/" + userName + "/" + folders[4]);
+                        } else if ("media".equals(folders[1])) {
                             /* 0:/ | 1:media | 2:mounted volume */
                             checking = new File("/media/" + folders[2]);
                         } else if ("mnt".equals(folders[1])) {
