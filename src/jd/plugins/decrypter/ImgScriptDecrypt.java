@@ -47,7 +47,7 @@ public class ImgScriptDecrypt extends PluginForDecrypt {
      * Returns the annotations names array
      */
     public static String[] getAnnotationNames() {
-        return new String[] { "imagefolks.com", "imgrill.com", "pixup.us", "imgcandy.net", "imagecorn.com", "imgnext.com", "hosturimage.com", "img.yt" };
+        return new String[] { "imagefolks.com", "imgrill.com", "pixup.us", "imgcandy.net", "imagecorn.com", "imgnext.com", "hosturimage.com", "img.yt", "imgtube.net" };
     }
 
     /**
@@ -58,7 +58,7 @@ public class ImgScriptDecrypt extends PluginForDecrypt {
 
         final String[] ret = new String[names.length];
         for (int i = 0; i < ret.length; i++) {
-            ret[i] = "http://(www\\.)?" + names[i].replaceAll("\\.", "\\\\.") + "/img\\-[a-z0-9]+\\.html";
+            ret[i] = "http://(www\\.)?" + names[i].replaceAll("\\.", "\\\\.") + "/img\\-[a-z0-9\\-]+\\.html";
         }
         return ret;
     }
@@ -84,7 +84,7 @@ public class ImgScriptDecrypt extends PluginForDecrypt {
         }
         br.postPage(br.getURL(), "imgContinue=Continue+to+image+...+");
         final String currentHost = new Regex(parameter, "http://(www\\.)?([a-z0-9\\.]+)/").getMatch(1).replace("\\.", "\\\\.");
-        final String finallink = br.getRegex("\\'(http://(www\\.)?" + currentHost + "/upload/big/[^<>\"]*?)\\'").getMatch(0);
+        final String finallink = br.getRegex("(\\'|\")(http://(www\\.)?" + currentHost + "(/upload/big/|/uploads/images/)[^<>\"]*?)(\\'|\")").getMatch(1);
         if (finallink == null) {
             logger.warning("Decrypter broken for link: " + parameter);
             return null;
