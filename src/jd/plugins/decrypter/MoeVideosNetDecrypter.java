@@ -94,7 +94,7 @@ public class MoeVideosNetDecrypter extends PluginForDecrypt {
             if (vidframe != null) {
                 br.getPage(vidframe);
             }
-            uid = br.getRegex("file=([0-9a-f\\.]+)(\\&|\"|\\')").getMatch(0);
+            uid = br.getRegex("(?:file=|/framevideo/)([0-9a-f\\.]+)(\\&|\"|\\'|\\?)").getMatch(0);
             if (uid == null) {
                 logger.warning("Decrypter broken for link: " + parameter);
                 return null;
