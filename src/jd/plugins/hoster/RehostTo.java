@@ -270,7 +270,7 @@ public class RehostTo extends PluginForHost {
                 AccountInfo ai = new AccountInfo();
                 hostUpdate(br, account, ai);
                 if (ai.getProperty("multiHostSupport") != null) {
-                    account.getAccountInfo().setProperty("multiHostSupport", ai.getProperty("multiHostSupport"));
+                    account.getAccountInfo().setMultiHostSupport(this, ai.getMultiHostSupport());
                 }
                 throw new PluginException(LinkStatus.ERROR_RETRY);
             } else if (error.equals("invalid_link")) {

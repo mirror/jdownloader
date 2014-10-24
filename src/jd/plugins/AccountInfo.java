@@ -16,7 +16,6 @@
 
 package jd.plugins;
 
-import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
@@ -236,11 +235,11 @@ public class AccountInfo extends Property {
      * @since JD2
      * */
 
-    public void setMultiHostSupport(final PluginForHost multiHostPlugin, final ArrayList<String> multiHostSupport) {
+    public void setMultiHostSupport(final PluginForHost multiHostPlugin, final List<String> multiHostSupport) {
         setMultiHostSupport(multiHostPlugin, multiHostSupport, new PluginFinder());
     }
 
-    public void setMultiHostSupport(final PluginForHost multiHostPlugin, final ArrayList<String> multiHostSupport, final PluginFinder pluginFinder) {
+    public void setMultiHostSupport(final PluginForHost multiHostPlugin, final List<String> multiHostSupport, final PluginFinder pluginFinder) {
         if (multiHostSupport != null && !multiHostSupport.isEmpty()) {
             final HashSet<String> supportedHostsSet = new HashSet<String>();
             for (final String host : multiHostSupport) {
