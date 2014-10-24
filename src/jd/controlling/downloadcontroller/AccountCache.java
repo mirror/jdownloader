@@ -100,9 +100,9 @@ public class AccountCache implements Iterable<CachedAccount> {
                 final AccountInfo ai = getAccount().getAccountInfo();
                 /* verify again because plugins can modify list on runtime */
                 if (ai != null) {
-                    Object multiHostSupport = ai.getProperty("multiHostSupport", null);
-                    if (multiHostSupport != null && multiHostSupport instanceof List) {
-                        canHandle = ((List<Object>) multiHostSupport).contains(link.getHost());
+                    final List<String> supported = ai.getMultiHostSupport();
+                    if (supported != null) {
+                        canHandle = supported.contains(link.getHost());
                     }
                 }
             }

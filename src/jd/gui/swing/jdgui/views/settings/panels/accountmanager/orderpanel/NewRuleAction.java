@@ -7,7 +7,6 @@ import java.util.Comparator;
 import java.util.HashSet;
 import java.util.List;
 
-import jd.config.Property;
 import jd.controlling.AccountController;
 import jd.plugins.Account;
 import jd.plugins.AccountInfo;
@@ -59,14 +58,12 @@ public class NewRuleAction extends AbstractAddAction {
         for (Account acc : AccountController.getInstance().list()) {
             final AccountInfo ai = acc.getAccountInfo();
             if (ai != null) {
-                final Object supportedHosts = ai.getProperty("multiHostSupport", Property.NULL);
-                if (supportedHosts != null && supportedHosts instanceof List) {
-                    for (Object supportedHost : (List<?>) supportedHosts) {
-                        if (supportedHost != null && supportedHost instanceof String) {
-                            final LazyHostPlugin plg = HostPluginController.getInstance().get((String) supportedHost);
-                            if (plg != null && !plg.getClassName().endsWith("r.Offline")) {
-                                domains.add(DomainInfo.getInstance(plg.getHost()));
-                            }
+                final List<String> supportedHosts = ai.getMultiHostSupport();
+                if (supportedHosts != null) {
+                    for (String supportedHost : supportedHosts) {
+                        final LazyHostPlugin plg = HostPluginController.getInstance().get(supportedHost);
+                        if (plg != null) {
+                            domains.add(DomainInfo.getInstance(plg.getHost()));
                         }
                     }
                 }

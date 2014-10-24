@@ -18,6 +18,8 @@ package jd.plugins;
 
 import java.util.ArrayList;
 import java.util.HashSet;
+import java.util.List;
+import java.util.concurrent.CopyOnWriteArrayList;
 
 import jd.config.Property;
 
@@ -254,10 +256,18 @@ public class AccountInfo extends Property {
             supportedHostsSet.remove("youtu.be");
             supportedHostsSet.remove("vimeo.com");
             if (supportedHostsSet.size() > 0) {
-                this.setProperty("multiHostSupport", new ArrayList<String>(supportedHostsSet));
+                this.setProperty("multiHostSupport", new CopyOnWriteArrayList<String>(supportedHostsSet));
                 return;
             }
         }
         this.setProperty("multiHostSupport", Property.NULL);
+    }
+
+    public List<String> getMultiHostSupport() {
+        final Object ret = getProperty("multiHostSupport", null);
+        if (ret != null && ret instanceof List) {
+            return (List<String>) ret;
+        }
+        return null;
     }
 }
