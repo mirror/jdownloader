@@ -35,7 +35,7 @@ import jd.plugins.PluginForHost;
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "yunpan.cn" }, urls = { "http://(www\\.)?(([a-z0-9]+\\.[a-z0-9]+\\.)?yunpan\\.cn/lk/[A-Za-z0-9]+|yunpan\\.cn/[a-zA-Z0-9]{13})" }, flags = { 0 })
 public class YunPanCn extends PluginForHost {
 
-    private final String preDownloadPassword = "<input class=\"pwd-input\" type=\"password\">";
+    private final String preDownloadPassword = "<input class=\"pwd-input\" type=\"";
 
     public YunPanCn(PluginWrapper wrapper) {
         super(wrapper);
@@ -60,7 +60,9 @@ public class YunPanCn extends PluginForHost {
             link.getLinkStatus().setStatusText("This file requires pre-download password!");
             return AvailableStatus.TRUE;
         }
-        if (br.containsHTML("befrherthtu567mut|id=\"linkError\"") || br.getURL().contains("?")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (br.containsHTML("befrherthtu567mut|id=\"linkError\"") || br.getURL().contains("?")) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
         fileCheck(link);
         return AvailableStatus.TRUE;
     }
@@ -68,9 +70,13 @@ public class YunPanCn extends PluginForHost {
     private void fileCheck(final DownloadLink link) throws PluginException {
         final String filename = br.getRegex("name\\s*:\\s*'(.*?)',").getMatch(0);
         final String filesize = br.getRegex("size\\s*:\\s*'(\\d+)',").getMatch(0);
-        if (filename == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (filename == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         link.setName(Encoding.htmlDecode(filename.trim()));
-        if (filesize != null) link.setDownloadSize(Long.parseLong(filesize));
+        if (filesize != null) {
+            link.setDownloadSize(Long.parseLong(filesize));
+        }
     }
 
     @Override
@@ -79,7 +85,9 @@ public class YunPanCn extends PluginForHost {
         if (br.containsHTML(preDownloadPassword)) {
             for (int i = 0; i != 3; i++) {
                 String passCode = downloadLink.getStringProperty("pass", null);
-                if (passCode == null || "".equals(passCode)) passCode = Plugin.getUserInput("Password?", downloadLink);
+                if (passCode == null || "".equals(passCode)) {
+                    passCode = Plugin.getUserInput("Password?", downloadLink);
+                }
                 if (passCode == null || "".equals(passCode)) {
                     logger.info("User has entered blank password, exiting handlePassword");
                     downloadLink.setProperty("pass", Property.NULL);
@@ -90,10 +98,11 @@ public class YunPanCn extends PluginForHost {
                 if (br2.containsHTML("\"errno\":0,")) {
                     downloadLink.setProperty("pass", passCode);
                     break;
-                } else if (i + 1 == 3)
+                } else if (i + 1 == 3) {
                     throw new PluginException(LinkStatus.ERROR_FATAL, "Exausted Password Tries!");
-                else
+                } else {
                     downloadLink.setProperty("pass", Property.NULL);
+                }
             }
             br.getPage(br.getURL());
             fileCheck(downloadLink);
@@ -102,12 +111,16 @@ public class YunPanCn extends PluginForHost {
         final String nid = br.getRegex("nid : \\'(\\d+)\\',").getMatch(0);
         final String domainPart = urlRegex.getMatch(1);
         final String shortUrl = urlRegex.getMatch(2);
-        if (nid == null || domainPart == null || shortUrl == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (nid == null || domainPart == null || shortUrl == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         br.getHeaders().put("Accept", "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8");
         br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
         br.postPage("http://" + domainPart + ".yunpan.cn/share/downloadfile/", "shorturl=" + shortUrl + "&nid=" + nid);
         String dllink = br.getRegex("\"downloadurl\":\"(http:[^<>\"]*?)\"").getMatch(0);
-        if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (dllink == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         dllink = dllink.replace("\\", "");
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 0);
         if (dl.getConnection().getContentType().contains("html")) {

@@ -33,7 +33,7 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "parteeey.de" }, urls = { "https?://(www\\.)?parteeey\\.de/Galerie/[A-Za-z0-9\\-_]+" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "parteeey.de" }, urls = { "https?://(www\\.)?parteeey\\.de/galerie/[A-Za-z0-9\\-_]+" }, flags = { 0 })
 public class ParteeeyDeGallery extends PluginForDecrypt {
 
     public ParteeeyDeGallery(PluginWrapper wrapper) {
@@ -44,23 +44,34 @@ public class ParteeeyDeGallery extends PluginForDecrypt {
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
+        final String gal_ID = new Regex(param.toString(), "(\\d+)$").getMatch(0);
+        if (gal_ID == null) {
+            logger.warning("Decrypter broken for link: " + param.toString());
+            return null;
+        }
+        /* Show 1000 links per page --> Usually we'll only get one page */
         final String parameter = param.toString() + "?oF=f.date&oD=asc&eP=1000";
-        if (!getUserLogin(param)) {
+        if (!getUserLogin(param, true)) {
             logger.info("Invalid logindata, stopping... " + parameter);
             return decryptedLinks;
         }
         br.getPage(parameter);
         if (br.containsHTML(">Seite nicht gefunden<")) {
-            logger.info("Link offline: " + parameter);
+            final DownloadLink offline = createDownloadlink("directhttp://" + parameter);
+            offline.setAvailable(false);
+            offline.setProperty("offline", true);
+            decryptedLinks.add(offline);
             return decryptedLinks;
         }
-        final String fpName = br.getRegex("<div class=\"boxTitle\">[\t\n\r ]+<h1>([^<>\"]*?)</h1>").getMatch(0);
+        final String fpName = br.getRegex("<h1>([^<>\"]*?)</h1>").getMatch(0);
         int currentMaxPage = 1;
         final String[] pages = br.getRegex("p=\\d+\">(\\d+)</a>").getColumn(0);
         if (pages != null && pages.length != 0) {
             for (final String page : pages) {
                 final int p = Integer.parseInt(page);
-                if (p > currentMaxPage) currentMaxPage = p;
+                if (p > currentMaxPage) {
+                    currentMaxPage = p;
+                }
             }
         }
         int counter = 1;
@@ -80,13 +91,19 @@ public class ParteeeyDeGallery extends PluginForDecrypt {
             if (i > 1) {
                 br.getPage(parameter + "&p=" + i);
             }
-            final String[] links = br.getRegex("\"(files/mul/galleries/\\d+/thumbnails/[^<>\"]*?\\.jpg)\"").getColumn(0);
+            /* Grab thumbnails and build finallinks --> Is very fast */
+            final String[] links = br.getRegex("data\\-src=\"(tmp/thumb/[^<>\"]*?)\"").getColumn(0);
             if (links == null || links.length == 0) {
                 logger.warning("Decrypter broken for link: " + parameter);
                 return null;
             }
             for (final String singleLink : links) {
-                final String finallink = "directhttp://https://www.parteeey.de/" + singleLink.replace("/thumbnails/", "/");
+                final String fname = new Regex(singleLink, "[a-z0-9]{32}/[a-z0-9]+_[a-z0-9]+_[a-z0-9]+_(.+)").getMatch(0);
+                if (fname == null) {
+                    logger.warning("Decrypter broken for link: " + parameter);
+                    return null;
+                }
+                final String finallink = "directhttp://https://www.parteeey.de/files/mul/galleries/" + gal_ID + "/" + fname;
                 final String finalfilename = df.format(counter) + "_" + new Regex(finallink, "([^<>\"/]*?)$").getMatch(0);
                 final DownloadLink dl = createDownloadlink(finallink);
                 dl.setFinalFileName(finalfilename);
@@ -105,16 +122,16 @@ public class ParteeeyDeGallery extends PluginForDecrypt {
         return decryptedLinks;
     }
 
-    @SuppressWarnings("unchecked")
-    private boolean getUserLogin(final CryptedLink param) throws Exception {
+    @SuppressWarnings({ "unchecked", "deprecation" })
+    private boolean getUserLogin(final CryptedLink param, final boolean force) throws Exception {
         synchronized (LOCK) {
             final Object ret = this.getPluginConfig().getProperty("cookies", null);
-            if (ret != null) {
+            if (ret != null && !force) {
                 final HashMap<String, String> cookies = (HashMap<String, String>) ret;
                 for (final Map.Entry<String, String> cookieEntry : cookies.entrySet()) {
                     final String key = cookieEntry.getKey();
                     final String value = cookieEntry.getValue();
-                    this.br.setCookie("http://www.parteeey.de/", key, value);
+                    this.br.setCookie("https://www.parteeey.de/", key, value);
                 }
             } else {
                 String username = this.getPluginConfig().getStringProperty("username", null);
@@ -123,8 +140,10 @@ public class ParteeeyDeGallery extends PluginForDecrypt {
                     username = getUserInput("Username for parteeey.de?", param);
                     password = getUserInput("Password for parteeey.de?", param);
                 }
-                br.postPage("https://www.parteeey.de/Login", "loginData%5BauthsysAuthProvider%5D%5BrememberLogin%5D=on&sent=true&url=%2F&usedProvider=authsysAuthProvider&loginData%5BauthsysAuthProvider%5D%5Busername%5D=" + Encoding.urlEncode(username) + "&loginData%5BauthsysAuthProvider%5D%5Bpassword%5D=" + Encoding.urlEncode(password));
-                if (br.containsHTML("Ihre Login\\-Daten sind ungültig") || br.getCookie("http://www.parteeey.de/", "identifier") == null) return false;
+                br.postPage("https://www.parteeey.de/login", "loginData%5BauthsysAuthProvider%5D%5BrememberLogin%5D=on&sent=true&url=%2F&usedProvider=authsysAuthProvider&loginData%5BauthsysAuthProvider%5D%5Busername%5D=" + Encoding.urlEncode(username) + "&loginData%5BauthsysAuthProvider%5D%5Bpassword%5D=" + Encoding.urlEncode(password));
+                if (br.containsHTML("Ihre Login\\-Daten sind ungültig") || br.getCookie("http://www.parteeey.de/", "identifier") == null) {
+                    return false;
+                }
                 /** Save cookies */
                 final HashMap<String, String> cookies = new HashMap<String, String>();
                 final Cookies add = this.br.getCookies("http://www.parteeey.de/");

@@ -329,7 +329,7 @@ public class SaveTv extends PluginForHost {
         long datemilliseconds = 0;
 
         /* For series only */
-        final String episodenumber = getJson(source, "SFOLGE");
+        String episodenumber = getJson(source, "SFOLGE");
         final String episodename = getJson(source, "SSUBTITLE");
 
         /* General */
@@ -378,6 +378,10 @@ public class SaveTv extends PluginForHost {
         /* Set properties which are needed for filenames */
         /* Add series information */
         if (episodenumber != null) {
+            /* json response contains episodenumbers in double-data-type --> Makes no sense --> Correct it here */
+            if (episodenumber.matches("^\\d+\\.0$")) {
+                episodenumber = new Regex(episodenumber, "^(\\d+)\\.0$").getMatch(0);
+            }
             dl.setProperty("episodenumber", correctData(episodenumber));
         }
         if (episodename != null) {
