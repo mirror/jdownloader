@@ -18,10 +18,8 @@ package jd.plugins.hoster;
 
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.HashSet;
 
 import jd.PluginWrapper;
-import jd.config.Property;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.plugins.Account;
@@ -48,13 +46,10 @@ public class MultidownCoIl extends PluginForHost {
         AccountInfo ac = new AccountInfo();
         br.setConnectTimeout(60 * 1000);
         br.setReadTimeout(60 * 1000);
-        String username = Encoding.urlEncode(account.getUser());
-        String pass = Encoding.urlEncode(account.getPass());
         String page = null;
         String hosts = null;
-        ac.setProperty("multiHostSupport", Property.NULL);
         // check if account is valid
-        page = br.getPage("http://multidown.co.il/api.php?user=" + username + "&pass=" + pass + "&link={stupid_workaround_to_get_pw_ok}");
+        page = br.getPage("http://multidown.co.il/api.php?user=" + Encoding.urlEncode(account.getUser()) + "&pass=" + account.getPass() + "&link={stupid_workaround_to_get_pw_ok}");
         String error = "";
         try {
             error = getRegexTag(page, "error").getMatch(0);
@@ -68,7 +63,7 @@ public class MultidownCoIl extends PluginForHost {
             return ac;
         }
         // account is valid, check if expired:
-        page = br.getPage("http://multidown.co.il/api.php?user=" + username + "&pass=" + pass);
+        page = br.getPage("http://multidown.co.il/api.php?user=" + Encoding.urlEncode(account.getUser()) + "&pass=" + account.getPass());
         long daysLeft = -1;
         try {
             daysLeft = Long.parseLong(getRegexTag(page, "daysleft").getMatch(0));
@@ -77,7 +72,7 @@ public class MultidownCoIl extends PluginForHost {
         account.setValid(true);
         long validuntil = System.currentTimeMillis() + (daysLeft * 1000 * 60 * 60 * 24);
         ac.setValidUntil(validuntil);
-        HashSet<String> supportedHosts = new HashSet<String>();
+        ArrayList<String> supportedHosts = new ArrayList<String>();
         hosts = br.getPage("http://multidown.co.il/api.php?hosts=1");
         if (hosts == null || hosts.isEmpty()) {
             account.setValid(false);
@@ -88,12 +83,8 @@ public class MultidownCoIl extends PluginForHost {
         for (String host : hosters) {
             supportedHosts.add(host.trim());
         }
-        /* workaround for uploaded.to */
-        if (supportedHosts.contains("uploaded.net")) {
-            supportedHosts.add("uploaded.to");
-        }
         ac.setStatus("Account valid");
-        ac.setProperty("multiHostSupport", new ArrayList<String>(supportedHosts));
+        ac.setMultiHostSupport(this, supportedHosts);
         return ac;
     }
 
@@ -117,12 +108,9 @@ public class MultidownCoIl extends PluginForHost {
     }
 
     /** no override to keep plugin compatible to old stable */
-    public void handleMultiHost(DownloadLink link, Account acc) throws Exception {
-        String user = Encoding.urlEncode(acc.getUser());
-        String pw = Encoding.urlEncode(acc.getPass());
-        String url = Encoding.urlEncode(link.getDownloadURL());
+    public void handleMultiHost(DownloadLink link, Account account) throws Exception {
         showMessage(link, "Phase 1/2: Generating Link");
-        String page = br.getPage("http://multidown.co.il/api.php?user=" + user + "&pass=" + pw + "&link=" + url);
+        String page = br.getPage("http://multidown.co.il/api.php?user=" + Encoding.urlEncode(account.getUser()) + "&pass=" + Encoding.urlEncode(account.getPass()) + "&link=" + Encoding.urlEncode(link.getDownloadURL()));
         String error = "";
         try {
             error = getRegexTag(page, "error").getMatch(0);
@@ -132,7 +120,7 @@ public class MultidownCoIl extends PluginForHost {
         if (!(error == null || error.isEmpty())) {
             // better error handling possible if we got more information multihoster
             showMessage(link, "Error: " + error);
-            tempUnavailableHoster(acc, link, 20 * 60 * 1000l);
+            tempUnavailableHoster(account, link, 20 * 60 * 1000l);
         }
         // hopefully no error, page should contain downloadlink
         String genlink = "";
@@ -150,7 +138,7 @@ public class MultidownCoIl extends PluginForHost {
             if (link.getLinkStatus().getRetryCount() >= 3) {
                 try {
                     // disable hoster for 30min
-                    tempUnavailableHoster(acc, link, 30 * 60 * 1000l);
+                    tempUnavailableHoster(account, link, 30 * 60 * 1000l);
                 } catch (Exception e) {
                 }
                 /* reset retrycounter */
@@ -172,7 +160,7 @@ public class MultidownCoIl extends PluginForHost {
             br.followConnection();
             logger.severe("Multidown.co.il(Error): " + br.toString());
             // disable hoster for 5min
-            tempUnavailableHoster(acc, link, 5 * 60 * 1000l);
+            tempUnavailableHoster(account, link, 5 * 60 * 1000l);
             // throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE);
         }
         showMessage(link, "Phase 2/2: Download begins!");
@@ -185,7 +173,9 @@ public class MultidownCoIl extends PluginForHost {
     }
 
     private void tempUnavailableHoster(Account account, DownloadLink downloadLink, long timeout) throws PluginException {
-        if (downloadLink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, "Unable to handle this errorcode!");
+        if (downloadLink == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, "Unable to handle this errorcode!");
+        }
         synchronized (hostUnavailableMap) {
             HashMap<String, Long> unavailableMap = hostUnavailableMap.get(account);
             if (unavailableMap == null) {
@@ -208,7 +198,9 @@ public class MultidownCoIl extends PluginForHost {
                     return false;
                 } else if (lastUnavailable != null) {
                     unavailableMap.remove(downloadLink.getHost());
-                    if (unavailableMap.size() == 0) hostUnavailableMap.remove(account);
+                    if (unavailableMap.size() == 0) {
+                        hostUnavailableMap.remove(account);
+                    }
                 }
             }
         }
