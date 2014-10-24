@@ -296,7 +296,7 @@ public class SuperdownComBr extends PluginForHost {
                 supportedHosts.add(realHost);
             }
         }
-        ai.setMultiHostSupport(supportedHosts);
+        ai.setMultiHostSupport(this, supportedHosts);
         ai.setStatus("Premium account");
         return ai;
     }

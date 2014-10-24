@@ -102,7 +102,7 @@ public class StreamManiaCom extends PluginForHost {
 
         }
         if (account.isValid()) {
-            ac.setMultiHostSupport(supportedHosts);
+            ac.setMultiHostSupport(this, supportedHosts);
         } else {
             account.setValid(false);
             ac.setProperty("multiHostSupport", Property.NULL);

@@ -407,7 +407,7 @@ public class ZeveraCom extends PluginForHost {
              * set ArrayList<String> with all supported multiHosts of this service
              */
             // we used local cached links provided by our decrypter, locked to ip addresses. Can not use multihoster
-            ai.setMultiHostSupport(supportedHosts);
+            ai.setMultiHostSupport(this, supportedHosts);
         } catch (Throwable e) {
             logger.info("Could not fetch ServerList from Multishare: " + e.toString());
         }

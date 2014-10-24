@@ -145,7 +145,7 @@ public class ConexaomegaCom extends PluginForHost {
                 supportedHosts.add(hostSet[1]);
             }
         }
-        ac.setMultiHostSupport(supportedHosts);
+        ac.setMultiHostSupport(this, supportedHosts);
         ac.setStatus("Account valid");
         return ac;
     }

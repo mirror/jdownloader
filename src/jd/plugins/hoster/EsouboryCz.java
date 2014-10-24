@@ -169,7 +169,7 @@ public class EsouboryCz extends PluginForHost {
             hostsSup = hostsSup.replaceFirst("https?://(www\\.)?", "");
             final String[] hosts = hostsSup.split(";");
             final ArrayList<String> supportedHosts = new ArrayList<String>(Arrays.asList(hosts));
-            ai.setMultiHostSupport(supportedHosts);
+            ai.setMultiHostSupport(this, supportedHosts);
         }
 
         return ai;

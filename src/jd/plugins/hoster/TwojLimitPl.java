@@ -147,7 +147,7 @@ public class TwojLimitPl extends PluginForHost {
             }
 
         }
-        ac.setMultiHostSupport(supportedHosts);
+        ac.setMultiHostSupport(this, supportedHosts);
         ac.setStatus("Account valid");
         return ac;
     }

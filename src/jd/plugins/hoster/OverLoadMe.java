@@ -302,7 +302,7 @@ public class OverLoadMe extends PluginForHost {
         for (final String domain : hostDomains) {
             supportedHosts.add(domain);
         }
-        ai.setMultiHostSupport(supportedHosts);
+        ai.setMultiHostSupport(this, supportedHosts);
         ai.setStatus("Account valid");
         return ai;
     }

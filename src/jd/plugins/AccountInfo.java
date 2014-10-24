@@ -230,14 +230,16 @@ public class AccountInfo extends Property {
      * Removes forbidden hosts, adds host corrections, de-dupes, and then sets AccountInfo property 'multiHostSupport'
      * 
      * @author raztoki
+     * @param multiHostPlugin
+     *            TODO
      * @since JD2
      * */
 
-    public void setMultiHostSupport(final ArrayList<String> multiHostSupport) {
-        setMultiHostSupport(multiHostSupport, new PluginFinder());
+    public void setMultiHostSupport(final PluginForHost multiHostPlugin, final ArrayList<String> multiHostSupport) {
+        setMultiHostSupport(multiHostPlugin, multiHostSupport, new PluginFinder());
     }
 
-    public void setMultiHostSupport(final ArrayList<String> multiHostSupport, final PluginFinder pluginFinder) {
+    public void setMultiHostSupport(final PluginForHost multiHostPlugin, final ArrayList<String> multiHostSupport, final PluginFinder pluginFinder) {
         if (multiHostSupport != null && !multiHostSupport.isEmpty()) {
             final HashSet<String> supportedHostsSet = new HashSet<String>();
             for (final String host : multiHostSupport) {

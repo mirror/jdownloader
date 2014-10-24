@@ -120,7 +120,7 @@ public class PremiumTo extends PluginForHost {
             String hosters[] = hbr.toString().split(";");
             if (hosters != null && hosters.length != 0) {
                 ArrayList<String> supportedHosts = new ArrayList<String>(Arrays.asList(hosters));
-                ac.setMultiHostSupport(supportedHosts);
+                ac.setMultiHostSupport(this, supportedHosts);
             }
         }
         account.setValid(true);

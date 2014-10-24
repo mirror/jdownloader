@@ -87,7 +87,7 @@ public class MyFastFileCom extends PluginForHost {
         String hostsArray = getJsonArray("hosts");
         String[] hosts = new Regex(hostsArray, "\"(.*?)\"").getColumn(0);
         ArrayList<String> supportedHosts = new ArrayList<String>(Arrays.asList(hosts));
-        ac.setMultiHostSupport(supportedHosts);
+        ac.setMultiHostSupport(this, supportedHosts);
         account.setValid(true);
         ac.setStatus("Premium Account");
         return ac;
@@ -194,7 +194,7 @@ public class MyFastFileCom extends PluginForHost {
 
     /**
      * Tries to return value of key from JSon response, from String source.
-     *
+     * 
      * @author raztoki
      * */
     private String getJson(final String source, final String key) {
@@ -210,7 +210,7 @@ public class MyFastFileCom extends PluginForHost {
 
     /**
      * Tries to return value of key from JSon response, from default 'br' Browser.
-     *
+     * 
      * @author raztoki
      * */
     private String getJson(final String key) {
@@ -219,7 +219,7 @@ public class MyFastFileCom extends PluginForHost {
 
     /**
      * Tries to return value of key from JSon response, from provided Browser.
-     *
+     * 
      * @author raztoki
      * */
     private String getJson(final Browser ibr, final String key) {
@@ -228,7 +228,7 @@ public class MyFastFileCom extends PluginForHost {
 
     /**
      * Tries to return value given JSon Array of Key from JSon response provided String source.
-     *
+     * 
      * @author raztoki
      * */
     private String getJsonArray(final String source, final String key) {
@@ -241,7 +241,7 @@ public class MyFastFileCom extends PluginForHost {
 
     /**
      * Tries to return value given JSon Array of Key from JSon response, from default 'br' Browser.
-     *
+     * 
      * @author raztoki
      * */
     private String getJsonArray(final String key) {
@@ -250,7 +250,7 @@ public class MyFastFileCom extends PluginForHost {
 
     /**
      * Validates string to series of conditions, null, whitespace, or "". This saves effort factor within if/for/while statements
-     *
+     * 
      * @param s
      *            Imported String to match against.
      * @return <b>true</b> on valid rule match. <b>false</b> on invalid rule match.

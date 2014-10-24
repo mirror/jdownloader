@@ -92,7 +92,7 @@ public class MegaDebridEu extends PluginForHost {
         String[] hosts = br.getRegex("\\[\"([a-z0-9\\.]+)\"").getColumn(0);
         ArrayList<String> supportedHosts = new ArrayList<String>(Arrays.asList(hosts));
         account.setValid(true);
-        ac.setMultiHostSupport(supportedHosts);
+        ac.setMultiHostSupport(this, supportedHosts);
         ac.setStatus("Account valid");
         return ac;
     }

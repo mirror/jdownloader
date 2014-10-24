@@ -137,7 +137,7 @@ public class FoxLeechCom extends PluginForHost {
     /**
      * Is intended to handle out of date errors which might occur seldom by re-tring a couple of times before we temporarily remove the host
      * from the host list.
-     *
+     * 
      * @param dl
      *            : The DownloadLink
      * @param error
@@ -230,7 +230,7 @@ public class FoxLeechCom extends PluginForHost {
         account.setType(AccountType.PREMIUM);
         account.setMaxSimultanDownloads(-1);
         account.setConcurrentUsePossible(true);
-        ac.setMultiHostSupport(supportedHosts);
+        ac.setMultiHostSupport(this, supportedHosts);
         ac.setStatus("Premium User");
         return ac;
     }

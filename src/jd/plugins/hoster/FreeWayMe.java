@@ -490,7 +490,7 @@ public class FreeWayMe extends PluginForHost {
             }
         }
         // set
-        ac.setMultiHostSupport(supportedHosts);
+        ac.setMultiHostSupport(this, supportedHosts);
         ac.setStatus(accountType + " Account");
         return ac;
     }

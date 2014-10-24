@@ -120,7 +120,7 @@ public class SimplyDebridCom extends PluginForHost {
         }
         account.setValid(true);
         ac.setStatus("Premium Account");
-        ac.setMultiHostSupport(supportedHosts);
+        ac.setMultiHostSupport(this, supportedHosts);
         return ac;
     }
 

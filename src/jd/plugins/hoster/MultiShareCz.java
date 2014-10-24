@@ -94,7 +94,7 @@ public class MultiShareCz extends PluginForHost {
                 /*
                  * set ArrayList<String> with all supported multiHosts of this service
                  */
-                ai.setMultiHostSupport(supportedHosts);
+                ai.setMultiHostSupport(this, supportedHosts);
             } catch (Throwable e) {
                 logger.info("Could not fetch ServerList from Multishare: " + e.toString());
             }

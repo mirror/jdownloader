@@ -166,7 +166,7 @@ public class RPNetBiz extends PluginForHost {
         String hosts = br.getPage(mPremium + "hostlist.php");
         if (hosts != null) {
             ArrayList<String> supportedHosts = new ArrayList<String>(Arrays.asList(hosts.split(",")));
-            ai.setMultiHostSupport(supportedHosts);
+            ai.setMultiHostSupport(this, supportedHosts);
         }
         ai.setStatus("Premium Account");
         return ai;

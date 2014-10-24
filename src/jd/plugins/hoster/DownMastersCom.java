@@ -101,7 +101,7 @@ public class DownMastersCom extends PluginForHost {
                 supportedHosts.add(host.trim());
             }
         }
-        ac.setMultiHostSupport(supportedHosts);
+        ac.setMultiHostSupport(this, supportedHosts);
         ac.setStatus("Account valid");
         return ac;
     }
