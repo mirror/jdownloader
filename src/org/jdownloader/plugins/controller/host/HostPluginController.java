@@ -321,6 +321,13 @@ public class HostPluginController extends PluginController<PluginForHost> {
                                     }
 
                                     try {
+                                        lazyHostPlugin.setHasAllowHandle(PluginForHost.implementsAllowHandle(plg));
+                                    } catch (Throwable e) {
+                                        logger.log(e);
+                                        lazyHostPlugin.setHasAllowHandle(false);
+                                    }
+
+                                    try {
                                         lazyHostPlugin.setHasRewrite(PluginForHost.implementsRewriteHost(plg, String.class));
                                     } catch (Throwable e) {
                                         logger.log(e);

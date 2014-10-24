@@ -1129,6 +1129,18 @@ public abstract class PluginForHost extends Plugin {
         return false;
     }
 
+    public static boolean implementsAllowHandle(PluginForHost plugin) {
+        try {
+            if (plugin != null) {
+                final Method method = plugin.getClass().getMethod("allowHandle", new Class[] { DownloadLink.class, PluginForHost.class });
+                final boolean implementsHandlePremium = method.getDeclaringClass() != PluginForHost.class;
+                return implementsHandlePremium;
+            }
+        } catch (Throwable e) {
+        }
+        return false;
+    }
+
     public static boolean implementsCheckLinks(PluginForHost plugin) {
         try {
             if (plugin != null) {

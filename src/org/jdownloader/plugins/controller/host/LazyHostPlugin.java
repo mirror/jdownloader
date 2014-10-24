@@ -14,7 +14,8 @@ public class LazyHostPlugin extends LazyPlugin<PluginForHost> {
         PREMIUM,
         ACCOUNTREWRITE,
         LINKREWRITE,
-        REWRITE
+        REWRITE,
+        ALLOW
     }
 
     private String        premiumUrl;
@@ -112,6 +113,14 @@ public class LazyHostPlugin extends LazyPlugin<PluginForHost> {
 
     public void setHasAccountRewrite(boolean hasAccountRewrite) {
         setProperty(hasAccountRewrite, PROPERTY.ACCOUNTREWRITE);
+    }
+
+    public void setHasAllowHandle(boolean hasAllowHandle) {
+        setProperty(hasAllowHandle, PROPERTY.ALLOW);
+    }
+
+    public boolean isHasAllowHandle() {
+        return getProperty(PROPERTY.ALLOW);
     }
 
     public boolean isHasLinkRewrite() {
