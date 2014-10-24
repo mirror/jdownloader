@@ -24,6 +24,7 @@ import java.util.concurrent.CopyOnWriteArrayList;
 import jd.config.Property;
 
 import org.appwork.utils.formatter.SizeFormatter;
+import org.jdownloader.logging.LogController;
 import org.jdownloader.plugins.controller.host.HostPluginController;
 import org.jdownloader.plugins.controller.host.LazyHostPlugin;
 import org.jdownloader.plugins.controller.host.PluginFinder;
@@ -250,13 +251,21 @@ public class AccountInfo extends Property {
                     assignedHost = pluginFinder.assignHost(host);
                 }
                 final LazyHostPlugin lazyPlugin = HostPluginController.getInstance().get(assignedHost);
-                if (lazyPlugin != null && !lazyPlugin.getClassName().endsWith("r.Offline")) {
-                    supportedHostsSet.add(lazyPlugin.getHost());
+                if (lazyPlugin != null && !lazyPlugin.getClassName().endsWith("r.Offline") && !supportedHostsSet.contains(lazyPlugin.getHost())) {
+                    try {
+                        if (!lazyPlugin.isHasAllowHandle()) {
+                            supportedHostsSet.add(lazyPlugin.getHost());
+                        } else {
+                            final DownloadLink link = new DownloadLink(null, "", lazyPlugin.getHost(), "", false);
+                            if (lazyPlugin.getPrototype(null).allowHandle(link, multiHostPlugin)) {
+                                supportedHostsSet.add(lazyPlugin.getHost());
+                            }
+                        }
+                    } catch (final Throwable e) {
+                        LogController.CL().log(e);
+                    }
                 }
             }
-            supportedHostsSet.remove("youtube.com");
-            supportedHostsSet.remove("youtu.be");
-            supportedHostsSet.remove("vimeo.com");
             if (supportedHostsSet.size() > 0) {
                 this.setProperty("multiHostSupport", new CopyOnWriteArrayList<String>(supportedHostsSet));
                 return;
