@@ -57,7 +57,7 @@ public class FotoLogComBr extends PluginForDecrypt {
             decryptedLinks.add(offline);
             return decryptedLinks;
         }
-        if (br.containsHTML(">Error 404 :") || br.getRedirectLocation() != null || br.containsHTML(">Account closed or deactivated<")) {
+        if (br.containsHTML(">Error 404 :") || br.getRedirectLocation() != null || br.containsHTML(">Account closed or deactivated<|>Conta encerrada ou desativada<")) {
             logger.info("Link offline: " + parameter);
             return decryptedLinks;
         }
