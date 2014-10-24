@@ -36,7 +36,6 @@ import javax.swing.SwingConstants;
 import javax.swing.SwingUtilities;
 
 import jd.SecondLevelLaunch;
-import jd.config.Property;
 import jd.controlling.AccountController;
 import jd.controlling.AccountControllerEvent;
 import jd.controlling.AccountControllerListener;
@@ -362,31 +361,28 @@ public class ServicePanel extends JPanel implements MouseListener, AccountToolti
                     final HashMap<String, DomainInfo> domainInfoCache = new HashMap<String, DomainInfo>();
                     final AccountInfo accountInfo = acc.getAccountInfo();
                     if (accountInfo != null) {
-                        final Object supportedHosts = accountInfo.getProperty("multiHostSupport", Property.NULL);
-                        if (supportedHosts != null && supportedHosts instanceof List) {
-                            synchronized (supportedHosts) {
-
-                                /*
-                                 * synchronized on list because plugins can change the list in runtime
-                                 */
-                                for (final String supportedHost : (List<String>) supportedHosts) {
-                                    DomainInfo supportedHostDomainInfo = domainInfoCache.get(supportedHost);
-                                    if (supportedHostDomainInfo == null) {
-                                        final LazyHostPlugin plg = HostPluginController.getInstance().get(supportedHost);
-                                        if (plg != null) {
-                                            supportedHostDomainInfo = DomainInfo.getInstance(plg.getHost());
-                                            domainInfoCache.put(supportedHost, supportedHostDomainInfo);
-                                        }
+                        final List<String> supportedHosts = accountInfo.getMultiHostSupport();
+                        if (supportedHosts != null) {
+                            /*
+                             * synchronized on list because plugins can change the list in runtime
+                             */
+                            for (final String supportedHost : supportedHosts) {
+                                DomainInfo supportedHostDomainInfo = domainInfoCache.get(supportedHost);
+                                if (supportedHostDomainInfo == null) {
+                                    final LazyHostPlugin plg = HostPluginController.getInstance().get(supportedHost);
+                                    if (plg != null) {
+                                        supportedHostDomainInfo = DomainInfo.getInstance(plg.getHost());
+                                        domainInfoCache.put(supportedHost, supportedHostDomainInfo);
                                     }
-                                    if (supportedHostDomainInfo != null && (hostFilter == null || StringUtils.equals(hostFilter, supportedHostDomainInfo.getTld()))) {
-                                        AccountServiceCollection asc = servicesMap.get(supportedHostDomainInfo.getTld());
-                                        if (asc == null) {
-                                            asc = new AccountServiceCollection(supportedHostDomainInfo);
-                                            servicesMap.put(supportedHostDomainInfo.getTld(), asc);
-                                            services.add(asc);
-                                        }
-                                        asc.add(acc);
+                                }
+                                if (supportedHostDomainInfo != null && (hostFilter == null || StringUtils.equals(hostFilter, supportedHostDomainInfo.getTld()))) {
+                                    AccountServiceCollection asc = servicesMap.get(supportedHostDomainInfo.getTld());
+                                    if (asc == null) {
+                                        asc = new AccountServiceCollection(supportedHostDomainInfo);
+                                        servicesMap.put(supportedHostDomainInfo.getTld(), asc);
+                                        services.add(asc);
                                     }
+                                    asc.add(acc);
                                 }
                             }
                         }

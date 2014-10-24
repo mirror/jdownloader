@@ -850,7 +850,7 @@ public abstract class PluginForHost extends Plugin {
 
     public void handleMultiHost(DownloadLink downloadLink, Account account) throws Exception {
         /*
-         * fetchAccountInfo must fill ai.setProperty("multiHostSupport", ArrayList<String>); to signal all supported multiHosts
+         * fetchAccountInfo must fill ai.setMultiHostSupport to signal all supported multiHosts
          * 
          * please synchronized on accountinfo and the ArrayList<String> when you change something in the handleMultiHost function
          * 

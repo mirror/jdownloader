@@ -28,7 +28,6 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.logging.Logger;
 
-import jd.config.Property;
 import jd.config.SubConfiguration;
 import jd.controlling.accountchecker.AccountChecker;
 import jd.controlling.accountchecker.AccountCheckerThread;
@@ -160,12 +159,12 @@ public class AccountController implements AccountControllerListener, AccountProp
             }
             boolean isMulti = false;
             if (ai != null) {
-                Object supported = ai.getProperty("multiHostSupport", Property.NULL);
-                if (supported != null && supported instanceof List) {
+                final List<String> multiHostSupport = ai.getMultiHostSupport();
+                if (multiHostSupport != null) {
                     isMulti = true;
-                    for (Object support : (List<?>) supported) {
+                    for (String support : multiHostSupport) {
                         if (support instanceof String) {
-                            String host = ((String) support).toLowerCase(Locale.ENGLISH);
+                            String host = support.toLowerCase(Locale.ENGLISH);
                             List<Account> accs = MULTIHOSTER_ACCOUNTS.get(host);
                             if (accs == null) {
                                 accs = new ArrayList<Account>();

@@ -21,7 +21,6 @@ import javax.swing.ListSelectionModel;
 import javax.swing.event.TableModelEvent;
 import javax.swing.event.TableModelListener;
 
-import jd.config.Property;
 import jd.gui.swing.jdgui.views.settings.panels.accountmanager.AccountEntry;
 import jd.plugins.Account;
 import jd.plugins.AccountInfo;
@@ -162,27 +161,15 @@ public class AccountTooltip extends PanelToolTip {
         for (Account acc : accountCollection) {
             AccountInfo ai = acc.getAccountInfo();
             if (ai != null) {
-                Object supported = null;
-                synchronized (ai) {
+                final List<String> supported = ai.getMultiHostSupport();
+                if (supported != null) {
                     /*
-                     * synchronized on accountinfo because properties are not threadsafe
+                     * synchronized on list because plugins can change the list in runtime
                      */
-                    supported = ai.getProperty("multiHostSupport", Property.NULL);
-                }
-                if (Property.NULL != supported && supported != null) {
-
-                    synchronized (supported) {
-                        /*
-                         * synchronized on list because plugins can change the list in runtime
-                         */
-
-                        if (supported instanceof ArrayList) {
-                            for (String sup : (java.util.List<String>) supported) {
-                                LazyHostPlugin plg = HostPluginController.getInstance().get(sup);
-                                if (plg != null) {
-                                    domains.add(DomainInfo.getInstance(plg.getHost()));
-                                }
-                            }
+                    for (String sup : supported) {
+                        LazyHostPlugin plg = HostPluginController.getInstance().get(sup);
+                        if (plg != null) {
+                            domains.add(DomainInfo.getInstance(plg.getHost()));
                         }
                     }
                 }

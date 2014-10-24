@@ -106,57 +106,12 @@ public class HosterOrderPanel extends SwitchPanel implements ActionListener, Acc
     }
 
     protected void updateTable() {
-        // HashSet<DomainInfo> domains = new HashSet<DomainInfo>();
-        // HashSet<String> plugins = new HashSet<String>();
-        // final AtomicBoolean refreshRequired = new AtomicBoolean();
-        // for (Account acc : AccountController.getInstance().list()) {
-        //
-        // AccountInfo ai = acc.getAccountInfo();
-        // if (ai != null) {
-        // Object supported = ai.getProperty("multiHostSupport", Property.NULL);
-        // if (supported != null && supported instanceof List) {
-        // for (Object support : (List<?>) supported) {
-        // if (support instanceof String) {
-        //
-        // LazyHostPlugin plg = HostPluginController.getInstance().get((String) support);
-        // if (plg != null && plugins.add(plg.getClassname())) {
-        // domains.add(DomainInfo.getInstance(plg.getHost()));
-        // }
-        // }
-        // }
-        // } else {
-        // domains.add(DomainInfo.getInstance(acc.getHoster()));
-        // }
-        // } else {
-        // refreshRequired.set(true);
-        // }
-        //
-        // }
-        //
-        // final ArrayList<DomainInfo> lst = new ArrayList<DomainInfo>(domains);
-        // Collections.sort(lst, new Comparator<DomainInfo>() {
-        //
-        // @Override
-        // public int compare(DomainInfo o1, DomainInfo o2) {
-        // return o1.getTld().compareTo(o2.getTld());
-        // }
-        // });
-        // lst.add(0, null);
         new EDTRunner() {
-
             @Override
             protected void runInEDT() {
                 model.resetData();
-
-                // Object before = searchCombobox.getSelectedItem();
-                // searchCombobox.setList(lst);
-                // if (refreshRequired.get()) {
-                // new RefreshAction().actionPerformed(null);
-                // }
-                // searchCombobox.setSelectedItem(before);
             }
         };
-
     }
 
     @Override
