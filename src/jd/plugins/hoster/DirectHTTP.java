@@ -550,7 +550,7 @@ public class DirectHTTP extends PluginForHost {
          * replace with br.setCurrentURL(null); in future (after 0.9)
          */
         this.br = new Browser();/* needed to clean referer */
-        br.setDefaultSSLTrustALL(isSSLTrustALL());
+        // br.setDefaultSSLTrustALL(isSSLTrustALL());
         if (auth != null) {
             this.br.getHeaders().put("Authorization", auth);
         }
@@ -651,7 +651,7 @@ public class DirectHTTP extends PluginForHost {
         this.setBrowserExclusive();
         /* disable gzip, because current downloadsystem cannot handle it correct */
         // identity can have adverse effects also!
-        this.br.setDefaultSSLTrustALL(isSSLTrustALL());
+        // this.br.setDefaultSSLTrustALL(isSSLTrustALL());
         this.br.getHeaders().put("Accept-Encoding", "identity");
         final String authinURL = new Regex(downloadLink.getDownloadURL(), "https?://(.+)@.*?($|/)").getMatch(0);
         String authSaved = null;

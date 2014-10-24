@@ -1198,7 +1198,7 @@ public class Uploadedto extends PluginForHost {
                 }
                 if (br.getRedirectLocation() == null) {
                     /* ul does not take care of set language.... */
-                    if (br.containsHTML(">Traffic exhausted") || br.containsHTML(">Traffickontingent aufgebraucht")) {
+                    if (br.containsHTML(">Traffic exhausted") || br.containsHTML(">Traffickontingent aufgebraucht") || br.containsHTML(">Your Download-, as well as your Hybrid-Traffic")) {
                         logger.info("Traffic exhausted, temp disabled account");
                         /* temp debug info */
                         logger.info(br.toString());
