@@ -16,7 +16,7 @@
 
 package jd.plugins;
 
-import java.util.HashSet;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
 
@@ -67,7 +67,7 @@ public class AccountInfo extends Property {
 
     /**
      * Gibt zurück wieviel (in Cent) Geld gerade auf diesem Account ist
-     * 
+     *
      * @return
      */
     public long getAccountBalance() {
@@ -76,7 +76,7 @@ public class AccountInfo extends Property {
 
     /**
      * Gibt zurück wieviele Files auf dem Account hochgeladen sind
-     * 
+     *
      * @return
      */
     public long getFilesNum() {
@@ -85,7 +85,7 @@ public class AccountInfo extends Property {
 
     /**
      * Gibt an wieviele PremiumPunkte der Account hat
-     * 
+     *
      * @return
      */
     public long getPremiumPoints() {
@@ -98,7 +98,7 @@ public class AccountInfo extends Property {
 
     /**
      * Gibt an wieviel Traffic noch frei ist (in bytes)
-     * 
+     *
      * @return
      */
     public long getTrafficLeft() {
@@ -111,7 +111,7 @@ public class AccountInfo extends Property {
 
     /**
      * Gibt zurück wieviel Platz (bytes) die Oploads auf diesem Account belegen
-     * 
+     *
      * @return
      */
     public long getUsedSpace() {
@@ -120,7 +120,7 @@ public class AccountInfo extends Property {
 
     /**
      * Gibt einen Timestamp zurück zu dem der Account auslaufen wird bzw. ausgelaufen ist.(-1 für Nie)
-     * 
+     *
      * @return
      */
     public long getValidUntil() {
@@ -129,7 +129,7 @@ public class AccountInfo extends Property {
 
     /**
      * Gibt zurück ob der Account abgelaufen ist
-     * 
+     *
      * @return
      */
     public boolean isExpired() {
@@ -205,7 +205,7 @@ public class AccountInfo extends Property {
 
     /**
      * -1 für Niemals ablaufen
-     * 
+     *
      * @param validUntil
      */
     public void setValidUntil(final long validUntil) {
@@ -228,7 +228,7 @@ public class AccountInfo extends Property {
 
     /**
      * Removes forbidden hosts, adds host corrections, de-dupes, and then sets AccountInfo property 'multiHostSupport'
-     * 
+     *
      * @author raztoki
      * @param multiHostPlugin
      *            TODO
@@ -241,7 +241,7 @@ public class AccountInfo extends Property {
 
     public void setMultiHostSupport(final PluginForHost multiHostPlugin, final List<String> multiHostSupport, final PluginFinder pluginFinder) {
         if (multiHostSupport != null && !multiHostSupport.isEmpty()) {
-            final HashSet<String> supportedHostsSet = new HashSet<String>();
+            final LinkedHashSet<String> supportedHostsSet = new LinkedHashSet<String>();
             for (final String host : multiHostSupport) {
                 final String assignedHost;
                 if (pluginFinder == null) {
