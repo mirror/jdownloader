@@ -58,7 +58,10 @@ public class FotoLogComBr extends PluginForDecrypt {
             return decryptedLinks;
         }
         if (br.containsHTML(">Error 404 :") || br.getRedirectLocation() != null || br.containsHTML(">Account closed or deactivated<|>Conta encerrada ou desativada<")) {
-            logger.info("Link offline: " + parameter);
+            final DownloadLink offline = createDownloadlink("directhttp://" + parameter);
+            offline.setAvailable(false);
+            offline.setProperty("offline", true);
+            decryptedLinks.add(offline);
             return decryptedLinks;
         }
         if (parameter.matches(domain + "/[a-z0-9\\-_]+/\\d+/")) {
@@ -72,7 +75,10 @@ public class FotoLogComBr extends PluginForDecrypt {
         } else {
             // mosaic / album urls
             if (br.containsHTML(">Latest popular photos<")) {
-                logger.info("Link offline: " + parameter);
+                final DownloadLink offline = createDownloadlink("directhttp://" + parameter);
+                offline.setAvailable(false);
+                offline.setProperty("offline", true);
+                decryptedLinks.add(offline);
                 return decryptedLinks;
             }
             String fpName = br.getRegex("<title>([^<>\"]*?)\\- Fotolog</title>").getMatch(0);
