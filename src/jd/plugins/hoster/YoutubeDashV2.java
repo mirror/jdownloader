@@ -2285,13 +2285,6 @@ public class YoutubeDashV2 extends PluginForHost {
         return downloadLink.getHost().equalsIgnoreCase(plugin.getHost());
     }
 
-    /**
-     * prevent showing up in AccountTooltip, re: multiHostSupport.
-     */
-    public String[] allowHandle() {
-        return new String[] { "youtube.com", "youtu.be" };
-    }
-
     protected void setConfigElements() {
     }
 
