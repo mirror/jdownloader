@@ -222,7 +222,7 @@ public class RehostTo extends PluginForHost {
             return null;
         }
         ArrayList<String> supportedHosts = new ArrayList<String>(Arrays.asList(hosts));
-        ai.setMultiHostSupport(supportedHosts);
+        ai.setMultiHostSupport(this, supportedHosts);
         return ai;
     }
 

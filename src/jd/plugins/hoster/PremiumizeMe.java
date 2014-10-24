@@ -352,7 +352,7 @@ public class PremiumizeMe extends PluginForHost {
         String[] hosts = new Regex(HostsJSON, "\"([a-zA-Z0-9\\.\\-]+)\"").getColumn(0);
         ArrayList<String> supportedHosts = new ArrayList<String>(Arrays.asList(hosts));
 
-        ai.setMultiHostSupport(supportedHosts);
+        ai.setMultiHostSupport(this, supportedHosts);
         ai.setProperty("connection_settings", response.get("connection_settings"));
         return ai;
     }

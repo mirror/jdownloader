@@ -172,7 +172,7 @@ public class ShareDirCom extends PluginForHost {
             }
         }
         ac.setStatus(acctype);
-        ac.setMultiHostSupport(supportedHosts);
+        ac.setMultiHostSupport(this, supportedHosts);
         return ac;
     }
 

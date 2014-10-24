@@ -107,7 +107,7 @@ public class Tb7Pl extends PluginForHost {
             }
         }
         account.setValid(true);
-        ai.setMultiHostSupport(supportedHosts);
+        ai.setMultiHostSupport(this, supportedHosts);
         ai.setProperty("Turbobit traffic", "Unlimited");
         final String otherHostersLimitLeft = br.getRegex(" Pozostały limit na serwisy dodatkowe: ([^<>\"\\']+)<br />").getMatch(0);
         ai.setProperty("Other hosters traffic", SizeFormatter.getSize(otherHostersLimitLeft));
@@ -199,7 +199,7 @@ public class Tb7Pl extends PluginForHost {
         }
         dl = jd.plugins.BrowserAdapter.openDownload(br, link, generatedLink, true, chunks);
         if (dl.getConnection().getContentType().equalsIgnoreCase("text/html")) // unknown
-            // error
+        // error
         {
             br.followConnection();
             if (br.getBaseURL().contains("notransfer")) {

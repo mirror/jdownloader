@@ -125,7 +125,7 @@ public class Rapids24Pl extends PluginForHost {
                 supportedHosts.add(host.trim());
             }
         }
-        ac.setMultiHostSupport(supportedHosts);
+        ac.setMultiHostSupport(this, supportedHosts);
         ac.setStatus("Premium User");
         return ac;
     }
@@ -506,7 +506,7 @@ public class Rapids24Pl extends PluginForHost {
             /* free accounts also have captchas */
             return true;
         }
-        if (acc.getStringProperty("session_type")!=null&&!"premium".equalsIgnoreCase(acc.getStringProperty("session_type"))) {
+        if (acc.getStringProperty("session_type") != null && !"premium".equalsIgnoreCase(acc.getStringProperty("session_type"))) {
             return true;
         }
         return false;

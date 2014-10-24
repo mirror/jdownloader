@@ -344,7 +344,7 @@ public class SpeedyShareCom extends PluginForHost {
                 /*
                  * set ArrayList<String> with all supported multiHosts of this service
                  */
-                ai.setMultiHostSupport(supportedHosts);
+                ai.setMultiHostSupport(this, supportedHosts);
                 ai.setStatus("Premium Account");
             } catch (final Throwable e) {
                 logger.info("Could not fetch ServerList from speedyshare.com: " + e.toString());

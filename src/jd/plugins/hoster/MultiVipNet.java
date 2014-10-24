@@ -314,7 +314,7 @@ public class MultiVipNet extends PluginForHost {
             account.setType(AccountType.FREE);
             ai.setStatus("Free Vip key");
         }
-        ai.setMultiHostSupport(supportedHosts);
+        ai.setMultiHostSupport(this, supportedHosts);
         account.setValid(true);
         return ai;
     }

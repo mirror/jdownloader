@@ -121,7 +121,7 @@ public class DebridLinkFr extends PluginForHost {
                 }
             }
         }
-        ac.setMultiHostSupport(supportedHosts);
+        ac.setMultiHostSupport(this, supportedHosts);
         // end of multihoster array
         return ac;
     }
@@ -553,7 +553,7 @@ public class DebridLinkFr extends PluginForHost {
             /* free accounts also have captchas */
             return true;
         }
-        if (acc.getStringProperty("session_type")!=null&&!"premium".equalsIgnoreCase(acc.getStringProperty("session_type"))) {
+        if (acc.getStringProperty("session_type") != null && !"premium".equalsIgnoreCase(acc.getStringProperty("session_type"))) {
             return true;
         }
         return false;

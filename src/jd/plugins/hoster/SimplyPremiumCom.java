@@ -326,7 +326,7 @@ public class SimplyPremiumCom extends PluginForHost {
         final String[] hostDomains = br.getRegex("<host>([^<>\"]*?)</host>").getColumn(0);
         if (hostDomains != null) {
             final ArrayList<String> supportedHosts = new ArrayList<String>(Arrays.asList(hostDomains));
-            ai.setMultiHostSupport(supportedHosts);
+            ai.setMultiHostSupport(this, supportedHosts);
         }
         account.setMaxSimultanDownloads(maxSimultanDls);
         account.setConcurrentUsePossible(true);
@@ -562,35 +562,35 @@ public class SimplyPremiumCom extends PluginForHost {
     }
 
     private HashMap<String, String> phrasesEN = new HashMap<String, String>() {
-        {
-            put("ACCOUNT_TYPE", "Account type:");
-            put("ACCOUNT_TYPE_TIME", "Time account");
-            put("ACCOUNT_TYPE_VOLUME", "Volume account");
-            put("DOWNLOAD_MAXSIMULTAN", "Max. number of simultan downloads:");
-            put("DOWNLOAD_MAXCHUNKS", "Max. chunks (connections per file):");
-            put("DOWNLOAD_RESUMABLE", "Resuming of stopped downloads possible:");
-            put("DOWNLOAD_RESUMABLE_TRUE", "Yes");
-            put("DOWNLOAD_RESUMABLE_FALSE", "No");
-        }
-    };
+                                                  {
+                                                      put("ACCOUNT_TYPE", "Account type:");
+                                                      put("ACCOUNT_TYPE_TIME", "Time account");
+                                                      put("ACCOUNT_TYPE_VOLUME", "Volume account");
+                                                      put("DOWNLOAD_MAXSIMULTAN", "Max. number of simultan downloads:");
+                                                      put("DOWNLOAD_MAXCHUNKS", "Max. chunks (connections per file):");
+                                                      put("DOWNLOAD_RESUMABLE", "Resuming of stopped downloads possible:");
+                                                      put("DOWNLOAD_RESUMABLE_TRUE", "Yes");
+                                                      put("DOWNLOAD_RESUMABLE_FALSE", "No");
+                                                  }
+                                              };
 
     private HashMap<String, String> phrasesDE = new HashMap<String, String>() {
-        {
-            put("ACCOUNT_TYPE", "Account Typ:");
-            put("ACCOUNT_TYPE_TIME", "Zeitaccount");
-            put("ACCOUNT_TYPE_VOLUME", "Volumenaccount");
-            put("DOWNLOAD_MAXSIMULTAN", "Max. Anzahl gleichzeitiger Downloads:");
-            put("DOWNLOAD_MAXCHUNKS", "Max. Anzahl Verbindungen pro Datei (Chunks):");
-            put("DOWNLOAD_RESUMABLE", "Abgebrochene Downloads fortsetzbar:");
-            put("DOWNLOAD_RESUMABLE_TRUE", "Ja");
-            put("DOWNLOAD_RESUMABLE_FALSE", "Nein");
-        }
-    };
+                                                  {
+                                                      put("ACCOUNT_TYPE", "Account Typ:");
+                                                      put("ACCOUNT_TYPE_TIME", "Zeitaccount");
+                                                      put("ACCOUNT_TYPE_VOLUME", "Volumenaccount");
+                                                      put("DOWNLOAD_MAXSIMULTAN", "Max. Anzahl gleichzeitiger Downloads:");
+                                                      put("DOWNLOAD_MAXCHUNKS", "Max. Anzahl Verbindungen pro Datei (Chunks):");
+                                                      put("DOWNLOAD_RESUMABLE", "Abgebrochene Downloads fortsetzbar:");
+                                                      put("DOWNLOAD_RESUMABLE_TRUE", "Ja");
+                                                      put("DOWNLOAD_RESUMABLE_FALSE", "Nein");
+                                                  }
+                                              };
 
     /**
      * Returns a germen/english translation of a phrase - we don't use the JDownloader translation framework since we need only germen and
      * english (provider is german)
-     *
+     * 
      * @param key
      * @return
      */

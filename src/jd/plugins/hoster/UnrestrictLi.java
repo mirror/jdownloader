@@ -452,7 +452,7 @@ public class UnrestrictLi extends PluginForHost {
             String apihosts = br.cloneBrowser().getPage("http://unrestrict.li/api/jdownloader/hosts.php");
             String[] hosts = new Regex(apihosts, "<host>(.*?)</host>").getColumn(0);
             ArrayList<String> supportedHosts = new ArrayList<String>(Arrays.asList(hosts));
-            ai.setMultiHostSupport(supportedHosts);
+            ai.setMultiHostSupport(this, supportedHosts);
         } catch (Throwable e) {
             logger.info("Failed to load Unrestrict.li hosts list. Error:" + e.toString());
         }

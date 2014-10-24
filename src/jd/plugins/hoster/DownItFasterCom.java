@@ -59,7 +59,7 @@ public class DownItFasterCom extends PluginForHost {
         }
         account.setMaxSimultanDownloads(-1);
         account.setConcurrentUsePossible(true);
-        ac.setMultiHostSupport(supportedHosts);
+        ac.setMultiHostSupport(this, supportedHosts);
         ac.setStatus("Account valid");
         return ac;
     }

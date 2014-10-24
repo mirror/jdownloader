@@ -107,7 +107,7 @@ public class MultihostersCom extends PluginForHost {
                 }
             }
             account.setValid(true);
-            ac.setMultiHostSupport(supportedHosts);
+            ac.setMultiHostSupport(this, supportedHosts);
             ac.setStatus("Account valid");
         }
         return ac;

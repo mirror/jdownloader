@@ -118,7 +118,7 @@ public class RapidsPl extends PluginForHost {
                 }
             }
         }
-        ac.setMultiHostSupport(supportedHosts);
+        ac.setMultiHostSupport(this, supportedHosts);
         return ac;
     }
 

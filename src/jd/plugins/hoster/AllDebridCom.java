@@ -126,7 +126,7 @@ public class AllDebridCom extends PluginForHost {
             account.setValid(false);
         }
         if (account.isValid()) {
-            ac.setMultiHostSupport(supportedHosts);
+            ac.setMultiHostSupport(this, supportedHosts);
             ac.setStatus("Account valid");
         } else {
             ac.setProperty("multiHostSupport", Property.NULL);

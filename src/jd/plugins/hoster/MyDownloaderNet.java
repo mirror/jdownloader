@@ -140,7 +140,7 @@ public class MyDownloaderNet extends PluginForHost {
         for (String host : hosters) {
             supportedHosts.add(host.trim());
         }
-        ac.setMultiHostSupport(supportedHosts);
+        ac.setMultiHostSupport(this, supportedHosts);
         return ac;
     }
 
@@ -183,7 +183,7 @@ public class MyDownloaderNet extends PluginForHost {
                 supportedHosts.add(host.trim());
             }
         }
-        ac.setMultiHostSupport(supportedHosts);
+        ac.setMultiHostSupport(this, supportedHosts);
         return ac;
     }
 

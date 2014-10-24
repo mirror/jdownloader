@@ -312,7 +312,7 @@ public class FileniumCom extends PluginForHost {
         String hostsSup = br.cloneBrowser().getPage("http://" + SELECTEDDOMAIN + "/jddomains");
         String[] hosts = new Regex(hostsSup, "\"([^\"]+)\",").getColumn(0);
         final ArrayList<String> supportedHosts = new ArrayList<String>(Arrays.asList(hosts));
-        ai.setMultiHostSupport(supportedHosts);
+        ai.setMultiHostSupport(this, supportedHosts);
         return ai;
     }
 

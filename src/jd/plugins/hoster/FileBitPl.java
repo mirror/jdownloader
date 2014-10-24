@@ -316,7 +316,7 @@ public class FileBitPl extends PluginForHost {
             account.setProperty("free", false);
             ai.setStatus("Premium Account");
         }
-        ai.setMultiHostSupport(supportedHosts);
+        ai.setMultiHostSupport(this, supportedHosts);
         return ai;
     }
 
