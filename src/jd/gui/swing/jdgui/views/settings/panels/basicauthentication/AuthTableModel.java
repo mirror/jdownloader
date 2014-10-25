@@ -8,6 +8,7 @@ import javax.swing.DefaultComboBoxModel;
 import javax.swing.JTable;
 import javax.swing.table.JTableHeader;
 
+import jd.gui.swing.jdgui.GUIUtils;
 
 import org.appwork.swing.exttable.ExtTableHeaderRenderer;
 import org.appwork.swing.exttable.ExtTableModel;
@@ -22,6 +23,7 @@ import org.jdownloader.auth.AuthenticationInfo;
 import org.jdownloader.auth.AuthenticationInfo.Type;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.images.NewTheme;
+import org.jdownloader.settings.staticreferences.CFG_GUI;
 
 public class AuthTableModel extends ExtTableModel<AuthenticationInfo> implements ChangeListener {
     private static final long serialVersionUID = 1L;
@@ -180,11 +182,16 @@ public class AuthTableModel extends ExtTableModel<AuthenticationInfo> implements
 
             @Override
             public String getStringValue(AuthenticationInfo value) {
-                return value.getUsername();
+                return GUIUtils.getAccountName(value.getUsername());
+
             }
 
             @Override
             public boolean isEditable(AuthenticationInfo obj) {
+                // prevent hash values from been edited...
+                if (CFG_GUI.CFG.isPresentationModeEnabled()) {
+                    return false;
+                }
                 return true;
             }
 
