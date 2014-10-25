@@ -1,4 +1,4 @@
-action_tooltip=Activar para Desligar o S.O. após descargas concluídas
+action_tooltip=Ativar o desligamento do sistema após os downloads serem finalizados
 addons_jdshutdown_statusmessage_disabled=O sistema não será desligado pelo JDownloader
 addons_jdshutdown_statusmessage_enabled=O JDownloader irá desligar o seu sistema após concluir as transferências activas
 config_active_by_default=Manter Desligar activo
@@ -7,7 +7,7 @@ gui_config_jdshutdown_close=Fechar JD
 gui_config_jdshutdown_forceshutdown=Forçar Encerramento (apenas alguns S.O.)
 gui_config_jdshutdown_hibernate=Hibernar (apenas alguns S.O.)
 gui_config_jdshutdown_mode=Modo:
-gui_config_jdshutdown_shutdown=Desligar
+gui_config_jdshutdown_shutdown=Encerrar
 gui_config_jdshutdown_standby=Pausa (Para alguns SO)
 install_force=Instalar Forçar Encerramento
 install_msg=Deseja preparar o seu PC para forçar o encerramento?
@@ -18,11 +18,11 @@ interaction_shutdown_dialog_msg_shutdown=<h2><font color="red">Atenção! O seu 
 interaction_shutdown_dialog_msg_standby=<h2><font color="red">Atenção! O seu sistema irá ser suspendido</font></h2>
 interaction_shutdown_dialog_title_closejd=Fechar JD?
 interaction_shutdown_dialog_title_hibernate=Hibernar?
-interaction_shutdown_dialog_title_shutdown=Desligar?
+interaction_shutdown_dialog_title_shutdown=Encerrar?
 interaction_shutdown_dialog_title_standby=Suspender?
 jd_plugins_optional_jdshutdown=JD Desligar
-jd_plugins_optional_jdshutdown_description=Desliga, suspende ou hiberna o computador ou o JD automáticamente, após descarga completa.
-lit_shutdownn=Desligar
-show_admin=Direitos Administrativos são necessários para permitir que o JDownloader coloque o sistema em estado de Hibernação ou em Modo de Espera.
-shutdown_toggle_action_disabled2=Desligar depois de Descarregar
-shutdown_toggle_action_enabled2=Desligar depois de Descarregar
+jd_plugins_optional_jdshutdown_description=Encerra, suspende ou hiberna o computador ou o JD automaticamente quando o download for finalizado.
+lit_shutdownn=Encerrar
+show_admin=É necessário executar como administrador  para permitir que o JDownloader coloque o sistema em estado de Hibernação ou em Modo de Espera.
+shutdown_toggle_action_disabled2=Encerrar depois de baixar
+shutdown_toggle_action_enabled2=Encerrar depois de baixar
