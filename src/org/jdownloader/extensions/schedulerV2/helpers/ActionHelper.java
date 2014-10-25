@@ -67,9 +67,7 @@ public class ActionHelper {
     public static enum TIME_OPTIONS {
         ONLYONCE(T._.time_option_only_once()),
         HOURLY(T._.time_option_hourly()),
-        DAILY(T._.time_option_daily()), // TODO remove me
         SPECIFICDAYS(T._.time_option_specificDays()),
-        WEEKLY(T._.time_option_weekly()), // TODO remove me
         CHOOSEINTERVAL(T._.time_option_choose_interval());
 
         private final String readableName;

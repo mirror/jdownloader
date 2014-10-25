@@ -18,7 +18,6 @@ package org.jdownloader.extensions.schedulerV2;
 
 import java.util.ArrayList;
 import java.util.Calendar;
-import java.util.LinkedList;
 import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.Executors;
@@ -41,7 +40,6 @@ import org.jdownloader.extensions.StartException;
 import org.jdownloader.extensions.StopException;
 import org.jdownloader.extensions.schedulerV2.helpers.ActionHelper;
 import org.jdownloader.extensions.schedulerV2.helpers.ActionHelper.TIME_OPTIONS;
-import org.jdownloader.extensions.schedulerV2.helpers.ActionHelper.WEEKDAY;
 import org.jdownloader.extensions.schedulerV2.model.ScheduleEntry;
 import org.jdownloader.extensions.schedulerV2.model.ScheduleEntryStorable;
 import org.jdownloader.extensions.schedulerV2.translate.SchedulerTranslation;
@@ -111,29 +109,8 @@ public class SchedulerExtension extends AbstractExtension<SchedulerConfig, Sched
         }
     }
 
-    @Deprecated
-    private void fixOldDailyWeekly() {
-        // TODO remove in near future
-        List<ScheduleEntryStorable> scheduleStorables = new LinkedList<ScheduleEntryStorable>(CFG_SCHEDULER.CFG.getEntryList());
-        for (ScheduleEntryStorable entry : scheduleStorables) {
-            if (entry._getTimeType().equals(TIME_OPTIONS.DAILY)) {
-                entry._setTimeType(TIME_OPTIONS.SPECIFICDAYS);
-                entry._setSelectedDays(new ArrayList<WEEKDAY>(ActionHelper.dayMap.values()));
-            } else if (entry._getTimeType().equals(TIME_OPTIONS.WEEKLY)) {
-                entry._setTimeType(TIME_OPTIONS.SPECIFICDAYS);
-                Calendar c = Calendar.getInstance();
-                c.setTimeInMillis(entry.getTimestamp() * 1000l);
-                ArrayList<WEEKDAY> day = new ArrayList<WEEKDAY>();
-                day.add(ActionHelper.dayMap.get(c.get(Calendar.DAY_OF_WEEK)));
-                entry._setSelectedDays(day);
-            }
-        }
-        CFG_SCHEDULER.CFG.setEntryList(scheduleStorables);
-    }
-
     @Override
     protected void start() throws StartException {
-        fixOldDailyWeekly();
 
         new EDTRunner() {
 
@@ -244,21 +221,20 @@ public class SchedulerExtension extends AbstractExtension<SchedulerConfig, Sched
         TIME_OPTIONS timeType = plan.getStorable()._getTimeType();
         switch (timeType) {
         case ONLYONCE: {
-            Calendar c = Calendar.getInstance();
-            c.setTimeInMillis(plan.getTimestamp() * 1000l);
-            if (Math.abs(c.getTimeInMillis() - Calendar.getInstance().getTimeInMillis()) < 30 * 1000l) {
+            if (Math.abs((plan.getTimestamp() * 1000l) - Calendar.getInstance().getTimeInMillis()) < 30 * 1000l) {
                 return true;
             }
         }
             break;
         case SPECIFICDAYS: {
             Calendar c = Calendar.getInstance();
+            // check whether day of week is correct
             if (!plan.getSelectedDays().contains(ActionHelper.dayMap.get(c.get(Calendar.DAY_OF_WEEK)))) {
                 return false;
             }
             // check time
             c.setTimeInMillis(plan.getTimestamp() * 1000l);
-            if (Math.abs(c.getTimeInMillis() - Calendar.getInstance().getTimeInMillis()) < 30 * 1000l) {
+            if (c.get(Calendar.MINUTE) == Calendar.getInstance().get(Calendar.MINUTE) && c.get(Calendar.HOUR_OF_DAY) == Calendar.getInstance().get(Calendar.HOUR_OF_DAY)) {
                 return true;
             }
         }
@@ -269,31 +245,6 @@ public class SchedulerExtension extends AbstractExtension<SchedulerConfig, Sched
             event.setTimeInMillis(plan.getTimestamp() * 1000l);
             Calendar c = Calendar.getInstance();
             c.set(Calendar.MINUTE, event.get(Calendar.MINUTE));
-            if (Math.abs(c.getTimeInMillis() - Calendar.getInstance().getTimeInMillis()) < 30 * 1000l - 1) {
-                return true;
-            }
-        }
-            break;
-        case DAILY: {
-            // TODO remove me
-            Calendar event = Calendar.getInstance();
-            event.setTimeInMillis(plan.getTimestamp() * 1000l);
-            Calendar c = Calendar.getInstance();
-            c.set(Calendar.MINUTE, event.get(Calendar.MINUTE));
-            c.set(Calendar.HOUR_OF_DAY, event.get(Calendar.HOUR_OF_DAY));
-            if (Math.abs(c.getTimeInMillis() - Calendar.getInstance().getTimeInMillis()) < 30 * 1000l - 1) {
-                return true;
-            }
-        }
-            break;
-        case WEEKLY: {
-            // TODO remove me
-            Calendar event = Calendar.getInstance();
-            event.setTimeInMillis(plan.getTimestamp() * 1000l);
-            Calendar c = Calendar.getInstance();
-            c.set(Calendar.MINUTE, event.get(Calendar.MINUTE));
-            c.set(Calendar.HOUR_OF_DAY, event.get(Calendar.HOUR_OF_DAY));
-            c.set(Calendar.DAY_OF_WEEK, event.get(Calendar.DAY_OF_WEEK));
             if (Math.abs(c.getTimeInMillis() - Calendar.getInstance().getTimeInMillis()) < 30 * 1000l - 1) {
                 return true;
             }
