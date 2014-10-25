@@ -5,8 +5,6 @@ import java.awt.event.ActionListener;
 import java.lang.reflect.Array;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
-import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.HashMap;
@@ -183,10 +181,7 @@ public class AddScheduleEntryDialog extends AbstractDialog<ScheduleEntry> {
         migPanel.add(header(T._.addScheduleEntryDialog_header_time()), "spanx, growx,pushx,newline 15");
         migPanel.add(new JLabel(T._.addScheduleEntryDialog_repeat() + ":"), "gapleft 10");
 
-        ArrayList<TIME_OPTIONS> values = new ArrayList<ActionHelper.TIME_OPTIONS>(Arrays.asList(ActionHelper.TIME_OPTIONS.values()));
-        values.remove(ActionHelper.TIME_OPTIONS.DAILY);
-        values.remove(ActionHelper.TIME_OPTIONS.WEEKLY);
-        intervalBox = new ComboBox<TIME_OPTIONS>(values.toArray(new ActionHelper.TIME_OPTIONS[values.size()])) {
+        intervalBox = new ComboBox<TIME_OPTIONS>(ActionHelper.TIME_OPTIONS.values()) {
 
             @Override
             protected String getLabel(int index, TIME_OPTIONS value) {

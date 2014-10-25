@@ -206,11 +206,6 @@ public class ScheduleTableModel extends ExtTableModel<ScheduleEntry> {
                     String minute = String.valueOf(c.get(Calendar.MINUTE));
                     return T._.timeformat_repeats_hourly(minute);
                 }
-                case DAILY: {
-                    c.setTimeInMillis(value.getTimestamp() * 1000l);
-                    String time = DateFormat.getTimeInstance(DateFormat.SHORT).format(c.getTime());
-                    return T._.timeformat_repeats_daily(time);
-                }
                 case SPECIFICDAYS: {
                     if (value.getSelectedDays().size() == 0) {
                         // Never
@@ -238,12 +233,6 @@ public class ScheduleTableModel extends ExtTableModel<ScheduleEntry> {
                         return T._.timeformat_repeats_weekly(days, time);
                     }
                     return T._.timeformat_repeats_specificDays(days, time);
-                }
-                case WEEKLY: {
-                    c.setTimeInMillis(value.getTimestamp() * 1000l);
-                    String day = (new SimpleDateFormat("EEEE")).format(c.getTime());
-                    String time = DateFormat.getTimeInstance(DateFormat.SHORT).format(c.getTime());
-                    return T._.timeformat_repeats_weekly(day, time);
                 }
                 case CHOOSEINTERVAL: {
                     String hour = String.valueOf(value.getIntervalHour());
