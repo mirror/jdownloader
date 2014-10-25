@@ -23,6 +23,7 @@ import java.util.regex.Pattern;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
+import jd.http.Browser;
 import jd.nutils.encoding.Encoding;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
@@ -34,6 +35,16 @@ public class BcVc extends PluginForDecrypt {
 
     public BcVc(PluginWrapper wrapper) {
         super(wrapper);
+    }
+
+    private Browser ajax = null;
+
+    private void ajaxPostPage(final String url, final LinkedHashMap<String, String> param) throws Exception {
+        ajax = br.cloneBrowser();
+        ajax.getHeaders().put("Accept", "*/*");
+        ajax.getHeaders().put("Connection-Type", "application/x-www-form-urlencoded");
+        ajax.getHeaders().put("X-Requested-With", "XMLHttpRequest");
+        ajax.postPage(url, param);
     }
 
     /**
@@ -49,7 +60,9 @@ public class BcVc extends PluginForDecrypt {
 
         /* Check for direct redirect */
         String redirect = br.getRedirectLocation();
-        if (redirect == null) redirect = br.getRegex("top\\.location\\.href = \"(http[^<>\"]*?)\"").getMatch(0);
+        if (redirect == null) {
+            redirect = br.getRegex("top\\.location\\.href = \"(http[^<>\"]*?)\"").getMatch(0);
+        }
         if (redirect != null && !redirect.contains("bc.vc/")) {
             decryptedLinks.add(createDownloadlink(redirect));
             return decryptedLinks;
@@ -68,32 +81,34 @@ public class BcVc extends PluginForDecrypt {
             logger.warning("Decrypter broken for link: " + parameter);
             return null;
         }
-        br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
         LinkedHashMap<String, String> data = new LinkedHashMap<String, String>();
+        // first
+        data.put("opt", "checks_log");
+        ajaxPostPage("/fly/ajax.fly.php", data);
+
+        // second repeated twice
         data.put("opt", "check_log");
         data.put(Encoding.urlEncode("args[aid]"), matches[0]);
         data.put(Encoding.urlEncode("args[lid]"), matches[1]);
         data.put(Encoding.urlEncode("args[oid]"), matches[2]);
         data.put(Encoding.urlEncode("args[ref]"), "");
-        br.postPage("http://bc.vc/fly/ajax.fly.php", data);
+        ajaxPostPage("/fly/ajax.fly.php", data);
+        ajaxPostPage("/fly/ajax.fly.php", data);
 
-        data.put("opt", "checks_log");
-        br.postPage("http://bc.vc/fly/ajax.fly.php", data);
-
-        data.put("opt", "check_log");
-        br.postPage("http://bc.vc/fly/ajax.fly.php", data);
         // waittime is 5 seconds. but somehow this often results in an error.
         // we use 5.5 seconds to avoid them
         Thread.sleep(5500);
 
+        // third
         data.put("opt", "make_log");
-        br.postPage("http://bc.vc/fly/ajax.fly.php", data);
-        String url = br.getRegex("\"url\"\\:\"(.*)\"").getMatch(0);
+        ajaxPostPage("/fly/ajax.fly.php", data);
+
+        String url = ajax.getRegex("\"url\"\\:\"(.*)\"").getMatch(0);
         if (url == null) {
             // maybe we have to wait even longer?
             Thread.sleep(2000);
-            br.postPage("http://bc.vc/fly/ajax.fly.php", data);
-            url = br.getRegex("\"url\"\\:\"(.*)\"").getMatch(0);
+            ajaxPostPage("/fly/ajax.fly.php", data);
+            url = ajax.getRegex("\"url\"\\:\"(.*)\"").getMatch(0);
         }
 
         url = url.replace("\\", "");
