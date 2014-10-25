@@ -25,9 +25,10 @@ import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
+import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision: 24808 $", interfaceVersion = 2, names = { "xxxfile.to" }, urls = { "http://(www\\.)?xxxfile\\.to/download/clips/[a-z0-9\\-]+\\.html" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision: 24808 $", interfaceVersion = 2, names = { "xxxfile.to" }, urls = { "http://(?:www\\.)?(?:xxxfile|x3)\\.to/download/clips/[a-z0-9\\-]+\\.html" }, flags = { 0 })
 public class XxxFileTo extends PluginForDecrypt {
 
     /**
@@ -40,12 +41,12 @@ public class XxxFileTo extends PluginForDecrypt {
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-        final String parameter = param.toString();
-
-        br.getPage(parameter);
+        final String parameter = param.toString().replace("xxxfile.to", "x3.to");
+        br.setCookie("x3.to", "hasVisitedSite", "Yes");
         br.setFollowRedirects(true);
-
-        final String content = br.getRegex("<div class=\"news-text clearfix\">(.*?)<div align=\"center\">").getMatch(0);
+        br.getPage(parameter);
+        correctBR();
+        final String content = new Regex(correctedBR, "<div class=\"news-text clearfix\">(.*?)<div align=\"center\">").getMatch(0);
 
         if (content == null) {
             return null;
@@ -63,12 +64,12 @@ public class XxxFileTo extends PluginForDecrypt {
         }
 
         for (final String link : links) {
-            if (!link.matches("https?://(www\\.)?xxxfile\\.to/.+")) {
+            if (!link.matches("https?://(?:www\\.)?(?:xxxfile|x3)\\.to/.+")) {
                 decryptedLinks.add(createDownloadlink(link));
             }
         }
 
-        final String[] imgs = br.getRegex("(https?://([\\w\\.]+)?pixhost\\.org/show/[^\"]+)").getColumn(0);
+        final String[] imgs = new Regex(content, "(https?://([\\w\\.]+)?(?:pixhost\\.org/show/|picsee\\.net/)[^\"]+)").getColumn(0);
         if (links != null && links.length != 0) {
             for (final String img : imgs) {
                 decryptedLinks.add(createDownloadlink(img));
@@ -81,6 +82,28 @@ public class XxxFileTo extends PluginForDecrypt {
             filePackage.addLinks(decryptedLinks);
         }
         return decryptedLinks;
+    }
+
+    private String correctedBR = null;
+
+    /** Remove HTML code which could break the plugin */
+    public void correctBR() throws NumberFormatException, PluginException {
+        correctedBR = br.toString();
+        ArrayList<String> regexStuff = new ArrayList<String>();
+
+        // remove custom rules first!!! As html can change because of generic cleanup rules.
+
+        // generic cleanup
+        regexStuff.add("<\\!(\\-\\-.*?\\-\\-)>");
+        regexStuff.add("(<\\s*(\\w+)\\s+[^>]*style\\s*=\\s*(\"|')(?:(?:[\\w:;\\s#-]*(visibility\\s*:\\s*hidden;|display\\s*:\\s*none;|font-size\\s*:\\s*0;)[\\w:;\\s#-]*)|font-size\\s*:\\s*0|visibility\\s*:\\s*hidden|display\\s*:\\s*none)\\3[^>]*(>.*?<\\s*/\\2[^>]*>|/\\s*>))");
+        for (String aRegex : regexStuff) {
+            String results[] = new Regex(correctedBR, aRegex).getColumn(0);
+            if (results != null) {
+                for (String result : results) {
+                    correctedBR = correctedBR.replace(result, "");
+                }
+            }
+        }
     }
 
     /* NO OVERRIDE!! */
