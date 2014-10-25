@@ -32,7 +32,7 @@ import jd.plugins.PluginForHost;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "zaycev.net" }, urls = { "http://(www\\.)?zaycev\\.net/pages/[0-9]+/[0-9]+\\.shtml" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "zaycev.net" }, urls = { "http://((www\\.)?zaycev\\.net/pages/[0-9]+/[0-9]+\\.shtml|dl\\.zaycev\\.net/[^\r\n\"]+)" }, flags = { 0 })
 public class ZaycevNet extends PluginForHost {
 
     public ZaycevNet(PluginWrapper wrapper) {
@@ -45,14 +45,19 @@ public class ZaycevNet extends PluginForHost {
     }
 
     private static final String CAPTCHATEXT = "/captcha/";
+    private String              finallink   = null;
 
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
         this.setBrowserExclusive();
         br.getHeaders().put("Accept-Charset", null);
         br.getHeaders().put("User-Agent", "Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/38.0.2125.101 Safari/537.36");
-        br.setCookie(this.getHost(), "mm_cookie", "1");
         br.setFollowRedirects(false);
+        if (link.getDownloadURL().matches(".+dl\\.zaycev\\.net/.+")) {
+            finallink = link.getDownloadURL();
+            return AvailableStatus.TRUE;
+        }
+        br.setCookie(this.getHost(), "mm_cookie", "1");
         br.getPage(link.getDownloadURL());
         if (br.getRedirectLocation() != null || br.containsHTML("http\\-equiv=\"Refresh\"|>Данная композиция заблокирована, приносим извинения")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
@@ -76,47 +81,49 @@ public class ZaycevNet extends PluginForHost {
     @Override
     public void handleFree(DownloadLink downloadLink) throws Exception, PluginException {
         br = new Browser();
+        finallink = null;
         requestFileInformation(downloadLink);
-        String finallink = null; // checkDirectLink(downloadLink, "savedlink");
+        // if (finallink == null) {
+        // finallink = checkDirectLink(downloadLink, "savedlink");
         if (finallink == null) {
             finallink = br.getRegex("\"(http://dl\\.zaycev\\.net/[^<>\"]*?)\"").getMatch(0);
-        }
-        if (finallink == null) {
-            String cryptedlink = br.getRegex("\"(/download\\.php\\?id=\\d+\\&ass=[^<>/\"]*?\\.mp3)\"").getMatch(0);
-            if (cryptedlink == null) {
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            }
-            br.getPage(cryptedlink);
-            finallink = getDllink();
             if (finallink == null) {
-                if (br.containsHTML(CAPTCHATEXT)) {
-                    for (int i = 0; i <= 5; i++) {
-                        // Captcha handling
+                String cryptedlink = br.getRegex("\"(/download\\.php\\?id=\\d+\\&ass=[^<>/\"]*?\\.mp3)\"").getMatch(0);
+                if (cryptedlink == null) {
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                }
+                br.getPage(cryptedlink);
+                finallink = getDllink();
+                if (finallink == null) {
+                    if (br.containsHTML(CAPTCHATEXT)) {
+                        for (int i = 0; i <= 5; i++) {
+                            // Captcha handling
+                            String captchaID = getCaptchaID();
+                            if (captchaID == null) {
+                                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                            }
+                            String code = getCaptchaCode("/captcha/" + captchaID + "/", downloadLink);
+                            String captchapage = cryptedlink + "&captchaId=" + captchaID + "&text_check=" + code + "&ok=%F1%EA%E0%F7%E0%F2%FC";
+                            br.getPage(captchapage);
+                            if (br.containsHTML(CAPTCHATEXT)) {
+                                continue;
+                            }
+                            break;
+                        }
+                        if (br.containsHTML(CAPTCHATEXT)) {
+                            throw new PluginException(LinkStatus.ERROR_CAPTCHA);
+                        }
+                    } else {
+                        String code = br.getRegex("<label>Ваш IP</label><span class=\"readonly\">[0-9\\.]+</span></div><input value=\"(.*?)\"").getMatch(0);
                         String captchaID = getCaptchaID();
-                        if (captchaID == null) {
+                        if (code == null || captchaID == null) {
                             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                         }
-                        String code = getCaptchaCode("/captcha/" + captchaID + "/", downloadLink);
                         String captchapage = cryptedlink + "&captchaId=" + captchaID + "&text_check=" + code + "&ok=%F1%EA%E0%F7%E0%F2%FC";
                         br.getPage(captchapage);
-                        if (br.containsHTML(CAPTCHATEXT)) {
-                            continue;
-                        }
-                        break;
                     }
-                    if (br.containsHTML(CAPTCHATEXT)) {
-                        throw new PluginException(LinkStatus.ERROR_CAPTCHA);
-                    }
-                } else {
-                    String code = br.getRegex("<label>Ваш IP</label><span class=\"readonly\">[0-9\\.]+</span></div><input value=\"(.*?)\"").getMatch(0);
-                    String captchaID = getCaptchaID();
-                    if (code == null || captchaID == null) {
-                        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                    }
-                    String captchapage = cryptedlink + "&captchaId=" + captchaID + "&text_check=" + code + "&ok=%F1%EA%E0%F7%E0%F2%FC";
-                    br.getPage(captchapage);
+                    finallink = getDllink();
                 }
-                finallink = getDllink();
             }
         }
 
@@ -135,18 +142,17 @@ public class ZaycevNet extends PluginForHost {
                 } catch (final Throwable t) {
                     con = br.openGetConnection(finallink);
                 }
-                if (!con.isContentDisposition() && br.getRedirectLocation() != null) {
+                final String r = br.getRedirectLocation();
+                final boolean cd = con.isContentDisposition();
+                final boolean ct = con.getContentType().contains("audio/");
+                if ((!cd || !ct) && r != null) {
                     if (i + 1 >= repeatTries) {
                         throw new PluginException(LinkStatus.ERROR_FATAL, "RedirectLoop");
                     }
                     // redirect, we want to store and continue down the rabbit hole!
-                    finallink = br.getRedirectLocation();
+                    finallink = r;
                     sleep(5000l * i, downloadLink);
                     continue;
-                } else if (!con.isContentDisposition()) {
-                    // error final destination/html
-                    br.followConnection();
-                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 } else {
                     // finallink! (usually doesn't container redirects)
                     finallink = br.getURL();
@@ -164,6 +170,8 @@ public class ZaycevNet extends PluginForHost {
             br.followConnection();
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
+        // id3 and packagename can be tag due to directlink imports
+        // downloadLink.setFinalFileName(getFileNameFromHeader(dl.getConnection()).replaceAll("_?\\(zaycev\\.net\\)", ""));
         downloadLink.setProperty("savedlink", finallink);
         dl.startDownload();
     }
