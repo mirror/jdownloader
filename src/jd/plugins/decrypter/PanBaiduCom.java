@@ -163,23 +163,29 @@ public class PanBaiduCom extends PluginForDecrypt {
                 if (!(ret.containsKey("headurl") || ret.containsKey("parent_path"))) {
                     continue;
                 }
-                dir = (new Regex(ret.get("headurl"), "filename=(.*?)$").getMatch(0));
-
-                if (dir == null) {
-                    dir = (ret.get("server_filename"));
-                }
-                dir = unescape(dir);
-                ret.put("path", dir);
-
-                dir = ret.get("parent_path") + "%2F" + dir;
-                if (singleFolder != null && !singleFolder.equals(dir)) {
-                    continue;// only selected folder
-                }
-                if (ret.containsKey("md5") && !"".equals(ret.get("md5"))) {// file in root
-                    final DownloadLink dl = generateDownloadLink(ret, parameter, dir, null, values[0]);
-                    decryptedLinks.add(dl);
+                if (ret.get("isdir") != null && ret.get("isdir").equals("1")) {
+                    // subfolder in imported root
+                    getDownloadLinks(decryptedLinks, parameter, ret.get("path"), Encoding.urlEncode(unescape(ret.get("path"))));
                 } else {
-                    getDownloadLinks(decryptedLinks, parameter, ret.get("path"), dir);// folder in root
+                    dir = (new Regex(ret.get("headurl"), "filename=(.*?)$").getMatch(0));
+
+                    if (dir == null) {
+                        dir = (ret.get("server_filename"));
+                    }
+                    dir = unescape(dir);
+                    // why do this exactly ?? for folder code down lower it fked this up seriously. I'm of the opinion that you should never
+                    // nuke original ret storables.
+                    // ret.put("path", dir);
+                    // dir = ret.get("parent_path") + "%2F" + dir;
+
+                    dir = ret.get("parent_path") + "%2F" + dir;
+                    if (singleFolder != null && !singleFolder.equals(dir)) {
+                        continue;// only selected folder
+                    }
+                    if (ret.containsKey("md5") && !"".equals(ret.get("md5"))) {// file in root
+                        final DownloadLink dl = generateDownloadLink(ret, parameter, dir, null, values[0]);
+                        decryptedLinks.add(dl);
+                    }
                 }
             }
             if (decryptedLinks.size() == 0) {
@@ -217,15 +223,19 @@ public class PanBaiduCom extends PluginForDecrypt {
                 decryptedLinks.add(dl);
                 return;
             }
-            HashMap<String, String> ret = new HashMap<String, String>();
+            HashMap<String, String> ret = null;
             String list = br.getRegex("\"list\":\\[(\\{.*?\\})\\]").getMatch(0);
             final String[][] linkInfo = new Regex((list == null ? "" : list), "\\{(.*?)\\}").getMatches();
             if (linkInfo != null && linkInfo.length != 0) {
                 currentlinksnum = linkInfo.length;
                 for (final String[] links : linkInfo) {
-
+                    ret = new HashMap<String, String>();
                     for (String[] link : new Regex(links[0] + ",", "\"(.*?)\":\"?(.*?)\"?,").getMatches()) {
                         ret.put(link[0], link[1]);
+                    }
+                    // nested folder.. we should really return back into itself to make this process threaded.
+                    if (ret.get("isdir") != null && ret.get("isdir").equals("1")) {
+                        getDownloadLinks(decryptedLinks, parameter, ret.get("path"), Encoding.urlEncode(unescape(ret.get("path"))));
                     }
                     if (links[0].contains("\"md5\"")) {
                         final DownloadLink dl = generateDownloadLink(ret, parameter, dir, null, null);
