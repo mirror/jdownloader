@@ -661,7 +661,7 @@ public class FileRioCom extends PluginForHost {
                         return;
                     }
                 }
-                getPage(COOKIE_HOST + "/loginmenow.html");
+                getPage(COOKIE_HOST + "/logmeinnow.html");
                 Form loginform = br.getForm(0);
                 if (loginform == null) {
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
