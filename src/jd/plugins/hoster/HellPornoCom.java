@@ -56,15 +56,16 @@ public class HellPornoCom extends PluginForHost {
         if (br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        String filename = br.getRegex("<div id=\"hp_underheader\">[\t\n\r ]+<h3>([^<>\"]*?)</h3>").getMatch(0);
+        String filename = br.getRegex("hp_underheader\">[\t\n\r ]*?<h3>([^<>\"]*?)</h3>").getMatch(0);
         if (filename == null) {
-            filename = br.getRegex("<title>([<>\"]*?)</title>").getMatch(0);
+            filename = br.getRegex("<title>([^<>\"]*?) - Hell Porno</title>").getMatch(0);
         }
         DLLINK = checkDirectLink(downloadLink, "directlink");
         if (DLLINK == null) {
-            DLLINK = br.getRegex("encodeURIComponent\\(\\'(http[^<>\"]*?)\\'\\)").getMatch(0);
+            DLLINK = br.getRegex("\'(http[^<>\"]*?)/\\?br=\\d+\'").getMatch(0);
         }
         if (filename == null || DLLINK == null) {
+            logger.info("filename = " + filename + ", dllink = " + DLLINK);
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         DLLINK = Encoding.htmlDecode(DLLINK);
