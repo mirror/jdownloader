@@ -101,6 +101,7 @@ public class BcVc extends PluginForDecrypt {
 
         // third
         data.put("opt", "make_log");
+        data.put(Encoding.urlEncode("args[nok]"), "no");
         ajaxPostPage("/fly/ajax.fly.php", data);
 
         String url = ajax.getRegex("\"url\"\\:\"(.*)\"").getMatch(0);
