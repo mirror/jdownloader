@@ -20,6 +20,7 @@ import java.io.File;
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicReference;
 
 import jd.PluginWrapper;
 import jd.config.Property;
@@ -27,6 +28,7 @@ import jd.http.Cookie;
 import jd.http.Cookies;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
+import jd.parser.html.Form;
 import jd.plugins.Account;
 import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
@@ -41,7 +43,7 @@ import jd.utils.JDUtilities;
 import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.formatter.TimeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "ugoupload.net" }, urls = { "http://(www\\.)?ugoupload\\.net/[A-Za-z0-9]+" }, flags = { 2 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "ugoupload.net" }, urls = { "http://(www\\.)?ugoupload\\.net/(?:Tol/)?[A-Za-z0-9]+" }, flags = { 2 })
 public class UGoUploadNet extends PluginForHost {
 
     public UGoUploadNet(PluginWrapper wrapper) {
@@ -54,31 +56,44 @@ public class UGoUploadNet extends PluginForHost {
         return "http://www.ugoupload.net/terms.html";
     }
 
-    // Captcha type: solvemedia
-    private static Object       LOCK                     = new Object();
-    private final String        MAINPAGE                 = "http://ugoupload.net";
-    private final boolean       RESUME                   = false;
-    private final int           MAXCHUNKS                = 1;
+    // Captcha type: now: recaptcha 20141025 was solvemedia previous time tested.
 
-    private static final String INVALIDLINKS             = "http://(www\\.)?ugoupload\\.net/(login|register|report)";
+    private static Object                          LOCK                     = new Object();
+    private final String                           MAINPAGE                 = "http://ugoupload.net";
+    private final boolean                          RESUME                   = false;
+    private final int                              MAXCHUNKS                = 1;
 
-    private static final String PREMIUMONLY              = "?e=You+must+register+for+a+premium+account+to+download+files+of+this+size";
-    private static final String PREMIUMONLYUSERTEXT      = "Only downloadable for premium users";
-    private static final String SIMULTANDLSLIMIT         = "?e=You+have+reached+the+maximum+concurrent+downloads";
-    private static final String SIMULTANDLSLIMITUSERTEXT = "Max. simultan downloads limit reached, wait or reconnect to start more downloads from this host";
-    private static final String DLSLIMIT                 = "?e=You+must+wait+";
-    private static final String DLSLIMITUSERTEXT         = "Max. downloads limit reached, wait or reconnect to start more downloads from this host";
-    private static final String ERRORFILE                = "?e=Error%3A+Could+not+open+file+for+reading";
-    private static final String OVERLOADED               = "?e=The+site+currently+overloaded+";
-    private static final String OVERLOADEDUSERTEXT       = "The site is currently overloaded";
+    private static final String                    INVALIDLINKS             = "http://(www\\.)?ugoupload\\.net/(login|register|report)";
+
+    private static final String                    PREMIUMONLY              = "?e=You+must+register+for+a+premium+account+to+download+files+of+this+size";
+    private static final String                    PREMIUMONLYUSERTEXT      = "Only downloadable for premium users";
+    private static final String                    SIMULTANDLSLIMIT         = "?e=You+have+reached+the+maximum+concurrent+downloads";
+    private static final String                    SIMULTANDLSLIMITUSERTEXT = "Max. simultan downloads limit reached, wait or reconnect to start more downloads from this host";
+    private static final String                    DLSLIMIT                 = "?e=You+must+wait+";
+    private static final String                    DLSLIMITUSERTEXT         = "Max. downloads limit reached, wait or reconnect to start more downloads from this host";
+    private static final String                    ERRORFILE                = "?e=Error%3A+Could+not+open+file+for+reading";
+    private static final String                    OVERLOADED               = "?e=The+site+currently+overloaded+";
+    private static final String                    OVERLOADEDUSERTEXT       = "The site is currently overloaded";
+
+    private boolean                                captchaUsed              = false;
+    private long                                   requestTime              = System.currentTimeMillis();
+    private static final String                    regexCaptchaRecaptcha    = "api\\.recaptcha\\.net|google\\.com/recaptcha/api/";
+    private static final String                    regexCaptchaSolvemedia   = "solvemedia\\.com/papi/";
+    private static final String                    regexCaptchaTypes        = regexCaptchaRecaptcha + "|" + regexCaptchaSolvemedia;
+
+    protected static final AtomicReference<String> userAgent                = new AtomicReference<String>(null);
 
     /** Uses same script as filegig.com */
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
-        if (link.getDownloadURL().matches(INVALIDLINKS)) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (link.getDownloadURL().matches(INVALIDLINKS)) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
+        prepBrowser();
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         br.getPage(link.getDownloadURL());
+        this.requestTime = System.currentTimeMillis();
         if (br.getURL().contains(PREMIUMONLY)) {
             link.setName(new Regex(link.getDownloadURL(), "([A-Za-z0-9]+)$").getMatch(0));
             link.getLinkStatus().setStatusText(PREMIUMONLYUSERTEXT);
@@ -94,17 +109,23 @@ public class UGoUploadNet extends PluginForHost {
             link.getLinkStatus().setStatusText(DLSLIMITUSERTEXT);
             return AvailableStatus.TRUE;
         }
-        if (br.getURL().contains("ugoupload.net/index.html") || br.containsHTML("<title>Index of") || br.containsHTML(">File has been removed due to inactivity")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        String[][] fileInfo = br.getRegex("<th class=\"descr\">[\t\n\r ]+<strong>[\r\n\t ]+(.+)\\(([\\d\\.]+ (KB|MB|GB))\\)<br/>").getMatches();
-        if (fileInfo == null || fileInfo.length == 0) {
-            fileInfo = br.getRegex("(.*?) \\(([\\d\\.]+ (KB|MB|GB))\\)").getMatches();
-            if ((fileInfo == null || fileInfo.length == 0) || fileInfo[0][0] == null) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
+        if (br.getURL().contains("ugoupload.net/index.html") || br.containsHTML("<title>Index of") || br.containsHTML(">File has been removed due to inactivity")) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        String filename = fileInfo[0][0];
-        String filesize = null;
-        if (fileInfo[0][1] != null) filesize = fileInfo[0][1];
+        String[] fileInfo = br.getRegex("<strong>\\s*([^\r\n]+)\\(([\\d\\.]+ (?:KB|MB|GB))\\)<\\s*(?:/br|br\\s*/)\\s*>").getRow(0);
+        if (fileInfo == null || fileInfo.length == 0) {
+            // is very slow regex!
+            fileInfo = br.getRegex("(.*?) \\(([\\d\\.]+ (KB|MB|GB))\\)").getRow(0);
+            if ((fileInfo == null || fileInfo.length == 0) || fileInfo[0] == null) {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
+        }
+        final String filename = fileInfo[0];
+        final String filesize = (fileInfo[1] != null ? fileInfo[1] : null);
         link.setName(Encoding.htmlDecode(filename.trim()));
-        link.setDownloadSize(SizeFormatter.getSize(filesize));
+        if (filesize != null) {
+            link.setDownloadSize(SizeFormatter.getSize(filesize));
+        }
         return AvailableStatus.TRUE;
     }
 
@@ -112,19 +133,38 @@ public class UGoUploadNet extends PluginForHost {
     public void handleFree(final DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
 
-        if (br.getURL().contains(PREMIUMONLY)) throw new PluginException(LinkStatus.ERROR_FATAL, PREMIUMONLYUSERTEXT);
-        if (br.getURL().contains(SIMULTANDLSLIMIT)) throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, SIMULTANDLSLIMITUSERTEXT, 1 * 60 * 1000l);
-        if (br.getURL().contains(ERRORFILE) || br.containsHTML("Error: Could not open file for reading.")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, 30 * 60 * 1000l);
-        if (br.getURL().contains(DLSLIMIT)) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 60 * 60 * 1001l);
-        if (br.getURL().contains(OVERLOADED)) throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, OVERLOADEDUSERTEXT, 3 * 60 * 1000l);
-        boolean captcha = false;
-        int wait = 420;
-        final String waittime = br.getRegex("\\$\\(\\'\\.download\\-timer\\-seconds\\'\\)\\.html\\((\\d+)\\);").getMatch(0);
-        if (waittime != null) wait = Integer.parseInt(waittime);
-        sleep(wait * 1001l, downloadLink);
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, downloadLink.getDownloadURL() + "?pt=2", RESUME, MAXCHUNKS);
+        if (br.getURL().contains(PREMIUMONLY)) {
+            throw new PluginException(LinkStatus.ERROR_FATAL, PREMIUMONLYUSERTEXT);
+        }
+        if (br.getURL().contains(SIMULTANDLSLIMIT)) {
+            throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, SIMULTANDLSLIMITUSERTEXT, 1 * 60 * 1000l);
+        }
+        if (br.getURL().contains(ERRORFILE) || br.containsHTML("Error: Could not open file for reading.")) {
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, 30 * 60 * 1000l);
+        }
+        if (br.getURL().contains(DLSLIMIT)) {
+            throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 60 * 60 * 1001l);
+        }
+        if (br.getURL().contains(OVERLOADED)) {
+            throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, OVERLOADEDUSERTEXT, 3 * 60 * 1000l);
+        }
+        final String dllink = br.getRegex("href='(https?://(?:\\w+\\.)?ugoupload.net/.*?\\?pt=[a-zA-Z0-9%]+)").getMatch(0);
+        String waittime = br.getRegex("\\$\\(\\'\\.download\\-timer\\-seconds\\'\\)\\.html\\((\\d+)\\);").getMatch(0);
+        {
+            waittime = waittime != null ? waittime : "420";
+            // remove one second from past, to prevent returning too quickly.
+            final long passedTime = ((System.currentTimeMillis() - requestTime) / 1000) - 1;
+            final long tt = Long.parseLong(waittime) - passedTime;
+            logger.info("WaitTime detected: " + waittime + " second(s). Elapsed Time: " + (passedTime > 0 ? passedTime : 0) + " second(s). Remaining Time: " + tt + " second(s)");
+            if (tt > 0) {
+                sleep(tt * 1000l, downloadLink);
+            }
+        }
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, (dllink != null ? dllink : downloadLink.getDownloadURL() + "?pt=2"), RESUME, MAXCHUNKS);
         if (!dl.getConnection().isContentDisposition()) {
-            if (br.getURL().contains(ERRORFILE) || br.containsHTML("Error: Could not open file for reading\\.")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, 30 * 60 * 1000l);
+            if (br.getURL().contains(ERRORFILE) || br.containsHTML("Error: Could not open file for reading\\.")) {
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, 30 * 60 * 1000l);
+            }
             br.followConnection();
 
             /* Untested! */
@@ -139,31 +179,34 @@ public class UGoUploadNet extends PluginForHost {
                     throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, null, 60 * 60 * 1000l);
                 } else {
                     int minutes = 0, seconds = 0, hours = 0, days = 0;
-                    if (tmphrs != null) hours = Integer.parseInt(tmphrs);
-                    if (tmpmin != null) minutes = Integer.parseInt(tmpmin);
-                    if (tmpsec != null) seconds = Integer.parseInt(tmpsec);
+                    if (tmphrs != null) {
+                        hours = Integer.parseInt(tmphrs);
+                    }
+                    if (tmpmin != null) {
+                        minutes = Integer.parseInt(tmpmin);
+                    }
+                    if (tmpsec != null) {
+                        seconds = Integer.parseInt(tmpsec);
+                    }
                     int waittime_long = ((days * 24 * 3600) + (3600 * hours) + (60 * minutes) + seconds + 1) * 1000;
                     logger.info("Detected waittime #2, waiting " + waittime_long + "milliseconds");
                     /* Not enough wait time to reconnect -> Wait short and retry */
                     throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, null, waittime_long);
                 }
             }
-
-            final String captchaAction = br.getRegex("<div class=\"captchaPageTable\">[\t\n\r ]+<form method=\"POST\" action=\"(https?://[^<>\"]*?)\"").getMatch(0);
-            final String rcID = br.getRegex("recaptcha/api/noscript\\?k=([^<>\"]*?)\"").getMatch(0);
-            if (captchaAction == null) {
-                logger.warning("captchaAction is null");
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            }
-            if (rcID != null) {
+            Form captchaForm = getCaptchaForm();
+            if (captchaForm != null && captchaForm.containsHTML(regexCaptchaRecaptcha)) {
                 final PluginForHost recplug = JDUtilities.getPluginForHost("DirectHTTP");
                 final jd.plugins.hoster.DirectHTTP.Recaptcha rc = ((DirectHTTP) recplug).getReCaptcha(br);
-                rc.setId(rcID);
+                final String rcID = captchaForm.getRegex("(?:/recaptcha/api/noscript|/recaptcha/api/challenge)\\?k=([^<>\"]+)\"").getMatch(0);
+                rc.setId(rcID != null ? rcID : "6LeuAc4SAAAAAOSry8eo2xW64K1sjHEKsQ5CaS10");
                 rc.load();
                 for (int i = 0; i <= 5; i++) {
                     File cf = rc.downloadCaptcha(getLocalCaptchaFile());
                     String c = getCaptchaCode(cf, downloadLink);
-                    dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, captchaAction, "submit=continue&submitted=1&d=1&recaptcha_challenge_field=" + rc.getChallenge() + "&recaptcha_response_field=" + c, RESUME, MAXCHUNKS);
+                    captchaForm.put("recaptcha_challenge_field", rc.getChallenge());
+                    captchaForm.put("recaptcha_response_field", Encoding.urlEncode(c));
+                    dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, captchaForm, RESUME, MAXCHUNKS);
                     if (!dl.getConnection().isContentDisposition()) {
                         br.followConnection();
                         rc.reload();
@@ -171,30 +214,54 @@ public class UGoUploadNet extends PluginForHost {
                     }
                     break;
                 }
-                captcha = true;
-            } else if (br.containsHTML("solvemedia\\.com/papi/")) {
-                captcha = true;
+            } else if (captchaForm != null && captchaForm.containsHTML(regexCaptchaSolvemedia)) {
                 for (int i = 0; i <= 5; i++) {
                     final PluginForDecrypt solveplug = JDUtilities.getPluginForDecrypt("linkcrypt.ws");
                     final jd.plugins.decrypter.LnkCrptWs.SolveMedia sm = ((jd.plugins.decrypter.LnkCrptWs) solveplug).getSolveMedia(br);
                     final File cf = sm.downloadCaptcha(getLocalCaptchaFile());
                     final String code = getCaptchaCode(cf, downloadLink);
                     final String chid = sm.getChallenge(code);
-                    dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, captchaAction, "submit=continue&submitted=1&d=1&adcopy_challenge=" + chid + "&adcopy_response=manual_challenge", RESUME, MAXCHUNKS);
+                    captchaForm.put("adcopy_challenge", chid);
+                    captchaForm.put("adcopy_response", "manual_challenge");
+                    dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, captchaForm, RESUME, MAXCHUNKS);
                     if (!dl.getConnection().isContentDisposition()) {
                         br.followConnection();
                         continue;
                     }
                     break;
                 }
+            } else {
+                // new captcha type?? or unsupported error.
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
         }
         if (!dl.getConnection().isContentDisposition()) {
             br.followConnection();
-            if (captcha && br.containsHTML("(api\\.recaptcha\\.net|google\\.com/recaptcha/api/)")) throw new PluginException(LinkStatus.ERROR_CAPTCHA);
+            if (this.captchaUsed && br.containsHTML(regexCaptchaTypes)) {
+                throw new PluginException(LinkStatus.ERROR_CAPTCHA);
+            }
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl.startDownload();
+    }
+
+    private void prepBrowser() {
+        if (userAgent.get() == null) {
+            /* we first have to load the plugin, before we can reference it */
+            JDUtilities.getPluginForHost("mediafire.com");
+            userAgent.set(jd.plugins.hoster.MediafireCom.stringUserAgent());
+        }
+        br.getHeaders().put("User-Agent", userAgent.get());
+    }
+
+    private Form getCaptchaForm() {
+        for (Form f : br.getForms()) {
+            if (f.containsHTML(regexCaptchaTypes)) {
+                this.captchaUsed = true;
+                return f;
+            }
+        }
+        return null;
     }
 
     @SuppressWarnings("unchecked")
@@ -203,9 +270,12 @@ public class UGoUploadNet extends PluginForHost {
             try {
                 // Load cookies
                 br.setCookiesExclusive(true);
+                prepBrowser();
                 final Object ret = account.getProperty("cookies", null);
                 boolean acmatch = Encoding.urlEncode(account.getUser()).equals(account.getStringProperty("name", Encoding.urlEncode(account.getUser())));
-                if (acmatch) acmatch = Encoding.urlEncode(account.getPass()).equals(account.getStringProperty("pass", Encoding.urlEncode(account.getPass())));
+                if (acmatch) {
+                    acmatch = Encoding.urlEncode(account.getPass()).equals(account.getStringProperty("pass", Encoding.urlEncode(account.getPass())));
+                }
                 if (acmatch && ret != null && ret instanceof HashMap<?, ?> && !force) {
                     final HashMap<String, String> cookies = (HashMap<String, String>) ret;
                     if (account.isValid()) {
@@ -251,7 +321,9 @@ public class UGoUploadNet extends PluginForHost {
         br.getPage("http://www.ugoupload.net/upgrade.html");
         ai.setUnlimitedTraffic();
         final String expire = br.getRegex("Reverts To Free Account:[\t\n\r ]+</td>[\t\n\r ]+<td>[\t\n\r ]+(\\d{2}/\\d{2}/\\d{4} \\d{2}:\\d{2}:\\d{2})").getMatch(0);
-        if (expire != null) ai.setValidUntil(TimeFormatter.getMilliSeconds(expire, "dd/MM/yyyy hh:mm:ss", null));
+        if (expire != null) {
+            ai.setValidUntil(TimeFormatter.getMilliSeconds(expire, "dd/MM/yyyy hh:mm:ss", null));
+        }
         account.setValid(true);
         ai.setStatus("Premium User");
         return ai;
@@ -265,7 +337,9 @@ public class UGoUploadNet extends PluginForHost {
         if (dl.getConnection().getContentType().contains("html")) {
             logger.warning("The final dllink seems not to be a file!");
             br.followConnection();
-            if (br.getURL().contains("e=Error%3A+Could+not+open+file+for+reading")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error: Could not open file for reading", 30 * 60 * 1000l);
+            if (br.getURL().contains("e=Error%3A+Could+not+open+file+for+reading")) {
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error: Could not open file for reading", 30 * 60 * 1000l);
+            }
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl.startDownload();
