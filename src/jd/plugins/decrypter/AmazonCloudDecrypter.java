@@ -104,7 +104,7 @@ public class AmazonCloudDecrypter extends PluginForDecrypt {
             return null;
         }
 
-        final String[] links = linktext.split("\\}\\},[\t\n\r ]+\\{");
+        final String[] links = linktext.split("\\}\\},([\t\n\r ]+)?\\{");
         if (links == null || links.length == 0) {
             logger.warning("Decrypter broken for link: " + parameter);
             return null;

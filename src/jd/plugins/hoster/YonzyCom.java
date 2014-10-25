@@ -55,7 +55,7 @@ public class YonzyCom extends PluginForHost {
     }
 
     // For sites which use this script: http://www.yetishare.com/
-    // YetiShareBasic2 Version 0.0.1-psp
+    // YetiShareBasic2 Version 0.0.2-psp
     // mods:
     // limit-info:
     // protocol: no https
@@ -181,6 +181,7 @@ public class YonzyCom extends PluginForHost {
 
     public void doFree(final DownloadLink downloadLink, final boolean resume, final int maxchunks, final String directlinkproperty) throws Exception, PluginException {
         boolean captcha = false;
+        boolean save_directlink = false;
         String continue_link = checkDirectLink(downloadLink, directlinkproperty);
         if (continue_link != null) {
             dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, continue_link, resume, maxchunks);
@@ -288,12 +289,15 @@ public class YonzyCom extends PluginForHost {
                 dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, captchaAction, postData, resume, maxchunks);
                 if (!dl.getConnection().isContentDisposition()) {
                     br.followConnection();
-                    if (br.getURL().contains("error.php?e=Error%3A+Could+not+open+file+for+reading")) {
-                        throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Server error", 60 * 60 * 1000l);
+                    handleErrors();
+                    continue_link = getDllink();
+                    if (continue_link != null) {
+                        save_directlink = true;
+                        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, continue_link, resume, maxchunks);
+                        break;
                     }
                     continue;
                 }
-                break;
             }
         }
         if (!dl.getConnection().isContentDisposition()) {
@@ -305,14 +309,14 @@ public class YonzyCom extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         /* Directlink is only available if we have no captcha */
-        if (!captcha) {
+        if (!captcha || save_directlink) {
             downloadLink.setProperty(directlinkproperty, continue_link);
         }
         dl.startDownload();
     }
 
     private String getDllink() {
-        return br.getRegex("\"(https?://" + domains + "/[^<>\"\\?]*?\\?download_token=[A-Za-z0-9]+)\"").getMatch(0);
+        return br.getRegex("\"(https?://([A-Za-z0-9\\-\\.]+)?" + domains + "/[^<>\"\\?]*?\\?download_token=[A-Za-z0-9]+)\"").getMatch(0);
     }
 
     private void handleErrors() throws PluginException {
@@ -320,6 +324,8 @@ public class YonzyCom extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Wait before starting new downloads", 3 * 60 * 1000l);
         } else if (br.getURL().contains(url_ERROR_SIMULTANDLSLIMIT)) {
             throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, errortext_ERROR_SIMULTANDLSLIMIT, 1 * 60 * 1000l);
+        } else if (br.getURL().contains("error.php?e=Error%3A+Could+not+open+file+for+reading")) {
+            throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Server error", 60 * 60 * 1000l);
         }
     }
 

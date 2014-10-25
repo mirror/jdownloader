@@ -31,7 +31,7 @@ import jd.utils.locale.JDL;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "xup.in" }, urls = { "http://[\\w\\.]*?xup\\.(in/dl,\\d+/?.+?|raidrush\\.ws/ndl_[a-z0-9]+)" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "xup.in" }, urls = { "http://[\\w\\.]*?xup\\.((in|to)/dl,\\d+/?.+?|raidrush\\.ws/ndl_[a-z0-9]+)" }, flags = { 0 })
 public class XupIn extends PluginForHost {
 
     private static final String AGB_LINK = "http://www.xup.in/terms/";
@@ -56,7 +56,9 @@ public class XupIn extends PluginForHost {
         this.requestFileInformation(downloadLink);
         br.getHeaders().put("User-Agent", RandomUserAgent.generate());
         Form download = br.getForm(0);
-        if (download == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (download == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         String passCode = null;
         if (download.hasInputFieldByName("vpass")) {
             if (downloadLink.getStringProperty("pass", null) == null) {
@@ -86,7 +88,9 @@ public class XupIn extends PluginForHost {
             }
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        if (passCode != null) downloadLink.setProperty("pass", passCode);
+        if (passCode != null) {
+            downloadLink.setProperty("pass", passCode);
+        }
         dl.startDownload();
 
     }
@@ -95,18 +99,24 @@ public class XupIn extends PluginForHost {
     public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws IOException, PluginException {
         this.setBrowserExclusive();
         br.getPage(downloadLink.getDownloadURL());
-        if (br.containsHTML("Datei existiert nicht")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (br.containsHTML("Datei existiert nicht")) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
         String filename = null;
         String filesize = null;
         if (downloadLink.getDownloadURL().contains("xup.raidrush.ws/")) {
             filename = br.getRegex("<title>XUP - Download (.*?) \\| ").getMatch(0);
-            if (filename == null) filename = br.getRegex("<h1>XUP - Download (.*?) \\| ").getMatch(0);
+            if (filename == null) {
+                filename = br.getRegex("<h1>XUP - Download (.*?) \\| ").getMatch(0);
+            }
             filesize = br.getRegex("Size</font></td>[\t\n\r ]+<td>(\\d+)</td>").getMatch(0);
         } else {
             filename = br.getRegex("<legend>.*?<.*?>Download:(.*?)</.*?>").getMatch(0);
             filesize = br.getRegex("File Size:(.*?)</li>").getMatch(0);
         }
-        if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (filename == null || filesize == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         downloadLink.setDownloadSize(SizeFormatter.getSize(filesize));
         downloadLink.setName(filename.trim());
         return AvailableStatus.TRUE;

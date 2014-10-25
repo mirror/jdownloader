@@ -46,8 +46,11 @@ public class ParteeeyDeGallery extends PluginForDecrypt {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         final String gal_ID = new Regex(param.toString(), "(\\d+)$").getMatch(0);
         if (gal_ID == null) {
-            logger.warning("Decrypter broken for link: " + param.toString());
-            return null;
+            final DownloadLink offline = createDownloadlink("directhttp://" + param.toString());
+            offline.setAvailable(false);
+            offline.setProperty("offline", true);
+            decryptedLinks.add(offline);
+            return decryptedLinks;
         }
         /* Show 1000 links per page --> Usually we'll only get one page */
         final String parameter = param.toString() + "?oF=f.date&oD=asc&eP=1000";
