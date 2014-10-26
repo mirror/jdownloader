@@ -136,7 +136,7 @@ public class DataFileCom extends PluginForHost {
         if (decrypterfilename != null) {
             /* Folder-filenames are complete - filenames shown when accessing single links are sometimes cut! */
             link.setName(decrypterfilename);
-        } else if (urlfilename.length() > sitefilename.length()) {
+        } else if (urlfilename != null && (urlfilename.length() > sitefilename.length())) {
             /* URL-filenames are complete - filenames shown when accessing single links are sometimes cut! */
             link.setName(urlfilename);
         } else {

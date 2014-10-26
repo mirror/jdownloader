@@ -188,7 +188,6 @@ public class ArteTv extends PluginForHost {
     @Override
     public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws Exception {
         br.setFollowRedirects(true);
-        final String wtf = downloadLink.getStringProperty("directURL", null);
         String link = downloadLink.getDownloadURL();
 
         if (downloadLink.getBooleanProperty("offline", false)) {

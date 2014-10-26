@@ -26,6 +26,7 @@ import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.parser.html.Form;
+import jd.plugins.Account;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
@@ -36,7 +37,7 @@ import jd.utils.locale.JDL;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "rusfolder.ru", "ifolder.ru" }, urls = { "http://([a-z0-9\\.\\-]*?\\.)?((daoifolder|yapapka|rusfolder|ifolder)\\.(net|ru|com)|files\\.metalarea\\.org)/(files/)?\\d+", "IFOLDERISNOWRUSFOLDER" }, flags = { 0, 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "rusfolder.com", "rusfolder.ru", "ifolder.ru" }, urls = { "http://([a-z0-9\\.\\-]*?\\.)?((daoifolder|yapapka|rusfolder|ifolder)\\.(net|ru|com)|files\\.metalarea\\.org)/(files/)?\\d+", "IFOLDERISNOWRUSFOLDER", "IFOLDERISNOWRUSFOLDER" }, flags = { 0, 0, 0 })
 public class IfolderRu extends PluginForHost {
 
     private String       ua          = RandomUserAgent.generate();
@@ -55,7 +56,7 @@ public class IfolderRu extends PluginForHost {
         if (url != null) {
             url = url.replaceAll("/files/", "/");
         }
-        link.setUrlDownload("http://rusfolder.ru" + url);
+        link.setUrlDownload("http://rusfolder.com" + url);
     }
 
     @Override
@@ -66,6 +67,40 @@ public class IfolderRu extends PluginForHost {
     @Override
     public int getMaxSimultanFreeDownloadNum() {
         return 10;
+    }
+
+    public String rewriteHost(String host) {
+        if ("rusfolder.ru".equals(getHost()) || "ifolder.ru".equals(getHost())) {
+            if ("rusfolder.ru".equals(getHost()) || "ifolder.ru".equals(getHost())) {
+                return "rusfolder.com";
+            }
+            return null;
+        }
+        return super.rewriteHost(host);
+    }
+
+    public Boolean rewriteHost(Account acc) {
+        if (isPremiumEnabled()) {
+            if (acc != null && ("rusfolder.ru".equals(acc.getHoster()) || "ifolder.ru".equals(acc.getHoster()))) {
+                acc.setHoster("rusfolder.com");
+                return true;
+            }
+            return false;
+        }
+        return null;
+    }
+
+    @Override
+    public Boolean rewriteHost(DownloadLink link) {
+        if (isPremiumEnabled()) {
+            if (link != null && ("rusfolder.ru".equals(link.getHost()) || "ifolder.ru".equals(link.getHost()))) {
+                link.setHost("rusfolder.com");
+                correctDownloadLink(link);
+                return true;
+            }
+            return false;
+        }
+        return null;
     }
 
     @Override
