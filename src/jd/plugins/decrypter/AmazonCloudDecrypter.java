@@ -98,18 +98,24 @@ public class AmazonCloudDecrypter extends PluginForDecrypt {
             return decryptedLinks;
         }
 
-        String linktext = br.getRegex("\"nodeInfo\":(\\{.*?)\\}$").getMatch(0);
+        String linktext = br.getRegex("\"nodeInfo\":(\\{.*?)\\}\\}\\}$").getMatch(0);
         if (linktext == null) {
             logger.warning("Decrypter broken for link: " + parameter);
             return null;
         }
 
-        final String[] links = linktext.split("\\}\\},([\t\n\r ]+)?\\{");
+        /* It's hard to separate the entries correctly without using json nodes - we might have to drop Stable compatibility in the future. */
+        final String[] links = linktext.split("\\}\\d+\\},([\t\n\r ]+)?\\{");
         if (links == null || links.length == 0) {
             logger.warning("Decrypter broken for link: " + parameter);
             return null;
         }
-        for (final String singleinfo : links) {
+        for (String singleinfo : links) {
+            /* If there are multiple versions/qualities/thumbnails of a file, remove them here - we only want to get the original file! */
+            final String assets = new Regex(singleinfo, "\"assets\":\\[(.+)\\]").getMatch(0);
+            if (assets != null) {
+                singleinfo = singleinfo.replace(assets, "");
+            }
             final DownloadLink dl = createDownloadlink("https://amazondecrypted.com/" + System.currentTimeMillis() + new Random().nextInt(100000));
             final String filesize = getJson(singleinfo, "size");
             String filename = getJson(singleinfo, "name");
