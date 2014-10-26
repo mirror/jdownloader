@@ -461,12 +461,12 @@ public class DirectHTTP extends PluginForHost {
     private final String SSLTRUSTALL = "SSLTRUSTALL";
 
     private void setConfigElements() {
-        final ConfigEntry cond = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), SSLTRUSTALL, JDL.L("plugins.hoster.http.ssltrustall", "Ignore SSL issues?")).setDefaultValue(false);
+        final ConfigEntry cond = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), SSLTRUSTALL, JDL.L("plugins.hoster.http.ssltrustall", "Ignore SSL issues?")).setDefaultValue(true);
         getConfig().addEntry(cond);
     }
 
     private boolean isSSLTrustALL() {
-        return SubConfiguration.getConfig("DirectHTTP").getBooleanProperty(SSLTRUSTALL, false);
+        return SubConfiguration.getConfig("DirectHTTP").getBooleanProperty(SSLTRUSTALL, true);
     }
 
     @Override
