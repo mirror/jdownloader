@@ -45,7 +45,7 @@ public class HosterRuleController implements AccountControllerListener {
 
     /**
      * get the only existing instance of HosterRuleController. This is a singleton
-     *
+     * 
      * @return
      */
     public static HosterRuleController getInstance() {
@@ -272,8 +272,9 @@ public class HosterRuleController implements AccountControllerListener {
                 missingRealAccounts.add(acc);
             }
         }
-        if (AccountController.getInstance().getMultiHostAccounts(host) != null) {
-            for (Account acc : AccountController.getInstance().getMultiHostAccounts(host)) {
+        final List<Account> multiAccs = AccountController.getInstance().getMultiHostAccounts(host);
+        if (multiAccs != null) {
+            for (Account acc : multiAccs) {
                 if (accountsInRule.add(acc)) {
                     missingMultiAccounts.add(acc);
                 }
