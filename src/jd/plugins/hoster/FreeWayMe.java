@@ -324,7 +324,7 @@ public class FreeWayMe extends PluginForHost {
             }
             // else it is limited
             if (link != null) {
-                List<String> limitedHosts = Arrays.asList("uploaded.to", "ul.to", "uploaded.net", "share-online.biz", "freakshare.com", "datei.to", "uploading.com", "rapidgator.net", "oboom.com");
+                List<String> limitedHosts = Arrays.asList("uploaded.to", "ul.to", "uploaded.net", "share-online.biz", "freakshare.com", "datei.to", "uploading.com", "rapidgator.net", "oboom.com", "filepost.com", "depositfiles.com", "keep2share.cc", "k2c.cc", "k2share.cc");
 
                 if (limitedHosts.contains(link.getHost().toLowerCase(Locale.ENGLISH))) {
                     return Math.min(connections, 2);
@@ -487,6 +487,9 @@ public class FreeWayMe extends PluginForHost {
         for (String host : hosts) {
             if (!host.isEmpty()) {
                 supportedHosts.add(host.trim());
+                if (host.trim().equals("freakshare.com")) {
+                    supportedHosts.add("freakshare.net");
+                }
             }
         }
         // set
@@ -606,6 +609,9 @@ public class FreeWayMe extends PluginForHost {
             String newDLpw = getUserInput(null, link);
             link.setDownloadPassword(newDLpw);
             throw new PluginException(LinkStatus.ERROR_RETRY);
+        } else if (error.contains("No more traffic for this host")) {
+            // this happens if there is a limit for a spcific host of this multi host
+            tempUnavailableHoster(acc, link, 1 * 60 * 60 * 1000l, error);
         } else if (error.contains("ltiger Login")) { // Ungü
             acc.setError(AccountError.TEMP_DISABLED, getPhrase("ERROR_INVALID_LOGIN"));
             throw new PluginException(LinkStatus.ERROR_RETRY);
@@ -693,19 +699,19 @@ public class FreeWayMe extends PluginForHost {
         }
     }
 
-    @SuppressWarnings({ "unused", "unchecked" })
+    @SuppressWarnings({ "unused" })
     public void showAccountDetailsDialog(final Account account) {
         final AccountInfo ai = account.getAccountInfo();
         if (ai != null) {
-            final Object supported = ai.getProperty("multiHostSupport", Property.NULL);
-            if (supported != null) {
+            List<String> supportedHosts = ai.getMultiHostSupport();
+            if (supportedHosts != null) {
                 final HashMap<String, Long> unavailableMap = hostUnavailableMap.get(account);
                 Set<String> unavailableHosts = new HashSet<String>();
                 if (unavailableMap != null) {
                     unavailableHosts.addAll(unavailableMap.keySet());
                 }
                 String windowTitleLangText = null;
-                ArrayList<String> supportedHosts = (ArrayList<String>) supported;
+
                 final String accType = account.getStringProperty("acctype", null);
                 final Integer maxSimultanDls = account.getIntegerProperty(ACC_PROPERTY_CONNECTIONS, 1);
                 final String notifications = account.getStringProperty("notifications", "0");
