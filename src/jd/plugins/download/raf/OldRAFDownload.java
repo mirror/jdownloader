@@ -376,30 +376,40 @@ public class OldRAFDownload extends DownloadInterface {
      * Setzt im Downloadlink und PLugin die entsprechende Fehlerids
      */
     public boolean handleErrors() throws PluginException {
-        if (externalDownloadStop()) {
-            return false;
-        }
-        if (getFileSize() > 0 && totalLinkBytesLoaded != getFileSize()) {
-            if (totalLinkBytesLoaded > getFileSize()) {
-                /*
-                 * workaround for old bug deep in this downloadsystem. more data got loaded (maybe just counting bug) than filesize. but in
-                 * most cases the file is okay! WONTFIX because new downloadsystem is on its way
-                 */
-                logger.severe("Filesize: " + getFileSize() + " Loaded: " + totalLinkBytesLoaded);
-                if (caughtPluginException == null) {
-                    downloadable.setLinkStatus(LinkStatus.FINISHED);
-
-                }
+        final boolean isExternalStop = externalDownloadStop();
+        final long verifiedFileSize = getVerifiedFileSize();
+        if (verifiedFileSize >= 0) {
+            if (totalLinkBytesLoaded == verifiedFileSize) {
+                logger.severe("VerifiedFilesize: " + verifiedFileSize + " Loaded: " + totalLinkBytesLoaded);
+                downloadable.setLinkStatus(LinkStatus.FINISHED);
                 return true;
             }
-            logger.severe("Filesize: " + getFileSize() + " Loaded: " + totalLinkBytesLoaded);
-            logger.severe("DOWNLOAD INCOMPLETE DUE TO FILESIZECHECK");
+            if (isExternalStop) {
+                return false;
+            }
             if (caughtPluginException != null) {
                 throw caughtPluginException;
             }
             throw new PluginException(LinkStatus.ERROR_DOWNLOAD_INCOMPLETE, _JDT._.download_error_message_incomplete());
         }
-        if (caughtPluginException == null) {
+        final long fileSize = getFileSize();
+        if (fileSize >= 0) {
+            if (totalLinkBytesLoaded == fileSize || isExternalStop == false && caughtPluginException == null) {
+                logger.severe("Filesize: " + fileSize + " Loaded: " + totalLinkBytesLoaded);
+                downloadable.setLinkStatus(LinkStatus.FINISHED);
+                return true;
+            }
+            if (isExternalStop) {
+                return false;
+            }
+            if (caughtPluginException != null) {
+                throw caughtPluginException;
+            }
+            throw new PluginException(LinkStatus.ERROR_DOWNLOAD_INCOMPLETE, _JDT._.download_error_message_incomplete());
+        }
+        if (externalDownloadStop()) {
+            return false;
+        } else if (caughtPluginException == null) {
             downloadable.setLinkStatus(LinkStatus.FINISHED);
             return true;
         } else {
@@ -440,7 +450,7 @@ public class OldRAFDownload extends DownloadInterface {
 
     /**
      * Startet den Download. Nach dem Aufruf dieser Funktion koennen keine Downlaodparameter mehr gesetzt werden bzw bleiben wirkungslos.
-     * 
+     *
      * @return
      * @throws Exception
      */
@@ -583,9 +593,9 @@ public class OldRAFDownload extends DownloadInterface {
      * Gibt eine bestmoegliche abschaetzung der Dateigroesse zurueck
      */
     protected long getFileSize() {
-        long verifiedFileSize = downloadable.getVerifiedFileSize();
-        if (verifiedFileSize >= 0) {
-            return verifiedFileSize;
+        final long size = getVerifiedFileSize();
+        if (size >= 0) {
+            return size;
         }
         if (connection != null) {
             if (connection.getRange() != null) {
@@ -603,6 +613,10 @@ public class OldRAFDownload extends DownloadInterface {
             return downloadable.getDownloadTotalBytes();
         }
         return -1;
+    }
+
+    protected long getVerifiedFileSize() {
+        return downloadable.getVerifiedFileSize();
     }
 
     public Request getRequest() {
@@ -875,7 +889,7 @@ public class OldRAFDownload extends DownloadInterface {
 
     /**
      * Fuegt einen Chunk hinzu und startet diesen
-     * 
+     *
      * @param chunk
      */
     protected void addChunk(RAFChunk chunk) {
