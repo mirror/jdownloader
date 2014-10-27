@@ -384,6 +384,8 @@ public class SuperdownComBr extends PluginForHost {
 
     @Override
     public void resetDownloadlink(DownloadLink link) {
+        if (link != null) {
+            link.setProperty(NOCHUNKS, Property.NULL);
+        }
     }
-
 }
