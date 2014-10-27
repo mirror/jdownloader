@@ -76,7 +76,7 @@ public class PluginException extends Exception {
 
     /**
      * JD2Only
-     *
+     * 
      * @return
      */
     public int getLinkStatus() {

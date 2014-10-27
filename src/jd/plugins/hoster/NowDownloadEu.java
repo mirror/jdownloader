@@ -86,15 +86,12 @@ public class NowDownloadEu extends PluginForHost {
             if (host == null || host.startsWith("nowdownload.")) {
                 return "nowdownload.eu";
             }
-            return null;
-        }
-        if ("likeupload.net".equals(getHost())) {
+        } else if ("likeupload.net".equals(getHost())) {
             if (host == null || host.startsWith("likeupload.")) {
                 return "nowdownload.eu";
             }
-            return null;
         }
-        return super.rewriteHost(host);
+        return null;
     }
 
     @Override

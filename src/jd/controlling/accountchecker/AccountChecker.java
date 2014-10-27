@@ -157,7 +157,6 @@ public class AccountChecker {
                         if (stopped) {
                             eventSender.fireEvent(new AccountCheckerEvent(AccountChecker.this, AccountCheckerEvent.Types.CHECK_STOPPED, null));
                         }
-
                     }
 
                     @Override

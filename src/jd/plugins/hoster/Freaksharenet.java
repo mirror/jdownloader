@@ -72,12 +72,11 @@ public class Freaksharenet extends PluginForHost {
 
     public String rewriteHost(String host) {
         if ("freakshare.net".equals(getHost())) {
-            if ("freakshare.net".equals(host)) {
+            if (host == null || "freakshare.net".equals(host)) {
                 return "freakshare.com";
             }
-            return null;
         }
-        return super.rewriteHost(host);
+        return null;
     }
 
     public Boolean rewriteHost(Account acc) {

@@ -86,13 +86,11 @@ public class PutLockerCom extends PluginForHost {
 
     public String rewriteHost(String host) {
         if ("putlocker.com".equals(getHost())) {
-            if ("putlocker.com".equals(host)) {
+            if (host == null || "putlocker.com".equals(host)) {
                 return "firedrive.com";
-            } else {
-                return null;
             }
         }
-        return super.rewriteHost(host);
+        return null;
     }
 
     public Boolean rewriteHost(DownloadLink link) {

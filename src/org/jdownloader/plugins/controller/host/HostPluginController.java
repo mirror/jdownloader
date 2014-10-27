@@ -14,6 +14,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
 
 import jd.SecondLevelLaunch;
+import jd.controlling.AccountController;
 import jd.controlling.TaskQueue;
 import jd.controlling.downloadcontroller.DownloadController;
 import jd.controlling.linkcollector.LinkCollector;
@@ -215,22 +216,25 @@ public class HostPluginController extends PluginController<PluginForHost> {
             logger.close();
             System.gc();
         }
-        SecondLevelLaunch.INIT_COMPLETE.executeWhenReached(new Runnable() {
+        if (SecondLevelLaunch.HOST_PLUGINS_COMPLETE.isReached()) {
+            SecondLevelLaunch.INIT_COMPLETE.executeWhenReached(new Runnable() {
 
-            @Override
-            public void run() {
-                TaskQueue.getQueue().add(new QueueAction<Void, RuntimeException>() {
+                @Override
+                public void run() {
+                    TaskQueue.getQueue().add(new QueueAction<Void, RuntimeException>() {
 
-                    @Override
-                    protected Void run() throws RuntimeException {
-                        LinkCollector.getInstance().checkPluginUpdates();
-                        DownloadController.getInstance().checkPluginUpdates();
-                        return null;
-                    }
-                });
+                        @Override
+                        protected Void run() throws RuntimeException {
+                            LinkCollector.getInstance().checkPluginUpdates();
+                            DownloadController.getInstance().checkPluginUpdates();
+                            AccountController.getInstance().checkPluginUpdates();
+                            return null;
+                        }
+                    });
 
-            }
-        });
+                }
+            });
+        }
         return list;
     }
 
