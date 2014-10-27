@@ -43,12 +43,12 @@ public class DebridItaliaCom extends PluginForHost {
 
     public DebridItaliaCom(PluginWrapper wrapper) {
         super(wrapper);
-        this.enablePremium("http://www.debriditalia.com/premium.php");
+        this.enablePremium("https://www.debriditalia.com/premium.php");
     }
 
     @Override
     public String getAGBLink() {
-        return "http://www.debriditalia.com/index.php";
+        return "https://www.debriditalia.com/premium.php";
     }
 
     @Override
@@ -94,7 +94,7 @@ public class DebridItaliaCom extends PluginForHost {
         ac.setValidUntil(Long.parseLong(expire) * 1000l);
 
         // now let's get a list of all supported hosts:
-        br.getPage("http://debriditalia.com/api.php?hosts");
+        br.getPage("https://debriditalia.com/api.php?hosts");
         hosts = br.getRegex("\"([^<>\"]*?)\"").getColumn(0);
         final ArrayList<String> supportedHosts = new ArrayList<String>(Arrays.asList(hosts));
         ac.setMultiHostSupport(this, supportedHosts);
@@ -118,7 +118,7 @@ public class DebridItaliaCom extends PluginForHost {
         String dllink = checkDirectLink(link, "debriditaliadirectlink");
         if (dllink == null) {
             final String encodedLink = Encoding.urlEncode(link.getDownloadURL());
-            br.getPage("http://debriditalia.com/api.php?generate=on&u=" + Encoding.urlEncode(acc.getUser()) + "&p=" + Encoding.urlEncode(acc.getPass()) + "&link=" + encodedLink);
+            br.getPage("https://debriditalia.com/api.php?generate=on&u=" + Encoding.urlEncode(acc.getUser()) + "&p=" + Encoding.urlEncode(acc.getPass()) + "&link=" + encodedLink);
             /* Either server error or the host is broken (we have to find out by retrying) */
             if (br.containsHTML("ERROR: not_available")) {
                 int timesFailed = link.getIntegerProperty("timesfaileddebriditalia_not_available", 0);
@@ -230,7 +230,7 @@ public class DebridItaliaCom extends PluginForHost {
     }
 
     private boolean loginAPI(final Account acc) throws IOException {
-        br.getPage("http://debriditalia.com/api.php?check=on&u=" + Encoding.urlEncode(acc.getUser()) + "&p=" + Encoding.urlEncode(acc.getPass()));
+        br.getPage("https://debriditalia.com/api.php?check=on&u=" + Encoding.urlEncode(acc.getUser()) + "&p=" + Encoding.urlEncode(acc.getPass()));
         if (!br.containsHTML("<status>valid</status>")) {
             return false;
         }
@@ -301,13 +301,13 @@ public class DebridItaliaCom extends PluginForHost {
     /**
      * Prevents more than one free download from starting at a given time. One step prior to dl.startDownload(), it adds a slot to maxFree
      * which allows the next singleton download to start, or at least try.
-     * 
+     *
      * This is needed because xfileshare(website) only throws errors after a final dllink starts transferring or at a given step within pre
      * download sequence. But this template(XfileSharingProBasic) allows multiple slots(when available) to commence the download sequence,
      * this.setstartintival does not resolve this issue. Which results in x(20) captcha events all at once and only allows one download to
      * start. This prevents wasting peoples time and effort on captcha solving and|or wasting captcha trading credits. Users will experience
      * minimal harm to downloading as slots are freed up soon as current download begins.
-     * 
+     *
      * @param controlFree
      *            (+1|-1)
      */
