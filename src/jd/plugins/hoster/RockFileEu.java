@@ -89,7 +89,7 @@ public class RockFileEu extends PluginForHost {
     private static final int               ACCOUNT_FREE_MAXDOWNLOADS    = 1;
     private static final boolean           ACCOUNT_PREMIUM_RESUME       = true;
     private static final int               ACCOUNT_PREMIUM_MAXCHUNKS    = 1;
-    private static final int               ACCOUNT_PREMIUM_MAXDOWNLOADS = 1;
+    private static final int               ACCOUNT_PREMIUM_MAXDOWNLOADS = 10;
     /* note: CAN NOT be negative or zero! (ie. -1 or 0) Otherwise math sections fail. .:. use [1-20] */
     private static AtomicInteger           totalMaxSimultanFreeDownload = new AtomicInteger(FREE_MAXDOWNLOADS);
     /* don't touch the following! */
@@ -100,7 +100,7 @@ public class RockFileEu extends PluginForHost {
 
     /* DEV NOTES */
     // XfileSharingProBasic Version 2.6.6.6
-    // mods: access downloadURL + ".html", waitTime
+    // mods: access downloadURL + ".html", waitTime, heavily modified, do NOT upgrade!
     // limit-info: premium & free acc untested, set FREE limits
     // protocol: no https
     // captchatype: null
@@ -553,6 +553,7 @@ public class RockFileEu extends PluginForHost {
         /* define custom browser headers and language settings */
         br.getHeaders().put("Accept-Language", "en-gb, en;q=0.9");
         br.setCookie(COOKIE_HOST, "lang", "english");
+        br.setCookie(COOKIE_HOST, "langAuto", "0");
         if (ENABLE_RANDOM_UA) {
             if (agent.get() == null) {
                 /* we first have to load the plugin, before we can reference it */
@@ -980,8 +981,9 @@ public class RockFileEu extends PluginForHost {
         long expire_milliseconds = 0;
         if (expire != null) {
             expire_milliseconds = TimeFormatter.getMilliSeconds(expire, "dd MMMM yyyy", Locale.ENGLISH);
+            account.setProperty("nopremium", false);
         }
-        if (account.getBooleanProperty("nopremium") && (expire_milliseconds - System.currentTimeMillis()) <= 0) {
+        if (account.getBooleanProperty("nopremium") || (expire_milliseconds - System.currentTimeMillis()) <= 0) {
             maxPrem.set(ACCOUNT_FREE_MAXDOWNLOADS);
             try {
                 account.setType(AccountType.FREE);
@@ -1049,10 +1051,10 @@ public class RockFileEu extends PluginForHost {
                         throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nInvalid username/password!\r\nYou're sure that the username and password you entered are correct? Some hints:\r\n1. If your password contains special characters, change it (remove them) and try again!\r\n2. Type in your username/password by hand without copy & paste.", PluginException.VALUE_ID_PREMIUM_DISABLE);
                     }
                 }
-                if (!br.getURL().contains("/?op=my_account")) {
-                    getPage("/?op=my_account");
+                if (!br.getURL().contains("/account")) {
+                    getPage("/account");
                 }
-                if (!new Regex(correctedBR, "(Premium(\\-| )Account expire|>Renew premium<)").matches()) {
+                if (!new Regex(correctedBR, ">Premium account expire").matches()) {
                     account.setProperty("nopremium", true);
                 } else {
                     account.setProperty("nopremium", false);
@@ -1079,7 +1081,7 @@ public class RockFileEu extends PluginForHost {
         passCode = downloadLink.getStringProperty("pass");
         requestFileInformation(downloadLink);
         login(account, false);
-        if (account.getBooleanProperty("nopremium")) {
+        if (account.getBooleanProperty("nopremium", false)) {
             requestFileInformation(downloadLink);
             doFree(downloadLink, ACCOUNT_FREE_RESUME, ACCOUNT_FREE_MAXCHUNKS, "freelink2");
         } else {
