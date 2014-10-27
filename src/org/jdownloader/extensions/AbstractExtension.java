@@ -40,9 +40,9 @@ import sun.reflect.generics.reflectiveObjects.ParameterizedTypeImpl;
 
 /**
  * Superclass for all extensions
- * 
+ *
  * @author thomas
- * 
+ *
  */
 public abstract class AbstractExtension<ConfigType extends ExtensionConfigInterface, TranslationType extends TranslateInterface> {
 
@@ -52,7 +52,7 @@ public abstract class AbstractExtension<ConfigType extends ExtensionConfigInterf
 
     /**
      * true if the extension is currently running.
-     * 
+     *
      * @return
      */
     public boolean isEnabled() {
@@ -65,7 +65,7 @@ public abstract class AbstractExtension<ConfigType extends ExtensionConfigInterf
 
     /**
      * start/stops the extension.
-     * 
+     *
      * @param enabled
      * @throws StartException
      * @throws StopException
@@ -101,7 +101,7 @@ public abstract class AbstractExtension<ConfigType extends ExtensionConfigInterf
 
     /**
      * Converts an ExtensionConfigPanel from the old config containers
-     * 
+     *
      * @param initSettings
      * @return
      */
@@ -139,7 +139,7 @@ public abstract class AbstractExtension<ConfigType extends ExtensionConfigInterf
     /**
      * Returns the internal storage. Most of the configvalues are for internal use only. This config only contains values which are valid
      * for all extensions
-     * 
+     *
      * @return
      */
     public ConfigType getSettings() {
@@ -148,14 +148,14 @@ public abstract class AbstractExtension<ConfigType extends ExtensionConfigInterf
 
     /**
      * use {@link #setAutoConnectEnabled(false)} to stop the extension. avoid to call this method directly
-     * 
+     *
      * @throws StopException
      */
     protected abstract void stop() throws StopException;
 
     /**
      * use {@link #setAutoConnectEnabled(true)} to start the extension. avoid to call this method directly
-     * 
+     *
      * @throws StartException
      */
     protected abstract void start() throws StartException;
@@ -185,7 +185,7 @@ public abstract class AbstractExtension<ConfigType extends ExtensionConfigInterf
     }
 
     /**
-     * 
+     *
      * @param translationInterface
      * @param contentType
      *            name of this plugin. Until JD 2.* we should use null here to use the old defaultname. we used to sue this localized name
@@ -220,7 +220,7 @@ public abstract class AbstractExtension<ConfigType extends ExtensionConfigInterf
 
     /**
      * Creates the correct config based on the Extensions supertype
-     * 
+     *
      * @param class1
      * @return
      */
@@ -231,7 +231,7 @@ public abstract class AbstractExtension<ConfigType extends ExtensionConfigInterf
 
     /**
      * returns the config interface class for this extension
-     * 
+     *
      * @return
      */
     @SuppressWarnings("unchecked")
@@ -250,14 +250,14 @@ public abstract class AbstractExtension<ConfigType extends ExtensionConfigInterf
 
     /**
      * Gets called once per session as soon as the extension gets loaded the first time
-     * 
+     *
      * @throws StartException
      */
     protected abstract void initExtension() throws StartException;
 
     /**
      * Reads the version.dat in the same directory as class1
-     * 
+     *
      * @param class1
      * @return
      */
