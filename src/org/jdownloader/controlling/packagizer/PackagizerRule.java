@@ -11,33 +11,42 @@ public class PackagizerRule extends FilterRule implements Storable {
     }
 
     public PackagizerRule duplicate() {
-        PackagizerRule ret = new PackagizerRule();
-
+        final PackagizerRule ret = new PackagizerRule();
         ret.setEnabled(isEnabled());
+
+        ret.setCreated(System.currentTimeMillis());
         ret.setIconKey(getIconKey());
+        ret.setName(_JDT._.LinkgrabberFilterRule_duplicate(getName()));
+
+        ret.setMatchAlwaysFilter(getMatchAlwaysFilter());
+
         ret.setFilenameFilter(getFilenameFilter());
         ret.setPackagenameFilter(getPackagenameFilter());
         ret.setFilesizeFilter(getFilesizeFilter());
-        ret.setMatchAlwaysFilter(getMatchAlwaysFilter());
         ret.setFiletypeFilter(getFiletypeFilter());
-        ret.setOnlineStatusFilter(getOnlineStatusFilter());
-        ret.setOriginFilter(getOriginFilter());
-        ret.setPluginStatusFilter(getPluginStatusFilter());
+
         ret.setHosterURLFilter(getHosterURLFilter());
-        ret.setName(_JDT._.LinkgrabberFilterRule_duplicate(getName()));
         ret.setSourceURLFilter(getSourceURLFilter());
+        ret.setOriginFilter(getOriginFilter());
+        ret.setOnlineStatusFilter(getOnlineStatusFilter());
+        ret.setPluginStatusFilter(getPluginStatusFilter());
+
+        ret.setDownloadDestination(getDownloadDestination());
+        ret.setPriority(getPriority());
+        ret.setPackageName(getPackageName());
+        ret.setFilename(getFilename());
+        ret.setComment(getComment());
+        ret.setChunks(getChunks());
+        ret.setAutoExtractionEnabled(isAutoExtractionEnabled());
+        ret.setAutoAddEnabled(isAutoAddEnabled());
+        ret.setAutoStartEnabled(isAutoStartEnabled());
+        ret.setAutoForcedStartEnabled(isAutoForcedStartEnabled());
         ret.setLinkEnabled(getLinkEnabled());
-        ret.setRename(getRename());
+
         ret.setMoveto(getMoveto());
-        ret.autoAddEnabled = autoAddEnabled;
-        ret.autoExtractionEnabled = autoExtractionEnabled;
-        ret.autoStartEnabled = autoStartEnabled;
-        ret.chunks = chunks;
-        ret.downloadDestination = downloadDestination;
-        ret.packageName = packageName;
-        ret.priority = priority;
-        ret.autoForcedStartEnabled = autoForcedStartEnabled;
-        ret.setCreated(System.currentTimeMillis());
+        ret.setRename(getRename());
+
+        ret.setTestUrl(getTestUrl());
         return ret;
     }
 
