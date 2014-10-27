@@ -7,7 +7,7 @@ import org.jdownloader.translate._JDT;
 
 public class PackagizerRule extends FilterRule implements Storable {
     public PackagizerRule() {
-        // required by STorable
+        // required by Storable
     }
 
     public PackagizerRule duplicate() {
