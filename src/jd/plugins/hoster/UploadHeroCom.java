@@ -99,6 +99,15 @@ public class UploadHeroCom extends PluginForHost {
         return null;
     }
 
+    public String rewriteHost(String host) {
+        if ("uploadhero.com".equals(getHost())) {
+            if (host == null || "uploadhero.com".equals(host)) {
+                return "uploadhero.co";
+            }
+        }
+        return null;
+    }
+
     @Override
     public String getAGBLink() {
         return MAINPAGE + "/tos";
