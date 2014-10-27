@@ -14,6 +14,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
 
 import jd.SecondLevelLaunch;
+import jd.controlling.TaskQueue;
 import jd.controlling.downloadcontroller.DownloadController;
 import jd.controlling.linkcollector.LinkCollector;
 import jd.nutils.Formatter;
@@ -29,6 +30,7 @@ import org.appwork.shutdown.ShutdownRequest;
 import org.appwork.storage.config.ConfigInterface;
 import org.appwork.utils.Application;
 import org.appwork.utils.ModifyLock;
+import org.appwork.utils.event.queue.QueueAction;
 import org.appwork.utils.logging2.LogSource;
 import org.jdownloader.controlling.FileCreationManager;
 import org.jdownloader.logging.LogController;
@@ -217,8 +219,16 @@ public class HostPluginController extends PluginController<PluginForHost> {
 
             @Override
             public void run() {
-                LinkCollector.getInstance().checkPluginUpdates();
-                DownloadController.getInstance().checkPluginUpdates();
+                TaskQueue.getQueue().add(new QueueAction<Void, RuntimeException>() {
+
+                    @Override
+                    protected Void run() throws RuntimeException {
+                        LinkCollector.getInstance().checkPluginUpdates();
+                        DownloadController.getInstance().checkPluginUpdates();
+                        return null;
+                    }
+                });
+
             }
         });
         return list;

@@ -1111,7 +1111,7 @@ public abstract class PluginForHost extends Plugin {
      * @return
      */
     public String rewriteHost(String host) {
-        if (host == null) {
+        if (host == null || host.equals(getHost())) {
             return getHost();
         }
         return null;
@@ -1122,9 +1122,19 @@ public abstract class PluginForHost extends Plugin {
             if (plugin != null) {
                 final Method method = plugin.getClass().getMethod("rewriteHost", new Class[] { clazz });
                 final boolean implementsHandlePremium = method.getDeclaringClass() != PluginForHost.class;
-                return implementsHandlePremium;
+                if (implementsHandlePremium) {
+                    if (String.class.equals(clazz)) {
+                        return StringUtils.equals(plugin.rewriteHost((String) null), plugin.getHost());
+                    } else if (DownloadLink.class.equals(clazz)) {
+                        return plugin.rewriteHost((DownloadLink) null) != null;
+                    } else if (Account.class.equals(clazz)) {
+                        return plugin.rewriteHost((Account) null) != null;
+                    }
+                }
             }
+        } catch (NoSuchMethodException e) {
         } catch (Throwable e) {
+            LogController.CL().log(e);
         }
         return false;
     }
@@ -1136,7 +1146,9 @@ public abstract class PluginForHost extends Plugin {
                 final boolean implementsHandlePremium = method.getDeclaringClass() != PluginForHost.class;
                 return implementsHandlePremium;
             }
+        } catch (NoSuchMethodException e) {
         } catch (Throwable e) {
+            LogController.CL().log(e);
         }
         return false;
     }
@@ -1148,7 +1160,9 @@ public abstract class PluginForHost extends Plugin {
                 final boolean hasMassCheck = method.getDeclaringClass() != PluginForHost.class;
                 return hasMassCheck;
             }
+        } catch (NoSuchMethodException e) {
         } catch (Throwable e) {
+            LogController.CL().log(e);
         }
         return false;
     }
@@ -1160,7 +1174,9 @@ public abstract class PluginForHost extends Plugin {
                 final boolean implementsHandlePremium = method.getDeclaringClass() != PluginForHost.class;
                 return implementsHandlePremium;
             }
+        } catch (NoSuchMethodException e) {
         } catch (Throwable e) {
+            LogController.CL().log(e);
         }
         return false;
     }
