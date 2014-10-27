@@ -1103,17 +1103,12 @@ public abstract class PluginForHost extends Plugin {
     /**
      * override this if you want to signal domain changes
      * 
-     * null must always return the original hostname
-     * 
-     * 
+     * to enable this feature null must return the original hostname
      * 
      * @param host
      * @return
      */
     public String rewriteHost(String host) {
-        if (host == null || host.equals(getHost())) {
-            return getHost();
-        }
         return null;
     }
 
@@ -1124,7 +1119,7 @@ public abstract class PluginForHost extends Plugin {
                 final boolean implementsHandlePremium = method.getDeclaringClass() != PluginForHost.class;
                 if (implementsHandlePremium) {
                     if (String.class.equals(clazz)) {
-                        return StringUtils.equals(plugin.rewriteHost((String) null), plugin.getHost());
+                        return plugin.rewriteHost((String) null) != null;
                     } else if (DownloadLink.class.equals(clazz)) {
                         return plugin.rewriteHost((DownloadLink) null) != null;
                     } else if (Account.class.equals(clazz)) {

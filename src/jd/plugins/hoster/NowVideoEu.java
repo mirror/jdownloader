@@ -84,11 +84,10 @@ public class NowVideoEu extends PluginForHost {
 
     @Override
     public String rewriteHost(String host) {
-        if (isPremiumEnabled()) {
-            return super.rewriteHost(host);
-        }
-        if (host == null || host.startsWith("nowvideo.")) {
-            return "nowvideo.eu";
+        if (!isPremiumEnabled()) {
+            if (host == null || host.startsWith("nowvideo.")) {
+                return "nowvideo.eu";
+            }
         }
         return null;
     }

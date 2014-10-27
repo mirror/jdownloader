@@ -23,6 +23,7 @@ import java.util.Collection;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
+import java.util.ListIterator;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -119,7 +120,7 @@ public class AccountController implements AccountControllerListener, AccountProp
             }
         };
         final Collection<List<Account>> accsc = ACCOUNTS.values();
-        for (final java.util.List<Account> accs : accsc) {
+        for (final List<Account> accs : accsc) {
             for (final Account acc : accs) {
                 acc.setAccountController(this);
                 if (acc.getPlugin() != null) {
@@ -131,14 +132,14 @@ public class AccountController implements AccountControllerListener, AccountProp
     }
 
     protected void save() {
-        HashMap<String, ArrayList<AccountData>> ret = new HashMap<String, ArrayList<AccountData>>();
-        synchronized (ACCOUNTS) {
-            for (Iterator<Entry<String, java.util.List<Account>>> it = ACCOUNTS.entrySet().iterator(); it.hasNext();) {
-                Entry<String, java.util.List<Account>> next = it.next();
+        final HashMap<String, ArrayList<AccountData>> ret = new HashMap<String, ArrayList<AccountData>>();
+        synchronized (AccountController.this) {
+            for (final Iterator<Entry<String, List<Account>>> it = ACCOUNTS.entrySet().iterator(); it.hasNext();) {
+                final Entry<String, List<Account>> next = it.next();
                 if (next.getValue().size() > 0) {
-                    ArrayList<AccountData> list = new ArrayList<AccountData>();
+                    final ArrayList<AccountData> list = new ArrayList<AccountData>(next.getValue().size());
                     ret.put(next.getKey(), list);
-                    for (Account a : next.getValue()) {
+                    for (final Account a : next.getValue()) {
                         list.add(AccountData.create(a));
                     }
                 }
@@ -148,7 +149,7 @@ public class AccountController implements AccountControllerListener, AccountProp
     }
 
     private void updateInternalMultiHosterMap(Account account, AccountInfo ai) {
-        synchronized (MULTIHOSTER_ACCOUNTS) {
+        synchronized (AccountController.this) {
             Iterator<Entry<String, List<Account>>> it = MULTIHOSTER_ACCOUNTS.entrySet().iterator();
             while (it.hasNext()) {
                 Entry<String, List<Account>> next = it.next();
@@ -163,15 +164,13 @@ public class AccountController implements AccountControllerListener, AccountProp
                 if (multiHostSupport != null) {
                     isMulti = true;
                     for (String support : multiHostSupport) {
-                        if (support instanceof String) {
-                            String host = support.toLowerCase(Locale.ENGLISH);
-                            List<Account> accs = MULTIHOSTER_ACCOUNTS.get(host);
-                            if (accs == null) {
-                                accs = new ArrayList<Account>();
-                                MULTIHOSTER_ACCOUNTS.put(host, accs);
-                            }
-                            accs.add(account);
+                        String host = support.toLowerCase(Locale.ENGLISH);
+                        List<Account> accs = MULTIHOSTER_ACCOUNTS.get(host);
+                        if (accs == null) {
+                            accs = new ArrayList<Account>();
+                            MULTIHOSTER_ACCOUNTS.put(host, accs);
                         }
+                        accs.add(account);
                     }
                 }
             }
@@ -426,17 +425,30 @@ public class AccountController implements AccountControllerListener, AccountProp
         }
     }
 
+    public void checkPluginUpdates() {
+        final PluginFinder pluginFinder = new PluginFinder();
+        for (final Account account : list(null)) {
+            final AccountInfo accountInfo = account.getAccountInfo();
+            if (account.getPlugin() != null && account.isMulti() && accountInfo != null) {
+                try {
+                    accountInfo.setMultiHostSupport(account.getPlugin(), accountInfo.getMultiHostSupport(), pluginFinder);
+                    updateInternalMultiHosterMap(account, accountInfo);
+                } catch (final Throwable e) {
+                    LogController.CL().log(e);
+                }
+            }
+        }
+    }
+
     public static AccountController getInstance() {
         return INSTANCE;
     }
 
     private synchronized HashMap<String, List<Account>> loadAccounts(AccountSettings config, boolean allowRestore) {
         HashMap<String, ArrayList<AccountData>> dat = config.getAccounts();
-        if (dat == null) {
+        if (dat == null && allowRestore) {
             try {
-                if (allowRestore) {
-                    dat = restore();
-                }
+                dat = restore();
             } catch (final Throwable e) {
                 LogController.CL().log(e);
             }
@@ -444,27 +456,40 @@ public class AccountController implements AccountControllerListener, AccountProp
         if (dat == null) {
             dat = new HashMap<String, ArrayList<AccountData>>();
         }
-        PluginFinder pluginFinder = new PluginFinder();
-        HashMap<String, List<Account>> ret = new HashMap<String, List<Account>>();
+        final PluginFinder pluginFinder = new PluginFinder();
+        final HashMap<String, List<Account>> ret = new HashMap<String, List<Account>>();
         for (Iterator<Entry<String, ArrayList<AccountData>>> it = dat.entrySet().iterator(); it.hasNext();) {
-            Entry<String, ArrayList<AccountData>> next = it.next();
+            final Entry<String, ArrayList<AccountData>> next = it.next();
             if (next.getValue().size() > 0) {
-                for (AccountData ad : next.getValue()) {
-                    String host = next.getKey();
-                    host = host.toLowerCase(Locale.ENGLISH);
-                    Account acc = ad.toAccount();
-                    acc.setHoster(host);
-                    PluginForHost plugin = pluginFinder.assignPlugin(acc, true);
+                final String nextHost = next.getKey().toLowerCase(Locale.ENGLISH);
+                for (final AccountData ad : next.getValue()) {
+                    final Account acc = ad.toAccount();
+                    acc.setHoster(nextHost);
+                    final PluginForHost plugin = pluginFinder.assignPlugin(acc, true);
+                    final String accountHost;
                     if (plugin != null) {
-                        host = plugin.getHost();
+                        accountHost = plugin.getHost();
                         acc.setPlugin(plugin);
                     } else {
+                        accountHost = nextHost;
                         acc.setPlugin(null);
                     }
-                    List<Account> accs = ret.get(host);
+                    final AccountInfo ai = acc.getAccountInfo();
+                    if (ai != null) {
+                        if (plugin != null) {
+                            try {
+                                ai.setMultiHostSupport(plugin, ai.getMultiHostSupport(), pluginFinder);
+                            } catch (final Throwable e) {
+                                LogController.CL().log(e);
+                            }
+                        } else {
+                            ai.setMultiHostSupport(null, null, null);
+                        }
+                    }
+                    List<Account> accs = ret.get(accountHost);
                     if (accs == null) {
                         accs = new ArrayList<Account>();
-                        ret.put(host, accs);
+                        ret.put(accountHost, accs);
                     }
                     accs.add(acc);
                 }
@@ -527,28 +552,25 @@ public class AccountController implements AccountControllerListener, AccountProp
 
     /* returns a list of all available accounts for given host */
     public ArrayList<Account> list(String host) {
-        ArrayList<Account> ret = new ArrayList<Account>();
-        synchronized (ACCOUNTS) {
-            if (StringUtils.isEmpty(host)) {
-                for (String hoster : ACCOUNTS.keySet()) {
-                    List<Account> ret2 = ACCOUNTS.get(hoster);
-                    if (ret2 != null) {
-                        for (Account acc : ret2) {
-                            if (acc.getPlugin() == null) {
-                                continue;
+        final ArrayList<Account> ret = new ArrayList<Account>();
+        synchronized (AccountController.this) {
+            if (host == null) {
+                for (final List<Account> accounts : ACCOUNTS.values()) {
+                    if (accounts != null) {
+                        for (final Account acc : accounts) {
+                            if (acc.getPlugin() != null) {
+                                ret.add(acc);
                             }
-                            ret.add(acc);
                         }
                     }
                 }
             } else {
-                List<Account> ret2 = ACCOUNTS.get(host);
+                final List<Account> ret2 = ACCOUNTS.get(host.toLowerCase(Locale.ENGLISH));
                 if (ret2 != null) {
-                    for (Account acc : ret2) {
-                        if (acc.getPlugin() == null) {
-                            continue;
+                    for (final Account acc : ret2) {
+                        if (acc.getPlugin() != null) {
+                            ret.add(acc);
                         }
-                        ret.add(acc);
                     }
                 }
             }
@@ -562,21 +584,15 @@ public class AccountController implements AccountControllerListener, AccountProp
     }
 
     /* do we have accounts for this host */
-    public boolean hasAccounts(String host) {
-        if (StringUtils.isEmpty(host)) {
-            return false;
-        }
-        List<Account> ret = null;
-        host = host.toLowerCase(Locale.ENGLISH);
-        synchronized (ACCOUNTS) {
-            ret = ACCOUNTS.get(host);
-            if (ret != null) {
-                for (Account acc : ret) {
-                    if (acc.getPlugin() == null) {
-                        continue;
-                    }
-                    if (acc.isValid()) {
-                        return true;
+    public boolean hasAccounts(final String host) {
+        if (host != null) {
+            synchronized (AccountController.this) {
+                final List<Account> ret = ACCOUNTS.get(host.toLowerCase(Locale.ENGLISH));
+                if (ret != null && ret.size() > 0) {
+                    for (final Account acc : ret) {
+                        if (acc.isValid() && acc.getPlugin() != null) {
+                            return true;
+                        }
                     }
                 }
             }
@@ -589,35 +605,27 @@ public class AccountController implements AccountControllerListener, AccountProp
     }
 
     public void addAccount(final Account account, boolean forceCheck) {
-        if (account == null) {
-            return;
-        }
-        if (account.getPlugin() == null) {
-            PluginForHost plugin = new PluginFinder().assignPlugin(account, true);
-            if (plugin != null) {
-                account.setPlugin(plugin);
-            } else {
-                account.setPlugin(null);
+        if (account != null) {
+            if (account.getPlugin() == null) {
+                account.setPlugin(new PluginFinder().assignPlugin(account, true));
             }
-        }
-
-        synchronized (ACCOUNTS) {
-            String host = account.getHoster();
-            host = host.toLowerCase(Locale.ENGLISH);
-            List<Account> accs = ACCOUNTS.get(host);
-            if (accs == null) {
-                accs = new ArrayList<Account>();
-                ACCOUNTS.put(host, accs);
-            }
-            for (final Account acc : accs) {
-                if (acc.equals(account)) {
-                    return;
+            synchronized (AccountController.this) {
+                final String host = account.getHoster().toLowerCase(Locale.ENGLISH);
+                List<Account> accs = ACCOUNTS.get(host);
+                if (accs == null) {
+                    accs = new ArrayList<Account>();
+                    ACCOUNTS.put(host, accs);
                 }
+                for (final Account acc : accs) {
+                    if (acc.equals(account)) {
+                        return;
+                    }
+                }
+                account.setAccountController(this);
+                accs.add(account);
             }
-            account.setAccountController(this);
-            accs.add(account);
+            this.broadcaster.fireEvent(new AccountControllerEvent(this, AccountControllerEvent.Types.ADDED, account));
         }
-        this.broadcaster.fireEvent(new AccountControllerEvent(this, AccountControllerEvent.Types.ADDED, account));
     }
 
     public boolean removeAccount(final Account account) {
@@ -626,10 +634,9 @@ public class AccountController implements AccountControllerListener, AccountProp
         }
         /* remove reference to AccountController */
         account.setAccountController(null);
-        synchronized (ACCOUNTS) {
-            String host = account.getHoster();
-            host = host.toLowerCase(Locale.ENGLISH);
-            List<Account> accs = ACCOUNTS.get(host);
+        synchronized (AccountController.this) {
+            final String host = account.getHoster().toLowerCase(Locale.ENGLISH);
+            final List<Account> accs = ACCOUNTS.get(host);
             if (accs == null || !accs.remove(account)) {
                 return false;
             }
@@ -690,7 +697,7 @@ public class AccountController implements AccountControllerListener, AccountProp
 
     @Deprecated
     public Account getValidAccount(final PluginForHost pluginForHost) {
-        ArrayList<Account> ret = getValidAccounts(pluginForHost.getHost());
+        final List<Account> ret = getValidAccounts(pluginForHost.getHost());
         if (ret != null && ret.size() > 0) {
             return ret.get(0);
         }
@@ -701,18 +708,17 @@ public class AccountController implements AccountControllerListener, AccountProp
         if (StringUtils.isEmpty(host)) {
             return null;
         }
-        host = host.toLowerCase(Locale.ENGLISH);
-        ArrayList<Account> ret = null;
-        synchronized (ACCOUNTS) {
-            final List<Account> accounts = ACCOUNTS.get(host);
+        final ArrayList<Account> ret;
+        synchronized (AccountController.this) {
+            final List<Account> accounts = ACCOUNTS.get(host = host.toLowerCase(Locale.ENGLISH));
             if (accounts == null || accounts.size() == 0) {
                 return null;
             }
             ret = new ArrayList<Account>(accounts);
         }
-        Iterator<Account> it = ret.iterator();
-        while (it.hasNext()) {
-            Account next = it.next();
+        final ListIterator<Account> it = ret.listIterator(ret.size());
+        while (it.hasPrevious()) {
+            final Account next = it.previous();
             if (!next.isEnabled() || !next.isValid() || next.isTempDisabled() || next.getPlugin() == null) {
                 /* we remove every invalid/disabled/tempdisabled/blocked account */
                 it.remove();
@@ -721,32 +727,29 @@ public class AccountController implements AccountControllerListener, AccountProp
         return ret;
     }
 
-    public List<Account> getMultiHostAccounts(String host) {
-        if (StringUtils.isEmpty(host)) {
-            return null;
-        }
-        host = host.toLowerCase(Locale.ENGLISH);
-        synchronized (MULTIHOSTER_ACCOUNTS) {
-            final List<Account> list = MULTIHOSTER_ACCOUNTS.get(host);
-            if (list != null) {
-                return new ArrayList<Account>(list);
+    public List<Account> getMultiHostAccounts(final String host) {
+        if (host != null) {
+            synchronized (AccountController.this) {
+                final List<Account> list = MULTIHOSTER_ACCOUNTS.get(host.toLowerCase(Locale.ENGLISH));
+                if (list != null && list.size() > 0) {
+                    return new ArrayList<Account>(list);
+                }
             }
-            return null;
         }
+        return null;
     }
 
-    public boolean hasMultiHostAccounts(String host) {
-        if (StringUtils.isEmpty(host)) {
-            return false;
+    public boolean hasMultiHostAccounts(final String host) {
+        if (host != null) {
+            synchronized (AccountController.this) {
+                return MULTIHOSTER_ACCOUNTS.containsKey(host.toLowerCase(Locale.ENGLISH));
+            }
         }
-        host = host.toLowerCase(Locale.ENGLISH);
-        synchronized (MULTIHOSTER_ACCOUNTS) {
-            return MULTIHOSTER_ACCOUNTS.containsKey(host);
-        }
+        return false;
     }
 
     @Deprecated
-    public ArrayList<Account> getAllAccounts(String string) {
+    public ArrayList<Account> getAllAccounts(final String string) {
         return list(string);
     }
 

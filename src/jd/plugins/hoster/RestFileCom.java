@@ -68,7 +68,6 @@ public class RestFileCom extends PluginForHost {
             if ("restfile.ws".equals(host) || "restfile.com".equals(host)) {
                 return "restfilee.com";
             }
-            return null;
         }
         return super.rewriteHost(host);
     }

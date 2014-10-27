@@ -840,7 +840,6 @@ public class SecondLevelLaunch {
                                 }.start(true);
                             }
                             Thread.currentThread().setName("ExecuteWhenGuiReachedThread: Init Host Plugins");
-
                             HostPluginController.getInstance().ensureLoaded();
                             HOST_PLUGINS_COMPLETE.setReached();
                             PackagizerController.getInstance();

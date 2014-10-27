@@ -71,12 +71,11 @@ public class IfolderRu extends PluginForHost {
 
     public String rewriteHost(String host) {
         if ("rusfolder.ru".equals(getHost()) || "ifolder.ru".equals(getHost())) {
-            if ("rusfolder.ru".equals(getHost()) || "ifolder.ru".equals(getHost())) {
+            if (host == null || "rusfolder.ru".equals(getHost()) || "ifolder.ru".equals(getHost())) {
                 return "rusfolder.com";
             }
-            return null;
         }
-        return super.rewriteHost(host);
+        return null;
     }
 
     public Boolean rewriteHost(Account acc) {

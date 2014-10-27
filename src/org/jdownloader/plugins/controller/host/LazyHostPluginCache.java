@@ -20,7 +20,7 @@ import org.jdownloader.plugins.controller.LazyPluginClass;
 
 public class LazyHostPluginCache {
 
-    private static final int CACHEVERSION = 11;
+    private static final int CACHEVERSION = 27102014;
 
     private static ByteArrayOutputStream readFile(File file) throws IOException {
         final ByteArrayOutputStream byteBuffer = new ByteArrayOutputStream(32767) {

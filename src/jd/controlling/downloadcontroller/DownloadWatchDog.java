@@ -3018,20 +3018,19 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
                     HosterRuleController.getInstance().getEventSender().addListener(hrcListener = new HosterRuleControllerListener() {
 
                         private void removeAccountCache(final String host) {
-                            if (host == null) {
-                                return;
+                            if (host != null) {
+                                enqueueJob(new DownloadWatchDogJob() {
+
+                                    @Override
+                                    public void execute(DownloadSession currentSession) {
+                                        currentSession.removeAccountCache(host);
+                                    }
+
+                                    @Override
+                                    public void interrupt() {
+                                    }
+                                });
                             }
-                            enqueueJob(new DownloadWatchDogJob() {
-
-                                @Override
-                                public void execute(DownloadSession currentSession) {
-                                    currentSession.removeAccountCache(host);
-                                }
-
-                                @Override
-                                public void interrupt() {
-                                }
-                            });
                         }
 
                         @Override
@@ -3074,6 +3073,13 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
                                 @Override
                                 public void execute(DownloadSession currentSession) {
                                     currentSession.removeAccountCache(event.getAccount().getHoster());
+                                    final AccountInfo ai = event.getAccount().getAccountInfo();
+                                    final List<String> multiHostList = ai.getMultiHostSupport();
+                                    if (multiHostList != null) {
+                                        for (final String multiHost : multiHostList) {
+                                            currentSession.removeAccountCache(multiHost);
+                                        }
+                                    }
                                 }
 
                                 @Override

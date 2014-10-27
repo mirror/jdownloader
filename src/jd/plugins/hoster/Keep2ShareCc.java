@@ -75,7 +75,7 @@ public class Keep2ShareCc extends K2SApi {
     }
 
     public String rewriteHost(String host) {
-        if ("keep2share.cc".equals(host) || "k2s.cc".equals(host) || "keep2s.cc".equals(host) || "keep2.cc".equals(host) || "k2share.cc".equals(host)) {
+        if (host == null || "keep2share.cc".equals(host) || "k2s.cc".equals(host) || "keep2s.cc".equals(host) || "keep2.cc".equals(host) || "k2share.cc".equals(host)) {
             return "keep2share.cc";
         } else {
             return null;
