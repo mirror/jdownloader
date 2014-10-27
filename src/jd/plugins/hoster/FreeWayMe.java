@@ -487,9 +487,6 @@ public class FreeWayMe extends PluginForHost {
         for (String host : hosts) {
             if (!host.isEmpty()) {
                 supportedHosts.add(host.trim());
-                if (host.trim().equals("freakshare.com")) {
-                    supportedHosts.add("freakshare.net");
-                }
             }
         }
         // set
