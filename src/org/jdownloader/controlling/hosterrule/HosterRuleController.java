@@ -133,7 +133,7 @@ public class HosterRuleController implements AccountControllerListener {
                             final AccountUsageRule rule = ars.restore(availableAccounts);
                             rule.setOwner(this);
                             final DownloadLink link = new DownloadLink(null, "", rule.getHoster(), "", false);
-                            PluginForHost plugin = pluginFinder.assignPlugin(link, true);
+                            final PluginForHost plugin = pluginFinder.assignPlugin(link, true);
                             if (plugin == null) {
                                 rule.setEnabled(false);
                             } else {
@@ -164,6 +164,32 @@ public class HosterRuleController implements AccountControllerListener {
                 return null;
             }
         });
+    }
+
+    public void checkPluginUpdates() {
+        if (SecondLevelLaunch.ACCOUNTLIST_LOADED.isReached() && initDone.get()) {
+            queue.add(new QueueAction<Void, RuntimeException>() {
+
+                @Override
+                protected Void run() throws RuntimeException {
+                    final PluginFinder pluginFinder = new PluginFinder(logger);
+                    for (final AccountUsageRule rule : loadedRules) {
+                        final DownloadLink link = new DownloadLink(null, "", rule.getHoster(), "", false);
+                        final PluginForHost plugin = pluginFinder.assignPlugin(link, true);
+                        if (plugin == null) {
+                            rule.setEnabled(false);
+                        } else {
+                            final boolean fireUpdate = !StringUtils.equalsIgnoreCase(rule.getHoster(), plugin.getHost());
+                            rule.setHoster(plugin.getHost());
+                            if (fireUpdate) {
+                                fireUpdate(rule);
+                            }
+                        }
+                    }
+                    return null;
+                }
+            });
+        }
     }
 
     public AccountCache getAccountCache(final String host, final DownloadSession session) {
@@ -362,22 +388,26 @@ public class HosterRuleController implements AccountControllerListener {
     }
 
     public void fireUpdate(final AccountUsageRule rule) {
-        if (rule == null) {
-            return;
-        }
-        queue.add(new QueueAction<Void, RuntimeException>() {
+        if (rule != null) {
+            queue.addAsynch(new QueueAction<Void, RuntimeException>() {
 
-            @Override
-            protected Void run() throws RuntimeException {
-                delayedSaver.delayedrun();
-                try {
-                    validateRule(rule);
-                } finally {
-                    eventSender.fireEvent(new HosterRuleControllerEvent(this, HosterRuleControllerEvent.Type.DATA_UPDATE, rule));
+                @Override
+                protected boolean allowAsync() {
+                    return true;
                 }
-                return null;
-            }
-        });
+
+                @Override
+                protected Void run() throws RuntimeException {
+                    delayedSaver.delayedrun();
+                    try {
+                        validateRule(rule);
+                    } finally {
+                        eventSender.fireEvent(new HosterRuleControllerEvent(this, HosterRuleControllerEvent.Type.DATA_UPDATE, rule));
+                    }
+                    return null;
+                }
+            });
+        }
     }
 
     public void showEditPanel(final AccountUsageRule editing) {

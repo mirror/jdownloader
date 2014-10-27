@@ -34,6 +34,7 @@ import org.appwork.utils.ModifyLock;
 import org.appwork.utils.event.queue.QueueAction;
 import org.appwork.utils.logging2.LogSource;
 import org.jdownloader.controlling.FileCreationManager;
+import org.jdownloader.controlling.hosterrule.HosterRuleController;
 import org.jdownloader.logging.LogController;
 import org.jdownloader.plugins.controller.PluginClassLoader.PluginClassLoaderChild;
 import org.jdownloader.plugins.controller.PluginController;
@@ -228,6 +229,7 @@ public class HostPluginController extends PluginController<PluginForHost> {
                             LinkCollector.getInstance().checkPluginUpdates();
                             DownloadController.getInstance().checkPluginUpdates();
                             AccountController.getInstance().checkPluginUpdates();
+                            HosterRuleController.getInstance().checkPluginUpdates();
                             return null;
                         }
                     });

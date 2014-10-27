@@ -3035,26 +3035,23 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
 
                         @Override
                         public void onRuleAdded(AccountUsageRule parameter) {
-                            if (parameter == null) {
-                                return;
+                            if (parameter != null) {
+                                removeAccountCache(parameter.getHoster());
                             }
-                            removeAccountCache(parameter.getHoster());
                         }
 
                         @Override
                         public void onRuleDataUpdate(AccountUsageRule parameter) {
-                            if (parameter == null) {
-                                return;
+                            if (parameter != null) {
+                                removeAccountCache(parameter.getHoster());
                             }
-                            removeAccountCache(parameter.getHoster());
                         }
 
                         @Override
                         public void onRuleRemoved(final AccountUsageRule parameter) {
-                            if (parameter == null) {
-                                return;
+                            if (parameter != null) {
+                                removeAccountCache(parameter.getHoster());
                             }
-                            removeAccountCache(parameter.getHoster());
                         }
 
                         @Override
