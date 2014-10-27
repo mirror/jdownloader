@@ -50,6 +50,7 @@ import jd.plugins.download.DownloadLinkDownloadable;
 import jd.plugins.download.HashInfo;
 import jd.utils.JDUtilities;
 
+import org.appwork.utils.StringUtils;
 import org.appwork.utils.logging2.LogSource;
 import org.appwork.utils.os.CrossSystem;
 
@@ -201,7 +202,7 @@ public class RealDebridCom extends PluginForHost {
             final Browser br2 = br.cloneBrowser();
             try {
                 dl = jd.plugins.BrowserAdapter.openDownload(br2, downloadLinkDownloadable, br2.createGetRequest(dllink), resumes, maxChunks);
-                if (dl.getConnection().isContentDisposition()) {
+                if (dl.getConnection().isContentDisposition() || StringUtils.containsIgnoreCase(dl.getConnection().getContentType(), "octet-stream")) {
                     /* content disposition, lets download it */
                     RUNNING_DOWNLOADS.incrementAndGet();
                     boolean ret = dl.startDownload();
