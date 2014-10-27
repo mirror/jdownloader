@@ -426,6 +426,9 @@ public class AccountController implements AccountControllerListener, AccountProp
     }
 
     public void checkPluginUpdates() {
+        /**
+         * TODO: assignPlugin(see loadAccounts)
+         */
         final PluginFinder pluginFinder = new PluginFinder();
         for (final Account account : list(null)) {
             final AccountInfo accountInfo = account.getAccountInfo();
