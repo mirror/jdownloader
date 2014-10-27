@@ -28,7 +28,6 @@ import jd.http.Cookie;
 import jd.http.Cookies;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
-import jd.parser.Regex;
 import jd.plugins.Account;
 import jd.plugins.Account.AccountType;
 import jd.plugins.AccountInfo;
@@ -42,25 +41,27 @@ import jd.utils.JDUtilities;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "foxleech.com" }, urls = { "REGEX_NOT_POSSIBLE_RANDOM-asdfasdfsadfsdgfd32423" }, flags = { 2 })
-public class FoxLeechCom extends PluginForHost {
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "premium.rapeit.net" }, urls = { "REGEX_NOT_POSSIBLE_RANDOM-asdfasdfsadfsdgfd32423" }, flags = { 2 })
+public class PremiumRapeitNet extends PluginForHost {
 
     private static HashMap<Account, HashMap<String, Long>> hostUnavailableMap = new HashMap<Account, HashMap<String, Long>>();
     private static final String                            NOCHUNKS           = "NOCHUNKS";
-    private static final String                            MAINPAGE           = "http://foxleech.com";
+    private static final String                            MAINPAGE           = "http://premium.rapeit.net";
     private static final String                            NICE_HOST          = MAINPAGE.replaceAll("(https://|http://)", "");
     private static final String                            NICE_HOSTproperty  = MAINPAGE.replaceAll("(https://|http://|\\.|\\-)", "");
     private static final String                            USE_API            = "USE_API";
 
-    public FoxLeechCom(PluginWrapper wrapper) {
+    private static final String[][]                        HOSTS              = { { "4SHARED", "4shared.com" }, { "BEARFILES", "bearfiles.in" }, { "BITSHARE", "bitshare.com" }, { "DEPFILE", "depfile.com" }, { "FILECLOUD", "filecloud.cc" }, { "FILEFACTORY", "filefactory.com" }, { "FILEPARADOX", "fileparadox.in" }, { "FILERIO", "filerio.in" }, { "FILESPACE", "filespace.com" }, { "FIREDRIVE", "firedrive.com" }, { "FREAKSHARE", "freakshare.com" }, { "FSHARE.VN", "fshare.vn" }, { "KEEP2SHARE", "k2s.cc" }, { "LETITBIT", "letitbit.net" }, { "NETLOAD", "netload.in" }, { "PRIVATEFILES", "privatefiles.com" }, { "RAPIDGATOR", "rapidgator.net" }, { "SOCKSHARE", "sockshare.com" }, { "SUBYSHARE", "subyshare" }, { "UPLOADABLE", "uploadable.ch" }, { "UPLOADED", "uploaded.to" }, { "VOZUPLOAD", "vozupload.com" }, { "XERVER", "xerver.co" } };
+
+    public PremiumRapeitNet(PluginWrapper wrapper) {
         super(wrapper);
-        this.enablePremium("http://www.foxleech.com/plans");
+        this.enablePremium("http://premium.rapeit.net/");
         this.setConfigElements();
     }
 
     @Override
     public String getAGBLink() {
-        return "http://www.foxleech.com/contact";
+        return "http://premium.rapeit.net/#tou";
     }
 
     @Override
@@ -95,7 +96,7 @@ public class FoxLeechCom extends PluginForHost {
             }
         }
         int maxChunks = 1;
-        if (link.getBooleanProperty(FoxLeechCom.NOCHUNKS, false)) {
+        if (link.getBooleanProperty(PremiumRapeitNet.NOCHUNKS, false)) {
             maxChunks = 1;
         }
 
@@ -115,8 +116,8 @@ public class FoxLeechCom extends PluginForHost {
                 } catch (final Throwable e) {
                 }
                 /* unknown error, we disable multiple chunks */
-                if (link.getBooleanProperty(FoxLeechCom.NOCHUNKS, false) == false) {
-                    link.setProperty(FoxLeechCom.NOCHUNKS, Boolean.valueOf(true));
+                if (link.getBooleanProperty(PremiumRapeitNet.NOCHUNKS, false) == false) {
+                    link.setProperty(PremiumRapeitNet.NOCHUNKS, Boolean.valueOf(true));
                     throw new PluginException(LinkStatus.ERROR_RETRY);
                 }
             }
@@ -126,8 +127,8 @@ public class FoxLeechCom extends PluginForHost {
             }
             // New V2 chunk errorhandling
             /* unknown error, we disable multiple chunks */
-            if (e.getLinkStatus() != LinkStatus.ERROR_RETRY && link.getBooleanProperty(FoxLeechCom.NOCHUNKS, false) == false) {
-                link.setProperty(FoxLeechCom.NOCHUNKS, Boolean.valueOf(true));
+            if (e.getLinkStatus() != LinkStatus.ERROR_RETRY && link.getBooleanProperty(PremiumRapeitNet.NOCHUNKS, false) == false) {
+                link.setProperty(PremiumRapeitNet.NOCHUNKS, Boolean.valueOf(true));
                 throw new PluginException(LinkStatus.ERROR_RETRY);
             }
             throw e;
@@ -156,7 +157,9 @@ public class FoxLeechCom extends PluginForHost {
         } else {
             dl.setProperty(NICE_HOSTproperty + "failedtimes_" + error, Property.NULL);
             logger.info(NICE_HOST + ": " + error + " -> Disabling current host");
-            tempUnavailableHoster(acc, dl, 1 * 60 * 60 * 1000l);
+            // tempUnavailableHoster(acc, dl, 1 * 60 * 60 * 1000l);
+            /* Test mode, usually never throw plugin defect */
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
     }
 
@@ -176,54 +179,21 @@ public class FoxLeechCom extends PluginForHost {
                 throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nInvalid username/password or login captcha!\r\nQuick help:\r\nYou're sure that the username and password (and captcha) you entered are correct?\r\nIf your password contains special characters, change it (remove them) and try again!", PluginException.VALUE_ID_PREMIUM_DISABLE);
             }
         }
-        br.getPage("http://www.foxleech.com/account");
-        /* No downloads possible throuh free accounts --> Supporting them makes no sense! */
-        if (br.containsHTML("<li>Account : <b>Free</b></li>")) {
-            logger.info("Free accounts are not supported!");
-            if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
-                throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nNicht unterstützter Accounttyp!\r\nFalls du denkst diese Meldung sei falsch die Unterstützung dieses Account-Typs sich\r\ndeiner Meinung nach aus irgendeinem Grund lohnt,\r\nkontaktiere uns über das support Forum.", PluginException.VALUE_ID_PREMIUM_DISABLE);
-            } else {
-                throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUnsupported account type!\r\nIf you think this message is incorrect or it makes sense to add support for this account type\r\ncontact us via our support forum.", PluginException.VALUE_ID_PREMIUM_DISABLE);
+        if (!br.getURL().equals("http://premium.rapeit.net/")) {
+            br.getPage("http://premium.rapeit.net/");
+        }
+        final ArrayList<String> supportedHosts = new ArrayList<String>();
+        for (final String[] hostinfo : HOSTS) {
+            final String siteHost = hostinfo[0];
+            final String realHost = hostinfo[1];
+            if (br.containsHTML("title=\"" + siteHost + " is ON")) {
+                supportedHosts.add(realHost);
             }
         }
-        final String[] hosts = br.getRegex("title=\"([^<>\"]*?)\" data\\-placement=\"bottom\"><img class=\"host\\-cool\"").getColumn(0);
-        final ArrayList<String> supportedHosts = new ArrayList<String>();
-        for (final String host : hosts) {
-            supportedHosts.add(host);
-        }
-        // final String traffic_downloaded = br.getRegex("<li>Download : <a>([^<>\"]*?) / Unlimited</a>").getMatch(0);
-        final String uploaded_size = br.getRegex("<li>Upload : <a>([^<>\"]*?) / \\d+ GB</a>").getMatch(0);
-        final String api_url = br.getRegex("\"(https?://(www\\.)?foxleech\\.com/api/[^<>\"]*?)\"").getMatch(0);
-        long expire = System.currentTimeMillis();
-        String months, days, hours, minutes, seconds;
-        final Regex expireinfo = br.getRegex("type=\"text\"[^<>]+ value=\"((\\d{1,2})Months )?((\\d{1,2})Days )?((\\d{1,2})Hours )?((\\d{1,2})Minutes )?((\\d{1,2})Seconds )?\"");
-        months = expireinfo.getMatch(1);
-        days = expireinfo.getMatch(3);
-        hours = expireinfo.getMatch(5);
-        minutes = expireinfo.getMatch(7);
-        seconds = expireinfo.getMatch(9);
-        if (months != null) {
-            expire += Long.parseLong(months) * 30 * 24 * 60 * 60 * 1000;
-        }
-        if (days != null) {
-            expire += Long.parseLong(days) * 24 * 60 * 60 * 1000;
-        }
-        if (hours != null) {
-            expire += Long.parseLong(hours) * 60 * 60 * 1000;
-        }
-        if (minutes != null) {
-            expire += Long.parseLong(minutes) * 60 * 1000;
-        }
-        if (seconds != null) {
-            expire += Long.parseLong(seconds) * 1000;
-        }
-        ac.setValidUntil(expire);
-        if (api_url != null) {
-            account.setProperty("api_url", api_url);
-        }
-        if (uploaded_size != null) {
-            ac.setUsedSpace(SizeFormatter.getSize(uploaded_size));
-        }
+        final String traffic_left = br.getRegex(">Available premium bandwidth: <strong>([^<>\"]*?)</strong>").getMatch(0);
+        final String traffic_downloaded = br.getRegex(">Total used premium bandwidth: <strong>([^<>\"]*?)</strong>").getMatch(0);
+        ac.setTrafficLeft(SizeFormatter.getSize(traffic_left));
+        ac.setTrafficMax(ac.getTrafficLeft() + SizeFormatter.getSize(traffic_downloaded));
         /* They only have accounts with traffic, no free/premium difference (other than no traffic) */
         account.setType(AccountType.PREMIUM);
         account.setMaxSimultanDownloads(-1);
@@ -235,6 +205,13 @@ public class FoxLeechCom extends PluginForHost {
 
     @SuppressWarnings("unchecked")
     private boolean site_login(final Account account, final boolean force) throws Exception {
+        if (!account.getUser().matches(".+@.+")) {
+            if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
+                throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nBitte gib deine E-Mail Adresse als Benutzername an!", PluginException.VALUE_ID_PREMIUM_DISABLE);
+            } else {
+                throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nPlease enter your e-mail adress as username!", PluginException.VALUE_ID_PREMIUM_DISABLE);
+            }
+        }
         synchronized (LOCK) {
             try {
                 // Load cookies
@@ -254,8 +231,8 @@ public class FoxLeechCom extends PluginForHost {
                         }
                         /* Avoid login captcha on forced login */
                         if (force) {
-                            br.getPage("http://www.foxleech.com/downloader");
-                            if (br.containsHTML("foxleech\\.com/logout\">Logout</a>")) {
+                            br.getPage(MAINPAGE);
+                            if (br.containsHTML(">Logged in as <strong>")) {
                                 return true;
                             } else {
                                 /* Foced login (check) failed - clear cookies and perform a full login! */
@@ -268,22 +245,18 @@ public class FoxLeechCom extends PluginForHost {
                     }
                 }
                 br.setFollowRedirects(true);
-                br.getPage("http://www.foxleech.com/login");
-                String postData = "username=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass());
-                br.postPage("http://www.foxleech.com/login", postData);
-                /* Even if the user entrs valid username/password, captcha may occur... */
-                if (br.getCookie(MAINPAGE, "auth") == null && br.containsHTML("google\\.com/recaptcha/api")) {
-                    final PluginForHost recplug = JDUtilities.getPluginForHost("DirectHTTP");
-                    final jd.plugins.hoster.DirectHTTP.Recaptcha rc = ((DirectHTTP) recplug).getReCaptcha(br);
-                    rc.findID();
-                    rc.load();
-                    final File cf = rc.downloadCaptcha(getLocalCaptchaFile());
-                    final DownloadLink dummyLink = new DownloadLink(this, "Account", NICE_HOST, MAINPAGE, true);
-                    final String c = getCaptchaCode(cf, dummyLink);
-                    postData += "&recaptcha_challenge_field=" + rc.getChallenge() + "&recaptcha_response_field=" + Encoding.urlEncode(c);
-                    br.postPage("http://www.foxleech.com/login", postData);
-                }
-                if (br.getCookie(MAINPAGE, "auth") == null) {
+                br.getPage(MAINPAGE);
+                String postData = "emailaddress=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass());
+                final PluginForHost recplug = JDUtilities.getPluginForHost("DirectHTTP");
+                final jd.plugins.hoster.DirectHTTP.Recaptcha rc = ((DirectHTTP) recplug).getReCaptcha(br);
+                rc.findID();
+                rc.load();
+                final File cf = rc.downloadCaptcha(getLocalCaptchaFile());
+                final DownloadLink dummyLink = new DownloadLink(this, "Account", NICE_HOST, MAINPAGE, true);
+                final String code = getCaptchaCode(cf, dummyLink);
+                postData += "&recaptcha_challenge_field=" + rc.getChallenge() + "&recaptcha_response_field=" + Encoding.urlEncode(code);
+                br.postPage("http://premium.rapeit.net/", postData);
+                if (br.getCookie(MAINPAGE, "session") == null) {
                     if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
                         throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUngültiger Benutzername, Passwort oder Login-Captcha!\r\nSchnellhilfe: \r\nDu bist dir sicher, dass dein eingegebener Benutzername und Passwort (und Captcha) stimmen?\r\nFalls dein Passwort Sonderzeichen enthält, ändere es und versuche es erneut!", PluginException.VALUE_ID_PREMIUM_DISABLE);
                     } else {
@@ -309,16 +282,10 @@ public class FoxLeechCom extends PluginForHost {
 
     private String site_get_dllink(final DownloadLink link, final Account acc) throws Exception {
         String dllink;
-        final String api_url = acc.getStringProperty("api_url", null);
         final String url = Encoding.urlEncode(link.getDownloadURL());
         site_login(acc, false);
-        if (api_url != null) {
-            /* Actually there is no reason to use this but whatever ... */
-            br.postPage(api_url, "link=" + url);
-        } else {
-            br.getPage("http://www.foxleech.com/Generate.php?link=" + url);
-        }
-        dllink = br.getRegex("\"link\":\"(http[^<>\"]*?)\"").getMatch(0);
+        br.postPage("http://premium.rapeit.net/", "inputlink=" + url);
+        dllink = br.getRegex("href=\"(https?://[a-z0-9]+\\.rapeit\\.net(:\\d+)?/dl/[^<>\"]*?)\" target=\"_blank\"").getMatch(0);
         if (dllink == null) {
             handlePluginBroken(acc, link, "dllink_null", 10);
         }
@@ -409,7 +376,7 @@ public class FoxLeechCom extends PluginForHost {
     private void setConfigElements() {
         /* No API available yet: http://svn.jdownloader.org/issues/46706 */
         // getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, this.getPluginConfig(), USE_API,
-        // JDL.L("plugins.hoster.FoxLeechCom.useAPI", "Use API (recommended!)")).setDefaultValue(default_USE_API));
+        // JDL.L("plugins.hoster.PremiumRapeitNet.useAPI", "Use API (recommended!)")).setDefaultValue(default_USE_API));
     }
 
     @Override
