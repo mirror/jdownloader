@@ -40,8 +40,6 @@ public class CopyCom extends PluginForHost {
         return "https://www.copy.com/about/tos";
     }
 
-    private static final String TYPE_OLD = "https?://(www\\.)?copy\\.com/(s/)?[A-Za-z0-9]+(/[^<>\"/]+)?";
-
     private static final String NOCHUNKS = "NOCHUNKS";
     private String              ddlink   = null;
 
@@ -49,7 +47,7 @@ public class CopyCom extends PluginForHost {
      * Corrects downloadLink.urlDownload().<br/>
      * <br/>
      * The following code respect the hoster supported protocols via plugin boolean settings and users config preference
-     * 
+     *
      * @author raztoki
      * */
     @Override
@@ -88,10 +86,6 @@ public class CopyCom extends PluginForHost {
         }
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
-        /* Filter links which have been added before the big change */
-        if (link.getDownloadURL().matches(TYPE_OLD)) {
-            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        }
         br.getPage(link.getStringProperty("mainlink", null));
 
         if (br.containsHTML(">You&rsquo;ve found a page that doesn&rsquo;t exist")) {
