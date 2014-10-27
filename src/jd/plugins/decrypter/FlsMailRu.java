@@ -52,7 +52,13 @@ public class FlsMailRu extends PluginForDecrypt {
         // also works for English but filesize handling doesn't so if this
         // plugin get's broken that's on of the first things to check
         br.getHeaders().put("User-Agent", RandomUserAgent.generate());
+        br.setFollowRedirects(false);
         br.getPage(parameter);
+        final String redirect = br.getRedirectLocation();
+        if (redirect != null && redirect.contains("cloud.mail.ru/")) {
+            decryptedLinks.add(createDownloadlink(redirect));
+            return decryptedLinks;
+        }
         // Errorhandling for offline folders
         if (br.containsHTML(jd.plugins.hoster.FilesMailRu.LINKOFFLINE)) {
             logger.info("Link offline: " + parameter);

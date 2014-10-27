@@ -82,10 +82,12 @@ public class ArteMediathekDecrypter extends PluginForDecrypt {
                 return decryptedLinks;
             }
         } else {
+            if (br.getRedirectLocation() != null) {
+                br.getPage(br.getRedirectLocation());
+            }
             int status = br.getHttpConnection().getResponseCode();
-            if (!parameter.contains("tv/guide/") && status == 200) {
-                final DownloadLink link = createDownloadlink(parameter.replace("http://", "decrypted://"));
-                decryptedLinks.add(link);
+            if (br.getHttpConnection().getResponseCode() == 400 || br.containsHTML("<h1>Error 404</h1>") || (!parameter.contains("tv/guide/") && status == 200)) {
+                decryptedLinks.add(createofflineDownloadLink(parameter));
                 return decryptedLinks;
             }
             /* new arte+7 handling */

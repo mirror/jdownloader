@@ -1003,7 +1003,11 @@ public class Uploadedto extends PluginForHost {
     // Attention!! Do not use Override here for stable compatibility reasons
     // @Override
     public void showAccountDetailsDialog(Account account) {
-        jd.gui.UserIO.getInstance().requestMessageDialog("Uploaded.to Account", "Account type: Premium");
+        String type = "Premium";
+        if (account.getBooleanProperty("free", false)) {
+            type = "Free";
+        }
+        jd.gui.UserIO.getInstance().requestMessageDialog("Uploaded.to Account", "Account type: " + type);
     }
 
     private String api_getAccessToken(Account account, boolean liveToken) throws Exception {
