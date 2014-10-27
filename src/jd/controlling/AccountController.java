@@ -432,7 +432,7 @@ public class AccountController implements AccountControllerListener, AccountProp
             if (account.getPlugin() != null && account.isMulti() && accountInfo != null) {
                 try {
                     accountInfo.setMultiHostSupport(account.getPlugin(), accountInfo.getMultiHostSupport(), pluginFinder);
-                    updateInternalMultiHosterMap(account, accountInfo);
+                    getBroadcaster().fireEvent(new AccountControllerEvent(this, AccountControllerEvent.Types.ACCOUNT_CHECKED, account));
                 } catch (final Throwable e) {
                     LogController.CL().log(e);
                 }
