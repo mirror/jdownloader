@@ -23,7 +23,6 @@ public class JD1Importer {
                         CONFIG = fold;
                     }
                 }
-
             }
             if (CONFIG == null) {
                 File fold = Application.getResource("config");
@@ -31,26 +30,20 @@ public class JD1Importer {
                     CONFIG = fold;
                 }
             }
-
-            ;
         } catch (Throwable e) {
             e.printStackTrace();
         }
     }
 
     public boolean isAvailable() {
-
         return CONFIG != null;
     }
 
     public Map<String, Object> getHashMap(String cfg) {
         try {
-
             ClassLoader cl = new SandboxClassloader(CONFIG.getParentFile());
-
             Class<?> clazz = cl.loadClass(JD1ImportSandbox.class.getName());
             Map<String, Object> map = (Map<String, Object>) clazz.getMethod("getSubConfigurationHashMap", new Class[] { File.class, String.class }).invoke(null, new Object[] { CONFIG.getParentFile(), cfg });
-
             return map;
 
         } catch (Throwable e) {
