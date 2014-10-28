@@ -2,4 +2,5 @@ addScheduleEntryDialog_defaultScheduleName=Plán
 addScheduleEntryDialog_time=Čas
 addScheduleEntryDialog_title_edit=Upraviť plán
 scheduleTable_column_name=Názov
+time_option_only_once=Iba raz
 title=Plánovač
