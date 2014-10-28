@@ -77,7 +77,12 @@ public class DatabaseConnector {
                         int objectIndex = 0;
                         long objectStartIndex = 0;
                         long objectStopIndex = -1;
-                        ByteArrayOutputStream bos = new ByteArrayOutputStream();
+                        final ByteArrayOutputStream bos = new ByteArrayOutputStream() {
+                            @Override
+                            public synchronized byte[] toByteArray() {
+                                return buf;
+                            }
+                        };
                         nameLoop: while ((read = fis.read()) != -1) {
                             bos.write(read);
                             if (searchForObject.charAt(objectIndex) == read) {
@@ -95,7 +100,9 @@ public class DatabaseConnector {
                                         break;
                                     }
                                 }
-                                if (objectStopIndex == -1) { throw new WTFException(); }
+                                if (objectStopIndex == -1) {
+                                    throw new WTFException();
+                                }
                                 logger.info("Found Entry: " + name + " Start: " + objectStartIndex + " End: " + objectStopIndex + " Size: " + (objectStopIndex - objectStartIndex));
                                 objectIndices.put(searchForEntriesType[searchForEntriesIndex] + name, new Long[] { objectStartIndex, objectStopIndex });
                                 continue insertLoop;
