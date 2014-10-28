@@ -51,7 +51,7 @@ public class PremiumRapeitNet extends PluginForHost {
     private static final String                            NICE_HOSTproperty  = MAINPAGE.replaceAll("(https://|http://|\\.|\\-)", "");
     private static final String                            USE_API            = "USE_API";
 
-    private static final String[][]                        HOSTS              = { { "4SHARED", "4shared.com" }, { "BEARFILES", "bearfiles.in" }, { "BITSHARE", "bitshare.com" }, { "DEPFILE", "depfile.com" }, { "FILECLOUD", "filecloud.cc" }, { "FILEFACTORY", "filefactory.com" }, { "FILEPARADOX", "fileparadox.in" }, { "FILERIO", "filerio.in" }, { "FILESPACE", "filespace.com" }, { "FIREDRIVE", "firedrive.com" }, { "FREAKSHARE", "freakshare.com" }, { "FSHARE.VN", "fshare.vn" }, { "KEEP2SHARE", "k2s.cc" }, { "LETITBIT", "letitbit.net" }, { "NETLOAD", "netload.in" }, { "PRIVATEFILES", "privatefiles.com" }, { "RAPIDGATOR", "rapidgator.net" }, { "SOCKSHARE", "sockshare.com" }, { "SUBYSHARE", "subyshare" }, { "UPLOADABLE", "uploadable.ch" }, { "UPLOADED", "uploaded.to" }, { "VOZUPLOAD", "vozupload.com" }, { "XERVER", "xerver.co" } };
+    private static final String[][]                        HOSTS              = { { "4SHARED", "4shared.com" }, { "BEARFILES", "bearfiles.in" }, { "BITSHARE", "bitshare.com" }, { "DEPFILE", "depfile.com" }, { "FILECLOUD", "filecloud.cc" }, { "FILEFACTORY", "filefactory.com" }, { "FILEPARADOX", "fileparadox.in" }, { "FILERIO", "filerio.in" }, { "FILESPACE", "filespace.com" }, { "FIREDRIVE", "firedrive.com" }, { "FREAKSHARE", "freakshare.com" }, { "FSHARE.VN", "fshare.vn" }, { "KEEP2SHARE", "k2s.cc" }, { "LETITBIT", "letitbit.net" }, { "NETLOAD", "netload.in" }, { "PRIVATEFILES", "privatefiles.com" }, { "RAPIDGATOR", "rapidgator.net" }, { "SOCKSHARE", "sockshare.com" }, { "SUBYSHARE", "subyshare.com" }, { "UPLOADABLE", "uploadable.ch" }, { "UPLOADED", "uploaded.to" }, { "VOZUPLOAD", "vozupload.com" }, { "XERVER", "xerver.co" } };
 
     public PremiumRapeitNet(PluginWrapper wrapper) {
         super(wrapper);
@@ -87,11 +87,13 @@ public class PremiumRapeitNet extends PluginForHost {
 
     /* no override to keep plugin compatible to old stable */
     public void handleMultiHost(final DownloadLink link, final Account acc) throws Exception {
-        String dllink = checkDirectLink(link, NICE_HOST + "directlink");
-        if (dllink == null) {
-            if (this.useAPI()) {
-                dllink = api_get_dllink(link, acc);
-            } else {
+        String dllink;
+        if (this.useAPI()) {
+            dllink = api_get_dllink(link, acc);
+        } else {
+            site_login(acc, false);
+            dllink = checkDirectLink(link, NICE_HOST + "directlink");
+            if (dllink == null) {
                 dllink = site_get_dllink(link, acc);
             }
         }
@@ -158,7 +160,7 @@ public class PremiumRapeitNet extends PluginForHost {
             dl.setProperty(NICE_HOSTproperty + "failedtimes_" + error, Property.NULL);
             logger.info(NICE_HOST + ": " + error + " -> Disabling current host");
             // tempUnavailableHoster(acc, dl, 1 * 60 * 60 * 1000l);
-            /* Test mode, usually never throw plugin defect */
+            /* TODO: Remove test-mode after some time:Test mode, usually never throw plugin defect */
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
     }
@@ -283,7 +285,6 @@ public class PremiumRapeitNet extends PluginForHost {
     private String site_get_dllink(final DownloadLink link, final Account acc) throws Exception {
         String dllink;
         final String url = Encoding.urlEncode(link.getDownloadURL());
-        site_login(acc, false);
         br.postPage("http://premium.rapeit.net/", "inputlink=" + url);
         dllink = br.getRegex("href=\"(https?://[a-z0-9]+\\.rapeit\\.net(:\\d+)?/dl/[^<>\"]*?)\" target=\"_blank\"").getMatch(0);
         if (dllink == null) {

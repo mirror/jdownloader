@@ -56,18 +56,18 @@ import jd.utils.locale.JDL;
 import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.formatter.TimeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "rockfile.eu" }, urls = { "https?://(www\\.)?rockfile\\.eu/(embed\\-)?[a-z0-9]{12}" }, flags = { 2 })
-public class RockFileEu extends PluginForHost {
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "24uploading.com" }, urls = { "https?://(www\\.)?24uploading\\.com/(embed\\-)?[a-z0-9]{12}" }, flags = { 2 })
+public class TwenteeFourUploadingCom extends PluginForHost {
 
     private String                         correctedBR                  = "";
     private String                         passCode                     = null;
     private static final String            PASSWORDTEXT                 = "<br><b>Passwor(d|t):</b> <input";
     /* primary website url, take note of redirects */
-    private static final String            COOKIE_HOST                  = "http://rockfile.eu";
+    private static final String            COOKIE_HOST                  = "http://24uploading.com";
     private static final String            NICE_HOST                    = COOKIE_HOST.replaceAll("(https://|http://)", "");
     private static final String            NICE_HOSTproperty            = COOKIE_HOST.replaceAll("(https://|http://|\\.|\\-)", "");
     /* domain names used within download links */
-    private static final String            DOMAINS                      = "(rockfile\\.eu)";
+    private static final String            DOMAINS                      = "(24uploading\\.com)";
     private static final String            MAINTENANCE                  = ">This server is in maintenance mode";
     private static final String            MAINTENANCEUSERTEXT          = JDL.L("hoster.xfilesharingprobasic.errors.undermaintenance", "This server is under maintenance");
     private static final String            ALLWAIT_SHORT                = JDL.L("hoster.xfilesharingprobasic.errors.waitingfordownloads", "Waiting till new downloads can be started");
@@ -82,10 +82,10 @@ public class RockFileEu extends PluginForHost {
     private static AtomicReference<String> agent                        = new AtomicReference<String>(null);
     /* Connection stuff */
     private static final boolean           FREE_RESUME                  = true;
-    private static final int               FREE_MAXCHUNKS               = 1;
+    private static final int               FREE_MAXCHUNKS               = -2;
     private static final int               FREE_MAXDOWNLOADS            = 1;
     private static final boolean           ACCOUNT_FREE_RESUME          = true;
-    private static final int               ACCOUNT_FREE_MAXCHUNKS       = 1;
+    private static final int               ACCOUNT_FREE_MAXCHUNKS       = -2;
     private static final int               ACCOUNT_FREE_MAXDOWNLOADS    = 1;
     private static final boolean           ACCOUNT_PREMIUM_RESUME       = true;
     private static final int               ACCOUNT_PREMIUM_MAXCHUNKS    = 1;
@@ -100,10 +100,10 @@ public class RockFileEu extends PluginForHost {
 
     /* DEV NOTES */
     // XfileSharingProBasic Version 2.6.6.6
-    // mods: access downloadURL + ".html", waitTime, heavily modified, do NOT upgrade!
-    // limit-info: premium & free acc untested, set FREE limits
+    // mods:
+    // limit-info: free account untested, set FREE limits
     // protocol: no https
-    // captchatype: null
+    // captchatype: solvemedia
     // other:
     // TODO: Add case maintenance + alternative filesize check
 
@@ -117,9 +117,6 @@ public class RockFileEu extends PluginForHost {
         } else if (SUPPORTSHTTPS && SUPPORTSHTTPS_FORCED) {
             link.setUrlDownload(link.getDownloadURL().replaceFirst("http://", "https://"));
         }
-        if (!link.getDownloadURL().contains(".html")) {
-            link.setUrlDownload(link.getDownloadURL() + ".html");
-        }
     }
 
     @Override
@@ -127,7 +124,7 @@ public class RockFileEu extends PluginForHost {
         return COOKIE_HOST + "/tos.html";
     }
 
-    public RockFileEu(PluginWrapper wrapper) {
+    public TwenteeFourUploadingCom(PluginWrapper wrapper) {
         super(wrapper);
         this.enablePremium(COOKIE_HOST + "/premium.html");
     }
@@ -366,10 +363,10 @@ public class RockFileEu extends PluginForHost {
                     }
                 }
                 /* Captcha START */
-                if (correctedBR.contains("/images/captchaBG.gif)")) {
+                if (correctedBR.contains(";background:#ccc;text-align")) {
                     logger.info("Detected captcha method \"plaintext captchas\" for this host");
                     /* Captcha method by ManiacMansion */
-                    final String[][] letters = new Regex(br, "position:absolute;padding\\-left:(\\d+)px;padding\\-top:\\d+px;\\'>(&#\\d+;)</span>").getMatches();
+                    final String[][] letters = new Regex(br, "<span style=\\'position:absolute;padding\\-left:(\\d+)px;padding\\-top:\\d+px;\\'>(&#\\d+;)</span>").getMatches();
                     if (letters == null || letters.length == 0) {
                         logger.warning("plaintext captchahandling broken!");
                         throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -556,7 +553,6 @@ public class RockFileEu extends PluginForHost {
         /* define custom browser headers and language settings */
         br.getHeaders().put("Accept-Language", "en-gb, en;q=0.9");
         br.setCookie(COOKIE_HOST, "lang", "english");
-        br.setCookie(COOKIE_HOST, "langAuto", "0");
         if (ENABLE_RANDOM_UA) {
             if (agent.get() == null) {
                 /* we first have to load the plugin, before we can reference it */
@@ -676,7 +672,7 @@ public class RockFileEu extends PluginForHost {
     private void waitTime(long timeBefore, final DownloadLink downloadLink) throws PluginException {
         int passedTime = (int) ((System.currentTimeMillis() - timeBefore) / 1000) - 1;
         /** Ticket Time */
-        final String ttt = new Regex(correctedBR, "id=\"countdown_str\" style=\"font-size:\\d+pt; text\\-align:center;\"><span id=\"[a-z0-9]+\">(\\d+)</span>").getMatch(0);
+        final String ttt = new Regex(correctedBR, "id=\"countdown_str\">[^<>\"]+<span id=\"[^<>\"]+\"( class=\"[^<>\"]+\")?>([\n ]+)?(\\d+)([\n ]+)?</span>").getMatch(2);
         if (ttt != null) {
             int wait = Integer.parseInt(ttt);
             wait -= passedTime;
@@ -780,7 +776,7 @@ public class RockFileEu extends PluginForHost {
 
     @SuppressWarnings("deprecation")
     private void setFUID(final DownloadLink dl) {
-        fuid = new Regex(dl.getDownloadURL(), "([a-z0-9]{12})(\\.html)?$").getMatch(0);
+        fuid = new Regex(dl.getDownloadURL(), "([a-z0-9]{12})$").getMatch(0);
     }
 
     private String handlePassword(final Form pwform, final DownloadLink thelink) throws PluginException {
@@ -984,9 +980,8 @@ public class RockFileEu extends PluginForHost {
         long expire_milliseconds = 0;
         if (expire != null) {
             expire_milliseconds = TimeFormatter.getMilliSeconds(expire, "dd MMMM yyyy", Locale.ENGLISH);
-            account.setProperty("nopremium", false);
         }
-        if (account.getBooleanProperty("nopremium") || (expire_milliseconds - System.currentTimeMillis()) <= 0) {
+        if (account.getBooleanProperty("nopremium") && (expire_milliseconds - System.currentTimeMillis()) <= 0) {
             maxPrem.set(ACCOUNT_FREE_MAXDOWNLOADS);
             try {
                 account.setType(AccountType.FREE);
@@ -1054,10 +1049,10 @@ public class RockFileEu extends PluginForHost {
                         throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nInvalid username/password!\r\nYou're sure that the username and password you entered are correct? Some hints:\r\n1. If your password contains special characters, change it (remove them) and try again!\r\n2. Type in your username/password by hand without copy & paste.", PluginException.VALUE_ID_PREMIUM_DISABLE);
                     }
                 }
-                if (!br.getURL().contains("/account")) {
-                    getPage("/account");
+                if (!br.getURL().contains("/?op=my_account")) {
+                    getPage("/?op=my_account");
                 }
-                if (!new Regex(correctedBR, ">Premium account expire").matches()) {
+                if (!new Regex(correctedBR, "(Premium(\\-| )Account expire|>Renew premium<)").matches()) {
                     account.setProperty("nopremium", true);
                 } else {
                     account.setProperty("nopremium", false);
@@ -1084,7 +1079,7 @@ public class RockFileEu extends PluginForHost {
         passCode = downloadLink.getStringProperty("pass");
         requestFileInformation(downloadLink);
         login(account, false);
-        if (account.getBooleanProperty("nopremium", false)) {
+        if (account.getBooleanProperty("nopremium")) {
             requestFileInformation(downloadLink);
             doFree(downloadLink, ACCOUNT_FREE_RESUME, ACCOUNT_FREE_MAXCHUNKS, "freelink2");
         } else {
