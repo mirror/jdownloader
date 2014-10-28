@@ -1,4 +1,4 @@
-package jd;
+package org.jdownloader.jd1import;
 
 import java.beans.ExceptionListener;
 import java.beans.Expression;
@@ -30,6 +30,36 @@ import org.w3c.dom.Document;
 public class JD1ImportSandbox {
     private static final Object[] PARAM_VAR_ARGS_EMPTY_OBJECT = new Object[] {};
     private static final Class[]  PARAM_VAR_ARGS_EMPTY        = new Class[] {};
+
+    public static Map<String, Object> getSubConfigurationHashMap(File root, String cfgID) {
+        try {
+            Field JD_HOME = JDUtilities.class.getDeclaredField("JD_HOME");
+            JD_HOME.setAccessible(true);
+            JD_HOME.set(null, root);
+            Field field = Class.forName("jd.controlling.JDLogger").getDeclaredField("LOGGER");
+            field.setAccessible(true);
+            field.set(null, org.jdownloader.logging.LogController.getInstance().getLogger("JD1ImportSandbox"));
+            JDUtilities.getDatabaseConnector();
+            try {
+                // ArrayList<SubConfiguration> subConfigs;
+
+                // subConfigs = (ArrayList<SubConfiguration>) DatabaseConnector.class.getMethod("getSubConfigurationKeys",
+                // PARAM_VAR_ARGS_EMPTY).invoke(JDUtilities.getDatabaseConnector(), PARAM_VAR_ARGS_EMPTY_OBJECT);
+
+                SubConfiguration cfg = SubConfiguration.getConfig(cfgID);
+                Map<String, Object> properties = (Map<String, Object>) SubConfiguration.class.getMethod("getProperties", PARAM_VAR_ARGS_EMPTY).invoke(cfg, PARAM_VAR_ARGS_EMPTY_OBJECT);
+                String json = toJson(properties);
+                return properties;
+            } finally {
+                DatabaseConnector.class.getMethod("shutdownDatabase", PARAM_VAR_ARGS_EMPTY).invoke(JDUtilities.getDatabaseConnector(), PARAM_VAR_ARGS_EMPTY_OBJECT);
+
+            }
+
+        } catch (Throwable e) {
+            e.printStackTrace();
+        }
+        return null;
+    }
 
     public static void run(String home) {
         System.out.println("RUNNING!!!!");
