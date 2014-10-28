@@ -141,7 +141,12 @@ public class JD1ImportSandbox {
     }
 
     private static String toXML(final Object value) throws Exception {
-        ByteArrayOutputStream bos = new ByteArrayOutputStream();
+        final ByteArrayOutputStream bos = new ByteArrayOutputStream() {
+            @Override
+            public synchronized byte[] toByteArray() {
+                return buf;
+            }
+        };
         final AtomicBoolean b = new AtomicBoolean(false);
         XMLEncoder encoder = new XMLEncoder(new BufferedOutputStream(bos)) {
             @Override
@@ -168,16 +173,12 @@ public class JD1ImportSandbox {
         encoder.writeObject(value);
         encoder.close();
 
-        String xml = new String(bos.toByteArray(), "UTF-8");
-        Document doc;
-
-        doc = DocumentBuilderFactory.newInstance().newDocumentBuilder().parse(new ByteArrayInputStream(bos.toByteArray()));
-
+        final Document doc = DocumentBuilderFactory.newInstance().newDocumentBuilder().parse(new ByteArrayInputStream(bos.toByteArray(), 0, bos.size()));
         if (doc.getChildNodes().item(0).getChildNodes().getLength() == 1) {
             throw new Exception("Empty");
         }
 
-        return xml;
+        return new String(bos.toByteArray(), 0, bos.size(), "UTF-8");
     }
 
     private static File getFile(String pre, String ext) {

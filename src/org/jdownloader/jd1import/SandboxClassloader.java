@@ -6,7 +6,6 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.net.URL;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.jar.JarEntry;
 import java.util.jar.JarFile;
@@ -20,12 +19,11 @@ import org.appwork.utils.Files.Handler;
 import org.appwork.utils.IO;
 
 public final class SandboxClassloader extends ClassLoader {
-    private final HashMap<String, Class<?>> cache = new HashMap<String, Class<?>>();
-    public ArrayList<File>                  jars;
+    protected final File jars[];
 
     public SandboxClassloader(final File root) {
         super(SandboxClassloader.class.getClassLoader());
-        jars = new ArrayList<File>();
+        final ArrayList<File> jars = new ArrayList<File>();
 
         final HashSet<Pattern> allowed = new HashSet<Pattern>();
         allowed.add(Pattern.compile("jdownloader\\.jar", Pattern.CASE_INSENSITIVE));
@@ -56,116 +54,123 @@ public final class SandboxClassloader extends ClassLoader {
             }
 
         }, root);
-
+        this.jars = jars.toArray(new File[] {});
     }
 
     @Override
-    protected Class<?> findClass(String className) throws ClassNotFoundException {
-        synchronized (this) {
-
-            if (DownloadLink.class.getName().equals(className)) {
-                return DownloadLink.class;
-
-            }
-            if (FilePackage.class.getName().equals(className)) {
-                return FilePackage.class;
-
-            }
-
-            if (className.startsWith("org.appwork")) {
-                Class<?> ret = findSystemClass(className);
-                return ret;
-            }
-            Class<?> cached = cache.get(className);
-            if (cached != null) {
-                return cached;
-            }
-            if (className.startsWith(JD1ImportSandbox.class.getName())) {
-                URL url = SandboxClassloader.class.getResource("/" + className.replace(".", "/") + ".class");
-                byte[] bytes;
-                try {
-                    bytes = IO.readURL(url);
-                } catch (IOException e) {
-                    throw new ClassNotFoundException();
-                }
-                Class<?> result = this.defineClass(className, bytes, 0, bytes.length, null);
-                cache.put(className, result);
-                return result;
-            }
-            for (File jar : jars) {
-
-                JarFile jarFile = null;
-                try {
-                    byte classByte[];
-                    jarFile = new JarFile(jar);
-                    final String jarClassName = className.replace(".", "/") + ".class";
-                    final JarEntry entry = jarFile.getJarEntry(jarClassName);
-                    if (entry != null) {
-                        final InputStream is = jarFile.getInputStream(entry);
-                        final ByteArrayOutputStream byteStream = new ByteArrayOutputStream();
-                        final byte[] buffer = new byte[32767];
-                        int read = 0;
-                        while ((read = is.read(buffer)) != -1) {
-                            if (read > 0) {
-                                byteStream.write(buffer, 0, read);
-                            }
-                        }
-                        classByte = byteStream.toByteArray();
-                        Class<?> result = this.defineClass(className, classByte, 0, classByte.length, null);
-                        cache.put(className, result);
-                        return result;
-                    }
-
-                } catch (final Exception e) {
-                    e.printStackTrace();
-                } finally {
-                    try {
-                        jarFile.close();
-                    } catch (final Throwable e) {
-                    }
-                }
-            }
-            if (className.startsWith("java.")) {
-                return findSystemClass(className);
-            }
-            if (className.startsWith("javax.")) {
-                return findSystemClass(className);
-            }
-            if (className.startsWith("org.w3c.")) {
-                return findSystemClass(className);
-            }
-            return findSystemClass(className);
+    protected synchronized Class<?> findClass(String className) throws ClassNotFoundException {
+        if (DownloadLink.class.getName().equals(className)) {
+            return DownloadLink.class;
         }
-    }
+        if (FilePackage.class.getName().equals(className)) {
+            return FilePackage.class;
+        }
 
-    @Override
-    public URL findResource(final String name) {
-
-        JarFile jarFile = null;
-        for (File jar : jars) {
-
-            try {
-                byte classByte[];
-                jarFile = new JarFile(jar);
-
-                final JarEntry entry = jarFile.getJarEntry(name);
-                if (entry != null) {
-
-                    final String url = jar.toURL().toString();
-                    return new URL("jar:" + url + "!/" + name);
-
+        if (className.startsWith("org.appwork")) {
+            final Class<?> ret = findSystemClass(className);
+            return ret;
+        }
+        final Class<?> loaded = findLoadedClass(className);
+        if (loaded != null) {
+            return loaded;
+        }
+        if (className.startsWith(JD1ImportSandbox.class.getName())) {
+            final URL url = SandboxClassloader.class.getResource("/" + className.replace(".", "/") + ".class");
+            final ByteArrayOutputStream byteStream = new ByteArrayOutputStream() {
+                @Override
+                public synchronized byte[] toByteArray() {
+                    return buf;
                 }
-
+            };
+            InputStream is = null;
+            try {
+                is = url.openStream();
+                IO.readStream(-1, is, byteStream, true);
+            } catch (IOException e) {
+                throw new ClassNotFoundException("Missing:" + className, e);
+            } finally {
+                try {
+                    if (is != null) {
+                        is.close();
+                    }
+                } catch (Throwable e) {
+                }
+            }
+            final Class<?> result = this.defineClass(className, byteStream.toByteArray(), 0, byteStream.size(), null);
+            return result;
+        }
+        final String jarClassName = className.replace(".", "/") + ".class";
+        for (File jar : jars) {
+            JarFile jarFile = null;
+            try {
+                jarFile = new JarFile(jar);
+                final JarEntry entry = jarFile.getJarEntry(jarClassName);
+                if (entry != null) {
+                    final ByteArrayOutputStream byteStream = new ByteArrayOutputStream() {
+                        @Override
+                        public synchronized byte[] toByteArray() {
+                            return buf;
+                        }
+                    };
+                    final InputStream is = jarFile.getInputStream(entry);
+                    try {
+                        IO.readStream(-1, is, byteStream, true);
+                    } catch (IOException e) {
+                        throw new ClassNotFoundException("Missing:" + jarClassName, e);
+                    } finally {
+                        if (is != null) {
+                            is.close();
+                        }
+                    }
+                    final Class<?> result = this.defineClass(className, byteStream.toByteArray(), 0, byteStream.size(), null);
+                    return result;
+                }
             } catch (final Exception e) {
                 e.printStackTrace();
             } finally {
                 try {
-                    jarFile.close();
+                    if (jarFile != null) {
+                        jarFile.close();
+                    }
                 } catch (final Throwable e) {
                 }
             }
         }
+        if (className.startsWith("java.")) {
+            return findSystemClass(className);
+        }
+        if (className.startsWith("javax.")) {
+            return findSystemClass(className);
+        }
+        if (className.startsWith("org.w3c.")) {
+            return findSystemClass(className);
+        }
+        return findSystemClass(className);
 
+    }
+
+    @Override
+    public URL findResource(final String name) {
+        JarFile jarFile = null;
+        for (File jar : jars) {
+            try {
+                jarFile = new JarFile(jar);
+                final JarEntry entry = jarFile.getJarEntry(name);
+                if (entry != null) {
+                    final String url = jar.toURL().toString();
+                    return new URL("jar:" + url + "!/" + name);
+                }
+            } catch (final Exception e) {
+                e.printStackTrace();
+            } finally {
+                try {
+                    if (jarFile != null) {
+                        jarFile.close();
+                    }
+                } catch (final Throwable e) {
+                }
+            }
+        }
         return null;
 
     }
