@@ -7,6 +7,7 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Locale;
+import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -15,6 +16,9 @@ import jd.controlling.linkcollector.LinkCollectingJob;
 import jd.controlling.linkcollector.PackagizerInterface;
 import jd.controlling.linkcrawler.CrawledLink;
 import jd.controlling.linkcrawler.PackageInfo;
+import jd.gui.swing.jdgui.views.settings.panels.linkgrabberfilter.editdialog.OnlineStatusFilter;
+import jd.gui.swing.jdgui.views.settings.panels.linkgrabberfilter.editdialog.OnlineStatusFilter.OnlineStatus;
+import jd.gui.swing.jdgui.views.settings.panels.linkgrabberfilter.editdialog.OnlineStatusFilter.OnlineStatusMatchtype;
 import jd.plugins.DownloadLink;
 
 import org.appwork.exceptions.WTFException;
@@ -35,12 +39,17 @@ import org.appwork.utils.os.CrossSystem;
 import org.jdownloader.controlling.FileCreationEvent;
 import org.jdownloader.controlling.FileCreationListener;
 import org.jdownloader.controlling.FileCreationManager;
+import org.jdownloader.controlling.Priority;
 import org.jdownloader.controlling.filter.NoDownloadLinkException;
+import org.jdownloader.controlling.filter.RegexFilter;
+import org.jdownloader.controlling.filter.RegexFilter.MatchType;
 import org.jdownloader.extensions.extraction.ArchiveFile;
 import org.jdownloader.extensions.extraction.BooleanStatus;
 import org.jdownloader.extensions.extraction.ExtractionController;
+import org.jdownloader.extensions.extraction.ExtractionExtension;
 import org.jdownloader.extensions.extraction.bindings.downloadlink.DownloadLinkArchive;
 import org.jdownloader.extensions.extraction.bindings.downloadlink.DownloadLinkArchiveFile;
+import org.jdownloader.jd1import.JD1Importer;
 
 public class PackagizerController implements PackagizerInterface, FileCreationListener {
     private PackagizerSettings                    config;
@@ -80,15 +89,82 @@ public class PackagizerController implements PackagizerInterface, FileCreationLi
         eventSender = new ChangeEventSender();
         if (!isTestInstance()) {
             config = JsonConfig.create(PackagizerSettings.class);
+
             try {
                 list = config.getRuleList();
             } catch (Throwable e) {
                 // restoring list may fail.
             }
+            if (list == null) {
+                list = new ArrayList<PackagizerRule>();
+            }
+            JD1Importer jd1Importer = new JD1Importer();
+            config.setTryJD1ImportEnabled(true);
+            if (config.isTryJD1ImportEnabled() && jd1Importer.isAvailable()) {
+                config.setTryJD1ImportEnabled(false);
+                Map<String, Object> data = jd1Importer.getHashMap("JD Package Customizer");
+                if (data != null) {
+                    ArrayList<HashMap<String, Object>> settings = JSonStorage.convert(data.get("SETTINGS"), new TypeRef<ArrayList<HashMap<String, Object>>>() {
+                    });
+                    data = null;
+                    System.gc();
+                    if (settings != null) {
+                        for (HashMap<String, Object> map : settings) {
+                            PackagizerRule rule = new PackagizerRule();
+                            String regex = (String) map.get("regex");
+                            String password = (String) map.get("password");
+                            String name = (String) map.get("name");
+                            boolean extract = Boolean.TRUE.equals(map.get("extract"));
+                            boolean enabled = Boolean.TRUE.equals(map.get("enabled"));
+                            boolean useSubDirectory = Boolean.TRUE.equals(map.get("useSubDirectory"));
+                            int priority = ((Number) map.get("priority")).intValue();
+                            String downloadDir = (String) map.get("downloadDir");
+                            if (downloadDir == null) {
+                                downloadDir = "";
+                            }
+                            if (useSubDirectory) {
+
+                                downloadDir += File.separator + "<jd:packagename>";
+                            }
+
+                            rule.setName(name);
+                            rule.setAutoExtractionEnabled(extract);
+                            rule.setEnabled(enabled);
+                            rule.setOnlineStatusFilter(new OnlineStatusFilter(OnlineStatusMatchtype.IS, true, OnlineStatus.ONLINE));
+                            if (StringUtils.isNotEmpty(downloadDir)) {
+                                rule.setDownloadDestination(downloadDir);
+                            }
+                            if (StringUtils.isNotEmpty(password)) {
+                                ExtractionExtension.getInstance().addPassword(password);
+                            }
+                            switch (priority) {
+                            case -1:
+                                rule.setPriority(Priority.LOWER);
+                                break;
+                            case 0:
+                                rule.setPriority(Priority.DEFAULT);
+                                break;
+                            case 1:
+                                rule.setPriority(Priority.HIGH);
+                                break;
+                            case 2:
+                                rule.setPriority(Priority.HIGHER);
+                                break;
+                            case 3:
+                                rule.setPriority(Priority.HIGHEST);
+                                break;
+                            }
+
+                            rule.setFilenameFilter(new RegexFilter(true, MatchType.EQUALS, regex, true));
+                            list.add(rule);
+                        }
+                        config.setRuleList(list);
+                    }
+
+                }
+            }
         }
-        if (list == null) {
-            list = new ArrayList<PackagizerRule>();
-        }
+
         if (!isTestInstance()) {
             ArrayList<PackagizerRule> newList = new ArrayList<PackagizerRule>();
             HashSet<String> dupefinder = new HashSet<String>();

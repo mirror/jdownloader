@@ -21,4 +21,10 @@ public interface PackagizerSettings extends ConfigInterface {
 
     void setPackagizerEnabled(boolean b);
 
+    @AboutConfig
+    @DefaultBooleanValue(true)
+    boolean isTryJD1ImportEnabled();
+
+    void setTryJD1ImportEnabled(boolean b);
+
 }

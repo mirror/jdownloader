@@ -306,27 +306,7 @@ public class SecondLevelLaunch {
      */
 
     public static void mainStart(final String args[]) {
-        // try {
-        //
-        // String redirect = IO.readFileToString(Application.getResource("redirect.txt"));
-        // final String org = new Regex(redirect, "org=(.*)").getMatch(0);
-        //
-        // Thread th = new Thread("Importer") {
-        // {
-        //
-        // }
-        //
-        // @Override
-        // public void run() {
-        //
-        // jd.JD1Import.run(org);
-        // }
-        // };
-        //
-        // th.start();
-        // } catch (Throwable e) {
-        // e.printStackTrace();
-        // }
+
         SecondLevelLaunch.LOG = LogController.GL;
         /* setup JSPermission */
         try {
