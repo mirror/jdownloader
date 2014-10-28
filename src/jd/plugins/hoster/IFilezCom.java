@@ -58,6 +58,16 @@ public class IFilezCom extends PluginForHost {
     }
 
     @Override
+    public String rewriteHost(String host) {
+        if ("i-filez.com".equals(getHost())) {
+            if (host == null || "i-filez.com".equals(host)) {
+                return "depfile.com";
+            }
+        }
+        return super.rewriteHost(host);
+    }
+
+    @Override
     public String getAGBLink() {
         return "http://depfile.com/terms";
     }
