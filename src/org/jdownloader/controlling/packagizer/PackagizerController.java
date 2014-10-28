@@ -99,7 +99,7 @@ public class PackagizerController implements PackagizerInterface, FileCreationLi
                 list = new ArrayList<PackagizerRule>();
             }
             JD1Importer jd1Importer = new JD1Importer();
-            config.setTryJD1ImportEnabled(true);
+
             if (config.isTryJD1ImportEnabled() && jd1Importer.isAvailable()) {
                 config.setTryJD1ImportEnabled(false);
                 Map<String, Object> data = jd1Importer.getHashMap("JD Package Customizer");
