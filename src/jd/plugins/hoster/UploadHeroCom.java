@@ -52,7 +52,9 @@ public class UploadHeroCom extends PluginForHost {
 
     public UploadHeroCom(PluginWrapper wrapper) {
         super(wrapper);
-        this.enablePremium(MAINPAGE + "/premium");
+        if ("uploadhero.co".equals(getHost())) {
+            this.enablePremium(MAINPAGE + "/premium");
+        }
     }
 
     /* NO OVERRIDE!! We need to stay 0.9*compatible */
@@ -73,39 +75,13 @@ public class UploadHeroCom extends PluginForHost {
     }
 
     @Override
-    public boolean isPremiumEnabled() {
-        return "uploadhero.co".equals(getHost());
-    }
-
-    public Boolean rewriteHost(final DownloadLink link) {
-        if ("uploadhero.co".equals(getHost())) {
-            if (link != null && "uploadhero.com".equals(link.getHost())) {
-                link.setHost("uploadhero.co");
-                return true;
-            }
-            return false;
-        }
-        return null;
-    }
-
-    public Boolean rewriteHost(final Account acc) {
-        if ("uploadhero.co".equals(getHost())) {
-            if (acc != null && "uploadhero.com".equals(acc.getHoster())) {
-                acc.setHoster("uploadhero.co");
-                return true;
-            }
-            return false;
-        }
-        return null;
-    }
-
     public String rewriteHost(String host) {
         if ("uploadhero.com".equals(getHost())) {
             if (host == null || "uploadhero.com".equals(host)) {
                 return "uploadhero.co";
             }
         }
-        return null;
+        return super.rewriteHost(host);
     }
 
     @Override

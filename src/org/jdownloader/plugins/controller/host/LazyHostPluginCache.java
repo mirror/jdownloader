@@ -20,7 +20,7 @@ import org.jdownloader.plugins.controller.LazyPluginClass;
 
 public class LazyHostPluginCache {
 
-    private static final int CACHEVERSION = 27102014;
+    private static final long CACHEVERSION = 28102014l;
 
     private static ByteArrayOutputStream readFile(File file) throws IOException {
         final ByteArrayOutputStream byteBuffer = new ByteArrayOutputStream(32767) {
@@ -48,7 +48,7 @@ public class LazyHostPluginCache {
             final ByteArrayOutputStream byteBuffer = readFile(file);
             final InputStream bis = new ByteArrayInputStream(byteBuffer.toByteArray(), 0, byteBuffer.size());
             final AWFCUtils is = new AWFCUtils(bis);
-            if (CACHEVERSION != is.readShort()) {
+            if (CACHEVERSION != is.readLong()) {
                 throw new IOException("Outdated CacheVersion");
             }
             final long lastModified = is.readLong();
@@ -64,8 +64,6 @@ public class LazyHostPluginCache {
                     final int flags = is.ensureRead();
                     lazyHostPlugin.setPremium((flags & (1 << 0)) != 0);
                     lazyHostPlugin.setHasConfig((flags & (1 << 1)) != 0);
-                    lazyHostPlugin.setHasLinkRewrite((flags & (1 << 2)) != 0);
-                    lazyHostPlugin.setHasAccountRewrite((flags & (1 << 3)) != 0);
                     if ((flags & (1 << 5)) != 0) {
                         lazyHostPlugin.setPremiumUrl(is.readString(stringBuffer));
                     }
@@ -105,7 +103,7 @@ public class LazyHostPluginCache {
             fos = new FileOutputStream(file);
             final BufferedOutputStream bos = new BufferedOutputStream(fos, 32767);
             final AWFCUtils os = new AWFCUtils(bos);
-            os.writeShort(CACHEVERSION);
+            os.writeLong(CACHEVERSION);
             final long lastModified = lastModification != null ? lastModification.get() : 0;
             os.writeLong(lastModified);
             os.writeShort(lazyPluginsMap.size());
@@ -130,12 +128,9 @@ public class LazyHostPluginCache {
                     if (plugin.isHasConfig()) {
                         flags |= (1 << 1);
                     }
-                    if (plugin.isHasLinkRewrite()) {
-                        flags |= (1 << 2);
-                    }
-                    if (plugin.isHasAccountRewrite()) {
-                        flags |= (1 << 3);
-                    }
+                    /**
+                     * 2,3 are unused
+                     */
                     if (plugin.isHasConfig() && plugin.getConfigInterface() != null) {
                         flags |= (1 << 4);
                     }

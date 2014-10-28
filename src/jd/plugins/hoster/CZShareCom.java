@@ -50,7 +50,9 @@ public class CZShareCom extends PluginForHost {
 
     public CZShareCom(PluginWrapper wrapper) {
         super(wrapper);
-        this.enablePremium("http://sdilej.cz/registrace");
+        if ("sdilej.cz".equals(getHost())) {
+            this.enablePremium("http://sdilej.cz/registrace");
+        }
     }
 
     /* NO OVERRIDE!! We need to stay 0.9*compatible */
@@ -76,20 +78,14 @@ public class CZShareCom extends PluginForHost {
         link.setUrlDownload(link.getDownloadURL().replace("https://", "http://"));
     }
 
-    public Boolean rewriteHost(DownloadLink link) {
-        if (link != null && "czshare.com".equals(link.getHost())) {
-            link.setHost("sdilej.cz");
-            return true;
+    @Override
+    public String rewriteHost(String host) {
+        if ("czshare.com".equals(getHost())) {
+            if (host == null || "czshare.com".equals(host)) {
+                return "sdilej.cz";
+            }
         }
-        return false;
-    }
-
-    public Boolean rewriteHost(Account acc) {
-        if (acc != null && "czshare.com".equals(acc.getHoster())) {
-            acc.setHoster("sdilej.cz");
-            return true;
-        }
-        return false;
+        return super.rewriteHost(host);
     }
 
     @Override

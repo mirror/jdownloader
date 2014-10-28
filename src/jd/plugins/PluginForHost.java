@@ -1086,46 +1086,37 @@ public abstract class PluginForHost extends Plugin {
         return link;
     }
 
-    /* override this if you want to change a link to use this plugin */
-    /* dont forget to change host with setHost */
-    /* must return true if changing was successful */
-    /* null = this function is not implemented */
-    /* if this function needs a browser, it must create an instance on its own */
-    public Boolean rewriteHost(DownloadLink link) {
-        return null;
-    }
-
-    /* null = this function is not implemented */
-    public Boolean rewriteHost(Account acc) {
-        return null;
-    }
-
-    /**
-     * override this if you want to signal domain changes
-     * 
-     * to enable this feature null must return the original hostname
-     * 
-     * @param host
-     * @return
-     */
     public String rewriteHost(String host) {
+        if (host != null && host.equals(getHost())) {
+            return getHost();
+        }
         return null;
     }
 
-    public static boolean implementsRewriteHost(PluginForHost plugin, Class<?> clazz) {
+    public boolean assignPlugin(final DownloadLink link) {
+        if (link != null) {
+            link.setHost(getHost());
+            link.setDefaultPlugin(this);
+            return true;
+        }
+        return false;
+    }
+
+    public boolean assignPlugin(final Account account) {
+        if (account != null) {
+            account.setHoster(getHost());
+            account.setPlugin(this);
+            return true;
+        }
+        return false;
+    }
+
+    public static boolean implementsRewriteHost(PluginForHost plugin) {
         try {
             if (plugin != null) {
-                final Method method = plugin.getClass().getMethod("rewriteHost", new Class[] { clazz });
+                final Method method = plugin.getClass().getMethod("rewriteHost", new Class[] { String.class });
                 final boolean implementsHandlePremium = method.getDeclaringClass() != PluginForHost.class;
-                if (implementsHandlePremium) {
-                    if (String.class.equals(clazz)) {
-                        return plugin.rewriteHost((String) null) != null;
-                    } else if (DownloadLink.class.equals(clazz)) {
-                        return plugin.rewriteHost((DownloadLink) null) != null;
-                    } else if (Account.class.equals(clazz)) {
-                        return plugin.rewriteHost((Account) null) != null;
-                    }
-                }
+                return implementsHandlePremium && plugin.rewriteHost((String) null) != null;
             }
         } catch (NoSuchMethodException e) {
         } catch (Throwable e) {

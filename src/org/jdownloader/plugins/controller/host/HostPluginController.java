@@ -19,8 +19,6 @@ import jd.controlling.TaskQueue;
 import jd.controlling.downloadcontroller.DownloadController;
 import jd.controlling.linkcollector.LinkCollector;
 import jd.nutils.Formatter;
-import jd.plugins.Account;
-import jd.plugins.DownloadLink;
 import jd.plugins.HostPlugin;
 import jd.plugins.PluginForHost;
 
@@ -328,13 +326,6 @@ public class HostPluginController extends PluginController<PluginForHost> {
                                     }
                                     /* set hasConfig */
                                     lazyHostPlugin.setHasConfig(plg.hasConfig());
-                                    /* set hasAccountRewrite */
-                                    try {
-                                        lazyHostPlugin.setHasAccountRewrite(PluginForHost.implementsRewriteHost(plg, Account.class));
-                                    } catch (Throwable e) {
-                                        logger.log(e);
-                                        lazyHostPlugin.setHasAccountRewrite(false);
-                                    }
 
                                     try {
                                         lazyHostPlugin.setHasAllowHandle(PluginForHost.implementsAllowHandle(plg));
@@ -344,19 +335,12 @@ public class HostPluginController extends PluginController<PluginForHost> {
                                     }
 
                                     try {
-                                        lazyHostPlugin.setHasRewrite(PluginForHost.implementsRewriteHost(plg, String.class));
+                                        lazyHostPlugin.setHasRewrite(PluginForHost.implementsRewriteHost(plg));
                                     } catch (Throwable e) {
                                         logger.log(e);
                                         lazyHostPlugin.setHasRewrite(false);
                                     }
 
-                                    /* set hasLinkRewrite */
-                                    try {
-                                        lazyHostPlugin.setHasLinkRewrite(PluginForHost.implementsRewriteHost(plg, DownloadLink.class));
-                                    } catch (Throwable e) {
-                                        logger.log(e);
-                                        lazyHostPlugin.setHasLinkRewrite(false);
-                                    }
                                 } catch (Throwable e) {
                                     if (e instanceof UpdateRequiredClassNotFoundException) {
                                         logger.log(e);

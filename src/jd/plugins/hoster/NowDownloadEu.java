@@ -58,29 +58,7 @@ public class NowDownloadEu extends PluginForHost {
         }
     }
 
-    public Boolean rewriteHost(DownloadLink link) {
-        if (isPremiumEnabled()) {
-            if (link != null && ("nowdownload.co".equals(link.getHost()) || "nowdownload.ch".equals(link.getHost()) || "nowdownload.sx".equals(link.getHost()) || "nowdownload.ag".equals(link.getHost()) || "nowdownload.at".equals(link.getHost()))) {
-                link.setHost("nowdownload.eu");
-                correctDownloadLink(link);
-                return true;
-            }
-            return false;
-        }
-        return null;
-    }
-
-    public Boolean rewriteHost(Account acc) {
-        if (isPremiumEnabled()) {
-            if (acc != null && ("nowdownload.co".equals(acc.getHoster()) || "nowdownload.ch".equals(acc.getHoster()) || "nowdownload.sx".equals(acc.getHoster()) || "nowdownload.ag".equals(acc.getHoster()) || "nowdownload.at".equals(acc.getHoster()))) {
-                acc.setHoster("nowdownload.eu");
-                return true;
-            }
-            return false;
-        }
-        return null;
-    }
-
+    @Override
     public String rewriteHost(String host) {
         if ("nowdownload.eu".equals(getHost())) {
             if (host == null || host.startsWith("nowdownload.")) {
@@ -91,7 +69,7 @@ public class NowDownloadEu extends PluginForHost {
                 return "nowdownload.eu";
             }
         }
-        return null;
+        return super.rewriteHost(host);
     }
 
     @Override

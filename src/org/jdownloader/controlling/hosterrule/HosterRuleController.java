@@ -133,7 +133,7 @@ public class HosterRuleController implements AccountControllerListener {
                             final AccountUsageRule rule = ars.restore(availableAccounts);
                             rule.setOwner(this);
                             final DownloadLink link = new DownloadLink(null, "", rule.getHoster(), "", false);
-                            final PluginForHost plugin = pluginFinder.assignPlugin(link, true);
+                            final PluginForHost plugin = pluginFinder.assignPlugin(link, false);
                             if (plugin == null) {
                                 rule.setEnabled(false);
                             } else {
@@ -175,7 +175,7 @@ public class HosterRuleController implements AccountControllerListener {
                     final PluginFinder pluginFinder = new PluginFinder(logger);
                     for (final AccountUsageRule rule : loadedRules) {
                         final DownloadLink link = new DownloadLink(null, "", rule.getHoster(), "", false);
-                        final PluginForHost plugin = pluginFinder.assignPlugin(link, true);
+                        final PluginForHost plugin = pluginFinder.assignPlugin(link, false);
                         if (plugin == null) {
                             rule.setEnabled(false);
                         } else {

@@ -58,33 +58,19 @@ public class GuploadBiz extends PluginForHost {
 
     public GuploadBiz(PluginWrapper wrapper) {
         super(wrapper);
-        this.enablePremium(MAINPAGE + "/register.html");
-    }
-
-    public boolean isPremiumEnabled() {
-        return "hoodload.com".equalsIgnoreCase(getHost());
-    }
-
-    public Boolean rewriteHost(Account acc) {
-        if ("gupload.biz".equals(getHost())) {
-            if (acc != null && "gupload.biz".equals(acc.getHoster())) {
-                acc.setHoster("hoodload.com");
-                return true;
-            }
-            return false;
+        if ("hoodload.com".equals(getHost())) {
+            this.enablePremium(MAINPAGE + "/register.html");
         }
-        return null;
     }
 
-    public Boolean rewriteHost(DownloadLink link) {
+    @Override
+    public String rewriteHost(String host) {
         if ("gupload.biz".equals(getHost())) {
-            if (link != null && "gupload.biz".equals(link.getHost())) {
-                link.setHost("hoodload.com");
-                return true;
+            if (host == null || "gupload.biz".equals(host)) {
+                return "hoodload.com";
             }
-            return false;
         }
-        return null;
+        return super.rewriteHost(host);
     }
 
     @Override
@@ -99,9 +85,12 @@ public class GuploadBiz extends PluginForHost {
     @Override
     public AvailableStatus requestFileInformation(DownloadLink link) throws IOException, PluginException {
         this.setBrowserExclusive();
+        correctDownloadLink(link);
         br.setFollowRedirects(true);
         br.getPage(link.getDownloadURL());
-        if (br.getURL().contains("/error.html") || br.getURL().contains("/index.php") || br.toString().length() < 100) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (br.getURL().contains("/error.html") || br.getURL().contains("/index.php") || br.toString().length() < 100) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
         if (br.getURL().contains(SIMULTANDLSLIMIT)) {
             link.setName(new Regex(link.getDownloadURL(), "([A-Za-z0-9]+)$").getMatch(0));
             link.getLinkStatus().setStatusText(SIMULTANDLSLIMITUSERTEXT);
@@ -110,7 +99,9 @@ public class GuploadBiz extends PluginForHost {
         final Regex fInfo = br.getRegex("<th class=\"descr\">[\t\n\r ]+<strong>([^<>\"]*?) \\(([^<>\"]*?)\\)<br/>");
         final String filename = fInfo.getMatch(0);
         final String filesize = fInfo.getMatch(1);
-        if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (filename == null || filesize == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         link.setName(Encoding.htmlDecode(filename.trim()));
         link.setDownloadSize(SizeFormatter.getSize(filesize));
         return AvailableStatus.TRUE;
@@ -119,10 +110,14 @@ public class GuploadBiz extends PluginForHost {
     @Override
     public void handleFree(DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
-        if (br.getURL().contains(SIMULTANDLSLIMIT)) throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, SIMULTANDLSLIMITUSERTEXT, 1 * 60 * 1000l);
+        if (br.getURL().contains(SIMULTANDLSLIMIT)) {
+            throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, SIMULTANDLSLIMITUSERTEXT, 1 * 60 * 1000l);
+        }
         int wait = 20;
         final String waittime = br.getRegex("\\$\\(\\'\\.download\\-timer\\-seconds\\'\\)\\.html\\((\\d+)\\);").getMatch(0);
-        if (waittime != null) wait = Integer.parseInt(waittime);
+        if (waittime != null) {
+            wait = Integer.parseInt(waittime);
+        }
         sleep(wait * 1001l, downloadLink);
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, downloadLink.getDownloadURL() + "?d=1", false, 1);
         if (dl.getConnection().getContentType().contains("html")) {
@@ -130,7 +125,9 @@ public class GuploadBiz extends PluginForHost {
             br.followConnection();
             final String captchaAction = br.getRegex("<div class=\"captchaPageTable\">[\t\n\r ]+<form method=\"POST\" action=\"(http://[^<>\"]*?)\"").getMatch(0);
             final String rcID = br.getRegex("recaptcha/api/noscript\\?k=([^<>\"]*?)\"").getMatch(0);
-            if (rcID == null || captchaAction == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            if (rcID == null || captchaAction == null) {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
             final PluginForHost recplug = JDUtilities.getPluginForHost("DirectHTTP");
             final jd.plugins.hoster.DirectHTTP.Recaptcha rc = ((DirectHTTP) recplug).getReCaptcha(br);
             rc.setId(rcID);
@@ -148,13 +145,17 @@ public class GuploadBiz extends PluginForHost {
             }
             if (dl.getConnection().getContentType().contains("html")) {
                 br.followConnection();
-                if (br.containsHTML("(api\\.recaptcha\\.net|google\\.com/recaptcha/api/)")) throw new PluginException(LinkStatus.ERROR_CAPTCHA);
+                if (br.containsHTML("(api\\.recaptcha\\.net|google\\.com/recaptcha/api/)")) {
+                    throw new PluginException(LinkStatus.ERROR_CAPTCHA);
+                }
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
         } else {
             logger.info("direct download");
         }
-        if (dl.getConnection().getLongContentLength() == 0) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error", 60 * 60 * 1000l);
+        if (dl.getConnection().getLongContentLength() == 0) {
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error", 60 * 60 * 1000l);
+        }
         dl.startDownload();
     }
 
@@ -173,7 +174,9 @@ public class GuploadBiz extends PluginForHost {
                 br.setCookiesExclusive(true);
                 final Object ret = account.getProperty("cookies", null);
                 boolean acmatch = Encoding.urlEncode(account.getUser()).equals(account.getStringProperty("name", Encoding.urlEncode(account.getUser())));
-                if (acmatch) acmatch = Encoding.urlEncode(account.getPass()).equals(account.getStringProperty("pass", Encoding.urlEncode(account.getPass())));
+                if (acmatch) {
+                    acmatch = Encoding.urlEncode(account.getPass()).equals(account.getStringProperty("pass", Encoding.urlEncode(account.getPass())));
+                }
                 if (acmatch && ret != null && ret instanceof HashMap<?, ?> && !force) {
                     final HashMap<String, String> cookies = (HashMap<String, String>) ret;
                     if (account.isValid()) {
@@ -228,9 +231,13 @@ public class GuploadBiz extends PluginForHost {
             account.setValid(false);
             throw e;
         }
-        if (!br.getURL().endsWith("/upgrade.php")) br.getPage("/upgrade.php");
+        if (!br.getURL().endsWith("/upgrade.php")) {
+            br.getPage("/upgrade.php");
+        }
         final String expire = br.getRegex("Reverts To Free Account:[\t\n\r ]+</td>[\t\n\r ]+<td>[\t\n\r ]+(\\d{2}/\\d{2}/\\d{4} \\d{2}:\\d{2}:\\d{2})").getMatch(0);
-        if (expire != null) ai.setValidUntil(TimeFormatter.getMilliSeconds(expire, "dd/MM/yyyy hh:mm:ss", Locale.ENGLISH));
+        if (expire != null) {
+            ai.setValidUntil(TimeFormatter.getMilliSeconds(expire, "dd/MM/yyyy hh:mm:ss", Locale.ENGLISH));
+        }
         account.setValid(true);
         ai.setUnlimitedTraffic();
         ai.setStatus("Premium User");
@@ -247,7 +254,9 @@ public class GuploadBiz extends PluginForHost {
             br.followConnection();
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        if (dl.getConnection().getLongContentLength() == 0) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error", 60 * 60 * 1000l);
+        if (dl.getConnection().getLongContentLength() == 0) {
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error", 60 * 60 * 1000l);
+        }
         dl.startDownload();
     }
 

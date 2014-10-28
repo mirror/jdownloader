@@ -53,7 +53,7 @@ names = { "4share.ws", "pliczek.net", "2gb-hosting.com", "maskfile.com", "rockdi
         "sharehub.com", "sharehut.com", "filesurf.ru", "openfile.ru", "letitfile.ru", "tab.net.ua", "uploadbox.com", "supashare.net", "usershare.net", "skipfile.com", "10upload.com", "x7.to", "uploadking.com", "uploadhere.com", "fileshaker.com", "vistaupload.com", "groovefile.com", "enterupload.com", "xshareware.com", "xun6.com", "yourupload.de", "youshare.eu", "mafiaupload.com", "addat.hu", "archiv.to", "bigupload.com", "biggerupload.com", "bitload.com", "bufiles.com", "cash-file.net", "combozip.com", "duckload.com", "exoshare.com", "file2upload.net", "filebase.to", "filebling.com", "filecrown.com", "filefrog.to", "filefront.com", "filehook.com", "filestage.to", "filezup.com", "fullshare.net", "gaiafile.com", "keepfile.com", "kewlshare.com", "lizshare.net", "loaded.it", "loadfiles.in", "megarapid.eu", "megashare.vn", "metahyper.com", "missupload.com", "netstorer.com",
         "nextgenvidz.com", "piggyshare.com", "profitupload.com", "quickload.to", "quickyshare.com", "share.cx", "sharehoster.de", "shareua.com", "speedload.to", "upfile.in", "ugotfile.com", "upload.ge", "uploadmachine.com", "uploady.to", "uploadstore.net", "vspace.cc", "web-share.net", "yvh.cc", "x-files.kz", "oteupload.com" },
 
-        urls = { "http://(www\\.)?4share\\.ws/file/[a-z0-9]+/.*?\\.html", "http://[\\w\\.]*?pliczek\\.net/index\\.php\\?p=\\d+", "http://(www\\.)?2gb\\-hosting\\.com/(videos|v)/[a-z0-9]+/.*?\\.html", "https?://(www\\.)?maskfile\\.com/((vid)?embed-)?[a-z0-9]{12}", "https?://(www\\.)?rockdizfile\\.com/((vid)?embed-)?[a-z0-9]{12}", "http://(www\\.)?(embed\\.)?yesload\\.net/[A-Za-z0-9]+", "https?://(www\\.)?dotsemper\\.com/(embed\\-)?[a-z0-9]{12}", "http://(www\\.)?mixbird\\.com/mixtapes/(listen|download)/[a-z0-9_\\-]+", "http://(www\\.)?myjizztube\\.com/videos/.*?\\d+\\.html", "http://([a-z]+\\.)?packupload.com/[A-Z0-9]+", "http://(www\\.)*?(en\\.)*?megaszafa\\.com/(plik,(\\d+?)\\.html|[0-9A-Za-z]+/.*)", "https?://(www\\.)?potload\\.com/((vid)?embed-)?[a-z0-9]{12}", "https?://(www\\.)?usefile\\.com/((vid)?embed-)?[a-z0-9]{12}", "http://(www\\.)?nitrobits\\.com/.+",
+urls = { "http://(www\\.)?4share\\.ws/file/[a-z0-9]+/.*?\\.html", "http://[\\w\\.]*?pliczek\\.net/index\\.php\\?p=\\d+", "http://(www\\.)?2gb\\-hosting\\.com/(videos|v)/[a-z0-9]+/.*?\\.html", "https?://(www\\.)?maskfile\\.com/((vid)?embed-)?[a-z0-9]{12}", "https?://(www\\.)?rockdizfile\\.com/((vid)?embed-)?[a-z0-9]{12}", "http://(www\\.)?(embed\\.)?yesload\\.net/[A-Za-z0-9]+", "https?://(www\\.)?dotsemper\\.com/(embed\\-)?[a-z0-9]{12}", "http://(www\\.)?mixbird\\.com/mixtapes/(listen|download)/[a-z0-9_\\-]+", "http://(www\\.)?myjizztube\\.com/videos/.*?\\d+\\.html", "http://([a-z]+\\.)?packupload.com/[A-Z0-9]+", "http://(www\\.)*?(en\\.)*?megaszafa\\.com/(plik,(\\d+?)\\.html|[0-9A-Za-z]+/.*)", "https?://(www\\.)?potload\\.com/((vid)?embed-)?[a-z0-9]{12}", "https?://(www\\.)?usefile\\.com/((vid)?embed-)?[a-z0-9]{12}", "http://(www\\.)?nitrobits\\.com/.+",
         "http://(www\\.)?uploads\\.center/[A-Za-z0-9]+", "https?://(www\\.)?filemonkey\\.in/file/[a-z0-9]+", "https?://(www\\.)?(mediafilestorage\\.net|multishared\\.me)/((vid)?embed\\-)?[a-z0-9]{12}", "http://(www\\.)?wallbase\\.cc/.+", "https?://(www\\.)?swankshare\\.com/((vid)?embed-)?[a-z0-9]{12}", "https?://(www\\.)?vidbox\\.yt/((vid)?embed-)?[a-z0-9]{12}", "https?://(www\\.)?vidzbeez\\.com/(vidembed\\-)?[a-z0-9]{12}", "https?://(www\\.)?megafiles\\.se/((vid)?embed-)?[a-z0-9]{12}", "https?://(www\\.)?fileom\\.com/((vid)?embed-)?[a-z0-9]{12}", "https?://(www\\.)?bluehaste\\.com/(vidembed\\-)?[a-z0-9]{12}", "http://(www\\.)?socifiles\\.com/d/[0-9a-z]+", "http://[\\w\\.]*?mlfat4arab\\.com/[a-z0-9]{12}", "http://[\\w\\.]*?megashare\\.by/(\\?d|download\\.php\\?id)=[A-Z0-9]+", "http://(www\\.)?flinzy\\.com/d/[A-Za-z0-9]+", "http://(www\\.)?filesend\\.net/download\\.php\\?f=[a-z0-9]+",
         "http://(www\\.)?fastfileshare\\.com\\.ar/index\\.php\\?p=download\\&hash=[A-Za-z0-9]+", "https?://(www\\.)?(ddlstorage\\.com|ddlsto\\.com)/((vid)?embed\\-)?[a-z0-9]{12}", "http://(www\\.)?spaadyshare\\.com/[A-Za-z0-9]{12}/.+", "https?://(www\\.)?sizfile\\.com/((vid)?embed-)?[a-z0-9]{12}", "http://(www\\.)?hostingcup\\.com/[0-9a-zA-Z]{12}", "http://(www\\.)?filecanyon\\.com/file/[a-z0-9]+", "https?://(www\\.)?bytesbox\\.com/\\!/[A-Za-z0-9]+", "https?://(www\\.)?dropvideos\\.net/(vidembed\\-)?[a-z0-9]{12}", "https?://(www\\.)?tubecloud\\.net/(vidembed\\-)?[a-z0-9]{12}", "http://(www\\.)?xrabbit\\.com/(watch/\\d+/|video/embed/[A-Za-z0-9=]+)", "http://(www\\.)?tubeq\\.net/video/[A-Z0-9]+", "http://(www\\.)?multiupload\\.(com|nl)(:\\d+)?/([A-Z0-9]{2}_[A-Z0-9]+|[0-9A-Z]+)", "https?://(www\\.)?pizzaupload\\.com/[a-z0-9]{12}", "https?://(www\\.)?ntupload\\.com/[a-z0-9]{12}",
         "http://(www\\.)?magnovideo\\.com/\\?(v|d)=[A-Z0-9]+", "http://(www\\.)?files\\.to/get/[0-9]+/[\\w]+", "https?://(www\\.)?moidisk\\.ru/[a-z0-9]{12}", "http://(www\\.)?vidaru\\.com/[a-z0-9\\-_]+/\\d+", "https?://(www\\.)?epicshare\\.net/((vid)?embed\\-)?[a-z0-9]{12}", "http://(www\\.)?filemov\\.net/download\\.php\\?id=[A-Z0-9]+", "https?://(www\\.)?hipfile\\.com/((vid)?embed-)?[a-z0-9]{12}", "https?://(www\\.)?zingload\\.com/((vid)?embed\\-)?[a-z0-9]{12}", "https?://(www\\.)?fileove\\.com/[a-z0-9]{12}", "http://(www\\.)?rnbload\\.com/.+", "https?://(www\\.)?filesaur\\.com/(vidembed\\-)?[a-z0-9]{12}", "http://[\\w\\.]*?wrzuc\\.to/([a-zA-Z0-9]+(\\.wt|\\.html)|(en/)?linki/[a-zA-Z0-9]+)", "https?://(www\\.)?hyshare\\.com/[a-z0-9]{12}", "https?://(www\\.)?redload\\.net/((vid)?embed-)?[a-z0-9]{12}", "https?://(www\\.)?blitzfiles\\.com/[a-z0-9]{12}",
@@ -98,12 +98,12 @@ names = { "4share.ws", "pliczek.net", "2gb-hosting.com", "maskfile.com", "rockdi
         "http://(www\\.)?profitupload\\.com/files/[A-Za-z0-9]+\\.html", "http://[\\w\\.]*?quickload\\.to/\\?Go=Player\\&HashID=FILE[A-Z0-9]+", "http://[\\w\\.]*?quickyshare\\.com/[a-z0-9]{12}", "http://[\\w\\.]*?share\\.cx/(files/)?\\d+", "http://[\\w\\.]*?sharehoster\\.(de|com|net)/(dl|wait|vid)/[a-z0-9]+", "http://[\\w\\.]*?shareua.com/get_file/.*?/\\d+", "http://[\\w\\.]*?speedload\\.to/FILE[A-Z0-9]+", "http://(www\\.)?upfile\\.in/[a-z0-9]{12}", "http://[\\w\\.]*?ugotfile.com/file/\\d+/.+", "http://[\\w\\.]*?upload\\.ge/((\\?d|download\\.php\\?id)=[A-Z0-9]+|((en|ru|fr|es)/)?file/[0-9]+/)", "http://[\\w\\.]*?uploadmachine\\.com/(download\\.php\\?id=[0-9]+&type=[0-9]{1}|file/[0-9]+/)", "http://[\\w\\.]*?uploady\\.to/dl/((\\?d|download\\.php\\?id)=[A-Z0-9]+|((en|ru|fr|es)/)?file/[0-9]+/)", "http://(www\\.)?uploadstore\\.net/[a-z0-9]{12}",
         "http://[\\w\\.]*?vspace\\.cc/file/[A-Z0-9]+\\.html", "http://[\\w\\.]*?web-share\\.net/download/file/item/.*?_[0-9]+", "http://(www\\.)?yvh\\.cc/video\\.php\\?file=[a-z0-9_]+", "http://[\\w\\.]*?x-files\\.kz/[a-z0-9]+", "https?://(www\\.)?oteupload\\.com/((vid)?embed\\-)?[a-z0-9]{12}" },
 
-        flags = { 0 })
+flags = { 0 })
 public class Offline extends PluginForHost {
 
     /**
      * fullbuild help comment
-     *
+     * 
      * @param wrapper
      */
     public Offline(PluginWrapper wrapper) {
@@ -131,18 +131,6 @@ public class Offline extends PluginForHost {
         ai.setStatus("Permanently Offline: Host provider no longer exists");
         account.setError(AccountError.INVALID, "Permanently Offline: Host provider no longer exists");
         return ai;
-    }
-
-    public Boolean rewriteHost(Account acc) {
-        /* please also update this for alternative hosts */
-        if ("filemade.com".equals(getHost())) {
-            if (acc != null && "filemade.co".equals(acc.getHoster())) {
-                acc.setHoster("filemade.co");
-                return true;
-            }
-            return false;
-        }
-        return null;
     }
 
     @Override

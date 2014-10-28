@@ -72,34 +72,14 @@ public class FileRioCom extends PluginForHost {
         link.setUrlDownload(link.getDownloadURL().replace("https://", "http://").replaceAll("(filerio|filekeen)\\.com/", "filerio.in/"));
     }
 
-    public boolean isPremiumEnabled() {
-        /*
-         * we only want to show filerio.in,so controller sees filerio.com and filekeen.com accounts but plugin no longer exists/supports
-         * account, then the rewriteHost stuff takes over
-         */
-        return "filerio.in".equalsIgnoreCase(getHost());
-    }
-
-    public Boolean rewriteHost(final Account acc) {
-        if ("filerio.in".equals(getHost())) {
-            if (acc != null && ("filekeen".equals(acc.getHoster()) || "filerio.com".equalsIgnoreCase(getHost()))) {
-                acc.setHoster("filerio.in");
-                return true;
+    @Override
+    public String rewriteHost(String host) {
+        if ("filerio.com".equals(getHost()) || "filekeen.com".equals(getHost())) {
+            if (host == null || "filerio.com".equals(host) || "filekeen.com".equals(host)) {
+                return "filerio.in";
             }
-            return false;
         }
-        return null;
-    }
-
-    public Boolean rewriteHost(final DownloadLink link) {
-        if ("filerio.in".equals(getHost())) {
-            if (link != null && ("filerio.com".equals(getHost()) || "filekeen.com".equalsIgnoreCase(getHost()))) {
-                link.setHost("filerio.in");
-                return true;
-            }
-            return false;
-        }
-        return null;
+        return super.rewriteHost(host);
     }
 
     @Override
@@ -109,8 +89,10 @@ public class FileRioCom extends PluginForHost {
 
     public FileRioCom(PluginWrapper wrapper) {
         super(wrapper);
-        this.enablePremium(COOKIE_HOST + "/premium.html");
-        this.setConfigElements();
+        if ("filerio.in".equals(getHost())) {
+            this.enablePremium(COOKIE_HOST + "/premium.html");
+            this.setConfigElements();
+        }
     }
 
     // do not add @Override here to keep 0.* compatibility

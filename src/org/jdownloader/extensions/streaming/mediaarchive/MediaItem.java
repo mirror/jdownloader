@@ -152,21 +152,21 @@ public abstract class MediaItem implements MediaNode {
                 pluginForHost = hPlugin.getPrototype(null);
             }
 
-            if (pluginForHost == null) {
-                try {
-                    for (LazyHostPlugin p : HostPluginController.getInstance().list()) {
-                        if (p.getPrototype(null).rewriteHost(downloadLink)) {
-                            pluginForHost = p.getPrototype(null);
-                            break;
-                        }
-                    }
-                    if (pluginForHost != null) {
-                        LOGGER.info("Plugin " + pluginForHost.getHost() + " now handles " + downloadLink.getName());
-                    }
-                } catch (final Throwable e) {
-                    LOGGER.log(e);
-                }
-            }
+            // if (pluginForHost == null) {
+            // try {
+            // for (LazyHostPlugin p : HostPluginController.getInstance().list()) {
+            // if (p.getPrototype(null).rewriteHost(downloadLink)) {
+            // pluginForHost = p.getPrototype(null);
+            // break;
+            // }
+            // }
+            // if (pluginForHost != null) {
+            // LOGGER.info("Plugin " + pluginForHost.getHost() + " now handles " + downloadLink.getName());
+            // }
+            // } catch (final Throwable e) {
+            // LOGGER.log(e);
+            // }
+            // }
             if (pluginForHost != null) {
                 downloadLink.setDefaultPlugin(pluginForHost);
             } else {
